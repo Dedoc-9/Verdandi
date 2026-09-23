@@ -1,0 +1,7 @@
+# build outputs of the gate and the drivers
+verify/build/
+*.exe
+*.pdb
+*.o
+# never committed
+.env

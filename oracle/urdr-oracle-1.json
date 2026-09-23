@@ -1,0 +1,91 @@
+{
+ "name": "studio-oracle-1",
+ "note": "The frozen contract a studio kernel reproduces before it claims anything: the certified game state and the certified picture at one view, from this tree at the tag that carries this file.",
+ "view": {
+  "seed": "0xABCDE",
+  "depth": 1,
+  "pos": [
+   34,
+   28
+  ],
+  "facing": "W",
+  "entity": "the player at pos (entity.at)"
+ },
+ "D_0": "7d8d02e119b230a91f67c649cb0ded73e6a406b2bb69639bf267b47318888c58",
+ "frame_digest_urdrfb1": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+ "identity_pixels_sha256": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35",
+ "oriented_pixels_sha256": "9c97e2cb5a3275d7bbd7ecd7977ca1e9a17bc11cba2aae9172d28f748ab05458",
+ "oriented_tiles_digest": "b6fd60696582f76d250cb6066f5411fc7cb43da7b631e2eb727f12f859ce177e",
+ "frame": {
+  "width": 1920,
+  "height": 1080,
+  "channels": 1,
+  "magic": "URDRFB1",
+  "serialization": "MAGIC | w u32 BE | h u32 BE | channels u8 | row-major indices; digest = sha256"
+ },
+ "picture": {
+  "width": 1920,
+  "height": 1080,
+  "channels": 3,
+  "identity": "sha256 of the RGB bytes, never a PNG file"
+ },
+ "camera": {
+  "focal": 960,
+  "cell": 256,
+  "eye_height": 128,
+  "bands": 32,
+  "texel_size": 256
+ },
+ "index_layout": {
+  "ink": 0,
+  "sky0": 1,
+  "sky_bands": 15,
+  "floor0": 16,
+  "down0": 48,
+  "up0": 80,
+  "wall0": 112,
+  "face_light": {
+   "4": 0,
+   "1": 1,
+   "5": 2,
+   "0": 3
+  },
+  "u_sign": {
+   "1": 1,
+   "0": -1,
+   "5": -1,
+   "4": 1
+  }
+ },
+ "corpus": {
+  "vista": "658ecfca6dcfe95c7b1abe7aa33ad7e86e3204c3ef6380e5c322fc18c751c0c5",
+  "mantle": "acb494bd2851ddf6c213b8bd8973e7368c8bfb37a1352b8b2ab618e3efadf88f",
+  "scenes": {
+   "corridor": {
+    "vista": "2593eca01ae9cdcf180845632d3604374b6265cab8376396e2e3acccc9132770",
+    "mantle": "c6780408c1b8fb01e91417b9e859db6c371b1c48cd5c229a5b477ec65f43d506"
+   },
+   "room": {
+    "vista": "656fb541db21f28a6044c3f84486f4b6e6b02bf78afb5beb83f0a86b9d056b06",
+    "mantle": "423622c951c10ea1b30bc477c99d41967e94c87bdff242c982f705d19d6945ae"
+   },
+   "landmark": {
+    "vista": "a1a5c5663dc9430f8acaf1086f6186e8e6386d31c6b74603c526cbb6c5050ad1",
+    "mantle": "7b248480d7e15529eb0f4a4ab765f2b8dc3d6e6b5d374bd1ba36bbe3a8788d89"
+   },
+   "pointblank": {
+    "vista": "ce68233e923da986af41907179819238620f288183f939e4843a541e8240235d",
+    "mantle": "00ae4e6363ccb11f228d5320d361fe5312a3703345232e482f81761afd2a2ad1"
+   }
+  }
+ },
+ "kernel_input": "tools/terrain/mantle_rs/mantle.rs header: URDRMNTI | level | eye | facing | table | per-band maps | tiles",
+ "witnessed": {
+  "python": "3.11.15",
+  "implementation": "CPython",
+  "os": "Linux",
+  "machine": "x86_64",
+  "note": "the same three hashes were printed on a Windows CPython host and on this Linux host (the ledger's cross-host TILE witness); add a host by pasting its --snapshot line"
+ },
+ "created_utc": "2026-09-23T18:05:57Z"
+}
