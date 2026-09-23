@@ -11,7 +11,11 @@ it cannot change a cell, a tile or the camera, and the workshop cannot be reache
 |---|---|
 | `mantle.rs` | the kernel proper: Urðr's placement made a library (`parse_scene`, `picture`, `Scene::{strips,frame,emit}`, `frame_digest`, `sha256`); the arithmetic is the tag's, byte for byte |
 | `formats.rs` | the studio's input formats — W the level (`VRDNLVL1`), M the tiles (`VRDNTIL1`), C the camera — and `compose()` into the kernel's `URDRMNTI` scene |
-| `main.rs` | the command line: a scene or `--level/--tiles/--camera`, the two witnesses, `--bench` off-gate |
+| `hud.rs` | HUD-0: the overlay drawn into the picture — reticle, strip-band bar, facing plate, minimap; a declared region; the overlay's own identity; the region audit |
+| `main.rs` | the command line: a scene or `--level/--tiles/--camera`, the two witnesses, `--hud` for the overlay's three lines, `--write-png` (a PPM) and `--bench` off-gate |
 
 Placed at KERNEL-0 from Urðr's `tools/terrain/mantle_rs/mantle.rs` at `urdr-oracle-1`, verified against
 `../oracle/` by `../verify/verify.py` on every run (rows `kernel-oracle`, `kernel-corpus`, `kernel-selftest`).
+HUD-0 added the overlay under its own pins (`../verify/pins/hud-1.json`; rows `hud-*`): the certified picture
+underneath is untouched, the index frame is never written, and the overlay reads the strips, the cells and the
+camera — never a material, never the shell.

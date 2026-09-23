@@ -80,3 +80,53 @@ blits (SHELL-0's contract), not this rung.
 **Falsifier.** Each PLANT row reddens if its refusal stops firing; `workshop-cell` reddens if appearance ever
 moves in a column whose geometry did not (with M unmoved); `workshop-tile` reddens if a material edit ever
 moves the frame digest.
+
+## HUD-0 — the overlay is a frame (seat 1 of the ratified order)
+
+**What landed.** `kernel/hud.rs` — geometry only, no glyph, no font, no asset: a reticle at the horizon (a black
+3-px cross under a white 1-px cross, a gap at the centre), a strip-band bar along the bottom 40 rows (per
+column the depth band as height, the light family as shade — read off the strips), a facing plate (four
+squares, the current facing white), and a minimap of the level's cells (rock, floor, up, down) with the eye's
+cell white and a red tick on its facing side. A declared region (four rectangles); `overlay()` writes only
+inside it; `overlay_bytes()` is the overlay drawn on black, its region's pixels — the HUD's identity,
+independent of the viewport underneath; `region_audit()` counts pixels changed inside and outside. `kernel
+--hud` prints three more lines (`hud_overlay`, `hud`, `hud_region inside= outside=`); `--write-png` writes
+the composite as a binary PPM, off-gate, for eyes.
+
+**The pins.** `verify/pins/hud-1.json` — per scene × tile set the overlay identity, the composite sha and the
+inside count, minted by the kernel on landing. This is Verðandi's first appearance authority: Urðr has no HUD
+to certify, so the pins are goldens held under laws (the four rows below), the way Urðr's own emissions are
+pinned. The viewport's authority stays Urðr's (`hud-index` proves the certified picture is untouched
+underneath).
+
+**Rows.** `hud-pins` — 12 composites and 12 overlay identities equal the pins. `hud-index` — with the overlay
+drawn, every frame digest and viewport pixel sha still equal the frozen corpus: the HUD moves no index.
+`hud-region` — 0 pixels changed outside the region in every scene; 106,388 inside (76,800 bar + 2,304 plate
++ 27,200 minimap + 84 reticle arms, every one different from what was under it). `hud-materials` — the overlay
+identity is the same under both tile sets in every scene and differs between scenes, including the
+camera-only pair corridor/pointblank: it reads geometry and the camera, never a material. `hud-selftest` —
+PLANTS: one pixel written outside the region is counted (`outside=1`); the facing frozen to W moves the pinned
+overlay of corridor, room and landmark and of none of witness, pointblank and neighbour (which face W).
+
+**Grade.** MEASURED: the four laws and both plants, live. ESTABLISHED: the overlay writes pixels and never
+indices (read off the source: `overlay` takes `&mut [u8]` of the picture and no frame). DECLARED: the layout
+and the shades (pinned, not argued).
+
+**does_not_show.** Legibility at 1080p (a design judgment, off-gate; a PPM is there to look at). Text of any
+kind — the three hashes and the camera as glyphs wait for a bitmap font carried as a frozen asset F with its own
+sha256 (never a rasteriser: outline glyphs differ across builds). That the shell blits this buffer (SHELL-0). Any
+wall-clock.
+
+**Falsifier.** `hud-region` reddens on the first stray pixel; `hud-index` on the first moved index; `hud-pins`
+on any moved mark; `hud-selftest` if either plant stops biting.
+
+## The seated order (COURT-1, ratified)
+
+HUD-0 → SHELL-0 → MEMBRANE-0 → TEXT-0 → WORKSHOP-1 → INPUT-0 → LATENCY-0 → GAUNTLET-1 → GAUNTLET-2 →
+MATERIAL-0. Each rung stands on one already measurable; headless before windowed; measure before optimise.
+
+**An open clause, recorded so it is decided on purpose.** New kernel semantics the studio did not inherit from
+Urðr (a filtered level per depth band, variety within a class) can be earned by either route: in Urðr under its
+gate and re-frozen here as `urdr-oracle-2`, or by a Verðandi-local VIEW reference pinned by rows here (as the
+HUD's pins are). CORE semantics have one route only — Urðr. Which route a rung takes is decided when it is
+seated; the charter must admit both.

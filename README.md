@@ -70,19 +70,32 @@ is a second authority.
          │
     WORKSHOP-0 ── edit → new authority → witness diff, with the planted falsifiers
          │
-    GUI-0 ─────── the deterministic viewport + HUD, digest-pinned
+    HUD-0 ─────── the overlay is a frame: reticle, band bar, facing plate, minimap — pinned, index-free
          │
-    SHELL-0 ───── a real window, frame → composited timing on a named host
+    SHELL-0 ───── a real window (hand-rolled Win32, zero crates), frame → composited timed;
+         │        the shell hashes what it blits
+    MEMBRANE-0 ── the one-way law as a compile-time wall (a row whose PASS is rustc refusing a plant)
          │
-    WORKSHOP-1 ── the authoring loop
+    TEXT-0 ────── the level as text, content split from provenance
          │
-    INPUT-0 ───── shell input → typed authority
+    WORKSHOP-1 ── the log is the history, undo is replay, the session is a file
          │
-    LATENCY-0 ─── input → kernel → present, against the same boundary (input_transport,
-                  present_wait and the panel need capture hardware; nothing here claims them)
+    INPUT-0 ───── shell input → typed command → new camera; the command log replays headless
+         │
+    LATENCY-0 ─── receipt → kernel → composited, two instruments (DWM timing beside PresentMon);
+         │        never input-to-photon (input transport, present wait beyond composition and the
+         │        panel need capture hardware; nothing here claims them)
+    GAUNTLET-1 ── the incremental floor cast: faster AND the same witnesses
+         │
+    GAUNTLET-2 ── columns in parallel, invariant under the thread count
+         │
+    MATERIAL-0 ── a picture becomes a material under a gate
 
 `D_0`, the third hash in the oracle, is Urðr's composed CORE identity (level, entity, RNG stream, action log)
-and is carried as evidence only; the studio does not recompute it and does not mint it.
+and is carried as evidence only; the studio does not recompute it and does not mint it. New VIEW semantics the
+studio did not inherit (filtering, variety) may be earned by either route — in Urðr and re-frozen here as a
+new oracle, or by a Verðandi-local reference pinned by rows here, as the HUD's pins are; CORE semantics have
+one route only. Which, is decided when such a rung is seated.
 
 ## Running
 
@@ -90,6 +103,7 @@ and is carried as evidence only; the studio does not recompute it and does not m
     rustc -O kernel/main.rs -o verify/build/kernel           # the kernel alone
     verify/build/kernel --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
     verify/build/kernel ... --bench 200 --warm 20            # off-gate: renderer time on this host
+    verify/build/kernel ... --hud --write-png out.ppm         # the composite with the overlay, to look at
     rustc -O workshop/edit.rs -o verify/build/edit           # the workshop
     verify/build/edit record --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles \
         --camera 34,28,W --edit cell:31,27,. --out-dir out --name cell

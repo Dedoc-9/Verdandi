@@ -1,0 +1,91 @@
+{
+ "name": "verdandi-hud-pins",
+ "version": 1,
+ "reading": "HUD-0: per scene x tile set, the overlay's own bytes (hud_overlay: the overlay drawn on black, its region's pixels), the composite picture (hud) and the pixels the overlay changed inside its declared region (inside); outside is 0 by law. Minted by the kernel on the rung's landing \u2014 Ver\u00f0andi's first appearance authority, held under the rows hud-index, hud-region, hud-materials, hud-selftest.",
+ "scenes": {
+  "witness": {
+   "identity": {
+    "hud_overlay": "de0a0256df62cdd9f84fda19222fc8b639dc23604d59612018411ecf278c1da2",
+    "hud": "03ac612881b4aec05e1f30b4ff025b8fcc2c028465f3b06332f2c8c3079c5c25",
+    "inside": 106388,
+    "outside": 0
+   },
+   "oriented": {
+    "hud_overlay": "de0a0256df62cdd9f84fda19222fc8b639dc23604d59612018411ecf278c1da2",
+    "hud": "386075beeb587daba1d8229ffc231699c8ffc1d2e84e4c750f04fad03d031966",
+    "inside": 106388,
+    "outside": 0
+   }
+  },
+  "corridor": {
+   "identity": {
+    "hud_overlay": "742e4d9e306098d40dcda3656f3cc775dfa18fd0f9e57731cf48078490af0d00",
+    "hud": "154235c13c8d6bbcb87f8c39ee6eec39aa5d626cb205db0536bac74381382c68",
+    "inside": 106388,
+    "outside": 0
+   },
+   "oriented": {
+    "hud_overlay": "742e4d9e306098d40dcda3656f3cc775dfa18fd0f9e57731cf48078490af0d00",
+    "hud": "b00df894fbdde4dcbf44bfcd0ce95183e9db2c28db3784189c0645fa3e708941",
+    "inside": 106388,
+    "outside": 0
+   }
+  },
+  "room": {
+   "identity": {
+    "hud_overlay": "89972e17498a27c32ea979348814fbd51a98813d162ea73049df842c19db9fa9",
+    "hud": "09665a94e1c4f4019c7757329305e1aa2f54b70b6281eb2ecfe6d3f6c1696f95",
+    "inside": 106388,
+    "outside": 0
+   },
+   "oriented": {
+    "hud_overlay": "89972e17498a27c32ea979348814fbd51a98813d162ea73049df842c19db9fa9",
+    "hud": "ce8bf7545ea4292ad214a41e809c3197853b49a1fb512928aeee4bd274fa0234",
+    "inside": 106388,
+    "outside": 0
+   }
+  },
+  "landmark": {
+   "identity": {
+    "hud_overlay": "75cd0a091402e2b30a8a4c33a01be4f0d49c22f9a791288df401f7318c2da13c",
+    "hud": "e2dcbc2deb176f74fd29f8cc198299ac5092e2c0f18ac05400ea1ad7549bdaba",
+    "inside": 106388,
+    "outside": 0
+   },
+   "oriented": {
+    "hud_overlay": "75cd0a091402e2b30a8a4c33a01be4f0d49c22f9a791288df401f7318c2da13c",
+    "hud": "3e1e5b7e9fe68c0ccaa4f613ce93e9b1b989f2ac9e3ffe50e73d75e6cda247b9",
+    "inside": 106388,
+    "outside": 0
+   }
+  },
+  "pointblank": {
+   "identity": {
+    "hud_overlay": "c245ccea6996e935bded79beab2ea470b57d3ffe29c389b69f7a793a20f5ece8",
+    "hud": "de946ee1d2f925e2a6a060bddb450e6998418df09092bccdcf78b4e8325af9f9",
+    "inside": 106388,
+    "outside": 0
+   },
+   "oriented": {
+    "hud_overlay": "c245ccea6996e935bded79beab2ea470b57d3ffe29c389b69f7a793a20f5ece8",
+    "hud": "e67813aeda4b4aff051af55a1d53dfed272ad9640fce818f846f60540abfe685",
+    "inside": 106388,
+    "outside": 0
+   }
+  },
+  "neighbour": {
+   "identity": {
+    "hud_overlay": "2b3392cb346e4d65e36baae7b21adbaad25c05226924de5c20cb7b969d163b59",
+    "hud": "d0c6c27226922fdb516c39dd70efc01c51f82d873cd9a32c906284bd624e072d",
+    "inside": 106388,
+    "outside": 0
+   },
+   "oriented": {
+    "hud_overlay": "2b3392cb346e4d65e36baae7b21adbaad25c05226924de5c20cb7b969d163b59",
+    "hud": "e310b652c73c7c0f16043888347d845f93f80bdf876fb9196fead1edcfccd490",
+    "inside": 106388,
+    "outside": 0
+   }
+  }
+ }
+}

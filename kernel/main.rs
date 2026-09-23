@@ -8,10 +8,14 @@
 //     kernel --level L.lvl --tiles T.tiles --camera 34,28,W      # composed from the studio's files
 //     kernel ... --bench 200 --warm 20                           # off-gate: p50/p95/p99/max us per phase
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
+//     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
+//     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
 //
-// Prints `frame <sha256>`, `pixels <sha256>`, `selfcheck OK|DIVERGED` (the picture computed twice), and
-// with --bench the per-phase percentiles and the host line. Renderer time only: no window, no present, no
-// input — never an input-to-photon number.
+// Prints `frame <sha256>`, `pixels <sha256>`, `selfcheck OK|DIVERGED` (the picture computed twice); with --hud
+// also `hud_overlay <sha256>` (the overlay's own bytes), `hud <sha256>` (the composite picture) and
+// `hud_region inside=N outside=M` (pixels the overlay changed inside and outside its declared region); with
+// --bench the per-phase percentiles and the host line. Renderer time only: no window, no present, no input —
+// never an input-to-photon number.
 
 #[allow(dead_code)]
 #[path = "mantle.rs"]
@@ -19,6 +23,9 @@ mod mantle;
 #[allow(dead_code)]
 #[path = "formats.rs"]
 mod formats;
+#[allow(dead_code)]
+#[path = "hud.rs"]
+mod hud;
 
 use std::env;
 use std::fs;
@@ -68,6 +75,8 @@ fn main() {
     let mut bench = 0usize;
     let mut warm = 10usize;
     let mut write_scene: Option<String> = None;
+    let mut want_hud = false;
+    let mut write_ppm: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
         let next = |i: usize| -> String {
@@ -80,6 +89,8 @@ fn main() {
             "--bench" => { bench = next(i).parse().unwrap_or_else(|_| refuse("--bench needs a count")); i += 2; }
             "--warm" => { warm = next(i).parse().unwrap_or_else(|_| refuse("--warm needs a count")); i += 2; }
             "--write-scene" => { write_scene = Some(next(i)); i += 2; }
+            "--hud" => { want_hud = true; i += 1; }
+            "--write-png" => { write_ppm = Some(next(i)); i += 2; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
         }
@@ -108,6 +119,27 @@ fn main() {
     println!("frame {}", fd);
     println!("pixels {}", ps);
     println!("selfcheck {}", if same { "OK" } else { "DIVERGED" });
+
+    if want_hud {
+        // HUD-0: the overlay drawn into a copy of the picture; the index frame is never touched
+        let mut composite = first.pixels.clone();
+        hud::overlay(&scene, &first.strips, &mut composite);
+        let ov = hex(&sha256(&hud::overlay_bytes(&scene, &first.strips)));
+        let hs = hex(&sha256(&composite));
+        let (inside, outside) = hud::region_audit(&scene, &first.pixels, &composite);
+        println!("hud_overlay {}", ov);
+        println!("hud {}", hs);
+        println!("hud_region inside={} outside={}", inside, outside);
+        if let Some(path) = &write_ppm {
+            let mut ppm = format!("P6\n{} {}\n255\n", W, H).into_bytes();
+            ppm.extend_from_slice(&composite);
+            fs::write(path, &ppm).unwrap_or_else(|e| refuse(&format!("cannot write {}: {}", path, e)));
+        }
+    } else if let Some(path) = &write_ppm {
+        let mut ppm = format!("P6\n{} {}\n255\n", W, H).into_bytes();
+        ppm.extend_from_slice(&first.pixels);
+        fs::write(path, &ppm).unwrap_or_else(|e| refuse(&format!("cannot write {}: {}", path, e)));
+    }
 
     if bench > 0 {
         // warm-up excluded; each sample is one full frame: traversal+strip+floor (frame) then the texel pass (pixels)

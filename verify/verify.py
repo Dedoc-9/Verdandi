@@ -10,7 +10,8 @@ consecutive runs are byte-identical when the tree is; that identity is the landi
 
 Stages: oracle (pure Python, the frozen evidence is self-consistent), kernel (the placement reproduces the
 oracle natively; the corpus; the mirrored sign table as the control that shows the rows can redden),
-workshop (an edit is a new authority and the witnesses say what it moved; the planted falsifiers bite).
+workshop (an edit is a new authority and the witnesses say what it moved; the planted falsifiers bite),
+hud (the overlay is a frame: pinned, index-free, inside its region, reading state and not materials).
 """
 from __future__ import annotations
 
@@ -109,15 +110,28 @@ def run(exe: str, args: list[str]) -> tuple[int, str, str]:
     return cp.returncode, cp.stdout, cp.stderr
 
 
-def witnesses(exe: str, level: str, tiles: str, camera: str) -> tuple[str, str]:
+def kernel_lines(exe: str, level: str, tiles: str, camera: str, extra: list[str] | None = None) -> dict:
     code, out, err = run(exe, ["--level", os.path.join(ORACLE, "levels", level + ".lvl"),
-                               "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"), "--camera", camera])
+                               "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"), "--camera", camera] + (extra or []))
     if code != 0:
         raise Red(f"kernel exited {code}: {err.strip()}")
     lines = dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
     if lines.get("selfcheck") != "OK":
         raise Red("kernel selfcheck DIVERGED")
+    return lines
+
+
+def witnesses(exe: str, level: str, tiles: str, camera: str) -> tuple[str, str]:
+    lines = kernel_lines(exe, level, tiles, camera)
     return lines["frame"], lines["pixels"]
+
+
+def hud_lines(exe: str, level: str, tiles: str, camera: str) -> dict:
+    """frame, pixels, hud_overlay, hud, inside, outside — one --hud run."""
+    lines = kernel_lines(exe, level, tiles, camera, ["--hud"])
+    reg = dict(kv.split("=") for kv in lines["hud_region"].split())
+    return {"frame": lines["frame"], "pixels": lines["pixels"], "hud_overlay": lines["hud_overlay"], "hud": lines["hud"],
+            "inside": int(reg["inside"]), "outside": int(reg["outside"])}
 
 
 def camera_of(entry: dict) -> str:
@@ -160,7 +174,7 @@ KERNEL_EXE: str | None = None
 def kernel_build():
     global KERNEL_EXE
     KERNEL_EXE = compile_rs(KERNEL, "main.rs", "kernel")
-    return "kernel/main.rs (+ mantle.rs, formats.rs) compiled live with " + " ".join(FLAGS)
+    return "kernel/main.rs (+ mantle.rs, formats.rs, hud.rs) compiled live with " + " ".join(FLAGS)
 
 
 def kernel_oracle():
@@ -411,6 +425,109 @@ def workshop_invalid():
             f"a cell outside the level, a byte outside the alphabet, an unknown material — each INVALID-EDIT with its reason, and the old authority stands")
 
 
+# ------------------------------------------------------------------ hud
+PINS = os.path.join(ROOT, "verify", "pins", "hud-1.json")
+HUD: dict = {}   # (scene, tiles) -> hud_lines, filled by hud_pins
+
+
+def pins() -> dict:
+    with open(PINS, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def hud_pins():
+    need_rustc()
+    p, c = pins(), corpus()
+    n = 0
+    for name, e in c["scenes"].items():
+        for tname in e["witnesses"]:
+            h = hud_lines(KERNEL_EXE, e["level"], tname, camera_of(e))
+            HUD[(name, tname)] = h
+            want = p["scenes"][name][tname]
+            if h["hud_overlay"] != want["hud_overlay"]:
+                raise Red(f"{name}/{tname}: overlay {h['hud_overlay'][:12]} != pinned {want['hud_overlay'][:12]}")
+            if h["hud"] != want["hud"]:
+                raise Red(f"{name}/{tname}: composite {h['hud'][:12]} != pinned {want['hud'][:12]}")
+            n += 1
+    return (f"{n} composites and {n} overlay identities equal verify/pins/hud-1.json over {len(c['scenes'])} scenes x {len(c['tiles'])} tile sets "
+            f"— Verðandi's first appearance authority, minted here and held under the four rows below")
+
+
+def hud_index():
+    need_rustc()
+    c = corpus()
+    for name, e in c["scenes"].items():
+        for tname, w in e["witnesses"].items():
+            h = HUD[(name, tname)]
+            if h["frame"] != w["frame"]:
+                raise Red(f"{name}/{tname}: the overlay moved the FRAME digest")
+            if h["pixels"] != w["pixels"]:
+                raise Red(f"{name}/{tname}: the overlay moved the VIEWPORT picture")
+    return "with the overlay drawn, every frame digest and every viewport pixel sha equal the frozen corpus: the HUD moves no index and the certified picture is untouched underneath"
+
+
+def hud_region():
+    need_rustc()
+    inside = set()
+    for (name, tname), h in HUD.items():
+        if h["outside"] != 0:
+            raise Red(f"{name}/{tname}: the overlay changed {h['outside']} pixels OUTSIDE its declared region")
+        if h["inside"] == 0:
+            raise Red(f"{name}/{tname}: the overlay changed nothing — vacuous")
+        inside.add(h["inside"])
+    return (f"0 pixels changed outside the declared region in every scene; {min(inside)}..{max(inside)} changed inside "
+            f"(the bar, the facing plate, the minimap and the reticle's arms; declared, not argued)")
+
+
+def hud_materials():
+    need_rustc()
+    c = corpus()
+    overlays = {}
+    for name in c["scenes"]:
+        ids = {HUD[(name, t)]["hud_overlay"] for t in c["tiles"]}
+        if len(ids) != 1:
+            raise Red(f"{name}: the overlay identity differs between tile sets — the HUD read a material")
+        overlays[name] = ids.pop()
+    # corridor and pointblank share a level and differ in camera only: the overlay must differ (it reads the camera)
+    if overlays["corridor"] == overlays["pointblank"]:
+        raise Red("corridor and pointblank (same level, different camera) have the same overlay — the HUD did not read the camera")
+    distinct = len(set(overlays.values()))
+    return (f"the overlay identity is the same under both tile sets in every scene (it reads geometry and the camera, never a material) "
+            f"and differs between the {distinct} scenes, including the camera-only pair corridor/pointblank")
+
+
+def hud_selftest():
+    """Two plants against hud.rs: one pixel written outside the region must be counted; the facing frozen to W
+    must move the pinned overlay of every scene not facing W and of no scene facing W."""
+    need_rustc()
+    src = read(os.path.join(KERNEL, "hud.rs")).decode("utf-8")
+    a1 = "    let _ = reticle;\n"
+    a2 = "        fill(out, *r, if i as u8 == scene.facing { WHITE } else { DIM });"
+    if src.count(a1) != 1 or src.count(a2) != 1:
+        raise Red("the selftest anchors are not where expected")
+    stray = src.replace(a1, a1 + "    put(out, W / 2, 100, WHITE); // PLANT: one pixel outside the region\n")
+    frozen = src.replace(a2, "        fill(out, *r, if i as u8 == 3 { WHITE } else { DIM }); // PLANT: the facing frozen")
+    exe_a = compile_rs(KERNEL, "main.rs", "kernel-hud-stray", {"hud.rs": stray})
+    exe_b = compile_rs(KERNEL, "main.rs", "kernel-hud-frozen", {"hud.rs": frozen})
+    c, p = corpus(), pins()
+    e = c["scenes"]["witness"]
+    ha = hud_lines(exe_a, e["level"], "identity", camera_of(e))
+    if ha["outside"] != 1:
+        raise Red(f"the stray pixel was counted as {ha['outside']} outside — the region audit is not load-bearing")
+    moved, kept = [], []
+    for name, e in c["scenes"].items():
+        hb = hud_lines(exe_b, e["level"], "identity", camera_of(e))
+        same = hb["hud_overlay"] == p["scenes"][name]["identity"]["hud_overlay"]
+        faces_w = e["camera"][2] == "W"
+        if faces_w and not same:
+            raise Red(f"{name} faces W and its overlay moved under the frozen-W plant")
+        if not faces_w and same:
+            raise Red(f"{name} does not face W and its overlay did not move under the frozen-W plant — the pins do not bite")
+        (kept if faces_w else moved).append(name)
+    return (f"PLANTS: one pixel outside the region is counted (outside=1); the facing frozen to W moves the pinned overlay of "
+            f"{', '.join(moved)} and of none of {', '.join(kept)} (which face W) — the pins bite and the HUD reads the camera")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -429,6 +546,11 @@ def main() -> int:
     row("workshop-camera", workshop_camera)
     row("workshop-authority", workshop_authority)
     row("workshop-invalid", workshop_invalid)
+    row("hud-pins", hud_pins)
+    row("hud-index", hud_index)
+    row("hud-region", hud_region)
+    row("hud-materials", hud_materials)
+    row("hud-selftest", hud_selftest)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

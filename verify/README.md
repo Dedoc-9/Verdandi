@@ -9,5 +9,8 @@ rowset digest does not depend on the toolchain being present — only the verdic
 Off-gate instruments (wall-clock on a named host) never print inside the gate; they write records beside the
 oracle with the witnesses checked first.
 
+`pins/` holds the goldens Verðandi mints itself (today: the HUD's overlay identities and composites), each held
+under laws by rows; the oracle folder holds only what Urðr certified.
+
 `RUNGS.md` is the ledger: one graded entry per rung, with what it measured, what it does not show, and the
 row that would redden if the claim were false.
