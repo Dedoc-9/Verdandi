@@ -130,3 +130,55 @@ Urðr (a filtered level per depth band, variety within a class) can be earned by
 gate and re-frozen here as `urdr-oracle-2`, or by a Verðandi-local VIEW reference pinned by rows here (as the
 HUD's pins are). CORE semantics have one route only — Urðr. Which route a rung takes is decided when it is
 seated; the charter must admit both.
+
+## WORKSHOP-0b — the truth table, populated (an amendment under review)
+
+**Why.** A reviewer proposed a lock-step law for `edit check`: with the camera carried, *authority moved ⟺
+projection moved*, refusing `VACUOUS-EDIT` (authority moved, projection static) and `PHANTOM-PROJECTION`
+(projection moved, authority static), first over the frame digest and then over frame-or-pixels. Measured
+before it was argued: `edit census` over every single-cell edit of the witness level under (34, 28, W) —
+1,379 edits — finds **1,308 (948 permille) that move the authority and nothing on screen** (the edit is out of
+the view), and 71 that move strips, frame and pixels together. The `workshop-tile` row had already shown M
+moving with the frame digest unmoved. So the biconditional is not a law of this system; the rule would refuse
+nineteen of every twenty legitimate edits. Its second arm cannot occur on re-derived values (the kernel is a
+function of the authority and the carried camera) and, on the record's claims, is already
+`PROJECTION-WITHOUT-AUTHORITY`. What the proposal was right about — scope the check to the carried camera,
+make the case analysis exhaustive and inspectable, distinguish the two ways a camera can move — is taken.
+
+**What landed.** A third witness: `strips`, the sha256 of the exact strips (voxel, face, `tn/td`, top, bot,
+band per column) — geometry at the kernel's own grain, beside the frame digest (geometry at the index grain)
+and the pixel sha (appearance). The consequence classified by an exhaustive `match` over (W or M moved,
+strips moved, frame moved, pixels moved) into a recorded **signature** — `identity`, `outside-view`,
+`geometry`, `material`, `geometry+material`, `sub-index` (strips and pixels moved, the index did not:
+possible in principle, unseen), `sub-pixel` — with only the arms the kernel makes impossible refused
+(`CONSEQUENCE-IMPOSSIBLE`). Per column, `strips_changed`, `index_changed`, `columns_changed`, and
+`columns_unexplained` — pixels moved with no strip, no index and no material behind them — a field whose law
+is zero. Two `CAMERA-MOVED` reasons (beside an edit; instead of one). `edit census` as an off-gate
+instrument, its record `workshop/attest/census-witness.json` committed (no clock inside, so it reproduces).
+Record version 2.
+
+**What the finer grain showed.** On the cell edit, the exact strip moved in 439 columns and the index column
+in 440: the index frame draws a seam's ink from the *neighbour's* strip, so an index column can move with its
+own strip unmoved. On the level edit, 1,920 strips moved and 1,919 index columns and pixel columns: one
+column's geometry moved below what the index and the texel round to. Both are why the per-column law is a
+subset — `columns_changed ⊆ strips_changed ∪ index_changed` with M unmoved — and not the equality the
+earlier `workshop-cell` row asserted (true on the corpus edit, not provable; corrected here).
+
+**Rows.** `workshop-seed` / `-cell` / `-tile` / `-identity` now assert their signatures (`geometry`,
+`geometry`, `material`, `identity`) and zero unexplained columns. `workshop-outside` — cell (1, 1) rock →
+floor: signature `outside-view`, W moved, strips/frame/pixels unmoved, CHECK OK: the arm a biconditional
+would refuse, accepted as a consequence. `workshop-census` — the record's provenance (W, M, camera, base
+witnesses) equals the frozen corpus; impossible 0; unexplained 0; counts sum to the edits tested; the number
+stated. `workshop-camera` now carries both plants. `workshop-stale` includes the strips.
+
+**Grade.** MEASURED: the census (1,379 edits), the five signatures on the corpus, the zero-unexplained law on
+every edit, both camera plants. ESTABLISHED: the impossible arms (read off the kernel: a function of the
+authority and the camera). DECLARED: the signature names.
+
+**does_not_show.** That `sub-index` never occurs (unseen in 1,379 edits on one level and one camera; the
+signature exists so it is recorded, not hidden). A census on any other level or camera. That a biconditional
+holds for some *other* pair of quantities (none was proposed).
+
+**Falsifier.** `workshop-outside` reddens if an out-of-view edit is ever refused; `workshop-census` if the
+record stops re-deriving from the corpus or an unexplained column appears; every signature row if its
+classification moves.

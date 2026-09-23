@@ -307,10 +307,14 @@ def must_refuse(path: str, code_word: str) -> str:
     return line
 
 
-def signature(r: dict, w: bool, m: bool, frame: bool) -> dict:
+def signature(r: dict, name: str, w: bool, m: bool, strips: bool, frame: bool) -> dict:
     c = r["consequence"]
-    if (c["w_moved"], c["m_moved"], c["frame_moved"], c["camera_carried"]) != (w, m, frame, True):
-        raise Red(f"signature {c}")
+    if c["signature"] != name:
+        raise Red(f"signature {c['signature']!r}, expected {name!r}")
+    if (c["w_moved"], c["m_moved"], c["strips_moved"], c["frame_moved"], c["camera_carried"]) != (w, m, strips, frame, True):
+        raise Red(f"signature fields {c}")
+    if c["columns_unexplained"] != 0:
+        raise Red(f"{c['columns_unexplained']} columns changed pixels with nothing behind them")
     if r["before"]["camera"] != r["after"]["camera"]:
         raise Red("the camera was not carried")
     return c
@@ -319,55 +323,100 @@ def signature(r: dict, w: bool, m: bool, frame: bool) -> dict:
 def workshop_seed():
     need_rustc()
     r = record("seed", "level:" + os.path.join(ORACLE, "levels", "neighbour.lvl"))
-    c = signature(r, True, False, True)
+    c = signature(r, "geometry", True, False, True, True)
     if c["strips_changed"] == 0 or c["pixels_changed"] == 0:
         raise Red("a new level moved nothing")
     check_ok("seed")
-    return (f"another frozen authority under the carried camera (34, 28, W): W moved, M unmoved, frame moved, "
-            f"{c['strips_changed']} of 1920 strips and {c['pixels_changed']} pixels ({c['pixels_permille']} permille) changed; "
-            f"the record re-derives (CHECK OK); the after level is a file whose sha256 is the new W")
+    return (f"another frozen authority under the carried camera (34, 28, W) — signature geometry: W moved, M unmoved, "
+            f"strips moved in {c['strips_changed']} of 1920 columns, the index in {c['index_changed']}, pixels in {c['columns_changed']} "
+            f"({c['pixels_changed']} pixels, {c['pixels_permille']} permille), 0 unexplained; the record re-derives (CHECK OK); "
+            f"the after level is a file whose sha256 is the new W")
 
 
 def workshop_cell():
     need_rustc()
     r = record("cell", "cell:31,27,.")
-    c = signature(r, True, False, True)
+    c = signature(r, "geometry", True, False, True, True)
     if not (0 < c["strips_changed"] < 1920) or c["pixels_changed"] == 0:
         raise Red(f"one cell moved {c['strips_changed']} strips")
-    if c["columns_changed"] != c["strips_changed"]:
-        raise Red(f"pixels moved in {c['columns_changed']} columns but strips in {c['strips_changed']}: appearance moved where geometry did not")
     check_ok("cell")
-    return (f"one cell (31, 27) rock -> floor: W moved, M unmoved, frame moved in {c['strips_changed']} of 1920 columns and the pixels "
-            f"in exactly those {c['columns_changed']} columns ({c['pixels_changed']} pixels, {c['pixels_permille']} permille) — with M unmoved, "
-            f"appearance moves only where geometry moved; the other {1920 - c['strips_changed']} columns are untouched, and the record re-derives")
+    return (f"one cell (31, 27) rock -> floor — signature geometry: W moved, M unmoved; the exact strip moved in {c['strips_changed']} "
+            f"of 1920 columns, the index column in {c['index_changed']} (the seam ink of a neighbour counts), the pixels in "
+            f"{c['columns_changed']} ({c['pixels_changed']} pixels, {c['pixels_permille']} permille) and in 0 columns without a strip or "
+            f"an index behind them — with M unmoved, appearance moves only where geometry moved, at one grain or the other; "
+            f"{1920 - c['columns_changed']} columns untouched; the record re-derives")
 
 
 def workshop_tile():
     need_rustc()
     r = record("tile", "tile:floor,96,80,64")
-    c = signature(r, False, True, False)
-    if c["strips_changed"] != 0 or c["pixels_changed"] == 0:
-        raise Red(f"a material edit moved {c['strips_changed']} strips")
+    c = signature(r, "material", False, True, False, False)
+    if c["strips_changed"] != 0 or c["index_changed"] != 0 or c["pixels_changed"] == 0:
+        raise Red(f"a material edit moved {c['strips_changed']} strips / {c['index_changed']} index columns")
     check_ok("tile")
-    return (f"one material (the floor tile, recoloured flat): M moved, W unmoved, the frame digest UNMOVED and 0 strips changed "
-            f"— the lookup moves no index, now a consequence row — while {c['pixels_changed']} pixels ({c['pixels_permille']} permille) "
-            f"in {c['columns_changed']} columns changed")
+    return (f"one material (the floor tile, recoloured flat) — signature material: M moved, W unmoved, the strips and the frame digest "
+            f"UNMOVED, 0 strips and 0 index columns changed — the lookup moves no index, as a consequence row — while "
+            f"{c['pixels_changed']} pixels ({c['pixels_permille']} permille) in {c['columns_changed']} columns changed; the authority moved "
+            f"and the geometry did not, so no biconditional over geometry can be a law here")
 
 
 def workshop_identity():
     need_rustc()
     r = record("none", "none")
-    c = signature(r, False, False, False)
-    if c["strips_changed"] or c["pixels_changed"]:
+    c = signature(r, "identity", False, False, False, False)
+    if c["strips_changed"] or c["index_changed"] or c["pixels_changed"]:
         raise Red("the identity edit moved something")
     check_ok("none")
-    return "the identity edit: W, M, camera, frame and pixels all unmoved, 0 strips, 0 pixels — an honest no-op is accepted, so the refusals below are not vacuous"
+    return "the identity edit — signature identity: W, M, camera, strips, frame and pixels all unmoved, 0 columns — an honest no-op is accepted, so the refusals below are not vacuous"
+
+
+def workshop_outside():
+    """The arm a biconditional would refuse: the authority moved and nothing on screen did."""
+    need_rustc()
+    r = record("outside", "cell:1,1,.")
+    c = signature(r, "outside-view", True, False, False, False)
+    if c["columns_changed"] or c["pixels_changed"]:
+        raise Red("the far corner moved a pixel")
+    line = check_ok("outside")
+    if not line.startswith("CHECK OK outside-view"):
+        raise Red(line)
+    return ("cell (1, 1) rock -> floor, out of the camera's view — signature outside-view: W moved; strips, frame and pixels UNMOVED; "
+            "0 columns; CHECK OK. An edit the world accepts and the screen does not see is a consequence, not a fault: the proposed "
+            "biconditional authority-moved <=> projection-moved would refuse it as VACUOUS-EDIT")
+
+
+def workshop_census():
+    """The off-gate census record re-derives its provenance and states the number."""
+    path = os.path.join(ROOT, "workshop", "attest", "census-witness.json")
+    with open(path, encoding="utf-8") as fh:
+        r = json.load(fh)
+    c = corpus()
+    if r["name"] != "verdandi-edit-census" or r["version"] != 1:
+        raise Red("not a census record")
+    if r["W"] != c["levels"]["witness"]["W"] or r["M"] != c["tiles"]["identity"]["M"]:
+        raise Red("the census was not taken on the frozen witness authority")
+    w = c["scenes"]["witness"]["witnesses"]["identity"]
+    if r["base"]["frame"] != w["frame"] or r["base"]["pixels"] != w["pixels"] or r["camera"] != c["scenes"]["witness"]["camera"]:
+        raise Red("the census's base witnesses are not the corpus's")
+    if r["impossible"] != 0 or r["unexplained_columns_total"] != 0:
+        raise Red(f"impossible {r['impossible']}, unexplained {r['unexplained_columns_total']}")
+    sig = r["signatures"]
+    if sum(sig.values()) != r["tested"]:
+        raise Red("the signature counts do not sum to the edits tested")
+    ov = sig.get("outside-view", 0)
+    if ov == 0:
+        raise Red("no outside-view edit in the census — the biconditional's refutation has no witness")
+    return (f"workshop/attest/census-witness.json (off-gate, {r['tested']} single-cell edits of the witness level under (34, 28, W)): "
+            f"{', '.join(f'{v} {k}' for k, v in sorted(sig.items(), key=lambda kv: -kv[1]))}; impossible 0; unexplained columns 0 — "
+            f"{ov * 1000 // r['tested']} permille of legitimate edits move the authority and nothing on screen, and the one-directional laws "
+            f"held on every edit; the record's provenance (W, M, camera, base witnesses) equals the frozen corpus")
 
 
 def workshop_stale():
     need_rustc()
 
     def stale(r):
+        r["after"]["strips"] = r["before"]["strips"]
         r["after"]["frame"] = r["before"]["frame"]
         r["after"]["pixels"] = r["before"]["pixels"]
     line = must_refuse(tampered("cell", "stale", stale), "STALE-PROJECTION")
@@ -391,7 +440,12 @@ def workshop_camera():
     def turn(r):
         r["after"]["camera"] = [34, 28, "N"]
     line = must_refuse(tampered("cell", "cam", turn), "CAMERA-MOVED")
-    return "PLANT: a record whose camera turned is refused as an edit record — " + line.split(" ", 2)[2]
+
+    def turn_only(r):
+        r["after"]["camera"] = [34, 28, "N"]
+    line2 = must_refuse(tampered("none", "cam", turn_only), "CAMERA-MOVED")
+    return ("PLANTS: a record whose camera turned beside a real edit, and one whose camera turned with no edit at all, are both refused "
+            "as edit records, each with its own reason — " + line.split(" ", 2)[2] + " / " + line2.split(" ", 2)[2])
 
 
 def workshop_authority():
@@ -541,6 +595,8 @@ def main() -> int:
     row("workshop-cell", workshop_cell)
     row("workshop-tile", workshop_tile)
     row("workshop-identity", workshop_identity)
+    row("workshop-outside", workshop_outside)
+    row("workshop-census", workshop_census)
     row("workshop-stale", workshop_stale)
     row("workshop-projection", workshop_projection)
     row("workshop-camera", workshop_camera)
