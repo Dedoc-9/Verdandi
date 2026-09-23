@@ -9,6 +9,9 @@ A new oracle is a new file with a new name and a new tag behind it, never an edi
 | File | Origin in Urðr | sha256 |
 |---|---|---|
 | `urdr-oracle-1.json` | `studio/attest/studio-oracle-1.json` at the tag, verbatim | `470d3ab2b1e3ac5a13cefa028b6362fa938fb0dc7a6ad447ced8b01438ec32c9` |
+| `levels/witness.lvl` `corridor.lvl` `room.lvl` `landmark.lvl` `neighbour.lvl` | `gamegen.generate(seed, depth)` at the tag, with the depth's `vista.lut` table and `mantle` band maps (`VRDNLVL1`; W = the file's sha256; Urðr's `level_digest` beside each in `witnesses.json`) | in `witnesses.json` |
+| `tiles/identity.tiles` `oriented.tiles` | `mantle.identity_tiles()` and the oriented synthetic set (`VRDNTIL1`; M = the file's sha256; Urðr's `tiles_digest` beside each) | in `witnesses.json` |
+| `witnesses.json` | the corpus: six scenes (the four of Urðr's corpus, the witness view, and the neighbour seed `0xABCDF` whose level keeps the witness camera on floor) × two tile sets, each with its frame digest and pixel sha computed live by the tag's Python modules | — |
 
 What the record fixes: the view (seed `0xABCDE`, depth 1, the player at (34, 28) facing W), `D_0`, the
 URDRFB1 frame digest, the identity picture's pixel sha256, the oriented picture and its tile digest, the

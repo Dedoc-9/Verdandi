@@ -1,0 +1,192 @@
+{
+ "name": "verdandi-corpus",
+ "version": 1,
+ "origin": {
+  "repo": "Dedoc-9/Urdr",
+  "tag": "urdr-oracle-1",
+  "commit": "4c8c2451d942ff320a11501b59fbbf2737ec42ce"
+ },
+ "witnessed": {
+  "python": "3.11.15",
+  "implementation": "CPython",
+  "os": "Linux",
+  "machine": "x86_64",
+  "PYTHONHASHSEED": "0"
+ },
+ "formats": {
+  "level": "VRDNLVL1 | u32 w | u32 rows | w*rows cells ('#' rock, '.' floor, '<' up, '>' down) | u32 depth | 768 table (vista.lut) | 32*256 wall_map | 32*256 floor_map (mantle band tables); W = sha256 of the file",
+  "tiles": "VRDNTIL1 | 4 * 196608 wall tiles (one per light family) | 196608 floor tile; M = sha256 of the file",
+  "camera": "(pos_x, pos_z, facing in N E S W); carried, never inside W or M",
+  "kernel_input": "URDRMNTI | u32 w | u32 rows | cells | i32 pos_x | i32 pos_z | u8 facing (0 N,1 E,2 S,3 W) | u32 depth | table | wall_map | floor_map | tiles \u2014 composed from level + camera + tiles by the drivers"
+ },
+ "levels": {
+  "witness": {
+   "seed": "0xabcde",
+   "depth": 1,
+   "w": 48,
+   "h": 32,
+   "bytes": 18708,
+   "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+   "urdr_level_digest": "9b034401cbdcfc9e9a35e6144374c38561099d746a21c05a22ca9f14362e5f5f"
+  },
+  "corridor": {
+   "seed": "0x0",
+   "depth": 1,
+   "w": 48,
+   "h": 32,
+   "bytes": 18708,
+   "W": "dacaef07b035fbb07c6b89154b58df1a17d099dbd721058f0c8b02e21b290127",
+   "urdr_level_digest": "87eda120ad80581ff8964425bd394524f68c9c60dc9f39431927895f3ebd84cf"
+  },
+  "room": {
+   "seed": "0x3039",
+   "depth": 7,
+   "w": 48,
+   "h": 32,
+   "bytes": 18708,
+   "W": "d9aa153c934b4e08d4205af4e3fd4e684cf5e0804fae2b3606d02c5d92e8a27b",
+   "urdr_level_digest": "828c413c9ba3374f9af8b238d202190d7f55370afd350990d8e68b403c5af64a"
+  },
+  "landmark": {
+   "seed": "0xc0ffee",
+   "depth": 2,
+   "w": 48,
+   "h": 32,
+   "bytes": 18708,
+   "W": "84c06414a5b3da3d2863c7226ff6e093e08ab0e257050d4b8187521c331e9c89",
+   "urdr_level_digest": "b7de3a12fe21ae91ee92d2c5846dbab6c0673a0602bbe537187f688fea0e50ab"
+  },
+  "neighbour": {
+   "seed": "0xabcdf",
+   "depth": 1,
+   "w": 48,
+   "h": 32,
+   "bytes": 18708,
+   "W": "f793c110e3feb5a989f2fcf1add47b7ecf04ff2ac2b9a1e6dbc5bcf05b2241d3",
+   "urdr_level_digest": "ae4429c0dd6f7395c0ffe9958d9f4fe58aa76a2c9cebcd8abf0af074547f9e1d"
+  }
+ },
+ "tiles": {
+  "identity": {
+   "bytes": 983048,
+   "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+   "urdr_tiles_digest": "3c5368ff5e123186059bca1e29fa78bc6bd9c5b5b8ab5713734bb9db1b08b865"
+  },
+  "oriented": {
+   "bytes": 983048,
+   "M": "f2fa98010b0b871477c41592788f0ea55a07aa03b83c61cc92819d7efc79ca78",
+   "urdr_tiles_digest": "b6fd60696582f76d250cb6066f5411fc7cb43da7b631e2eb727f12f859ce177e"
+  }
+ },
+ "scenes": {
+  "witness": {
+   "level": "witness",
+   "camera": [
+    34,
+    28,
+    "W"
+   ],
+   "witnesses": {
+    "identity": {
+     "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+     "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35"
+    },
+    "oriented": {
+     "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+     "pixels": "9c97e2cb5a3275d7bbd7ecd7977ca1e9a17bc11cba2aae9172d28f748ab05458"
+    }
+   }
+  },
+  "corridor": {
+   "level": "corridor",
+   "camera": [
+    34,
+    26,
+    "N"
+   ],
+   "witnesses": {
+    "identity": {
+     "frame": "12e2c5e703c2b984829ff59818de783bad8310ac6f9443a2cfcafc084178992f",
+     "pixels": "730d5f733735daeebb9285c7d93ca4201d0f50bf2f40612dc77ba4c82ef8be2e"
+    },
+    "oriented": {
+     "frame": "12e2c5e703c2b984829ff59818de783bad8310ac6f9443a2cfcafc084178992f",
+     "pixels": "385c164b731af5702093feb512c9e7f11894fe0468290d895d0673371e1dbf64"
+    }
+   }
+  },
+  "room": {
+   "level": "room",
+   "camera": [
+    33,
+    13,
+    "E"
+   ],
+   "witnesses": {
+    "identity": {
+     "frame": "f71847f93bb6ac49258339fe0660bdb1a04009a047ec8074ae9752bf6d0d20f0",
+     "pixels": "307cecca1d0d1c84b3a5ced8c0fa69a122f5be1851401248a6113a05d8b54775"
+    },
+    "oriented": {
+     "frame": "f71847f93bb6ac49258339fe0660bdb1a04009a047ec8074ae9752bf6d0d20f0",
+     "pixels": "0acde20d0f494d6eb3b82c940fc0d8dc8798210c1a5359882a6c4a79ea227757"
+    }
+   }
+  },
+  "landmark": {
+   "level": "landmark",
+   "camera": [
+    7,
+    20,
+    "E"
+   ],
+   "witnesses": {
+    "identity": {
+     "frame": "d1bd80d82e7d27650afe4f179ba95e711f6838233309336ebd34470c4c61973e",
+     "pixels": "2d74df8464eed40b0971a819390933a567823bf4203323634be22102c2a71fe2"
+    },
+    "oriented": {
+     "frame": "d1bd80d82e7d27650afe4f179ba95e711f6838233309336ebd34470c4c61973e",
+     "pixels": "68cae6148670d1119c4244401aebeb75c04abb112a4cf9fe5cd5a283958e3bd3"
+    }
+   }
+  },
+  "pointblank": {
+   "level": "corridor",
+   "camera": [
+    29,
+    26,
+    "W"
+   ],
+   "witnesses": {
+    "identity": {
+     "frame": "cbbfc1fa9cbeba8283d15b454ae2ad519881c24c0a3dd06f324a3e0cf8cfe78a",
+     "pixels": "30b157cc29e77f530bf4d55f8cfdf7128445563b3d521671e9374a6d42dd5047"
+    },
+    "oriented": {
+     "frame": "cbbfc1fa9cbeba8283d15b454ae2ad519881c24c0a3dd06f324a3e0cf8cfe78a",
+     "pixels": "ffe0e927b4088734749d3a96a94eef91573e9fe91c7f69f0e7e46810ada0f667"
+    }
+   }
+  },
+  "neighbour": {
+   "level": "neighbour",
+   "camera": [
+    34,
+    28,
+    "W"
+   ],
+   "witnesses": {
+    "identity": {
+     "frame": "ab555e1e7d2798be52fab58e6a0bf49a0605a64f8285b0fae2577ca5a8fd68f5",
+     "pixels": "fb23d6c388999dd2c9bcb87f15e02d14d3690a8fa77b5001fcfe8191d767cb57"
+    },
+    "oriented": {
+     "frame": "ab555e1e7d2798be52fab58e6a0bf49a0605a64f8285b0fae2577ca5a8fd68f5",
+     "pixels": "56ecc054af66d64f038fcb44c81a1ee0e019f633e349185352bd43cb39bf121f"
+    }
+   }
+  }
+ },
+ "cross_check": "the witness scene's identity frame/pixels and oriented pixels equal urdr-oracle-1.json; the oriented tile digest equals the record's; corridor..pointblank cameras equal vista.scene_view at the tag"
+}

@@ -7,5 +7,11 @@ INPUT), an 8-bit index frame and a 1920×1080 RGB picture out, and two witnesses
 presentation API; nothing here opens a window or reads a clock inside the gate. The kernel mints no authority:
 it cannot change a cell, a tile or the camera, and the workshop cannot be reached from here.
 
-Lands at KERNEL-0 as the placement from Urðr's `tools/terrain/mantle_rs/mantle.rs`, verified against
-`../oracle/` by `../verify/verify.py`.
+| File | What it is |
+|---|---|
+| `mantle.rs` | the kernel proper: Urðr's placement made a library (`parse_scene`, `picture`, `Scene::{strips,frame,emit}`, `frame_digest`, `sha256`); the arithmetic is the tag's, byte for byte |
+| `formats.rs` | the studio's input formats — W the level (`VRDNLVL1`), M the tiles (`VRDNTIL1`), C the camera — and `compose()` into the kernel's `URDRMNTI` scene |
+| `main.rs` | the command line: a scene or `--level/--tiles/--camera`, the two witnesses, `--bench` off-gate |
+
+Placed at KERNEL-0 from Urðr's `tools/terrain/mantle_rs/mantle.rs` at `urdr-oracle-1`, verified against
+`../oracle/` by `../verify/verify.py` on every run (rows `kernel-oracle`, `kernel-corpus`, `kernel-selftest`).

@@ -84,6 +84,16 @@ oracle's frame digest and pixel sha natively against the tag). `D_0`, the third 
 Urðr's composed CORE identity (level, entity, RNG stream, action log) and is carried as evidence only; the
 studio does not recompute it and does not mint it.
 
+## Running
+
+    python verify/verify.py                                  # the gate; needs rustc for the kernel rows
+    rustc -O kernel/main.rs -o verify/build/kernel           # the kernel alone
+    verify/build/kernel --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
+    verify/build/kernel ... --bench 200 --warm 20            # off-gate: renderer time on this host
+
+Landing condition: two consecutive gate runs byte-identical and `GATE PASSED`. The ledger is
+[`verify/RUNGS.md`](verify/RUNGS.md).
+
 ## Discipline
 
 Every claim is graded — MEASURED, ESTABLISHED, DECLARED — with a `does_not_show` boundary and a falsifier that
