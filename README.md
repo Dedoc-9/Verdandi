@@ -64,9 +64,11 @@ is a second authority.
 
 ## The sequence (each rung stands on one already measurable)
 
-    CREATE REPO ── this commit
+    CREATE REPO ── the charter (c3cda5a)
          │
-    WORKSHOP-0 ── edit → new authority → witness diff, with two planted falsifiers
+    KERNEL-0 ──── the placement reproduces the oracle natively, against the tag
+         │
+    WORKSHOP-0 ── edit → new authority → witness diff, with the planted falsifiers
          │
     GUI-0 ─────── the deterministic viewport + HUD, digest-pinned
          │
@@ -79,10 +81,8 @@ is a second authority.
     LATENCY-0 ─── input → kernel → present, against the same boundary (input_transport,
                   present_wait and the panel need capture hardware; nothing here claims them)
 
-The kernel lands first as the rung that makes WORKSHOP-0 possible (KERNEL-0: the placement reproduces the
-oracle's frame digest and pixel sha natively against the tag). `D_0`, the third hash in the oracle, is
-Urðr's composed CORE identity (level, entity, RNG stream, action log) and is carried as evidence only; the
-studio does not recompute it and does not mint it.
+`D_0`, the third hash in the oracle, is Urðr's composed CORE identity (level, entity, RNG stream, action log)
+and is carried as evidence only; the studio does not recompute it and does not mint it.
 
 ## Running
 
@@ -90,6 +90,10 @@ studio does not recompute it and does not mint it.
     rustc -O kernel/main.rs -o verify/build/kernel           # the kernel alone
     verify/build/kernel --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
     verify/build/kernel ... --bench 200 --warm 20            # off-gate: renderer time on this host
+    rustc -O workshop/edit.rs -o verify/build/edit           # the workshop
+    verify/build/edit record --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles \
+        --camera 34,28,W --edit cell:31,27,. --out-dir out --name cell
+    verify/build/edit check --record out/cell.record.json
 
 Landing condition: two consecutive gate runs byte-identical and `GATE PASSED`. The ledger is
 [`verify/RUNGS.md`](verify/RUNGS.md).

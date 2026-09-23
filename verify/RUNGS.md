@@ -37,3 +37,46 @@ That the corpus is representative — six scenes, two tile sets. A window, a pre
 
 **Falsifier.** `kernel-oracle` and `kernel-corpus` redden on any drift in the arithmetic; `kernel-selftest`
 reddens if the comparison ever stops biting.
+
+## WORKSHOP-0 — an edit is a new authority, and the witnesses say what it moved
+
+**What landed.** `workshop/edit.rs` (std-only; built over the kernel's own `mantle.rs` and `formats.rs` by
+`#[path]` — one traversal, one emission, no mirror). `edit record` takes an authority (W a level file, M a
+tiles file, C a camera) and one edit — `cell:X,Z,C`, `tile:CLASS,R,G,B`, `level:PATH` (the seed edit: another
+frozen level from the oracle, since the studio generates no levels and ports no CORE), or `none` — validates
+it before any projection (the cell in range and in the alphabet, the border still rock, the carried camera
+still on a traversable cell of the new authority, the material class known), writes the new level and tiles
+as files beside the record (the world survives the app), and records before/after W, M, C, frame digest and
+pixel sha with the consequence: `strips_changed` (columns whose index column differs), `columns_changed`
+(columns with any pixel differing), `pixels_changed` and its permille. `edit check` re-derives every value
+from the files and refuses typed: `STALE-PROJECTION`, `PROJECTION-WITHOUT-AUTHORITY`, `CAMERA-MOVED`,
+`AUTHORITY-MISMATCH`, `BEFORE-MISMATCH`, `CONSEQUENCE-MISMATCH`, `INVALID-EDIT`.
+
+**Rows (on the witness authority, camera (34, 28) W carried).** `workshop-seed` — the neighbour level
+`0xABCDF/1`: W moved, M unmoved, frame moved, 1,919 of 1,920 strips and 1,228,154 pixels (592 permille);
+CHECK OK. `workshop-cell` — cell (31, 27) rock → floor: W moved, M unmoved, the frame moved in 440 columns
+and the pixels in exactly those 440 (165,558 pixels, 79 permille) — with M unmoved, appearance moves only
+where geometry moved; 1,480 columns untouched. `workshop-tile` — the floor tile recoloured flat: M moved, W
+unmoved, the frame digest UNMOVED, 0 strips, 694,648 pixels (334 permille) in 1,920 columns — the
+lookup-moves-no-index law as a consequence row (694,648 is the witness frame's floor pixel count, measured in
+Urðr's TILE-0: every floor pixel and only floor pixels). `workshop-identity` — the no-op is accepted with
+everything unmoved, so the refusals are not vacuous. `workshop-stale` — PLANT: the authoritative cell changed
+while the recorded projection stayed → `STALE-PROJECTION`. `workshop-projection` — PLANT: the picture changed
+while W, M and the camera did not → `PROJECTION-WITHOUT-AUTHORITY`. `workshop-camera` — PLANT: a turned camera
+→ `CAMERA-MOVED`. `workshop-authority` — PLANT: one more cell changed in the after FILE than the record says →
+`AUTHORITY-MISMATCH`; restored, the record re-derives. `workshop-invalid` — six edits refused before any
+projection, each `INVALID-EDIT` with its reason.
+
+**Grade.** MEASURED: the three signatures (seed: W+frame+pixels; cell: W+frame+pixels, columns = strips;
+tile: M+pixels, frame unmoved) and the five refusals, live on every gate run. ESTABLISHED: the workshop
+holds no renderer state (it calls `picture()` and writes files; read off the source). DECLARED: nothing.
+
+**does_not_show.** A level generated here (the seed edit is a choice among frozen authorities). An edit to
+the camera as a design act (a camera record is a later rung — it is refused here on purpose). Filtering,
+variety within a class, stairs, sky, motion. Any wall-clock: `record` is off the frame path. That a
+projection tampered *after* the kernel — by a shell — is caught: that needs the shell to hash what it
+blits (SHELL-0's contract), not this rung.
+
+**Falsifier.** Each PLANT row reddens if its refusal stops firing; `workshop-cell` reddens if appearance ever
+moves in a column whose geometry did not (with M unmoved); `workshop-tile` reddens if a material edit ever
+moves the frame digest.

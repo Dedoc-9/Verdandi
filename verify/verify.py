@@ -9,7 +9,8 @@ need `rustc` SKIP without it, count-stable. Nothing here prints a clock or a tem
 consecutive runs are byte-identical when the tree is; that identity is the landing condition.
 
 Stages: oracle (pure Python, the frozen evidence is self-consistent), kernel (the placement reproduces the
-oracle natively; the corpus; the mirrored sign table as the control that shows the rows can redden).
+oracle natively; the corpus; the mirrored sign table as the control that shows the rows can redden),
+workshop (an edit is a new authority and the witnesses say what it moved; the planted falsifiers bite).
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ORACLE = os.path.join(ROOT, "oracle")
 KERNEL = os.path.join(ROOT, "kernel")
+WORKSHOP = os.path.join(ROOT, "workshop")
 BUILD = os.path.join(ROOT, "verify", "build")
 RUSTC = shutil.which("rustc")
 FLAGS = ["-O"]
@@ -227,6 +229,188 @@ def kernel_selftest():
             f"identity picture ({kept_identity}): the rows above can redden, and geometry and appearance are distinct witnesses")
 
 
+# ------------------------------------------------------------------ workshop
+EDIT_EXE: str | None = None
+WS = os.path.join(BUILD, "ws")
+WITNESS_ARGS = ["--level", os.path.join(ORACLE, "levels", "witness.lvl"), "--tiles", os.path.join(ORACLE, "tiles", "identity.tiles"), "--camera", "34,28,W"]
+
+
+def workshop_build():
+    global EDIT_EXE
+    EDIT_EXE = compile_rs(WORKSHOP, "edit.rs", "edit")
+    if os.path.isdir(WS):
+        shutil.rmtree(WS)
+    os.makedirs(WS)
+    return "workshop/edit.rs compiled live over the kernel's own mantle.rs and formats.rs (no mirror: one traversal, one emission)"
+
+
+def record(name: str, spec: str, extra: list[str] | None = None) -> dict:
+    """Run `edit record` for a spec on the witness authority; return the parsed record (or refuse typed)."""
+    args = ["record"] + (extra if extra is not None else WITNESS_ARGS) + ["--edit", spec, "--out-dir", WS, "--name", name]
+    code, out, _err = run(EDIT_EXE, args)
+    if code != 0:
+        raise Red(f"record refused: {out.strip().splitlines()[0] if out.strip() else code}")
+    with open(os.path.join(WS, name + ".record.json"), encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def refusal(name: str, spec: str) -> str:
+    """`edit record` must refuse typed; returns the refusal line."""
+    code, out, _err = run(EDIT_EXE, ["record"] + WITNESS_ARGS + ["--edit", spec, "--out-dir", WS, "--name", name])
+    line = out.strip().splitlines()[0] if out.strip() else ""
+    if code != 2 or not line.startswith("WORKSHOP-REFUSE: INVALID-EDIT"):
+        raise Red(f"{spec!r} was not refused as INVALID-EDIT: exit {code} {line}")
+    return line
+
+
+def check(path: str) -> tuple[int, str]:
+    code, out, _err = run(EDIT_EXE, ["check", "--record", path])
+    return code, (out.strip().splitlines()[0] if out.strip() else "")
+
+
+def check_ok(name: str) -> str:
+    code, line = check(os.path.join(WS, name + ".record.json"))
+    if code != 0 or not line.startswith("CHECK OK"):
+        raise Red(f"check of {name}: exit {code} {line}")
+    return line
+
+
+def tampered(name: str, suffix: str, mutate) -> str:
+    """Write a tampered copy of a record beside the original (same files) and return its path."""
+    with open(os.path.join(WS, name + ".record.json"), encoding="utf-8") as fh:
+        r = json.load(fh)
+    mutate(r)
+    path = os.path.join(WS, f"{name}.{suffix}.record.json")
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(r, fh, indent=1)
+    return path
+
+
+def must_refuse(path: str, code_word: str) -> str:
+    code, line = check(path)
+    if code != 2 or not line.startswith("WORKSHOP-REFUSE: " + code_word):
+        raise Red(f"expected {code_word}, got exit {code}: {line}")
+    return line
+
+
+def signature(r: dict, w: bool, m: bool, frame: bool) -> dict:
+    c = r["consequence"]
+    if (c["w_moved"], c["m_moved"], c["frame_moved"], c["camera_carried"]) != (w, m, frame, True):
+        raise Red(f"signature {c}")
+    if r["before"]["camera"] != r["after"]["camera"]:
+        raise Red("the camera was not carried")
+    return c
+
+
+def workshop_seed():
+    need_rustc()
+    r = record("seed", "level:" + os.path.join(ORACLE, "levels", "neighbour.lvl"))
+    c = signature(r, True, False, True)
+    if c["strips_changed"] == 0 or c["pixels_changed"] == 0:
+        raise Red("a new level moved nothing")
+    check_ok("seed")
+    return (f"another frozen authority under the carried camera (34, 28, W): W moved, M unmoved, frame moved, "
+            f"{c['strips_changed']} of 1920 strips and {c['pixels_changed']} pixels ({c['pixels_permille']} permille) changed; "
+            f"the record re-derives (CHECK OK); the after level is a file whose sha256 is the new W")
+
+
+def workshop_cell():
+    need_rustc()
+    r = record("cell", "cell:31,27,.")
+    c = signature(r, True, False, True)
+    if not (0 < c["strips_changed"] < 1920) or c["pixels_changed"] == 0:
+        raise Red(f"one cell moved {c['strips_changed']} strips")
+    if c["columns_changed"] != c["strips_changed"]:
+        raise Red(f"pixels moved in {c['columns_changed']} columns but strips in {c['strips_changed']}: appearance moved where geometry did not")
+    check_ok("cell")
+    return (f"one cell (31, 27) rock -> floor: W moved, M unmoved, frame moved in {c['strips_changed']} of 1920 columns and the pixels "
+            f"in exactly those {c['columns_changed']} columns ({c['pixels_changed']} pixels, {c['pixels_permille']} permille) — with M unmoved, "
+            f"appearance moves only where geometry moved; the other {1920 - c['strips_changed']} columns are untouched, and the record re-derives")
+
+
+def workshop_tile():
+    need_rustc()
+    r = record("tile", "tile:floor,96,80,64")
+    c = signature(r, False, True, False)
+    if c["strips_changed"] != 0 or c["pixels_changed"] == 0:
+        raise Red(f"a material edit moved {c['strips_changed']} strips")
+    check_ok("tile")
+    return (f"one material (the floor tile, recoloured flat): M moved, W unmoved, the frame digest UNMOVED and 0 strips changed "
+            f"— the lookup moves no index, now a consequence row — while {c['pixels_changed']} pixels ({c['pixels_permille']} permille) "
+            f"in {c['columns_changed']} columns changed")
+
+
+def workshop_identity():
+    need_rustc()
+    r = record("none", "none")
+    c = signature(r, False, False, False)
+    if c["strips_changed"] or c["pixels_changed"]:
+        raise Red("the identity edit moved something")
+    check_ok("none")
+    return "the identity edit: W, M, camera, frame and pixels all unmoved, 0 strips, 0 pixels — an honest no-op is accepted, so the refusals below are not vacuous"
+
+
+def workshop_stale():
+    need_rustc()
+
+    def stale(r):
+        r["after"]["frame"] = r["before"]["frame"]
+        r["after"]["pixels"] = r["before"]["pixels"]
+    line = must_refuse(tampered("cell", "stale", stale), "STALE-PROJECTION")
+    return "PLANT: the authoritative cell changed while the recorded projection stayed the old one — " + line.split(" ", 2)[2]
+
+
+def workshop_projection():
+    need_rustc()
+    with open(os.path.join(WS, "cell.record.json"), encoding="utf-8") as fh:
+        other = json.load(fh)["after"]["pixels"]
+
+    def moved(r):
+        r["after"]["pixels"] = other
+    line = must_refuse(tampered("none", "proj", moved), "PROJECTION-WITHOUT-AUTHORITY")
+    return "PLANT: the picture changed while W, M and the camera did not — " + line.split(" ", 2)[2]
+
+
+def workshop_camera():
+    need_rustc()
+
+    def turn(r):
+        r["after"]["camera"] = [34, 28, "N"]
+    line = must_refuse(tampered("cell", "cam", turn), "CAMERA-MOVED")
+    return "PLANT: a record whose camera turned is refused as an edit record — " + line.split(" ", 2)[2]
+
+
+def workshop_authority():
+    need_rustc()
+    path = os.path.join(WS, "cell.after.lvl")
+    original = read(path)
+    b = bytearray(original)
+    b[16 + 27 * 48 + 30] = ord(".")          # a second, unrecorded edit hidden in the after file
+    with open(path, "wb") as fh:
+        fh.write(b)
+    try:
+        line = must_refuse(os.path.join(WS, "cell.record.json"), "AUTHORITY-MISMATCH")
+    finally:
+        with open(path, "wb") as fh:
+            fh.write(original)
+    check_ok("cell")
+    return "PLANT: one more cell changed in the after FILE than the record says — " + line.split(" ", 2)[2] + "; restored, the record re-derives again"
+
+
+def workshop_invalid():
+    need_rustc()
+    lines = [
+        refusal("bad", "cell:0,5,."),
+        refusal("bad", "cell:34,28,#"),
+        refusal("bad", "cell:99,5,."),
+        refusal("bad", "level:" + os.path.join(ORACLE, "levels", "corridor.lvl")),
+        refusal("bad", "cell:3,3,x"),
+        refusal("bad", "tile:roof,1,2,3"),
+    ]
+    return (f"{len(lines)} edits refused before any projection — an opened border, the camera left in rock (by a cell and by a level), "
+            f"a cell outside the level, a byte outside the alphabet, an unknown material — each INVALID-EDIT with its reason, and the old authority stands")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -235,6 +419,16 @@ def main() -> int:
     row("kernel-oracle", kernel_oracle)
     row("kernel-corpus", kernel_corpus)
     row("kernel-selftest", kernel_selftest)
+    row("workshop-build", workshop_build)
+    row("workshop-seed", workshop_seed)
+    row("workshop-cell", workshop_cell)
+    row("workshop-tile", workshop_tile)
+    row("workshop-identity", workshop_identity)
+    row("workshop-stale", workshop_stale)
+    row("workshop-projection", workshop_projection)
+    row("workshop-camera", workshop_camera)
+    row("workshop-authority", workshop_authority)
+    row("workshop-invalid", workshop_invalid)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]
