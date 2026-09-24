@@ -57,6 +57,21 @@
    ],
    "instrument": "kernel/main.rs --breakdown N (off-gate, host) via verify/gauntlet.py -> kernel/attest/breakdown-<host>.json, citing this entry; verify row gauntlet-preregistered locks this method and the 500-permille decision rule",
    "chain_hash": "a8122b4f8e35f1c61fc92ccdea428e5ed965fabf095b5234422606565478753e"
+  },
+  "GAUNTLET-1": {
+   "rung": "GAUNTLET-1",
+   "hypothesis": "emit is GAUNTLET-1's target (from GAUNTLET-0). A candidate emit is ACCEPTED as a renderer iff it is byte-identical to the frozen mantle.rs emit (pixel_sha) with an unchanged frame (frame_digest) over the corpus PLUS adversarial cameras; correctness is mandatory and independent of speed. A candidate is PROMOTED to the fast path iff it is accepted AND measurably faster on ONE consistent apparatus; identical-but-slower is a correctness pass and a performance fail; different pixels is not a renderer at any speed",
+   "success_condition": "gauntlet1-equiv PASSES (fast_pixels == pixels and fast_frame == frame over every corpus and adversarial case); gauntlet1-region names the dominant divide-work region deterministically; and a promotion is claimed only with byte-identity AND a same-apparatus host speed measurement (witnesses checked first) against a stated threshold, sealed off-gate as GAUNTLET-1b citing this entry",
+   "failure_condition": "any case where fast_equal != OK, or fast_pixels != pixels, or fast_frame != frame, refuses the candidate as a renderer regardless of speed; a promotion claimed without byte-identity, or without a same-apparatus speed measurement, or by comparing against GAUNTLET-0's instrumented render absolute; or mantle.rs is modified (the reference must stay frozen)",
+   "interpretation_limits": [
+    "mantle.rs is the frozen correctness oracle: the differential compares candidate -> frozen, never the reverse, and the harness is not the oracle; the candidate is guilty until its bytes agree",
+    "correctness (byte-identity) and performance (speed) are two SEPARATE courts; byte-identity is mandatory and gate-enforced, speed is judged independently off-gate",
+    "the region measure is divide-work (a source-derived proxy: ceiling 0, wall 1, floor 4 integer divisions per pixel), NOT a wall-clock; it names a target, it is not a speedup",
+    "a GAUNTLET-1b speed number is host-specific and is NEVER compared to GAUNTLET-0's instrumented render absolute (different apparatus); it is a same-apparatus frozen-vs-candidate delta",
+    "GAUNTLET-1a commits NO optimization technique; the seed fast.rs is an exact transcription that only proves the harness"
+   ],
+   "instrument": "kernel/main.rs --fast (gate rows gauntlet1-equiv, gauntlet1-region) for correctness + the deterministic region measure; the host speed number is GAUNTLET-1b's, off-gate, sealed and citing this entry; row gauntlet1-preregistered locks this method and the two-court promotion rule",
+   "chain_hash": "96c427499affb6a32f990ec4a9e65c50b6f5c48637dd28373c63dd76ea322615"
   }
  }
 }

@@ -9,7 +9,8 @@ it cannot change a cell, a tile or the camera, and the workshop cannot be reache
 
 | File | What it is |
 |---|---|
-| `mantle.rs` | the kernel proper: Urðr's placement made a library (`parse_scene`, `picture`, `Scene::{strips,frame,emit}`, `frame_digest`, `sha256`); the arithmetic is the tag's, byte for byte |
+| `mantle.rs` | the kernel proper: Urðr's placement made a library (`parse_scene`, `picture`, `Scene::{strips,frame,emit}`, `frame_digest`, `sha256`); the arithmetic is the tag's, byte for byte — the **frozen correctness oracle**, never modified for performance |
+| `fast.rs` | GAUNTLET-1: a SIBLING of `emit` (never `mantle.rs`), seeded as an exact transcription; the differential harness (`--fast`, rows `gauntlet1-*`) proves a candidate byte-identical to the frozen emit before any speed claim. A deterministic region measure names the floor's per-row divides as the target (floor divide-work ~4× the wall's) |
 | `formats.rs` | the studio's input formats — W the level (`VRDNLVL1`), M the tiles (`VRDNTIL1`), C the camera — and `compose()` into the kernel's `URDRMNTI` scene |
 | `hud.rs` | HUD-0: the overlay drawn into the picture — reticle, strip-band bar, facing plate, minimap; a declared region; the overlay's own identity; the region audit |
 | `main.rs` | the command line: a scene or `--level/--tiles/--camera`, the two witnesses, `--hud` for the overlay's three lines, `--write-png` (a PPM), and off-gate `--bench` (2-phase) / `--breakdown` (GAUNTLET-0: strips/frame/emit + the two witness hashes). It only times `mantle.rs`'s pub calls — it never modifies the frozen renderer |

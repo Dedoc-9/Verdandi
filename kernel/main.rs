@@ -8,6 +8,7 @@
 //     kernel --level L.lvl --tiles T.tiles --camera 34,28,W      # composed from the studio's files
 //     kernel ... --bench 200 --warm 20                           # off-gate: p50/p95/p99/max us per phase
 //     kernel ... --breakdown 300 --warm 30                        # off-gate (GAUNTLET-0): render split strips/frame/emit + the two witness hashes
+//     kernel ... --fast                                           # GAUNTLET-1: fast.rs emit vs the frozen emit — fast_equal OK|DIFFER, region divide-work, first-diff taxonomy
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
@@ -27,6 +28,9 @@ mod formats;
 #[allow(dead_code)]
 #[path = "hud.rs"]
 mod hud;
+#[allow(dead_code)]
+#[path = "fast.rs"]
+mod fast;
 
 use std::env;
 use std::fs;
@@ -78,6 +82,7 @@ fn main() {
     let mut warm = 10usize;
     let mut write_scene: Option<String> = None;
     let mut want_hud = false;
+    let mut want_fast = false;
     let mut write_ppm: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
@@ -93,6 +98,7 @@ fn main() {
             "--warm" => { warm = next(i).parse().unwrap_or_else(|_| refuse("--warm needs a count")); i += 2; }
             "--write-scene" => { write_scene = Some(next(i)); i += 2; }
             "--hud" => { want_hud = true; i += 1; }
+            "--fast" => { want_fast = true; i += 1; }
             "--write-png" => { write_ppm = Some(next(i)); i += 2; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
@@ -175,6 +181,37 @@ fn main() {
         println!("bench_total_us p50={} p95={} p99={} max={}", a, b, c, d);
         println!("bench_samples {} warmup {} same_witnesses {}", bench, warm, if same_after { "OK" } else { "DIVERGED" });
         println!("{}", host_line());
+    }
+    if want_fast {
+        // GAUNTLET-1: the sibling emit renders the SAME frozen strips + frame; its bytes must equal the frozen
+        // emit's, or it is not an accepted renderer. The frame (buf) is read-only, so frame_digest cannot move.
+        let mut rgb_fast = vec![0u8; W * H * 3];
+        fast::emit(&scene, &first.strips, &first.frame, &mut rgb_fast);
+        let fps = hex(&sha256(&rgb_fast));
+        let firstdiff = rgb_fast.iter().zip(first.pixels.iter()).position(|(a, b)| a != b);
+        println!("fast_pixels {}", fps);
+        println!("fast_frame {}", fd); // fast never writes buf; the frame is the frozen one, echoed for the record
+        println!("fast_equal {}", if firstdiff.is_none() && fps == ps { "OK" } else { "DIFFER" });
+        // the deterministic region measure: the divide-work per region, which names GAUNTLET-1b's target
+        let (wall_tex, floor_tex, table_px) = fast::region_divides(&first.strips, &first.frame);
+        let (wall_work, floor_work) = (wall_tex, 4 * floor_tex);
+        let dominant = if floor_work >= wall_work { "floor" } else { "wall" };
+        println!("fast_region wall_tex={} floor_tex={} table_px={}", wall_tex, floor_tex, table_px);
+        println!("fast_divwork wall={} floor={} dominant={}", wall_work, floor_work, dominant);
+        // the failure taxonomy: first differing pixel, its coordinate, region, index and channels
+        if let Some(bi) = firstdiff {
+            let p = bi / 3;
+            let (c, r) = (p % W, p / W);
+            let s = &first.strips[c];
+            let region = if (r as i64) < s.top { "ceiling" } else if (r as i64) <= s.bot { "wall" } else { "floor" };
+            let idx = first.frame[p];
+            let o = p * 3;
+            eprintln!(
+                "GAUNTLET1-DIFFER: first differing byte {} at pixel ({}, {}) region {} idx {} face {} tn {} td {}: frozen [{},{},{}] fast [{},{},{}]",
+                bi, c, r, region, idx, s.face, s.tn, s.td,
+                first.pixels[o], first.pixels[o + 1], first.pixels[o + 2], rgb_fast[o], rgb_fast[o + 1], rgb_fast[o + 2]);
+            exit(3);
+        }
     }
     if breakdown > 0 {
         // GAUNTLET-0: the render decomposed at the kernel's pub-phase boundaries — strips (traversal), frame

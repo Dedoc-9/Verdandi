@@ -17,6 +17,10 @@ rung that produces a number on a host was preregistered with a failure condition
 SOFTWARE-144-BUDGET / HARDWARE-144 split, their conjunction, and the honest scope — and GAUNTLET-0's method —
 the render breakdown and its 500-permille optimization decision rule, with GAUNTLET-1 owing byte-identity before
 any speed claim — are hash-locked before any host number, so weakening either is a visible diff),
+gauntlet1 (GAUNTLET-1a: the emit differential court — a sibling fast.rs emit, seeded as an exact transcription, is
+byte-identical to the frozen mantle.rs emit over the corpus plus adversarial cameras (candidate -> frozen, never
+the reverse); a deterministic region measure names the floor's per-row divides as GAUNTLET-1b's target; and the
+acceptance/promotion rule (byte-identity mandatory, speed a separate court) is hash-locked before any candidate),
 shell (SHELL-0a: the blit-hash law headless — the shell shows the kernel's composite, the blit is an invertible
 carrier of it, and a byte corrupted between kernel and blit is detectable; the window is the host's, cfg-gated),
 membrane (MEMBRANE-0: the one-way law as a compile-time wall — editing the authority through a live read-borrow
@@ -2015,6 +2019,109 @@ def shell_playback_checkpoint():
             "DIVERGES on resume — the checkpoint carries the whole interleaved authority, not a partial projection" % len(cuts))
 
 
+# ------------------------------------------------------------------ gauntlet1 (GAUNTLET-1a: the emit differential)
+def _fast_lines(level, tiles, camera):
+    code, out, err = run(KERNEL_EXE, ["--level", os.path.join(ORACLE, "levels", level + ".lvl"),
+                                      "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"),
+                                      "--camera", camera, "--fast"])
+    if code != 0:
+        raise Red("kernel --fast exited %d on %s@%s: %s" % (code, level, camera, err.strip()))
+    return dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+
+
+def _g1_cases():
+    c = corpus()
+    cases = []
+    for _name, sc in c["scenes"].items():
+        x, z, f = sc["camera"]
+        for tiles in sc["witnesses"].keys():
+            cases.append((sc["level"], tiles, "%d,%d,%s" % (x, z, f)))
+    # adversarial witness cameras: all four facings at the spawn (both u-axes, both signs) and the frozen-traversable
+    # positions of the SHELL-PLAYBACK reference path (28,27 is rock on the UNEDITED level — the demo opens it by an
+    # edit — so it is excluded; the differential renders the frozen corpus)
+    for cam in ["34,28,N", "34,28,E", "34,28,S", "34,28,W", "28,28,N", "28,26,N", "28,26,W", "27,26,W"]:
+        cases.append(("witness", "identity", cam))
+    seen, uniq = set(), []
+    for cs in cases:
+        if cs not in seen:
+            seen.add(cs)
+            uniq.append(cs)
+    return uniq
+
+
+def gauntlet1_equiv():
+    need_rustc()
+    cases = _g1_cases()
+    for (lvl, tiles, cam) in cases:
+        d = _fast_lines(lvl, tiles, cam)
+        if d.get("selfcheck") != "OK":
+            raise Red("kernel did not selfcheck on %s@%s" % (lvl, cam))
+        if d.get("fast_equal") != "OK":
+            raise Red("fast emit DIFFERS from the frozen emit on %s %s@%s" % (lvl, tiles, cam))
+        if d.get("fast_pixels") != d.get("pixels") or d.get("fast_frame") != d.get("frame"):
+            raise Red("fast pixels/frame != frozen on %s %s@%s" % (lvl, tiles, cam))
+    return ("the sibling fast.rs emit is byte-identical to the frozen mantle.rs emit over %d cases (every corpus scene x its tile "
+            "sets, plus adversarial witness cameras: the four spawn facings and the frozen-traversable sessionwalk positions) — "
+            "fast_pixels == pixels AND fast_frame == frame everywhere; the GAUNTLET-1a seed is an exact transcription, so the "
+            "differential harness (candidate -> frozen, never the reverse) is proven before any optimization technique" % len(cases))
+
+
+def gauntlet1_region():
+    need_rustc()
+    d = _fast_lines("witness", "identity", "34,28,W")
+    reg = dict(kv.split("=") for kv in d["fast_region"].split())
+    work = dict(kv.split("=") for kv in d["fast_divwork"].split() if "=" in kv)
+    wall_tex, floor_tex = int(reg["wall_tex"]), int(reg["floor_tex"])
+    wall_work, floor_work = int(work["wall"]), int(work["floor"])
+    if wall_work != wall_tex or floor_work != 4 * floor_tex:
+        raise Red("the divide-work is not per-source (wall 1/px, floor 4/px): %s" % d["fast_divwork"])
+    dominant = "floor" if floor_work >= wall_work else "wall"
+    if work.get("dominant") != dominant:
+        raise Red("the reported dominant region disagrees with the divide-work")
+    return ("the DETERMINISTIC region measure on the witness frame (34,28,W): %d wall-textured px (1 divide each) vs %d "
+            "floor-textured px (4 divides each) -> divide-work wall %d, floor %d; the FLOOR dominates (%s) by ~%dx, so "
+            "GAUNTLET-1b's exact optimization targets the floor's per-row perspective divides — not the wall, and not the "
+            "frame-pass floor cast the original hypothesis named" % (wall_tex, floor_tex, wall_work, floor_work, dominant, floor_work // max(wall_work, 1)))
+
+
+def gauntlet1_preregistered():
+    """GAUNTLET-1's acceptance and promotion rule is locked: byte-identity is mandatory and gate-enforced, speed is a
+    separate court, mantle.rs stays the frozen oracle, and a speed number is never cross-compared to GAUNTLET-0's
+    instrumented render. Weakening any of it is a visible diff, not a silent re-hash."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))
+    e = reg["entries"].get("GAUNTLET-1")
+    if not e:
+        raise Red("GAUNTLET-1 is not registered")
+    hyp, succ, fail = e["hypothesis"], e["success_condition"], e["failure_condition"]
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "emit is the accepted-renderer target": "emit" in hyp and "ACCEPTED as a renderer" in hyp,
+        "byte-identity is mandatory and independent of speed": "byte-identical" in hyp and "independent of speed" in hyp,
+        "a differing pixel is not a renderer at any speed": "different pixels is not a renderer at any speed" in hyp,
+        "equivalence is gate-enforced (fast_pixels == pixels)": "fast_pixels == pixels" in succ,
+        "any diff refuses the candidate regardless of speed": "regardless of speed" in fail,
+        "two separate courts": "two separate courts" in lims,
+        "mantle.rs stays the frozen oracle": "mantle.rs is the frozen correctness oracle" in lims and "mantle.rs is modified" in fail,
+        "no cross-compare to GAUNTLET-0's absolute": "never compared to gauntlet-0" in lims,
+        "the region measure is divide-work, not a wall-clock": "divide-work" in lims and "not a wall-clock" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the GAUNTLET-1 method is not fully locked: " + "; ".join(missing))
+    want = envelope.chain_hash({"name": "verdandi-preregistration-entry", "version": 1, "claim_class": "declared",
+                                "provenance": {"registered_in": "verify/preregister.json"},
+                                "validity_scope": {"certifies": "the conditions GAUNTLET-1 was seated under"},
+                                "forbidden_interpretations": ["that registering a condition earns it"],
+                                "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+    if e["chain_hash"] != want:
+        raise Red("the GAUNTLET-1 entry was edited after registration (chain hash)")
+    return ("GAUNTLET-1's acceptance + promotion rule is locked before any candidate: byte-identity to the frozen emit "
+            "(fast_pixels == pixels, fast_frame == frame over corpus + adversarial cameras) is MANDATORY and gate-enforced "
+            "(gauntlet1-equiv); speed is a SEPARATE court (identical-but-slower is a correctness pass / performance fail, a "
+            "differing pixel is not a renderer at any speed); mantle.rs stays the frozen oracle and a speed number is never "
+            "cross-compared to GAUNTLET-0's instrumented absolute; hash-locked %s" % e["chain_hash"][:8])
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -2045,6 +2152,9 @@ def main() -> int:
     row("records-preregistered", records_preregistered)
     row("latency-preregistered", latency_preregistered)
     row("gauntlet-preregistered", gauntlet_preregistered)
+    row("gauntlet1-preregistered", gauntlet1_preregistered)
+    row("gauntlet1-equiv", gauntlet1_equiv)
+    row("gauntlet1-region", gauntlet1_region)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)

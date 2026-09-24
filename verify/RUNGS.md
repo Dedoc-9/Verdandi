@@ -693,6 +693,58 @@ lands, its failure condition (no render phase ≥ 500‰, or times that do not r
 non-reproducible shape, or a breakdown of anything but the frozen witnesses) kills the single-phase optimization
 rather than being massaged into a target.
 
+## GAUNTLET-1a — the emit differential court, seeded and proven; no technique committed (seat 14)
+
+**What landed (the framework, not the optimization).** GAUNTLET-0 seated `emit` as the target; GAUNTLET-1a builds
+the court that will judge any candidate `emit`, before a technique is chosen. `kernel/fast.rs` is a SIBLING of the
+frozen renderer — never `mantle.rs` — seeded as an **exact transcription** of `Scene::emit` (no optimization).
+`kernel/main.rs --fast` renders the candidate against the *same* frozen strips + frame and reports `fast_equal`,
+`fast_pixels`, `fast_frame`, a deterministic region measure, and — on any mismatch — a first-differing-pixel
+taxonomy (coordinate, region, index, face, frozen vs fast channels). The frame buffer is read-only, so
+`frame_digest` cannot move. The comparison is always **candidate → frozen**, never the reverse: the harness is not
+the oracle; the candidate is guilty until its bytes agree.
+
+**The law and the cost, read off the source.** Per pixel, `emit` is a ceiling/table copy (0 divides), a wall texel
+(`tj = texel(v_base+2r·tn, v_den)`, 1 divide, denominator column-constant), or a floor texel (`tj`, `ti_f` each a
+`rem_euclid` + a `div_euclid`, ~4 divides, denominator `kk·Q` moving per row). So `emit` is integer-division-bound
+and the floor is the per-pixel hot spot. The **deterministic region measure** (computed from the frozen strips +
+frame, no wall-clock) confirms it on the witness frame: **674,760 wall-textured px × 1 = 674,760** vs **694,648
+floor-textured px × 4 = 2,778,592** divides — the **floor dominates by ~4×**. So GAUNTLET-1b's exact optimization
+targets the floor's per-row perspective divides — not the wall, and not the frame-pass "floor cast" the original
+instinct named.
+
+**Design, searched.** Differential testing against a frozen reference at the strongest observable ("measure first,
+then tune"; [ryg](https://fgiesen.wordpress.com/2013/02/10/optimizing-the-basic-rasterizer/),
+[performance & optimization](https://www.informit.com/articles/article.aspx?p=2115288&seqNum=8)). The GAUNTLET-1
+preregistration (`c… 96c42749`, hash-locked) fixes the two-court promotion rule *before* any candidate: byte-identity
+to the frozen `emit` (`pixel_sha` and `frame_digest`) over the corpus **plus** adversarial cameras is MANDATORY and
+gate-enforced; speed is a SEPARATE court — identical-but-slower is a correctness pass and a performance fail, a
+differing pixel is not an accepted renderer at any speed; `mantle.rs` stays frozen; and a speed number is never
+cross-compared to GAUNTLET-0's instrumented render absolute (different apparatus).
+
+**Rows.** `gauntlet1-preregistered` — the acceptance/promotion rule is locked (byte-identity mandatory, two courts,
+`mantle.rs` frozen, no cross-instrument compare), hash-locked. `gauntlet1-equiv` — the sibling `fast.rs` emit is
+byte-identical to the frozen emit over 19 cases (every corpus scene × its tile sets, plus the four spawn facings and
+the frozen-traversable sessionwalk positions): `fast_pixels == pixels` and `fast_frame == frame` everywhere — the
+seed transcription and the harness are proven before any technique. `gauntlet1-region` — the deterministic divide-work
+measure names the floor as GAUNTLET-1b's target.
+
+**Grade.** MEASURED (live, headless): the differential equivalence over corpus + adversarial cameras, and the
+deterministic region measure. DECLARED: the hash-locked acceptance/promotion rule. ESTABLISHED (read off the source):
+the emit law and its division cost (floor 4 / wall 1 / ceiling 0 per pixel). NOT_MEASURED yet: any speedup — GAUNTLET-1a
+commits no optimization; the seed transcription's only claim is byte-identity.
+
+**does_not_show.** Any optimization or speedup (there is none yet — the seed is an exact transcription). Which
+technique GAUNTLET-1b will use (uncommitted until the floor path is inspected). A wall-clock region time (the region
+measure is source-derived divide-work, a target-finder). The edited-level sessionwalk cameras (28,27 is rock on the
+frozen level; the differential renders the unedited corpus). That the harness is the oracle (it is not — `mantle.rs`
+is; the candidate is guilty until its bytes agree).
+
+**Falsifier.** `gauntlet1-equiv` reddens if the sibling emit differs from the frozen emit on any case (with the
+first-diff taxonomy); `gauntlet1-region` if the divide-work is not per-source or the dominant region is misreported;
+`gauntlet1-preregistered` if the acceptance/promotion rule is weakened; and when GAUNTLET-1b's candidate lands, the
+same `gauntlet1-equiv` refuses it outright on a single differing pixel, whatever its speed.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -715,12 +767,14 @@ present is refresh-coupled on a ~75Hz panel — all three verdicts FAIL honestly
 the render and locked the optimization decision rule. Each rung was proven headless first. The performance
 staircase and what remains:
 
-- **The GAUNTLET staircase.** GAUNTLET-0 (seated) measures the render breakdown and locks the 500-permille rule;
-  the preliminary read points at **`emit`** (the texel pass), not the floor, as the dominant phase. **GAUNTLET-1**
-  is seated only against the phase the host record confirms clears 500‰, and must prove byte-identity against the
-  frozen reference (a differential oracle) before any speed claim; **GAUNTLET-2+** only after the first has a
-  measured result. **LATENCY-1** then reruns the same fixed session and records the before/after render delta
-  against LATENCY-0's immutable baseline.
+- **The GAUNTLET staircase.** GAUNTLET-0 (seated) measured the render breakdown and locked the 500‰ rule; `emit`
+  cleared it (695‰ on host). GAUNTLET-1a (seated) built the differential court — a sibling `fast.rs` emit proven
+  byte-identical to the frozen emit over corpus + adversarial cameras — and its deterministic region measure names
+  the **floor's per-row perspective divides** as the target (floor divide-work ~4× the wall's). **GAUNTLET-1b** now
+  writes the simplest *exact* floor optimization and earns acceptance only by (1) byte-identity through the same
+  `gauntlet1-equiv` harness and (2) a separately judged, same-apparatus speed result. **GAUNTLET-2+** only after the
+  first has a measured result. **LATENCY-1** then reruns the same fixed session and records the before/after render
+  delta against LATENCY-0's immutable baseline.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is
   refresh-coupled. PRESENT-1's *hypothesis* — falsifiable, to be measured, never assumed — is that a flip-model
   present CAN decouple present latency from refresh; it becomes experimentally valuable once the render fits the
