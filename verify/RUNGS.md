@@ -292,3 +292,46 @@ transport, the present wait beyond composition and the panel need capture hardwa
 **Falsifier.** `shell-blit-pins` reddens if the shell's composite ever differs from the kernel's, or the blit
 bytes from `to_blit` of it; `shell-blit-law` if the round-trip ever fails or a windowless build stops refusing;
 `shell-blit-plant` if a corrupted present path stops being caught.
+
+## SHELL-0 (host) — the first present number
+
+The owner ran `shell run --measure 200` (window build, `--cfg shell_window`) and sealed the record:
+`shell/attest/present-DANIELDILLBERG.json`, citing SHELL-0's registration (`de30d1ec`). **frame-ready →
+composited: p50 5,289 / p95 6,015 / p99 6,373 / max 6,577 µs**, refresh ~13,466 µs (≈ 74 Hz). It is the blit
+plus the wait for the next DWM composition, from a random phase within one refresh — hence a median near 0.4×
+the refresh. It **excludes the kernel render** (that is the bench, p50 10.3 ms; the composite is rendered once
+and blitted 200 times, so the two instruments do not naively add) and it is **not input-to-photon** (no input,
+no scanout, no panel). It is the baseline a flip-model waitable-swapchain shell is later measured against; a
+composed GDI present cannot go below one refresh interval, which is the wall the number sits against.
+`records-preregistered` counts it as the first committed record to close a preregistered loop.
+
+## MEMBRANE-0 — the one-way law as a compile-time wall (seat 6)
+
+**What landed.** `workshop/membrane.rs` (std-only): `Authority { level, tiles }` owns the world; `read(&self)
+-> Reading<'a>` is the render path (an immutable borrow tied to `&self`); `edit_cell(&mut self, …)` is the
+write path. While a `Reading` is alive the borrow checker forbids `&mut Authority`, so no edit can run mid-read
+— mirrored from the old project's `SimExport<'a>` (a read window that forbids `tick()` while it lives). The
+proof is a ROW WHOSE PASS IS rustc's REFUSAL: an `illegal` function, compiled only under `--cfg
+membrane_probe_illegal`, edits through a live `Reading` and must fail to borrow-check.
+
+**Rows.** `membrane-build` — the legal build compiles (the control: the file is otherwise sound). `membrane-
+witness` — the render path through the typestate (`Authority::read → Reading::witnesses`) reproduces the
+kernel's frame digest and pixel sha on all 6 corpus scenes: the wall carries identical semantics and costs
+nothing. `membrane-legal` — the permitted sequence (read fully, drop the `Reading`, then edit, then read
+again) compiles and runs. `membrane-wall` — compiled with `--cfg membrane_probe_illegal`, editing through a
+live read-borrow does NOT compile: rustc refuses with `E0502: cannot borrow *auth as mutable because it is
+also borrowed as immutable`. The row passes iff the compile is refused for that reason.
+
+**Grade.** MEASURED (structurally): the wall is rustc's own refusal, checked live; the witness equivalence over
+the corpus. ESTABLISHED: the legal build as the control (the failure is the borrow, nothing else). DECLARED:
+nothing.
+
+**does_not_show.** Safety against an adversary: `unsafe`, a raw pointer or interior mutability defeats the wall
+— it stops HONEST mistakes (a render path that reaches back to mutate the authority), not attacks.
+`typestate ≠ security`. That the whole studio is wired through `Authority`/`Reading` — this rung demonstrates
+the wall; threading it through `edit.rs`'s full vocabulary is later work. That the wall forbids editing a
+DIFFERENT authority while reading one (it does not — the borrow is per-value).
+
+**Falsifier.** `membrane-wall` reddens if the illegal probe ever compiles (the wall stopped biting) or fails
+for a reason other than E0502; `membrane-witness` if the typestate path ever renders something other than the
+kernel's witnesses; `membrane-build`/`membrane-legal` if the legal path stops compiling or running.

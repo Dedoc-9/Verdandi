@@ -15,7 +15,9 @@ hud (the overlay is a frame: pinned, index-free, inside its region, reading stat
 records (RECORD-0: every record Verðandi mints passes the envelope's firewall, the two writers agree, and a
 rung that produces a number on a host was preregistered with a failure condition),
 shell (SHELL-0a: the blit-hash law headless — the shell shows the kernel's composite, the blit is an invertible
-carrier of it, and a byte corrupted between kernel and blit is detectable; the window is the host's, cfg-gated).
+carrier of it, and a byte corrupted between kernel and blit is detectable; the window is the host's, cfg-gated),
+membrane (MEMBRANE-0: the one-way law as a compile-time wall — editing the authority through a live read-borrow
+does not compile, while read-then-edit does and renders the kernel's witnesses).
 """
 from __future__ import annotations
 
@@ -805,6 +807,68 @@ def shell_blit_plant():
             "(blit_roundtrip BROKEN) — the shell hashing what it blits catches a picture the kernel did not make")
 
 
+# ------------------------------------------------------------------ membrane (MEMBRANE-0)
+MEMBRANE_EXE: str | None = None
+
+
+def compile_expect_fail(src_dir: str, main: str, out: str, extra_flags: list[str], want_error: str) -> str:
+    """Compile with extra flags and REQUIRE rustc to fail with `want_error` in its output. Returns the first
+    matching error line. The row that calls this passes iff the compile is refused for the named reason."""
+    need_rustc()
+    os.makedirs(BUILD, exist_ok=True)
+    cp = subprocess.run([RUSTC] + FLAGS + extra_flags + [os.path.join(src_dir, main), "-o", os.path.join(BUILD, out)],
+                        capture_output=True, text=True)
+    if cp.returncode == 0:
+        raise Red(f"the compile SUCCEEDED but the wall required it to fail ({want_error})")
+    line = next((ln for ln in cp.stderr.splitlines() if want_error in ln), None)
+    if line is None:
+        raise Red(f"the compile failed but not with {want_error}: {cp.stderr.strip().splitlines()[:1]}")
+    return line.strip()
+
+
+def membrane_build():
+    global MEMBRANE_EXE
+    MEMBRANE_EXE = compile_rs(WORKSHOP, "membrane.rs", "membrane")
+    return "workshop/membrane.rs compiled live (the legal build): Authority owns the world, Reading borrows it immutably, edit_cell needs &mut"
+
+
+def membrane_witness():
+    need_rustc()
+    c = corpus()
+    n = 0
+    for name, e in c["scenes"].items():
+        w = e["witnesses"]["identity"]
+        code, out, err = run(MEMBRANE_EXE, ["witness", "--level", os.path.join(ORACLE, "levels", e["level"] + ".lvl"),
+                                            "--tiles", os.path.join(ORACLE, "tiles", "identity.tiles"), "--camera", camera_of(e)])
+        if code != 0:
+            raise Red(f"{name}: membrane witness exited {code}: {err.strip()}")
+        d = dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+        if d["frame"] != w["frame"] or d["pixels"] != w["pixels"]:
+            raise Red(f"{name}: the Reading path rendered ({d['frame'][:12]}, {d['pixels'][:12]}) != the kernel's witnesses")
+        n += 1
+    return (f"the render path through the typestate (Authority::read -> Reading::witnesses) reproduces the kernel's frame digest and "
+            f"pixel sha on all {n} corpus scenes — the immutable-borrow wall carries identical semantics, it costs nothing")
+
+
+def membrane_legal():
+    need_rustc()
+    code, out, err = run(MEMBRANE_EXE, ["legal", "--level", os.path.join(ORACLE, "levels", "witness.lvl"),
+                                        "--tiles", os.path.join(ORACLE, "tiles", "identity.tiles"), "--camera", "34,28,W", "--edit", "31,27,."])
+    line = out.strip().splitlines()[0] if out.strip() else ""
+    if code != 0 or not line.startswith("legal OK"):
+        raise Red(f"the legal read-then-edit sequence did not run: exit {code} {err.strip()[:60]}")
+    return "the legal sequence — read the authority FULLY, drop the Reading, THEN edit, then read again — compiles and runs: " + line
+
+
+def membrane_wall():
+    """The row whose PASS is rustc's REFUSAL: compiled with --cfg membrane_probe_illegal, an edit through a live
+    Reading must not borrow-check. The legal build (membrane-build) is the control that shows the file is otherwise
+    sound, so the failure is the borrow and nothing else."""
+    line = compile_expect_fail(WORKSHOP, "membrane.rs", "membrane-illegal", ["--cfg", "membrane_probe_illegal"], "E0502")
+    return ("PLANT (a compile-fail row): editing the authority through a LIVE read-borrow does not compile — rustc refuses with "
+            + line.split(": ", 1)[-1] + " — so the one-way law (render reads, never writes) is a compile-time wall, not only a runtime test")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -837,6 +901,10 @@ def main() -> int:
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)
     row("shell-blit-plant", shell_blit_plant)
+    row("membrane-build", membrane_build)
+    row("membrane-witness", membrane_witness)
+    row("membrane-legal", membrane_legal)
+    row("membrane-wall", membrane_wall)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

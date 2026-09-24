@@ -78,7 +78,7 @@ is a second authority.
     SHELL-0 ───── a real window (hand-rolled Win32, zero crates), frame → composited timed;
          │        the shell hashes what it blits; born under the envelope, preregistered
          │        (0a: the blit-hash law, headless & gated here; the window runs on the host)
-    MEMBRANE-0 ── the one-way law as a compile-time wall (a row whose PASS is rustc refusing a plant)
+    MEMBRANE-0 ── the one-way law as a compile-time wall (a row whose PASS is rustc refusing a plant) [landed]
          │
     TEXT-0 ────── the level as text, content split from provenance
          │
