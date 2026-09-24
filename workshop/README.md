@@ -20,6 +20,7 @@ state: it calls the kernel; it never draws.
 |---|---|
 | `edit.rs` | `edit record --level L --tiles T --camera x,z,F --edit SPEC --out-dir DIR --name N` writes `N.before.*`, `N.after.*` and `N.record.json`; `edit check --record R` re-derives every value and refuses typed; `edit census ... --out FILE.json` classifies every single-cell edit of a level under a camera (off-gate). SPEC: `cell:X,Z,C` · `tile:CLASS,R,G,B` · `level:PATH.lvl` · `none` |
 | `membrane.rs` | MEMBRANE-0: `Authority` owns the world, `Reading<'a>` borrows it immutably, `edit_cell` needs `&mut` — so editing the authority through a live read-borrow does not compile (rows `membrane-*`; the wall's PASS is rustc's refusal) |
+| `text.rs` | TEXT-0: the level as text (`depth` + a `#.<>` grid; `;` comments). `text to-text` / `from-text --palette-from R.lvl` / `digests` — round-trips to the same W, and a content digest (W, unmoved by a reformat) beside an authoring digest (the text bytes) tells a reformat from an edit (rows `text-*`) |
 | `attest/census-witness.json` | the truth table populated (a sealed record): 1,379 single-cell edits of the witness level under (34, 28, W) — 1,308 outside-view, 71 geometry, 0 impossible, 0 unexplained columns; the cone split (712 outside, 596 occluded) with `geometry_outside_cone` 0 |
 
 WORKSHOP-0 landed with the planted falsifiers the rung was ratified on: a stale projection under a changed

@@ -17,7 +17,9 @@ rung that produces a number on a host was preregistered with a failure condition
 shell (SHELL-0a: the blit-hash law headless — the shell shows the kernel's composite, the blit is an invertible
 carrier of it, and a byte corrupted between kernel and blit is detectable; the window is the host's, cfg-gated),
 membrane (MEMBRANE-0: the one-way law as a compile-time wall — editing the authority through a live read-borrow
-does not compile, while read-then-edit does and renders the kernel's witnesses).
+does not compile, while read-then-edit does and renders the kernel's witnesses),
+text (TEXT-0: the level as text — round-trips to the same W, and tells a reformat from an edit: a comment or
+blank line moves the authoring digest and not W, a cell edit moves both).
 """
 from __future__ import annotations
 
@@ -869,6 +871,139 @@ def membrane_wall():
             + line.split(": ", 1)[-1] + " — so the one-way law (render reads, never writes) is a compile-time wall, not only a runtime test")
 
 
+# ------------------------------------------------------------------ text (TEXT-0)
+TEXT_EXE = None
+TXT = os.path.join(BUILD, "txt")
+
+
+def text_build():
+    global TEXT_EXE
+    TEXT_EXE = compile_rs(WORKSHOP, "text.rs", "text")
+    if os.path.isdir(TXT):
+        shutil.rmtree(TXT)
+    os.makedirs(TXT)
+    return "workshop/text.rs compiled live: to-text (depth + #.<> grid), from-text (borrows a same-depth oracle level's palette), digests"
+
+
+def _to_text(name):
+    lvl = os.path.join(ORACLE, "levels", name + ".lvl")
+    code, out, err = run(TEXT_EXE, ["to-text", "--level", lvl])
+    if code != 0:
+        raise Red("to-text %s: %s" % (name, err.strip()))
+    path = os.path.join(TXT, name + ".wtxt")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(out)
+    return path
+
+
+def _digests(text_path, palette):
+    code, out, err = run(TEXT_EXE, ["digests", "--text", text_path, "--palette-from", os.path.join(ORACLE, "levels", palette + ".lvl")])
+    if code != 0:
+        raise Red("digests: " + err.strip())
+    d = dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+    return d["content"], d["authoring"]
+
+
+def text_roundtrip():
+    need_rustc()
+    c = corpus()
+    n = 0
+    for name, lv in c["levels"].items():
+        tp = _to_text(name)
+        out_lvl = os.path.join(TXT, name + ".rt.lvl")
+        code, _o, err = run(TEXT_EXE, ["from-text", "--text", tp, "--palette-from", os.path.join(ORACLE, "levels", name + ".lvl"), "--out", out_lvl])
+        if code != 0:
+            raise Red("from-text %s: %s" % (name, err.strip()))
+        if sha256(read(out_lvl)) != lv["W"]:
+            raise Red("%s: the round-trip level's W != the frozen W" % name)
+        _c2, out2, _e = run(TEXT_EXE, ["to-text", "--level", out_lvl])
+        with open(tp, encoding="utf-8") as fh:
+            if out2 != fh.read():
+                raise Red("%s: to_text(from_text(to_text(L))) is not byte-identical to to_text(L)" % name)
+        n += 1
+    return ("all %d corpus levels round-trip: from_text(to_text(L)) rebuilds the frozen VRDNLVL1 bytes (W unchanged), and the "
+            "text form is canonical (re-emitting reproduces it byte for byte); the palette is borrowed from the same-depth level" % n)
+
+
+def text_reformat():
+    need_rustc()
+    tp = _to_text("witness")
+    c0, a0 = _digests(tp, "witness")
+    with open(tp, encoding="utf-8") as fh:
+        lines = fh.read().split("\n")
+    reflowed = ["; a note added by a human", ""] + lines[:6] + ["", "; midway comment"] + lines[6:]
+    rp = os.path.join(TXT, "witness.reformat.wtxt")
+    with open(rp, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(reflowed))
+    c1, a1 = _digests(rp, "witness")
+    if c1 != c0:
+        raise Red("a reformat moved the CONTENT digest (%s -> %s)" % (c0[:12], c1[:12]))
+    if a1 == a0:
+        raise Red("a reformat did not move the authoring digest")
+    return ("a reformat (a `;` comment, blank lines, a comment amid the grid) leaves W (content) UNMOVED at %s and moves the "
+            "authoring digest %s -> %s: the record can tell a reformat from an edit" % (c0[:12], a0[:12], a1[:12]))
+
+
+def text_edit():
+    need_rustc()
+    import struct as _s
+    tp = _to_text("witness")
+    c0, _a0 = _digests(tp, "witness")
+    with open(tp, encoding="utf-8") as fh:
+        lines = fh.read().split("\n")
+    gi = lines.index("grid") + 1
+    row = list(lines[gi + 27])
+    if row[31] != "#":
+        raise Red("the witness grid cell (31, 27) is %r, expected rock" % row[31])
+    row[31] = "."
+    lines[gi + 27] = "".join(row)
+    ep = os.path.join(TXT, "witness.edit.wtxt")
+    with open(ep, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
+    c1, _a1 = _digests(ep, "witness")
+    if c1 == c0:
+        raise Red("editing a grid cell did not move W")
+    b = bytearray(read(os.path.join(ORACLE, "levels", "witness.lvl")))
+    w = _s.unpack_from("<I", b, 8)[0]
+    b[16 + 27 * w + 31] = ord(".")
+    if sha256(bytes(b)) != c1:
+        raise Red("the text edit's W does not equal the same cell flip applied to the VRDNLVL1 bytes")
+    return ("flipping one grid cell (31, 27) rock -> floor moves W %s -> %s, and that W equals the same byte flip "
+            "applied to the level file: the text's content IS the cells, exactly" % (c0[:12], c1[:12]))
+
+
+def text_refuse():
+    need_rustc()
+    tp = _to_text("witness")
+    got = []
+    code, _o, err = run(TEXT_EXE, ["from-text", "--text", tp, "--palette-from", os.path.join(ORACLE, "levels", "room.lvl"), "--out", os.path.join(TXT, "x.lvl")])
+    if code != 2 or "TEXT-INVALID-TEXT" not in err or "depth" not in err:
+        raise Red("a wrong-depth palette was not refused: exit %d %s" % (code, err.strip()[:60]))
+    got.append("wrong-depth palette")
+    with open(tp, encoding="utf-8") as fh:
+        t = fh.read().split("\n")
+    gi = t.index("grid") + 1
+    bad = t[:]
+    bad[gi] = bad[gi][:5] + "X" + bad[gi][6:]
+    bp = os.path.join(TXT, "bad.wtxt")
+    with open(bp, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(bad))
+    code, _o, err = run(TEXT_EXE, ["digests", "--text", bp, "--palette-from", os.path.join(ORACLE, "levels", "witness.lvl")])
+    if code != 2 or "alphabet" not in err:
+        raise Red("a non-alphabet grid byte was not refused: exit %d %s" % (code, err.strip()[:60]))
+    got.append("non-alphabet cell")
+    rag = t[:]
+    rag[gi] = rag[gi] + "."
+    rp = os.path.join(TXT, "ragged.wtxt")
+    with open(rp, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(rag))
+    code, _o, err = run(TEXT_EXE, ["digests", "--text", rp, "--palette-from", os.path.join(ORACLE, "levels", "witness.lvl")])
+    if code != 2 or "width" not in err:
+        raise Red("a ragged grid was not refused: exit %d %s" % (code, err.strip()[:60]))
+    got.append("ragged grid row")
+    return "%d malformed texts refused typed before any content digest — %s" % (len(got), ", ".join(got))
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -905,6 +1040,11 @@ def main() -> int:
     row("membrane-witness", membrane_witness)
     row("membrane-legal", membrane_legal)
     row("membrane-wall", membrane_wall)
+    row("text-build", text_build)
+    row("text-roundtrip", text_roundtrip)
+    row("text-reformat", text_reformat)
+    row("text-edit", text_edit)
+    row("text-refuse", text_refuse)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

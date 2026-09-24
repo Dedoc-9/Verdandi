@@ -80,7 +80,7 @@ is a second authority.
          │        (0a: the blit-hash law, headless & gated here; the window runs on the host)
     MEMBRANE-0 ── the one-way law as a compile-time wall (a row whose PASS is rustc refusing a plant) [landed]
          │
-    TEXT-0 ────── the level as text, content split from provenance
+    TEXT-0 ────── the level as text, content split from provenance [landed]
          │
     WORKSHOP-1 ── the log is the history, undo is replay, the session is a file
          │

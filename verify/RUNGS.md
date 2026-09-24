@@ -335,3 +335,37 @@ DIFFERENT authority while reading one (it does not — the borrow is per-value).
 **Falsifier.** `membrane-wall` reddens if the illegal probe ever compiles (the wall stopped biting) or fails
 for a reason other than E0502; `membrane-witness` if the typestate path ever renders something other than the
 kernel's witnesses; `membrane-build`/`membrane-legal` if the legal path stops compiling or running.
+
+## TEXT-0 — the level as text, content split from provenance (seat 7)
+
+**What landed.** `workshop/text.rs` (std-only): a human authors a level's TOPOLOGY as text — a `depth`
+directive and a grid of `#.<>` (rock, floor, up, down) — and it round-trips to the same `VRDNLVL1` bytes.
+The depth's colour table and per-band maps are NOT authored here (they are Urðr's derived VIEW semantics, which
+the kernel takes as INPUT); `from_text` borrows them from a same-depth oracle level's palette, so the text
+holds only what a human should edit. `;` is the comment marker (not `#`, which is always a cell); comments and
+blank lines are ignored for content. **Two digests** make the content/provenance split (as Urðr's `worldbind`
+row earned it): W (content) = sha256 of the reassembled `VRDNLVL1` bytes, unmoved by a reformat and moved by a
+cell edit; authoring digest = sha256 of the exact text bytes, moved by any text change.
+
+**Rows.** `text-build` — compiles. `text-roundtrip` — all 5 corpus levels: `from_text(to_text(L))` rebuilds
+the frozen `VRDNLVL1` bytes (W unchanged), and the text form is canonical (re-emitting reproduces it byte for
+byte). `text-reformat` — a `;` comment, blank lines and a comment amid the grid leave W (content) UNMOVED at
+`1b84db41…` and move the authoring digest (`82015cbb…` → `0336917f…`): the record can tell a reformat from an
+edit. `text-edit` — flipping one grid cell (31, 27) rock → floor moves W (`1b84db41…` → `40963eb6…`), and that
+W equals the same byte flip applied to the level file — the text's content IS the cells, exactly.
+`text-refuse` — three malformed texts refused typed before any content digest: a wrong-depth palette, a
+non-alphabet cell, a ragged grid row.
+
+**Grade.** MEASURED: the round-trip and canonicality over the corpus, the reformat/edit split, the cross-check
+that a text edit's W equals the byte-level edit's W, the three refusals. ESTABLISHED: the palette is
+depth-derived provenance borrowed from a same-depth level (read off `from_text`; the studio computes no
+`lut`). DECLARED: the `VWTX1` text format.
+
+**does_not_show.** A text form of the tiles (M) — TEXT-0 is the level (W) only. Authoring a new depth's palette
+(the table/maps are Urðr's; a new depth needs a same-depth oracle level as the palette source). That the text
+is the only authoring surface — the editor pane (a shell concern) is later. Any wall-clock.
+
+**Falsifier.** `text-roundtrip` reddens if a level ever fails to rebuild its bytes or the text stops being
+canonical; `text-reformat` if a reformat ever moves W or ever leaves the authoring digest unmoved; `text-edit`
+if a cell edit leaves W unmoved or its W diverges from the byte edit; `text-refuse` if any malformed text is
+accepted.
