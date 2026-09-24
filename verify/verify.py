@@ -28,7 +28,11 @@ digest; a walk never touches W or M, a tampered command breaks the chain, and a 
 sessionwalk (SESSION-WALK: move while authoring — ONE interleaved append-only log of edits AND moves, each
 evaluated in log order against the authority the preceding events produced, folded into a single head; a move
 sees a prior edit (order is meaning), the head is checkpoint/replay-equivalent (batching cannot change it),
-dropping moves leaves W,M and dropping edits changes navigation, and a Python twin re-derives the head).
+dropping moves leaves W,M and dropping edits changes navigation, and a Python twin re-derives the head),
+shell-playback (SHELL-PLAYBACK: the window shows exactly the sealed becoming — playback consumes a sealed
+SESSION-WALK, replays it through the SHELL-0 present path, and its composited frame-digest sequence EQUALS the
+session's per-move witnesses; every frame passes the blit law, playback writes no authority, a tampered/reordered
+input diverges rather than minting a new authority, and replay from any certified checkpoint reproduces the head).
 """
 from __future__ import annotations
 
@@ -1699,6 +1703,243 @@ def sessionwalk_demo():
             "%s and a Python twin re-derives — established, host-independent" % (ed, mv, d["head"][:12]))
 
 
+# ------------------------------------------------------------------ shell playback (SHELL-PLAYBACK)
+PB = os.path.join(BUILD, "pb")
+SESSIONWALK_DEMO = os.path.join(ROOT, "workshop", "attest", "sessionwalk-demo.json")
+
+
+def _pb_dir():
+    if not os.path.isdir(PB):
+        os.makedirs(PB)
+
+
+def _pb_run(exe, args):
+    return run(exe, args)
+
+
+def _pb_playback(exe, session, root="", batch=None):
+    a = ["playback", "--session", session]
+    if root:
+        a += ["--root", root]
+    if batch is not None:
+        a += ["--batch", str(batch)]
+    code, out, err = _pb_run(exe, a)
+    return code, out, err
+
+
+def _pb_parse(out):
+    frames, head, final = [], None, None
+    for ln in out.strip().splitlines():
+        if ln.startswith("frame "):
+            p = ln.split()
+            frames.append({"i": int(p[1]), "camera": p[3], "digest": p[5], "blit": p[7], "roundtrip": p[9]})
+        elif ln.startswith("playback head "):
+            p = ln.split()
+            head = p[2]
+            final = p[8]
+    return frames, head, final
+
+
+def _pb_demo_events(session_path):
+    d = json.load(open(session_path, encoding="utf-8"))["data"]
+    events = [(e["kind"], e["command"] if e["kind"] == "move" else e["spec"]) for e in d["log"]]
+    move_wit = [e["witness"] for e in d["log"] if e["kind"] == "move"]
+    return d, events, move_wit
+
+
+def shell_playback_sealed_input():
+    need_rustc()
+    _pb_dir()
+    # playback consumes the COMMITTED sealed session-walk (relative base paths resolved via --root)
+    code, out, err = _pb_playback(SHELL_EXE, SESSIONWALK_DEMO, root=ROOT + os.sep)
+    if code != 0:
+        raise Red("playback of the committed demo failed: " + err.strip())
+    d, _events, _mw = _pb_demo_events(SESSIONWALK_DEMO)
+    _frames, head, _final = _pb_parse(out)
+    if head != d["head"]:
+        raise Red("playback head %s != the sealed demo head %s" % (head[:12], d["head"][:12]))
+    # it refuses a NON-session artifact (an ad-hoc/reconstructed stream is not accepted)
+    bad = os.path.join(PB, "not-a-session.json")
+    with open(bad, "w", encoding="utf-8") as fh:
+        fh.write('{"name":"verdandi-walk","data":{}}')
+    code, _o, err = _pb_playback(SHELL_EXE, bad)
+    if code != 2 or "INVALID-SESSION" not in err:
+        raise Red("playback accepted a non-session artifact: %d %s" % (code, err.strip()[:60]))
+    return ("`shell playback` consumes the committed sealed session-walk (workshop/attest/sessionwalk-demo.json) and re-derives its "
+            "head %s; it refuses a non-session artifact (INVALID-SESSION) — playback reads the sealed authority, never an ad-hoc "
+            "action stream" % head[:12])
+
+
+def shell_playback_frame_sequence():
+    need_rustc()
+    _pb_dir()
+    # THE CROWN WITNESS: the composited frame-digest sequence == the session's per-move frame-witness sequence
+    code, out, err = _pb_playback(SHELL_EXE, SESSIONWALK_DEMO, root=ROOT + os.sep)
+    if code != 0:
+        raise Red("playback failed: " + err.strip())
+    frames, _head, _final = _pb_parse(out)
+    d, events, move_wit = _pb_demo_events(SESSIONWALK_DEMO)
+    seq = [f["digest"] for f in frames]
+    if seq != move_wit:
+        raise Red("the playback frame-digest sequence != the sealed move-witness sequence")
+    # cross-check with a Python twin: reconstruct the authority per move and render via a SEPARATE kernel process
+    lv = read(os.path.join(ORACLE, "levels", "witness.lvl"))
+    tl = read(os.path.join(ORACLE, "tiles", "identity.tiles"))
+    cam = _cam_tuple(d["base"]["camera"])
+    cache = {}
+    twin = []
+    for kind, param in events:
+        if kind == "edit":
+            lv, tl = _sw_apply(lv, tl, param)
+        else:
+            cam = _sw_step(lv, cam, param)
+            twin.append(_sw_frame(lv, tl, cam, cache))
+    if twin != seq:
+        raise Red("a Python twin (separate kernel process) disagrees with the playback frame sequence")
+    return ("the crown witness: playback's composited frame-digest sequence (%d frames) EQUALS the session's sealed per-move "
+            "frame-witness sequence AND a Python twin rendering each move through a separate kernel process — the window's frames "
+            "are exactly the becoming SESSION-WALK sealed, tied through the SHELL-0 present path" % len(seq))
+
+
+def shell_playback_blit_law():
+    need_rustc()
+    _pb_dir()
+    # every displayed frame passes SHELL-0's blit round-trip
+    code, out, _e = _pb_playback(SHELL_EXE, SESSIONWALK_DEMO, root=ROOT + os.sep)
+    frames, _h, _f = _pb_parse(out)
+    if not frames or any(f["roundtrip"] != "OK" for f in frames):
+        raise Red("a displayed frame did not pass the blit round-trip")
+    # the law bites: a present path that drops the red channel makes playback report BROKEN
+    src = read(os.path.join(SHELL, "present.rs")).decode("utf-8")
+    anchor = "        out[i * 3 + 2] = rgb[i * 3]; // R"
+    if src.count(anchor) != 1:
+        raise Red("the blit-plant anchor moved")
+    corrupted = src.replace(anchor, "        out[i * 3 + 2] = 0; // PLANT: playback's present path drops red")
+    plant = compile_rs(SHELL, "main.rs", "shell-pb-plant", {"present.rs": corrupted})
+    code, out, _e = _pb_playback(plant, SESSIONWALK_DEMO, root=ROOT + os.sep)
+    fr, _h2, _f2 = _pb_parse(out)
+    if not fr or all(f["roundtrip"] == "OK" for f in fr):
+        raise Red("a corrupted present path still round-tripped — the blit law does not bite in playback")
+    return ("every displayed frame passes SHELL-0's blit round-trip (from_blit(to_blit(c))==c), and a planted present path that "
+            "drops the red channel makes playback report BROKEN — the window shows only bytes that carried the kernel's composite "
+            "intact (%d frames)" % len(frames))
+
+
+def shell_playback_no_authority():
+    need_rustc()
+    _pb_dir()
+    lvl = os.path.join(ORACLE, "levels", "witness.lvl")
+    tls = os.path.join(ORACLE, "tiles", "identity.tiles")
+    sp = _sw_build("pb_na", "28,28,N", [("edit", "cell:28,27,."), ("move", "F"), ("move", "F"), ("edit", "tile:floor,96,80,64"), ("move", "L"), ("move", "F")])
+    before = {p: sha256(read(p)) for p in (lvl, tls, sp)}
+    _pb_playback(SHELL_EXE, sp)
+    ck = os.path.join(PB, "na.ck")
+    _pb_run(SHELL_EXE, ["checkpoint", "--session", sp, "--at", "3", "--out", ck])
+    _pb_run(SHELL_EXE, ["resume", "--session", sp, "--checkpoint", ck])
+    after = {p: sha256(read(p)) for p in (lvl, tls, sp)}
+    if before != after:
+        raise Red("playback/checkpoint/resume changed the level, tiles, or session file — the shell became a second authority")
+    return ("after playback + checkpoint + resume the level's W, the tiles' M and the session file are byte-identical — the shell "
+            "playback reads the sealed authority and writes none of it; it cannot become a second authority")
+
+
+def shell_playback_order():
+    need_rustc()
+    _pb_dir()
+    sp = _sw_build("pb_order", "28,28,N", [("edit", "cell:28,27,."), ("move", "F"), ("move", "F")])
+    # in order, playback succeeds and its frames are in log order
+    code, out, _e = _pb_playback(SHELL_EXE, sp)
+    if code != 0:
+        raise Red("in-order playback failed")
+    frames, _h, _f = _pb_parse(out)
+    if [f["i"] for f in frames] != list(range(len(frames))):
+        raise Red("playback did not emit frames in log order")
+    # reorder the sealed log (swap the opening edit with the first move) WITHOUT recomputing witnesses/head
+    doc = json.load(open(sp, encoding="utf-8"))
+    log = doc["data"]["log"]
+    log[0], log[1] = log[1], log[0]
+    with open(sp, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(doc, fh, indent=1)
+    code, _o, err = _pb_playback(SHELL_EXE, sp)
+    if code != 2 or "DIVERGED" not in err:
+        raise Red("a reordered sealed log was not caught: %d %s" % (code, err.strip()[:60]))
+    return ("playback presents the sealed events strictly in log order (frames 0..n) and never reorders for presentation: swapping "
+            "the opening edit with the first move makes a re-derived witness diverge and playback REFUSES (DIVERGED) rather than "
+            "showing a different becoming")
+
+
+def shell_playback_tamper():
+    need_rustc()
+    _pb_dir()
+    sp = _sw_build("pb_tamper", "28,28,N", [("edit", "cell:28,27,."), ("move", "F"), ("move", "F")])
+    code, _o, _e = _pb_playback(SHELL_EXE, sp)
+    if code != 0:
+        raise Red("the untampered session did not play back")
+    # change one move command without recomputing its witness/head
+    doc = json.load(open(sp, encoding="utf-8"))
+    for e in doc["data"]["log"]:
+        if e["kind"] == "move":
+            e["command"] = "B"
+            break
+    with open(sp, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(doc, fh, indent=1)
+    code, _o, err = _pb_playback(SHELL_EXE, sp)
+    if code != 2 or "DIVERGED" not in err:
+        raise Red("a tampered move was not caught by playback: %d %s" % (code, err.strip()[:60]))
+    # truncating the log (dropping the last event) is also caught (the stored head no longer matches)
+    sp2 = _sw_build("pb_trunc", "28,28,N", [("edit", "cell:28,27,."), ("move", "F"), ("move", "F")])
+    doc2 = json.load(open(sp2, encoding="utf-8"))
+    doc2["data"]["log"] = doc2["data"]["log"][:-1]
+    with open(sp2, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(doc2, fh, indent=1)
+    code, _o, err = _pb_playback(SHELL_EXE, sp2)
+    if code != 2 or "DIVERGED" not in err:
+        raise Red("a truncated log was not caught by playback: %d %s" % (code, err.strip()[:60]))
+    return ("a tampered move command and a truncated log both make playback REFUSE (DIVERGED, exit 2) — the re-derived witness or "
+            "head no longer matches the seal, so playback never silently produces frames for an authority the seal does not name")
+
+
+def shell_playback_checkpoint():
+    need_rustc()
+    _pb_dir()
+    events = [("edit", "cell:28,27,."), ("move", "F"), ("move", "F"), ("edit", "tile:floor,96,80,64"), ("move", "L"), ("move", "F")]
+    sp = _sw_build("pb_ck", "28,28,N", events)
+    # the full playback's move digest sequence and head
+    code, out, _e = _pb_playback(SHELL_EXE, sp)
+    full_frames, full_head, _f = _pb_parse(out)
+    full_seq = [f["digest"] for f in full_frames]
+    cuts = []
+    for k in range(len(events) + 1):
+        ck = os.path.join(PB, "ck_%d" % k)
+        code, cout, cerr = _pb_run(SHELL_EXE, ["checkpoint", "--session", sp, "--at", str(k), "--out", ck])
+        if code != 0:
+            raise Red("checkpoint at %d failed: %s" % (k, cerr.strip()))
+        prefix = [ln.split()[5] for ln in cout.strip().splitlines() if ln.startswith("prefix frame ")]
+        code, rout, rerr = _pb_run(SHELL_EXE, ["resume", "--session", sp, "--checkpoint", ck])
+        if code != 0:
+            raise Red("resume from checkpoint at %d failed: %s" % (k, rerr.strip()))
+        suffix = [ln.split()[5] for ln in rout.strip().splitlines() if ln.startswith("suffix frame ")]
+        rhead = [ln.split()[2] for ln in rout.strip().splitlines() if ln.startswith("resume head ")][0]
+        if prefix + suffix != full_seq:
+            raise Red("checkpoint at %d: prefix++suffix frames != the full sequence" % k)
+        if not full_head.startswith(rhead):
+            raise Red("checkpoint at %d: resumed head %s != full head %s" % (k, rhead, full_head[:12]))
+        cuts.append(k)
+    # the checkpoint carries the WHOLE authority: corrupt its tiles and resume must DIVERGE (not silently OK)
+    ck = os.path.join(PB, "ck_lossy")
+    _pb_run(SHELL_EXE, ["checkpoint", "--session", sp, "--at", "1", "--out", ck])   # suffix includes the tile edit
+    tb = bytearray(read(ck + ".tiles"))
+    tb[8] ^= 0xFF  # flip a byte of the checkpoint's tiles
+    with open(ck + ".tiles", "wb") as fh:
+        fh.write(tb)
+    code, _o, err = _pb_run(SHELL_EXE, ["resume", "--session", sp, "--checkpoint", ck])
+    if code != 2 or "DIVERGED" not in err:
+        raise Red("a checkpoint with corrupted tiles did not diverge on resume: %d %s" % (code, err.strip()[:60]))
+    return ("replay from a certified checkpoint reproduces the identical frame-witness suffix and head at all %d cut positions "
+            "(prefix++suffix == the full sequence, resumed head == the full head), and a checkpoint whose tiles were corrupted "
+            "DIVERGES on resume — the checkpoint carries the whole interleaved authority, not a partial projection" % len(cuts))
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -1759,6 +2000,13 @@ def main() -> int:
     row("sessionwalk-tamper", sessionwalk_tamper)
     row("sessionwalk-projection", sessionwalk_projection)
     row("sessionwalk-demo", sessionwalk_demo)
+    row("shell-playback-sealed-input", shell_playback_sealed_input)
+    row("shell-playback-frame-sequence", shell_playback_frame_sequence)
+    row("shell-playback-blit-law", shell_playback_blit_law)
+    row("shell-playback-no-authority", shell_playback_no_authority)
+    row("shell-playback-order", shell_playback_order)
+    row("shell-playback-tamper", shell_playback_tamper)
+    row("shell-playback-checkpoint", shell_playback_checkpoint)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

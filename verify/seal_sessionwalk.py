@@ -55,9 +55,10 @@ def main() -> int:
     exe, tmp = build_input()
     try:
         sp = os.path.join(tmp, "session.json")
-        lp, tp = os.path.join(ROOT, a.level), os.path.join(ROOT, a.tiles)
-        cp = subprocess.run([exe, "new", "--level", lp, "--tiles", tp, "--camera", a.camera, "--out", sp],
-                            capture_output=True, text=True)
+        # run WITH cwd=ROOT and RELATIVE base paths, so the sealed record is portable (base.level is repo-relative;
+        # playback resolves it with --root). The binary reads the files relative to ROOT.
+        cp = subprocess.run([exe, "new", "--level", a.level, "--tiles", a.tiles, "--camera", a.camera, "--out", sp],
+                            capture_output=True, text=True, cwd=ROOT)
         if cp.returncode != 0:
             print("REFUSE: new failed: " + cp.stderr.strip())
             return 2
@@ -73,7 +74,7 @@ def main() -> int:
             else:
                 print("REFUSE: unknown event kind " + kind)
                 return 2
-            cp = subprocess.run([exe] + args, capture_output=True, text=True)
+            cp = subprocess.run([exe] + args, capture_output=True, text=True, cwd=ROOT)
             if cp.returncode != 0:
                 print("REFUSE: %s failed: %s" % (token, cp.stderr.strip()))
                 return 2

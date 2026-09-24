@@ -526,6 +526,57 @@ if reordering an edit past a dependent move does *not* move the head (or if the 
 `sessionwalk-tamper` if a changed event is not caught; `sessionwalk-projection` if dropping moves ever changes
 W,M or dropping edits ever leaves navigation untouched.
 
+## SHELL-PLAYBACK — the window shows exactly the sealed becoming (seat 11)
+
+**What landed.** `shell/playback.rs` (a module of the shell crate, headless): `shell playback --session S` CONSUMES
+a sealed SESSION-WALK (`VRDNSW1`) — not a reconstructed action stream — replays it from the base authority, and
+for every MOVE renders the kernel's composite through the SHELL-0 present path (`compose_frame` → `to_blit`). The
+bridge it certifies is `sealed session → replay → kernel frame → SHELL-0 blit/hash → the window`. Playback
+re-derives every event's witness and the head and REFUSES (`DIVERGED`, exit 2) if any diverges from the seal, so
+it can never mint a new authority; it reads the level, tiles and session and writes none of them. Checkpoint/
+resume is folded in: `shell checkpoint --at K` captures the WHOLE interleaved authority (level bytes, tiles bytes,
+camera, head) at event K, and `shell resume --checkpoint CK` reproduces the identical frame-witness suffix and
+head as replay from the origin. The actual on-screen window (`shell playback-window`, host-run under
+`--cfg shell_window`) is **SHELL-PLAYBACK-b**, named below, not built here — the certified bridge is headless.
+
+**Design, searched.** This is deterministic record-and-replay with per-checkpoint canonical state hashing
+([ACM Queue: Deterministic Record-and-Replay](https://queue.acm.org/detail.cfm?id=3688088), [canonical state
+hashing at checkpoints](https://github.com/oktayaydogan/aeo2/issues/67)) applied to a sealed authority: the
+session is the record, playback is the replay, and the frame-digest sequence is the golden output. The crucial
+boundary the search confirmed — separate the simulation from the presentation — is exactly why SHELL-PLAYBACK
+certifies the frame SEQUENCE (the theorem: what is shown) and leaves the presentation SCHEDULE (how fast it
+reaches the glass) to LATENCY-0's measurement. The checkpoint carries the full authority precisely so it cannot
+degrade to a partial projection (only `walk_head` or only `edit_head`) — a corrupted-tiles checkpoint diverges.
+
+**Rows.** `shell-playback-sealed-input` — playback consumes the committed sealed demo and re-derives its head;
+refuses a non-session (INVALID-SESSION). `shell-playback-frame-sequence` — **the crown witness**: the composited
+frame-digest sequence EQUALS the session's sealed per-move witnesses AND a Python twin rendering each move through
+a separate kernel process. `shell-playback-blit-law` — every displayed frame passes `from_blit(to_blit(c))==c`,
+and a planted present path that drops red makes playback report BROKEN (the law bites). `shell-playback-no-authority`
+— after playback + checkpoint + resume the level's W, the tiles' M and the session file are byte-identical.
+`shell-playback-order` — playback presents strictly in log order; a reordered sealed log DIVERGES.
+`shell-playback-tamper` — a tampered move and a truncated log both make playback REFUSE (DIVERGED, exit 2).
+`shell-playback-checkpoint` — resume from checkpoints at all seven cut positions reproduces prefix++suffix == the
+full sequence and the full head, and a corrupted-tiles checkpoint DIVERGES on resume.
+
+**Grade.** MEASURED: the frame-sequence bridge + twin, the blit law + plant, authority-untouched, order
+preservation, tamper divergence, checkpoint/resume equivalence — all live headless. ESTABLISHED: playback renders
+through the SHELL-0 present path (read off the source: `compose_frame`/`to_blit`); it opens the file read-only.
+DECLARED: the checkpoint sidecar format; that the head fold matches `workshop/sessionwalk.rs` (mirrored constants,
+cross-checked live by `shell-playback-frame-sequence` and the sealed head).
+
+**does_not_show.** The on-screen window (SHELL-PLAYBACK-b, host-run — the gate cannot open a window; the bridge
+certified here is what that window would display). Presentation timing / frame pacing (LATENCY-0). Appearance
+beyond geometry in the *chain* (the move witness is the geometry frame digest; the pixels the window shows are
+carried by the blit law but not chained). A skybox or physics. That the chain defeats a joint rewrite of events
+and head (the outer seal and git anchor that).
+
+**Falsifier.** `shell-playback-frame-sequence` reddens if the displayed sequence ever differs from the sealed
+witnesses or the twin; `shell-playback-blit-law` if a corrupted present path still round-trips; `shell-playback-no-authority`
+if playback ever writes W, M or the session; `shell-playback-order`/`-tamper` if a reordered/tampered/truncated
+input does not diverge; `shell-playback-checkpoint` if any checkpoint/resume disagrees or a corrupted checkpoint
+silently resumes.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -540,9 +591,17 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   the charter forbids.
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
-textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), and SESSION-WALK *fuses* the
-two into one interleaved log where authoring and moving genuinely interact — the studio's real loop, proven
-headless. The locked forward order is **SESSION-WALK → SHELL-PLAYBACK → LATENCY-0**: SHELL-PLAYBACK drives the
-window from the same sealed session/`.walk` representation, and only then does LATENCY-0 measure input-to-present
-on the host (where the 144Hz/batch scheduler becomes a preregistered, measured hypothesis). Skybox and physics
-stay beyond the frozen oracle, named here, gated behind the new-semantics route.
+textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two
+into one interleaved log where authoring and moving genuinely interact — the studio's real loop — and
+SHELL-PLAYBACK proves the window *displays exactly that becoming* and nothing else, through the SHELL-0 blit law.
+Each was proven headless first. What remains on the locked path:
+
+- **SHELL-PLAYBACK-b (host window).** `shell playback-window --session S`, built under `--cfg shell_window` on
+  Windows, plays a sealed session frame-by-frame in the real window and can emit a host attestation — the on-screen
+  counterpart of the certified headless bridge, run on the host like SHELL-0a's present number. Not built here.
+- **LATENCY-0 (host measurement).** Only after the window plays does LATENCY-0 measure input-to-present on the host,
+  where the 144Hz/7ms batch scheduler becomes a preregistered hypothesis with a success AND a failure condition —
+  timing, never mixed into the authority model. The boundary holds: SESSION-WALK proves what is becoming,
+  SHELL-PLAYBACK proves the window shows exactly that becoming, LATENCY-0 measures how quickly it gets there.
+
+Skybox and physics stay beyond the frozen oracle, named here, gated behind the new-semantics route.

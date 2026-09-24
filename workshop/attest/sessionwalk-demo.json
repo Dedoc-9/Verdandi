@@ -26,8 +26,8 @@
    "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
    "camera": "28,28,N",
    "content": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08",
-   "level": "/root/verdandi/oracle/levels/witness.lvl",
-   "tiles": "/root/verdandi/oracle/tiles/identity.tiles"
+   "level": "oracle/levels/witness.lvl",
+   "tiles": "oracle/tiles/identity.tiles"
   },
   "edits": 2,
   "final_camera": "27,26,W",
@@ -73,5 +73,5 @@
   "moves": 4
  },
  "reading": "",
- "chain_hash": "0197d5cad5f6cbf58e22e0f00e4df2890f5840b1e02e04be4548b8e572641a20"
+ "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff"
 }

@@ -29,6 +29,9 @@ mod hud;
 #[allow(dead_code)]
 #[path = "present.rs"]
 mod present;
+#[allow(dead_code)]
+#[path = "playback.rs"]
+mod playback;
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -119,6 +122,29 @@ fn main() {
             {
                 let _ = c;
                 refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to present and measure");
+            }
+        }
+        "playback" | "checkpoint" | "resume" => {
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            let root = opt("--root").unwrap_or_default();
+            match args[1].as_str() {
+                "playback" => {
+                    let batch = opt("--batch").and_then(|v| v.parse().ok()).unwrap_or(usize::MAX);
+                    playback::playback(&session, &root, batch);
+                }
+                "checkpoint" => {
+                    let at = opt("--at").and_then(|v| v.parse().ok()).unwrap_or_else(|| refuse("USAGE", "checkpoint needs --at"));
+                    let out = opt("--out").unwrap_or_else(|| refuse("USAGE", "checkpoint needs --out"));
+                    playback::checkpoint(&session, &root, at, &out);
+                }
+                _ => {
+                    let ck = opt("--checkpoint").unwrap_or_else(|| refuse("USAGE", "resume needs --checkpoint"));
+                    playback::resume(&session, &root, &ck);
+                }
             }
         }
         other => refuse("USAGE", &format!("unknown command {}", other)),
