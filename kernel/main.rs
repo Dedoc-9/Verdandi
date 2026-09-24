@@ -7,6 +7,7 @@
 //     kernel scene.bin                                           # URDRMNTI bytes
 //     kernel --level L.lvl --tiles T.tiles --camera 34,28,W      # composed from the studio's files
 //     kernel ... --bench 200 --warm 20                           # off-gate: p50/p95/p99/max us per phase
+//     kernel ... --breakdown 300 --warm 30                        # off-gate (GAUNTLET-0): render split strips/frame/emit + the two witness hashes
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
@@ -73,6 +74,7 @@ fn main() {
     let mut scene_path: Option<String> = None;
     let (mut level, mut tiles, mut camera): (Option<String>, Option<String>, Option<String>) = (None, None, None);
     let mut bench = 0usize;
+    let mut breakdown = 0usize;
     let mut warm = 10usize;
     let mut write_scene: Option<String> = None;
     let mut want_hud = false;
@@ -87,6 +89,7 @@ fn main() {
             "--tiles" => { tiles = Some(next(i)); i += 2; }
             "--camera" => { camera = Some(next(i)); i += 2; }
             "--bench" => { bench = next(i).parse().unwrap_or_else(|_| refuse("--bench needs a count")); i += 2; }
+            "--breakdown" => { breakdown = next(i).parse().unwrap_or_else(|_| refuse("--breakdown needs a count")); i += 2; }
             "--warm" => { warm = next(i).parse().unwrap_or_else(|_| refuse("--warm needs a count")); i += 2; }
             "--write-scene" => { write_scene = Some(next(i)); i += 2; }
             "--hud" => { want_hud = true; i += 1; }
@@ -171,6 +174,64 @@ fn main() {
         let (a, b, c, d) = percentiles(t_tot);
         println!("bench_total_us p50={} p95={} p99={} max={}", a, b, c, d);
         println!("bench_samples {} warmup {} same_witnesses {}", bench, warm, if same_after { "OK" } else { "DIVERGED" });
+        println!("{}", host_line());
+    }
+    if breakdown > 0 {
+        // GAUNTLET-0: the render decomposed at the kernel's pub-phase boundaries — strips (traversal), frame
+        // (walls + floor cast), emit (texel pass) — plus the two WITNESS hashes (frame_digest, pixel_sha),
+        // which the --bench total excludes and an interactive render never pays. mantle.rs is not touched: this
+        // only times the existing calls. Host-CPU-specific; finer than frame() (floor vs walls) needs a sibling
+        // renderer, which is GAUNTLET-1's differential fast path.
+        let mut strips: Vec<Strip> = Vec::with_capacity(W);
+        let mut buf = vec![0u8; W * H];
+        let mut rgb = vec![0u8; W * H * 3];
+        let mut t_strips: Vec<u128> = Vec::with_capacity(breakdown);
+        let mut t_frame: Vec<u128> = Vec::with_capacity(breakdown);
+        let mut t_emit: Vec<u128> = Vec::with_capacity(breakdown);
+        let mut t_fd: Vec<u128> = Vec::with_capacity(breakdown);
+        let mut t_ps: Vec<u128> = Vec::with_capacity(breakdown);
+        let mut t_render: Vec<u128> = Vec::with_capacity(breakdown);
+        for k in 0..(warm + breakdown) {
+            let a0 = Instant::now();
+            scene.strips(&mut strips);
+            let a1 = Instant::now();
+            scene.frame(&strips, &mut buf);
+            let a2 = Instant::now();
+            scene.emit(&strips, &buf, &mut rgb);
+            let a3 = Instant::now();
+            let fdx = frame_digest(&buf);
+            let a4 = Instant::now();
+            let psx = hex(&sha256(&rgb));
+            let a5 = Instant::now();
+            // guard: the phases reproduced the frozen witnesses, so the breakdown timed the certified render
+            if fdx != fd || psx != ps {
+                refuse("the breakdown rendered something other than the witnessed picture");
+            }
+            if k >= warm {
+                t_strips.push((a1 - a0).as_micros());
+                t_frame.push((a2 - a1).as_micros());
+                t_emit.push((a3 - a2).as_micros());
+                t_fd.push((a4 - a3).as_micros());
+                t_ps.push((a5 - a4).as_micros());
+                t_render.push((a3 - a0).as_micros()); // render = strips + frame + emit (the --bench total; excludes hashes)
+            }
+        }
+        let render_p99 = { let (_, _, c, _) = percentiles(t_render.clone()); c };
+        let line = |name: &str, xs: Vec<u128>| {
+            let (a, b, c, d) = percentiles(xs);
+            let share = if render_p99 > 0 { c * 1000 / render_p99 } else { 0 }; // p99 share of the render, permille
+            println!("breakdown_{}_us p50={} p95={} p99={} max={} render_permille={}", name, a, b, c, d, share);
+        };
+        line("strips", t_strips);
+        line("frame", t_frame);
+        line("emit", t_emit);
+        line("framedigest", t_fd);
+        line("pixelsha", t_ps);
+        {
+            let (a, b, c, d) = percentiles(t_render);
+            println!("breakdown_render_us p50={} p95={} p99={} max={}", a, b, c, d);
+        }
+        println!("breakdown_samples {} warmup {} same_witnesses OK", breakdown, warm);
         println!("{}", host_line());
     }
     if !same {

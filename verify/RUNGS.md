@@ -640,6 +640,59 @@ threshold, a dropped conjunction, or a dropped scope limit; `records-preregister
 registration; and when the host record lands, its failure condition (p99 > 6,944µs, or a refresh > 6,944µs, or a
 shape not reproducible on a second run) refutes the corresponding claim rather than being massaged into a pass.
 
+## GAUNTLET-0 — measure before optimize; the render breakdown, and a decision rule (seat 13)
+
+**What landed (the method, not the optimization).** GAUNTLET is a performance-certification *staircase* with
+progressively narrower intervention, and GAUNTLET-0 is the first tread: the render decomposed, with no renderer
+change. `kernel/main.rs --breakdown N` (off-gate, host; `mantle.rs` untouched — it only times the existing pub
+calls) measures the reference render at its pub-phase boundaries — **strips** (traversal), **frame** (walls +
+floor cast), **emit** (texel pass) — and, separately, the two **witness hashes** (`frame_digest`, `pixel_sha`)
+that the render total excludes and an interactive render never pays. `verify/gauntlet.py` compiles, checks the
+witnesses against the frozen corpus *before any number*, runs the breakdown and seals a `verdandi-render-breakdown`
+record (per-phase p50/p95/p99/max and each render phase's p99 share in permille — no verdict key) as
+`kernel/attest/breakdown-<host>.json`, citing GAUNTLET-0. The seat carries **only** the measurement and a
+preregistered decision rule; it changes no renderer.
+
+**Design, searched.** "Measure first, then tune" is the rasterizer's own discipline ([ryg on optimizing the
+basic rasterizer](https://fgiesen.wordpress.com/2013/02/10/optimizing-the-basic-rasterizer/), [performance &
+optimization](https://www.informit.com/articles/article.aspx?p=2115288&seqNum=8)). The preregistered rule
+(`verify/preregister.json` → GAUNTLET-0, hash-locked `a8122b4f…`): a render phase must clear **500 permille** of
+the render p99 to earn a GAUNTLET-1 seat; GAUNTLET-1 must then prove **byte-identity** against the frozen
+reference (a differential oracle — `frame_digest` AND `pixel_sha` equal over the corpus plus adversarial cameras)
+*before any speed claim*; and the incremental-floor-cast hypothesis specifically dies unless `frame()` clears the
+bar. Correctness stays a headless differential proof; performance stays a host measurement — the two never mix.
+
+**Preliminary (exploratory, container CPU — not the committed host number).** A container breakdown put the p99
+render-shares at **strips ≈ 2‰, frame ≈ 306‰, emit ≈ 725‰**, with the witness hashes (`frame_digest` ≈ 20 ms,
+`pixel_sha` ≈ 61 ms p99) rivalling the whole render. Read against the locked rule this already refutes the
+floor-cast instinct — the floor lives inside `frame` (~30%), while **`emit` (the texel pass) is the dominant
+render cost** and would be GAUNTLET-1's target — and flags the witness hashing as a large *verification-only*
+tax the interactive path avoids. The committed host record confirms this on the owner's CPU; the shares are the
+portable quantity, the microseconds are not.
+
+**Rows.** `gauntlet-preregistered` — the method and decision rule are locked before the host number: the render
+phases are named, the 500-permille rule is in both success and failure conditions, GAUNTLET-1 must prove
+byte-identity before a speed claim, the incremental-floor-cast hypothesis can die here, the witness hashes are
+verification-only, `mantle.rs` is not modified, and the entry is hash-locked — so weakening any of it is a
+visible diff, not a silent re-hash. `records-preregistered` additionally hash-locks the entry.
+
+**Grade.** DECLARED: the preregistered method and 500-permille decision rule (hash-locked). MEASURED (live in
+the gate): that the method IS locked (`gauntlet-preregistered`). NOT_MEASURED yet (as a committed record): the
+host breakdown — produced off-gate by `verify/gauntlet.py` and sealed, like the bench and the present number. The
+container preliminary is exploratory only, clearly not the committed number.
+
+**does_not_show.** Any optimization or speedup (GAUNTLET-0 changes no renderer). Floor-vs-walls inside `frame()`,
+or any sub-`emit` split (that needs GAUNTLET-1's sibling renderer). Input-to-photon, present, window (none is in
+a render number). That the witness hashes are interactive cost (they are verification-only). Any other scene,
+tile set or resolution; absolute microseconds (host-specific — the permille shares are portable).
+
+**Falsifier.** `gauntlet-preregistered` reddens if the method is weakened — a phase unnamed, the 500-permille
+rule dropped from either condition, the byte-identity precondition removed, the witness-hash or `mantle.rs`
+limit dropped; `records-preregistered` if the entry is edited after registration; and when the host record
+lands, its failure condition (no render phase ≥ 500‰, or times that do not reconcile with the render total, or a
+non-reproducible shape, or a breakdown of anything but the frozen witnesses) kills the single-phase optimization
+rather than being massaged into a target.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -657,20 +710,30 @@ The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *aut
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two
 into one interleaved log where authoring and moving genuinely interact — the studio's real loop — and
 SHELL-PLAYBACK proves the window *displays exactly that becoming* and nothing else, through the SHELL-0 blit law.
-SHELL-PLAYBACK-b now plays a sealed session in the real window (host-run), and LATENCY-0 is measured: on host
-DANIELDILLBERG the composed-GDI present is refresh-coupled (~75Hz panel), so SOFTWARE-144-BUDGET, HARDWARE-144
-and SUSTAINED-144Hz all FAIL honestly — a measured refutation that names its own next lever. Each rung was
-proven headless first. What remains:
+SHELL-PLAYBACK-b now plays a sealed session in the real window (host-run); LATENCY-0 is measured (the composed-GDI
+present is refresh-coupled on a ~75Hz panel — all three verdicts FAIL honestly); and GAUNTLET-0 has decomposed
+the render and locked the optimization decision rule. Each rung was proven headless first. The performance
+staircase and what remains:
 
-- **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* (measured) only that the composed-GDI
-  present is refresh-coupled on the host. PRESENT-1's *hypothesis* — falsifiable, to be measured, never assumed —
-  is that a flip-model present with a waitable swapchain CAN decouple present latency from the refresh interval
-  and let a display-free software present latency be measured, compared against LATENCY-0's committed baseline.
-  Off-gate/host, a later shell rung; reaching HARDWARE-144 additionally needs a ≥144Hz panel.
+- **The GAUNTLET staircase.** GAUNTLET-0 (seated) measures the render breakdown and locks the 500-permille rule;
+  the preliminary read points at **`emit`** (the texel pass), not the floor, as the dominant phase. **GAUNTLET-1**
+  is seated only against the phase the host record confirms clears 500‰, and must prove byte-identity against the
+  frozen reference (a differential oracle) before any speed claim; **GAUNTLET-2+** only after the first has a
+  measured result. **LATENCY-1** then reruns the same fixed session and records the before/after render delta
+  against LATENCY-0's immutable baseline.
+- **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is
+  refresh-coupled. PRESENT-1's *hypothesis* — falsifiable, to be measured, never assumed — is that a flip-model
+  present CAN decouple present latency from refresh; it becomes experimentally valuable once the render fits the
+  budget (so it is not competing with an 11.6 ms render). Off-gate/host; HARDWARE-144 additionally needs a ≥144Hz panel.
+- **Interactive capture (parallel, not entangled with the performance chain).** The inverse of SHELL-PLAYBACK:
+  raw window/device event → binding → typed action/edit → SESSION-WALK append → the SAME sealed representation
+  headless authoring produces. A shell/input problem, not a new authority; measured against the existing session
+  machinery, never modifying it.
 - **The named future slices** (courted, not seated): IMPOSSIBILITY-0 (measured negative results as level
   preconditions), SEMANTIC-0 (a float-free, geometry-bound semantic layer as a Verðandi-local new-semantics
   authority), MERGE-0 (deterministic commutative merge of non-conflicting edits, stripped of consensus/time).
 
 The boundary holds end to end: SESSION-WALK proves what is becoming, SHELL-PLAYBACK proves the window shows
-exactly that becoming, LATENCY-0 measures how quickly it gets there. Skybox and physics stay beyond the frozen
-oracle, named here, gated behind the new-semantics route.
+exactly that becoming, LATENCY-0/GAUNTLET measure how fast it is produced and shown — and every performance step
+survives the same pixel-level oracle, so speed is never traded for correctness and a failed experiment stays
+permanently useful evidence. Skybox and physics stay beyond the frozen oracle, gated behind the new-semantics route.

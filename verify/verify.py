@@ -14,8 +14,9 @@ workshop (an edit is a new authority and the witnesses say what it moved; the pl
 hud (the overlay is a frame: pinned, index-free, inside its region, reading state and not materials),
 records (RECORD-0: every record Verðandi mints passes the envelope's firewall, the two writers agree, and a
 rung that produces a number on a host was preregistered with a failure condition; LATENCY-0's method — the
-SOFTWARE-144-BUDGET / HARDWARE-144 split, their conjunction, and the honest scope — is hash-locked before any
-host number, so weakening it is a visible diff),
+SOFTWARE-144-BUDGET / HARDWARE-144 split, their conjunction, and the honest scope — and GAUNTLET-0's method —
+the render breakdown and its 500-permille optimization decision rule, with GAUNTLET-1 owing byte-identity before
+any speed claim — are hash-locked before any host number, so weakening either is a visible diff),
 shell (SHELL-0a: the blit-hash law headless — the shell shows the kernel's composite, the blit is an invertible
 carrier of it, and a byte corrupted between kernel and blit is detectable; the window is the host's, cfg-gated),
 membrane (MEMBRANE-0: the one-way law as a compile-time wall — editing the authority through a live read-borrow
@@ -770,6 +771,43 @@ def latency_preregistered():
             "frame-ready->composited <= 6944 us; HARDWARE-144, measured refresh >= 144 Hz), the sustained-144Hz claim is their "
             "conjunction, the budget is named a budget (not a refresh-rate claim), refresh is measured not inferred, and "
             "input-to-photon is out of scope; hash-locked %s so weakening it is a visible diff, not a silent edit" % e["chain_hash"][:8])
+
+
+def gauntlet_preregistered():
+    """GAUNTLET-0's method and DECISION RULE are locked before the host number: the render is decomposed at pub-phase
+    boundaries, a phase must clear 500 permille of the render p99 to earn GAUNTLET-1, GAUNTLET-1 must prove byte-identity
+    before any speed claim, the witness hashes are verification-only, and mantle.rs is not touched. Weakening any of these
+    is a visible code diff, not a silent re-hash."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))
+    e = reg["entries"].get("GAUNTLET-0")
+    if not e:
+        raise Red("GAUNTLET-0 is not registered")
+    hyp, succ, fail = e["hypothesis"], e["success_condition"], e["failure_condition"]
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "the render phases are named": all(p in hyp for p in ("strips", "frame", "emit")),
+        "the 500-permille decision rule is in success AND failure": "500 permille" in succ and "500 permille" in fail,
+        "GAUNTLET-1 must prove byte-identity before a speed claim": "byte-identical" in succ and "differential oracle" in succ,
+        "the floor-cast hypothesis can die here": "incremental floor cast" in fail and "dies" in fail,
+        "the witness hashes are verification-only, not render cost": "verification cost" in lims and "not interactive-render cost" in lims,
+        "mantle.rs is not modified": "mantle.rs is not modified" in lims,
+        "a breakdown is a target-finder, not a speed improvement": "target-finder" in lims and "not a speed improvement" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the GAUNTLET-0 method is not fully locked: " + "; ".join(missing))
+    want = envelope.chain_hash({"name": "verdandi-preregistration-entry", "version": 1, "claim_class": "declared",
+                                "provenance": {"registered_in": "verify/preregister.json"},
+                                "validity_scope": {"certifies": "the conditions GAUNTLET-0 was seated under"},
+                                "forbidden_interpretations": ["that registering a condition earns it"],
+                                "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+    if e["chain_hash"] != want:
+        raise Red("the GAUNTLET-0 entry was edited after registration (chain hash)")
+    return ("GAUNTLET-0's method and decision rule are locked before the host number: the render is decomposed at pub-phase "
+            "boundaries (strips/frame/emit) with the two witness hashes reported separately as verification-only cost; a render "
+            "phase must clear 500 permille of the render p99 to earn a GAUNTLET-1 seat (the incremental-floor-cast hypothesis "
+            "dies here unless frame() qualifies), GAUNTLET-1 must prove byte-identity (a differential oracle) before any speed "
+            "claim, and mantle.rs is not touched; hash-locked %s" % e["chain_hash"][:8])
 
 
 # ------------------------------------------------------------------ shell (SHELL-0a)
@@ -2006,6 +2044,7 @@ def main() -> int:
     row("records-twins", records_twins)
     row("records-preregistered", records_preregistered)
     row("latency-preregistered", latency_preregistered)
+    row("gauntlet-preregistered", gauntlet_preregistered)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)
