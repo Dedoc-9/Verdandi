@@ -10,3 +10,7 @@ __pycache__/
 .gate-*/
 # redirected gate / measurement output (sealed records under */attest/ are committed; raw logs are not)
 *.log
+# off-gate eyeball images from `kernel --write-png` etc. (the project commits digests, never images)
+*.ppm
+*.png
+*.bmp
