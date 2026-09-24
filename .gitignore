@@ -8,3 +8,5 @@ verify/build/
 __pycache__/
 *.pyc
 .gate-*/
+# redirected gate / measurement output (sealed records under */attest/ are committed; raw logs are not)
+*.log

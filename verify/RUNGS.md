@@ -608,12 +608,27 @@ and a good software number cannot imply a display capability that was not measur
 failure conditions, the budget is 6,944µs, the claim is the conjunction, the budget is named a budget (not a
 refresh claim), refresh is measured not inferred, and input-to-photon is out of scope; the entry is hash-locked,
 so weakening the method is a visible code diff (this row reddens), not a silent re-hash. `records-preregistered`
-additionally hash-locks the entry; `records-firewall` will validate the sealed host record when it lands.
+additionally hash-locks the entry; `records-firewall` validates the sealed host record.
 
-**Grade.** DECLARED: the preregistered method, thresholds and interpretation (hash-locked). MEASURED (live in
-the gate): that the method IS locked (`latency-preregistered`). NOT_MEASURED yet: the host number itself — it is
-produced off-gate by `playback_window --measure` on the owner's host and sealed, exactly as SHELL-0's present
-number was. The instrument and seal script ship here; the number is the next host run.
+**Measured (host DANIELDILLBERG, `shell/attest/latency-DANIELDILLBERG.json`, cites LATENCY-0 `c4d8db6a…`).** 200
+samples over the 4-move sealed reference session: frame-ready → composited **p50 5,921 / p95 7,078 / p99 7,318 /
+max 7,396 µs**, measured refresh **13,298 µs (~75 Hz)**. Verdicts against the locked thresholds: **SOFTWARE-144-
+BUDGET FAIL** (p99 7,318 > 6,944), **HARDWARE-144 FAIL** (refresh 13,298 > 6,944), **SUSTAINED-144Hz FAIL**. The
+two failures share one cause: the measured interval is frame-ready → *DwmFlush returns*, and DwmFlush blocks
+until the next DWM composition, so the present time is the compositor phase wait — bounded by the refresh period
+(~half of 13,298 µs). The composed-GDI present is therefore refresh-coupled: on a sub-144Hz panel it cannot fit
+the 144Hz budget, not because the software is slow but because DWM composition wait scales with refresh. This is
+the baseline the preregistration named. Whether present latency can be *decoupled* from refresh is **PRESENT-1's
+hypothesis** (a flip-model / waitable-swapchain path), NOT a consequence LATENCY-0 establishes; reaching
+HARDWARE-144 needs a ≥144Hz panel.
+
+**Grade.** DECLARED: the preregistered method, thresholds and interpretation (hash-locked). MEASURED: that the
+method IS locked (`latency-preregistered`), and the host number itself — p50/p95/p99/max and the refresh, on
+host DANIELDILLBERG, refuting SUSTAINED-144Hz honestly (both conditions FAIL, recorded not massaged). ESTABLISHED
+(read off the mechanism): the composed-GDI present is refresh-coupled (frame-ready → next composition), so
+SOFTWARE-144-BUDGET *measured on this path* is not display-independent. What LATENCY-0 does NOT establish: that
+any other present path could isolate a display-free software latency — that is PRESENT-1's hypothesis, to be
+measured, not assumed here.
 
 **does_not_show.** Any latency number (none is claimed until the host record lands). Input-to-photon (capture
 hardware). Render time (the kernel bench). The present wait beyond composition (a flip-model / waitable-swapchain
@@ -642,14 +657,16 @@ The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *aut
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two
 into one interleaved log where authoring and moving genuinely interact — the studio's real loop — and
 SHELL-PLAYBACK proves the window *displays exactly that becoming* and nothing else, through the SHELL-0 blit law.
-SHELL-PLAYBACK-b now plays a sealed session in the real window (host-run), and LATENCY-0's method is locked.
-Each rung was proven headless first. What remains:
+SHELL-PLAYBACK-b now plays a sealed session in the real window (host-run), and LATENCY-0 is measured: on host
+DANIELDILLBERG the composed-GDI present is refresh-coupled (~75Hz panel), so SOFTWARE-144-BUDGET, HARDWARE-144
+and SUSTAINED-144Hz all FAIL honestly — a measured refutation that names its own next lever. Each rung was
+proven headless first. What remains:
 
-- **LATENCY-0's host number.** The method is preregistered and hash-locked and the instrument ships
-  (`playback_window --measure`); the number itself is the owner's host run — `shell playback-window --session S
-  --measure N --host <name>` under `--cfg shell_window`, then `verify/seal_latency.py`, producing
-  `shell/attest/latency-<host>.json`. It will report SOFTWARE-144-BUDGET, HARDWARE-144 and SUSTAINED-144Hz from
-  the measured numbers against the locked thresholds — with a slow panel refuting HARDWARE-144 honestly.
+- **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* (measured) only that the composed-GDI
+  present is refresh-coupled on the host. PRESENT-1's *hypothesis* — falsifiable, to be measured, never assumed —
+  is that a flip-model present with a waitable swapchain CAN decouple present latency from the refresh interval
+  and let a display-free software present latency be measured, compared against LATENCY-0's committed baseline.
+  Off-gate/host, a later shell rung; reaching HARDWARE-144 additionally needs a ≥144Hz panel.
 - **The named future slices** (courted, not seated): IMPOSSIBILITY-0 (measured negative results as level
   preconditions), SEMANTIC-0 (a float-free, geometry-bound semantic layer as a Verðandi-local new-semantics
   authority), MERGE-0 (deterministic commutative merge of non-conflicting edits, stripped of consensus/time).
