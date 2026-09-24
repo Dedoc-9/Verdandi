@@ -1,0 +1,35 @@
+{
+ "name": "verdandi-walk",
+ "version": 1,
+ "claim_class": "established",
+ "provenance": {
+  "tool": "workshop/input.rs + verify/seal_walk.py",
+  "oracle_authority": "witness/identity, frozen from Urðr"
+ },
+ "validity_scope": {
+  "certifies": "a fixed camera walk (commands LFFRFFBQE from 34,28,W) over the frozen authority (W 1b84db41a5fb… M 52e8b54ae508…) replays to this head; the trajectory (final 33,28,W, 9 steps, 2 blocked) and every step's kernel URDRFB1 frame digest are reproducible on any host",
+  "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+  "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+  "head": "02df6049e8fe26b848cfca73968dd528c8fb239889c74b544dc4f194d2173991"
+ },
+ "forbidden_interpretations": [
+  "a wall-clock or any timing (a walk carries no time; it is a pure headless replay)",
+  "an edit, or any change to W or M (the camera is projection-owned per WORKSHOP-0b; a walk reads the authority, never writes it)",
+  "a skybox or physics (a walk moves the camera through the frozen geometry only — no new VIEW or CORE)",
+  "the shell's key/mouse capture (that is INPUT-0b, host-run; this head is the headless command→camera→frame discipline)"
+ ],
+ "data": {
+  "level": "oracle/levels/witness.lvl",
+  "tiles": "oracle/tiles/identity.tiles",
+  "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+  "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+  "camera": "34,28,W",
+  "commands": "LFFRFFBQE",
+  "final": "33,28,W",
+  "steps": 9,
+  "blocked": 2,
+  "head": "02df6049e8fe26b848cfca73968dd528c8fb239889c74b544dc4f194d2173991"
+ },
+ "reading": "",
+ "chain_hash": "7ee8107c1e61a49b074d14f9906659b83a3eb9add3dd530f48c33403e6f4d1bf"
+}

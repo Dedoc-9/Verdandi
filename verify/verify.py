@@ -21,7 +21,10 @@ does not compile, while read-then-edit does and renders the kernel's witnesses),
 text (TEXT-0: the level as text — round-trips to the same W, and tells a reformat from an edit: a comment or
 blank line moves the authoring digest and not W, a cell edit moves both),
 workshop1 (WORKSHOP-1: the log is the history — a session is a base authority + a hash-chained cell/tile edit
-log; undo is replay, propose is a scratchpad, tampering breaks the chain; a Python twin re-derives the head).
+log; undo is replay, propose is a scratchpad, tampering breaks the chain; a Python twin re-derives the head),
+input (INPUT-0: moving around is the projection's job — a typed command log (L/R/F/B/Q/E) moves the camera
+against a FIXED level, blocked by rock, and replays headless to a head that chains each step's kernel frame
+digest; a walk never touches W or M, a tampered command breaks the chain, and a Python twin re-derives the head).
 """
 from __future__ import annotations
 
@@ -1182,6 +1185,224 @@ def workshop1_demo():
             "frozen witness base; committed %d, irreversible %d, durable — a session is a hash-chained file" % (d["head"][:12], len(d["log"]), ts["committed"], ts["irreversible"]))
 
 
+# ------------------------------------------------------------------ input (INPUT-0)
+INPUT_EXE = None
+WLK = os.path.join(BUILD, "wlk")
+_FWD = {0: (0, -1), 1: (1, 0), 2: (0, 1), 3: (-1, 0)}   # N E S W — matches the kernel's `direction`
+_LETTER = {0: "N", 1: "E", 2: "S", 3: "W"}
+
+
+def input_build():
+    global INPUT_EXE
+    INPUT_EXE = compile_rs(WORKSHOP, "input.rs", "input")
+    if os.path.isdir(WLK):
+        shutil.rmtree(WLK)
+    os.makedirs(WLK)
+    return "workshop/input.rs compiled live: replay / write / verify — a typed command log (L R F B Q E) moves the camera against a fixed level and chains each step's kernel URDRFB1 frame digest into a head"
+
+
+# --- the Python movement + chain twin: reproduce the trajectory and the head independently ---
+def _grid(level_bytes):
+    import struct as _s
+    w = _s.unpack_from("<I", level_bytes, 8)[0]
+    rows = _s.unpack_from("<I", level_bytes, 12)[0]
+    return w, rows, level_bytes[16:16 + w * rows]
+
+
+def _walk_trav(level_bytes, x, z):
+    w, rows, cells = _grid(level_bytes)
+    return 0 <= x < w and 0 <= z < rows and cells[z * w + x] != ord("#")
+
+
+def _walk_step(level_bytes, cam, cmd):
+    x, z, f = cam
+    if cmd == "L":
+        return (x, z, (f + 3) % 4)
+    if cmd == "R":
+        return (x, z, (f + 1) % 4)
+    d = {"F": _FWD[f], "B": (-_FWD[f][0], -_FWD[f][1]), "Q": _FWD[(f + 3) % 4], "E": _FWD[(f + 1) % 4]}[cmd]
+    nx, nz = x + d[0], z + d[1]
+    return (nx, nz, f) if _walk_trav(level_bytes, nx, nz) else (x, z, f)   # blocked = a no-op
+
+
+def _walk_cams(level_bytes, cam0, commands):
+    cams, cam, blocked = [cam0], cam0, 0
+    for cmd in commands:
+        if cmd.isspace():
+            continue
+        before = (cam[0], cam[1])
+        cam = _walk_step(level_bytes, cam, cmd)
+        if cmd in "FBQE" and (cam[0], cam[1]) == before:
+            blocked += 1
+        cams.append(cam)
+    return cams, blocked
+
+
+def _walk_frame(cam):
+    """the kernel executable's URDRFB1 frame digest for a camera over the witness/identity authority."""
+    x, z, f = cam
+    return witnesses(KERNEL_EXE, "witness", "identity", "%d,%d,%s" % (x, z, _LETTER[f]))[0]
+
+
+def _walk_head(cams):
+    """chain the per-step frame digests exactly as input.rs: genesis sha256(MAGIC‖frame0), then sha256(acc‖frame)."""
+    frames = [_walk_frame(c) for c in cams]
+    acc = hashlib.sha256(b"VWLK1" + frames[0].encode()).digest()
+    for fr in frames[1:]:
+        acc = hashlib.sha256(acc + fr.encode()).digest()
+    return acc.hex(), frames
+
+
+def _replay(camera, commands):
+    lvl = os.path.join(ORACLE, "levels", "witness.lvl")
+    tls = os.path.join(ORACLE, "tiles", "identity.tiles")
+    code, out, err = run(INPUT_EXE, ["replay", "--level", lvl, "--tiles", tls, "--camera", camera, "--commands", commands])
+    if code != 0:
+        raise Red("replay %s: %s" % (commands, err.strip()))
+    d = {}
+    for ln in out.strip().splitlines():
+        if ln.startswith("final camera "):
+            p = ln.split()
+            d["final"] = "%s,%s,%s" % (p[2], p[3], p[4])
+        elif ln.startswith("steps "):
+            p = ln.split()
+            d["steps"], d["blocked"] = int(p[1]), int(p[3])
+        elif ln.startswith("head "):
+            d["head"] = ln.split()[1]
+    return d
+
+
+def input_replay():
+    need_rustc()
+    cam0, commands = (34, 28, 3), "LFFRF"   # from the witness spawn, facing W
+    rep = _replay("34,28,W", commands)
+    level_bytes = read(os.path.join(ORACLE, "levels", "witness.lvl"))
+    cams, blocked = _walk_cams(level_bytes, cam0, commands)
+    twin_head, _frames = _walk_head(cams)
+    if twin_head != rep["head"]:
+        raise Red("the Python movement+chain twin head %s != input replay's head %s" % (twin_head[:12], rep["head"][:12]))
+    if (len(cams) - 1, blocked) != (rep["steps"], rep["blocked"]):
+        raise Red("the twin's step/blocked (%d/%d) disagree with replay (%d/%d)" % (len(cams) - 1, blocked, rep["steps"], rep["blocked"]))
+    fc = cams[-1]
+    if "%d,%d,%s" % (fc[0], fc[1], _LETTER[fc[2]]) != rep["final"]:
+        raise Red("the twin's final camera %s != replay's %s" % ((fc[0], fc[1], _LETTER[fc[2]]), rep["final"]))
+    return ("a %d-command walk (LFFRF) replays to camera %s and head %s; a Python twin reimplements the movement rules "
+            "(L/R turn, F/B/Q/E step, blocked=no-op) and chains the kernel executable's frame digests (genesis "
+            "sha256(MAGIC‖frame0), then sha256(acc‖frame)) to the SAME head — trajectory AND chain are cross-checked, "
+            "and the frame digests come from a separate kernel process than input.rs's library copy" % (rep["steps"], rep["final"], rep["head"][:12]))
+
+
+def input_blocked():
+    need_rustc()
+    level_bytes = read(os.path.join(ORACLE, "levels", "witness.lvl"))
+    # (34,29) faces S onto (34,30); that target is rock, so F must be a no-op, still logged
+    if _walk_trav(level_bytes, 34, 30):
+        raise Red("the blocked-step precondition failed: (34,30) is not rock")
+    rep = _replay("34,29,S", "F")
+    if rep["final"] != "34,29,S":
+        raise Red("a blocked forward moved the camera to %s" % rep["final"])
+    if (rep["steps"], rep["blocked"]) != (1, 1):
+        raise Red("the blocked step was not counted (steps %d blocked %d)" % (rep["steps"], rep["blocked"]))
+    # the no-op is witnessed: its frame equals the unchanged camera's frame, and the head is the two-frame chain of it
+    twin_head, frames = _walk_head([(34, 29, 2), (34, 29, 2)])
+    if frames[0] != frames[1]:
+        raise Red("a blocked step's frame is not the unchanged camera's frame")
+    if twin_head != rep["head"]:
+        raise Red("the blocked walk's head %s != the twin's %s" % (rep["head"][:12], twin_head[:12]))
+    return ("walking into rock (camera 34,29,S, F onto rock at 34,30) does not move the camera — final stays 34,29,S — yet the "
+            "step is still logged: its frame digest equals the unchanged camera's, and the head is the two-frame chain of that "
+            "one repeated frame; a wall stops you deterministically and the no-op is witnessed, never dropped")
+
+
+def input_tamper():
+    need_rustc()
+    wp = os.path.join(WLK, "tamper.walk")
+    with open(wp, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("; a walk to tamper\nlevel %s\ntiles %s\ncamera 34 28 W\ncommands LFFRF\n"
+                 % (os.path.join(ORACLE, "levels", "witness.lvl"), os.path.join(ORACLE, "tiles", "identity.tiles")))
+    code, out, err = run(INPUT_EXE, ["write", "--walk", wp])
+    if code != 0:
+        raise Red("write: " + err.strip())
+    code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
+    if code != 0 or "verify OK" not in out:
+        raise Red("the written walk did not verify: " + (out + err).strip())
+    original = read(wp)
+    # tamper: change one command (L -> R) without recomputing the stored head
+    with open(wp, "wb") as fh:
+        fh.write(original.replace(b"commands LFFRF", b"commands RFFRF"))
+    code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
+    if code != 2 or "CHAIN-BROKEN" not in err:
+        raise Red("a tampered command was not caught: %d %s" % (code, (out + err).strip()[:60]))
+    with open(wp, "wb") as fh:
+        fh.write(original)
+    code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
+    if code != 0:
+        raise Red("the restored walk did not re-verify")
+    return ("`input write` seals a walk's head; changing one command (L→R) without recomputing it makes `input verify` replay and "
+            "catch CHAIN-BROKEN (exit 2) — a different first turn takes a different trajectory, hence different frames, hence a "
+            "different head; restored to the original bytes, the walk re-verifies")
+
+
+def input_not_authority():
+    need_rustc()
+    c = corpus()
+    lvl = os.path.join(ORACLE, "levels", "witness.lvl")
+    tls = os.path.join(ORACLE, "tiles", "identity.tiles")
+    W0, M0 = sha256(read(lvl)), sha256(read(tls))
+    if W0 != c["levels"]["witness"]["W"] or M0 != c["tiles"]["identity"]["M"]:
+        raise Red("the base authority is not the frozen witness/identity")
+    wp = os.path.join(WLK, "na.walk")
+    with open(wp, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("level %s\ntiles %s\ncamera 34 28 W\ncommands LFFRF\n" % (lvl, tls))
+    for verb in ("write", "verify"):
+        code, _o, err = run(INPUT_EXE, [verb, "--walk", wp])
+        if code != 0:
+            raise Red("%s: %s" % (verb, err.strip()))
+    rep = _replay("34,28,W", "LFFRF")
+    if rep["final"].rsplit(",", 1)[0] == "34,28":
+        raise Red("the walk did not move the camera, so this proves nothing")
+    if sha256(read(lvl)) != W0 or sha256(read(tls)) != M0:
+        raise Red("replaying/verifying a walk changed the level or tiles file — the camera is NOT projection-owned")
+    return ("a walk moves the camera (34,28 → %s) but leaves the authority untouched: after write+verify+replay the level's W (%s…) "
+            "and the tiles' M (%s…) are byte-identical to the frozen witness/identity — moving around is a VIEW mutation, never an "
+            "edit (WORKSHOP-0b), so the shell cannot smuggle a world change in through the camera" % (rep["final"], W0[:8], M0[:8]))
+
+
+def input_demo():
+    need_rustc()
+    rec = envelope.read(os.path.join(ROOT, "workshop", "attest", "walk-demo.json"))  # sealed under RECORD-0
+    if rec["name"] != "verdandi-walk" or rec["claim_class"] != "established":
+        raise Red("the demo is not an established verdandi-walk")
+    d = rec["data"]
+    c = corpus()
+    lvl = os.path.join(ORACLE, "levels", "witness.lvl")
+    tls = os.path.join(ORACLE, "tiles", "identity.tiles")
+    if d["W"] != c["levels"]["witness"]["W"] or d["M"] != c["tiles"]["identity"]["M"]:
+        raise Red("the demo's base is not the frozen witness/identity authority")
+    if sha256(read(lvl)) != d["W"] or sha256(read(tls)) != d["M"]:
+        raise Red("the demo's W/M do not equal the oracle files")
+    # the binary re-derives the sealed head, and the Python twin re-derives it independently
+    wp = os.path.join(WLK, "demo.walk")
+    with open(wp, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("level %s\ntiles %s\ncamera %s\ncommands %s\nhead %s\n"
+                 % (lvl, tls, d["camera"].replace(",", " "), d["commands"], d["head"]))
+    code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
+    if code != 0 or ("head " + d["head"][:12]) not in out:
+        raise Red("the sealed walk did not verify to its head: " + (out + err).strip())
+    cam0 = tuple(int(v) for v in d["camera"].split(",")[:2]) + ({"N": 0, "E": 1, "S": 2, "W": 3}[d["camera"].split(",")[2]],)
+    cams, blocked = _walk_cams(read(lvl), cam0, d["commands"])
+    twin_head, _f = _walk_head(cams)
+    fc = cams[-1]
+    if twin_head != d["head"]:
+        raise Red("the Python twin head %s != the sealed head %s" % (twin_head[:12], d["head"][:12]))
+    if (len(cams) - 1, blocked, "%d,%d,%s" % (fc[0], fc[1], _LETTER[fc[2]])) != (d["steps"], d["blocked"], d["final"]):
+        raise Red("the twin's trajectory disagrees with the sealed final/steps/blocked")
+    return ("the committed demo (workshop/attest/walk-demo.json, sealed under RECORD-0) is a reference walk (commands %s, all six "
+            "letters) that `input verify` replays to its sealed head %s over %d steps (%d blocked), and a Python twin re-derives "
+            "that head on the frozen witness base — a walk is a hash-chained file, established (host-independent), not measured"
+            % (d["commands"], d["head"][:12], d["steps"], d["blocked"]))
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -1229,6 +1450,12 @@ def main() -> int:
     row("workshop1-propose", workshop1_propose)
     row("workshop1-tamper", workshop1_tamper)
     row("workshop1-demo", workshop1_demo)
+    row("input-build", input_build)
+    row("input-replay", input_replay)
+    row("input-blocked", input_blocked)
+    row("input-tamper", input_tamper)
+    row("input-not-authority", input_not_authority)
+    row("input-demo", input_demo)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

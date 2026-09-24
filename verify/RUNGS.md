@@ -416,6 +416,58 @@ ever differs from replay; `workshop1-propose` if a propose writes or an invalid 
 `workshop1-tamper` if a changed entry is not caught; `workshop1-demo` if the committed session stops replaying
 to its head.
 
+## INPUT-0 — moving around is the projection's job, and a walk replays headless (seat 9)
+
+**What landed.** `workshop/input.rs` (std-only): a **walk** is an initial camera and an ordered log of typed
+movement commands, replayed against a FIXED level to reproduce the whole camera trajectory and the frame at
+every step. The commands are one letter each — `L`/`R` turn (the facing rotates; the cell does not move),
+`F`/`B` step along the facing, `Q`/`E` strafe perpendicular — and each is pure and validated against the
+level: a step is valid iff the target cell is in the level and not `#` rock, so **walking into a wall does not
+move you** (a blocked step is a no-op, still logged). The witness of each step is the kernel's `URDRFB1` frame
+digest for (level, camera, tiles), chained into a head like a session: `head = sha256( … sha256( sha256(MAGIC‖
+frame0) ‖ frame1 ) … ‖ frameN )`. So a `.walk` file (`VWLK1`, line-oriented, `;` comments) is a hash-chained
+artifact: `input write` seals the head, `input verify` replays and catches a tampered command. The camera is
+never in W or M — a walk reads the authority and never writes it. `verify/seal_walk.py` seals a reference walk
+under RECORD-0 as an *established* (host-independent) record.
+
+**Design, searched.** This is WORKSHOP-0b made operational: the camera is projection-owned, so moving it is a
+VIEW mutation, not an edit, and the shell cannot smuggle a camera into the studio because the walk replays
+*without* the shell. The direction vectors (N=(0,−1), E=(1,0), S=(0,1), W=(−1,0)) are read straight off the
+kernel's `direction`, so the studio and the renderer agree on which way is forward by construction, not by a
+second table. The head is the session pattern (genesis over the first frame, then a fold) applied to *frame
+digests* rather than authority digests — a walk witnesses the geometry the camera sees, deterministically, on
+any host. NOT here: the shell's key/mouse capture (`WM_KEYDOWN` → a command) is **INPUT-0b**, cfg-gated to
+Windows in the shell and run on the host; this file is the headless command → camera → frame discipline the
+gate exercises.
+
+**Rows.** `input-build` — compiles. `input-replay` — a 5-command walk (`LFFRF`) replays to a camera and head,
+and a Python twin *reimplements the movement rules* and chains the frame digests of a *separate kernel process*
+to the SAME head (trajectory AND chain cross-checked across two languages and two processes). `input-blocked` —
+a forward onto rock does not move the camera, yet the step is logged: its frame equals the unchanged camera's,
+and the head is the two-frame chain of that repeat. `input-tamper` — changing one command without recomputing
+the head makes `verify` catch `CHAIN-BROKEN` (exit 2); restored, it re-verifies. `input-not-authority` — a
+walk moves the camera but the level's W and the tiles' M are byte-identical afterward (the camera is
+projection-owned). `input-demo` — the committed sealed walk (`workshop/attest/walk-demo.json`, commands
+`LFFRFFBQE`, all six letters) replays to its sealed head over 9 steps (2 blocked), and a Python twin re-derives
+it.
+
+**Grade.** MEASURED: replay/head, the two-language two-process twin, the blocked no-op, tamper detection,
+authority-untouched, the sealed demo — all live. ESTABLISHED: the direction vectors equal the kernel's
+`direction` (read off the source); a blocked step is a no-op (the target-cell test). DECLARED: the `VWLK1`
+chain construction and the one-letter command vocabulary.
+
+**does_not_show.** The shell's key/mouse capture (INPUT-0b, host-run — a walk is what a captured session would
+*produce*, not the capture). Appearance/lighting beyond geometry (the frame digest is the geometry the camera
+sees; M is carried but a walk does not witness a texture change). Collision volume beyond a cell being rock
+(the traversability test is per-cell, not sub-cell). A skybox or physics (a walk moves through the frozen
+geometry only). That the chain defeats a simultaneous rewrite of commands and head (it does not; the outer seal
+and git anchor that).
+
+**Falsifier.** `input-replay` reddens if the head or trajectory ever diverges from the twin; `input-blocked` if
+a wall ever moves the camera or the no-op is dropped from the chain; `input-tamper` if a changed command is not
+caught; `input-not-authority` if replaying a walk ever changes W or M; `input-demo` if the committed walk stops
+replaying to its sealed head.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -429,5 +481,6 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   authors no physics before a certified semantics renders it; anything else would be a second authority, which
   the charter forbids.
 
-The seated order's authoring rungs (WORKSHOP-1, INPUT-0) reach walls, ground and textures — everything the
-frozen oracle certifies. Skybox and physics are beyond it, named here, gated behind the new-semantics route.
+The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
+textures, and INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit). Skybox and physics are
+beyond it, named here, gated behind the new-semantics route.
