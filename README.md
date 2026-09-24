@@ -68,12 +68,15 @@ is a second authority.
          │
     KERNEL-0 ──── the placement reproduces the oracle natively, against the tag
          │
-    WORKSHOP-0 ── edit → new authority → witness diff, with the planted falsifiers
+    WORKSHOP-0 ── edit → new authority → witness diff (0/0b: three witness grains, a recorded signature)
          │
     HUD-0 ─────── the overlay is a frame: reticle, band bar, facing plate, minimap — pinned, index-free
          │
+    RECORD-0 ──── every record carries claim_class, scope, forbidden readings and a chain hash, read
+         │        through one firewall in two languages; rungs preregister a failure condition
+         │        (a fork of the owner's executable-epistemics)
     SHELL-0 ───── a real window (hand-rolled Win32, zero crates), frame → composited timed;
-         │        the shell hashes what it blits
+         │        the shell hashes what it blits; born under the envelope, preregistered
     MEMBRANE-0 ── the one-way law as a compile-time wall (a row whose PASS is rustc refusing a plant)
          │
     TEXT-0 ────── the level as text, content split from provenance
@@ -83,8 +86,9 @@ is a second authority.
     INPUT-0 ───── shell input → typed command → new camera; the command log replays headless
          │
     LATENCY-0 ─── receipt → kernel → composited, two instruments (DWM timing beside PresentMon);
-         │        never input-to-photon (input transport, present wait beyond composition and the
-         │        panel need capture hardware; nothing here claims them)
+         │        never input-to-photon
+    GAUNTLET-0 ── the strip cache: reuse strips + frame across frames with a still camera (proven safe)
+         │
     GAUNTLET-1 ── the incremental floor cast: faster AND the same witnesses
          │
     GAUNTLET-2 ── columns in parallel, invariant under the thread count
@@ -104,6 +108,7 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/kernel --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
     verify/build/kernel ... --bench 200 --warm 20            # off-gate: renderer time on this host
     verify/build/kernel ... --hud --write-png out.ppm         # the composite with the overlay, to look at
+    python verify/bench.py --host $env:COMPUTERNAME           # off-gate: the kernel's frame time, sealed under the envelope
     rustc -O workshop/edit.rs -o verify/build/edit           # the workshop
     verify/build/edit record --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles \
         --camera 34,28,W --edit cell:31,27,. --out-dir out --name cell

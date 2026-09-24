@@ -11,16 +11,22 @@ consecutive runs are byte-identical when the tree is; that identity is the landi
 Stages: oracle (pure Python, the frozen evidence is self-consistent), kernel (the placement reproduces the
 oracle natively; the corpus; the mirrored sign table as the control that shows the rows can redden),
 workshop (an edit is a new authority and the witnesses say what it moved; the planted falsifiers bite),
-hud (the overlay is a frame: pinned, index-free, inside its region, reading state and not materials).
+hud (the overlay is a frame: pinned, index-free, inside its region, reading state and not materials),
+records (RECORD-0: every record Verðandi mints passes the envelope's firewall, the two writers agree, and a
+rung that produces a number on a host was preregistered with a failure condition).
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import envelope  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ORACLE = os.path.join(ROOT, "oracle")
@@ -264,8 +270,7 @@ def record(name: str, spec: str, extra: list[str] | None = None) -> dict:
     code, out, _err = run(EDIT_EXE, args)
     if code != 0:
         raise Red(f"record refused: {out.strip().splitlines()[0] if out.strip() else code}")
-    with open(os.path.join(WS, name + ".record.json"), encoding="utf-8") as fh:
-        return json.load(fh)
+    return envelope.read(os.path.join(WS, name + ".record.json"))["data"]
 
 
 def refusal(name: str, spec: str) -> str:
@@ -289,14 +294,18 @@ def check_ok(name: str) -> str:
     return line
 
 
-def tampered(name: str, suffix: str, mutate) -> str:
-    """Write a tampered copy of a record beside the original (same files) and return its path."""
+def tampered(name: str, suffix: str, mutate, reseal: bool = True) -> str:
+    """Write a tampered copy of a record beside the original (same files) and return its path. The plants
+    against `check`'s laws are RESEALED (a fresh chain hash) so that they reach the law they target; the
+    envelope plants are not."""
     with open(os.path.join(WS, name + ".record.json"), encoding="utf-8") as fh:
         r = json.load(fh)
-    mutate(r)
+    mutate(r["data"])
+    if reseal:
+        r["chain_hash"] = envelope.chain_hash(r)
     path = os.path.join(WS, f"{name}.{suffix}.record.json")
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(r, fh, indent=1)
+        json.dump(r, fh, indent=1, ensure_ascii=False)
     return path
 
 
@@ -380,36 +389,46 @@ def workshop_outside():
     line = check_ok("outside")
     if not line.startswith("CHECK OK outside-view"):
         raise Red(line)
+    why = c.get("explanation")
+    if why != "inside the view cone, occluded":
+        raise Red(f"explanation {why!r}")
     return ("cell (1, 1) rock -> floor, out of the camera's view — signature outside-view: W moved; strips, frame and pixels UNMOVED; "
-            "0 columns; CHECK OK. An edit the world accepts and the screen does not see is a consequence, not a fault: the proposed "
-            "biconditional authority-moved <=> projection-moved would refuse it as VACUOUS-EDIT")
+            "0 columns; CHECK OK; explanation computed and re-derived: inside the view cone, occluded. An edit the world accepts and the "
+            "screen does not see is a consequence, not a fault: the proposed biconditional authority-moved <=> projection-moved would refuse it")
 
 
 def workshop_census():
-    """The off-gate census record re-derives its provenance and states the number."""
+    """The off-gate census record re-derives its provenance, states the number, and holds the cone theorem."""
     path = os.path.join(ROOT, "workshop", "attest", "census-witness.json")
-    with open(path, encoding="utf-8") as fh:
-        r = json.load(fh)
+    r = envelope.read(path)
     c = corpus()
-    if r["name"] != "verdandi-edit-census" or r["version"] != 1:
-        raise Red("not a census record")
-    if r["W"] != c["levels"]["witness"]["W"] or r["M"] != c["tiles"]["identity"]["M"]:
+    if r["name"] != "verdandi-edit-census" or r["version"] != 2:
+        raise Red("not a census record v2")
+    pv, d = r["provenance"], r["data"]
+    if pv["W"] != c["levels"]["witness"]["W"] or pv["M"] != c["tiles"]["identity"]["M"]:
         raise Red("the census was not taken on the frozen witness authority")
     w = c["scenes"]["witness"]["witnesses"]["identity"]
-    if r["base"]["frame"] != w["frame"] or r["base"]["pixels"] != w["pixels"] or r["camera"] != c["scenes"]["witness"]["camera"]:
+    if pv["base"]["frame"] != w["frame"] or pv["base"]["pixels"] != w["pixels"] or pv["camera"] != c["scenes"]["witness"]["camera"]:
         raise Red("the census's base witnesses are not the corpus's")
-    if r["impossible"] != 0 or r["unexplained_columns_total"] != 0:
-        raise Red(f"impossible {r['impossible']}, unexplained {r['unexplained_columns_total']}")
-    sig = r["signatures"]
-    if sum(sig.values()) != r["tested"]:
+    if d["impossible"] != 0 or d["unexplained_columns_total"] != 0:
+        raise Red(f"impossible {d['impossible']}, unexplained {d['unexplained_columns_total']}")
+    sig = d["signatures"]
+    if sum(sig.values()) != d["tested"]:
         raise Red("the signature counts do not sum to the edits tested")
     ov = sig.get("outside-view", 0)
     if ov == 0:
         raise Red("no outside-view edit in the census — the biconditional's refutation has no witness")
-    return (f"workshop/attest/census-witness.json (off-gate, {r['tested']} single-cell edits of the witness level under (34, 28, W)): "
+    cone = d["cone"]
+    if cone["geometry_outside_cone"] != 0:
+        raise Red(f"{cone['geometry_outside_cone']} geometry edits lie OUTSIDE the view cone — the cone theorem is false")
+    if sum(cone["inside"].values()) + sum(cone["outside"].values()) != d["tested"]:
+        raise Red("the cone split does not sum to the edits tested")
+    ov_in, ov_out = cone["inside"].get("outside-view", 0), cone["outside"].get("outside-view", 0)
+    return (f"workshop/attest/census-witness.json (off-gate, {d['tested']} single-cell edits of the witness level under (34, 28, W)): "
             f"{', '.join(f'{v} {k}' for k, v in sorted(sig.items(), key=lambda kv: -kv[1]))}; impossible 0; unexplained columns 0 — "
-            f"{ov * 1000 // r['tested']} permille of legitimate edits move the authority and nothing on screen, and the one-directional laws "
-            f"held on every edit; the record's provenance (W, M, camera, base witnesses) equals the frozen corpus")
+            f"{ov * 1000 // d['tested']} permille of legitimate edits move the authority and nothing on screen. THE CONE: every geometry edit "
+            f"lies inside the view cone (0 outside); of the outside-view edits {ov_out} are outside the cone (a coordinate test could name them) "
+            f"and {ov_in} inside it, occluded (only the traversal can); the record's provenance equals the frozen corpus and its chain hash seals it")
 
 
 def workshop_stale():
@@ -426,7 +445,7 @@ def workshop_stale():
 def workshop_projection():
     need_rustc()
     with open(os.path.join(WS, "cell.record.json"), encoding="utf-8") as fh:
-        other = json.load(fh)["after"]["pixels"]
+        other = json.load(fh)["data"]["after"]["pixels"]
 
     def moved(r):
         r["after"]["pixels"] = other
@@ -485,8 +504,7 @@ HUD: dict = {}   # (scene, tiles) -> hud_lines, filled by hud_pins
 
 
 def pins() -> dict:
-    with open(PINS, encoding="utf-8") as fh:
-        return json.load(fh)
+    return envelope.read(PINS)
 
 
 def hud_pins():
@@ -497,7 +515,7 @@ def hud_pins():
         for tname in e["witnesses"]:
             h = hud_lines(KERNEL_EXE, e["level"], tname, camera_of(e))
             HUD[(name, tname)] = h
-            want = p["scenes"][name][tname]
+            want = p["data"]["scenes"][name][tname]
             if h["hud_overlay"] != want["hud_overlay"]:
                 raise Red(f"{name}/{tname}: overlay {h['hud_overlay'][:12]} != pinned {want['hud_overlay'][:12]}")
             if h["hud"] != want["hud"]:
@@ -571,7 +589,7 @@ def hud_selftest():
     moved, kept = [], []
     for name, e in c["scenes"].items():
         hb = hud_lines(exe_b, e["level"], "identity", camera_of(e))
-        same = hb["hud_overlay"] == p["scenes"][name]["identity"]["hud_overlay"]
+        same = hb["hud_overlay"] == p["data"]["scenes"][name]["identity"]["hud_overlay"]
         faces_w = e["camera"][2] == "W"
         if faces_w and not same:
             raise Red(f"{name} faces W and its overlay moved under the frozen-W plant")
@@ -580,6 +598,112 @@ def hud_selftest():
         (kept if faces_w else moved).append(name)
     return (f"PLANTS: one pixel outside the region is counted (outside=1); the facing frozen to W moves the pinned overlay of "
             f"{', '.join(moved)} and of none of {', '.join(kept)} (which face W) — the pins bite and the HUD reads the camera")
+
+
+# ------------------------------------------------------------------ records (RECORD-0)
+def committed_records() -> list[str]:
+    """Every record Verðandi mints and commits: the pins, the attest folders. The oracle folder is Urðr's evidence
+    and is not enveloped (it is read-only here and verified by oracle-frozen)."""
+    out = []
+    for sub in ("verify/pins", "workshop/attest", "kernel/attest", "shell/attest"):
+        d = os.path.join(ROOT, sub)
+        if os.path.isdir(d):
+            out += sorted(os.path.join(d, f) for f in os.listdir(d) if f.endswith(".json"))
+    return out
+
+
+def records_firewall():
+    paths = committed_records()
+    if not paths:
+        raise Red("no committed records found")
+    for p in paths:
+        try:
+            envelope.read(p)
+        except envelope.EnvelopeViolation as e:
+            raise Red(f"{os.path.relpath(p, ROOT)}: {e}")
+    # the plants: a verdict-shaped key inside data, and a tampered hash — both must be refused by the Python reader
+    base = envelope.read(paths[0])
+    bad = json.loads(json.dumps(base))
+    bad["data"]["verdict"] = "within"
+    bad["chain_hash"] = envelope.chain_hash(bad)
+    try:
+        envelope.validate(bad)
+        raise Red("a verdict-shaped key inside data passed the firewall")
+    except envelope.EnvelopeViolation as e:
+        if "verdict_field" not in str(e):
+            raise Red(f"wrong refusal for the verdict plant: {e}")
+    tam = json.loads(json.dumps(base))
+    tam["data"] = {"tampered": 1, **tam["data"]}
+    try:
+        envelope.validate(tam)
+        raise Red("a record whose data changed after sealing passed the firewall")
+    except envelope.EnvelopeViolation as e:
+        if "chain_hash" not in str(e):
+            raise Red(f"wrong refusal for the tamper plant: {e}")
+    names = ", ".join(os.path.relpath(p, ROOT) for p in paths)
+    return (f"{len(paths)} committed records carry name, version, claim_class, provenance, a scope that says what it certifies, "
+            f"forbidden interpretations and a chain hash over the required fields, with no verdict-shaped key inside data ({names}); "
+            f"PLANTS: a `verdict` key inside data and a change after sealing are both refused")
+
+
+def records_twins():
+    """The Rust writer (workshop/edit.rs) and the Python reader agree on the canonical form: Python recomputes the chain
+    hash of every record Rust sealed during this gate, and Rust refuses the Python-made plants."""
+    need_rustc()
+    rust_written = sorted(os.path.join(WS, f) for f in os.listdir(WS) if f.endswith(".record.json") and f.count(".") == 2)
+    if len(rust_written) < 4:
+        raise Red("expected the workshop's records to be present")
+    for p in rust_written:
+        envelope.read(p)   # validate() recomputes the chain hash in Python over Rust's bytes
+    # Rust must refuse the Python-made plants at the envelope
+    verdict_plant = tampered("cell", "verdict", lambda d: d.__setitem__("verdict", "within"))
+    must_refuse(verdict_plant, "ENVELOPE")
+    tamper_plant = tampered("cell", "tamper", lambda d: d.__setitem__("tampered", 1), reseal=False)
+    must_refuse(tamper_plant, "ENVELOPE")
+    # the two verdict-key sets are the same list
+    src = read(os.path.join(WORKSHOP, "edit.rs")).decode("utf-8")
+    start = src.index("const VERDICT_KEYS")
+    body = src[src.index("= [", start) + 3:src.index("];", start)]
+    rust_keys = set(re.findall(r'"([^"]+)"', body))
+    if rust_keys != set(envelope.VERDICT_KEYS):
+        raise Red(f"the two firewalls disagree on the verdict keys: {sorted(rust_keys ^ set(envelope.VERDICT_KEYS))}")
+    census = envelope.read(os.path.join(ROOT, "workshop", "attest", "census-witness.json"))
+    return (f"Python recomputes the chain hash of {len(rust_written)} records Rust sealed in this run and of the committed census "
+            f"({census['chain_hash'][:12]}…); Rust refuses a verdict key and a post-seal change made in Python (ENVELOPE); "
+            f"the two firewalls carry the same {len(rust_keys)} verdict-shaped keys")
+
+
+def records_preregistered():
+    path = os.path.join(ROOT, "verify", "preregister.json")
+    with open(path, encoding="utf-8") as fh:
+        reg = json.load(fh)
+    if reg["name"] != "verdandi-preregistration":
+        raise Red("not the registry")
+    for rung, e in reg["entries"].items():
+        for k in ("hypothesis", "success_condition", "failure_condition", "interpretation_limits", "instrument"):
+            if not e.get(k):
+                raise Red(f"{rung}: {k} missing — a rung without a failure condition is refused a seat")
+        want = envelope.chain_hash({"name": "verdandi-preregistration-entry", "version": 1, "claim_class": "declared",
+                                    "provenance": {"registered_in": "verify/preregister.json"},
+                                    "validity_scope": {"certifies": f"the conditions {rung} was seated under"},
+                                    "forbidden_interpretations": ["that registering a condition earns it"],
+                                    "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+        if e["chain_hash"] != want:
+            raise Red(f"{rung}: the entry was edited after registration (chain hash)")
+    # every attest record of a preregistered rung must cite its entry's hash
+    cited = []
+    for p in committed_records():
+        r = envelope.read(p)
+        pr = r["provenance"].get("preregistered")
+        if pr:
+            rung, h = pr.get("rung"), pr.get("chain_hash")
+            if rung not in reg["entries"] or reg["entries"][rung]["chain_hash"] != h:
+                raise Red(f"{os.path.relpath(p, ROOT)} cites a registration that does not exist or was changed")
+            cited.append(rung)
+    locked = ", ".join("{} {}".format(k, v["chain_hash"][:8]) for k, v in reg["entries"].items())
+    cite_note = " ({})".format(", ".join(cited)) if cited else " (none yet: SHELL-0's will be the first)"
+    return (f"{len(reg['entries'])} rungs registered with hypothesis, success AND failure conditions and interpretation limits, each entry "
+            f"hash-locked ({locked}); {len(cited)} committed records cite a registration" + cite_note)
 
 
 # ------------------------------------------------------------------ main
@@ -607,6 +731,9 @@ def main() -> int:
     row("hud-region", hud_region)
     row("hud-materials", hud_materials)
     row("hud-selftest", hud_selftest)
+    row("records-firewall", records_firewall)
+    row("records-twins", records_twins)
+    row("records-preregistered", records_preregistered)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

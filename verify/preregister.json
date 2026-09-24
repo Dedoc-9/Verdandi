@@ -1,0 +1,32 @@
+{
+ "name": "verdandi-preregistration",
+ "version": 1,
+ "reading": "a fork of executable-epistemics' registry: a rung that will produce a number on a host registers its hypothesis, success condition, failure condition and interpretation limits HERE, before its instrument runs; the entry's chain hash is what the rung's record must cite; an entry without a failure condition is refused a seat",
+ "entries": {
+  "RECORD-0": {
+   "rung": "RECORD-0",
+   "hypothesis": "every record Verðandi mints can be written by two languages and read through one firewall without a verdict entering data",
+   "success_condition": "records-firewall PASSES over every committed record; records-twins shows Python recomputes the chain hash of every Rust-written record; a planted verdict key and a planted tampered hash are both refused by BOTH readers",
+   "failure_condition": "any committed record lacks a field, carries a verdict-shaped key, or has a chain hash the other language cannot reproduce; or a plant passes either reader",
+   "interpretation_limits": [
+    "a chain hash detects tampering after sealing; it does not make the data true — `check` and the rows do that",
+    "the firewall scans keys, not meaning: a verdict can still be smuggled as a value or a string, and is caught only by reading"
+   ],
+   "instrument": "verify/verify.py rows records-firewall, records-twins, records-preregistered",
+   "chain_hash": "766615422be3f06d70163eec36aba7abad507cc121ed4a96b300897014d4d6a2"
+  },
+  "SHELL-0": {
+   "rung": "SHELL-0",
+   "hypothesis": "a hand-rolled Win32 shell (zero crates) can blit the kernel's composite into a window, prove it blitted what the kernel made, and time frame-ready -> composited on the owner's host",
+   "success_condition": "the blit-hash law holds headless (a byte altered between kernel and blit reddens; the plant bites); on the host, N frames blitted with every blit hash equal to the kernel's composite sha, and a record of frame-ready -> composited p50/p95/p99/max µs with DwmGetCompositionTimingInfo's refresh period beside it, sealed under the envelope with the budgets as data",
+   "failure_condition": "a blit whose hash differs from the kernel's composite goes unrefused; or no composited timestamp can be read from DWM on the host; or the record cannot be sealed without a verdict-shaped key; or the number is not reproducible in shape (order of magnitude) on a second run",
+   "interpretation_limits": [
+    "frame-ready -> composited is not input-to-photon: input transport, the present wait beyond composition and the panel need capture hardware",
+    "a composed GDI present costs at least one refresh interval under DWM (documented); this number is a BASELINE for a later flip-model shell, not a claim of low latency",
+    "Windows-only; a second shell is a later rung"
+   ],
+   "instrument": "shell/win32.rs + verify rows shell-blit-hash, shell-blit-plant; off-gate: shell --measure N on the host -> shell/attest/present-<host>.json",
+   "chain_hash": "de30d1ec9bf60a0a44acd7ee7bd9de4ca9c87d78a3ee5dbc5ecd2cf25c08d8cd"
+  }
+ }
+}

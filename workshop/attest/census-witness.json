@@ -1,82 +1,103 @@
 {
- "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
- "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
- "base": {
-  "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
-  "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35",
-  "strips": "b7f0e5e1ffa22832dbedaafa264ee17b876775c39f0daac67c325545f61e4767"
+ "chain_hash": "cbcaa551fe7cb6ce204e01a3cf986fadc4c899669e215584910e7ac1bde971e2",
+ "claim_class": "measured",
+ "data": {
+  "cone": {
+   "geometry_outside_cone": 0,
+   "inside": {
+    "geometry": 71,
+    "outside-view": 596
+   },
+   "outside": {
+    "outside-view": 712
+   }
+  },
+  "examples": {
+   "geometry": [{
+    "columns_changed": 110,
+    "from": "#",
+    "index_changed": 110,
+    "pixels_changed": 27572,
+    "strips_changed": 110,
+    "to": ".",
+    "x": 30,
+    "z": 25
+   }, {
+    "columns_changed": 273,
+    "from": "#",
+    "index_changed": 273,
+    "pixels_changed": 89982,
+    "strips_changed": 274,
+    "to": ".",
+    "x": 31,
+    "z": 25
+   }, {
+    "columns_changed": 110,
+    "from": ".",
+    "index_changed": 110,
+    "pixels_changed": 29902,
+    "strips_changed": 110,
+    "to": "#",
+    "x": 30,
+    "z": 26
+   }],
+   "outside-view": [{
+    "columns_changed": 0,
+    "from": "#",
+    "index_changed": 0,
+    "pixels_changed": 0,
+    "strips_changed": 0,
+    "to": ".",
+    "x": 1,
+    "z": 1
+   }, {
+    "columns_changed": 0,
+    "from": "#",
+    "index_changed": 0,
+    "pixels_changed": 0,
+    "strips_changed": 0,
+    "to": ".",
+    "x": 2,
+    "z": 1
+   }, {
+    "columns_changed": 0,
+    "from": "#",
+    "index_changed": 0,
+    "pixels_changed": 0,
+    "strips_changed": 0,
+    "to": ".",
+    "x": 3,
+    "z": 1
+   }]
+  },
+  "impossible": 0,
+  "signatures": {
+   "geometry": 71,
+   "outside-view": 1308
+  },
+  "skipped": 1,
+  "tested": 1379,
+  "unexplained_columns_total": 0
  },
- "camera": [34, 28, "W"],
- "edit": "every interior cell except the camera's, rock -> floor or anything else -> rock",
- "examples": {
-  "geometry": [{
-   "columns_changed": 110,
-   "from": "#",
-   "index_changed": 110,
-   "pixels_changed": 27572,
-   "strips_changed": 110,
-   "to": ".",
-   "x": 30,
-   "z": 25
-  }, {
-   "columns_changed": 273,
-   "from": "#",
-   "index_changed": 273,
-   "pixels_changed": 89982,
-   "strips_changed": 274,
-   "to": ".",
-   "x": 31,
-   "z": 25
-  }, {
-   "columns_changed": 110,
-   "from": ".",
-   "index_changed": 110,
-   "pixels_changed": 29902,
-   "strips_changed": 110,
-   "to": "#",
-   "x": 30,
-   "z": 26
-  }],
-  "outside-view": [{
-   "columns_changed": 0,
-   "from": "#",
-   "index_changed": 0,
-   "pixels_changed": 0,
-   "strips_changed": 0,
-   "to": ".",
-   "x": 1,
-   "z": 1
-  }, {
-   "columns_changed": 0,
-   "from": "#",
-   "index_changed": 0,
-   "pixels_changed": 0,
-   "strips_changed": 0,
-   "to": ".",
-   "x": 2,
-   "z": 1
-  }, {
-   "columns_changed": 0,
-   "from": "#",
-   "index_changed": 0,
-   "pixels_changed": 0,
-   "strips_changed": 0,
-   "to": ".",
-   "x": 3,
-   "z": 1
-  }]
- },
- "impossible": 0,
- "level": "witness.lvl",
+ "forbidden_interpretations": ["any other level, camera or tile set", "that a signature unseen here (sub-index, sub-pixel) cannot occur", "a wall-clock (none is inside; the record reproduces byte for byte)", "that an outside-view edit is a fault"],
  "name": "verdandi-edit-census",
- "reading": "the truth table populated: how many single-cell edits of this level under this camera move which witnesses; outside-view = the authority moved and no strip, index or pixel did; a biconditional authority-moved <=> projection-moved would refuse every outside-view edit; the laws that hold are one-directional (unexplained_columns_total is 0 by law, impossible is 0)",
- "signatures": {
-  "geometry": 71,
-  "outside-view": 1308
+ "provenance": {
+  "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+  "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+  "base": {
+   "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+   "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35",
+   "strips": "b7f0e5e1ffa22832dbedaafa264ee17b876775c39f0daac67c325545f61e4767"
+  },
+  "camera": [34, 28, "W"],
+  "level": "witness.lvl",
+  "tiles": "identity.tiles",
+  "tool": "workshop/edit.rs census"
  },
- "skipped": 1,
- "tested": 1379,
- "tiles": "identity.tiles",
- "unexplained_columns_total": 0,
- "version": 1
+ "reading": "the truth table populated: how many single-cell edits of this level under this camera move which witnesses; outside-view = the authority moved and no strip, index or pixel did; the cone = the theorem that a cell any ray can touch lies forward of the eye and no farther sideways than forward (+1 cell): inside/outside count each signature on either side, and geometry_outside_cone is 0 by law; a biconditional authority-moved <=> projection-moved would refuse every outside-view edit; the one-directional laws hold (unexplained_columns_total 0, impossible 0)",
+ "validity_scope": {
+  "certifies": "the consequence signature of every single-cell flip (rock -> floor, anything else -> rock; the border and the camera's cell excepted) of witness.lvl (W 1b84db41a5fb…) under the camera (34, 28, W) with identity.tiles (M 52e8b54ae508…)",
+  "edit_family": "single-cell flips"
+ },
+ "version": 2
 }

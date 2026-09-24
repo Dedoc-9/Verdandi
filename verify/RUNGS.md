@@ -182,3 +182,67 @@ holds for some *other* pair of quantities (none was proposed).
 **Falsifier.** `workshop-outside` reddens if an out-of-view edit is ever refused; `workshop-census` if the
 record stops re-deriving from the corpus or an unexplained column appears; every signature row if its
 classification moves.
+
+## RECORD-0 — the record envelope, the firewall, the preregistration (a fork of executable-epistemics)
+
+**Why.** Reviewer proposals kept pointing at a bridge/epistemic layer; the reusable part was not in the
+documents but in the owner's `Dedoc-9/executable-epistemics` — `witness_core.Artifact`: data + provenance +
+`claim_class` + `validity_scope` + `forbidden_interpretations`, a chain hash, an interpretive firewall that
+raises on any verdict-shaped key inside data, and a registry that refuses a study without a failure condition.
+Verðandi's records had provenance and a reading and none of the rest; and Urðr's own bench record carried
+`"verdict": {"60Hz": "within"}` — a verdict stored as data, which this firewall refuses. RECORD-0 makes the
+envelope the format every record Verðandi mints is written in, in both its languages, read through one gate.
+
+**What landed.** `verify/envelope.py` — the envelope (`seal`, `validate`, `read`, `write`, `chain_hash`,
+`canonical`): the seven required fields, `claim_class ∈ {measured, established, declared, predicted}`, a
+`validity_scope` with a non-empty `certifies`, a non-empty `forbidden_interpretations`, no verdict-shaped key
+anywhere in `data` (scanned; the set extends witness_core's with the gate's own `pass/fail/status/within/over`),
+integers only, and a chain hash over the required fields (the `reading` stays outside it). A **Rust twin** in
+`workshop/edit.rs` — `json_canonical` + `envelope_seal`/`envelope_validate` — writing the same canonical bytes,
+so `edit record` and `edit census` mint sealed records the Python gate re-hashes. The HUD pins re-minted under
+the envelope; the census record carries the **cone** split and `geometry_outside_cone`. `verify/bench.py` — the
+kernel's wall-clock as a sealed record with the budgets as data and the comparison in the reading (the shape
+Urðr's record should have had). `verify/preregister.json` — a hash-locked registry: RECORD-0 and SHELL-0 each
+with hypothesis, success **and** failure conditions and interpretation limits, before their instruments run.
+
+**The cone.** A theorem (`in_cone`, `workshop/edit.rs`): every ray has |forward| = 1920, |sideways| ≤ 1919 and
+the floor point lies on it, so a cell any ray can touch is forward of the eye and no farther sideways than
+forward (+1 for its extent). The census confirms it: of 1,379 single-cell edits, all 71 geometry edits lie
+inside the cone; of the 1,308 outside-view edits, **712 are outside the cone** (a coordinate test could name
+them without the kernel) and **596 are inside it, occluded** (only the traversal can). An out-of-view cell edit
+now carries a computed `explanation` — "outside the view cone" or "inside the view cone, occluded" —
+re-derived by `check`. This is the honest form of the reviewer's frustum pre-filter: a coordinate test bounds
+the dirty region and names 712/1,308, but cannot replace the kernel for the 596 the cone cannot see are hidden.
+
+**Rows.** `records-firewall` — every committed record validates under the envelope; a `verdict` key inside
+data and a change after sealing are both refused. `records-twins` — Python recomputes the chain hash of every
+record Rust sealed this run and of the census; Rust refuses the Python-made verdict and tamper plants
+(`ENVELOPE`); the two firewalls carry the same 17 verdict keys (read off both sources). `records-preregistered`
+— every registry entry has a failure condition and a hash lock; a record of a preregistered rung must cite its
+entry's hash (none yet; SHELL-0's is the first).
+
+**Grade.** MEASURED: the firewall on every record, the two plants, the twin agreement, the cone split.
+ESTABLISHED: the cone theorem (read off the ray bounds; the census is its witness, not its proof). DECLARED:
+the verdict-key set, the claim classes, the preregistered conditions (declared is what a registration is).
+
+**does_not_show.** That a chain hash makes data true — it detects tampering after sealing; `check` and the rows
+earn truth. That the firewall catches a verdict smuggled as a value or a string — it scans keys; only reading
+catches meaning. That the cone is tight — it is conservative (712 named, 596 not). That the 596 occluded edits
+could be named more cheaply than by the traversal.
+
+**Falsifier.** `records-firewall` reddens if any committed record loses a field, gains a verdict key, or
+carries a hash it cannot reproduce; `records-twins` if the two languages' canonical forms or verdict sets ever
+diverge; `records-preregistered` if an entry is edited after its lock or a rung's record cites a stale one;
+`workshop-census` if a geometry edit is ever found outside the cone.
+
+## The seated order (COURT-1, amended by COURT-2)
+
+**RECORD-0** → SHELL-0 → MEMBRANE-0 → TEXT-0 → WORKSHOP-1 → INPUT-0 → LATENCY-0 → **GAUNTLET-0 (the strip
+cache)** ‖ GAUNTLET-1 (the floor cast) → GAUNTLET-2 (columns) → MATERIAL-0. RECORD-0 landed before SHELL-0 so
+the first present-path record is born under the envelope and preregistered. GAUNTLET-0 — caching the strips and
+frame across frames with a still camera and no world edit (proven safe: `strips()` and `frame()` read no tile)
+— joins the gauntlet beside GAUNTLET-1. The reviewer's frustum pre-filter and material short-circuit were
+measured and are folded in as the cone bound (a census row) and GAUNTLET-0; rayon, per-column hash caching and
+edit coalescing were declined (a dependency the charter excludes; memory for a millisecond diff; WORKSHOP-1's
+territory). The `intent`/`feedback` bridge was declined: an `expected_change` field is unfalsifiable, and
+`outside-view` is already `CHECK OK`, not a refusal.

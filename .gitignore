@@ -5,3 +5,5 @@ verify/build/
 *.o
 # never committed
 .env
+__pycache__/
+*.pyc
