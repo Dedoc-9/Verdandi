@@ -579,6 +579,52 @@ if playback ever writes W, M or the session; `shell-playback-order`/`-tamper` if
 input does not diverge; `shell-playback-checkpoint` if any checkpoint/resume disagrees or a corrupted checkpoint
 silently resumes.
 
+## LATENCY-0 — the method is locked before the number; the display is not the software (seat 12)
+
+**What landed (the method, not yet the number).** LATENCY-0 measures ONE thing on the host — the per-frame
+`frame-ready → composited` time of the SHELL-PLAYBACK-b present path, replaying the *fixed sealed reference
+session* — and it is preregistered before any host number exists. Following the ratified split, the 144Hz claim
+is two independent MEASURED conditions, never one Boolean: **SOFTWARE-144-BUDGET** (PASS iff p99(frame-ready →
+composited) ≤ 6,944µs — a *budget* condition: 99% of intervals fit the nominal 144Hz period, which is NOT by
+itself sustained-144Hz presentation and NOT a refresh-rate claim) and **HARDWARE-144** (PASS iff the *measured*
+DwmFlush refresh period ≤ 6,944µs, i.e. ≥144Hz — measured, never inferred from the monitor's nominal setting),
+with **SUSTAINED-144Hz = SOFTWARE-144-BUDGET ∧ HARDWARE-144**. The entry in `verify/preregister.json` carries
+the hypothesis, both conditions, the failure condition, the interpretation limits and the instrument, hash-locked
+(`c4d8db6a…`). `shell/win32.rs playback_window --measure N` is the instrument (QPC after StretchDIBits → QPC
+after DwmFlush, per frame across the sealed sequence; refresh = median idle DwmFlush interval); it emits a raw
+record `verify/seal_latency.py` seals under RECORD-0 as `shell/attest/latency-<host>.json`, citing this entry.
+
+**Design, searched.** Deterministic record-and-replay measured against a fixed golden sequence, with the honest
+boundary the field already draws: `frame-ready → composited` is software-reachable via QPC + DwmFlush, while
+input-to-photon needs external capture hardware ([NVIDIA on PC latency](https://developer.nvidia.com/blog/understanding-and-measuring-pc-latency/),
+[PresentMon throughput vs latency](https://forums.blurbusters.com/viewtopic.php?t=5552&p=58993),
+[DWM present latency](https://jackmin.home.blog/2018/12/14/swapchains-present-and-present-latency/), and
+"measure first, then tune" [frame-pacing](https://github.com/portare-ch/distribution/issues/13)). The
+software/hardware split exists so a slow display cannot launder a good software number into a false 144Hz claim,
+and a good software number cannot imply a display capability that was not measured — on the current ~74Hz panel
+(SHELL-0's present record), SOFTWARE-144-BUDGET can pass while HARDWARE-144 is honestly refuted.
+
+**Rows.** `latency-preregistered` — the METHOD is locked: the two conditions are named in both the success and
+failure conditions, the budget is 6,944µs, the claim is the conjunction, the budget is named a budget (not a
+refresh claim), refresh is measured not inferred, and input-to-photon is out of scope; the entry is hash-locked,
+so weakening the method is a visible code diff (this row reddens), not a silent re-hash. `records-preregistered`
+additionally hash-locks the entry; `records-firewall` will validate the sealed host record when it lands.
+
+**Grade.** DECLARED: the preregistered method, thresholds and interpretation (hash-locked). MEASURED (live in
+the gate): that the method IS locked (`latency-preregistered`). NOT_MEASURED yet: the host number itself — it is
+produced off-gate by `playback_window --measure` on the owner's host and sealed, exactly as SHELL-0's present
+number was. The instrument and seal script ship here; the number is the next host run.
+
+**does_not_show.** Any latency number (none is claimed until the host record lands). Input-to-photon (capture
+hardware). Render time (the kernel bench). The present wait beyond composition (a flip-model / waitable-swapchain
+path is a later rung — the composed GDI present is the baseline). Arbitrary interactive load (the fixed sealed
+sequence only). Non-Windows hosts.
+
+**Falsifier.** `latency-preregistered` reddens if the method is weakened — a missing condition, a changed
+threshold, a dropped conjunction, or a dropped scope limit; `records-preregistered` if the entry is edited after
+registration; and when the host record lands, its failure condition (p99 > 6,944µs, or a refresh > 6,944µs, or a
+shape not reproducible on a second run) refutes the corresponding claim rather than being massaged into a pass.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -596,15 +642,18 @@ The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *aut
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two
 into one interleaved log where authoring and moving genuinely interact — the studio's real loop — and
 SHELL-PLAYBACK proves the window *displays exactly that becoming* and nothing else, through the SHELL-0 blit law.
-Each was proven headless first. What remains on the locked path:
+SHELL-PLAYBACK-b now plays a sealed session in the real window (host-run), and LATENCY-0's method is locked.
+Each rung was proven headless first. What remains:
 
-- **SHELL-PLAYBACK-b (host window).** `shell playback-window --session S`, shipped in `shell/win32.rs` behind
-  `--cfg shell_window`, plays a sealed session frame-by-frame in the real window (each frame guarded by the blit
-  law). Host-run and out of every gate build, like the rest of `win32.rs` — the on-screen counterpart of the
-  certified headless bridge, run on the host like SHELL-0a's present number.
-- **LATENCY-0 (host measurement).** Only after the window plays does LATENCY-0 measure input-to-present on the host,
-  where the 144Hz/7ms batch scheduler becomes a preregistered hypothesis with a success AND a failure condition —
-  timing, never mixed into the authority model. The boundary holds: SESSION-WALK proves what is becoming,
-  SHELL-PLAYBACK proves the window shows exactly that becoming, LATENCY-0 measures how quickly it gets there.
+- **LATENCY-0's host number.** The method is preregistered and hash-locked and the instrument ships
+  (`playback_window --measure`); the number itself is the owner's host run — `shell playback-window --session S
+  --measure N --host <name>` under `--cfg shell_window`, then `verify/seal_latency.py`, producing
+  `shell/attest/latency-<host>.json`. It will report SOFTWARE-144-BUDGET, HARDWARE-144 and SUSTAINED-144Hz from
+  the measured numbers against the locked thresholds — with a slow panel refuting HARDWARE-144 honestly.
+- **The named future slices** (courted, not seated): IMPOSSIBILITY-0 (measured negative results as level
+  preconditions), SEMANTIC-0 (a float-free, geometry-bound semantic layer as a Verðandi-local new-semantics
+  authority), MERGE-0 (deterministic commutative merge of non-conflicting edits, stripped of consensus/time).
 
-Skybox and physics stay beyond the frozen oracle, named here, gated behind the new-semantics route.
+The boundary holds end to end: SESSION-WALK proves what is becoming, SHELL-PLAYBACK proves the window shows
+exactly that becoming, LATENCY-0 measures how quickly it gets there. Skybox and physics stay beyond the frozen
+oracle, named here, gated behind the new-semantics route.

@@ -146,11 +146,14 @@ fn main() {
                     playback::resume(&session, &root, &ck);
                 }
                 _ => {
-                    // playback-window (SHELL-PLAYBACK-b): play the sealed session IN the host window (window build only)
+                    // playback-window (SHELL-PLAYBACK-b): play the sealed session IN the host window; with
+                    // --measure N it is LATENCY-0's instrument (window build only)
                     #[cfg(all(target_os = "windows", shell_window))]
                     {
+                        let measure = opt("--measure").and_then(|v| v.parse().ok()).unwrap_or(0usize);
+                        let host = opt("--host").unwrap_or_else(|| "unnamed".to_string());
                         let frames = playback::frames(&session, &root);
-                        win32::playback_window(frames);
+                        win32::playback_window(frames, measure, &host);
                     }
                     #[cfg(not(all(target_os = "windows", shell_window)))]
                     {

@@ -344,7 +344,7 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
 /// blit-hash law before it reaches the OS; the sequence plays once at a visible dwell, then holds the last frame
 /// until the window is closed. This is the on-screen counterpart of the headless bridge the gate certifies; it
 /// carries no authority and mints no record — it only displays the composites `shell/playback.rs` produced.
-pub fn playback_window(frames: Vec<Composed>) {
+pub fn playback_window(frames: Vec<Composed>, measure: usize, host: &str) {
     if frames.is_empty() {
         eprintln!("SHELL-PLAYBACK-EMPTY: the sealed session has no move frames to show");
         std::process::exit(2);
@@ -401,6 +401,15 @@ pub fn playback_window(frames: Vec<Composed>) {
     // pace with DwmFlush when available (each blocks ~one composition), else a small sleep; presentation timing
     // only — never authority. DWELL compositions per frame keeps the walk watchable.
     let dwm = load_dwm();
+
+    // LATENCY-0 (off-gate, host): measure frame-ready -> composited across the sealed sequence and emit a raw
+    // record. The window path is the instrument; the number is the host's, sealed by verify/seal_latency.py.
+    if measure > 0 {
+        latency_measure(hwnd, &blits, &header, frames.len(), measure, host, dwm);
+        unsafe { DestroyWindow(hwnd) };
+        return;
+    }
+
     const DWELL: u32 = 24;
 
     let mut msg: Msg = unsafe { std::mem::zeroed() };
@@ -442,6 +451,110 @@ pub fn playback_window(frames: Vec<Composed>) {
             }
             // else: hold the last frame until the window is closed
         }
+    }
+}
+
+/// LATENCY-0's instrument: replay the sealed sequence in the window, timing frame-ready -> composited per frame
+/// (QPC after StretchDIBits -> QPC after the following DwmFlush), until `measure` samples are collected; the
+/// refresh period is the median idle DwmFlush interval. Emits a raw record; sealing is Python's.
+fn latency_measure(hwnd: Hwnd, blits: &[Vec<u8>], header: &BitmapInfoHeader, frame_count: usize, measure: usize, host: &str, dwm: Option<Dwm>) {
+    let dwm = match dwm {
+        Some(d) => d,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or its composition-timing entry point is unavailable; cannot measure frame->composited");
+            std::process::exit(2);
+        }
+    };
+    let mut freq = 0i64;
+    unsafe { QueryPerformanceFrequency(&mut freq) };
+    if freq <= 0 {
+        freq = 1;
+    }
+    // refresh: the median of a few idle DwmFlush intervals (each blocks ~one composition)
+    let mut refresh: Vec<u128> = Vec::with_capacity(8);
+    for _ in 0..8 {
+        let a = qpc();
+        (dwm.flush)();
+        let b = qpc();
+        refresh.push((b - a).max(0) as u128 * 1_000_000 / freq as u128);
+    }
+    refresh.sort_unstable();
+    let refresh_us = refresh[refresh.len() / 2];
+
+    // one present: frame-ready (QPC after StretchDIBits) -> composited (QPC after the following DwmFlush)
+    let present_once = |blit: &[u8]| -> Option<u128> {
+        let hdc = unsafe { GetDC(hwnd) };
+        if hdc.is_null() {
+            return None;
+        }
+        let ok = unsafe {
+            StretchDIBits(hdc, 0, 0, (W as i32) / 2, (H as i32) / 2, 0, 0, W as i32, H as i32,
+                blit.as_ptr() as *const c_void, header, DIB_RGB_COLORS, SRCCOPY)
+        };
+        let ready = qpc();
+        let composited = if ok != 0 {
+            (dwm.flush)();
+            Some(qpc())
+        } else {
+            None
+        };
+        unsafe { ReleaseDC(hwnd, hdc) };
+        composited.map(|t| (t - ready).max(0) as u128 * 1_000_000 / freq as u128)
+    };
+
+    let mut samples: Vec<u128> = Vec::with_capacity(measure);
+    let mut msg: Msg = unsafe { std::mem::zeroed() };
+    let mut idx = 0usize;
+    while samples.len() < measure {
+        while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            unsafe {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            if msg.message == 0x0012 {
+                // WM_QUIT — the user closed the window before N samples; emit what we have
+                break;
+            }
+        }
+        if let Some(us) = present_once(&blits[idx]) {
+            samples.push(us);
+        }
+        idx = (idx + 1) % frame_count;
+    }
+    emit_latency(host, &samples, refresh_us, frame_count);
+}
+
+fn emit_latency(host: &str, samples: &[u128], refresh_us: u128, frame_count: usize) {
+    if samples.is_empty() {
+        println!("SHELL-PLAYBACK: no samples measured");
+        return;
+    }
+    let (p50, p95, p99, max) = percentiles(samples.to_vec());
+    // the two conditions and their conjunction are READINGS (printed), never verdict-shaped keys inside the record
+    let software = p99 <= 6944;
+    let hardware = refresh_us <= 6944;
+    println!("present frame-ready->composited us  p50={} p95={} p99={} max={}", p50, p95, p99, max);
+    println!("refresh_period_us={}  (~{} Hz)  samples={}  sequence_frames={}", refresh_us, if refresh_us > 0 { 1_000_000 / refresh_us } else { 0 }, samples.len(), frame_count);
+    println!("SOFTWARE-144-BUDGET: {}  (p99 {} us vs 6944 us)", if software { "PASS" } else { "FAIL" }, p99);
+    println!("HARDWARE-144: {}  (refresh {} us vs 6944 us)", if hardware { "PASS" } else { "FAIL" }, refresh_us);
+    println!("SUSTAINED-144Hz: {}  (SOFTWARE-144-BUDGET AND HARDWARE-144)", if software && hardware { "PASS" } else { "FAIL" });
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    // data holds ONLY measurements and the declared thresholds — no verdict-shaped key (the firewall forbids them)
+    let data = format!(
+        "{{\"present_us\":{{\"p50\":{},\"p95\":{},\"p99\":{},\"max\":{}}},\"refresh_period_us\":{},\"samples\":{},\"sequence_frames\":{},\"software_144_budget_us\":6944,\"hardware_144_target_hz\":144}}",
+        p50, p95, p99, max, refresh_us, samples.len(), frame_count);
+    let prov = format!(
+        "{{\"tool\":\"shell/win32.rs playback_window --measure\",\"host\":{},\"preregistered\":{{\"rung\":\"LATENCY-0\",\"chain_hash\":\"PASTE_LATENCY0_HASH\"}},\"unix_seconds\":{}}}",
+        json_escape(host), now);
+    let scope = format!("frame-ready -> composited time of the GDI present path replaying the sealed reference session on host {}, {} samples over {} frames", host, samples.len(), frame_count);
+    let raw = format!(
+        "{{\"name\":\"verdandi-latency\",\"version\":1,\"claim_class\":\"measured\",\"provenance\":{},\"validity_scope\":{{\"certifies\":{},\"host\":{}}},\"data\":{},\"reading\":\"SOFTWARE-144-BUDGET is p99<=6944us; HARDWARE-144 is refresh<=6944us (>=144Hz); SUSTAINED-144Hz is their conjunction; frame-ready->composited only, NOT input-to-photon\"}}",
+        prov, json_escape(&scope), json_escape(host), data);
+    let out = format!("shell/attest/latency-{}.json", host);
+    if std::fs::create_dir_all("shell/attest").is_ok() && std::fs::write(&out, raw.as_bytes()).is_ok() {
+        println!("[shell] wrote raw {} — seal it with: python verify/seal_latency.py --record {}", out, out);
+    } else {
+        eprintln!("SHELL-CANNOT-WRITE: {}", out);
     }
 }
 

@@ -27,6 +27,21 @@
    ],
    "instrument": "shell/win32.rs + verify rows shell-blit-hash, shell-blit-plant; off-gate: shell --measure N on the host -> shell/attest/present-<host>.json",
    "chain_hash": "de30d1ec9bf60a0a44acd7ee7bd9de4ca9c87d78a3ee5dbc5ecd2cf25c08d8cd"
+  },
+  "LATENCY-0": {
+   "rung": "LATENCY-0",
+   "hypothesis": "for the fixed sealed playback sequence, the host's frame-ready -> composited present path fits one 144Hz frame period (SOFTWARE-144-BUDGET) AND the panel refreshes at >=144Hz (HARDWARE-144), each measured and reported independently; SUSTAINED-144Hz is their conjunction (A AND B), never the software budget alone",
+   "success_condition": "on the host, replaying the sealed reference session through shell playback-window --measure, a record of per-frame frame-ready -> composited p50/p95/p99/max us with the measured panel refresh period beside it, sealed under the envelope; SOFTWARE-144-BUDGET is PASS iff p99 <= 6944 us; HARDWARE-144 is PASS iff the measured refresh period <= 6944 us (>=144 Hz); SUSTAINED-144Hz = SOFTWARE-144-BUDGET AND HARDWARE-144",
+   "failure_condition": "p99(frame-ready -> composited) > 6944 us fails SOFTWARE-144-BUDGET; a measured refresh period > 6944 us fails HARDWARE-144; either alone refutes SUSTAINED-144Hz; also fails if no composited timestamp can be read from DWM on the host, the record carries a verdict-shaped key, or the shape (order of magnitude) is not reproducible on a second run",
+   "interpretation_limits": [
+    "SOFTWARE-144-BUDGET is a BUDGET condition: 99% of frame-ready -> composited intervals fit the nominal 144Hz period (6944 us). It is NOT by itself sustained-144Hz presentation and it is NOT a refresh-rate claim",
+    "HARDWARE-144 is MEASURED from the DwmFlush interval, never inferred from the monitor's nominal setting",
+    "frame-ready -> composited excludes the kernel render (that is the bench), input transport, the present wait beyond composition, and the panel scan-out; it is NOT input-to-photon (that needs capture hardware)",
+    "the wait after composition is an instrument limitation of a composed GDI present; a flip-model / waitable-swapchain path is a later rung",
+    "the sequence is the fixed sealed reference session, not arbitrary interactive load; Windows-only"
+   ],
+   "instrument": "shell/win32.rs playback_window --measure N (off-gate, host, --cfg shell_window) -> a raw record sealed by verify/seal_latency.py -> shell/attest/latency-<host>.json, citing this entry; verify row latency-preregistered locks this method",
+   "chain_hash": "c4d8db6a3dd3293748d69629d1148801507725829d23fcab30e730824c1f56c7"
   }
  }
 }

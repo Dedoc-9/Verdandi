@@ -13,7 +13,9 @@ oracle natively; the corpus; the mirrored sign table as the control that shows t
 workshop (an edit is a new authority and the witnesses say what it moved; the planted falsifiers bite),
 hud (the overlay is a frame: pinned, index-free, inside its region, reading state and not materials),
 records (RECORD-0: every record Verðandi mints passes the envelope's firewall, the two writers agree, and a
-rung that produces a number on a host was preregistered with a failure condition),
+rung that produces a number on a host was preregistered with a failure condition; LATENCY-0's method — the
+SOFTWARE-144-BUDGET / HARDWARE-144 split, their conjunction, and the honest scope — is hash-locked before any
+host number, so weakening it is a visible diff),
 shell (SHELL-0a: the blit-hash law headless — the shell shows the kernel's composite, the blit is an invertible
 carrier of it, and a byte corrupted between kernel and blit is detectable; the window is the host's, cfg-gated),
 membrane (MEMBRANE-0: the one-way law as a compile-time wall — editing the authority through a live read-borrow
@@ -733,6 +735,41 @@ def records_preregistered():
     cite_note = " ({})".format(", ".join(cited)) if cited else " (none yet: SHELL-0's will be the first)"
     return (f"{len(reg['entries'])} rungs registered with hypothesis, success AND failure conditions and interpretation limits, each entry "
             f"hash-locked ({locked}); {len(cited)} committed records cite a registration" + cite_note)
+
+
+def latency_preregistered():
+    """LATENCY-0's METHOD is locked before any host number: the two independent conditions, the 144Hz budget, the
+    conjunction, and the honest scope limits are asserted here, so weakening the method is a visible code diff (this
+    row reddens) rather than a silent data edit that re-hashes the entry."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))
+    e = reg["entries"].get("LATENCY-0")
+    if not e:
+        raise Red("LATENCY-0 is not registered")
+    succ, fail = e["success_condition"], e["failure_condition"]
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "SOFTWARE-144-BUDGET named in both conditions": "SOFTWARE-144-BUDGET" in succ and "SOFTWARE-144-BUDGET" in fail,
+        "HARDWARE-144 named in both conditions": "HARDWARE-144" in succ and "HARDWARE-144" in fail,
+        "the 144Hz budget is 6944 us": "6944" in succ and "6944" in fail,
+        "the claim is conjunctive (A AND B)": "SUSTAINED-144Hz = SOFTWARE-144-BUDGET AND HARDWARE-144" in succ,
+        "the budget is named a budget, not a refresh claim": "budget condition" in lims and "not a refresh-rate claim" in lims,
+        "refresh is measured, not inferred": "measured from the dwmflush" in lims,
+        "input-to-photon is out of scope": "not input-to-photon" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the LATENCY-0 method is not fully locked: " + "; ".join(missing))
+    want = envelope.chain_hash({"name": "verdandi-preregistration-entry", "version": 1, "claim_class": "declared",
+                                "provenance": {"registered_in": "verify/preregister.json"},
+                                "validity_scope": {"certifies": "the conditions LATENCY-0 was seated under"},
+                                "forbidden_interpretations": ["that registering a condition earns it"],
+                                "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+    if e["chain_hash"] != want:
+        raise Red("the LATENCY-0 entry was edited after registration (chain hash)")
+    return ("LATENCY-0's method is locked before any host number: two independent MEASURED conditions (SOFTWARE-144-BUDGET, p99 "
+            "frame-ready->composited <= 6944 us; HARDWARE-144, measured refresh >= 144 Hz), the sustained-144Hz claim is their "
+            "conjunction, the budget is named a budget (not a refresh-rate claim), refresh is measured not inferred, and "
+            "input-to-photon is out of scope; hash-locked %s so weakening it is a visible diff, not a silent edit" % e["chain_hash"][:8])
 
 
 # ------------------------------------------------------------------ shell (SHELL-0a)
@@ -1968,6 +2005,7 @@ def main() -> int:
     row("records-firewall", records_firewall)
     row("records-twins", records_twins)
     row("records-preregistered", records_preregistered)
+    row("latency-preregistered", latency_preregistered)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)
