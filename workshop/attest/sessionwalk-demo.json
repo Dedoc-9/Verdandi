@@ -1,0 +1,77 @@
+{
+ "name": "verdandi-session-walk",
+ "version": 1,
+ "claim_class": "established",
+ "provenance": {
+  "tool": "workshop/sessionwalk.rs + verify/seal_sessionwalk.py",
+  "oracle_authority": "witness/identity, frozen from Urðr"
+ },
+ "validity_scope": {
+  "certifies": "a fixed interleaved session (4 moves, 2 edits from camera 28,28,N) over the frozen authority (W 1b84db41a5fb… M 52e8b54ae508…) replays, in log order, to this head; every event's witness (a frame digest for a move, a content digest for an edit) and the single fold are reproducible on any host",
+  "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+  "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+  "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e",
+  "final_camera": "27,26,W"
+ },
+ "forbidden_interpretations": [
+  "a wall-clock or any timing (a session-walk carries no time; the 144Hz/batch scheduler is a LATENCY-0 hypothesis, not this)",
+  "two independent authorities (walk_head and edit_head are DERIVED projections of this one interleaved chain, never sealed apart)",
+  "a skybox or physics (the log holds only cell/tile edits and camera moves the frozen oracle certifies)",
+  "a predicted consequence (each witness is MEASURED at the event, never declared at queue time)",
+  "tamper-proofing beyond replay: the chain catches a changed event under replay and is anchored by this seal and by git"
+ ],
+ "data": {
+  "base": {
+   "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+   "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+   "camera": "28,28,N",
+   "content": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08",
+   "level": "/root/verdandi/oracle/levels/witness.lvl",
+   "tiles": "/root/verdandi/oracle/tiles/identity.tiles"
+  },
+  "edits": 2,
+  "final_camera": "27,26,W",
+  "final_content": "5d9c523fffa1bf26cc84e2b4f8af07ad4b4e77a87e85cc73a67f9025cbd9980c",
+  "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e",
+  "log": [
+   {
+    "kind": "edit",
+    "spec": "cell:28,27,.",
+    "witness": "f38fd268788eaf4146b19299061200367972ea8a68015d6e578eef5a243f3d70"
+   },
+   {
+    "camera": "28,27,N",
+    "command": "F",
+    "kind": "move",
+    "witness": "51f5e8b859823919c73a7235714d5743382ac5201c5f34440042e2a2a6d8010f"
+   },
+   {
+    "camera": "28,26,N",
+    "command": "F",
+    "kind": "move",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,96,80,64",
+    "witness": "5d9c523fffa1bf26cc84e2b4f8af07ad4b4e77a87e85cc73a67f9025cbd9980c"
+   },
+   {
+    "camera": "28,26,W",
+    "command": "L",
+    "kind": "move",
+    "witness": "c0485f912a9d966ee72063f9261a8dc7ae53da05ba079ac451cd24f8c8dd8139"
+   },
+   {
+    "camera": "27,26,W",
+    "command": "F",
+    "kind": "move",
+    "witness": "856178d6af2cee1db5abcdb5649e0e4f6f007d083bbe41deb3106af3adaed584"
+   }
+  ],
+  "magic": "VRDNSW1",
+  "moves": 4
+ },
+ "reading": "",
+ "chain_hash": "0197d5cad5f6cbf58e22e0f00e4df2890f5840b1e02e04be4548b8e572641a20"
+}

@@ -468,6 +468,64 @@ a wall ever moves the camera or the no-op is dropped from the chain; `input-tamp
 caught; `input-not-authority` if replaying a walk ever changes W or M; `input-demo` if the committed walk stops
 replaying to its sealed head.
 
+## SESSION-WALK — move while authoring, one interleaved sealed chain (seat 10)
+
+**What landed.** `workshop/sessionwalk.rs` (std-only): a session-walk is a base authority (W, M) + an initial
+camera + ONE append-only log of two event kinds — `move C` (L/R/F/B/Q/E) and `edit SPEC` (cell/tile). It is the
+fusion of WORKSHOP-1 (a log of edits) and INPUT-0 (a log of moves), and the central design fact is that the two
+**cannot** be independent chains: a move's traversability and its frame are decided against the *current* world,
+so an edit that opens a cell changes what a later move sees. Every event is therefore evaluated in log order
+against the authority all preceding events produced, and folded into a **single** head:
+`content(W,M) = sha256(sha256(W)‖sha256(M))`; `head0 = sha256(MAGIC‖content(base)‖"@"‖camera)`; a move folds the
+kernel's frame digest at the new camera over the current (W,M), an edit folds the new content — `head =
+sha256(head‖":"‖tag‖":"‖witness)`. `walk_head` and `edit_head` are **derived projections** of this one chain,
+never sealed apart. `verify/seal_sessionwalk.py` seals a reference session under RECORD-0 as *established*.
+
+**Design, searched, and a correction.** The tempting architecture was two independent sealed chains combined as
+`sha256(walk_head‖edit_head)`, with edits deferred and batch-verified. That is wrong: if a deferred edit opens a
+cell a later move enters, batching changes what the move sees, so the same event order yields different
+movement — the combined head becomes timing-dependent, breaking the very invariant it claimed. Event-sourcing's
+own rule resolves it: the append-only log *is* the authority and read-models/projections are *derived*
+([Microsoft's Event Sourcing pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing),
+[Kurrent on ES+CQRS](https://www.kurrent.io/blog/event-sourcing-and-cqrs), [read models are derived](https://www.cqrs.com/event-driven-architecture/read-models/)).
+So the sealed authority is one interleaved log; the batch scheduler is demoted to a runtime concern whose *only*
+certified property is checkpoint/replay equivalence, a known provable property
+([replay-determinism equivalence](https://github.com/Obiajulu-gif/vaultquest-archive/issues/751)). Kept out of
+the sealed state, by charter: a predicted `expected_change` (unfalsifiable, RECORD-0 firewall-rejected — the
+consequence is measured at the event), latency guarantees (declared ≠ verified — timing is LATENCY-0's job), and
+adaptive batch sizing (no falsifier). The head stays clock-free.
+
+**Rows.** `sessionwalk-build` — compiles. `sessionwalk-replay` — a 6-event interleaved session replays to its
+head, and a Python twin re-derives it (edits mutate W,M; moves render a *separate kernel process's* frame
+against the current authority; one fold). `sessionwalk-interleave` — the key one: `EDIT(open 28,27)→MOVE(F)`
+steps through the opened cell (final 28,27,N) while `MOVE(F)→EDIT` is blocked (final 28,28,N); same two events,
+same final W,M, different head and camera — the move sees the edit, so order is meaning, not a batching artifact.
+`sessionwalk-batch-invariance` — the honest delay operator: incremental-append equals monolithic-replay, and
+cutting the fold at every split point then resuming from the checkpoint reproduces the identical head.
+`sessionwalk-tamper` — changing one event without recomputing its witness makes `verify` catch CHAIN-BROKEN at
+that event (exit 2); restored, it re-verifies. `sessionwalk-projection` — dropping every move leaves W,M
+identical (moves never author) while dropping every edit changes where a move ends up (edits are not views): the
+two-way semiotic separation over one log. `sessionwalk-demo` — a committed sealed interleaved session
+(`workshop/attest/sessionwalk-demo.json`: open a doorway, walk through it, retexture the floor, turn and step)
+replays to its head.
+
+**Grade.** MEASURED: the interleaved head + twin, order-dependence, checkpoint/replay equivalence, tamper
+detection, the two-way projection, the sealed demo — all live. ESTABLISHED: a move evaluates traversability and
+its frame against the current authority; an edit never moves the camera; `apply` is pure (read off the source).
+DECLARED: the `VRDNSW1` fold construction and the two-tag (M/E) event vocabulary.
+
+**does_not_show.** A live scheduler — this certifies the sealed construction *admits* checkpointing/batching, not
+that any batch loop was built (that is the shell, SHELL-PLAYBACK). Timing/latency (LATENCY-0). Branching or
+concurrent multi-writer sessions (single-writer, linear log). An edit that turns the camera's own cell to rock
+(a real consequence the kernel refuses on the next frame; the demo does not exercise it). A skybox or physics.
+That the chain defeats a simultaneous rewrite of events and head (it does not; the outer seal and git anchor).
+
+**Falsifier.** `sessionwalk-replay`/`-demo` redden if the head ever diverges from the twin; `sessionwalk-interleave`
+if reordering an edit past a dependent move does *not* move the head (or if the move stops seeing the edit);
+`sessionwalk-batch-invariance` if any checkpoint/resume or the incremental vs monolithic head disagree;
+`sessionwalk-tamper` if a changed event is not caught; `sessionwalk-projection` if dropping moves ever changes
+W,M or dropping edits ever leaves navigation untouched.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -482,5 +540,9 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   the charter forbids.
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
-textures, and INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit). Skybox and physics are
-beyond it, named here, gated behind the new-semantics route.
+textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), and SESSION-WALK *fuses* the
+two into one interleaved log where authoring and moving genuinely interact — the studio's real loop, proven
+headless. The locked forward order is **SESSION-WALK → SHELL-PLAYBACK → LATENCY-0**: SHELL-PLAYBACK drives the
+window from the same sealed session/`.walk` representation, and only then does LATENCY-0 measure input-to-present
+on the host (where the 144Hz/batch scheduler becomes a preregistered, measured hypothesis). Skybox and physics
+stay beyond the frozen oracle, named here, gated behind the new-semantics route.

@@ -24,7 +24,11 @@ workshop1 (WORKSHOP-1: the log is the history — a session is a base authority 
 log; undo is replay, propose is a scratchpad, tampering breaks the chain; a Python twin re-derives the head),
 input (INPUT-0: moving around is the projection's job — a typed command log (L/R/F/B/Q/E) moves the camera
 against a FIXED level, blocked by rock, and replays headless to a head that chains each step's kernel frame
-digest; a walk never touches W or M, a tampered command breaks the chain, and a Python twin re-derives the head).
+digest; a walk never touches W or M, a tampered command breaks the chain, and a Python twin re-derives the head),
+sessionwalk (SESSION-WALK: move while authoring — ONE interleaved append-only log of edits AND moves, each
+evaluated in log order against the authority the preceding events produced, folded into a single head; a move
+sees a prior edit (order is meaning), the head is checkpoint/replay-equivalent (batching cannot change it),
+dropping moves leaves W,M and dropping edits changes navigation, and a Python twin re-derives the head).
 """
 from __future__ import annotations
 
@@ -1403,6 +1407,298 @@ def input_demo():
             % (d["commands"], d["head"][:12], d["steps"], d["blocked"]))
 
 
+# ------------------------------------------------------------------ sessionwalk (SESSION-WALK)
+SESSIONWALK_EXE = None
+SW = os.path.join(BUILD, "sw")
+SW_MAGIC = b"VRDNSW1"
+_SWTILE = {"wall0": 0, "wall1": 1, "wall2": 2, "wall3": 3, "floor": 4}
+
+
+def sessionwalk_build():
+    global SESSIONWALK_EXE
+    SESSIONWALK_EXE = compile_rs(WORKSHOP, "sessionwalk.rs", "sessionwalk")
+    if os.path.isdir(SW):
+        shutil.rmtree(SW)
+    os.makedirs(SW)
+    return ("workshop/sessionwalk.rs compiled live: new / move / edit / replay / verify — one interleaved append-only log "
+            "of edits AND moves, each evaluated in log order against the authority the preceding events produced")
+
+
+# --- the Python twin: reproduce the single interleaved head independently ---
+def _sw_content(level_bytes, tiles_bytes):
+    return hashlib.sha256(hashlib.sha256(level_bytes).digest() + hashlib.sha256(tiles_bytes).digest()).hexdigest()
+
+
+def _sw_apply(level_bytes, tiles_bytes, spec):
+    kind, rest = spec.split(":", 1)
+    if kind == "cell":
+        x, z, c = rest.split(",")
+        x, z = int(x), int(z)
+        import struct as _s
+        b = bytearray(level_bytes)
+        w = _s.unpack_from("<I", b, 8)[0]
+        b[16 + z * w + x] = ord(c)
+        return bytes(b), tiles_bytes
+    if kind == "tile":
+        cls, r, g, bl = rest.split(",")
+        off = 8 + _SWTILE[cls] * (256 * 256 * 3)
+        px = bytes((int(r), int(g), int(bl)))
+        b = bytearray(tiles_bytes)
+        for i in range(off, off + 256 * 256 * 3, 3):
+            b[i:i + 3] = px
+        return level_bytes, bytes(b)
+    raise Red("twin: unknown edit kind " + kind)
+
+
+def _sw_trav(level_bytes, x, z):
+    return _walk_trav(level_bytes, x, z)  # shares INPUT-0's grid reader
+
+
+def _sw_step(level_bytes, cam, cmd):
+    return _walk_step(level_bytes, cam, cmd)  # shares INPUT-0's movement rules
+
+
+def _sw_frame(level_bytes, tiles_bytes, cam, cache):
+    """the kernel executable's frame digest at cam over the CURRENT (possibly edited) authority; cache the temp files."""
+    if cache.get("lvl") != level_bytes or cache.get("til") != tiles_bytes:
+        lp = os.path.join(SW, "cur.lvl")
+        tp = os.path.join(SW, "cur.tiles")
+        with open(lp, "wb") as fh:
+            fh.write(level_bytes)
+        with open(tp, "wb") as fh:
+            fh.write(tiles_bytes)
+        cache["lvl"], cache["til"], cache["lp"], cache["tp"] = level_bytes, tiles_bytes, lp, tp
+    x, z, f = cam
+    code, out, err = run(KERNEL_EXE, ["--level", cache["lp"], "--tiles", cache["tp"], "--camera", "%d,%d,%s" % (x, z, _LETTER[f])])
+    if code != 0:
+        raise Red("twin frame render: " + err.strip())
+    d = dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+    return d["frame"]
+
+
+def _sw_genesis(base_content, cam0):
+    x, z, f = cam0
+    return hashlib.sha256(SW_MAGIC + base_content.encode() + b"@" + ("%d,%d,%s" % (x, z, _LETTER[f])).encode()).hexdigest()
+
+
+def _sw_fold(head, tag, witness):
+    return hashlib.sha256(head.encode() + b":" + tag + b":" + witness.encode()).hexdigest()
+
+
+def _sw_advance(state, event, cache):
+    """the pure step function of the fold: (level,tiles,cam,head,moves,edits) + event -> new state, and its witness."""
+    lvl, til, cam, head, mv, ed = state
+    kind, param = event
+    if kind == "move":
+        cam2 = _sw_step(lvl, cam, param)
+        wit = _sw_frame(lvl, til, cam2, cache)
+        return (lvl, til, cam2, _sw_fold(head, b"M", wit), mv + 1, ed), ("M", wit)
+    lvl2, til2 = _sw_apply(lvl, til, param)
+    wit = _sw_content(lvl2, til2)
+    return (lvl2, til2, cam, _sw_fold(head, b"E", wit), mv, ed + 1), ("E", wit)
+
+
+def _sw_fold_all(level_bytes, tiles_bytes, cam0, events, cache, start=None):
+    if start is None:
+        base_content = _sw_content(level_bytes, tiles_bytes)
+        state = (level_bytes, tiles_bytes, cam0, _sw_genesis(base_content, cam0), 0, 0)
+    else:
+        state = start
+    wits = []
+    for ev in events:
+        state, w = _sw_advance(state, ev, cache)
+        wits.append(w)
+    return state, wits
+
+
+def _cam_tuple(tok):
+    x, z, f = tok.split(",")
+    return (int(x), int(z), {"N": 0, "E": 1, "S": 2, "W": 3}[f])
+
+
+def _sw_build(name, cam0_tok, events):
+    """drive the binary: new, then one move/edit per event; return the session path."""
+    sp = os.path.join(SW, name + ".json")
+    lv = os.path.join(ORACLE, "levels", "witness.lvl")
+    tl = os.path.join(ORACLE, "tiles", "identity.tiles")
+    code, _o, err = run(SESSIONWALK_EXE, ["new", "--level", lv, "--tiles", tl, "--camera", cam0_tok, "--out", sp])
+    if code != 0:
+        raise Red("sessionwalk new: " + err.strip())
+    for kind, param in events:
+        flag = "--command" if kind == "move" else "--edit"
+        verb = "move" if kind == "move" else "edit"
+        code, _o, err = run(SESSIONWALK_EXE, [verb, "--session", sp, flag, param])
+        if code != 0:
+            raise Red("sessionwalk %s %s: %s" % (verb, param, err.strip()))
+    return sp
+
+
+def _sw_stored(sp):
+    return json.load(open(sp, encoding="utf-8"))["data"]
+
+
+# a canonical interleaved demo: open a doorway, walk through it into the upper corridor, place a wall, turn and step
+DEMO_CAM = "28,28,N"
+DEMO_EVENTS = [("edit", "cell:28,27,."), ("move", "F"), ("move", "F"), ("edit", "tile:floor,96,80,64"), ("move", "L"), ("move", "F")]
+
+
+def _sw_twin_head(cam0_tok, events):
+    lv = read(os.path.join(ORACLE, "levels", "witness.lvl"))
+    tl = read(os.path.join(ORACLE, "tiles", "identity.tiles"))
+    cache = {}
+    (lvl, til, cam, head, mv, ed), wits = _sw_fold_all(lv, tl, _cam_tuple(cam0_tok), events, cache)
+    return head, cam, _sw_content(lvl, til), mv, ed, wits
+
+
+def sessionwalk_replay():
+    need_rustc()
+    sp = _sw_build("replay", DEMO_CAM, DEMO_EVENTS)
+    code, out, err = run(SESSIONWALK_EXE, ["replay", "--session", sp])
+    if code != 0:
+        raise Red("replay: " + err.strip())
+    rep = {}
+    for ln in out.strip().splitlines():
+        if ln.startswith("head "):
+            rep["head"] = ln.split()[1]
+        elif ln.startswith("final camera "):
+            p = ln.split()
+            rep["cam"] = (int(p[2]), int(p[3]), {"N": 0, "E": 1, "S": 2, "W": 3}[p[4]])
+        elif ln.startswith("final content "):
+            rep["content"] = ln.split()[2]
+    twin_head, twin_cam, twin_content, mv, ed, _w = _sw_twin_head(DEMO_CAM, DEMO_EVENTS)
+    if twin_head != rep["head"]:
+        raise Red("the Python twin head %s != the binary replay head %s" % (twin_head[:12], rep["head"][:12]))
+    if twin_cam != rep["cam"] or twin_content != rep["content"]:
+        raise Red("the twin's final camera/content disagrees with the binary")
+    return ("a %d-event interleaved session (%d edits + %d moves) replays to head %s; a Python twin reimplements the fold — edits "
+            "mutate (W,M), moves render the kernel's frame against the CURRENT authority, one interleaved chain — and re-derives the "
+            "SAME head, final camera and content (frames from a separate kernel process)" % (mv + ed, ed, mv, rep["head"][:12]))
+
+
+def sessionwalk_interleave():
+    need_rustc()
+    # the same two events in both orders; the move depends on the edit, so order is meaning, not a scheduler artifact
+    a = _sw_build("inter_a", "28,28,N", [("edit", "cell:28,27,."), ("move", "F")])   # open, then step through
+    b = _sw_build("inter_b", "28,28,N", [("move", "F"), ("edit", "cell:28,27,.")])   # step (blocked), then open
+    da, db = _sw_stored(a), _sw_stored(b)
+    if da["head"] == db["head"]:
+        raise Red("reordering an edit past a dependent move did not change the head — the log order carries no meaning")
+    if da["final_camera"] != "28,27,N":
+        raise Red("with the edit first, the move did not step through the opened cell (got %s)" % da["final_camera"])
+    if db["final_camera"] != "28,28,N":
+        raise Red("with the move first, it was not blocked by rock (got %s)" % db["final_camera"])
+    if da["final_content"] != db["final_content"]:
+        raise Red("the two orders should leave the SAME (W,M) — the cell edit commutes; only navigation differs")
+    # the twin agrees on both heads
+    ha, _ca, _cc, _m, _e, _w = _sw_twin_head("28,28,N", [("edit", "cell:28,27,."), ("move", "F")])
+    hb, _cb, _cc2, _m2, _e2, _w2 = _sw_twin_head("28,28,N", [("move", "F"), ("edit", "cell:28,27,.")])
+    if ha != da["head"] or hb != db["head"]:
+        raise Red("the twin disagrees with the binary on an interleaved head")
+    return ("EDIT(open 28,27)→MOVE(F) steps THROUGH the opened cell (final 28,27,N) while MOVE(F)→EDIT is blocked by rock "
+            "(final 28,28,N): same two events, same final (W,M), but different head and different camera — the move genuinely "
+            "sees the edit, so log order is meaning, not a batching artifact; the twin re-derives both heads")
+
+
+def sessionwalk_batch_invariance():
+    need_rustc()
+    # the binary built the session incrementally (one append per event); replay recomputes the head monolithically from base
+    sp = _sw_build("batch", DEMO_CAM, DEMO_EVENTS)
+    inc_head = _sw_stored(sp)["head"]
+    code, out, _e = run(SESSIONWALK_EXE, ["replay", "--session", sp])
+    mono_head = [l for l in out.strip().splitlines() if l.startswith("head ")][0].split()[1]
+    if inc_head != mono_head:
+        raise Red("incremental-append head %s != monolithic-replay head %s" % (inc_head[:12], mono_head[:12]))
+    # the twin proves checkpoint equivalence: cut the fold at every split point, resume, and get the identical head
+    lv = read(os.path.join(ORACLE, "levels", "witness.lvl"))
+    tl = read(os.path.join(ORACLE, "tiles", "identity.tiles"))
+    cache = {}
+    full_state, _w = _sw_fold_all(lv, tl, _cam_tuple(DEMO_CAM), DEMO_EVENTS, cache)
+    full_head = full_state[3]
+    if full_head != mono_head:
+        raise Red("the twin full-fold head %s != the binary head %s" % (full_head[:12], mono_head[:12]))
+    splits = 0
+    for k in range(len(DEMO_EVENTS) + 1):
+        ck_state, _w1 = _sw_fold_all(lv, tl, _cam_tuple(DEMO_CAM), DEMO_EVENTS[:k], cache)
+        resumed, _w2 = _sw_fold_all(None, None, None, DEMO_EVENTS[k:], cache, start=ck_state)
+        if resumed[3] != full_head:
+            raise Red("checkpoint at %d then resume gave head %s != the full head %s" % (k, resumed[3][:12], full_head[:12]))
+        splits += 1
+    return ("the head is one left fold, so it is checkpoint/replay-equivalent: incremental-append (%s) equals monolithic-replay, and "
+            "cutting the fold at all %d split points then resuming from the checkpoint reproduces the identical head — a scheduler may "
+            "batch verification any way it likes without changing what the sealed log means" % (inc_head[:12], splits))
+
+
+def sessionwalk_tamper():
+    need_rustc()
+    sp = _sw_build("tamper", DEMO_CAM, DEMO_EVENTS)
+    code, out, _e = run(SESSIONWALK_EXE, ["verify", "--session", sp])
+    if code != 0 or "verify OK" not in out:
+        raise Red("the untampered session did not verify: " + out.strip())
+    original = read(sp)
+    doc = json.load(open(sp, encoding="utf-8"))
+    # tamper: change the first move's command without recomputing its witness or the head
+    for e in doc["data"]["log"]:
+        if e["kind"] == "move":
+            e["command"] = "B" if e["command"] != "B" else "L"
+            break
+    with open(sp, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(doc, fh, indent=1)
+    code, _o, err = run(SESSIONWALK_EXE, ["verify", "--session", sp])
+    if code != 2 or "CHAIN-BROKEN" not in err:
+        raise Red("a tampered move was not caught: %d %s" % (code, err.strip()[:60]))
+    with open(sp, "wb") as fh:
+        fh.write(original)
+    code, out, _e = run(SESSIONWALK_EXE, ["verify", "--session", sp])
+    if code != 0:
+        raise Red("the restored session did not re-verify")
+    return ("changing one event (a move's command) without recomputing its witness makes `verify` replay and catch CHAIN-BROKEN "
+            "(exit 2) at that event — every link after it breaks too; restored to the original bytes, the session re-verifies")
+
+
+def sessionwalk_projection():
+    need_rustc()
+    # the full interleaved session
+    full_head, full_cam, full_content, _m, _e, _w = _sw_twin_head(DEMO_CAM, DEMO_EVENTS)
+    edits_only = [ev for ev in DEMO_EVENTS if ev[0] == "edit"]
+    moves_only = [ev for ev in DEMO_EVENTS if ev[0] == "move"]
+    # drop the moves: the (W,M) evolution is unchanged (moves are not edits)
+    _eh, _ec, edits_content, _m2, _e2, _w2 = _sw_twin_head(DEMO_CAM, edits_only)
+    if edits_content != full_content:
+        raise Red("dropping the moves changed the final (W,M) — a move must not author")
+    # drop the edits: a move that depended on an edit now behaves differently (edits are not views)
+    _mh, moves_cam, _mc, _m3, _e3, _w3 = _sw_twin_head(DEMO_CAM, moves_only)
+    if moves_cam == full_cam:
+        raise Red("dropping the edits left the trajectory unchanged — then the edits never affected navigation, no bridge")
+    return ("the two event kinds have distinct, non-independent roles: dropping every MOVE leaves the final (W,M) identical "
+            "(content %s — moves never author), while dropping every EDIT changes where a move ends up (%s with edits vs %s without — "
+            "the opened doorway is gone) — authoring and navigation interact through one ordered log, not two authorities"
+            % (full_content[:12], "%d,%d,%s" % (full_cam[0], full_cam[1], _LETTER[full_cam[2]]),
+               "%d,%d,%s" % (moves_cam[0], moves_cam[1], _LETTER[moves_cam[2]])))
+
+
+def sessionwalk_demo():
+    need_rustc()
+    rec = envelope.read(os.path.join(ROOT, "workshop", "attest", "sessionwalk-demo.json"))  # sealed under RECORD-0
+    if rec["name"] != "verdandi-session-walk" or rec["claim_class"] != "established":
+        raise Red("the demo is not an established verdandi-session-walk")
+    d = rec["data"]
+    c = corpus()
+    if d["base"]["W"] != c["levels"]["witness"]["W"] or d["base"]["M"] != c["tiles"]["identity"]["M"]:
+        raise Red("the demo's base is not the frozen witness/identity authority")
+    # rebuild the session from the sealed events, verify it replays to the sealed head, and the twin re-derives it
+    events = [(e["kind"], e["command"] if e["kind"] == "move" else e["spec"]) for e in d["log"]]
+    sp = _sw_build("demo", d["base"]["camera"], events)
+    code, out, err = run(SESSIONWALK_EXE, ["verify", "--session", sp])
+    if code != 0 or ("head " + d["head"][:12]) not in out:
+        raise Red("the sealed session did not verify to its head: " + (out + err).strip())
+    twin_head, twin_cam, twin_content, mv, ed, _w = _sw_twin_head(d["base"]["camera"], events)
+    if twin_head != d["head"] or "%d,%d,%s" % (twin_cam[0], twin_cam[1], _LETTER[twin_cam[2]]) != d["final_camera"]:
+        raise Red("the twin disagrees with the sealed demo head/camera")
+    return ("the committed demo (workshop/attest/sessionwalk-demo.json, sealed under RECORD-0) is an interleaved session (%d edits + "
+            "%d moves: open a doorway, walk through it, retexture the floor, turn and step) that `verify` replays to its sealed head "
+            "%s and a Python twin re-derives — established, host-independent" % (ed, mv, d["head"][:12]))
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -1456,6 +1752,13 @@ def main() -> int:
     row("input-tamper", input_tamper)
     row("input-not-authority", input_not_authority)
     row("input-demo", input_demo)
+    row("sessionwalk-build", sessionwalk_build)
+    row("sessionwalk-replay", sessionwalk_replay)
+    row("sessionwalk-interleave", sessionwalk_interleave)
+    row("sessionwalk-batch-invariance", sessionwalk_batch_invariance)
+    row("sessionwalk-tamper", sessionwalk_tamper)
+    row("sessionwalk-projection", sessionwalk_projection)
+    row("sessionwalk-demo", sessionwalk_demo)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]
