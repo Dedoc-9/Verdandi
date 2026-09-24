@@ -1,0 +1,74 @@
+{
+ "name": "verdandi-kernel-bench",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "verify/bench.py",
+  "kernel": "kernel/main.rs (+ mantle.rs, formats.rs, hud.rs)",
+  "flags": [
+   "-C",
+   "opt-level=3"
+  ],
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+  "host": "DANIELDILLBERG",
+  "host_line": "os=windows arch=x86_64 cpu=\"AMD64 Family 26 Model 36 Stepping 0, AuthenticAMD\"",
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "scene": "witness",
+  "tiles": "identity",
+  "camera": [
+   34,
+   28,
+   "W"
+  ],
+  "corpus_commit": "4c8c2451d942ff320a11501b59fbbf2737ec42ce"
+ },
+ "validity_scope": {
+  "certifies": "per-frame renderer time of the kernel on host DANIELDILLBERG for scene witness with identity tiles, 200 samples after 20 warm-ups",
+  "host": "DANIELDILLBERG",
+  "scene": "witness",
+  "tiles": "identity"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency (input transport, present wait and the panel need capture hardware)",
+  "a present, a window, a compositor: none is in this number",
+  "any other host, scene or tile set",
+  "that the kernel is optimised: this is the baseline the gauntlet is measured against"
+ ],
+ "data": {
+  "phases_us": {
+   "frame": {
+    "p50": 3909,
+    "p95": 4220,
+    "p99": 4596,
+    "max": 5677
+   },
+   "pixels": {
+    "p50": 6364,
+    "p95": 7034,
+    "p99": 7284,
+    "max": 7544
+   },
+   "total": {
+    "p50": 10278,
+    "p95": 11254,
+    "p99": 11569,
+    "max": 12374
+   }
+  },
+  "budgets_us": {
+   "60hz": 16667,
+   "144hz": 6944,
+   "240hz": 4167
+  },
+  "samples": 200,
+  "warmup": 20,
+  "witnesses": {
+   "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+   "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35"
+  }
+ },
+ "reading": "renderer time per frame on host DANIELDILLBERG: total p50 10278 / p95 11254 / p99 11569 / max 12374 µs against budgets 16,667 (60 Hz), 6,944 (144 Hz), 4,167 (240 Hz); the comparison is the reader's, from the two numbers; the witnesses were checked before any number was taken",
+ "chain_hash": "b4559a50ed1995a81c4c5324e0280cf3ceafe7a45401584b6bbc5da2813f5744"
+}
