@@ -17,7 +17,7 @@ Python authority; this shell carries none.
 |---|---|
 | `present.rs` | the platform-agnostic core: render a scene to the composite, `to_blit`/`from_blit` (24-bit BGR top-down, a bijection), `blit_witness`, `blit_roundtrip_ok` — the blit-hash law |
 | `main.rs` | `shell witness` / `shell selfcheck` (headless, the law); `shell run` (Windows: the window; elsewhere: `SHELL-NO-WINDOW`) |
-| `win32.rs` | cfg-gated to Windows: the hand-rolled window, `StretchDIBits`, `DwmGetCompositionTimingInfo`; guards every present with the blit witness; writes the raw present record |
+| `win32.rs` | behind `--cfg shell_window` on Windows: the hand-rolled window, `StretchDIBits`, `DwmFlush` as the composition barrier (frame-ready → composited by QPC); guards every present with the blit witness; writes the raw present record |
 | `attest/present-<host>.json` | the host's `frame-ready → composited` record, sealed by `../verify/seal_present.py` under RECORD-0's envelope |
 
 SHELL-0a landed the blit-hash law (`../verify/pins/shell-1.json`; rows `shell-*`): the shell shows the kernel's

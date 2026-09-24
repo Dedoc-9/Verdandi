@@ -264,8 +264,8 @@ and `blit_witness = sha256(to_blit(c))` is the sha of exactly what the OS is han
 a bijection, determines the composite's sha and back. `shell/main.rs`: `shell witness` (the composite sha and
 the blit witness), `shell selfcheck` (`blit_roundtrip OK|BROKEN`), `shell run` (Windows: the window;
 elsewhere: `SHELL-NO-WINDOW`, refusing rather than pretending). `shell/win32.rs` (cfg-gated): a hand-rolled
-Win32 window — `RegisterClassW`/`CreateWindowExW`, a message pump, `StretchDIBits`, `DwmGetCompositionTimingInfo`
-for `qpcFrameDisplayed`, `QueryPerformanceCounter` — that guards every present with the blit witness (a frame
+Win32 window — `RegisterClassW`/`CreateWindowExW`, a message pump, `StretchDIBits`, `DwmFlush`
+(the composition barrier), `QueryPerformanceCounter` — that guards every present with the blit witness (a frame
 whose blit is not the kernel's composite is refused, not shown) and writes a raw present record. `verify/pins/
 shell-1.json` (sealed): per corpus scene × tile, the composite (equal to the HUD composite) and the blit witness.
 `verify/seal_present.py`: seals the host's raw present record under RECORD-0's envelope, checking its blit

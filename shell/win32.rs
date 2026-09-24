@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Daniel J. Dillberg
 //
-// shell/win32.rs — the window, the blit, and DWM's composition clock. COMPILED ONLY ON WINDOWS
-// (`#[cfg(target_os = "windows")]` at the module in main.rs), so the Linux gate never sees this file; it is
-// compiled and run on the owner's host. Zero crates: the Win32 surface is declared here as raw `extern
-// "system"` against user32/gdi32/dwmapi/kernel32, exactly the charter's "hand-rolled Win32."
+// shell/win32.rs — the window, the blit, and DWM's composition barrier. COMPILED ONLY WHEN
+// `--cfg shell_window` is set AND target_os = "windows" (see main.rs), so no gate build on any host sees this
+// file; it is compiled and run on the owner's host. Zero crates: the Win32 surface is declared here as raw
+// `extern "system"` against user32/gdi32/kernel32 (dwmapi is loaded at run time), the charter's "hand-rolled
+// Win32."
 //
 // What it does: register a class, create a window, and — when --measure N is given — run N frames of
 //   1. blit the kernel's composite (as `to_blit` bytes: 24-bit BGR, top-down) with StretchDIBits,
 //   2. read the QPC the moment StretchDIBits returns (frame-ready),
-//   3. poll DwmGetCompositionTimingInfo until a composition pass at or after frame-ready, and take its
-//      qpcFrameDisplayed as the composited time,
-// recording frame-ready -> composited in microseconds, p50/p95/p99/max, with the refresh period beside it, into
-// a record SEALED the same way as verify/bench.py (the RECORD-0 envelope), citing SHELL-0's preregistration.
+//   3. call DwmFlush(), which BLOCKS until the next DWM composition, and read the QPC when it returns
+//      (composited) — no fragile DWM_TIMING_INFO struct is read,
+// recording frame-ready -> composited in microseconds, p50/p95/p99/max, with the refresh period (median idle
+// DwmFlush interval) beside it, into a raw record that verify/seal_present.py seals under the RECORD-0 envelope
+// and stamps with SHELL-0's preregistration hash.
 //
 // THE BLIT-HASH LAW, at the boundary: the shell hashes the exact bytes it hands StretchDIBits and refuses to
 // present a frame whose blit witness is not the one the kernel's composite produces — so a picture that reached
@@ -90,34 +92,10 @@ struct BitmapInfoHeader {
     bi_clr_important: Dword,
 }
 
-#[repr(C)]
-struct UnsignedRatio {
-    numerator: Dword,
-    denominator: Dword,
-}
-
-// DWM_TIMING_INFO — only the head fields we read are named precisely; the tail is padding we never touch.
-#[repr(C)]
-struct DwmTimingInfo {
-    cb_size: Dword,
-    rate_refresh: UnsignedRatio,
-    qpc_refresh_period: u64,
-    rate_compose: UnsignedRatio,
-    qpc_vblank: u64,
-    c_refresh: u64,
-    c_dxrefresh: Uint,
-    qpc_compose: u64,
-    c_frame: u64,
-    c_refresh_frame_submitted: Uint,
-    c_frame_pending: u64,
-    qpc_frame_pending: u64,
-    c_frame_displayed: u64,
-    qpc_frame_displayed: u64,
-    c_refresh_frame_displayed: u64,
-    // ... more fields follow in the real struct; cb_size covers the whole thing, we set it to our size and DWM
-    // fills what fits. We only read up to qpc_frame_displayed.
-    _tail: [u64; 12],
-}
+// The composited time is measured with DwmFlush() (which blocks until the next DWM composition) plus QPC — NOT
+// by reading DWM_TIMING_INFO, whose 40-plus mixed-width fields are too fragile to hand-lay-out correctly (an
+// earlier attempt read qpcFrameDisplayed from the wrong offset and never advanced). frame-ready is the QPC the
+// instant StretchDIBits returns; composited is the QPC the instant the following DwmFlush() returns.
 
 const WS_OVERLAPPEDWINDOW: Dword = 0x00CF_0000;
 const WS_VISIBLE: Dword = 0x1000_0000;
@@ -159,13 +137,11 @@ extern "system" {
 }
 
 // dwmapi is loaded at RUNTIME (its import library is absent from some mingw toolchains, which fails the link);
-// user32/gdi32/kernel32 are core and always present, so they stay `#[link]`. If dwmapi.dll or either proc is
-// missing at run time, `run` refuses SHELL-NO-DWM rather than crashing.
-type DwmGetTimingFn = extern "system" fn(Hwnd, *mut DwmTimingInfo) -> i32;
+// user32/gdi32/kernel32 are core and always present, so they stay `#[link]`. We need only DwmFlush (the
+// composition barrier). If dwmapi.dll or DwmFlush is missing at run time, `run` refuses SHELL-NO-DWM.
 type DwmFlushFn = extern "system" fn() -> i32;
 
 struct Dwm {
-    get_timing: DwmGetTimingFn,
     flush: DwmFlushFn,
 }
 
@@ -175,15 +151,11 @@ fn load_dwm() -> Option<Dwm> {
         if lib.is_null() {
             return None;
         }
-        let g = GetProcAddress(lib, b"DwmGetCompositionTimingInfo\0".as_ptr());
         let f = GetProcAddress(lib, b"DwmFlush\0".as_ptr());
-        if g.is_null() || f.is_null() {
+        if f.is_null() {
             return None;
         }
-        Some(Dwm {
-            get_timing: std::mem::transmute::<*mut c_void, DwmGetTimingFn>(g),
-            flush: std::mem::transmute::<*mut c_void, DwmFlushFn>(f),
-        })
+        Some(Dwm { flush: std::mem::transmute::<*mut c_void, DwmFlushFn>(f) })
     }
 }
 
@@ -298,40 +270,47 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
 
     let mut freq = 0i64;
     unsafe { QueryPerformanceFrequency(&mut freq) };
+    if freq <= 0 {
+        freq = 1;
+    }
     let mut samples: Vec<u128> = Vec::with_capacity(measure.max(1));
-    let mut refresh_period_qpc = 0u64;
 
+    // refresh period: the median of a few idle DwmFlush intervals (each blocks ~one composition)
+    let mut refresh: Vec<u128> = Vec::with_capacity(8);
+    for _ in 0..8 {
+        let a = qpc();
+        (dwm.flush)();
+        let b = qpc();
+        refresh.push((b - a).max(0) as u128 * 1_000_000 / freq as u128);
+    }
+    refresh.sort_unstable();
+    let refresh_us = refresh[refresh.len() / 2];
+
+    // one present: frame-ready (QPC after StretchDIBits) -> composited (QPC after the following DwmFlush)
     let present_once = |hwnd: Hwnd, dwm: &Dwm| -> Option<u128> {
         let hdc = unsafe { GetDC(hwnd) };
         if hdc.is_null() {
             return None;
         }
-        // frame-ready is the QPC the moment StretchDIBits returns
         let ok = unsafe {
             StretchDIBits(hdc, 0, 0, (W as i32) / 2, (H as i32) / 2, 0, 0, W as i32, H as i32,
                 blit.as_ptr() as *const c_void, &header, DIB_RGB_COLORS, SRCCOPY)
         };
         let ready = qpc();
+        let composited = if ok != 0 {
+            (dwm.flush)();
+            Some(qpc())
+        } else {
+            None
+        };
         unsafe { ReleaseDC(hwnd, hdc) };
-        if ok == 0 {
-            return None;
-        }
-        // poll DWM until a composition pass whose displayed frame is at or after frame-ready
-        let mut info: DwmTimingInfo = unsafe { std::mem::zeroed() };
-        info.cb_size = std::mem::size_of::<DwmTimingInfo>() as Dword;
-        for _ in 0..240 {
-            unsafe { (dwm.flush)() };
-            let hr = unsafe { (dwm.get_timing)(std::ptr::null_mut(), &mut info) };
-            if hr == 0 && info.qpc_frame_displayed as i64 >= ready {
-                return Some((info.qpc_frame_displayed - ready as u64) as u128 * 1_000_000 / freq as u128);
-            }
-        }
-        None
+        composited.map(|t| (t - ready).max(0) as u128 * 1_000_000 / freq as u128)
     };
 
     // pump + present loop
     let mut msg: Msg = unsafe { std::mem::zeroed() };
     let mut done = 0usize;
+    let want = if measure == 0 { usize::MAX } else { measure };
     loop {
         while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
             unsafe {
@@ -340,25 +319,20 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
             }
             if msg.message == 0x0012 {
                 // WM_QUIT
-                emit(host, &samples, refresh_period_qpc, freq, &c, cam, &bw);
+                emit(host, &samples, refresh_us, &c, cam, &bw);
                 return;
             }
         }
-        if measure == 0 || done < measure {
+        if done < want {
             if let Some(us) = present_once(hwnd, &dwm) {
                 if measure > 0 {
                     samples.push(us);
                 }
                 done += 1;
             }
-            let mut info: DwmTimingInfo = unsafe { std::mem::zeroed() };
-            info.cb_size = std::mem::size_of::<DwmTimingInfo>() as Dword;
-            if unsafe { (dwm.get_timing)(std::ptr::null_mut(), &mut info) } == 0 {
-                refresh_period_qpc = info.qpc_refresh_period;
-            }
         }
         if measure > 0 && done >= measure {
-            emit(host, &samples, refresh_period_qpc, freq, &c, cam, &bw);
+            emit(host, &samples, refresh_us, &c, cam, &bw);
             unsafe { DestroyWindow(hwnd) };
             return;
         }
@@ -366,13 +340,12 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
     }
 }
 
-fn emit(host: &str, samples: &[u128], refresh_period_qpc: u64, freq: i64, c: &Composed, cam: Camera, blit_w: &str) {
+fn emit(host: &str, samples: &[u128], refresh_us: u128, c: &Composed, cam: Camera, blit_w: &str) {
     if samples.is_empty() {
         println!("SHELL presented; no measurement requested (--measure N to record)");
         return;
     }
     let (p50, p95, p99, max) = percentiles(samples.to_vec());
-    let refresh_us = if freq > 0 { refresh_period_qpc as u128 * 1_000_000 / freq as u128 } else { 0 };
     let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
     // a record under RECORD-0's envelope, written by hand here to keep the shell std-only and crate-free
     let data = format!(
