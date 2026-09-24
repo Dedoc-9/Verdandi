@@ -1,0 +1,100 @@
+{
+ "name": "verdandi-render-breakdown",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "kernel/main.rs --breakdown + verify/gauntlet.py",
+  "kernel": "kernel/main.rs (+ mantle.rs, formats.rs, hud.rs)",
+  "flags": [
+   "-C",
+   "opt-level=3"
+  ],
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+  "host": "DANIELDILLBERG",
+  "host_line": "os=windows arch=x86_64 cpu=\"AMD64 Family 26 Model 36 Stepping 0, AuthenticAMD\"",
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "scene": "witness",
+  "tiles": "identity",
+  "camera": [
+   34,
+   28,
+   "W"
+  ],
+  "corpus_commit": "4c8c2451d942ff320a11501b59fbbf2737ec42ce",
+  "preregistered": {
+   "rung": "GAUNTLET-0",
+   "chain_hash": "a8122b4f8e35f1c61fc92ccdea428e5ed965fabf095b5234422606565478753e"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the per-phase render decomposition of the kernel on host DANIELDILLBERG for scene witness with identity tiles, 300 samples after 30 warm-ups",
+  "host": "DANIELDILLBERG",
+  "scene": "witness",
+  "tiles": "identity"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency (input transport, present wait and the panel need capture hardware)",
+  "a present, a window, a compositor: none is in this number",
+  "any other host, scene, tile set or resolution; absolute us are host-specific — the permille shares are the portable quantity",
+  "a speed improvement: a breakdown is a target-finder, not an optimization; GAUNTLET-1 must prove byte-identity before any speed claim",
+  "that the witness hashes (frame_digest, pixel_sha) are interactive-render cost: they are verification-only and excluded from the render total"
+ ],
+ "data": {
+  "render_phases_us": {
+   "strips": {
+    "p50": 30,
+    "p95": 44,
+    "p99": 53,
+    "max": 72
+   },
+   "frame": {
+    "p50": 5964,
+    "p95": 6812,
+    "p99": 7314,
+    "max": 7813
+   },
+   "emit": {
+    "p50": 9904,
+    "p95": 11352,
+    "p99": 14903,
+    "max": 15752
+   },
+   "render": {
+    "p50": 15911,
+    "p95": 17970,
+    "p99": 21426,
+    "max": 22664
+   }
+  },
+  "render_p99_shares_permille": {
+   "strips": 2,
+   "frame": 341,
+   "emit": 695
+  },
+  "witness_hashes_us": {
+   "frame_digest": {
+    "p50": 8749,
+    "p95": 10148,
+    "p99": 11198,
+    "max": 12305
+   },
+   "pixel_sha": {
+    "p50": 24387,
+    "p95": 26792,
+    "p99": 30940,
+    "max": 31946
+   }
+  },
+  "decision_rule_permille": 500,
+  "samples": 300,
+  "warmup": 30,
+  "witnesses": {
+   "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+   "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35"
+  }
+ },
+ "reading": "reference render decomposed on host DANIELDILLBERG: strips 2 / frame 341 / emit 695 permille of the render p99; the largest is emit (695 permille). The 500-permille decision rule (the reader's, applied to these shares) says GAUNTLET-1 targets emit iff its share >= 500, and the incremental-floor-cast hypothesis dies unless frame >= 500. The two witness hashes are verification-only cost, excluded from the render total; the witnesses were checked before any number was taken",
+ "chain_hash": "2e62f6bf7511d06ffdb39bd8d99714e2683271a8c944434713be7ffe085f38e6"
+}
