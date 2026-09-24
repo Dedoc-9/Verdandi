@@ -124,7 +124,7 @@ fn main() {
                 refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to present and measure");
             }
         }
-        "playback" | "checkpoint" | "resume" => {
+        "playback" | "checkpoint" | "resume" | "playback-window" => {
             let a = &args[2..];
             let opt = |flag: &str| -> Option<String> {
                 a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
@@ -141,9 +141,22 @@ fn main() {
                     let out = opt("--out").unwrap_or_else(|| refuse("USAGE", "checkpoint needs --out"));
                     playback::checkpoint(&session, &root, at, &out);
                 }
-                _ => {
+                "resume" => {
                     let ck = opt("--checkpoint").unwrap_or_else(|| refuse("USAGE", "resume needs --checkpoint"));
                     playback::resume(&session, &root, &ck);
+                }
+                _ => {
+                    // playback-window (SHELL-PLAYBACK-b): play the sealed session IN the host window (window build only)
+                    #[cfg(all(target_os = "windows", shell_window))]
+                    {
+                        let frames = playback::frames(&session, &root);
+                        win32::playback_window(frames);
+                    }
+                    #[cfg(not(all(target_os = "windows", shell_window)))]
+                    {
+                        let _ = (&session, &root);
+                        refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to play a sealed session in the window");
+                    }
                 }
             }
         }

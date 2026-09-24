@@ -28,7 +28,7 @@ use std::ffi::c_void;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::formats::{facing_letter, Camera};
-use crate::present::{blit_witness, to_blit, Composed};
+use crate::present::{blit_roundtrip_ok, blit_witness, to_blit, Composed};
 use crate::mantle::{H, W};
 
 type Bool = i32;
@@ -337,6 +337,111 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
             return;
         }
         let _ = WM_PAINT;
+    }
+}
+
+/// SHELL-PLAYBACK-b: play a sealed session's frames IN the window (host-run). Every frame is guarded by the
+/// blit-hash law before it reaches the OS; the sequence plays once at a visible dwell, then holds the last frame
+/// until the window is closed. This is the on-screen counterpart of the headless bridge the gate certifies; it
+/// carries no authority and mints no record — it only displays the composites `shell/playback.rs` produced.
+pub fn playback_window(frames: Vec<Composed>) {
+    if frames.is_empty() {
+        eprintln!("SHELL-PLAYBACK-EMPTY: the sealed session has no move frames to show");
+        std::process::exit(2);
+    }
+    // guard every frame: hand the OS only bytes that carried the kernel's composite intact
+    let blits: Vec<Vec<u8>> = frames.iter().map(|c| to_blit(&c.composite)).collect();
+    for (i, c) in frames.iter().enumerate() {
+        if !blit_roundtrip_ok(&c.composite) {
+            eprintln!("SHELL-BLIT-REFUSE: playback frame {} did not round-trip; not presenting", i);
+            std::process::exit(2);
+        }
+    }
+
+    let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
+    let class_name = wide("VerdandiPlayback");
+    let title = wide("Verðandi — SHELL-PLAYBACK");
+    let wc = WndClassW {
+        style: 0,
+        lpfn_wnd_proc: Some(wnd_proc),
+        cb_cls_extra: 0,
+        cb_wnd_extra: 0,
+        h_instance: hinstance,
+        h_icon: std::ptr::null_mut(),
+        h_cursor: std::ptr::null_mut(),
+        hbr_background: std::ptr::null_mut(),
+        lpsz_menu_name: std::ptr::null(),
+        lpsz_class_name: class_name.as_ptr(),
+    };
+    unsafe { RegisterClassW(&wc) };
+    let hwnd = unsafe {
+        CreateWindowExW(0, class_name.as_ptr(), title.as_ptr(), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+            CW_USEDEFAULT, CW_USEDEFAULT, (W as i32) / 2 + 16, (H as i32) / 2 + 39,
+            std::ptr::null_mut(), std::ptr::null_mut(), hinstance, std::ptr::null_mut())
+    };
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+
+    let header = BitmapInfoHeader {
+        bi_size: std::mem::size_of::<BitmapInfoHeader>() as Dword,
+        bi_width: W as Long,
+        bi_height: -(H as Long),
+        bi_planes: 1,
+        bi_bit_count: 24,
+        bi_compression: BI_RGB,
+        bi_size_image: (W * H * 3) as Dword,
+        bi_x_pels_per_meter: 0,
+        bi_y_pels_per_meter: 0,
+        bi_clr_used: 0,
+        bi_clr_important: 0,
+    };
+
+    // pace with DwmFlush when available (each blocks ~one composition), else a small sleep; presentation timing
+    // only — never authority. DWELL compositions per frame keeps the walk watchable.
+    let dwm = load_dwm();
+    const DWELL: u32 = 24;
+
+    let mut msg: Msg = unsafe { std::mem::zeroed() };
+    let mut idx = 0usize;
+    let mut dwell = 0u32;
+    println!("[playback] {} frames; close the window to stop", frames.len());
+    println!("[playback] frame 1 of {}", frames.len());
+    loop {
+        while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            unsafe {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            if msg.message == 0x0012 {
+                // WM_QUIT
+                return;
+            }
+        }
+        let hdc = unsafe { GetDC(hwnd) };
+        if !hdc.is_null() {
+            unsafe {
+                StretchDIBits(hdc, 0, 0, (W as i32) / 2, (H as i32) / 2, 0, 0, W as i32, H as i32,
+                    blits[idx].as_ptr() as *const c_void, &header, DIB_RGB_COLORS, SRCCOPY);
+            }
+            unsafe { ReleaseDC(hwnd, hdc) };
+        }
+        match &dwm {
+            Some(d) => {
+                (d.flush)();
+            }
+            None => std::thread::sleep(std::time::Duration::from_millis(13)),
+        }
+        dwell += 1;
+        if dwell >= DWELL {
+            dwell = 0;
+            if idx + 1 < frames.len() {
+                idx += 1;
+                println!("[playback] frame {} of {}", idx + 1, frames.len());
+            }
+            // else: hold the last frame until the window is closed
+        }
     }
 }
 

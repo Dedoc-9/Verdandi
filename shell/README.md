@@ -18,7 +18,7 @@ Python authority; this shell carries none.
 | `present.rs` | the platform-agnostic core: render a scene to the composite, `to_blit`/`from_blit` (24-bit BGR top-down, a bijection), `blit_witness`, `blit_roundtrip_ok` — the blit-hash law |
 | `playback.rs` | SHELL-PLAYBACK: `shell playback --session S` consumes a sealed SESSION-WALK, replays it through the present path, and emits the per-move frame digest + blit witness + round-trip; `shell checkpoint --at K` / `shell resume --checkpoint CK` fold in checkpoint/replay equivalence. Re-derives every witness and the head and REFUSES (`DIVERGED`) if the sealed input was tampered; writes no authority (rows `shell-playback-*`) |
 | `main.rs` | `shell witness` / `shell selfcheck` (headless, the law); `shell playback` / `checkpoint` / `resume` (headless, SHELL-PLAYBACK); `shell run` (Windows: the window; elsewhere: `SHELL-NO-WINDOW`) |
-| `win32.rs` | behind `--cfg shell_window` on Windows: the hand-rolled window, `StretchDIBits`, `DwmFlush` as the composition barrier (frame-ready → composited by QPC); guards every present with the blit witness; writes the raw present record. SHELL-PLAYBACK-b (`shell playback-window`, playing a sealed session in the window) is the host-run counterpart, not built here |
+| `win32.rs` | behind `--cfg shell_window` on Windows: the hand-rolled window, `StretchDIBits`, `DwmFlush` as the composition barrier (frame-ready → composited by QPC); guards every present with the blit witness; writes the raw present record. `playback_window` (SHELL-PLAYBACK-b) plays a sealed session frame-by-frame in the real window, each frame blit-law-guarded — host-run, out of every gate build |
 | `attest/present-<host>.json` | the host's `frame-ready → composited` record, sealed by `../verify/seal_present.py` under RECORD-0's envelope |
 
 SHELL-0a landed the blit-hash law (`../verify/pins/shell-1.json`; rows `shell-*`): the shell shows the kernel's
@@ -32,7 +32,8 @@ SESSION-WALK and nothing else. Playback consumes the sealed session (never an ad
 the present path, and its composited frame-digest sequence equals the session's per-move witnesses — the crown
 witness tying the sealed-authority mechanism to the certified blit law. It writes no authority, refuses a
 tampered/reordered/truncated input (`DIVERGED`), and resumes from any certified checkpoint to the same head. The
-on-screen window (SHELL-PLAYBACK-b) is the host-run counterpart, and only after it does LATENCY-0 measure timing.
+on-screen window (SHELL-PLAYBACK-b, `shell playback-window`) now ships in `win32.rs` — host-run under
+`--cfg shell_window`, it plays a sealed session in the real window; and only after it does LATENCY-0 measure timing.
 
 What a shell number is and is not: frame → composited is software-reachable; input transport, the present
 wait beyond composition, and the panel are not (they need capture hardware). No number from this folder is an

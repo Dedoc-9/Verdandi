@@ -536,8 +536,9 @@ re-derives every event's witness and the head and REFUSES (`DIVERGED`, exit 2) i
 it can never mint a new authority; it reads the level, tiles and session and writes none of them. Checkpoint/
 resume is folded in: `shell checkpoint --at K` captures the WHOLE interleaved authority (level bytes, tiles bytes,
 camera, head) at event K, and `shell resume --checkpoint CK` reproduces the identical frame-witness suffix and
-head as replay from the origin. The actual on-screen window (`shell playback-window`, host-run under
-`--cfg shell_window`) is **SHELL-PLAYBACK-b**, named below, not built here — the certified bridge is headless.
+head as replay from the origin. The on-screen window (`shell playback-window`, **SHELL-PLAYBACK-b**) ships in
+`shell/win32.rs` behind `--cfg shell_window`: it guards every frame with the blit law and plays the sealed
+session in the real window. Like all of `win32.rs` it is host-run and out of every gate build (graded DECLARED).
 
 **Design, searched.** This is deterministic record-and-replay with per-checkpoint canonical state hashing
 ([ACM Queue: Deterministic Record-and-Replay](https://queue.acm.org/detail.cfm?id=3688088), [canonical state
@@ -565,8 +566,9 @@ through the SHELL-0 present path (read off the source: `compose_frame`/`to_blit`
 DECLARED: the checkpoint sidecar format; that the head fold matches `workshop/sessionwalk.rs` (mirrored constants,
 cross-checked live by `shell-playback-frame-sequence` and the sealed head).
 
-**does_not_show.** The on-screen window (SHELL-PLAYBACK-b, host-run — the gate cannot open a window; the bridge
-certified here is what that window would display). Presentation timing / frame pacing (LATENCY-0). Appearance
+**does_not_show.** The on-screen window's correctness (SHELL-PLAYBACK-b ships in `win32.rs` but is host-run and
+out of every gate build — the gate cannot open a window; what the gate certifies is the headless bridge that
+window displays). Presentation timing / frame pacing (LATENCY-0). Appearance
 beyond geometry in the *chain* (the move witness is the geometry frame digest; the pixels the window shows are
 carried by the blit law but not chained). A skybox or physics. That the chain defeats a joint rewrite of events
 and head (the outer seal and git anchor that).
@@ -596,9 +598,10 @@ into one interleaved log where authoring and moving genuinely interact — the s
 SHELL-PLAYBACK proves the window *displays exactly that becoming* and nothing else, through the SHELL-0 blit law.
 Each was proven headless first. What remains on the locked path:
 
-- **SHELL-PLAYBACK-b (host window).** `shell playback-window --session S`, built under `--cfg shell_window` on
-  Windows, plays a sealed session frame-by-frame in the real window and can emit a host attestation — the on-screen
-  counterpart of the certified headless bridge, run on the host like SHELL-0a's present number. Not built here.
+- **SHELL-PLAYBACK-b (host window).** `shell playback-window --session S`, shipped in `shell/win32.rs` behind
+  `--cfg shell_window`, plays a sealed session frame-by-frame in the real window (each frame guarded by the blit
+  law). Host-run and out of every gate build, like the rest of `win32.rs` — the on-screen counterpart of the
+  certified headless bridge, run on the host like SHELL-0a's present number.
 - **LATENCY-0 (host measurement).** Only after the window plays does LATENCY-0 measure input-to-present on the host,
   where the 144Hz/7ms batch scheduler becomes a preregistered hypothesis with a success AND a failure condition —
   timing, never mixed into the authority model. The boundary holds: SESSION-WALK proves what is becoming,
