@@ -1,0 +1,48 @@
+{
+ "name": "verdandi-present",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell/win32.rs run --measure",
+  "host": "DANIELDILLBERG",
+  "camera": [
+   34,
+   28,
+   "W"
+  ],
+  "preregistered": {
+   "rung": "SHELL-0",
+   "chain_hash": "de30d1ec9bf60a0a44acd7ee7bd9de4ca9c87d78a3ee5dbc5ecd2cf25c08d8cd"
+  },
+  "unix_seconds": 1790213405
+ },
+ "validity_scope": {
+  "certifies": "frame-ready -> composited time of the GDI present path on host DANIELDILLBERG, 200 frames, for this scene",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency: input transport, the present wait beyond composition and the panel need capture hardware",
+  "renderer time (that is the kernel bench, kernel/attest/bench-<host>.json); this is only frame-ready -> composited",
+  "a low-latency claim: a composed GDI present costs at least one refresh interval under DWM — this is the baseline a flip-model shell is measured against",
+  "any other host, scene or window state"
+ ],
+ "data": {
+  "present_us": {
+   "p50": 5289,
+   "p95": 6015,
+   "p99": 6373,
+   "max": 6577
+  },
+  "refresh_period_us": 13466,
+  "samples": 200,
+  "budgets_us": {
+   "60hz": 16667,
+   "144hz": 6944,
+   "240hz": 4167
+  },
+  "blit_witness": "6b1655405dcbb10338f14aaec2202c2cc19121d4b87ba8df70a7a477280a62c6",
+  "composite": "03ac612881b4aec05e1f30b4ff025b8fcc2c028465f3b06332f2c8c3079c5c25"
+ },
+ "reading": "frame-ready -> composited on the host; renderer time excluded (that is the bench); NOT input-to-photon",
+ "chain_hash": "2bb1bd3e03dcab91b646f8374e3cbe38ec65772e020e70a23458d4ffe7c0b369"
+}
