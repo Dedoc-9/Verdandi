@@ -13,7 +13,9 @@ oracle natively; the corpus; the mirrored sign table as the control that shows t
 workshop (an edit is a new authority and the witnesses say what it moved; the planted falsifiers bite),
 hud (the overlay is a frame: pinned, index-free, inside its region, reading state and not materials),
 records (RECORD-0: every record Verðandi mints passes the envelope's firewall, the two writers agree, and a
-rung that produces a number on a host was preregistered with a failure condition).
+rung that produces a number on a host was preregistered with a failure condition),
+shell (SHELL-0a: the blit-hash law headless — the shell shows the kernel's composite, the blit is an invertible
+carrier of it, and a byte corrupted between kernel and blit is detectable; the window is the host's, cfg-gated).
 """
 from __future__ import annotations
 
@@ -32,6 +34,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ORACLE = os.path.join(ROOT, "oracle")
 KERNEL = os.path.join(ROOT, "kernel")
 WORKSHOP = os.path.join(ROOT, "workshop")
+SHELL = os.path.join(ROOT, "shell")
 BUILD = os.path.join(ROOT, "verify", "build")
 RUSTC = shutil.which("rustc")
 FLAGS = ["-O"]
@@ -92,20 +95,29 @@ def compile_rs(src_dir: str, main: str, out: str, source_override: dict | None =
     are written into a scratch copy of the directory first. Returns the executable path."""
     need_rustc()
     os.makedirs(BUILD, exist_ok=True)
+    exe = os.path.join(BUILD, out + EXE)
     src = src_dir
+    scratch = None
     if source_override:
-        src = os.path.join(BUILD, "src-" + os.path.basename(out))
-        if os.path.isdir(src):
-            shutil.rmtree(src)
-        os.makedirs(src)
+        # A crate may reference a sibling directory (`#[path = "../kernel/mantle.rs"]`), so the scratch copy
+        # must sit at the SAME place under the repo root as the real source dir — a sibling of `kernel/` — for
+        # those relative paths to resolve. It is removed after the compile so the working tree stays clean.
+        scratch = os.path.join(ROOT, ".gate-" + out)
+        if os.path.isdir(scratch):
+            shutil.rmtree(scratch)
+        os.makedirs(scratch)
         for name in os.listdir(src_dir):
             if name.endswith(".rs"):
-                shutil.copy(os.path.join(src_dir, name), os.path.join(src, name))
+                shutil.copy(os.path.join(src_dir, name), os.path.join(scratch, name))
         for name, text in source_override.items():
-            with open(os.path.join(src, name), "w", encoding="utf-8", newline="\n") as fh:
+            with open(os.path.join(scratch, name), "w", encoding="utf-8", newline="\n") as fh:
                 fh.write(text)
-    exe = os.path.join(BUILD, out + EXE)
-    cp = subprocess.run([RUSTC] + FLAGS + [os.path.join(src, main), "-o", exe], capture_output=True, text=True)
+        src = scratch
+    try:
+        cp = subprocess.run([RUSTC] + FLAGS + [os.path.join(src, main), "-o", exe], capture_output=True, text=True)
+    finally:
+        if scratch and os.path.isdir(scratch):
+            shutil.rmtree(scratch)
     if cp.returncode != 0:
         raise Red("rustc failed: " + cp.stderr.strip().splitlines()[0])
     return exe
@@ -706,6 +718,87 @@ def records_preregistered():
             f"hash-locked ({locked}); {len(cited)} committed records cite a registration" + cite_note)
 
 
+# ------------------------------------------------------------------ shell (SHELL-0a)
+SHELL_EXE: str | None = None
+
+
+def shell_lines(exe: str, cmd: str, level: str, tiles: str, camera: str) -> dict:
+    code, out, err = run(exe, [cmd, "--level", os.path.join(ORACLE, "levels", level + ".lvl"),
+                               "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"), "--camera", camera])
+    if code != 0:
+        raise Red(f"shell {cmd} exited {code}: {err.strip()}")
+    return dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+
+
+def shell_build():
+    global SHELL_EXE
+    SHELL_EXE = compile_rs(SHELL, "main.rs", "shell")
+    return ("shell/main.rs (+ the kernel's mantle.rs, formats.rs, hud.rs, and present.rs) compiled live; the Win32 window "
+            "(shell/win32.rs) is cfg-gated to Windows and not in this build — the blit-hash law below is what the gate exercises")
+
+
+def shell_blit_pins():
+    need_rustc()
+    p, c, hud = envelope.read(os.path.join(ROOT, "verify", "pins", "shell-1.json")), corpus(), pins()
+    n = 0
+    for name, e in c["scenes"].items():
+        for tname in e["witnesses"]:
+            d = shell_lines(SHELL_EXE, "witness", e["level"], tname, camera_of(e))
+            want = p["data"]["scenes"][name][tname]
+            if d["composite"] != want["composite"] or d["blit"] != want["blit"]:
+                raise Red(f"{name}/{tname}: shell witness ({d['composite'][:12]}, {d['blit'][:12]}) != pins")
+            if d["composite"] != hud["data"]["scenes"][name][tname]["hud"]:
+                raise Red(f"{name}/{tname}: the shell's composite is not the kernel's HUD composite")
+            n += 1
+    return (f"{n} composites and {n} blit witnesses equal verify/pins/shell-1.json, and every composite equals the HUD composite the "
+            f"kernel minted — the shell shows the kernel's picture and hands the OS exactly its BGR top-down bytes")
+
+
+def shell_blit_law():
+    need_rustc()
+    c = corpus()
+    n = 0
+    for name, e in c["scenes"].items():
+        for tname in e["witnesses"]:
+            d = shell_lines(SHELL_EXE, "selfcheck", e["level"], tname, camera_of(e))
+            if d.get("blit_roundtrip") != "OK":
+                raise Red(f"{name}/{tname}: from_blit(to_blit(composite)) != composite")
+            n += 1
+    # the Linux build has no window and says so rather than pretending to present
+    code, out, _err = run(SHELL_EXE, ["run", "--level", os.path.join(ORACLE, "levels", "witness.lvl"),
+                                      "--tiles", os.path.join(ORACLE, "tiles", "identity.tiles"), "--camera", "34,28,W"])
+    line = (out.strip().splitlines() or [""])[0]
+    # the refusal is on stderr; re-run capturing it
+    cp = subprocess.run([SHELL_EXE, "run", "--level", os.path.join(ORACLE, "levels", "witness.lvl"),
+                         "--tiles", os.path.join(ORACLE, "tiles", "identity.tiles"), "--camera", "34,28,W"], capture_output=True, text=True)
+    if cp.returncode != 2 or "SHELL-NO-WINDOW" not in cp.stderr:
+        raise Red(f"a windowless build did not refuse `run`: exit {cp.returncode} {cp.stderr.strip()[:60]}")
+    _ = line
+    return (f"the blit round-trip holds on all {n} corpus composites (the transform carries the kernel's bytes intact), and a build "
+            f"with no window refuses `run` (SHELL-NO-WINDOW) rather than pretending to present")
+
+
+def shell_blit_plant():
+    """The plant: a to_blit that drops the red channel (writes 0). The blit witness must move on the witness scene and
+    the round-trip must break — a corrupted present path is detectable."""
+    need_rustc()
+    src = read(os.path.join(SHELL, "present.rs")).decode("utf-8")
+    anchor = "        out[i * 3 + 2] = rgb[i * 3]; // R"
+    if src.count(anchor) != 1:
+        raise Red("the blit-plant anchor is not where expected")
+    corrupted = src.replace(anchor, "        out[i * 3 + 2] = 0; // PLANT: the present path drops red")
+    exe = compile_rs(SHELL, "main.rs", "shell-plant", {"present.rs": corrupted})
+    p = envelope.read(os.path.join(ROOT, "verify", "pins", "shell-1.json"))
+    d = shell_lines(exe, "witness", "witness", "identity", "34,28,W")
+    if d["blit"] == p["data"]["scenes"]["witness"]["identity"]["blit"]:
+        raise Red("the corrupted present path produced the pinned blit witness — the law is not load-bearing")
+    sc = shell_lines(exe, "selfcheck", "witness", "identity", "34,28,W")
+    if sc.get("blit_roundtrip") != "BROKEN":
+        raise Red("a corrupted to_blit still round-trips — the law does not bite")
+    return ("PLANT: a present path that drops the red channel moves the blit witness off the pin AND breaks the round-trip "
+            "(blit_roundtrip BROKEN) — the shell hashing what it blits catches a picture the kernel did not make")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -734,6 +827,10 @@ def main() -> int:
     row("records-firewall", records_firewall)
     row("records-twins", records_twins)
     row("records-preregistered", records_preregistered)
+    row("shell-build", shell_build)
+    row("shell-blit-pins", shell_blit_pins)
+    row("shell-blit-law", shell_blit_law)
+    row("shell-blit-plant", shell_blit_plant)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

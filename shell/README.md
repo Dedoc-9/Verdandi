@@ -13,6 +13,18 @@ the viewport and HUD are the kernel's frame. A cross-platform shell is a later, 
 project's lesson stands here: its eight interactive pages each carried an untested JavaScript mirror of the
 Python authority; this shell carries none.
 
+| File | What it is |
+|---|---|
+| `present.rs` | the platform-agnostic core: render a scene to the composite, `to_blit`/`from_blit` (24-bit BGR top-down, a bijection), `blit_witness`, `blit_roundtrip_ok` — the blit-hash law |
+| `main.rs` | `shell witness` / `shell selfcheck` (headless, the law); `shell run` (Windows: the window; elsewhere: `SHELL-NO-WINDOW`) |
+| `win32.rs` | cfg-gated to Windows: the hand-rolled window, `StretchDIBits`, `DwmGetCompositionTimingInfo`; guards every present with the blit witness; writes the raw present record |
+| `attest/present-<host>.json` | the host's `frame-ready → composited` record, sealed by `../verify/seal_present.py` under RECORD-0's envelope |
+
+SHELL-0a landed the blit-hash law (`../verify/pins/shell-1.json`; rows `shell-*`): the shell shows the kernel's
+composite and hands the OS exactly its bytes, and a byte corrupted between the kernel and the blit is detectable
+— the defence WORKSHOP-0 named as out of its reach. The window and the number are the host's (SHELL-0,
+preregistered).
+
 What a shell number is and is not: frame → composited is software-reachable; input transport, the present
 wait beyond composition, and the panel are not (they need capture hardware). No number from this folder is an
 input-to-photon claim.

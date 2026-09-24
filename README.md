@@ -77,6 +77,7 @@ is a second authority.
          │        (a fork of the owner's executable-epistemics)
     SHELL-0 ───── a real window (hand-rolled Win32, zero crates), frame → composited timed;
          │        the shell hashes what it blits; born under the envelope, preregistered
+         │        (0a: the blit-hash law, headless & gated here; the window runs on the host)
     MEMBRANE-0 ── the one-way law as a compile-time wall (a row whose PASS is rustc refusing a plant)
          │
     TEXT-0 ────── the level as text, content split from provenance
@@ -109,6 +110,8 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/kernel ... --bench 200 --warm 20            # off-gate: renderer time on this host
     verify/build/kernel ... --hud --write-png out.ppm         # the composite with the overlay, to look at
     python verify/bench.py --host $env:COMPUTERNAME           # off-gate: the kernel's frame time, sealed under the envelope
+    verify/build/shell witness --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
+    verify/build/shell run --level ... --camera 34,28,W --measure 200 --host $env:COMPUTERNAME   # Windows: the window + present timing
     rustc -O workshop/edit.rs -o verify/build/edit           # the workshop
     verify/build/edit record --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles \
         --camera 34,28,W --edit cell:31,27,. --out-dir out --name cell

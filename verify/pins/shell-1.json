@@ -1,0 +1,97 @@
+{
+ "name": "verdandi-shell-pins",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell/main.rs witness over the frozen corpus",
+  "blit_transform": "24-bit BGR, top-down, DWORD-aligned (W=1920 -> 5760 bytes/row, no padding)",
+  "corpus": "oracle/witnesses.json"
+ },
+ "validity_scope": {
+  "certifies": "the composite the shell shows (the kernel's viewport + HUD, equal to the HUD composite pin) and the blit witness (the sha of the exact BGR top-down bytes StretchDIBits receives) per corpus scene and tile set",
+  "scenes": [
+   "corridor",
+   "landmark",
+   "neighbour",
+   "pointblank",
+   "room",
+   "witness"
+  ],
+  "tile_sets": [
+   "identity",
+   "oriented"
+  ]
+ },
+ "forbidden_interpretations": [
+  "a present number (that is shell/attest/present-<host>.json on the host, sealed by seal_present.py)",
+  "that the picture is legible (a design judgment, off-gate)",
+  "any window, compositor or clock: this is the blit-hash law, headless",
+  "a wall-clock"
+ ],
+ "data": {
+  "scenes": {
+   "witness": {
+    "identity": {
+     "composite": "03ac612881b4aec05e1f30b4ff025b8fcc2c028465f3b06332f2c8c3079c5c25",
+     "blit": "6b1655405dcbb10338f14aaec2202c2cc19121d4b87ba8df70a7a477280a62c6"
+    },
+    "oriented": {
+     "composite": "386075beeb587daba1d8229ffc231699c8ffc1d2e84e4c750f04fad03d031966",
+     "blit": "e79c5f31e40b7cd2f040fc1da5d59df031e2e23df2520a24a3935c46062b36c6"
+    }
+   },
+   "corridor": {
+    "identity": {
+     "composite": "154235c13c8d6bbcb87f8c39ee6eec39aa5d626cb205db0536bac74381382c68",
+     "blit": "462158e5eed8952a030496961d5a9a46b1bc3efbcba1eb23afd5cbffcc76abff"
+    },
+    "oriented": {
+     "composite": "b00df894fbdde4dcbf44bfcd0ce95183e9db2c28db3784189c0645fa3e708941",
+     "blit": "b8a4c7458f65cca90554d93807a5baba009ffdff70ba8873fed63e4ce6271982"
+    }
+   },
+   "room": {
+    "identity": {
+     "composite": "09665a94e1c4f4019c7757329305e1aa2f54b70b6281eb2ecfe6d3f6c1696f95",
+     "blit": "b71c043807a399887a32dfecfa77a5d014f2a6f31751b75ba8eac63342b70e20"
+    },
+    "oriented": {
+     "composite": "ce8bf7545ea4292ad214a41e809c3197853b49a1fb512928aeee4bd274fa0234",
+     "blit": "e325fa5aff9abd51c31ab1114fe4a890dc99666a581f824cd00b333448871bc9"
+    }
+   },
+   "landmark": {
+    "identity": {
+     "composite": "e2dcbc2deb176f74fd29f8cc198299ac5092e2c0f18ac05400ea1ad7549bdaba",
+     "blit": "ed329bb1f94cee03115a490177d1a138ae7dc56e60922e85bf786bc83365ee3f"
+    },
+    "oriented": {
+     "composite": "3e1e5b7e9fe68c0ccaa4f613ce93e9b1b989f2ac9e3ffe50e73d75e6cda247b9",
+     "blit": "ed2cebea924daa1f79f59ab8bc5f18704011af73225d85e1d886e1a62064dcfd"
+    }
+   },
+   "pointblank": {
+    "identity": {
+     "composite": "de946ee1d2f925e2a6a060bddb450e6998418df09092bccdcf78b4e8325af9f9",
+     "blit": "79e3f4c6edfea02be5e213296a4c518179a0259feece20d75eb4eb63965fb8d5"
+    },
+    "oriented": {
+     "composite": "e67813aeda4b4aff051af55a1d53dfed272ad9640fce818f846f60540abfe685",
+     "blit": "c4fe546b1fdd7fe952cb4de5ebf6ebabece37f7264c1c5981fd5f4d8879881c1"
+    }
+   },
+   "neighbour": {
+    "identity": {
+     "composite": "d0c6c27226922fdb516c39dd70efc01c51f82d873cd9a32c906284bd624e072d",
+     "blit": "c596dfb66ccea51c71e7178562af875ae7f25e90d666e0af2e2346af2aff430a"
+    },
+    "oriented": {
+     "composite": "e310b652c73c7c0f16043888347d845f93f80bdf876fb9196fead1edcfccd490",
+     "blit": "89a41e6d30ff341af34ffec058f91e148159e24219859988c2b1ed0675f22ccb"
+    }
+   }
+  }
+ },
+ "reading": "the blit-hash law: composite = the kernel's HUD composite; blit = sha256 of to_blit(composite) (BGR, top-down); to_blit is a bijection (from_blit(to_blit(c))==c), so a byte corrupted between the kernel and the blit moves the blit witness and breaks the round-trip — a picture reaching the screen without passing through the kernel is detectable",
+ "chain_hash": "7f0430f136b8a85ff5b6df01cfb0cd12fc6231f1dd1f2963894fa481f34ca386"
+}

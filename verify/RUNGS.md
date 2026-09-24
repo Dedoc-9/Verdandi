@@ -246,3 +246,47 @@ measured and are folded in as the cone bound (a census row) and GAUNTLET-0; rayo
 edit coalescing were declined (a dependency the charter excludes; memory for a millisecond diff; WORKSHOP-1's
 territory). The `intent`/`feedback` bridge was declined: an `expected_change` field is unfalsifiable, and
 `outside-view` is already `CHECK OK`, not a refusal.
+
+## SHELL-0a — the blit-hash law, headless (seat 5, the container-verifiable half)
+
+**The boundary.** SHELL-0 opens a window and times `frame-ready → composited` on the owner's host; a Linux
+container has no Win32, no window and no DWM clock, so the rung splits. SHELL-0a lands the half that is
+verifiable anywhere — the blit-hash law — with the window written and `cfg(target_os = "windows")`-gated, so
+the gate compiles the shell with the Win32 module out and the law is what it exercises. The host half
+(the window, the present, the number) is a follow-up the owner runs; its conditions are already hash-locked in
+`verify/preregister.json` (SHELL-0), and `shell/win32.rs` is the one file the gate does not compile.
+
+**What landed.** `shell/present.rs` (std-only, platform-agnostic): `compose_frame` renders a scene to the
+composite the shell shows — the kernel's viewport with the HUD overlay — and `to_blit` converts it to the exact
+bytes `StretchDIBits` receives: 24-bit BGR, top-down, DWORD-aligned (W = 1920 → 5760 bytes/row, no padding).
+`from_blit` is its inverse (a B↔R swap, self-inverse), so `blit_roundtrip_ok(c) = from_blit(to_blit(c)) == c`
+and `blit_witness = sha256(to_blit(c))` is the sha of exactly what the OS is handed — which, the transform being
+a bijection, determines the composite's sha and back. `shell/main.rs`: `shell witness` (the composite sha and
+the blit witness), `shell selfcheck` (`blit_roundtrip OK|BROKEN`), `shell run` (Windows: the window;
+elsewhere: `SHELL-NO-WINDOW`, refusing rather than pretending). `shell/win32.rs` (cfg-gated): a hand-rolled
+Win32 window — `RegisterClassW`/`CreateWindowExW`, a message pump, `StretchDIBits`, `DwmGetCompositionTimingInfo`
+for `qpcFrameDisplayed`, `QueryPerformanceCounter` — that guards every present with the blit witness (a frame
+whose blit is not the kernel's composite is refused, not shown) and writes a raw present record. `verify/pins/
+shell-1.json` (sealed): per corpus scene × tile, the composite (equal to the HUD composite) and the blit witness.
+`verify/seal_present.py`: seals the host's raw present record under RECORD-0's envelope, checking its blit
+witness against the pins and citing SHELL-0's registration.
+
+**Rows.** `shell-build` — the shell compiles with the Win32 module cfg'd out. `shell-blit-pins` — 12 composites
+and 12 blit witnesses equal the pins, and every composite equals the kernel's HUD composite (the shell shows the
+kernel's picture and blits exactly its bytes). `shell-blit-law` — the round-trip holds on all 12 composites, and
+a windowless build refuses `run`. `shell-blit-plant` — a present path that drops the red channel moves the blit
+witness off the pin and makes `selfcheck` print BROKEN: a picture the kernel did not make is detectable.
+
+**Grade.** MEASURED: the blit-hash law and its plant, the pins, the no-window refusal, live. ESTABLISHED: the
+transform is a bijection (read off `to_blit`/`from_blit`; a channel swap is its own inverse). DECLARED: the DIB
+format (BGR, top-down); the host present number (preregistered, unmeasured until the owner runs it). UNCOMPILED
+here: `shell/win32.rs` (compiled and run only on the host).
+
+**does_not_show.** A present number (the host's, sealed by `seal_present.py`, citing SHELL-0). That
+`shell/win32.rs` compiles — the container cannot; the owner compiles it, as with the first `mantle_rs` port. That
+the picture on screen is legible. That `frame-ready → composited` is input-to-photon — it is not (input
+transport, the present wait beyond composition and the panel need capture hardware).
+
+**Falsifier.** `shell-blit-pins` reddens if the shell's composite ever differs from the kernel's, or the blit
+bytes from `to_blit` of it; `shell-blit-law` if the round-trip ever fails or a windowless build stops refusing;
+`shell-blit-plant` if a corrupted present path stops being caught.
