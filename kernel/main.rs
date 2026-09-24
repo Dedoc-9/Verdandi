@@ -8,7 +8,8 @@
 //     kernel --level L.lvl --tiles T.tiles --camera 34,28,W      # composed from the studio's files
 //     kernel ... --bench 200 --warm 20                           # off-gate: p50/p95/p99/max us per phase
 //     kernel ... --breakdown 300 --warm 30                        # off-gate (GAUNTLET-0): render split strips/frame/emit + the two witness hashes
-//     kernel ... --fast                                           # GAUNTLET-1: fast.rs emit vs the frozen emit — fast_equal OK|DIFFER, region divide-work, first-diff taxonomy
+//     kernel ... --fast                                           # GAUNTLET-1: fast.rs emit vs the frozen emit — fast_equal OK|DIFFER, region divide-work (frozen + candidate), first-diff taxonomy
+//     kernel ... --fast-bench 300 --warm 30                        # off-gate (GAUNTLET-1b): frozen emit vs fast emit, same apparatus (both must reproduce the witness)
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
@@ -83,6 +84,7 @@ fn main() {
     let mut write_scene: Option<String> = None;
     let mut want_hud = false;
     let mut want_fast = false;
+    let mut fast_bench = 0usize;
     let mut write_ppm: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
@@ -99,6 +101,7 @@ fn main() {
             "--write-scene" => { write_scene = Some(next(i)); i += 2; }
             "--hud" => { want_hud = true; i += 1; }
             "--fast" => { want_fast = true; i += 1; }
+            "--fast-bench" => { fast_bench = next(i).parse().unwrap_or_else(|_| refuse("--fast-bench needs a count")); i += 2; }
             "--write-png" => { write_ppm = Some(next(i)); i += 2; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
@@ -192,12 +195,20 @@ fn main() {
         println!("fast_pixels {}", fps);
         println!("fast_frame {}", fd); // fast never writes buf; the frame is the frozen one, echoed for the record
         println!("fast_equal {}", if firstdiff.is_none() && fps == ps { "OK" } else { "DIFFER" });
-        // the deterministic region measure: the divide-work per region, which names GAUNTLET-1b's target
+        // the deterministic region measure: the divide-work per region, which named GAUNTLET-1b's target
         let (wall_tex, floor_tex, table_px) = fast::region_divides(&first.strips, &first.frame);
         let (wall_work, floor_work) = (wall_tex, 4 * floor_tex);
         let dominant = if floor_work >= wall_work { "floor" } else { "wall" };
         println!("fast_region wall_tex={} floor_tex={} table_px={}", wall_tex, floor_tex, table_px);
         println!("fast_divwork wall={} floor={} dominant={}", wall_work, floor_work, dominant);
+        // GAUNTLET-1b: the candidate's floor loop does ONE div_euclid per coordinate (2/floor px) where the frozen
+        // did two texel(rem_euclid, div_euclid) pairs (4/floor px); the wall and ceiling are unchanged. A structural
+        // divide reduction read off fast.rs (a source-cost proxy, NOT a wall-clock and NOT a speed claim — the speed
+        // is gauntlet1b.py's separate host court). floor_saved is the divides the collapse removes on this frame.
+        let floor_work_fast = 2 * floor_tex;
+        let dominant_fast = if floor_work_fast >= wall_tex { "floor" } else { "wall" };
+        let floor_saved = floor_work - floor_work_fast;
+        println!("fast_optwork wall={} floor={} dominant={} floor_saved={}", wall_tex, floor_work_fast, dominant_fast, floor_saved);
         // the failure taxonomy: first differing pixel, its coordinate, region, index and channels
         if let Some(bi) = firstdiff {
             let p = bi / 3;
@@ -212,6 +223,40 @@ fn main() {
                 first.pixels[o], first.pixels[o + 1], first.pixels[o + 2], rgb_fast[o], rgb_fast[o + 1], rgb_fast[o + 2]);
             exit(3);
         }
+    }
+    if fast_bench > 0 {
+        // GAUNTLET-1b: the same-apparatus emit comparison — the frozen `mantle` emit and the sibling `fast` emit,
+        // timed back to back over the SAME frozen strips + frame (both are pure functions of them; neither writes
+        // buf, so frame_digest cannot move). BOTH must reproduce the frozen pixel witness or no number is printed.
+        // This is an EMIT-level delta ONLY: it is never the whole render, and it is NEVER cross-compared to
+        // GAUNTLET-0's instrumented render absolute (a different apparatus) — the locked GAUNTLET-1 rule. The
+        // comparison itself is left to the reader (verify/gauntlet1b.py); this prints two percentile lines as data.
+        let mut rgb_frozen = vec![0u8; W * H * 3];
+        let mut rgb_fast = vec![0u8; W * H * 3];
+        let mut t_frozen: Vec<u128> = Vec::with_capacity(fast_bench);
+        let mut t_fast: Vec<u128> = Vec::with_capacity(fast_bench);
+        for k in 0..(warm + fast_bench) {
+            let a0 = Instant::now();
+            scene.emit(&first.strips, &first.frame, &mut rgb_frozen);
+            let a1 = Instant::now();
+            fast::emit(&scene, &first.strips, &first.frame, &mut rgb_fast);
+            let a2 = Instant::now();
+            if k >= warm {
+                t_frozen.push((a1 - a0).as_micros());
+                t_fast.push((a2 - a1).as_micros());
+            }
+        }
+        // guard: both emits reproduced the frozen witness, so the delta timed the certified render both ways
+        let same_after = hex(&sha256(&rgb_frozen)) == ps && hex(&sha256(&rgb_fast)) == ps;
+        if !same_after {
+            refuse("the fast-bench emits did not both reproduce the frozen pixel witness; no number is printed");
+        }
+        let (a, b, c, d) = percentiles(t_frozen);
+        println!("fastbench_frozen_us p50={} p95={} p99={} max={}", a, b, c, d);
+        let (a, b, c, d) = percentiles(t_fast);
+        println!("fastbench_fast_us p50={} p95={} p99={} max={}", a, b, c, d);
+        println!("fastbench_samples {} warmup {} same_witnesses OK", fast_bench, warm);
+        println!("{}", host_line());
     }
     if breakdown > 0 {
         // GAUNTLET-0: the render decomposed at the kernel's pub-phase boundaries — strips (traversal), frame

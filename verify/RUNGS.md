@@ -745,6 +745,56 @@ first-diff taxonomy); `gauntlet1-region` if the divide-work is not per-source or
 `gauntlet1-preregistered` if the acceptance/promotion rule is weakened; and when GAUNTLET-1b's candidate lands, the
 same `gauntlet1-equiv` refuses it outright on a single differing pixel, whatever its speed.
 
+## GAUNTLET-1b — the floor divide-collapse: the first exact optimization (seat 15)
+
+**What landed (the first real technique, proven byte-identical).** GAUNTLET-1a named the floor's per-row perspective
+divides as the target; GAUNTLET-1b writes the simplest *exact* reduction and nothing more. `kernel/fast.rs`'s floor
+loop — and **only** its floor loop — collapses the two `texel(N.rem_euclid(kk·Q), kk·Q)` calls into one `div_euclid`
+per floor coordinate: **2 divides per textured floor pixel where the frozen did 4**, and the column-constant `d·EYE_Y`
+multiplies are hoisted out of the row loop (no per-pixel `e·kk`). The ceiling and wall passes stay exact
+transcriptions; `mantle.rs` is untouched. The candidate is proven byte-identical to the frozen emit — the *same*
+`gauntlet1-equiv` court built in 1a now judges a real candidate, and it passes on every corpus and adversarial case.
+
+**The collapse, derived (and why byte-identity is the real proof).** With `den = kk·Q`, `Q == T == 256`, and
+`N = e·kk + d·EYE_Y`, the frozen `texel(N.rem_euclid(den), den) = clamp((N.rem_euclid(den)·T).div_euclid(den), 0, T−1)`
+reduces **exactly** to `(e + (d·EYE_Y).div_euclid(kk)).rem_euclid(T)`: the clamp never bites (the value is already in
+`[0,T)`), and `rem_euclid(256)` is `& (T−1)` for any `i64` (T is a power of two). The identity was checked over
+17.6M cases, but the derivation is not the acceptance test — **byte-identity is**: a differing pixel refuses the
+candidate at any speed. The deterministic region measure now reports both costs off the same pixel counts: on the
+witness frame (34,28,W), frozen floor divide-work **2,778,592** (694,648 px × 4) → candidate **1,389,296** (× 2),
+the wall unchanged at **674,760** — **1,389,296 floor divides removed**, the floor still the dominant divide region
+left for GAUNTLET-1c.
+
+**Design, searched.** The exact half-reduction is the smallest intervention that attacks the named region: it removes
+the redundant `rem_euclid`+scale by recognizing the frozen texel over a `kk·Q` denominator is a fixed-point divide by
+`kk` alone. The two-court rule holds: correctness is mandatory and gate-enforced (byte-identity + the deterministic
+reduction), speed is measured separately on ONE consistent apparatus and never cross-compared to GAUNTLET-0's
+instrumented render absolute. `kernel/main.rs --fast-bench N` times the frozen `mantle` emit and the `fast` emit back
+to back over the *same* frozen strips + frame (both must reproduce the witness); `verify/gauntlet1b.py --host NAME`
+runs it, checks the witnesses first, and seals `verdandi-gauntlet1b-emit` (an emit-only, same-apparatus delta) to
+`kernel/attest/gauntlet1b-<host>.json`, citing the GAUNTLET-1 preregistration.
+
+**Rows.** `gauntlet1-equiv` — unchanged, and now decisive: the candidate `fast.rs` emit (with the collapsed floor) is
+byte-identical to the frozen emit over the corpus + adversarial cameras (`fast_pixels == pixels`, `fast_frame ==
+frame`). `gauntlet1b-reduction` — new: the candidate is byte-identical on the witness frame AND its floor does exactly
+**2 divides/px** (down from the frozen 4), the wall untouched, `floor_saved` exactly the removed half — the
+deterministic divide reduction, gate-enforced, no wall-clock.
+
+**Grade.** MEASURED (live, headless): byte-identity of the collapsed-floor candidate over corpus + adversarial
+cameras, and the deterministic 4→2 floor divide reduction. ESTABLISHED (derived + 17.6M-case checked, and byte-proven
+by the gate): the collapse identity. NOT_MEASURED here: the wall-clock speedup — that is GAUNTLET-1b's separate host
+court (`verify/gauntlet1b.py`), sealed off-gate; the gate proves correctness, the host measures speed.
+
+**does_not_show.** A speedup (the gate carries none; the host record does, off-gate). The whole-render cost (the
+`--fast-bench` delta is emit only). Any comparison to GAUNTLET-0's instrumented render absolute (different apparatus).
+That the harness is the oracle (it is not — `mantle.rs` is; the candidate is guilty until its bytes agree). The
+full elimination of the floor's per-row divide (that is GAUNTLET-1c, decided only after this collapse is measured).
+
+**Falsifier.** `gauntlet1-equiv` reddens on a single differing pixel between the collapsed floor and the frozen emit
+(with the first-diff taxonomy); `gauntlet1b-reduction` reddens if the candidate is not byte-identical, if the wall
+divide-work changes, if the floor is not exactly halved, or if `floor_saved` is not the removed half; and the host
+seal refuses to print a number unless both emits reproduce the frozen witness first.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -769,10 +819,13 @@ staircase and what remains:
 
 - **The GAUNTLET staircase.** GAUNTLET-0 (seated) measured the render breakdown and locked the 500‰ rule; `emit`
   cleared it (695‰ on host). GAUNTLET-1a (seated) built the differential court — a sibling `fast.rs` emit proven
-  byte-identical to the frozen emit over corpus + adversarial cameras — and its deterministic region measure names
-  the **floor's per-row perspective divides** as the target (floor divide-work ~4× the wall's). **GAUNTLET-1b** now
-  writes the simplest *exact* floor optimization and earns acceptance only by (1) byte-identity through the same
-  `gauntlet1-equiv` harness and (2) a separately judged, same-apparatus speed result. **GAUNTLET-2+** only after the
+  byte-identical to the frozen emit over corpus + adversarial cameras — and its deterministic region measure named
+  the **floor's per-row perspective divides** as the target (floor divide-work ~4× the wall's). GAUNTLET-1b (seated)
+  wrote the first *exact* floor optimization — the **divide-collapse**, 4→2 floor divides per pixel, proven
+  byte-identical through the same `gauntlet1-equiv` court and gated deterministically by `gauntlet1b-reduction`; its
+  speed is a separate, same-apparatus host court (`verify/gauntlet1b.py`, sealed off-gate). **GAUNTLET-1c** will decide
+  the full floor-divide elimination (a row-major DDA restructure) only after the collapse is measured on a host.
+  **GAUNTLET-2+** only after the
   first has a measured result. **LATENCY-1** then reruns the same fixed session and records the before/after render
   delta against LATENCY-0's immutable baseline.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is

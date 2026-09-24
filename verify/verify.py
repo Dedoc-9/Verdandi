@@ -2084,6 +2084,39 @@ def gauntlet1_region():
             "frame-pass floor cast the original hypothesis named" % (wall_tex, floor_tex, wall_work, floor_work, dominant, floor_work // max(wall_work, 1)))
 
 
+def gauntlet1b_reduction():
+    """GAUNTLET-1b: the floor divide-collapse. The candidate emit is byte-identical to the frozen emit (the same
+    gauntlet1-equiv court judges it) AND its floor loop does exactly HALF the floor divides — 2 per textured floor
+    pixel (one div_euclid per coordinate) where the frozen did 4 (two texel, each rem_euclid + div_euclid) — with the
+    wall and ceiling untouched. This gates the DETERMINISTIC divide reduction (a source-cost proxy, not a wall-clock);
+    the speed itself is GAUNTLET-1b's separate host court (verify/gauntlet1b.py, sealed off-gate citing GAUNTLET-1)."""
+    need_rustc()
+    d = _fast_lines("witness", "identity", "34,28,W")
+    if d.get("fast_equal") != "OK" or d.get("fast_pixels") != d.get("pixels"):
+        raise Red("the GAUNTLET-1b candidate is not byte-identical to the frozen emit on the witness frame")
+    reg = dict(kv.split("=") for kv in d["fast_region"].split())
+    base = dict(kv.split("=") for kv in d["fast_divwork"].split() if "=" in kv)
+    opt = dict(kv.split("=") for kv in d["fast_optwork"].split() if "=" in kv)
+    wall_tex, floor_tex = int(reg["wall_tex"]), int(reg["floor_tex"])
+    base_floor = int(base["floor"])
+    opt_wall, opt_floor, saved = int(opt["wall"]), int(opt["floor"]), int(opt["floor_saved"])
+    if base_floor != 4 * floor_tex:
+        raise Red("the frozen floor divide-work is not 4/px: %s" % d["fast_divwork"])
+    if opt_wall != wall_tex:
+        raise Red("the candidate changed the wall divide-work (the collapse must touch only the floor): %s" % d["fast_optwork"])
+    if opt_floor != 2 * floor_tex:
+        raise Red("the candidate floor divide-work is not 2/px (the 4->2 collapse): %s" % d["fast_optwork"])
+    if saved != base_floor - opt_floor or saved != 2 * floor_tex:
+        raise Red("floor_saved is not exactly the removed half of the floor divides: %s" % d["fast_optwork"])
+    if opt.get("dominant") != ("floor" if opt_floor >= opt_wall else "wall"):
+        raise Red("the candidate's reported dominant region disagrees with its divide-work")
+    return ("GAUNTLET-1b's floor divide-collapse is byte-identical to the frozen emit (fast_equal OK, fast_pixels == "
+            "pixels on 34,28,W) AND does exactly HALF the floor divides: %d floor-textured px at 2/px = %d (candidate) "
+            "vs 4/px = %d (frozen), the wall unchanged at %d — %d divides removed on this frame, the floor still the "
+            "dominant divide region left for GAUNTLET-1c. The reduction is deterministic (a source-cost proxy); the "
+            "speed is a separate host court (gauntlet1b.py, off-gate, citing GAUNTLET-1)" % (floor_tex, opt_floor, base_floor, opt_wall, saved))
+
+
 def gauntlet1_preregistered():
     """GAUNTLET-1's acceptance and promotion rule is locked: byte-identity is mandatory and gate-enforced, speed is a
     separate court, mantle.rs stays the frozen oracle, and a speed number is never cross-compared to GAUNTLET-0's
@@ -2155,6 +2188,7 @@ def main() -> int:
     row("gauntlet1-preregistered", gauntlet1_preregistered)
     row("gauntlet1-equiv", gauntlet1_equiv)
     row("gauntlet1-region", gauntlet1_region)
+    row("gauntlet1b-reduction", gauntlet1b_reduction)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)

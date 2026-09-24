@@ -9,15 +9,20 @@
 // proven before any candidate technique is inspected. The frozen `mantle.rs` is the correctness oracle; this file
 // is guilty until its bytes agree with it, and the harness compares candidate -> frozen, never the reverse.
 //
-// GAUNTLET-1b will replace the body below with the simplest exact optimization the measured dominant region
-// justifies, and it earns acceptance only by (1) byte-identical output over the corpus + adversarial cameras and
-// (2) a separately judged speed result. Correctness is mandatory; speed is a second, independent court.
+// GAUNTLET-1b is the first exact optimization: a divide-collapse in the floor loop below. The frozen floor did
+// FOUR integer divides per textured pixel (two `texel` calls, each a `rem_euclid` then a `div_euclid`, over the
+// moving denominator `kk*Q`); this does TWO (one `div_euclid` per floor coordinate) and hoists the column-constant
+// `d*EYE_Y` multiplies out of the row loop. It earns acceptance only by (1) byte-identical output over the corpus +
+// adversarial cameras (the same `gauntlet1-equiv` court, now judging a real candidate) and (2) a separately judged,
+// same-apparatus speed result (`verify/gauntlet1b.py` on a host, sealed off-gate). Correctness is mandatory and
+// gate-enforced; speed is a second, independent court. The ceiling and wall loops stay exact transcriptions.
 
 use crate::mantle::{texel, u_axis_is_z, Scene, Strip, BANDS, CY, DOWN0, EYE_Y, FLOOR0, H, Q, T, U_SIGN, W, WALL0};
 
-/// An exact transcription of `mantle::Scene::emit` as a free function (the GAUNTLET-1a seed — no optimization).
-/// Every operation and its order mirror the frozen source; `mantle.rs` is not touched. `buf` is read, never
-/// written, so the frame (and thus `frame_digest`) cannot move.
+/// The candidate `emit` as a free function. The ceiling and wall passes mirror `mantle::Scene::emit` operation for
+/// operation (an exact transcription); the floor pass is GAUNTLET-1b's divide-collapse, proven byte-identical to the
+/// frozen floor by `gauntlet1-equiv`. `mantle.rs` is not touched. `buf` is read, never written, so the frame (and
+/// thus `frame_digest`) cannot move.
 pub fn emit(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
     let ex = scene.pos_x * Q + EYE_Y;
     let ez = scene.pos_z * Q + EYE_Y;
@@ -59,6 +64,15 @@ pub fn emit(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
             out[o + 1] = m[tile[k + 1] as usize];
             out[o + 2] = m[tile[k + 2] as usize];
         }
+        // GAUNTLET-1b divide-collapse. `dz*EYE_Y` and `dx*EYE_Y` are column-constant — hoist them out of the row
+        // loop. For the moving denominator den = kk*Q with Q == T == 256, the frozen
+        //     texel(N.rem_euclid(den), den) = clamp((N.rem_euclid(den) * T).div_euclid(den), 0, T-1)  with N = e*kk + d*EYE_Y
+        // reduces EXACTLY to (e + (d*EYE_Y).div_euclid(kk)).rem_euclid(T): the clamp never bites (the value is already
+        // in [0,T)), and rem_euclid(256) is `& (T-1)` for any i64 (T is a power of two). Two `div_euclid` per floor
+        // pixel instead of four, and no per-pixel `e*kk` multiply. Byte-identity is the proof, not this comment:
+        // `gauntlet1-equiv` compares this floor against the frozen one over the corpus + adversarial cameras.
+        let dz_eye = dz * EYE_Y;
+        let dx_eye = dx * EYE_Y;
         for r in (bot + 1)..H {
             let idx = buf[r * W + c];
             let o = (r * W + c) * 3;
@@ -68,9 +82,8 @@ pub fn emit(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
                 continue;
             }
             let kk = 2 * (r as i64 - CY) + 1;
-            let den = kk * Q;
-            let tj = texel((ez * kk + dz * EYE_Y).rem_euclid(den), den);
-            let ti_f = texel((ex * kk + dx * EYE_Y).rem_euclid(den), den);
+            let tj = (ez + dz_eye.div_euclid(kk)) & (T - 1);
+            let ti_f = (ex + dx_eye.div_euclid(kk)) & (T - 1);
             let k = ((tj * T + ti_f) * 3) as usize;
             let band = (idx - FLOOR0) as usize;
             let m = &scene.floor_map[band * 256..band * 256 + 256];
@@ -84,10 +97,12 @@ pub fn emit(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
 
 /// The GAUNTLET-1a region measure, DETERMINISTIC (so the gate computes it byte-identically, no host timing):
 /// count the pixels that take each of emit's three branches, mirroring the frozen branch logic exactly (region
-/// by top/bot, then the idx test), and the integer-division work each costs — read off the source cost mechanism:
-/// ceiling/table = 0, a textured wall pixel = 1 (one `texel`), a textured floor pixel = 4 (two `texel`, each a
-/// `rem_euclid` + a `div_euclid`). Returns (wall_textured_px, floor_textured_px, table_px), from which the
-/// divide-work is wall + 4*floor. This names GAUNTLET-1b's target region without measuring a wall-clock.
+/// by top/bot, then the idx test). The per-source divide cost is read off the source mechanism: ceiling/table = 0;
+/// a textured wall pixel = 1 (one `texel`); a textured FLOOR pixel = 4 in the FROZEN emit (two `texel`, each a
+/// `rem_euclid` + a `div_euclid`) and 2 in this GAUNTLET-1b candidate (one `div_euclid` per coordinate, the
+/// collapse). Returns (wall_textured_px, floor_textured_px, table_px); `main.rs --fast` reads the frozen baseline
+/// (wall + 4*floor) and the candidate (wall + 2*floor) off these counts. This names the region and its reduction
+/// without measuring a wall-clock — the speed itself is GAUNTLET-1b's separate, host-measured court.
 pub fn region_divides(strips: &[Strip], buf: &[u8]) -> (usize, usize, usize) {
     let (mut wall_tex, mut floor_tex, mut table_px) = (0usize, 0usize, 0usize);
     for c in 0..W {
