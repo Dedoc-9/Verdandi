@@ -369,3 +369,65 @@ is the only authoring surface — the editor pane (a shell concern) is later. An
 canonical; `text-reformat` if a reformat ever moves W or ever leaves the authoring digest unmoved; `text-edit`
 if a cell edit leaves W unmoved or its W diverges from the byte edit; `text-refuse` if any malformed text is
 accepted.
+
+## WORKSHOP-1 — the log is the history, undo is replay, the session is a hash-chained file (seat 8)
+
+**What landed.** `workshop/session.rs` (std-only): a session is a base authority (a level + tiles) and an
+ordered log of cell edits (walls and ground) and tile edits (textures) — the two things the frozen oracle
+certifies. It is event-sourced: the world is not stored mutably, it is REBUILT by replaying the log from the
+base, so `undo to n` is a deterministic replay of the first n edits, never a localised mutation (`apply` is
+pure — cells, tiles, no clock, no I/O, no camera). Each entry carries two digests, the claim/full split from
+the owner's `provenance_runtime`: `content = sha256(W‖M)` (the authority state after the edit) and
+`full = sha256(parent.full‖content)` — a single-writer hash chain whose head is the session's integrity in one
+hash. `propose` validates against the head and writes NOTHING (the speculative scratchpad, from
+`live_world_kernel`); `commit` appends with its digests; a failed propose leaves the log unchanged. Three
+states are reported: committed (in the log), irreversible (something committed depends on it), durable (it
+replays). `verify/seal_session.py` seals a committed snapshot under RECORD-0.
+
+**Design, searched.** A single-writer hash chain is the right structure — records are ordered from one author
+and verifiers replay from the base anchor, so tampering any entry cascades and breaks every link after it; a
+Merkle *tree* only earns its keep for O(log n) sampling proofs a session does not need. Undo-as-replay is
+event-sourcing's own rule (rebuild from a snapshot; replay is deterministic because `apply` reads nothing
+external). The honest boundary from the audit-log literature: a hash chain catches tampering UNDER REPLAY but
+does not prove timing or non-membership, nor stop a rewrite of entries AND hashes together — so the committed
+session is additionally sealed under RECORD-0 and anchored by git history.
+
+**Rows.** `workshop1-build` — compiles. `workshop1-replay` — a 4-edit session replays to its head, and a
+Python chain twin recomputes the same head independently (a cross-language check, like `records-twins`).
+`workshop1-undo` — undo to 2 rewinds the head to exactly a fresh 2-edit session's head (undo is replay), and
+verifies committed 2 / irreversible 1. `workshop1-propose` — a valid propose writes nothing; one that opens
+the border is refused and still writes nothing. `workshop1-tamper` — changing one log entry's param without
+its digests makes `verify` replay and catch `CHAIN-BROKEN`; restored, it re-verifies. `workshop1-demo` — the
+committed sealed demo (`workshop/attest/session-demo.json`) replays to its head over 5 edits on the frozen
+witness base, three-state consistent.
+
+**Grade.** MEASURED: replay/head, the Python chain twin, undo-as-replay equivalence, propose-writes-nothing,
+tamper detection, the sealed demo — all live. ESTABLISHED: `apply` is pure (read off the source: no clock, no
+I/O, no camera), which is what makes replay deterministic. DECLARED: the `VRDNSES1` chain construction, the
+three-state vocabulary.
+
+**does_not_show.** A skybox or physics — see the open clause below; the log holds only cell and tile edits.
+Branching history (the log is linear; a causal-subtree undo is a later rung). A camera (projection-owned,
+INPUT-0). Multi-writer or concurrent editing (single-writer by construction). That the chain defeats a
+simultaneous rewrite of entries and hashes (it does not; the outer seal and git anchor that).
+
+**Falsifier.** `workshop1-replay` reddens if the head ever diverges from the twin; `workshop1-undo` if undo
+ever differs from replay; `workshop1-propose` if a propose writes or an invalid one is accepted;
+`workshop1-tamper` if a changed entry is not caught; `workshop1-demo` if the committed session stops replaying
+to its head.
+
+## The open clause, now with named rungs (skybox, physics)
+
+New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
+
+- **SKYBOX-0 (new VIEW semantics).** The sky is `vista`'s LUT sky-bands per depth, frozen in Urðr. Authoring a
+  skybox is a VIEW law Urðr never certified, so it takes one of the two open-clause routes: earned in Urðr and
+  re-frozen here as `urdr-oracle-2`, or a Verðandi-local VIEW reference pinned by rows here. Not built until a
+  route is chosen and a semantics exists to render it.
+- **PHYSICS-0 (new CORE semantics).** Urðr is a renderer; there is no physics in the frozen oracle at all.
+  Physics is CORE, and CORE has ONE route only — earned in Urðr (or its successor) and re-frozen. The studio
+  authors no physics before a certified semantics renders it; anything else would be a second authority, which
+  the charter forbids.
+
+The seated order's authoring rungs (WORKSHOP-1, INPUT-0) reach walls, ground and textures — everything the
+frozen oracle certifies. Skybox and physics are beyond it, named here, gated behind the new-semantics route.

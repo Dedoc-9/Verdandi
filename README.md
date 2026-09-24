@@ -82,7 +82,7 @@ is a second authority.
          │
     TEXT-0 ────── the level as text, content split from provenance [landed]
          │
-    WORKSHOP-1 ── the log is the history, undo is replay, the session is a file
+    WORKSHOP-1 ── the log is the history, undo is replay, the session is a hash-chained file [landed]
          │
     INPUT-0 ───── shell input → typed command → new camera; the command log replays headless
          │

@@ -19,7 +19,9 @@ carrier of it, and a byte corrupted between kernel and blit is detectable; the w
 membrane (MEMBRANE-0: the one-way law as a compile-time wall — editing the authority through a live read-borrow
 does not compile, while read-then-edit does and renders the kernel's witnesses),
 text (TEXT-0: the level as text — round-trips to the same W, and tells a reformat from an edit: a comment or
-blank line moves the authoring digest and not W, a cell edit moves both).
+blank line moves the authoring digest and not W, a cell edit moves both),
+workshop1 (WORKSHOP-1: the log is the history — a session is a base authority + a hash-chained cell/tile edit
+log; undo is replay, propose is a scratchpad, tampering breaks the chain; a Python twin re-derives the head).
 """
 from __future__ import annotations
 
@@ -1004,6 +1006,182 @@ def text_refuse():
     return "%d malformed texts refused typed before any content digest — %s" % (len(got), ", ".join(got))
 
 
+# ------------------------------------------------------------------ workshop1 (WORKSHOP-1)
+SESSION_EXE = None
+SES = os.path.join(BUILD, "ses")
+TILE_BYTES = 256 * 256 * 3
+
+
+def workshop1_build():
+    global SESSION_EXE
+    SESSION_EXE = compile_rs(WORKSHOP, "session.rs", "session")
+    if os.path.isdir(SES):
+        shutil.rmtree(SES)
+    os.makedirs(SES)
+    return "workshop/session.rs compiled live: new / propose / commit / undo / replay / verify over a base authority and a cell+tile edit log"
+
+
+# --- the Python chain twin: recompute content/full independently, mirroring session.rs ---
+def _apply_cell(level_bytes, x, z, to):
+    import struct as _s
+    b = bytearray(level_bytes)
+    w = _s.unpack_from("<I", b, 8)[0]
+    b[16 + z * w + x] = ord(to)
+    return bytes(b)
+
+
+def _apply_tile(tiles_bytes, cls, rgb):
+    b = bytearray(tiles_bytes)
+    off = 8 + {"wall0": 0, "wall1": 1, "wall2": 2, "wall3": 3, "floor": 4}[cls] * TILE_BYTES
+    px = bytes(rgb)
+    for i in range(off, off + TILE_BYTES, 3):
+        b[i:i + 3] = px
+    return bytes(b)
+
+
+def _content(level_bytes, tiles_bytes):
+    return hashlib.sha256(hashlib.sha256(level_bytes).digest() + hashlib.sha256(tiles_bytes).digest()).digest()
+
+
+def _chain_head(level_bytes, tiles_bytes, log):
+    full = hashlib.sha256(b"VRDNSES1" + _content(level_bytes, tiles_bytes)).digest()
+    lvl, til = level_bytes, tiles_bytes
+    for e in log:
+        if e["op"] == "cell":
+            lvl = _apply_cell(lvl, e["x"], e["z"], e["to"])
+        else:
+            lvl2, til = lvl, _apply_tile(til, e["class"], tuple(e["rgb"]))
+            lvl = lvl2
+        full = hashlib.sha256(full + _content(lvl, til)).digest()
+    return full.hex()
+
+
+def _new_session(name, edits):
+    """Build a scratch session with the witness base and the given edits; return its path."""
+    sp = os.path.join(SES, name + ".json")
+    lv = os.path.join(ORACLE, "levels", "witness.lvl")
+    tl = os.path.join(ORACLE, "tiles", "identity.tiles")
+    code, _o, err = run(SESSION_EXE, ["new", "--level", lv, "--tiles", tl, "--out", sp])
+    if code != 0:
+        raise Red("session new: " + err.strip())
+    for e in edits:
+        code, _o, err = run(SESSION_EXE, ["commit", "--session", sp, "--edit", e])
+        if code != 0:
+            raise Red("session commit %s: %s" % (e, err.strip()))
+    return sp
+
+
+def _session_head(sp):
+    with open(sp, encoding="utf-8") as fh:
+        return json.load(fh)["data"]["head"]
+
+
+def _verify(sp):
+    code, out, err = run(SESSION_EXE, ["verify", "--session", sp])
+    return code, (out.strip() or err.strip())
+
+
+def workshop1_replay():
+    need_rustc()
+    edits = ["cell:30,25,#", "cell:30,26,#", "cell:30,27,#", "tile:floor,96,80,64"]
+    sp = _new_session("replay", edits)
+    code, out, err = run(SESSION_EXE, ["replay", "--session", sp])
+    if code != 0:
+        raise Red("replay: " + err.strip())
+    head = _session_head(sp)
+    if ("head " + head[:12]) not in out:
+        raise Red("replay did not report the stored head")
+    # the Python chain twin recomputes the head independently
+    log = json.load(open(sp, encoding="utf-8"))["data"]["log"]
+    twin = _chain_head(read(os.path.join(ORACLE, "levels", "witness.lvl")), read(os.path.join(ORACLE, "tiles", "identity.tiles")), [e["edit"] for e in log])
+    if twin != head:
+        raise Red("the Python chain twin head %s != the session head %s" % (twin[:12], head[:12]))
+    return ("a %d-edit session (3 walls + 1 texture) replays from the base to its head %s, and a Python recomputation of the "
+            "hash chain (content=sha256(W‖M), full=sha256(parent‖content)) reproduces that head — the chain is a cross-checked single-writer log" % (len(edits), head[:12]))
+
+
+def workshop1_undo():
+    need_rustc()
+    sp = _new_session("undo", ["cell:30,25,#", "cell:30,26,#", "cell:30,27,#", "tile:floor,96,80,64"])
+    code, _o, err = run(SESSION_EXE, ["undo", "--session", sp, "--to", "2"])
+    if code != 0:
+        raise Red("undo: " + err.strip())
+    undone = _session_head(sp)
+    # undo to 2 must equal a fresh session of the first 2 edits (undo is replay, not mutation)
+    sp2 = _new_session("undo_ref", ["cell:30,25,#", "cell:30,26,#"])
+    if undone != _session_head(sp2):
+        raise Red("undo to 2 did not equal replaying the first 2 edits — undo is not replay")
+    code, out = _verify(sp)
+    if code != 0 or "committed 2 irreversible 1" not in out:
+        raise Red("the undone session did not verify with committed 2 irreversible 1: " + out)
+    return ("undo to 2 rewinds the head to %s, which equals a fresh session of the first 2 edits — undo is a deterministic replay, "
+            "never a localised mutation; the rewound session verifies (committed 2, irreversible 1, durable)" % undone[:12])
+
+
+def workshop1_propose():
+    need_rustc()
+    sp = _new_session("propose", ["cell:30,25,#"])
+    before = read(sp)
+    # a valid propose writes nothing
+    code, out, _e = run(SESSION_EXE, ["propose", "--session", sp, "--edit", "cell:31,25,#"])
+    if code != 0 or "nothing written" not in out:
+        raise Red("a valid propose did not report OK/nothing-written: " + out.strip())
+    if read(sp) != before:
+        raise Red("propose wrote to the session file — it must be a speculative scratchpad")
+    # an invalid propose (opens the border) refuses, and still writes nothing
+    code, _o, err = run(SESSION_EXE, ["propose", "--session", sp, "--edit", "cell:0,5,."])
+    if code != 2 or "border" not in err:
+        raise Red("an edit opening the border was not refused: %d %s" % (code, err.strip()[:50]))
+    if read(sp) != before:
+        raise Red("a refused propose changed the session")
+    return ("propose validates against the head and writes NOTHING (a valid one reports the would-commit head; one that opens the "
+            "border is refused) — the speculative scratchpad, with the committed log left oblivious")
+
+
+def workshop1_tamper():
+    need_rustc()
+    sp = _new_session("tamper", ["cell:30,25,#", "cell:30,26,#", "tile:floor,96,80,64"])
+    code, out = _verify(sp)
+    if code != 0:
+        raise Red("the untampered session did not verify: " + out)
+    doc = json.load(open(sp, encoding="utf-8"))
+    original = read(sp)
+    # tamper: change the second entry's op param (30,26 -> 31,26) WITHOUT touching its stored digests
+    doc["data"]["log"][1]["edit"]["x"] = 31
+    with open(sp, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(doc, fh, indent=1)
+    code, out = _verify(sp)
+    if code != 2 or "CHAIN-BROKEN" not in out:
+        raise Red("a tampered log entry was not caught: %d %s" % (code, out[:60]))
+    with open(sp, "wb") as fh:
+        fh.write(original)
+    code, out = _verify(sp)
+    if code != 0:
+        raise Red("the restored session did not re-verify")
+    return ("changing one log entry (its edit param) without its digests makes `verify` replay and catch CHAIN-BROKEN — the head "
+            "moves and every link after the change breaks; restored, the session re-verifies")
+
+
+def workshop1_demo():
+    need_rustc()
+    sp = os.path.join(ROOT, "workshop", "attest", "session-demo.json")
+    rec = envelope.read(sp)  # sealed under RECORD-0; records-firewall covers it too
+    if rec["name"] != "verdandi-session":
+        raise Red("the demo is not a verdandi-session")
+    d = rec["data"]
+    c = corpus()
+    if d["base"]["W"] != c["levels"]["witness"]["W"] or d["base"]["M"] != c["tiles"]["identity"]["M"]:
+        raise Red("the demo's base is not the frozen witness authority")
+    code, out = _verify(sp)
+    if code != 0 or ("head " + d["head"][:12]) not in out:
+        raise Red("the committed demo did not replay to its sealed head: " + out)
+    ts = d["three_state"]
+    if ts["irreversible"] != ts["committed"] - 1 or not ts["durable"]:
+        raise Red("the three-state invariant is inconsistent")
+    return ("the committed demo (workshop/attest/session-demo.json, sealed under RECORD-0) replays to its head %s over %d edits on the "
+            "frozen witness base; committed %d, irreversible %d, durable — a session is a hash-chained file" % (d["head"][:12], len(d["log"]), ts["committed"], ts["irreversible"]))
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -1045,6 +1223,12 @@ def main() -> int:
     row("text-reformat", text_reformat)
     row("text-edit", text_edit)
     row("text-refuse", text_refuse)
+    row("workshop1-build", workshop1_build)
+    row("workshop1-replay", workshop1_replay)
+    row("workshop1-undo", workshop1_undo)
+    row("workshop1-propose", workshop1_propose)
+    row("workshop1-tamper", workshop1_tamper)
+    row("workshop1-demo", workshop1_demo)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

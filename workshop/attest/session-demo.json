@@ -1,0 +1,100 @@
+{
+ "name": "verdandi-session",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "workshop/session.rs + verify/seal_session.py",
+  "base_level": "oracle/levels/witness.lvl",
+  "base_tiles": "oracle/tiles/identity.tiles",
+  "edits": 5
+ },
+ "validity_scope": {
+  "certifies": "an ordered cell/tile edit log over the base authority (W 1b84db41a5fb… M 52e8b54ae508…), its per-entry content and full digests, and the head hash chain — the session replays to this head",
+  "base_W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+  "base_M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+  "head": "6700cf170719a59e7eb492bcd28f2ddddd86e6b0d378955a77774124a8c15d1f"
+ },
+ "forbidden_interpretations": [
+  "a wall-clock (a session carries no time; it replays deterministically)",
+  "a skybox or physics: the log holds only cell (walls/ground) and tile (texture) edits the frozen oracle certifies",
+  "tamper-proofing beyond replay: a hash chain catches a changed entry under replay and is anchored by this seal and by git; it does not prove timing or non-membership",
+  "any camera or view: the camera is projection-owned (INPUT-0), never in the authoring log"
+ ],
+ "data": {
+  "base": {
+   "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+   "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+   "full": "a0f29ed3847f4aad14484ab53b3b12d484cf72e2c64e3e331ec7c045a52f0201",
+   "level": "oracle/levels/witness.lvl",
+   "tiles": "oracle/tiles/identity.tiles"
+  },
+  "head": "6700cf170719a59e7eb492bcd28f2ddddd86e6b0d378955a77774124a8c15d1f",
+  "log": [
+   {
+    "content": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08",
+    "edit": {
+     "op": "cell",
+     "to": "#",
+     "x": 30,
+     "z": 25
+    },
+    "full": "0d71986ee9d035a120b1d8011d7050ff5b131cbead5cf13d6dd2a6fe4f403c9d",
+    "seq": 1
+   },
+   {
+    "content": "3cfbc4baf6b54d69ae7462c90e314d93145947930f06e7335e92c6989ba0500d",
+    "edit": {
+     "op": "cell",
+     "to": "#",
+     "x": 30,
+     "z": 26
+    },
+    "full": "e3b58663a2cf1c1c60cffc8dec14be2f49f62ba20fa56837bd51f119dda269c7",
+    "seq": 2
+   },
+   {
+    "content": "3cfbc4baf6b54d69ae7462c90e314d93145947930f06e7335e92c6989ba0500d",
+    "edit": {
+     "op": "cell",
+     "to": "#",
+     "x": 30,
+     "z": 27
+    },
+    "full": "775af4ebdac7260564733e1ccc8dc204e1f2551da579e881d223de4620128e19",
+    "seq": 3
+   },
+   {
+    "content": "822e9749fe9c3a4b18a6ab87bdd0d726d7b87c96c382e7111a96a051a4d0d2e1",
+    "edit": {
+     "op": "cell",
+     "to": "#",
+     "x": 29,
+     "z": 26
+    },
+    "full": "6697f3bf94d4a3f96057990268b50b499522a5c8fb984039ed87e24235b5f249",
+    "seq": 4
+   },
+   {
+    "content": "d54654340d404ddd5ac3ef3b18a4105ecd1339b089854472ccab592313e7082d",
+    "edit": {
+     "class": "floor",
+     "op": "tile",
+     "rgb": [
+      96,
+      80,
+      64
+     ]
+    },
+    "full": "6700cf170719a59e7eb492bcd28f2ddddd86e6b0d378955a77774124a8c15d1f",
+    "seq": 5
+   }
+  ],
+  "three_state": {
+   "committed": 5,
+   "durable": true,
+   "irreversible": 4
+  }
+ },
+ "reading": "an event-sourced session: base authority + an ordered cell/tile edit log; content = sha256(W‖M) after an edit, full = sha256(parent.full‖content) — a single-writer hash chain whose head is the session's integrity; undo to n is a deterministic replay of the first n edits; a hash chain catches tampering under replay but is additionally sealed under RECORD-0 and anchored by git",
+ "chain_hash": "131704b14360c03a0f3c445b84fe8ec63a3526fe9aee6d8741448f309fc18cb3"
+}
