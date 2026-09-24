@@ -111,7 +111,8 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/kernel ... --hud --write-png out.ppm         # the composite with the overlay, to look at
     python verify/bench.py --host $env:COMPUTERNAME           # off-gate: the kernel's frame time, sealed under the envelope
     verify/build/shell witness --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
-    verify/build/shell run --level ... --camera 34,28,W --measure 200 --host $env:COMPUTERNAME   # Windows: the window + present timing
+    rustc -O --cfg shell_window shell/main.rs -o verify/build/shell.exe   # Windows: build WITH the window
+    verify/build/shell.exe run --level ... --camera 34,28,W --measure 200 --host $env:COMPUTERNAME   # the window + present timing
     rustc -O workshop/edit.rs -o verify/build/edit           # the workshop
     verify/build/edit record --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles \
         --camera 34,28,W --edit cell:31,27,. --out-dir out --name cell

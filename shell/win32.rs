@@ -149,17 +149,42 @@ extern "system" {
     fn StretchDIBits(hdc: Hdc, x_dest: i32, y_dest: i32, w_dest: i32, h_dest: i32, x_src: i32, y_src: i32, w_src: i32, h_src: i32, bits: *const c_void, info: *const BitmapInfoHeader, usage: Uint, rop: Dword) -> i32;
 }
 
-#[link(name = "dwmapi")]
-extern "system" {
-    fn DwmGetCompositionTimingInfo(hwnd: Hwnd, info: *mut DwmTimingInfo) -> i32;
-    fn DwmFlush() -> i32;
-}
-
 #[link(name = "kernel32")]
 extern "system" {
     fn QueryPerformanceCounter(count: *mut i64) -> Bool;
     fn QueryPerformanceFrequency(freq: *mut i64) -> Bool;
     fn GetModuleHandleW(name: *const u16) -> Hinstance;
+    fn LoadLibraryW(name: *const u16) -> *mut c_void;
+    fn GetProcAddress(module: *mut c_void, name: *const u8) -> *mut c_void;
+}
+
+// dwmapi is loaded at RUNTIME (its import library is absent from some mingw toolchains, which fails the link);
+// user32/gdi32/kernel32 are core and always present, so they stay `#[link]`. If dwmapi.dll or either proc is
+// missing at run time, `run` refuses SHELL-NO-DWM rather than crashing.
+type DwmGetTimingFn = extern "system" fn(Hwnd, *mut DwmTimingInfo) -> i32;
+type DwmFlushFn = extern "system" fn() -> i32;
+
+struct Dwm {
+    get_timing: DwmGetTimingFn,
+    flush: DwmFlushFn,
+}
+
+fn load_dwm() -> Option<Dwm> {
+    unsafe {
+        let lib = LoadLibraryW(wide("dwmapi.dll").as_ptr());
+        if lib.is_null() {
+            return None;
+        }
+        let g = GetProcAddress(lib, b"DwmGetCompositionTimingInfo\0".as_ptr());
+        let f = GetProcAddress(lib, b"DwmFlush\0".as_ptr());
+        if g.is_null() || f.is_null() {
+            return None;
+        }
+        Some(Dwm {
+            get_timing: std::mem::transmute::<*mut c_void, DwmGetTimingFn>(g),
+            flush: std::mem::transmute::<*mut c_void, DwmFlushFn>(f),
+        })
+    }
 }
 
 fn wide(s: &str) -> Vec<u16> {
@@ -223,6 +248,13 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
         std::process::exit(2);
     }
 
+    let dwm = match load_dwm() {
+        Some(d) => d,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or its composition-timing entry point is unavailable; cannot measure frame->composited");
+            std::process::exit(2);
+        }
+    };
     let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
     let class_name = wide("VerdandiShell");
     let title = wide("Verðandi — SHELL-0");
@@ -269,7 +301,7 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
     let mut samples: Vec<u128> = Vec::with_capacity(measure.max(1));
     let mut refresh_period_qpc = 0u64;
 
-    let present_once = |hwnd: Hwnd| -> Option<u128> {
+    let present_once = |hwnd: Hwnd, dwm: &Dwm| -> Option<u128> {
         let hdc = unsafe { GetDC(hwnd) };
         if hdc.is_null() {
             return None;
@@ -288,8 +320,8 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
         let mut info: DwmTimingInfo = unsafe { std::mem::zeroed() };
         info.cb_size = std::mem::size_of::<DwmTimingInfo>() as Dword;
         for _ in 0..240 {
-            unsafe { DwmFlush() };
-            let hr = unsafe { DwmGetCompositionTimingInfo(std::ptr::null_mut(), &mut info) };
+            unsafe { (dwm.flush)() };
+            let hr = unsafe { (dwm.get_timing)(std::ptr::null_mut(), &mut info) };
             if hr == 0 && info.qpc_frame_displayed as i64 >= ready {
                 return Some((info.qpc_frame_displayed - ready as u64) as u128 * 1_000_000 / freq as u128);
             }
@@ -313,7 +345,7 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
             }
         }
         if measure == 0 || done < measure {
-            if let Some(us) = present_once(hwnd) {
+            if let Some(us) = present_once(hwnd, &dwm) {
                 if measure > 0 {
                     samples.push(us);
                 }
@@ -321,7 +353,7 @@ pub fn run(c: Composed, measure: usize, host: &str, cam: Camera) {
             }
             let mut info: DwmTimingInfo = unsafe { std::mem::zeroed() };
             info.cb_size = std::mem::size_of::<DwmTimingInfo>() as Dword;
-            if unsafe { DwmGetCompositionTimingInfo(std::ptr::null_mut(), &mut info) } == 0 {
+            if unsafe { (dwm.get_timing)(std::ptr::null_mut(), &mut info) } == 0 {
                 refresh_period_qpc = info.qpc_refresh_period;
             }
         }

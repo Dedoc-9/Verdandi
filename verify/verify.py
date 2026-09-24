@@ -733,8 +733,14 @@ def shell_lines(exe: str, cmd: str, level: str, tiles: str, camera: str) -> dict
 def shell_build():
     global SHELL_EXE
     SHELL_EXE = compile_rs(SHELL, "main.rs", "shell")
-    return ("shell/main.rs (+ the kernel's mantle.rs, formats.rs, hud.rs, and present.rs) compiled live; the Win32 window "
-            "(shell/win32.rs) is cfg-gated to Windows and not in this build — the blit-hash law below is what the gate exercises")
+    # the window is behind `--cfg shell_window`, which the gate never passes, so win32.rs is out of this build on
+    # EVERY host (not only non-Windows) and the gate stays host-independent
+    r1, o1, e1 = run(SHELL_EXE, ["run", "--level", os.path.join(ORACLE, "levels", "witness.lvl"),
+                                 "--tiles", os.path.join(ORACLE, "tiles", "identity.tiles"), "--camera", "34,28,W"])
+    _ = (r1, o1, e1)
+    return ("shell/main.rs (+ the kernel's mantle.rs, formats.rs, hud.rs, present.rs) compiled live; the Win32 window "
+            "(shell/win32.rs) is behind `--cfg shell_window`, which the gate never passes, so it is out of this build on "
+            "every host — the blit-hash law below is what the gate exercises")
 
 
 def shell_blit_pins():

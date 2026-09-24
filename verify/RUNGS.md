@@ -280,7 +280,9 @@ witness off the pin and makes `selfcheck` print BROKEN: a picture the kernel did
 **Grade.** MEASURED: the blit-hash law and its plant, the pins, the no-window refusal, live. ESTABLISHED: the
 transform is a bijection (read off `to_blit`/`from_blit`; a channel swap is its own inverse). DECLARED: the DIB
 format (BGR, top-down); the host present number (preregistered, unmeasured until the owner runs it). UNCOMPILED
-here: `shell/win32.rs` (compiled and run only on the host).
+here: `shell/win32.rs` (compiled and run only on the host — behind `--cfg shell_window`, which the gate never
+passes, so it is out of every gate build on every host; `dwmapi` is loaded at run time, not linked, since its
+import library is absent from some mingw toolchains).
 
 **does_not_show.** A present number (the host's, sealed by `seal_present.py`, citing SHELL-0). That
 `shell/win32.rs` compiles — the container cannot; the owner compiles it, as with the first `mantle_rs` port. That

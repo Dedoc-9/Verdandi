@@ -3,15 +3,19 @@
 //
 // shell/main.rs — the shell's command line.
 //
-//     rustc -O shell/main.rs -o build/shell
+//     rustc -O shell/main.rs -o build/shell                          # the headless law (what the gate builds)
+//     rustc -O --cfg shell_window shell/main.rs -o build/shell       # + the window, ON WINDOWS (the host build)
 //     shell witness --level L --tiles T --camera x,z,F        # headless: the composite sha and the blit witness
 //     shell selfcheck --level L --tiles T --camera x,z,F      # headless: `blit_roundtrip OK|BROKEN`
-//     shell run --level L --tiles T --camera x,z,F [--measure N --host NAME]   # Windows only: a window; a
-//                                                            # frame->composited record when --measure is given
+//     shell run --level L --tiles T --camera x,z,F [--measure N --host NAME]   # a window (window build only)
 //
-// The window, the blit and the DWM composition clock live in shell/win32.rs, compiled only on Windows. On any
-// other target `run` refuses `SHELL-NO-WINDOW` rather than pretending to present. `witness` and `selfcheck`
-// are the blit-hash law and run anywhere: they are what the gate exercises.
+// The window, the blit and the DWM composition clock live in shell/win32.rs, compiled ONLY when BOTH
+// target_os = "windows" AND the `--cfg shell_window` flag are set. The gate never passes that flag, so
+// win32.rs is out of every gate build on every host, and `shell witness`/`shell selfcheck` — the blit-hash
+// law — are what the gate exercises, host-independently. Without the window, `run` refuses `SHELL-NO-WINDOW`
+// rather than pretending to present. The owner adds `--cfg shell_window` to build the real window on the host.
+
+#![allow(unexpected_cfgs)]
 
 #[allow(dead_code)]
 #[path = "../kernel/mantle.rs"]
@@ -25,7 +29,7 @@ mod hud;
 #[allow(dead_code)]
 #[path = "present.rs"]
 mod present;
-#[cfg(target_os = "windows")]
+#[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
 
@@ -46,7 +50,7 @@ fn read(path: &str) -> Vec<u8> {
     fs::read(path).unwrap_or_else(|e| refuse("CANNOT-READ", &format!("{}: {}", path, e)))
 }
 
-#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+#[allow(dead_code)]
 struct Args {
     level: String,
     tiles: String,
@@ -107,14 +111,14 @@ fn main() {
         "run" => {
             let a = parse(&args[2..]);
             let c = composed(&a);
-            #[cfg(target_os = "windows")]
+            #[cfg(all(target_os = "windows", shell_window))]
             {
                 win32::run(c, a.measure, &a.host, a.camera);
             }
-            #[cfg(not(target_os = "windows"))]
+            #[cfg(not(all(target_os = "windows", shell_window)))]
             {
                 let _ = c;
-                refuse("NO-WINDOW", "this build has no window (compiled without target_os=windows); run it on the host to present and measure");
+                refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to present and measure");
             }
         }
         other => refuse("USAGE", &format!("unknown command {}", other)),
