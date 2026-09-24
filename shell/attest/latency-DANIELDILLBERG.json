@@ -1,0 +1,40 @@
+{
+ "name": "verdandi-latency",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell/win32.rs playback_window --measure",
+  "host": "DANIELDILLBERG",
+  "preregistered": {
+   "rung": "LATENCY-0",
+   "chain_hash": "c4d8db6a3dd3293748d69629d1148801507725829d23fcab30e730824c1f56c7"
+  },
+  "unix_seconds": 1790273129
+ },
+ "validity_scope": {
+  "certifies": "frame-ready -> composited time of the GDI present path replaying the sealed reference session on host DANIELDILLBERG, 200 samples over 4 frames",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency: input transport, the present wait beyond composition and the panel need capture hardware",
+  "renderer time (that is the kernel bench, kernel/attest/bench-<host>.json); this is only frame-ready -> composited",
+  "SOFTWARE-144-BUDGET (p99 <= 6944 us) is a budget condition, not sustained-144Hz presentation and not a refresh-rate claim",
+  "HARDWARE-144 is the measured DwmFlush refresh, never the monitor's nominal setting; SUSTAINED-144Hz needs BOTH",
+  "any other host, scene, window state or interactive load; this is the fixed sealed reference session"
+ ],
+ "data": {
+  "present_us": {
+   "p50": 5921,
+   "p95": 7078,
+   "p99": 7318,
+   "max": 7396
+  },
+  "refresh_period_us": 13298,
+  "samples": 200,
+  "sequence_frames": 4,
+  "software_144_budget_us": 6944,
+  "hardware_144_target_hz": 144
+ },
+ "reading": "SOFTWARE-144-BUDGET is p99<=6944us; HARDWARE-144 is refresh<=6944us (>=144Hz); SUSTAINED-144Hz is their conjunction; frame-ready->composited only, NOT input-to-photon",
+ "chain_hash": "19758751c370351b990ea006fa3da8cf0303dd4c700db678a78c09171fe27d72"
+}
