@@ -982,6 +982,54 @@ distinct-per-texel render; `locality0-bijection` if a swizzle is not lossless on
 locality over linear in any band; `locality0-preregistered` if the method, the isolation boundary or the three exits are
 weakened.
 
+## LOCALITY-0 LOCK — blocked promoted to the accepted single-thread emit; GAUNTLET-2's baseline sealed (seat 19)
+
+**What landed (the court's consequence, made the production path).** LOCALITY-0's process-isolated host court fired
+**Exit 1 (blocked wins)** on `DANIELDILLBERG`: the 8×8 cache-blocked floor layout was byte-identical to the frozen
+emit **and** faster than the linear-fetch DDA (**8185 → 7734 µs p99**, ~1.07×), and it carried the *lower* index-
+arithmetic tax of the two layouts (blocked X **356** vs Morton **1040**) — Morton bought the same locality but its
+bit-interleave ate the gain and it landed slower (8736 µs). Same content, same execution boundary, only the layout
+moved, so the win is causal proof the tile fetch was the cost. This seat is the LOCK: `emit_swizzled<BLOCKED>` is
+promoted to the accepted single-thread `fast::emit`, monomorphized completely.
+
+**The promotion, kept pristine.** The floor tile is ingested and re-laid into the blocked execution format **once at
+scene load** (`fast::blocked_floor`); the production `emit` then reads that pre-swizzled buffer in the hot path via
+`floor_blocked` — a pure shift/mask index, no runtime layout branch, no generic `<LAYOUT>` toggle, never touching
+`scene.floor`. The blocked index has **one definition repo-wide**: the court's `locality::swizzle_index::<BLOCKED>`
+delegates to the production `floor_blocked`, so apparatus and promoted path can never disagree. The pre-LOCK linear-
+fetch DDA is retained **verbatim** as `emit_linear` on the archive shelf beside `emit_collapse` — an immutable
+**reference witness**: the historical courts (the GAUNTLET-1c fast-bench, RE-BREAKDOWN-1's ablation/structure, and
+LOCALITY-0's own LINEAR anchor and DDA baseline) all measure against it, so the LOCK's win stays reproducible and
+nothing dead or commented-out is left in the engine loop.
+
+**The baseline, sealed.** The accepted blocked emit's process-isolated p99 — **7734 µs** on `DANIELDILLBERG` — is
+sealed as GAUNTLET-2's **hard baseline**: the multi-threaded rung inherits it, never re-derives it, and must beat it
+under **thread-count invariance** (byte-identical for every thread count P) to promote. Taking the earned 1.07×
+into the parallel court, rather than discarding it, forces the parallel implementation to fight against our best
+single-thread work. GAUNTLET-2 is preregistered (`5c3a5c30`) so the floor is fixed before the rung is built.
+
+**Rows.** `locality0-lock` — the blocked production emit and the archived `emit_linear` reference are both byte-
+identical to the frozen emit (and render the same picture). `locality0-lockfence` — the source-level proof: `emit`
+takes the pre-swizzled blocked buffer, uses `floor_blocked` in the hot path, never reads `scene.floor` there, and
+carries no layout toggle (monomorphized); `blocked_floor` builds the format once; `emit_linear` is the verbatim
+linear-fetch reference. `gauntlet2-preregistered` — the inherited single-thread baseline, thread-count invariance
+and the two-court rule are hash-locked (`5c3a5c30`). `gauntlet1-equiv` / `gauntlet1c-dda` now certify BOTH the
+blocked production emit and the linear reference over the corpus + adversarial cameras.
+
+**Grade.** MEASURED (live, headless, deterministic): byte-identity of the blocked production emit and the archived
+linear reference over corpus + adversarial cameras; the source-level LOCK fence. DECLARED: the hash-locked GAUNTLET-2
+baseline and method. The **which-layout-wins** and the **7734 µs** are the host record's (`verify/locality0.py`,
+off-gate) — the gate carries no wall-clock.
+
+**does_not_show.** The speed win itself (the gate proves only byte-identity; the host record carries the µs). That
+the blocked layout removes the stall for *every* scene (it is the accepted emit on this corpus; capacity behaviour is
+scene-dependent). Any comparison to GAUNTLET-0's instrumented absolute.
+
+**Falsifier.** `locality0-lock` reddens if the blocked emit or the archived reference drifts from the frozen emit;
+`locality0-lockfence` if the production emit reads `scene.floor`, drops `floor_blocked`, grows a layout toggle, or the
+archived `emit_linear`/`blocked_floor` go missing; `gauntlet2-preregistered` if the inherited-baseline rule, the
+thread-count invariance or the two-court separation is weakened.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -1021,8 +1069,12 @@ staircase and what remains:
   anchor tax was cancelled. LOCALITY-0 (seated) opened the data-layout court on that finding — the floor tile re-laid
   out as an 8×8 cache-blocked or Morton Z-order execution FORMAT, both proven byte-identical, both a lossless bijection,
   content-provenance held apart from format — timed process-isolated under the Epistemic-Invariance boundary
-  (`verify/locality0.py`), with three exits (blocked / morton / neither → capacity stall → GAUNTLET-2). **GAUNTLET-2+**
-  (multi-threaded column stripping) inherits LOCALITY-0's accepted single-thread emit as its sealed hard baseline.
+  (`verify/locality0.py`), with three exits (blocked / morton / neither → capacity stall → GAUNTLET-2). The host court
+  fired **Exit 1**: blocked won byte-identical and faster (8185→7734 µs p99, ~1.07×, the lower index tax of the two),
+  and the **LOCALITY-0 LOCK** (seated) promoted `emit_swizzled<BLOCKED>` to the accepted single-thread `fast::emit` —
+  monomorphized, the floor swizzled once at scene load, the linear-fetch DDA retained verbatim as the `emit_linear`
+  reference witness. **GAUNTLET-2+** (multi-threaded column stripping) inherits the LOCKED blocked emit's sealed 7734 µs
+  p99 as its hard baseline, to be beaten under thread-count invariance (preregistered `5c3a5c30`).
   **LATENCY-1** then reruns the same fixed session and records the before/after render delta against LATENCY-0's
   immutable baseline.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is

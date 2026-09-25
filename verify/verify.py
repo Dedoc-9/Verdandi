@@ -2064,14 +2064,17 @@ def gauntlet1_equiv():
         if d.get("selfcheck") != "OK":
             raise Red("kernel did not selfcheck on %s@%s" % (lvl, cam))
         if d.get("fast_equal") != "OK":
-            raise Red("fast emit DIFFERS from the frozen emit on %s %s@%s" % (lvl, tiles, cam))
+            raise Red("the LOCKED blocked emit DIFFERS from the frozen emit on %s %s@%s" % (lvl, tiles, cam))
         if d.get("fast_pixels") != d.get("pixels") or d.get("fast_frame") != d.get("frame"):
-            raise Red("fast pixels/frame != frozen on %s %s@%s" % (lvl, tiles, cam))
-    return ("the sibling fast.rs emit (now the GAUNTLET-1c row-major floor DDA) is byte-identical to the frozen mantle.rs emit over "
-            "%d cases (every corpus scene x its tile sets, plus adversarial witness cameras: the four spawn facings and the "
-            "frozen-traversable sessionwalk positions) — fast_pixels == pixels AND fast_frame == frame everywhere; the standing "
-            "differential court (candidate -> frozen, never the reverse; proven on the 1a exact-transcription seed) judges each "
-            "optimization tread, and a single differing pixel refuses it regardless of speed" % len(cases))
+            raise Red("blocked emit pixels/frame != frozen on %s %s@%s" % (lvl, tiles, cam))
+        if d.get("linear_equal") != "OK" or d.get("linear_pixels") != d.get("pixels"):
+            raise Red("the archived linear-fetch DDA reference (emit_linear) is not byte-identical to frozen on %s %s@%s" % (lvl, tiles, cam))
+    return ("the sibling fast.rs emit (now the LOCALITY-0 LOCKED blocked-layout row-major floor DDA) is byte-identical to the "
+            "frozen mantle.rs emit over %d cases (every corpus scene x its tile sets, plus adversarial witness cameras: the four "
+            "spawn facings and the frozen-traversable sessionwalk positions) — fast_pixels == pixels AND fast_frame == frame "
+            "everywhere; the archived linear-fetch DDA reference (emit_linear) stays byte-identical too (linear_pixels == pixels). "
+            "The standing differential court (candidate -> frozen, never the reverse; proven on the 1a exact-transcription seed) "
+            "judges each tread, and a single differing pixel refuses it regardless of speed" % len(cases))
 
 
 def gauntlet1_region():
@@ -2136,7 +2139,9 @@ def gauntlet1c_dda():
     need_rustc()
     d = _fast_lines("witness", "identity", "34,28,W")
     if d.get("fast_equal") != "OK" or d.get("fast_pixels") != d.get("pixels"):
-        raise Red("the GAUNTLET-1c DDA is not byte-identical to the frozen emit on the witness frame")
+        raise Red("the GAUNTLET-1c DDA (LOCKED blocked emit) is not byte-identical to the frozen emit on the witness frame")
+    if d.get("linear_equal") != "OK" or d.get("linear_pixels") != d.get("pixels"):
+        raise Red("the archived linear-fetch DDA reference (emit_linear) is not byte-identical to the frozen emit")
     if d.get("collapse_equal") != "OK" or d.get("collapse_pixels") != d.get("pixels"):
         raise Red("the retained GAUNTLET-1b collapse baseline is not byte-identical to the frozen emit")
     w = dict(kv.split("=") for kv in d["fast_ddawork"].split() if "=" in kv)
@@ -2152,10 +2157,12 @@ def gauntlet1c_dda():
         raise Red("the DDA did not reduce the floor divide-work below the collapse: %s" % d["fast_ddawork"])
     ratio = collapse_div // max(dda_div, 1)
     return ("GAUNTLET-1c's row-major floor DDA is byte-identical to the frozen emit (fast_equal OK, fast_pixels == "
-            "pixels on 34,28,W) AND the retained GAUNTLET-1b collapse baseline stays byte-identical (collapse_equal "
-            "OK); the floor's perspective divide is now per-ROW: %d floor px over %d rows -> %d DDA div/rem ops (5/row) "
-            "vs the collapse's %d (2/floor px), a ~%dx reduction on this frame. Deterministic (a source-cost proxy); "
-            "the DDA-vs-collapse speed is the separate host court (gauntlet1c.py, off-gate, citing GAUNTLET-1)"
+            "pixels on 34,28,W) in BOTH its LOCKED blocked-fetch production form (emit) and its archived linear-fetch "
+            "reference (emit_linear, linear_equal OK) — the two share the recurrence, only the floor layout differs — "
+            "AND the retained GAUNTLET-1b collapse baseline stays byte-identical (collapse_equal OK); the floor's "
+            "perspective divide is per-ROW: %d floor px over %d rows -> %d DDA div/rem ops (5/row) vs the collapse's %d "
+            "(2/floor px), a ~%dx reduction on this frame. Deterministic (a source-cost proxy); the DDA-vs-collapse "
+            "speed is the separate host court (gauntlet1c.py, off-gate, citing GAUNTLET-1)"
             % (floor_px, rows, dda_div, collapse_div, ratio))
 
 
@@ -2281,9 +2288,10 @@ def rebreakdown1_structure():
 
 
 def rebreakdown1_fence():
-    """The fence: the production emit() and the GAUNTLET-1b emit_collapse() baseline reference no probe, so the
-    measurement apparatus (fast.rs::probe) is structurally isolated from fast.rs's promotion chain. The probes are
-    scaffold, never renderers; a differing probe pixel is expected, not a fault."""
+    """The fence: the production emit() (LOCKED blocked), the archived emit_linear() reference and the GAUNTLET-1b
+    emit_collapse() baseline reference no probe, so the measurement apparatus (fast.rs::probe) is structurally
+    isolated from fast.rs's promotion chain. The probes are scaffold, never renderers; a differing probe pixel is
+    expected, not a fault."""
     src = open(os.path.join(ROOT, "kernel", "fast.rs"), encoding="utf-8").read()
 
     def between(a, b):
@@ -2291,20 +2299,23 @@ def rebreakdown1_fence():
         j = src.index(b, i + len(a))
         return src[i:j]
 
-    emit_body = between("pub fn emit(", "pub fn emit_collapse(")
-    collapse_body = between("pub fn emit_collapse(", "pub fn region_divides(")
-    if "probe" in emit_body:
-        raise Red("the production emit() references a probe — the measurement apparatus is not fenced from the renderer")
-    if "probe" in collapse_body:
-        raise Red("emit_collapse() references a probe — the apparatus is not fenced from the baseline renderer")
+    def code_only(body):  # strip // and /// lines so a doc comment may NAME the probe court without breaching the fence
+        return "\n".join(ln for ln in body.splitlines() if not ln.lstrip().startswith("//"))
+
+    emit_body = code_only(between("pub fn emit(", "pub fn emit_linear("))
+    linear_body = code_only(between("pub fn emit_linear(", "pub fn emit_collapse("))
+    collapse_body = code_only(between("pub fn emit_collapse(", "pub fn region_divides("))
+    for name, body in (("emit()", emit_body), ("emit_linear()", linear_body), ("emit_collapse()", collapse_body)):
+        if "probe" in body:
+            raise Red("%s references a probe — the measurement apparatus is not fenced from the renderer" % name)
     if "pub mod probe" not in src or "emit_probe" not in src:
         raise Red("the fenced probe apparatus (pub mod probe / emit_probe) is missing")
     if "black_box" not in src:
         raise Red("the probes are not anchored against dead-code elision (no black_box) — the timing would be meaningless")
-    return ("RE-BREAKDOWN-1 fence: the production emit() and the GAUNTLET-1b emit_collapse() baseline reference no probe "
-            "— the ablation apparatus (fast.rs::probe, black_box-anchored so the optimizer cannot elide the timed work) "
-            "is isolated from fast.rs's promotion chain; the probes are measurement scaffold, never renderers, and a "
-            "differing probe pixel is expected, not a fault")
+    return ("RE-BREAKDOWN-1 fence: the production emit() (LOCKED blocked), the archived emit_linear() reference and the "
+            "GAUNTLET-1b emit_collapse() baseline reference no probe — the ablation apparatus (fast.rs::probe, "
+            "black_box-anchored so the optimizer cannot elide the timed work) is isolated from fast.rs's promotion "
+            "chain; the probes are measurement scaffold, never renderers, and a differing probe pixel is expected, not a fault")
 
 
 # ------------------------------------------------------------------ locality0 (LOCALITY-0: the floor-tile execution-format court)
@@ -2434,6 +2445,105 @@ def locality0_indextax():
             % (lin["near"], lin["mid"], lin["far"], blk["near"], blk["mid"], blk["far"], mor["near"], mor["mid"], mor["far"]))
 
 
+def locality0_lock():
+    """LOCALITY-0 LOCK: the blocked floor-tile layout is PROMOTED to the accepted single-thread emit — the production
+    fast::emit is monomorphized to the blocked-fetch DDA, its floor swizzled once at scene load — while the linear-fetch
+    DDA is retained VERBATIM as emit_linear, an immutable reference witness. Both are byte-identical to the frozen emit;
+    the accepted (blocked) emit's process-isolated host p99 (sealed in the LOCALITY-0 record) is GAUNTLET-2's hard
+    baseline. This is LOCALITY-0's Exit 1 (blocked wins) made the production path, gate-enforced for correctness."""
+    need_rustc()
+    d = _fast_lines("witness", "identity", "34,28,W")
+    if d.get("fast_equal") != "OK" or d.get("fast_pixels") != d.get("pixels"):
+        raise Red("the LOCKED blocked emit is not byte-identical to the frozen emit")
+    if d.get("linear_equal") != "OK" or d.get("linear_pixels") != d.get("pixels"):
+        raise Red("the archived linear-fetch DDA reference (emit_linear) is not byte-identical to the frozen emit")
+    if d.get("fast_pixels") != d.get("linear_pixels"):
+        raise Red("the blocked production emit and the archived linear reference disagree — the LOCK moved the picture")
+    return ("LOCALITY-0 LOCK (Exit 1, blocked wins): the blocked floor-tile layout is the accepted single-thread emit — the "
+            "production fast::emit is the blocked-fetch DDA (floor swizzled once at scene load) and is byte-identical to the "
+            "frozen emit (fast_pixels == pixels), while the linear-fetch DDA is retained verbatim as emit_linear, an immutable "
+            "reference witness, byte-identical too (linear_pixels == pixels == fast_pixels). The accepted blocked emit's "
+            "process-isolated host p99 (sealed in the LOCALITY-0 record) is the hard baseline GAUNTLET-2 must beat; correctness "
+            "is gate-enforced here, the speed win is LOCALITY-0's off-gate host court")
+
+
+def locality0_lockfence():
+    """The LOCK is structural, not merely behavioural: the production emit() fetches the floor from the blocked scene-load
+    buffer via floor_blocked and NEVER reads scene.floor in the hot path, with no runtime or generic layout toggle
+    (monomorphized to blocked); the archived emit_linear() is the pre-LOCK linear-fetch path (reads scene.floor, no
+    blocked index); and the scene-load swizzle blocked_floor() exists. A source-level fence, mirroring rebreakdown1-fence."""
+    src = open(os.path.join(ROOT, "kernel", "fast.rs"), encoding="utf-8").read()
+
+    def between(a, b):
+        i = src.index(a)
+        j = src.index(b, i + len(a))
+        return src[i:j]
+
+    def code_only(body):
+        return "\n".join(ln for ln in body.splitlines() if not ln.lstrip().startswith("//"))
+
+    def reads_raw_floor(body):  # `scene.floor` the raw tile, NOT `scene.floor_map` the band map (a substring of it)
+        return "scene.floor" in body.replace("scene.floor_map", "")
+
+    emit_body = code_only(between("pub fn emit(", "pub fn emit_linear("))
+    linear_body = code_only(between("pub fn emit_linear(", "pub fn emit_collapse("))
+    if "pub fn emit(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8], floor: &[u8])" not in src:
+        raise Red("the production emit() does not take the pre-swizzled blocked floor buffer — the LOCK is not wired")
+    if "pub fn blocked_floor(" not in src:
+        raise Red("the scene-load swizzle blocked_floor() is missing — nothing builds the blocked execution format")
+    if "floor_blocked(" not in emit_body:
+        raise Red("the production emit() hot path does not use the blocked index floor_blocked — it is not the LOCKED layout")
+    if reads_raw_floor(emit_body):
+        raise Red("the production emit() reads scene.floor in the hot path — the raw canonical tile, not the swizzled buffer")
+    if "const LAYOUT" in emit_body or "if LAYOUT" in emit_body:
+        raise Red("the production emit() carries a generic/runtime layout toggle — it is not monomorphized to blocked")
+    if not reads_raw_floor(linear_body):
+        raise Red("the archived emit_linear() does not fetch scene.floor — it is not the linear-fetch reference")
+    if "floor_blocked(" in linear_body:
+        raise Red("the archived emit_linear() uses the blocked index — it is not the pre-LOCK linear path")
+    return ("LOCALITY-0 LOCK fence (source): the production emit() takes the pre-swizzled blocked floor buffer, uses the "
+            "blocked index floor_blocked in the hot path, never reads scene.floor there, and carries no generic or runtime "
+            "layout toggle — it is monomorphized to the LOCKED blocked layout; the scene-load swizzle blocked_floor() builds "
+            "that format once; and the archived emit_linear() is the verbatim pre-LOCK linear-fetch reference (reads "
+            "scene.floor, no blocked index). The promotion is a clean binary boundary, not a runtime branch")
+
+
+def gauntlet2_preregistered():
+    """GAUNTLET-2's baseline is SEALED before the parallel rung is built: the single-thread floor is the LOCKED blocked
+    emit's process-isolated p99 as sealed by LOCALITY-0 (inherited, never re-derived); a parallel emit is accepted only if
+    byte-identical to the frozen emit for EVERY thread count and promoted only if it beats that inherited baseline; never
+    cross-compared to GAUNTLET-0's absolute; mantle.rs stays frozen. Hash-locked, so weakening it is a visible diff."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))
+    e = reg["entries"].get("GAUNTLET-2")
+    if not e:
+        raise Red("GAUNTLET-2 is not registered")
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "the single-thread baseline is inherited from LOCALITY-0, never re-derived": "inherited from locality-0" in lims and "never re-measured" in lims,
+        "byte-identity holds for every thread count (thread-count invariance)": "thread-count invariance" in lims,
+        "correctness and speed are two separate courts": "two separate courts" in lims,
+        "never vs GAUNTLET-0's absolute": "never compared to gauntlet-0" in lims,
+        "mantle.rs stays the frozen oracle": "mantle.rs stays the frozen correctness oracle" in lims,
+        "embarrassingly parallel; hides, does not remove, the stall": "embarrassingly parallel" in lims and "does not remove the capacity/lru stall" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the GAUNTLET-2 method is not fully locked: " + "; ".join(missing))
+    want = envelope.chain_hash({"name": "verdandi-preregistration-entry", "version": 1, "claim_class": "declared",
+                                "provenance": {"registered_in": "verify/preregister.json"},
+                                "validity_scope": {"certifies": "the conditions GAUNTLET-2 was seated under"},
+                                "forbidden_interpretations": ["that registering a condition earns it"],
+                                "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+    if e["chain_hash"] != want:
+        raise Red("the GAUNTLET-2 entry was edited after registration (chain hash)")
+    return ("GAUNTLET-2's baseline is sealed before the parallel rung is built: the single-thread hard floor is the LOCKED "
+            "blocked emit's process-isolated p99 as sealed by LOCALITY-0 (inherited, never re-measured); a parallel emit is "
+            "ACCEPTED only if byte-identical to the frozen emit for every thread count (thread-count invariance) and PROMOTED "
+            "only if it beats that inherited baseline on the same apparatus; never cross-compared to GAUNTLET-0's absolute; the "
+            "emit is embarrassingly parallel so parallelism hides — does not remove — the capacity/LRU stall LOCALITY-0's third "
+            "exit named; mantle.rs stays frozen; hash-locked %s" % e["chain_hash"][:8])
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -2477,6 +2587,9 @@ def main() -> int:
     row("locality0-bijection", locality0_bijection)
     row("locality0-provenance", locality0_provenance)
     row("locality0-indextax", locality0_indextax)
+    row("locality0-lock", locality0_lock)
+    row("locality0-lockfence", locality0_lockfence)
+    row("gauntlet2-preregistered", gauntlet2_preregistered)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)

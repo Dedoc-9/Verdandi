@@ -104,6 +104,21 @@
    ],
    "instrument": "kernel/main.rs --locality (deterministic differential; gate rows locality0-equiv / -bijection / -provenance / -indextax) and --locality-bench --variant blocked|morton (process-isolated host timing, whole-frame + index tax X + per-band); kernel/fast.rs::locality is the fast-path apparatus (mantle.rs and fast::emit untouched); verify/locality0.py orchestrates interleaved invocations and seals verdandi-locality0 citing this entry; row locality0-preregistered locks the method, the three exits, and the process-isolation boundary.",
    "chain_hash": "28a9d792d5e0cb9443b804ae0bc75c12c2d5c0fcf2b96101c25011fe70f66a3a"
+  },
+  "GAUNTLET-2": {
+   "rung": "GAUNTLET-2",
+   "hypothesis": "LOCALITY-0 LOCKED the blocked floor-tile layout as the accepted single-thread emit (byte-identical to the frozen emit AND faster than the linear-fetch DDA, carrying the lower index-arithmetic tax of the two layouts). GAUNTLET-2 parallelizes THAT emit across a thread count P: the render is embarrassingly parallel (per-column wall, per-row floor, the per-row DDA recurrence independent across rows), so a parallel emit can be byte-identical to the frozen emit for every P. It is ACCEPTED iff byte-identical over the corpus plus adversarial cameras and invariant under P; it is PROMOTED iff its host p99 beats the sealed single-thread baseline. That baseline is the LOCKED blocked emit's process-isolated p99 sealed by LOCALITY-0, inherited on this rung, never re-derived.",
+   "success_condition": "a candidate parallel emit is byte-identical to the frozen mantle.rs emit (pixel_sha) with an unchanged frame (frame_digest) over the corpus PLUS adversarial cameras AND invariant under the thread count P (the same picture for every P from 1 to N); a promotion is claimed only with that byte-identity AND a same-apparatus host p99 strictly below the sealed LOCALITY-0 single-thread baseline, sealed off-gate citing this entry, witnesses checked before any number.",
+   "failure_condition": "any thread count P where the picture differs from the frozen emit or from the P=1 result refuses the candidate regardless of speed; a promotion claimed without byte-identity, without thread-count invariance, without a same-apparatus measurement, or by comparing against GAUNTLET-0's instrumented render absolute or against anything other than the sealed single-thread baseline; or mantle.rs is modified; or the single-thread baseline is re-derived on this rung rather than inherited from the sealed LOCALITY-0 record.",
+   "interpretation_limits": [
+    "the single-thread baseline is INHERITED from LOCALITY-0's sealed accepted-emit p99 (the LOCKED blocked emit), never re-measured on this rung; GAUNTLET-2 must beat that exact hard floor, not a fresh number",
+    "byte-identity is mandatory and gate-enforced and must hold for EVERY thread count (thread-count invariance), not merely for one P; correctness (byte-identity) and speed are two separate courts, judged independently",
+    "a GAUNTLET-2 speed number is host-specific and is NEVER compared to GAUNTLET-0's instrumented render absolute (a different apparatus); it is a same-apparatus parallel-vs-sealed-single-thread delta",
+    "the emit is embarrassingly parallel by construction (per-column wall, per-row floor, the per-row DDA recurrence independent across rows); parallelism HIDES the tile-fetch latency behind compute, it does not remove the capacity/LRU stall that LOCALITY-0's third exit named",
+    "mantle.rs stays the frozen correctness oracle; the differential compares candidate -> frozen, never the reverse, and the harness is not the oracle"
+   ],
+   "instrument": "kernel/fast.rs::emit is the LOCKED blocked single-thread baseline (row locality0-lock); a later parallel emit sibling carries the thread-count-invariant differential; the host speed number is sealed off-gate citing this entry; row gauntlet2-preregistered locks this method, the thread-count invariance, and the inherited single-thread baseline.",
+   "chain_hash": "5c3a5c309950f2f431acc86f55c9cd31d63707996a451624578f56987dce311c"
   }
  }
 }

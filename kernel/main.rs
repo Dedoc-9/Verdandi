@@ -8,8 +8,8 @@
 //     kernel --level L.lvl --tiles T.tiles --camera 34,28,W      # composed from the studio's files
 //     kernel ... --bench 200 --warm 20                           # off-gate: p50/p95/p99/max us per phase
 //     kernel ... --breakdown 300 --warm 30                        # off-gate (GAUNTLET-0): render split strips/frame/emit + the two witness hashes
-//     kernel ... --fast                                           # GAUNTLET-1: DDA emit + collapse baseline vs frozen — fast_equal / collapse_equal, region divide-work (frozen/collapse/DDA), first-diff taxonomy
-//     kernel ... --fast-bench 300 --warm 30                        # off-gate (GAUNTLET-1c): frozen / collapse / DDA emit timed on one apparatus (all three must reproduce the witness)
+//     kernel ... --fast                                           # GAUNTLET-1 / LOCALITY-0 LOCK: blocked emit + archived linear emit + collapse baseline vs frozen — fast_equal / linear_equal / collapse_equal, region divide-work, first-diff taxonomy
+//     kernel ... --fast-bench 300 --warm 30                        # off-gate (GAUNTLET-1c): frozen / collapse / archived linear DDA emit timed on one apparatus (all three must reproduce the witness)
 //     kernel ... --emit-breakdown 300 --warm 30                     # off-gate (RE-BREAKDOWN-1): Court A structure + Court B ablation probes (addr/lookup/full/emit), probe VERIFY == emit
 //     kernel ... --locality                                         # LOCALITY-0 differential: both floor layouts byte-identical + bijection + content/format + per-band locality
 //     kernel ... --variant blocked --locality-bench 300 --warm 30   # off-gate (LOCALITY-0): process-isolated timing of ONE layout vs the DDA baseline (whole-frame + index tax + per-band)
@@ -78,10 +78,11 @@ fn host_line() -> String {
 }
 
 /// LOCALITY-0 process-isolated timing for ONE layout (monomorphized, so only this variant's address-generation
-/// instructions are hot in this invocation — the Epistemic-Invariance boundary). Times the DDA baseline (fast::emit)
-/// vs the swizzled variant whole-frame (the promotion number, both must reproduce the witness), the whole-frame
-/// index-arithmetic tax X (floor ADDR: variant minus linear), and the per-band floor FULL delta (the mid-field shear
-/// story). The orchestrator interleaves separate invocations of blocked and morton to cancel thermal drift.
+/// instructions are hot in this invocation — the Epistemic-Invariance boundary). Times the linear-fetch DDA
+/// reference (fast::emit_linear, the archived pre-LOCK baseline) vs the swizzled variant whole-frame (both must
+/// reproduce the witness), the whole-frame index-arithmetic tax X (floor ADDR: variant minus linear), and the
+/// per-band floor FULL delta (the mid-field shear story). The orchestrator interleaves separate invocations of
+/// blocked and morton to cancel thermal drift; with --variant blocked it re-confirms the LOCK (linear vs blocked).
 fn locality_bench_variant<const LAYOUT: u8>(
     scene: &mantle::Scene, strips: &[Strip], frame: &[u8], ps: &str, samples: usize, warm: usize, name: &str,
 ) {
@@ -98,7 +99,7 @@ fn locality_bench_variant<const LAYOUT: u8>(
     let mut t_xvar: Vec<u128> = Vec::with_capacity(samples);
     for k in 0..(warm + samples) {
         let a0 = Instant::now();
-        fast::emit(scene, strips, frame, &mut rgb_dda);
+        fast::emit_linear(scene, strips, frame, &mut rgb_dda);
         let a1 = Instant::now();
         loc::emit_swizzled::<LAYOUT>(scene, strips, frame, &mut rgb_var, &floor_sw);
         let a2 = Instant::now();
@@ -276,15 +277,25 @@ fn main() {
         println!("{}", host_line());
     }
     if want_fast {
-        // GAUNTLET-1: the sibling emit renders the SAME frozen strips + frame; its bytes must equal the frozen
-        // emit's, or it is not an accepted renderer. The frame (buf) is read-only, so frame_digest cannot move.
-        let mut rgb_fast = vec![0u8; W * H * 3]; // GAUNTLET-1c: fast::emit is now the row-major floor DDA
-        fast::emit(&scene, &first.strips, &first.frame, &mut rgb_fast);
+        // GAUNTLET-1 / LOCALITY-0 LOCK: the sibling emits render the SAME frozen strips + frame; their bytes must
+        // equal the frozen emit's, or they are not accepted renderers. The frame (buf) is read-only, so frame_digest
+        // cannot move. `emit` is now the LOCKED blocked-layout floor DDA — the floor tile is swizzled ONCE into the
+        // blocked execution format here at scene load, then read in the hot path (scene.floor is never touched there).
+        let bf = fast::blocked_floor(&scene.floor);
+        let mut rgb_fast = vec![0u8; W * H * 3];
+        fast::emit(&scene, &first.strips, &first.frame, &mut rgb_fast, &bf);
         let fps = hex(&sha256(&rgb_fast));
         let firstdiff = rgb_fast.iter().zip(first.pixels.iter()).position(|(a, b)| a != b);
         println!("fast_pixels {}", fps);
         println!("fast_frame {}", fd); // fast never writes buf; the frame is the frozen one, echoed for the record
         println!("fast_equal {}", if firstdiff.is_none() && fps == ps { "OK" } else { "DIFFER" });
+        // the archived linear-fetch DDA (fast::emit_linear), the immutable reference witness, must ALSO stay
+        // byte-identical to frozen — the historical courts and the LOCK's baseline measure against it.
+        let mut rgb_linear = vec![0u8; W * H * 3];
+        fast::emit_linear(&scene, &first.strips, &first.frame, &mut rgb_linear);
+        let lps = hex(&sha256(&rgb_linear));
+        println!("linear_pixels {}", lps);
+        println!("linear_equal {}", if lps == ps { "OK" } else { "DIFFER" });
         // GAUNTLET-1b's collapse, retained as the performance baseline, must ALSO stay byte-identical to frozen
         let mut rgb_collapse = vec![0u8; W * H * 3];
         fast::emit_collapse(&scene, &first.strips, &first.frame, &mut rgb_collapse);
@@ -302,10 +313,11 @@ fn main() {
         let dominant_fast = if floor_work_fast >= wall_tex { "floor" } else { "wall" };
         let floor_saved = floor_work - floor_work_fast;
         println!("fast_optwork wall={} floor={} dominant={} floor_saved={}", wall_tex, floor_work_fast, dominant_fast, floor_saved);
-        // GAUNTLET-1c (the DDA, now fast::emit): the floor's perspective divide is per-ROW, not per-pixel — a bounded
-        // ~5 div_euclid/rem_euclid per floor row (the two step constants, the constant-axis texel, the row's starting
-        // q/rem) against the collapse's 2 per floor pixel. A structural claim read off fast.rs, NOT a wall-clock; the
-        // speed is gauntlet1c.py's separate host court. dda_div = 5*floor_rows, collapse_div = 2*floor_px.
+        // GAUNTLET-1c (the row-major DDA — the LOCKED blocked `fast::emit` and its archived linear form `emit_linear`
+        // share the recurrence, only the floor fetch layout differs): the floor's perspective divide is per-ROW, not
+        // per-pixel — a bounded ~5 div_euclid/rem_euclid per floor row (the two step constants, the constant-axis
+        // texel, the row's starting q/rem) against the collapse's 2 per floor pixel. A structural claim read off
+        // fast.rs, NOT a wall-clock; the speed is gauntlet1c.py's separate host court. dda_div = 5*floor_rows.
         let rows = fast::floor_rows(&first.strips);
         let dda_div = 5 * rows;
         let collapse_div = 2 * floor_tex;
@@ -327,7 +339,8 @@ fn main() {
     }
     if fast_bench > 0 {
         // The same-apparatus emit comparison — the frozen `mantle` emit, the GAUNTLET-1b collapse baseline, and the
-        // GAUNTLET-1c DDA candidate (`fast::emit`), timed back to back over the SAME frozen strips + frame (all are
+        // GAUNTLET-1c DDA (`fast::emit_linear`, the archived linear-fetch reference — GAUNTLET-1c's own subject,
+        // retained byte-identical under the LOCK), timed back to back over the SAME frozen strips + frame (all are
         // pure functions of them; none writes buf, so frame_digest cannot move). ALL THREE must reproduce the frozen
         // pixel witness or no number is printed. These are EMIT-level deltas ONLY: never the whole render, and never
         // cross-compared to GAUNTLET-0's instrumented render absolute (a different apparatus) — the locked GAUNTLET-1
@@ -345,7 +358,7 @@ fn main() {
             let a1 = Instant::now();
             fast::emit_collapse(&scene, &first.strips, &first.frame, &mut rgb_collapse);
             let a2 = Instant::now();
-            fast::emit(&scene, &first.strips, &first.frame, &mut rgb_fast);
+            fast::emit_linear(&scene, &first.strips, &first.frame, &mut rgb_fast);
             let a3 = Instant::now();
             if k >= warm {
                 t_frozen.push((a1 - a0).as_micros());
@@ -381,10 +394,10 @@ fn main() {
         println!("emitbd_locality floor_adj={} floor_local={} local_permille={}", st.floor_adj, st.floor_local, local_permille);
         println!("emitbd_writes writes={} writes_once={}", st.writes, if st.writes_once { "OK" } else { "NO" });
         // Faithfulness / negative control (deterministic, gate-checkable): the probe's VERIFY path is byte-identical
-        // to emit (hence the frozen oracle), so the ablated probes are a demonstrable SUBSET of the certified path,
-        // auditable rather than merely asserted.
+        // to the archived linear DDA reference (emit_linear) — RE-BREAKDOWN-1's fixed subject, itself the frozen
+        // oracle — so the ablated probes are a demonstrable SUBSET of the certified path, auditable not merely asserted.
         let mut rgb_emit = vec![0u8; W * H * 3];
-        fast::emit(&scene, &first.strips, &first.frame, &mut rgb_emit);
+        fast::emit_linear(&scene, &first.strips, &first.frame, &mut rgb_emit);
         let mut rgb_verify = vec![0u8; W * H * 3];
         fast::probe::emit_probe::<{ fast::probe::VERIFY }>(&scene, &first.strips, &first.frame, &mut rgb_verify);
         let verify_ok = rgb_verify == rgb_emit && hex(&sha256(&rgb_verify)) == ps;
@@ -413,7 +426,7 @@ fn main() {
                 let a2 = Instant::now();
                 fast::probe::emit_probe::<{ fast::probe::FULL }>(&scene, &first.strips, &first.frame, &mut f);
                 let a3 = Instant::now();
-                fast::emit(&scene, &first.strips, &first.frame, &mut e);
+                fast::emit_linear(&scene, &first.strips, &first.frame, &mut e);
                 let a4 = Instant::now();
                 black_box(&a);
                 black_box(&l);
@@ -455,7 +468,8 @@ fn main() {
         let mut r_l = vec![0u8; W * H * 3];
         loc::emit_swizzled::<{ loc::LINEAR }>(&scene, &first.strips, &first.frame, &mut r_l, floor);
         let od = |b: bool| if b { "OK" } else { "DIFFER" };
-        let dda_ref = { let mut d = vec![0u8; W * H * 3]; fast::emit(&scene, &first.strips, &first.frame, &mut d); d };
+        // the LINEAR anchor must reproduce the archived linear-fetch DDA reference (fast::emit_linear) exactly
+        let dda_ref = { let mut d = vec![0u8; W * H * 3]; fast::emit_linear(&scene, &first.strips, &first.frame, &mut d); d };
         println!("locality_pixels {}", ps);
         println!("locality_equal blocked={} morton={} linear_anchor={}",
                  od(hex(&sha256(&r_b)) == ps), od(hex(&sha256(&r_m)) == ps), od(r_l == dda_ref));

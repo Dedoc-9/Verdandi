@@ -9,30 +9,70 @@
 // candidate technique was inspected. The frozen `mantle.rs` is the correctness oracle; a candidate is guilty until
 // its bytes agree with it, and the harness compares candidate -> frozen, never the reverse.
 //
-// This file now holds the optimization STAIRCASE, each tread proven byte-identical to the frozen emit:
-//   * `emit`          — GAUNTLET-1c: the row-major floor DDA (the accepted fast path). Per floor row the perspective
-//                       divide is done a bounded number of times and the per-column texel steps by a recurrence:
-//                       O(rows) divides where the collapse did O(pixels). Ceiling + wall are the exact transcription.
+// This file holds the optimization STAIRCASE, each tread proven byte-identical to the frozen emit. LOCALITY-0
+// LOCKED the blocked floor-tile layout as the accepted single-thread emit, so the promotion chain is now:
+//   * `emit`          — LOCALITY-0 LOCKED (the accepted fast path): the GAUNTLET-1c row-major floor DDA with the
+//                       floor tile fetched from the 8x8 BLOCKED execution format (`blocked_floor`, swizzled ONCE at
+//                       scene load). Monomorphized to blocked — the floor index is `floor_blocked` (pure shift/mask,
+//                       no runtime layout branch), the buffer is the pre-swizzled `floor`, never `scene.floor`.
+//   * `emit_linear`   — GAUNTLET-1c ARCHIVED: the same row-major DDA fetching the floor from the canonical
+//                       row-major `scene.floor` (the pre-LOCK linear layout). Retained VERBATIM as an immutable
+//                       reference witness on the archive shelf — the fixed byte-identical target the historical
+//                       courts (fast-bench, the probe/structure, the LINEAR anchor and DDA baseline) still measure.
 //   * `emit_collapse` — GAUNTLET-1b: the floor divide-collapse (2 divides per floor pixel), a verbatim copy kept as
-//                       the SAME-APPARATUS performance BASELINE the DDA is measured against — never the oracle.
-// Correctness is mandatory and gate-enforced for BOTH (each byte-identical to frozen); speed is a second, separate
-// court measured off-gate on a host. `mantle.rs` is untouched.
+//                       the SAME-APPARATUS performance BASELINE the DDA was measured against — never the oracle.
+// Correctness is mandatory and gate-enforced for ALL THREE (each byte-identical to frozen); speed is a second,
+// separate court measured off-gate on a host. `mantle.rs` is untouched, and `emit`/`emit_linear`/`emit_collapse`
+// call no probe (the RE-BREAKDOWN-1 fence).
 
 use crate::mantle::{
     texel, u_axis_is_z, Scene, Strip, BANDS, CY, DOWN0, EYE_Y, FLOOR0, FOCAL, H, Q, T, U_SIGN, W, WALL0,
 };
 
-/// GAUNTLET-1c — the accepted fast path: the frozen ceiling + wall (an exact transcription) in a column-major pass,
-/// then the floor in a ROW-MAJOR pass that replaces the per-pixel perspective divide with a per-row DDA.
+const TZ: usize = T as usize; // 256, the tile edge
+
+/// The LOCKED floor-tile execution format (LOCALITY-0, blocked 8x8): the single definition of where texel (tj, ti)
+/// lives in the cache-blocked layout — 8x8 blocks in row-major block order, texels row-major within a block. The
+/// production `emit` fetches through it and `blocked_floor` fills through it, so the hot path and the scene-load
+/// swizzle share ONE index (a divergence is impossible without a red gate). The court's
+/// `locality::swizzle_index::<BLOCKED>` delegates here, so BLOCKED has exactly one definition repo-wide.
+#[inline(always)]
+fn floor_blocked(tj: i64, ti: i64) -> usize {
+    let (tj, ti) = (tj as usize, ti as usize);
+    (((tj >> 3) * (TZ >> 3)) + (ti >> 3)) * 64 + (tj & 7) * 8 + (ti & 7)
+}
+
+/// Ingest the canonical row-major floor tile and re-lay it into the LOCKED blocked execution format, ONCE (at
+/// scene load, not per frame): the texel at (tj, ti) moves to `floor_blocked(tj, ti)`. A pure permutation — the
+/// execution FORMAT — holding the same CONTENT as the input. `emit` reads the result; `scene.floor` is never
+/// touched in the hot path again.
+pub fn blocked_floor(floor: &[u8]) -> Vec<u8> {
+    let mut out = vec![0u8; TZ * TZ * 3];
+    for tj in 0..TZ {
+        for ti in 0..TZ {
+            let src = (tj * TZ + ti) * 3;
+            let dst = floor_blocked(tj as i64, ti as i64) * 3;
+            out[dst..dst + 3].copy_from_slice(&floor[src..src + 3]);
+        }
+    }
+    out
+}
+
+/// LOCALITY-0 LOCKED — the accepted single-thread fast path: the GAUNTLET-1c row-major floor DDA with the floor
+/// tile fetched from the 8x8 BLOCKED execution format (`blocked_floor`, built once at scene load). Blocked won the
+/// LOCALITY-0 court byte-identical AND faster than the linear-fetch DDA (it carries the lower index-arithmetic tax
+/// of the two layouts), so it is monomorphized here as production: the floor index is `floor_blocked` (pure
+/// shift/mask, no runtime layout branch), and `floor` is the pre-swizzled buffer — `scene.floor` is never read in
+/// the hot path. Ceiling + wall are the exact frozen transcription in a column-major pass.
 ///
 /// Why row-major: at a fixed floor row `r`, `kk = 2(r-CY)+1` is constant, and (from `direction`) exactly one floor
 /// axis is constant across columns while the other's numerator `D(c)` steps by `+/- 2*EYE_Y` per column. The frozen
 /// (collapse) texel for the varying axis is `(e + D(c).div_euclid(kk)) & (T-1)`; tracking `(q, rem) =
 /// (D.div_euclid(kk), D.rem_euclid(kk))` and advancing `D` by its constant step needs at most one correction — O(1)
-/// per column, ~5 divides per ROW instead of 2 per floor pixel. Validated exact over the recurrence (2.07M points)
-/// and the facing/assignment mapping (3.93M texels), and — decisively — proven byte-identical to the frozen emit by
-/// `gauntlet1-equiv`. `buf` is read, never written, so the frame (and `frame_digest`) cannot move.
-pub fn emit(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
+/// per column, ~5 divides per ROW instead of 2 per floor pixel. Byte-identical to the frozen emit (`gauntlet1-equiv`,
+/// `locality0-lock`); `buf` is read, never written, so the frame (and `frame_digest`) cannot move. The archived
+/// linear-fetch form (the LOCALITY-0 reference witness and the historical courts' target) is `emit_linear`.
+pub fn emit(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8], floor: &[u8]) {
     let ex = scene.pos_x * Q + EYE_Y;
     let ez = scene.pos_z * Q + EYE_Y;
     let table = &scene.table;
@@ -95,6 +135,117 @@ pub fn emit(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
     let e_vary = if varying_is_x { ex } else { ez }; // varying axis is X for N,S; Z for E,W
     let dconst_eye = d_const * EYE_Y;
     let step = 2 * EYE_Y; // D(c) steps by 2*EYE_Y per column (a = 2c+1-W steps by 2; D = EYE_Y * (+/-a))
+    for r in ((min_bot + 1) as usize)..H {
+        let kk = 2 * (r as i64 - CY) + 1;
+        let cconst = (e_const + dconst_eye.div_euclid(kk)) & (T - 1);
+        let a_step = step.div_euclid(kk);
+        let b_step = step.rem_euclid(kk);
+        let mut q = d0.div_euclid(kk);
+        let mut rem = d0.rem_euclid(kk);
+        let row = r * W;
+        for c in 0..W {
+            let idx = buf[row + c];
+            if idx >= FLOOR0 && idx < WALL0 {
+                let o = (row + c) * 3;
+                if idx < DOWN0 {
+                    let vary = (e_vary + q) & (T - 1);
+                    let (tj, ti_f) = if varying_is_x { (cconst, vary) } else { (vary, cconst) };
+                    let kf = floor_blocked(tj, ti_f) * 3;
+                    let band = (idx - FLOOR0) as usize;
+                    let m = &scene.floor_map[band * 256..band * 256 + 256];
+                    out[o] = m[floor[kf] as usize];
+                    out[o + 1] = m[floor[kf + 1] as usize];
+                    out[o + 2] = m[floor[kf + 2] as usize];
+                } else {
+                    // a down/up stair band in the floor region: a table copy, as the frozen floor loop does
+                    let i = idx as usize;
+                    out[o..o + 3].copy_from_slice(&table[i * 3..i * 3 + 3]);
+                }
+            }
+            // advance the DDA every column (q is a pure function of c and kk, valid whether or not we wrote)
+            if delta_pos {
+                q += a_step;
+                rem += b_step;
+                if rem >= kk {
+                    rem -= kk;
+                    q += 1;
+                }
+            } else {
+                q -= a_step;
+                rem -= b_step;
+                if rem < 0 {
+                    rem += kk;
+                    q -= 1;
+                }
+            }
+        }
+    }
+}
+
+/// GAUNTLET-1c ARCHIVED — the row-major floor DDA fetching the floor from the canonical row-major `scene.floor`
+/// (the pre-LOCK LINEAR layout). This is the accepted fast path's predecessor: LOCALITY-0 LOCKED the blocked-layout
+/// form (`emit`), and this linear-fetch form is retained VERBATIM on the archive shelf beside `emit_collapse` as an
+/// immutable REFERENCE WITNESS. It stays byte-identical to the frozen emit (`locality0-lock`), so the historical
+/// courts that measured the linear DDA keep a fixed target and the LOCK's blocked win stays reproducible against it:
+/// the GAUNTLET-1c fast-bench times it as "the DDA", RE-BREAKDOWN-1's ablation and structure courts verify against
+/// it, and LOCALITY-0's LINEAR anchor and DDA baseline are it. Not the production path (that is `emit`, blocked);
+/// never promoted, never edited for speed. `buf` is read, never written.
+pub fn emit_linear(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
+    let ex = scene.pos_x * Q + EYE_Y;
+    let ez = scene.pos_z * Q + EYE_Y;
+    let table = &scene.table;
+    let mut min_bot = H as i64 - 1;
+    for c in 0..W {
+        let s = &strips[c];
+        let (tn, td, dx, dz) = (s.tn, s.td, s.dx, s.dz);
+        let mut along = if u_axis_is_z(s.face) { ez * td + tn * dz } else { ex * td + tn * dx };
+        if U_SIGN[s.face as usize] < 0 {
+            along = -along;
+        }
+        let u_d = Q * td;
+        let u_n = along.rem_euclid(u_d);
+        let ti = texel(u_n, u_d);
+        let v_base = Q * td - EYE_Y * td - (2 * CY - 1) * tn;
+        let v_den = Q * td;
+        let top = s.top as usize;
+        let bot = s.bot as usize;
+        if s.bot < min_bot {
+            min_bot = s.bot;
+        }
+        for r in 0..top {
+            let idx = buf[r * W + c] as usize;
+            let o = (r * W + c) * 3;
+            out[o..o + 3].copy_from_slice(&table[idx * 3..idx * 3 + 3]);
+        }
+        for r in top..=bot {
+            let idx = buf[r * W + c];
+            let o = (r * W + c) * 3;
+            if idx < WALL0 {
+                let i = idx as usize;
+                out[o..o + 3].copy_from_slice(&table[i * 3..i * 3 + 3]);
+                continue;
+            }
+            let light = ((idx - WALL0) / (BANDS as u8)) as usize;
+            let band = ((idx - WALL0) % (BANDS as u8)) as usize;
+            let tj = texel(v_base + 2 * r as i64 * tn, v_den);
+            let k = ((tj * T + ti) * 3) as usize;
+            let tile = &scene.walls[light];
+            let m = &scene.wall_map[band * 256..band * 256 + 256];
+            out[o] = m[tile[k] as usize];
+            out[o + 1] = m[tile[k + 1] as usize];
+            out[o + 2] = m[tile[k + 2] as usize];
+        }
+    }
+    let (varying_is_x, delta_pos, d0, d_const): (bool, bool, i64, i64) = match scene.facing {
+        0 => (true, true, EYE_Y * (1 - W as i64), -2 * FOCAL),
+        1 => (false, true, EYE_Y * (1 - W as i64), 2 * FOCAL),
+        2 => (true, false, EYE_Y * (W as i64 - 1), 2 * FOCAL),
+        _ => (false, false, EYE_Y * (W as i64 - 1), -2 * FOCAL),
+    };
+    let e_const = if varying_is_x { ez } else { ex };
+    let e_vary = if varying_is_x { ex } else { ez };
+    let dconst_eye = d_const * EYE_Y;
+    let step = 2 * EYE_Y;
     let tile = &scene.floor;
     for r in ((min_bot + 1) as usize)..H {
         let kk = 2 * (r as i64 - CY) + 1;
@@ -118,12 +269,10 @@ pub fn emit(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
                     out[o + 1] = m[tile[k + 1] as usize];
                     out[o + 2] = m[tile[k + 2] as usize];
                 } else {
-                    // a down/up stair band in the floor region: a table copy, as the frozen floor loop does
                     let i = idx as usize;
                     out[o..o + 3].copy_from_slice(&table[i * 3..i * 3 + 3]);
                 }
             }
-            // advance the DDA every column (q is a pure function of c and kk, valid whether or not we wrote)
             if delta_pos {
                 q += a_step;
                 rem += b_step;
@@ -553,7 +702,7 @@ pub mod locality {
     pub const MORTON: u8 = 2;
     pub const FULL: u8 = 0; // MODE: the real fetch + store (byte-identical)
     pub const ADDR: u8 = 1; // MODE: the floor index math only, anchored — the arithmetic tax X
-    const TZ: usize = T as usize; // 256, the tile edge
+    // TZ (the tile edge) is the production `super::TZ`; the court's BLOCKED index delegates to `super::floor_blocked`.
 
     #[inline(always)]
     fn spread8(v: usize) -> usize {
@@ -570,12 +719,15 @@ pub mod locality {
     /// portable so byte-identity holds on any host). All three are bijections on [0, T*T) (row: locality0-bijection).
     #[inline(always)]
     pub fn swizzle_index<const LAYOUT: u8>(tj: i64, ti: i64) -> usize {
-        let (tj, ti) = (tj as usize, ti as usize);
         if LAYOUT == BLOCKED {
-            (((tj >> 3) * (TZ >> 3)) + (ti >> 3)) * 64 + (tj & 7) * 8 + (ti & 7)
+            // the LOCKED blocked layout has ONE definition repo-wide: the production `super::floor_blocked`, so the
+            // court apparatus and the promoted `emit` can never disagree on where a blocked texel lives.
+            super::floor_blocked(tj, ti)
         } else if LAYOUT == MORTON {
+            let (tj, ti) = (tj as usize, ti as usize);
             spread8(ti) | (spread8(tj) << 1)
         } else {
+            let (tj, ti) = (tj as usize, ti as usize);
             tj * TZ + ti
         }
     }

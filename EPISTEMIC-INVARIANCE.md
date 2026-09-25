@@ -99,6 +99,20 @@ wins, or **neither** beats the baseline — which is not a null but a proof that
 capacity/LRU miss no permutation can fix, redirecting the trajectory to `GAUNTLET-2` (parallelism) to hide the
 latency behind compute.
 
+**Why this theorem is `LOCALITY-0`'s foundation.** The isolation law is what makes the third exit *load-bearing*
+rather than an excuse. Because the boundary holds everything constant except the address arithmetic under test,
+a "neither beats the baseline" verdict is not a tie or a measurement failure — it is a definitive proof that the
+system is **capacity-bound or LRU-stalled**, a stall no layout permutation can remove. Without the boundary, that
+same null could be dismissed as thermal drift or predictor cross-talk, and an engineer could burn weeks
+micro-optimizing layout math against noise. With it, the null is a *result*: it forecloses the entire data-layout
+search space and redirects the trajectory to `GAUNTLET-2` (latency hiding via parallelism), the only remaining
+lever. The theorem thus does double duty — it certifies a *win* fairly (blocked or Morton), and it certifies a
+*dead end* rigorously, and the second is the more valuable guarantee.
+
+> **In `Verðandi`, `LOCALITY-0` fired Exit 1: blocked won, byte-identical and faster, and was `LOCK`ed as the
+> accepted single-thread `emit` (`GAUNTLET-2`'s sealed baseline). Had it instead fired Exit 3, this theorem is
+> what would have licensed the jump to parallelism without a single wasted layout patch.**
+
 ---
 
 ## Honest limits of the formalism

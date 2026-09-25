@@ -132,4 +132,6 @@ The performance courts isolate their measurements under a formal boundary condit
 [`EPISTEMIC-INVARIANCE.md`](EPISTEMIC-INVARIANCE.md) — the author's *Epistemic Invariance of the Boundary* theorem,
 which dictates that a layout mutation's cost is extractable only when the execution boundary is held
 microarchitecturally static (monomorphize, process-isolate, interleave), and which honestly bounds what its own
-formalism proves. First applied by `LOCALITY-0`.
+formalism proves. First applied by `LOCALITY-0`, whose court fired **Exit 1** (blocked wins): the 8×8 cache-blocked
+floor layout, byte-identical and faster, was `LOCK`ed as the accepted single-thread `emit` and sealed as GAUNTLET-2's
+hard baseline, with the linear-fetch DDA retained verbatim as an immutable reference witness.
