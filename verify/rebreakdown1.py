@@ -6,8 +6,10 @@
 
 Compiles kernel/main.rs in release, then runs `--emit-breakdown` in one invocation. Court A (deterministic) is
 recorded as-is: the divide-work, the tile/map memory reads, the tile working-set cardinality, the floor texel-stride
-locality, and the write-once coverage. Court B is the host ablation: probe_addr -> probe_lookup -> probe_full timed
-against emit on ONE apparatus, with probe VERIFY byte-identical to emit checked FIRST (the apparatus is a proven
+locality, and the write-once coverage. Court B is the host ablation (RE-BREAKDOWN-1b constant-anchor probe: every
+mode folds three bytes with the identical combine, so the anchor tax is constant across modes and cancels in the
+increments): probe_addr -> probe_lookup -> probe_full timed against emit on ONE apparatus, with the negative control
+full-emit reported, and probe VERIFY byte-identical to emit checked FIRST (the apparatus is a proven
 subset of the certified path). The Court B increments are recorded AS DATA and read as INCREMENTAL WALL-CLOCK
 ATTRIBUTION UNDER CONTROLLED ABLATION — never as pure hardware-resource costs, and never compared to GAUNTLET-0's
 instrumented render absolute. No verdict-shaped key exists in the record; `records-firewall` would refuse one.
@@ -33,8 +35,8 @@ import envelope  # noqa: E402
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--host", required=True)
-    ap.add_argument("--samples", type=int, default=300)
-    ap.add_argument("--warm", type=int, default=30)
+    ap.add_argument("--samples", type=int, default=500)
+    ap.add_argument("--warm", type=int, default=50)
     ap.add_argument("--scene", default="witness")
     ap.add_argument("--tiles", default="identity")
     a = ap.parse_args()
@@ -102,7 +104,7 @@ def main() -> int:
         "witnesses": {"frame": lines["frame"], "pixels": lines["pixels"]},
     }
     prov = {
-        "tool": "kernel/main.rs --emit-breakdown + verify/rebreakdown1.py", "kernel": "kernel/main.rs (+ mantle.rs, fast.rs, formats.rs, hud.rs)",
+        "tool": "kernel/main.rs --emit-breakdown + verify/rebreakdown1.py", "instrument_revision": "RE-BREAKDOWN-1b constant-anchor probe", "kernel": "kernel/main.rs (+ mantle.rs, fast.rs, formats.rs, hud.rs)",
         "flags": ["-C", "opt-level=3"], "rustc": subprocess.run([rustc, "--version"], capture_output=True, text=True).stdout.strip(),
         "host": a.host, "host_line": lines.get("host", ""), "python": platform.python_version(), "os": platform.system(), "machine": platform.machine(),
         "scene": a.scene, "tiles": a.tiles, "camera": [x, z, f], "corpus_commit": corpus["origin"]["commit"],
@@ -126,9 +128,12 @@ def main() -> int:
                f"'{largest}'; the promotion table (the reader's, from the preregistration) says a dominant lookup "
                f"increment or pathological locality LOCKs a data-layout/locality court, a dominant address increment "
                f"the arithmetic path, a dominant write the framebuffer path, and disagreement or no dominance DEFERs. "
-               f"probe VERIFY is byte-identical to emit (the apparatus is a subset of the certified path); FULL carries "
-               f"a small black_box anchor tax vs emit (full-emit {increments['full_vs_emit_p99']} us at p99). This is "
-               f"EMIT-level only, never the whole render, and NEVER compared to GAUNTLET-0's instrumented absolute")
+               f"probe VERIFY is byte-identical to emit (the apparatus is a subset of the certified path). RE-BREAKDOWN-1b "
+               f"instrument: every mode folds three bytes with the IDENTICAL combine, so the black_box anchor tax is "
+               f"CONSTANT across modes and cancels in the increments — the negative control full-emit "
+               f"{increments['full_vs_emit_p99']} us at p99 measures that constant tax (present equally in every mode), "
+               f"so the increments above are de-contaminated (the 1a probe's tax grew with depth and inflated them). This "
+               f"is EMIT-level only, never the whole render, and NEVER compared to GAUNTLET-0's instrumented absolute")
     rec = envelope.seal(
         "verdandi-emit-breakdown", 1, "measured", prov,
         {"certifies": f"the deterministic structure of emit and the same-apparatus ablation attribution of its work classes on host {a.host} for scene {a.scene} with {a.tiles} tiles, {a.samples} samples after {a.warm} warm-ups",

@@ -370,7 +370,8 @@ pub fn structure(scene: &Scene, strips: &[Strip], buf: &[u8]) -> Structure {
 /// RE-BREAKDOWN-1 — Court B: the fenced ablation-probe apparatus. NOT a renderer: `probe` is measurement scaffold,
 /// isolated from the promotion chain (the production `emit` never calls it; a gate row asserts so). `emit_probe`
 /// is a faithful copy of the DDA `emit`, `const MODE`-gated so each build does a nested SUBSET of the per-pixel
-/// textured work, with `black_box` anchoring the work so the optimizer cannot elide the very thing being timed:
+/// textured work, with ONE `black_box`-fed anchor per pixel in every mode (RE-BREAKDOWN-1b: constant tax that
+/// cancels in the increments — see `anchor_of`) so the optimizer cannot elide the very thing being timed:
 ///   ADDR    — classify + coordinate/DDA arithmetic, then a CONSTANT store (no memory fetch)
 ///   LOOKUP  — ADDR + the tile texel fetches (the big-texture memory reads), CONSTANT store
 ///   FULL    — LOOKUP + the band-map indirection/assembly, CONSTANT store (the negative control's work)
@@ -386,6 +387,31 @@ pub mod probe {
     pub const LOOKUP: u8 = 1;
     pub const FULL: u8 = 2;
     pub const VERIFY: u8 = 3;
+
+    /// RE-BREAKDOWN-1b: every mode produces THREE bytes and folds them with the IDENTICAL combine, so the anchor's
+    /// arithmetic tax is constant across modes and cancels exactly in the increments; only the memory work being
+    /// measured differs. ADDR folds three bytes of the address `k` (forces the coordinate arithmetic, no fetch);
+    /// LOOKUP folds the three tile texel bytes (forces the tile-texture read); FULL/VERIFY fold the three band-map
+    /// results `m[tile[k]]` (forces the map indirection, and returns them as the pixel `rr,gg,bb`). Thus
+    /// LOOKUP−ADDR is the tile fetch alone and FULL−LOOKUP the map indirection alone — the combine cancels. The 1a
+    /// probe accumulated 1/2/3 values by depth, so its tax grew with the mode and contaminated the deltas; this does not.
+    #[inline(always)]
+    fn anchor_of<const MODE: u8>(tile: &[u8], m: &[u8], k: usize, rr: &mut u8, gg: &mut u8, bb: &mut u8) -> u64 {
+        let (b0, b1, b2): (u8, u8, u8) = if MODE == ADDR {
+            (k as u8, (k >> 8) as u8, (k >> 16) as u8)
+        } else {
+            let (t0, t1, t2) = (tile[k], tile[k + 1], tile[k + 2]);
+            if MODE == LOOKUP {
+                (t0, t1, t2)
+            } else {
+                *rr = m[t0 as usize];
+                *gg = m[t1 as usize];
+                *bb = m[t2 as usize];
+                (*rr, *gg, *bb)
+            }
+        };
+        b0 as u64 ^ ((b1 as u64) << 8) ^ ((b2 as u64) << 16)
+    }
 
     pub fn emit_probe<const MODE: u8>(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
         let ex = scene.pos_x * Q + EYE_Y;
@@ -428,18 +454,9 @@ pub mod probe {
                 let k = ((tj * T + ti) * 3) as usize;
                 let tile = &scene.walls[light];
                 let m = &scene.wall_map[band * 256..band * 256 + 256];
-                acc = acc.wrapping_add(k as u64);
                 let (mut rr, mut gg, mut bb) = (0u8, 0u8, 0u8);
-                if MODE >= LOOKUP {
-                    let (t0, t1, t2) = (tile[k], tile[k + 1], tile[k + 2]);
-                    acc = acc.wrapping_add(t0 as u64 ^ ((t1 as u64) << 8) ^ ((t2 as u64) << 16));
-                    if MODE >= FULL {
-                        rr = m[t0 as usize];
-                        gg = m[t1 as usize];
-                        bb = m[t2 as usize];
-                        acc = acc.wrapping_add(rr as u64 ^ ((gg as u64) << 8) ^ ((bb as u64) << 16));
-                    }
-                }
+                let anchor = anchor_of::<MODE>(tile, m, k, &mut rr, &mut gg, &mut bb);
+                acc = acc.wrapping_add(anchor);
                 if MODE == VERIFY {
                     out[o] = rr;
                     out[o + 1] = gg;
@@ -481,18 +498,9 @@ pub mod probe {
                         let k = ((tj * T + ti_f) * 3) as usize;
                         let band = (idx - FLOOR0) as usize;
                         let m = &scene.floor_map[band * 256..band * 256 + 256];
-                        acc = acc.wrapping_add(k as u64);
                         let (mut rr, mut gg, mut bb) = (0u8, 0u8, 0u8);
-                        if MODE >= LOOKUP {
-                            let (t0, t1, t2) = (tile[k], tile[k + 1], tile[k + 2]);
-                            acc = acc.wrapping_add(t0 as u64 ^ ((t1 as u64) << 8) ^ ((t2 as u64) << 16));
-                            if MODE >= FULL {
-                                rr = m[t0 as usize];
-                                gg = m[t1 as usize];
-                                bb = m[t2 as usize];
-                                acc = acc.wrapping_add(rr as u64 ^ ((gg as u64) << 8) ^ ((bb as u64) << 16));
-                            }
-                        }
+                        let anchor = anchor_of::<MODE>(tile, m, k, &mut rr, &mut gg, &mut bb);
+                        acc = acc.wrapping_add(anchor);
                         if MODE == VERIFY {
                             out[o] = rr;
                             out[o + 1] = gg;

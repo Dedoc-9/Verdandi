@@ -909,6 +909,19 @@ That the probes are renderers (they are fenced apparatus; a differing probe pixe
 production `emit`/`emit_collapse` references a probe or the apparatus loses its `black_box` anchor;
 `rebreakdown1-preregistered` reddens if the method or promotion table is weakened.
 
+**RE-BREAKDOWN-1b (the constant-anchor refinement, before any layout change).** The first host run's Court B increments
+were close (tile-fetch 1071 vs map/assembly 911 µs p99) and the negative control was large (`full − emit` ≈ 1079 µs) —
+because the 1a probe accumulated 1/2/3 anchor values by mode, so its `black_box` tax grew with depth and leaked into the
+deltas. Choosing rigor over speed, 1b rebuilds the probe (`anchor_of`) so **every mode folds exactly three bytes with the
+identical combine** — ADDR from the address, LOOKUP from the tile texels, FULL/VERIFY from the band-map results — leaving
+only the memory work under measurement to differ. The tax is now constant across modes and cancels: `LOOKUP − ADDR` is
+the tile fetch alone, `FULL − LOOKUP` the map indirection alone. `emit_probe<VERIFY>` stays byte-identical to emit, the
+fence and the deterministic Court A are unchanged (the gate is byte-identical, rowset `2fd691b4a383354c`), so this is a
+same-court instrument refinement, not a new method. It re-seats under the same hash-locked RE-BREAKDOWN-1 entry; the host
+re-measures (`verify/rebreakdown1.py`, now default 500/50) and the promotion call is made from the de-contaminated
+increments. In the container the refinement widened the tile-fetch lead from ~1.2× to ~4× and shrank the negative control
+by roughly half — the host number is the user's, and the LOCALITY court is chosen from it.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
