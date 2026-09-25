@@ -1153,6 +1153,55 @@ any case (a partition/order or race dependency); `gauntlet2-threaded-fence` if `
 or reads `scene.floor` or references a probe, or if `emit_threaded` acquires a second renderer (a coordinate/material/
 pixel primitive) instead of routing through `emit_partitioned`.
 
+## GAUNTLET-2 LOCK — the threaded emit adopted, T=8 the production default (seat 22)
+
+**What landed (promotion, on a reproduced verdict).** The host performance court fired **PROMOTE** on `DANIELDILLBERG`,
+and the shape was confirmed on a second independent sweep. The threaded emit is adopted: `kernel/fast.rs::render` is the
+accepted production fast path — mantle's frozen strips + frame (the oracle's geometry, unchanged), then the pixels via
+`emit_threaded` at `PROD_THREADS = 8` — and the shell's production render (`shell/present.rs::compose_frame`) is rewired
+to call it, so the parallel headroom actually reaches the frame the window shows. Byte-identity is gate-enforced
+(`gauntlet2-lock`: the production render reproduces the frozen picture's frame digest AND pixel sha over corpus +
+adversarial cameras); the single-thread `emit`/`emit_linear` are retained as the reference witnesses.
+
+**The measured facts (two sweeps, `DANIELDILLBERG`).** Every `T>1` beat the inherited **7,734 µs** single-thread
+baseline in both runs. The matrix (run 1 / run 2, µs p99): T1 5019/5067, T2 3752/3923, T4 3012/2929, T8 **2360/2355**,
+T16 **2311/2208**. T=16 was the measured-fastest both times (~3.35–3.50× over baseline); T=8 was the **stable knee** —
+0.2% run-to-run — while T=16 carried 4.5% run-to-run variance. T=8 is ~3.27–3.28× over baseline.
+
+**Why T=8 is the production default (and the honest grade of the plateau).** T=8 is chosen for a **deterministic**
+production p99: it banks a rock-stable ~3.3× (2355–2360 µs, sub-1% run-to-run) rather than T=16's marginally-faster but
+noisier point. The `T≥8` plateau and the elevated `T=16` variance are **consistent with** LOCALITY-0's memory-bound
+finding — the emit is bandwidth-limited, so past ~8 threads the cores contend for memory rather than doing independent
+work. That is graded as a **hypothesis supported by the run-to-run variance, NOT a direct bandwidth measurement**: this
+court did not measure the memory bus, and it does not establish that exactly eight threads is the hardware's saturation
+point. T=8 is an **execution parameter**, not rendering authority: the `{1,2,4,8,16}` partition/thread court
+(`gauntlet2-threaded-equiv`) stays intact as the correctness oracle, unchanged by the choice of production `T`.
+Recorded engineering facts: default T=8; tested ceiling T=16; T=16 measured-fastest in both sweeps; T=8 the selected
+deterministic production default; T=16 the observed performance-ceiling / plateau candidate.
+
+**Reproducibility, kept durable without clobbering.** The sealed measurement (`kernel/attest/gauntlet2-<host>.json`,
+run 1) stays the canonical record. A confirming sweep is sealed SEPARATELY by `verify/gauntlet2.py --confirm` to
+`kernel/attest/gauntlet2-confirm-<host>.json`, which cites the canonical record's chain hash and states whether the
+shape reproduced — the second run's value is durable evidence, never a silent replacement of the original sealed number.
+
+**Rows.** `gauntlet2-lock` — `fast::render` (production render, T=8) byte-identical to the frozen picture over corpus +
+adversarial cameras; `render_threads == 8`. `gauntlet2-lockfence` — the structural LOCK: `fast::render` routes the
+pixels through `emit_threaded` at `PROD_THREADS = 8` (no duplicate renderer), the shell's `present.rs` is wired to
+`fast::render` and no longer calls the frozen `picture()` for its pixels, and the single-thread reference is retained.
+
+**Grade.** MEASURED (host, off-gate, two sweeps): the p99 matrix and the ~3.3× promotion, reproduced. MEASURED (gate):
+the production render's byte-identity at T=8 and the structural LOCK. HYPOTHESIS (evidence-supported, not established):
+that the `T≥8` plateau is memory-bandwidth saturation — the variance is evidence, a bus measurement would be proof.
+DECLARED: T=8 as the production default.
+
+**does_not_show.** That eight threads is the exact bandwidth-saturation point (not measured). Any frame-rate,
+refresh, or input-to-photon claim (this is emit p99, not the present path — that is LATENCY-1). Any comparison to
+GAUNTLET-0's instrumented absolute. That the ~3.3× survives the frame-ready → composited path (LATENCY-1 measures that).
+
+**Falsifier.** `gauntlet2-lock` reddens if the production render diverges from the frozen picture on any case or is not
+at T=8; `gauntlet2-lockfence` if `fast::render` stops routing through `emit_threaded`/`PROD_THREADS`, if the shell's
+production render reverts to the frozen `picture()`, if `PROD_THREADS != 8`, or if the single-thread reference is dropped.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -1202,7 +1251,12 @@ staircase and what remains:
   Both GAUNTLET-2 courts then landed: the **correctness court** (seat 20) proved `emit_partitioned` byte-identical over
   contiguous + adversarial partitions, and the **performance court** (seat 21) added the execution-only `emit_threaded`
   (`std::thread::scope`, one contiguous group per thread) with byte-identity gate-enforced at every `T` and the
-  `T | correctness | p99` matrix vs the inherited 7734 µs sealed off-gate by `verify/gauntlet2.py` on the owner's host.
+  `T | correctness | p99` matrix vs the inherited 7734 µs sealed off-gate by `verify/gauntlet2.py`. The host court fired
+  **PROMOTE** (every `T>1` beat 7734, reproduced on a second sweep; T=16 fastest ~3.35–3.50×, T=8 the stable knee ~3.3×),
+  and the **GAUNTLET-2 LOCK** (seat 22) adopted the threaded emit as the production render (`fast::render` at the default
+  `PROD_THREADS = 8`), rewiring the shell to render through it so the ~3.3× headroom reaches the present path. **LATENCY-1**
+  is now the natural next measurement — whether that render headroom survives the actual frame-ready → composited path —
+  rather than another blind renderer optimization.
   **LATENCY-1** then reruns the same fixed session and records the before/after render delta against LATENCY-0's
   immutable baseline.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is

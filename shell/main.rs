@@ -27,6 +27,9 @@ mod formats;
 #[path = "../kernel/hud.rs"]
 mod hud;
 #[allow(dead_code)]
+#[path = "../kernel/fast.rs"]
+mod fast;
+#[allow(dead_code)]
 #[path = "present.rs"]
 mod present;
 #[allow(dead_code)]

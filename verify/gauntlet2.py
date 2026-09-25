@@ -48,6 +48,9 @@ def main() -> int:
     ap.add_argument("--threads", default="1,2,4,8,16")
     ap.add_argument("--scene", default="witness")
     ap.add_argument("--tiles", default="identity")
+    ap.add_argument("--confirm", action="store_true",
+                    help="a reproducibility run: seal a SEPARATE gauntlet2-confirm-<host>.json citing the sealed record, "
+                         "without overwriting the canonical measurement")
     a = ap.parse_args()
     sweep = [int(x) for x in a.threads.split(",") if x.strip()]
     if 1 not in sweep:
@@ -185,9 +188,27 @@ def main() -> int:
                f"threaded emit is the certified picture at every thread count. These are same-apparatus p99 deltas vs the "
                f"sealed single-thread baseline — NOT compared to GAUNTLET-0's instrumented render absolute, and NOT a "
                f"refresh-rate or input-to-photon claim.")
+    name, out_name = "verdandi-gauntlet2", f"gauntlet2-{a.host}.json"
+    if a.confirm:
+        # a reproducibility run: seal a SEPARATE confirmation record citing the sealed measurement, never replacing it
+        canon = os.path.join(ROOT, "kernel", "attest", f"gauntlet2-{a.host}.json")
+        if not os.path.exists(canon):
+            print("REFUSE: nothing to confirm — no sealed kernel/attest/gauntlet2-%s.json. Run without --confirm first." % a.host)
+            return 2
+        orig = envelope.read(canon)
+        prov["confirms"] = {"of": f"kernel/attest/gauntlet2-{a.host}.json", "chain_hash": orig["chain_hash"],
+                            "original_best_parallel_p99_us": orig["data"].get("best_parallel_p99_us"),
+                            "original_speedup_permille": orig["data"].get("speedup_permille")}
+        name, out_name = "verdandi-gauntlet2-confirm", f"gauntlet2-confirm-{a.host}.json"
+        shape_ok = promoted and best < baseline
+        reading = (f"CONFIRMATION run — does NOT replace the sealed measurement (kernel/attest/gauntlet2-{a.host}.json, "
+                   f"chain_hash {orig['chain_hash'][:8]}). The shape {'REPRODUCED' if shape_ok else 'did NOT reproduce'}: "
+                   f"original best {orig['data'].get('best_parallel_p99_us')} us ({orig['data'].get('speedup_permille')} "
+                   f"permille of baseline), this run best {best} us ({speedup_permille} permille); per-T this run: {matrix} "
+                   f"us. ") + reading
     rec = envelope.seal(
-        "verdandi-gauntlet2", 1, "measured", prov,
-        {"certifies": f"the same-apparatus p99 of the threaded emit at thread counts {sweep} vs the inherited single-thread baseline on host {a.host} for scene {a.scene} with {a.tiles} tiles, {a.samples} samples x {a.strips} interleaved strips",
+        name, 1, "measured", prov,
+        {"certifies": f"the same-apparatus p99 of the threaded emit at thread counts {sweep} vs the inherited single-thread baseline on host {a.host} for scene {a.scene} with {a.tiles} tiles, {a.samples} samples x {a.strips} interleaved strips" + (" (a confirmation run, citing the sealed measurement)" if a.confirm else ""),
          "host": a.host, "scene": a.scene, "tiles": a.tiles},
         ["input-to-photon latency, a present, a window, a compositor, a refresh-rate claim: none is in this number",
          "the whole-render cost: this is emit only, over the frozen strips + frame every thread count shares",
@@ -199,11 +220,11 @@ def main() -> int:
         data, reading)
     out_dir = os.path.join(ROOT, "kernel", "attest")
     os.makedirs(out_dir, exist_ok=True)
-    out = os.path.join(out_dir, f"gauntlet2-{a.host}.json")
+    out = os.path.join(out_dir, out_name)
     envelope.write(out, rec)
     print(json.dumps({"host": a.host, "baseline_p99_us": baseline, "threads_p99_us": data["threads_p99_us"],
                       "best_parallel_threads": best_t, "best_parallel_p99_us": best,
-                      "speedup_permille": speedup_permille, "promoted": promoted}, indent=1))
+                      "speedup_permille": speedup_permille, "promoted": promoted, "confirm": a.confirm}, indent=1))
     print("[gauntlet2] " + verdict)
     print(f"[gauntlet2] -> {os.path.relpath(out, ROOT)}  (cites GAUNTLET-2 {reg[:8]})")
     return 0

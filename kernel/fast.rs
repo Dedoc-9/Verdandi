@@ -625,6 +625,31 @@ fn contiguous_groups(t: usize) -> Vec<(usize, usize)> {
     g
 }
 
+/// The GAUNTLET-2 production thread count (the accepted default). It is an EXECUTION parameter, not rendering
+/// authority: the correctness court judges T in {1,2,4,8,16} and every partition byte-identically, and T=8 is merely
+/// the value the production render is fixed to. On host DANIELDILLBERG (two sweeps): T=8 was the STABLE knee — p99
+/// 2360/2355 us, 0.2% run-to-run — while T=16 was the measured-fastest (2311/2208) but noisier (4.5% run-to-run).
+/// The T>=8 plateau and that variance are CONSISTENT WITH LOCALITY-0's memory-bound finding (the emit is bandwidth-
+/// limited), but they are evidence for a bandwidth-saturation hypothesis, NOT a direct bandwidth measurement or proof
+/// that 8 is the exact saturation point. T=8 is chosen for a deterministic production p99; T=16 is the tested ceiling.
+pub const PROD_THREADS: usize = 8;
+
+/// The ACCEPTED production render fast path (GAUNTLET-2 LOCKED): the frozen strips + frame geometry (mantle's, the
+/// oracle's, unchanged), then the pixels via the GAUNTLET-2 threaded emit at the production default `PROD_THREADS`.
+/// Byte-identical to `mantle::picture(scene).pixels` (the frozen oracle) — every pixel routed through
+/// `emit_threaded` -> `emit_partitioned` (gauntlet2-lock / -lockfence). Returns (strips, index frame, RGB pixels);
+/// the shell's `present.rs` renders through this, so the ~3x GAUNTLET-2 headroom flows into the present path.
+pub fn render(scene: &Scene) -> (Vec<Strip>, Vec<u8>, Vec<u8>) {
+    let mut strips = Vec::with_capacity(W);
+    scene.strips(&mut strips);
+    let mut frame = vec![0u8; W * H];
+    scene.frame(&strips, &mut frame);
+    let floor = blocked_floor(&scene.floor);
+    let mut pixels = vec![0u8; W * H * 3];
+    emit_threaded(scene, &strips, &frame, &mut pixels, &floor, PROD_THREADS);
+    (strips, frame, pixels)
+}
+
 /// RE-BREAKDOWN-1 — Court A: the DETERMINISTIC structural attribution (gate-computed, wall-clock-free). What work
 /// exists in `emit`, read off the frozen frame: divide-work (wall 1/px + floor DDA 5/row), the tile/map memory reads
 /// (3 texels + 3 map indirections per textured pixel), the tile working-set cardinality (distinct texel addresses),

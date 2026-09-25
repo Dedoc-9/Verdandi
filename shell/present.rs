@@ -17,9 +17,10 @@
 // No window, no clock, no OS call here; std-only; compiles on any target. `shell/win32.rs` (cfg-gated to
 // Windows) is the only file that opens a window and reads DWM's composition clock.
 
+use crate::fast;
 use crate::formats::{compose, parse_level, parse_tiles, Camera};
 use crate::hud;
-use crate::mantle::{hex, parse_scene, picture, sha256, Refusal, H, W};
+use crate::mantle::{frame_digest, hex, parse_scene, sha256, Refusal, H, W};
 
 pub struct Composed {
     pub composite: Vec<u8>,     // W*H*3 RGB, top-down: the kernel's viewport with the HUD overlay drawn in
@@ -33,13 +34,16 @@ pub fn compose_frame(level_bytes: &[u8], tiles_bytes: &[u8], cam: Camera) -> Res
     let level = parse_level(level_bytes)?;
     let tiles = parse_tiles(tiles_bytes)?;
     let scene = parse_scene(&compose(&level, cam, &tiles))?;
-    let pic = picture(&scene);
-    let frame_digest = pic.frame_digest();
-    let pixels = pic.pixel_sha256();
-    let mut composite = pic.pixels.clone();
-    hud::overlay(&scene, &pic.strips, &mut composite);
+    // GAUNTLET-2 LOCKED: the production render goes through the accepted threaded fast path (emit_threaded at T=8),
+    // byte-identical to the frozen mantle::picture (gauntlet2-lock). The geometry (strips, frame) is mantle's, the
+    // oracle's, unchanged; only the pixel pass is the parallel emit, so the ~3x render headroom reaches the present.
+    let (strips, frame, viewport) = fast::render(&scene);
+    let digest = frame_digest(&frame);
+    let pixels = hex(&sha256(&viewport));
+    let mut composite = viewport;
+    hud::overlay(&scene, &strips, &mut composite);
     let composite_sha = hex(&sha256(&composite));
-    Ok(Composed { composite, frame_digest, pixels, composite_sha })
+    Ok(Composed { composite, frame_digest: digest, pixels, composite_sha })
 }
 
 /// RGB top-down -> BGR top-down: the exact bytes StretchDIBits receives (a 24-bit top-down DIB). Self-inverse.

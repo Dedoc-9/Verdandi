@@ -2690,6 +2690,76 @@ def gauntlet2_threaded_fence():
             "duplicate renderer). Replaces the retired gauntlet2-partition-fence, whose 'no threading yet' job is finished")
 
 
+def _render_lines(level, tiles, camera):
+    code, out, err = run(KERNEL_EXE, ["--level", os.path.join(ORACLE, "levels", level + ".lvl"),
+                                      "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"),
+                                      "--camera", camera, "--render"])
+    if code != 0:
+        raise Red("kernel --render exited %d on %s@%s: %s" % (code, level, camera, err.strip()))
+    return dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+
+
+def gauntlet2_lock():
+    """GAUNTLET-2 LOCK: the accepted production render (fast::render) goes through the threaded emit at the production
+    default PROD_THREADS=8 and is byte-identical to the frozen picture — the frame digest AND pixel sha reproduce the
+    witness — over corpus + adversarial cameras. T=8 is a production EXECUTION parameter (this row checks it), NOT the
+    correctness oracle: the {1,2,4,8,16} court (gauntlet2-threaded-equiv) stays intact and separate."""
+    need_rustc()
+    cases = _g1_cases()
+    for (lvl, tiles, cam) in cases:
+        d = _render_lines(lvl, tiles, cam)
+        if d.get("selfcheck") != "OK":
+            raise Red("kernel did not selfcheck under --render on %s@%s" % (lvl, cam))
+        if d.get("render_threads") != "8":
+            raise Red("the production render default is not T=8 (render_threads=%s) on %s@%s" % (d.get("render_threads"), lvl, cam))
+        if d.get("render_equal") != "OK" or d.get("render_pixels") != d.get("pixels") or d.get("render_frame") != d.get("frame"):
+            raise Red("the LOCKED production render (fast::render at T=8) is NOT byte-identical to the frozen picture on %s@%s" % (lvl, cam))
+    return ("GAUNTLET-2 LOCK over %d cases (corpus + adversarial cameras): the accepted production render fast::render — "
+            "mantle's frozen strips + frame, then the pixels via emit_threaded at the production default PROD_THREADS=8 — is "
+            "byte-identical to the frozen picture (render_pixels == pixels AND render_frame == frame everywhere). T=8 is a "
+            "production execution parameter, gate-checked here; the {1,2,4,8,16} partition/thread court (gauntlet2-threaded-equiv) "
+            "stays intact as the correctness oracle. The shell renders through this path, so the parallel headroom reaches the present")
+
+
+def gauntlet2_lockfence():
+    """The LOCK is structural: fast::render routes through emit_threaded at PROD_THREADS (fixed to 8), the shell's
+    production render (shell/present.rs) is wired to fast::render and no longer calls the frozen picture() for its
+    pixels, and the single-thread reference (emit / emit_linear) is retained. T=8 is an execution parameter, not
+    rendering authority — the correctness court's thread set is untouched."""
+    fast_src = open(os.path.join(ROOT, "kernel", "fast.rs"), encoding="utf-8").read()
+    present_src = open(os.path.join(ROOT, "shell", "present.rs"), encoding="utf-8").read()
+
+    def between(a, b):
+        i = fast_src.index(a)
+        j = fast_src.index(b, i + len(a))
+        return fast_src[i:j]
+
+    def code_only(body):
+        return "\n".join(ln for ln in body.splitlines() if not ln.lstrip().startswith("//"))
+
+    if "pub const PROD_THREADS: usize = 8" not in fast_src:
+        raise Red("the production default is not PROD_THREADS = 8")
+    if "pub fn render(" not in fast_src:
+        raise Red("the production render entry fast::render is missing")
+    render_body = code_only(between("pub fn render(", "/// RE-BREAKDOWN-1 — Court A"))
+    if "emit_threaded(" not in render_body or "PROD_THREADS" not in render_body:
+        raise Red("fast::render does not route the pixels through emit_threaded at PROD_THREADS")
+    if "floor_blocked(" in render_body:
+        raise Red("fast::render contains a duplicate-renderer primitive — it must only orchestrate emit_threaded")
+    if "pub fn emit(" not in fast_src or "pub fn emit_linear(" not in fast_src:
+        raise Red("the single-thread reference (emit / emit_linear) was dropped — it must be retained")
+    pcode = code_only(present_src)
+    if "fast::render(" not in pcode:
+        raise Red("the shell production render (shell/present.rs) is NOT wired to fast::render — the production path is not the threaded emit")
+    if "picture(" in pcode:
+        raise Red("the shell production render still calls the frozen picture() for its pixels — the threaded emit is not the production path")
+    return ("GAUNTLET-2 LOCK fence (source): fast::render routes the production pixels through emit_threaded at "
+            "PROD_THREADS = 8 (no duplicate renderer), the shell's production render (shell/present.rs) is wired to "
+            "fast::render and no longer calls the frozen picture() for its pixels, and the single-thread reference "
+            "(emit / emit_linear) is retained. T=8 is an execution parameter fixed for production, not rendering "
+            "authority — the {1,2,4,8,16} correctness court is untouched")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -2739,6 +2809,8 @@ def main() -> int:
     row("gauntlet2-partition-invariance", gauntlet2_partition_invariance)
     row("gauntlet2-threaded-equiv", gauntlet2_threaded_equiv)
     row("gauntlet2-threaded-fence", gauntlet2_threaded_fence)
+    row("gauntlet2-lock", gauntlet2_lock)
+    row("gauntlet2-lockfence", gauntlet2_lockfence)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)

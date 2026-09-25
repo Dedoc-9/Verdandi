@@ -16,6 +16,7 @@
 //     kernel ... --gauntlet2                                         # GAUNTLET-2 correctness court: partition invariance — emit_partitioned over contiguous/adversarial column partitions is byte-identical to frozen (deterministic, no threads)
 //     kernel ... --gauntlet2-threads                                 # GAUNTLET-2 threaded byte-identity: emit_threaded (std::thread::scope) byte-identical to frozen at T in {1,2,4,8,16} (deterministic output)
 //     kernel ... --gauntlet2-bench 300 --warm 30 --threads 8         # off-gate (GAUNTLET-2): p99 of the threaded emit at an EXPLICIT thread count (byte-identity checked first)
+//     kernel ... --render                                            # GAUNTLET-2 LOCKED production render: fast::render (emit_threaded at PROD_THREADS=8) byte-identical to the frozen picture
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
@@ -178,6 +179,7 @@ fn main() {
     let mut want_g2threads = false;
     let mut g2_bench = 0usize;
     let mut n_threads = 1usize;
+    let mut want_render = false;
     let mut write_ppm: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
@@ -204,6 +206,7 @@ fn main() {
             "--gauntlet2-threads" => { want_g2threads = true; i += 1; }
             "--gauntlet2-bench" => { g2_bench = next(i).parse().unwrap_or_else(|_| refuse("--gauntlet2-bench needs a count")); i += 2; }
             "--threads" => { n_threads = next(i).parse().unwrap_or_else(|_| refuse("--threads needs a count")); i += 2; }
+            "--render" => { want_render = true; i += 1; }
             "--write-png" => { write_ppm = Some(next(i)); i += 2; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
@@ -657,6 +660,19 @@ fn main() {
             println!("g2t_thread {} equal={}", t, if hex(&sha256(&o)) == ps { "OK" } else { "DIFFER" });
         }
         println!("g2t_total 5");
+    }
+    if want_render {
+        // GAUNTLET-2 LOCKED production render: fast::render is the accepted production fast path — mantle's frozen
+        // strips + frame geometry, then the pixels via emit_threaded at the production default PROD_THREADS (T=8).
+        // Byte-identical to the frozen picture (render_equal): the frame digest and pixel sha both reproduce the
+        // witness. T=8 is a production EXECUTION parameter; the correctness court still judges all of {1,2,4,8,16}.
+        let (_strips, frame, pixels) = fast::render(&scene);
+        let rd = frame_digest(&frame);
+        let rp = hex(&sha256(&pixels));
+        println!("render_threads {}", fast::PROD_THREADS);
+        println!("render_frame {}", rd);
+        println!("render_pixels {}", rp);
+        println!("render_equal {}", if rp == ps && rd == fd { "OK" } else { "DIFFER" });
     }
     if g2_bench > 0 {
         // GAUNTLET-2 performance court (off-gate, host): time emit_threaded at the EXPLICIT --threads T. Byte-identity
