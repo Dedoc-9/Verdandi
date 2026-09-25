@@ -8,8 +8,8 @@
 //     kernel --level L.lvl --tiles T.tiles --camera 34,28,W      # composed from the studio's files
 //     kernel ... --bench 200 --warm 20                           # off-gate: p50/p95/p99/max us per phase
 //     kernel ... --breakdown 300 --warm 30                        # off-gate (GAUNTLET-0): render split strips/frame/emit + the two witness hashes
-//     kernel ... --fast                                           # GAUNTLET-1: fast.rs emit vs the frozen emit — fast_equal OK|DIFFER, region divide-work (frozen + candidate), first-diff taxonomy
-//     kernel ... --fast-bench 300 --warm 30                        # off-gate (GAUNTLET-1b): frozen emit vs fast emit, same apparatus (both must reproduce the witness)
+//     kernel ... --fast                                           # GAUNTLET-1: DDA emit + collapse baseline vs frozen — fast_equal / collapse_equal, region divide-work (frozen/collapse/DDA), first-diff taxonomy
+//     kernel ... --fast-bench 300 --warm 30                        # off-gate (GAUNTLET-1c): frozen / collapse / DDA emit timed on one apparatus (all three must reproduce the witness)
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
@@ -188,27 +188,38 @@ fn main() {
     if want_fast {
         // GAUNTLET-1: the sibling emit renders the SAME frozen strips + frame; its bytes must equal the frozen
         // emit's, or it is not an accepted renderer. The frame (buf) is read-only, so frame_digest cannot move.
-        let mut rgb_fast = vec![0u8; W * H * 3];
+        let mut rgb_fast = vec![0u8; W * H * 3]; // GAUNTLET-1c: fast::emit is now the row-major floor DDA
         fast::emit(&scene, &first.strips, &first.frame, &mut rgb_fast);
         let fps = hex(&sha256(&rgb_fast));
         let firstdiff = rgb_fast.iter().zip(first.pixels.iter()).position(|(a, b)| a != b);
         println!("fast_pixels {}", fps);
         println!("fast_frame {}", fd); // fast never writes buf; the frame is the frozen one, echoed for the record
         println!("fast_equal {}", if firstdiff.is_none() && fps == ps { "OK" } else { "DIFFER" });
+        // GAUNTLET-1b's collapse, retained as the performance baseline, must ALSO stay byte-identical to frozen
+        let mut rgb_collapse = vec![0u8; W * H * 3];
+        fast::emit_collapse(&scene, &first.strips, &first.frame, &mut rgb_collapse);
+        let cps = hex(&sha256(&rgb_collapse));
+        println!("collapse_pixels {}", cps);
+        println!("collapse_equal {}", if cps == ps { "OK" } else { "DIFFER" });
         // the deterministic region measure: the divide-work per region, which named GAUNTLET-1b's target
         let (wall_tex, floor_tex, table_px) = fast::region_divides(&first.strips, &first.frame);
         let (wall_work, floor_work) = (wall_tex, 4 * floor_tex);
         let dominant = if floor_work >= wall_work { "floor" } else { "wall" };
         println!("fast_region wall_tex={} floor_tex={} table_px={}", wall_tex, floor_tex, table_px);
         println!("fast_divwork wall={} floor={} dominant={}", wall_work, floor_work, dominant);
-        // GAUNTLET-1b: the candidate's floor loop does ONE div_euclid per coordinate (2/floor px) where the frozen
-        // did two texel(rem_euclid, div_euclid) pairs (4/floor px); the wall and ceiling are unchanged. A structural
-        // divide reduction read off fast.rs (a source-cost proxy, NOT a wall-clock and NOT a speed claim — the speed
-        // is gauntlet1b.py's separate host court). floor_saved is the divides the collapse removes on this frame.
+        // GAUNTLET-1b (the collapse, now emit_collapse): ONE div_euclid per coordinate (2/floor px) vs the frozen 4.
         let floor_work_fast = 2 * floor_tex;
         let dominant_fast = if floor_work_fast >= wall_tex { "floor" } else { "wall" };
         let floor_saved = floor_work - floor_work_fast;
         println!("fast_optwork wall={} floor={} dominant={} floor_saved={}", wall_tex, floor_work_fast, dominant_fast, floor_saved);
+        // GAUNTLET-1c (the DDA, now fast::emit): the floor's perspective divide is per-ROW, not per-pixel — a bounded
+        // ~5 div_euclid/rem_euclid per floor row (the two step constants, the constant-axis texel, the row's starting
+        // q/rem) against the collapse's 2 per floor pixel. A structural claim read off fast.rs, NOT a wall-clock; the
+        // speed is gauntlet1c.py's separate host court. dda_div = 5*floor_rows, collapse_div = 2*floor_px.
+        let rows = fast::floor_rows(&first.strips);
+        let dda_div = 5 * rows;
+        let collapse_div = 2 * floor_tex;
+        println!("fast_ddawork floor_px={} floor_rows={} dda_div={} collapse_div={}", floor_tex, rows, dda_div, collapse_div);
         // the failure taxonomy: first differing pixel, its coordinate, region, index and channels
         if let Some(bi) = firstdiff {
             let p = bi / 3;
@@ -225,34 +236,43 @@ fn main() {
         }
     }
     if fast_bench > 0 {
-        // GAUNTLET-1b: the same-apparatus emit comparison — the frozen `mantle` emit and the sibling `fast` emit,
-        // timed back to back over the SAME frozen strips + frame (both are pure functions of them; neither writes
-        // buf, so frame_digest cannot move). BOTH must reproduce the frozen pixel witness or no number is printed.
-        // This is an EMIT-level delta ONLY: it is never the whole render, and it is NEVER cross-compared to
-        // GAUNTLET-0's instrumented render absolute (a different apparatus) — the locked GAUNTLET-1 rule. The
-        // comparison itself is left to the reader (verify/gauntlet1b.py); this prints two percentile lines as data.
+        // The same-apparatus emit comparison — the frozen `mantle` emit, the GAUNTLET-1b collapse baseline, and the
+        // GAUNTLET-1c DDA candidate (`fast::emit`), timed back to back over the SAME frozen strips + frame (all are
+        // pure functions of them; none writes buf, so frame_digest cannot move). ALL THREE must reproduce the frozen
+        // pixel witness or no number is printed. These are EMIT-level deltas ONLY: never the whole render, and never
+        // cross-compared to GAUNTLET-0's instrumented render absolute (a different apparatus) — the locked GAUNTLET-1
+        // rule. The comparison is left to the reader (verify/gauntlet1c.py): 1c is judged against the collapse, 1b's
+        // baseline, not against frozen. Three percentile lines as data.
         let mut rgb_frozen = vec![0u8; W * H * 3];
         let mut rgb_fast = vec![0u8; W * H * 3];
+        let mut rgb_collapse = vec![0u8; W * H * 3];
         let mut t_frozen: Vec<u128> = Vec::with_capacity(fast_bench);
         let mut t_fast: Vec<u128> = Vec::with_capacity(fast_bench);
+        let mut t_collapse: Vec<u128> = Vec::with_capacity(fast_bench);
         for k in 0..(warm + fast_bench) {
             let a0 = Instant::now();
             scene.emit(&first.strips, &first.frame, &mut rgb_frozen);
             let a1 = Instant::now();
-            fast::emit(&scene, &first.strips, &first.frame, &mut rgb_fast);
+            fast::emit_collapse(&scene, &first.strips, &first.frame, &mut rgb_collapse);
             let a2 = Instant::now();
+            fast::emit(&scene, &first.strips, &first.frame, &mut rgb_fast);
+            let a3 = Instant::now();
             if k >= warm {
                 t_frozen.push((a1 - a0).as_micros());
-                t_fast.push((a2 - a1).as_micros());
+                t_collapse.push((a2 - a1).as_micros());
+                t_fast.push((a3 - a2).as_micros());
             }
         }
-        // guard: both emits reproduced the frozen witness, so the delta timed the certified render both ways
-        let same_after = hex(&sha256(&rgb_frozen)) == ps && hex(&sha256(&rgb_fast)) == ps;
+        // guard: all three emits reproduced the frozen witness, so the deltas timed the certified render every way
+        let same_after =
+            hex(&sha256(&rgb_frozen)) == ps && hex(&sha256(&rgb_fast)) == ps && hex(&sha256(&rgb_collapse)) == ps;
         if !same_after {
-            refuse("the fast-bench emits did not both reproduce the frozen pixel witness; no number is printed");
+            refuse("the fast-bench emits did not all reproduce the frozen pixel witness; no number is printed");
         }
         let (a, b, c, d) = percentiles(t_frozen);
         println!("fastbench_frozen_us p50={} p95={} p99={} max={}", a, b, c, d);
+        let (a, b, c, d) = percentiles(t_collapse);
+        println!("fastbench_collapse_us p50={} p95={} p99={} max={}", a, b, c, d);
         let (a, b, c, d) = percentiles(t_fast);
         println!("fastbench_fast_us p50={} p95={} p99={} max={}", a, b, c, d);
         println!("fastbench_samples {} warmup {} same_witnesses OK", fast_bench, warm);

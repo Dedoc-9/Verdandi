@@ -2060,10 +2060,11 @@ def gauntlet1_equiv():
             raise Red("fast emit DIFFERS from the frozen emit on %s %s@%s" % (lvl, tiles, cam))
         if d.get("fast_pixels") != d.get("pixels") or d.get("fast_frame") != d.get("frame"):
             raise Red("fast pixels/frame != frozen on %s %s@%s" % (lvl, tiles, cam))
-    return ("the sibling fast.rs emit is byte-identical to the frozen mantle.rs emit over %d cases (every corpus scene x its tile "
-            "sets, plus adversarial witness cameras: the four spawn facings and the frozen-traversable sessionwalk positions) — "
-            "fast_pixels == pixels AND fast_frame == frame everywhere; the GAUNTLET-1a seed is an exact transcription, so the "
-            "differential harness (candidate -> frozen, never the reverse) is proven before any optimization technique" % len(cases))
+    return ("the sibling fast.rs emit (now the GAUNTLET-1c row-major floor DDA) is byte-identical to the frozen mantle.rs emit over "
+            "%d cases (every corpus scene x its tile sets, plus adversarial witness cameras: the four spawn facings and the "
+            "frozen-traversable sessionwalk positions) — fast_pixels == pixels AND fast_frame == frame everywhere; the standing "
+            "differential court (candidate -> frozen, never the reverse; proven on the 1a exact-transcription seed) judges each "
+            "optimization tread, and a single differing pixel refuses it regardless of speed" % len(cases))
 
 
 def gauntlet1_region():
@@ -2085,15 +2086,16 @@ def gauntlet1_region():
 
 
 def gauntlet1b_reduction():
-    """GAUNTLET-1b: the floor divide-collapse. The candidate emit is byte-identical to the frozen emit (the same
-    gauntlet1-equiv court judges it) AND its floor loop does exactly HALF the floor divides — 2 per textured floor
-    pixel (one div_euclid per coordinate) where the frozen did 4 (two texel, each rem_euclid + div_euclid) — with the
-    wall and ceiling untouched. This gates the DETERMINISTIC divide reduction (a source-cost proxy, not a wall-clock);
-    the speed itself is GAUNTLET-1b's separate host court (verify/gauntlet1b.py, sealed off-gate citing GAUNTLET-1)."""
+    """GAUNTLET-1b: the floor divide-collapse, now RETAINED as fast::emit_collapse (the same-apparatus baseline the
+    GAUNTLET-1c DDA is measured against). The collapse is byte-identical to the frozen emit (collapse_equal) AND its
+    floor does exactly HALF the floor divides — 2 per textured floor pixel (one div_euclid per coordinate) where the
+    frozen did 4 (two texel, each rem_euclid + div_euclid) — with the wall and ceiling untouched. This gates the
+    DETERMINISTIC divide reduction (a source-cost proxy, not a wall-clock); the collapse's own speed win was measured
+    in GAUNTLET-1b's host court (verify/gauntlet1b.py, sealed off-gate citing GAUNTLET-1)."""
     need_rustc()
     d = _fast_lines("witness", "identity", "34,28,W")
-    if d.get("fast_equal") != "OK" or d.get("fast_pixels") != d.get("pixels"):
-        raise Red("the GAUNTLET-1b candidate is not byte-identical to the frozen emit on the witness frame")
+    if d.get("collapse_equal") != "OK" or d.get("collapse_pixels") != d.get("pixels"):
+        raise Red("the retained GAUNTLET-1b collapse baseline is not byte-identical to the frozen emit on the witness frame")
     reg = dict(kv.split("=") for kv in d["fast_region"].split())
     base = dict(kv.split("=") for kv in d["fast_divwork"].split() if "=" in kv)
     opt = dict(kv.split("=") for kv in d["fast_optwork"].split() if "=" in kv)
@@ -2103,18 +2105,51 @@ def gauntlet1b_reduction():
     if base_floor != 4 * floor_tex:
         raise Red("the frozen floor divide-work is not 4/px: %s" % d["fast_divwork"])
     if opt_wall != wall_tex:
-        raise Red("the candidate changed the wall divide-work (the collapse must touch only the floor): %s" % d["fast_optwork"])
+        raise Red("the collapse changed the wall divide-work (it must touch only the floor): %s" % d["fast_optwork"])
     if opt_floor != 2 * floor_tex:
-        raise Red("the candidate floor divide-work is not 2/px (the 4->2 collapse): %s" % d["fast_optwork"])
+        raise Red("the collapse floor divide-work is not 2/px (the 4->2 collapse): %s" % d["fast_optwork"])
     if saved != base_floor - opt_floor or saved != 2 * floor_tex:
         raise Red("floor_saved is not exactly the removed half of the floor divides: %s" % d["fast_optwork"])
     if opt.get("dominant") != ("floor" if opt_floor >= opt_wall else "wall"):
-        raise Red("the candidate's reported dominant region disagrees with its divide-work")
-    return ("GAUNTLET-1b's floor divide-collapse is byte-identical to the frozen emit (fast_equal OK, fast_pixels == "
-            "pixels on 34,28,W) AND does exactly HALF the floor divides: %d floor-textured px at 2/px = %d (candidate) "
-            "vs 4/px = %d (frozen), the wall unchanged at %d — %d divides removed on this frame, the floor still the "
-            "dominant divide region left for GAUNTLET-1c. The reduction is deterministic (a source-cost proxy); the "
-            "speed is a separate host court (gauntlet1b.py, off-gate, citing GAUNTLET-1)" % (floor_tex, opt_floor, base_floor, opt_wall, saved))
+        raise Red("the collapse's reported dominant region disagrees with its divide-work")
+    return ("GAUNTLET-1b's floor divide-collapse, retained as the DDA's baseline, is byte-identical to the frozen emit "
+            "(collapse_equal OK, collapse_pixels == pixels on 34,28,W) AND does exactly HALF the floor divides: %d "
+            "floor-textured px at 2/px = %d (collapse) vs 4/px = %d (frozen), the wall unchanged at %d — %d divides "
+            "removed. The reduction is deterministic (a source-cost proxy); the collapse's speed win was GAUNTLET-1b's "
+            "host court (gauntlet1b.py, off-gate, citing GAUNTLET-1)" % (floor_tex, opt_floor, base_floor, opt_wall, saved))
+
+
+def gauntlet1c_dda():
+    """GAUNTLET-1c: the row-major floor DDA (fast::emit). It is byte-identical to the frozen emit (the same
+    gauntlet1-equiv court judges it), the GAUNTLET-1b collapse is retained byte-identical as the same-apparatus
+    baseline, and the DDA moves the floor's perspective divide from per-PIXEL to per-ROW: a bounded ~5 div/rem ops
+    per floor row (the two step constants, the constant-axis texel, the row's starting q/rem), not 2 per floor pixel.
+    A DETERMINISTIC structural reduction (a source-cost proxy, not a wall-clock); the DDA-vs-collapse speed is the
+    separate host court (verify/gauntlet1c.py, sealed off-gate citing GAUNTLET-1)."""
+    need_rustc()
+    d = _fast_lines("witness", "identity", "34,28,W")
+    if d.get("fast_equal") != "OK" or d.get("fast_pixels") != d.get("pixels"):
+        raise Red("the GAUNTLET-1c DDA is not byte-identical to the frozen emit on the witness frame")
+    if d.get("collapse_equal") != "OK" or d.get("collapse_pixels") != d.get("pixels"):
+        raise Red("the retained GAUNTLET-1b collapse baseline is not byte-identical to the frozen emit")
+    w = dict(kv.split("=") for kv in d["fast_ddawork"].split() if "=" in kv)
+    floor_px, rows = int(w["floor_px"]), int(w["floor_rows"])
+    dda_div, collapse_div = int(w["dda_div"]), int(w["collapse_div"])
+    if collapse_div != 2 * floor_px:
+        raise Red("the collapse divide-work is not 2/floor px: %s" % d["fast_ddawork"])
+    if dda_div != 5 * rows:
+        raise Red("the DDA divide-work is not 5/floor row: %s" % d["fast_ddawork"])
+    if rows > 540:  # H - CY: no more floor rows than the image has below the horizon
+        raise Red("more floor rows than the image can hold below the horizon: %s" % d["fast_ddawork"])
+    if dda_div >= collapse_div:
+        raise Red("the DDA did not reduce the floor divide-work below the collapse: %s" % d["fast_ddawork"])
+    ratio = collapse_div // max(dda_div, 1)
+    return ("GAUNTLET-1c's row-major floor DDA is byte-identical to the frozen emit (fast_equal OK, fast_pixels == "
+            "pixels on 34,28,W) AND the retained GAUNTLET-1b collapse baseline stays byte-identical (collapse_equal "
+            "OK); the floor's perspective divide is now per-ROW: %d floor px over %d rows -> %d DDA div/rem ops (5/row) "
+            "vs the collapse's %d (2/floor px), a ~%dx reduction on this frame. Deterministic (a source-cost proxy); "
+            "the DDA-vs-collapse speed is the separate host court (gauntlet1c.py, off-gate, citing GAUNTLET-1)"
+            % (floor_px, rows, dda_div, collapse_div, ratio))
 
 
 def gauntlet1_preregistered():
@@ -2189,6 +2224,7 @@ def main() -> int:
     row("gauntlet1-equiv", gauntlet1_equiv)
     row("gauntlet1-region", gauntlet1_region)
     row("gauntlet1b-reduction", gauntlet1b_reduction)
+    row("gauntlet1c-dda", gauntlet1c_dda)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)

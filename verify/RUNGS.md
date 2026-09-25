@@ -795,6 +795,68 @@ full elimination of the floor's per-row divide (that is GAUNTLET-1c, decided onl
 divide-work changes, if the floor is not exactly halved, or if `floor_saved` is not the removed half; and the host
 seal refuses to print a number unless both emits reproduce the frozen witness first.
 
+## GAUNTLET-1c — the row-major floor DDA: the perspective divide made per-row (seat 16)
+
+**What landed (the divide eliminated from the pixel, byte-identical).** GAUNTLET-1b halved the floor divides (4→2 per
+pixel) and was promoted (emit p99 6928→5455 µs on host). GAUNTLET-1c removes them from the pixel entirely. The floor
+is now a **row-major second pass**: the frozen ceiling + wall stay an exact transcription in a column-major pass, and
+`kernel/fast.rs::emit` then sweeps the floor row by row. At a fixed row `r`, `kk = 2(r−CY)+1` is constant, so the
+perspective divide is done a **bounded number of times per row** and the per-column texel advances by a recurrence —
+**O(rows) divides where the collapse did O(pixels)**. On the witness frame that is **2,590 div/rem ops over 518 rows
+vs 1,389,296** for the collapse, a **~536× reduction**. The GAUNTLET-1b collapse is retained verbatim as
+`fast::emit_collapse` — the same-apparatus baseline the DDA is measured against, never the oracle.
+
+**The DDA, derived off the source.** From `direction(facing, c)`, the camera-space column term `a = 2c+1−W` steps by
+`+2` per column while `b = 2·FOCAL` is constant, and each facing carries them onto the world axes so that **exactly one
+floor axis is constant across the row and the other is linear in `c`** (N: X varies, Z constant; E: Z varies, X
+constant; S, W: the same with a negated step). The frozen (collapse) texel for the varying axis is
+`(e + D(c).div_euclid(kk)) & (T−1)` with `D(c) = ±EYE_Y·a(c)` stepping by `±2·EYE_Y`. Tracking `(q, rem) =
+(D.div_euclid(kk), D.rem_euclid(kk))` and advancing `D` by its constant step needs **at most one correction** per
+column — a Bresenham-exact rational-slope DDA. The constant axis's texel is computed once per row. So per floor row:
+~5 `div_euclid`/`rem_euclid` ops (the two step constants, the constant-axis texel, the row's starting `q`/`rem`) and
+**zero divides per pixel**.
+
+**Validated before a line of Rust, then proven byte-identical.** The recurrence was checked exhaustively against
+`floor(D(c)/kk)` over **2,073,600** points (every floor row `kk = 1..1079`, every column, both step signs; 0
+mismatches), and the full facing→assignment mapping and `k` composition against the frozen collapse texel over
+**3,932,160** texels (all four facings × 16 cameras × sampled rows × every column; 0 mismatches). The offline proof is
+not the acceptance test — **byte-identity is**: the standing `gauntlet1-equiv` court now judges the DDA and finds it
+`fast_pixels == pixels` and `fast_frame == frame` over the corpus + adversarial cameras. The row-major pass writes
+exactly the floor region (frame index in `[FLOOR0, WALL0)`: floor bands take the texel, stair bands a table copy), so
+it never touches Pass 1's ceiling/wall pixels and the seam/stairs stay correct.
+
+**Design, searched.** The naïve column-major elimination was infeasible (the quotient jumps by up to 32,768 near the
+horizon as `kk` grows); the row-major restructure is the feasible exact form — at fixed `kk` the slope is rational and
+constant, which is the classic DDA/Bresenham setting. The two courts hold: correctness is mandatory and gate-enforced
+(byte-identity of the DDA **and** the retained collapse, plus the deterministic per-row divide count); speed is a
+SEPARATE, same-apparatus court judged against the **collapse** (GAUNTLET-1b's promoted baseline), never frozen and
+never GAUNTLET-0's instrumented absolute. `kernel/main.rs --fast-bench` times frozen / collapse / DDA back to back
+(all three must reproduce the witness); `verify/gauntlet1c.py --host NAME` seals `verdandi-gauntlet1c-emit` to
+`kernel/attest/gauntlet1c-<host>.json`, citing the GAUNTLET-1 preregistration.
+
+**Rows.** `gauntlet1-equiv` — unchanged and now judging the DDA: byte-identical to the frozen emit over the corpus +
+adversarial cameras. `gauntlet1b-reduction` — retargeted to the retained collapse baseline (`collapse_equal`): it
+stays byte-identical and 2 divides/floor px, so the baseline is pinned to the oracle. `gauntlet1c-dda` — new: the DDA
+is byte-identical, the collapse is byte-identical, and the floor divide-work is `5 × floor_rows` (per-row) strictly
+below the collapse's `2 × floor_px` (per-pixel) — the structural elimination, gate-enforced, no wall-clock.
+
+**Grade.** MEASURED (live, headless): byte-identity of the DDA over corpus + adversarial cameras, byte-identity of the
+retained collapse, and the deterministic per-row divide reduction. ESTABLISHED (derived + 2.07M/3.93M-case checked,
+and byte-proven by the gate): the row-major DDA identity. NOT_MEASURED here: the wall-clock speedup — that is
+GAUNTLET-1c's separate host court (`verify/gauntlet1c.py`), judged against the collapse baseline, sealed off-gate.
+
+**does_not_show.** A speedup (the gate carries none; the host record does, off-gate, vs the collapse). The whole-render
+cost (the `--fast-bench` delta is emit only). Any comparison to GAUNTLET-0's instrumented render absolute (different
+apparatus). That the frozen→DDA cumulative number is the promotion test (1c is promoted against the collapse baseline,
+not frozen). That the harness is the oracle (it is not — `mantle.rs` is; the candidate is guilty until its bytes
+agree).
+
+**Falsifier.** `gauntlet1-equiv` reddens on a single differing pixel between the DDA and the frozen emit (with the
+first-diff taxonomy — and camera/row boundary cases are in the corpus: the four spawn facings, the sessionwalk
+positions, the floor-less near-wall frames where `floor_rows = 0`); `gauntlet1c-dda` reddens if the DDA or the
+retained collapse is not byte-identical, if the DDA divide-work is not `5 × floor_rows`, or if it does not fall below
+the collapse's; the host seal refuses to print a number unless all three emits reproduce the frozen witness first.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -822,10 +884,11 @@ staircase and what remains:
   byte-identical to the frozen emit over corpus + adversarial cameras — and its deterministic region measure named
   the **floor's per-row perspective divides** as the target (floor divide-work ~4× the wall's). GAUNTLET-1b (seated)
   wrote the first *exact* floor optimization — the **divide-collapse**, 4→2 floor divides per pixel, proven
-  byte-identical through the same `gauntlet1-equiv` court and gated deterministically by `gauntlet1b-reduction`; its
-  speed is a separate, same-apparatus host court (`verify/gauntlet1b.py`, sealed off-gate). **GAUNTLET-1c** will decide
-  the full floor-divide elimination (a row-major DDA restructure) only after the collapse is measured on a host.
-  **GAUNTLET-2+** only after the
+  byte-identical through the same `gauntlet1-equiv` court and gated by `gauntlet1b-reduction`; measured 6928→5455 µs
+  p99 emit on host (~1.27×), promoted. GAUNTLET-1c (seated) took the divide off the pixel entirely — the **row-major
+  floor DDA**, O(rows) divides not O(pixels) (~536× fewer on the witness), proven byte-identical through the same
+  court and gated by `gauntlet1c-dda`, with the collapse retained verbatim as the same-apparatus baseline; its speed
+  is judged against that collapse (`verify/gauntlet1c.py`, sealed off-gate). **GAUNTLET-2+** only after the
   first has a measured result. **LATENCY-1** then reruns the same fixed session and records the before/after render
   delta against LATENCY-0's immutable baseline.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is
