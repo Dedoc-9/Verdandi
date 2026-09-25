@@ -1,0 +1,84 @@
+{
+ "name": "verdandi-gauntlet1c-emit",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "kernel/main.rs --fast --fast-bench + verify/gauntlet1c.py",
+  "kernel": "kernel/main.rs (+ mantle.rs, fast.rs, formats.rs, hud.rs)",
+  "flags": [
+   "-C",
+   "opt-level=3"
+  ],
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+  "host": "DANIELDILLBERG",
+  "host_line": "os=windows arch=x86_64 cpu=\"AMD64 Family 26 Model 36 Stepping 0, AuthenticAMD\"",
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "scene": "witness",
+  "tiles": "identity",
+  "camera": [
+   34,
+   28,
+   "W"
+  ],
+  "corpus_commit": "4c8c2451d942ff320a11501b59fbbf2737ec42ce",
+  "preregistered": {
+   "rung": "GAUNTLET-1",
+   "chain_hash": "96c427499affb6a32f990ec4a9e65c50b6f5c48637dd28373c63dd76ea322615"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the same-apparatus emit-level speed delta (the GAUNTLET-1c DDA vs the GAUNTLET-1b collapse baseline, with frozen mantle for context) on host DANIELDILLBERG for scene witness with identity tiles, 300 samples after 30 warm-ups",
+  "host": "DANIELDILLBERG",
+  "scene": "witness",
+  "tiles": "identity"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency (input transport, present wait and the panel need capture hardware)",
+  "a present, a window, a compositor: none is in this number",
+  "the whole-render or per-frame cost: this is emit ONLY, timed over the frozen strips + frame all three share",
+  "any comparison to GAUNTLET-0's instrumented render absolute: different apparatus; this is a same-apparatus candidate-vs-baseline delta",
+  "any other host, scene, tile set or resolution; absolute µs are host-specific",
+  "that byte-identity is earned by this record: correctness is the gate's court (gauntlet1-equiv, gauntlet1c-dda); this seat measures only the speed given it",
+  "that the frozen->DDA cumulative number is the promotion test: GAUNTLET-1c is promoted against the collapse baseline, not frozen"
+ ],
+ "data": {
+  "emit_us": {
+   "frozen": {
+    "p50": 6430,
+    "p95": 6637,
+    "p99": 6934,
+    "max": 8037
+   },
+   "collapse": {
+    "p50": 4966,
+    "p95": 5182,
+    "p99": 5354,
+    "max": 5760
+   },
+   "dda": {
+    "p50": 4492,
+    "p95": 4648,
+    "p99": 4734,
+    "max": 4843
+   }
+  },
+  "floor_divide_work": {
+   "collapse_per_px": 2,
+   "dda_per_row": 5,
+   "floor_px": 694648,
+   "floor_rows": 518,
+   "collapse_div": 1389296,
+   "dda_div": 2590
+  },
+  "samples": 300,
+  "warmup": 30,
+  "witnesses": {
+   "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+   "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35"
+  }
+ },
+ "reading": "emit-only, same-apparatus delta on host DANIELDILLBERG. The promotion measurement is DDA vs the GAUNTLET-1b COLLAPSE baseline (not frozen): collapse emit p99 5354 µs vs the DDA 4734 µs (1130 permille of the collapse at p99); the cumulative frozen->DDA is 6934 -> 4734 µs (1464 permille), for context only. All three emits reproduced the frozen pixel witness (byte-identical — gate-enforced by gauntlet1-equiv / gauntlet1c-dda, not by this record), and the DDA does the floor's perspective divide per ROW (2590 div/rem ops over 518 rows) where the collapse did per PIXEL (1389296 over 694648 px). The promotion bar is the reader's: promote iff byte-identical AND the DDA emit p99 is strictly below the collapse's (vs_collapse > 1000 permille); identical-but-not-faster than the baseline is a correctness pass and a performance fail. This is an EMIT-level number, NOT the whole render, and NEVER compared to GAUNTLET-0's instrumented render absolute (a different apparatus). Witnesses were checked before any number was taken",
+ "chain_hash": "992d8961ace8dea460767287fdc45abe764e845e823b81d1e9ffb063e3a19d3c"
+}
