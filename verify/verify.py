@@ -2509,10 +2509,12 @@ def locality0_lockfence():
 
 
 def gauntlet2_preregistered():
-    """GAUNTLET-2's baseline is SEALED before the parallel rung is built: the single-thread floor is the LOCKED blocked
-    emit's process-isolated p99 as sealed by LOCALITY-0 (inherited, never re-derived); a parallel emit is accepted only if
-    byte-identical to the frozen emit for EVERY thread count and promoted only if it beats that inherited baseline; never
-    cross-compared to GAUNTLET-0's absolute; mantle.rs stays frozen. Hash-locked, so weakening it is a visible diff."""
+    """GAUNTLET-2's full method is SEALED before the parallel rung is built. It is not 'make emit multithreaded': it
+    establishes PARTITION INVARIANCE — the certified picture is byte-invariant under every admitted column partition and
+    order (adversarial, not merely contiguous), so thread count and partition are execution parameters, not rendering
+    authority. Two courts (deterministic partition-invariance + host threaded p99 vs the inherited LOCALITY-0 baseline);
+    the thread count T is explicit and recorded in the attestation; the decision rule — including the memory-hierarchy
+    redirect on a scaling stall — is preregistered before the number. Hash-locked, so weakening it is a visible diff."""
     reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))
     e = reg["entries"].get("GAUNTLET-2")
     if not e:
@@ -2520,7 +2522,10 @@ def gauntlet2_preregistered():
     lims = " ".join(e["interpretation_limits"]).lower()
     checks = {
         "the single-thread baseline is inherited from LOCALITY-0, never re-derived": "inherited from locality-0" in lims and "never re-measured" in lims,
+        "PARTITION invariance (not merely thread count); partition/order are execution parameters, not authority": "partition invariance" in lims and "execution parameters, not rendering authority" in lims and "adversarial partitions" in lims,
         "byte-identity holds for every thread count (thread-count invariance)": "thread-count invariance" in lims,
+        "the thread count T is explicit and recorded in the attestation": "explicit thread count" in lims and "recorded in the attestation" in lims,
+        "the decision rule is preregistered before the number, incl. the memory-hierarchy redirect": "decision rule" in lims and "before the number" in lims and "memory-bandwidth" in lims,
         "correctness and speed are two separate courts": "two separate courts" in lims,
         "never vs GAUNTLET-0's absolute": "never compared to gauntlet-0" in lims,
         "mantle.rs stays the frozen oracle": "mantle.rs stays the frozen correctness oracle" in lims,
@@ -2536,12 +2541,15 @@ def gauntlet2_preregistered():
                                 "data": {k: v for k, v in e.items() if k != "chain_hash"}})
     if e["chain_hash"] != want:
         raise Red("the GAUNTLET-2 entry was edited after registration (chain hash)")
-    return ("GAUNTLET-2's baseline is sealed before the parallel rung is built: the single-thread hard floor is the LOCKED "
-            "blocked emit's process-isolated p99 as sealed by LOCALITY-0 (inherited, never re-measured); a parallel emit is "
-            "ACCEPTED only if byte-identical to the frozen emit for every thread count (thread-count invariance) and PROMOTED "
-            "only if it beats that inherited baseline on the same apparatus; never cross-compared to GAUNTLET-0's absolute; the "
-            "emit is embarrassingly parallel so parallelism hides — does not remove — the capacity/LRU stall LOCALITY-0's third "
-            "exit named; mantle.rs stays frozen; hash-locked %s" % e["chain_hash"][:8])
+    return ("GAUNTLET-2's full method is sealed before the parallel rung is built: it establishes PARTITION INVARIANCE — the "
+            "certified picture is byte-invariant under every admitted column partition and order (adversarial partitions, not "
+            "merely contiguous chunks; thread-count invariance is its contiguous special case), so thread count and partition "
+            "are execution parameters, not rendering authority. Two separate courts (deterministic partition-invariance on the "
+            "gate + host threaded p99); the thread count T is explicit and recorded in the attestation (the T | correctness | "
+            "p99 matrix); the single-thread floor is the LOCKED blocked emit's p99 inherited from LOCALITY-0, never re-measured; "
+            "the decision rule is preregistered before the number — promote iff byte-invariant AND some admitted T>1 beats the "
+            "baseline, and a scaling stall reads as memory-bandwidth/cache contention (turn to the memory hierarchy), not as too "
+            "few threads. Never vs GAUNTLET-0's absolute; mantle.rs stays frozen; hash-locked %s" % e["chain_hash"][:8])
 
 
 # ------------------------------------------------------------------ main

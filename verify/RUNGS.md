@@ -1006,15 +1006,17 @@ nothing dead or commented-out is left in the engine loop.
 sealed as GAUNTLET-2's **hard baseline**: the multi-threaded rung inherits it, never re-derives it, and must beat it
 under **thread-count invariance** (byte-identical for every thread count P) to promote. Taking the earned 1.07×
 into the parallel court, rather than discarding it, forces the parallel implementation to fight against our best
-single-thread work. GAUNTLET-2 is preregistered (`5c3a5c30`) so the floor is fixed before the rung is built.
+single-thread work. GAUNTLET-2's baseline was first sealed here (`5c3a5c30`); its full method is preregistered in the
+next seat (`711cc1d4`) so the floor and the decision rule are fixed before the rung is built.
 
 **Rows.** `locality0-lock` — the blocked production emit and the archived `emit_linear` reference are both byte-
 identical to the frozen emit (and render the same picture). `locality0-lockfence` — the source-level proof: `emit`
 takes the pre-swizzled blocked buffer, uses `floor_blocked` in the hot path, never reads `scene.floor` there, and
 carries no layout toggle (monomorphized); `blocked_floor` builds the format once; `emit_linear` is the verbatim
 linear-fetch reference. `gauntlet2-preregistered` — the inherited single-thread baseline, thread-count invariance
-and the two-court rule are hash-locked (`5c3a5c30`). `gauntlet1-equiv` / `gauntlet1c-dda` now certify BOTH the
-blocked production emit and the linear reference over the corpus + adversarial cameras.
+and the two-court rule are hash-locked (upgraded to the full partition-invariance method in the next seat, `711cc1d4`).
+`gauntlet1-equiv` / `gauntlet1c-dda` now certify BOTH the blocked production emit and the linear reference over the
+corpus + adversarial cameras.
 
 **Grade.** MEASURED (live, headless, deterministic): byte-identity of the blocked production emit and the archived
 linear reference over corpus + adversarial cameras; the source-level LOCK fence. DECLARED: the hash-locked GAUNTLET-2
@@ -1029,6 +1031,43 @@ scene-dependent). Any comparison to GAUNTLET-0's instrumented absolute.
 `locality0-lockfence` if the production emit reads `scene.floor`, drops `floor_blocked`, grows a layout toggle, or the
 archived `emit_linear`/`blocked_floor` go missing; `gauntlet2-preregistered` if the inherited-baseline rule, the
 thread-count invariance or the two-court separation is weakened.
+
+## GAUNTLET-2 — preregistered: partition invariance before parallelism (method locked, seat pending)
+
+**What is locked (the method, before a line of implementation or a single number).** GAUNTLET-2 is opened but not yet
+seated: the parallel emit does not exist, and no host number has been taken. What is sealed here is the *method*, so the
+decision rule is fixed before any result can tempt it. The framing is deliberate — GAUNTLET-2 is **not** "make emit
+multithreaded." It establishes the stronger property:
+
+> **Partitioning the column domain changes execution parallelism but not the certified picture.** `emit` over any
+> partition of the columns into groups, processed in any order, across any admitted thread count `T`, is byte-identical
+> to the frozen emit. Thread count and column partition are **execution parameters, not rendering authority.**
+
+**Two courts (the GAUNTLET separation, kept).** *Correctness* is deterministic and gate-enforced: a partition-agnostic
+emit must reproduce the frozen `frame_digest` **and** `pixel_sha` for every tested column partition — contiguous chunks
+at `T ∈ {1,2,4,8,16}` **and** adversarial partitions (strided/interleaved column assignment, reversed processing order,
+single-column groups, a seeded permutation) — over the corpus plus adversarial cameras. The dangerous failure is no
+longer arithmetic; it is an accidental dependency on shared framebuffer state, shared temporary state, mutable
+material-lookup state, column ordering, thread-local initialization, or reduction/merge ordering — each of which shows
+up as *partition-dependence*, caught deterministically without spawning a thread. *Performance* is host, off-gate: a
+`std::thread` emit (no crates) partitions the columns across an **explicit** thread count `T` that is an input to the
+benchmark and **recorded in the attestation** (a `T | correctness | p99` matrix), byte-identity checked before any
+number, p99 compared **only** against the sealed single-thread baseline (never GAUNTLET-0's absolute, never the frozen
+renderer, never an absolute refresh-rate claim).
+
+**The decision rule, preregistered before the number.** Promote the parallel emit iff it is byte-invariant across every
+admitted `(T, partition)` **and** some admitted `T > 1` has p99 below the sealed **7734 µs** baseline. And a subtle
+consequence of the locality work: if p99 stops improving as `T` grows (sublinear or negative scaling), that is itself
+evidence — of **memory-bandwidth / cache contention**, not insufficient parallelism — and the trajectory turns to the
+memory hierarchy rather than blindly increasing `T`. The staircase reads `GAUNTLET-1c → LOCALITY-0 → GAUNTLET-2`:
+*projection arithmetic → data locality → parallel execution*.
+
+**Row.** `gauntlet2-preregistered` — the partition-invariance law, the adversarial-partition requirement, the explicit
+thread-count-in-attestation, the two-court separation, the inherited (never re-measured) baseline and the decision rule
+(including the memory-hierarchy redirect) are hash-locked (`711cc1d4`, superseding patch 0028's baseline-seal `5c3a5c30`
+— no record cited it and the instrument has not run). **Grade.** DECLARED (the method; the correctness and performance
+courts are the next builds). **Falsifier.** `gauntlet2-preregistered` reddens if the partition-invariance law, the
+adversarial-partition or explicit-thread-count requirement, the two-court separation, or the decision rule is weakened.
 
 ## The open clause, now with named rungs (skybox, physics)
 
@@ -1074,7 +1113,8 @@ staircase and what remains:
   and the **LOCALITY-0 LOCK** (seated) promoted `emit_swizzled<BLOCKED>` to the accepted single-thread `fast::emit` —
   monomorphized, the floor swizzled once at scene load, the linear-fetch DDA retained verbatim as the `emit_linear`
   reference witness. **GAUNTLET-2+** (multi-threaded column stripping) inherits the LOCKED blocked emit's sealed 7734 µs
-  p99 as its hard baseline, to be beaten under thread-count invariance (preregistered `5c3a5c30`).
+  p99 as its hard baseline, to be beaten under partition invariance — the certified picture byte-invariant under any
+  column partition and thread count, adversarial partitions included (preregistered `711cc1d4`, decision rule and all).
   **LATENCY-1** then reruns the same fixed session and records the before/after render delta against LATENCY-0's
   immutable baseline.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is

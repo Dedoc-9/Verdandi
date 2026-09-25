@@ -92,7 +92,7 @@ is a second authority.
          │
     GAUNTLET-1 ── the incremental floor cast: faster AND the same witnesses
          │
-    GAUNTLET-2 ── columns in parallel, invariant under the thread count
+    GAUNTLET-2 ── columns in parallel, invariant under any column partition and thread count
          │
     MATERIAL-0 ── a picture becomes a material under a gate
 
