@@ -1,0 +1,100 @@
+{
+ "name": "verdandi-locality0",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "kernel/main.rs --locality-bench (process-isolated) + verify/locality0.py",
+  "kernel": "kernel/main.rs (+ mantle.rs, fast.rs, formats.rs, hud.rs)",
+  "flags": [
+   "-C",
+   "opt-level=3"
+  ],
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+  "host": "DANIELDILLBERG",
+  "host_line": "os=windows arch=x86_64 cpu=\"AMD64 Family 26 Model 36 Stepping 0, AuthenticAMD\"",
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "scene": "witness",
+  "tiles": "identity",
+  "camera": [
+   34,
+   28,
+   "W"
+  ],
+  "corpus_commit": "4c8c2451d942ff320a11501b59fbbf2737ec42ce",
+  "instrument": "Epistemic-Invariance process-isolated interleaved strips",
+  "preregistered": {
+   "rung": "LOCALITY-0",
+   "chain_hash": "28a9d792d5e0cb9443b804ae0bc75c12c2d5c0fcf2b96101c25011fe70f66a3a"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the process-isolated same-apparatus speed of the blocked and Morton floor-tile layouts vs the DDA baseline on host DANIELDILLBERG for scene witness with identity tiles, 300 samples x 8 interleaved strips",
+  "host": "DANIELDILLBERG",
+  "scene": "witness",
+  "tiles": "identity"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency, a present, a window, a compositor: none is in this number",
+  "the whole-render cost: this is emit only, over the frozen strips + frame the layouts share",
+  "any comparison to GAUNTLET-0's instrumented render absolute (a different apparatus)",
+  "the per-variant deltas as pure hardware-resource costs: they are process-isolated same-apparatus improvements, and cache/scheduling make sub-phase subtraction non-additive",
+  "instruction-level invariance as proven: only OUTPUT byte-identity is proven (locality0-equiv); the address-generation isolation is a best-effort of code structure",
+  "any other host, scene, tile set or resolution; absolute us are host-specific",
+  "that a layout is promoted by this record: promotion is the reader's, from the three exits and the locked table"
+ ],
+ "data": {
+  "blocked": {
+   "dda_p99": 8292,
+   "variant_p99": 7734,
+   "index_tax_x_p99": 356,
+   "bands": {
+    "near": {
+     "dda_p99": 868,
+     "var_p99": 922
+    },
+    "mid": {
+     "dda_p99": 1562,
+     "var_p99": 1626
+    },
+    "far": {
+     "dda_p99": 1393,
+     "var_p99": 1635
+    }
+   },
+   "improve_permille": 1072
+  },
+  "morton": {
+   "dda_p99": 8102,
+   "variant_p99": 8736,
+   "index_tax_x_p99": 1040,
+   "bands": {
+    "near": {
+     "dda_p99": 818,
+     "var_p99": 960
+    },
+    "mid": {
+     "dda_p99": 1568,
+     "var_p99": 1980
+    },
+    "far": {
+     "dda_p99": 1529,
+     "var_p99": 1869
+    }
+   },
+   "improve_permille": 927
+  },
+  "strips": 8,
+  "samples": 300,
+  "warmup": 30,
+  "dda_baseline_us": 8185,
+  "witnesses": {
+   "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+   "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35"
+  },
+  "gauntlet2_baseline_p99_us": 7734
+ },
+ "reading": "the floor-tile execution-format court on host DANIELDILLBERG, process-isolated and interleaved over 8 strips (medians). Whole-frame p99: DDA baseline 8185 us; blocked 7734 (1072 permille of DDA, index tax X 356 us), morton 8736 (927 permille, X 1040 us). EXIT 1 (blocked wins): blocked is byte-identical AND faster than the DDA baseline (1072 permille of it) and at least as fast as morton (927). Action for the reader: LOCK the 8x8 blocked layout. Per-band floor p99 (dda/var): blocked near 868/922, mid 1562/1626, far 1393/1635; morton near 818/960, mid 1568/1980, far 1529/1869. Byte-identity was proven first (locality0-equiv, non-vacuous). The accepted single-thread emit p99 7734 us is the sealed HARD BASELINE for GAUNTLET-2. Deltas are process-isolated same-apparatus improvements (medians, outliers absorbed), NOT hardware-resource costs and NEVER compared to GAUNTLET-0's instrumented render absolute",
+ "chain_hash": "1403861c991e8602c9895e3a07bb4247e56244d6a2194f37419f93c972ea0917"
+}
