@@ -261,3 +261,270 @@ pub fn floor_rows(strips: &[Strip]) -> usize {
     }
     (H as i64 - 1 - min_bot).max(0) as usize
 }
+
+/// RE-BREAKDOWN-1 — Court A: the DETERMINISTIC structural attribution (gate-computed, wall-clock-free). What work
+/// exists in `emit`, read off the frozen frame: divide-work (wall 1/px + floor DDA 5/row), the tile/map memory reads
+/// (3 texels + 3 map indirections per textured pixel), the tile working-set cardinality (distinct texel addresses),
+/// the floor's adjacent-column texel-stride locality (the fraction within a 64-byte cache line — where the DDA's
+/// near-horizon stride is benign or pathological), and a coverage proof that every framebuffer pixel is written
+/// exactly once. Names candidates; it is a proxy for time, not time (Court B is the wall-clock).
+pub struct Structure {
+    pub wall_tex: usize,
+    pub floor_tex: usize,
+    pub divides: usize,       // wall_tex (1/px) + 5 * floor_rows (the DDA's per-row divides)
+    pub tile_reads: usize,    // 3 per textured pixel (the big tile texture fetches)
+    pub map_reads: usize,     // 3 per textured pixel (the 256-byte band-map indirections)
+    pub ws_floor: usize,      // distinct floor texel addresses k (the floor working set)
+    pub ws_wall: usize,       // distinct wall texel addresses k (the wall working set)
+    pub floor_adj: usize,     // adjacent same-row floor texel pairs sampled
+    pub floor_local: usize,   // of those, |Δk| <= 64 (within a cache line)
+    pub writes: usize,        // total framebuffer pixels written (coverage sum)
+    pub writes_once: bool,    // every framebuffer pixel written exactly once
+}
+
+pub fn structure(scene: &Scene, strips: &[Strip], buf: &[u8]) -> Structure {
+    use std::collections::HashSet;
+    let ex = scene.pos_x * Q + EYE_Y;
+    let ez = scene.pos_z * Q + EYE_Y;
+    let (mut wall_tex, mut floor_tex) = (0usize, 0usize);
+    let mut ws_wall: HashSet<usize> = HashSet::new();
+    let mut ws_floor: HashSet<usize> = HashSet::new();
+    let (mut floor_adj, mut floor_local) = (0usize, 0usize);
+    let mut cover = vec![0u8; W * H];
+    // wall texel addresses (column-major, mirroring emit's wall pass)
+    for c in 0..W {
+        let s = &strips[c];
+        let (tn, td, dx, dz) = (s.tn, s.td, s.dx, s.dz);
+        let mut along = if u_axis_is_z(s.face) { ez * td + tn * dz } else { ex * td + tn * dx };
+        if U_SIGN[s.face as usize] < 0 {
+            along = -along;
+        }
+        let u_d = Q * td;
+        let ti = texel(along.rem_euclid(u_d), u_d);
+        let v_base = Q * td - EYE_Y * td - (2 * CY - 1) * tn;
+        let v_den = Q * td;
+        let top = s.top as usize;
+        let bot = s.bot as usize;
+        for r in 0..top {
+            cover[r * W + c] += 1;
+        }
+        for r in top..=bot {
+            cover[r * W + c] += 1;
+            let idx = buf[r * W + c];
+            if idx >= WALL0 {
+                wall_tex += 1;
+                let tj = texel(v_base + 2 * r as i64 * tn, v_den);
+                ws_wall.insert(((tj * T + ti) * 3) as usize);
+            }
+        }
+    }
+    // floor texel addresses (row-major, mirroring the DDA; the collapse formula gives the same k, off the hot path)
+    for r_us in 0..H {
+        let r = r_us as i64;
+        let kk = 2 * (r - CY) + 1;
+        let mut prev: Option<(usize, usize)> = None; // (column, k) of the previous floor pixel in this row
+        for c in 0..W {
+            let s = &strips[c];
+            if r_us <= s.bot as usize {
+                continue; // wall/ceiling region — Pass 1's, already covered above
+            }
+            cover[r_us * W + c] += 1;
+            let idx = buf[r_us * W + c];
+            if idx < FLOOR0 || idx >= DOWN0 {
+                prev = None;
+                continue; // stair band: a table copy, not a floor texel
+            }
+            floor_tex += 1;
+            let tj = (ez + (s.dz * EYE_Y).div_euclid(kk)) & (T - 1);
+            let ti_f = (ex + (s.dx * EYE_Y).div_euclid(kk)) & (T - 1);
+            let k = ((tj * T + ti_f) * 3) as usize;
+            ws_floor.insert(k);
+            if let Some((pc, pk)) = prev {
+                if pc + 1 == c {
+                    floor_adj += 1;
+                    if (k as i64 - pk as i64).abs() <= 64 {
+                        floor_local += 1;
+                    }
+                }
+            }
+            prev = Some((c, k));
+        }
+    }
+    let writes: usize = cover.iter().map(|&v| v as usize).sum();
+    let writes_once = cover.iter().all(|&v| v == 1);
+    Structure {
+        wall_tex,
+        floor_tex,
+        divides: wall_tex + 5 * floor_rows(strips),
+        tile_reads: 3 * (wall_tex + floor_tex),
+        map_reads: 3 * (wall_tex + floor_tex),
+        ws_floor: ws_floor.len(),
+        ws_wall: ws_wall.len(),
+        floor_adj,
+        floor_local,
+        writes,
+        writes_once,
+    }
+}
+
+/// RE-BREAKDOWN-1 — Court B: the fenced ablation-probe apparatus. NOT a renderer: `probe` is measurement scaffold,
+/// isolated from the promotion chain (the production `emit` never calls it; a gate row asserts so). `emit_probe`
+/// is a faithful copy of the DDA `emit`, `const MODE`-gated so each build does a nested SUBSET of the per-pixel
+/// textured work, with `black_box` anchoring the work so the optimizer cannot elide the very thing being timed:
+///   ADDR    — classify + coordinate/DDA arithmetic, then a CONSTANT store (no memory fetch)
+///   LOOKUP  — ADDR + the tile texel fetches (the big-texture memory reads), CONSTANT store
+///   FULL    — LOOKUP + the band-map indirection/assembly, CONSTANT store (the negative control's work)
+///   VERIFY  — FULL's work + the REAL store: byte-identical to `emit` (gate-proven), so the probe path is
+///             demonstrably the intended subset of the certified path, auditable rather than asserted.
+/// The host deltas (LOOKUP−ADDR, FULL−LOOKUP) are INCREMENTAL wall-clock attribution under controlled ablation —
+/// not pure hardware-resource costs (cache/branch/scheduling make the subtraction non-additive).
+pub mod probe {
+    use super::*;
+    use std::hint::black_box;
+
+    pub const ADDR: u8 = 0;
+    pub const LOOKUP: u8 = 1;
+    pub const FULL: u8 = 2;
+    pub const VERIFY: u8 = 3;
+
+    pub fn emit_probe<const MODE: u8>(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8]) {
+        let ex = scene.pos_x * Q + EYE_Y;
+        let ez = scene.pos_z * Q + EYE_Y;
+        let table = &scene.table;
+        let mut acc: u64 = 0;
+        let mut min_bot = H as i64 - 1;
+        for c in 0..W {
+            let s = &strips[c];
+            let (tn, td, dx, dz) = (s.tn, s.td, s.dx, s.dz);
+            let mut along = if u_axis_is_z(s.face) { ez * td + tn * dz } else { ex * td + tn * dx };
+            if U_SIGN[s.face as usize] < 0 {
+                along = -along;
+            }
+            let u_d = Q * td;
+            let ti = texel(along.rem_euclid(u_d), u_d);
+            let v_base = Q * td - EYE_Y * td - (2 * CY - 1) * tn;
+            let v_den = Q * td;
+            let top = s.top as usize;
+            let bot = s.bot as usize;
+            if s.bot < min_bot {
+                min_bot = s.bot;
+            }
+            for r in 0..top {
+                // a ceiling table copy: identical in every mode (cancels in the deltas), so it is never gated
+                let idx = buf[r * W + c] as usize;
+                let o = (r * W + c) * 3;
+                out[o..o + 3].copy_from_slice(&table[idx * 3..idx * 3 + 3]);
+            }
+            for r in top..=bot {
+                let idx = buf[r * W + c];
+                let o = (r * W + c) * 3;
+                if idx < WALL0 {
+                    out[o..o + 3].copy_from_slice(&table[idx as usize * 3..idx as usize * 3 + 3]);
+                    continue;
+                }
+                let light = ((idx - WALL0) / (BANDS as u8)) as usize;
+                let band = ((idx - WALL0) % (BANDS as u8)) as usize;
+                let tj = texel(v_base + 2 * r as i64 * tn, v_den);
+                let k = ((tj * T + ti) * 3) as usize;
+                let tile = &scene.walls[light];
+                let m = &scene.wall_map[band * 256..band * 256 + 256];
+                acc = acc.wrapping_add(k as u64);
+                let (mut rr, mut gg, mut bb) = (0u8, 0u8, 0u8);
+                if MODE >= LOOKUP {
+                    let (t0, t1, t2) = (tile[k], tile[k + 1], tile[k + 2]);
+                    acc = acc.wrapping_add(t0 as u64 ^ ((t1 as u64) << 8) ^ ((t2 as u64) << 16));
+                    if MODE >= FULL {
+                        rr = m[t0 as usize];
+                        gg = m[t1 as usize];
+                        bb = m[t2 as usize];
+                        acc = acc.wrapping_add(rr as u64 ^ ((gg as u64) << 8) ^ ((bb as u64) << 16));
+                    }
+                }
+                if MODE == VERIFY {
+                    out[o] = rr;
+                    out[o + 1] = gg;
+                    out[o + 2] = bb;
+                } else {
+                    out[o] = 0;
+                    out[o + 1] = 0;
+                    out[o + 2] = 0;
+                }
+            }
+        }
+        // Pass 2: the floor DDA, mode-gated exactly as the wall pass
+        let (varying_is_x, delta_pos, d0, d_const): (bool, bool, i64, i64) = match scene.facing {
+            0 => (true, true, EYE_Y * (1 - W as i64), -2 * FOCAL),
+            1 => (false, true, EYE_Y * (1 - W as i64), 2 * FOCAL),
+            2 => (true, false, EYE_Y * (W as i64 - 1), 2 * FOCAL),
+            _ => (false, false, EYE_Y * (W as i64 - 1), -2 * FOCAL),
+        };
+        let e_const = if varying_is_x { ez } else { ex };
+        let e_vary = if varying_is_x { ex } else { ez };
+        let dconst_eye = d_const * EYE_Y;
+        let step = 2 * EYE_Y;
+        let tile = &scene.floor;
+        for r in ((min_bot + 1) as usize)..H {
+            let kk = 2 * (r as i64 - CY) + 1;
+            let cconst = (e_const + dconst_eye.div_euclid(kk)) & (T - 1);
+            let a_step = step.div_euclid(kk);
+            let b_step = step.rem_euclid(kk);
+            let mut q = d0.div_euclid(kk);
+            let mut rem = d0.rem_euclid(kk);
+            let row = r * W;
+            for c in 0..W {
+                let idx = buf[row + c];
+                if idx >= FLOOR0 && idx < WALL0 {
+                    let o = (row + c) * 3;
+                    if idx < DOWN0 {
+                        let vary = (e_vary + q) & (T - 1);
+                        let (tj, ti_f) = if varying_is_x { (cconst, vary) } else { (vary, cconst) };
+                        let k = ((tj * T + ti_f) * 3) as usize;
+                        let band = (idx - FLOOR0) as usize;
+                        let m = &scene.floor_map[band * 256..band * 256 + 256];
+                        acc = acc.wrapping_add(k as u64);
+                        let (mut rr, mut gg, mut bb) = (0u8, 0u8, 0u8);
+                        if MODE >= LOOKUP {
+                            let (t0, t1, t2) = (tile[k], tile[k + 1], tile[k + 2]);
+                            acc = acc.wrapping_add(t0 as u64 ^ ((t1 as u64) << 8) ^ ((t2 as u64) << 16));
+                            if MODE >= FULL {
+                                rr = m[t0 as usize];
+                                gg = m[t1 as usize];
+                                bb = m[t2 as usize];
+                                acc = acc.wrapping_add(rr as u64 ^ ((gg as u64) << 8) ^ ((bb as u64) << 16));
+                            }
+                        }
+                        if MODE == VERIFY {
+                            out[o] = rr;
+                            out[o + 1] = gg;
+                            out[o + 2] = bb;
+                        } else {
+                            out[o] = 0;
+                            out[o + 1] = 0;
+                            out[o + 2] = 0;
+                        }
+                    } else {
+                        // a down/up stair band: a table copy, identical in every mode
+                        let i = idx as usize;
+                        out[o..o + 3].copy_from_slice(&table[i * 3..i * 3 + 3]);
+                    }
+                }
+                if delta_pos {
+                    q += a_step;
+                    rem += b_step;
+                    if rem >= kk {
+                        rem -= kk;
+                        q += 1;
+                    }
+                } else {
+                    q -= a_step;
+                    rem -= b_step;
+                    if rem < 0 {
+                        rem += kk;
+                        q -= 1;
+                    }
+                }
+            }
+        }
+        black_box(acc); // anchor the ablated work so the optimizer cannot elide what we are timing
+    }
+}

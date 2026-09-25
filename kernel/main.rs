@@ -10,6 +10,7 @@
 //     kernel ... --breakdown 300 --warm 30                        # off-gate (GAUNTLET-0): render split strips/frame/emit + the two witness hashes
 //     kernel ... --fast                                           # GAUNTLET-1: DDA emit + collapse baseline vs frozen — fast_equal / collapse_equal, region divide-work (frozen/collapse/DDA), first-diff taxonomy
 //     kernel ... --fast-bench 300 --warm 30                        # off-gate (GAUNTLET-1c): frozen / collapse / DDA emit timed on one apparatus (all three must reproduce the witness)
+//     kernel ... --emit-breakdown 300 --warm 30                     # off-gate (RE-BREAKDOWN-1): Court A structure + Court B ablation probes (addr/lookup/full/emit), probe VERIFY == emit
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
@@ -35,6 +36,7 @@ mod fast;
 
 use std::env;
 use std::fs;
+use std::hint::black_box;
 use std::process::exit;
 use std::time::Instant;
 
@@ -85,6 +87,8 @@ fn main() {
     let mut want_hud = false;
     let mut want_fast = false;
     let mut fast_bench = 0usize;
+    let mut emit_bd = 0usize;
+    let mut want_struct = false;
     let mut write_ppm: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
@@ -102,6 +106,8 @@ fn main() {
             "--hud" => { want_hud = true; i += 1; }
             "--fast" => { want_fast = true; i += 1; }
             "--fast-bench" => { fast_bench = next(i).parse().unwrap_or_else(|_| refuse("--fast-bench needs a count")); i += 2; }
+            "--emit-breakdown" => { emit_bd = next(i).parse().unwrap_or_else(|_| refuse("--emit-breakdown needs a count")); i += 2; }
+            "--emit-structure" => { want_struct = true; i += 1; }
             "--write-png" => { write_ppm = Some(next(i)); i += 2; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
@@ -277,6 +283,78 @@ fn main() {
         println!("fastbench_fast_us p50={} p95={} p99={} max={}", a, b, c, d);
         println!("fastbench_samples {} warmup {} same_witnesses OK", fast_bench, warm);
         println!("{}", host_line());
+    }
+    if emit_bd > 0 || want_struct {
+        // RE-BREAKDOWN-1: Court A (deterministic structure, wall-clock-free) always; Court B (host ablation) only with
+        // --emit-breakdown N. The probes are fenced measurement apparatus, never renderers (see kernel/fast.rs::probe);
+        // production emit calls none. Court A — what work exists, off the frozen frame:
+        let st = fast::structure(&scene, &first.strips, &first.frame);
+        println!(
+            "emitbd_struct wall_tex={} floor_tex={} divides={} tile_reads={} map_reads={} ws_floor={} ws_wall={}",
+            st.wall_tex, st.floor_tex, st.divides, st.tile_reads, st.map_reads, st.ws_floor, st.ws_wall
+        );
+        let local_permille = if st.floor_adj > 0 { st.floor_local * 1000 / st.floor_adj } else { 0 };
+        println!("emitbd_locality floor_adj={} floor_local={} local_permille={}", st.floor_adj, st.floor_local, local_permille);
+        println!("emitbd_writes writes={} writes_once={}", st.writes, if st.writes_once { "OK" } else { "NO" });
+        // Faithfulness / negative control (deterministic, gate-checkable): the probe's VERIFY path is byte-identical
+        // to emit (hence the frozen oracle), so the ablated probes are a demonstrable SUBSET of the certified path,
+        // auditable rather than merely asserted.
+        let mut rgb_emit = vec![0u8; W * H * 3];
+        fast::emit(&scene, &first.strips, &first.frame, &mut rgb_emit);
+        let mut rgb_verify = vec![0u8; W * H * 3];
+        fast::probe::emit_probe::<{ fast::probe::VERIFY }>(&scene, &first.strips, &first.frame, &mut rgb_verify);
+        let verify_ok = rgb_verify == rgb_emit && hex(&sha256(&rgb_verify)) == ps;
+        println!("emitbd_verify {}", if verify_ok { "OK" } else { "DIFFER" });
+        if !verify_ok || !st.writes_once {
+            refuse("emit-breakdown: the probe VERIFY path is not the certified emit, or write coverage is not exactly once");
+        }
+        if emit_bd > 0 {
+            // Court B — the ablation ladder timed against emit on ONE apparatus. Deltas are INCREMENTAL wall-clock
+            // attribution under controlled ablation (LOOKUP−ADDR ~ tile fetch, FULL−LOOKUP ~ map/assembly), NOT
+            // hardware-resource costs; FULL vs emit is the negative control (FULL carries a small black_box anchor
+            // tax). Never cross-compared to GAUNTLET-0's instrumented render absolute.
+            let mut a = vec![0u8; W * H * 3];
+            let mut l = vec![0u8; W * H * 3];
+            let mut f = vec![0u8; W * H * 3];
+            let mut e = vec![0u8; W * H * 3];
+            let mut t_addr: Vec<u128> = Vec::with_capacity(emit_bd);
+            let mut t_lookup: Vec<u128> = Vec::with_capacity(emit_bd);
+            let mut t_full: Vec<u128> = Vec::with_capacity(emit_bd);
+            let mut t_emit: Vec<u128> = Vec::with_capacity(emit_bd);
+            for kk in 0..(warm + emit_bd) {
+                let a0 = Instant::now();
+                fast::probe::emit_probe::<{ fast::probe::ADDR }>(&scene, &first.strips, &first.frame, &mut a);
+                let a1 = Instant::now();
+                fast::probe::emit_probe::<{ fast::probe::LOOKUP }>(&scene, &first.strips, &first.frame, &mut l);
+                let a2 = Instant::now();
+                fast::probe::emit_probe::<{ fast::probe::FULL }>(&scene, &first.strips, &first.frame, &mut f);
+                let a3 = Instant::now();
+                fast::emit(&scene, &first.strips, &first.frame, &mut e);
+                let a4 = Instant::now();
+                black_box(&a);
+                black_box(&l);
+                black_box(&f);
+                if kk >= warm {
+                    t_addr.push((a1 - a0).as_micros());
+                    t_lookup.push((a2 - a1).as_micros());
+                    t_full.push((a3 - a2).as_micros());
+                    t_emit.push((a4 - a3).as_micros());
+                }
+            }
+            if hex(&sha256(&e)) != ps {
+                refuse("emit-breakdown: the timed emit did not reproduce the frozen witness; no number is printed");
+            }
+            let pl = |name: &str, xs: Vec<u128>| {
+                let (a, b, c, d) = percentiles(xs);
+                println!("emitbd_{}_us p50={} p95={} p99={} max={}", name, a, b, c, d);
+            };
+            pl("addr", t_addr);
+            pl("lookup", t_lookup);
+            pl("full", t_full);
+            pl("emit", t_emit);
+            println!("emitbd_samples {} warmup {} same_witnesses OK", emit_bd, warm);
+            println!("{}", host_line());
+        }
     }
     if breakdown > 0 {
         // GAUNTLET-0: the render decomposed at the kernel's pub-phase boundaries — strips (traversal), frame

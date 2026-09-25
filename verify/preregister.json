@@ -72,6 +72,22 @@
    ],
    "instrument": "kernel/main.rs --fast (gate rows gauntlet1-equiv, gauntlet1-region) for correctness + the deterministic region measure; the host speed number is GAUNTLET-1b's, off-gate, sealed and citing this entry; row gauntlet1-preregistered locks this method and the two-court promotion rule",
    "chain_hash": "96c427499affb6a32f990ec4a9e65c50b6f5c48637dd28373c63dd76ea322615"
+  },
+  "RE-BREAKDOWN-1": {
+   "rung": "RE-BREAKDOWN-1",
+   "hypothesis": "After GAUNTLET-1c the emit cost structure shifted (a 536x floor divide cut bought ~12% wall-clock), so the next step is to MEASURE, not optimize. emit's internal cost is attributed two ways: Court A, a DETERMINISTIC structural measure (gate-enforced, wall-clock-free) of what work exists; and Court B, a host ablation of fenced probes (addr -> lookup -> full) timed against emit. The probes are MEASUREMENT APPARATUS, NOT candidate renderers: a probe may be wrong by construction provided its wrongness is isolated from the certified path and its work is a demonstrable subset of that path (proven by probe VERIFY == emit, byte-identical).",
+   "success_condition": "Court A passes on gate: emitbd_verify OK (the probe VERIFY path is byte-identical to emit and the frozen witness), write coverage is exactly once over every framebuffer pixel, and the memory reads are 3 per textured pixel; the working-set cardinality and the floor texel-stride locality are reported as data. Court B is a same-apparatus host ablation sealed off-gate as verdandi-emit-breakdown citing this entry, with the deltas read as incremental attribution.",
+   "failure_condition": "probe VERIFY != emit (the apparatus is not a subset of the certified path); or the production emit or emit_collapse calls a probe (the fence is breached); or a Court B delta is interpreted as a pure hardware-resource cost rather than an incremental ablation delta; or any optimization is committed on this rung before the number (RE-BREAKDOWN-1 measures, it does not optimize); or a Court B number is compared to GAUNTLET-0's instrumented render absolute.",
+   "interpretation_limits": [
+    "RE-BREAKDOWN-1 MEASURES, it does not optimize: no candidate renderer is committed on this rung",
+    "Court A and Court B are two separate courts; Court A is a source-derived proxy for time (deterministic, gate-enforced), Court B is the wall-clock (host, off-gate)",
+    "the Court B deltas (LOOKUP-ADDR, FULL-LOOKUP) are incremental wall-clock attribution under controlled ablation, NOT pure hardware-resource measurements; cache state, branches, scheduling and register pressure make the subtraction non-additive; the experiment possesses no architectural counters",
+    "the probes are measurement apparatus, not renderers: they never enter fast.rs's promotion chain, the production emit calls none of them, and a differing probe pixel is expected, not a fault",
+    "a Court B number is host-specific and is NEVER compared to GAUNTLET-0's instrumented render absolute (different apparatus)",
+    "the promotion rule is locked before any result: lookup increment or pathological locality -> LOCK a data-layout/locality court; address/DDA -> arithmetic path; full-write -> framebuffer path; results disagree or nothing dominates -> DEFER, do not optimize by intuition"
+   ],
+   "instrument": "kernel/main.rs --emit-structure (deterministic Court A; gate rows rebreakdown1-structure, rebreakdown1-fence) and --emit-breakdown N (Court A + the host ablation ladder); kernel/fast.rs::probe is the fenced apparatus (emit_probe<MODE>, black_box-anchored, VERIFY == emit); the host number is sealed by verify/rebreakdown1.py citing this entry; row rebreakdown1-preregistered locks this method and the promotion table.",
+   "chain_hash": "66c3cb640876465c6efccce8c5c3edd1b5f789340489e51c3a441f27f158a3b3"
   }
  }
 }

@@ -2190,6 +2190,116 @@ def gauntlet1_preregistered():
             "cross-compared to GAUNTLET-0's instrumented absolute; hash-locked %s" % e["chain_hash"][:8])
 
 
+# ------------------------------------------------------------------ rebreakdown1 (RE-BREAKDOWN-1: probe emit's cost structure)
+def _emit_struct_lines(level, tiles, camera):
+    code, out, err = run(KERNEL_EXE, ["--level", os.path.join(ORACLE, "levels", level + ".lvl"),
+                                      "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"),
+                                      "--camera", camera, "--emit-structure"])
+    if code != 0:
+        raise Red("kernel --emit-structure exited %d on %s@%s: %s" % (code, level, camera, err.strip()))
+    return dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+
+
+def rebreakdown1_preregistered():
+    """RE-BREAKDOWN-1's method is locked before the number: it measures (no optimization); two separate courts; the
+    probes are apparatus not renderers with probe VERIFY == emit as the subset proof; the ablation deltas are
+    incremental attribution (non-additive, no architectural counters), never vs GAUNTLET-0's absolute; the promotion
+    table is fixed. Weakening any of it is a visible diff, not a silent re-hash."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))
+    e = reg["entries"].get("RE-BREAKDOWN-1")
+    if not e:
+        raise Red("RE-BREAKDOWN-1 is not registered")
+    hyp, succ, fail = e["hypothesis"].lower(), e["success_condition"].lower(), e["failure_condition"].lower()
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "measures, does not optimize": "measure, not optimize" in hyp and "does not optimize" in lims,
+        "two separate courts": "two separate courts" in lims,
+        "probes are apparatus, not renderers": "measurement apparatus, not candidate renderers" in hyp and "not renderers" in lims,
+        "probe VERIFY == emit is the subset proof": "verify == emit" in hyp and "emitbd_verify ok" in succ,
+        "incremental attribution, non-additive": "incremental wall-clock attribution under controlled ablation" in lims and "non-additive" in lims,
+        "no architectural counters": "no architectural counters" in lims,
+        "never vs GAUNTLET-0's absolute": "never compared to gauntlet-0" in lims,
+        "the fence (production emit calls no probe)": "calls a probe" in fail,
+        "the promotion table with DEFER": "defer" in lims and "lock a data-layout/locality court" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the RE-BREAKDOWN-1 method is not fully locked: " + "; ".join(missing))
+    want = envelope.chain_hash({"name": "verdandi-preregistration-entry", "version": 1, "claim_class": "declared",
+                                "provenance": {"registered_in": "verify/preregister.json"},
+                                "validity_scope": {"certifies": "the conditions RE-BREAKDOWN-1 was seated under"},
+                                "forbidden_interpretations": ["that registering a condition earns it"],
+                                "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+    if e["chain_hash"] != want:
+        raise Red("the RE-BREAKDOWN-1 entry was edited after registration (chain hash)")
+    return ("RE-BREAKDOWN-1's method is locked before the number: it MEASURES (no optimization committed); two separate "
+            "courts (deterministic structure + host ablation); the probes are apparatus not renderers with probe "
+            "VERIFY == emit as the subset proof; the ablation deltas are incremental wall-clock attribution under "
+            "controlled ablation (non-additive, no architectural counters), never vs GAUNTLET-0's absolute; the "
+            "promotion table (LOCK locality / arithmetic / write, else DEFER) is fixed; hash-locked %s" % e["chain_hash"][:8])
+
+
+def rebreakdown1_structure():
+    """Court A, deterministic and gate-enforced: the probe VERIFY path is byte-identical to emit (the apparatus is a
+    proven subset of the certified path), emit writes every framebuffer pixel exactly once, the textured memory reads
+    are 3 per pixel, and the divide-work is wall(1/px) + 5/floor-row. The tile working set and the floor texel-stride
+    locality are reported as data (the memory axis), never as a wall-clock."""
+    need_rustc()
+    d = _emit_struct_lines("witness", "identity", "34,28,W")
+    if d.get("selfcheck") != "OK":
+        raise Red("kernel did not selfcheck under --emit-structure")
+    if d.get("emitbd_verify") != "OK":
+        raise Red("the probe VERIFY path is NOT byte-identical to emit — the apparatus is not a subset of the certified path")
+    st = dict(kv.split("=") for kv in d["emitbd_struct"].split() if "=" in kv)
+    wr = dict(kv.split("=") for kv in d["emitbd_writes"].split() if "=" in kv)
+    lo = dict(kv.split("=") for kv in d["emitbd_locality"].split() if "=" in kv)
+    wall_tex, floor_tex = int(st["wall_tex"]), int(st["floor_tex"])
+    tex = wall_tex + floor_tex
+    if int(st["tile_reads"]) != 3 * tex or int(st["map_reads"]) != 3 * tex:
+        raise Red("the memory reads are not 3 per textured pixel: %s" % d["emitbd_struct"])
+    if wr.get("writes_once") != "OK" or int(wr["writes"]) != 1920 * 1080:
+        raise Red("emit does not write every framebuffer pixel exactly once (double-write or temp buffer?): %s" % d["emitbd_writes"])
+    if (int(st["divides"]) - wall_tex) % 5 != 0 or int(st["divides"]) < wall_tex:
+        raise Red("the divide-work is not wall(1/px) + 5/floor-row: %s" % d["emitbd_struct"])
+    local = int(lo["local_permille"])
+    if not (0 <= local <= 1000) or int(lo["floor_local"]) > int(lo["floor_adj"]):
+        raise Red("the locality statistic is malformed: %s" % d["emitbd_locality"])
+    return ("RE-BREAKDOWN-1 Court A (deterministic, wall-clock-free) on the witness (34,28,W): the probe VERIFY path is "
+            "byte-identical to emit (emitbd_verify OK), so the ablation probes are a proven subset of the certified path; "
+            "emit writes all %d framebuffer pixels exactly once (no double-write, no temp buffer); the textured work is "
+            "%d px x 3 = %d tile reads and %d map reads; the tile working set is %s floor / %s wall distinct texels (of "
+            "65536), and %d permille of adjacent-column floor texels fall within a 64-byte cache line — the memory / "
+            "locality axis, reported as data, not a wall-clock" % (int(wr["writes"]), tex, int(st["tile_reads"]),
+            int(st["map_reads"]), st["ws_floor"], st["ws_wall"], local))
+
+
+def rebreakdown1_fence():
+    """The fence: the production emit() and the GAUNTLET-1b emit_collapse() baseline reference no probe, so the
+    measurement apparatus (fast.rs::probe) is structurally isolated from fast.rs's promotion chain. The probes are
+    scaffold, never renderers; a differing probe pixel is expected, not a fault."""
+    src = open(os.path.join(ROOT, "kernel", "fast.rs"), encoding="utf-8").read()
+
+    def between(a, b):
+        i = src.index(a)
+        j = src.index(b, i + len(a))
+        return src[i:j]
+
+    emit_body = between("pub fn emit(", "pub fn emit_collapse(")
+    collapse_body = between("pub fn emit_collapse(", "pub fn region_divides(")
+    if "probe" in emit_body:
+        raise Red("the production emit() references a probe — the measurement apparatus is not fenced from the renderer")
+    if "probe" in collapse_body:
+        raise Red("emit_collapse() references a probe — the apparatus is not fenced from the baseline renderer")
+    if "pub mod probe" not in src or "emit_probe" not in src:
+        raise Red("the fenced probe apparatus (pub mod probe / emit_probe) is missing")
+    if "black_box" not in src:
+        raise Red("the probes are not anchored against dead-code elision (no black_box) — the timing would be meaningless")
+    return ("RE-BREAKDOWN-1 fence: the production emit() and the GAUNTLET-1b emit_collapse() baseline reference no probe "
+            "— the ablation apparatus (fast.rs::probe, black_box-anchored so the optimizer cannot elide the timed work) "
+            "is isolated from fast.rs's promotion chain; the probes are measurement scaffold, never renderers, and a "
+            "differing probe pixel is expected, not a fault")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -2225,6 +2335,9 @@ def main() -> int:
     row("gauntlet1-region", gauntlet1_region)
     row("gauntlet1b-reduction", gauntlet1b_reduction)
     row("gauntlet1c-dda", gauntlet1c_dda)
+    row("rebreakdown1-preregistered", rebreakdown1_preregistered)
+    row("rebreakdown1-structure", rebreakdown1_structure)
+    row("rebreakdown1-fence", rebreakdown1_fence)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)

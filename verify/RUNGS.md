@@ -857,6 +857,58 @@ positions, the floor-less near-wall frames where `floor_rows = 0`); `gauntlet1c-
 retained collapse is not byte-identical, if the DDA divide-work is not `5 × floor_rows`, or if it does not fall below
 the collapse's; the host seal refuses to print a number unless all three emits reproduce the frozen witness first.
 
+## RE-BREAKDOWN-1 — probe emit's cost structure after the DDA (measure, not optimize) (seat 17)
+
+**What landed (a measurement rung, no optimization).** GAUNTLET-1c cut the floor's divides ~536&times; for ~12% wall-clock
+— the textbook signal that arithmetic was not the sole limiter. Following GAUNTLET-0's rule (measure when the cost
+structure shifts), RE-BREAKDOWN-1 attributes emit's internal cost two ways and commits **no** candidate renderer.
+**Court A** (deterministic, gate-enforced, wall-clock-free): `kernel/fast.rs::structure` reads off the frozen frame the
+divide-work, the tile/map memory reads (3 texel + 3 map indirections per textured pixel), the tile **working-set
+cardinality**, the floor's **adjacent-column texel-stride locality**, and a **write-once coverage** proof. **Court B**
+(host, off-gate): `kernel/fast.rs::probe` is a fenced ablation apparatus — `emit_probe<MODE>`, a faithful copy of the
+DDA emit, `black_box`-anchored, run at ADDR (classify + coordinate/DDA, constant store), LOOKUP (+ tile fetch), FULL
+(+ map/assembly), and VERIFY (+ real store) — timed against emit on one apparatus (`--emit-breakdown`).
+
+**The two courts, the fence, the negative control.** The probes are *measurement apparatus, not renderers*: a probe may
+be wrong by construction, provided its wrongness is isolated from the certified path and its work is a demonstrable
+subset of it. That subset relation is **gate-proven, not asserted**: `emit_probe<VERIFY>` is byte-identical to `emit`
+(and to the frozen oracle), so ADDR/LOOKUP/FULL are truncations of the real path. The fence is structural — the
+production `emit` and the GAUNTLET-1b `emit_collapse` baseline reference **no** probe (a gate row reads the source and
+asserts so), and the probes never enter the promotion chain. The Court B increments (LOOKUP&minus;ADDR ~ tile fetch,
+FULL&minus;LOOKUP ~ map/assembly) are named exactly what they are: **incremental wall-clock attribution under controlled
+ablation** — non-additive (cache/branch/scheduling), with no architectural counters claimed.
+
+**What Court A establishes (host-independent).** On the witness frame: emit writes all **2,073,600** framebuffer pixels
+**exactly once** (no double-write, no temp buffer); the textured work is **1,369,408 px &times; 3 = 4,108,224** tile reads
+and as many map indirections; the tile **working set is 60,176 floor / 65,529 wall distinct texels of 65,536** — both
+regions stream nearly the whole 192 KB tile per frame, a working set far past L1; and only **590 permille** of adjacent-
+column floor texels fall within a 64-byte cache line (~41% cross a line). This is the memory/locality axis, named as
+deterministic data — a candidate for the bottleneck the divide cut left behind, to be confirmed (or not) by Court B.
+
+**The promotion rule (locked before the host number).** A dominant lookup increment or pathological locality LOCKs a
+data-layout/locality court; a dominant address/DDA increment the arithmetic path; a dominant full-write increment the
+framebuffer path; results that disagree materially, or no clear dominance, DEFER — no optimization by intuition.
+
+**Rows.** `rebreakdown1-preregistered` — the method and the promotion table are hash-locked (`66c3cb64`): measures not
+optimizes, two courts, probes-are-apparatus with VERIFY == emit as the subset proof, the incremental/non-additive
+boundary, never vs GAUNTLET-0's absolute. `rebreakdown1-structure` — Court A on gate: VERIFY byte-identical to emit,
+write-once coverage, 3 reads/textured px, and the working-set + locality reported as data. `rebreakdown1-fence` — the
+source-level assertion that the production renderers call no probe.
+
+**Grade.** MEASURED (live, headless, deterministic): Court A's structure, the VERIFY subset proof, the write-once
+coverage. DECLARED: the hash-locked method + promotion table. NOT_MEASURED here: the host ablation wall-clock — that is
+Court B's sealed host record (`verify/rebreakdown1.py` &rarr; `kernel/attest/emit-breakdown-<host>.json`), the user's run.
+
+**does_not_show.** Any optimization (this rung commits none). The Court B increments as pure resource costs (they are
+incremental ablation deltas, non-additive). The whole-render cost (emit only). Any comparison to GAUNTLET-0's
+instrumented absolute. That Court A's op counts are a wall-clock (they are a source-cost proxy that names candidates).
+That the probes are renderers (they are fenced apparatus; a differing probe pixel is expected).
+
+**Falsifier.** `rebreakdown1-structure` reddens if `emit_probe<VERIFY>` differs from emit, if the memory reads are not
+3/textured px, or if any framebuffer pixel is written other than exactly once; `rebreakdown1-fence` reddens if the
+production `emit`/`emit_collapse` references a probe or the apparatus loses its `black_box` anchor;
+`rebreakdown1-preregistered` reddens if the method or promotion table is weakened.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -888,9 +940,13 @@ staircase and what remains:
   p99 emit on host (~1.27×), promoted. GAUNTLET-1c (seated) took the divide off the pixel entirely — the **row-major
   floor DDA**, O(rows) divides not O(pixels) (~536× fewer on the witness), proven byte-identical through the same
   court and gated by `gauntlet1c-dda`, with the collapse retained verbatim as the same-apparatus baseline; its speed
-  is judged against that collapse (`verify/gauntlet1c.py`, sealed off-gate). **GAUNTLET-2+** only after the
-  first has a measured result. **LATENCY-1** then reruns the same fixed session and records the before/after render
-  delta against LATENCY-0's immutable baseline.
+  is judged against that collapse (`verify/gauntlet1c.py`, sealed off-gate). RE-BREAKDOWN-1 (seated) then re-measured
+  the shifted cost structure before any further algorithm — Court A (deterministic: the tile working set streams nearly
+  the whole texture, ~41% of adjacent floor texels cross a cache line) and Court B (a fenced ablation apparatus, host
+  off-gate) — naming the memory/locality axis as a candidate and committing no optimization. The next optimization
+  court is chosen by its promotion table, from the host ablation. **GAUNTLET-2+** only after a measured result.
+  **LATENCY-1** then reruns the same fixed session and records the before/after render delta against LATENCY-0's
+  immutable baseline.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is
   refresh-coupled. PRESENT-1's *hypothesis* — falsifiable, to be measured, never assumed — is that a flip-model
   present CAN decouple present latency from refresh; it becomes experimentally valuable once the render fits the
