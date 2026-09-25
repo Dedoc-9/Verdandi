@@ -2605,10 +2605,55 @@ def gauntlet2_partition_invariance():
             "threading is GAUNTLET-2's separate off-gate performance court" % len(cases))
 
 
-def gauntlet2_partition_fence():
-    """The correctness court commits NO threading: emit_partitioned is the partition-agnostic core (LOCKED blocked
-    index floor_blocked + the pre-swizzled floor, never scene.floor, no probe), and fast.rs contains no std::thread —
-    parallel execution is GAUNTLET-2's separate performance court, built only after partition invariance is green."""
+def _g2threads_lines(level, tiles, camera):
+    code, out, err = run(KERNEL_EXE, ["--level", os.path.join(ORACLE, "levels", level + ".lvl"),
+                                      "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"),
+                                      "--camera", camera, "--gauntlet2-threads"])
+    if code != 0:
+        raise Red("kernel --gauntlet2-threads exited %d on %s@%s: %s" % (code, level, camera, err.strip()))
+    meta, th = {}, {}
+    for ln in out.strip().splitlines():
+        if ln.startswith("g2t_thread "):
+            parts = ln.split()
+            th[parts[1]] = dict(p.split("=") for p in parts[2:] if "=" in p)
+        elif " " in ln:
+            k, v = ln.split(" ", 1)
+            meta[k] = v
+    return th, meta
+
+
+def gauntlet2_threaded_equiv():
+    """The threaded emit is byte-identical to the frozen picture at every thread count. emit_threaded partitions the
+    columns into T contiguous groups and renders them across std::thread::scope, one group per thread with disjoint
+    framebuffer writes; the OUTPUT is deterministic though thread scheduling is not, so this is gate-enforceable.
+    Byte-identity is checked FIRST, before any performance interpretation; the T | correctness | p99 speed matrix is
+    GAUNTLET-2's separate off-gate court (verify/gauntlet2.py)."""
+    need_rustc()
+    want_t = {"1", "2", "4", "8", "16"}
+    cases = _g1_cases()
+    for (lvl, tiles, cam) in cases:
+        th, meta = _g2threads_lines(lvl, tiles, cam)
+        if meta.get("selfcheck") != "OK":
+            raise Red("kernel did not selfcheck under --gauntlet2-threads on %s@%s" % (lvl, cam))
+        miss = want_t - set(th.keys())
+        if miss:
+            raise Red("GAUNTLET-2 threaded is missing thread counts %s on %s@%s" % (sorted(miss), lvl, cam))
+        for t, kv in th.items():
+            if kv.get("equal") != "OK":
+                raise Red("the threaded emit at T=%s is NOT byte-identical to the frozen picture on %s@%s — a partition/order or race dependency" % (t, lvl, cam))
+    return ("GAUNTLET-2 threaded byte-identity (deterministic) over %d cases (corpus x tile sets + adversarial cameras): "
+            "emit_threaded — std::thread::scope, one contiguous column group per thread, disjoint framebuffer writes — "
+            "reproduces the frozen picture EXACTLY at every thread count T in {1,2,4,8,16}. The output is deterministic "
+            "though scheduling is not (disjoint per-column writes, no shared/reduction state), so byte-identity is checked "
+            "FIRST and gate-enforced; the T | correctness | p99 speed matrix vs the sealed 7734 us single-thread baseline "
+            "is GAUNTLET-2's separate off-gate host court (verify/gauntlet2.py)" % len(cases))
+
+
+def gauntlet2_threaded_fence():
+    """The performance court adds ONLY execution. emit_partitioned stays the clean partition-agnostic core (LOCKED
+    floor_blocked + the pre-swizzled floor, never scene.floor, no probe), and emit_threaded routes EVERY pixel through
+    emit_partitioned — std::thread::scope with no coordinate, material or pixel algorithm of its own (no duplicate
+    renderer). This REPLACES the retired gauntlet2-partition-fence, whose 'no threading yet' job is finished."""
     src = open(os.path.join(ROOT, "kernel", "fast.rs"), encoding="utf-8").read()
 
     def between(a, b):
@@ -2622,21 +2667,27 @@ def gauntlet2_partition_fence():
     def reads_raw_floor(body):
         return "scene.floor" in body.replace("scene.floor_map", "")
 
-    if "pub fn emit_partitioned(" not in src:
-        raise Red("the partition-agnostic core emit_partitioned is missing")
-    body = code_only(between("pub fn emit_partitioned(", "/// RE-BREAKDOWN-1 — Court A"))
-    if "floor_blocked(" not in body:
-        raise Red("emit_partitioned does not use the LOCKED blocked index floor_blocked")
-    if reads_raw_floor(body):
-        raise Red("emit_partitioned reads scene.floor in the hot path — it must read the pre-swizzled floor buffer")
-    if "probe" in body:
-        raise Red("emit_partitioned references a probe — the apparatus is not fenced from the renderer")
-    if "std::thread" in src or "thread::scope" in src or "spawn(" in src:
-        raise Red("fast.rs already contains threading — GAUNTLET-2's correctness court must commit NO parallel execution")
-    return ("GAUNTLET-2 fence: the partition-agnostic core emit_partitioned uses the LOCKED blocked index floor_blocked and "
-            "the pre-swizzled floor buffer (never scene.floor), references no probe, and fast.rs contains NO std::thread — the "
-            "correctness court commits partition invariance only; parallel execution is the separate off-gate performance court, "
-            "built after this court is green")
+    if "pub fn emit_partitioned(" not in src or "pub fn emit_threaded(" not in src:
+        raise Red("the partition-agnostic core or the threaded emit is missing")
+    core = code_only(between("pub fn emit_partitioned(", "pub fn emit_threaded("))
+    if "floor_blocked(" not in core:
+        raise Red("emit_partitioned no longer uses the LOCKED blocked index floor_blocked")
+    if reads_raw_floor(core):
+        raise Red("emit_partitioned reads scene.floor — it must read the pre-swizzled floor buffer")
+    if "probe" in core:
+        raise Red("emit_partitioned references a probe — the core is not fenced from the apparatus")
+    thr = code_only(between("pub fn emit_threaded(", "GAUNTLET-2 threading plumbing"))
+    if "emit_partitioned(" not in thr:
+        raise Red("emit_threaded does not route pixels through emit_partitioned")
+    if "thread::scope" not in thr:
+        raise Red("emit_threaded does not use std::thread::scope — the execution boundary is missing")
+    for bad in ("floor_blocked(", "scene.floor_map", "scene.wall_map", "texel("):
+        if bad in thr:
+            raise Red("emit_threaded contains a duplicate-renderer primitive (%s) — it must only orchestrate emit_partitioned" % bad)
+    return ("GAUNTLET-2 threaded fence: emit_partitioned stays the clean partition-agnostic core (LOCKED floor_blocked + the "
+            "pre-swizzled floor, never scene.floor, no probe); emit_threaded is EXECUTION-only — it routes every pixel through "
+            "emit_partitioned across std::thread::scope and holds no coordinate, material or pixel algorithm of its own (no "
+            "duplicate renderer). Replaces the retired gauntlet2-partition-fence, whose 'no threading yet' job is finished")
 
 
 # ------------------------------------------------------------------ main
@@ -2686,7 +2737,8 @@ def main() -> int:
     row("locality0-lockfence", locality0_lockfence)
     row("gauntlet2-preregistered", gauntlet2_preregistered)
     row("gauntlet2-partition-invariance", gauntlet2_partition_invariance)
-    row("gauntlet2-partition-fence", gauntlet2_partition_fence)
+    row("gauntlet2-threaded-equiv", gauntlet2_threaded_equiv)
+    row("gauntlet2-threaded-fence", gauntlet2_threaded_fence)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)

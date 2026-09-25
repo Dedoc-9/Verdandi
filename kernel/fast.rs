@@ -568,6 +568,63 @@ pub fn emit_partitioned(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [
     }
 }
 
+/// GAUNTLET-2 — the threaded emit (EXECUTION MECHANISM ONLY). It builds the SAME contiguous column partition the
+/// correctness court accepts (T groups over 0..W) and calls the proven `emit_partitioned` once per group across
+/// `std::thread::scope`, one contiguous group per thread. It holds NO coordinate, material or pixel algorithm of its
+/// own — every pixel is routed through `emit_partitioned` (no duplicate renderer; gauntlet2-threaded-fence). Threads
+/// write DISJOINT columns (a partition of 0..W), so no two ever touch the same output byte; the shared reads (scene,
+/// strips, buf, the pre-swizzled floor) are immutable. Byte-identical to the frozen emit at every T
+/// (gauntlet2-threaded-equiv) because the output is a pure function of the column set; the speed is the off-gate court.
+pub fn emit_threaded(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8], floor: &[u8], threads: usize) {
+    let t = threads.max(1);
+    if t == 1 {
+        // one thread: call the proven core directly — the single-thread path, no scope
+        let whole: Vec<usize> = (0..W).collect();
+        emit_partitioned(scene, strips, buf, out, floor, &whole);
+        return;
+    }
+    let groups = contiguous_groups(t);
+    let fb = SendFb(out.as_mut_ptr(), out.len());
+    std::thread::scope(|s| {
+        for &(lo, hi) in &groups {
+            let group: Vec<usize> = (lo..=hi).collect();
+            s.spawn(move || {
+                // SAFETY: `groups` is a partition of 0..W, so this thread's columns [lo, hi] are DISJOINT from every
+                // other thread's. emit_partitioned writes only those columns' pixels and never reads `out`, so no two
+                // threads ever write (or read) the same byte; the shared inputs are immutable. The pixel work is the
+                // proven emit_partitioned, unchanged — the threading adds only the execution boundary.
+                let out = unsafe { std::slice::from_raw_parts_mut(fb.0, fb.1) };
+                emit_partitioned(scene, strips, buf, out, floor, &group);
+            });
+        }
+    });
+}
+
+// ---- GAUNTLET-2 threading plumbing (used only by emit_threaded; no rendering logic) ----
+#[derive(Clone, Copy)]
+struct SendFb(*mut u8, usize);
+// SAFETY: the framebuffer pointer is shared across scoped threads that write DISJOINT columns (a partition of 0..W);
+// no two threads access the same byte, so there is no data race despite the shared base pointer.
+unsafe impl Send for SendFb {}
+unsafe impl Sync for SendFb {}
+
+/// The contiguous column partition for T threads: T ranges over 0..W, as even as possible (the first `W % T` ranges
+/// one column longer). The SAME shape the correctness court's `contig{T}` specs use, so the threaded path exercises a
+/// partition already proven byte-identical.
+fn contiguous_groups(t: usize) -> Vec<(usize, usize)> {
+    let (base, extra) = (W / t, W % t);
+    let mut g = Vec::with_capacity(t);
+    let mut c = 0usize;
+    for i in 0..t {
+        let len = base + if i < extra { 1 } else { 0 };
+        if len > 0 {
+            g.push((c, c + len - 1));
+        }
+        c += len;
+    }
+    g
+}
+
 /// RE-BREAKDOWN-1 — Court A: the DETERMINISTIC structural attribution (gate-computed, wall-clock-free). What work
 /// exists in `emit`, read off the frozen frame: divide-work (wall 1/px + floor DDA 5/row), the tile/map memory reads
 /// (3 texels + 3 map indirections per textured pixel), the tile working-set cardinality (distinct texel addresses),

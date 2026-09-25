@@ -1107,9 +1107,51 @@ sealed 7734 µs) is the next build, off-gate.
 baseline (the host performance court decides that). That partition invariance holds for scenes outside the corpus.
 
 **Falsifier.** `gauntlet2-partition-invariance` reddens if any partition spec (contiguous or adversarial) diverges from
-the frozen picture on any case, fails coverage, or if the `T=1` core diverges from the LOCKED emit; `gauntlet2-partition-fence`
-if `emit_partitioned` reads `scene.floor`, drops `floor_blocked`, references a probe, or `fast.rs` grows threading on
-this rung.
+the frozen picture on any case, fails coverage, or if the `T=1` core diverges from the LOCKED emit.
+
+## GAUNTLET-2 — the performance court: parallel execution, correctness gate-enforced first (seat 21)
+
+**What landed (execution only, over an already-proven core).** GAUNTLET-2's performance court adds the parallel
+execution mechanism and nothing else. `kernel/fast.rs::emit_threaded(threads)` builds the same contiguous column
+partition the correctness court accepts (`T` contiguous groups over `0..W`) and calls the proven `emit_partitioned`
+once per group across `std::thread::scope` — one contiguous group per thread, writing **disjoint** columns. It holds no
+coordinate, material or pixel algorithm of its own; every pixel is routed through `emit_partitioned`. Because the output
+is a pure function of the column set, it is byte-identical to the frozen picture at every thread count regardless of how
+the threads are scheduled.
+
+**Correctness is gate-enforced first; speed is off-gate.** `--gauntlet2-threads` renders `emit_threaded` at
+`T ∈ {1,2,4,8,16}` into a sentinel-filled buffer and checks byte-identity to the frozen picture; the output is
+deterministic though scheduling is not, so this is a legitimate, reproducible gate check that fires **before** any
+performance interpretation. The wall-clock lives entirely off-gate: `--gauntlet2-bench N --threads T` times one
+explicit thread count per process, byte-identity checked first, and `verify/gauntlet2.py` interleaves the thread counts
+across strips (drift cancels) into the `T | correctness | p99` matrix, sealed under RECORD-0 to
+`kernel/attest/gauntlet2-<host>.json`.
+
+**The baseline is inherited, the decision rule preregistered.** The single-thread floor is read from the sealed
+LOCALITY-0 record (`gauntlet2_baseline_p99_us`, **7734 µs** on `DANIELDILLBERG`) — inherited, never re-derived; the
+orchestrator refuses to run without it. Promotion is exactly the preregistered rule: byte-invariant at every `T` **and**
+some `T > 1` p99 below the baseline. And the memory-hierarchy redirect is honoured: if p99 stops improving as `T` grows,
+the reading names it **memory-bandwidth / cache contention**, not insufficient parallelism, and points the trajectory at
+the memory hierarchy rather than a bigger thread count. Never compared to GAUNTLET-0's absolute; no refresh claim.
+
+**Rows.** `gauntlet2-threaded-equiv` — `emit_threaded` byte-identical to the frozen picture at every `T ∈ {1,2,4,8,16}`
+over the corpus + adversarial cameras. `gauntlet2-threaded-fence` — `emit_partitioned` stays the clean core (LOCKED
+`floor_blocked` + the pre-swizzled floor, never `scene.floor`, no probe), and `emit_threaded` routes every pixel through
+`emit_partitioned` via `std::thread::scope` with no duplicate-renderer primitive. This row **replaces** the retired
+`gauntlet2-partition-fence`, whose "no threading yet" job (proving seat 20 stayed correctness-only) is finished.
+
+**Grade.** MEASURED (live, headless, deterministic): the threaded emit's byte-identity at every `T` and the
+execution-only structure. NOT_MEASURED here: the parallel speed — the `T | correctness | p99` matrix vs the sealed
+7734 µs is the host court (`verify/gauntlet2.py`, off-gate), which the owner runs on `DANIELDILLBERG`; the promotion is
+the reader's from that matrix and the preregistered rule.
+
+**does_not_show.** Any wall-clock on the gate. That parallelism beats the baseline (the host matrix decides, against the
+inherited floor). Any refresh-rate or input-to-photon claim. Any comparison to GAUNTLET-0's instrumented absolute.
+
+**Falsifier.** `gauntlet2-threaded-equiv` reddens if the threaded emit diverges from the frozen picture at any `T` on
+any case (a partition/order or race dependency); `gauntlet2-threaded-fence` if `emit_partitioned` loses `floor_blocked`
+or reads `scene.floor` or references a probe, or if `emit_threaded` acquires a second renderer (a coordinate/material/
+pixel primitive) instead of routing through `emit_partitioned`.
 
 ## The open clause, now with named rungs (skybox, physics)
 
@@ -1157,6 +1199,10 @@ staircase and what remains:
   reference witness. **GAUNTLET-2+** (multi-threaded column stripping) inherits the LOCKED blocked emit's sealed 7734 µs
   p99 as its hard baseline, to be beaten under partition invariance — the certified picture byte-invariant under any
   column partition and thread count, adversarial partitions included (preregistered `711cc1d4`, decision rule and all).
+  Both GAUNTLET-2 courts then landed: the **correctness court** (seat 20) proved `emit_partitioned` byte-identical over
+  contiguous + adversarial partitions, and the **performance court** (seat 21) added the execution-only `emit_threaded`
+  (`std::thread::scope`, one contiguous group per thread) with byte-identity gate-enforced at every `T` and the
+  `T | correctness | p99` matrix vs the inherited 7734 µs sealed off-gate by `verify/gauntlet2.py` on the owner's host.
   **LATENCY-1** then reruns the same fixed session and records the before/after render delta against LATENCY-0's
   immutable baseline.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is

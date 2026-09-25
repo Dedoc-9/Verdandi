@@ -14,6 +14,8 @@
 //     kernel ... --locality                                         # LOCALITY-0 differential: both floor layouts byte-identical + bijection + content/format + per-band locality
 //     kernel ... --variant blocked --locality-bench 300 --warm 30   # off-gate (LOCALITY-0): process-isolated timing of ONE layout vs the DDA baseline (whole-frame + index tax + per-band)
 //     kernel ... --gauntlet2                                         # GAUNTLET-2 correctness court: partition invariance — emit_partitioned over contiguous/adversarial column partitions is byte-identical to frozen (deterministic, no threads)
+//     kernel ... --gauntlet2-threads                                 # GAUNTLET-2 threaded byte-identity: emit_threaded (std::thread::scope) byte-identical to frozen at T in {1,2,4,8,16} (deterministic output)
+//     kernel ... --gauntlet2-bench 300 --warm 30 --threads 8         # off-gate (GAUNTLET-2): p99 of the threaded emit at an EXPLICIT thread count (byte-identity checked first)
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
@@ -173,6 +175,9 @@ fn main() {
     let mut loc_variant: Option<String> = None;
     let mut loc_bench = 0usize;
     let mut want_g2 = false;
+    let mut want_g2threads = false;
+    let mut g2_bench = 0usize;
+    let mut n_threads = 1usize;
     let mut write_ppm: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
@@ -196,6 +201,9 @@ fn main() {
             "--variant" => { loc_variant = Some(next(i)); i += 2; }
             "--locality-bench" => { loc_bench = next(i).parse().unwrap_or_else(|_| refuse("--locality-bench needs a count")); i += 2; }
             "--gauntlet2" => { want_g2 = true; i += 1; }
+            "--gauntlet2-threads" => { want_g2threads = true; i += 1; }
+            "--gauntlet2-bench" => { g2_bench = next(i).parse().unwrap_or_else(|_| refuse("--gauntlet2-bench needs a count")); i += 2; }
+            "--threads" => { n_threads = next(i).parse().unwrap_or_else(|_| refuse("--threads needs a count")); i += 2; }
             "--write-png" => { write_ppm = Some(next(i)); i += 2; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
@@ -635,6 +643,51 @@ fn main() {
                      if cover_ok { "OK" } else { "BAD" }, if equal_ok { "OK" } else { "DIFFER" });
         }
         println!("g2_specs_total {}", specs.len());
+    }
+    if want_g2threads {
+        // GAUNTLET-2 threaded byte-identity (deterministic, gate-enforced): emit_threaded — std::thread::scope, one
+        // contiguous column group per thread, disjoint framebuffer writes — reproduces the frozen picture at every
+        // thread count. The OUTPUT is deterministic though thread SCHEDULING is not (disjoint per-column writes), so
+        // this is a valid gate check; no timing here (that is --gauntlet2-bench, off-gate). Sentinel-init so a missed
+        // column would diverge.
+        let bf = fast::blocked_floor(&scene.floor);
+        for &t in &[1usize, 2, 4, 8, 16] {
+            let mut o = vec![0xABu8; W * H * 3];
+            fast::emit_threaded(&scene, &first.strips, &first.frame, &mut o, &bf, t);
+            println!("g2t_thread {} equal={}", t, if hex(&sha256(&o)) == ps { "OK" } else { "DIFFER" });
+        }
+        println!("g2t_total 5");
+    }
+    if g2_bench > 0 {
+        // GAUNTLET-2 performance court (off-gate, host): time emit_threaded at the EXPLICIT --threads T. Byte-identity
+        // is checked FIRST and again after timing — no number is printed if the threaded emit diverged from the frozen
+        // witness. p99 is compared (by the orchestrator verify/gauntlet2.py) ONLY against the sealed single-thread
+        // baseline, never GAUNTLET-0's absolute, never a refresh-rate claim. One T per invocation for a clean measurement.
+        let bf = fast::blocked_floor(&scene.floor);
+        let t = n_threads.max(1);
+        let mut rgb = vec![0u8; W * H * 3];
+        fast::emit_threaded(&scene, &first.strips, &first.frame, &mut rgb, &bf, t);
+        if hex(&sha256(&rgb)) != ps {
+            refuse("gauntlet2-bench: the threaded emit did not reproduce the frozen witness; no number is printed");
+        }
+        let mut times: Vec<u128> = Vec::with_capacity(g2_bench);
+        for k in 0..(warm + g2_bench) {
+            let a0 = Instant::now();
+            fast::emit_threaded(&scene, &first.strips, &first.frame, &mut rgb, &bf, t);
+            let a1 = Instant::now();
+            black_box(&rgb);
+            if k >= warm {
+                times.push((a1 - a0).as_micros());
+            }
+        }
+        if hex(&sha256(&rgb)) != ps {
+            refuse("gauntlet2-bench: the timed threaded emit diverged from the frozen witness; no number is printed");
+        }
+        let (p50, p95, p99, mx) = percentiles(times);
+        println!("g2bench_threads {}", t);
+        println!("g2bench_us p50={} p95={} p99={} max={}", p50, p95, p99, mx);
+        println!("g2bench_equal OK");
+        println!("{}", host_line());
     }
     if breakdown > 0 {
         // GAUNTLET-0: the render decomposed at the kernel's pub-phase boundaries — strips (traversal), frame
