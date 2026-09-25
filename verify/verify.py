@@ -2552,6 +2552,93 @@ def gauntlet2_preregistered():
             "few threads. Never vs GAUNTLET-0's absolute; mantle.rs stays frozen; hash-locked %s" % e["chain_hash"][:8])
 
 
+# ------------------------------------------------------------------ gauntlet2 correctness court (partition invariance)
+def _g2_lines(level, tiles, camera):
+    code, out, err = run(KERNEL_EXE, ["--level", os.path.join(ORACLE, "levels", level + ".lvl"),
+                                      "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"),
+                                      "--camera", camera, "--gauntlet2"])
+    if code != 0:
+        raise Red("kernel --gauntlet2 exited %d on %s@%s: %s" % (code, level, camera, err.strip()))
+    meta, specs = {}, {}
+    for ln in out.strip().splitlines():
+        if ln.startswith("g2_spec "):
+            parts = ln.split()
+            specs[parts[1]] = dict(p.split("=") for p in parts[2:] if "=" in p)
+        elif " " in ln:
+            k, v = ln.split(" ", 1)
+            meta[k] = v
+    return specs, meta
+
+
+def gauntlet2_partition_invariance():
+    """The GAUNTLET-2 correctness court, deterministic and gate-enforced: emit_partitioned renders every column
+    partition — contiguous chunks at T in {1,2,4,8,16} AND adversarial partitions (strided, reversed group+column
+    order, single-column, seeded permutation) — byte-identical to the frozen picture over corpus + adversarial
+    cameras, each a true partition of 0..W, and the core at T=1 equals the LOCKED blocked emit. Partition and order
+    are execution parameters, not rendering authority; a shared-state or reduction-order dependency reddens here,
+    deterministically, without a thread. Threading is GAUNTLET-2's separate off-gate performance court."""
+    need_rustc()
+    required = {"contig1", "contig2", "contig4", "contig8", "contig16", "strided2", "strided8", "reversed8", "single", "permuted8"}
+    cases = _g1_cases()
+    for (lvl, tiles, cam) in cases:
+        specs, meta = _g2_lines(lvl, tiles, cam)
+        if meta.get("selfcheck") != "OK":
+            raise Red("kernel did not selfcheck under --gauntlet2 on %s@%s" % (lvl, cam))
+        if meta.get("g2_vs_emit") != "OK":
+            raise Red("emit_partitioned over the whole frame differs from the LOCKED blocked emit on %s@%s" % (lvl, cam))
+        if meta.get("g2_pixels") != meta.get("pixels"):
+            raise Red("the GAUNTLET-2 witness pixels disagree with the frozen witness on %s@%s" % (lvl, cam))
+        miss = required - set(specs.keys())
+        if miss:
+            raise Red("GAUNTLET-2 is missing partition specs %s on %s@%s" % (sorted(miss), lvl, cam))
+        for name, kv in specs.items():
+            if kv.get("cover") != "OK":
+                raise Red("partition spec %s is not a true partition of 0..W (coverage) on %s@%s" % (name, lvl, cam))
+            if kv.get("equal") != "OK":
+                raise Red("partition spec %s is NOT byte-identical to the frozen picture on %s@%s — a partition/order dependency" % (name, lvl, cam))
+    return ("GAUNTLET-2 partition invariance (deterministic) over %d cases (every corpus scene x its tile sets + adversarial "
+            "cameras): emit_partitioned renders every column partition — contiguous chunks at T in {1,2,4,8,16} AND adversarial "
+            "partitions (strided/interleaved, reversed group+column order, single-column, a seeded permutation) — byte-identical "
+            "to the frozen picture, each a true partition of 0..W (coverage exactly once), and the partition core at T=1 equals "
+            "the LOCKED blocked emit (g2_vs_emit OK). Partition and order are execution parameters, not rendering authority; a "
+            "shared-state or reduction-order dependency would redden here, deterministically, without spawning a thread — "
+            "threading is GAUNTLET-2's separate off-gate performance court" % len(cases))
+
+
+def gauntlet2_partition_fence():
+    """The correctness court commits NO threading: emit_partitioned is the partition-agnostic core (LOCKED blocked
+    index floor_blocked + the pre-swizzled floor, never scene.floor, no probe), and fast.rs contains no std::thread —
+    parallel execution is GAUNTLET-2's separate performance court, built only after partition invariance is green."""
+    src = open(os.path.join(ROOT, "kernel", "fast.rs"), encoding="utf-8").read()
+
+    def between(a, b):
+        i = src.index(a)
+        j = src.index(b, i + len(a))
+        return src[i:j]
+
+    def code_only(body):
+        return "\n".join(ln for ln in body.splitlines() if not ln.lstrip().startswith("//"))
+
+    def reads_raw_floor(body):
+        return "scene.floor" in body.replace("scene.floor_map", "")
+
+    if "pub fn emit_partitioned(" not in src:
+        raise Red("the partition-agnostic core emit_partitioned is missing")
+    body = code_only(between("pub fn emit_partitioned(", "/// RE-BREAKDOWN-1 — Court A"))
+    if "floor_blocked(" not in body:
+        raise Red("emit_partitioned does not use the LOCKED blocked index floor_blocked")
+    if reads_raw_floor(body):
+        raise Red("emit_partitioned reads scene.floor in the hot path — it must read the pre-swizzled floor buffer")
+    if "probe" in body:
+        raise Red("emit_partitioned references a probe — the apparatus is not fenced from the renderer")
+    if "std::thread" in src or "thread::scope" in src or "spawn(" in src:
+        raise Red("fast.rs already contains threading — GAUNTLET-2's correctness court must commit NO parallel execution")
+    return ("GAUNTLET-2 fence: the partition-agnostic core emit_partitioned uses the LOCKED blocked index floor_blocked and "
+            "the pre-swizzled floor buffer (never scene.floor), references no probe, and fast.rs contains NO std::thread — the "
+            "correctness court commits partition invariance only; parallel execution is the separate off-gate performance court, "
+            "built after this court is green")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -2598,6 +2685,8 @@ def main() -> int:
     row("locality0-lock", locality0_lock)
     row("locality0-lockfence", locality0_lockfence)
     row("gauntlet2-preregistered", gauntlet2_preregistered)
+    row("gauntlet2-partition-invariance", gauntlet2_partition_invariance)
+    row("gauntlet2-partition-fence", gauntlet2_partition_fence)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)

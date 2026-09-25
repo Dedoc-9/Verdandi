@@ -13,6 +13,7 @@
 //     kernel ... --emit-breakdown 300 --warm 30                     # off-gate (RE-BREAKDOWN-1): Court A structure + Court B ablation probes (addr/lookup/full/emit), probe VERIFY == emit
 //     kernel ... --locality                                         # LOCALITY-0 differential: both floor layouts byte-identical + bijection + content/format + per-band locality
 //     kernel ... --variant blocked --locality-bench 300 --warm 30   # off-gate (LOCALITY-0): process-isolated timing of ONE layout vs the DDA baseline (whole-frame + index tax + per-band)
+//     kernel ... --gauntlet2                                         # GAUNTLET-2 correctness court: partition invariance — emit_partitioned over contiguous/adversarial column partitions is byte-identical to frozen (deterministic, no threads)
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
@@ -171,6 +172,7 @@ fn main() {
     let mut want_loc = false;
     let mut loc_variant: Option<String> = None;
     let mut loc_bench = 0usize;
+    let mut want_g2 = false;
     let mut write_ppm: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
@@ -193,6 +195,7 @@ fn main() {
             "--locality" => { want_loc = true; i += 1; }
             "--variant" => { loc_variant = Some(next(i)); i += 2; }
             "--locality-bench" => { loc_bench = next(i).parse().unwrap_or_else(|_| refuse("--locality-bench needs a count")); i += 2; }
+            "--gauntlet2" => { want_g2 = true; i += 1; }
             "--write-png" => { write_ppm = Some(next(i)); i += 2; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
@@ -530,6 +533,108 @@ fn main() {
             Some("linear") => locality_bench_variant::<{ fast::locality::LINEAR }>(&scene, &first.strips, &first.frame, &ps, loc_bench, warm, "linear"),
             _ => refuse("--locality-bench needs --variant blocked|morton|linear"),
         }
+    }
+    if want_g2 {
+        // GAUNTLET-2 correctness court (deterministic, gate-enforced): PARTITION INVARIANCE. The partition-agnostic
+        // emit (fast::emit_partitioned) renders any partition of the columns, in any order, byte-identically to the
+        // frozen picture — thread count and column partition are EXECUTION parameters, not rendering authority. NO
+        // threads, NO host timing, NO promotion here (that is GAUNTLET-2's performance court, off-gate). T is only a
+        // harness knob that GENERATES a partition spec; the kernel receives the actual column groups.
+        let bf = fast::blocked_floor(&scene.floor);
+        // deterministic partition-spec generators, each a partition of 0..W into groups (a Vec<Vec<usize>>)
+        fn contiguous(t: usize) -> Vec<Vec<usize>> {
+            let (base, extra) = (W / t, W % t);
+            let mut g = Vec::new();
+            let mut c = 0usize;
+            for i in 0..t {
+                let len = base + if i < extra { 1 } else { 0 };
+                g.push((c..c + len).collect());
+                c += len;
+            }
+            g
+        }
+        fn strided(t: usize) -> Vec<Vec<usize>> {
+            let mut g = vec![Vec::new(); t];
+            for c in 0..W {
+                g[c % t].push(c);
+            }
+            g
+        }
+        fn singles() -> Vec<Vec<usize>> {
+            (0..W).map(|c| vec![c]).collect()
+        }
+        fn reversed_spec(t: usize) -> Vec<Vec<usize>> {
+            // a contiguous partition, but the GROUP order reversed AND each group's columns reversed — order must not matter
+            let mut g = contiguous(t);
+            for grp in g.iter_mut() {
+                grp.reverse();
+            }
+            g.reverse();
+            g
+        }
+        fn permuted(t: usize) -> Vec<Vec<usize>> {
+            // a seeded Fisher-Yates shuffle of 0..W (fixed-seed LCG, deterministic), sliced into t groups — each group
+            // an arbitrary column set in arbitrary within-group order
+            let mut perm: Vec<usize> = (0..W).collect();
+            let mut state: u64 = 0x9E3779B97F4A7C15;
+            for i in (1..W).rev() {
+                state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                let j = ((state >> 33) as usize) % (i + 1);
+                perm.swap(i, j);
+            }
+            let (base, extra) = (W / t, W % t);
+            let mut g = Vec::new();
+            let mut idx = 0usize;
+            for i in 0..t {
+                let len = base + if i < extra { 1 } else { 0 };
+                g.push(perm[idx..idx + len].to_vec());
+                idx += len;
+            }
+            g
+        }
+        let specs: Vec<(&str, Vec<Vec<usize>>)> = vec![
+            ("contig1", contiguous(1)),
+            ("contig2", contiguous(2)),
+            ("contig4", contiguous(4)),
+            ("contig8", contiguous(8)),
+            ("contig16", contiguous(16)),
+            ("strided2", strided(2)),
+            ("strided8", strided(8)),
+            ("reversed8", reversed_spec(8)),
+            ("single", singles()),
+            ("permuted8", permuted(8)),
+        ];
+        println!("g2_pixels {}", ps);
+        // emit_partitioned over the single whole-frame group must equal the LOCKED blocked emit byte-for-byte (the
+        // partition core, at T=1, IS the accepted single-thread emit — no new correctness surface)
+        let whole: Vec<usize> = (0..W).collect();
+        let mut r_part = vec![0u8; W * H * 3];
+        fast::emit_partitioned(&scene, &first.strips, &first.frame, &mut r_part, &bf, &whole);
+        let mut r_emit = vec![0u8; W * H * 3];
+        fast::emit(&scene, &first.strips, &first.frame, &mut r_emit, &bf);
+        println!("g2_vs_emit {}", if r_part == r_emit && hex(&sha256(&r_part)) == ps { "OK" } else { "DIFFER" });
+        for (name, groups) in &specs {
+            // coverage: every column of 0..W covered exactly once (a true partition)
+            let mut cover = vec![0u32; W];
+            for grp in groups {
+                for &c in grp {
+                    if c < W {
+                        cover[c] += 1;
+                    }
+                }
+            }
+            let cover_ok = cover.iter().all(|&v| v == 1);
+            // render into a SENTINEL-filled buffer (a missed column would leave 0xAB, diverging from the frozen sha),
+            // processing the groups in the spec's given order
+            let mut buf_out = vec![0xABu8; W * H * 3];
+            for grp in groups {
+                fast::emit_partitioned(&scene, &first.strips, &first.frame, &mut buf_out, &bf, grp);
+            }
+            let equal_ok = hex(&sha256(&buf_out)) == ps;
+            println!("g2_spec {} groups={} cover={} equal={}", name, groups.len(),
+                     if cover_ok { "OK" } else { "BAD" }, if equal_ok { "OK" } else { "DIFFER" });
+        }
+        println!("g2_specs_total {}", specs.len());
     }
     if breakdown > 0 {
         // GAUNTLET-0: the render decomposed at the kernel's pub-phase boundaries — strips (traversal), frame

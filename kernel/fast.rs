@@ -411,6 +411,163 @@ pub fn floor_rows(strips: &[Strip]) -> usize {
     (H as i64 - 1 - min_bot).max(0) as usize
 }
 
+/// The maximal contiguous ascending runs (lo, hi inclusive) of a column group. Fast path: a group that already IS
+/// one ascending-contiguous run (the GAUNTLET-2 threading case — a thread's column range) returns it with no sort and
+/// no allocation-per-column. Otherwise the columns are sorted and scanned into runs. The runs partition the group's
+/// columns, so `emit_partitioned` renders exactly the group regardless of the order the columns were handed in.
+fn runs_of(group: &[usize]) -> Vec<(usize, usize)> {
+    if group.is_empty() {
+        return Vec::new();
+    }
+    let mut contiguous = true;
+    for w in group.windows(2) {
+        if w[1] != w[0] + 1 {
+            contiguous = false;
+            break;
+        }
+    }
+    if contiguous {
+        return vec![(group[0], group[group.len() - 1])];
+    }
+    let mut cols = group.to_vec();
+    cols.sort_unstable();
+    let mut runs = Vec::new();
+    let (mut lo, mut prev) = (cols[0], cols[0]);
+    for &c in &cols[1..] {
+        if c == prev + 1 {
+            prev = c;
+        } else {
+            runs.push((lo, prev));
+            lo = c;
+            prev = c;
+        }
+    }
+    runs.push((lo, prev));
+    runs
+}
+
+/// GAUNTLET-2 — the partition-agnostic emit (the parallelizable core). Renders exactly the pixels of the columns in
+/// `group` (ANY subset, in ANY order) and is byte-identical to the frozen emit for those columns: the ceiling + wall
+/// per column exactly as the frozen transcription, and the floor via the LOCALITY-0 LOCKED blocked DDA seeded per
+/// contiguous run (`floor_blocked` + the pre-swizzled `floor`; `scene.floor` is never read). The DDA's `q` at column
+/// c is a pure function of c and kk, so a run seeded at any `lo` is exact — a contiguous group is one full-DDA run
+/// (what GAUNTLET-2's threads use), an adversarial group degrades to short runs but stays byte-identical.
+///
+/// The output is a pure function of the column SET: each column writes only its own disjoint pixels, and there is no
+/// shared, accumulated or reduction state, so over ANY partition of 0..W, processed in ANY order, the framebuffer
+/// equals the frozen picture (gauntlet2-partition-invariance). Thread count and partition are EXECUTION parameters,
+/// not rendering authority — GAUNTLET-2's threaded emit calls THIS with one contiguous group per thread, adding only
+/// the execution mechanism around an already-proven operation. `buf` is read, never written.
+pub fn emit_partitioned(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8], floor: &[u8], group: &[usize]) {
+    let ex = scene.pos_x * Q + EYE_Y;
+    let ez = scene.pos_z * Q + EYE_Y;
+    let table = &scene.table;
+    // Pass 1: ceiling + wall for each column in the group — independent, order-agnostic (disjoint per-column writes).
+    for &c in group {
+        let s = &strips[c];
+        let (tn, td, dx, dz) = (s.tn, s.td, s.dx, s.dz);
+        let mut along = if u_axis_is_z(s.face) { ez * td + tn * dz } else { ex * td + tn * dx };
+        if U_SIGN[s.face as usize] < 0 {
+            along = -along;
+        }
+        let u_d = Q * td;
+        let ti = texel(along.rem_euclid(u_d), u_d);
+        let v_base = Q * td - EYE_Y * td - (2 * CY - 1) * tn;
+        let v_den = Q * td;
+        let top = s.top as usize;
+        let bot = s.bot as usize;
+        for r in 0..top {
+            let idx = buf[r * W + c] as usize;
+            let o = (r * W + c) * 3;
+            out[o..o + 3].copy_from_slice(&table[idx * 3..idx * 3 + 3]);
+        }
+        for r in top..=bot {
+            let idx = buf[r * W + c];
+            let o = (r * W + c) * 3;
+            if idx < WALL0 {
+                out[o..o + 3].copy_from_slice(&table[idx as usize * 3..idx as usize * 3 + 3]);
+                continue;
+            }
+            let light = ((idx - WALL0) / (BANDS as u8)) as usize;
+            let band = ((idx - WALL0) % (BANDS as u8)) as usize;
+            let tj = texel(v_base + 2 * r as i64 * tn, v_den);
+            let k = ((tj * T + ti) * 3) as usize;
+            let tile = &scene.walls[light];
+            let m = &scene.wall_map[band * 256..band * 256 + 256];
+            out[o] = m[tile[k] as usize];
+            out[o + 1] = m[tile[k + 1] as usize];
+            out[o + 2] = m[tile[k + 2] as usize];
+        }
+    }
+    // Pass 2: the floor, via the LOCKED blocked DDA, seeded per maximal contiguous ascending run of the group's
+    // columns. `min_bot` is the global horizon (the floor pass starts where any column first has floor), exactly as
+    // the whole-frame emit; the per-pixel [FLOOR0, WALL0) test skips each column's own wall/ceiling rows.
+    let mut min_bot = H as i64 - 1;
+    for s in strips.iter().take(W) {
+        if s.bot < min_bot {
+            min_bot = s.bot;
+        }
+    }
+    let (varying_is_x, delta_pos, d0, d_const): (bool, bool, i64, i64) = match scene.facing {
+        0 => (true, true, EYE_Y * (1 - W as i64), -2 * FOCAL),
+        1 => (false, true, EYE_Y * (1 - W as i64), 2 * FOCAL),
+        2 => (true, false, EYE_Y * (W as i64 - 1), 2 * FOCAL),
+        _ => (false, false, EYE_Y * (W as i64 - 1), -2 * FOCAL),
+    };
+    let e_const = if varying_is_x { ez } else { ex };
+    let e_vary = if varying_is_x { ex } else { ez };
+    let dconst_eye = d_const * EYE_Y;
+    let step = 2 * EYE_Y;
+    for (lo, hi) in runs_of(group) {
+        for r in ((min_bot + 1) as usize)..H {
+            let kk = 2 * (r as i64 - CY) + 1;
+            let cconst = (e_const + dconst_eye.div_euclid(kk)) & (T - 1);
+            let a_step = step.div_euclid(kk);
+            let b_step = step.rem_euclid(kk);
+            // seed the DDA directly at column `lo`: q at column c = (d0 +/- c*step).div_euclid(kk) (a pure function
+            // of c and kk), so a run seeded anywhere reproduces the whole-row DDA for its columns exactly.
+            let n_lo = d0 + if delta_pos { lo as i64 } else { -(lo as i64) } * step;
+            let mut q = n_lo.div_euclid(kk);
+            let mut rem = n_lo.rem_euclid(kk);
+            let row = r * W;
+            for c in lo..=hi {
+                let idx = buf[row + c];
+                if idx >= FLOOR0 && idx < WALL0 {
+                    let o = (row + c) * 3;
+                    if idx < DOWN0 {
+                        let vary = (e_vary + q) & (T - 1);
+                        let (tj, ti_f) = if varying_is_x { (cconst, vary) } else { (vary, cconst) };
+                        let kf = floor_blocked(tj, ti_f) * 3;
+                        let band = (idx - FLOOR0) as usize;
+                        let m = &scene.floor_map[band * 256..band * 256 + 256];
+                        out[o] = m[floor[kf] as usize];
+                        out[o + 1] = m[floor[kf + 1] as usize];
+                        out[o + 2] = m[floor[kf + 2] as usize];
+                    } else {
+                        let i = idx as usize;
+                        out[o..o + 3].copy_from_slice(&table[i * 3..i * 3 + 3]);
+                    }
+                }
+                if delta_pos {
+                    q += a_step;
+                    rem += b_step;
+                    if rem >= kk {
+                        rem -= kk;
+                        q += 1;
+                    }
+                } else {
+                    q -= a_step;
+                    rem -= b_step;
+                    if rem < 0 {
+                        rem += kk;
+                        q -= 1;
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// RE-BREAKDOWN-1 — Court A: the DETERMINISTIC structural attribution (gate-computed, wall-clock-free). What work
 /// exists in `emit`, read off the frozen frame: divide-work (wall 1/px + floor DDA 5/row), the tile/map memory reads
 /// (3 texels + 3 map indirections per textured pixel), the tile working-set cardinality (distinct texel addresses),

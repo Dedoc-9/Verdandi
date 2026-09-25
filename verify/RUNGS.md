@@ -1069,6 +1069,48 @@ thread-count-in-attestation, the two-court separation, the inherited (never re-m
 courts are the next builds). **Falsifier.** `gauntlet2-preregistered` reddens if the partition-invariance law, the
 adversarial-partition or explicit-thread-count requirement, the two-court separation, or the decision rule is weakened.
 
+## GAUNTLET-2 — the correctness court: partition invariance proven (seat 20)
+
+**What landed (the stronger property, deterministically, with no threads).** GAUNTLET-2's correctness court is seated:
+`kernel/fast.rs::emit_partitioned(group)` is a partition-agnostic sibling of the LOCKED emit. It renders exactly the
+pixels of the columns in `group` — any subset, in any order — byte-identically to the frozen picture: ceiling + wall
+per column as the frozen transcription, and the floor via the LOCKED blocked DDA **seeded per contiguous run** (the
+DDA's `q` at column c is a pure function of c and kk, so a run seeded at any `lo` is exact). A contiguous group is one
+full-DDA run — what the parallel court's threads will use; an adversarial group degrades to short runs but stays
+byte-identical. The output is a pure function of the column **set**: disjoint per-column writes, no shared, accumulated
+or reduction state, so over any partition of `0..W`, in any order, the framebuffer equals the frozen picture.
+
+**T is not authoritative inside the kernel.** The kernel receives the actual column **groups**; the thread count `T`
+only *generates* a partition spec in the harness (`main.rs --gauntlet2`). That makes the law testable independently of
+any threading concept: `partition spec → emit_partitioned(groups) → framebuffer`, never `T → kernel decides partition`.
+
+**The dangerous failures, caught without a thread.** The court runs ten partition specs over the corpus + adversarial
+cameras: contiguous chunks at `T ∈ {1,2,4,8,16}`, strided/interleaved assignment, reversed group **and** within-group
+column order, single-column groups (1920 of them), and a seeded permutation. Each is verified a true partition of
+`0..W` (coverage exactly once, into a sentinel-filled buffer so a missed column would diverge) and byte-identical to
+the frozen picture. An accidental dependency on shared framebuffer or temporary or material state, on column ordering,
+thread-local init, or reduction/merge ordering would surface as *partition-dependence* and redden the gate —
+deterministically, reproducibly, before a single `std::thread` exists.
+
+**Rows.** `gauntlet2-partition-invariance` — all ten specs byte-identical to frozen over the corpus + adversarial
+cameras, each a true partition, and the core at `T=1` equals the LOCKED blocked emit (`g2_vs_emit OK`), so no new
+correctness surface was introduced. `gauntlet2-partition-fence` — `emit_partitioned` uses the LOCKED `floor_blocked` +
+the pre-swizzled floor (never `scene.floor`), references no probe, and `fast.rs` contains **no** `std::thread`: this
+patch commits partition invariance only, no parallel execution.
+
+**Grade.** MEASURED (live, headless, deterministic): partition invariance of `emit_partitioned` over contiguous and
+adversarial partitions, corpus + adversarial cameras, and equality with the LOCKED emit at `T=1`. NOT_MEASURED here:
+any wall-clock — GAUNTLET-2's performance court (the `std::thread` emit and the `T | correctness | p99` matrix vs the
+sealed 7734 µs) is the next build, off-gate.
+
+**does_not_show.** Any speed (the correctness court carries no threads and no clock). That parallel execution beats the
+baseline (the host performance court decides that). That partition invariance holds for scenes outside the corpus.
+
+**Falsifier.** `gauntlet2-partition-invariance` reddens if any partition spec (contiguous or adversarial) diverges from
+the frozen picture on any case, fails coverage, or if the `T=1` core diverges from the LOCKED emit; `gauntlet2-partition-fence`
+if `emit_partitioned` reads `scene.floor`, drops `floor_blocked`, references a probe, or `fast.rs` grows threading on
+this rung.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
