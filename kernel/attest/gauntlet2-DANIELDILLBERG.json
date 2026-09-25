@@ -1,0 +1,75 @@
+{
+ "name": "verdandi-gauntlet2",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "kernel/main.rs --gauntlet2-bench (one thread count per process, interleaved) + verify/gauntlet2.py",
+  "kernel": "kernel/main.rs (+ mantle.rs, fast.rs, formats.rs, hud.rs)",
+  "flags": [
+   "-C",
+   "opt-level=3"
+  ],
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+  "host": "DANIELDILLBERG",
+  "host_line": "os=windows arch=x86_64 cpu=\"AMD64 Family 26 Model 36 Stepping 0, AuthenticAMD\"",
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "scene": "witness",
+  "tiles": "identity",
+  "camera": [
+   34,
+   28,
+   "W"
+  ],
+  "corpus_commit": "4c8c2451d942ff320a11501b59fbbf2737ec42ce",
+  "instrument": "interleaved per-thread-count strips, one T per process",
+  "preregistered": {
+   "rung": "GAUNTLET-2",
+   "chain_hash": "711cc1d4982999c0e79aa72301bc7b4a0307e051517bef6deb7ad886d33b7b8a"
+  },
+  "inherited_baseline": {
+   "rung": "LOCALITY-0",
+   "from": "kernel/attest/locality0-DANIELDILLBERG.json",
+   "chain_hash": "1403861c991e8602c9895e3a07bb4247e56244d6a2194f37419f93c972ea0917",
+   "baseline_p99_us": 7734
+  }
+ },
+ "validity_scope": {
+  "certifies": "the same-apparatus p99 of the threaded emit at thread counts [1, 2, 4, 8, 16] vs the inherited single-thread baseline on host DANIELDILLBERG for scene witness with identity tiles, 300 samples x 8 interleaved strips",
+  "host": "DANIELDILLBERG",
+  "scene": "witness",
+  "tiles": "identity"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency, a present, a window, a compositor, a refresh-rate claim: none is in this number",
+  "the whole-render cost: this is emit only, over the frozen strips + frame every thread count shares",
+  "any comparison to GAUNTLET-0's instrumented render absolute (a different apparatus)",
+  "the single-thread baseline as re-derived here: it is INHERITED from the sealed LOCALITY-0 record, unchanged",
+  "the per-T p99 as a pure core-count law: cache/bandwidth/scheduling make scaling sublinear, and a plateau is a memory-hierarchy finding, not a call for more threads",
+  "any other host, scene, tile set, resolution or core count; absolute us are host-specific",
+  "that the threaded emit is promoted by this record: promotion is the reader's, from the decision rule and the p99 matrix"
+ ],
+ "data": {
+  "threads_p99_us": {
+   "1": 5019,
+   "2": 3752,
+   "4": 3012,
+   "8": 2360,
+   "16": 2311
+  },
+  "baseline_p99_us": 7734,
+  "best_parallel_threads": 16,
+  "best_parallel_p99_us": 2311,
+  "speedup_permille": 3346,
+  "samples": 300,
+  "warmup": 30,
+  "strips": 8,
+  "witnesses": {
+   "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+   "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35"
+  }
+ },
+ "reading": "the parallel-execution court on host DANIELDILLBERG, off-gate, interleaved over 8 strips (per-T p99 medians): T1=5019, T2=3752, T4=3012, T8=2360, T16=2311 us; inherited single-thread baseline 7734 us (sealed by LOCALITY-0, never re-derived). PROMOTE: parallel execution beats the sealed single-thread baseline — best at T=16 with p99 2311 us vs baseline 7734 us (3346 permille of it), and p99 kept improving out to the largest T tested. Action for the reader: adopt the threaded emit; the parallel court is open for higher T if the platform has the cores. Byte-identity was proven FIRST at every T (gauntlet2-threaded-equiv), so the threaded emit is the certified picture at every thread count. These are same-apparatus p99 deltas vs the sealed single-thread baseline — NOT compared to GAUNTLET-0's instrumented render absolute, and NOT a refresh-rate or input-to-photon claim.",
+ "chain_hash": "f9ca33742837d659f3ee6ecd9456ed71ea770d013cac9eedebf16dc9bfa33bdf"
+}
