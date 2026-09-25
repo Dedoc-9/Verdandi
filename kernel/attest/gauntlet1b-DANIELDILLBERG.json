@@ -1,0 +1,79 @@
+{
+ "name": "verdandi-gauntlet1b-emit",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "kernel/main.rs --fast --fast-bench + verify/gauntlet1b.py",
+  "kernel": "kernel/main.rs (+ mantle.rs, fast.rs, formats.rs, hud.rs)",
+  "flags": [
+   "-C",
+   "opt-level=3"
+  ],
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+  "host": "DANIELDILLBERG",
+  "host_line": "os=windows arch=x86_64 cpu=\"AMD64 Family 26 Model 36 Stepping 0, AuthenticAMD\"",
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "scene": "witness",
+  "tiles": "identity",
+  "camera": [
+   34,
+   28,
+   "W"
+  ],
+  "corpus_commit": "4c8c2451d942ff320a11501b59fbbf2737ec42ce",
+  "preregistered": {
+   "rung": "GAUNTLET-1",
+   "chain_hash": "96c427499affb6a32f990ec4a9e65c50b6f5c48637dd28373c63dd76ea322615"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the same-apparatus emit-level speed delta (frozen mantle emit vs the GAUNTLET-1b candidate) on host DANIELDILLBERG for scene witness with identity tiles, 300 samples after 30 warm-ups",
+  "host": "DANIELDILLBERG",
+  "scene": "witness",
+  "tiles": "identity"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency (input transport, present wait and the panel need capture hardware)",
+  "a present, a window, a compositor: none is in this number",
+  "the whole-render or per-frame cost: this is emit ONLY, timed over the frozen strips + frame both emits share",
+  "any comparison to GAUNTLET-0's instrumented render absolute: different apparatus; this is a same-apparatus frozen-vs-candidate delta",
+  "any other host, scene, tile set or resolution; absolute µs are host-specific",
+  "that byte-identity is earned by this record: correctness is the gate's court (gauntlet1-equiv, gauntlet1b-reduction); this seat measures only the speed given it"
+ ],
+ "data": {
+  "emit_us": {
+   "frozen": {
+    "p50": 6420,
+    "p95": 6766,
+    "p99": 6928,
+    "max": 7458
+   },
+   "fast": {
+    "p50": 4942,
+    "p95": 5231,
+    "p99": 5455,
+    "max": 5819
+   }
+  },
+  "floor_divides_per_px": {
+   "frozen": 4,
+   "candidate": 2
+  },
+  "divide_work_on_witness": {
+   "wall": 674760,
+   "floor_frozen": 2778592,
+   "floor_candidate": 1389296,
+   "floor_saved": 1389296
+  },
+  "samples": 300,
+  "warmup": 30,
+  "witnesses": {
+   "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
+   "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35"
+  }
+ },
+ "reading": "emit-only, same-apparatus delta on host DANIELDILLBERG: the frozen emit p99 6928 µs vs the GAUNTLET-1b candidate 5455 µs (1270 permille of frozen at p99). The candidate reproduced the frozen pixel witness (byte-identical — gate-enforced by gauntlet1-equiv / gauntlet1b-reduction, not by this record), and its floor loop does 2 divides/px where the frozen did 4 (1389296 floor divides removed on the witness frame). The promotion bar is the reader's: promote iff byte-identical AND the candidate emit p99 is strictly below the frozen emit's (speedup > 1000 permille); identical-but-not-faster is a correctness pass and a performance fail. This is an EMIT-level number, NOT the whole render, and NEVER compared to GAUNTLET-0's instrumented render absolute (a different apparatus). Witnesses were checked before any number was taken",
+ "chain_hash": "bb0cc643d76d88e9c7e6bcf4df7737cc2e7173a69c5fb90c5cb2004cf9f440fe"
+}
