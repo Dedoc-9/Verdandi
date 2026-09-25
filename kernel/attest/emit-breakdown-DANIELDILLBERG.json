@@ -4,6 +4,7 @@
  "claim_class": "measured",
  "provenance": {
   "tool": "kernel/main.rs --emit-breakdown + verify/rebreakdown1.py",
+  "instrument_revision": "RE-BREAKDOWN-1b constant-anchor probe",
   "kernel": "kernel/main.rs (+ mantle.rs, fast.rs, formats.rs, hud.rs)",
   "flags": [
    "-C",
@@ -29,7 +30,7 @@
   }
  },
  "validity_scope": {
-  "certifies": "the deterministic structure of emit and the same-apparatus ablation attribution of its work classes on host DANIELDILLBERG for scene witness with identity tiles, 300 samples after 30 warm-ups",
+  "certifies": "the deterministic structure of emit and the same-apparatus ablation attribution of its work classes on host DANIELDILLBERG for scene witness with identity tiles, 500 samples after 50 warm-ups",
   "host": "DANIELDILLBERG",
   "scene": "witness",
   "tiles": "identity"
@@ -60,42 +61,42 @@
   },
   "court_b_ablation_us": {
    "addr": {
-    "p50": 3822,
-    "p95": 3928,
-    "p99": 4070,
-    "max": 5091
+    "p50": 3794,
+    "p95": 4077,
+    "p99": 4634,
+    "max": 5566
    },
    "lookup": {
-    "p50": 4695,
-    "p95": 4904,
-    "p99": 5141,
-    "max": 5459
+    "p50": 4646,
+    "p95": 5177,
+    "p99": 5773,
+    "max": 6798
    },
    "full": {
-    "p50": 5394,
-    "p95": 5656,
-    "p99": 6052,
-    "max": 6783
+    "p50": 4851,
+    "p95": 5293,
+    "p99": 6032,
+    "max": 6948
    },
    "emit": {
-    "p50": 4459,
-    "p95": 4692,
-    "p99": 4973,
-    "max": 6300
+    "p50": 4429,
+    "p95": 4867,
+    "p99": 5227,
+    "max": 6371
    }
   },
   "court_b_increments_us_p99": {
-   "lookup_minus_addr_p99": 1071,
-   "full_minus_lookup_p99": 911,
-   "full_vs_emit_p99": 1079
+   "lookup_minus_addr_p99": 1139,
+   "full_minus_lookup_p99": 259,
+   "full_vs_emit_p99": 805
   },
-  "samples": 300,
-  "warmup": 30,
+  "samples": 500,
+  "warmup": 50,
   "witnesses": {
    "frame": "9bb45bf393a6340af432c080b87e9a85e57810a7b46deb792247e11b633e18cf",
    "pixels": "0bef7c1ee0a299bed50df62c0d81f5daf39e34cb981a4e9dc87fa94b1ee72d35"
   }
  },
- "reading": "emit's cost structure on host DANIELDILLBERG. Court A (deterministic): 674760 wall + 694648 floor textured px, 677350 divides, 4108224 tile reads, working set 60176 floor / 65529 wall distinct texels (of 65536), and 590 permille of adjacent floor texels within a cache line. Court B (host ablation, p99 us): addr 4070 -> lookup 5141 -> full 6052, emit 4973; the increments are lookup-addr 1071 (tile fetch), full-lookup 911 (map/assembly). These are INCREMENTAL wall-clock attribution under controlled ablation, NOT pure resource costs: cache/branch/scheduling make the subtraction non-additive and the experiment has no architectural counters. The largest increment is 'tile fetch (lookup - addr)'; the promotion table (the reader's, from the preregistration) says a dominant lookup increment or pathological locality LOCKs a data-layout/locality court, a dominant address increment the arithmetic path, a dominant write the framebuffer path, and disagreement or no dominance DEFERs. probe VERIFY is byte-identical to emit (the apparatus is a subset of the certified path); FULL carries a small black_box anchor tax vs emit (full-emit 1079 us at p99). This is EMIT-level only, never the whole render, and NEVER compared to GAUNTLET-0's instrumented absolute",
- "chain_hash": "157f6aac5f3390ec008f0027f1b85d6057b72d3eaba400f8649331c5bef6ba8d"
+ "reading": "emit's cost structure on host DANIELDILLBERG. Court A (deterministic): 674760 wall + 694648 floor textured px, 677350 divides, 4108224 tile reads, working set 60176 floor / 65529 wall distinct texels (of 65536), and 590 permille of adjacent floor texels within a cache line. Court B (host ablation, p99 us): addr 4634 -> lookup 5773 -> full 6032, emit 5227; the increments are lookup-addr 1139 (tile fetch), full-lookup 259 (map/assembly). These are INCREMENTAL wall-clock attribution under controlled ablation, NOT pure resource costs: cache/branch/scheduling make the subtraction non-additive and the experiment has no architectural counters. The largest increment is 'tile fetch (lookup - addr)'; the promotion table (the reader's, from the preregistration) says a dominant lookup increment or pathological locality LOCKs a data-layout/locality court, a dominant address increment the arithmetic path, a dominant write the framebuffer path, and disagreement or no dominance DEFERs. probe VERIFY is byte-identical to emit (the apparatus is a subset of the certified path). RE-BREAKDOWN-1b instrument: every mode folds three bytes with the IDENTICAL combine, so the black_box anchor tax is CONSTANT across modes and cancels in the increments — the negative control full-emit 805 us at p99 measures that constant tax (present equally in every mode), so the increments above are de-contaminated (the 1a probe's tax grew with depth and inflated them). This is EMIT-level only, never the whole render, and NEVER compared to GAUNTLET-0's instrumented absolute",
+ "chain_hash": "9b75fef2b0a255a532c2a4643154c5f5827321d07ededed1309767a7bd2708f0"
 }
