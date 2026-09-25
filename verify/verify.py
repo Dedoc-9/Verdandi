@@ -2307,6 +2307,133 @@ def rebreakdown1_fence():
             "differing probe pixel is expected, not a fault")
 
 
+# ------------------------------------------------------------------ locality0 (LOCALITY-0: the floor-tile execution-format court)
+def _loc_lines(level, tiles, camera):
+    code, out, err = run(KERNEL_EXE, ["--level", os.path.join(ORACLE, "levels", level + ".lvl"),
+                                      "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"),
+                                      "--camera", camera, "--locality"])
+    if code != 0:
+        raise Red("kernel --locality exited %d on %s@%s: %s" % (code, level, camera, err.strip()))
+    return dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+
+
+def locality0_preregistered():
+    """LOCALITY-0's method is locked before any layout wins: two courts (byte-identity mandatory + host speed vs the
+    DDA baseline), the Epistemic-Invariance process-isolation boundary (instruction-invariance a goal, not gate-proven),
+    content-provenance isolated from execution-format, the three exits, and the GAUNTLET-2 baseline. Hash-locked."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))
+    e = reg["entries"].get("LOCALITY-0")
+    if not e:
+        raise Red("LOCALITY-0 is not registered")
+    hyp, succ, fail = e["hypothesis"].lower(), e["success_condition"].lower(), e["failure_condition"].lower()
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "byte-identity is mandatory and gate-enforced": "mandatory, gate-enforced" in succ,
+        "speed is a separate host court vs the DDA baseline": "separate host court" in lims and "dda baseline" in succ,
+        "the Epistemic-Invariance process-isolation boundary": "epistemic-invariance boundary" in lims and "process-isolated" in lims,
+        "instruction invariance is not gate-provable": "not gate-provable" in lims,
+        "never vs GAUNTLET-0's absolute": "never gauntlet-0" in lims,
+        "content provenance isolated from execution format": "content provenance is isolated from execution format" in lims,
+        "the three exits incl. capacity->GAUNTLET-2": "three exits" in lims and "capacity" in lims,
+        "the GAUNTLET-2 hard baseline": "baseline for gauntlet-2" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the LOCALITY-0 method is not fully locked: " + "; ".join(missing))
+    want = envelope.chain_hash({"name": "verdandi-preregistration-entry", "version": 1, "claim_class": "declared",
+                                "provenance": {"registered_in": "verify/preregister.json"},
+                                "validity_scope": {"certifies": "the conditions LOCALITY-0 was seated under"},
+                                "forbidden_interpretations": ["that registering a condition earns it"],
+                                "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+    if e["chain_hash"] != want:
+        raise Red("the LOCALITY-0 entry was edited after registration (chain hash)")
+    return ("LOCALITY-0's method is locked before any layout wins: byte-identity is MANDATORY and gate-enforced, speed "
+            "is a SEPARATE process-isolated host court vs the DDA baseline (never GAUNTLET-0's absolute); the Epistemic-"
+            "Invariance boundary monomorphizes + process-isolates + interleaves (instruction-invariance a goal, not "
+            "gate-proven); content provenance is isolated from execution format; three exits (blocked / morton / neither "
+            "-> capacity stall -> GAUNTLET-2), and the accepted single-thread emit is the GAUNTLET-2 baseline; hash-locked %s"
+            % e["chain_hash"][:8])
+
+
+def locality0_equiv():
+    """The regression court: both floor-tile layouts byte-identical to the frozen emit over corpus + adversarial
+    cameras, and — non-vacuously — on a synthetic distinct-per-texel floor where a mis-index would actually diverge."""
+    need_rustc()
+    cases = _g1_cases()
+    for (lvl, tiles, cam) in cases:
+        d = _loc_lines(lvl, tiles, cam)
+        if d.get("selfcheck") != "OK":
+            raise Red("kernel did not selfcheck under --locality on %s@%s" % (lvl, cam))
+        eq = dict(kv.split("=") for kv in d["locality_equal"].split() if "=" in kv)
+        se = dict(kv.split("=") for kv in d["locality_synthemit"].split() if "=" in kv)
+        if eq.get("blocked") != "OK" or eq.get("morton") != "OK" or eq.get("linear_anchor") != "OK":
+            raise Red("a swizzled floor emit differs from the frozen emit on %s %s@%s" % (lvl, tiles, cam))
+        if se.get("blocked") != "OK" or se.get("morton") != "OK":
+            raise Red("the swizzled fetch is wrong on distinct floor data on %s@%s (the non-vacuous guard)" % (lvl, cam))
+    return ("both floor-tile layouts (8x8 blocked, Morton Z-order) are byte-identical to the frozen emit over %d cases "
+            "(every corpus scene x its tile sets + adversarial cameras), emit_swizzled<LINEAR> reproduces the DDA emit "
+            "exactly, AND the non-vacuous synthetic distinct-per-texel render agrees across all three layouts — a "
+            "mis-index would diverge on real data. Regression security is gate-enforced before any speed claim" % len(cases))
+
+
+def locality0_bijection():
+    """Each swizzle is a lossless bijection — proven on a synthetic distinct-per-texel tile (round-trip holds AND the
+    format genuinely moves), not merely on the flat corpus tile where any permutation round-trips trivially."""
+    need_rustc()
+    d = _loc_lines("witness", "identity", "34,28,W")
+    bj = dict(kv.split("=") for kv in d["locality_bijection"].split() if "=" in kv)
+    sy = dict(kv.split("=") for kv in d["locality_synth"].split() if "=" in kv)
+    if bj.get("blocked") != "OK" or bj.get("morton") != "OK":
+        raise Red("a swizzle is not a lossless round-trip on the corpus tile")
+    if sy.get("blocked_roundtrip") != "OK" or sy.get("morton_roundtrip") != "OK":
+        raise Red("a swizzle is not a bijection on distinct data (round-trip failed) — a collision bug")
+    if sy.get("blocked_fmt_moved") != "true" or sy.get("morton_fmt_moved") != "true":
+        raise Red("the swizzle is a byte-level no-op on distinct data (the format did not move)")
+    return ("both swizzles are lossless bijections: unswizzle(swizzle(tile)) == tile, and on a synthetic distinct-per-"
+            "texel tile the round-trip holds AND the swizzled bytes differ from canonical — the permutation is proven "
+            "on data where a collision bug would show, not just on the flat corpus tile")
+
+
+def locality0_provenance():
+    """Content-provenance isolated from execution-format (the text-reformat law for the tile): the canonical-order
+    content hash is unmoved by the swizzle, while the storage layout moves. Certified content vs performance layout."""
+    need_rustc()
+    d = _loc_lines("witness", "identity", "34,28,W")
+    pr = dict(kv.split("=") for kv in d["locality_provenance"].split() if "=" in kv)
+    sy = dict(kv.split("=") for kv in d["locality_synth"].split() if "=" in kv)
+    if pr.get("blocked_content_same") != "true" or pr.get("morton_content_same") != "true":
+        raise Red("the swizzle changed the tile CONTENT (unswizzled hash moved) — not a pure re-format")
+    if sy.get("blocked_fmt_moved") != "true" or sy.get("morton_fmt_moved") != "true":
+        raise Red("the swizzle did not move the storage format on distinct data")
+    return ("content-provenance is isolated from execution-format (the text-reformat law applied to the tile): the "
+            "canonical-order content hash is UNMOVED by both swizzles while the storage layout MOVES (on distinct data "
+            "the swizzled bytes differ from canonical) — the certified content's identity is independent of the "
+            "performance layout, exactly as text-reformat separates content from authoring format")
+
+
+def locality0_indextax():
+    """The deterministic per-band within-cache-line locality (the shear story): both layouts raise locality over the
+    linear order in every band, most in the near-field where the linear layout scatters. Names each layout as a real
+    locality lever whose wall-clock worth, net of its index-arithmetic tax X, is the host court."""
+    need_rustc()
+    d = _loc_lines("witness", "identity", "34,28,W")
+    lin = dict(kv.split("=") for kv in d["locality_bands_linear"].split() if "=" in kv)
+    blk = dict(kv.split("=") for kv in d["locality_bands_blocked"].split() if "=" in kv)
+    mor = dict(kv.split("=") for kv in d["locality_bands_morton"].split() if "=" in kv)
+    for nm, band in (("linear", lin), ("blocked", blk), ("morton", mor)):
+        for b in ("near", "mid", "far"):
+            if not (0 <= int(band[b]) <= 1000):
+                raise Red("malformed per-band locality for %s" % nm)
+    for b in ("near", "mid", "far"):
+        if int(blk[b]) < int(lin[b]) or int(mor[b]) < int(lin[b]):
+            raise Red("a layout did not raise within-cache-line locality over linear in the %s band" % b)
+    return ("the deterministic per-band within-cache-line locality (the shear story) on the witness: linear near/mid/far "
+            "%s/%s/%s permille -> blocked %s/%s/%s, morton %s/%s/%s; both layouts raise locality in every band (most in "
+            "the near-field where the linear order scatters), so each is a real locality lever — its WALL-CLOCK worth, "
+            "net of the index-arithmetic tax X, is LOCALITY-0's process-isolated host court, not this deterministic proxy"
+            % (lin["near"], lin["mid"], lin["far"], blk["near"], blk["mid"], blk["far"], mor["near"], mor["mid"], mor["far"]))
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -2345,6 +2472,11 @@ def main() -> int:
     row("rebreakdown1-preregistered", rebreakdown1_preregistered)
     row("rebreakdown1-structure", rebreakdown1_structure)
     row("rebreakdown1-fence", rebreakdown1_fence)
+    row("locality0-preregistered", locality0_preregistered)
+    row("locality0-equiv", locality0_equiv)
+    row("locality0-bijection", locality0_bijection)
+    row("locality0-provenance", locality0_provenance)
+    row("locality0-indextax", locality0_indextax)
     row("shell-build", shell_build)
     row("shell-blit-pins", shell_blit_pins)
     row("shell-blit-law", shell_blit_law)

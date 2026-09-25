@@ -11,6 +11,8 @@
 //     kernel ... --fast                                           # GAUNTLET-1: DDA emit + collapse baseline vs frozen — fast_equal / collapse_equal, region divide-work (frozen/collapse/DDA), first-diff taxonomy
 //     kernel ... --fast-bench 300 --warm 30                        # off-gate (GAUNTLET-1c): frozen / collapse / DDA emit timed on one apparatus (all three must reproduce the witness)
 //     kernel ... --emit-breakdown 300 --warm 30                     # off-gate (RE-BREAKDOWN-1): Court A structure + Court B ablation probes (addr/lookup/full/emit), probe VERIFY == emit
+//     kernel ... --locality                                         # LOCALITY-0 differential: both floor layouts byte-identical + bijection + content/format + per-band locality
+//     kernel ... --variant blocked --locality-bench 300 --warm 30   # off-gate (LOCALITY-0): process-isolated timing of ONE layout vs the DDA baseline (whole-frame + index tax + per-band)
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
@@ -75,6 +77,82 @@ fn host_line() -> String {
     format!("host os={} arch={} cpu=\"{}\"", env::consts::OS, env::consts::ARCH, cpu)
 }
 
+/// LOCALITY-0 process-isolated timing for ONE layout (monomorphized, so only this variant's address-generation
+/// instructions are hot in this invocation — the Epistemic-Invariance boundary). Times the DDA baseline (fast::emit)
+/// vs the swizzled variant whole-frame (the promotion number, both must reproduce the witness), the whole-frame
+/// index-arithmetic tax X (floor ADDR: variant minus linear), and the per-band floor FULL delta (the mid-field shear
+/// story). The orchestrator interleaves separate invocations of blocked and morton to cancel thermal drift.
+fn locality_bench_variant<const LAYOUT: u8>(
+    scene: &mantle::Scene, strips: &[Strip], frame: &[u8], ps: &str, samples: usize, warm: usize, name: &str,
+) {
+    use fast::locality as loc;
+    let floor_sw = loc::swizzle_tile::<LAYOUT>(&scene.floor);
+    let floor_lin = scene.floor.clone();
+    let bands = loc::floor_bands(strips);
+    let mut rgb_dda = vec![0u8; W * H * 3];
+    let mut rgb_var = vec![0u8; W * H * 3];
+    let mut sink = vec![0u8; W * H * 3];
+    let mut t_dda: Vec<u128> = Vec::with_capacity(samples);
+    let mut t_var: Vec<u128> = Vec::with_capacity(samples);
+    let mut t_xlin: Vec<u128> = Vec::with_capacity(samples);
+    let mut t_xvar: Vec<u128> = Vec::with_capacity(samples);
+    for k in 0..(warm + samples) {
+        let a0 = Instant::now();
+        fast::emit(scene, strips, frame, &mut rgb_dda);
+        let a1 = Instant::now();
+        loc::emit_swizzled::<LAYOUT>(scene, strips, frame, &mut rgb_var, &floor_sw);
+        let a2 = Instant::now();
+        loc::floor_bench::<{ loc::LINEAR }, { loc::ADDR }>(scene, strips, frame, &mut sink, &floor_lin, 0, H);
+        let a3 = Instant::now();
+        loc::floor_bench::<LAYOUT, { loc::ADDR }>(scene, strips, frame, &mut sink, &floor_sw, 0, H);
+        let a4 = Instant::now();
+        black_box(&rgb_dda);
+        black_box(&rgb_var);
+        black_box(&sink);
+        if k >= warm {
+            t_dda.push((a1 - a0).as_micros());
+            t_var.push((a2 - a1).as_micros());
+            t_xlin.push((a3 - a2).as_micros());
+            t_xvar.push((a4 - a3).as_micros());
+        }
+    }
+    if hex(&sha256(&rgb_dda)) != ps || hex(&sha256(&rgb_var)) != ps {
+        refuse("locality-bench: the DDA baseline or the swizzled variant did not reproduce the frozen witness");
+    }
+    let pl = |tag: &str, xs: Vec<u128>| {
+        let (a, b, c, d) = percentiles(xs);
+        println!("locbench_{}_us p50={} p95={} p99={} max={}", tag, a, b, c, d);
+    };
+    let p99 = |xs: Vec<u128>| {
+        let (_, _, c, _) = percentiles(xs);
+        c
+    };
+    pl("dda", t_dda);
+    pl(name, t_var);
+    println!("locbench_addr_us lin_p99={} var_p99={}", p99(t_xlin), p99(t_xvar));
+    // per-band floor FULL: where the memory win (if any) lives across the shear
+    for (bi, &(lo, hi)) in bands.iter().enumerate() {
+        let bandname = ["near", "mid", "far"][bi];
+        let mut td: Vec<u128> = Vec::with_capacity(samples);
+        let mut tv: Vec<u128> = Vec::with_capacity(samples);
+        for k in 0..(warm + samples) {
+            let a0 = Instant::now();
+            loc::floor_bench::<{ loc::LINEAR }, { loc::FULL }>(scene, strips, frame, &mut sink, &floor_lin, lo, hi);
+            let a1 = Instant::now();
+            loc::floor_bench::<LAYOUT, { loc::FULL }>(scene, strips, frame, &mut sink, &floor_sw, lo, hi);
+            let a2 = Instant::now();
+            black_box(&sink);
+            if k >= warm {
+                td.push((a1 - a0).as_micros());
+                tv.push((a2 - a1).as_micros());
+            }
+        }
+        println!("locband_{}_{} dda_p99={} var_p99={}", name, bandname, p99(td), p99(tv));
+    }
+    println!("locbench_samples {} warmup {} variant {} same_witnesses OK", samples, warm, name);
+    println!("{}", host_line());
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let usage = "usage: kernel <scene.bin> | --level L --tiles T --camera x,z,F  [--bench N] [--warm M] [--write-scene OUT]";
@@ -89,6 +167,9 @@ fn main() {
     let mut fast_bench = 0usize;
     let mut emit_bd = 0usize;
     let mut want_struct = false;
+    let mut want_loc = false;
+    let mut loc_variant: Option<String> = None;
+    let mut loc_bench = 0usize;
     let mut write_ppm: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
@@ -108,6 +189,9 @@ fn main() {
             "--fast-bench" => { fast_bench = next(i).parse().unwrap_or_else(|_| refuse("--fast-bench needs a count")); i += 2; }
             "--emit-breakdown" => { emit_bd = next(i).parse().unwrap_or_else(|_| refuse("--emit-breakdown needs a count")); i += 2; }
             "--emit-structure" => { want_struct = true; i += 1; }
+            "--locality" => { want_loc = true; i += 1; }
+            "--variant" => { loc_variant = Some(next(i)); i += 2; }
+            "--locality-bench" => { loc_bench = next(i).parse().unwrap_or_else(|_| refuse("--locality-bench needs a count")); i += 2; }
             "--write-png" => { write_ppm = Some(next(i)); i += 2; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
@@ -354,6 +438,83 @@ fn main() {
             pl("emit", t_emit);
             println!("emitbd_samples {} warmup {} same_witnesses OK", emit_bd, warm);
             println!("{}", host_line());
+        }
+    }
+    if want_loc {
+        // LOCALITY-0 differential (deterministic): both swizzled-floor emits byte-identical to frozen; each swizzle a
+        // lossless bijection; the content (canonical order) unmoved while the execution format (swizzled bytes) moves;
+        // and the per-band within-cache-line locality of each layout (the shear story). Runs on the current camera.
+        use fast::locality as loc;
+        let floor = &scene.floor;
+        let sw_b = loc::swizzle_tile::<{ loc::BLOCKED }>(floor);
+        let sw_m = loc::swizzle_tile::<{ loc::MORTON }>(floor);
+        let mut r_b = vec![0u8; W * H * 3];
+        loc::emit_swizzled::<{ loc::BLOCKED }>(&scene, &first.strips, &first.frame, &mut r_b, &sw_b);
+        let mut r_m = vec![0u8; W * H * 3];
+        loc::emit_swizzled::<{ loc::MORTON }>(&scene, &first.strips, &first.frame, &mut r_m, &sw_m);
+        let mut r_l = vec![0u8; W * H * 3];
+        loc::emit_swizzled::<{ loc::LINEAR }>(&scene, &first.strips, &first.frame, &mut r_l, floor);
+        let od = |b: bool| if b { "OK" } else { "DIFFER" };
+        let dda_ref = { let mut d = vec![0u8; W * H * 3]; fast::emit(&scene, &first.strips, &first.frame, &mut d); d };
+        println!("locality_pixels {}", ps);
+        println!("locality_equal blocked={} morton={} linear_anchor={}",
+                 od(hex(&sha256(&r_b)) == ps), od(hex(&sha256(&r_m)) == ps), od(r_l == dda_ref));
+        // bijection: unswizzle(swizzle(tile)) == tile
+        println!("locality_bijection blocked={} morton={}",
+                 od(loc::unswizzle_tile::<{ loc::BLOCKED }>(&sw_b) == *floor),
+                 od(loc::unswizzle_tile::<{ loc::MORTON }>(&sw_m) == *floor));
+        // content-provenance vs execution-format: content hash (canonical order) unmoved; raw format bytes moved
+        let content = hex(&sha256(floor));
+        let content_b = hex(&sha256(&loc::unswizzle_tile::<{ loc::BLOCKED }>(&sw_b)));
+        let content_m = hex(&sha256(&loc::unswizzle_tile::<{ loc::MORTON }>(&sw_m)));
+        println!("locality_provenance content={} blocked_content_same={} morton_content_same={} blocked_fmt_moved={} morton_fmt_moved={}",
+                 &content[..16], content_b == content, content_m == content,
+                 hex(&sha256(&sw_b)) != content, hex(&sha256(&sw_m)) != content);
+        // NON-VACUOUS bijection + format-move on a synthetic distinct-per-texel tile (the corpus floor is flat, so
+        // its round-trip and format-move are trivially true; this exercises the permutation on data where a swizzle
+        // bug WOULD show — the real regression guard behind locality0-bijection).
+        let mut synth = vec![0u8; 256 * 256 * 3];
+        for tj in 0..256usize {
+            for ti in 0..256usize {
+                for ch in 0..3usize {
+                    synth[(tj * 256 + ti) * 3 + ch] = ((tj * 7 + ti * 13 + ch * 5) & 0xFF) as u8;
+                }
+            }
+        }
+        let ssb = loc::swizzle_tile::<{ loc::BLOCKED }>(&synth);
+        let ssm = loc::swizzle_tile::<{ loc::MORTON }>(&synth);
+        println!("locality_synth blocked_roundtrip={} morton_roundtrip={} blocked_fmt_moved={} morton_fmt_moved={}",
+                 od(loc::unswizzle_tile::<{ loc::BLOCKED }>(&ssb) == synth),
+                 od(loc::unswizzle_tile::<{ loc::MORTON }>(&ssm) == synth),
+                 ssb != synth, ssm != synth);
+        // NON-VACUOUS emit byte-identity: render the DISTINCT synthetic floor through linear vs blocked vs morton
+        // (emit_swizzled takes the floor buffer as a parameter, so no scene mutation) — on flat corpus data every
+        // layout trivially agrees; here a mis-indexed fetch would diverge. This is the real Objective-2 guard.
+        let mut e_lin = vec![0u8; W * H * 3];
+        loc::emit_swizzled::<{ loc::LINEAR }>(&scene, &first.strips, &first.frame, &mut e_lin, &synth);
+        let mut e_b = vec![0u8; W * H * 3];
+        loc::emit_swizzled::<{ loc::BLOCKED }>(&scene, &first.strips, &first.frame, &mut e_b, &ssb);
+        let mut e_m = vec![0u8; W * H * 3];
+        loc::emit_swizzled::<{ loc::MORTON }>(&scene, &first.strips, &first.frame, &mut e_m, &ssm);
+        println!("locality_synthemit blocked={} morton={}", od(e_b == e_lin), od(e_m == e_lin));
+        // per-band deterministic within-cache-line locality (permille), the shear story
+        let band_line = |name: &str, bl: [(usize, usize); 3]| {
+            let pm = |p: (usize, usize)| if p.0 > 0 { p.1 * 1000 / p.0 } else { 0 };
+            println!("locality_bands_{} near={} mid={} far={}", name, pm(bl[0]), pm(bl[1]), pm(bl[2]));
+        };
+        band_line("linear", loc::band_locality::<{ loc::LINEAR }>(&scene, &first.strips, &first.frame));
+        band_line("blocked", loc::band_locality::<{ loc::BLOCKED }>(&scene, &first.strips, &first.frame));
+        band_line("morton", loc::band_locality::<{ loc::MORTON }>(&scene, &first.strips, &first.frame));
+    }
+    if loc_bench > 0 {
+        // LOCALITY-0 host timing, process-isolated: this invocation runs exactly ONE variant (chosen by --variant),
+        // so only that layout's code is hot. The orchestrator (verify/locality0.py) interleaves blocked and morton
+        // invocations to cancel drift and compares their DDA-relative improvements. Never vs GAUNTLET-0's absolute.
+        match loc_variant.as_deref() {
+            Some("blocked") => locality_bench_variant::<{ fast::locality::BLOCKED }>(&scene, &first.strips, &first.frame, &ps, loc_bench, warm, "blocked"),
+            Some("morton") => locality_bench_variant::<{ fast::locality::MORTON }>(&scene, &first.strips, &first.frame, &ps, loc_bench, warm, "morton"),
+            Some("linear") => locality_bench_variant::<{ fast::locality::LINEAR }>(&scene, &first.strips, &first.frame, &ps, loc_bench, warm, "linear"),
+            _ => refuse("--locality-bench needs --variant blocked|morton|linear"),
         }
     }
     if breakdown > 0 {

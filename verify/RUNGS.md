@@ -922,6 +922,66 @@ re-measures (`verify/rebreakdown1.py`, now default 500/50) and the promotion cal
 increments. In the container the refinement widened the tile-fetch lead from ~1.2× to ~4× and shrank the negative control
 by roughly half — the host number is the user's, and the LOCALITY court is chosen from it.
 
+## LOCALITY-0 — the floor-tile execution-format court (blocked vs Morton, process-isolated) (seat 18)
+
+**What landed (a two-layout court under a new isolation law).** RE-BREAKDOWN-1b named the tile fetch as emit's leading
+cost (a clean ~4.4× over the map indirection once the anchor tax was cancelled). LOCALITY-0 attacks it by re-laying-out
+the **floor tile's storage** — the execution FORMAT — while the frozen `mantle.rs` and the accepted DDA `fast::emit`
+stay untouched. Two layouts compete, each a lossless bijection proven byte-identical to the frozen oracle: **BLOCKED**
+(8×8 cache blocks, cheap shift/mask index) and **MORTON** (Z-order space-filling curve, portable scalar bit-interleave,
+a heavier index). `kernel/fast.rs::locality` holds `swizzle_index<LAYOUT>`, the `swizzle_tile`/`unswizzle_tile`
+permutation, and `emit_swizzled<LAYOUT>` — the DDA emit with the floor fetched from the re-laid-out copy. LINEAR is the
+identity and reproduces `fast::emit` byte-for-byte (the apparatus anchor).
+
+**The isolation law it introduced.** The court is built on the author's *Epistemic Invariance of the Boundary*
+theorem (`EPISTEMIC-INVARIANCE.md`): two layouts are neither timed in one process (which poisons the branch predictor
+and bloats the I-cache until a data-locality test becomes an instruction-locality test) nor in two loose runs (which
+leaks thermal drift). Instead the *same* binary is hot-swapped by `--variant`, one layout per process, and the
+invocations are **interleaved in alternating strips** so slow drift cancels; each variant is timed against a DDA
+baseline measured in *its own* process, and the orchestrator compares the two baseline-relative improvements (medians
+across strips). Monomorphize, process-isolate, interleave — and prove *output* invariance, not instruction invariance.
+
+**Objectives, each to a mechanism.** (1) *Proof of the memory bottleneck* — the only thing that changes is the tile
+layout, so byte-identical-and-faster is causal proof the fetch was the cost. (2) *Absolute regression security* —
+`locality0-equiv` (both layouts byte-identical over corpus + adversarial cameras) **and** a non-vacuous synthetic
+distinct-per-texel render, because the corpus floor is flat and would make the naive test vacuous. (3) *Clean
+progression signal* — `--locality-bench` vs the DDA baseline, process-isolated. (4) *Oracle purity* — the swizzle is a
+fast-path scene-load transform; `mantle.rs`/`fast::emit` untouched, the witnesses unchanged. (5) *Index-arithmetic
+verdict* — the floor ADDR ablation isolates each layout's tax X (blocked cheap, Morton heavy). (6) *Content vs format*
+— `locality0-provenance`: the canonical-order content hash is unmoved while the storage layout moves (the text-reformat
+law for the tile). (7) *GAUNTLET-2 baseline* — the accepted single-thread emit p99 is sealed as the hard baseline the
+parallel rung must beat; emit stays embarrassingly parallel (per-column wall, per-row floor).
+
+**Three exits, ratified before the number.** Blocked wins, Morton wins, or **neither** beats the baseline — the last
+is not a null but a proof the tile-fetch stall is a capacity/LRU miss no permutation of the 192 KB tile can fix,
+redirecting the trajectory to `GAUNTLET-2` (parallelism) to hide the latency behind compute.
+
+**Rows.** `locality0-preregistered` — the method, the process-isolation boundary, the three exits and the GAUNTLET-2
+baseline are hash-locked (`28a9d792`). `locality0-equiv` — both layouts byte-identical over 19 cases + the non-vacuous
+synthetic render. `locality0-bijection` — both swizzles are lossless bijections, proven on distinct data where a
+collision would show. `locality0-provenance` — content unmoved, format moved. `locality0-indextax` — the deterministic
+per-band within-cache-line locality (the shear story): on the witness, linear near/mid/far **153/534/714** permille →
+blocked **845/941/964**, morton **738/883/928**; both raise locality in every band, most in the near-field where the
+linear order scatters.
+
+**Grade.** MEASURED (live, headless, deterministic): byte-identity of both layouts over corpus + adversarial cameras
+(and the non-vacuous synthetic guard), the bijections, the content/format separation, and the per-band structural
+locality. DECLARED: the hash-locked method + three exits. NOT_MEASURED here: which layout wins on the clock — that is
+LOCALITY-0's process-isolated host court (`verify/locality0.py`), sealed off-gate, the promotion the reader's from the
+three exits.
+
+**does_not_show.** Which layout is faster (the gate carries no wall-clock; the host record does, off-gate). Any
+comparison to GAUNTLET-0's instrumented absolute. That instruction-level invariance is proven (only output byte-identity
+is; the address-generation isolation is best-effort code structure — the record says so). That the per-band locality is
+a wall-clock (it is a deterministic proxy; the per-band µs are the host's). That the swizzle changed the content (it is
+a pure re-format; the content provenance is unmoved).
+
+**Falsifier.** `locality0-equiv` reddens if either layout differs from the frozen emit on any case or on the synthetic
+distinct-per-texel render; `locality0-bijection` if a swizzle is not lossless on distinct data or is a byte-level no-op;
+`locality0-provenance` if the content hash moves or the format does not; `locality0-indextax` if a layout fails to raise
+locality over linear in any band; `locality0-preregistered` if the method, the isolation boundary or the three exits are
+weakened.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -956,8 +1016,13 @@ staircase and what remains:
   is judged against that collapse (`verify/gauntlet1c.py`, sealed off-gate). RE-BREAKDOWN-1 (seated) then re-measured
   the shifted cost structure before any further algorithm — Court A (deterministic: the tile working set streams nearly
   the whole texture, ~41% of adjacent floor texels cross a cache line) and Court B (a fenced ablation apparatus, host
-  off-gate) — naming the memory/locality axis as a candidate and committing no optimization. The next optimization
-  court is chosen by its promotion table, from the host ablation. **GAUNTLET-2+** only after a measured result.
+  off-gate) — naming the memory/locality axis as a candidate and committing no optimization; its RE-BREAKDOWN-1b
+  refinement (constant-anchor probe) confirmed the tile fetch leads the map indirection ~4.4× on the host once the
+  anchor tax was cancelled. LOCALITY-0 (seated) opened the data-layout court on that finding — the floor tile re-laid
+  out as an 8×8 cache-blocked or Morton Z-order execution FORMAT, both proven byte-identical, both a lossless bijection,
+  content-provenance held apart from format — timed process-isolated under the Epistemic-Invariance boundary
+  (`verify/locality0.py`), with three exits (blocked / morton / neither → capacity stall → GAUNTLET-2). **GAUNTLET-2+**
+  (multi-threaded column stripping) inherits LOCALITY-0's accepted single-thread emit as its sealed hard baseline.
   **LATENCY-1** then reruns the same fixed session and records the before/after render delta against LATENCY-0's
   immutable baseline.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is

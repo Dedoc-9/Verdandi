@@ -536,3 +536,338 @@ pub mod probe {
         black_box(acc); // anchor the ablated work so the optimizer cannot elide what we are timing
     }
 }
+
+/// LOCALITY-0 — the floor-tile execution-format court. The frozen `mantle.rs` and the accepted DDA `fast::emit`
+/// stay untouched; this is a fast-path apparatus that fetches the FLOOR tile from a re-laid-out copy (the execution
+/// FORMAT) holding the same texel values (the CONTENT provenance). Two layouts compete, each a lossless bijection
+/// proven byte-identical to the frozen emit: BLOCKED (8×8 cache blocks, cheap shift/mask index) and MORTON (Z-order
+/// space-filling curve, portable scalar bit-interleave). LINEAR is the identity (reproduces `fast::emit`), the
+/// apparatus anchor. Per the Epistemic-Invariance theorem, the variants are hot-swapped at the binary boundary and
+/// timed process-isolated; here we provide the byte-identical renderer, the bijection, and the per-band instruments.
+pub mod locality {
+    use super::*;
+    use std::hint::black_box;
+
+    pub const LINEAR: u8 = 0;
+    pub const BLOCKED: u8 = 1;
+    pub const MORTON: u8 = 2;
+    pub const FULL: u8 = 0; // MODE: the real fetch + store (byte-identical)
+    pub const ADDR: u8 = 1; // MODE: the floor index math only, anchored — the arithmetic tax X
+    const TZ: usize = T as usize; // 256, the tile edge
+
+    #[inline(always)]
+    fn spread8(v: usize) -> usize {
+        // Part1By1 (8-bit): insert a zero between each low bit, for the Morton interleave
+        let mut v = v & 0xFF;
+        v = (v | (v << 4)) & 0x0F0F;
+        v = (v | (v << 2)) & 0x3333;
+        v = (v | (v << 1)) & 0x5555;
+        v
+    }
+
+    /// The tile texel index (0..T*T) for coordinate (tj, ti) under LAYOUT. LINEAR is the frozen row-major order
+    /// (identity); BLOCKED is 8×8 cache blocks (shifts + masks); MORTON is the Z-order curve (scalar interleave,
+    /// portable so byte-identity holds on any host). All three are bijections on [0, T*T) (row: locality0-bijection).
+    #[inline(always)]
+    pub fn swizzle_index<const LAYOUT: u8>(tj: i64, ti: i64) -> usize {
+        let (tj, ti) = (tj as usize, ti as usize);
+        if LAYOUT == BLOCKED {
+            (((tj >> 3) * (TZ >> 3)) + (ti >> 3)) * 64 + (tj & 7) * 8 + (ti & 7)
+        } else if LAYOUT == MORTON {
+            spread8(ti) | (spread8(tj) << 1)
+        } else {
+            tj * TZ + ti
+        }
+    }
+
+    /// A LAYOUT copy of the canonical row-major floor tile: the texel at (tj, ti) moves to swizzle_index(tj, ti). A
+    /// pure permutation — the execution FORMAT — holding the same CONTENT as the input. LINEAR returns a copy.
+    pub fn swizzle_tile<const LAYOUT: u8>(tile: &[u8]) -> Vec<u8> {
+        let mut out = vec![0u8; TZ * TZ * 3];
+        for tj in 0..TZ {
+            for ti in 0..TZ {
+                let src = (tj * TZ + ti) * 3;
+                let dst = swizzle_index::<LAYOUT>(tj as i64, ti as i64) * 3;
+                out[dst..dst + 3].copy_from_slice(&tile[src..src + 3]);
+            }
+        }
+        out
+    }
+
+    /// The inverse permutation: reconstruct the canonical tile from a LAYOUT-swizzled one. The witness
+    /// `unswizzle_tile(swizzle_tile(t)) == t` proves the format transform is lossless (row: locality0-bijection).
+    pub fn unswizzle_tile<const LAYOUT: u8>(sw: &[u8]) -> Vec<u8> {
+        let mut out = vec![0u8; TZ * TZ * 3];
+        for tj in 0..TZ {
+            for ti in 0..TZ {
+                let dst = (tj * TZ + ti) * 3;
+                let src = swizzle_index::<LAYOUT>(tj as i64, ti as i64) * 3;
+                out[dst..dst + 3].copy_from_slice(&sw[src..src + 3]);
+            }
+        }
+        out
+    }
+
+    /// facing -> (varying_is_x, delta_pos, d0, d_const), the GAUNTLET-1c floor DDA parameters (shared).
+    #[inline(always)]
+    fn dda_params(facing: u8) -> (bool, bool, i64, i64) {
+        match facing {
+            0 => (true, true, EYE_Y * (1 - W as i64), -2 * FOCAL),
+            1 => (false, true, EYE_Y * (1 - W as i64), 2 * FOCAL),
+            2 => (true, false, EYE_Y * (W as i64 - 1), 2 * FOCAL),
+            _ => (false, false, EYE_Y * (W as i64 - 1), -2 * FOCAL),
+        }
+    }
+
+    /// The GAUNTLET-1c DDA emit with the FLOOR tile fetched from `floor_buf` at `swizzle_index::<LAYOUT>` — the
+    /// LOCALITY-0 candidate renderer. LAYOUT=LINEAR + floor_buf=scene.floor reproduces `fast::emit` byte-for-byte
+    /// (the apparatus anchor). Ceiling and wall are the frozen transcription (not swizzled). Byte-identity is proven
+    /// by locality0-equiv; `buf` is read-only so the frame cannot move.
+    pub fn emit_swizzled<const LAYOUT: u8>(scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8], floor_buf: &[u8]) {
+        let ex = scene.pos_x * Q + EYE_Y;
+        let ez = scene.pos_z * Q + EYE_Y;
+        let table = &scene.table;
+        let mut min_bot = H as i64 - 1;
+        for c in 0..W {
+            let s = &strips[c];
+            let (tn, td, dx, dz) = (s.tn, s.td, s.dx, s.dz);
+            let mut along = if u_axis_is_z(s.face) { ez * td + tn * dz } else { ex * td + tn * dx };
+            if U_SIGN[s.face as usize] < 0 {
+                along = -along;
+            }
+            let u_d = Q * td;
+            let ti = texel(along.rem_euclid(u_d), u_d);
+            let v_base = Q * td - EYE_Y * td - (2 * CY - 1) * tn;
+            let v_den = Q * td;
+            let top = s.top as usize;
+            let bot = s.bot as usize;
+            if s.bot < min_bot {
+                min_bot = s.bot;
+            }
+            for r in 0..top {
+                let idx = buf[r * W + c] as usize;
+                let o = (r * W + c) * 3;
+                out[o..o + 3].copy_from_slice(&table[idx * 3..idx * 3 + 3]);
+            }
+            for r in top..=bot {
+                let idx = buf[r * W + c];
+                let o = (r * W + c) * 3;
+                if idx < WALL0 {
+                    out[o..o + 3].copy_from_slice(&table[idx as usize * 3..idx as usize * 3 + 3]);
+                    continue;
+                }
+                let light = ((idx - WALL0) / (BANDS as u8)) as usize;
+                let band = ((idx - WALL0) % (BANDS as u8)) as usize;
+                let tj = texel(v_base + 2 * r as i64 * tn, v_den);
+                let k = ((tj * T + ti) * 3) as usize;
+                let tile = &scene.walls[light];
+                let m = &scene.wall_map[band * 256..band * 256 + 256];
+                out[o] = m[tile[k] as usize];
+                out[o + 1] = m[tile[k + 1] as usize];
+                out[o + 2] = m[tile[k + 2] as usize];
+            }
+        }
+        let (varying_is_x, delta_pos, d0, d_const) = dda_params(scene.facing);
+        let e_const = if varying_is_x { ez } else { ex };
+        let e_vary = if varying_is_x { ex } else { ez };
+        let dconst_eye = d_const * EYE_Y;
+        let step = 2 * EYE_Y;
+        for r in ((min_bot + 1) as usize)..H {
+            let kk = 2 * (r as i64 - CY) + 1;
+            let cconst = (e_const + dconst_eye.div_euclid(kk)) & (T - 1);
+            let a_step = step.div_euclid(kk);
+            let b_step = step.rem_euclid(kk);
+            let mut q = d0.div_euclid(kk);
+            let mut rem = d0.rem_euclid(kk);
+            let row = r * W;
+            for c in 0..W {
+                let idx = buf[row + c];
+                if idx >= FLOOR0 && idx < WALL0 {
+                    let o = (row + c) * 3;
+                    if idx < DOWN0 {
+                        let vary = (e_vary + q) & (T - 1);
+                        let (tj, ti_f) = if varying_is_x { (cconst, vary) } else { (vary, cconst) };
+                        let kf = swizzle_index::<LAYOUT>(tj, ti_f) * 3;
+                        let band = (idx - FLOOR0) as usize;
+                        let m = &scene.floor_map[band * 256..band * 256 + 256];
+                        out[o] = m[floor_buf[kf] as usize];
+                        out[o + 1] = m[floor_buf[kf + 1] as usize];
+                        out[o + 2] = m[floor_buf[kf + 2] as usize];
+                    } else {
+                        let i = idx as usize;
+                        out[o..o + 3].copy_from_slice(&table[i * 3..i * 3 + 3]);
+                    }
+                }
+                if delta_pos {
+                    q += a_step;
+                    rem += b_step;
+                    if rem >= kk {
+                        rem -= kk;
+                        q += 1;
+                    }
+                } else {
+                    q -= a_step;
+                    rem -= b_step;
+                    if rem < 0 {
+                        rem += kk;
+                        q -= 1;
+                    }
+                }
+            }
+        }
+    }
+
+    /// The floor-only band instrument: the DDA floor pass over rows [r_lo, r_hi) ONLY, for per-band host timing (the
+    /// mid-field shear question). MODE=FULL does the real swizzled fetch + store; MODE=ADDR does the floor index math
+    /// only, one constant anchor per pixel (RE-BREAKDOWN-1b discipline) + a constant store — so ADDR(variant) −
+    /// ADDR(LINEAR) is the index-arithmetic tax X on that band. Not a renderer: a timing probe (a differing pixel is
+    /// expected). Ceiling/wall are never touched here, so the band delta is the floor's alone.
+    pub fn floor_bench<const LAYOUT: u8, const MODE: u8>(
+        scene: &Scene, strips: &[Strip], buf: &[u8], out: &mut [u8], floor_buf: &[u8], r_lo: usize, r_hi: usize,
+    ) {
+        let ex = scene.pos_x * Q + EYE_Y;
+        let ez = scene.pos_z * Q + EYE_Y;
+        let mut min_bot = H as i64 - 1;
+        for s in strips.iter().take(W) {
+            if s.bot < min_bot {
+                min_bot = s.bot;
+            }
+        }
+        let (varying_is_x, delta_pos, d0, d_const) = dda_params(scene.facing);
+        let e_const = if varying_is_x { ez } else { ex };
+        let e_vary = if varying_is_x { ex } else { ez };
+        let dconst_eye = d_const * EYE_Y;
+        let step = 2 * EYE_Y;
+        let lo = r_lo.max((min_bot + 1) as usize);
+        let hi = r_hi.min(H);
+        let mut acc: u64 = 0;
+        for r in lo..hi {
+            let kk = 2 * (r as i64 - CY) + 1;
+            let cconst = (e_const + dconst_eye.div_euclid(kk)) & (T - 1);
+            let a_step = step.div_euclid(kk);
+            let b_step = step.rem_euclid(kk);
+            let mut q = d0.div_euclid(kk);
+            let mut rem = d0.rem_euclid(kk);
+            let row = r * W;
+            for c in 0..W {
+                let idx = buf[row + c];
+                if idx >= FLOOR0 && idx < DOWN0 {
+                    let o = (row + c) * 3;
+                    let vary = (e_vary + q) & (T - 1);
+                    let (tj, ti_f) = if varying_is_x { (cconst, vary) } else { (vary, cconst) };
+                    let kf = swizzle_index::<LAYOUT>(tj, ti_f) * 3;
+                    if MODE == FULL {
+                        let band = (idx - FLOOR0) as usize;
+                        let m = &scene.floor_map[band * 256..band * 256 + 256];
+                        out[o] = m[floor_buf[kf] as usize];
+                        out[o + 1] = m[floor_buf[kf + 1] as usize];
+                        out[o + 2] = m[floor_buf[kf + 2] as usize];
+                    } else {
+                        acc = acc.wrapping_add(kf as u64);
+                        out[o] = 0;
+                    }
+                }
+                if delta_pos {
+                    q += a_step;
+                    rem += b_step;
+                    if rem >= kk {
+                        rem -= kk;
+                        q += 1;
+                    }
+                } else {
+                    q -= a_step;
+                    rem -= b_step;
+                    if rem < 0 {
+                        rem += kk;
+                        q -= 1;
+                    }
+                }
+            }
+        }
+        if MODE != FULL {
+            black_box(acc);
+        }
+    }
+
+    /// The three floor row-bands [near, mid, far] of the horizon, as (r_lo, r_hi) pairs: near = just below the
+    /// horizon (small kk, huge DDA stride — near-random tile access), far = the bottom rows (large kk, tight
+    /// stride), mid = the sheared middle where a block layout may cross boundaries while a Z-curve holds.
+    pub fn floor_bands(strips: &[Strip]) -> [(usize, usize); 3] {
+        let mut min_bot = H as i64 - 1;
+        for s in strips.iter().take(W) {
+            if s.bot < min_bot {
+                min_bot = s.bot;
+            }
+        }
+        let lo = (min_bot + 1) as usize;
+        let span = H.saturating_sub(lo);
+        let t1 = lo + span / 3;
+        let t2 = lo + 2 * span / 3;
+        [(lo, t1), (t1, t2), (t2, H)]
+    }
+
+    /// DETERMINISTIC per-band locality for LAYOUT: for each of the three bands, over adjacent-column floor texels,
+    /// count how many land within a 64-byte cache line of each other IN THE SWIZZLED BUFFER (|Δ index|*3 <= 64).
+    /// This is the structural shear story — where blocked locality collapses (near/mid, stride crosses blocks) vs
+    /// where the Z-curve holds — gate-computed, wall-clock-free. Returns [(adjacent_pairs, within_line); 3].
+    pub fn band_locality<const LAYOUT: u8>(scene: &Scene, strips: &[Strip], buf: &[u8]) -> [(usize, usize); 3] {
+        let ex = scene.pos_x * Q + EYE_Y;
+        let ez = scene.pos_z * Q + EYE_Y;
+        let (varying_is_x, delta_pos, d0, d_const) = dda_params(scene.facing);
+        let e_const = if varying_is_x { ez } else { ex };
+        let e_vary = if varying_is_x { ex } else { ez };
+        let dconst_eye = d_const * EYE_Y;
+        let step = 2 * EYE_Y;
+        let bands = floor_bands(strips);
+        let mut outb = [(0usize, 0usize); 3];
+        for (bi, &(lo, hi)) in bands.iter().enumerate() {
+            let (mut adj, mut local) = (0usize, 0usize);
+            for r in lo..hi {
+                let kk = 2 * (r as i64 - CY) + 1;
+                let cconst = (e_const + dconst_eye.div_euclid(kk)) & (T - 1);
+                let a_step = step.div_euclid(kk);
+                let b_step = step.rem_euclid(kk);
+                let mut q = d0.div_euclid(kk);
+                let mut rem = d0.rem_euclid(kk);
+                let mut prev: Option<(usize, usize)> = None; // (column, swizzle_index)
+                let row = r * W;
+                for c in 0..W {
+                    let idx = buf[row + c];
+                    if idx >= FLOOR0 && idx < DOWN0 {
+                        let vary = (e_vary + q) & (T - 1);
+                        let (tj, ti_f) = if varying_is_x { (cconst, vary) } else { (vary, cconst) };
+                        let ki = swizzle_index::<LAYOUT>(tj, ti_f);
+                        if let Some((pc, pk)) = prev {
+                            if pc + 1 == c {
+                                adj += 1;
+                                if (ki as i64 - pk as i64).abs() * 3 <= 64 {
+                                    local += 1;
+                                }
+                            }
+                        }
+                        prev = Some((c, ki));
+                    } else {
+                        prev = None;
+                    }
+                    if delta_pos {
+                        q += a_step;
+                        rem += b_step;
+                        if rem >= kk {
+                            rem -= kk;
+                            q += 1;
+                        }
+                    } else {
+                        q -= a_step;
+                        rem -= b_step;
+                        if rem < 0 {
+                            rem += kk;
+                            q -= 1;
+                        }
+                    }
+                }
+            }
+            outb[bi] = (adj, local);
+        }
+        outb
+    }
+}

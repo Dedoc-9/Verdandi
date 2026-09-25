@@ -127,3 +127,9 @@ Every claim is graded — MEASURED, ESTABLISHED, DECLARED — with a `does_not_s
 can fail. Tests assert the apparatus (the plant bites), never a hoped outcome. Two witnesses per row where
 two quantities exist (geometry and appearance), never one. Wall-clock is off-gate, on a named host, with the
 witnesses checked before any number is printed. `integrity ≠ truth`; `built ≠ adopted`; `declared ≠ verified`.
+
+The performance courts isolate their measurements under a formal boundary condition,
+[`EPISTEMIC-INVARIANCE.md`](EPISTEMIC-INVARIANCE.md) — the author's *Epistemic Invariance of the Boundary* theorem,
+which dictates that a layout mutation's cost is extractable only when the execution boundary is held
+microarchitecturally static (monomorphize, process-isolate, interleave), and which honestly bounds what its own
+formalism proves. First applied by `LOCALITY-0`.

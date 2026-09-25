@@ -88,6 +88,22 @@
    ],
    "instrument": "kernel/main.rs --emit-structure (deterministic Court A; gate rows rebreakdown1-structure, rebreakdown1-fence) and --emit-breakdown N (Court A + the host ablation ladder); kernel/fast.rs::probe is the fenced apparatus (emit_probe<MODE>, black_box-anchored, VERIFY == emit); the host number is sealed by verify/rebreakdown1.py citing this entry; row rebreakdown1-preregistered locks this method and the promotion table.",
    "chain_hash": "66c3cb640876465c6efccce8c5c3edd1b5f789340489e51c3a441f27f158a3b3"
+  },
+  "LOCALITY-0": {
+   "rung": "LOCALITY-0",
+   "hypothesis": "RE-BREAKDOWN-1b named the tile fetch as emit's leading cost (clean ~4.4x over the map indirection). A cache-friendlier floor-tile EXECUTION FORMAT reduces that stall while producing byte-identical pixels. Two layouts compete, each a lossless bijection: BLOCKED (8x8 cache blocks, cheap shift/mask index) and MORTON (Z-order curve, portable scalar bit-interleave, a larger index tax). The winner is the one with the lower net p99 (memory saving Y minus its index-arithmetic tax X) on a process-isolated same-apparatus court; it LOCKs the data-layout court. Content provenance is isolated from execution format: the swizzle is a pure re-format, never a content edit.",
+   "success_condition": "locality0-equiv PASSES: both layouts byte-identical to the frozen emit over corpus + adversarial cameras AND on a non-vacuous synthetic distinct-per-texel render (mandatory, gate-enforced); each swizzle is a lossless bijection (locality0-bijection, proven on distinct data); the canonical-order content hash is unmoved while the storage layout moves (locality0-provenance); and a layout is promoted only with byte-identity AND a lower process-isolated p99 than the DDA baseline (4734 us p99 on the host), sealed off-gate as LOCALITY-0 citing this entry, with the accepted single-thread emit sealed as the GAUNTLET-2 baseline.",
+   "failure_condition": "any layout not byte-identical to the frozen emit (a regression) refuses it; a swizzle that moves the tile CONTENT (unswizzled hash changes) rather than only the format; a speed claim from separately-run (non-interleaved) invocations, or compared to GAUNTLET-0's instrumented render absolute; or a layout committed to the accepted path without byte-identity AND a same-apparatus win over the DDA baseline.",
+   "interpretation_limits": [
+    "the Epistemic-Invariance boundary: variants are monomorphized and hot-swapped at the binary boundary, process-isolated per invocation, and interleaved to cancel drift; instruction-level invariance up to address-generation is a structuring goal, NOT gate-provable — the gate proves OUTPUT byte-identity, and the record says so",
+    "correctness (byte-identity) is mandatory and gate-enforced; speed is a SEPARATE host court, process-isolated, judged against the DDA baseline (4734 us) — never GAUNTLET-0's instrumented absolute",
+    "the per-band wall-clock deltas are host measurements; the per-band within-cache-line locality is a deterministic source-cost proxy, not a wall-clock",
+    "content provenance is isolated from execution format: the swizzle moves the layout, not the certified content (the text-reformat law applied to the tile)",
+    "three exits: BLOCKED wins, MORTON wins, or NEITHER beats the baseline — the last is not a null but a proof the tile-fetch stall is a capacity/LRU miss no permutation fixes, redirecting to GAUNTLET-2 (parallelism) to hide the latency behind compute",
+    "the accepted single-thread emit is sealed as the HARD BASELINE for GAUNTLET-2; the emit stays embarrassingly parallel (per-column wall, per-row floor, only the per-row DDA recurrence, independent across rows)"
+   ],
+   "instrument": "kernel/main.rs --locality (deterministic differential; gate rows locality0-equiv / -bijection / -provenance / -indextax) and --locality-bench --variant blocked|morton (process-isolated host timing, whole-frame + index tax X + per-band); kernel/fast.rs::locality is the fast-path apparatus (mantle.rs and fast::emit untouched); verify/locality0.py orchestrates interleaved invocations and seals verdandi-locality0 citing this entry; row locality0-preregistered locks the method, the three exits, and the process-isolation boundary.",
+   "chain_hash": "28a9d792d5e0cb9443b804ae0bc75c12c2d5c0fcf2b96101c25011fe70f66a3a"
   }
  }
 }
