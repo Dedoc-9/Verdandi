@@ -65,6 +65,10 @@ FLAGS = ["-O"]
 EXE = ".exe" if os.name == "nt" else ""
 
 ROWS: list[tuple[str, str, str]] = []   # (status, name, text)
+# Default output is COMPACT (one short line per row); --verbose (-v) prints each row's full reading. A FAIL always
+# prints its reason regardless, so a red row is never silent. This changes only what is printed — the row set, the
+# ordering, the pass/fail logic and the RECONCILE rowset are untouched, so the gate's identity is unchanged.
+VERBOSE = ("-v" in sys.argv) or ("--verbose" in sys.argv)
 
 
 class Skip(Exception):
@@ -86,7 +90,10 @@ def row(name, fn):
     except Exception as e:  # a crash is a red row, never a missing one
         ROWS.append(("FAIL", name, f"{type(e).__name__}: {e}"))
     st, _, text = ROWS[-1]
-    print(f"[{st}] {name:<28} {text}")
+    if VERBOSE or st == "FAIL":
+        print(f"[{st}] {name:<28} {text}")
+    else:
+        print(f"[{st}] {name}")
 
 
 def sha256(b: bytes) -> str:
