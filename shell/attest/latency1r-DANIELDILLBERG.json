@@ -1,0 +1,159 @@
+{
+ "name": "verdandi-latency1r",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell latency1r-window (shell/latency1r.rs court over the GDI surface appended to shell/win32.rs) + verify/latency1r.py",
+  "surface": "shell/latency1r.rs court over the GDI window (StretchDIBits + DwmFlush, QPC) surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790427868,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "LATENCY-1R",
+   "chain_hash": "5cfb3ece0ffcaaa1a3eca9d5722df2b364802f6d79efdc927d2b1e6d99d9dca4"
+  }
+ },
+ "validity_scope": {
+  "certifies": "render-start -> composited of the production render (T=8) and the single-thread reference over the sealed reference session on host DANIELDILLBERG, locked and uniform phase, 200 samples per cell over 4 frames",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency: input transport and panel scan-out need capture hardware",
+  "a comparison with LATENCY-0's or LATENCY-1's frame-ready -> composited, or with any emit p99 (different observables)",
+  "a render-speed claim: that is GAUNTLET-2's; here the render is one part of a render-inclusive present interval",
+  "that the locked or uniform regime is a real game loop under load (each is a declared phase model)",
+  "that absorption in the locked regime means faster rendering is useless (it is the refresh-coupled GDI present's property)",
+  "a single scalar: the propagation permille is on p50s; the p99s are reported beside it, never folded in",
+  "any other host, session, panel or window state; absolute us are host- and panel-specific"
+ ],
+ "data": {
+  "cells": {
+   "locked": {
+    "production": {
+     "render_us": {
+      "p50": 15430,
+      "p95": 16937,
+      "p99": 17890,
+      "max": 18913
+     },
+     "present_us": {
+      "p50": 10058,
+      "p95": 12398,
+      "p99": 12826,
+      "max": 13576
+     },
+     "total_us": {
+      "p50": 25550,
+      "p95": 26320,
+      "p99": 27107,
+      "max": 27576
+     },
+     "samples": 200
+    },
+    "single_thread": {
+     "render_us": {
+      "p50": 18070,
+      "p95": 19264,
+      "p99": 19732,
+      "max": 19777
+     },
+     "present_us": {
+      "p50": 7499,
+      "p95": 9258,
+      "p99": 9826,
+      "max": 10248
+     },
+     "total_us": {
+      "p50": 25552,
+      "p95": 26312,
+      "p99": 26749,
+      "max": 26954
+     },
+     "samples": 200
+    }
+   },
+   "uniform": {
+    "production": {
+     "render_us": {
+      "p50": 14826,
+      "p95": 16075,
+      "p99": 17327,
+      "max": 18306
+     },
+     "present_us": {
+      "p50": 6780,
+      "p95": 12868,
+      "p99": 14050,
+      "max": 15132
+     },
+     "total_us": {
+      "p50": 21400,
+      "p95": 27981,
+      "p99": 29004,
+      "max": 30052
+     },
+     "samples": 200
+    },
+    "single_thread": {
+     "render_us": {
+      "p50": 17499,
+      "p95": 18002,
+      "p99": 18560,
+      "max": 19847
+     },
+     "present_us": {
+      "p50": 7592,
+      "p95": 13364,
+      "p99": 14255,
+      "max": 14368
+     },
+     "total_us": {
+      "p50": 24987,
+      "p95": 30950,
+      "p99": 32114,
+      "max": 32202
+     },
+     "samples": 200
+    }
+   }
+  },
+  "refresh_period_us": 13926,
+  "sequence_frames": 4,
+  "samples_per_cell": 200,
+  "production_threads": 8,
+  "phase_seed": "0x5EED1A7E00000001",
+  "derived": {
+   "locked": {
+    "render_delta_p50_us": 2640,
+    "glass_delta_p50_us": 2,
+    "propagation_permille": 0,
+    "present_growth_p50_us": 2559,
+    "total_delta_p99_us": -358
+   },
+   "uniform": {
+    "render_delta_p50_us": 2673,
+    "glass_delta_p50_us": 3587,
+    "propagation_permille": 1341,
+    "present_growth_p50_us": -812,
+    "total_delta_p99_us": 3110
+   }
+  }
+ },
+ "reading": "LATENCY-1R, render-start -> composited, production (T=8) vs the single-thread reference, on host DANIELDILLBERG (refresh 13926 us, 200 samples per cell). locked: ABSORBED — render delta 2640 us, glass delta 2 us, 0 permille of the render headroom reached composited (p50s; the p99 total delta is -358 us, reported beside it). The production arm's frame-ready -> composited grew by 2559 us: the saved render time was spent waiting for the composition. uniform: PROPAGATES — render delta 2673 us, glass delta 3587 us, 1341 permille of the render headroom reached composited (p50s; the p99 total delta is 3110 us, reported beside it). A composed-GDI present is refresh-coupled (LATENCY-0), so absorption in the locked regime is a property of this present path, not evidence that faster rendering is useless; decoupling it is PRESENT-1's hypothesis. Within this apparatus only: never compared to LATENCY-0/LATENCY-1 or to any emit p99; not input-to-photon.",
+ "chain_hash": "8dcefa4ef98412ec66958038f08e16e0904e2e332ae114d29a27261e13ef3837"
+}
