@@ -40,10 +40,12 @@ semantics reaches the screen without passing through a gate.
 
 ## The gap, in four questions
 
-1. **Does the render headroom reach the screen?** Measured once (`LATENCY-1R`): yes for work arriving at a random
-   phase (composited output 3.6 ms earlier at the median), no for a loop that renders right after it presents (fully
-   absorbed by the refresh-coupled GDI present). The shell's whole render-start → frame-ready interval is ~15 ms, longer
-   than one refresh on the owner's host. *(G7 — confirmation pending; G8 — the split is next.)*
+1. **Does the render headroom reach the screen?** Measured twice (`LATENCY-1R`): yes for work arriving at a random
+   phase (composited output 3.2–3.6 ms earlier at the median), no for a loop that renders right after it presents
+   (under 1% gets through the refresh-coupled GDI present). The shell's whole render-start → frame-ready interval is
+   14.8–15.7 ms at p50, longer than one refresh on the owner's host, and its split is unmeasured. Renderer latency:
+   materially improved. End-to-end presentation latency: phase-dependent, no low-latency or competitive claim.
+   *(G7 — measured; G8 — the split is the next measurement.)*
 2. **Can an author edit the live window?** The pieces exist headless (input → typed edit → SESSION-WALK); they are
    not yet wired into the running present loop with live re-projection.
 3. **Can the world hold semantics the oracle never certified?** The skybox and filtered VIEW semantics live *beyond*
@@ -72,13 +74,19 @@ about the presentation interval only (a 50‰ materiality bound, declared), neve
 read NO MATERIAL CHANGE (p99 7,339 vs 7,318 µs). The presentation interval reproduces LATENCY-0, and the first run's
 category did not reproduce (`GHOSTS.md` G10).
 
-### LATENCY-1R — the render inside the clock · **measured once** (`5cfb3ece`), confirmation pending
+### LATENCY-1R — the render inside the clock · **measured twice** (`5cfb3ece`)
 The question LATENCY-1 cannot answer, as its own observable: render-start → composited on the same sealed session
 and GDI present, for the production render (T=8) against the single-thread reference, in a locked and a uniform
-phase regime. On the owner's host: **locked ABSORBED** (the ~2.6 ms render saving becomes composition wait, 0‰) and
-**uniform PROPAGATES** (composited output 3.6 ms earlier at the median, 1,341‰). The production render-start →
-frame-ready interval itself is 15.4 ms at p50, longer than the 13.9 ms refresh. Next: `--confirm`, then split that
-interval phase by phase (`GHOSTS.md` G8) before choosing the next target.
+phase regime. On the owner's host, two runs: **uniform PROPAGATES** both times (composited output 3.2–3.6 ms earlier
+at the median; 1,341‰ and 1,182‰), and the **locked** regime absorbed in both (0‰ and 8‰ of a ~2.7 ms render saving
+got through) — its preregistered label flipped from ABSORBED to PARTIALLY ABSORBED across a zero-margin boundary, which
+the confirmation record states (`GHOSTS.md` G10). The production render-start → frame-ready interval itself is
+14.8–15.7 ms at p50, longer than the 13.1–13.9 ms refresh.
+
+**Next: measure before optimizing.** Split that ~15 ms interval phase by phase on the same apparatus and sealed session
+— renderer output, HUD, conversion, blit — with the whole-frame and frame-ready → composited intervals beside it as
+anchors (`GHOSTS.md` G8). Only then does it make sense to choose between a renderer, conversion, HUD or presentation
+change; `PRESENT-1` below is a hypothesis for the locked regime, not yet the indicated lever.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

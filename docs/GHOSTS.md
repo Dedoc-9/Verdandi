@@ -111,42 +111,46 @@ says what is proven (output) and what is aspired to (instruction schedule), and 
 
 ---
 
-## G7 — the render headroom reaches the screen only out of phase with the present · MEASURED (one run; confirmation pending)
+## G7 — the render headroom reaches the screen only out of phase with the present · MEASURED (two runs)
 
 `LATENCY-0` *established* that the composed-GDI present (`StretchDIBits` under DWM) is refresh-coupled. Whether
 `GAUNTLET-2`'s faster render survives it was the open question, and `LATENCY-1` turned out unable to ask it: its
 instrument renders every frame before the window opens (the amendment `LATENCY-1a`). `LATENCY-1R` put the render inside
-the clock and measured it on the owner's host (`shell/attest/latency1r-DANIELDILLBERG.json`). Render-start →
-composited, production (T=8) against the single-thread reference:
+the clock and measured it twice on the owner's host (`shell/attest/latency1r-DANIELDILLBERG.json` and its `-confirm-`).
+Render-start → composited, production (T=8) against the single-thread reference, p50:
 
-- **Locked** (the render starts right after a composition): 25,550 vs 25,552 µs at p50. **Absorbed** — both arms land
-  on the same composition, and the ~2.6 ms the faster render saves is spent waiting for it.
-- **Uniform** (the render starts at a random phase): 21,400 vs 24,987 µs at p50. **Propagates** — composited output is
-  3.6 ms earlier at the median and 3.1 ms at p99.
+- **Locked** (the render starts right after a composition): 25,550 vs 25,552 µs, then 25,563 vs 25,587 µs. **Absorbed**
+  — less than 1% of the ~2.6–2.8 ms render saving reached composited output in either run; both arms land on the same
+  composition and the saving becomes waiting. (The preregistered label flipped from ABSORBED to PARTIALLY ABSORBED
+  between the runs on a 22 µs difference — see G10.)
+- **Uniform** (the render starts at a random phase): 21,400 vs 24,987 µs, then 21,977 vs 25,217 µs. **Propagates** —
+  composited output 3.2–3.6 ms earlier at the median, reproduced.
 
-So the headroom reaches the glass for work that arrives at an arbitrary moment (an input, say) and not for a loop
-that renders right after it presents. That is one run; the preregistered `--confirm` has not been taken yet. No
-refresh-rate or input-to-photon claim is made.
+So the headroom reaches the glass for work that arrives at an arbitrary moment (an input, say) and not for a loop that
+renders right after it presents. The renderer's own latency is materially improved; end-to-end presentation latency is
+phase-dependent; no low-latency, competitive or input-to-photon claim is made.
 
-**Exorcism.** Run `LATENCY-1R --confirm` to establish the shape. The locked-regime absorption is the property
-`PRESENT-1` (a flip-model / waitable-swapchain present) hypothesizes it can remove — now a measured motivation rather
-than an assumed one, still to be measured when built.
+**Exorcism.** For the locked regime, the absorption is what `PRESENT-1` (a flip-model / waitable-swapchain present)
+hypothesizes it can remove — but not before G8's split shows whether the present or the software frame dominates.
 
 ---
 
 ## G8 — the render-inclusive frame is longer than one refresh, and its split is unmeasured · MEASURED (total), UNDERDETERMINED (split)
 
 The GAUNTLET staircase optimized only the *emit* (texel) pass, because `GAUNTLET-0` measured it as the dominant render
-phase (695‰). `Scene::strips` and `Scene::frame` remain mantle's frozen, single-threaded code. `LATENCY-1R` has now
-measured the whole render-start → frame-ready interval in the shell window: **15.4 ms at p50 for the production arm**,
-longer than the host's measured refresh (13.9 ms), with the two arms differing by only 2.6 ms. That interval holds
-more than `--breakdown` times: strips, frame, the pixel pass, the HUD overlay, the RGB → BGR conversion, fresh buffer
-allocation, and `StretchDIBits`'s 2:1 downscale into the half-size client area. How the ~15 ms divides among them is
-not measured.
+phase (695‰). `Scene::strips` and `Scene::frame` remain mantle's frozen, single-threaded code. `LATENCY-1R` measured the
+whole render-start → frame-ready interval in the shell window: **14.8–15.7 ms at p50 for the production arm** across
+two runs and both regimes — longer than every refresh estimate taken on that host (13.1–13.9 ms) — while the two arms
+differ in it by only 2.6–2.8 ms. That interval holds more than `--breakdown` times: strips, frame, the pixel pass, the
+HUD overlay, the RGB → BGR conversion, fresh buffer allocation, and `StretchDIBits`'s 2:1 downscale into the half-size
+client area. How the ~15 ms divides among them is not measured, and it is where the dominant whole-frame cost now
+hides. (It is not the whole software-to-screen path either: render-start → composited is 21.4–25.6 ms at p50 across both runs.)
 
-**Exorcism.** Split the render-start → frame-ready interval on the same window apparatus, phase by phase, before any
-optimization is chosen — the `GAUNTLET-0` pattern applied to the shell's whole frame. The `--breakdown` rerun alone
-would miss the conversion and blit phases, which sit outside the kernel.
+**Exorcism.** Split the render-start → frame-ready interval on the same window apparatus and the same sealed session,
+phase by phase — renderer output, HUD, conversion, blit — with the render-start → frame-ready total and the frame-ready →
+composited interval kept beside them as anchors: the `GAUNTLET-0` pattern applied to the shell's whole frame, before
+any optimization (renderer or presentation) is chosen. The `--breakdown` rerun alone would miss the conversion and blit
+phases, which sit outside the kernel.
 
 ---
 
@@ -164,18 +168,20 @@ tidiness ghost, not a correctness or performance one.
 
 ---
 
-## G10 — the latency statistics are thin · MEASURED
+## G10 — the latency statistics are thin, and one category boundary has no margin · MEASURED
 
-Two of the present-path statistics rest on very few samples. With n = 200, **p99 is the third-largest sample**: the
-first `LATENCY-1` run read DEGRADATION (p99 12,299 µs vs 7,318) on three slow samples, and its confirmation read NO
-MATERIAL CHANGE (p99 7,339 µs) — the category flipped on a three-sample tail while p50 and p95 held. The **refresh
-period** is the median of eight idle `DwmFlush` intervals, and across four runs on the same host it read 13,298,
-13,089, 13,561 and 13,926 µs, a 63‰ spread. Neither statistic is wrong, but both are coarser than their precision
-suggests.
+Some of the present-path statistics rest on very few samples. With n = 200, **p99 is the third-largest sample** (two
+lie beyond it): the first `LATENCY-1` run read DEGRADATION (p99 12,299 µs vs 7,318) on three slow samples, and its
+confirmation read NO MATERIAL CHANGE (p99 7,339 µs) — the category flipped on a three-sample tail while p50 and p95
+held. The **refresh period** is the median of eight idle `DwmFlush` intervals, and across five runs on the same host it
+read between 13,089 and 13,926 µs, a 63‰ spread. And `LATENCY-1R`'s rule puts the boundary between ABSORBED (≤ 0‰) and
+PARTIALLY ABSORBED (1–499‰) at exactly zero, so the locked regime's label flipped between runs on 2 vs 24 µs of glass
+delta while its magnitude (under 1% propagated) held. None of these statistics is wrong; each is coarser than its
+precision suggests, and the medians across repeated runs deserve more weight than any single tail or label.
 
-**Exorcism.** For a tail-sensitive verdict, raise N or report the number of samples above the threshold beside the
-percentile, and confirm before reading a category; estimate the refresh from a longer idle run. Each is a method
-change, so it would be preregistered before a number, never applied to one already taken.
+**Exorcism.** For a tail-sensitive verdict, raise N or report the number of samples beyond the threshold beside the
+percentile; estimate the refresh from a longer idle run; give a category boundary a declared noise margin. Each is a
+method change, so it would be preregistered before a number, never applied to one already taken.
 
 ---
 
@@ -195,8 +201,8 @@ state what it does; either way, time the blit as its own phase in the G8 split.
 ## The disposition
 
 None of these ghosts is load-bearing for a claim the program actually makes. G1 and G3 are execution refinements
-with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured once and awaits its
-confirmation, and G8 has turned from a hunch into a measured total with an unmeasured split; G4, G5, G6, G9, G10 and
+with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured and reproduced (twice), and
+G8 has turned from a hunch into a measured total with an unmeasured split — the program's next measurement; G4, G5, G6, G9, G10 and
 G11 are caveats a careful reader must carry, recorded so they are carried on purpose.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously

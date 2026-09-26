@@ -1276,7 +1276,7 @@ gate-source edit, another origin, or an import outside the closure; `game-suites
 is not 411, or a witness exits non-zero; `game-plant` if a flipped golden passes either check; `game-not-runtime` if
 runtime code reaches into the folder.
 
-## LATENCY-1a / LATENCY-1R — the instrument fact recorded before the number; the render put inside the clock (LATENCY-1 measured and confirmed; LATENCY-1R measured, confirmation pending)
+## LATENCY-1a / LATENCY-1R — the instrument fact recorded before the number; the render put inside the clock (LATENCY-1 measured and confirmed; LATENCY-1R measured twice — reproduced in magnitude, the locked label flipped)
 
 **What landed.** Two hash-locked preregistrations, the instrument for the second, and both host sealers — before any
 LATENCY-1 or LATENCY-1R number exists.
@@ -1384,15 +1384,48 @@ interval includes it). The two arms differ in it by only 2.6 ms, and how its ~15
 is not measured here. That split is the next cheap measurement (`GHOSTS.md` G8). The measured refresh moved
 again (13,926 µs, 47‰ from LATENCY-0's); the 1R verdicts do not use it.
 
+**LATENCY-1R confirmation (`shell/attest/latency1r-confirm-DANIELDILLBERG.json`, cites the first record).** A second
+full run, no close, 200 samples per cell, measured refresh 13,433 µs. Per cell, p50 / p99 in µs:
+
+| regime | arm | render-start → frame-ready | frame-ready → composited | render-start → composited |
+|---|---|---|---|---|
+| locked | production (T=8) | 15,669 / 18,468 | 9,992 / 12,440 | **25,563** / 26,864 |
+| locked | single-thread | 18,463 / 21,204 | 7,108 / 9,234 | **25,587** / 26,519 |
+| uniform | production (T=8) | 14,851 / 17,710 | 7,245 / 14,353 | **21,977** / 29,756 |
+| uniform | single-thread | 17,591 / 21,287 | 7,289 / 14,266 | **25,217** / 32,348 |
+
+- **uniform — PROPAGATES again.** dR = 2,740 µs, dG = 3,240 µs, 1,182‰ (the first run: 1,341‰). Composited output is
+  3.2 ms earlier at p50 and 2.6 ms at p99. This regime reproduced, category and magnitude.
+- **locked — PARTIALLY ABSORBED by the rule, absorbed in substance.** dR = 2,794 µs, dG = 24 µs, 8‰. The first run
+  read ABSORBED (dG = 2 µs, 0‰). Both runs let less than 1% of the render saving reach composited output, and in both
+  the production arm's frame-ready → composited grew by about the saving (2,559 and 2,884 µs); at p99 the production
+  arm's total was slightly *later* both times (358 and 345 µs). But the preregistered boundary between ABSORBED (≤ 0‰)
+  and PARTIALLY ABSORBED (1–499‰) has no margin, so a 22 µs difference moved the label. The confirmation record
+  therefore states, correctly by the rule's letter, that the locked shape did **not** reproduce. The reading here is
+  both at once: the label did not reproduce; the magnitude did. Changing the boundary would be a method change, to be
+  preregistered before any further number and never applied to these two (`GHOSTS.md` G10).
+
+**The status these two courts support.** Render-side: the T=8 production render shortens the shell's render-start →
+frame-ready interval by 2.6–2.8 ms at p50 (about 15% of the single-thread arm's), in all four regime-runs. Screen-side:
+that saving reaches composited output when the work arrives at an arbitrary phase (3.2–3.6 ms earlier at p50) and is
+absorbed by the refresh-coupled GDI present when rendering starts right after a composition. The production
+render-start → frame-ready interval is 14.8–15.7 ms at p50 across both runs and both regimes, longer than every refresh
+estimate taken (13.1–13.9 ms), and its split is unmeasured. So: renderer latency materially improved; end-to-end
+presentation latency phase-dependent; no low-latency or competitive claim made; the dominant whole-frame cost
+unresolved. The next measurement is the split of that interval (`GHOSTS.md` G8), before any further optimization —
+presentation or renderer.
+
 **Grade.** DECLARED: both methods (hash-locked). ESTABLISHED (gate): the instrument fact in source; the sealers'
 decision rules; the court's logic over the mock surface. MEASURED (host): LATENCY-1's presentation interval —
-reproduces LATENCY-0 on confirmation, the first run's DEGRADATION not reproduced; LATENCY-1R, one run — locked
-ABSORBED, uniform PROPAGATES, and a production render-start → frame-ready interval longer than one refresh. Not yet
-MEASURED: LATENCY-1R's reproducibility (`--confirm`).
+reproduces LATENCY-0 on confirmation, the first run's DEGRADATION not reproduced; LATENCY-1R, two runs — uniform
+PROPAGATES (reproduced), locked absorbed in magnitude in both (< 1% propagated) with its label flipping ABSORBED →
+PARTIALLY ABSORBED across a zero-margin boundary, and a production render-start → frame-ready interval longer than
+every refresh estimate. Not MEASURED: how that interval divides among its phases.
 
 **does_not_show.** Input-to-photon. Any comparison between LATENCY-1 and LATENCY-1R, or between either and an emit
 p99. That the locked or uniform regime is a real game loop under load. How the ~15 ms render-start → frame-ready
-interval divides among its phases. That LATENCY-1R's shape reproduces (one run so far).
+interval divides among its phases. That the locked regime's category reproduces (its magnitude did; its label
+did not). A low-latency or competitive-presentation claim of any kind.
 
 **Falsifier.** `latency1a-preregistered` reddens if the amendment is edited, stops citing LATENCY-1's hash, or its
 instrument fact becomes false in source; `latency1r-preregistered` if the method is weakened or the code's seed or

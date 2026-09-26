@@ -118,8 +118,8 @@ Every rung ran the same loop, and the loop is the product as much as the code:
 - The T=8 plateau is a hypothesis, not a bus measurement (G2); a roofline settles it.
 - The shell's whole render-start → frame-ready interval is ~15 ms at p50, longer than one refresh on the owner's host
   (G8); split it phase by phase — strips, frame, pixel pass, HUD, conversion, blit — before choosing the next target.
-- The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, one run); confirm
-  it before building on it.
+- The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two
+  runs); presentation latency is phase-dependent, and no low-latency claim is made.
 - A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.
 
 ---
@@ -145,8 +145,14 @@ its own.
    and got two opposite answers from one apparatus. In the locked regime the faster render's ~2.6 ms is fully absorbed
    by the composition wait (0‰). In the uniform regime composited output arrives 3.6 ms earlier at the median. Timing
    the loop only one way would have produced either "the optimization is useless" or "the optimization reaches the
-   screen", and both would have been half true. The same run also showed the shell's full render-start → frame-ready
-   interval is ~15 ms, longer than a refresh, which moves the next measurement from the emit to the whole frame (G8).
+   screen", and both would have been half true. The confirmation reproduced both halves in magnitude, though the
+   locked label flipped across a boundary with no noise margin (8‰ vs 0‰) — a reminder that a category is only as
+   stable as its boundary. Both runs also showed the shell's full render-start → frame-ready interval is ~15 ms, longer
+   than a refresh, which moves the next measurement from the emit to the whole frame (G8).
+
+The campaign's status, graded: **renderer latency materially improved; end-to-end presentation latency phase-dependent
+and not certified low-latency; the dominant whole-frame cost unresolved.** The next rung is a measurement, not an
+optimization.
 
 ---
 
