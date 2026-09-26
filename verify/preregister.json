@@ -122,6 +122,22 @@
    ],
    "instrument": "kernel/fast.rs will gain a partition-agnostic emit (deterministic correctness: byte-invariance over contiguous and adversarial column partitions; gate rows gauntlet2-*) and a std::thread parallel emit (host, off-gate, no crates); the host T | correctness | p99 matrix is sealed off-gate citing this entry; row gauntlet2-preregistered locks the partition-invariance law, the explicit-thread-count attestation and the decision rule (including the memory-hierarchy redirect on a scaling stall). Supersedes patch 0028's baseline-seal entry (5c3a5c30): no record cited it, and the instrument has not yet run.",
    "chain_hash": "711cc1d4982999c0e79aa72301bc7b4a0307e051517bef6deb7ad886d33b7b8a"
+  },
+  "LATENCY-1": {
+   "rung": "LATENCY-1",
+   "hypothesis": "GAUNTLET-2 LOCKED the T=8 threaded emit as the production render (~3.3x faster emit, byte-identical) and the shell now renders through it. LATENCY-1 asks — to be MEASURED, never assumed — whether replacing the renderer with that promoted T=8 path measurably changes the frame-ready -> composited latency of the fixed sealed playback sequence, versus the LATENCY-0 sealed baseline. It does NOT ask whether rendering is faster (that is already established); it asks whether the render headroom propagates into the measured presentation path or whether presentation/DWM remains the dominant measured boundary.",
+   "success_condition": "on the host, replaying the SAME sealed reference session through the SAME apparatus as LATENCY-0 (shell playback-window --measure), but with the promoted T=8 threaded renderer, a record of per-frame frame-ready -> composited p50/p95/p99/max us sealed under the envelope with the measured refresh period beside it, witnesses checked first; the comparison is drawn ONLY against the LATENCY-0 sealed frame-ready -> composited baseline (the SAME observable), inherited from shell/attest/latency-<host>.json and never re-derived.",
+   "failure_condition": "comparing the LATENCY-1 number against any observable other than LATENCY-0's sealed frame-ready -> composited baseline — in particular against an emit p99 (the GAUNTLET-2 7734 us baseline is an emit p99, a DIFFERENT observable, and using it is a category error); a claim of input-to-photon latency; no composited timestamp readable from DWM on the host; the shape not reproducible on a second run; the baseline re-derived rather than inherited from the sealed LATENCY-0 record; or the sealed session or the measurement apparatus changed from LATENCY-0's (then it is not the same experiment).",
+   "interpretation_limits": [
+    "the comparator is LATENCY-0's sealed frame-ready -> composited p99, NOT an emit p99: they are DIFFERENT observables (a render-phase time versus a present-path time) and must never be mixed; only the same-observable, same-apparatus delta is legitimate",
+    "the single-thread render baseline is INHERITED from the sealed LATENCY-0 record (shell/attest/latency-<host>.json), never re-derived on this rung",
+    "the disciplined reading of the delta: an IMPROVEMENT means the renderer headroom is propagating into the measured presentation path; NO MATERIAL improvement means presentation/DWM remains the dominant measured boundary; a DEGRADATION means the threaded path introduced a new scheduling/contention cost at the shell boundary; NONE of these by itself proves input-to-photon latency",
+    "frame-ready -> composited excludes the kernel render (that is the bench), input transport, the present wait beyond composition, and the panel scan-out; it is NOT input-to-photon (that needs capture hardware)",
+    "the promoted T=8 render's per-frame thread-spawn cost is UPSTREAM of frame-ready (it is part of producing the frame, not of presenting it), so it does not enter this observable directly; a render regression would show only insofar as it delays frame-ready",
+    "Windows-only; off-gate on a named host; the sequence is the fixed sealed reference session, not arbitrary interactive load"
+   ],
+   "instrument": "shell/win32.rs playback_window --measure N (off-gate, host, --cfg shell_window), now rendering through the LOCKED fast::render (T=8) via present.rs; sealed by verify/latency1.py -> shell/attest/latency1-<host>.json, citing this entry and inheriting the LATENCY-0 baseline; row latency1-preregistered locks this method and the same-observable comparator.",
+   "chain_hash": "8e93118e9a6f5447066b3b19e9c48c292fec2a96490189e1d924209879d1b4ee"
   }
  }
 }

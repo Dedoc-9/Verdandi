@@ -784,6 +784,44 @@ def latency_preregistered():
             "input-to-photon is out of scope; hash-locked %s so weakening it is a visible diff, not a silent edit" % e["chain_hash"][:8])
 
 
+def latency1_preregistered():
+    """LATENCY-1's method is locked before any host number: it asks whether the promoted T=8 threaded render measurably
+    changes frame-ready -> composited latency versus the LATENCY-0 sealed baseline — the SAME observable, inherited not
+    re-derived, and NEVER compared to an emit p99 (a different observable; the GAUNTLET-2 7734 us baseline is one). The
+    delta reading (improvement / none / degradation) is disciplined, and none of it proves input-to-photon. Hash-locked."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))
+    e = reg["entries"].get("LATENCY-1")
+    if not e:
+        raise Red("LATENCY-1 is not registered")
+    succ = e["success_condition"].lower()
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "the comparator is LATENCY-0's frame-ready->composited, NEVER an emit p99": "not an emit p99" in lims and "different observables" in lims,
+        "the baseline is inherited from LATENCY-0, never re-derived": "inherited" in lims and "latency-0" in lims and "never re-derived" in lims,
+        "the disciplined delta reading (improvement / none / degradation)": "presentation" in lims and "dominant" in lims and "contention" in lims,
+        "input-to-photon is out of scope": "not input-to-photon" in lims,
+        "same apparatus + same sealed session as LATENCY-0": "same apparatus" in succ and "same sealed" in succ,
+        "Windows-only, off-gate host": "windows-only" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the LATENCY-1 method is not fully locked: " + "; ".join(missing))
+    want = envelope.chain_hash({"name": "verdandi-preregistration-entry", "version": 1, "claim_class": "declared",
+                                "provenance": {"registered_in": "verify/preregister.json"},
+                                "validity_scope": {"certifies": "the conditions LATENCY-1 was seated under"},
+                                "forbidden_interpretations": ["that registering a condition earns it"],
+                                "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+    if e["chain_hash"] != want:
+        raise Red("the LATENCY-1 entry was edited after registration (chain hash)")
+    return ("LATENCY-1's method is locked before any host number: it measures whether the promoted T=8 threaded render "
+            "changes frame-ready -> composited latency for the fixed sealed session, on the SAME apparatus as LATENCY-0, "
+            "compared ONLY against LATENCY-0's sealed frame-ready -> composited baseline (the same observable, inherited "
+            "from shell/attest/latency-<host>.json, never re-derived) and NEVER against an emit p99 (a different "
+            "observable — the GAUNTLET-2 7734 us baseline is one; mixing them is a category error). The delta reads as "
+            "headroom-propagates / presentation-dominant / shell-contention, and none of it proves input-to-photon; "
+            "Windows-only, off-gate; hash-locked %s" % e["chain_hash"][:8])
+
+
 def gauntlet_preregistered():
     """GAUNTLET-0's method and DECISION RULE are locked before the host number: the render is decomposed at pub-phase
     boundaries, a phase must clear 500 permille of the render p99 to earn GAUNTLET-1, GAUNTLET-1 must prove byte-identity
@@ -2789,6 +2827,7 @@ def main() -> int:
     row("records-twins", records_twins)
     row("records-preregistered", records_preregistered)
     row("latency-preregistered", latency_preregistered)
+    row("latency1-preregistered", latency1_preregistered)
     row("gauntlet-preregistered", gauntlet_preregistered)
     row("gauntlet1-preregistered", gauntlet1_preregistered)
     row("gauntlet1-equiv", gauntlet1_equiv)

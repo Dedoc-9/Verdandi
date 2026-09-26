@@ -1202,6 +1202,39 @@ GAUNTLET-0's instrumented absolute. That the ~3.3× survives the frame-ready →
 at T=8; `gauntlet2-lockfence` if `fast::render` stops routing through `emit_threaded`/`PROD_THREADS`, if the shell's
 production render reverts to the frozen `picture()`, if `PROD_THREADS != 8`, or if the single-thread reference is dropped.
 
+## LATENCY-1 — preregistered: does the render headroom reach the screen (method locked, host-run pending)
+
+**What is locked (the method, before any host number).** With the render now ~3.3× faster and the shell rendering
+through the LOCKED T=8 path, `LATENCY-1` asks the question the whole GAUNTLET-2 campaign was ultimately for — **does
+that render headroom survive the frame-ready → composited path?** It is a *measurement, not an optimization*: it does
+not ask whether rendering is faster (established) but whether replacing the renderer with the promoted T=8 path
+*measurably changes* the present-path latency of the fixed sealed session versus `LATENCY-0`'s sealed baseline.
+
+**The comparator discipline (the reason to lock it first).** The comparison is drawn ONLY against `LATENCY-0`'s sealed
+**frame-ready → composited** p99 — the *same observable* — inherited from `shell/attest/latency-<host>.json` and never
+re-derived. It is **never** compared against an *emit* p99: the GAUNTLET-2 **7,734 µs** baseline is an emit-phase
+time, a *different observable* from a present-path time, and mixing them is a category error. Locking this in
+`preregister.json` (`8e93118e`) before the number means the mistake cannot be made silently.
+
+**The disciplined reading, ratified before the result.** An *improvement* means the renderer headroom is propagating
+into the measured presentation path; *no material improvement* means presentation/DWM remains the dominant measured
+boundary (and `PRESENT-1` — a flip-model / waitable-swapchain path — becomes the next falsifiable hypothesis); a
+*degradation* means the threaded path introduced a scheduling/contention cost at the shell boundary. None of these,
+by itself, proves input-to-photon latency — that needs capture hardware and is out of scope.
+
+**Instrument.** `shell/win32.rs playback_window --measure` (off-gate, host, `--cfg shell_window`), now rendering
+through `fast::render` (T=8) via `present.rs`; sealed by `verify/latency1.py` → `shell/attest/latency1-<host>.json`,
+citing this entry and inheriting the `LATENCY-0` baseline. **Row.** `latency1-preregistered` locks the method, the
+same-observable comparator, the inherited baseline and the disciplined reading (`8e93118e`). **Grade.** DECLARED (the
+method; the host measurement and its sealer are the next build). **Falsifier.** `latency1-preregistered` reddens if
+the comparator, the inherited-baseline rule, the disciplined reading, the not-input-to-photon scope, or the
+same-apparatus requirement is weakened.
+
+*Cheap prerequisite measurement (existing instrument, no new rung): re-establish the post-optimization render phase
+balance (`GHOSTS.md` G8). Note that `--breakdown` as it stands times the FROZEN `emit`; the honest G8 answer combines
+its (unchanged) `strips`/`frame` phases with the FAST emit on one apparatus — a small `--breakdown` extension, not a
+new rung. Privileged slices `BANDWIDTH-0` (G2) and `POOL-0` (G1/G3) remain uncommitted pending the `LATENCY-1` result.*
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

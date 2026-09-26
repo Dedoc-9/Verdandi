@@ -50,10 +50,15 @@ semantics reaches the screen without passing through a gate.
 
 ## The sequenced path (named rungs only)
 
-### LATENCY-1 — does the headroom survive the present path
+### LATENCY-1 — does the headroom survive the present path · **preregistered** (`8e93118e`)
 Re-run the sealed reference session through the present path *now that the render is fast*, and compare frame-ready →
 composited against `LATENCY-0`'s immutable baseline. This is a **measurement, not an optimization** — it answers
 question 1 and decides whether `PRESENT-1` is even worth building. Off-gate, host, witnesses first, no refresh claim.
+The method is hash-locked (`latency1-preregistered`): the comparator is `LATENCY-0`'s sealed **frame-ready →
+composited** p99 — the *same observable*, inherited never re-derived — and **never** an emit p99 (the GAUNTLET-2
+7,734 µs baseline is a different observable; mixing them is a category error). The delta reads as
+headroom-propagates / presentation-dominant / shell-contention, and none of it proves input-to-photon. The host
+measurement and its `verify/latency1.py` sealer are the next build.
 
 ### PRESENT-1 — decouple present from refresh, if LATENCY-1 says the present dominates
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
