@@ -38,6 +38,9 @@ mod playback;
 #[allow(dead_code)]
 #[path = "latency1r.rs"]
 mod latency1r;
+#[allow(dead_code)]
+#[path = "framesplit.rs"]
+mod framesplit;
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -223,6 +226,61 @@ fn main() {
                 {
                     let _ = (&inputs, per_cell, &out);
                     refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run the LATENCY-1R court in the window");
+                }
+            }
+        }
+        "framesplit-selftest" | "framesplit-window" => {
+            // FRAME-SPLIT-0 (where render-start -> frame-ready goes): ONE court, driven headless through the mock
+            // surface (`framesplit-selftest`, what the gate runs) or through the host window (`framesplit-window`).
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            let root = opt("--root").unwrap_or_default();
+            let per_cell = opt("--per-cell").and_then(|v| v.parse().ok()).unwrap_or(300usize);
+            let out = opt("--out");
+            let mut inputs: Vec<latency1r::FrameInput> = playback::frame_inputs(&session, &root)
+                .into_iter()
+                .map(|(lv, tl, cam, w)| latency1r::FrameInput {
+                    scene: present::scene_of(&lv, &tl, cam).unwrap_or_else(|Refusal(m)| refuse("INVALID-SCENE", &m)),
+                    witness: w,
+                })
+                .collect();
+            if args[1] == "framesplit-selftest" {
+                // plants: `--plant witness` tampers the first sealed witness; `--plant close` closes the mock window
+                let plant = opt("--plant").unwrap_or_default();
+                if plant == "witness" {
+                    if let Some(f) = inputs.first_mut() {
+                        let flipped = if f.witness.starts_with('0') { "1" } else { "0" };
+                        f.witness = format!("{}{}", flipped, &f.witness[1..]);
+                    }
+                }
+                let close_after = if plant == "close" { Some(5) } else { None };
+                let mut surf = latency1r::MockSurface::new(13_333, 1, close_after);
+                match framesplit::court(&mut surf, &inputs, per_cell) {
+                    Ok(sp) => {
+                        for ln in framesplit::summary(&sp) {
+                            println!("{}", ln);
+                        }
+                        if let Some(o) = out {
+                            fs::write(&o, framesplit::raw_record("gate-mock", "mock", &sp, 0))
+                                .unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", o, e)));
+                        }
+                        println!("framesplit court OK");
+                    }
+                    Err(m) => refuse("FRAMESPLIT", &m),
+                }
+            } else {
+                #[cfg(all(target_os = "windows", shell_window))]
+                {
+                    let host = opt("--host").unwrap_or_else(|| "unnamed".to_string());
+                    win32::framesplit_window(inputs, per_cell, &host, out);
+                }
+                #[cfg(not(all(target_os = "windows", shell_window)))]
+                {
+                    let _ = (&inputs, per_cell, &out);
+                    refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run the FRAME-SPLIT-0 court in the window");
                 }
             }
         }

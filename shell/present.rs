@@ -110,3 +110,34 @@ pub fn arm_composite(scene: &Scene, arm: Arm) -> (Vec<u8>, Vec<u8>) {
     hud::overlay(scene, &strips, &mut composite);
     (frame, composite)
 }
+
+/// FRAME-SPLIT-0's phase marks: the court records one timestamp per phase boundary.
+pub trait Marks {
+    fn mark(&mut self);
+}
+
+/// FRAME-SPLIT-0's instrumented mirror of `arm_composite`: the SAME statement sequence per arm, with one mark after
+/// each phase — strips, frame (its buffer allocated inside the phase), the floor swizzle, the pixel pass (its buffer
+/// allocated inside the phase; Production = `emit_threaded` at `PROD_THREADS`, the calls `fast::render` makes, in its
+/// order; SingleThread = `fast::emit`), and the HUD. The gate proves its output byte-identical to `arm_composite` and
+/// its call order equal to `fast::render`'s; the court's uninstrumented cells call `arm_composite` itself, so the
+/// whole-frame envelope is the real production path and the mirror's cost difference is measured, never assumed.
+pub fn arm_composite_marked<M: Marks>(scene: &Scene, arm: Arm, m: &mut M) -> (Vec<u8>, Vec<u8>) {
+    let mut strips = Vec::with_capacity(W);
+    scene.strips(&mut strips);
+    m.mark(); // strips
+    let mut frame = vec![0u8; W * H];
+    scene.frame(&strips, &mut frame);
+    m.mark(); // frame
+    let floor = fast::blocked_floor(&scene.floor);
+    m.mark(); // floor swizzle
+    let mut pixels = vec![0u8; W * H * 3];
+    match arm {
+        Arm::Production => fast::emit_threaded(scene, &strips, &frame, &mut pixels, &floor, fast::PROD_THREADS),
+        Arm::SingleThread => fast::emit(scene, &strips, &frame, &mut pixels, &floor),
+    }
+    m.mark(); // pixel pass
+    hud::overlay(scene, &strips, &mut pixels);
+    m.mark(); // HUD
+    (frame, pixels)
+}

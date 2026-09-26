@@ -152,6 +152,8 @@ composited interval kept beside them as anchors: the `GAUNTLET-0` pattern applie
 any optimization (renderer or presentation) is chosen. The `--breakdown` rerun alone would miss the conversion and blit
 phases, which sit outside the kernel.
 
+That measurement is now preregistered as `FRAME-SPLIT-0` (`739dc807`) and awaits its host run.
+
 ---
 
 ## G9 — the shell now compiles the entire fast/apparatus stack · MEASURED (benign), noted

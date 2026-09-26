@@ -83,10 +83,14 @@ got through) — its preregistered label flipped from ABSORBED to PARTIALLY ABSO
 the confirmation record states (`GHOSTS.md` G10). The production render-start → frame-ready interval itself is
 14.8–15.7 ms at p50, longer than the 13.1–13.9 ms refresh.
 
-**Next: measure before optimizing.** Split that ~15 ms interval phase by phase on the same apparatus and sealed session
-— renderer output, HUD, conversion, blit — with the whole-frame and frame-ready → composited intervals beside it as
-anchors (`GHOSTS.md` G8). Only then does it make sense to choose between a renderer, conversion, HUD or presentation
-change; `PRESENT-1` below is a hypothesis for the locked regime, not yet the indicated lever.
+### FRAME-SPLIT-0 — where the ~15 ms goes · **preregistered** (`739dc807`), host-run pending
+Measure before optimizing: split the production render-start → frame-ready interval into seven contiguous phases
+(strips, frame, floor swizzle, pixel pass, HUD, BGR conversion, blit) on LATENCY-1R's apparatus with no new variable,
+the uninstrumented envelope interleaved beside the split so the instrumentation tax is measured, reconciliation
+reported and never distributed. One phase ≥ 500‰ of the envelope p99 is the next target; none or several means the
+frame is multi-component and no single phase is promoted (`GHOSTS.md` G8). Only then does it make sense to choose
+between a renderer, conversion, HUD or presentation change; `PRESENT-1` below is a hypothesis for the locked regime,
+not yet the indicated lever.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

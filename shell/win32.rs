@@ -754,3 +754,93 @@ pub fn latency1r_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, ou
         }
     }
 }
+
+// ================================================================== FRAME-SPLIT-0 (appended)
+// The same GDI surface as LATENCY-1R (its present mirrors LATENCY-0's present_once), driving the platform-agnostic
+// split court in shell/framesplit.rs. LATENCY-0's instrument above stays a byte-exact prefix of this file.
+
+pub fn framesplit_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, out: Option<String>) {
+    let flush_fn = match load_dwm() {
+        Some(d) => d.flush,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or its composition-timing entry point is unavailable; cannot run FRAME-SPLIT-0");
+            std::process::exit(2);
+        }
+    };
+    let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
+    let class_name = wide("VerdandiFrameSplit0");
+    let title = wide("Verðandi — FRAME-SPLIT-0");
+    let wc = WndClassW {
+        style: 0,
+        lpfn_wnd_proc: Some(wnd_proc),
+        cb_cls_extra: 0,
+        cb_wnd_extra: 0,
+        h_instance: hinstance,
+        h_icon: std::ptr::null_mut(),
+        h_cursor: std::ptr::null_mut(),
+        hbr_background: std::ptr::null_mut(),
+        lpsz_menu_name: std::ptr::null(),
+        lpsz_class_name: class_name.as_ptr(),
+    };
+    unsafe { RegisterClassW(&wc) };
+    let hwnd = unsafe {
+        CreateWindowExW(0, class_name.as_ptr(), title.as_ptr(), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+            CW_USEDEFAULT, CW_USEDEFAULT, (W as i32) / 2 + 16, (H as i32) / 2 + 39,
+            std::ptr::null_mut(), std::ptr::null_mut(), hinstance, std::ptr::null_mut())
+    };
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    let header = BitmapInfoHeader {
+        bi_size: std::mem::size_of::<BitmapInfoHeader>() as Dword,
+        bi_width: W as Long,
+        bi_height: -(H as Long),
+        bi_planes: 1,
+        bi_bit_count: 24,
+        bi_compression: BI_RGB,
+        bi_size_image: (W * H * 3) as Dword,
+        bi_x_pels_per_meter: 0,
+        bi_y_pels_per_meter: 0,
+        bi_clr_used: 0,
+        bi_clr_important: 0,
+    };
+    let mut freq = 0i64;
+    unsafe { QueryPerformanceFrequency(&mut freq) };
+    if freq <= 0 {
+        freq = 1;
+    }
+    let mut surf = GdiSurface { hwnd, header, flush_fn, freq, last_input: 0, inputs_seen: 0 };
+    println!("[framesplit] window open — leave it alone until it closes ({} samples + {} warm-up rounds)",
+             per_cell * 4, crate::framesplit::WARM_ROUNDS);
+    let result = crate::framesplit::court(&mut surf, &inputs, per_cell);
+    let alive = unsafe { IsWindow(hwnd) } != 0;
+    if alive {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    match result {
+        Ok(sp) => {
+            for ln in crate::framesplit::summary(&sp) {
+                println!("{}", ln);
+            }
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+            let raw = crate::framesplit::raw_record(host, "GDI window (StretchDIBits + DwmFlush, QPC)", &sp, now);
+            let path = out.unwrap_or_else(|| format!("verify/build/framesplit-raw-{}.json", host));
+            if let Some(dir) = std::path::Path::new(&path).parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            if std::fs::write(&path, raw.as_bytes()).is_ok() {
+                println!("[shell] wrote raw {} — sealed by python verify/framesplit.py", path);
+            } else {
+                eprintln!("SHELL-CANNOT-WRITE: {}", path);
+                std::process::exit(2);
+            }
+        }
+        Err(m) => {
+            eprintln!("SHELL-{}", m);
+            eprintln!("SHELL-FRAMESPLIT-DIAG: window_still_existed={} input_messages_seen={} last_input_msg=0x{:04X}",
+                      alive, surf.inputs_seen, surf.last_input);
+            std::process::exit(2);
+        }
+    }
+}

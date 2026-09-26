@@ -46,7 +46,9 @@ session's per-move witnesses; every frame passes the blit law, playback writes n
 input diverges rather than minting a new authority, and replay from any certified checkpoint reproduces the head),
 latency1r (LATENCY-1R's court, headless: the render-inclusive court over a deterministic mock surface on the sealed
 session — witnesses first, the declared phase regimes, plants that refuse with no record — and the fence that keeps
-LATENCY-0's instrument a byte-exact prefix of shell/win32.rs).
+LATENCY-0's instrument a byte-exact prefix of shell/win32.rs), framesplit (FRAME-SPLIT-0: the split of render-start ->
+frame-ready into seven contiguous phases beside its uninstrumented envelope — locked method, sealer rules, the court
+over the mock, and the fence that keeps the marked mirror on fast::render's calls).
 """
 from __future__ import annotations
 
@@ -3330,6 +3332,204 @@ def latency1r_fence():
             "present -> drift check, with no hashing inside the timed interval" % (LATENCY0_WIN32_LEN, LATENCY0_WIN32_SHA256[:12]))
 
 
+# ------------------------------------------------------------------ FRAME-SPLIT-0
+def framesplit_preregistered():
+    """FRAME-SPLIT-0's method is locked before any host number: the seven contiguous phases with frame-ready as the
+    hard boundary, the uninstrumented envelope beside the instrumented split, witnesses first (the mirror byte-equal
+    to the envelope path), no new variable against LATENCY-1R's apparatus, the VOID tax bound, GAUNTLET-0's p99-share
+    seat rule on the production arm, and reconciliation reported, never distributed. Code constants must match."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    e = reg.get("FRAME-SPLIT-0")
+    if not e:
+        raise Red("FRAME-SPLIT-0 is not registered")
+    hyp, succ, fail = e["hypothesis"].lower(), e["success_condition"].lower(), e["failure_condition"].lower()
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "the seven phases, in order, frame-ready the hard boundary": all(p in hyp for p in ("strips", "frame", "floor_swizzle", "emit", "hud", "bgr", "blit")) and "hard boundary" in hyp,
+        "no new variable against LATENCY-1R": "adds no variable" in hyp and "locked phase origin" in hyp,
+        "witnesses first, the mirror byte-equal to the envelope path": "witnesses first" in succ and "byte for byte" in succ,
+        "envelope and split interleaved ABBA, warm-up discarded": "envelope" in succ and "abba" in succ and "10 warm-up rounds" in succ,
+        "the phases sum to the split total exactly": "sum to its total exactly" in succ,
+        "the VOID tax bound": "100 permille" in succ and "void" in succ,
+        "GAUNTLET-0's p99 share against the envelope, 500 permille": "1000 * p99(phase) / p99(envelope)" in succ and "500 permille" in succ,
+        "the three readings, production arm only": "reads seat" in succ and "multi-component" in succ and "none promoted" in succ and "gets no seat" in succ,
+        "reconciliation reported, never distributed": "never distributed" in succ and "distributed among the phases" in fail,
+        "never compared to an emit p99 or LATENCY-0/1": "emit p99" in fail and "latency-0/latency-1" in fail,
+        "reproducibility and an untouched LATENCY-0 instrument": "--confirm" in fail and "byte-exact prefix" in fail,
+        "scope: tax includes mirror cost, allocations attributed, not input-to-photon": "marked mirror" in lims and "allocation" in lims and "not input-to-photon" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the FRAME-SPLIT-0 method is not fully locked: " + "; ".join(missing))
+    if not entry_hash_ok("FRAME-SPLIT-0", e):
+        raise Red("the FRAME-SPLIT-0 entry was edited after registration (chain hash)")
+    import framesplit as FS
+    rs = read(os.path.join(SHELL, "framesplit.rs")).decode("utf-8")
+    m = re.search(r'pub const PHASES: \[&str; 7\] = \[([^\]]*)\];', rs)
+    rs_phases = tuple(x.strip().strip('"') for x in m.group(1).split(",")) if m else ()
+    if rs_phases != FS.PHASES or FS.PHASES != ("strips", "frame", "floor_swizzle", "emit", "hud", "bgr", "blit"):
+        raise Red("the court's or the sealer's phases are not the registered seven, in order")
+    if "pub const WARM_ROUNDS: usize = 10;" not in rs or FS.WARM_ROUNDS != 10:
+        raise Red("the warm-up is not the registered 10 rounds")
+    if (FS.SEAT_PERMILLE, FS.VOID_TAX_PERMILLE, FS.PROD_THREADS) != (500, 100, 8):
+        raise Red("the sealer's decision constants are not the registered ones")
+    return ("FRAME-SPLIT-0's method is locked before any host number: render-start -> frame-ready split into seven "
+            "contiguous phases (strips, frame, floor_swizzle, emit, hud, bgr, blit; frame-ready the hard boundary) on "
+            "LATENCY-1R's apparatus with no new variable, the uninstrumented envelope interleaved ABBA with the split "
+            "(10 warm-up rounds), witnesses first with the marked mirror byte-equal to the envelope path; |tax| >= 100 "
+            "permille of the envelope reads VOID, else GAUNTLET-0's p99 share against the envelope: one phase >= 500 "
+            "permille is the SEAT, none or several is NO SEAT, production arm only; reconciliation reported, never "
+            "distributed; the code's phases, warm-up and thresholds equal the registered ones; hash-locked %s" % e["chain_hash"][:8])
+
+
+def framesplit_sealer():
+    """The host sealer is a pure function the gate drives with synthetic splits: SEAT, NO SEAT (multi-component),
+    NO SEAT (several at the threshold) and VOID fire exactly at the registered bounds, the shares use the envelope p99
+    as the denominator, reconciliation is recorded not distributed, and a malformed record is refused."""
+    import framesplit as FS
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+
+    def pct(v):
+        return {"p50": v, "p95": v, "p99": v, "max": v}
+
+    def arm(env, phases, total=None):
+        total = sum(phases) if total is None else total
+        return {"envelope": {"render_us": pct(env), "present_us": pct(9000), "samples": 3},
+                "split": {"phases_us": {p: pct(v) for p, v in zip(FS.PHASES, phases)}, "render_us": pct(total),
+                          "present_us": pct(9000), "samples": 3}}
+
+    def raw(prod, single=None, **over):
+        d = {"arms": {"production": prod, "single_thread": single or prod}, "phases": list(FS.PHASES),
+             "refresh_period_us": 13500, "sequence_frames": 4, "samples_per_cell": 3, "warm_rounds": 10,
+             "production_threads": 8, "phase_origin": "locked"}
+        d.update(over)
+        return {"name": "verdandi-framesplit", "provenance": {"tool": "synthetic", "unix_seconds": 0}, "data": d}
+
+    session, build = {"path": "synthetic", "chain_hash": "0" * 64}, {"rustc": "gate", "flags": ["-O"]}
+    cases = {
+        "SEAT: blit": arm(15000, [300, 1500, 100, 2600, 400, 2100, 8000]),              # blit 8000/15000 = 533 permille
+        "NO SEAT (multi-component)": arm(15000, [300, 3500, 100, 2600, 400, 3100, 5000]),  # largest 5000/15000 = 333
+        "NO SEAT (several at the threshold)": arm(10000, [100, 100, 100, 100, 100, 5000, 5000]),  # two at exactly 500
+        "VOID": arm(15000, [300, 3500, 100, 2600, 400, 3100, 5000], total=16600),        # tax 1600 = 106 permille
+    }
+    for want, prod in cases.items():
+        rec, got = FS.seal_framesplit(raw(prod), reg, "gate", session, build)
+        envelope.validate(rec)
+        if got != want:
+            raise Red(f"the sealer read {got!r}, the registered rule says {want!r}")
+        if rec["provenance"]["preregistered"]["chain_hash"] != reg["FRAME-SPLIT-0"]["chain_hash"]:
+            raise Red("the sealed record does not cite FRAME-SPLIT-0")
+    dv = FS.derive(cases["NO SEAT (multi-component)"])
+    if dv["shares_p99_permille_of_envelope"]["blit"] != 333 or dv["tax_p50_us"] != 0:
+        raise Red("the shares are not computed against the envelope p99")
+    skew = arm(15000, [300, 3500, 100, 2600, 400, 3100, 5000])
+    skew["split"]["render_us"] = pct(15400)   # a split total the phase p50s do not reach
+    dv = FS.derive(skew)
+    if dv["median_additivity_gap_us"] != 400 or dv["tax_p50_us"] != 400:
+        raise Red("the reconciliation gap and the tax are not recorded as measured")
+    for bad in (raw(cases["VOID"], phases=list(FS.PHASES)[::-1]), raw(cases["VOID"], phase_origin="uniform"),
+                raw(cases["VOID"], production_threads=4)):
+        try:
+            FS.seal_framesplit(bad, reg, "gate", session, build)
+            raise Red("the sealer accepted phases out of order, another phase origin or another production T")
+        except FS.Refuse:
+            pass
+    return ("verify/framesplit.py, driven with synthetic splits: SEAT (one phase >= 500 permille of the envelope p99), NO "
+            "SEAT multi-component (none), NO SEAT several (two at exactly 500) and VOID (|tax| >= 100 permille) fire at the "
+            "registered bounds; shares use the envelope p99; the tax and the median-additivity gap are recorded as "
+            "measured, never distributed; records cite FRAME-SPLIT-0 and pass the firewall; phases out of order, "
+            "another phase origin or another production T are refused")
+
+
+def framesplit_court():
+    """The SAME split court the host window runs, headless over the mock surface on the sealed session: witnesses first
+    (the envelope path reproduces every sealed witness, the marked mirror reproduces it byte for byte, the arms
+    agree), four cells after the warm-up, and every split's seven phases summing exactly to its total. PLANTS: a
+    tampered sealed witness and a mid-court close both refuse with no record."""
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    import framesplit as FS
+    out = os.path.join(BUILD, "framesplit-mock.json")
+    if os.path.exists(out):
+        os.remove(out)
+    base = ["framesplit-selftest", "--session", SESSIONWALK_DEMO, "--per-cell", "2"]
+    cp = subprocess.run([SHELL_EXE] + base + ["--out", out], capture_output=True, text=True, cwd=ROOT)
+    if cp.returncode != 0 or "framesplit court OK" not in cp.stdout or not os.path.exists(out):
+        raise Red("the headless split court did not run: " + (cp.stderr.strip() or cp.stdout.strip()))
+    with open(out, encoding="utf-8") as fh:
+        raw = json.load(fh)
+    os.remove(out)
+    d = raw["data"]
+    if d["sequence_frames"] != 4 or d["samples_per_cell"] != 2 or d["warm_rounds"] != 10:
+        raise Red("the court did not run the 4 sealed moves, 2 samples per cell after 10 warm-up rounds")
+    for arm in FS.ARMS:
+        spl = d["arms"][arm]["split"]
+        # under the mock clock each phase is exactly one tick, so the telescoping sum is checkable per percentile
+        if sum(spl["phases_us"][p]["p50"] for p in FS.PHASES) != spl["render_us"]["p50"] or spl["render_us"]["p50"] != len(FS.PHASES):
+            raise Red(f"{arm}: the split's phases do not sum to its total")
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    rec, label = FS.seal_framesplit(raw, reg, "gate-mock", {"path": "workshop/attest/sessionwalk-demo.json"}, {"rustc": "gate"})
+    envelope.validate(rec)
+    if label != "VOID":
+        raise Red(f"the mock court (all tax, no work) read {label!r}, not VOID")
+    for plant, code in (("witness", "FRAMESPLIT-WITNESS"), ("close", "FRAMESPLIT-CLOSED")):
+        pout = os.path.join(BUILD, f"framesplit-plant-{plant}.json")
+        if os.path.exists(pout):
+            os.remove(pout)
+        cp = subprocess.run([SHELL_EXE] + base + ["--plant", plant, "--out", pout], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode == 0 or code not in cp.stderr or os.path.exists(pout):
+            raise Red(f"PLANT {plant}: the split court did not refuse with {code} and no record")
+    return ("the FRAME-SPLIT-0 court runs headless over the mock surface on the sealed reference session: witnesses first "
+            "(both arms' envelope paths reproduce the 4 sealed frame witnesses, the marked mirror reproduces them byte for "
+            "byte, the arms agree), 10 warm-up rounds then 4 cells x 2 samples ABBA, each split's seven phases summing "
+            "exactly to its total; the raw record seals citing FRAME-SPLIT-0 and reads VOID (under the mock the probes are "
+            "all the time there is); PLANTS: a tampered sealed witness refuses FRAMESPLIT-WITNESS and a window closed "
+            "mid-court refuses FRAMESPLIT-CLOSED, each writing no record")
+
+
+def framesplit_fence():
+    """The split measures the path LATENCY-1R timed and nothing else: the envelope cells call arm_composite; the marked
+    mirror makes fast::render's calls in fast::render's order (production) or the single-thread arm's (fast::emit),
+    with exactly five marks between the phases; the court reads the clock at render-start, at each mark, after the
+    BGR conversion and at frame-ready, hashes nothing inside the interval, and the window driver is appended after
+    LATENCY-0's untouched instrument."""
+    fast_src = read(os.path.join(KERNEL, "fast.rs")).decode("utf-8")
+    render = src_span(fast_src, "pub fn render(", "/// RE-BREAKDOWN-1 — Court A")
+    pr = read(os.path.join(SHELL, "present.rs")).decode("utf-8")
+    mirror = src_span(pr, "pub fn arm_composite_marked<", "\n}\n")
+    want_order = ["scene.strips(&mut strips)", "scene.frame(&strips, &mut frame)", "blocked_floor(&scene.floor)", "emit_threaded("]
+    ro = [render.find(t) for t in want_order]
+    mo = [mirror.find(t) for t in want_order]
+    if -1 in ro or ro != sorted(ro) or -1 in mo or mo != sorted(mo):
+        raise Red("the marked mirror does not make fast::render's calls in fast::render's order")
+    if "fast::PROD_THREADS" not in mirror or "fast::emit(scene, &strips, &frame, &mut pixels, &floor)" not in mirror:
+        raise Red("the mirror's arms are not emit_threaded at PROD_THREADS and the single-thread fast::emit")
+    if mirror.count("m.mark();") != 5 or "hud::overlay(" not in mirror or "picture(" in mirror:
+        raise Red("the mirror does not mark exactly five render phases (strips, frame, floor_swizzle, emit, hud)")
+    rs = read(os.path.join(SHELL, "framesplit.rs")).decode("utf-8")
+    court = src_span(rs, "pub fn court(", "fn pct_json(")
+    if "arm_composite(&inputs[k].scene, arm)" not in court or "arm_composite_marked(&inputs[k].scene, arm, &mut m)" not in court:
+        raise Red("the envelope cells do not call arm_composite, or the split cells do not call the marked mirror")
+    timed = court[court.index("let t0 = s.ticks();"):court.index("if comp != expected[k]")]
+    order = [timed.find(t) for t in ("let t0 = s.ticks();", "arm_composite", "to_blit(&comp)", "let t_bgr", "s.present(&bgr)")]
+    if -1 in order or order != sorted(order) or "frame_digest" in timed or "sha256" in timed:
+        raise Red("the court's timed interval is not t0 -> render (marked) -> bgr -> present, hash-free")
+    if "let bounds = [t0, t[0], t[1], t[2], t[3], t[4], t_bgr, t1];" not in court:
+        raise Red("the phases are not consecutive differences of contiguous clock reads ending at frame-ready")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    if tail.index("FRAME-SPLIT-0 (appended)") < tail.index("LATENCY-1R (appended)") or "framesplit::court(&mut surf, &inputs, per_cell)" not in tail:
+        raise Red("the FRAME-SPLIT-0 window driver is not appended after LATENCY-1R's, over the same GDI surface")
+    return ("the envelope cells call arm_composite (the path LATENCY-1R timed); the marked mirror makes fast::render's "
+            "calls in fast::render's order (strips, frame, blocked_floor, emit_threaded at PROD_THREADS) or the "
+            "single-thread fast::emit, with exactly five marks; the court's interval is t0 -> render -> bgr -> present, "
+            "hash-free, its phases consecutive differences of contiguous clock reads ending at frame-ready; the window "
+            "driver is appended after LATENCY-1R's over the same GDI surface, LATENCY-0's instrument still a byte-exact prefix")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -3367,6 +3567,8 @@ def main() -> int:
     row("latency1a-preregistered", latency1a_preregistered)
     row("latency1r-preregistered", latency1r_preregistered)
     row("latency1-sealers", latency1_sealers)
+    row("framesplit-preregistered", framesplit_preregistered)
+    row("framesplit-sealer", framesplit_sealer)
     row("gauntlet-preregistered", gauntlet_preregistered)
     row("gauntlet1-preregistered", gauntlet1_preregistered)
     row("gauntlet1-equiv", gauntlet1_equiv)
@@ -3430,6 +3632,8 @@ def main() -> int:
     row("shell-playback-checkpoint", shell_playback_checkpoint)
     row("latency1r-court", latency1r_court)
     row("latency1r-fence", latency1r_fence)
+    row("framesplit-court", framesplit_court)
+    row("framesplit-fence", framesplit_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

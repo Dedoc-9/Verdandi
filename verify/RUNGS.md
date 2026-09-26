@@ -1434,6 +1434,65 @@ A's delta to the renderer; `latency1r-court` if a plant passes or the court's re
 `latency1r-fence` if LATENCY-0's instrument is edited or the court's ordering changes. On the host, a witness mismatch
 or a closed window yields no number, and a shape that does not reproduce under `--confirm` refutes the reading.
 
+## FRAME-SPLIT-0 — preregistered: where the render-start → frame-ready interval goes (method locked, host-run pending)
+
+**Why it is next.** LATENCY-1R measured the shell's render-start → frame-ready interval at 14.8–15.7 ms p50 for the
+production render, longer than every refresh estimate on the owner's host, with the two arms differing in it by only
+2.6–2.8 ms. The renderer's own latency is materially improved; the dominant whole-frame cost is unresolved. The next
+rung is therefore a measurement, not an optimization: split that interval before choosing anything to change.
+
+**The method (`739dc807`).** Seven contiguous phases, in order — **strips** (mantle's `Scene::strips`), **frame** (the
+index-frame buffer allocated and `Scene::frame`), **floor_swizzle** (`fast::blocked_floor`), **emit** (the pixel buffer
+allocated and the pixel pass: `emit_threaded` at `PROD_THREADS = 8`, or the LOCKED `fast::emit` for the single-thread
+arm), **hud** (`hud::overlay`), **bgr** (`to_blit`) and **blit** (`GetDC` + `StretchDIBits`, ending at frame-ready, the
+hard boundary). No variable is added to LATENCY-1R's apparatus: the same window and half-size client area, the same
+sealed session, the same GDI present, the locked phase origin. Per arm, an uninstrumented **envelope** cell (the path
+LATENCY-1R timed, no interior clock read — the accounting envelope) is interleaved ABBA with an instrumented **split**
+cell (the same statements with a clock read after each phase), after 10 warm-up rounds, N samples per cell (default
+300). Witnesses come first: every arm's envelope path reproduces every sealed frame witness, the marked mirror
+reproduces it byte for byte, and the arms agree, before any clock. Frame-ready → composited is kept beside as an
+anchor, not split.
+
+**The reading, on the production arm** (the single-thread split is context and takes no seat). The instrumentation
+tax is split total − envelope, at p50 and p99; |tax p50| ≥ 100‰ of the envelope p50 reads **VOID** (the probes perturbed
+the interval too much to attribute it). Otherwise each phase's share is ⌊1000 · p99(phase) / p99(envelope)⌋ —
+GAUNTLET-0's formula with the envelope as the denominator: exactly one phase ≥ 500‰ reads **SEAT** (the next target);
+none reads **NO SEAT, multi-component** (no single phase is promoted); several reads **NO SEAT**, the several named and
+none promoted. Reconciliation is reported and never distributed: a split's phases sum to its total per sample by
+construction; the tax, and the sum of the phase p50s against the split total p50 (medians do not add), are recorded
+as measured.
+
+**The instrument.** `shell/framesplit.rs` is the court, platform-agnostic over LATENCY-1R's `Surface`; on the host it
+runs over the same GDI surface, its window driver appended to `shell/win32.rs` after LATENCY-1R's (LATENCY-0's
+instrument still a byte-exact prefix); on the gate over the mock surface (`shell framesplit-selftest`). The split's
+path is `present.rs::arm_composite_marked`, which makes `fast::render`'s calls in `fast::render`'s order;
+`fast::render` itself is untouched, and the envelope cells call it, so the mirror's cost difference is inside the
+measured tax. The window build was type-checked here; linking and running are the host's. `verify/framesplit.py`
+seals `shell/attest/framesplit-<host>.json`; `--confirm` seals a separate confirmation record beside it.
+
+**Rows.** `framesplit-preregistered` — the method is locked and the code's phases, warm-up and thresholds equal the
+registered ones. `framesplit-sealer` — synthetic splits: SEAT, NO SEAT (multi-component), NO SEAT (several) and VOID
+fire at the registered bounds, shares use the envelope p99, the tax and the median gap are recorded, malformed records
+are refused. `framesplit-court` — the court over the mock on the sealed session: witnesses first, the mirror byte-equal,
+the warm-up, each split's phases summing exactly to its total, the raw record sealing (VOID under the mock, where the
+probes are all the time there is); plants: a tampered witness and a mid-court close both refuse with no record.
+`framesplit-fence` — the envelope calls `arm_composite`, the mirror follows `fast::render`'s call order with exactly
+five marks, the timed interval is t0 → render → bgr → present with no hashing, and the window driver is appended
+after LATENCY-1R's.
+
+**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the mirror's byte-identity and
+call order, the sealer's rule. Not yet MEASURED: any host number.
+
+**does_not_show.** Any number (none until the host runs). A split of the composition wait after frame-ready. What an
+optimization of the seated phase would achieve. Any other window size, phase origin or host. Input-to-photon.
+
+**Falsifier.** `framesplit-preregistered` reddens if the method is weakened or the code drifts from it;
+`framesplit-sealer` if a reading fires elsewhere than registered; `framesplit-court` if a plant passes or a split stops
+summing to its total; `framesplit-fence` if the mirror leaves `fast::render`'s calls, the envelope stops being the
+production path, or LATENCY-0's instrument is edited. On the host, a witness or mirror mismatch or a closed window
+yields no number, a tax ≥ 100‰ refuses attribution, and a reading that does not reproduce under `--confirm` is
+refuted.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
