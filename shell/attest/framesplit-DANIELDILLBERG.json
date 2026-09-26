@@ -1,0 +1,273 @@
+{
+ "name": "verdandi-framesplit",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell framesplit-window (shell/framesplit.rs court over the GDI surface appended to shell/win32.rs) + verify/framesplit.py",
+  "surface": "shell/framesplit.rs court over the GDI window (StretchDIBits + DwmFlush, QPC) surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790461891,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "FRAME-SPLIT-0",
+   "chain_hash": "739dc807c3aa6c4e39567c4c45c4beb78700aba30ce8bde32bd913c86f1f1bf9"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the render-start -> frame-ready interval of the shell's frame on host DANIELDILLBERG split into 7 phases for the production (T=8) and single-thread arms, with the uninstrumented envelope beside it, locked phase origin, 300 samples per cell over 4 frames",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency: input transport and panel scan-out need capture hardware",
+  "a comparison with any emit p99 (a different apparatus and observable)",
+  "that a phase's share is its cost outside this frame (the shares are p99s of one interval, and p99s do not add)",
+  "that the instrumentation tax is zero: it is measured and reported, and a VOID reading refuses attribution",
+  "a split of the time AFTER frame-ready (the composition wait) — that is frame-ready -> composited, kept as an anchor",
+  "that the seat names an optimization that will work: it names where the time is, not what will remove it",
+  "any other host, session, panel, window size or phase origin; absolute us are host-specific"
+ ],
+ "data": {
+  "arms": {
+   "production": {
+    "envelope": {
+     "render_us": {
+      "p50": 15690,
+      "p95": 17256,
+      "p99": 17863,
+      "max": 18388
+     },
+     "present_us": {
+      "p50": 9904,
+      "p95": 12006,
+      "p99": 12945,
+      "max": 13251
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 62,
+       "p95": 145,
+       "p99": 170,
+       "max": 208
+      },
+      "frame": {
+       "p50": 2911,
+       "p95": 4075,
+       "p99": 4487,
+       "max": 4711
+      },
+      "floor_swizzle": {
+       "p50": 79,
+       "p95": 97,
+       "p99": 137,
+       "max": 208
+      },
+      "emit": {
+       "p50": 3566,
+       "p95": 4490,
+       "p99": 4869,
+       "max": 5324
+      },
+      "hud": {
+       "p50": 51,
+       "p95": 85,
+       "p99": 126,
+       "max": 134
+      },
+      "bgr": {
+       "p50": 1778,
+       "p95": 2241,
+       "p99": 2483,
+       "max": 2635
+      },
+      "blit": {
+       "p50": 7087,
+       "p95": 7291,
+       "p99": 7762,
+       "max": 8748
+      }
+     },
+     "render_us": {
+      "p50": 15536,
+      "p95": 17434,
+      "p99": 17821,
+      "max": 17966
+     },
+     "present_us": {
+      "p50": 10094,
+      "p95": 12096,
+      "p99": 12656,
+      "max": 13760
+     },
+     "samples": 300
+    }
+   },
+   "single_thread": {
+    "envelope": {
+     "render_us": {
+      "p50": 18452,
+      "p95": 19780,
+      "p99": 21021,
+      "max": 24792
+     },
+     "present_us": {
+      "p50": 7236,
+      "p95": 8799,
+      "p99": 8979,
+      "max": 9463
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 62,
+       "p95": 147,
+       "p99": 156,
+       "max": 207
+      },
+      "frame": {
+       "p50": 2943,
+       "p95": 3993,
+       "p99": 4454,
+       "max": 4632
+      },
+      "floor_swizzle": {
+       "p50": 79,
+       "p95": 95,
+       "p99": 203,
+       "max": 250
+      },
+      "emit": {
+       "p50": 6828,
+       "p95": 7243,
+       "p99": 7734,
+       "max": 8173
+      },
+      "hud": {
+       "p50": 45,
+       "p95": 52,
+       "p99": 57,
+       "max": 73
+      },
+      "bgr": {
+       "p50": 1711,
+       "p95": 1836,
+       "p99": 2002,
+       "max": 2183
+      },
+      "blit": {
+       "p50": 7063,
+       "p95": 7284,
+       "p99": 8111,
+       "max": 8510
+      }
+     },
+     "render_us": {
+      "p50": 18503,
+      "p95": 19625,
+      "p99": 20231,
+      "max": 22395
+     },
+     "present_us": {
+      "p50": 7230,
+      "p95": 8653,
+      "p99": 9634,
+      "max": 10357
+     },
+     "samples": 300
+    }
+   }
+  },
+  "phases": [
+   "strips",
+   "frame",
+   "floor_swizzle",
+   "emit",
+   "hud",
+   "bgr",
+   "blit"
+  ],
+  "refresh_period_us": 13363,
+  "sequence_frames": 4,
+  "samples_per_cell": 300,
+  "warm_rounds": 10,
+  "production_threads": 8,
+  "phase_origin": "locked",
+  "derived": {
+   "production": {
+    "tax_p50_us": -154,
+    "tax_p99_us": -42,
+    "abs_tax_p50_permille_of_envelope": 9,
+    "shares_p99_permille_of_envelope": {
+     "strips": 9,
+     "frame": 251,
+     "floor_swizzle": 7,
+     "emit": 272,
+     "hud": 7,
+     "bgr": 139,
+     "blit": 434
+    },
+    "shares_p50_permille_of_envelope": {
+     "strips": 3,
+     "frame": 185,
+     "floor_swizzle": 5,
+     "emit": 227,
+     "hud": 3,
+     "bgr": 113,
+     "blit": 451
+    },
+    "sum_of_phase_p50s_us": 15534,
+    "split_total_p50_us": 15536,
+    "median_additivity_gap_us": 2
+   },
+   "single_thread": {
+    "tax_p50_us": 51,
+    "tax_p99_us": -790,
+    "abs_tax_p50_permille_of_envelope": 2,
+    "shares_p99_permille_of_envelope": {
+     "strips": 7,
+     "frame": 211,
+     "floor_swizzle": 9,
+     "emit": 367,
+     "hud": 2,
+     "bgr": 95,
+     "blit": 385
+    },
+    "shares_p50_permille_of_envelope": {
+     "strips": 3,
+     "frame": 159,
+     "floor_swizzle": 4,
+     "emit": 370,
+     "hud": 2,
+     "bgr": 92,
+     "blit": 382
+    },
+    "sum_of_phase_p50s_us": 18731,
+    "split_total_p50_us": 18503,
+    "median_additivity_gap_us": -228
+   }
+  },
+  "seat_rule_permille": 500,
+  "void_tax_permille": 100
+ },
+ "reading": "FRAME-SPLIT-0 on host DANIELDILLBERG (locked phase origin, 300 samples per cell, refresh 13363 us, context only). Production envelope render-start -> frame-ready p50 15690 us / p99 17863 us. production: NO SEAT — multi-component: no phase reaches 500 permille, none is promoted. p99 shares of the envelope (permille): strips 9, frame 251, floor_swizzle 7, emit 272, hud 7, bgr 139, blit 434. Tax -154 us at p50 (9 permille of the envelope) and -42 us at p99; the phase p50s sum to 15534 us against a split total of 15536 us (medians do not add; the 2 us gap is reported, not distributed). Context, no seat: single_thread: NO SEAT — multi-component: no phase reaches 500 permille, none is promoted. p99 shares of the envelope (permille): strips 7, frame 211, floor_swizzle 9, emit 367, hud 2, bgr 95, blit 385. Tax 51 us at p50 (2 permille of the envelope) and -790 us at p99; the phase p50s sum to 18731 us against a split total of 18503 us (medians do not add; the -228 us gap is reported, not distributed). Not input-to-photon; never compared to an emit p99; within this apparatus only.",
+ "chain_hash": "f83b5ce3baa27b5906f0cc97cab03b7e78f2e2a19c208e69dd777e40dc524339"
+}
