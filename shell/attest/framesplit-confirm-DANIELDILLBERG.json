@@ -1,0 +1,278 @@
+{
+ "name": "verdandi-framesplit-confirm",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell framesplit-window (shell/framesplit.rs court over the GDI surface appended to shell/win32.rs) + verify/framesplit.py",
+  "surface": "shell/framesplit.rs court over the GDI window (StretchDIBits + DwmFlush, QPC) surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790462536,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "FRAME-SPLIT-0",
+   "chain_hash": "739dc807c3aa6c4e39567c4c45c4beb78700aba30ce8bde32bd913c86f1f1bf9"
+  },
+  "confirms": {
+   "of": "shell/attest/framesplit-DANIELDILLBERG.json",
+   "chain_hash": "f83b5ce3baa27b5906f0cc97cab03b7e78f2e2a19c208e69dd777e40dc524339",
+   "original_label": "NO SEAT (multi-component)"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the render-start -> frame-ready interval of the shell's frame on host DANIELDILLBERG split into 7 phases for the production (T=8) and single-thread arms, with the uninstrumented envelope beside it, locked phase origin, 300 samples per cell over 4 frames (a confirmation run)",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency: input transport and panel scan-out need capture hardware",
+  "a comparison with any emit p99 (a different apparatus and observable)",
+  "that a phase's share is its cost outside this frame (the shares are p99s of one interval, and p99s do not add)",
+  "that the instrumentation tax is zero: it is measured and reported, and a VOID reading refuses attribution",
+  "a split of the time AFTER frame-ready (the composition wait) — that is frame-ready -> composited, kept as an anchor",
+  "that the seat names an optimization that will work: it names where the time is, not what will remove it",
+  "any other host, session, panel, window size or phase origin; absolute us are host-specific"
+ ],
+ "data": {
+  "arms": {
+   "production": {
+    "envelope": {
+     "render_us": {
+      "p50": 15766,
+      "p95": 17474,
+      "p99": 18015,
+      "max": 18703
+     },
+     "present_us": {
+      "p50": 9773,
+      "p95": 11755,
+      "p99": 12262,
+      "max": 13097
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 61,
+       "p95": 157,
+       "p99": 178,
+       "max": 211
+      },
+      "frame": {
+       "p50": 3043,
+       "p95": 4120,
+       "p99": 4678,
+       "max": 5367
+      },
+      "floor_swizzle": {
+       "p50": 55,
+       "p95": 102,
+       "p99": 197,
+       "max": 235
+      },
+      "emit": {
+       "p50": 3736,
+       "p95": 4597,
+       "p99": 4860,
+       "max": 5111
+      },
+      "hud": {
+       "p50": 51,
+       "p95": 81,
+       "p99": 132,
+       "max": 137
+      },
+      "bgr": {
+       "p50": 1759,
+       "p95": 2293,
+       "p99": 2451,
+       "max": 2811
+      },
+      "blit": {
+       "p50": 7082,
+       "p95": 7295,
+       "p99": 7695,
+       "max": 7933
+      }
+     },
+     "render_us": {
+      "p50": 15722,
+      "p95": 17517,
+      "p99": 18067,
+      "max": 19136
+     },
+     "present_us": {
+      "p50": 9848,
+      "p95": 11828,
+      "p99": 12217,
+      "max": 13328
+     },
+     "samples": 300
+    }
+   },
+   "single_thread": {
+    "envelope": {
+     "render_us": {
+      "p50": 18595,
+      "p95": 20037,
+      "p99": 20528,
+      "max": 24428
+     },
+     "present_us": {
+      "p50": 7023,
+      "p95": 8634,
+      "p99": 9056,
+      "max": 9621
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 58,
+       "p95": 155,
+       "p99": 185,
+       "max": 226
+      },
+      "frame": {
+       "p50": 3058,
+       "p95": 4091,
+       "p99": 4831,
+       "max": 5122
+      },
+      "floor_swizzle": {
+       "p50": 49,
+       "p95": 95,
+       "p99": 220,
+       "max": 376
+      },
+      "emit": {
+       "p50": 6854,
+       "p95": 7148,
+       "p99": 7617,
+       "max": 8357
+      },
+      "hud": {
+       "p50": 45,
+       "p95": 52,
+       "p99": 57,
+       "max": 60
+      },
+      "bgr": {
+       "p50": 1691,
+       "p95": 1777,
+       "p99": 1860,
+       "max": 2197
+      },
+      "blit": {
+       "p50": 7056,
+       "p95": 7164,
+       "p99": 7261,
+       "max": 8481
+      }
+     },
+     "render_us": {
+      "p50": 18518,
+      "p95": 19878,
+      "p99": 20310,
+      "max": 20772
+     },
+     "present_us": {
+      "p50": 7062,
+      "p95": 8574,
+      "p99": 8964,
+      "max": 9127
+     },
+     "samples": 300
+    }
+   }
+  },
+  "phases": [
+   "strips",
+   "frame",
+   "floor_swizzle",
+   "emit",
+   "hud",
+   "bgr",
+   "blit"
+  ],
+  "refresh_period_us": 13337,
+  "sequence_frames": 4,
+  "samples_per_cell": 300,
+  "warm_rounds": 10,
+  "production_threads": 8,
+  "phase_origin": "locked",
+  "derived": {
+   "production": {
+    "tax_p50_us": -44,
+    "tax_p99_us": 52,
+    "abs_tax_p50_permille_of_envelope": 2,
+    "shares_p99_permille_of_envelope": {
+     "strips": 9,
+     "frame": 259,
+     "floor_swizzle": 10,
+     "emit": 269,
+     "hud": 7,
+     "bgr": 136,
+     "blit": 427
+    },
+    "shares_p50_permille_of_envelope": {
+     "strips": 3,
+     "frame": 193,
+     "floor_swizzle": 3,
+     "emit": 236,
+     "hud": 3,
+     "bgr": 111,
+     "blit": 449
+    },
+    "sum_of_phase_p50s_us": 15787,
+    "split_total_p50_us": 15722,
+    "median_additivity_gap_us": -65
+   },
+   "single_thread": {
+    "tax_p50_us": -77,
+    "tax_p99_us": -218,
+    "abs_tax_p50_permille_of_envelope": 4,
+    "shares_p99_permille_of_envelope": {
+     "strips": 9,
+     "frame": 235,
+     "floor_swizzle": 10,
+     "emit": 371,
+     "hud": 2,
+     "bgr": 90,
+     "blit": 353
+    },
+    "shares_p50_permille_of_envelope": {
+     "strips": 3,
+     "frame": 164,
+     "floor_swizzle": 2,
+     "emit": 368,
+     "hud": 2,
+     "bgr": 90,
+     "blit": 379
+    },
+    "sum_of_phase_p50s_us": 18811,
+    "split_total_p50_us": 18518,
+    "median_additivity_gap_us": -293
+   }
+  },
+  "seat_rule_permille": 500,
+  "void_tax_permille": 100
+ },
+ "reading": "CONFIRMATION run — does NOT replace the sealed FRAME-SPLIT-0 record (chain f83b5ce3). The production reading REPRODUCED: original NO SEAT (multi-component), this run NO SEAT (multi-component). FRAME-SPLIT-0 on host DANIELDILLBERG (locked phase origin, 300 samples per cell, refresh 13337 us, context only). Production envelope render-start -> frame-ready p50 15766 us / p99 18015 us. production: NO SEAT — multi-component: no phase reaches 500 permille, none is promoted. p99 shares of the envelope (permille): strips 9, frame 259, floor_swizzle 10, emit 269, hud 7, bgr 136, blit 427. Tax -44 us at p50 (2 permille of the envelope) and 52 us at p99; the phase p50s sum to 15787 us against a split total of 15722 us (medians do not add; the -65 us gap is reported, not distributed). Context, no seat: single_thread: NO SEAT — multi-component: no phase reaches 500 permille, none is promoted. p99 shares of the envelope (permille): strips 9, frame 235, floor_swizzle 10, emit 371, hud 2, bgr 90, blit 353. Tax -77 us at p50 (4 permille of the envelope) and -218 us at p99; the phase p50s sum to 18811 us against a split total of 18518 us (medians do not add; the -293 us gap is reported, not distributed). Not input-to-photon; never compared to an emit p99; within this apparatus only.",
+ "chain_hash": "46f63ef79f64d0458b23e6a61119f51f79e3ba3fe079cd3be14f19f699351d24"
+}
