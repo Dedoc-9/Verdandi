@@ -1542,7 +1542,7 @@ production path, or LATENCY-0's instrument is edited. On the host, a witness or 
 yields no number, a tax ≥ 100‰ refuses attribution, and a reading that does not reproduce under `--confirm` is
 refuted.
 
-## PRESENT-SCALE-0 — how much of the blit is the 2:1 destination scaling (a diagnostic; measured: SCALING MATERIAL; confirmation pending)
+## PRESENT-SCALE-0 — how much of the blit is the 2:1 destination scaling (a diagnostic; measured and confirmed: SCALING MATERIAL)
 
 **Why it is next.** FRAME-SPLIT-0, confirmed, found the blit — `GetDC` + `StretchDIBits` of the 1920×1080 composite
 into the half-size client area — the largest phase of the frame (~7.1 ms p50) without a seat, and `GHOSTS.md` G11 had
@@ -1601,9 +1601,11 @@ nothing inside the interval, and LATENCY-0's instrument is still a byte-exact pr
 **The reading: SCALING MATERIAL (the full-size destination is cheaper).** The blit's p50 fell by 5,561 µs — 717‰ of the
 half-size blit, far past the 100‰ bound — while the six non-blit phases moved 460 µs (48‰), just inside the 50‰
 CONFOUNDED bound, and the instrumentation tax stayed inside the VOID bound in both geometries. So destination
-geometry materially changes the GDI blit on this host, and in the cheaper direction: writing four times the destination
-pixels 1:1 costs far less than `StretchDIBits`'s 2:1 reduction under the default stretch mode. The number is the
-preregistered **net** — the scaling removed and the larger copy added — not the scaler's own cost. About 97% of the
+geometry materially changes the GDI blit on this host, in the cheaper direction: on this host, in this exact GDI
+apparatus and workload, the 1:1 destination configuration had a far lower blit p50 than the 2:1 `BLACKONWHITE`
+configuration. That is not a general statement about GDI or Windows, whose stretching behaviour depends on the mode
+and the configuration. The number is the preregistered **net** — the scaling removed and the larger copy added — not
+the scaler's own cost. About 97% of the
 envelope's median drop (5.7 ms, 333‰) is the blit.
 
 **Beside the reading, not ruled on.** At full size the envelope p50 (11.4 ms) is below the measured refresh (13.2 ms)
@@ -1618,9 +1620,25 @@ Finally, the half-size condition here read slower than FRAME-SPLIT-0's window (e
 client area is now set exactly and the blocks alternate with full-size ones. That is a cross-court difference neither
 rule covers; it is recorded, not interpreted, and the within-court comparison (block-ABBA) is what the reading uses.
 
+**Confirmed (`shell/attest/presentscale-confirm-DANIELDILLBERG.json`, cites the first record).** The preregistered
+second run reads **SCALING MATERIAL (the full-size destination is cheaper)** again, and the confirmation record states
+that the reading reproduced. The same stretch mode (1) and screen, refresh 13,394 µs. p50 / p99 in µs:
+
+| | half (960×540) | full (1920×1080) | full − half |
+|---|---|---|---|
+| **blit** | **7,461 / 8,547** | **2,199 / 2,830** | **−5,262 / −5,717** |
+| non-blit phases, p50 sum | 9,429 | 9,115 | −314 (33‰) |
+| envelope render-start → frame-ready | 16,959 / 19,683 | 11,243 / 13,506 | −5,716 / −6,177 |
+| frame-ready → composited | 8,557 / 12,280 | 3,637 / 15,252 | −4,920 / +2,972 |
+
+The blit delta was 705‰ of the half-size blit (the first run: 717‰), the full-size blit steady at ~2.2 ms, and the
+non-blit movement smaller this time (33‰ against 48‰), further from the confound bound. The tail pattern reproduced
+too: frame-ready → composited p99 rose ~3.0 ms at full size in both runs while its p50 fell, so the blit result is still
+not an end-to-end latency result. At full size the envelope p50 (11.2 ms) was again below the measured refresh.
+
 **Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the geometry refusal, the
-sealer's rule. MEASURED (host, one run): SCALING MATERIAL, full-size cheaper, net −5.56 ms at the blit's p50. Not yet
-MEASURED: its reproducibility (`--confirm`).
+sealer's rule. MEASURED (host, two runs): SCALING MATERIAL, the full-size destination cheaper, net −5.26 to −5.56 ms at
+the blit's p50 — reproduced, on this host and apparatus.
 
 **does_not_show.** That the shell should present at full size, or with any other stretch mode — each would be a
 separate court, because it changes what the window shows. Anything about a

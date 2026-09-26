@@ -119,8 +119,8 @@ Every rung ran the same loop, and the loop is the product as much as the code:
 - The shell's whole render-start → frame-ready interval is ~15 ms at p50, longer than one refresh on the owner's host,
   and FRAME-SPLIT-0 found, twice, no single dominant phase (blit 427–434‰, emit ~270‰, frame ~255‰, bgr ~137‰): no
   target is promoted (G8). The narrower diagnostic of the largest component, PRESENT-SCALE-0, found the blit's 2:1
-  reduction material (the 1:1 blit ~5.6 ms cheaper at p50, once; G11). Choosing the shell's presentation geometry is
-  still a separate court.
+  reduction material on this host (the 1:1 blit ~5.3–5.6 ms cheaper at p50, confirmed; G11). Choosing the shell's
+  presentation geometry is still a separate court.
 - The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two
   runs); presentation latency is phase-dependent, and no low-latency claim is made.
 - A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.

@@ -190,7 +190,7 @@ method change, so it would be preregistered before a number, never applied to on
 
 ---
 
-## G11 — the window shows GDI's 2:1 Boolean-AND reduction of the certified picture, and that reduction is costly · MEASURED (one run; confirmation pending)
+## G11 — the window shows GDI's 2:1 Boolean-AND reduction of the certified picture, and here that reduction is costly · MEASURED (confirmed)
 
 The blit-hash law proves the shell hands `StretchDIBits` exactly the kernel's composite. But the window's client area
 is half size (960 × 540), so GDI reduces the 1920 × 1080 picture on the way to the glass, under the device context's
@@ -199,14 +199,15 @@ default stretch mode — the shell never sets one. `PRESENT-SCALE-0` recorded th
 an average. What the half-size window shows is therefore not the certified picture scaled but an AND-reduction of it,
 which no row checks.
 
-It is also expensive. With the destination client area as the only variable, the blit's p50 fell from 7,755 µs (half)
-to 2,194 µs (full, 1:1) — **SCALING MATERIAL**, 717‰, with the non-blit phases inside the confound bound (48‰). Writing
-four times the destination pixels 1:1 costs far less than the 2:1 reduction. That is the net of removing the scaling
-and adding the larger copy, measured once.
+It is also expensive here. With the destination client area as the only variable, the blit's p50 fell from 7,755 µs
+(half) to 2,194 µs (full, 1:1), and on the preregistered second run from 7,461 to 2,199 µs — **SCALING MATERIAL** both
+times (717‰ and 705‰), with the non-blit phases inside the confound bound (48‰ and 33‰). On this host, in this exact GDI
+apparatus and workload, the 1:1 destination configuration had a far lower blit p50 than the 2:1 `BLACKONWHITE` one; that
+is the net of removing the scaling and adding the larger copy, and not a general statement about GDI.
 
-**Exorcism.** `PRESENT-SCALE-0 --confirm` to establish the reading. Beyond it, what the shell should present — its
-geometry, a stretch mode set and stated, or a 1:1 region — changes what the window shows, so each is its own court,
-never a consequence drawn from this diagnostic.
+**Exorcism.** As a measurement ghost this one is laid: the reading reproduced. What is still open is a choice, not a
+measurement — what the shell should present (its geometry, a stretch mode set and stated, or a 1:1 region) changes
+what the window shows, so each is its own court, never a consequence drawn from this diagnostic.
 
 ---
 
@@ -214,8 +215,8 @@ never a consequence drawn from this diagnostic.
 
 None of these ghosts is load-bearing for a claim the program actually makes. G1 and G3 are execution refinements
 with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured and reproduced (twice), and
-G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured once (costly, and not a
-faithful scaling); G4, G5, G6, G9 and G10 are caveats a careful reader must carry, recorded so they are carried on
+G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
+and not a faithful scaling); G4, G5, G6, G9 and G10 are caveats a careful reader must carry, recorded so they are carried on
 purpose.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously
