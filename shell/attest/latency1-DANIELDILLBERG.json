@@ -1,0 +1,82 @@
+{
+ "name": "verdandi-latency1",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell/win32.rs playback_window --measure (LATENCY-0's instrument, unchanged) + verify/latency1.py",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790425159,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "LATENCY-1",
+   "chain_hash": "8e93118e9a6f5447066b3b19e9c48c292fec2a96490189e1d924209879d1b4ee"
+  },
+  "amended_by": {
+   "rung": "LATENCY-1a",
+   "chain_hash": "b32d226f561c3b3c42542b2deac89ca100768861296b72f3fc889ba588472d53"
+  },
+  "inherited_baseline": {
+   "rung": "LATENCY-0",
+   "from": "shell/attest/latency-DANIELDILLBERG.json",
+   "chain_hash": "19758751c370351b990ea006fa3da8cf0303dd4c700db678a78c09171fe27d72",
+   "present_us": {
+    "p50": 5921,
+    "p95": 7078,
+    "p99": 7318,
+    "max": 7396
+   },
+   "refresh_period_us": 13298
+  }
+ },
+ "validity_scope": {
+  "certifies": "the frame-ready -> composited (blit -> composited) time of LATENCY-0's instrument replaying the sealed reference session on host DANIELDILLBERG, 200 samples over 4 frames, from a build whose production render is the T=8 threaded path — which runs BEFORE this interval",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "that the T=8 renderer's headroom propagates, is absorbed, or contends: the render ran before the window opened, outside this interval (LATENCY-1a)",
+  "input-to-photon latency: input transport, the present wait beyond composition and the panel need capture hardware",
+  "a comparison to any emit p99 (GAUNTLET-2's 7734 us baseline is a render-phase time, a different observable)",
+  "a comparison with LATENCY-1R's render-start -> composited numbers (a different observable)",
+  "the baseline as re-derived here: it is inherited from the sealed LATENCY-0 record, unchanged",
+  "any other host, session, window state or interactive load; absolute us are host- and panel-specific"
+ ],
+ "data": {
+  "present_us": {
+   "p50": 5965,
+   "p95": 6882,
+   "p99": 12299,
+   "max": 20140
+  },
+  "refresh_period_us": 13089,
+  "samples": 200,
+  "sequence_frames": 4,
+  "baseline_present_us": {
+   "p50": 5921,
+   "p95": 7078,
+   "p99": 7318,
+   "max": 7396
+  },
+  "baseline_refresh_period_us": 13298,
+  "delta_p50_us": 44,
+  "delta_p99_us": 4981,
+  "abs_delta_p99_permille_of_baseline": 680,
+  "materiality_permille": 50
+ },
+ "reading": "DEGRADATION of the presentation interval: p99 12299 us vs the inherited 7318 us (delta +4981 us, 680 permille) — a change in the blit -> composited interval itself (DWM, system state, build). Per the LATENCY-1a amendment this says NOTHING about the renderer: the frames were rendered before the window opened, outside this interval, so neither render headroom propagating nor render contention can appear in it — the render-inclusive question is LATENCY-1R's, a different observable never compared with this one. Not input-to-photon; never compared to an emit p99.",
+ "chain_hash": "4817c9f1300b21249c32b05f46131401fc0a9ab96f7b01254cdc248e598359db"
+}
