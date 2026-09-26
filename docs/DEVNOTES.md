@@ -117,8 +117,9 @@ Every rung ran the same loop, and the loop is the product as much as the code:
 - The threaded write is race-free but not Miri-clean (G1); a row-band `chunks_mut` decomposition makes it sound.
 - The T=8 plateau is a hypothesis, not a bus measurement (G2); a roofline settles it.
 - The shell's whole render-start → frame-ready interval is ~15 ms at p50, longer than one refresh on the owner's host,
-  and FRAME-SPLIT-0 found no single dominant phase (blit 434‰, emit 272‰, frame 251‰, bgr 139‰): no target is
-  promoted (G8). The next step is a narrower measurement of one named component, not an optimization.
+  and FRAME-SPLIT-0 found, twice, no single dominant phase (blit 427–434‰, emit ~270‰, frame ~255‰, bgr ~137‰): no
+  target is promoted (G8). The next step is a narrower diagnostic of one named component (PRESENT-SCALE-0, the blit's
+  2:1 scaling), not an optimization.
 - The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two
   runs); presentation latency is phase-dependent, and no low-latency claim is made.
 - A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.

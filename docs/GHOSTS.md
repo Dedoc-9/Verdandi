@@ -135,7 +135,7 @@ hypothesizes it can remove — but not before G8's split shows whether the prese
 
 ---
 
-## G8 — the render-inclusive frame is longer than one refresh, and it has no single dominant phase · MEASURED (one run; confirmation pending)
+## G8 — the render-inclusive frame is longer than one refresh, and it has no single dominant phase · MEASURED (confirmed)
 
 The GAUNTLET staircase optimized only the *emit* (texel) pass, because `GAUNTLET-0` measured it as the dominant render
 phase (695‰). `LATENCY-1R` then measured the shell's whole render-start → frame-ready interval at 14.8–15.7 ms p50 for
@@ -146,12 +146,14 @@ reaches 500‰, so the court reads NO SEAT (multi-component):** the post-GAUNTLE
 renderer or presentation phase, and no single optimization is promoted. The instrumentation tax was −154 µs at p50
 (9‰), recorded and not used to correct any phase.
 
-The ghost is not fully laid: this is one run, and the split cannot say how much of the largest phase, the blit, is
-`StretchDIBits`'s 2:1 downscale rather than the copy itself (G11).
+The preregistered confirmation reproduced the reading (NO SEAT; blit 427‰, emit 269‰, frame 259‰, bgr 136‰; every
+share within 8‰ of the first run). What remains open is not the shape but its parts: the split cannot say how much of
+the largest phase, the blit, is `StretchDIBits`'s 2:1 downscale rather than the copy itself (G11), and the emit and
+frame phases include their buffers' allocation.
 
-**Exorcism.** `FRAME-SPLIT-0 --confirm` to establish the reading. Then, because the multi-component result promotes
-nothing by itself, any next step is a narrower measurement of one named component, preregistered on its own — not an
-optimization chosen because a share looks large. A return to `emit` because it was once dominant, a present-path
+**Exorcism.** Because the multi-component result promotes nothing by itself, any next step is a narrower measurement of
+one named component, preregistered on its own — not an optimization chosen because a share looks large. The first is
+`PRESENT-SCALE-0` (G11). A return to `emit` because it was once dominant, a present-path
 rewrite because blit is largest, or a BGR change because 139‰ looks tempting would each skip the rule this court
 applied.
 
@@ -196,8 +198,10 @@ mode the device context has — the shell never sets one. What actually reaches 
 resampling of the certified picture, which no row checks, and the resampling's cost sits inside `LATENCY-1R`'s
 render-start → frame-ready interval (it is before `LATENCY-0`'s frame-ready, so outside `LATENCY-0` and `LATENCY-1`).
 
-`FRAME-SPLIT-0` has now timed the blit as its own phase: about 7.1 ms at p50 (434‰ of the envelope at p99), the
-largest single phase in both arms. How much of that is the 2:1 scaling is still unmeasured.
+`FRAME-SPLIT-0` has now timed the blit as its own phase, twice: about 7.1 ms at p50 (427–434‰ of the envelope at
+p99), the largest single phase in both arms. How much of that is the 2:1 scaling is still unmeasured; `PRESENT-SCALE-0`
+(`64b263da`, preregistered) measures it, with the destination client area as its only variable and the stretch mode
+and screen scaling recorded.
 
 **Exorcism.** Measure the destination geometry as the only variable — the same sealed session, framebuffer, renderer,
 HUD, BGR buffer and GDI path, a half-size against a full-size destination — before deciding anything about the present
@@ -210,7 +214,7 @@ checked.
 
 None of these ghosts is load-bearing for a claim the program actually makes. G1 and G3 are execution refinements
 with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured and reproduced (twice), and
-G8 has turned from a hunch into a measured split with no single dominant phase (one run, confirmation pending); G4, G5, G6, G9, G10 and
+G8 has turned from a hunch into a confirmed split with no single dominant phase; G4, G5, G6, G9, G10 and
 G11 are caveats a careful reader must carry, recorded so they are carried on purpose.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously

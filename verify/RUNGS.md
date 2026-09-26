@@ -1434,7 +1434,7 @@ A's delta to the renderer; `latency1r-court` if a plant passes or the court's re
 `latency1r-fence` if LATENCY-0's instrument is edited or the court's ordering changes. On the host, a witness mismatch
 or a closed window yields no number, and a shape that does not reproduce under `--confirm` refutes the reading.
 
-## FRAME-SPLIT-0 — where the render-start → frame-ready interval goes (measured: NO SEAT, multi-component; confirmation pending)
+## FRAME-SPLIT-0 — where the render-start → frame-ready interval goes (measured and confirmed: NO SEAT, multi-component)
 
 **Why it is next.** LATENCY-1R measured the shell's render-start → frame-ready interval at 14.8–15.7 ms p50 for the
 production render, longer than every refresh estimate on the owner's host, with the two arms differing in it by only
@@ -1511,9 +1511,25 @@ is corrected by it. The production phase p50s sum to 15,534 µs against a split 
 single-thread arm the gap is −228 µs, because medians do not add). The single-thread context confirms where GAUNTLET-2's
 saving sits: emit p50 6,828 → 3,566 µs, with the other phases within ~70 µs between arms.
 
+**Confirmed (`shell/attest/framesplit-confirm-DANIELDILLBERG.json`, cites the first record).** The preregistered second
+run reads **NO SEAT (multi-component)** again, and the confirmation record states that the reading reproduced.
+Production envelope p50 15,766 / p99 18,015 µs (the first run 15,690 / 17,863: +8‰ at p99). The p99 shares, first run →
+confirmation:
+
+| phase | strips | frame | floor_swizzle | emit | hud | bgr | blit |
+|---|---|---|---|---|---|---|---|
+| first run | 9‰ | 251‰ | 7‰ | 272‰ | 7‰ | 139‰ | 434‰ |
+| confirmation | 9‰ | 259‰ | 10‰ | 269‰ | 7‰ | 136‰ | 427‰ |
+
+Every share moved by 8‰ or less; the blit moved *away* from the 500‰ boundary (434 → 427‰), its p50 steady at ~7.1 ms
+(7,087 → 7,082 µs). The instrumentation tax was −44 µs at p50 (2‰), again recorded and not used to correct any phase.
+So the post-GAUNTLET-2 frame is confirmed multi-component: no single phase is promoted, the blit is the largest
+component and not a bottleneck, and the next step is a narrower diagnostic of one named component — the destination
+scaling inside the blit (PRESENT-SCALE-0 below) — rather than an optimization.
+
 **Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the mirror's byte-identity and
-call order, the sealer's rule. MEASURED (host, one run): the split and its reading — NO SEAT, multi-component, blit
-the largest phase at 434‰. Not yet MEASURED: its reproducibility (`--confirm`).
+call order, the sealer's rule. MEASURED (host, two runs): the split and its reading — NO SEAT, multi-component,
+reproduced; the blit the largest phase at 427–434‰.
 
 **does_not_show.** A split of the composition wait after frame-ready. How much of the blit is the 2:1 scaling rather
 than the copy. What an optimization of any phase would achieve. That blit is "the bottleneck" (it did not seat). Any
@@ -1525,6 +1541,64 @@ summing to its total; `framesplit-fence` if the mirror leaves `fast::render`'s c
 production path, or LATENCY-0's instrument is edited. On the host, a witness or mirror mismatch or a closed window
 yields no number, a tax ≥ 100‰ refuses attribution, and a reading that does not reproduce under `--confirm` is
 refuted.
+
+## PRESENT-SCALE-0 — preregistered: how much of the blit is the 2:1 destination scaling (a diagnostic; method locked, host-run pending)
+
+**Why it is next.** FRAME-SPLIT-0, confirmed, found the blit — `GetDC` + `StretchDIBits` of the 1920×1080 composite
+into the half-size client area — the largest phase of the frame (~7.1 ms p50) without a seat, and `GHOSTS.md` G11 had
+already recorded that what reaches the glass is GDI's 2:1 downscale of the certified picture. The narrowest next
+question is how much of the blit that scaling is. This is a **diagnostic court**: it attributes; it does not seat,
+promote a change, or name a winner.
+
+**The method (`64b263da`).** One variable, the destination geometry, as a **client-area** size (never the outer window
+size): **half** (960×540) against **full** (1920×1080, 1:1 with the source). Everything else is FRAME-SPLIT-0's
+production path unchanged — the same sealed session, the envelope (`arm_composite`) and split
+(`arm_composite_marked`), the same HUD and BGR buffer, the same GDI present, the locked phase origin. The window is
+resized between **blocks**, never between samples: 8 blocks, H F F H H F F H, each opening with 5 discarded warm-up
+rounds; after every resize the client rectangle is read back and must equal the request, or the court refuses. Per
+geometry the envelope and the split are recorded, so a geometry that silently changed the rest of the frame is caught.
+The logical and physical screen sizes and the device context's stretch mode are recorded, never varied. The outcome is
+not predicted: a 1:1 destination skips the scaling but writes four times the destination pixels.
+
+**The reading, on p50s.** **VOID** if either geometry's |instrumentation tax| ≥ 100‰ of its envelope. **CONFOUNDED** if the
+six non-blit phases, summed, moved ≥ 50‰ of their half-size sum (the geometry changed more than the blit; nothing is
+attributed to scaling). Otherwise, with dB = blit(full) − blit(half): |dB| ≥ 100‰ of blit(half) reads **SCALING
+MATERIAL** (the sign says whether the full-size, unscaled destination was cheaper or dearer), and anything less reads
+**SCALING IMMATERIAL**. p99s, both envelopes and frame-ready → composited are reported beside, never folded in.
+
+**The instrument.** `shell/presentscale.rs` is the court, generic over a `GeomSurface` (a `Surface` whose client area
+can be set). On the host it runs over a GDI surface appended to `shell/win32.rs` after FRAME-SPLIT-0's driver: the
+client area is sized through `AdjustWindowRect` + `SetWindowPos` at a fixed position and read back with
+`GetClientRect`, and its present mirrors LATENCY-0's `present_once` with the destination rectangle as the only change.
+Its window procedure is LATENCY-0's plus `WM_GETMINMAXINFO`, which raises the maximum tracking size so a full client
+area is not clamped to the screen. On the gate the court runs over the mock surface (`shell presentscale-selftest`).
+The window build was type-checked here; linking and running are the host's. `verify/presentscale.py` seals
+`shell/attest/presentscale-<host>.json`; `--confirm` seals a separate confirmation record beside it.
+
+**Rows.** `presentscale-preregistered` — the method is locked and the code's geometries, block order, warm-up and
+thresholds equal the registered ones. `presentscale-sealer` — synthetic geometries: SCALING MATERIAL (both signs, at
+exactly 100‰), SCALING IMMATERIAL (99‰), CONFOUNDED (50‰) and VOID fire at the registered bounds; a clamped client
+area, another block order or another source size is refused. `presentscale-court` — the court over the mock on the
+sealed session: witnesses first, 8 blocks with the client area verified, both geometries recorded, each split summing
+to its total; plants: a tampered witness, a window manager that clamps the full client area, and a mid-court close all
+refuse with no record. `presentscale-fence` — the present differs from LATENCY-0's only in the destination rectangle,
+the client area is sized at a fixed position and read back, the window style and procedure are LATENCY-0's (plus
+`WM_GETMINMAXINFO`), the court uses FRAME-SPLIT-0's envelope and split paths, resizes only between blocks and hashes
+nothing inside the interval, and LATENCY-0's instrument is still a byte-exact prefix.
+
+**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the geometry refusal, the
+sealer's rule. Not yet MEASURED: any host number.
+
+**does_not_show.** Any number (none until the host runs). That the shell should present at full size. Anything about a
+present path other than `StretchDIBits` into a GDI window (PRESENT-1's flip model is not measured). That the pixels on
+the glass are certified in either geometry. The scaling's cost and the extra copy's cost separately (only their net).
+Input-to-photon.
+
+**Falsifier.** `presentscale-preregistered` reddens if the method is weakened or the code drifts from it;
+`presentscale-sealer` if a reading fires elsewhere than registered or a clamped geometry is accepted;
+`presentscale-court` if a plant passes; `presentscale-fence` if a second variable enters the blit or the window, or
+LATENCY-0's instrument is edited. On the host, a witness or client-area mismatch or a closed window yields no number,
+and a reading that does not reproduce under `--confirm` is refuted.
 
 ## The open clause, now with named rungs (skybox, physics)
 

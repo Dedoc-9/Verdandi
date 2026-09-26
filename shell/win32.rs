@@ -844,3 +844,252 @@ pub fn framesplit_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, o
         }
     }
 }
+
+// ================================================================== PRESENT-SCALE-0 (appended)
+// A GDI surface whose DESTINATION is settable: the client area is sized (never the outer window) with
+// AdjustWindowRect + SetWindowPos, read back with GetClientRect, and StretchDIBits draws into exactly that client
+// rectangle. Its present otherwise mirrors LATENCY-0's present_once (GetDC, StretchDIBits, frame-ready, DwmFlush,
+// composited, ReleaseDC). Its window procedure is LATENCY-0's plus one message: WM_GETMINMAXINFO raises the maximum
+// tracking size so a full 1920x1080 client area is not clamped to the screen. LATENCY-0's instrument above stays a
+// byte-exact prefix of this file.
+
+#[repr(C)]
+struct Rect {
+    left: Long,
+    top: Long,
+    right: Long,
+    bottom: Long,
+}
+
+#[repr(C)]
+struct MinMaxInfo {
+    pt_reserved: Point,
+    pt_max_size: Point,
+    pt_max_position: Point,
+    pt_min_track_size: Point,
+    pt_max_track_size: Point,
+}
+
+#[link(name = "user32")]
+extern "system" {
+    fn AdjustWindowRect(rect: *mut Rect, style: Dword, menu: Bool) -> Bool;
+    fn SetWindowPos(hwnd: Hwnd, after: Hwnd, x: i32, y: i32, cx: i32, cy: i32, flags: Uint) -> Bool;
+    fn GetClientRect(hwnd: Hwnd, rect: *mut Rect) -> Bool;
+}
+
+#[link(name = "gdi32")]
+extern "system" {
+    fn GetDeviceCaps(hdc: Hdc, index: i32) -> i32;
+    fn GetStretchBltMode(hdc: Hdc) -> i32;
+}
+
+const WM_GETMINMAXINFO: Uint = 0x0024;
+const SWP_NOZORDER: Uint = 0x0004;
+const SWP_NOACTIVATE: Uint = 0x0010;
+
+extern "system" fn wnd_proc_geom(hwnd: Hwnd, msg: Uint, wp: Wparam, lp: Lparam) -> Lresult {
+    if msg == WM_GETMINMAXINFO {
+        let mmi = lp as *mut MinMaxInfo;
+        if !mmi.is_null() {
+            unsafe {
+                (*mmi).pt_max_track_size.x = 8192;
+                (*mmi).pt_max_track_size.y = 8192;
+            }
+        }
+        return 0;
+    }
+    wnd_proc(hwnd, msg, wp, lp)
+}
+
+struct GeomGdiSurface {
+    hwnd: Hwnd,
+    header: BitmapInfoHeader,
+    flush_fn: DwmFlushFn,
+    freq: i64,
+    dst_w: i32,
+    dst_h: i32,
+    last_input: Uint,
+    inputs_seen: usize,
+}
+
+impl Surface for GeomGdiSurface {
+    fn ticks(&mut self) -> i64 {
+        qpc()
+    }
+    fn freq(&self) -> i64 {
+        self.freq
+    }
+    fn present(&mut self, bgr: &[u8]) -> Option<(i64, i64)> {
+        let hdc = unsafe { GetDC(self.hwnd) };
+        if hdc.is_null() {
+            return None;
+        }
+        let ok = unsafe {
+            StretchDIBits(hdc, 0, 0, self.dst_w, self.dst_h, 0, 0, W as i32, H as i32,
+                bgr.as_ptr() as *const c_void, &self.header, DIB_RGB_COLORS, SRCCOPY)
+        };
+        let ready = qpc();
+        let composited = if ok != 0 {
+            (self.flush_fn)();
+            Some(qpc())
+        } else {
+            None
+        };
+        unsafe { ReleaseDC(self.hwnd, hdc) };
+        composited.map(|t| (ready, t))
+    }
+    fn flush(&mut self) {
+        (self.flush_fn)();
+    }
+    fn pump(&mut self) -> bool {
+        let mut msg: Msg = unsafe { std::mem::zeroed() };
+        while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            let m = msg.message;
+            if (0x0100..=0x0109).contains(&m) || (0x00A0..=0x00AD).contains(&m) || (0x0200..=0x020E).contains(&m) || m == 0x0112 {
+                self.last_input = m;
+                self.inputs_seen += 1;
+            }
+            unsafe {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            if msg.message == 0x0012 {
+                return false;
+            }
+        }
+        true
+    }
+    fn progress(&mut self, done: usize, total: usize) {
+        if done % 100 == 0 || done == total {
+            println!("[court] {} of {} samples", done, total);
+        }
+    }
+}
+
+impl crate::presentscale::GeomSurface for GeomGdiSurface {
+    fn set_destination(&mut self, w: u32, h: u32) -> Result<(u32, u32), String> {
+        let mut r = Rect { left: 0, top: 0, right: w as Long, bottom: h as Long };
+        if unsafe { AdjustWindowRect(&mut r, WS_OVERLAPPEDWINDOW, 0) } == 0 {
+            return Err("PRESENTSCALE-GEOMETRY: AdjustWindowRect failed".to_string());
+        }
+        let (ow, oh) = (r.right - r.left, r.bottom - r.top);
+        // the same outer position for both geometries (the primary monitor's top-left); only the size changes
+        if unsafe { SetWindowPos(self.hwnd, std::ptr::null_mut(), 0, 0, ow, oh, SWP_NOZORDER | SWP_NOACTIVATE) } == 0 {
+            return Err("PRESENTSCALE-GEOMETRY: SetWindowPos failed".to_string());
+        }
+        let _ = self.pump();
+        let mut c = Rect { left: 0, top: 0, right: 0, bottom: 0 };
+        if unsafe { GetClientRect(self.hwnd, &mut c) } == 0 {
+            return Err("PRESENTSCALE-GEOMETRY: GetClientRect failed".to_string());
+        }
+        self.dst_w = w as i32;
+        self.dst_h = h as i32;
+        Ok(((c.right - c.left).max(0) as u32, (c.bottom - c.top).max(0) as u32))
+    }
+    fn environment(&mut self) -> (i32, i32, i32, i32, i32) {
+        // HORZRES/VERTRES (8/10) are the logical screen this DPI-unaware process sees; DESKTOPHORZRES/DESKTOPVERTRES
+        // (118/117) the physical desktop; a difference means the compositor scales this window again on the way out
+        let screen = unsafe { GetDC(std::ptr::null_mut()) };
+        let (lw, lh, dw, dh) = if screen.is_null() {
+            (0, 0, 0, 0)
+        } else {
+            let v = unsafe { (GetDeviceCaps(screen, 8), GetDeviceCaps(screen, 10), GetDeviceCaps(screen, 118), GetDeviceCaps(screen, 117)) };
+            unsafe { ReleaseDC(std::ptr::null_mut(), screen) };
+            v
+        };
+        let hdc = unsafe { GetDC(self.hwnd) };
+        let sm = if hdc.is_null() { 0 } else {
+            let m = unsafe { GetStretchBltMode(hdc) };
+            unsafe { ReleaseDC(self.hwnd, hdc) };
+            m
+        };
+        (lw, lh, dw, dh, sm)
+    }
+}
+
+pub fn presentscale_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, out: Option<String>) {
+    let flush_fn = match load_dwm() {
+        Some(d) => d.flush,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or its composition-timing entry point is unavailable; cannot run PRESENT-SCALE-0");
+            std::process::exit(2);
+        }
+    };
+    let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
+    let class_name = wide("VerdandiPresentScale0");
+    let title = wide("Verðandi — PRESENT-SCALE-0");
+    let wc = WndClassW {
+        style: 0,
+        lpfn_wnd_proc: Some(wnd_proc_geom),
+        cb_cls_extra: 0,
+        cb_wnd_extra: 0,
+        h_instance: hinstance,
+        h_icon: std::ptr::null_mut(),
+        h_cursor: std::ptr::null_mut(),
+        hbr_background: std::ptr::null_mut(),
+        lpsz_menu_name: std::ptr::null(),
+        lpsz_class_name: class_name.as_ptr(),
+    };
+    unsafe { RegisterClassW(&wc) };
+    let hwnd = unsafe {
+        CreateWindowExW(0, class_name.as_ptr(), title.as_ptr(), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+            0, 0, (W as i32) / 2 + 16, (H as i32) / 2 + 39,
+            std::ptr::null_mut(), std::ptr::null_mut(), hinstance, std::ptr::null_mut())
+    };
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    let header = BitmapInfoHeader {
+        bi_size: std::mem::size_of::<BitmapInfoHeader>() as Dword,
+        bi_width: W as Long,
+        bi_height: -(H as Long),
+        bi_planes: 1,
+        bi_bit_count: 24,
+        bi_compression: BI_RGB,
+        bi_size_image: (W * H * 3) as Dword,
+        bi_x_pels_per_meter: 0,
+        bi_y_pels_per_meter: 0,
+        bi_clr_used: 0,
+        bi_clr_important: 0,
+    };
+    let mut freq = 0i64;
+    unsafe { QueryPerformanceFrequency(&mut freq) };
+    if freq <= 0 {
+        freq = 1;
+    }
+    let mut surf = GeomGdiSurface { hwnd, header, flush_fn, freq, dst_w: (W as i32) / 2, dst_h: (H as i32) / 2,
+                                    last_input: 0, inputs_seen: 0 };
+    println!("[presentscale] window open — it will resize between half and full size; leave it alone until it closes ({} samples)",
+             per_cell * 4);
+    let result = crate::presentscale::court(&mut surf, &inputs, per_cell);
+    let alive = unsafe { IsWindow(hwnd) } != 0;
+    if alive {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    match result {
+        Ok(sc) => {
+            for ln in crate::presentscale::summary(&sc) {
+                println!("{}", ln);
+            }
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+            let raw = crate::presentscale::raw_record(host, "GDI window with a settable client area (StretchDIBits + DwmFlush, QPC)", &sc, now);
+            let path = out.unwrap_or_else(|| format!("verify/build/presentscale-raw-{}.json", host));
+            if let Some(dir) = std::path::Path::new(&path).parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            if std::fs::write(&path, raw.as_bytes()).is_ok() {
+                println!("[shell] wrote raw {} — sealed by python verify/presentscale.py", path);
+            } else {
+                eprintln!("SHELL-CANNOT-WRITE: {}", path);
+                std::process::exit(2);
+            }
+        }
+        Err(m) => {
+            eprintln!("SHELL-{}", m);
+            eprintln!("SHELL-PRESENTSCALE-DIAG: window_still_existed={} input_messages_seen={} last_input_msg=0x{:04X}",
+                      alive, surf.inputs_seen, surf.last_input);
+            std::process::exit(2);
+        }
+    }
+}

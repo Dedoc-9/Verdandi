@@ -48,7 +48,9 @@ latency1r (LATENCY-1R's court, headless: the render-inclusive court over a deter
 session — witnesses first, the declared phase regimes, plants that refuse with no record — and the fence that keeps
 LATENCY-0's instrument a byte-exact prefix of shell/win32.rs), framesplit (FRAME-SPLIT-0: the split of render-start ->
 frame-ready into seven contiguous phases beside its uninstrumented envelope — locked method, sealer rules, the court
-over the mock, and the fence that keeps the marked mirror on fast::render's calls).
+over the mock, and the fence that keeps the marked mirror on fast::render's calls), presentscale (PRESENT-SCALE-0: the
+same frame presented into a half-size and a full-size client area, the destination the only variable — locked method,
+the diagnostic attribution rule, the court over the mock with a clamped-geometry plant, and the fence).
 """
 from __future__ import annotations
 
@@ -3530,6 +3532,205 @@ def framesplit_fence():
             "driver is appended after LATENCY-1R's over the same GDI surface, LATENCY-0's instrument still a byte-exact prefix")
 
 
+# ------------------------------------------------------------------ PRESENT-SCALE-0
+def presentscale_preregistered():
+    """PRESENT-SCALE-0's method is locked before any host number: destination geometry (client area, half vs full) the
+    only variable over FRAME-SPLIT-0's path, block-ABBA with warm-up after every resize, the client rectangle verified,
+    the environment recorded and never varied, and a diagnostic attribution (VOID / CONFOUNDED / SCALING MATERIAL /
+    SCALING IMMATERIAL) with no seat and no winner. The code's constants must equal the registered ones."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    e = reg.get("PRESENT-SCALE-0")
+    if not e:
+        raise Red("PRESENT-SCALE-0 is not registered")
+    hyp, succ, fail = e["hypothesis"].lower(), e["success_condition"].lower(), e["failure_condition"].lower()
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "one variable: the client-area destination, half vs full": "one thing" in hyp and "client-area" in hyp and "960x540" in hyp and "1920x1080" in hyp,
+        "everything else FRAME-SPLIT-0's path, unchanged": "frame-split-0's production path unchanged" in hyp,
+        "a diagnostic, no seat, no predicted outcome": "diagnostic" in hyp and "does not seat" in hyp and "not predicted" in hyp,
+        "resize between blocks, H F F H H F F H, warm-up": "h f f h h f f h" in succ and "5 discarded warm-up rounds" in succ,
+        "the client rectangle verified": "getclientrect" in succ and "must equal the requested size" in succ,
+        "the environment recorded, never varied": "stretch mode" in succ and "never varied" in succ,
+        "the four readings": all(x in succ for x in ("void", "confounded", "scaling material", "scaling immaterial")),
+        "the thresholds": "100 permille of its envelope" in succ and "50 permille" in succ and "100 permille of blit(half)" in succ,
+        "no second variable, no winner": "second variable" in fail and "winner" in fail,
+        "never compared to an emit p99 or LATENCY-0/1; --confirm; LATENCY-0 prefix": "emit p99" in fail and "--confirm" in fail and "byte-exact prefix" in fail,
+        "scope: the net of scaling vs copy, the wndproc difference, DPI": "net" in lims and "wm_getminmaxinfo" in lims and "dpi-unaware" in lims and "not input-to-photon" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the PRESENT-SCALE-0 method is not fully locked: " + "; ".join(missing))
+    if not entry_hash_ok("PRESENT-SCALE-0", e):
+        raise Red("the PRESENT-SCALE-0 entry was edited after registration (chain hash)")
+    import presentscale as PS
+    rs = read(os.path.join(SHELL, "presentscale.rs")).decode("utf-8")
+    if ("pub const BLOCK_ORDER: [usize; 8] = [0, 1, 1, 0, 0, 1, 1, 0];" not in rs or "pub const WARM_ROUNDS_PER_BLOCK: usize = 5;" not in rs
+            or "pub const GEOMETRIES: [(u32, u32); 2] = [((W / 2) as u32, (H / 2) as u32), (W as u32, H as u32)];" not in rs):
+        raise Red("the court's geometries, block order or warm-up are not the registered ones")
+    if (PS.VOID_TAX_PERMILLE, PS.CONFOUND_PERMILLE, PS.MATERIAL_PERMILLE, PS.BLOCK_ORDER, PS.WARM_ROUNDS_PER_BLOCK,
+            PS.GEOMS) != (100, 50, 100, "HFFHHFFH", 5, {"half": [960, 540], "full": [1920, 1080]}):
+        raise Red("the sealer's constants are not the registered ones")
+    return ("PRESENT-SCALE-0's method is locked before any host number: the client-area destination (half 960x540 vs full "
+            "1920x1080) is the only variable over FRAME-SPLIT-0's unchanged path; blocks H F F H H F F H with 5 warm-up "
+            "rounds after every resize; the client rectangle read back and required to match; screen sizes and stretch mode "
+            "recorded, never varied; on p50s VOID (tax >= 100 permille) / CONFOUNDED (non-blit moved >= 50) / SCALING "
+            "MATERIAL (|blit delta| >= 100 permille, signed) / SCALING IMMATERIAL — a diagnostic with no seat and no winner; "
+            "the code's constants equal the registered ones; hash-locked %s" % e["chain_hash"][:8])
+
+
+def presentscale_sealer():
+    """The host sealer, driven with synthetic geometries: VOID, CONFOUNDED, SCALING MATERIAL (both signs) and SCALING
+    IMMATERIAL fire exactly at the registered bounds; a client area that is not the requested size, another block
+    order, or another source size is refused; every sealed record cites PRESENT-SCALE-0 and passes the firewall."""
+    import presentscale as PS
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+
+    def pct(v):
+        return {"p50": v, "p95": v, "p99": v, "max": v}
+
+    def geom(name, blit, non_blit=8000, env=None, total=None, client=None):
+        phases = [1000, 2000, 100, 3000, 100, 1800][:6]
+        scale = non_blit / sum(phases)
+        vals = [int(round(v * scale)) for v in phases]
+        vals[0] += non_blit - sum(vals)
+        env = (non_blit + blit) if env is None else env
+        total = (non_blit + blit) if total is None else total
+        dest = PS.GEOMS[name]
+        return {"destination": dest, "client": client or dest,
+                "envelope": {"render_us": pct(env), "present_us": pct(9000), "samples": 4},
+                "split": {"phases_us": {**{p: pct(v) for p, v in zip(PS.NON_BLIT, vals)}, "blit": pct(blit)},
+                          "render_us": pct(total), "present_us": pct(9000), "samples": 4}}
+
+    def raw(half, full, **over):
+        d = {"geometries": {"half": half, "full": full}, "source": [1920, 1080], "phases": list(PS.PHASES),
+             "block_order": "HFFHHFFH", "warm_rounds_per_block": 5, "refresh_period_us": 13400, "sequence_frames": 4,
+             "samples_per_cell": 4, "production_threads": 8, "phase_origin": "locked",
+             "screen": {"logical": [1920, 1080], "desktop": [1920, 1080]}, "stretch_mode": 1}
+        d.update(over)
+        return {"name": "verdandi-presentscale", "provenance": {"tool": "synthetic", "unix_seconds": 0}, "data": d}
+
+    session, build = {"path": "synthetic", "chain_hash": "0" * 64}, {"rustc": "gate", "flags": ["-O"]}
+    cases = {
+        "SCALING MATERIAL (the full-size destination is cheaper)": (geom("half", 7000), geom("full", 6300)),   # -100 permille
+        "SCALING MATERIAL (the full-size destination is dearer)": (geom("half", 7000), geom("full", 7700)),    # +100
+        "SCALING IMMATERIAL": (geom("half", 7000), geom("full", 6301)),                                        # 99
+        "CONFOUNDED": (geom("half", 7000), geom("full", 5000, non_blit=8400)),                                 # non-blit +50
+        "VOID": (geom("half", 7000), geom("full", 5000, env=13000, total=14300)),                              # tax 100
+    }
+    for want, (h, f) in cases.items():
+        rec, got = PS.seal_presentscale(raw(h, f), reg, "gate", session, build)
+        envelope.validate(rec)
+        if got != want:
+            raise Red(f"the sealer read {got!r}, the registered rule says {want!r}")
+        if rec["provenance"]["preregistered"]["chain_hash"] != reg["PRESENT-SCALE-0"]["chain_hash"]:
+            raise Red("the sealed record does not cite PRESENT-SCALE-0")
+    ok_h, ok_f = cases["SCALING IMMATERIAL"]
+    for bad, why in ((raw(ok_h, geom("full", 6301, client=[1920, 1049])), "a clamped client area"),
+                     (raw(ok_h, ok_f, block_order="HFHFHFHF"), "another block order"),
+                     (raw(ok_h, ok_f, source=[1280, 720]), "another source size")):
+        try:
+            PS.seal_presentscale(bad, reg, "gate", session, build)
+            raise Red(f"the sealer accepted {why}")
+        except PS.Refuse:
+            pass
+    return ("verify/presentscale.py, driven with synthetic geometries: SCALING MATERIAL (cheaper and dearer, at exactly 100 "
+            "permille), SCALING IMMATERIAL (99), CONFOUNDED (non-blit moved 50) and VOID (tax 100) fire at the registered "
+            "bounds; a clamped client area, another block order or another source size is refused; records cite "
+            "PRESENT-SCALE-0 and pass the firewall")
+
+
+def presentscale_court():
+    """The SAME geometry court the host window runs, headless over the mock surface on the sealed session: witnesses
+    first, 8 blocks with the client area verified after every resize, both geometries' envelope and split recorded.
+    PLANTS: a tampered witness, a window manager that clamps the full client area, and a mid-court close all refuse
+    with no record."""
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    import presentscale as PS
+    out = os.path.join(BUILD, "presentscale-mock.json")
+    if os.path.exists(out):
+        os.remove(out)
+    base = ["presentscale-selftest", "--session", SESSIONWALK_DEMO, "--per-cell", "4"]
+    cp = subprocess.run([SHELL_EXE] + base + ["--out", out], capture_output=True, text=True, cwd=ROOT)
+    if cp.returncode != 0 or "presentscale court OK" not in cp.stdout or not os.path.exists(out):
+        raise Red("the headless geometry court did not run: " + (cp.stderr.strip() or cp.stdout.strip()))
+    with open(out, encoding="utf-8") as fh:
+        raw = json.load(fh)
+    os.remove(out)
+    d = raw["data"]
+    for g, dest in PS.GEOMS.items():
+        gd = d["geometries"][g]
+        if gd["client"] != dest or gd["envelope"]["samples"] != 4 or gd["split"]["samples"] != 4:
+            raise Red(f"{g}: the court did not record 4 samples per cell at the verified {dest[0]}x{dest[1]} client area")
+        if sum(gd["split"]["phases_us"][p]["p50"] for p in PS.PHASES) != gd["split"]["render_us"]["p50"]:
+            raise Red(f"{g}: the split's phases do not sum to its total")
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    rec, label = PS.seal_presentscale(raw, reg, "gate-mock", {"path": "workshop/attest/sessionwalk-demo.json"}, {"rustc": "gate"})
+    envelope.validate(rec)
+    if label != "VOID":
+        raise Red(f"the mock court (all tax, no work) read {label!r}, not VOID")
+    for plant, code in (("witness", "PRESENTSCALE-WITNESS"), ("geometry", "PRESENTSCALE-GEOMETRY"), ("close", "PRESENTSCALE-CLOSED")):
+        pout = os.path.join(BUILD, f"presentscale-plant-{plant}.json")
+        if os.path.exists(pout):
+            os.remove(pout)
+        cp = subprocess.run([SHELL_EXE] + base + ["--plant", plant, "--out", pout], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode == 0 or code not in cp.stderr or os.path.exists(pout):
+            raise Red(f"PLANT {plant}: the geometry court did not refuse with {code} and no record")
+    return ("the PRESENT-SCALE-0 court runs headless over the mock surface on the sealed reference session: witnesses first "
+            "(the production envelope path reproduces the sealed witnesses, the marked mirror byte-equal), 8 blocks H F F H H "
+            "F F H with the client area verified after every resize, both geometries' envelope and split recorded (4 samples "
+            "per cell), each split summing exactly to its total; the raw record seals and reads VOID under the mock; "
+            "PLANTS: a tampered witness (PRESENTSCALE-WITNESS), a clamped full client area (PRESENTSCALE-GEOMETRY) and a "
+            "mid-court close (PRESENTSCALE-CLOSED) each refuse with no record")
+
+
+def presentscale_fence():
+    """Only the destination changes: the settable surface's present mirrors LATENCY-0's present_once with the
+    destination rectangle as the one difference, the window style and position are the same for both geometries, the
+    window procedure differs from LATENCY-0's only by WM_GETMINMAXINFO, the court uses FRAME-SPLIT-0's envelope and
+    marked paths on the production arm, and LATENCY-0's instrument is still a byte-exact prefix."""
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i_fs, i_ps = tail.find("FRAME-SPLIT-0 (appended)"), tail.find("PRESENT-SCALE-0 (appended)")
+    if i_fs < 0 or i_ps < i_fs:
+        raise Red("the PRESENT-SCALE-0 surface is not appended after FRAME-SPLIT-0's driver")
+    sect = tail[i_ps:]
+    pres = src_span(sect, "fn present(&mut self", "fn flush(&mut self)")
+    order = [pres.find(t) for t in ("GetDC(", "StretchDIBits(", "let ready = qpc();", "(self.flush_fn)();", "Some(qpc())", "ReleaseDC(")]
+    if -1 in order or order != sorted(order):
+        raise Red("the settable surface's present does not mirror LATENCY-0's present_once")
+    if "StretchDIBits(hdc, 0, 0, self.dst_w, self.dst_h, 0, 0, W as i32, H as i32," not in pres:
+        raise Red("the blit's only change is not the destination rectangle (dst_w, dst_h) over the full W x H source")
+    setd = src_span(sect, "fn set_destination(", "fn environment(")
+    if ("AdjustWindowRect(&mut r, WS_OVERLAPPEDWINDOW, 0)" not in setd or "SetWindowPos(self.hwnd, std::ptr::null_mut(), 0, 0, ow, oh," not in setd
+            or "GetClientRect(" not in setd):
+        raise Red("the client area is not sized through AdjustWindowRect at a fixed position and read back")
+    wp = src_span(sect, "extern \"system\" fn wnd_proc_geom(", "struct GeomGdiSurface")
+    if "WM_GETMINMAXINFO" not in wp or "wnd_proc(hwnd, msg, wp, lp)" not in wp:
+        raise Red("the geometry window procedure is not LATENCY-0's plus WM_GETMINMAXINFO")
+    if "WS_OVERLAPPEDWINDOW | WS_VISIBLE" not in src_span(sect, "pub fn presentscale_window(", "let header = BitmapInfoHeader"):
+        raise Red("the geometry window is not the same overlapped window style")
+    rs = read(os.path.join(SHELL, "presentscale.rs")).decode("utf-8")
+    court = src_span(rs, "pub fn court<", "fn pct_json(")
+    if ("arm_composite(&inputs[k].scene, Arm::Production)" not in court
+            or "arm_composite_marked(&inputs[k].scene, Arm::Production, &mut m)" not in court
+            or "let bounds = [t0, t[0], t[1], t[2], t[3], t[4], t_bgr, t1];" not in court
+            or "if client != (w, h)" not in court):
+        raise Red("the court does not use FRAME-SPLIT-0's envelope/marked paths with a verified client area")
+    timed = court[court.index("let t0 = s.ticks();"):court.index("if comp != expected[k]")]
+    if "frame_digest" in timed or "sha256" in timed or "set_destination" in timed:
+        raise Red("the timed interval holds hashing or a resize")
+    return ("only the destination changes: the settable surface's present mirrors LATENCY-0's present_once with the "
+            "destination rectangle (dst_w, dst_h) over the full W x H source as its one difference; the client area is "
+            "sized through AdjustWindowRect at a fixed position and read back; the window style is the same overlapped "
+            "window and the window procedure is LATENCY-0's plus WM_GETMINMAXINFO; the court uses FRAME-SPLIT-0's envelope "
+            "and marked paths on the production arm, resizes only between blocks, hashes nothing inside the interval; "
+            "LATENCY-0's instrument is still a byte-exact prefix")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -3569,6 +3770,8 @@ def main() -> int:
     row("latency1-sealers", latency1_sealers)
     row("framesplit-preregistered", framesplit_preregistered)
     row("framesplit-sealer", framesplit_sealer)
+    row("presentscale-preregistered", presentscale_preregistered)
+    row("presentscale-sealer", presentscale_sealer)
     row("gauntlet-preregistered", gauntlet_preregistered)
     row("gauntlet1-preregistered", gauntlet1_preregistered)
     row("gauntlet1-equiv", gauntlet1_equiv)
@@ -3634,6 +3837,8 @@ def main() -> int:
     row("latency1r-fence", latency1r_fence)
     row("framesplit-court", framesplit_court)
     row("framesplit-fence", framesplit_fence)
+    row("presentscale-court", presentscale_court)
+    row("presentscale-fence", presentscale_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

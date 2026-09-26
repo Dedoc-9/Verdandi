@@ -43,9 +43,10 @@ semantics reaches the screen without passing through a gate.
 1. **Does the render headroom reach the screen?** Measured twice (`LATENCY-1R`): yes for work arriving at a random
    phase (composited output 3.2–3.6 ms earlier at the median), no for a loop that renders right after it presents
    (under 1% gets through the refresh-coupled GDI present). The shell's whole render-start → frame-ready interval is
-   14.8–15.7 ms at p50, longer than one refresh on the owner's host, and FRAME-SPLIT-0 found no single phase dominating
-   it (blit largest at 434‰). Renderer latency: materially improved. End-to-end presentation latency: phase-dependent,
-   no low-latency or competitive claim. *(G7 — measured; G8 — measured once, NO SEAT.)*
+   14.8–15.7 ms at p50, longer than one refresh on the owner's host, and FRAME-SPLIT-0 found, twice, no single phase
+   dominating it (blit largest at 427–434‰). Renderer latency: materially improved. End-to-end presentation latency:
+   phase-dependent, no low-latency or competitive claim. *(G7 — measured; G8 — confirmed, NO SEAT; G11 — PRESENT-SCALE-0
+   next.)*
 2. **Can an author edit the live window?** The pieces exist headless (input → typed edit → SESSION-WALK); they are
    not yet wired into the running present loop with live re-projection.
 3. **Can the world hold semantics the oracle never certified?** The skybox and filtered VIEW semantics live *beyond*
@@ -83,14 +84,20 @@ got through) — its preregistered label flipped from ABSORBED to PARTIALLY ABSO
 the confirmation record states (`GHOSTS.md` G10). The production render-start → frame-ready interval itself is
 14.8–15.7 ms at p50, longer than the 13.1–13.9 ms refresh.
 
-### FRAME-SPLIT-0 — where the ~15 ms goes · **measured once** (`739dc807`): NO SEAT, multi-component
+### FRAME-SPLIT-0 — where the ~15 ms goes · **measured and confirmed** (`739dc807`): NO SEAT, multi-component
 The production render-start → frame-ready interval split into seven contiguous phases on LATENCY-1R's apparatus, the
 uninstrumented envelope beside it. On the owner's host (envelope p50 15.7 ms): blit 434‰ of the envelope p99, emit
 272‰, frame 251‰, bgr 139‰, the rest under 10‰ each. No phase reaches 500‰, so **no single optimization is promoted**
 — the frame is multi-component after GAUNTLET-2 (`GHOSTS.md` G8). The blit (`StretchDIBits` into the half-size window,
 ~7.1 ms p50) is the largest component, not a seated bottleneck; how much of it is the 2:1 scaling is unmeasured
-(`GHOSTS.md` G11). Next: `--confirm`; then any further step is a narrower, separately preregistered measurement of a
-named component, not an optimization. `PRESENT-1` below stays a hypothesis for the locked regime.
+(`GHOSTS.md` G11). The confirmation reproduced the reading (blit 427‰, every share within 8‰). Any further step is a
+narrower, separately preregistered measurement of a named component, not an optimization.
+
+### PRESENT-SCALE-0 — how much of the blit is the 2:1 scaling · **preregistered** (`64b263da`), host-run pending
+A diagnostic, not an optimization court: the same frame presented into a half-size (960×540) and a full-size
+(1920×1080) client area, the destination the only variable, with the whole frame recorded beside the blit so a
+geometry that changed anything else is caught (CONFOUNDED). It reads SCALING MATERIAL (with its sign) or SCALING
+IMMATERIAL, and names no winner and no seat. `PRESENT-1` below stays a hypothesis for the locked regime.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
