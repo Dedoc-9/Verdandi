@@ -1542,7 +1542,7 @@ production path, or LATENCY-0's instrument is edited. On the host, a witness or 
 yields no number, a tax ≥ 100‰ refuses attribution, and a reading that does not reproduce under `--confirm` is
 refuted.
 
-## PRESENT-SCALE-0 — preregistered: how much of the blit is the 2:1 destination scaling (a diagnostic; method locked, host-run pending)
+## PRESENT-SCALE-0 — how much of the blit is the 2:1 destination scaling (a diagnostic; measured: SCALING MATERIAL; confirmation pending)
 
 **Why it is next.** FRAME-SPLIT-0, confirmed, found the blit — `GetDC` + `StretchDIBits` of the 1920×1080 composite
 into the half-size client area — the largest phase of the frame (~7.1 ms p50) without a seat, and `GHOSTS.md` G11 had
@@ -1586,10 +1586,44 @@ the client area is sized at a fixed position and read back, the window style and
 `WM_GETMINMAXINFO`), the court uses FRAME-SPLIT-0's envelope and split paths, resizes only between blocks and hashes
 nothing inside the interval, and LATENCY-0's instrument is still a byte-exact prefix.
 
-**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the geometry refusal, the
-sealer's rule. Not yet MEASURED: any host number.
+**Measured (host DANIELDILLBERG, `shell/attest/presentscale-DANIELDILLBERG.json`, cites PRESENT-SCALE-0 `64b263da`).**
+300 samples per cell over 8 blocks, no close; both client areas read back exactly as requested (960×540 and
+1920×1080); logical screen = physical desktop = 1920×1080 (no display scaling); the device context's stretch mode
+**1 (`BLACKONWHITE`)**; measured refresh 13,163 µs. p50 / p99 in µs:
 
-**does_not_show.** Any number (none until the host runs). That the shell should present at full size. Anything about a
+| | half (960×540) | full (1920×1080) | full − half |
+|---|---|---|---|
+| **blit** | **7,755 / 8,410** | **2,194 / 2,756** | **−5,561 / −5,654** |
+| non-blit phases, p50 sum | 9,538 | 9,078 | −460 (48‰) |
+| envelope render-start → frame-ready | 17,098 / 19,508 | 11,395 / 13,365 | −5,703 / −6,143 |
+| frame-ready → composited | 8,476 / 12,331 | 5,176 / 15,331 | −3,300 / +3,000 |
+
+**The reading: SCALING MATERIAL (the full-size destination is cheaper).** The blit's p50 fell by 5,561 µs — 717‰ of the
+half-size blit, far past the 100‰ bound — while the six non-blit phases moved 460 µs (48‰), just inside the 50‰
+CONFOUNDED bound, and the instrumentation tax stayed inside the VOID bound in both geometries. So destination
+geometry materially changes the GDI blit on this host, and in the cheaper direction: writing four times the destination
+pixels 1:1 costs far less than `StretchDIBits`'s 2:1 reduction under the default stretch mode. The number is the
+preregistered **net** — the scaling removed and the larger copy added — not the scaler's own cost. About 97% of the
+envelope's median drop (5.7 ms, 333‰) is the blit.
+
+**Beside the reading, not ruled on.** At full size the envelope p50 (11.4 ms) is below the measured refresh (13.2 ms)
+and its p99 (13.4 ms) about at it; at half size both are well above it. frame-ready → composited moved the other way at
+the tail: its p50 fell 3.3 ms (the frame now finishes before the next composition) but its p99 rose 3.0 ms, so the blit
+result is not an end-to-end latency result. The non-blit movement (48‰) sits close to the confound bound, which is
+why the rule has one. On this 1920×1080 screen the full-size client area extends below the screen edge (its title bar
+takes the top rows); the blit writes all of it. Stretch mode 1 is `BLACKONWHITE`, which combines the pixels a 2:1
+reduction eliminates with a Boolean AND rather than averaging them ([MS-WMF StretchMode](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wmf/b839b18a-a47c-4a44-b365-ef17d3c89e9a)) —
+what the shell's half-size window has been showing is that reduction of the certified picture (`GHOSTS.md` G11).
+Finally, the half-size condition here read slower than FRAME-SPLIT-0's window (envelope p50 17.1 vs 15.7–15.8 ms): the
+client area is now set exactly and the blocks alternate with full-size ones. That is a cross-court difference neither
+rule covers; it is recorded, not interpreted, and the within-court comparison (block-ABBA) is what the reading uses.
+
+**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the geometry refusal, the
+sealer's rule. MEASURED (host, one run): SCALING MATERIAL, full-size cheaper, net −5.56 ms at the blit's p50. Not yet
+MEASURED: its reproducibility (`--confirm`).
+
+**does_not_show.** That the shell should present at full size, or with any other stretch mode — each would be a
+separate court, because it changes what the window shows. Anything about a
 present path other than `StretchDIBits` into a GDI window (PRESENT-1's flip model is not measured). That the pixels on
 the glass are certified in either geometry. The scaling's cost and the extra copy's cost separately (only their net).
 Input-to-photon.

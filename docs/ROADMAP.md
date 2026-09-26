@@ -45,8 +45,8 @@ semantics reaches the screen without passing through a gate.
    (under 1% gets through the refresh-coupled GDI present). The shell's whole render-start → frame-ready interval is
    14.8–15.7 ms at p50, longer than one refresh on the owner's host, and FRAME-SPLIT-0 found, twice, no single phase
    dominating it (blit largest at 427–434‰). Renderer latency: materially improved. End-to-end presentation latency:
-   phase-dependent, no low-latency or competitive claim. *(G7 — measured; G8 — confirmed, NO SEAT; G11 — PRESENT-SCALE-0
-   next.)*
+   phase-dependent, no low-latency or competitive claim. The largest phase, the blit, is mostly the 2:1 reduction: at 1:1
+   it drops ~5.6 ms (PRESENT-SCALE-0, once). *(G7 — measured; G8 — confirmed, NO SEAT; G11 — measured once.)*
 2. **Can an author edit the live window?** The pieces exist headless (input → typed edit → SESSION-WALK); they are
    not yet wired into the running present loop with live re-projection.
 3. **Can the world hold semantics the oracle never certified?** The skybox and filtered VIEW semantics live *beyond*
@@ -93,11 +93,14 @@ uninstrumented envelope beside it. On the owner's host (envelope p50 15.7 ms): b
 (`GHOSTS.md` G11). The confirmation reproduced the reading (blit 427‰, every share within 8‰). Any further step is a
 narrower, separately preregistered measurement of a named component, not an optimization.
 
-### PRESENT-SCALE-0 — how much of the blit is the 2:1 scaling · **preregistered** (`64b263da`), host-run pending
+### PRESENT-SCALE-0 — how much of the blit is the 2:1 scaling · **measured once** (`64b263da`): SCALING MATERIAL
 A diagnostic, not an optimization court: the same frame presented into a half-size (960×540) and a full-size
-(1920×1080) client area, the destination the only variable, with the whole frame recorded beside the blit so a
-geometry that changed anything else is caught (CONFOUNDED). It reads SCALING MATERIAL (with its sign) or SCALING
-IMMATERIAL, and names no winner and no seat. `PRESENT-1` below stays a hypothesis for the locked regime.
+(1920×1080) client area, the destination the only variable. On the owner's host the blit's p50 fell from 7.76 ms to
+2.19 ms at 1:1 (717‰, net of the larger copy), the non-blit phases inside the confound bound (48‰), and the envelope's
+p50 from 17.1 to 11.4 ms — below the refresh at full size, above it at half. The default stretch mode is
+`BLACKONWHITE`, a Boolean-AND reduction (`GHOSTS.md` G11). It names no winner: what the shell should present is a
+separate court, because it changes what the window shows. Next: `--confirm`. `PRESENT-1` below stays a hypothesis for
+the locked regime.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

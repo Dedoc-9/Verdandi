@@ -190,23 +190,23 @@ method change, so it would be preregistered before a number, never applied to on
 
 ---
 
-## G11 — the window shows GDI's 2:1 downscale of the certified picture · NOT_MEASURED
+## G11 — the window shows GDI's 2:1 Boolean-AND reduction of the certified picture, and that reduction is costly · MEASURED (one run; confirmation pending)
 
 The blit-hash law proves the shell hands `StretchDIBits` exactly the kernel's composite. But the window's client area
-is half size (960 × 540), so GDI downsamples the 1920 × 1080 picture on the way to the glass, under whatever stretch
-mode the device context has — the shell never sets one. What actually reaches the screen is therefore an OS
-resampling of the certified picture, which no row checks, and the resampling's cost sits inside `LATENCY-1R`'s
-render-start → frame-ready interval (it is before `LATENCY-0`'s frame-ready, so outside `LATENCY-0` and `LATENCY-1`).
+is half size (960 × 540), so GDI reduces the 1920 × 1080 picture on the way to the glass, under the device context's
+default stretch mode — the shell never sets one. `PRESENT-SCALE-0` recorded that mode on the owner's host: **1,
+`BLACKONWHITE`**, which combines the pixels a reduction eliminates with a Boolean AND of their colour values rather than
+an average. What the half-size window shows is therefore not the certified picture scaled but an AND-reduction of it,
+which no row checks.
 
-`FRAME-SPLIT-0` has now timed the blit as its own phase, twice: about 7.1 ms at p50 (427–434‰ of the envelope at
-p99), the largest single phase in both arms. How much of that is the 2:1 scaling is still unmeasured; `PRESENT-SCALE-0`
-(`64b263da`, preregistered) measures it, with the destination client area as its only variable and the stretch mode
-and screen scaling recorded.
+It is also expensive. With the destination client area as the only variable, the blit's p50 fell from 7,755 µs (half)
+to 2,194 µs (full, 1:1) — **SCALING MATERIAL**, 717‰, with the non-blit phases inside the confound bound (48‰). Writing
+four times the destination pixels 1:1 costs far less than the 2:1 reduction. That is the net of removing the scaling
+and adding the larger copy, measured once.
 
-**Exorcism.** Measure the destination geometry as the only variable — the same sealed session, framebuffer, renderer,
-HUD, BGR buffer and GDI path, a half-size against a full-size destination — before deciding anything about the present
-path; and present 1:1, or set the stretch mode explicitly and state what it does, if what reaches the glass is to be
-checked.
+**Exorcism.** `PRESENT-SCALE-0 --confirm` to establish the reading. Beyond it, what the shell should present — its
+geometry, a stretch mode set and stated, or a 1:1 region — changes what the window shows, so each is its own court,
+never a consequence drawn from this diagnostic.
 
 ---
 
@@ -214,8 +214,9 @@ checked.
 
 None of these ghosts is load-bearing for a claim the program actually makes. G1 and G3 are execution refinements
 with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured and reproduced (twice), and
-G8 has turned from a hunch into a confirmed split with no single dominant phase; G4, G5, G6, G9, G10 and
-G11 are caveats a careful reader must carry, recorded so they are carried on purpose.
+G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured once (costly, and not a
+faithful scaling); G4, G5, G6, G9 and G10 are caveats a careful reader must carry, recorded so they are carried on
+purpose.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously
 as a win, and a hypothesis is never dressed as a measurement.
