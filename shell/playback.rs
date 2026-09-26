@@ -553,3 +553,27 @@ pub fn frames(session: &str, root_prefix: &str) -> Vec<Composed> {
     }
     p.shown.into_iter().map(|sh| sh.composed).collect()
 }
+
+/// LATENCY-1R's inputs: for every MOVE of the sealed session, the authority it renders (level + tiles after the
+/// preceding edits), its camera, and its SEALED frame witness. The session is first replayed in full by the same
+/// witness-checked path `frames()` uses (a tampered session refuses `DIVERGED`); nothing here is timed.
+#[allow(dead_code)]
+pub fn frame_inputs(session: &str, root_prefix: &str) -> Vec<(Vec<u8>, Vec<u8>, Camera, String)> {
+    let s = load_sealed(session, root_prefix);
+    let p = replay_all(&s);
+    if p.head != s.head {
+        refuse("DIVERGED", "re-derived head != the sealed head");
+    }
+    let (mut level, mut tiles, mut cam) = (s.level_bytes.clone(), s.tiles_bytes.clone(), s.cam0);
+    let mut out = Vec::new();
+    for k in 0..s.log.len() {
+        match &s.log[k] {
+            Event::Move(c) => {
+                cam = step(&level, cam, *c);
+                out.push((level.clone(), tiles.clone(), cam, s.stored[k].1.clone()));
+            }
+            Event::Edit(spec) => apply_spec(&mut level, &mut tiles, spec),
+        }
+    }
+    out
+}

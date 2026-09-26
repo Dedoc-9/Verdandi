@@ -41,7 +41,7 @@ semantics reaches the screen without passing through a gate.
 ## The gap, in four questions
 
 1. **Does the render headroom reach the screen?** The present path is still composed-GDI and refresh-coupled; a
-   faster render behind it may buy nothing at the glass. *(Open — G7.)*
+   faster render behind it may buy nothing at the glass. *(Open — G7; LATENCY-1R measures it.)*
 2. **Can an author edit the live window?** The pieces exist headless (input → typed edit → SESSION-WALK); they are
    not yet wired into the running present loop with live re-projection.
 3. **Can the world hold semantics the oracle never certified?** The skybox and filtered VIEW semantics live *beyond*
@@ -60,8 +60,19 @@ question 1 and decides whether `PRESENT-1` is even worth building. Off-gate, hos
 The method is hash-locked (`latency1-preregistered`): the comparator is `LATENCY-0`'s sealed **frame-ready →
 composited** p99 — the *same observable*, inherited never re-derived — and **never** an emit p99 (the GAUNTLET-2
 7,734 µs baseline is a different observable; mixing them is a category error). The delta reads as
-headroom-propagates / presentation-dominant / shell-contention, and none of it proves input-to-photon. The host
-measurement and its `verify/latency1.py` sealer are the next build.
+headroom-propagates / presentation-dominant / shell-contention, and none of it proves input-to-photon.
+
+**Amended before the number (LATENCY-1a, `b32d226f`).** LATENCY-0's instrument renders every frame before its window
+opens and times only blit → composited, so LATENCY-1 cannot see the renderer; its delta is now read as a statement
+about the presentation interval only (a 50‰ materiality bound, declared), never as render headroom or contention.
+
+### LATENCY-1R — the render inside the clock · **preregistered** (`5cfb3ece`), host-run pending
+The question LATENCY-1 cannot answer, as its own observable: render-start → composited on the same sealed session
+and GDI present, for the production render (T=8) against the single-thread reference, in a locked and a uniform
+phase regime. Per regime, the share of the render delta that reaches composited output reads PROPAGATES / PARTIALLY
+ABSORBED / ABSORBED / VOID. The court is built (`shell/latency1r.rs`, gated over a mock surface) and both sealers
+(`verify/latency1.py`, `verify/latency1r.py`) are in place; the two host runs are next, each sealed as its own
+record and never compared with the other.
 
 ### PRESENT-1 — decouple present from refresh, if LATENCY-1 says the present dominates
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

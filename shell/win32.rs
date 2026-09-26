@@ -587,3 +587,145 @@ fn emit(host: &str, samples: &[u128], refresh_us: u128, c: &Composed, cam: Camer
         eprintln!("SHELL-CANNOT-WRITE: {}", out);
     }
 }
+
+// ================================================================== LATENCY-1R (appended)
+// Everything above this line is LATENCY-0's instrument, byte for byte (gate row latency1r-fence pins it as a prefix
+// of this file). LATENCY-1R adds a second, render-inclusive observable here without touching it: a GDI surface for
+// the platform-agnostic court in shell/latency1r.rs. Its present mirrors LATENCY-0's `present_once` exactly —
+// GetDC, StretchDIBits, frame-ready = QPC, DwmFlush, composited = QPC, ReleaseDC — and the court puts the render
+// in front of it, inside the clock.
+
+use crate::latency1r::{self, FrameInput, Surface};
+
+struct GdiSurface {
+    hwnd: Hwnd,
+    header: BitmapInfoHeader,
+    flush_fn: DwmFlushFn,
+    freq: i64,
+}
+
+impl Surface for GdiSurface {
+    fn ticks(&mut self) -> i64 {
+        qpc()
+    }
+    fn freq(&self) -> i64 {
+        self.freq
+    }
+    fn present(&mut self, bgr: &[u8]) -> Option<(i64, i64)> {
+        let hdc = unsafe { GetDC(self.hwnd) };
+        if hdc.is_null() {
+            return None;
+        }
+        let ok = unsafe {
+            StretchDIBits(hdc, 0, 0, (W as i32) / 2, (H as i32) / 2, 0, 0, W as i32, H as i32,
+                bgr.as_ptr() as *const c_void, &self.header, DIB_RGB_COLORS, SRCCOPY)
+        };
+        let ready = qpc();
+        let composited = if ok != 0 {
+            (self.flush_fn)();
+            Some(qpc())
+        } else {
+            None
+        };
+        unsafe { ReleaseDC(self.hwnd, hdc) };
+        composited.map(|t| (ready, t))
+    }
+    fn flush(&mut self) {
+        (self.flush_fn)();
+    }
+    fn pump(&mut self) -> bool {
+        let mut msg: Msg = unsafe { std::mem::zeroed() };
+        while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            unsafe {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            if msg.message == 0x0012 {
+                // WM_QUIT — the window was closed; the court refuses rather than writing a partial record
+                return false;
+            }
+        }
+        true
+    }
+}
+
+/// LATENCY-1R's host instrument: open a window the size of SHELL-PLAYBACK-b's, run the court over the GDI surface,
+/// and write the raw record (sealed afterwards by verify/latency1r.py). Refuses SHELL-NO-DWM without the barrier.
+pub fn latency1r_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, out: Option<String>) {
+    let flush_fn = match load_dwm() {
+        Some(d) => d.flush,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or its composition-timing entry point is unavailable; cannot run LATENCY-1R");
+            std::process::exit(2);
+        }
+    };
+    let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
+    let class_name = wide("VerdandiLatency1R");
+    let title = wide("Verðandi — LATENCY-1R");
+    let wc = WndClassW {
+        style: 0,
+        lpfn_wnd_proc: Some(wnd_proc),
+        cb_cls_extra: 0,
+        cb_wnd_extra: 0,
+        h_instance: hinstance,
+        h_icon: std::ptr::null_mut(),
+        h_cursor: std::ptr::null_mut(),
+        hbr_background: std::ptr::null_mut(),
+        lpsz_menu_name: std::ptr::null(),
+        lpsz_class_name: class_name.as_ptr(),
+    };
+    unsafe { RegisterClassW(&wc) };
+    let hwnd = unsafe {
+        CreateWindowExW(0, class_name.as_ptr(), title.as_ptr(), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+            CW_USEDEFAULT, CW_USEDEFAULT, (W as i32) / 2 + 16, (H as i32) / 2 + 39,
+            std::ptr::null_mut(), std::ptr::null_mut(), hinstance, std::ptr::null_mut())
+    };
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    let header = BitmapInfoHeader {
+        bi_size: std::mem::size_of::<BitmapInfoHeader>() as Dword,
+        bi_width: W as Long,
+        bi_height: -(H as Long),
+        bi_planes: 1,
+        bi_bit_count: 24,
+        bi_compression: BI_RGB,
+        bi_size_image: (W * H * 3) as Dword,
+        bi_x_pels_per_meter: 0,
+        bi_y_pels_per_meter: 0,
+        bi_clr_used: 0,
+        bi_clr_important: 0,
+    };
+    let mut freq = 0i64;
+    unsafe { QueryPerformanceFrequency(&mut freq) };
+    if freq <= 0 {
+        freq = 1;
+    }
+    let mut surf = GdiSurface { hwnd, header, flush_fn, freq };
+    let result = latency1r::court(&mut surf, &inputs, per_cell);
+    unsafe { DestroyWindow(hwnd) };
+    match result {
+        Ok(c) => {
+            for ln in latency1r::summary(&c) {
+                println!("{}", ln);
+            }
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+            let raw = latency1r::raw_record(host, "GDI window (StretchDIBits + DwmFlush, QPC)", &c, now);
+            let path = out.unwrap_or_else(|| format!("verify/build/latency1r-raw-{}.json", host));
+            if let Some(dir) = std::path::Path::new(&path).parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            if std::fs::write(&path, raw.as_bytes()).is_ok() {
+                println!("[shell] wrote raw {} — seal it with: python verify/latency1r.py (it runs this court and seals)", path);
+            } else {
+                eprintln!("SHELL-CANNOT-WRITE: {}", path);
+                std::process::exit(2);
+            }
+        }
+        Err(m) => {
+            eprintln!("SHELL-{}", m);
+            std::process::exit(2);
+        }
+    }
+}

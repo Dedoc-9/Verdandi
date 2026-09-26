@@ -20,7 +20,7 @@
 use crate::fast;
 use crate::formats::{compose, parse_level, parse_tiles, Camera};
 use crate::hud;
-use crate::mantle::{frame_digest, hex, parse_scene, sha256, Refusal, H, W};
+use crate::mantle::{frame_digest, hex, parse_scene, sha256, Refusal, Scene, H, W};
 
 pub struct Composed {
     pub composite: Vec<u8>,     // W*H*3 RGB, top-down: the kernel's viewport with the HUD overlay drawn in
@@ -72,4 +72,41 @@ pub fn blit_witness(blit: &[u8]) -> String {
 /// kernel's bytes intact. (The plant compiles a `to_blit` that drops a channel; this then returns false.)
 pub fn blit_roundtrip_ok(composite: &[u8]) -> bool {
     from_blit(&to_blit(composite)) == composite
+}
+
+/// Parse level + tiles + camera into the kernel's scene, refusing (typed) exactly as `compose_frame` does. Used by
+/// LATENCY-1R to prepare each sealed frame's scene OUTSIDE its clock, so the timed interval holds render work only.
+pub fn scene_of(level_bytes: &[u8], tiles_bytes: &[u8], cam: Camera) -> Result<Scene, Refusal> {
+    let level = parse_level(level_bytes)?;
+    let tiles = parse_tiles(tiles_bytes)?;
+    parse_scene(&compose(&level, cam, &tiles))
+}
+
+/// LATENCY-1R's two arms. They differ ONLY in the pixel pass over mantle's frozen strips + frame:
+///   Production   — `fast::render`: `emit_threaded` at `PROD_THREADS = 8`, the path `compose_frame` renders through;
+///   SingleThread — the LOCKED single-thread `fast::emit`, GAUNTLET-2's reference.
+/// Both draw the same HUD overlay and return (index frame, composite) and nothing else: no digest is computed here,
+/// so a clock around this call times rendering, never witness hashing. `compose_frame` stays the production entry.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Arm {
+    Production,
+    SingleThread,
+}
+
+pub fn arm_composite(scene: &Scene, arm: Arm) -> (Vec<u8>, Vec<u8>) {
+    let (strips, frame, mut composite) = match arm {
+        Arm::Production => fast::render(scene),
+        Arm::SingleThread => {
+            let mut strips = Vec::with_capacity(W);
+            scene.strips(&mut strips);
+            let mut frame = vec![0u8; W * H];
+            scene.frame(&strips, &mut frame);
+            let floor = fast::blocked_floor(&scene.floor);
+            let mut pixels = vec![0u8; W * H * 3];
+            fast::emit(scene, &strips, &frame, &mut pixels, &floor);
+            (strips, frame, pixels)
+        }
+    };
+    hud::overlay(scene, &strips, &mut composite);
+    (frame, composite)
 }

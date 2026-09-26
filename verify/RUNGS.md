@@ -1276,6 +1276,73 @@ gate-source edit, another origin, or an import outside the closure; `game-suites
 is not 411, or a witness exits non-zero; `game-plant` if a flipped golden passes either check; `game-not-runtime` if
 runtime code reaches into the folder.
 
+## LATENCY-1a / LATENCY-1R — the instrument fact recorded before the number; the render put inside the clock (methods locked, host-run pending)
+
+**What landed.** Two hash-locked preregistrations, the instrument for the second, and both host sealers — before any
+LATENCY-1 or LATENCY-1R number exists.
+
+**The instrument fact (LATENCY-1a, `b32d226f`).** Reading LATENCY-0's instrument before building LATENCY-1's sealer
+showed that the preregistered LATENCY-1 cannot do what its three-way reading assumed. `shell playback-window` renders
+every move of the sealed session (`playback::frames` → `compose_frame` → `fast::render`) **before** the window opens,
+and `latency_measure` times frame-ready (QPC after `StretchDIBits`) → composited (QPC after `DwmFlush`) over those
+pre-rendered bitmaps. The renderer is outside the clock, so a single-thread build and the T=8 build measure the same
+interval up to noise, and LATENCY-1's "improvement = render headroom propagates" branch could never fire on the render.
+That reading was written into LATENCY-1 (`8e93118e`) by this program and is corrected here rather than massaged. The
+amendment cites LATENCY-1's current hash, alters none of its observable, comparator, session, apparatus or entry, and
+binds how its delta is read: against a declared 50‰ materiality bound, **NO MATERIAL CHANGE** means the presentation
+interval reproduces LATENCY-0 (the second-run shape confirmation LATENCY-0's own failure condition asks for), and a
+material **IMPROVEMENT** or **DEGRADATION** is a change of the presentation interval itself — never render headroom
+propagating, never render contention. The instrument writes to the sealed LATENCY-0 record's path, so the sealer
+restores that record byte-exact before sealing.
+
+**The render-inclusive court (LATENCY-1R, `5cfb3ece`).** A separate observable, preregistered as its own rung:
+render-start → composited, per sample, on the same sealed session and the same GDI present. Two arms render the
+identical certified frame and differ only in the pixel pass — **production** (`fast::render`, `emit_threaded` at
+`PROD_THREADS = 8`) and the **single-thread reference** (the LOCKED `fast::emit`). The render's phase against
+composition is a declared variable: **locked** (the render starts right after a composition) and **uniform** (at a
+seeded offset uniform in [0, refresh) after one, seed `0x5EED1A7E00000001`). Witnesses come first — both arms reproduce
+every sealed frame witness and each other's composites before any clock — then N samples per cell, ABBA-interleaved,
+each starting from a composition, with a byte-for-byte drift check after each sample, outside the interval. Per
+regime, on p50s: render delta dR = render(S) − render(P), glass delta dG = total(S) − total(P), propagation =
+⌊1000·dG/dR⌋‰ → **PROPAGATES** (≥ 500), **PARTIALLY ABSORBED** (1–499), **ABSORBED** (≤ 0), **VOID** (dR ≤ 0: no
+headroom in this apparatus). p99s are reported beside it and never folded in. LATENCY-0's refresh coupling predicts
+absorption in the locked regime and near-full propagation in the uniform one — to be measured, not assumed.
+
+**The instrument.** `shell/latency1r.rs` is the court, platform-agnostic, over a `Surface` (clock, present,
+composition barrier, pump). On the host it runs over a GDI surface **appended** to `shell/win32.rs` after LATENCY-0's
+instrument, whose text stays a byte-exact prefix of the file; its present mirrors LATENCY-0's `present_once` exactly.
+On the gate the same court runs over a deterministic mock surface (`shell latency1r-selftest`). The window build was
+type-checked in the container (`--emit=metadata`, the window cfg on); linking and running are the host's.
+`verify/latency1.py` and `verify/latency1r.py` seal `shell/attest/latency1-<host>.json` and
+`shell/attest/latency1r-<host>.json`; `--confirm` seals a separate confirmation record beside each.
+
+**Rows.** `latency1a-preregistered` — the amendment is locked, cites LATENCY-1's current hash, and its instrument
+fact is checked **in source** (the playback-window dispatch pre-renders; `latency_measure` holds no render call).
+`latency1r-preregistered` — the 1R method is locked and the code's seed and thresholds equal the registered ones.
+`latency1-sealers` — both sealers driven with synthetic numbers: court A's three categories fire at the 50‰ bound and
+every reading is bound by the amendment, a different session / partial run / baseline not citing LATENCY-0 is refused,
+and the LATENCY-0 record is restored byte-exact even when the instrument fails; court B's four readings fire at the
+registered thresholds and a record with another seed or production T is refused. `latency1r-court` — the court runs
+headless over the mock on the sealed session (witnesses first, 4 cells, the locked regime quantized and the uniform
+one offset), its raw record seals and reads VOID (the mock has no render headroom); plants: a tampered witness and a
+mid-court close both refuse with no record. `latency1r-fence` — LATENCY-0's instrument is a byte-exact prefix of
+`win32.rs`, `playback::frames` and the playback-window dispatch are unchanged, the arms differ only in the pixel pass,
+and the court orders witnesses → refresh → t0 → render → present → drift check with no hashing inside the clock.
+
+**Grade.** DECLARED: both methods (hash-locked). ESTABLISHED (gate): the instrument fact in source; the sealers'
+decision rules; the court's logic over the mock surface. Not yet MEASURED: any host number.
+
+**does_not_show.** Any latency number (none exists until the host runs). That the GDI surface links and runs on the
+host (type-checked only here). Input-to-photon. Any comparison between LATENCY-1 and LATENCY-1R, or between either and
+an emit p99. That the locked or uniform regime is a real game loop under load.
+
+**Falsifier.** `latency1a-preregistered` reddens if the amendment is edited, stops citing LATENCY-1's hash, or its
+instrument fact becomes false in source; `latency1r-preregistered` if the method is weakened or the code's seed or
+thresholds drift from it; `latency1-sealers` if a reading branch fires elsewhere than registered or attributes court
+A's delta to the renderer; `latency1r-court` if a plant passes or the court's regimes stop behaving as declared;
+`latency1r-fence` if LATENCY-0's instrument is edited or the court's ordering changes. On the host, a witness mismatch
+or a closed window yields no number, and a shape that does not reproduce under `--confirm` refutes the reading.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -1336,11 +1403,11 @@ staircase and what remains:
   `T | correctness | p99` matrix vs the inherited 7734 µs sealed off-gate by `verify/gauntlet2.py`. The host court fired
   **PROMOTE** (every `T>1` beat 7734, reproduced on a second sweep; T=16 fastest ~3.35–3.50×, T=8 the stable knee ~3.3×),
   and the **GAUNTLET-2 LOCK** (seat 22) adopted the threaded emit as the production render (`fast::render` at the default
-  `PROD_THREADS = 8`), rewiring the shell to render through it so the ~3.3× headroom reaches the present path. **LATENCY-1**
-  is now the natural next measurement — whether that render headroom survives the actual frame-ready → composited path —
-  rather than another blind renderer optimization.
-  **LATENCY-1** then reruns the same fixed session and records the before/after render delta against LATENCY-0's
-  immutable baseline.
+  `PROD_THREADS = 8`), rewiring the shell to render through it. Whether that headroom reaches composited output is a
+  measurement, not an inference: **LATENCY-1** reruns the fixed session through LATENCY-0's unchanged instrument —
+  which, as the amendment **LATENCY-1a** records, times only blit → composited over frames rendered before the window
+  opens, so it cannot see the renderer — and **LATENCY-1R** puts the render inside the clock (render-start →
+  composited, T=8 vs the single-thread reference, locked and uniform phase), preregistered before its number.
 - **PRESENT-1 (flip-model / waitable-swapchain).** LATENCY-0 *established* only that the composed-GDI present is
   refresh-coupled. PRESENT-1's *hypothesis* — falsifiable, to be measured, never assumed — is that a flip-model
   present CAN decouple present latency from refresh; it becomes experimentally valuable once the render fits the

@@ -16,7 +16,9 @@ workshop (an edit is a new authority and the witnesses say what it moved; the pl
 hud (the overlay is a frame: pinned, index-free, inside its region, reading state and not materials),
 records (RECORD-0: every record Verðandi mints passes the envelope's firewall, the two writers agree, and a
 rung that produces a number on a host was preregistered with a failure condition; LATENCY-0's method — the
-SOFTWARE-144-BUDGET / HARDWARE-144 split, their conjunction, and the honest scope — and GAUNTLET-0's method —
+SOFTWARE-144-BUDGET / HARDWARE-144 split, their conjunction, and the honest scope — LATENCY-1's, its amendment
+LATENCY-1a (the instrument fact, checked in source: LATENCY-0's window renders before it opens, so it cannot see the
+renderer) and the render-inclusive LATENCY-1R, with both host sealers driven by synthetic numbers — and GAUNTLET-0's method —
 the render breakdown and its 500-permille optimization decision rule, with GAUNTLET-1 owing byte-identity before
 any speed claim — are hash-locked before any host number, so weakening either is a visible diff),
 gauntlet1 (GAUNTLET-1a: the emit differential court — a sibling fast.rs emit, seeded as an exact transcription, is
@@ -41,7 +43,10 @@ dropping moves leaves W,M and dropping edits changes navigation, and a Python tw
 shell-playback (SHELL-PLAYBACK: the window shows exactly the sealed becoming — playback consumes a sealed
 SESSION-WALK, replays it through the SHELL-0 present path, and its composited frame-digest sequence EQUALS the
 session's per-move witnesses; every frame passes the blit law, playback writes no authority, a tampered/reordered
-input diverges rather than minting a new authority, and replay from any certified checkpoint reproduces the head).
+input diverges rather than minting a new authority, and replay from any certified checkpoint reproduces the head),
+latency1r (LATENCY-1R's court, headless: the render-inclusive court over a deterministic mock surface on the sealed
+session — witnesses first, the declared phase regimes, plants that refuse with no record — and the fence that keeps
+LATENCY-0's instrument a byte-exact prefix of shell/win32.rs).
 """
 from __future__ import annotations
 
@@ -1012,6 +1017,240 @@ def latency1_preregistered():
             "observable — the GAUNTLET-2 7734 us baseline is one; mixing them is a category error). The delta reads as "
             "headroom-propagates / presentation-dominant / shell-contention, and none of it proves input-to-photon; "
             "Windows-only, off-gate; hash-locked %s" % e["chain_hash"][:8])
+
+
+# ------------------------------------------------------------------ LATENCY-1a / LATENCY-1R
+# LATENCY-0's instrument (shell/win32.rs as sealed at 0de8341, unchanged since): its bytes must stay a PREFIX of the
+# file, so any court added later is appended after it and the instrument LATENCY-1 reuses is provably the same one.
+LATENCY0_WIN32_LEN = 24869
+LATENCY0_WIN32_SHA256 = "450900b054aed11615a26f91dcc347e905bdc1cd79ec2d46a738346d81523220"
+# playback::frames — the pre-render LATENCY-0's (and LATENCY-1's) window plays — pinned by its text
+PLAYBACK_FRAMES_SHA256 = "acb457940212c9b410e4cd02245f339a95ebe0232fd3a8fe0a057c3ca6a75569"
+PLAYBACK_WINDOW_DISPATCH = ("                        let frames = playback::frames(&session, &root);\n"
+                            "                        win32::playback_window(frames, measure, &host);\n")
+
+
+def entry_hash_ok(rung: str, e: dict) -> bool:
+    return e.get("chain_hash") == envelope.chain_hash({
+        "name": "verdandi-preregistration-entry", "version": 1, "claim_class": "declared",
+        "provenance": {"registered_in": "verify/preregister.json"},
+        "validity_scope": {"certifies": f"the conditions {rung} was seated under"},
+        "forbidden_interpretations": ["that registering a condition earns it"],
+        "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+
+
+def src_span(src: str, start: str, end: str) -> str:
+    i = src.index(start)
+    return src[i:src.index(end, i + len(start))]
+
+
+def latency1a_preregistered():
+    """The LATENCY-1 amendment is locked before any LATENCY-1 host number, it cites LATENCY-1's CURRENT hash (so it
+    amends that entry and no other), and the instrument fact it records is TRUE IN SOURCE: the playback-window
+    dispatch renders every frame (`playback::frames`) before the window opens, and `latency_measure` times blit ->
+    composited over pre-rendered bitmaps with no render call inside it."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    e = reg.get("LATENCY-1a")
+    if not e:
+        raise Red("the LATENCY-1 amendment (LATENCY-1a) is not registered")
+    if e.get("amends") != {"rung": "LATENCY-1", "chain_hash": reg["LATENCY-1"]["chain_hash"]}:
+        raise Red("LATENCY-1a does not amend LATENCY-1's current registration")
+    hyp, succ, fail = e["hypothesis"].lower(), e["success_condition"].lower(), e["failure_condition"].lower()
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "the instrument fact (pre-render, blit -> composited)": "playback::frames" in hyp and "before the window opens" in hyp and "cannot observe" in hyp,
+        "the observable/comparator are NOT altered": "does not alter" in hyp and "does not alter" in lims,
+        "the 50-permille materiality bound, declared": "50 permille" in succ and "declared convention" in lims,
+        "a delta is never read as render headroom or contention": "never as render headroom propagating" in succ and "never as render contention" in succ,
+        "the LATENCY-0 record is restored byte-exact": "restored byte-exact" in succ and "restored byte-exact" in fail,
+        "the instrument stays a byte-exact prefix of win32.rs": "byte-exact prefix" in fail,
+        "the render-inclusive question is LATENCY-1R's, never compared": "latency-1r" in lims and "never compared" in lims,
+        "not input-to-photon, Windows-only": "not input-to-photon" in lims and "windows-only" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the LATENCY-1 amendment is not fully locked: " + "; ".join(missing))
+    if not entry_hash_ok("LATENCY-1a", e):
+        raise Red("the LATENCY-1a entry was edited after registration (chain hash)")
+    # the fact, in source
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    if PLAYBACK_WINDOW_DISPATCH not in main_src:
+        raise Red("the playback-window dispatch no longer renders the frames (playback::frames) before opening the window")
+    w32 = read(os.path.join(SHELL, "win32.rs")).decode("utf-8")
+    measure = src_span(w32, "fn latency_measure(", "fn emit_latency(")
+    for bad in ("compose_frame", "render(", "arm_composite", "emit("):
+        if bad in measure:
+            raise Red(f"latency_measure contains a render call ({bad}) — the amendment's instrument fact is false")
+    if "StretchDIBits(" not in measure or "(dwm.flush)();" not in measure:
+        raise Red("latency_measure no longer times StretchDIBits -> DwmFlush")
+    pw = src_span(w32, "pub fn playback_window(", "fn latency_measure(")
+    if "frames.iter().map(|c| to_blit(&c.composite)).collect()" not in pw:
+        raise Red("playback_window no longer blits the pre-rendered composites")
+    return ("LATENCY-1a is locked before any LATENCY-1 host number and amends LATENCY-1's current registration "
+            f"({reg['LATENCY-1']['chain_hash'][:8]}) without altering its observable or comparator: the render runs "
+            "BEFORE the window opens (playback::frames, then playback_window — checked in shell/main.rs) and "
+            "latency_measure times StretchDIBits -> DwmFlush over pre-rendered bitmaps with no render call (checked in "
+            "shell/win32.rs), so LATENCY-1 cannot see the T=8 renderer; its delta reads against a declared 50-permille "
+            "materiality bound as a statement about the presentation interval only, never render headroom or "
+            "contention; the LATENCY-0 record it overwrites is restored byte-exact; the render-inclusive question is "
+            "LATENCY-1R's, never compared with it; hash-locked %s" % e["chain_hash"][:8])
+
+
+def latency1r_preregistered():
+    """LATENCY-1R's method is locked before any host number: the render-inclusive observable, the two arms, the two
+    declared phase regimes and the fixed seed, witnesses first, ABBA interleaving, the p50 propagation rule and its
+    four readings, and its scope. The code's constants must equal the registered ones."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    e = reg.get("LATENCY-1R")
+    if not e:
+        raise Red("LATENCY-1R is not registered")
+    hyp, succ, fail = e["hypothesis"].lower(), e["success_condition"].lower(), e["failure_condition"].lower()
+    lims = " ".join(e["interpretation_limits"]).lower()
+    checks = {
+        "the render-inclusive observable": "render-start -> composited" in hyp and "render-inclusive" in hyp,
+        "the two arms (T=8 production, single-thread fast::emit)": "prod_threads = 8" in hyp and "fast::emit" in hyp,
+        "the two declared phase regimes and the fixed seed": "locked" in hyp and "uniform" in hyp and "0x5eed1a7e00000001" in hyp,
+        "witnesses first, byte-identical arms": "witnesses first" in succ and "byte-identical" in succ,
+        "ABBA interleaving from a composition": "abba" in succ and "starting from a composition" in succ,
+        "the p50 propagation rule and its four readings": "500 permille propagates" in succ and "partially absorbed" in succ and "void" in succ,
+        "tail percentiles never folded in": "tail percentiles do not subtract" in lims and "one scalar" in fail,
+        "never compared to LATENCY-0/1 or an emit p99": "different observables" in fail,
+        "reproducibility (--confirm)": "--confirm" in fail,
+        "the LATENCY-0 instrument untouched": "byte-exact prefix" in fail,
+        "scope: not input-to-photon, Windows-only, PRESENT-1 owns the coupling": "not input-to-photon" in lims and "windows-only" in lims and "present-1" in lims,
+    }
+    missing = [k for k, ok in checks.items() if not ok]
+    if missing:
+        raise Red("the LATENCY-1R method is not fully locked: " + "; ".join(missing))
+    if not entry_hash_ok("LATENCY-1R", e):
+        raise Red("the LATENCY-1R entry was edited after registration (chain hash)")
+    rs = read(os.path.join(SHELL, "latency1r.rs")).decode("utf-8")
+    m = re.search(r"pub const PHASE_SEED: u64 = (0x[0-9A-Fa-f_]+);", rs)
+    import latency1r as L1R
+    if not m or int(m.group(1).replace("_", ""), 16) != 0x5EED1A7E00000001 or L1R.PHASE_SEED != "0x5EED1A7E00000001":
+        raise Red("the court's phase seed is not the registered one")
+    if L1R.PROPAGATES_PERMILLE != 500 or L1R.PROD_THREADS != 8:
+        raise Red("the sealer's decision constants are not the registered ones")
+    return ("LATENCY-1R's method is locked before any host number: render-start -> composited (render-inclusive) for the "
+            "production render (T=8) and the single-thread reference (fast::emit) on the same sealed session and GDI "
+            "present, in two declared phase regimes (locked / uniform, seed 0x5EED1A7E00000001), witnesses first with "
+            "byte-identical arms, ABBA-interleaved from a composition; per regime the p50 propagation 1000*dG/dR reads "
+            "PROPAGATES (>=500) / PARTIALLY ABSORBED / ABSORBED / VOID, p99s beside and never folded in; never compared "
+            "to LATENCY-0/1 or an emit p99; not input-to-photon; the code's seed and thresholds equal the registered "
+            "ones; hash-locked %s" % e["chain_hash"][:8])
+
+
+def latency1_sealers():
+    """Both host sealers are pure functions the gate can drive with synthetic numbers: court A's three branches are
+    read through the amendment (never about the renderer), refuse a different session or a partial run, and the
+    LATENCY-0 record the instrument overwrites is restored byte-exact; court B's four readings fire at the registered
+    thresholds and a malformed raw record is refused. Every sealed record passes the firewall."""
+    import latency1 as L1
+    import latency1r as L1R
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    base_data = {"present_us": {"p50": 5921, "p95": 7078, "p99": 7318, "max": 7396}, "refresh_period_us": 13298,
+                 "samples": 200, "sequence_frames": 4, "software_144_budget_us": 6944, "hardware_144_target_hz": 144}
+    base = envelope.seal("verdandi-latency", 1, "measured",
+                         {"preregistered": {"rung": "LATENCY-0", "chain_hash": reg["LATENCY-0"]["chain_hash"]}},
+                         {"certifies": "a synthetic LATENCY-0-shaped baseline (gate)"}, ["synthetic"], base_data, "synthetic")
+    L1.inherit_baseline(base, reg)
+
+    def raw(p99, frames=4, samples=200):
+        return {"name": "verdandi-latency", "provenance": {"unix_seconds": 0},
+                "data": {"present_us": {"p50": 5900, "p95": 7000, "p99": p99, "max": p99 + 50}, "refresh_period_us": 13298,
+                         "samples": samples, "sequence_frames": frames}}
+
+    session, build = {"path": "synthetic", "chain_hash": "0" * 64}, {"rustc": "gate", "flags": ["-O"]}
+    labels = {}
+    for p99 in (7418, 6500, 8000):
+        rec, label = L1.seal_latency1(raw(p99), base, "synthetic", reg, "gate", session, build)
+        envelope.validate(rec)
+        if "says NOTHING about the renderer" not in rec["reading"]:
+            raise Red(f"court A's {label} reading is not bound by the amendment")
+        pv = rec["provenance"]
+        if (pv["preregistered"]["chain_hash"], pv["amended_by"]["chain_hash"], pv["inherited_baseline"]["chain_hash"]) != \
+                (reg["LATENCY-1"]["chain_hash"], reg["LATENCY-1a"]["chain_hash"], base["chain_hash"]):
+            raise Red("court A's record does not cite LATENCY-1, LATENCY-1a and the inherited baseline")
+        labels[p99] = label
+    if labels != {7418: "NO MATERIAL CHANGE", 6500: "IMPROVEMENT", 8000: "DEGRADATION"}:
+        raise Red(f"court A's categories do not fire at the 50-permille bound: {labels}")
+    for bad, why in ((raw(7318, frames=5), "a different session"), (raw(7318, samples=150), "a partial run")):
+        try:
+            L1.seal_latency1(bad, base, "synthetic", reg, "gate", session, build)
+            raise Red(f"court A sealed {why}")
+        except L1.Refuse:
+            pass
+    wrong = json.loads(json.dumps(base))
+    wrong["provenance"]["preregistered"]["chain_hash"] = "0" * 64
+    wrong["chain_hash"] = envelope.chain_hash(wrong)
+    try:
+        L1.inherit_baseline(wrong, reg)
+        raise Red("court A inherited a baseline that does not cite LATENCY-0")
+    except L1.Refuse:
+        pass
+    os.makedirs(BUILD, exist_ok=True)
+    tmp = os.path.join(BUILD, "latency1-restore-plant.json")
+    with open(tmp, "wb") as fh:
+        fh.write(b"SEALED-LATENCY-0")
+
+    def overwrite():
+        with open(tmp, "wb") as fh:
+            fh.write(b"RAW")
+
+    def overwrite_then_fail():
+        overwrite()
+        raise L1.Refuse("instrument failed")
+
+    got = L1.run_preserving(tmp, overwrite)
+    if got != b"RAW" or read(tmp) != b"SEALED-LATENCY-0":
+        raise Red("court A did not capture the instrument's bytes and restore the baseline byte-exact")
+    try:
+        L1.run_preserving(tmp, overwrite_then_fail)
+    except L1.Refuse:
+        pass
+    restored = read(tmp) == b"SEALED-LATENCY-0"
+    os.remove(tmp)
+    if not restored:
+        raise Red("a failing instrument left the baseline overwritten")
+
+    def cell(render, total):
+        return {"render_us": {"p50": render, "p95": render, "p99": render, "max": render},
+                "present_us": {"p50": total - render, "p95": total - render, "p99": total - render, "max": total - render},
+                "total_us": {"p50": total, "p95": total, "p99": total, "max": total}, "samples": 3}
+
+    def raw_r(locked, uniform, seed="0x5EED1A7E00000001", threads=8):
+        return {"name": "verdandi-latency1r", "provenance": {"tool": "synthetic", "unix_seconds": 0},
+                "data": {"cells": {"locked": {"production": cell(*locked[0]), "single_thread": cell(*locked[1])},
+                                   "uniform": {"production": cell(*uniform[0]), "single_thread": cell(*uniform[1])}},
+                         "refresh_period_us": 13298, "sequence_frames": 4, "samples_per_cell": 3,
+                         "production_threads": threads, "phase_seed": seed}}
+
+    cases = {  # (production (render, total), single-thread (render, total)) -> the registered reading
+        "ABSORBED": ((3000, 13300), (8000, 13300)),
+        "PROPAGATES": ((3000, 9700), (8000, 14000)),
+        "PARTIALLY ABSORBED": ((3000, 12000), (8000, 13000)),
+        "VOID": ((5000, 13000), (5000, 13000)),
+    }
+    for want, arms in cases.items():
+        rec, got = L1R.seal_latency1r(raw_r(arms, arms), reg, "gate", session, build)
+        envelope.validate(rec)
+        if got != {"locked": want, "uniform": want}:
+            raise Red(f"court B read {got}, the registered rule says {want}")
+        if rec["provenance"]["preregistered"]["chain_hash"] != reg["LATENCY-1R"]["chain_hash"]:
+            raise Red("court B's record does not cite LATENCY-1R")
+    for bad in (raw_r(cases["VOID"], cases["VOID"], seed="0x1"), raw_r(cases["VOID"], cases["VOID"], threads=4)):
+        try:
+            L1R.seal_latency1r(bad, reg, "gate", session, build)
+            raise Red("court B sealed a record with another seed or another production T")
+        except L1R.Refuse:
+            pass
+    return ("court A (verify/latency1.py): NO MATERIAL CHANGE / IMPROVEMENT / DEGRADATION fire at the 50-permille bound, "
+            "every reading is bound by LATENCY-1a (nothing about the renderer), the record cites LATENCY-1 + LATENCY-1a + "
+            "the inherited baseline, a different session / partial run / baseline not citing LATENCY-0 are refused, and "
+            "the LATENCY-0 record the instrument overwrites is restored byte-exact even when the instrument fails; "
+            "court B (verify/latency1r.py): PROPAGATES / PARTIALLY ABSORBED / ABSORBED / VOID fire at the registered "
+            "thresholds on p50s, the record cites LATENCY-1R, and another seed or production T is refused — all sealed "
+            "records pass the firewall")
 
 
 def gauntlet_preregistered():
@@ -2990,6 +3229,107 @@ def gauntlet2_lockfence():
             "authority — the {1,2,4,8,16} correctness court is untouched")
 
 
+# ------------------------------------------------------------------ LATENCY-1R: the court, headless
+def latency1r_court():
+    """The SAME court the host window runs, driven headless through the deterministic mock surface over the sealed
+    reference session: witnesses first (both arms reproduce every sealed frame witness and each other's composites),
+    four cells of N samples, the locked regime composition-quantized and the uniform regime phase-offset as declared,
+    and the raw record sealed by verify/latency1r.py (the mock has no render headroom, so both regimes read VOID).
+    PLANTS: a tampered sealed witness refuses before any clock; a window closed mid-court refuses with no record."""
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    import latency1r as L1R
+    out = os.path.join(BUILD, "latency1r-mock.json")
+    if os.path.exists(out):
+        os.remove(out)
+    base = ["latency1r-selftest", "--session", SESSIONWALK_DEMO, "--per-cell", "2"]
+    cp = subprocess.run([SHELL_EXE] + base + ["--out", out], capture_output=True, text=True, cwd=ROOT)
+    if cp.returncode != 0 or "latency1r court OK" not in cp.stdout or not os.path.exists(out):
+        raise Red("the headless court did not run: " + (cp.stderr.strip() or cp.stdout.strip()))
+    cells = {}
+    for ln in cp.stdout.splitlines():
+        if ln.startswith("latency1r cell "):
+            parts = ln.split()
+            cells[(parts[2], parts[3])] = dict(p.split("=") for p in parts[4:])
+    head = cp.stdout.splitlines()[0].split()
+    if head[:2] != ["latency1r", "refresh_us"] or head[4] != "4" or head[6] != "2" or len(cells) != 4:
+        raise Red("the court did not render the 4 sealed moves in 4 cells of 2 samples")
+    lp, ls = cells[("locked", "production")], cells[("locked", "single_thread")]
+    if not (lp["total_p50"] == lp["total_p99"] == lp["total_max"] == ls["total_p50"] == ls["total_max"]):
+        raise Red("the locked regime is not composition-quantized under the mock clock")
+    up, us = cells[("uniform", "production")], cells[("uniform", "single_thread")]
+    if not (int(up["total_p50"]) < int(lp["total_p50"]) and int(us["total_p50"]) < int(lp["total_p50"])):
+        raise Red("the uniform regime did not offset the render start inside the refresh")
+    with open(out, encoding="utf-8") as fh:
+        raw = json.load(fh)
+    os.remove(out)
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    rec, labels = L1R.seal_latency1r(raw, reg, "gate-mock", {"path": "workshop/attest/sessionwalk-demo.json"},
+                                     {"rustc": "gate"})
+    envelope.validate(rec)
+    if labels != {"locked": "VOID", "uniform": "VOID"}:
+        raise Red(f"the mock court (no render headroom) read {labels}, not VOID")
+    for plant, code in (("witness", "LATENCY1R-WITNESS"), ("close", "LATENCY1R-CLOSED")):
+        pout = os.path.join(BUILD, f"latency1r-plant-{plant}.json")
+        if os.path.exists(pout):
+            os.remove(pout)
+        cp = subprocess.run([SHELL_EXE] + base + ["--plant", plant, "--out", pout], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode == 0 or code not in cp.stderr or os.path.exists(pout):
+            raise Red(f"PLANT {plant}: the court did not refuse with {code} and no record")
+    return ("the LATENCY-1R court runs headless over the mock surface on the sealed reference session: both arms reproduce "
+            "all 4 sealed frame witnesses and each other's composites before any clock, 4 cells x 2 samples ABBA, the "
+            "locked regime composition-quantized and the uniform regime offset inside the refresh; its raw record seals "
+            "under the envelope citing LATENCY-1R and reads VOID in both regimes (the mock has no render headroom); "
+            "PLANTS: a tampered sealed witness refuses LATENCY1R-WITNESS and a window closed mid-court refuses "
+            "LATENCY1R-CLOSED, each writing no record")
+
+
+def latency1r_fence():
+    """The structure LATENCY-1/1R rest on: LATENCY-0's instrument is a byte-exact PREFIX of shell/win32.rs (1R is
+    appended after it), playback::frames and the playback-window dispatch are unchanged, the GDI surface's present
+    mirrors LATENCY-0's present_once, the two arms differ only in the pixel pass, and inside the court the render sits
+    between render-start and the present with the witnesses before the clock and the drift check after it."""
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if len(w32) < LATENCY0_WIN32_LEN or sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    if not tail.startswith("\n// ================================================================== LATENCY-1R (appended)"):
+        raise Red("what follows LATENCY-0's instrument is not the appended LATENCY-1R section")
+    pres = src_span(tail, "fn present(&mut self", "fn flush(&mut self)")
+    order = [pres.find(t) for t in ("GetDC(", "StretchDIBits(", "let ready = qpc();", "(self.flush_fn)();", "Some(qpc())", "ReleaseDC(")]
+    if -1 in order or order != sorted(order):
+        raise Red("the GDI surface's present does not mirror LATENCY-0's present_once (GetDC, StretchDIBits, ready, DwmFlush, composited, ReleaseDC)")
+    pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
+    i = pb.index("pub fn frames(")
+    if sha256(pb[i:pb.index("\n}\n", i) + 3].encode("utf-8")) != PLAYBACK_FRAMES_SHA256:
+        raise Red("playback::frames (the pre-render LATENCY-0/1 play) changed")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    if PLAYBACK_WINDOW_DISPATCH not in main_src or "win32::latency1r_window(inputs, per_cell, &host, out);" not in main_src:
+        raise Red("the playback-window dispatch changed, or latency1r-window does not reach the appended court")
+    pr = read(os.path.join(SHELL, "present.rs")).decode("utf-8")
+    arms = src_span(pr, "pub fn arm_composite(", "hud::overlay(scene")
+    prod, single = src_span(arms, "Arm::Production =>", "Arm::SingleThread =>"), arms[arms.index("Arm::SingleThread =>"):]
+    if "fast::render(scene)" not in prod or "fast::emit(" not in single or "emit_threaded" in single or "picture(" in arms:
+        raise Red("the arms differ in more than the pixel pass (production = fast::render, single-thread = fast::emit)")
+    if "fast::render(&scene)" not in src_span(pr, "pub fn compose_frame(", "pub fn to_blit("):
+        raise Red("compose_frame no longer renders through fast::render")
+    rs = read(os.path.join(SHELL, "latency1r.rs")).decode("utf-8")
+    court = src_span(rs, "pub fn court(", "fn pct_json(")
+    idx = [court.find(t) for t in ("frame_digest(&fp) != f.witness", "if cp != cs", "let refresh_us", "let t0 = s.ticks();",
+                                   "arm_composite(&inputs[k].scene, arm)", "s.present(&bgr)", "if comp != expected[k]")]
+    if -1 in idx or idx != sorted(idx):
+        raise Red("the court's order is not witnesses -> refresh -> t0 -> render -> present -> drift check")
+    timed = court[court.index("let t0 = s.ticks();"):court.index("s.present(&bgr)")]
+    if "frame_digest" in timed or "sha256" in timed:
+        raise Red("witness hashing sits inside the timed interval")
+    return ("LATENCY-0's instrument is a byte-exact prefix of shell/win32.rs (%d bytes, sha %s…) with LATENCY-1R appended "
+            "after it; playback::frames and the playback-window dispatch are unchanged; the GDI surface's present mirrors "
+            "LATENCY-0's present_once; the arms differ only in the pixel pass (fast::render vs fast::emit) and "
+            "compose_frame still renders through fast::render; the court orders witnesses -> refresh -> t0 -> render -> "
+            "present -> drift check, with no hashing inside the timed interval" % (LATENCY0_WIN32_LEN, LATENCY0_WIN32_SHA256[:12]))
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -3024,6 +3364,9 @@ def main() -> int:
     row("records-preregistered", records_preregistered)
     row("latency-preregistered", latency_preregistered)
     row("latency1-preregistered", latency1_preregistered)
+    row("latency1a-preregistered", latency1a_preregistered)
+    row("latency1r-preregistered", latency1r_preregistered)
+    row("latency1-sealers", latency1_sealers)
     row("gauntlet-preregistered", gauntlet_preregistered)
     row("gauntlet1-preregistered", gauntlet1_preregistered)
     row("gauntlet1-equiv", gauntlet1_equiv)
@@ -3085,6 +3428,8 @@ def main() -> int:
     row("shell-playback-order", shell_playback_order)
     row("shell-playback-tamper", shell_playback_tamper)
     row("shell-playback-checkpoint", shell_playback_checkpoint)
+    row("latency1r-court", latency1r_court)
+    row("latency1r-fence", latency1r_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]
