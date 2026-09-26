@@ -116,9 +116,37 @@ Every rung ran the same loop, and the loop is the product as much as the code:
 
 - The threaded write is race-free but not Miri-clean (G1); a row-band `chunks_mut` decomposition makes it sound.
 - The T=8 plateau is a hypothesis, not a bus measurement (G2); a roofline settles it.
-- The emit shrank ~3.3×, so `strips`/`frame` are now a larger render fraction (G8); re-run `--breakdown` before
-  assuming emit is still the target.
-- The present path is still refresh-coupled (G7); the render headroom is unproven at the screen until `LATENCY-1`.
+- The shell's whole render-start → frame-ready interval is ~15 ms at p50, longer than one refresh on the owner's host
+  (G8); split it phase by phase — strips, frame, pixel pass, HUD, conversion, blit — before choosing the next target.
+- The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, one run); confirm
+  it before building on it.
+- A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.
+
+---
+
+## Epilogue — does the speed reach the glass (`LATENCY-1`, `LATENCY-1a`, `LATENCY-1R`)
+
+The campaign's last question was whether the ~3.3× emit reaches the screen. Answering it produced three lessons of
+its own.
+
+1. **Read the instrument before the number.** `LATENCY-1` was preregistered to compare the present path before and
+   after the fast render, with a reading of "improvement = the render headroom propagates". Building its sealer meant
+   reading LATENCY-0's instrument, which renders every frame *before* its window opens and times only blit →
+   composited. The renderer was never inside the clock, so that reading could not fire. The fix was an amendment
+   registered before the number (`LATENCY-1a`: the delta speaks only about the presentation interval) and a separate,
+   render-inclusive court preregistered as its own rung (`LATENCY-1R`). The hash-locked entry stayed untouched and
+   the correction is visible in the ledger.
+
+2. **A p99 of 200 samples is three samples.** LATENCY-1's first run read DEGRADATION on three slow samples; its
+   confirmation read NO MATERIAL CHANGE, p99 within 21 µs of LATENCY-0. The `--confirm` habit from GAUNTLET-2 caught
+   it; without a second run the ledger would carry a regression that was never there.
+
+3. **Phase is a variable, not noise.** `LATENCY-1R` declared the render's phase against composition before measuring
+   and got two opposite answers from one apparatus. In the locked regime the faster render's ~2.6 ms is fully absorbed
+   by the composition wait (0‰). In the uniform regime composited output arrives 3.6 ms earlier at the median. Timing
+   the loop only one way would have produced either "the optimization is useless" or "the optimization reaches the
+   screen", and both would have been half true. The same run also showed the shell's full render-start → frame-ready
+   interval is ~15 ms, longer than a refresh, which moves the next measurement from the emit to the whole frame (G8).
 
 ---
 

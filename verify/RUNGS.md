@@ -1276,7 +1276,7 @@ gate-source edit, another origin, or an import outside the closure; `game-suites
 is not 411, or a witness exits non-zero; `game-plant` if a flipped golden passes either check; `game-not-runtime` if
 runtime code reaches into the folder.
 
-## LATENCY-1a / LATENCY-1R — the instrument fact recorded before the number; the render put inside the clock (methods locked, host-run pending)
+## LATENCY-1a / LATENCY-1R — the instrument fact recorded before the number; the render put inside the clock (LATENCY-1 measured and confirmed; LATENCY-1R measured, confirmation pending)
 
 **What landed.** Two hash-locked preregistrations, the instrument for the second, and both host sealers — before any
 LATENCY-1 or LATENCY-1R number exists.
@@ -1331,29 +1331,68 @@ and the court orders witnesses → refresh → t0 → render → present → dri
 
 **LATENCY-1 measured (host DANIELDILLBERG, `shell/attest/latency1-DANIELDILLBERG.json`, cites LATENCY-1 `8e93118e` +
 LATENCY-1a `b32d226f`, inherits LATENCY-0).** 200 samples over the 4-move sealed session: blit → composited **p50 5,965
-/ p95 6,882 / p99 12,299 / max 20,140 µs**, measured refresh 13,089 µs (~76 Hz; 15‰ from LATENCY-0's 13,298, so the
-same display). Against the inherited LATENCY-0 p99 of 7,318 µs the locked rule reads **DEGRADATION** (+4,981 µs, 680‰
-≥ 50‰), recorded as such. The shape of that degradation is a tail, not a shift: p50 moved +44 µs (7‰) and p95 −196 µs,
-while with n = 200 the p99 is the third-largest sample — so three of 200 samples took ≥ 12.3 ms, roughly one extra
-composition (the max, 20.1 ms, about one and a half). Per LATENCY-1a this is a statement about the presentation
-interval only; the renderer ran before the window opened and cannot appear in it. Whether the tail is systematic or
-transient is what the preregistered second run (`--confirm`) decides; the sealed LATENCY-0 record was restored
-byte-exact.
+/ p95 6,882 / p99 12,299 / max 20,140 µs**, measured refresh 13,089 µs. Against the inherited LATENCY-0 p99 of 7,318 µs
+the locked rule read **DEGRADATION** (+4,981 µs, 680‰ ≥ 50‰), recorded as such. It was a tail, not a shift: p50 moved
++44 µs and p95 −196 µs, and with n = 200 the p99 is the third-largest sample, so three samples took ≥ 12.3 ms (about
+one extra composition; the max about one and a half).
+
+**The confirmation did not reproduce it (`shell/attest/latency1-confirm-DANIELDILLBERG.json`, cites the first record).**
+The second run read **NO MATERIAL CHANGE**: **p50 5,703 / p95 6,890 / p99 7,339 / max 7,477 µs**, refresh 13,561 µs —
+p99 within 21 µs (2‰) of LATENCY-0's 7,318. The confirmation record states that the shape did not reproduce. Across
+the three runs of this instrument (LATENCY-0, LATENCY-1, its confirmation) the body is stable (p50 5.7–6.0 ms, p95
+6.9–7.1 ms); the first LATENCY-1 run carried a three-sample tail the other two did not. The disciplined reading: the
+presentation interval **reproduces LATENCY-0** — which is also the second run LATENCY-0's own failure condition asked
+for — and the first run's DEGRADATION is a transient that a 200-sample p99 is thin enough to register (`GHOSTS.md`
+G10). Per LATENCY-1a, none of it is about the renderer, which ran before the window opened. The sealed LATENCY-0
+record was restored byte-exact both times.
 
 **LATENCY-1R, first host attempt: refused, no record.** The window court stopped with `LATENCY1R-CLOSED` — the window
 received a close before N samples per cell — and, as preregistered, wrote nothing. LATENCY-0's measurement loop only
 leaves its message pump on a close and keeps measuring, so a close during a LATENCY-0/1 run is not detected there. The
 court now reports where a close lands (round, samples taken), prints progress, and on a close reports whether the
-window still existed and the last keyboard/mouse/system-command message the pump saw, to tell an operator close from a
-stray one. None of this touches the timed interval or LATENCY-0's instrument.
+window still existed and the last keyboard/mouse/system-command message the pump saw. None of this touches the timed
+interval or LATENCY-0's instrument.
+
+**LATENCY-1R measured (host DANIELDILLBERG, `shell/attest/latency1r-DANIELDILLBERG.json`, cites LATENCY-1R
+`5cfb3ece`).** The second attempt ran to completion with no close: witnesses first, then 200 samples in each of four
+cells, measured refresh 13,926 µs. Per cell, p50 / p99 in µs:
+
+| regime | arm | render-start → frame-ready | frame-ready → composited | render-start → composited |
+|---|---|---|---|---|
+| locked | production (T=8) | 15,430 / 17,890 | 10,058 / 12,826 | **25,550** / 27,107 |
+| locked | single-thread | 18,070 / 19,732 | 7,499 / 9,826 | **25,552** / 26,749 |
+| uniform | production (T=8) | 14,826 / 17,327 | 6,780 / 14,050 | **21,400** / 29,004 |
+| uniform | single-thread | 17,499 / 18,560 | 7,592 / 14,255 | **24,987** / 32,114 |
+
+The preregistered rule, on p50s:
+
+- **locked — ABSORBED.** Render delta dR = 2,640 µs, glass delta dG = 2 µs, 0‰. The production arm's frame-ready →
+  composited grew by 2,559 µs, about the whole render saving: both arms land on the same composition, and the time
+  the faster render saves is spent waiting for it.
+- **uniform — PROPAGATES.** dR = 2,673 µs, dG = 3,587 µs, 1,341‰; the p99 total fell 3,110 µs. Composited output is
+  3.6 ms earlier at the median (14% of the single-thread arm's 25.0 ms). Propagation above 1,000‰ is possible because
+  composited times are quantized to compositions: a shorter render moves some samples a whole composition earlier,
+  and medians do not subtract. That is the mechanism the numbers are consistent with, not a separate measurement.
+
+What this answers (`GHOSTS.md` G7): GAUNTLET-2's render headroom **does** reach composited output for work that arrives
+at a random phase (an input, say), and it **does not** for a loop that renders right after it presents, where the
+refresh-coupled GDI present absorbs it. A second finding sits beside the verdicts. In this window the render-start →
+frame-ready interval of the **production** arm is 15.4 ms at p50, longer than one refresh (13.9 ms). That interval
+holds more than the renderer: mantle's strips and frame, the pixel pass, the HUD, the BGR conversion, and
+`StretchDIBits`'s 2:1 downscale into the half-size client area (LATENCY-0's frame-ready excludes that blit; this
+interval includes it). The two arms differ in it by only 2.6 ms, and how its ~15 ms divides among those phases
+is not measured here. That split is the next cheap measurement (`GHOSTS.md` G8). The measured refresh moved
+again (13,926 µs, 47‰ from LATENCY-0's); the 1R verdicts do not use it.
 
 **Grade.** DECLARED: both methods (hash-locked). ESTABLISHED (gate): the instrument fact in source; the sealers'
-decision rules; the court's logic over the mock surface. MEASURED (host, one run): LATENCY-1's presentation interval —
-DEGRADATION by the locked p99 rule, body reproduced, confirmation pending. Not yet MEASURED: LATENCY-1R.
+decision rules; the court's logic over the mock surface. MEASURED (host): LATENCY-1's presentation interval —
+reproduces LATENCY-0 on confirmation, the first run's DEGRADATION not reproduced; LATENCY-1R, one run — locked
+ABSORBED, uniform PROPAGATES, and a production render-start → frame-ready interval longer than one refresh. Not yet
+MEASURED: LATENCY-1R's reproducibility (`--confirm`).
 
-**does_not_show.** Any latency number (none exists until the host runs). That the GDI surface links and runs on the
-host (type-checked only here). Input-to-photon. Any comparison between LATENCY-1 and LATENCY-1R, or between either and
-an emit p99. That the locked or uniform regime is a real game loop under load.
+**does_not_show.** Input-to-photon. Any comparison between LATENCY-1 and LATENCY-1R, or between either and an emit
+p99. That the locked or uniform regime is a real game loop under load. How the ~15 ms render-start → frame-ready
+interval divides among its phases. That LATENCY-1R's shape reproduces (one run so far).
 
 **Falsifier.** `latency1a-preregistered` reddens if the amendment is edited, stops citing LATENCY-1's hash, or its
 instrument fact becomes false in source; `latency1r-preregistered` if the method is weakened or the code's seed or

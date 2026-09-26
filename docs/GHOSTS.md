@@ -111,32 +111,42 @@ says what is proven (output) and what is aspired to (instruction schedule), and 
 
 ---
 
-## G7 — the present path is still refresh-coupled; the fast render's headroom is unproven at the screen · NOT_MEASURED
+## G7 — the render headroom reaches the screen only out of phase with the present · MEASURED (one run; confirmation pending)
 
-`LATENCY-0` *established* only that the composed-GDI present (`StretchDIBits` under DWM) costs at least one refresh
-interval — it is refresh-coupled by construction. `GAUNTLET-2` made the *render* ~3.3× faster and wired it into the
-shell, but **whether that headroom survives the frame-ready → composited path is unmeasured.** A faster render
-behind a refresh-coupled present may buy nothing at the screen; that is exactly the open question, not a settled
-win. No refresh-rate or input-to-photon claim is made anywhere, and none is earned.
+`LATENCY-0` *established* that the composed-GDI present (`StretchDIBits` under DWM) is refresh-coupled. Whether
+`GAUNTLET-2`'s faster render survives it was the open question, and `LATENCY-1` turned out unable to ask it: its
+instrument renders every frame before the window opens (the amendment `LATENCY-1a`). `LATENCY-1R` put the render inside
+the clock and measured it on the owner's host (`shell/attest/latency1r-DANIELDILLBERG.json`). Render-start →
+composited, production (T=8) against the single-thread reference:
 
-**Exorcism.** `LATENCY-1`: re-run the sealed reference session through the present path now that the render is fast,
-and compare frame-ready → composited against `LATENCY-0`'s immutable baseline. If the present dominates, `PRESENT-1`
-(a hand-rolled DXGI flip-model / waitable-swapchain path, which the vendor documents as reaching ~1 frame of latency
-in Independent Flip and letting the compositor sleep) becomes the falsifiable next hypothesis — to be *measured*,
-never assumed.
+- **Locked** (the render starts right after a composition): 25,550 vs 25,552 µs at p50. **Absorbed** — both arms land
+  on the same composition, and the ~2.6 ms the faster render saves is spent waiting for it.
+- **Uniform** (the render starts at a random phase): 21,400 vs 24,987 µs at p50. **Propagates** — composited output is
+  3.6 ms earlier at the median and 3.1 ms at p99.
+
+So the headroom reaches the glass for work that arrives at an arbitrary moment (an input, say) and not for a loop
+that renders right after it presents. That is one run; the preregistered `--confirm` has not been taken yet. No
+refresh-rate or input-to-photon claim is made.
+
+**Exorcism.** Run `LATENCY-1R --confirm` to establish the shape. The locked-regime absorption is the property
+`PRESENT-1` (a flip-model / waitable-swapchain present) hypothesizes it can remove — now a measured motivation rather
+than an assumed one, still to be measured when built.
 
 ---
 
-## G8 — only `emit` was optimized; `strips` and `frame` are still the frozen path · UNDERDETERMINED
+## G8 — the render-inclusive frame is longer than one refresh, and its split is unmeasured · MEASURED (total), UNDERDETERMINED (split)
 
-The whole GAUNTLET staircase optimized the *emit* (texel) pass, because `GAUNTLET-0` measured emit as the dominant
-render phase (695‰ of the instrumented render). `Scene::strips` (traversal) and `Scene::frame` (the walls + floor
-cast) remain mantle's frozen, single-threaded code. As emit shrinks ~3.3×, those phases are now a *larger* fraction
-of the render — but by how much on the current host has not been re-measured since the emit changed.
+The GAUNTLET staircase optimized only the *emit* (texel) pass, because `GAUNTLET-0` measured it as the dominant render
+phase (695‰). `Scene::strips` and `Scene::frame` remain mantle's frozen, single-threaded code. `LATENCY-1R` has now
+measured the whole render-start → frame-ready interval in the shell window: **15.4 ms at p50 for the production arm**,
+longer than the host's measured refresh (13.9 ms), with the two arms differing by only 2.6 ms. That interval holds
+more than `--breakdown` times: strips, frame, the pixel pass, the HUD overlay, the RGB → BGR conversion, fresh buffer
+allocation, and `StretchDIBits`'s 2:1 downscale into the half-size client area. How the ~15 ms divides among them is
+not measured.
 
-**Exorcism.** Re-run `--breakdown` (GAUNTLET-0's instrument) against the current build to see whether `frame` now
-clears the 500‰ bar that would justify a `GAUNTLET-3`-class sibling for the floor cast. The decision rule is already
-locked; only the number is missing.
+**Exorcism.** Split the render-start → frame-ready interval on the same window apparatus, phase by phase, before any
+optimization is chosen — the `GAUNTLET-0` pattern applied to the shell's whole frame. The `--breakdown` rerun alone
+would miss the conversion and blit phases, which sit outside the kernel.
 
 ---
 
@@ -154,11 +164,40 @@ tidiness ghost, not a correctness or performance one.
 
 ---
 
+## G10 — the latency statistics are thin · MEASURED
+
+Two of the present-path statistics rest on very few samples. With n = 200, **p99 is the third-largest sample**: the
+first `LATENCY-1` run read DEGRADATION (p99 12,299 µs vs 7,318) on three slow samples, and its confirmation read NO
+MATERIAL CHANGE (p99 7,339 µs) — the category flipped on a three-sample tail while p50 and p95 held. The **refresh
+period** is the median of eight idle `DwmFlush` intervals, and across four runs on the same host it read 13,298,
+13,089, 13,561 and 13,926 µs, a 63‰ spread. Neither statistic is wrong, but both are coarser than their precision
+suggests.
+
+**Exorcism.** For a tail-sensitive verdict, raise N or report the number of samples above the threshold beside the
+percentile, and confirm before reading a category; estimate the refresh from a longer idle run. Each is a method
+change, so it would be preregistered before a number, never applied to one already taken.
+
+---
+
+## G11 — the window shows GDI's 2:1 downscale of the certified picture · NOT_MEASURED
+
+The blit-hash law proves the shell hands `StretchDIBits` exactly the kernel's composite. But the window's client area
+is half size (960 × 540), so GDI downsamples the 1920 × 1080 picture on the way to the glass, under whatever stretch
+mode the device context has — the shell never sets one. What actually reaches the screen is therefore an OS
+resampling of the certified picture, which no row checks, and the resampling's cost sits inside `LATENCY-1R`'s
+render-start → frame-ready interval (it is before `LATENCY-0`'s frame-ready, so outside `LATENCY-0` and `LATENCY-1`).
+
+**Exorcism.** Present 1:1 (a full-size client area, or a 1:1 blit of a region), or set the stretch mode explicitly and
+state what it does; either way, time the blit as its own phase in the G8 split.
+
+---
+
 ## The disposition
 
 None of these ghosts is load-bearing for a claim the program actually makes. G1 and G3 are execution refinements
-with sound remedies; G2 and G7 are the honest boundaries of what the courts measured (and each names the rung that
-would settle it); G4, G5, G6, G9 are caveats a careful reader must carry, recorded so they are carried on purpose.
+with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured once and awaits its
+confirmation, and G8 has turned from a hunch into a measured total with an unmeasured split; G4, G5, G6, G9, G10 and
+G11 are caveats a careful reader must carry, recorded so they are carried on purpose.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously
 as a win, and a hypothesis is never dressed as a measurement.

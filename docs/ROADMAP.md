@@ -40,8 +40,10 @@ semantics reaches the screen without passing through a gate.
 
 ## The gap, in four questions
 
-1. **Does the render headroom reach the screen?** The present path is still composed-GDI and refresh-coupled; a
-   faster render behind it may buy nothing at the glass. *(Open — G7; LATENCY-1R measures it.)*
+1. **Does the render headroom reach the screen?** Measured once (`LATENCY-1R`): yes for work arriving at a random
+   phase (composited output 3.6 ms earlier at the median), no for a loop that renders right after it presents (fully
+   absorbed by the refresh-coupled GDI present). The shell's whole render-start → frame-ready interval is ~15 ms, longer
+   than one refresh on the owner's host. *(G7 — confirmation pending; G8 — the split is next.)*
 2. **Can an author edit the live window?** The pieces exist headless (input → typed edit → SESSION-WALK); they are
    not yet wired into the running present loop with live re-projection.
 3. **Can the world hold semantics the oracle never certified?** The skybox and filtered VIEW semantics live *beyond*
@@ -53,10 +55,10 @@ semantics reaches the screen without passing through a gate.
 
 ## The sequenced path (named rungs only)
 
-### LATENCY-1 — does the headroom survive the present path · **preregistered** (`8e93118e`)
+### LATENCY-1 — does the headroom survive the present path · **measured and confirmed** (`8e93118e`, amended `b32d226f`)
 Re-run the sealed reference session through the present path *now that the render is fast*, and compare frame-ready →
-composited against `LATENCY-0`'s immutable baseline. This is a **measurement, not an optimization** — it answers
-question 1 and decides whether `PRESENT-1` is even worth building. Off-gate, host, witnesses first, no refresh claim.
+composited against `LATENCY-0`'s immutable baseline. This is a **measurement, not an optimization** — it was meant to
+answer question 1; the amendment below records why it cannot, and LATENCY-1R does. Off-gate, host, witnesses first, no refresh claim.
 The method is hash-locked (`latency1-preregistered`): the comparator is `LATENCY-0`'s sealed **frame-ready →
 composited** p99 — the *same observable*, inherited never re-derived — and **never** an emit p99 (the GAUNTLET-2
 7,734 µs baseline is a different observable; mixing them is a category error). The delta reads as
@@ -66,15 +68,19 @@ headroom-propagates / presentation-dominant / shell-contention, and none of it p
 opens and times only blit → composited, so LATENCY-1 cannot see the renderer; its delta is now read as a statement
 about the presentation interval only (a 50‰ materiality bound, declared), never as render headroom or contention.
 
-### LATENCY-1R — the render inside the clock · **preregistered** (`5cfb3ece`), host-run pending
+**Measured.** On the owner's host LATENCY-1's first run read DEGRADATION on a three-sample p99 tail; its confirmation
+read NO MATERIAL CHANGE (p99 7,339 vs 7,318 µs). The presentation interval reproduces LATENCY-0, and the first run's
+category did not reproduce (`GHOSTS.md` G10).
+
+### LATENCY-1R — the render inside the clock · **measured once** (`5cfb3ece`), confirmation pending
 The question LATENCY-1 cannot answer, as its own observable: render-start → composited on the same sealed session
 and GDI present, for the production render (T=8) against the single-thread reference, in a locked and a uniform
-phase regime. Per regime, the share of the render delta that reaches composited output reads PROPAGATES / PARTIALLY
-ABSORBED / ABSORBED / VOID. The court is built (`shell/latency1r.rs`, gated over a mock surface) and both sealers
-(`verify/latency1.py`, `verify/latency1r.py`) are in place; the two host runs are next, each sealed as its own
-record and never compared with the other.
+phase regime. On the owner's host: **locked ABSORBED** (the ~2.6 ms render saving becomes composition wait, 0‰) and
+**uniform PROPAGATES** (composited output 3.6 ms earlier at the median, 1,341‰). The production render-start →
+frame-ready interval itself is 15.4 ms at p50, longer than the 13.9 ms refresh. Next: `--confirm`, then split that
+interval phase by phase (`GHOSTS.md` G8) before choosing the next target.
 
-### PRESENT-1 — decouple present from refresh, if LATENCY-1 says the present dominates
+### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
 falsifiable hypothesis — to be measured, never assumed — is that a **flip-model / waitable-swapchain** present can
 decouple present latency from refresh. The prior art is well documented: the DXGI flip model shares frames directly
