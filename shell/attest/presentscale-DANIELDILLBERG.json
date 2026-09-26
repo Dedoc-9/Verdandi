@@ -1,0 +1,286 @@
+{
+ "name": "verdandi-presentscale",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell presentscale-window (shell/presentscale.rs court over the settable-client GDI surface appended to shell/win32.rs) + verify/presentscale.py",
+  "surface": "shell/presentscale.rs court over the GDI window with a settable client area (StretchDIBits + DwmFlush, QPC) surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790463734,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "PRESENT-SCALE-0",
+   "chain_hash": "64b263dabf164470be48ebc1e112968b0a3ad63dfd1be991f0bfaafa29392878"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the shell's production frame presented into a half-size (960x540) and a full-size (1920x1080) client area on host DANIELDILLBERG, envelope and split per geometry, locked phase origin, 300 samples per cell over 4 frames",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "a seat, a winner or a promoted change: this court attributes the blit's cost to destination scaling or not, nothing more",
+  "that the full-size window is what the shell should use (it changes what the window shows and how much screen it takes)",
+  "a claim about any present path other than StretchDIBits into a GDI window (PRESENT-1's flip model is not measured here)",
+  "that the pixels reaching the glass are certified in either geometry (the stretch mode and any DPI scaling are recorded, not verified)",
+  "input-to-photon latency, or a comparison with any emit p99",
+  "any other host, panel, DPI setting, window position or phase origin; absolute us are host-specific"
+ ],
+ "data": {
+  "geometries": {
+   "half": {
+    "destination": [
+     960,
+     540
+    ],
+    "client": [
+     960,
+     540
+    ],
+    "envelope": {
+     "render_us": {
+      "p50": 17098,
+      "p95": 19073,
+      "p99": 19508,
+      "max": 20747
+     },
+     "present_us": {
+      "p50": 8476,
+      "p95": 11412,
+      "p99": 12331,
+      "max": 13410
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 111,
+       "p95": 161,
+       "p99": 186,
+       "max": 493
+      },
+      "frame": {
+       "p50": 3642,
+       "p95": 4815,
+       "p99": 5162,
+       "max": 5385
+      },
+      "floor_swizzle": {
+       "p50": 85,
+       "p95": 149,
+       "p99": 241,
+       "max": 253
+      },
+      "emit": {
+       "p50": 3749,
+       "p95": 4583,
+       "p99": 4805,
+       "max": 5194
+      },
+      "hud": {
+       "p50": 57,
+       "p95": 94,
+       "p99": 142,
+       "max": 297
+      },
+      "bgr": {
+       "p50": 1894,
+       "p95": 2269,
+       "p99": 2705,
+       "max": 3418
+      },
+      "blit": {
+       "p50": 7755,
+       "p95": 8030,
+       "p99": 8410,
+       "max": 9588
+      }
+     },
+     "render_us": {
+      "p50": 17203,
+      "p95": 19092,
+      "p99": 19502,
+      "max": 19768
+     },
+     "present_us": {
+      "p50": 8328,
+      "p95": 11100,
+      "p99": 12469,
+      "max": 13608
+     },
+     "samples": 300
+    }
+   },
+   "full": {
+    "destination": [
+     1920,
+     1080
+    ],
+    "client": [
+     1920,
+     1080
+    ],
+    "envelope": {
+     "render_us": {
+      "p50": 11395,
+      "p95": 12846,
+      "p99": 13365,
+      "max": 13487
+     },
+     "present_us": {
+      "p50": 5176,
+      "p95": 14813,
+      "p99": 15331,
+      "max": 16164
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 122,
+       "p95": 241,
+       "p99": 431,
+       "max": 503
+      },
+      "frame": {
+       "p50": 3348,
+       "p95": 4406,
+       "p99": 4743,
+       "max": 4937
+      },
+      "floor_swizzle": {
+       "p50": 81,
+       "p95": 145,
+       "p99": 206,
+       "max": 229
+      },
+      "emit": {
+       "p50": 3675,
+       "p95": 4644,
+       "p99": 4885,
+       "max": 5271
+      },
+      "hud": {
+       "p50": 52,
+       "p95": 91,
+       "p99": 157,
+       "max": 339
+      },
+      "bgr": {
+       "p50": 1800,
+       "p95": 2330,
+       "p99": 2806,
+       "max": 2955
+      },
+      "blit": {
+       "p50": 2194,
+       "p95": 2435,
+       "p99": 2756,
+       "max": 2992
+      }
+     },
+     "render_us": {
+      "p50": 11458,
+      "p95": 12951,
+      "p99": 13784,
+      "max": 13918
+     },
+     "present_us": {
+      "p50": 12053,
+      "p95": 14684,
+      "p99": 15345,
+      "max": 16061
+     },
+     "samples": 300
+    }
+   }
+  },
+  "source": [
+   1920,
+   1080
+  ],
+  "phases": [
+   "strips",
+   "frame",
+   "floor_swizzle",
+   "emit",
+   "hud",
+   "bgr",
+   "blit"
+  ],
+  "block_order": "HFFHHFFH",
+  "warm_rounds_per_block": 5,
+  "refresh_period_us": 13163,
+  "sequence_frames": 4,
+  "samples_per_cell": 300,
+  "production_threads": 8,
+  "phase_origin": "locked",
+  "screen": {
+   "logical": [
+    1920,
+    1080
+   ],
+   "desktop": [
+    1920,
+    1080
+   ]
+  },
+  "stretch_mode": 1,
+  "derived": {
+   "half": {
+    "envelope_p50_us": 17098,
+    "envelope_p99_us": 19508,
+    "blit_p50_us": 7755,
+    "blit_p99_us": 8410,
+    "non_blit_p50_sum_us": 9538,
+    "tax_p50_us": 105,
+    "abs_tax_p50_permille_of_envelope": 6,
+    "present_p50_us": 8476,
+    "present_p99_us": 12331
+   },
+   "full": {
+    "envelope_p50_us": 11395,
+    "envelope_p99_us": 13365,
+    "blit_p50_us": 2194,
+    "blit_p99_us": 2756,
+    "non_blit_p50_sum_us": 9078,
+    "tax_p50_us": 63,
+    "abs_tax_p50_permille_of_envelope": 5,
+    "present_p50_us": 5176,
+    "present_p99_us": 15331
+   },
+   "deltas": {
+    "blit_delta_p50_us": -5561,
+    "blit_delta_p99_us": -5654,
+    "blit_delta_permille_of_half": 717,
+    "non_blit_delta_p50_us": -460,
+    "non_blit_delta_permille_of_half": 48,
+    "envelope_delta_p50_us": -5703,
+    "present_delta_p50_us": -3300
+   }
+  },
+  "rule_permille": {
+   "void_tax": 100,
+   "confounded": 50,
+   "material": 100
+  }
+ },
+ "reading": "PRESENT-SCALE-0 on host DANIELDILLBERG (300 samples per cell, blocks HFFHHFFH, stretch mode 1). Blit p50/p99: half 7755/8410 us, full 2194/2756 us (delta -5561 us at p50, 717 permille of the half-size blit). Non-blit phases moved -460 us (48 permille); envelopes 17098 -> 11395 us; frame-ready -> composited 8476 -> 5176 us. Reading: SCALING MATERIAL (the full-size destination is cheaper). A diagnostic: it attributes, it does not seat or promote a change; not input-to-photon.",
+ "chain_hash": "92f41f6ea436167841bd6cadf197d3ccdc9ef780076575f40ab74cf7b91a7951"
+}
