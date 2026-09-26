@@ -43,9 +43,9 @@ semantics reaches the screen without passing through a gate.
 1. **Does the render headroom reach the screen?** Measured twice (`LATENCY-1R`): yes for work arriving at a random
    phase (composited output 3.2–3.6 ms earlier at the median), no for a loop that renders right after it presents
    (under 1% gets through the refresh-coupled GDI present). The shell's whole render-start → frame-ready interval is
-   14.8–15.7 ms at p50, longer than one refresh on the owner's host, and its split is unmeasured. Renderer latency:
-   materially improved. End-to-end presentation latency: phase-dependent, no low-latency or competitive claim.
-   *(G7 — measured; G8 — the split is the next measurement.)*
+   14.8–15.7 ms at p50, longer than one refresh on the owner's host, and FRAME-SPLIT-0 found no single phase dominating
+   it (blit largest at 434‰). Renderer latency: materially improved. End-to-end presentation latency: phase-dependent,
+   no low-latency or competitive claim. *(G7 — measured; G8 — measured once, NO SEAT.)*
 2. **Can an author edit the live window?** The pieces exist headless (input → typed edit → SESSION-WALK); they are
    not yet wired into the running present loop with live re-projection.
 3. **Can the world hold semantics the oracle never certified?** The skybox and filtered VIEW semantics live *beyond*
@@ -83,14 +83,14 @@ got through) — its preregistered label flipped from ABSORBED to PARTIALLY ABSO
 the confirmation record states (`GHOSTS.md` G10). The production render-start → frame-ready interval itself is
 14.8–15.7 ms at p50, longer than the 13.1–13.9 ms refresh.
 
-### FRAME-SPLIT-0 — where the ~15 ms goes · **preregistered** (`739dc807`), host-run pending
-Measure before optimizing: split the production render-start → frame-ready interval into seven contiguous phases
-(strips, frame, floor swizzle, pixel pass, HUD, BGR conversion, blit) on LATENCY-1R's apparatus with no new variable,
-the uninstrumented envelope interleaved beside the split so the instrumentation tax is measured, reconciliation
-reported and never distributed. One phase ≥ 500‰ of the envelope p99 is the next target; none or several means the
-frame is multi-component and no single phase is promoted (`GHOSTS.md` G8). Only then does it make sense to choose
-between a renderer, conversion, HUD or presentation change; `PRESENT-1` below is a hypothesis for the locked regime,
-not yet the indicated lever.
+### FRAME-SPLIT-0 — where the ~15 ms goes · **measured once** (`739dc807`): NO SEAT, multi-component
+The production render-start → frame-ready interval split into seven contiguous phases on LATENCY-1R's apparatus, the
+uninstrumented envelope beside it. On the owner's host (envelope p50 15.7 ms): blit 434‰ of the envelope p99, emit
+272‰, frame 251‰, bgr 139‰, the rest under 10‰ each. No phase reaches 500‰, so **no single optimization is promoted**
+— the frame is multi-component after GAUNTLET-2 (`GHOSTS.md` G8). The blit (`StretchDIBits` into the half-size window,
+~7.1 ms p50) is the largest component, not a seated bottleneck; how much of it is the 2:1 scaling is unmeasured
+(`GHOSTS.md` G11). Next: `--confirm`; then any further step is a narrower, separately preregistered measurement of a
+named component, not an optimization. `PRESENT-1` below stays a hypothesis for the locked regime.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

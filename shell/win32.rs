@@ -662,7 +662,7 @@ impl Surface for GdiSurface {
     }
     fn progress(&mut self, done: usize, total: usize) {
         if done % 100 == 0 || done == total {
-            println!("[latency1r] {} of {} samples", done, total);
+            println!("[court] {} of {} samples", done, total);
         }
     }
 }

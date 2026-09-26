@@ -135,24 +135,25 @@ hypothesizes it can remove — but not before G8's split shows whether the prese
 
 ---
 
-## G8 — the render-inclusive frame is longer than one refresh, and its split is unmeasured · MEASURED (total), UNDERDETERMINED (split)
+## G8 — the render-inclusive frame is longer than one refresh, and it has no single dominant phase · MEASURED (one run; confirmation pending)
 
 The GAUNTLET staircase optimized only the *emit* (texel) pass, because `GAUNTLET-0` measured it as the dominant render
-phase (695‰). `Scene::strips` and `Scene::frame` remain mantle's frozen, single-threaded code. `LATENCY-1R` measured the
-whole render-start → frame-ready interval in the shell window: **14.8–15.7 ms at p50 for the production arm** across
-two runs and both regimes — longer than every refresh estimate taken on that host (13.1–13.9 ms) — while the two arms
-differ in it by only 2.6–2.8 ms. That interval holds more than `--breakdown` times: strips, frame, the pixel pass, the
-HUD overlay, the RGB → BGR conversion, fresh buffer allocation, and `StretchDIBits`'s 2:1 downscale into the half-size
-client area. How the ~15 ms divides among them is not measured, and it is where the dominant whole-frame cost now
-hides. (It is not the whole software-to-screen path either: render-start → composited is 21.4–25.6 ms at p50 across both runs.)
+phase (695‰). `LATENCY-1R` then measured the shell's whole render-start → frame-ready interval at 14.8–15.7 ms p50 for
+the production arm — longer than every refresh estimate on the owner's host — without a split. `FRAME-SPLIT-0`
+(`739dc807`) split it (`shell/attest/framesplit-DANIELDILLBERG.json`): envelope p50 15,690 µs, and p99 shares of the
+envelope — **blit 434‰**, emit 272‰, frame 251‰, bgr 139‰, and strips, floor swizzle and HUD under 10‰ each. **No phase
+reaches 500‰, so the court reads NO SEAT (multi-component):** the post-GAUNTLET-2 frame is not dominated by any single
+renderer or presentation phase, and no single optimization is promoted. The instrumentation tax was −154 µs at p50
+(9‰), recorded and not used to correct any phase.
 
-**Exorcism.** Split the render-start → frame-ready interval on the same window apparatus and the same sealed session,
-phase by phase — renderer output, HUD, conversion, blit — with the render-start → frame-ready total and the frame-ready →
-composited interval kept beside them as anchors: the `GAUNTLET-0` pattern applied to the shell's whole frame, before
-any optimization (renderer or presentation) is chosen. The `--breakdown` rerun alone would miss the conversion and blit
-phases, which sit outside the kernel.
+The ghost is not fully laid: this is one run, and the split cannot say how much of the largest phase, the blit, is
+`StretchDIBits`'s 2:1 downscale rather than the copy itself (G11).
 
-That measurement is now preregistered as `FRAME-SPLIT-0` (`739dc807`) and awaits its host run.
+**Exorcism.** `FRAME-SPLIT-0 --confirm` to establish the reading. Then, because the multi-component result promotes
+nothing by itself, any next step is a narrower measurement of one named component, preregistered on its own — not an
+optimization chosen because a share looks large. A return to `emit` because it was once dominant, a present-path
+rewrite because blit is largest, or a BGR change because 139‰ looks tempting would each skip the rule this court
+applied.
 
 ---
 
@@ -195,8 +196,13 @@ mode the device context has — the shell never sets one. What actually reaches 
 resampling of the certified picture, which no row checks, and the resampling's cost sits inside `LATENCY-1R`'s
 render-start → frame-ready interval (it is before `LATENCY-0`'s frame-ready, so outside `LATENCY-0` and `LATENCY-1`).
 
-**Exorcism.** Present 1:1 (a full-size client area, or a 1:1 blit of a region), or set the stretch mode explicitly and
-state what it does; either way, time the blit as its own phase in the G8 split.
+`FRAME-SPLIT-0` has now timed the blit as its own phase: about 7.1 ms at p50 (434‰ of the envelope at p99), the
+largest single phase in both arms. How much of that is the 2:1 scaling is still unmeasured.
+
+**Exorcism.** Measure the destination geometry as the only variable — the same sealed session, framebuffer, renderer,
+HUD, BGR buffer and GDI path, a half-size against a full-size destination — before deciding anything about the present
+path; and present 1:1, or set the stretch mode explicitly and state what it does, if what reaches the glass is to be
+checked.
 
 ---
 
@@ -204,7 +210,7 @@ state what it does; either way, time the blit as its own phase in the G8 split.
 
 None of these ghosts is load-bearing for a claim the program actually makes. G1 and G3 are execution refinements
 with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured and reproduced (twice), and
-G8 has turned from a hunch into a measured total with an unmeasured split — the program's next measurement; G4, G5, G6, G9, G10 and
+G8 has turned from a hunch into a measured split with no single dominant phase (one run, confirmation pending); G4, G5, G6, G9, G10 and
 G11 are caveats a careful reader must carry, recorded so they are carried on purpose.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously

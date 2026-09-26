@@ -116,8 +116,9 @@ Every rung ran the same loop, and the loop is the product as much as the code:
 
 - The threaded write is race-free but not Miri-clean (G1); a row-band `chunks_mut` decomposition makes it sound.
 - The T=8 plateau is a hypothesis, not a bus measurement (G2); a roofline settles it.
-- The shell's whole render-start → frame-ready interval is ~15 ms at p50, longer than one refresh on the owner's host
-  (G8); split it phase by phase — strips, frame, pixel pass, HUD, conversion, blit — before choosing the next target.
+- The shell's whole render-start → frame-ready interval is ~15 ms at p50, longer than one refresh on the owner's host,
+  and FRAME-SPLIT-0 found no single dominant phase (blit 434‰, emit 272‰, frame 251‰, bgr 139‰): no target is
+  promoted (G8). The next step is a narrower measurement of one named component, not an optimization.
 - The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two
   runs); presentation latency is phase-dependent, and no low-latency claim is made.
 - A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.
@@ -150,9 +151,15 @@ its own.
    stable as its boundary. Both runs also showed the shell's full render-start → frame-ready interval is ~15 ms, longer
    than a refresh, which moves the next measurement from the emit to the whole frame (G8).
 
+4. **A court that names no target is doing its job.** FRAME-SPLIT-0 split the ~15 ms frame and found its largest phase,
+   the blit, at 434‰ — large, and below the 500‰ rule locked before the number. The rule held: the reading is NO SEAT,
+   multi-component, and no optimization is promoted. Without the preregistered threshold, "the blit is the bottleneck"
+   would have been the headline and a present-path rewrite the next month's work, on a phase that owns well under
+   half the frame.
+
 The campaign's status, graded: **renderer latency materially improved; end-to-end presentation latency phase-dependent
-and not certified low-latency; the dominant whole-frame cost unresolved.** The next rung is a measurement, not an
-optimization.
+and not certified low-latency; the whole frame multi-component, with no single phase promoted.** The next rung is a
+narrower measurement, not an optimization.
 
 ---
 

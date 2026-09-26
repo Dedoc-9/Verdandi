@@ -1434,7 +1434,7 @@ A's delta to the renderer; `latency1r-court` if a plant passes or the court's re
 `latency1r-fence` if LATENCY-0's instrument is edited or the court's ordering changes. On the host, a witness mismatch
 or a closed window yields no number, and a shape that does not reproduce under `--confirm` refutes the reading.
 
-## FRAME-SPLIT-0 — preregistered: where the render-start → frame-ready interval goes (method locked, host-run pending)
+## FRAME-SPLIT-0 — where the render-start → frame-ready interval goes (measured: NO SEAT, multi-component; confirmation pending)
 
 **Why it is next.** LATENCY-1R measured the shell's render-start → frame-ready interval at 14.8–15.7 ms p50 for the
 production render, longer than every refresh estimate on the owner's host, with the two arms differing in it by only
@@ -1480,11 +1480,44 @@ probes are all the time there is); plants: a tampered witness and a mid-court cl
 five marks, the timed interval is t0 → render → bgr → present with no hashing, and the window driver is appended
 after LATENCY-1R's.
 
-**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the mirror's byte-identity and
-call order, the sealer's rule. Not yet MEASURED: any host number.
+**Measured (host DANIELDILLBERG, `shell/attest/framesplit-DANIELDILLBERG.json`, cites FRAME-SPLIT-0 `739dc807`).**
+300 samples per cell after 10 warm-up rounds, no close, measured refresh 13,363 µs. Production envelope render-start →
+frame-ready **p50 15,690 / p99 17,863 µs** (single-thread 18,452 / 21,021). The split, in µs (p50 / p99) with each
+phase's share of the envelope (p99 share, the seat rule's; p50 share beside it):
 
-**does_not_show.** Any number (none until the host runs). A split of the composition wait after frame-ready. What an
-optimization of the seated phase would achieve. Any other window size, phase origin or host. Input-to-photon.
+| phase | production (T=8) | p99 share | p50 share | single-thread | p99 share |
+|---|---|---|---|---|---|
+| strips | 62 / 170 | 9‰ | 3‰ | 62 / 156 | 7‰ |
+| frame | 2,911 / 4,487 | 251‰ | 185‰ | 2,943 / 4,454 | 211‰ |
+| floor_swizzle | 79 / 137 | 7‰ | 5‰ | 79 / 203 | 9‰ |
+| emit | 3,566 / 4,869 | 272‰ | 227‰ | 6,828 / 7,734 | 367‰ |
+| hud | 51 / 126 | 7‰ | 3‰ | 45 / 57 | 2‰ |
+| bgr | 1,778 / 2,483 | 139‰ | 113‰ | 1,711 / 2,002 | 95‰ |
+| **blit** | **7,087 / 7,762** | **434‰** | **451‰** | 7,063 / 8,111 | 385‰ |
+
+**The reading: NO SEAT (multi-component).** No production phase reaches 500‰ of the envelope, at p99 or at p50, so
+the court promotes no single optimization target — which is the outcome the rule was written to be able to give.
+The largest phase is **blit** (`GetDC` + `StretchDIBits`, including the 2:1 downscale into the half-size client area):
+434‰ at p99 and about 7.1 ms at p50, essentially the same in both arms. It is the largest component, not a seated
+bottleneck. After it come **emit** (272‰; its phase includes the 6 MB pixel buffer's allocation) and **frame** (251‰;
+including the 2 MB index buffer's allocation), then **bgr** (139‰). Grouped loosely, the two phases after the render
+(bgr + blit) hold about 57% of the median envelope and the renderer's frame + emit about 41% — a grouping the
+preregistration does not rule on and no seat follows from.
+
+**Reconciliation, reported, not distributed.** The instrumentation tax is −154 µs at p50 (9‰ of the envelope, well
+inside the 100‰ VOID bound) and −42 µs at p99; a negative tax is not a negative cost — envelope and split samples are
+not paired, and scheduling and cache state move either median by that much. It is recorded as measured and no phase
+is corrected by it. The production phase p50s sum to 15,534 µs against a split total of 15,536 µs (a 2 µs gap; for the
+single-thread arm the gap is −228 µs, because medians do not add). The single-thread context confirms where GAUNTLET-2's
+saving sits: emit p50 6,828 → 3,566 µs, with the other phases within ~70 µs between arms.
+
+**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the mirror's byte-identity and
+call order, the sealer's rule. MEASURED (host, one run): the split and its reading — NO SEAT, multi-component, blit
+the largest phase at 434‰. Not yet MEASURED: its reproducibility (`--confirm`).
+
+**does_not_show.** A split of the composition wait after frame-ready. How much of the blit is the 2:1 scaling rather
+than the copy. What an optimization of any phase would achieve. That blit is "the bottleneck" (it did not seat). Any
+other window size, phase origin or host. Input-to-photon.
 
 **Falsifier.** `framesplit-preregistered` reddens if the method is weakened or the code drifts from it;
 `framesplit-sealer` if a reading fires elsewhere than registered; `framesplit-court` if a plant passes or a split stops
