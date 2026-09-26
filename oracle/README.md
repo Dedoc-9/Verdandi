@@ -18,4 +18,5 @@ What the record fixes: the view (seed `0xABCDE`, depth 1, the player at (34, 28)
 URDRFB1 frame digest, the identity picture's pixel sha256, the oriented picture and its tile digest, the
 identity laws, the camera constants, the index layout, the corpus goldens, the kernel input format and the
 Python that witnessed it. Of the three hashes, two are reproduced natively by the kernel (the frame digest
-and the pixel sha); `D_0` is Urðr's composed CORE identity and is evidence only.
+and the pixel sha); `D_0` is Urðr's composed CORE identity and is evidence: since ORACLE-D0 it is recomputed at
+gate time by Urðr's own `statecanon`, in place under `game/` (row `oracle-d0`), and the studio still does not mint it.

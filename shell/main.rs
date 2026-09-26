@@ -44,6 +44,12 @@ mod framesplit;
 #[allow(dead_code)]
 #[path = "presentscale.rs"]
 mod presentscale;
+#[allow(dead_code)]
+#[path = "presentstretch.rs"]
+mod presentstretch;
+#[allow(dead_code)]
+#[path = "allocreuse.rs"]
+mod allocreuse;
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -340,6 +346,85 @@ fn main() {
                 {
                     let _ = (&inputs, per_cell, &out);
                     refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run the PRESENT-SCALE-0 court in the window");
+                }
+            }
+        }
+        "presentstretch-selftest" | "presentstretch-window" | "allocreuse-selftest" | "allocreuse-window" => {
+            // PRESENT-STRETCH-0 (the half-size blit under three stretch modes) and ALLOC-REUSE-0 (fresh vs reused
+            // buffers): each ONE court, driven headless through the mock surface (`-selftest`, what the gate runs) or
+            // the host window (`-window`, window build only).
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            let root = opt("--root").unwrap_or_default();
+            let per_cell = opt("--per-cell").and_then(|v| v.parse().ok()).unwrap_or(300usize);
+            let out = opt("--out");
+            let mut inputs: Vec<latency1r::FrameInput> = playback::frame_inputs(&session, &root)
+                .into_iter()
+                .map(|(lv, tl, cam, w)| latency1r::FrameInput {
+                    scene: present::scene_of(&lv, &tl, cam).unwrap_or_else(|Refusal(m)| refuse("INVALID-SCENE", &m)),
+                    witness: w,
+                })
+                .collect();
+            let plant = opt("--plant").unwrap_or_default();
+            if plant == "witness" {
+                if let Some(f) = inputs.first_mut() {
+                    let flipped = if f.witness.starts_with('0') { "1" } else { "0" };
+                    f.witness = format!("{}{}", flipped, &f.witness[1..]);
+                }
+            }
+            let close_after = if plant == "close" { Some(5) } else { None };
+            match args[1].as_str() {
+                "presentstretch-selftest" => {
+                    // plants: witness, close, and `--plant mode` (the device context ignores the requested mode)
+                    let mut surf = presentstretch::MockStretch { inner: latency1r::MockSurface::new(13_333, 1, close_after), refuse_mode: plant == "mode" };
+                    match presentstretch::court(&mut surf, &inputs, per_cell) {
+                        Ok(st) => {
+                            for ln in presentstretch::summary(&st) {
+                                println!("{}", ln);
+                            }
+                            if let Some(o) = out {
+                                fs::write(&o, presentstretch::raw_record("gate-mock", "mock", &st, 0))
+                                    .unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", o, e)));
+                            }
+                            println!("presentstretch court OK");
+                        }
+                        Err(m) => refuse("PRESENTSTRETCH", &m),
+                    }
+                }
+                "allocreuse-selftest" => {
+                    let mut surf = latency1r::MockSurface::new(13_333, 1, close_after);
+                    match allocreuse::court(&mut surf, &inputs, per_cell) {
+                        Ok(al) => {
+                            for ln in allocreuse::summary(&al) {
+                                println!("{}", ln);
+                            }
+                            if let Some(o) = out {
+                                fs::write(&o, allocreuse::raw_record("gate-mock", "mock", &al, 0))
+                                    .unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", o, e)));
+                            }
+                            println!("allocreuse court OK");
+                        }
+                        Err(m) => refuse("ALLOCREUSE", &m),
+                    }
+                }
+                _ => {
+                    #[cfg(all(target_os = "windows", shell_window))]
+                    {
+                        let host = opt("--host").unwrap_or_else(|| "unnamed".to_string());
+                        if args[1] == "presentstretch-window" {
+                            win32::presentstretch_window(inputs, per_cell, &host, out);
+                        } else {
+                            win32::allocreuse_window(inputs, per_cell, &host, out);
+                        }
+                    }
+                    #[cfg(not(all(target_os = "windows", shell_window)))]
+                    {
+                        let _ = (&inputs, per_cell, &out);
+                        refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run this court in the window");
+                    }
                 }
             }
         }

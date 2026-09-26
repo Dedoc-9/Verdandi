@@ -99,7 +99,8 @@ is a second authority.
     MATERIAL-0 ── a picture becomes a material under a gate
 
 `D_0`, the third hash in the oracle, is Urðr's composed CORE identity (level, entity, RNG stream, action log)
-and is carried as evidence only; the studio does not recompute it and does not mint it. New VIEW semantics the
+and is evidence, not the studio's: it is recomputed at gate time by Urðr's own `statecanon`, in place in the
+carried game layer (row `oracle-d0`), and the studio still does not mint it. New VIEW semantics the
 studio did not inherit (filtering, variety) may be earned by either route — in Urðr and re-frozen here as a
 new oracle, or by a Verðandi-local reference pinned by rows here, as the HUD's pins are; CORE semantics have
 one route only. Which, is decided when such a rung is seated.

@@ -1093,3 +1093,241 @@ pub fn presentscale_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str,
         }
     }
 }
+
+// ================================================================== PRESENT-STRETCH-0 and ALLOC-REUSE-0 (appended)
+// PRESENT-STRETCH-0: a half-size GDI surface whose present sets the stretch mode and the brush origin before the blit
+// (a common DC resets both on every GetDC; the brush origin is what HALFTONE requires), identically for every mode —
+// only the mode's value differs; otherwise it mirrors LATENCY-0's present_once. ALLOC-REUSE-0 runs over LATENCY-1R's
+// GDI surface in FRAME-SPLIT-0's window, unchanged. LATENCY-0's instrument above stays a byte-exact prefix.
+
+#[link(name = "gdi32")]
+extern "system" {
+    fn SetStretchBltMode(hdc: Hdc, mode: i32) -> i32;
+    fn SetBrushOrgEx(hdc: Hdc, x: i32, y: i32, old: *mut Point) -> Bool;
+}
+
+struct StretchGdiSurface {
+    hwnd: Hwnd,
+    header: BitmapInfoHeader,
+    flush_fn: DwmFlushFn,
+    freq: i64,
+    mode: i32,
+    last_input: Uint,
+    inputs_seen: usize,
+}
+
+impl Surface for StretchGdiSurface {
+    fn ticks(&mut self) -> i64 {
+        qpc()
+    }
+    fn freq(&self) -> i64 {
+        self.freq
+    }
+    fn present(&mut self, bgr: &[u8]) -> Option<(i64, i64)> {
+        let hdc = unsafe { GetDC(self.hwnd) };
+        if hdc.is_null() {
+            return None;
+        }
+        unsafe {
+            SetStretchBltMode(hdc, self.mode);
+            SetBrushOrgEx(hdc, 0, 0, std::ptr::null_mut());
+        }
+        let ok = unsafe {
+            StretchDIBits(hdc, 0, 0, (W as i32) / 2, (H as i32) / 2, 0, 0, W as i32, H as i32,
+                bgr.as_ptr() as *const c_void, &self.header, DIB_RGB_COLORS, SRCCOPY)
+        };
+        let ready = qpc();
+        let composited = if ok != 0 {
+            (self.flush_fn)();
+            Some(qpc())
+        } else {
+            None
+        };
+        unsafe { ReleaseDC(self.hwnd, hdc) };
+        composited.map(|t| (ready, t))
+    }
+    fn flush(&mut self) {
+        (self.flush_fn)();
+    }
+    fn pump(&mut self) -> bool {
+        let mut msg: Msg = unsafe { std::mem::zeroed() };
+        while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            let m = msg.message;
+            if (0x0100..=0x0109).contains(&m) || (0x00A0..=0x00AD).contains(&m) || (0x0200..=0x020E).contains(&m) || m == 0x0112 {
+                self.last_input = m;
+                self.inputs_seen += 1;
+            }
+            unsafe {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            if msg.message == 0x0012 {
+                return false;
+            }
+        }
+        true
+    }
+    fn progress(&mut self, done: usize, total: usize) {
+        if done % 100 == 0 || done == total {
+            println!("[court] {} of {} samples", done, total);
+        }
+    }
+}
+
+impl crate::presentstretch::StretchSurface for StretchGdiSurface {
+    fn set_mode(&mut self, mode: i32) -> i32 {
+        self.mode = mode;
+        let hdc = unsafe { GetDC(self.hwnd) };
+        if hdc.is_null() {
+            return 0;
+        }
+        let eff = unsafe {
+            SetStretchBltMode(hdc, mode);
+            GetStretchBltMode(hdc)
+        };
+        unsafe { ReleaseDC(self.hwnd, hdc) };
+        eff
+    }
+    fn client(&mut self) -> (u32, u32) {
+        let mut c = Rect { left: 0, top: 0, right: 0, bottom: 0 };
+        if unsafe { GetClientRect(self.hwnd, &mut c) } == 0 {
+            return (0, 0);
+        }
+        ((c.right - c.left).max(0) as u32, (c.bottom - c.top).max(0) as u32)
+    }
+}
+
+fn court_header() -> BitmapInfoHeader {
+    BitmapInfoHeader {
+        bi_size: std::mem::size_of::<BitmapInfoHeader>() as Dword,
+        bi_width: W as Long,
+        bi_height: -(H as Long),
+        bi_planes: 1,
+        bi_bit_count: 24,
+        bi_compression: BI_RGB,
+        bi_size_image: (W * H * 3) as Dword,
+        bi_x_pels_per_meter: 0,
+        bi_y_pels_per_meter: 0,
+        bi_clr_used: 0,
+        bi_clr_important: 0,
+    }
+}
+
+fn court_window(class: &str, title: &str, x: i32, y: i32, ow: i32, oh: i32) -> Hwnd {
+    let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
+    let class_name = wide(class);
+    let title_w = wide(title);
+    let wc = WndClassW {
+        style: 0,
+        lpfn_wnd_proc: Some(wnd_proc),
+        cb_cls_extra: 0,
+        cb_wnd_extra: 0,
+        h_instance: hinstance,
+        h_icon: std::ptr::null_mut(),
+        h_cursor: std::ptr::null_mut(),
+        hbr_background: std::ptr::null_mut(),
+        lpsz_menu_name: std::ptr::null(),
+        lpsz_class_name: class_name.as_ptr(),
+    };
+    unsafe { RegisterClassW(&wc) };
+    unsafe {
+        CreateWindowExW(0, class_name.as_ptr(), title_w.as_ptr(), WS_OVERLAPPEDWINDOW | WS_VISIBLE, x, y, ow, oh,
+            std::ptr::null_mut(), std::ptr::null_mut(), hinstance, std::ptr::null_mut())
+    }
+}
+
+fn court_prelude(name: &str) -> (DwmFlushFn, i64) {
+    let flush_fn = match load_dwm() {
+        Some(d) => d.flush,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or its composition-timing entry point is unavailable; cannot run {}", name);
+            std::process::exit(2);
+        }
+    };
+    let mut freq = 0i64;
+    unsafe { QueryPerformanceFrequency(&mut freq) };
+    (flush_fn, if freq <= 0 { 1 } else { freq })
+}
+
+fn write_raw(path: String, raw: String, sealer: &str) {
+    if let Some(dir) = std::path::Path::new(&path).parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    if std::fs::write(&path, raw.as_bytes()).is_ok() {
+        println!("[shell] wrote raw {} — sealed by python verify/{}", path, sealer);
+    } else {
+        eprintln!("SHELL-CANNOT-WRITE: {}", path);
+        std::process::exit(2);
+    }
+}
+
+pub fn presentstretch_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, out: Option<String>) {
+    let (flush_fn, freq) = court_prelude("PRESENT-STRETCH-0");
+    // the half-size client area, set exactly (as PRESENT-SCALE-0's half cell) and read back by the court
+    let mut r = Rect { left: 0, top: 0, right: (W as Long) / 2, bottom: (H as Long) / 2 };
+    unsafe { AdjustWindowRect(&mut r, WS_OVERLAPPEDWINDOW, 0) };
+    let hwnd = court_window("VerdandiPresentStretch0", "Verðandi — PRESENT-STRETCH-0", 0, 0, r.right - r.left, r.bottom - r.top);
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    let mut surf = StretchGdiSurface { hwnd, header: court_header(), flush_fn, freq, mode: 1, last_input: 0, inputs_seen: 0 };
+    let _ = surf.pump();
+    println!("[presentstretch] window open — leave it alone until it closes ({} samples)", per_cell * 6);
+    let result = crate::presentstretch::court(&mut surf, &inputs, per_cell);
+    let alive = unsafe { IsWindow(hwnd) } != 0;
+    if alive {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    match result {
+        Ok(st) => {
+            for ln in crate::presentstretch::summary(&st) {
+                println!("{}", ln);
+            }
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+            let raw = crate::presentstretch::raw_record(host, "half-size GDI window with a set stretch mode (StretchDIBits + DwmFlush, QPC)", &st, now);
+            write_raw(out.unwrap_or_else(|| format!("verify/build/presentstretch-raw-{}.json", host)), raw, "presentstretch.py");
+        }
+        Err(m) => {
+            eprintln!("SHELL-{}", m);
+            eprintln!("SHELL-PRESENTSTRETCH-DIAG: window_still_existed={} input_messages_seen={} last_input_msg=0x{:04X}",
+                      alive, surf.inputs_seen, surf.last_input);
+            std::process::exit(2);
+        }
+    }
+}
+
+pub fn allocreuse_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, out: Option<String>) {
+    let (flush_fn, freq) = court_prelude("ALLOC-REUSE-0");
+    // FRAME-SPLIT-0's window, unchanged: the same outer size and default placement, LATENCY-1R's GDI surface
+    let hwnd = court_window("VerdandiAllocReuse0", "Verðandi — ALLOC-REUSE-0", CW_USEDEFAULT, CW_USEDEFAULT,
+                            (W as i32) / 2 + 16, (H as i32) / 2 + 39);
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    let mut surf = GdiSurface { hwnd, header: court_header(), flush_fn, freq, last_input: 0, inputs_seen: 0 };
+    println!("[allocreuse] window open — leave it alone until it closes ({} samples + {} warm-up rounds)",
+             per_cell * 4, crate::allocreuse::WARM_ROUNDS);
+    let result = crate::allocreuse::court(&mut surf, &inputs, per_cell);
+    let alive = unsafe { IsWindow(hwnd) } != 0;
+    if alive {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    match result {
+        Ok(al) => {
+            for ln in crate::allocreuse::summary(&al) {
+                println!("{}", ln);
+            }
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+            let raw = crate::allocreuse::raw_record(host, "GDI window (StretchDIBits + DwmFlush, QPC)", &al, now);
+            write_raw(out.unwrap_or_else(|| format!("verify/build/allocreuse-raw-{}.json", host)), raw, "allocreuse.py");
+        }
+        Err(m) => {
+            eprintln!("SHELL-{}", m);
+            eprintln!("SHELL-ALLOCREUSE-DIAG: window_still_existed={} input_messages_seen={} last_input_msg=0x{:04X}",
+                      alive, surf.inputs_seen, surf.last_input);
+            std::process::exit(2);
+        }
+    }
+}

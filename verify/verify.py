@@ -50,7 +50,10 @@ LATENCY-0's instrument a byte-exact prefix of shell/win32.rs), framesplit (FRAME
 frame-ready into seven contiguous phases beside its uninstrumented envelope — locked method, sealer rules, the court
 over the mock, and the fence that keeps the marked mirror on fast::render's calls), presentscale (PRESENT-SCALE-0: the
 same frame presented into a half-size and a full-size client area, the destination the only variable — locked method,
-the diagnostic attribution rule, the court over the mock with a clamped-geometry plant, and the fence).
+the diagnostic attribution rule, the court over the mock with a clamped-geometry plant, and the fence), presentstretch
+(PRESENT-STRETCH-0: the half-size blit under three GDI stretch modes, the mode the only variable), allocreuse
+(ALLOC-REUSE-0: the frame with its buffers allocated every frame vs once, the lifetime the only variable), and — in the
+oracle stage — oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
 
@@ -415,6 +418,46 @@ def game_not_runtime():
     return ("no kernel/, workshop/ or shell/ code reaches into oracle/game — the game layer is evidence the gate reads, "
             "never a runtime dependency (the charter's ORACLE clause); PLANTS: a planted #[path] and a planted file read "
             "into oracle/game are both seen")
+
+
+ORACLE_D0_SNIPPET = r"""
+import json, sys
+sys.path.insert(0, "tools/terrain")
+import gamegen as G, entity as E, rngstream as R, actionlog as A, statecanon as S
+seed, depth, pos = int(sys.argv[1], 16), int(sys.argv[2]), (int(sys.argv[3]), int(sys.argv[4]))
+log = json.loads(sys.argv[5])
+print(S.d_n(G.generate(seed, depth), E.at(pos), R.apply(R.root(seed), []), A.from_actions(log)))
+"""
+
+
+def oracle_d0_of(seed: str, depth: int, pos, log) -> str:
+    cp = subprocess.run([sys.executable, "-B", "-c", ORACLE_D0_SNIPPET, seed.replace("0x", ""), str(depth), str(pos[0]),
+                         str(pos[1]), json.dumps(log)], cwd=GAME, env=game_env(), capture_output=True, text=True,
+                        encoding="utf-8")
+    if cp.returncode != 0:
+        tail = cp.stderr.strip().splitlines()[-1] if cp.stderr.strip() else "no output"
+        raise Red("Urðr's statecanon did not run in place: " + tail)
+    return cp.stdout.strip()
+
+
+def oracle_d0():
+    """ORACLE-D0: the oracle's third hash, until now carried as evidence only, is recomputed at gate time by Urðr's own
+    code in place (oracle/game: gamegen, entity, rngstream, actionlog, statecanon) from the oracle's view — the level at
+    (seed, depth), the entity at pos, the RNG stream at its root, an empty action log — and equals urdr-oracle-1.json's
+    D_0. Verðandi still mints nothing: the composition is statecanon's. PLANT: the entity one cell over gives a different
+    D_0."""
+    o = oracle()
+    v = o["view"]
+    got = oracle_d0_of(v["seed"], v["depth"], v["pos"], [])
+    if got != o["D_0"]:
+        raise Red(f"Urðr's statecanon composes {got[:12]}… for the oracle's view, not the oracle's D_0 {o['D_0'][:12]}…")
+    moved = oracle_d0_of(v["seed"], v["depth"], [v["pos"][0] + 1, v["pos"][1]], [])
+    if moved == o["D_0"]:
+        raise Red("PLANT: an entity one cell over composed the same D_0")
+    return ("D_0 recomputed in place by Urðr's own statecanon (level %s depth %d, entity at %s, the RNG stream at its root, an "
+            "empty action log) equals urdr-oracle-1.json's %s… — the oracle's third hash is now checked, not only carried, "
+            "and Verðandi mints none of it; PLANT: the entity one cell over composes a different D_0"
+            % (v["seed"], v["depth"], tuple(v["pos"]), o["D_0"][:12]))
 
 
 # ------------------------------------------------------------------ kernel
@@ -3731,6 +3774,355 @@ def presentscale_fence():
             "LATENCY-0's instrument is still a byte-exact prefix")
 
 
+# ------------------------------------------------------------------ PRESENT-STRETCH-0 and ALLOC-REUSE-0
+def locked_entry(rung: str, phrases: dict) -> dict:
+    """A registered entry whose method phrases are all present (lower-cased search over its fields) and whose chain hash
+    is intact; the Red names the missing clauses."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    e = reg.get(rung)
+    if not e:
+        raise Red(f"{rung} is not registered")
+    text = {"hyp": e["hypothesis"].lower(), "succ": e["success_condition"].lower(), "fail": e["failure_condition"].lower(),
+            "lims": " ".join(e["interpretation_limits"]).lower()}
+    missing = [k for k, (field, needles) in phrases.items() if not all(n in text[field] for n in needles)]
+    if missing:
+        raise Red(f"the {rung} method is not fully locked: " + "; ".join(missing))
+    if not entry_hash_ok(rung, e):
+        raise Red(f"the {rung} entry was edited after registration (chain hash)")
+    return e
+
+
+def presentstretch_preregistered():
+    """PRESENT-STRETCH-0's method is locked before any host number: the stretch mode (BLACKONWHITE, COLORONCOLOR,
+    HALFTONE at the half-size destination) the only variable, set with the brush origin identically before every blit,
+    blocks B C H H C B B C H H C B with warm-up, the effective mode and the client area verified, a diagnostic reading
+    per mode against the default, no mode adopted. Code constants must match."""
+    e = locked_entry("PRESENT-STRETCH-0", {
+        "one variable: the stretch mode at 960x540": ("hyp", ("one thing", "960x540", "blackonwhite", "coloroncolor", "halftone")),
+        "mode and brush origin set identically before every blit": ("hyp", ("brush origin", "identically in every cell")),
+        "a diagnostic, no seat, not predicted": ("hyp", ("diagnostic", "does not seat or adopt", "not predicted")),
+        "blocks, warm-up, verified mode and client": ("succ", ("b c h h c b b c h h c b", "5 discarded warm-up rounds", "effective mode", "must be 960x540")),
+        "the readings and thresholds": ("succ", ("void", "confounded", "mode material", "mode immaterial", "100 permille", "50 permille")),
+        "no second variable, no adopted mode, no general claim": ("fail", ("second variable", "adopted stretch mode", "in general")),
+        "--confirm, emit p99, LATENCY-0 prefix": ("fail", ("--confirm", "emit p99", "byte-exact prefix")),
+        "scope: GDI's semantics recorded not verified": ("lims", ("not verified", "separate court", "not input-to-photon")),
+    })
+    import presentstretch as PST
+    rs = read(os.path.join(SHELL, "presentstretch.rs")).decode("utf-8")
+    if ("pub const MODES: [i32; 3] = [1, 3, 4];" not in rs or "pub const BLOCK_ORDER: [usize; 12] = [0, 1, 2, 2, 1, 0, 0, 1, 2, 2, 1, 0];" not in rs
+            or "pub const WARM_ROUNDS_PER_BLOCK: usize = 5;" not in rs):
+        raise Red("the court's modes, block order or warm-up are not the registered ones")
+    if (PST.MODES, PST.BLOCK_ORDER, PST.VOID_TAX_PERMILLE, PST.CONFOUND_PERMILLE, PST.MATERIAL_PERMILLE) != \
+            ({"BLACKONWHITE": 1, "COLORONCOLOR": 3, "HALFTONE": 4}, "BCHHCBBCHHCB", 100, 50, 100):
+        raise Red("the sealer's constants are not the registered ones")
+    return ("PRESENT-STRETCH-0's method is locked before any host number: the stretch mode (BLACKONWHITE 1, COLORONCOLOR 3, "
+            "HALFTONE 4) is the only variable at the 960x540 destination, set with the brush origin identically before every "
+            "blit; blocks B C H H C B B C H H C B with 5 warm-up rounds; the effective mode and the client area read back; per "
+            "mode against BLACKONWHITE on p50s VOID / CONFOUNDED / MODE MATERIAL / MODE IMMATERIAL — a diagnostic, no mode "
+            "adopted; the code's constants equal the registered ones; hash-locked %s" % e["chain_hash"][:8])
+
+
+def allocreuse_preregistered():
+    """ALLOC-REUSE-0's method is locked before any host number: the buffers' lifetime (fresh vs reused) the only
+    variable over FRAME-SPLIT-0's apparatus, the same calls and marks, witnesses first with byte-equal reuse, a
+    diagnostic reading on the envelope with the per-phase deltas beside, nothing adopted. Code constants must match."""
+    e = locked_entry("ALLOC-REUSE-0", {
+        "one variable: the buffers' lifetime": ("hyp", ("one thing", "fresh", "reused", "same calls in the same order")),
+        "the floor swizzle stays fresh; fast.rs untouched": ("hyp", ("stays fresh in both", "fast.rs is untouched")),
+        "a diagnostic, not predicted": ("hyp", ("diagnostic", "does not seat or adopt", "not predicted")),
+        "witnesses first, reuse bytes equal": ("succ", ("witnesses first", "reused buffers' index frame, composite and blit bytes equal")),
+        "four cells ABBA, warm-up": ("succ", ("four cells", "abba", "10 warm-up rounds")),
+        "the readings and thresholds": ("succ", ("void", "confounded", "allocation material", "allocation immaterial", "50 permille of the fresh envelope")),
+        "no per-phase verdict, nothing adopted": ("fail", ("per-phase verdict", "adopting buffer reuse")),
+        "--confirm, emit p99, LATENCY-0 prefix": ("fail", ("--confirm", "emit p99", "byte-exact prefix")),
+        "scope: allocator/OS-specific, not input-to-photon": ("lims", ("page faults", "not input-to-photon")),
+    })
+    import allocreuse as AR
+    rs = read(os.path.join(SHELL, "allocreuse.rs")).decode("utf-8")
+    if "pub const WARM_ROUNDS: usize = 10;" not in rs:
+        raise Red("the court's warm-up is not the registered 10 rounds")
+    if (AR.ALLOCATING, AR.UNCHANGED, AR.VOID_TAX_PERMILLE, AR.CONFOUND_PERMILLE, AR.MATERIAL_PERMILLE) != \
+            (("strips", "frame", "emit", "bgr"), ("floor_swizzle", "hud", "blit"), 100, 50, 50):
+        raise Red("the sealer's phase groups or constants are not the registered ones")
+    return ("ALLOC-REUSE-0's method is locked before any host number: the buffers' lifetime (fresh every frame vs reused) is "
+            "the only variable over FRAME-SPLIT-0's apparatus with the same calls and marks, the floor swizzle fresh in both; "
+            "witnesses first with the reused bytes equal to the fresh path's; four cells ABBA after 10 warm-up rounds; on p50s "
+            "VOID / CONFOUNDED (unchanged phases >= 50) / ALLOCATION MATERIAL (|envelope delta| >= 50 permille) / IMMATERIAL, "
+            "per-phase deltas beside and never ruled on; nothing adopted; hash-locked %s" % e["chain_hash"][:8])
+
+
+def diag_sealer_cases(module, seal_fn_name: str, rung: str, cases: dict, bad: list) -> None:
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    session, build = {"path": "synthetic", "chain_hash": "0" * 64}, {"rustc": "gate", "flags": ["-O"]}
+    seal = getattr(module, seal_fn_name)
+    for want, raw in cases.items():
+        rec, got = seal(raw, reg, "gate", session, build)
+        envelope.validate(rec)
+        if got != want:
+            raise Red(f"{rung}'s sealer read {got!r}, the registered rule says {want!r}")
+        if rec["provenance"]["preregistered"]["chain_hash"] != reg[rung]["chain_hash"]:
+            raise Red(f"the sealed record does not cite {rung}")
+    for raw, why in bad:
+        try:
+            seal(raw, reg, "gate", session, build)
+            raise Red(f"{rung}'s sealer accepted {why}")
+        except module.Refuse:
+            pass
+
+
+def _pct4(v):
+    return {"p50": v, "p95": v, "p99": v, "max": v}
+
+
+def _cell(blit, non_blit=8000, env=None, total=None, phases=("strips", "frame", "floor_swizzle", "emit", "hud", "bgr", "blit")):
+    base = [1000, 2000, 100, 3000, 100, 1800]
+    vals = [int(round(v * non_blit / sum(base))) for v in base]
+    vals[0] += non_blit - sum(vals)
+    env = non_blit + blit if env is None else env
+    total = non_blit + blit if total is None else total
+    return {"envelope": {"render_us": _pct4(env), "present_us": _pct4(9000), "samples": 4},
+            "split": {"phases_us": dict(zip(phases, [_pct4(v) for v in vals + [blit]])), "render_us": _pct4(total),
+                      "present_us": _pct4(9000), "samples": 4}}
+
+
+def presentstretch_sealer():
+    """The stretch sealer, with synthetic modes: per-mode MODE MATERIAL (cheaper/dearer at exactly 100 permille), MODE
+    IMMATERIAL (99), CONFOUNDED (50) and a court-wide VOID fire at the registered bounds; a mode the device context did
+    not honour, another client area or another block order is refused."""
+    import presentstretch as PST
+
+    def raw(c, h, b=None, **over):
+        modes = {}
+        for name, mode, cell in (("BLACKONWHITE", 1, b or _cell(7000)), ("COLORONCOLOR", 3, c), ("HALFTONE", 4, h)):
+            modes[name] = dict(cell, requested=mode, effective=mode)
+        d = {"modes": modes, "default_mode": "BLACKONWHITE", "destination": [960, 540], "client": [960, 540],
+             "source": [1920, 1080], "phases": list(PST.PHASES), "block_order": "BCHHCBBCHHCB", "warm_rounds_per_block": 5,
+             "refresh_period_us": 13400, "sequence_frames": 4, "samples_per_cell": 4, "production_threads": 8, "phase_origin": "locked"}
+        d.update(over)
+        return {"name": "verdandi-presentstretch", "provenance": {"tool": "synthetic", "unix_seconds": 0}, "data": d}
+
+    cases = {
+        "COLORONCOLOR: MODE MATERIAL (cheaper); HALFTONE: MODE MATERIAL (dearer)": raw(_cell(6300), _cell(7700)),
+        "COLORONCOLOR: MODE IMMATERIAL; HALFTONE: CONFOUNDED": raw(_cell(6301), _cell(7000, non_blit=8400)),
+        "VOID": raw(_cell(6300), _cell(7700, env=14000, total=15700)),
+    }
+    ignored = raw(_cell(6300), _cell(7700))
+    ignored["data"]["modes"]["HALFTONE"]["effective"] = 1
+    diag_sealer_cases(PST, "seal_presentstretch", "PRESENT-STRETCH-0", cases,
+                      [(ignored, "a mode the device context did not honour"),
+                       (raw(_cell(6300), _cell(7700), client=[944, 501]), "another client area"),
+                       (raw(_cell(6300), _cell(7700), block_order="BCHBCHBCHBCH"), "another block order")])
+    return ("verify/presentstretch.py, driven with synthetic modes: MODE MATERIAL (cheaper and dearer, at exactly 100 permille), "
+            "MODE IMMATERIAL (99), CONFOUNDED (50) and a court-wide VOID (tax 100) fire at the registered bounds, per mode "
+            "against BLACKONWHITE; an unhonoured mode, another client area or another block order is refused; records cite "
+            "PRESENT-STRETCH-0 and pass the firewall")
+
+
+def allocreuse_sealer():
+    """The allocation sealer, with synthetic variants: ALLOCATION MATERIAL (reuse cheaper/dearer at exactly 50 permille of
+    the fresh envelope), IMMATERIAL (49), CONFOUNDED (the unchanged phases moved 50) and VOID fire at the registered
+    bounds; the per-phase deltas are recorded; another warm-up or phase order is refused."""
+    import allocreuse as AR
+
+    def var(env, unchanged=(100, 100, 7000), alloc=(60, 3000, 3600, 1800), env_split=None):
+        ph = dict(zip(AR.ALLOCATING, alloc))
+        ph.update(dict(zip(AR.UNCHANGED, unchanged)))
+        total = sum(ph.values())
+        return {"envelope": {"render_us": _pct4(env), "present_us": _pct4(9000), "samples": 4},
+                "split": {"phases_us": {p: _pct4(ph[p]) for p in AR.PHASES}, "render_us": _pct4(env if env_split is None else env_split),
+                          "present_us": _pct4(9000), "samples": 4}}
+
+    def raw(f, r, **over):
+        d = {"variants": {"fresh": f, "reused": r}, "phases": list(AR.PHASES), "warm_rounds": 10, "refresh_period_us": 13400,
+             "sequence_frames": 4, "samples_per_cell": 4, "production_threads": 8, "phase_origin": "locked"}
+        d.update(over)
+        return {"name": "verdandi-allocreuse", "provenance": {"tool": "synthetic", "unix_seconds": 0}, "data": d}
+
+    cases = {
+        "ALLOCATION MATERIAL (reuse cheaper)": raw(var(16000), var(15200, alloc=(40, 2600, 3000, 1100))),   # -800 = 50
+        "ALLOCATION MATERIAL (reuse dearer)": raw(var(16000), var(16800)),
+        "ALLOCATION IMMATERIAL": raw(var(16000), var(15201)),                                             # 49
+        "CONFOUNDED": raw(var(16000), var(15000, unchanged=(100, 100, 6640))),                            # 360/7200 = 50
+        "VOID": raw(var(16000), var(15000, env_split=16500)),                                             # 1500/15000 = 100
+    }
+    rec, _ = AR.seal_allocreuse(cases["ALLOCATION MATERIAL (reuse cheaper)"],
+                                json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"],
+                                "gate", {"path": "synthetic"}, {"rustc": "gate"})
+    pd = rec["data"]["derived"]["deltas"]["phase_delta_p50_us"]
+    if (pd["frame"], pd["emit"], pd["bgr"], pd["blit"]) != (-400, -600, -700, 0):
+        raise Red("the per-phase deltas are not recorded as measured")
+    diag_sealer_cases(AR, "seal_allocreuse", "ALLOC-REUSE-0", cases,
+                      [(raw(var(16000), var(15200), warm_rounds=5), "another warm-up"),
+                       (raw(var(16000), var(15200), phases=list(AR.PHASES)[::-1]), "phases out of order")])
+    return ("verify/allocreuse.py, driven with synthetic variants: ALLOCATION MATERIAL (reuse cheaper and dearer, at exactly 50 "
+            "permille of the fresh envelope), IMMATERIAL (49), CONFOUNDED (the unchanged phases moved 50) and VOID fire at the "
+            "registered bounds; the per-phase deltas are recorded as measured and never ruled on; another warm-up or phase "
+            "order is refused; records cite ALLOC-REUSE-0 and pass the firewall")
+
+
+def diag_court(cmd: str, per_cell: str, ok_marker: str, plants: list, check) -> None:
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    out = os.path.join(BUILD, f"{cmd}-mock.json")
+    if os.path.exists(out):
+        os.remove(out)
+    base = [f"{cmd}-selftest", "--session", SESSIONWALK_DEMO, "--per-cell", per_cell]
+    cp = subprocess.run([SHELL_EXE] + base + ["--out", out], capture_output=True, text=True, cwd=ROOT)
+    if cp.returncode != 0 or ok_marker not in cp.stdout or not os.path.exists(out):
+        raise Red(f"the headless {cmd} court did not run: " + (cp.stderr.strip() or cp.stdout.strip()))
+    with open(out, encoding="utf-8") as fh:
+        raw = json.load(fh)
+    os.remove(out)
+    check(raw)
+    for plant, code in plants:
+        pout = os.path.join(BUILD, f"{cmd}-plant-{plant}.json")
+        if os.path.exists(pout):
+            os.remove(pout)
+        cp = subprocess.run([SHELL_EXE] + base + ["--plant", plant, "--out", pout], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode == 0 or code not in cp.stderr or os.path.exists(pout):
+            raise Red(f"PLANT {plant}: the {cmd} court did not refuse with {code} and no record")
+
+
+def presentstretch_court():
+    """The SAME stretch court the host window runs, headless over the mock: witnesses first, the client area and each
+    effective mode verified, 12 blocks, every mode's envelope and split recorded, each split summing to its total.
+    PLANTS: a tampered witness, a device context that ignores the requested mode, and a mid-court close all refuse."""
+    import presentstretch as PST
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+
+    def check(raw):
+        d = raw["data"]
+        for name, mode in PST.MODES.items():
+            md = d["modes"][name]
+            if md["effective"] != mode or md["envelope"]["samples"] != 4 or md["split"]["samples"] != 4:
+                raise Red(f"{name}: not recorded at its verified mode with 4 samples per cell")
+            if sum(md["split"]["phases_us"][p]["p50"] for p in PST.PHASES) != md["split"]["render_us"]["p50"]:
+                raise Red(f"{name}: the split's phases do not sum to its total")
+        rec, label = PST.seal_presentstretch(raw, reg, "gate-mock", {"path": "workshop/attest/sessionwalk-demo.json"}, {"rustc": "gate"})
+        envelope.validate(rec)
+        if label != "VOID":
+            raise Red(f"the mock stretch court read {label!r}, not VOID")
+
+    diag_court("presentstretch", "4", "presentstretch court OK",
+               [("witness", "PRESENTSTRETCH-WITNESS"), ("mode", "PRESENTSTRETCH-MODE"), ("close", "PRESENTSTRETCH-CLOSED")], check)
+    return ("the PRESENT-STRETCH-0 court runs headless over the mock surface on the sealed session: witnesses first, the "
+            "960x540 client area and each block's effective mode verified, 12 blocks B C H H C B B C H H C B, all three modes' "
+            "envelope and split recorded, each split summing to its total; its raw record seals and reads VOID under the mock; "
+            "PLANTS: a tampered witness (PRESENTSTRETCH-WITNESS), an ignored mode (PRESENTSTRETCH-MODE) and a mid-court close "
+            "(PRESENTSTRETCH-CLOSED) each refuse with no record")
+
+
+def allocreuse_court():
+    """The SAME allocation court the host window runs, headless over the mock: witnesses first including the reused
+    buffers' byte-equality, four cells after the warm-up, each split summing to its total. PLANTS: a tampered witness
+    and a mid-court close both refuse with no record."""
+    import allocreuse as AR
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+
+    def check(raw):
+        d = raw["data"]
+        if d["warm_rounds"] != 10 or d["samples_per_cell"] != 2:
+            raise Red("the court did not run 2 samples per cell after 10 warm-up rounds")
+        for v in AR.VARIANTS:
+            spl = d["variants"][v]["split"]
+            if sum(spl["phases_us"][p]["p50"] for p in AR.PHASES) != spl["render_us"]["p50"]:
+                raise Red(f"{v}: the split's phases do not sum to its total")
+        rec, label = AR.seal_allocreuse(raw, reg, "gate-mock", {"path": "workshop/attest/sessionwalk-demo.json"}, {"rustc": "gate"})
+        envelope.validate(rec)
+        if label != "VOID":
+            raise Red(f"the mock allocation court read {label!r}, not VOID")
+
+    diag_court("allocreuse", "2", "allocreuse court OK",
+               [("witness", "ALLOCREUSE-WITNESS"), ("close", "ALLOCREUSE-CLOSED")], check)
+    return ("the ALLOC-REUSE-0 court runs headless over the mock surface on the sealed session: witnesses first (the fresh "
+            "path reproduces the sealed witnesses, the marked mirror byte-equal, the reused buffers' frame, composite and blit "
+            "bytes equal the fresh path's for all 4 frames), 10 warm-up rounds then 4 cells ABBA, each split summing to its "
+            "total; its raw record seals and reads VOID under the mock; PLANTS: a tampered witness (ALLOCREUSE-WITNESS) and a "
+            "mid-court close (ALLOCREUSE-CLOSED) each refuse with no record")
+
+
+def presentstretch_fence():
+    """Only the stretch mode changes: the stretch surface's present is LATENCY-0's present_once plus SetStretchBltMode and
+    SetBrushOrgEx before the blit into the fixed half-size destination; the window is the plain overlapped window with
+    LATENCY-0's procedure; the court uses FRAME-SPLIT-0's envelope and split paths and changes the mode only between
+    blocks; LATENCY-0's instrument is still a byte-exact prefix."""
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i_ps, i_st = tail.find("PRESENT-SCALE-0 (appended)"), tail.find("PRESENT-STRETCH-0 and ALLOC-REUSE-0 (appended)")
+    if i_ps < 0 or i_st < i_ps:
+        raise Red("the stretch/allocation section is not appended after PRESENT-SCALE-0's")
+    sect = tail[i_st:]
+    pres = src_span(sect, "fn present(&mut self", "fn flush(&mut self)")
+    order = [pres.find(t) for t in ("GetDC(", "SetStretchBltMode(hdc, self.mode)", "SetBrushOrgEx(hdc, 0, 0,", "StretchDIBits(",
+                                    "let ready = qpc();", "(self.flush_fn)();", "Some(qpc())", "ReleaseDC(")]
+    if -1 in order or order != sorted(order):
+        raise Red("the stretch surface's present is not LATENCY-0's present_once with the mode and brush origin set before the blit")
+    if "StretchDIBits(hdc, 0, 0, (W as i32) / 2, (H as i32) / 2, 0, 0, W as i32, H as i32," not in pres:
+        raise Red("the stretch surface does not blit into the fixed half-size destination")
+    win = src_span(sect, "pub fn presentstretch_window(", "pub fn allocreuse_window(")
+    if "AdjustWindowRect(&mut r, WS_OVERLAPPEDWINDOW, 0)" not in win or "lpfn_wnd_proc: Some(wnd_proc)" not in sect:
+        raise Red("the stretch window is not the plain overlapped window sized to a 960x540 client with LATENCY-0's procedure")
+    rs = read(os.path.join(SHELL, "presentstretch.rs")).decode("utf-8")
+    court = src_span(rs, "pub fn court<", "fn pct_json(")
+    if ("arm_composite(&inputs[k].scene, Arm::Production)" not in court or "arm_composite_marked(&inputs[k].scene, Arm::Production, &mut m)" not in court
+            or "if effective != MODES[mi]" not in court or "if client != DESTINATION" not in court):
+        raise Red("the court does not use FRAME-SPLIT-0's paths with a verified mode and client area")
+    timed = court[court.index("let t0 = s.ticks();"):court.index("if comp != expected[k]")]
+    if "set_mode" in timed or "frame_digest" in timed or "sha256" in timed:
+        raise Red("the timed interval holds a mode change or hashing")
+    return ("only the stretch mode changes: the present is LATENCY-0's present_once with SetStretchBltMode and SetBrushOrgEx "
+            "before the blit into the fixed 960x540 destination; the window is the plain overlapped window with LATENCY-0's "
+            "procedure; the court uses FRAME-SPLIT-0's envelope and split paths, verifies the mode and the client area, and "
+            "changes the mode only between blocks; LATENCY-0's instrument is still a byte-exact prefix")
+
+
+def allocreuse_fence():
+    """Only the buffers' lifetime changes: the reuse path makes the marked mirror's calls in its order with the same five
+    marks into persistent buffers, `to_blit_into` is `to_blit`'s transform, the window and surface are FRAME-SPLIT-0's,
+    and every composite and blit buffer is checked after its sample."""
+    pr = read(os.path.join(SHELL, "present.rs")).decode("utf-8")
+    mirror = src_span(pr, "pub fn arm_composite_marked<", "\n}\n")
+    reuse = src_span(pr, "pub fn arm_composite_reuse_marked<", "\n}\n")
+    calls = ["strips(&mut", "m.mark();", ".frame(&", "m.mark();", "blocked_floor(&scene.floor)", "m.mark();", "emit_threaded(", "m.mark();", "hud::overlay(", "m.mark();"]
+
+    def ordered(body):
+        pos, out = 0, []
+        for c in calls:
+            i = body.find(c, pos)
+            if i < 0:
+                return False
+            pos = i + len(c)
+        return True
+
+    if not ordered(mirror) or not ordered(reuse) or reuse.count("m.mark();") != 5:
+        raise Red("the reuse path does not make the marked mirror's calls in its order with the same five marks")
+    if "fast::PROD_THREADS" not in reuse or "vec![" in reuse or "Vec::with_capacity" in reuse:
+        raise Red("the reuse path allocates, or is not the production arm")
+    tb, tbi = src_span(pr, "pub fn to_blit(", "\n}\n"), src_span(pr, "pub fn to_blit_into(", "\n}\n")
+    for line in ("out[i * 3] = rgb[i * 3 + 2];", "out[i * 3 + 1] = rgb[i * 3 + 1];", "out[i * 3 + 2] = rgb[i * 3];"):
+        if line not in tb or line not in tbi:
+            raise Red("to_blit_into is not to_blit's transform")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    win = src_span(w32.decode("utf-8"), "pub fn allocreuse_window(", "\n}\n")
+    if "CW_USEDEFAULT, CW_USEDEFAULT," not in win or "(W as i32) / 2 + 16, (H as i32) / 2 + 39" not in win or "GdiSurface {" not in win:
+        raise Red("the allocation court does not run in FRAME-SPLIT-0's window over LATENCY-1R's GDI surface")
+    rs = read(os.path.join(SHELL, "allocreuse.rs")).decode("utf-8")
+    court = src_span(rs, "pub fn court(", "fn pct_json(")
+    if ("bufs.pixels != expected[k] || bufs.bgr != expected_bgr[k]" not in court or "comp != expected[k] || bgr != expected_bgr[k]" not in court
+            or "let bounds = [t0, t[0], t[1], t[2], t[3], t[4], t_bgr, t1];" not in court):
+        raise Red("the court does not check both variants' bytes after every sample, or its phases are not contiguous")
+    return ("only the buffers' lifetime changes: the reuse path makes the marked mirror's calls in its order with the same "
+            "five marks into persistent buffers and allocates none of them (the floor swizzle stays fast.rs's, fresh in both); "
+            "to_blit_into is to_blit's transform; the court runs in "
+            "FRAME-SPLIT-0's window over LATENCY-1R's GDI surface and checks both variants' composite and blit bytes after "
+            "every sample; LATENCY-0's instrument is still a byte-exact prefix")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -3739,6 +4131,7 @@ def main() -> int:
     row("game-suites", game_suites)
     row("game-plant", game_plant)
     row("game-not-runtime", game_not_runtime)
+    row("oracle-d0", oracle_d0)
     row("kernel-build", kernel_build)
     row("kernel-oracle", kernel_oracle)
     row("kernel-corpus", kernel_corpus)
@@ -3772,6 +4165,10 @@ def main() -> int:
     row("framesplit-sealer", framesplit_sealer)
     row("presentscale-preregistered", presentscale_preregistered)
     row("presentscale-sealer", presentscale_sealer)
+    row("presentstretch-preregistered", presentstretch_preregistered)
+    row("presentstretch-sealer", presentstretch_sealer)
+    row("allocreuse-preregistered", allocreuse_preregistered)
+    row("allocreuse-sealer", allocreuse_sealer)
     row("gauntlet-preregistered", gauntlet_preregistered)
     row("gauntlet1-preregistered", gauntlet1_preregistered)
     row("gauntlet1-equiv", gauntlet1_equiv)
@@ -3839,6 +4236,10 @@ def main() -> int:
     row("framesplit-fence", framesplit_fence)
     row("presentscale-court", presentscale_court)
     row("presentscale-fence", presentscale_fence)
+    row("presentstretch-court", presentstretch_court)
+    row("presentstretch-fence", presentstretch_fence)
+    row("allocreuse-court", allocreuse_court)
+    row("allocreuse-fence", allocreuse_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

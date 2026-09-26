@@ -103,6 +103,18 @@ p50 from 17.1 to 11.4 ms — below the refresh at full size, above it at half. T
 separate court, because it changes what the window shows. The confirmation reproduced it (705‰; non-blit 33‰), on
 this host and apparatus. `PRESENT-1` below stays a hypothesis for the locked regime.
 
+### PRESENT-STRETCH-0 — does the half-size blit's cost depend on the stretch mode · **preregistered** (`f5372890`), host-run pending
+A diagnostic over the same half-size frame, with the stretch mode the only variable: `BLACKONWHITE` (the default, now
+set explicitly), `COLORONCOLOR` and `HALFTONE`, in 12 blocks with the effective mode read back. Per mode against the
+default it reads MODE MATERIAL or IMMATERIAL (100‰ of the default's blit), unless the court is VOID or that mode is
+CONFOUNDED. It adopts no mode: each draws different pixels, so choosing one is a separate court.
+
+### ALLOC-REUSE-0 — how much of the frame is per-frame buffer allocation · **preregistered** (`aaaada37`), host-run pending
+A diagnostic over FRAME-SPLIT-0's apparatus with the buffers' lifetime the only variable: allocated every frame (the
+production path) or once and overwritten, the same calls and marks, the reused bytes proven equal first. On the
+envelope it reads ALLOCATION MATERIAL or IMMATERIAL (50‰ of the fresh envelope), with the per-phase deltas beside and
+never ruled on. The production path is unchanged by it.
+
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
 falsifiable hypothesis — to be measured, never assumed — is that a **flip-model / waitable-swapchain** present can
@@ -135,7 +147,9 @@ that the merge must produce a *sealed, replayable* history whose result is byte-
 The seventeen discrete game-layer slices (`gamegen` … `cue`), their corpora, suites, briefs and the D24/D25 boundaries,
 carried verbatim from `urdr-oracle-1` into `oracle/game/`, each file listed with its sha256 and Urðr git blob id, and
 Urðr's own suites passing in place (`game-frozen`, `game-suites`, `game-plant`, `game-not-runtime`). Evidence, not a
-runtime dependency: the kernel, workshop and shell do not read it.
+runtime dependency: the kernel, workshop and shell do not read it. **ORACLE-D0 (landed):** the same carried code,
+in place, recomputes the oracle's third hash `D_0` from the oracle's view on every gate (`oracle-d0`, with a plant),
+so all three oracle hashes are now checked; the studio still mints none of `D_0`.
 
 ### SKYBOX-0 / PHYSICS-0 — the skybox beyond the oracle; physics already in the tag
 The skybox stays *beyond* the frozen oracle and is gated behind the new-semantics route (`SEMANTIC-0`'s machinery):

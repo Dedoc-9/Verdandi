@@ -149,11 +149,12 @@ renderer or presentation phase, and no single optimization is promoted. The inst
 The preregistered confirmation reproduced the reading (NO SEAT; blit 427‰, emit 269‰, frame 259‰, bgr 136‰; every
 share within 8‰ of the first run). What remains open is not the shape but its parts: the split cannot say how much of
 the largest phase, the blit, is `StretchDIBits`'s 2:1 downscale rather than the copy itself (G11), and the emit and
-frame phases include their buffers' allocation.
+frame phases include their buffers' allocation. `ALLOC-REUSE-0` (preregistered, `aaaada37`) measures how much of the
+frame that allocation is, as a diagnostic that adopts nothing.
 
 **Exorcism.** Because the multi-component result promotes nothing by itself, any next step is a narrower measurement of
-one named component, preregistered on its own — not an optimization chosen because a share looks large. The first is
-`PRESENT-SCALE-0` (G11). A return to `emit` because it was once dominant, a present-path
+one named component, preregistered on its own — not an optimization chosen because a share looks large. The first was
+`PRESENT-SCALE-0` (G11); `PRESENT-STRETCH-0` and `ALLOC-REUSE-0` follow the same way. A return to `emit` because it was once dominant, a present-path
 rewrite because blit is largest, or a BGR change because 139‰ looks tempting would each skip the rule this court
 applied.
 
@@ -207,7 +208,8 @@ is the net of removing the scaling and adding the larger copy, and not a general
 
 **Exorcism.** As a measurement ghost this one is laid: the reading reproduced. What is still open is a choice, not a
 measurement — what the shell should present (its geometry, a stretch mode set and stated, or a 1:1 region) changes
-what the window shows, so each is its own court, never a consequence drawn from this diagnostic.
+what the window shows, so each is its own court, never a consequence drawn from this diagnostic. `PRESENT-STRETCH-0`
+(preregistered, `f5372890`) asks only whether the half-size blit's cost depends on the stretch mode; it chooses none.
 
 ---
 

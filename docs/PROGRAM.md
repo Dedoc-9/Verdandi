@@ -84,7 +84,9 @@ The oracle is more than the renderer. `oracle/game/` (`GAME-0`) carries Urðr's 
 seventeen discrete vertical slices from level generation (`gamegen`) through the assembled state identity
 (`statecanon`), the kinema view membrane and the input membrane (`cue`), with their frozen corpora and red-first suites.
 Every file is listed with its sha256 and its Urðr git blob id, and the gate runs Urðr's own 411 tests in place. It is
-evidence the gate reads. No kernel, workshop or shell code depends on it.
+evidence the gate reads. No kernel, workshop or shell code depends on it. Since ORACLE-D0 the gate also asks Urðr's own
+`statecanon`, in place, to compose the oracle's third hash, `D_0`, from the oracle's view, and checks it against the
+frozen value — the studio checks it and still mints none of it.
 
 ---
 

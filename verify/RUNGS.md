@@ -31,7 +31,8 @@ ESTABLISHED: the port changed visibility and shape and no arithmetic (read off t
 source). DECLARED: nothing.
 
 **does_not_show.** `D_0` — Urðr's composed CORE identity (level, entity, RNG stream, action log) is carried
-in the oracle as evidence and is neither recomputed nor minted here. Any frame budget (off-gate:
+in the oracle as evidence and is not minted here; since ORACLE-D0 (below) it is recomputed at gate time by Urðr's
+own `statecanon`, in place, and still never by the kernel. Any frame budget (off-gate:
 `kernel --bench N --warm M` on a named host; the owner's Urðr record stands at p99 12,319 µs within 60 Hz).
 That the corpus is representative — six scenes, two tile sets. A window, a present, an input.
 
@@ -1651,6 +1652,143 @@ Input-to-photon.
 `presentscale-court` if a plant passes; `presentscale-fence` if a second variable enters the blit or the window, or
 LATENCY-0's instrument is edited. On the host, a witness or client-area mismatch or a closed window yields no number,
 and a reading that does not reproduce under `--confirm` is refuted.
+
+## ORACLE-D0 — the oracle's third hash recomputed in place by Urðr's own code (the studio mints none of it)
+
+**Why it is next.** Of `urdr-oracle-1`'s three hashes the kernel reproduces two natively, the frame digest and the
+pixel sha. The third, `D_0`, is Urðr's composed CORE identity — level, entity, RNG stream and action log folded by
+`statecanon` — and until now it was carried as evidence and checked by nothing here. GAME-0 carried Urðr's game layer
+verbatim, with its suites running in place, and that layer holds every module `D_0` is composed from. So the third
+hash can be checked without a second authority: by Urðr's own code, where it was frozen.
+
+**The row.** `oracle-d0` runs a short driver in `oracle/game/` under GAME-0's environment. It imports Urðr's `gamegen`,
+`entity`, `rngstream`, `actionlog` and `statecanon` and prints
+`statecanon.d_n(gamegen.generate(seed, depth), entity.at(pos), rngstream.apply(rngstream.root(seed), []), actionlog.from_actions([]))`
+for the oracle's own view: seed `0xABCDE`, depth 1, the entity at (34, 28), the RNG stream at its root and an empty
+action log. The result must equal `urdr-oracle-1.json`'s `D_0` (`7d8d02e1…`). **Plant:** the same composition with the
+entity one cell over must give a different `D_0`, so the row can go red.
+
+**Grade.** ESTABLISHED (gate): the frozen `D_0` is reproduced by the tag's own code, in place, on every gate.
+Verðandi writes none of the composition: no port, no twin, no re-derivation. The driver only calls `statecanon`.
+
+**does_not_show.** That any other state composes as Urðr would: only the oracle's view with an empty log, plus the
+one plant, is checked. That the kernel's picture depends on `D_0`, which it never reads, because VIEW does not read
+CORE identity. Anything about movement or a non-empty action log. It is a check that the evidence the oracle carries
+is consistent with the code carried beside it. It does not make the studio an authority over `D_0`.
+
+**Falsifier.** `oracle-d0` goes red if the carried game layer, the oracle's `D_0` or the composition drifts, and the
+plant goes red if `D_0` stops depending on the entity's position.
+
+## PRESENT-STRETCH-0 — preregistered: does the half-size blit's cost depend on GDI's stretch mode (a diagnostic; host-run pending)
+
+**Why it is next.** PRESENT-SCALE-0, confirmed, found the 2:1 blit far dearer than the 1:1 blit on the owner's host,
+under the device context's default stretch mode, 1 (`BLACKONWHITE`, a Boolean-AND reduction). That reading does not
+say whether the cost belongs to the reduction as such or to that particular mode. This is the narrowest next question,
+and it is a **diagnostic court**. It attributes. It adopts no mode, because each mode draws different pixels, so
+choosing one for the shell changes what the window shows and would be its own court.
+
+**The method (`f5372890`).** One variable at the half-size (960×540) destination: the stretch mode, one of
+`BLACKONWHITE` (1, the default, now set explicitly), `COLORONCOLOR` (3, deletes the eliminated pixels) and `HALFTONE`
+(4, averages them). Every present sets the mode and the brush origin (0, 0) before the blit, the same way in every
+cell; only the mode's value differs. Everything else is FRAME-SPLIT-0's production path unchanged. The mode changes
+between **blocks**, never between samples: 12 blocks, B C H H C B B C H H C B, each opening with 5 discarded warm-up
+rounds. After each change the effective mode is read back from a device context and must equal the request, and the
+client area is read back once and must be 960×540, or the court refuses. Per mode an envelope and a split are
+recorded. The outcome is not predicted.
+
+**The reading, on p50s, per mode against `BLACKONWHITE`.** **VOID** (the whole court) if any mode's |instrumentation
+tax| ≥ 100‰ of its envelope. **CONFOUNDED** if that mode's six non-blit phases, summed, moved ≥ 50‰ of
+`BLACKONWHITE`'s. Otherwise, if |blit(mode) − blit(`BLACKONWHITE`)| ≥ 100‰ of `BLACKONWHITE`'s blit, it reads **MODE
+MATERIAL** (cheaper or dearer), and anything less reads **MODE IMMATERIAL**. p99s and the envelopes are reported
+beside the reading and never folded into it.
+
+**The instrument.** `shell/presentstretch.rs` is the court, generic over a `StretchSurface` (a `Surface` whose stretch
+mode can be set and read back). On the host it runs over a stretch-mode GDI surface appended to `shell/win32.rs`,
+after PRESENT-SCALE-0's section. Its present is LATENCY-0's `present_once` with `SetStretchBltMode` and
+`SetBrushOrgEx` before the blit into the fixed half-size destination, in the plain overlapped window with LATENCY-0's
+procedure. On the gate the court runs over the mock surface (`shell presentstretch-selftest`). The window build was
+type-checked here; linking and running happen on the host. `verify/presentstretch.py` seals
+`shell/attest/presentstretch-<host>.json`, and `--confirm` seals a separate confirmation record beside it.
+
+**Rows.** `presentstretch-preregistered`: the method is locked, and the code's modes, block order, warm-up and
+thresholds equal the registered ones. `presentstretch-sealer`: synthetic modes, where MODE MATERIAL (cheaper and
+dearer, at exactly 100‰), MODE IMMATERIAL (99‰), CONFOUNDED (50‰) and a court-wide VOID fire at the registered
+bounds, and a mode the device context did not honour, another client area or another block order is refused.
+`presentstretch-court`: the court over the mock on the sealed session. Witnesses come first, the client area and each
+block's effective mode are verified, all three modes are recorded, and each split sums to its total. Plants: a
+tampered witness, an ignored mode and a mid-court close each refuse with no record. `presentstretch-fence`: only the
+stretch mode changes, the timed interval holds no mode change and no hashing, and LATENCY-0's instrument is still a
+byte-exact prefix.
+
+**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the mode and client-area
+refusals and the sealer's rule. MEASURED: nothing yet. The host run is pending.
+
+**does_not_show.** Which stretch mode the shell should use, or whether it should use one at all. That the modes'
+pixel semantics are what GDI documents them to be: they are recorded from the documentation and not verified on the
+glass. Anything about a destination other than 960×540, or a present path other than `StretchDIBits` into a GDI
+window. Input-to-photon.
+
+**Falsifier.** `presentstretch-preregistered` goes red if the method is weakened or the code drifts from it.
+`presentstretch-sealer` goes red if a reading fires anywhere other than where it was registered, or if an unhonoured
+mode is accepted. `presentstretch-court` goes red if a plant passes, and `presentstretch-fence` if a second variable
+enters the present or the timed interval. On the host, a witness, mode or client-area mismatch, or a closed window,
+yields no number, and a reading that does not reproduce under `--confirm` is refuted.
+
+## ALLOC-REUSE-0 — preregistered: how much of the frame is allocating its buffers every frame (a diagnostic; host-run pending)
+
+**Why it is next.** FRAME-SPLIT-0 attributes each buffer's allocation to the phase it happens in: the strips vector
+to strips, the 2 MB index frame to frame, the 6 MB pixel buffer to emit and the 6 MB BGR buffer to bgr (`GHOSTS.md`
+G8). The split cannot say how much of those phases is the allocation itself. This court asks that, as a
+**diagnostic**. It attributes. It adopts nothing: reusing buffers in the production path would be its own change and
+its own court.
+
+**The method (`aaaada37`).** One variable, the buffers' lifetime. **Fresh** is the production path, where the buffers
+are allocated every frame (`arm_composite` / `arm_composite_marked` + `to_blit`). **Reused** allocates them once and
+overwrites them every frame (`arm_composite_reuse_marked` + `to_blit_into`). The same calls run in the same order with
+the same five marks. The floor swizzle's buffer belongs to `fast::blocked_floor` and stays fresh in both variants,
+because `fast.rs` is untouched. Everything else is FRAME-SPLIT-0's apparatus unchanged: the production half-size
+window and default stretch mode, the sealed session, the GDI present and the locked phase origin. Witnesses come
+first. The reused buffers' index frame, composite and blit bytes must equal the fresh path's for every sealed frame
+before any clock runs, and every composite and blit buffer is checked again after its sample. Then come four cells
+(fresh envelope, fresh split, reused envelope, reused split), interleaved ABBA after 10 warm-up rounds. The outcome is
+not predicted.
+
+**The reading, on p50s.** **VOID** if either variant's |instrumentation tax| ≥ 100‰ of its envelope. **CONFOUNDED** if
+the phases whose allocation does not change (floor swizzle, HUD and blit, summed) moved ≥ 50‰ of the fresh sum.
+Otherwise, with dE = envelope(reused) − envelope(fresh), |dE| ≥ 50‰ of the fresh envelope reads **ALLOCATION
+MATERIAL** (reuse cheaper or dearer), and anything less reads **ALLOCATION IMMATERIAL**. The per-phase deltas (strips,
+frame, emit, bgr) are reported beside the reading, to show where any cost sits, and are never ruled on.
+
+**The instrument.** `shell/allocreuse.rs` is the court, over LATENCY-1R's `Surface`. `shell/present.rs` gains the
+reuse path, which is the marked mirror's calls in the persistent `ReuseBufs`, plus `to_blit_into`, which is
+`to_blit`'s transform into a given buffer. On the host the court runs in FRAME-SPLIT-0's window over LATENCY-1R's GDI
+surface, through a driver appended to `shell/win32.rs`. On the gate it runs over the mock surface
+(`shell allocreuse-selftest`). `verify/allocreuse.py` seals `shell/attest/allocreuse-<host>.json`, and `--confirm`
+seals a separate confirmation record beside it.
+
+**Rows.** `allocreuse-preregistered`: the method is locked, and the code's warm-up, phase groups and thresholds equal
+the registered ones. `allocreuse-sealer`: synthetic variants, where ALLOCATION MATERIAL (reuse cheaper and dearer, at
+exactly 50‰ of the fresh envelope), IMMATERIAL (49‰), CONFOUNDED (50‰) and VOID fire at the registered bounds. The
+per-phase deltas are recorded as measured, and another warm-up or phase order is refused. `allocreuse-court`: the
+court over the mock on the sealed session, with witnesses first (including the reused bytes' equality), four cells
+after the warm-up, and each split summing to its total. Plants: a tampered witness and a mid-court close each refuse
+with no record. `allocreuse-fence`: the reuse path makes the marked mirror's calls in its order with the same five
+marks and allocates none of its buffers (only `fast::blocked_floor` still allocates, in both variants), `to_blit_into` is
+`to_blit`'s transform, the court runs in FRAME-SPLIT-0's window and
+checks both variants' bytes after every sample, and LATENCY-0's instrument is still a byte-exact prefix.
+
+**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the reuse path is byte-equal to the fresh path on
+every sealed frame, and the court's logic and the sealer's rule hold. MEASURED: nothing yet. The host run is pending.
+
+**does_not_show.** That the production path should reuse its buffers. Anything about another allocator, OS or buffer
+size: a fresh buffer's cost includes whatever this host's allocator and OS do for it (zeroing, first-touch page
+faults). The floor swizzle's allocation, which stays fresh in both variants. A per-phase verdict. Input-to-photon.
+
+**Falsifier.** `allocreuse-preregistered` goes red if the method is weakened or the code drifts from it.
+`allocreuse-sealer` goes red if a reading fires anywhere other than where it was registered. `allocreuse-court` goes
+red if a plant passes, and `allocreuse-fence` if the reuse path changes a call, a mark or a byte, or starts to
+allocate a buffer. On the host, a witness or reuse-byte mismatch, or a closed window, yields no number, and a reading that does
+not reproduce under `--confirm` is refuted.
 
 ## The open clause, now with named rungs (skybox, physics)
 

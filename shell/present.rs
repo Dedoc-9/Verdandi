@@ -141,3 +141,48 @@ pub fn arm_composite_marked<M: Marks>(scene: &Scene, arm: Arm, m: &mut M) -> (Ve
     m.mark(); // HUD
     (frame, pixels)
 }
+
+/// ALLOC-REUSE-0: `to_blit` into a caller-owned buffer (the same transform, no allocation): B, G, R per pixel. Its
+/// lines carry no per-channel comments so that `to_blit`'s own `// R` line stays the one anchor the blit-law plants
+/// mutate (rows `shell-blit-plant`, `shell-playback-blit-law`).
+pub fn to_blit_into(rgb: &[u8], out: &mut [u8]) {
+    let n = W * H;
+    for i in 0..n {
+        out[i * 3] = rgb[i * 3 + 2];
+        out[i * 3 + 1] = rgb[i * 3 + 1];
+        out[i * 3 + 2] = rgb[i * 3];
+    }
+}
+
+/// ALLOC-REUSE-0's persistent buffers: the strips, the index frame, the pixels (which become the composite) and the
+/// BGR blit buffer, allocated once and overwritten every frame. The floor swizzle's buffer is not among them: it is
+/// `fast::blocked_floor`'s own, and `fast.rs` is untouched, so it stays freshly allocated in both variants.
+pub struct ReuseBufs {
+    pub strips: Vec<crate::mantle::Strip>,
+    pub frame: Vec<u8>,
+    pub pixels: Vec<u8>,
+    pub bgr: Vec<u8>,
+}
+
+impl ReuseBufs {
+    pub fn new() -> ReuseBufs {
+        ReuseBufs { strips: Vec::with_capacity(W), frame: vec![0u8; W * H], pixels: vec![0u8; W * H * 3], bgr: vec![0u8; W * H * 3] }
+    }
+}
+
+/// ALLOC-REUSE-0's reuse variant of `arm_composite_marked` (production arm): the same calls in the same order with the
+/// same five marks, writing into `b` instead of fresh buffers. `Scene::strips` clears its vector, `Scene::frame` writes
+/// every index and the pixel pass writes every pixel exactly once, so no stale byte can survive; the court checks every
+/// composite byte for byte regardless. The composite is left in `b.pixels`.
+pub fn arm_composite_reuse_marked<M: Marks>(scene: &Scene, b: &mut ReuseBufs, m: &mut M) {
+    scene.strips(&mut b.strips);
+    m.mark(); // strips
+    scene.frame(&b.strips, &mut b.frame);
+    m.mark(); // frame
+    let floor = fast::blocked_floor(&scene.floor);
+    m.mark(); // floor swizzle
+    fast::emit_threaded(scene, &b.strips, &b.frame, &mut b.pixels, &floor, fast::PROD_THREADS);
+    m.mark(); // pixel pass
+    hud::overlay(scene, &b.strips, &mut b.pixels);
+    m.mark(); // HUD
+}
