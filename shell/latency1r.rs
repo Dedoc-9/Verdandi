@@ -37,6 +37,8 @@ pub trait Surface {
     fn present(&mut self, bgr: &[u8]) -> Option<(i64, i64)>;
     fn flush(&mut self);
     fn pump(&mut self) -> bool;
+    /// Called once per completed round, between samples (outside every interval); the window prints progress.
+    fn progress(&mut self, _done: usize, _total: usize) {}
 }
 
 /// One sealed move to render: its scene (parsed outside every clock) and its sealed frame witness.
@@ -136,7 +138,9 @@ pub fn court(s: &mut dyn Surface, inputs: &[FrameInput], per_cell: usize) -> Res
         let order: [usize; 4] = if round % 2 == 0 { [0, 1, 2, 3] } else { [3, 2, 1, 0] };
         for &c in order.iter() {
             if !s.pump() {
-                return Err("LATENCY1R-CLOSED: the window closed before the court finished; no partial record".to_string());
+                let taken: usize = cells.iter().map(|x| x.total_us.len()).sum();
+                return Err(format!("LATENCY1R-CLOSED: the window closed before the court finished (round {} of {}, {} of {} samples taken); no partial record",
+                                   round + 1, per_cell, taken, per_cell * 4));
             }
             let (phase, arm) = (cells[c].phase, cells[c].arm);
             s.flush(); // the phase origin: every sample starts from a composition
@@ -160,6 +164,7 @@ pub fn court(s: &mut dyn Surface, inputs: &[FrameInput], per_cell: usize) -> Res
             cells[c].present_us.push(us(t2 - t1));
             cells[c].total_us.push(us(t2 - t0));
         }
+        s.progress((round + 1) * 4, per_cell * 4);
     }
     Ok(Court { refresh_us, frames: inputs.len(), per_cell, cells })
 }

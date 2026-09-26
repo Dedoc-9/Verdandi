@@ -204,11 +204,12 @@ def main() -> int:
         raw_path = os.path.join(build_dir, f"latency1r-raw-{a.host}.json")
         if os.path.exists(raw_path):
             os.remove(raw_path)
-        cp = subprocess.run([exe, "latency1r-window", "--session", a.session, "--per-cell", str(a.per_cell),
-                             "--host", a.host, "--out", raw_path], cwd=ROOT, **run)
-        print(cp.stdout, end="")
-        if cp.returncode != 0 or not os.path.exists(raw_path):
-            raise Refuse("the window court refused or wrote nothing:\n" + cp.stderr)
+        # the window court streams its progress and any refusal straight to this console (not captured)
+        sys.stdout.flush()
+        rc = subprocess.run([exe, "latency1r-window", "--session", a.session, "--per-cell", str(a.per_cell),
+                             "--host", a.host, "--out", raw_path], cwd=ROOT).returncode
+        if rc != 0 or not os.path.exists(raw_path):
+            raise Refuse("the window court refused or wrote nothing (its reason is printed above)")
         with open(raw_path, encoding="utf-8") as fh:
             raw = json.load(fh)
         os.remove(raw_path)

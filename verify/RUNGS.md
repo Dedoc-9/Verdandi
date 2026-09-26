@@ -1329,8 +1329,27 @@ mid-court close both refuse with no record. `latency1r-fence` — LATENCY-0's in
 `win32.rs`, `playback::frames` and the playback-window dispatch are unchanged, the arms differ only in the pixel pass,
 and the court orders witnesses → refresh → t0 → render → present → drift check with no hashing inside the clock.
 
+**LATENCY-1 measured (host DANIELDILLBERG, `shell/attest/latency1-DANIELDILLBERG.json`, cites LATENCY-1 `8e93118e` +
+LATENCY-1a `b32d226f`, inherits LATENCY-0).** 200 samples over the 4-move sealed session: blit → composited **p50 5,965
+/ p95 6,882 / p99 12,299 / max 20,140 µs**, measured refresh 13,089 µs (~76 Hz; 15‰ from LATENCY-0's 13,298, so the
+same display). Against the inherited LATENCY-0 p99 of 7,318 µs the locked rule reads **DEGRADATION** (+4,981 µs, 680‰
+≥ 50‰), recorded as such. The shape of that degradation is a tail, not a shift: p50 moved +44 µs (7‰) and p95 −196 µs,
+while with n = 200 the p99 is the third-largest sample — so three of 200 samples took ≥ 12.3 ms, roughly one extra
+composition (the max, 20.1 ms, about one and a half). Per LATENCY-1a this is a statement about the presentation
+interval only; the renderer ran before the window opened and cannot appear in it. Whether the tail is systematic or
+transient is what the preregistered second run (`--confirm`) decides; the sealed LATENCY-0 record was restored
+byte-exact.
+
+**LATENCY-1R, first host attempt: refused, no record.** The window court stopped with `LATENCY1R-CLOSED` — the window
+received a close before N samples per cell — and, as preregistered, wrote nothing. LATENCY-0's measurement loop only
+leaves its message pump on a close and keeps measuring, so a close during a LATENCY-0/1 run is not detected there. The
+court now reports where a close lands (round, samples taken), prints progress, and on a close reports whether the
+window still existed and the last keyboard/mouse/system-command message the pump saw, to tell an operator close from a
+stray one. None of this touches the timed interval or LATENCY-0's instrument.
+
 **Grade.** DECLARED: both methods (hash-locked). ESTABLISHED (gate): the instrument fact in source; the sealers'
-decision rules; the court's logic over the mock surface. Not yet MEASURED: any host number.
+decision rules; the court's logic over the mock surface. MEASURED (host, one run): LATENCY-1's presentation interval —
+DEGRADATION by the locked p99 rule, body reproduced, confirmation pending. Not yet MEASURED: LATENCY-1R.
 
 **does_not_show.** Any latency number (none exists until the host runs). That the GDI surface links and runs on the
 host (type-checked only here). Input-to-photon. Any comparison between LATENCY-1 and LATENCY-1R, or between either and

@@ -597,11 +597,18 @@ fn emit(host: &str, samples: &[u128], refresh_us: u128, c: &Composed, cam: Camer
 
 use crate::latency1r::{self, FrameInput, Surface};
 
+#[link(name = "user32")]
+extern "system" {
+    fn IsWindow(hwnd: Hwnd) -> Bool;
+}
+
 struct GdiSurface {
     hwnd: Hwnd,
     header: BitmapInfoHeader,
     flush_fn: DwmFlushFn,
     freq: i64,
+    last_input: Uint, // the last keyboard / mouse / system-command message the pump saw (0 = none)
+    inputs_seen: usize,
 }
 
 impl Surface for GdiSurface {
@@ -636,6 +643,12 @@ impl Surface for GdiSurface {
     fn pump(&mut self) -> bool {
         let mut msg: Msg = unsafe { std::mem::zeroed() };
         while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            let m = msg.message;
+            // keyboard (0x0100-0x0109), non-client mouse (0x00A0-0x00AD), client mouse (0x0200-0x020E), WM_SYSCOMMAND
+            if (0x0100..=0x0109).contains(&m) || (0x00A0..=0x00AD).contains(&m) || (0x0200..=0x020E).contains(&m) || m == 0x0112 {
+                self.last_input = m;
+                self.inputs_seen += 1;
+            }
             unsafe {
                 TranslateMessage(&msg);
                 DispatchMessageW(&msg);
@@ -646,6 +659,11 @@ impl Surface for GdiSurface {
             }
         }
         true
+    }
+    fn progress(&mut self, done: usize, total: usize) {
+        if done % 100 == 0 || done == total {
+            println!("[latency1r] {} of {} samples", done, total);
+        }
     }
 }
 
@@ -702,9 +720,13 @@ pub fn latency1r_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, ou
     if freq <= 0 {
         freq = 1;
     }
-    let mut surf = GdiSurface { hwnd, header, flush_fn, freq };
+    let mut surf = GdiSurface { hwnd, header, flush_fn, freq, last_input: 0, inputs_seen: 0 };
+    println!("[latency1r] window open — leave it alone until it closes ({} samples)", per_cell * 4);
     let result = latency1r::court(&mut surf, &inputs, per_cell);
-    unsafe { DestroyWindow(hwnd) };
+    let alive = unsafe { IsWindow(hwnd) } != 0;
+    if alive {
+        unsafe { DestroyWindow(hwnd) };
+    }
     match result {
         Ok(c) => {
             for ln in latency1r::summary(&c) {
@@ -725,6 +747,9 @@ pub fn latency1r_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, ou
         }
         Err(m) => {
             eprintln!("SHELL-{}", m);
+            // where a close came from: a window destroyed by a click/Alt+F4 shows input before it; a stray quit does not
+            eprintln!("SHELL-LATENCY1R-DIAG: window_still_existed={} input_messages_seen={} last_input_msg=0x{:04X}",
+                      alive, surf.inputs_seen, surf.last_input);
             std::process::exit(2);
         }
     }
