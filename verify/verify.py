@@ -8,7 +8,9 @@ Prints one line per row, `GATE PASSED` or `GATE FAILED`, and a reconcile line na
 need `rustc` SKIP without it, count-stable. Nothing here prints a clock or a temporary path, so two
 consecutive runs are byte-identical when the tree is; that identity is the landing condition.
 
-Stages: oracle (pure Python, the frozen evidence is self-consistent), kernel (the placement reproduces the
+Stages: oracle (pure Python, the frozen evidence is self-consistent), game (GAME-0: Urðr's game layer carried
+verbatim from the same tag — bytes, sha256 and git blob equal a digest-pinned manifest, Urðr's own suites pass in
+place, a flipped golden reddens both fences, and no runtime code reaches into it), kernel (the placement reproduces the
 oracle natively; the corpus; the mirrored sign table as the control that shows the rows can redden),
 workshop (an edit is a new authority and the witnesses say what it moved; the planted falsifiers bite),
 hud (the overlay is a frame: pinned, index-free, inside its region, reading state and not materials),
@@ -214,6 +216,196 @@ def oracle_frozen():
     return (f"{len(c['levels'])} levels (W = sha256 of the file), {len(c['tiles'])} tile sets (M), {n_sc} scenes, "
             f"{n_w} witnesses, all frozen from Urðr @ {c['origin']['commit'][:7]}; the witness scene's frame, "
             f"identity pixels and oriented pixels equal urdr-oracle-1.json, and D_0 is carried as evidence only")
+
+
+# ------------------------------------------------------------------ game (GAME-0)
+# GAME-0: Urðr's game layer carried as frozen evidence. The seventeen discrete vertical slices (gamegen … cue), their
+# corpora, suites, briefs, the D24/D25 boundaries and the two exact-arithmetic physics modules kinema reads its radix
+# from — verbatim from the SAME tag the oracle cites, so no new oracle is minted and no charter clause moves. The
+# manifest is pinned here by digest, so re-indexing the evidence is a visible diff in the gate itself.
+GAME = os.path.join(ORACLE, "game")
+GAME_MANIFEST_SHA256 = "d506abe3341ca3762786a639422e28a47b33e3cb11aa8e03206e35ffc05ffce4"
+GAME_PROSE = {"MANIFEST.json", "README.md"}   # Verðandi's index and prose beside the evidence, never evidence
+GAME_STDLIB = {"ast", "collections", "hashlib", "inspect", "io", "os", "subprocess", "sys", "unittest"}
+
+
+def game_imports(root: str) -> set:
+    """Every top-level module name any .py under `root` imports (absolute imports; AST, not grep)."""
+    import ast
+    names = set()
+    for rel in game_tree(root):
+        if rel.endswith(".py"):
+            for n in ast.walk(ast.parse(read(os.path.join(root, rel)).decode("utf-8"))):
+                if isinstance(n, ast.Import):
+                    names |= {a.name.split(".")[0] for a in n.names}
+                elif isinstance(n, ast.ImportFrom) and n.level == 0 and n.module:
+                    names.add(n.module.split(".")[0])
+    return names
+
+
+def git_blob(b: bytes) -> str:
+    return hashlib.sha1(b"blob %d\0" % len(b) + b).hexdigest()
+
+
+def game_manifest() -> dict:
+    with open(os.path.join(GAME, "MANIFEST.json"), encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def game_tree(root: str) -> list[str]:
+    out = []
+    for d, dirs, files in os.walk(root):
+        dirs[:] = sorted(x for x in dirs if x != "__pycache__")
+        for f in files:
+            rel = os.path.relpath(os.path.join(d, f), root).replace(os.sep, "/")
+            if rel not in GAME_PROSE and not f.endswith(".pyc"):
+                out.append(rel)
+    return sorted(out)
+
+
+def game_bytes_fault(root: str, m: dict) -> str | None:
+    """The first way the tree at `root` departs from the manifest, or None. Bytes, sha256 and the git blob are all
+    recomputed from disk: the blob is what `git ls-tree -r urdr-oracle-1` names in Urðr, so a reviewer holding
+    Urðr can check every file without trusting this repository."""
+    listed = [f["path"] for f in m["files"]]
+    on_disk = game_tree(root)
+    if on_disk != sorted(listed):
+        extra, missing = sorted(set(on_disk) - set(listed)), sorted(set(listed) - set(on_disk))
+        return f"the tree is not the manifest: extra {extra[:3]}, missing {missing[:3]}"
+    for f in m["files"]:
+        b = read(os.path.join(root, f["path"]))
+        if len(b) != f["bytes"] or sha256(b) != f["sha256"] or git_blob(b) != f["git_blob"]:
+            return f"{f['path']}: bytes/sha256/git blob do not match the manifest"
+    return None
+
+
+def game_env() -> dict:
+    env = dict(os.environ)
+    env.update({"PYTHONHASHSEED": "0", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"})
+    return env
+
+
+def game_unittest(root: str, pattern: str) -> tuple[int, int, str]:
+    """(returncode, tests ran, last line) of Urðr's own suites, run in place from `root`."""
+    cp = subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-p", pattern],
+                        cwd=root, env=game_env(), capture_output=True, text=True, encoding="utf-8")
+    ran = re.findall(r"^Ran (\d+) tests? in ", cp.stderr, re.M)
+    tail = cp.stderr.strip().splitlines()[-1] if cp.stderr.strip() else ""
+    return cp.returncode, int(ran[-1]) if ran else -1, tail
+
+
+def game_frozen():
+    m, c = game_manifest(), corpus()
+    got = sha256(read(os.path.join(GAME, "MANIFEST.json")))
+    if got != GAME_MANIFEST_SHA256:
+        raise Red(f"oracle/game/MANIFEST.json is {got[:12]}, not the pinned {GAME_MANIFEST_SHA256[:12]} — the index moved")
+    o = m["origin"]
+    if (o["tag"], o["commit"]) != (c["origin"]["tag"], c["origin"]["commit"]) or o["tag"] != "urdr-oracle-1":
+        raise Red("the game layer names another origin than the oracle — a different tag is a new oracle, never this one")
+    fault = game_bytes_fault(GAME, m)
+    if fault:
+        raise Red(fault)
+    cl = m["closure"]
+    if len(cl["modules"]) != 17 or cl["physics"] != ["field", "rational"]:
+        raise Red("the closure is not the seventeen slices plus field/rational")
+    for mod in cl["modules"]:
+        for p in (f"tools/terrain/{mod}.py", f"tools/terrain/conformance_{mod}.txt", f"tests/test_{mod}.py", f"docs/{mod}_brief.md"):
+            if p not in {f["path"] for f in m["files"]}:
+                raise Red(f"slice {mod} is missing {p}")
+    roles: dict = {}
+    for f in m["files"]:
+        roles[f["role"]] = roles.get(f["role"], 0) + 1
+    tally = ", ".join(f"{v} {k}" for k, v in sorted(roles.items()))
+    closed = set(cl["modules"]) | set(cl["physics"])
+    stray = sorted(game_imports(GAME) - closed - GAME_STDLIB)
+    if stray:
+        raise Red(f"the game layer imports outside its closure and the pinned stdlib set: {stray}")
+    return (f"{len(m['files'])} files ({tally}) are Urðr's game layer verbatim @ {o['commit'][:7]} — the oracle's own tag; "
+            f"each file's bytes, sha256 and git blob recomputed from disk equal the manifest, the tree holds nothing else, "
+            f"the manifest is pinned here by digest ({GAME_MANIFEST_SHA256[:12]}…), and every import is one of the "
+            f"{len(closed)} closure modules or the {len(GAME_STDLIB)} pinned stdlib names (closed, no third-party code)")
+
+
+def game_suites():
+    m = game_manifest()
+    want = m["closure"]["tests"]
+    code, ran, tail = game_unittest(GAME, "test_*.py")
+    if code != 0 or tail != "OK":
+        raise Red(f"Urðr's suites did not pass in place: exit {code}, {tail!r}")
+    if ran != want:
+        raise Red(f"ran {ran} tests, the manifest pins {want} — the closure is not the one that was imported")
+    for mod in m["closure"]["modules"]:
+        cp = subprocess.run([sys.executable, "-B", os.path.join("tools", "terrain", mod + ".py")], cwd=GAME,
+                            env=game_env(), capture_output=True, text=True, encoding="utf-8")
+        if cp.returncode != 0:
+            raise Red(f"{mod}'s own witness exited {cp.returncode}")
+        if "does_not_show" not in cp.stdout:
+            raise Red(f"{mod}'s witness printed no does_not_show boundary")
+    return (f"Urðr's own {ran} red-first tests pass in place under PYTHONHASHSEED=0 (conformance goldens included), and "
+            f"all {len(m['closure']['modules'])} slices' witnesses exit 0 and print their does_not_show boundary — the "
+            f"game layer is self-contained here, stdlib only, with no Urðr checkout beside it")
+
+
+def game_plant():
+    """Both fences bite on a scratch copy: one golden digit flipped in conformance_move.txt is refused by the byte
+    fence AND reddens Urðr's own suite. The real tree is never touched; the copy is removed."""
+    m = game_manifest()
+    scratch = os.path.join(ROOT, ".gate-game-plant")
+    if os.path.isdir(scratch):
+        shutil.rmtree(scratch)
+    try:
+        shutil.copytree(GAME, scratch, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        if game_bytes_fault(scratch, m) is not None:
+            raise Red("the unplanted copy already departs from the manifest")
+        p = os.path.join(scratch, "tools", "terrain", "conformance_move.txt")
+        text = read(p).decode("utf-8")
+        i = text.index("\nmove-digest ") + len("\nmove-digest ")
+        flipped = "0" if text[i] != "0" else "1"
+        with open(p, "wb") as fh:
+            fh.write((text[:i] + flipped + text[i + 1:]).encode("utf-8"))
+        fault = game_bytes_fault(scratch, m)
+        if fault is None or "conformance_move.txt" not in fault:
+            raise Red("a flipped golden digit passed the byte fence")
+        code, ran, tail = game_unittest(scratch, "test_move.py")
+        if code == 0 or not tail.startswith("FAILED"):
+            raise Red("a flipped golden digit did not redden Urðr's own suite")
+    finally:
+        if os.path.isdir(scratch):
+            shutil.rmtree(scratch)
+    return ("PLANT: one hex digit of move's frozen move-digest golden, flipped in a scratch copy, is refused by the byte "
+            "fence (sha256/git blob) AND reddens test_move — the goldens are frozen, not rewritten, and both fences bite")
+
+
+GAME_NAMES = ("oracle/game", "oracle\\\\game", "oracle\\game")
+
+
+def game_refs(src: str) -> list[str]:
+    """References to the imported game layer in CODE (comment lines dropped: a provenance comment naming where a
+    port came from, as mantle.rs names Urðr's tools/terrain/mantle_rs, is history, not a dependency)."""
+    code = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith(("//", "#")) or ln.lstrip().startswith("#["))
+    return [n for n in GAME_NAMES if n in code]
+
+
+def game_not_runtime():
+    """The charter: Urðr is frozen evidence, not a runtime dependency. No kernel, workshop or shell source reaches
+    into oracle/game (no #[path], include_*!, or file path); only the gate reads it. A plant proves the scan sees one."""
+    hits = []
+    for sub in ("kernel", "workshop", "shell"):
+        d = os.path.join(ROOT, sub)
+        for f in sorted(os.listdir(d)):
+            if f.endswith((".rs", ".py")):
+                refs = game_refs(read(os.path.join(d, f)).decode("utf-8"))
+                if refs:
+                    hits.append(f"{sub}/{f} -> {refs[0]}")
+    if hits:
+        raise Red("the game layer is referenced from runtime code: " + "; ".join(hits))
+    if not game_refs('#[path = "../oracle/game/tools/terrain/move.py"]'):
+        raise Red("PLANT: a runtime reference to oracle/game was not seen by the scan")
+    if not game_refs('    let b = std::fs::read("oracle/game/tools/terrain/conformance_move.txt");'):
+        raise Red("PLANT: a runtime file read of oracle/game was not seen by the scan")
+    return ("no kernel/, workshop/ or shell/ code reaches into oracle/game — the game layer is evidence the gate reads, "
+            "never a runtime dependency (the charter's ORACLE clause); PLANTS: a planted #[path] and a planted file read "
+            "into oracle/game are both seen")
 
 
 # ------------------------------------------------------------------ kernel
@@ -2802,6 +2994,10 @@ def gauntlet2_lockfence():
 def main() -> int:
     print("VERÐANDI GATE")
     row("oracle-frozen", oracle_frozen)
+    row("game-frozen", game_frozen)
+    row("game-suites", game_suites)
+    row("game-plant", game_plant)
+    row("game-not-runtime", game_not_runtime)
     row("kernel-build", kernel_build)
     row("kernel-oracle", kernel_oracle)
     row("kernel-corpus", kernel_corpus)

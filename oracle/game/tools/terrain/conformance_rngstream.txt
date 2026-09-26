@@ -1,0 +1,52 @@
+# URDRRNG1 conformance -- THE CANONICAL RNG STREAM, THE FIRST STATEFUL CANONICAL COMPONENT.
+#
+# The fifth game-layer vertical slice, and the first whose STATE ADVANCES. `gamegen` draws STATELESSLY
+# (SHA-256(MAGIC|seed|depth|tag|i), order-independent -- "there is no RNG object"); this module holds a
+# STREAM: canonical randomness that is consumed, so advancing it is itself a change to canonical state.
+# D24 §2 lists exactly that field -- "RNG state: the deterministic stream, advanced only by canonical
+# actions" -- and its digest participates in canonical state identity, which is why a stateless draw
+# could not have carried it.
+#
+# ONE STREAM, ROOTED AT THE RUN'S SEED, DOMAIN-SEPARATED. R_0 = SHA-256(b"rngstream/v1"|b"|s:"|seed),
+# the same `seed` `gamegen` uses, through a domain tag so it is not a `gamegen` derivation of that seed.
+# The tag is part of the LAW: drop it and R_0 collapses toward a rootless hash. SEED_MAX/SEED_BITS
+# mirror `gamegen`'s and a law pins them equal, so "same seed" is single-sourced.
+#
+# STATE IS (n, R_n), NOT MERELY R_n. The identity binds the sequence coordinate --
+# I_n = SHA-256(URDRRNG1|n:<n>|r:<R_n hex>) -- so two runs holding the same value after different action
+# counts cannot masquerade as the same state. ADVANCE IS AN ACTION; A READ NEVER ADVANCES, BY
+# CONSTRUCTION: `Stream` is immutable, `advance` returns a NEW stream, and every read (`stream_bytes`,
+# `stream_digest`, `peek`) returns a VALUE with no handle that could advance it. Preimages are
+# tag-separated -- `adv` for the chain, `draw` for `peek` -- so a consumer's draw cannot collide with
+# the advance.
+#
+# The synthetic action is VERIFICATION-ONLY (tokens v0..v3): it exists solely to make the advance law
+# non-vacuously testable now; this module declares no gameplay action vocabulary (that is `move`'s, and
+# `loot`'s draws to come). MOVE IS NOT CONTAMINATED: `move` neither imports this module nor carries a
+# stream, so a reference (level, entity, stream) assembly stepped by `move` leaves the stream a fixed
+# point while the entity moves -- a boundary compatibility invariant for the current `move` contract.
+#
+# The `root` scene pins R_0 and I_0 per corpus seed; the `trace` scene pins the full prefix trace
+# (n, I_n) for a fixed seed and the synthetic action sequence -- the golden replay/prefix vector; the
+# `laws` scene pins the ten falsifier booleans. All three and the top digest are what the module EMITS
+# and stay FROZEN, because a golden the gate rewrites cannot detect drift.
+#
+# GRADE (honest, D5). MEASURED: over the seed corpus and the fixed action sequence, the root, the
+# advance chain, every prefix state and the top digest reproduce, byte-identical across a hash-seed
+# sweep; identical (seed, actions) reproduce the whole trace; a different action sequence diverges; a
+# reference `move` assembly leaves the stream fixed while the entity moves. ESTABLISHED: malformed
+# seeds, actions, bounds and streams refuse typed; a read leaves (n, R_n) unchanged; incremental and
+# batch advancement agree at every prefix; the same R at different n has a different identity; the root
+# is domain-separated from a `gamegen` derivation of the same seed. DECLARED: that the URDRRNG1
+# serialization is v1 and is FROZEN -- the golden vectors below are its representation lock, and a
+# format change mints v2 rather than editing v1.
+#
+# does_not_show: WHICH real canonical actions advance the stream (the synthetic action is
+# verification-only; `move` advances nothing, and `loot` is the first real consumer); independent
+# sub-stream domains for decoupling subsystem draw order (a counter-based derive(R_n, domain), which is
+# `loot`/`combat`'s to earn, not built here); statistical quality of the draws beyond determinism; and
+# the assembly of the full D_n snapshot, which is `statecanon`'s.
+root f53e77f6c9a78470da2a4bf026e668a2a56f01384931042c467a11416a3d1855
+trace cf79d872e516a4a756019ee24311fb1a0d621e4c6120b47d3a068e968c96d41e
+laws 2bbc014d19e2d2adabd24cd279cc4485b1cb1e588586fbcaecd62a57afb8ebce
+rngstream e4f0465e9f657a0d8d5d5ea3fd6f18add362ed79818c79dcc539aa3aab73eae0

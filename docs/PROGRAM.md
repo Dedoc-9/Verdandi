@@ -80,6 +80,12 @@ Two witnesses accompany every frame where two quantities exist: the `URDRFB1` in
 picture's `sha256` (appearance). Never one where two are due. Wall-clock is never a witness — it is off-gate, on a
 named host, and the witnesses are checked before any number is printed.
 
+The oracle is more than the renderer. `oracle/game/` (`GAME-0`) carries Urðr's game layer from the same tag, verbatim:
+seventeen discrete vertical slices from level generation (`gamegen`) through the assembled state identity
+(`statecanon`), the kinema view membrane and the input membrane (`cue`), with their frozen corpora and red-first suites.
+Every file is listed with its sha256 and its Urðr git blob id, and the gate runs Urðr's own 411 tests in place. It is
+evidence the gate reads. No kernel, workshop or shell code depends on it.
+
 ---
 
 ## 5. RECORD-0 — the envelope every claim is written in

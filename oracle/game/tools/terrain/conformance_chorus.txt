@@ -1,0 +1,57 @@
+# URDRCHO1 conformance -- THE COMPOSITION OF N DISPOSABLE OBSERVERS OVER ONE AUTHORITATIVE TRANSITION.
+#
+# The sixteenth game-layer vertical slice, WINDOW-0 of the observer-composition arc, and the second game-layer
+# VIEW module (after `kinema`). Its one invariant: OBSERVER TOPOLOGY IS DISPOSABLE; CANONICAL SIMULATION IS
+# NOT. It takes one authoritative transition and a collection of disposable `ObserverSpec`s and composes a
+# `Scene` -- a tuple of per-observer `kinema` Frame-sets -- PURELY by repeated `kinema` application. It mints
+# no canonical identity, computes no `D_n`, calls no transition, and imports none of the authority modules.
+#
+# DIRECTION (one-way): transition -> KINEMA -> ObserverSpec[] -> Frame-set[] -> Scene -> window/layout, never
+# Scene/window -> D_n -> transition. Endpoint witnesses (which ARE D_n values) enter as OPAQUE strings and are
+# carried VERBATIM through the Frames -- never ingested as authority. `the_membrane_is_one_way` reads this
+# module's OWN full AST (function-local imports included) and refuses any authority import or any
+# `.d_n`/`.d_n_preimage`/`.dispatch`/`.apply`/`.step` reach, with a positive control (nested enact/statecanon
+# imports and bare d_n/dispatch reaches are rejected; the read-only kinema/gamegen/descent path is allowed).
+#
+# COMPOSITION IS REPEATED OBSERVATION: `compose(transition, specs)` is exactly
+# `tuple((spec.observer_id, observe(transition, spec)) for spec in specs)` and `observe` is one `kinema.frames`
+# call. No N-window authority: N is a list length; N=0 is the empty Scene.
+#
+# OBSERVER IDENTITY IS DISPOSABLE: an `ObserverSpec` is (observer_id, source_tick, samples, window) where
+# `window` (bounds/focus/z-order/camera/zoom/layout) is an OPAQUE INERT blob this rung consumes nowhere -- two
+# specs differing only in `window`/`observer_id` produce byte-identical Frame-sets.
+#
+# AGREEMENT IS PROVENANCE, NOT PIXELS: panes of one transition share (source_tick, witness_n, witness_m, cls)
+# while different `samples` give different refined pixels. PERMUTATION INVARIANCE IS CANONICAL-ONLY: reordering
+# the collection leaves the provenance MULTISET identical, but the ordered Scene is deliberately NOT certified
+# equal -- ordering is not an earned observer law. STALENESS IS PROVENANCE: an older-transition pane carries
+# the older witnesses; a current pane the current ones; neither synthesises a between-state (kinema's
+# one-transition input boundary makes this structural). TOPOLOGY IS A LIST OPERATION: add/remove/reorder/
+# duplicate/omit follow the spec list exactly.
+#
+# INHERITED, NOT RE-PROVED: a forged transition refuses through `kinema` (KINEMA-REFUSE via
+# `descent.traversable`); render-cadence independence is `panelight`'s dt-log decoupling + the clock guards;
+# the no-successor / forged-pair guarantees are `kinema`'s. The CANONICAL topology differential across a real
+# `enact`/`statecanon`/`rerun` core -- including N=0 exercising the core with no observers -- is the GATE's,
+# because this module cannot (and must not) reach that core to test it.
+#
+# The `composition` scene pins a corpus of Scenes (per pane: observer_id, provenance, frame count, a digest of
+# the refined samples). The `topology` scene pins the falsifier booleans (repeated observation, provenance
+# agreement, permutation-invariant multiset with ordering NOT certified, list-operation topology, empty scene,
+# disposable window, stale-vs-current provenance, forged-transition refusal, the full-AST one-way guard, and
+# total typed refusal). Both scenes and the top digest are what the module EMITS.
+#
+# GRADE (honest, D5). MEASURED: `compose` is repeated `observe`; panes of one transition agree on provenance
+# while samples differ; the provenance multiset is permutation-invariant; add/remove/reorder/duplicate/omit
+# follow the spec list; the empty Scene is pure; the `window` blob is disposable (byte-identical Frame-sets).
+# ESTABLISHED: a stale and a current pane differ by provenance and neither synthesises a between-state; a
+# forged transition refuses KINEMA-REFUSE; the membrane is one-way (full-AST, direction-aware, no D_n
+# ingestion, positive control). DECLARED: the observer model is `kinema`'s; the `window` blob is inert this
+# rung; permutation invariance is canonical-only (ordering not certified); single peer.
+#
+# does_not_show: the canonical topology differential across a real core (the gate's, not the module's); window
+# -> `enact` input (WINDOW-1); OS-native windows, GPU composition, camera architecture, voxels, wireframes,
+# developer authoring, and any wall-clock or frame budget (all deferred).
+composition 85f76e2817c9fc4d84ed460f000a1ed39227477cdcb9e55df7d706e5884ad709
+topology 25c321962cb996ed6e14a12939044633f262edbc062e87d124c9ed634916950a
+chorus 626ee12ce6dd123f8fbd5e431b1ee5d74d56c71013ffc2cc8943c7f9d6cff240

@@ -1,0 +1,64 @@
+# URDRCUE1 conformance -- THE ONE-WAY INPUT MEMBRANE: A RAW WINDOW/DEVICE EVENT BECOMES A TYPED ENACT TOKEN.
+#
+# The seventeenth game-layer vertical slice, WINDOW-1 of the observer-composition arc, and the INPUT-SIDE
+# mirror of `chorus`. Where `chorus` (URDRCHO1) is the one-way DISPLAY membrane (an authoritative transition
+# flows OUT to disposable observers, never back to `D_n`), `cue` is the one-way INPUT membrane (a raw external
+# event flows IN and becomes a typed action token, and the window that originated it flows NOWHERE). Its one
+# invariant: FOCUS IDENTITY IS NON-AUTHORITATIVE; THE CANONICAL ACTION STREAM IS DETERMINED BY THE INPUT, NOT
+# BY WHICH WINDOW ORIGINATED IT.
+#
+# DIRECTION (one-way): raw window/device event -> bind() -> typed enact token | refusal -> enact -> D_{n+1},
+# never token-authority -> window. `bind(event)` is PURE in the event and the binding table -- it reads no
+# `level`/`pos`/`stream`/`D_n`, its signature cannot receive canonical state (sealed observer), and it mints
+# no transition and no identity. It imports `enact` for its CODEC ONLY (`encode`/`decode`/`kind_of`) so the
+# tree keeps ONE token vocabulary, and it never reaches `enact.dispatch`/`enact.apply` nor imports
+# move/descend/loot/statecanon/rerun/savegame/lockstep. `the_membrane_is_one_way` reads this module's OWN full
+# AST (function-local imports included) and refuses any authority import or any `.dispatch`/`.apply`/`.d_n`/
+# `.step` reach, with a positive control (enact.dispatch, enact.apply, nested statecanon/rerun imports, a
+# `move` transition, and bare d_n/dispatch reaches are rejected; the read-only enact.encode/decode path is
+# allowed).
+#
+# FOCUS IS A ROUTING LABEL, NOT AN AUTHORITY. A raw `Event(focus, key)` names the window that received the
+# event; `bind` consumes ONLY `key`. The certified statement is precise -- FOCUS IDENTITY ALONE is
+# non-authoritative: hold the BINDING TABLE and the RAW KEY SEQUENCE fixed and vary ONLY which focus receives
+# each event, and the emitted token stream is byte-identical, with the two routes genuinely different and each
+# route using more than one focus (non-vacuity). That is DISTINCT from configuration: a DIFFERENT binding
+# table may legitimately change the tokens (which also proves the map is real -- an always-refuse binding
+# would satisfy the focus differential vacuously), and configuration is not focus authority.
+#
+# OWNERSHIP IS A THREE-TIER LADDER. An unbound or malformed EVENT is THIS module's typed `CUE-REFUSE` ("I
+# cannot bind this event"); a bound-but-malformed PAYLOAD surfaces `enact`'s `ENACT-REFUSE` ("I cannot form
+# this token"), the vocabulary staying `enact`'s even at bind time; a syntactically valid token whose GAMEPLAY
+# legality is false (a DESCEND off the down-stairs) passes WINDOW-1 and is refused DOWNSTREAM by the authority
+# (`DESCEND-REFUSE`, through `enact.dispatch`). The third tier is the GATE's to prove, because this module must
+# not reach `enact.dispatch` -- so `cue` never becomes a gameplay validator.
+#
+# The `binding` scene pins the concrete map (each raw key -> the token bytes it emits and the kind/payload it
+# decodes to), the binding-table-is-data check, the different-table-changes-the-tokens check, the two
+# bind-time refusal ownerships (unbound/malformed = ours, bad payload = enact's), and STATELESS STREAM
+# COMPOSITION (binding is a homomorphism over concatenation where the bindings succeed -- empty->empty,
+# duplicates duplicate, refusal atomic at the batch boundary -- with a stateful-binder positive control that
+# breaks concatenation, so a future chord/repeat/hold state cannot enter the membrane silently). The `focus`
+# scene pins the
+# per-key focus-blindness, the central focus-identity differential (tokens identical, routes differ, both
+# focuses used), the full-AST one-way guard, and total typed refusal. Both scenes and the top digest are what
+# the module EMITS.
+#
+# GRADE (honest, D5). MEASURED: `bind` is pure in the raw event and ignores `focus`; focus identity alone is
+# non-authoritative (same bindings + same keys + rerouted focus -> byte-identical tokens, routes genuinely
+# different, each focus used); a different binding table changes the tokens (the map is real; configuration is
+# not focus authority); the binding table is data; an unbound/malformed event refuses `CUE-REFUSE` while a
+# malformed payload surfaces `ENACT-REFUSE`; and stream binding is a STATELESS homomorphism over concatenation
+# where the bindings succeed (empty->empty, duplicates duplicate, refusal atomic), a stateful-binder control
+# breaking the law. ESTABLISHED: the membrane is one-way (full-AST, direction-aware,
+# `enact` codec only, no authority import in any scope, no `.dispatch`/`.apply`/`.d_n`/`.step`, positive
+# control); no CORE module imports `cue`. DECLARED: the token vocabulary is `enact`'s; `focus` is a routing
+# label; the binding table is the declared default; single peer.
+#
+# does_not_show: the DOWNSTREAM gameplay-legality refusal and the canonical-replay half of the focus
+# differential across a real `enact`/`savegame`/`rerun` core (the gate's, not the module's); stateful/timed
+# input, chords, key-repeat, modifiers-as-state; focus arbitration / any window-manager authority; a raw-event
+# history channel; OS-native input, gamepads, and any wall-clock or frame budget (all deferred or rejected).
+binding 1a36c7be0612b192d697cc31090d76ca44940e05a7a118724798e0648b0cc3c8
+focus c26a5f0bd1f9726daac2bf88473a2508e4c3d262469f56dce6adbd4bf5e0bac9
+cue 1e8e5070c1f459253cf0a3dda3528f5b89e7ad942aa30d7a3a99dc3e796592e6

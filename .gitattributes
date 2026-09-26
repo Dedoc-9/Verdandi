@@ -3,3 +3,4 @@
 *.tiles binary
 *.bin binary
 *.png binary
+oracle/game/** -text

@@ -1,0 +1,42 @@
+# URDRETY1 conformance -- THE CANONICAL ENTITY, A CONTENT-ADDRESSED COMPONENT IN ONE VOCABULARY.
+#
+# The fourth game-layer vertical slice, and it MOVES nothing -- it NAMES something. `move` produced
+# the first authoritative D_n -> D_{n+1} and, for want of an entity, INLINED the entity's sole field
+# into its state identity (`URDRMOV1|lvl:<level_digest>|pos:x,y`). D24 §2 assembles canonical state
+# from CONTENT-ADDRESSED components -- `world identity, the way worldbind names a chunk by its digest`
+# -- and an entity is one of them. This module is that component: an entity is a record with a
+# canonical digest, and `move`'s state now NAMES the entity by that digest rather than inlining its
+# field, so there is ONE identity vocabulary from the level through the entity to `statecanon`, and no
+# second form for a later rung to translate. A wrap would have left two serializations of one entity
+# (`move`'s inline pos and `statecanon`'s digest) needing reconciliation -- the translation D24 §2's
+# rule forbids -- so `move`'s identity BECAME the entity-derived component.
+#
+# ONLY POSITION IS EARNED, AND THE RECORD SAYS SO. D24 §2 lists position, health, inventory, equipment,
+# progression and transformation for entity state, but only POSITION has been earned, by `move`. The
+# declared field set FIELDS is `("pos",)` and nothing more -- this record is NOT a catch-all schema for
+# fields no rung has built. It IS forward-compatible: fields append as `|key:value` and
+# `a_new_field_does_not_reformat_position` proves that adding one leaves the `pos:x,y` bytes identical,
+# so growth costs no re-mint of what is pinned. An entity is level-agnostic: whether its position is on
+# a traversable cell is `move`'s question via `descent`, not the record's.
+#
+# VIEW QUANTITIES ARE EXCLUDED BY CONSTRUCTION. `entity_bytes` walks FIELDS in declared order; the
+# constructor refuses any undeclared keyword typed, so a facing kept only for animation, an interpolated
+# sub-cell position or a highlight -- D24 §2's `not canonical` list -- cannot reach a digest. Two
+# entities with equal declared fields are the same entity; a difference in any field moves it.
+#
+# The `record` scene pins the digest of an entity at each of the eight `gamegen` spawns (real positions,
+# read through `descent`); the `laws` scene pins the field set, order, equality, the two refusals and the
+# forward-compatibility proof. Both stay FROZEN, because a golden the gate rewrites cannot detect drift.
+#
+# GRADE (honest, D5). MEASURED: the digest of a position-only entity reproduces; equal fields give equal
+# digests and any position change moves it; `move`'s state names this component. ESTABLISHED: the
+# constructor refuses a malformed or undeclared field typed; the field walk is in declared order;
+# appending a field does not reformat the position. DECLARED: that the entity is a bare position today,
+# FIELDS = ("pos",), and that later fields are earned by later rungs and appended here.
+#
+# does_not_show: that an entity has health, inventory or any field beyond position -- none is earned yet;
+# that an entity is placed legally on a level (that is `move`'s claim, via `descent`); that two entities
+# interact; and nothing about WHICH entities a run contains -- a roster is `statecanon`'s to assemble.
+record a9e38fd95812653bc4ce9d1cb6ca3085c4ba1a677b1e7469dd837665ad03c9b5
+laws 7e9d5c1a695e5f602b986f03a301f7b63485a6e1468ef84eba2566c0ad0620ee
+entity-digest cc256e7f5c20f285e6e4935d512159ba3eea7d6db89d79a2af08a056dd8f0ced

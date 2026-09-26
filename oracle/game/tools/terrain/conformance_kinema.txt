@@ -1,0 +1,58 @@
+# URDRKIN1 conformance -- THE ONE-WAY OBSERVER-SPACE REFINEMENT OF AN AUTHORITATIVE TRANSITION.
+#
+# The fifteenth game-layer vertical slice, D25's cinematic membrane, and the FIRST game-layer VIEW module:
+# every rung before it AFFECTS canonical game state; this one only PRODUCES A VIEW of it (D25 §2). It is HANDED
+# a real authoritative transition -- `enact.dispatch` produces consecutive canonical states D_n -> D_{n+1} and
+# `statecanon` identifies both ends -- and refines BETWEEN the two endpoints. It never computes the successor it
+# observes: it imports no `move`/`descend`/`loot`/`enact` and reaches no `.step`/`.dispatch`/`.apply` (read off
+# its own FULL AST, function-local imports included, in `the_membrane_is_one_way`, with a positive control).
+#
+# WHAT IS REFINED IS THE POSITION, NEVER THE DIGEST. `D_n` is a 64-hex SHA -- arithmetic on it is meaningless.
+# The interpolable quantity is the entity POSITION (integer cell coords), refined in the FROZEN Q32.32 substrate
+# (`field.ONE`, consumed not reinvented): before = A*ONE, after = B*ONE, refined = before + ((alpha*(after-
+# before)) // ONE) (D25 §6, floor via // ONE). alpha=0 lands on A, alpha=ONE lands on B, exactly. The
+# arithmetic is graded REFERENCE (unbounded-integer) on the frozen radix; a bounded-i64 model is a DECLARED
+# cross-placement obligation (§6), not claimed here.
+#
+# THREE TRANSITION SHAPES, ONE SPATIALLY REFINED: MOVED (same level, orthogonally adjacent, both cells
+# descent-traversable) is interpolated; FIXED (same cell -- a BLOCKED move or a LOOT) is a spatial fixed point;
+# LEVELCUT (the level identity differs -- a DESCEND) is a DISCRETE two-frame cut, never interpolated (a position
+# across a level change is a fiction). CONTAINMENT consumes the real topology: a MOVED refinement is admitted
+# only over a `descent.traversable` adjacent pair -- a legal move edge, single-sourced in `descent` as `move`
+# single-sources it -- and every sample floors into {A, B}. A FALSE VISUAL WITNESS refuses typed KINEMA-REFUSE:
+# a BLOCKED move presented as motion (target is a WALL, the refused boundary), and a forged non-adjacent or
+# wall-crossing pair. With the currently earned single-cell MOVE vocabulary there is no cell BETWEEN two
+# adjacent cells, so the literal A-X-B intermediate-wall plant has no realizable instance; manufacturing a
+# multi-cell move to give it one would invent gameplay authority, so it is DEFERRED and non-vacuity is carried
+# by the real topology against forged endpoint claims instead.
+#
+# THE OUTPUT IS DISPOSABLE AND THE MEMBRANE IS ONE-WAY: a Frame carries the source tick, the sample alpha, the
+# refined Q32.32 position, and BOTH endpoint witnesses VERBATIM (the D15 `terrain_view` pattern -- a view
+# carries the authority witness and may never write back into it). Nothing produced feeds a canonical component;
+# the gate stage's OBSERVER-PRESENCE DIFFERENTIAL shows the canonical transcript is byte-identical whether this
+# module is exercised or not, and no CORE module imports it.
+#
+# The `refinement` scene pins a corpus of real move edges (spawn + a descent-traversable neighbour) by their
+# exact G(alpha) frame sequence -- alpha, refined Q32.32, floored cell, carried witnesses, class. The `membrane`
+# scene pins the falsifier booleans (endpoints land exactly, containment, wall-crossing refusal (Plant A),
+# non-adjacent refusal (Plant B), level-cut-not-interpolated, fixed-point stationary, sampling view-only
+# (Plant D local half), witness carried verbatim, the full-AST one-way guard, and total typed refusal). Both
+# scenes and the top digest are what the module EMITS.
+#
+# GRADE (honest, D5). MEASURED: endpoints land exactly; every sample of a permitted transition is contained in
+# {A, B}; a FIXED transition is stationary; a LEVELCUT is a discrete two-frame cut; the sample count is
+# view-only (2/6/60/144 samples, same endpoints, all contained); the endpoint witnesses are carried verbatim.
+# ESTABLISHED: a wall-target and a non-adjacent/wall-crossing forged pair refuse KINEMA-REFUSE against
+# `descent.traversable`; the module is one-way -- read off its full AST it imports exactly its declared
+# substrate (no move/descend/loot/enact/statecanon/rerun/lockstep, function-local included) and reaches no
+# mutator, with a synthetic forbidden module rejected as the positive control. DECLARED: the cell coordinate is
+# the position (no world-coordinate lift this slice); the sample set is alpha_i = i*ONE//(k-1); the arithmetic
+# is reference on the frozen radix; single transition, single peer.
+#
+# does_not_show: what a view should look like (D25 §12); a bounded-i64 model (§6, a cross-placement obligation);
+# multi-cell or curved trajectories, smooth-height interpolation, camera/pose (gaze/vantage's), a voxel/observer
+# scene, developer-mode authoring, network/replay connection, and any wall-clock or frame budget (§13, off-gate
+# by rule).
+refinement 651bd509526a9705983135eab7b0b8b13950a3704a5110775c9676d023b9f572
+membrane 49bd5a501ea40c79c2ddce9a8e3a59f28633acfea38191795dc8dce0808e77a1
+kinema ce1b69520a40daaed0645188e8abe1138facfeed48b0dadebf3ff0d5646767fa

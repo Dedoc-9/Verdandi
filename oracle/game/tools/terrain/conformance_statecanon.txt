@@ -1,0 +1,61 @@
+# URDRSTC1 conformance -- THE ASSEMBLED CANONICAL IDENTITY D_n OVER THE FOUR EARNED COMPONENT IDENTITIES.
+#
+# The fourteenth game-layer vertical slice and D24 §2's ASSEMBLED-STATE rung. Every rung before it earned an
+# identity for ONE component of a run: `gamegen.level_digest` (world), `entity.entity_digest` (entity),
+# `rngstream.stream_digest` (RNG state), `actionlog.digest` (ordered action history). This rung earns EXACTLY
+# ONE new authority -- the single canonical identity `D_n` of the assembled run -- by COMPOSING those four
+# already-earned identities. It reimplements none of them, mints no second serialization of any component,
+# and adds no new state.
+#
+# THE LAW (one content-addressed digest over the four component identities):
+#   D_n = SHA-256( MAGIC | lvl:<level_digest> | ent:<entity_digest> | rng:<stream_digest> | log:<actionlog digest> )
+# Each component enters ONLY through its own authority's identity function, under a fixed label, delimited by
+# the reserved `|`. Every component identity is 64 hex chars and contains no `|`, so the labelled, fixed-width,
+# delimiter-framed preimage is injective in the four identities. `D_n` is the one and only new SHA-256 minted.
+#
+# THE ACTION HISTORY IS PART OF THE IDENTITY (the ratified choice): `D_n` includes `actionlog.digest`, so two
+# runs at the SAME (level, entity, stream) reached by DIFFERENT histories have DIFFERENT `D_n` -- it identifies
+# the run AND how it arrived. SEED/DEPTH ARE NOT SEPARATE COMPONENTS: `gamegen.level_digest` already commits to
+# both (its canon bytes open `URDRGEN1|s:<seed>|d:<depth>|...`) and the seed re-enters via the RNG root, so a
+# raw `seed` field would be redundant and is deliberately absent.
+#
+# THE AUTHORITY/VIEW BOUNDARY holds by construction at the seam this rung composes: a view-only quantity
+# (facing/camera/interp) cannot enter `entity` (`FIELDS == ("pos",)` refuses any undeclared field), so it can
+# never reach `entity_digest` and therefore never reach `D_n`.
+#
+# OWNERSHIP STAYS CRISP -- none of the three neighbouring laws absorbs another. `savegame` answers "can I
+# restore this artifact?" (stores components independently, mints no assembled identity); `rerun` answers
+# "does this recovered history reproduce the independently stored state?" (a REPRODUCED/DIVERGED verdict);
+# `statecanon` answers "what is the canonical identity of this assembled state-and-history?" (a single digest).
+# It exposes no serialize/restore/address (savegame's) and no replay/verdict/reconstruct_origin (rerun's), and
+# imports neither module.
+#
+# IT ADDS NO AUTHORITY BEYOND THE COMPOSITION: read off the AST, the assembly (`d_n_preimage` + `d_n`) reaches
+# all four component-identity authorities, mints EXACTLY ONE `sha256`, reaches none of the components' raw
+# serializations (`canon_bytes`/`entity_bytes`/`stream_bytes`/`stream_of`) and advances no RNG -- so a mutant
+# that reproduced the same `D_n` while BYPASSING an authority (inlining a component's own `sha256(preimage)`,
+# or hard-coding a digest) reddens on the structure even though its output matched. Single-peer (cross-peer
+# `lockstep.canon`'s (tick, peer, seq) is Slice A), so it imports no `lockstep`.
+#
+# The `assembly` scene pins a corpus of runs (gamegen seeds/depths, arbitrary positions, INDEPENDENT
+# log/stream token sequences) by their assembled `D_n`; the `laws` scene pins the falsifier booleans
+# (D_n-is-the-composition, each-component-moves-D_n, history-in-the-identity, depends-only-on-identity, the
+# view boundary, the injective framing, the AST composition guard, and non-absorption of the neighbours).
+# Both scenes and the top digest are what the module EMITS.
+#
+# GRADE (honest, D5). MEASURED: over the corpus `D_n` equals SHA-256 of the labelled preimage built
+# independently from the four public component-identity functions; mutating ANY one component changes `D_n`;
+# same (level, entity, stream) with different histories -> different `D_n`; `D_n` depends only on the component
+# identities, not object instances. ESTABLISHED: a view-only field cannot enter `entity` and so cannot reach
+# `D_n`; the labelled fixed-width `|`-delimited framing is injective (a swap of two identities changes the
+# preimage); the assembly COMPOSES the four earned authorities and mints exactly one SHA and reaches no raw
+# serialization (AST); it absorbs no neighbour and imports exactly its declared substrate and no `lockstep`.
+# DECLARED: the four components are the currently-earned canonical identities, seed/depth ride inside
+# `level_digest`, single-peer.
+#
+# does_not_show: multi-entity rosters or health/inventory (unearned components, no slot yet); cross-peer order
+# independence (Slice A); whether a run is reachable or winnable (that is `move`/`descent`'s); and anything
+# about observers, which stay KINEMA's.
+assembly d8e3f00bea00ed056b2ee417bb22b41e202da3f35e4954a885b9aabf81da8e92
+laws 02c09138b23251547bbac683784f003fa8bfa314e47fb48931d40532908551e3
+statecanon 7b671d4911e440e6e016313fe2205f2c52ac4a29efb73ce93d322e3bca3f7bdf

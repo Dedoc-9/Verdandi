@@ -56,7 +56,7 @@ is a second authority.
 
 | Folder | Contract |
 |---|---|
-| `oracle/` | frozen evidence from Urðr at `urdr-oracle-1`: the contract record, and (later rungs) the corpus inputs the kernel is compared against. Read-only by convention; a change here is a new oracle, named. |
+| `oracle/` | frozen evidence from Urðr at `urdr-oracle-1`: the contract record, the corpus inputs the kernel is compared against, and (`oracle/game/`, GAME-0) Urðr's game layer with its own suites. Read-only by convention; a change here is a new oracle, named. |
 | `kernel/` | the deterministic per-frame work: a scene in, an index frame and a picture out, two witnesses. std-only. |
 | `workshop/` | the design loop: an edit in, a new authority out, a consequence record beside it. Validates before it projects. |
 | `shell/` | the window: blit the kernel's framebuffer, pump input, time the present path. Owns no truth. |
@@ -93,6 +93,8 @@ is a second authority.
     GAUNTLET-1 ── the incremental floor cast: faster AND the same witnesses
          │
     GAUNTLET-2 ── columns in parallel, invariant under any column partition and thread count
+         │
+    GAME-0 ────── Urðr's game layer carried verbatim from the same tag; its own 411 tests pass in place
          │
     MATERIAL-0 ── a picture becomes a material under a gate
 

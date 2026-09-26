@@ -1,0 +1,52 @@
+# URDRGEN1 conformance -- SEED + DEPTH -> CANONICAL LEVEL -> DIGEST, AND NOTHING ELSE.
+#
+# The first game-layer vertical slice, and the first module admitted under D24. D24 §1 asks: does
+# this affect canonical game state, or is it a view of it? This module affects canonical game state.
+# It is CORE; it imports `hashlib` and `os` and nothing under tools/; it renders nothing and needs
+# no window, clock, input device or audio. The contract was written first (docs/gamegen_brief.md
+# §1) and the module was held to it.
+#
+# THE CONTRACT. Input: (seed, depth), 0 <= seed < 2**64, 1 <= depth <= DEPTH_MAX, anything else a
+# typed GAMEGEN-REFUSE. Output: a fixed 48 x 32 grid over `# . < >` plus the rooms, SORTED.
+# Identity: URDRGEN1|s:|d:|48x32|rooms:...|row|...|row -- nothing else enters. Digest: SHA-256 of
+# the identity bytes, REPRODUCIBILITY ONLY and never the correctness oracle.
+#
+# DEPTH IS THREE CLAIMS, KEPT APART. Representation: DEPTH_MAX is computed from the width and held
+# equal to the literal 2147483647. Admission: 0 and DEPTH_MAX + 1 refuse, DEPTH_MAX is admitted.
+# Generation: two DEPTH_MAX members are in the corpus below, pinned raw, well-formed, eight rooms
+# each, at the same number of draws as depth 1. The question the original never asked -- does the
+# deepest level generate? -- is answered for this generator by running it.
+#
+# THE DRAW IS STATELESS, in heightfield's idiom: SHA-256(MAGIC | seed | depth | tag | i), so no
+# evaluation order can reach the output. MEASURED: over 128 seeds at depth 1 and 16 at DEPTH_MAX,
+# every level generated, none refused, none malformed, and every one kept exactly ROOMS_MAX = 8
+# rooms -- the admission condition (fewer than ROOMS_MIN kept) is REAL, demonstrated by a one-try
+# plant that refuses typed, and NEVER MET in the sweep. Both facts are reported; neither is assumed.
+#
+# THE DIGEST IS NOT THE ORACLE. Structure has its own predicates and each has a PLANTED violation
+# caught BY NAME: a breached border, an overlapping room, a second stairs up, a stairs in no room, a
+# room hanging off the grid, an unsorted room list. Alongside them, two identity plants: reversing
+# the room order before serialisation is INERT (declared inert, because identity sorts the rooms),
+# and moving one wall cell is observable. And heightfield's corpus law: a generator with the
+# opposite corridor bend moves EVERY one of the eight pinned digests.
+#
+# The eight `level-<seed>-<depth>` lines are RAW level digests, pinned so that a second
+# implementation can match one level without reproducing a scene. None has, and none is claimed.
+#
+# does_not_show: that a level is worth playing; that the stairs down are reachable from the stairs
+# up -- the corridors join consecutive rooms, so by construction they are, and CONSTRUCTION IS NOT A
+# WITNESS; that the draw is unbiased (it is draw mod n, declared); that 48 x 32, eight rooms and an
+# L-shaped corridor are the right constants -- each is a constant of this canon; and nothing about
+# canonical GAME STATE, this being one level and not a run.
+corpus b9e4675554ea2d1cc0a34bbf80ff5fee16f00986dba6695e25d6a65e4f56ae7d
+structure 762789a08814e7e7ab44856e165ece05c390416cde8ebf64748d3bb003ebf2cb
+plants 6984c371541c921336798ce917003c8ebdde0c531f56bc10292cdf1f7e6da3e9
+gamegen ee47c206d4065b6abc77c07e8fd3a5fd2ae3587707cd96abf1f14bf55ac4118e
+level-0-1 87eda120ad80581ff8964425bd394524f68c9c60dc9f39431927895f3ebd84cf
+level-1-1 096155c88a7778513b22631cd29250fd14bc3e04d6a0edb1bb96f64e03cfda80
+level-1-2 15bf2d6f5268b36517c88ba3c770ff4395f762cbd25d737d9d2b190e33bf8c46
+level-12345-1 3e62f861a2ac5890932f6af1ffe2533956ccfa3a4cc35b322a9503bdabbd2902
+level-3735928559-100 a70eecc640d7938ad7663a742b518e4c7e3b18b53a8f9dc0fc4209f1ca15600e
+level-18446744073709551615-1 5210ad3260f118ffd967155a627fd295e2f89e74495bcaceae3b667ddfc1bf1e
+level-7-2147483647 51830493d69e5947e7a863457f243de833101680d02bde9a632a7cffabbae069
+level-18446744073709551615-2147483647 0db616eb6442d1688ab2cd08115938167159f54dc59056cdb5341e2ed6276175

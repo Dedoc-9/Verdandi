@@ -1,0 +1,60 @@
+# URDRHEI1 conformance -- THE CERTIFIED GENERATIONAL-GROWTH LAW: A DERIVED QUANTITY, NOT PERSISTENT STATE.
+#
+# The ninth game-layer vertical slice, and the second certified ARITHMETIC LAW (after `combat`) rather than a
+# state transition. D24 §3's heirloom progression: an inherited quantity grows by a declared fraction each
+# generation, direction and baseline enforced, a shrink reddening. The gateable sentence is "the growth is
+# deterministic and obeys the declared fraction"; "the progression is rewarding or balanced" is NOT gateable
+# (D24 §4), and this module is the gateable sentence and nothing more.
+#
+# A DERIVED QUANTITY, NOT PERSISTENT STATE -- the transition settled by measurement, exactly as `combat`'s.
+# The shape persistent_retirement_state -> persistent_retirement_state' needs a place to KEEP the inherited
+# quantity across generations, and the measurement found NONE: the game layer has no persistence substrate
+# (the `persist` rung is unbuilt, and the existing persist.py/URDRLAT5 is the MMO/netcode rollback-window
+# checkpoint, a different arc no game-layer module imports); entity.FIELDS == ("pos",) and the chain
+# entity.at -> entity.digest_at -> move.state_bytes means a progression field would BREAK move; and the
+# tree's direction-and-baseline authority operates on module-level SOURCE CONSTANTS across GIT HISTORY, so it
+# cannot hold a RUNTIME quantity. Making a container inside heirloom would be architectural INVENTION, not
+# implementation. So heirloom is the smaller, honest slice: quantity -> quantity', a PURE FUNCTION that
+# persists nothing -- the way combat generated a damage integer with no health to store it in and loot
+# generated a drop with no inventory. The quantity composes forward to a future persistence/binding rung.
+#
+# A REGISTERED ARITHMETIC EXPERIMENT WITH A DECLARED INPUT. No canonical quantity exists that heirloom could
+# inherit (gamegen's seed/depth, entity's position, rngstream's (n,R_n), loot's drop and combat's damage are
+# none of them a persistable progression quantity), so q is a DECLARED integer input over the non-negative
+# integers, as magicdiv/horn/opcost/combat are certified arithmetic laws over declared inputs.
+#
+# THE FORMULA IS heir(q) = q + (q * NUM) // DEN, the smallest law that still GROWS BY A FRACTION. An INTEGER
+# RATIO with FLOOR division, not a Fraction (which appears in this tree only as an adversarial plant other
+# modules REFUSE). MONOTONE NON-DECREASING, not a minimum-growth rule: heir(q) >= q for every q, strictly
+# greater only once the floor contribution turns positive (q >= DEN/NUM); below that threshold the floor
+# legitimately yields ZERO growth, asserted directly rather than papered over with a max(1,...) clamp (that
+# minimum-growth rule is a DEFER, its mutation reddening). DETERMINISTIC -- no randomness, no rngstream edge.
+# The GENERATIONS are a pure SEQUENCE folded from a declared baseline, COMPUTED not STORED.
+#
+# THE ORACLE IS STRUCTURALLY SEPARATE. heir is q + (q*NUM)//DEN (add after floor); the references are
+# (q*(DEN+NUM))//DEN (a single floor of a combined numerator, provably equal but a different expression) and
+# a COUNT-OF-MULTIPLES oracle that uses NO floor division at all -- plus a corpus of FROZEN LITERAL boundary
+# tuples that share no code with heir. A shrink, a replace-not-grow, or an off-by-one is caught by all three.
+#
+# The `table` scene pins NUM, DEN, a declared quantity grid, the boundary tuples each with its grown
+# successor, and a golden generational sequence; the `laws` scene pins the falsifier booleans -- exhaustive
+# agreement with both oracles, the frozen tuples, the never-shrink and sequence-monotone direction laws, the
+# strict-above/zero-below floor law, that each planted mutation reddens, non-constancy, typed refusal, and
+# that the module is a stdlib leaf (no entity/persist/rngstream/game or verification imports). Both scenes and
+# the top digest are what the module EMITS and stay FROZEN. A change to the fraction mints a new corpus.
+#
+# GRADE (honest, D5). MEASURED: over the whole 0..CORPUS_MAX corpus heir equals BOTH independent oracles; the
+# frozen tuples match; growth never shrinks; the generational sequence is monotone non-decreasing; growth is
+# strictly positive for q >= DEN/NUM and exactly zero below it. ESTABLISHED: the four planted mutations
+# (shrink, replace-not-grow, off-by-one, deferred minimum-growth-1) each disagree with an independent oracle;
+# malformed or negative inputs (bool excluded) refuse typed HEIRLOOM-REFUSE; the module mutates nothing and
+# its substrate is stdlib only. DECLARED: the fraction is NUM/DEN = 1/8, the growth is monotone NON-DECREASING
+# (with an intentional zero-growth region below the floor threshold), and a minimum-growth rule, where the
+# quantity lives, entity binding, persistence and multi-attribute progression are later rungs'.
+#
+# does_not_show: that the progression is rewarding, balanced or fun (not gateable, D24 §4); WHERE the quantity
+# is kept (no persistence substrate yet); that a hero inherits it (no entity binding); randomized growth; and
+# nothing about the direction-and-baseline register, whose machinery is over source constants in git history.
+table 7cd11d64ad8b4ff2627e79e2ea3757f2bbf21fecfeef0ea2a54c1e9c8873dd17
+laws 160b4a3cd6f16a3e7abfb8f5b7bef58178df0809dfad99f74bc49a9b39a92caa
+heirloom 9425dcaefae74f4f74e2e21cc88d128111879d75dc221878e122252784ce9b29

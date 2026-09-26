@@ -17,7 +17,9 @@ the certified baseline (a stable ~2,355 µs p99 at eight threads), byte-identica
 and the shell now renders through that parallel fast path. The **authoring** half already exists in skeleton:
 `WORKSHOP-0/1` turn an edit into a new authority with a hash-chained consequence record; `INPUT-0` turns shell input
 into a typed command and a new camera that replays headless; `SESSION-WALK` interleaves moving and authoring into one
-sealed chain; and `SHELL-PLAYBACK` proves the window shows *exactly* that sealed becoming.
+sealed chain; and `SHELL-PLAYBACK` proves the window shows *exactly* that sealed becoming. And since `GAME-0`, Urðr's
+**game layer** — seventeen discrete vertical slices, from level generation through the input membrane, with their
+corpora and suites — sits in `oracle/game/` as frozen evidence from the same tag, passing its own 411 tests in place.
 
 What is *not* yet joined is the loop between them at interactive speed: editing the world **while** the window shows
 it, and seeing the consequence immediately, all through the same sealed representation — and doing it for semantics
@@ -29,9 +31,9 @@ the frozen oracle never certified.
 
 Not a general game engine. Specifically: **a running window in which an author changes the world, the change becomes
 a new authority through the sealed workshop path, the projection updates live, and every frame on the screen is
-provably the consequence of that authored history** — with new kinds of world content (skybox, physics, filtering
-semantics) admitted only when they *earn* an authority, either re-frozen from Urðr or pinned by a Verðandi-local
-reference. The bar is the one the program already holds itself to: `built ≠ adopted`, `declared ≠ verified`, and no
+provably the consequence of that authored history** — with new kinds of world content (skybox, filtering semantics,
+physics beyond what the tag carries) admitted only when they *earn* an authority, either carried or re-frozen from Urðr
+or pinned by a Verðandi-local reference. The bar is the one the program already holds itself to: `built ≠ adopted`, `declared ≠ verified`, and no
 semantics reaches the screen without passing through a gate.
 
 ---
@@ -42,8 +44,9 @@ semantics reaches the screen without passing through a gate.
    faster render behind it may buy nothing at the glass. *(Open — G7.)*
 2. **Can an author edit the live window?** The pieces exist headless (input → typed edit → SESSION-WALK); they are
    not yet wired into the running present loop with live re-projection.
-3. **Can the world hold semantics the oracle never certified?** Skybox, physics, and filtered VIEW semantics live
-   *beyond* the frozen oracle and need the new-semantics route.
+3. **Can the world hold semantics the oracle never certified?** The skybox and filtered VIEW semantics live *beyond*
+   the frozen oracle and need the new-semantics route. Physics is different: much of it is already in the tag (see
+   below), so the question there is what to carry, not what to invent.
 4. **Can independent edits combine?** Two authored branches of a world need a deterministic, consensus-free merge.
 
 ---
@@ -88,10 +91,19 @@ an authored, hash-chained edit history rather than a live distributed store. The
 delta-state CRDTs; deterministic lockstep simulation) supplies the convergence theory; the Verðandi constraint is
 that the merge must produce a *sealed, replayable* history whose result is byte-identical regardless of merge order.
 
-### SKYBOX-0 / PHYSICS-0 — content beyond the frozen oracle
-Skybox and physics stay *beyond* the frozen oracle and are gated behind the new-semantics route (`SEMANTIC-0`'s
-machinery). They are named, courted, and deliberately not seated until the semantics route that would give them an
-authority is built.
+### GAME-0 — Urðr's game layer as frozen evidence · **landed**
+The seventeen discrete game-layer slices (`gamegen` … `cue`), their corpora, suites, briefs and the D24/D25 boundaries,
+carried verbatim from `urdr-oracle-1` into `oracle/game/`, each file listed with its sha256 and Urðr git blob id, and
+Urðr's own suites passing in place (`game-frozen`, `game-suites`, `game-plant`, `game-not-runtime`). Evidence, not a
+runtime dependency: the kernel, workshop and shell do not read it.
+
+### SKYBOX-0 / PHYSICS-0 — the skybox beyond the oracle; physics already in the tag
+The skybox stays *beyond* the frozen oracle and is gated behind the new-semantics route (`SEMANTIC-0`'s machinery):
+named, courted, and not seated until that route exists. Physics is not in the same position. An earlier version of
+this roadmap said it was beyond the oracle, and that was wrong. `urdr-oracle-1` carries Urðr's exact ℤ/ℚ mechanics
+(rungs 1–4), its bounded Q32.32 real-time path (rung 5) and its lockstep/rollback netcode, all as earned CORE
+semantics with frozen corpora. They reach the studio by the `GAME-0` route, and only physics the tag does not carry
+needs the new-semantics route.
 
 ### IMPOSSIBILITY-0 — measured negative results as level preconditions
 Some world states are *provably unreachable*; recording those impossibilities as level preconditions is itself a
@@ -103,7 +115,8 @@ form of authored semantics, and a natural companion to `SEMANTIC-0`.
 
 Everything above obeys the same discipline that carried the render campaign:
 
-- **Earn the authority.** New CORE semantics come only from Urðr, re-frozen and named. New VIEW semantics may be
+- **Earn the authority.** CORE semantics come only from Urðr: carried verbatim from the tag already cited (as
+  `GAME-0` carries the game layer), or earned there and re-frozen under a new name. New VIEW semantics may be
   Verðandi-local but must be pinned by rows here. The shell never mints truth.
 - **Byte-identity where an oracle exists; a pinned reference where one does not.** A rung with a frozen oracle proves
   byte-identity against it; a rung inventing new semantics defines a reference and pins it, then defends *that*.

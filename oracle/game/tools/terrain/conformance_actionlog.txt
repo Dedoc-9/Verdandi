@@ -1,0 +1,57 @@
+# URDRACT1 conformance -- THE AUTHORITATIVE RECOVERABLE ACTION HISTORY: ORDER COMPOSED, ACTIONS READABLE BACK.
+#
+# The tenth game-layer vertical slice, and the first SEQUENCE/ORDER rung -- where `combat` and `heirloom` were
+# pure per-input arithmetic, this one's subject is ORDER itself. D24 §2: "authoritative action history -- the
+# ordered inputs replay consumes". It is also the first CONSUMER (not a stdlib leaf) since `loot`: it earns its
+# keep by COMPOSING `rngstream`'s ordered fold rather than duplicating it.
+#
+# WHY IT IS NOT REDUNDANT WITH `rngstream`. The stream already COMMITS to the ordered action history (its chain
+# R_{n+1} = SHA(...|R_n|action) diverges under reordering), but it DISCARDS the actions: the transition is
+# one-way, so R_n cannot be read back into the sequence that produced it. `replay` will need to re-consume the
+# actions and the stream cannot give them back. So this rung owns the one thing the stream lacks: RECOVERABILITY.
+# `rngstream` owns ordered state TRANSITION; `actionlog` owns recoverable ordered HISTORY.
+#
+# ORDER IS COMPOSED, NOT REINVENTED. The log's order-committing identity IS `rngstream`'s fold, from a DECLARED,
+# seed-independent, domain-separated root LOG_ROOT = Stream(0, SHA(URDRACT1|root)):
+#     digest(log) = rngstream.stream_digest(rngstream.apply(LOG_ROOT, entries(log)))
+# There is NO second hash chain: `append` is exactly ONE `rngstream.advance` (`each_append_is_one_advance`), and
+# the ordering functions build no hashlib chain of their own (read off this module's AST). The ordering AUTHORITY
+# stays `rngstream`'s; `actionlog` adds the recoverable entries and the count.
+#
+# ONE VOCABULARY. Tokens are canonicalized by exactly `rngstream`'s rule (str -> utf-8, bytes pass through, else
+# refuse), so a str token and its utf-8 bytes are the SAME action and never split the log's identity -- and this
+# is gate-enforced by the stream-agreement law, because a divergent canonicalization would fail to reproduce the
+# run's stream.
+#
+# THE STREAM-AGREEMENT LAW IS THE EXTERNAL RULER. Folding the logged actions through rngstream.apply(root(seed),
+# entries(log)) REPRODUCES run seed's stream, and a reordered log DIVERGES it -- so a reorder is caught by the
+# STREAM, an authority this module does not own; `actionlog` cannot certify its own ordering merely by agreeing
+# with its own digest. NOT CLAIMED: that the log is the unique mathematical PREIMAGE of an arbitrary stream state.
+# The stream's transition is one-way; the log is a recoverable SOURCE SEQUENCE that reproduces a stream, weaker
+# and true.
+#
+# THE TOKENS STAY OPAQUE. No canonical action vocabulary has been earned (`move`'s N/S/E/W do not advance the
+# stream, `loot` folds b"loot:"+S, no unified typed command type exists), so the log records OPAQUE tokens and
+# commits to their order; interpreting a token is a later rung's (statecanon/replay), and this module imports
+# neither `move` nor `entity`.
+#
+# The `log` scene pins a corpus of logs (empty, single, move-like, loot-like, mixed str/bytes, and an explicit
+# reorder pair) each with its count, entries and digest; the `laws` scene pins the falsifier booleans -- the
+# reorder witness, the str/bytes equivalence, recoverability, immutability, the empty-log identity, one-advance-
+# per-append, stream agreement, reorder-diverges-the-run-stream, typed refusal, no-second-chain, and that
+# rngstream imports no actionlog. Both scenes and the top digest are what the module EMITS and stay FROZEN.
+#
+# GRADE (honest, D5). MEASURED: over the corpus `entries` recover the exact appended order; a reorder of two
+# distinct actions changes the digest while a str/bytes equivalence does not; folding the entries through a run
+# seed reproduces that run's stream and a reordered log diverges it; each append is exactly one rngstream.advance.
+# ESTABLISHED: append is immutable and order-sensitive; the empty log has a canonical identity; the ordering
+# builds no second hash chain; a malformed action or log refuses typed ACTIONLOG-REFUSE. DECLARED: that tokens are
+# opaque and canonicalized by rngstream's rule, and that a typed vocabulary, the "replay consumes only this"
+# claim, persistence, entity/snapshot binding and bounded/compacted history are later rungs'.
+#
+# does_not_show: that the log is replay's sole input (replay unbuilt); that it survives a process (persistence is
+# persist's, rung 9); what a token MEANS; that it is a unique preimage of a stream state (only that it reproduces
+# one); and nothing about rngstream's own law, which stands on its own frozen vectors and imports no actionlog.
+log 2333494b55077e0309bb24eb1ef18e3e72181e97f28226cb626e80e769e8d539
+laws 901b278bcc8ed22d5d206a8651467f66cb9269f1080f43c66d8b97a58ce5fc8f
+actionlog 0f35ac5c520e3462802465b716f880e5df45a08d07e69875c081f40c2d33271e

@@ -1235,6 +1235,47 @@ balance (`GHOSTS.md` G8). Note that `--breakdown` as it stands times the FROZEN 
 its (unchanged) `strips`/`frame` phases with the FAST emit on one apparatus — a small `--breakdown` extension, not a
 new rung. Privileged slices `BANDWIDTH-0` (G2) and `POOL-0` (G1/G3) remain uncommitted pending the `LATENCY-1` result.*
 
+## GAME-0 — Urðr's game layer carried as frozen evidence, from the same tag (seat 23)
+
+**What landed.** `oracle/game/` holds the runtime closure of Urðr's seventeen discrete game-layer vertical slices —
+`gamegen`, `descent`, `move`, `entity`, `rngstream`, `descend`, `loot`, `combat`, `heirloom`, `actionlog`, `savegame`,
+`enact`, `rerun`, `statecanon`, `kinema`, `chorus`, `cue` — with each slice's frozen conformance corpus, its red-first
+suite and its brief, the `D24` game boundary and `D25` kinema boundary, the game-layer roadmap, and the two physics
+modules `kinema` needs (`field.py` for the frozen Q32.32 radix, `rational.py` beneath it): 73 files, verbatim from
+`urdr-oracle-1` at the same paths they have in Urðr. The closure was found by relocation, not by reading imports: the
+slices were copied out of Urðr and their mains and suites run until nothing was missing, which surfaced three members an
+import graph misses (`enact` reads the source of `combat` and `heirloom`; `test_cue` audits `chorus`).
+
+**Why this is charter-clean.** These are CORE and VIEW semantics earned in Urðr and frozen at the tag the oracle
+already cites. Carrying them is the charter's own route for CORE semantics; no new oracle is minted, no charter clause
+moves, and no Verðandi code computes, edits or depends on them.
+
+**Provenance a stranger can check.** `oracle/game/MANIFEST.json` lists every file's size, sha256 and **git blob id**
+— the id `git ls-tree -r urdr-oracle-1` names at that path in Urðr — so each file can be checked against Urðr without
+trusting this repository. Before import, all 73 staged files were hashed with `git hash-object` and matched their tag
+blobs exactly (no line-ending drift); `.gitattributes` now marks the folder `-text` so git never rewrites one.
+
+**Rows.** `game-frozen` — bytes, sha256 and git blob recomputed from disk equal the manifest for every file, the tree
+holds nothing unlisted, the manifest's digest is pinned in the gate source, the origin is the oracle's tag and commit,
+and every import is a closure module or one of nine pinned stdlib names. `game-suites` — Urðr's own 411 tests pass in
+place under `PYTHONHASHSEED=0` (conformance goldens included) and all seventeen slices' witnesses exit 0 and print
+their `does_not_show`. `game-plant` — one hex digit of `move`'s frozen `move-digest` golden, flipped in a scratch copy,
+is refused by the byte check and reddens `test_move`. `game-not-runtime` — no `kernel/`, `workshop/` or `shell/` code
+reaches into `oracle/game` (the charter's ORACLE clause), with planted references proving the scan sees one.
+
+**Grade.** ESTABLISHED (gate): the import is byte-exact against the tag's blobs, self-contained, and passes Urðr's own
+suites in place. DECLARED: the closure's completeness beyond what the relocation run exercised.
+
+**does_not_show.** Any Verðandi-native placement of a game slice (that would be a separate rung reproducing these
+corpora, as `KERNEL-0` reproduced the renderer). Any coupling between the game layer and the renderer, the workshop or
+the shell. Anything each slice's own `does_not_show` disclaims. That the rest of Urðr's `tools/physics` or its
+`tools/netcode` is imported — it is not; only `field` and `rational` are here.
+
+**Falsifier.** `game-frozen` reddens on any byte change, any added or missing file, a manifest edit that is not also a
+gate-source edit, another origin, or an import outside the closure; `game-suites` if any of Urðr's tests fails, the count
+is not 411, or a witness exits non-zero; `game-plant` if a flipped golden passes either check; `game-not-runtime` if
+runtime code reaches into the folder.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -1243,10 +1284,18 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   skybox is a VIEW law Urðr never certified, so it takes one of the two open-clause routes: earned in Urðr and
   re-frozen here as `urdr-oracle-2`, or a Verðandi-local VIEW reference pinned by rows here. Not built until a
   route is chosen and a semantics exists to render it.
-- **PHYSICS-0 (new CORE semantics).** Urðr is a renderer; there is no physics in the frozen oracle at all.
-  Physics is CORE, and CORE has ONE route only — earned in Urðr (or its successor) and re-frozen. The studio
-  authors no physics before a certified semantics renders it; anything else would be a second authority, which
-  the charter forbids.
+- **PHYSICS-0 (CORE semantics — corrected).** An earlier version of this clause said the frozen oracle holds no
+  physics. That was wrong, and the correction is checked against the tag. `urdr-oracle-1` carries Urðr's
+  `tools/physics`: exact mechanics over ℤ/ℚ (rungs 1–4: 1D and n-D dynamics, the frictionless n-contact LCP,
+  articulated joints), the bounded Q32.32 fixed-point path (rung 5), and scalar-field transport with its coupling to
+  bodies, all with frozen conformance corpora, and std-only Rust cross-placements of rungs 1–5. It also carries
+  `tools/netcode`: a lockstep spine, rollback, authored worlds in the tick, and regional authority. These are CORE
+  semantics already earned in Urðr and frozen at the tag this repository cites, so they can reach Verðandi by the
+  GAME-0 route (verbatim import, manifest, the tag's own suites run in place) with no re-freeze and no second
+  authority. None of it is imported yet; GAME-0 carries only the two modules `kinema` needs. What the tag does *not*
+  carry is still new CORE semantics with one route only, earned in Urðr and re-frozen: Urðr's own `contact` law
+  records that its 3D tick does not exist yet. The studio authors no physics that a certified semantics does not
+  already define.
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two
@@ -1307,4 +1356,5 @@ staircase and what remains:
 The boundary holds end to end: SESSION-WALK proves what is becoming, SHELL-PLAYBACK proves the window shows
 exactly that becoming, LATENCY-0/GAUNTLET measure how fast it is produced and shown — and every performance step
 survives the same pixel-level oracle, so speed is never traded for correctness and a failed experiment stays
-permanently useful evidence. Skybox and physics stay beyond the frozen oracle, gated behind the new-semantics route.
+permanently useful evidence. The skybox stays beyond the frozen oracle, gated behind the new-semantics route;
+physics is in the tag, and reaches the studio only as imported evidence by the GAME-0 route (PHYSICS-0 above).

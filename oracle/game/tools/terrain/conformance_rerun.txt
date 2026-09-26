@@ -1,0 +1,63 @@
+# URDRRRN1 conformance -- THE RECOVERED ACTION HISTORY MUST REPRODUCE THE INDEPENDENTLY STORED STATE.
+#
+# The thirteenth game-layer vertical slice and D24 §3's REPLAY rung (chain role "replay"), a CERTIFICATION
+# LAYER rather than a new simulation authority. It has its own module name because `replay` is occupied
+# (`tools/editor/replay.py`), exactly as the persist rung landed as `savegame` -- the rung is "replay", the
+# artifact is `rerun`. `actionlog` records the ordered history, `savegame` stores the earned components,
+# `enact` turns a token into a canonical transition; this rung binds them -- from a saved run it reconstructs
+# the ORIGIN, folds the recovered history through `enact`, and certifies the fold reproduces the state
+# `savegame` stored INDEPENDENTLY. The new law is exactly that agreement.
+#
+# THE ORIGIN RECONSTRUCTS FROM EARNED STATE ALONE (Slice B, closed by measurement, not by a new record):
+#   seed     stored directly
+#   depth0   = savegame.depth - (DESCEND count in the actionlog)   # depth moves ONLY via descend, +1
+#   level0   = gamegen.generate(seed, depth0)
+#   pos0     = move.spawn(level0)                                   # the authoritative starting position
+#   stream0  = rngstream.root(seed)
+# `savegame.depth` is the CURRENT depth, not the origin -- that was the whole of Slice B -- and it is
+# recovered by subtracting the history's DESCEND count, because depth is a pure function of that count
+# (MOVE/LOOT keep depth; DESCEND is the only mover, +1; no ascent). No origin field is added to `savegame`
+# and no hidden origin record is minted.
+#
+# THE ORIGIN IS RECONSTRUCTED AND THEN VERIFIED, NEVER TRUSTED. Because depth0 is derived from the stored
+# depth, the fold's final depth equals the stored depth BY CONSTRUCTION -- depth equality is TAUTOLOGICAL and
+# is NOT the ruler. The discriminating comparison is the canonical MUTABLE state, the entity POSITION and the
+# RNG STREAM, against the independently stored (pos, stream). Even the "runs originate at spawn" convention is
+# confirmed per record: a run that began elsewhere would not fold from spawn to the stored state.
+#
+# THE VERDICT: for a well-formed record whose fold completes, REPRODUCED (fold's (pos, stream) equal the
+# stored (pos, stream)) or DIVERGED (an envelope-valid record whose history does not reproduce its stored
+# state). DIVERGED is a RETURN, not a refusal (the move MOVED/BLOCKED pattern): `savegame` stores the log and
+# the state INDEPENDENTLY, so an inconsistent pair restores fine and catching it is EXACTLY the binding this
+# rung performs and `savegame` declines to.
+#
+# OWNERSHIP: the one refusal this rung OWNS is ORIGIN UNDERFLOW (the log's DESCEND count exceeds the stored
+# depth, so no origin depth >= 1 exists) -- typed RERUN-REFUSE. A malformed record is `savegame`'s
+# SAVEGAME-REFUSE; a malformed token is `enact`'s ENACT-REFUSE; a DESCEND that cannot dispatch mid-fold is
+# `descend`'s DESCEND-REFUSE (through `enact`). IT ADDS NO AUTHORITY: the fold IS `enact.apply` (read off the
+# AST), so it re-derives no transition and advances no RNG (the stream moves only through loot via enact, so a
+# replayed run's stream.n equals its LOOT count). SINGLE-PEER: cross-peer union is `lockstep.canon`'s, whose
+# (tick, peer, seq) key game actions do not carry (Slice A), so this module imports no `lockstep`.
+#
+# The `reconstruction` scene pins a corpus of runs by their reconstructed origin depth, verdict, and final
+# (pos, stream) identity; the `laws` scene pins the falsifier booleans (reproduce+origin recovery, deep
+# single-floor, corrupt/reorder/delete divergence, the inconsistent-pair binding, underflow refusal,
+# bogus-descend authority refusal, malformed record/token authority refusals, empty-log-to-origin, the
+# pos+stream discriminator with depth tautological, the loot-only RNG advance, the fold-adds-no-authority AST
+# check, and total typed refusal). Both scenes and the top digest are what the module EMITS and stay FROZEN.
+#
+# GRADE (honest, D5). MEASURED: over the corpus the origin reconstructs from earned state and the fold
+# reproduces the independently stored savegame bit-for-bit (multi-floor and deep single-floor); corrupt,
+# reorder and delete DIVERGE; an envelope-valid record whose log does not fold to its stored state DIVERGES;
+# the empty log replays to the origin snapshot. ESTABLISHED: origin underflow refuses RERUN-REFUSE; a bogus
+# DESCEND surfaces DESCEND-REFUSE, a malformed token ENACT-REFUSE, a malformed record SAVEGAME-REFUSE; the
+# fold is `enact.apply` and this module mints no transition or RNG authority (AST); the discriminator is
+# (pos, stream) while depth equality is structural. DECLARED: a run originates at move.spawn; the verdict is
+# REPRODUCED/DIVERGED; single-peer.
+#
+# does_not_show: that a savegame+log pair is the run a player ACTUALLY played (only that it is internally
+# consistent -- the log folds the reconstructed origin to the stored state); cross-peer order independence
+# (Slice A, unearned); the assembled canonical D_n (statecanon's); and anything about observers (KINEMA's).
+reconstruction 8ffb2cb8409e0483a1edbc05f9200b9ef8c37bff99cbc2e4aff216f2334eabc2
+laws a0fb17e9ea09da5cb36c5c8991510596f1aa6cfacabd2f8e15f4636a5b0b5a5a
+rerun 1cd17635924d3d51458c2b7dddef121ec2ffe27880f30096a67b7c020d30dd1b

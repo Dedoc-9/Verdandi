@@ -1,0 +1,57 @@
+# URDRLOO1 conformance -- THE FIRST CANONICAL GAMEPLAY CONSUMER OF THE RNG STREAM: SOURCE + STREAM -> DROP.
+#
+# The seventh game-layer vertical slice, and the FIRST REAL CONSUMER of `rngstream` (URDRRNG1). The stream
+# shipped with a verification-only action; `move` and `descend` were measured to leave it untouched. This
+# rung is where a real gameplay action finally CONSUMES randomness -- the first concrete answer to
+# `rngstream`'s open question "which real canonical actions advance the stream?": a loot event does.
+#
+# THE TRANSITION IS (source, R_n) -> (drop, R_{n+1}), NOT seed -> drop. Because the stream is stateful, the
+# SAME source at a different stream position must give a different drop; the seed enters only through R_0.
+#     S       = move.state_digest(level, pos)          # the source identity, in the ONE vocabulary
+#     i       = rngstream.peek(R_n, S, len(TABLE))     # a READ of R_n; peek does not advance
+#     drop    = TABLE[i]                               # a uniform selection from the frozen table
+#     R_{n+1} = rngstream.advance(R_n, b"loot:" + S)   # ONE advance CONSUMES the event
+# `peek` determines WHAT happens; `advance` records THAT the randomness was consumed. `loot` OWNS the
+# advance (it returns the successor stream), so the operation that claims to consume randomness is the one
+# that changes it; a later `actionlog` records this already-produced transition rather than performing the
+# advance, which is how replay/omission/double-consumption bugs are kept impossible to write.
+#
+# THE SOURCE IS (level, pos), the smallest canonically-identified thing available -- no chest/monster
+# object exists, and a room or tile has no standalone digest. `move.state_digest(level, pos)` already
+# encodes the level (seed, depth, layout) and the exact position, so no new source_id is minted; it is
+# folded into the advance (`b"loot:" + S`) so two events at DIFFERENT sources are distinguishable at the
+# transition layer. ANY canonical (level, pos) IS A SOURCE -- traversability is NOT required, so a wall is
+# a valid source; requiring `descent.traversable` would invent a gameplay rule this rung did not earn and
+# conflate source identity with gameplay eligibility. This module imports no `descent`.
+#
+# WHAT IS EARNED IS ONE UNIFORM SELECTION AND NOTHING MORE: no rarity, weighting, quantity or multiple
+# draws (the primitive supports them; the contract does not require them). The drop's canonical
+# representation is `URDRLOO1|item:<id>` -- the item alone; the source and stream are NOT in the drop
+# digest, because they belong to the TRANSITION, not the identity of the RESULT. NO INVENTORY (entity has
+# earned only a position), NO mutation of level/pos, NO second RNG: loot GENERATES a drop the way
+# `gamegen` generates a level, and its ONLY canonical state change is the stream advance.
+#
+# The `drops` scene pins, per corpus source (each seed at the stairs-down, stairs-up and a WALL cell), the
+# selected item, its drop digest and the successor stream digest; the `consume` scene pins a replay trace
+# over a fixed event sequence (the golden consumption vector); the `laws` scene pins the A-H falsifier
+# booleans. All three and the top digest are what the module EMITS and stay FROZEN, because a golden the
+# gate rewrites cannot detect drift. The TABLE is a DECLARED, FROZEN, UNIFORM canonical INPUT; a change to
+# it mints a new drop corpus.
+#
+# GRADE (honest, D5). MEASURED: over the corpus the selection and successor stream reproduce; the same
+# source at a different R_n gives a different drop; a table mutation at the SELECTED slot changes the drop
+# while a mutation elsewhere does not; the selected index equals an INDEPENDENT re-derivation from the SHA
+# construction, not via this module. ESTABLISHED: a second sequential loot consumes R_{n+1} not R_n; peek
+# does not advance; two distinct sources at one R_n do not collapse; the level and position are unchanged
+# and only the RNG advances; a replay from the same R_0 reconstructs the same drops and streams; malformed
+# level, position or stream refuse typed LOOT-REFUSE. DECLARED: that the table is uniform and frozen and a
+# drop is a single item selection -- rarity, weighting and quantity are later rungs'.
+#
+# does_not_show: that a drop enters inventory (no inventory field yet); that only traversable cells hold
+# loot (any canonical (level, pos) is a source); that loot is weighted or yields more than one item; and
+# nothing about `rngstream`'s own law, which stands on its own frozen vectors and does not depend on this
+# module.
+drops 370aeffad04ebc7706967f00efe74678d89e7e49de8f0e179ea9ab6f96262121
+consume da1fe0dfa695fdab751977c798c1df3060d26b9966db8de19d76293de2a88fad
+laws 42533c2f6fbd06aa4f59ef56abcbf67be475e2b3ae81cd6b8a1790766f8d60ac
+loot b0a93a966a8030a2b8fa7169f9b2ceec9cbb034264dfb6714c89ed873ba878e6

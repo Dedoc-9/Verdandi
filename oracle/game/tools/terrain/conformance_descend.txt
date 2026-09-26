@@ -1,0 +1,51 @@
+# URDRDEP1 conformance -- THE AUTHORITATIVE DEPTH TRANSITION: FROM THE DOWN-STAIRS TO THE NEXT FLOOR.
+#
+# The sixth game-layer vertical slice. `gamegen` makes one level from (seed, depth); `descent` witnesses
+# its stairs connect; `move` steps within a level; `entity` names it; `rngstream` holds the stream. None
+# CHANGES DEPTH. This is the single authoritative D_n -> D_{n+1} that advances it: an entity on the
+# down-stairs of the level at depth d arrives at the level at depth d+1, at that level's own stairs-up.
+#
+# IT CONSUMES AUTHORITY IT DOES NOT OWN. DEPTH is `gamegen`'s: the bound, the admission of d+1 and the
+# ceiling refusal are all `gamegen.check_params`, ASKED before anything is generated, and this module
+# names no DEPTH_MAX of its own (checked on its AST). THE SUCCESSOR LEVEL is `gamegen.generate(seed, d+1)`,
+# same seed, identity unchanged. THE STAIRS are `descent.endpoints` -- the unique down-stairs (precondition)
+# and the successor's unique up-stairs (arrival). THE ARRIVAL POSITION is the successor's authoritative
+# SPAWN, `descent.endpoints(level').up` == `move.spawn(level')`, traversable by construction and NOT
+# re-proved here. THE ONE NEW THING is the depth transition and its single precondition: descend only from
+# the down-stairs. `DESCEND-REFUSE` iff the supplied position is not the level's unique down endpoint.
+#
+# WHY THE OLD POSITION HAS NO AUTHORITY IN THE NEW LEVEL. The successor's layout is generated
+# INDEPENDENTLY from (seed, d+1), so the old down-stairs coordinate is not reliably traversable there
+# (measured: a wall in some successors). The only authoritative successor position is the new stairs-up.
+#
+# OWNERSHIP STAYS CRISP: malformed/invalid level -> descent/gamegen; invalid command -> move; blocked
+# movement -> move (never an arrival on the down-stairs); depth ceiling (d = DEPTH_MAX) -> gamegen
+# (GAMEGEN-REFUSE, inherited); valid arrival on the down-stairs -> descend; descend off the down-stairs
+# -> descend (DESCEND-REFUSE). RNG IS UNTOUCHED: the successor is fully determined by (seed, d+1), descend
+# never receives or returns a stream and imports no `rngstream`, read off its AST.
+#
+# The `transition` scene pins, per corpus member with depth < DEPTH_MAX, the successor depth, its stairs-up
+# and the successor's canonical state identity in the ONE existing (level, entity) vocabulary
+# (`move.state_digest`); the `boundary` scene pins the DEPTH_MAX-1 positive witness and, per DEPTH_MAX
+# member, the ceiling refusal ordering (refused GAMEGEN-REFUSE, input unchanged, no DEPTH_MAX literal); the
+# `laws` scene pins the spawn/reproduces/off-stairs/malformed/no-rng/refuse booleans. All three and the top
+# digest are what the module EMITS and stay FROZEN, because a golden the gate rewrites cannot detect drift.
+#
+# GRADE (honest, D5). MEASURED: over the corpus, a descent from the down-stairs produces
+# `gamegen.generate(seed, d+1)` with the entity at that level's stairs-up, the successor identity exactly
+# the existing canonical vocabulary for (level', spawn); at DEPTH_MAX-1 the successor is DEPTH_MAX, matching
+# `gamegen.generate(seed, DEPTH_MAX)`. ESTABLISHED: the arrival equals `move.spawn(level')`; the ceiling
+# refuses through `gamegen`'s authority WITHOUT generating a successor or mutating the input, and this
+# module names no DEPTH_MAX; off the down-stairs refuses DESCEND-REFUSE while a malformed level surfaces
+# `descent`'s DESCENT-REFUSE; this module imports no `rngstream`. DECLARED: that a descent begins at the
+# successor's stairs-up -- a fresh floor from the top, the FATE model -- and that there is no ascent in this
+# rung.
+#
+# does_not_show: whether the successor level is worth playing or reachable (gamegen's/descent's claims,
+# unchanged); that the entity carries anything but position across the transition; that the RNG advances on
+# a descent (it does not, and whether any real action ever advances it is `rngstream`'s and `loot`'s
+# question); and any relation between two floors beyond seed and depth+1.
+transition 8c58ace04741efdb528b8938f4a4309f355776efe1ff39b8a6c77125e8010d99
+boundary 9bc4014c962a4ec9a31a7f16887dbae5a67feb7a7dd2b77290b2de28de213df5
+laws 36f0a2d7e4105e286547dd76995c08b2367e4eb6479bcb52bc2c3b258049286f
+descend d62a1ebe9d638a9417fd1c7f585ef35b15c751531cb2e08d219eb040fc6682ab

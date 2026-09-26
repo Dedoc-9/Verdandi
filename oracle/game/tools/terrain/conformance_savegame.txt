@@ -1,0 +1,62 @@
+# URDRSAV1 conformance -- THE DURABLE SERIALIZATION OF THE EARNED CANONICAL COMPONENTS: PERSIST STORES STATE.
+#
+# The eleventh game-layer vertical slice, D24 §3's PERSISTENCE rung (chain role "persist"). It has its own
+# module name and glyph on purpose: persist.py (URDRLAT5) is the MMO Stage-H rollback-window checkpoint, its
+# public contract bound to storecost/horizon and the N-actor glide model, so it is NOT reusable as a
+# game-state API. What IS reused is the tree's UNIVERSAL content-addressing vocabulary -- SHA-256(MAGIC |
+# content) = identity, a trailing-digest verify, reconstruct-or-refuse -- a discipline ~25 modules share, not
+# persist.py's property. This module imports no persist.py and inherits none of the URDRLAT5 model.
+#
+# PERSIST STORES CANONICAL STATE; REPLAY DERIVES IT. "serialize/restore/re-bind bit-identically" must not
+# become "replay the actions": actionlog records OPAQUE tokens, including actions with different RNG-consumption
+# behaviour (a move command does not advance the stream), so folding the log does NOT reproduce the run's RNG
+# state in general. Every canonical component is serialized INDEPENDENTLY and reconstructed DIRECTLY, never by
+# replaying the log -- re-deriving state from the action history is replay's rung (10), across this boundary.
+#
+# THE SNAPSHOT (each component independently recoverable): seed; depth (with seed, REGENERATES the level via
+# gamegen.generate -- no cells stored); pos (RECONSTRUCTS the entity via entity.at); (n, R_n) (RECONSTRUCTS
+# via rngstream.Stream -- stored DIRECTLY); actionlog entries (RECONSTRUCTS via actionlog.from_actions). THIS
+# IS NOT THE ASSEMBLED CANONICAL STATE: it is a durable serialization of currently-earned components, not the
+# canonical D_n -- assembling one identity is statecanon's rung (11), later.
+#
+# THE RECORD (length-framed, big-endian -- no ambiguous concatenation of native encodings):
+#   record = MAGIC(8) | seed(8) | depth(8) | pos_x(8, signed) | pos_y(8, signed) | n(8) | R_n(32)
+#          | log_count(4) | (len(4) | token)*log_count
+#          | level_digest(32) | entity_digest(32) | stream_digest(32) | actionlog_digest(32)   # check-block
+#          | SHA-256(preceding)(32)
+# The trailing digest is integrity check AND content address (its hex is the filename a durable store WOULD
+# use); the check-block binds each recoverable input to its component's OWN identity authority.
+#
+# TWO-LAYER INTEGRITY. restore verifies the trailing digest first (every single-byte flip and every truncation
+# refuses typed SAVEGAME-REFUSE before anything is reconstructed), then RECONSTRUCTS usable typed state and
+# requires each reconstructed component's digest to EQUAL the check-block, so a validly RE-SEALED record whose
+# seed/pos/stream/token was altered to a different component still refuses. Restoration produces objects, not
+# mere digest equality.
+#
+# A PURE BYTES LAW. serialize/restore are deterministic functions of bytes; there is NO filesystem here. Disk
+# I/O (digest-named files) is a DECLARED application discipline, not part of the certification law -- exactly
+# as persist.py treats its store medium -- because nondeterministic I/O has no place in a byte-identical gate.
+#
+# The `snapshot` scene pins a corpus of snapshots (gamegen seeds/depths, arbitrary positions -- savegame does
+# not police traversability, that is move's -- and INDEPENDENT logs and streams) each with its record length
+# and content address; the `laws` scene pins the falsifier booleans: round-trip, typed re-bind, persist-is-not-
+# replay, level-regenerated-not-stored, unambiguous length framing, exhaustive byte-flip and truncation
+# refusal, resealed-wrong-component refusal, total typed refusal, imports-no-persist-and-one-identity, and
+# not-the-assembled-canonical-state. Both scenes and the top digest are what the module EMITS and stay FROZEN.
+#
+# GRADE (honest, D5). MEASURED: the record round-trips bit-for-bit, restore yields usable typed state whose
+# component digests match, the level is regenerated (the record carries no cells; its size is independent of
+# level dimensions), and length framing round-trips even a token that mimics a component encoding. ESTABLISHED:
+# persist is not replay (the stream is restored directly, and a log that folds to a different stream still
+# restores the stored stream); every byte flip and truncation refuses; a re-sealed wrong-component refuses
+# per-component; malformed inputs refuse typed SAVEGAME-REFUSE; the module imports no persist.py and mints no
+# new identity mechanism. DECLARED: the snapshot is the earned components and NOT the assembled canonical D_n,
+# and disk I/O, statecanon's assembled identity, replay-based reconstruction, multi-entity rosters and
+# manifests/windows are later rungs'.
+#
+# does_not_show: the assembled canonical-state identity (statecanon's); that a restored run is winnable;
+# wall-clock or crash-atomicity of any real write; and nothing about the MMO rollback window, whose persist.py
+# this module does not touch.
+snapshot 08d2331566686e28f5f93a3a04d4eaec5280315293b7dde86a215336e2dbf31f
+laws e1d6ab0411e4d931f0255c13471fcd0750b205404ab5b99c5f76e3a48c0ba87c
+savegame 46e5ed948240b2814e4cca0403f54bbb63c3fbb3cb442d84cbadb048f2129572

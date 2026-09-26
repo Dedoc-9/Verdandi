@@ -1,0 +1,553 @@
+{
+ "name": "urdr-game-layer-1",
+ "note": "The game layer's runtime closure, carried verbatim from Dedoc-9/Urdr at the tag urdr-oracle-1: the seventeen discrete CORE/VIEW vertical slices (gamegen through cue), their frozen conformance corpora, their red-first suites, their briefs, the D24 game boundary and D25 kinema boundary, and the two exact-arithmetic physics modules kinema reads its radix from. Each file's git_blob is the blob `git ls-tree -r urdr-oracle-1` names at the same path in Urdr; nothing here is computed in Verdandi and nothing in Verdandi's kernel, workshop or shell imports it.",
+ "origin": {
+  "repo": "Dedoc-9/Urdr",
+  "tag": "urdr-oracle-1",
+  "commit": "4c8c2451d942ff320a11501b59fbbf2737ec42ce",
+  "layout": "each path is the file's path in Urdr at the tag, unchanged"
+ },
+ "closure": {
+  "modules": [
+   "gamegen",
+   "descent",
+   "move",
+   "entity",
+   "rngstream",
+   "descend",
+   "loot",
+   "combat",
+   "heirloom",
+   "actionlog",
+   "savegame",
+   "enact",
+   "rerun",
+   "statecanon",
+   "kinema",
+   "chorus",
+   "cue"
+  ],
+  "physics": [
+   "field",
+   "rational"
+  ],
+  "why_physics": "kinema imports field.ONE (the frozen Q32.32 radix); field imports rational",
+  "why_combat_heirloom": "enact reads combat.py and heirloom.py source as its _DERIVATIONS register",
+  "why_chorus": "test_cue's one-way audit lists chorus among the observers it checks",
+  "suites": "python -m unittest discover -s tests -p test_*.py, run from this folder",
+  "tests": 411
+ },
+ "files": [
+  {
+   "path": "docs/actionlog_brief.md",
+   "role": "brief",
+   "bytes": 6172,
+   "sha256": "2c620c665d20b085045da2ed351637a320140cd49b44c2912ed2cc377e2b478d",
+   "git_blob": "ec9e047fde3c2811ac8c02ca3a2fb25db4414d3b"
+  },
+  {
+   "path": "docs/chorus_brief.md",
+   "role": "brief",
+   "bytes": 6238,
+   "sha256": "69d99237af8d8df74ce34d2e97481c09c2e2ec8772915dad7834c49bca5ae1e3",
+   "git_blob": "331245cf88b2a0d2d73649a985919019ecfce369"
+  },
+  {
+   "path": "docs/combat_brief.md",
+   "role": "brief",
+   "bytes": 6764,
+   "sha256": "41fe953805119e65ce6be891fcf11e957b4e2360dc7e75a096c41743a16b9b59",
+   "git_blob": "6c5c6d0abe3982b4663268673fbaa271da690aab"
+  },
+  {
+   "path": "docs/cue_brief.md",
+   "role": "brief",
+   "bytes": 9704,
+   "sha256": "f6d27ddcc7f834037c5c39222da8ebb8191b2aeedc81f3377518bbc7069133a4",
+   "git_blob": "1dd26de2b1a8a4994662201212eb877f6cf14ad2"
+  },
+  {
+   "path": "docs/descend_brief.md",
+   "role": "brief",
+   "bytes": 6625,
+   "sha256": "29257dda198ce896968bac13ed544ecec39b61c5a44bd42c10b81c03d03fe19c",
+   "git_blob": "a781a5903c61d67b5af7b5bd6d8813bb6b6eff6c"
+  },
+  {
+   "path": "docs/descent_brief.md",
+   "role": "brief",
+   "bytes": 5754,
+   "sha256": "af6441ed15ea3bf2d1fe51833daa71cf59971ead73593dd2cb087304e1b6b1f8",
+   "git_blob": "b099a141d96d92eca2e7a3c6fe3407245c19fb6e"
+  },
+  {
+   "path": "docs/enact_brief.md",
+   "role": "brief",
+   "bytes": 7833,
+   "sha256": "a6cc5a340cb2f54f7c3904e5d42d261ffa49d09891dfd30f51dd03084aa86003",
+   "git_blob": "58507757ddb022ff7d1f981ffc97ed2e381622c2"
+  },
+  {
+   "path": "docs/entity_brief.md",
+   "role": "brief",
+   "bytes": 7512,
+   "sha256": "81281db25f806e9b7bd55ab340c478b296093aa9c37ea90d55e03c1264afae2c",
+   "git_blob": "29fa99a71cd10de60a4e17155aa59fa37fde6c5a"
+  },
+  {
+   "path": "docs/game-layer-roadmap.md",
+   "role": "roadmap",
+   "bytes": 34918,
+   "sha256": "a3007fc99aa0d4e4ab6ec0c87a090f4bbf8947e7b4362d72497ab8bea9124578",
+   "git_blob": "7cd823412838a3c097c0ec9665d84eab3ca39ebf"
+  },
+  {
+   "path": "docs/gamegen_brief.md",
+   "role": "brief",
+   "bytes": 10098,
+   "sha256": "9ca30c2bb4dbad34271e703e2d38d0ef31bb5b45e4b02b37346e76d911ea1c36",
+   "git_blob": "165c58e3810776c21ef6adcb62440f699bf34ff0"
+  },
+  {
+   "path": "docs/heirloom_brief.md",
+   "role": "brief",
+   "bytes": 7836,
+   "sha256": "22e65a0a94bdecd33939d3c371e497d2492e793b8c6efe97157d327355bc949d",
+   "git_blob": "e771012076fad424c693b047ff2ccea070ba0290"
+  },
+  {
+   "path": "docs/kinema_brief.md",
+   "role": "brief",
+   "bytes": 7053,
+   "sha256": "910001e8e786f08dd0253c2604e8735f06a0d648c5d621853a6fa1206b2edb1c",
+   "git_blob": "cb37759be969aa4defab192a447d9cce75c7ae65"
+  },
+  {
+   "path": "docs/loot_brief.md",
+   "role": "brief",
+   "bytes": 6595,
+   "sha256": "61b9813e09a2d29cf72a942cc2a7199271e14186b089b773d9074878cccafae0",
+   "git_blob": "02d9a62e9a01b6e21407241491aee2724d9ba1d3"
+  },
+  {
+   "path": "docs/move_brief.md",
+   "role": "brief",
+   "bytes": 6453,
+   "sha256": "64348e3ca1688fc9832a1e40a220ecbe343781977bd87033737229152c35ed92",
+   "git_blob": "06ae40294369c60605d1bec2dd84c2818b1f7c25"
+  },
+  {
+   "path": "docs/rerun_brief.md",
+   "role": "brief",
+   "bytes": 5932,
+   "sha256": "0b9d531bfa0dc9c14781bb5332cdf8da1d7f4f070df5af1de9db1bb7fa691dbb",
+   "git_blob": "a6f3e95da9e2643f3c359a625737c77f3d5c8479"
+  },
+  {
+   "path": "docs/rngstream_brief.md",
+   "role": "brief",
+   "bytes": 6502,
+   "sha256": "a4051824928cc808d27a40ff2dc282fb45cef23195b0dbdbef7de2fc1bc5755d",
+   "git_blob": "b9e385e937c6445acf792ba6a92779b6e4f034e9"
+  },
+  {
+   "path": "docs/savegame_brief.md",
+   "role": "brief",
+   "bytes": 6709,
+   "sha256": "5f776c926062d0f608a8f0718971d1570e564e4358efad2e7e42f0e97173d31f",
+   "git_blob": "b9ae7fd58407e0184e9c277b43423f8ce74c903d"
+  },
+  {
+   "path": "docs/statecanon_brief.md",
+   "role": "brief",
+   "bytes": 6206,
+   "sha256": "005ddfb966e53f4caed20b96c91a99cd2e4cf95cf3f25e0d6a3f7ab598baa8b6",
+   "git_blob": "a4745f75b9c74b280175c049621dba042ade9a26"
+  },
+  {
+   "path": "spec/D24-game-boundary.md",
+   "role": "spec",
+   "bytes": 45555,
+   "sha256": "ff542b15fc19de530bb739be3bb4bd35c138bf2b6d0e46b1e96b57c40f7d2800",
+   "git_blob": "ec63dc3fb3767dd90a869263824e5d444601a1e3"
+  },
+  {
+   "path": "spec/D25-kinema-boundary.md",
+   "role": "spec",
+   "bytes": 24170,
+   "sha256": "c73037aadd3fe7bf0306f68049a375eb398b0c284c17a2c9c26493fb63af1ff5",
+   "git_blob": "53a3c11c95129fde87795d49a7cc3a0b15b3e86a"
+  },
+  {
+   "path": "tests/test_actionlog.py",
+   "role": "suite",
+   "bytes": 9625,
+   "sha256": "1512a1fabf8fdc9c180c3d86f8eff7010e6c918a7d71f6ec352c37112b1f97d0",
+   "git_blob": "653bbf16aa4421f925f0470fa5650d271d8adc98"
+  },
+  {
+   "path": "tests/test_chorus.py",
+   "role": "suite",
+   "bytes": 9929,
+   "sha256": "61501f80a0be970e92ec5c718d721e035ef5e2e3caad0b817bfda78c178c961c",
+   "git_blob": "4f97208d1bf997823941ce6c6484532daadd3ac9"
+  },
+  {
+   "path": "tests/test_combat.py",
+   "role": "suite",
+   "bytes": 9554,
+   "sha256": "d84586f64e09abec56a8ab68572491c47304467c67b9b2602d60ee71362aaba7",
+   "git_blob": "297a1028b7aa9d0556997138780284d0b489b230"
+  },
+  {
+   "path": "tests/test_cue.py",
+   "role": "suite",
+   "bytes": 12487,
+   "sha256": "7b2a427a1579ecbf4954cb7837497f601a57c54ba7319b590194fe5576209534",
+   "git_blob": "ef5e5983842cfc968ceebdbb31949147420a2e8a"
+  },
+  {
+   "path": "tests/test_descend.py",
+   "role": "suite",
+   "bytes": 10098,
+   "sha256": "6e17ce963553e63368659a8dad490fdfa0fcdbe2eee1ad9b36c2d579366e65d2",
+   "git_blob": "b22212fb10ca62817d01780b6d9acc9994ea78d0"
+  },
+  {
+   "path": "tests/test_descent.py",
+   "role": "suite",
+   "bytes": 8116,
+   "sha256": "f371323527b7abd950804f36176c128937b5e53b7a119dabf37bc58c70d5027f",
+   "git_blob": "1f7a2f90ef848f9338944a6f492654ba5eb2084d"
+  },
+  {
+   "path": "tests/test_enact.py",
+   "role": "suite",
+   "bytes": 10790,
+   "sha256": "6bd76199e8f1831f3b6dda2888bae6b925240da67240ac8fb719667a7e748e8a",
+   "git_blob": "cfbc05b276c5625fce9d55ca658cc689bfb2e397"
+  },
+  {
+   "path": "tests/test_entity.py",
+   "role": "suite",
+   "bytes": 11432,
+   "sha256": "c05ec5cbade4e248879a2a5eaa999f48c49823f82c65e4f56cfe2f6e30dee07f",
+   "git_blob": "d59c4140db367ebdf59a64469ab06c9fe3201f06"
+  },
+  {
+   "path": "tests/test_gamegen.py",
+   "role": "suite",
+   "bytes": 10765,
+   "sha256": "17ce22d01dbb6351be886e72bec01d03f6cf200b64e1579798a5c4d03d09b4e2",
+   "git_blob": "2aa678ff0ed145b3be83c01be045d090d6b2a72e"
+  },
+  {
+   "path": "tests/test_heirloom.py",
+   "role": "suite",
+   "bytes": 8636,
+   "sha256": "29300f2e9722cad57f5a2ed90edc62b3d3e13bbb203623f82740bf59124bcfdd",
+   "git_blob": "add15972370cc9765ab8fa6736a5ce69cdf568b5"
+  },
+  {
+   "path": "tests/test_kinema.py",
+   "role": "suite",
+   "bytes": 11236,
+   "sha256": "286508a25d61d06447885a24c640a6ec6fff1d58f6ba8ce78db84664a88bb01e",
+   "git_blob": "f9c71117ac65cf597ee3219b114356b49506e36f"
+  },
+  {
+   "path": "tests/test_loot.py",
+   "role": "suite",
+   "bytes": 10760,
+   "sha256": "2034320b222bb4a82aee3d4f34d306fc588912d65d3e4e55adf47b22dab30d1d",
+   "git_blob": "6b02bace46ecc96e648a5e5986b14407cb390119"
+  },
+  {
+   "path": "tests/test_move.py",
+   "role": "suite",
+   "bytes": 9489,
+   "sha256": "a9cf2ce2b11c9b3950d3b58e08309f522a899b0f794bd3bce7de508b08f17564",
+   "git_blob": "9bd3113728ebd9134800b4b6f39ec7beb51941ad"
+  },
+  {
+   "path": "tests/test_rerun.py",
+   "role": "suite",
+   "bytes": 9402,
+   "sha256": "264cb36141187e466f2b1b3c4d1ce9548116fa7a7d20b05b9b46f5267a9ccc7f",
+   "git_blob": "100f472d6dfbeb78f6a956fc7822fb6e373fc000"
+  },
+  {
+   "path": "tests/test_rngstream.py",
+   "role": "suite",
+   "bytes": 12379,
+   "sha256": "ca4340d70c40ed5b370a880553be01809f4ca8295d8b10c5d16054143fd44026",
+   "git_blob": "764fb4577921dba71a39b0488b1981d409ade1b7"
+  },
+  {
+   "path": "tests/test_savegame.py",
+   "role": "suite",
+   "bytes": 9626,
+   "sha256": "c02af6df62d64b3ad2d909bdc66a69154a7c2867c2bcd005f83eb196ab027a4e",
+   "git_blob": "686e326268613a3d77b51aebc56ccf4b3065b17a"
+  },
+  {
+   "path": "tests/test_statecanon.py",
+   "role": "suite",
+   "bytes": 9096,
+   "sha256": "12ef8d7dfe29703faf75a20fec4a027835f73d645db5d33c2b44b02faeed2e7e",
+   "git_blob": "a200fecca3c31abfbe1d8ee56335ee11c51f2798"
+  },
+  {
+   "path": "tools/physics/field.py",
+   "role": "module",
+   "bytes": 13662,
+   "sha256": "376e7d7a63407d0cf7001432265d8b1154ef9f4610c16326fe90ef77dd55437b",
+   "git_blob": "d2a0c39ab30116c6beb8ff0e7913cacfeaea3ff1"
+  },
+  {
+   "path": "tools/physics/rational.py",
+   "role": "module",
+   "bytes": 1958,
+   "sha256": "a8b3d83f43b7a712d9719b9f806448a32a539c2df2c009c6e12e5bc2cc706605",
+   "git_blob": "9209aef60cda79939b225be88d304197323e6cf3"
+  },
+  {
+   "path": "tools/terrain/actionlog.py",
+   "role": "module",
+   "bytes": 19512,
+   "sha256": "5a6a40e41bfe8e8c4430609a6a94fe1774565df6079bf87f2e8dae4c3b29b2a6",
+   "git_blob": "2a607b4fd6e0136cec4801e91c1c27efd14350d2"
+  },
+  {
+   "path": "tools/terrain/chorus.py",
+   "role": "module",
+   "bytes": 23851,
+   "sha256": "412254b427980728232cbdf9710b580535173b3ce4b86df85fc663c02aa788f0",
+   "git_blob": "81c14a26140de932f13f72390a6e8e771f2668fe"
+  },
+  {
+   "path": "tools/terrain/combat.py",
+   "role": "module",
+   "bytes": 17370,
+   "sha256": "9e9a75c21403b317eaa4fb0b35c926bddfaead7df4a79894b32ad62ba8ca184c",
+   "git_blob": "c3d211872ffb5fdcb4733a78caf6c0edce6bcc5a"
+  },
+  {
+   "path": "tools/terrain/conformance_actionlog.txt",
+   "role": "corpus",
+   "bytes": 4817,
+   "sha256": "5c8157a1fce4d858c824acebde8fe6cde74cf58323faa1982df449d1ea16a36a",
+   "git_blob": "da85785c566efdc0b7fa559384d1cb732fc4df6f"
+  },
+  {
+   "path": "tools/terrain/conformance_chorus.txt",
+   "role": "corpus",
+   "bytes": 4833,
+   "sha256": "7c1aa813945e4b1f17b1da52c851e553b5762469194879684d57ce9d8296108c",
+   "git_blob": "01e6e6a4cf89def08dfc70c702c43ad72f512c7e"
+  },
+  {
+   "path": "tools/terrain/conformance_combat.txt",
+   "role": "corpus",
+   "bytes": 4974,
+   "sha256": "927372d15f1b6da8a43024d0fd8a057f1350520761873720a69c28e9557df962",
+   "git_blob": "cca67d88d89e79a324078344154e989b4cbdd4c6"
+  },
+  {
+   "path": "tools/terrain/conformance_cue.txt",
+   "role": "corpus",
+   "bytes": 5584,
+   "sha256": "599552408254f4fbe1c05f291a8eb3bd2f56b03c599033073178d0784dbfc901",
+   "git_blob": "0f3d4245fcd332c591891e94c758004790c91e11"
+  },
+  {
+   "path": "tools/terrain/conformance_descend.txt",
+   "role": "corpus",
+   "bytes": 4311,
+   "sha256": "c3cdbad0d0f92d0b1d16c27a312c7bfe4d71d279055c1fd4f3859d89ea761c5e",
+   "git_blob": "8ef88f66415bd2724f663299e7eef3aba75825fd"
+  },
+  {
+   "path": "tools/terrain/conformance_descent.txt",
+   "role": "corpus",
+   "bytes": 4469,
+   "sha256": "89666f4e6d2be72c84e8b5395c1c37f4fe8608fcc84e802dbd8a7aee0a98d03d",
+   "git_blob": "039a00375129f9a72338c4894c7d24b8d5930ce5"
+  },
+  {
+   "path": "tools/terrain/conformance_enact.txt",
+   "role": "corpus",
+   "bytes": 5338,
+   "sha256": "5a9d0c18d0c354db233f8db36046a7e356708dfdca63709912bb5c2e9d9f433d",
+   "git_blob": "40ce05db8cf7bafe94848d9eb43ba51e52af13fa"
+  },
+  {
+   "path": "tools/terrain/conformance_entity.txt",
+   "role": "corpus",
+   "bytes": 3514,
+   "sha256": "d100b0b6b33cc469238583c9394e788dfc8ad18ba00abef0fe82b162f3c14c4d",
+   "git_blob": "5f938076be2c9b76f46e0a936ab529b1e6ff4aa7"
+  },
+  {
+   "path": "tools/terrain/conformance_gamegen.txt",
+   "role": "corpus",
+   "bytes": 4023,
+   "sha256": "0f947270cbc1bcc743b404783c722d3355aaca227c6a2b2272387e366ed36886",
+   "git_blob": "9116943a4e13c78ba09b6eb0335c13c56f21a190"
+  },
+  {
+   "path": "tools/terrain/conformance_heirloom.txt",
+   "role": "corpus",
+   "bytes": 5423,
+   "sha256": "7b5c1a7c54bc99429768326f22e9d154903a6a47553b83fb07a1f5857b8ad58a",
+   "git_blob": "8899cae447cc9aaba5fdbf3782dfab14cef52340"
+  },
+  {
+   "path": "tools/terrain/conformance_kinema.txt",
+   "role": "corpus",
+   "bytes": 5132,
+   "sha256": "c96a495d5e2333bd7643cd5d7b6af2ff7a3b5313d7948faa61f988acf889a071",
+   "git_blob": "6195db98c6eb09af188add928ac12dd07de525d2"
+  },
+  {
+   "path": "tools/terrain/conformance_loot.txt",
+   "role": "corpus",
+   "bytes": 4846,
+   "sha256": "639491dc1a6c63a9b25bacbb50ea0317be141c56e41578501d6d36b081731c57",
+   "git_blob": "33ab08daf5e3b7e8debedb7ff81875b8c7820b9d"
+  },
+  {
+   "path": "tools/terrain/conformance_move.txt",
+   "role": "corpus",
+   "bytes": 4346,
+   "sha256": "d0cb4bdc2c10fb7fdbd7805ff287597fe2ed66565ffa461d041cfb9887d451ad",
+   "git_blob": "cf706caae3633618f6869e7bfdff399461c53434"
+  },
+  {
+   "path": "tools/terrain/conformance_rerun.txt",
+   "role": "corpus",
+   "bytes": 5317,
+   "sha256": "b0656b0f207b32a3d9db30aaca3ff070f71e571ac12e396d3c69be9a78d9c409",
+   "git_blob": "994c5879e626544025cd0310bd33e570d464a287"
+  },
+  {
+   "path": "tools/terrain/conformance_rngstream.txt",
+   "role": "corpus",
+   "bytes": 4120,
+   "sha256": "29845611f2cc9c7b47a2efc76fbffbd024a448e3364c7134850edc0921c3634e",
+   "git_blob": "ca7172703e23adcf11ade328cf69fdded61a7158"
+  },
+  {
+   "path": "tools/terrain/conformance_savegame.txt",
+   "role": "corpus",
+   "bytes": 5237,
+   "sha256": "8c0c3a8744c99af458e545ac499eeec458cd34bca8b8b6e078ba0fa5401392da",
+   "git_blob": "7a1aa782cf6c2b6b86d9bab74bd73bdd52327d2a"
+  },
+  {
+   "path": "tools/terrain/conformance_statecanon.txt",
+   "role": "corpus",
+   "bytes": 5039,
+   "sha256": "ef13ea5a14ef355af04f7e4a8281802bebcf0747662236a21a47c2e80fd77216",
+   "git_blob": "ee73f9b52254de47c4bd82754846daf0235b0b77"
+  },
+  {
+   "path": "tools/terrain/cue.py",
+   "role": "module",
+   "bytes": 25118,
+   "sha256": "1f599154b4126039a5b3d56f42dc31a93f86091615c49b96963a7c460f300ef4",
+   "git_blob": "9740dd4e83aa6fdad6633b564448930717bb5c7a"
+  },
+  {
+   "path": "tools/terrain/descend.py",
+   "role": "module",
+   "bytes": 17686,
+   "sha256": "396a6585f7bba282a086afec205f8b11434b90c583d1c04b97bb97fdec12a741",
+   "git_blob": "738941bf722b80b731ffc03934bfc27ee78837af"
+  },
+  {
+   "path": "tools/terrain/descent.py",
+   "role": "module",
+   "bytes": 17427,
+   "sha256": "be058e6c2e3f7a99bce33122924ef7d43e16c73a67ee912e81a201619f1715dd",
+   "git_blob": "76f28000cdbd3643063df35d0b3f9e24319f8a04"
+  },
+  {
+   "path": "tools/terrain/enact.py",
+   "role": "module",
+   "bytes": 28493,
+   "sha256": "86e979394dd914e5446e31ecd774224b0aef8c49d7f640cbbef9af6ae4e6112f",
+   "git_blob": "509eb52d560e1f9b3e4d1b505ed9f6f5a699faa9"
+  },
+  {
+   "path": "tools/terrain/entity.py",
+   "role": "module",
+   "bytes": 13383,
+   "sha256": "045adbf999896ff793d8e7add095450e3dc3a00a2f8717ba4d1162510f444d66",
+   "git_blob": "76ff326dcc0b21a5edd728d0648088b80fc33722"
+  },
+  {
+   "path": "tools/terrain/gamegen.py",
+   "role": "module",
+   "bytes": 24101,
+   "sha256": "a2b2c26d46092296cb057c2538d70121a6da9302e15308a926c2d0d3e8a683dc",
+   "git_blob": "607ae391ab10cc4ae72b157cd7a741fe2f014bef"
+  },
+  {
+   "path": "tools/terrain/heirloom.py",
+   "role": "module",
+   "bytes": 18522,
+   "sha256": "a50b543244a878c909b8f9e2514eb72d33a6d3132c7fddd81aed230d6faf27a9",
+   "git_blob": "cfa3c65fc07d33566e5137324e9824305c08883d"
+  },
+  {
+   "path": "tools/terrain/kinema.py",
+   "role": "module",
+   "bytes": 24631,
+   "sha256": "71fec6cd8cd882da2091a4b3a086c2036d22db4ca40bb7e179ddec5e2e6a7b76",
+   "git_blob": "470d9588ef6dccac49b3490ec306c9a13e813961"
+  },
+  {
+   "path": "tools/terrain/loot.py",
+   "role": "module",
+   "bytes": 22390,
+   "sha256": "ffa9ad31ab1ef298d7d88c7ee034bfe15d9e81cef3a3c34c4a3ce9be232611ae",
+   "git_blob": "a977f8d3691221d6a827948e62a160a8ce764234"
+  },
+  {
+   "path": "tools/terrain/move.py",
+   "role": "module",
+   "bytes": 18164,
+   "sha256": "192cd3c044a574cd08219563137edb6e367e9524841d7526de51018e4a549dfa",
+   "git_blob": "5293f253dd5327727cab13cec2b804b350b5753c"
+  },
+  {
+   "path": "tools/terrain/rerun.py",
+   "role": "module",
+   "bytes": 28349,
+   "sha256": "9505f01fd000c5ce1db74746f258a7e1f14d026ed9109953b8c3559f647b4154",
+   "git_blob": "be4ef04ced248927479111744ba76dbd86017148"
+  },
+  {
+   "path": "tools/terrain/rngstream.py",
+   "role": "module",
+   "bytes": 21678,
+   "sha256": "9166912ea338df43eb008e83d8378a85ead76907798c9dffe88e0bd44e193e53",
+   "git_blob": "ef50180ec3d01165d650eff0461a3be5a75f2722"
+  },
+  {
+   "path": "tools/terrain/savegame.py",
+   "role": "module",
+   "bytes": 25478,
+   "sha256": "2558dc23fbb4c420605d0a7d552e61a537a76a553b3ca81507ec11225aa21b9a",
+   "git_blob": "17aac80527c78eac3486358288fced356bc700f7"
+  },
+  {
+   "path": "tools/terrain/statecanon.py",
+   "role": "module",
+   "bytes": 20281,
+   "sha256": "5689c35a381fcb7c561ec3d8988cab3b953e8e819d4caddc477cddbbe8baa98d",
+   "git_blob": "db4119f2870e215b75e3a09d4c0801da99292f6c"
+  }
+ ]
+}

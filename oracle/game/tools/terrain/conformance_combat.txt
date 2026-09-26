@@ -1,0 +1,58 @@
+# URDRCMB1 conformance -- THE CERTIFIED DAMAGE-RESOLUTION LAW: A DERIVED RESULT, NOT PERSISTENT STATE.
+#
+# The eighth game-layer vertical slice, and the first that is a CERTIFIED ARITHMETIC LAW rather than a state
+# transition. D24 §3: "combat arithmetic -- damage, mitigation and hit resolution obey the declared formula
+# exactly; the formula is data, the resolution is checked against it, and a planted off-by-one reddens." The
+# gateable sentence is "damage calculation is deterministic and obeys the declared formula"; "this combat
+# system is balanced" is NOT gateable (D24 §4), and this module is the gateable sentence and nothing more.
+#
+# A DERIVED RESULT, NOT A MUTATED ENTITY -- the transition fork settled by measurement. The shape
+# (attacker, defender) -> (attacker', defender') needs HEALTH on the entity across actions, and the
+# measurement refused it: entity.FIELDS == ("pos",), and the chain
+# Entity.FIELDS -> Entity(...) -> entity.at(pos) -> entity.digest_at(pos) -> move.state_bytes means adding
+# an `hp` field would BREAK move's position-only construction, not merely extend it. Persistent health is a
+# NEW canonical-state contract with upstream consequences and belongs at the rung where persistence is
+# required. So combat is the smaller honest slice: resolve(attack, defense) -> damage, a pure function --
+# the way `loot` GENERATED a drop with no inventory and `descend` computed a successor without editing the
+# level it left. The integer composes forward: combat -> resolved damage -> a future health-bearing rung.
+#
+# A REGISTERED ARITHMETIC EXPERIMENT WITH EXPLICIT DECLARED INPUTS. There is no canonical source for
+# `attack` or `defense` anywhere in the tree (measured), so this rung does NOT pretend those values already
+# belong to game state; (attack, defense) are its DECLARED integer inputs over 0..STAT_MAX, exactly as
+# `magicdiv`/`horn`/`opcost` are certified arithmetic laws over declared inputs. A later rung binds real
+# combatants to this function; disguising invented stats as entity fields is refused.
+#
+# THE FORMULA, THE SMALLEST ONE THAT STILL MITIGATES: damage = max(0, attack - defense). Minimality forces
+# every choice -- SUBTRACTION not division (no truncation earned), FLOOR 0 not 1 (a minimum-damage rule is
+# deferred; a fully-mitigated attack deals exactly zero), DETERMINISTIC (no hit/miss roll, no rngstream edge
+# -- importing the stream because it exists is refused). Mitigation IS present, which makes this combat
+# arithmetic rather than a bare number and keeps the planted-mutation falsifier non-vacuous. There is NO
+# result digest: a damage integer is not named by anything yet, so the conformance corpus IS the identity.
+#
+# THE INDEPENDENT ORACLE IS STRUCTURALLY SEPARATE. `resolve` is `max(0, a-d)`; the reference is
+# `a - min(a, d)` -- saturating subtraction derived the OTHER way, agreeing on the whole domain but sharing
+# no structure -- and a corpus of FROZEN LITERAL boundary tuples shares no code with `resolve` at all. A
+# `+1`, a `<`-vs-`<=`, or a floor-clamp mutation is caught by both.
+#
+# The `table` scene pins STAT_MAX, a declared (attack, defense) grid and the boundary tuples each with its
+# resolved damage (the frozen representation); the `laws` scene pins the falsifier booleans -- exhaustive
+# agreement with the independent oracle, the frozen tuples, the zero-floor and exact-difference laws,
+# monotonicity, that each planted mutation reddens, non-constancy, typed refusal, and that the module is a
+# stdlib leaf (no entity/move/rngstream). Both scenes and the top digest are what the module EMITS and stay
+# FROZEN, because a golden the gate rewrites cannot detect drift. A change to the formula or the domain mints
+# a new corpus.
+#
+# GRADE (honest, D5). MEASURED: over the full 0..STAT_MAX square resolve equals the independent min-oracle;
+# the frozen boundary tuples match; damage is monotone; for attack > defense damage is exactly attack-defense
+# and for attack <= defense it is exactly zero. ESTABLISHED: the three planted mutations each disagree with
+# the oracle so the falsifier bites; malformed or out-of-range inputs refuse typed COMBAT-REFUSE; the module
+# mutates nothing and its declared substrate is stdlib only. DECLARED: the formula is max(0, attack-defense)
+# over 0..STAT_MAX; a minimum-damage floor, divisive mitigation, hit/miss and randomness are later rungs';
+# the result is a bare integer with no representation yet.
+#
+# does_not_show: that combat is balanced or fun (not gateable, D24 §4); that damage persists to an entity
+# (no health field -- a later rung's contract); that a hit is randomized or can miss (deterministic here);
+# that loot's item ids carry attack values (bare strings); nothing about rngstream, untouched here.
+table 5ed3e6abf90b73d06566f46ae414d305c6036d3d02a75ca568e35e32fed7df0f
+laws 8031a849e6937044bd76fe4f94902e174f9a73f8e993bf4ef8087e190c6a7dd6
+combat 9db65079328e41a7bb30566f4127df0cb893f7fd7cb75e3f7084db09ddcf5620

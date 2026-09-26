@@ -1,0 +1,62 @@
+# URDRENA1 conformance -- THE TYPED ACTION AUTHORITY: A KIND, A PAYLOAD, AND ONE DISPATCH TO THE TRANSITION.
+#
+# The twelfth game-layer vertical slice, and the missing piece between actionlog and replay. actionlog
+# (URDRACT1) records OPAQUE tokens and commits to their order but does not say what a token MEANS; savegame
+# (URDRSAV1) stores the earned components directly. Neither can turn a recorded token back into a canonical
+# transition, and replay cannot be built until something can. This rung is that something: it gives an action
+# a KIND and a PAYLOAD and binds each kind to the ONE existing transition authority that already owns it.
+#
+# THE KINDS ARE EXACTLY THE STATE TRANSITIONS, established by a code sweep -- a canonical action takes a
+# canonical state component and returns an updated one, and exactly three CORE modules do that:
+#   MOVE     move.step(level, pos, command) -> (outcome, pos')    updates the entity position
+#   DESCEND  descend.descend(level, pos)    -> (level', pos')     updates the level and position (depth)
+#   LOOT     loot.loot(level, pos, stream)  -> (drop, stream')    updates the RNG stream
+# combat and heirloom are OUT: each takes DECLARED integer inputs and returns a DERIVED number, mutating
+# nothing and holding no canonical component (stdlib leaves, read off their imports). Including them would
+# manufacture a state authority rather than discover one.
+#
+# THE PAYLOAD is whatever the action adds beyond the state, and the three shapes genuinely differ: MOVE
+# carries one direction in move.DIRECTIONS; DESCEND and LOOT carry nothing (their effect is a function of the
+# state alone). A token is `KIND-tag byte | payload`: b"M"+dir, b"D", b"L". encode/decode round-trip, and the
+# tokens ARE actionlog tokens, so the vocabulary rides on the history channel that already exists.
+#
+# DISPATCH BINDS, IT DOES NOT REIMPLEMENT. dispatch(state, token) threads a bundle (level, pos, stream) --
+# every field an already-earned component, nothing invented -- decodes the kind, and calls the authority that
+# owns it; the routed result EQUALS calling move.step/descend.descend/loot.loot directly (read off the AST,
+# the router builds no transition of its own).
+#
+# RNG SEMANTICS ATTACH BY KIND, NOT BY PRESENCE IN THE HISTORY: rng_advances(LOOT) == 1 while MOVE and DESCEND
+# advance nothing. ORDERING is actionlog's append order, the only one earned; cross-peer canonical ordering is
+# lockstep.canon's (tools/netcode), whose (tick, peer, seq) key game actions do not carry, so this rung binds
+# the append order and invents no key. OWNERSHIP: a malformed TOKEN refuses typed ENACT-REFUSE; a valid token
+# against a malformed STATE surfaces the AUTHORITY's code (MOVE/DESCEND/LOOT-REFUSE), never ENACT-REFUSE.
+#
+# THE NEUTRAL RULER is savegame, independent of this module: a single-floor token sequence is dispatched to a
+# final state, savegame stores that (pos, stream) and the tokens (as an actionlog) INDEPENDENTLY, and after a
+# restore the decoded tokens re-dispatched from the origin reproduce savegame's stored level/entity/stream --
+# while a corrupted token DIVERGES it. savegame is imported lazily so the declared substrate stays the
+# dispatch stack.
+#
+# The `vocabulary` scene pins the canonical token table (each kind and each move direction -> token hex), the
+# kinds set, the move directions, and the per-kind rng-advance count. The `laws` scene pins the falsifier
+# booleans over the gamegen corpus: token round-trip, kinds-are-exactly-the-transitions, excluded-derivations,
+# per-kind dispatch == authority, only-loot-advances, ownership split, actionlog-append ordering, router-
+# reimplements-nothing, the savegame neutral-ruler reproduction (with corruption divergence), and total typed
+# refusal. Both scenes and the top digest are what the module EMITS and stay FROZEN.
+#
+# GRADE (honest, D5). MEASURED: a dispatched MOVE/DESCEND/LOOT equals its authority called directly; the
+# stream advances only on LOOT (0 for MOVE and DESCEND); a token round-trips through encode/decode and through
+# an actionlog in append order; the actionlog -> decode -> dispatch chain reproduces the state savegame stored
+# independently, while a corrupted token diverges it. ESTABLISHED: the kinds are exactly the three state
+# transitions and combat/heirloom are pure derivations excluded (read off their imports); the router binds and
+# reimplements no transition (read off the AST); a malformed token refuses typed ENACT-REFUSE while a bad
+# state surfaces the authority's code; the declared substrate is the dispatch stack + stdlib. DECLARED: the
+# vocabulary is exactly these three kinds with these payloads, single-peer, and live capture, from-origin
+# replay, cross-peer reconciliation, the assembled D_n and health/inventory binding are LATER rungs'.
+#
+# does_not_show: that a token stream is replay's sole input (replay is unbuilt); cross-peer order independence
+# (lockstep.canon's coordinates are unearned here); the assembled canonical state (statecanon's); and nothing
+# about the transition math itself, which stands in move/descend/loot and imports no enact.
+vocabulary 22df71a097ef40f6398b0daaa95a78cab71ef8afae276e24612212b384d52807
+laws d6b0c945a17c458430f7a1cdbcd24c7d385e6c5e6a766e273a9cc0209faaef5f
+enact d21d598555cd1f891e17ac6d9aaf627c7cb7ebafd876e4f899d96a47a48ac79e

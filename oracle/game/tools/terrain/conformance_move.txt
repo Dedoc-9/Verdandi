@@ -1,0 +1,54 @@
+# URDRMOV1 conformance -- THE FIRST AUTHORITATIVE D_n -> D_{n+1}: ONE STEP, MOVED OR BLOCKED.
+#
+# The third game-layer vertical slice and the first that MOVES anything. `gamegen` makes a canonical
+# level; `descent` witnesses that its stairs connect; neither has an entity or a tick, so there was
+# no `D_n -> D_{n+1}` in the tree -- which is exactly why KINEMA (D25) cannot yet be built. This is
+# that transition: an entity at a cell takes ONE step under a command, and the authority answers.
+#
+# IT CONSUMES `descent`'s AUTHORITY, IT DOES NOT REINVENT IT. Legality is `descent.traversable`, the
+# predicate promoted to public one change earlier for exactly this; `move` does not re-derive
+# `cell in TRAVERSABLE` and does not reach into a private. Movement truth is single-sourced, and
+# `the_directions_are_descents` proves the four directions this module moves along ARE `descent.STEPS`.
+#
+# THREE OUTCOMES, AND THE DISTINCTION IS LOAD-BEARING FOR KINEMA.
+#     MOVED    target is descent-traversable   -> D_{n+1} = entity at the target
+#     BLOCKED  target is a wall or off-grid     -> D_{n+1} = D_n, the entity stayed
+#     REFUSE   the input is MALFORMED           -> typed MOVE-REFUSE
+# A wall step is NOT an error: it is an in-domain command whose authoritative outcome is `you do not
+# move`, a legal transition with D_{n+1} = D_n. Collapsing it into REFUSE would make walking into a
+# wall a malformed input, and would leave KINEMA's Plant A (D25 §10) with nothing to consume -- that
+# plant IS `authority refused a move, D_n = D_{n+1}, and a rendered A->B must be rejected`, so the
+# authority has to RETURN the blocked pair, not throw it.
+#
+# IDENTITY IS DERIVED FROM THE EXISTING MACHINERY, not a parallel rule. The canonical state is the
+# level plus the entity position; the level's identity is already `gamegen.level_digest`, so the
+# state names the level BY THAT DIGEST (`worldbind`'s content-addressed precedent) and adds the one
+# new field in the same idiom: state_digest = SHA-256(URDRMOV1|lvl:<level_digest>|pos:x,y). A view-only
+# quantity a later camera might carry is not canonical and never reaches this digest; the integer
+# cell is, because it is what the next authoritative step reads.
+#
+# MEASURED, and pinned below: from the spawn (`descent`'s stairs-up) the four outcomes and the
+# resulting state digests; that every step agrees with `descent.traversable` on its target; that a
+# BLOCKED step is a fixed point in the state AND the digest while a MOVED step changes both; that a
+# walk into the bounded wall BLOCKS with a well-formed fixed point; and that the sealed-mouth
+# counterexample flips a step that MOVED into one that is BLOCKED -- legality tracking `descent`'s
+# authority rather than a copy of it. The three scenes and the top digest are what the module EMITS
+# and stay FROZEN, because a golden the gate rewrites cannot detect drift.
+#
+# GRADE (honest, D5). MEASURED: over every corpus level the four spawn outcomes and their state
+# digests; that each step agrees with `descent.traversable` on its target; that a walk into the wall
+# BLOCKS with a well-formed fixed point; that the sealed-mouth counterexample flips MOVED into
+# BLOCKED; the identity derivation reproduces. ESTABLISHED: `step` is a pure function of (level,
+# pos, command) under a hash-seed sweep; BLOCKED leaves position and digest unchanged while MOVED
+# changes both; the REFUSE domain is total over malformed states and commands. DECLARED: that a
+# single orthogonal cell step is the movement model -- a choice, labelled, widened by a later law
+# rather than edited here; and that the entity is, for this rung, a bare position.
+#
+# does_not_show: that movement is timed or continuous -- one discrete step, and KINEMA is the rung
+# that refines this pair; that a BLOCKED step advances a turn or action log (`actionlog`'s rung);
+# that an entity is more than a position (health, inventory, facing are later D24 §2 fields); and
+# nothing about WHY a level is traversable, which is `descent`'s claim and which this module consults.
+moves 8f1686b3e608c66b275196cf693ddaf3813252d49b3df2aae3715ea974ede06a
+authority 38a8cf5c52ea1d5528e4e325f139a4b2712697169c30c7d538f1d942e2ed7b17
+domain a75f0cda6b3f1c1b91a51a40f4303f58dbcc3fc61b21b4ecd4fbae6f583d74ca
+move-digest 31de7db1d217bcd3ca4c54b087d34f6683f9ea452a54f3ca76d978214c3627ed
