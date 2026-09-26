@@ -135,3 +135,14 @@ microarchitecturally static (monomorphize, process-isolate, interleave), and whi
 formalism proves. First applied by `LOCALITY-0`, whose court fired **Exit 1** (blocked wins): the 8×8 cache-blocked
 floor layout, byte-identical and faster, was `LOCK`ed as the accepted single-thread `emit` and sealed as GAUNTLET-2's
 hard baseline, with the linear-fetch DDA retained verbatim as an immutable reference witness.
+
+## Reading further
+
+| Document | What it holds |
+|---|---|
+| [`docs/PROGRAM.md`](docs/PROGRAM.md) | the program in depth — the charter, the four layers, the frozen oracle, the RECORD-0 envelope, preregistration, the two-court rule, and how a frame flows |
+| [`docs/GHOSTS.md`](docs/GHOSTS.md) | what the gate does *not* prove — every unproven assumption, caveat and soundness question, each graded and given the measurement that would settle it |
+| [`docs/DEVNOTES.md`](docs/DEVNOTES.md) | dev notes and the retrospective on the `GAUNTLET-1c → LOCALITY-0 → GAUNTLET-2` campaign — what each court found, the process rhythm, the lessons |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | the sequenced, falsifiable path toward a live, authorable world (`LATENCY-1`, `PRESENT-1`, interactive capture, `SEMANTIC-0`, `MERGE-0`, …) |
+| [`verify/RUNGS.md`](verify/RUNGS.md) | the terse ledger — every seated rung, its rows, its grade, its falsifier |
+| [`EPISTEMIC-INVARIANCE.md`](EPISTEMIC-INVARIANCE.md) | the author's isolation theorem, and the honest limits of its own formalism |
