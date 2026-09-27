@@ -2367,7 +2367,7 @@ stops, not a diagnosis. An elevated or protected owner's image name (it reads as
 a process with more rights, is reached from a fourth place, is called before a decision or used for more than the
 message, if the default names something, or if a planted refusal stops refusing or names a box other than its own.
 
-## HOST-STATE-1 — the clock the OS computes, and paging, recorded beside HOST-STATE-0 (an apparatus; landed; no court records it yet)
+## HOST-STATE-1 — the clock the OS computes, and paging, recorded beside HOST-STATE-0 (an apparatus; landed, first host look taken; no court records it yet)
 
 **Why.** HOST-STATE-0's MHz is what `CallNtPowerInformation` reports. On the owner's host it never exceeded 2,000,
 limit included, so it cannot say whether the clock differed between two runs. HOST-STATE-0 also records nothing about
@@ -2394,9 +2394,31 @@ versions validate. A mislabelled, mixed, float- or boolean-bearing, or unknown-v
 snapshot of its version. No court asks for version 2. The recorder calls only PDH's reading functions.
 `hoststate-record` still holds for the whole source (no control API, no file written, one query command).
 
+**First host look (DANIELDILLBERG; one snapshot, nothing written).** The patch applied, the gate read 133 rows twice,
+byte-identical, and every counter read. `clock`: Processor Frequency 1,658, % Processor Performance 1,185‰, % Processor
+Utility 60‰, estimate 1,964. HOST-STATE-0's field in the same snapshot: `CallNtPowerInformation` current 1,610–2,000
+(median 1,610), maximum and limit 2,000. `faults`: 1,708 page faults/s, 1 page read/s, 16 pages input/s. `memory`: 94%
+load with 649 MB available. `load`: 67‰ busy.
+
+Three observations, each from one second of one look. First, the OS reports delivered performance above nominal
+(118.5%). The CallNtPowerInformation MHz, which never exceeded 2,000, could not show that. This is the gap HOST-STATE-1
+was added to fill. Second, Processor Frequency read 1,658: below the 2,000 maximum, and inside the range of the
+current values CallNtPowerInformation reported. So on this host that counter looks like a current frequency rather than
+a constant nominal one, and the product the estimate takes is not established to mean an effective clock. Third, at
+94% memory load, hard faulting was 1 page read/s. So a high memory load did not come with heavy paging in that second.
+G13's association is with memory load, which is not the same thing as paging.
+
+**Erratum (the entry is hash-locked and unchanged).** HOST-STATE-1's entry calls Processor Frequency "the nominal MHz"
+and the estimate "nominal x performance". The first look does not support that gloss on this host (UNDERDETERMINED).
+The arithmetic stays as registered, and the recorder's text now describes it literally: Processor Frequency x %
+Processor Performance. A court that wants a clock witness should rule on neither: its own entry would say which
+counter it records and what it takes each to mean. Also fixed after the host run: the recorder's docstring carried an
+invalid escape (`\P`), which the host's Python warns on and the gate's older Python did not. Every `verify/*.py` is now
+compiled on the gate with such warnings recorded (`hoststate1-record`).
+
 **Grade.** DECLARED: the method. ESTABLISHED (gate): the shape, the unchanged default, the degradation, the
-independence of each counter. NOT_MEASURED (host): whether these counters read on the owner's host. The first look
-(`python verify/hoststate.py`) will say, before any court relies on them.
+independence of each counter. MEASURED (host, one look): every counter reads on the owner's host. UNDERDETERMINED:
+what Processor Frequency denotes here, and so what the estimate means.
 
 **does_not_show.** A measured clock: % Processor Performance is the OS's ratio of delivered to nominal clock,
 averaged over the window and every processor, and the estimate inherits that. The court's own paging: the rates are

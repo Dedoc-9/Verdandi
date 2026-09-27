@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright (C) 2026 Daniel J. Dillberg
-"""hoststate.py — HOST-STATE-0: record the host's observable state beside a court's number. Record, don't control.
+r"""hoststate.py — HOST-STATE-0: record the host's observable state beside a court's number. Record, don't control.
 
 PRESENT-STRETCH-0's confirmation ran with the default mode's blit p50 59% higher than its first run (7,274 -> 11,589 µs)
 at a similar refresh, and no court could say why. This module records what the OS will report about the host, so a
@@ -29,9 +29,11 @@ HOST-STATE-1 (version 2, appended; HOST-STATE-0's version 1 is unchanged and sta
 cites HOST-STATE-0 records exactly what it recorded before) adds two fields, read through the performance-counter
 library (PDH, English counter names, so the paths do not depend on the display language), each over its own 1000 ms
 window:
-  clock    \Processor Information(_Total): Processor Frequency (the nominal MHz), % Processor Performance and
-           % Processor Utility (uncapped: both exceed 100% under boost), and the effective-MHz estimate the OS's own
-           arithmetic gives (nominal x performance); the counters as the OS computes them, not a measured clock
+  clock    \Processor Information(_Total): Processor Frequency, % Processor Performance and % Processor Utility
+           (uncapped: both exceed 100% under boost), and the estimate Processor Frequency x % Processor Performance;
+           the counters as the OS computes them, not a measured clock. (HOST-STATE-1's entry calls Processor Frequency
+           "the nominal MHz"; the owner's first look read 1,658 against a 2,000 maximum, so that gloss is not
+           established: see verify/RUNGS.md.)
   faults   \Memory: Page Faults/sec, Page Reads/sec and Pages Input/sec — system-wide rates, hard faults are the reads
 A court asks for version 2 explicitly (`capture(version=2)`); `python verify/hoststate.py` prints a version 2 look.
 """
@@ -257,8 +259,8 @@ def clock() -> dict:
     out["effective_mhz_estimate"] = ((f * p) // 1000 if isinstance(f, int) and isinstance(p, int)
                                      else {"unavailable": "needs processor_frequency_mhz and performance_permille"})
     out["window_ms"] = COUNTER_WINDOW_MS
-    out["source"] = ("PDH \\Processor Information(_Total) over the window, uncapped; the estimate is nominal x performance, "
-                     "as the OS computes its counters, not a measured clock")
+    out["source"] = ("PDH \\Processor Information(_Total) over the window, uncapped; the estimate is Processor Frequency x "
+                     "% Processor Performance, the OS's counters multiplied, not a measured clock")
     return out
 
 

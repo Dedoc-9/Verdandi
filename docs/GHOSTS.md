@@ -277,7 +277,9 @@ cannot show boost, thermal state is not captured, and the snapshots bracket the 
 PRESENT-EXACT-0's two runs add a pair without drift: they were within 2% at p50, with memory at 85–86% before both.
 HOST-STATE-1 now provides the two missing witnesses: the clock as the OS computes it (% Processor Performance against
 the nominal frequency, uncapped, so boost shows) and the system's paging rates. Both are recorded, never read by a rule,
-and only by a court whose own entry asks for them. They can make a drift explainable. They cannot explain it.
+and only by a court whose own entry asks for them. They can make a drift explainable. They cannot explain it. Their
+first look already separates two things G13's association had merged: 94% memory load came with 1 hard fault per
+second, so a high memory load does not by itself mean paging (one second, one look).
 
 **Exorcism.** Keep recording, and don't control yet. Each further pair of runs either repeats the association (slow runs
 under memory pressure) or breaks it (a slow run with memory to spare, which would say the recorded state is

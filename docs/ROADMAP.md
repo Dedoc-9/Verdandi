@@ -177,12 +177,14 @@ styles, or "below the window layer" when none does. It is appended after the ver
 acts, and it cannot change a verdict. The first host refusal needed a separate probe run and the owner's knowledge to
 be traced to an overlay. The next one names its candidates itself. A candidate is not a cause.
 
-### HOST-STATE-1 — the reported clock and paging · **landed** (`b992d9dd`); no court records it yet
+### HOST-STATE-1 — the reported clock and paging · **landed** (`b992d9dd`); first host look taken; no court records it yet
 Version 2 of the host snapshot: HOST-STATE-0's fields unchanged, then the clock the OS computes (% Processor Performance
 and % Processor Utility, uncapped, with the nominal × performance estimate) and the system's paging rates, each over a
 1000 ms window. Version 1 stays the default, so no existing court's records change. It fills the two gaps G13 left: a
 reported MHz that cannot show boost, and memory pressure with no paging witness. A court records it only by its own
-preregistered entry. Still association, never cause.
+preregistered entry. Still association, never cause. The first host look read every counter, with performance at
+118.5% of nominal (boost now visible) and 1 hard fault/s at 94% memory load. Processor Frequency read 1,658 against a
+2,000 maximum, so the entry's "nominal" gloss is not established, and neither is the meaning of the estimate built on it.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

@@ -5080,12 +5080,23 @@ def hoststate1_record():
     src = read(os.path.join(ROOT, "verify", "hoststate.py")).decode("utf-8")
     if set(re.findall(r"pdh\.(Pdh\w+)", src)) != HOSTSTATE1_PDH:
         raise Red("the recorder calls a PDH function other than the reading ones")
+    # the host's Python (3.12+) warned on an invalid escape in this recorder's docstring; the gate's older Python only
+    # deprecates it silently, so every verify/*.py is compiled here with those warnings recorded
+    import warnings
+    for name in sorted(os.listdir(os.path.join(ROOT, "verify"))):
+        if name.endswith(".py"):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                compile(read(os.path.join(ROOT, "verify", name)).decode("utf-8"), name, "exec")
+            esc = [w for w in caught if issubclass(w.category, (SyntaxWarning, DeprecationWarning)) and "escape" in str(w.message)]
+            if esc:
+                raise Red("verify/%s has an invalid escape sequence (line %d): the host's Python warns on it" % (name, esc[0].lineno))
     return ("verify/hoststate.py, version 2 beside version 1: the default snapshot is still HOST-STATE-0's shape and markers; "
             "off Windows version 2 marks every field unavailable and nothing raises, and the Windows path degrades field by "
             "field; clock's estimate is nominal x performance and needs both, and a failed counter stands alone; well-formed "
             "snapshots of both versions validate; a mislabelled, mixed, float- or boolean-bearing or unknown-version snapshot "
             "becomes an unavailable snapshot of its version; no court asks for version 2; the recorder calls only PDH's "
-            "reading functions (%s)" % ", ".join(sorted(HOSTSTATE1_PDH)))
+            "reading functions (%s); no verify/*.py carries an invalid escape sequence" % ", ".join(sorted(HOSTSTATE1_PDH)))
 
 # ------------------------------------------------------------------ main
 def main() -> int:
