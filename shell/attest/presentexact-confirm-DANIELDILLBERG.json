@@ -1,0 +1,373 @@
+{
+ "name": "verdandi-presentexact-confirm",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell presentexact-window (shell/presentexact.rs court over the borderless 1:1 GDI window with screen readback, appended to shell/win32.rs) + verify/presentexact.py",
+  "surface": "shell/presentexact.rs court over the borderless 1:1 GDI window with screen readback (DwmFlush, QPC) surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790514152,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "PRESENT-EXACT-0",
+   "chain_hash": "bc910e2fa99cfc418e478e0b1587bd794f2638bc6d2ba8c6d87c72a8a4b3cffe"
+  },
+  "presentation_choice": {
+   "rung": "PRESENTATION-CHOICE-0",
+   "chain_hash": "4a7a32d9f2ca8232d29d3bb62ec015006f43187e525e51eb723912a2bf03d445"
+  },
+  "host_state_preregistered": {
+   "rung": "HOST-STATE-0",
+   "chain_hash": "582503823c360e07ee6b295117d870ec4eb3b1fe5f2bb422ede04947b35ff072"
+  },
+  "confirms": {
+   "of": "shell/attest/presentexact-DANIELDILLBERG.json",
+   "chain_hash": "2eee8efcbf8ab89c2bac072780d8ba8ed5afaa0ce7910dd3b3a8f0b2d6333175",
+   "original_label": "NO MATERIAL DIFFERENCE"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the certified composite presented 1:1 by StretchDIBits and by SetDIBitsToDevice in a borderless 1920x1080 window at the screen's origin on host DANIELDILLBERG, the composed screen read back before and after the court, uninstrumented envelopes interleaved ABBA, locked phase origin, 1000 samples per cell over 4 frames (a confirmation run)",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "that the pixels reach the eye unchanged: the readback is the composed screen, before scan-out, the panel and any display-side colour processing",
+  "that the readback holds between the checked frames: it is taken on the sealed frames before the clock and on the last frame after it, not on every sample",
+  "an adoption from one run, from a comparator sealed in another run, or from the p50s",
+  "that the recorded host state explains or caused a number: HOST-STATE-0 is recorded beside and never read",
+  "input-to-photon latency, or a comparison with any emit p99",
+  "any other host, screen size, scaling setting or GPU driver"
+ ],
+ "data": {
+  "calls": {
+   "stretchdibits": {
+    "envelope": {
+     "render_us": {
+      "p50": 10203,
+      "p95": 11619,
+      "p99": 12279,
+      "max": 12870
+     },
+     "call_us": {
+      "p50": 1846,
+      "p95": 2003,
+      "p99": 2321,
+      "max": 2793
+     },
+     "present_us": {
+      "p50": 2352,
+      "p95": 13892,
+      "p99": 15195,
+      "max": 16895
+     },
+     "samples": 1000
+    },
+    "tail_render_us": [
+     12870,
+     12734,
+     12568,
+     12470,
+     12380,
+     12348,
+     12337,
+     12321,
+     12304,
+     12297,
+     12279,
+     12233
+    ]
+   },
+   "setdibitstodevice": {
+    "envelope": {
+     "render_us": {
+      "p50": 10139,
+      "p95": 11688,
+      "p99": 12117,
+      "max": 12847
+     },
+     "call_us": {
+      "p50": 1838,
+      "p95": 1997,
+      "p99": 2325,
+      "max": 2975
+     },
+     "present_us": {
+      "p50": 2430,
+      "p95": 13987,
+      "p99": 15211,
+      "max": 15936
+     },
+     "samples": 1000
+    },
+    "tail_render_us": [
+     12847,
+     12533,
+     12500,
+     12412,
+     12344,
+     12284,
+     12208,
+     12191,
+     12166,
+     12165,
+     12117,
+     12116
+    ]
+   }
+  },
+  "geometry": {
+   "client": [
+    1920,
+    1080
+   ],
+   "origin": [
+    0,
+    0
+   ],
+   "screen_logical": [
+    1920,
+    1080
+   ],
+   "screen_physical": [
+    1920,
+    1080
+   ],
+   "source": [
+    1920,
+    1080
+   ]
+  },
+  "readback": {
+   "frames": 4,
+   "checks": 10,
+   "bytes_compared": 62208000,
+   "mismatched_bytes": 0,
+   "method": "clear to white, read the clear back, present, read the composed screen back"
+  },
+  "block_order": "ABBA",
+  "warm_rounds": 10,
+  "refresh_period_us": 13710,
+  "sequence_frames": 4,
+  "samples_per_cell": 1000,
+  "production_threads": 8,
+  "phase_origin": "locked",
+  "render_entry": "LoopRenderer",
+  "loop_renders": 2024,
+  "derived": {
+   "calls": {
+    "stretchdibits": {
+     "render_p50_us": 10203,
+     "render_p95_us": 11619,
+     "render_p99_us": 12279,
+     "render_max_us": 12870,
+     "call_p50_us": 1846,
+     "call_p99_us": 2321,
+     "composited_p50_us": 2352,
+     "composited_p99_us": 15195,
+     "tail_render_us": [
+      12870,
+      12734,
+      12568,
+      12470,
+      12380,
+      12348,
+      12337,
+      12321,
+      12304,
+      12297,
+      12279,
+      12233
+     ]
+    },
+    "setdibitstodevice": {
+     "render_p50_us": 10139,
+     "render_p95_us": 11688,
+     "render_p99_us": 12117,
+     "render_max_us": 12847,
+     "call_p50_us": 1838,
+     "call_p99_us": 2325,
+     "composited_p50_us": 2430,
+     "composited_p99_us": 15211,
+     "tail_render_us": [
+      12847,
+      12533,
+      12500,
+      12412,
+      12344,
+      12284,
+      12208,
+      12191,
+      12166,
+      12165,
+      12117,
+      12116
+     ]
+    }
+   },
+   "between_calls": {
+    "p99_stretch_permille_of_setdib": 1013,
+    "p99_setdib_permille_of_stretch": 986,
+    "p50_stretch_minus_setdib_us": 64,
+    "call_p50_stretch_minus_setdib_us": 8
+   }
+  },
+  "rule": {
+   "margin_permille": 950,
+   "required_per_cell": 1000,
+   "runs": 2,
+   "default_call": "setdibitstodevice",
+   "margin": "an adoption margin (a declared decision threshold), not an uncertainty"
+  },
+  "host_state": {
+   "before": {
+    "hoststate": "HOST-STATE-0",
+    "version": 1,
+    "unix_seconds": 1790514094,
+    "platform": "win32",
+    "fields": {
+     "cpu": {
+      "model": "AMD Ryzen AI Z2 Extreme",
+      "logical_processors": 16,
+      "mhz": {
+       "current_min": 1610,
+       "current_median": 1610,
+       "current_max": 2000,
+       "max": 2000,
+       "limit_min": 2000,
+       "source": "CallNtPowerInformation(ProcessorInformation), as the OS reports it"
+      }
+     },
+     "power": {
+      "ac_line_status": 1,
+      "battery_flag": 1,
+      "battery_percent": 100,
+      "battery_saver": 0,
+      "codes": "ac_line_status 0 offline, 1 online, 255 unknown; battery_percent 255 unknown",
+      "plan": {
+       "guid": "381b4222-f694-41f0-9685-ff5bb260df2e",
+       "name": "Balanced"
+      }
+     },
+     "load": {
+      "cpu_busy_permille": 29,
+      "window_ms": 1000,
+      "source": "GetSystemTimes over the window, all processors"
+     },
+     "memory": {
+      "load_percent": 86,
+      "total_mb": 11897,
+      "available_mb": 1609
+     },
+     "process": {
+      "priority_class": "0x20",
+      "affinity_mask": "0xffff",
+      "system_affinity_mask": "0xffff",
+      "of": "the sealing process; the court process is its child"
+     },
+     "display": {
+      "logical": [
+       1920,
+       1080
+      ],
+      "physical": [
+       1920,
+       1080
+      ],
+      "bits_per_pixel": 32,
+      "vertical_refresh_hz": 75,
+      "source": "GetDeviceCaps on the screen DC: the nominal mode, not the court's measured refresh"
+     },
+     "uptime": {
+      "ms": 768639781
+     },
+     "thermal": {
+      "unavailable": "not captured: no reliable source without elevation (declared, not attempted)"
+     }
+    }
+   },
+   "after": {
+    "hoststate": "HOST-STATE-0",
+    "version": 1,
+    "unix_seconds": 1790514153,
+    "platform": "win32",
+    "fields": {
+     "cpu": {
+      "model": "AMD Ryzen AI Z2 Extreme",
+      "logical_processors": 16,
+      "mhz": {
+       "current_min": 1610,
+       "current_median": 2000,
+       "current_max": 2000,
+       "max": 2000,
+       "limit_min": 2000,
+       "source": "CallNtPowerInformation(ProcessorInformation), as the OS reports it"
+      }
+     },
+     "power": {
+      "ac_line_status": 1,
+      "battery_flag": 1,
+      "battery_percent": 100,
+      "battery_saver": 0,
+      "codes": "ac_line_status 0 offline, 1 online, 255 unknown; battery_percent 255 unknown",
+      "plan": {
+       "guid": "381b4222-f694-41f0-9685-ff5bb260df2e",
+       "name": "Balanced"
+      }
+     },
+     "load": {
+      "cpu_busy_permille": 45,
+      "window_ms": 1000,
+      "source": "GetSystemTimes over the window, all processors"
+     },
+     "memory": {
+      "load_percent": 86,
+      "total_mb": 11897,
+      "available_mb": 1635
+     },
+     "process": {
+      "priority_class": "0x20",
+      "affinity_mask": "0xffff",
+      "system_affinity_mask": "0xffff",
+      "of": "the sealing process; the court process is its child"
+     },
+     "display": {
+      "logical": [
+       1920,
+       1080
+      ],
+      "physical": [
+       1920,
+       1080
+      ],
+      "bits_per_pixel": 32,
+      "vertical_refresh_hz": 75,
+      "source": "GetDeviceCaps on the screen DC: the nominal mode, not the court's measured refresh"
+     },
+     "uptime": {
+      "ms": 768699046
+     },
+     "thermal": {
+      "unavailable": "not captured: no reliable source without elevation (declared, not attempted)"
+     }
+    }
+   }
+  }
+ },
+ "reading": "CONFIRMATION run — does NOT replace the sealed PRESENT-EXACT-0 record (chain 2eee8efc). First run NO MATERIAL DIFFERENCE; this run NO MATERIAL DIFFERENCE. ADOPTED CALL: SETDIBITSTODEVICE (StretchDIBits was not cheaper by the margin in both runs, so the simpler call is adopted); the shell's 1:1 presentation is locked to it in the following patch. PRESENT-EXACT-0 on host DANIELDILLBERG (1000 samples per cell, ABBA). The composed screen read back equal to the certified picture in all 10 checks (62208000 bytes, 0 differing), under both calls, in a borderless 1920x1080 window at (0,0). Envelope p99 StretchDIBits 12279 us, SetDIBitsToDevice 12117 us: NO MATERIAL DIFFERENCE (the margin: 950 permille). p50 StretchDIBits 10203 us, SetDIBitsToDevice 10139 us (beside, not the rule). One run adopts nothing: the adoption is read on --confirm. Not input-to-photon.",
+ "chain_hash": "7af3b71aae7ab35edcfb19f1150debabe4ef552aee0e2b534151f5704191e29d"
+}
