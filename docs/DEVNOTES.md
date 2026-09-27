@@ -120,9 +120,10 @@ Every rung ran the same loop, and the loop is the product as much as the code:
   and FRAME-SPLIT-0 found, twice, no single dominant phase (blit 427–434‰, emit ~270‰, frame ~255‰, bgr ~137‰): no
   target is promoted (G8). The narrower diagnostic of the largest component, PRESENT-SCALE-0, found the blit's 2:1
   reduction material on this host (the 1:1 blit ~5.3–5.6 ms cheaper at p50, confirmed; G11). Choosing the shell's
-  presentation geometry is still a separate court. Two narrower diagnostics are preregistered and wait for the host:
-  PRESENT-STRETCH-0 (does the half-size blit's cost depend on the stretch mode) and ALLOC-REUSE-0 (how much of the
-  frame is allocating its buffers every frame). Neither adopts anything.
+  presentation geometry is still a separate court. Two narrower diagnostics have each run once on the host.
+  PRESENT-STRETCH-0 read MODE MATERIAL: the `COLORONCOLOR` and `HALFTONE` blits were 2.3–2.9 ms cheaper than the
+  default `BLACKONWHITE` at p50. ALLOC-REUSE-0 read ALLOCATION MATERIAL: reusing the frame's buffers was ~1.6 ms
+  cheaper at the envelope p50. Both confirmations are pending, and neither adopts anything.
 - The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two
   runs); presentation latency is phase-dependent, and no low-latency claim is made.
 - A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.

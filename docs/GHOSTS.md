@@ -150,7 +150,8 @@ The preregistered confirmation reproduced the reading (NO SEAT; blit 427‰, emi
 share within 8‰ of the first run). What remains open is not the shape but its parts: the split cannot say how much of
 the largest phase, the blit, is `StretchDIBits`'s 2:1 downscale rather than the copy itself (G11), and the emit and
 frame phases include their buffers' allocation. `ALLOC-REUSE-0` (preregistered, `aaaada37`) measures how much of the
-frame that allocation is, as a diagnostic that adopts nothing.
+frame that allocation is, as a diagnostic that adopts nothing. Its first run read ALLOCATION MATERIAL: reuse was
+1.59 ms (91‰) cheaper at the envelope p50, with the deltas mostly in bgr and emit. The confirmation is pending.
 
 **Exorcism.** Because the multi-component result promotes nothing by itself, any next step is a narrower measurement of
 one named component, preregistered on its own — not an optimization chosen because a share looks large. The first was
@@ -209,7 +210,10 @@ is the net of removing the scaling and adding the larger copy, and not a general
 **Exorcism.** As a measurement ghost this one is laid: the reading reproduced. What is still open is a choice, not a
 measurement — what the shell should present (its geometry, a stretch mode set and stated, or a 1:1 region) changes
 what the window shows, so each is its own court, never a consequence drawn from this diagnostic. `PRESENT-STRETCH-0`
-(preregistered, `f5372890`) asks only whether the half-size blit's cost depends on the stretch mode; it chooses none.
+(`f5372890`) asks only whether the half-size blit's cost depends on the stretch mode, and it chooses none. Its first
+run read MODE MATERIAL for both alternatives. On this host the default `BLACKONWHITE` blit was the dearest of the three
+modes measured: `COLORONCOLOR` read 392‰ and `HALFTONE` 322‰ cheaper at p50. So the half-size blit's cost here depends
+materially on which reduction GDI performs. The confirmation is pending.
 
 ---
 

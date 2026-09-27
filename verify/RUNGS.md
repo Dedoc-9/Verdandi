@@ -1679,7 +1679,7 @@ is consistent with the code carried beside it. It does not make the studio an au
 **Falsifier.** `oracle-d0` goes red if the carried game layer, the oracle's `D_0` or the composition drifts, and the
 plant goes red if `D_0` stops depending on the entity's position.
 
-## PRESENT-STRETCH-0 — preregistered: does the half-size blit's cost depend on GDI's stretch mode (a diagnostic; host-run pending)
+## PRESENT-STRETCH-0 — does the half-size blit's cost depend on GDI's stretch mode (a diagnostic; measured once: MODE MATERIAL, both modes cheaper than the default; confirmation pending)
 
 **Why it is next.** PRESENT-SCALE-0, confirmed, found the 2:1 blit far dearer than the 1:1 blit on the owner's host,
 under the device context's default stretch mode, 1 (`BLACKONWHITE`, a Boolean-AND reduction). That reading does not
@@ -1720,8 +1720,40 @@ tampered witness, an ignored mode and a mid-court close each refuse with no reco
 stretch mode changes, the timed interval holds no mode change and no hashing, and LATENCY-0's instrument is still a
 byte-exact prefix.
 
+**Measured (host DANIELDILLBERG, `shell/attest/presentstretch-DANIELDILLBERG.json`, cites PRESENT-STRETCH-0 `f5372890`).**
+300 samples per cell over 12 blocks, no close. The client area read back as 960×540 and every block's effective mode
+equalled its request (1, 3, 4). Measured refresh 13,379 µs. p50 / p99 in µs:
+
+| | `BLACKONWHITE` (1, default) | `COLORONCOLOR` (3) | `HALFTONE` (4) |
+|---|---|---|---|
+| **blit** | **7,274 / 8,050** | **4,420 / 4,983** | **4,928 / 5,622** |
+| blit − default, p50 | — | −2,854 (392‰) | −2,346 (322‰) |
+| non-blit phases, p50 sum | 9,371 | 9,214 (−157, 16‰) | 9,230 (−141, 15‰) |
+| instrumentation tax, p50 | −37 (2‰) | +44 (3‰) | −27 (1‰) |
+| envelope render-start → frame-ready | 16,722 / 19,067 | 13,676 / 15,797 | 14,201 / 16,244 |
+| frame-ready → composited | 8,873 / 12,402 | 11,436 / 14,891 | 11,018 / 14,331 |
+
+**The reading: `COLORONCOLOR`: MODE MATERIAL (cheaper); `HALFTONE`: MODE MATERIAL (cheaper).** Each non-default
+mode's blit p50 fell far past the 100‰ bound below `BLACKONWHITE`'s (392‰ and 322‰). The non-blit phases moved 16‰ and
+15‰, well inside the 50‰ confound bound, and every tax was 3‰ or less. So on this host, in this exact GDI apparatus
+and workload, the half-size blit's cost depended materially on the stretch mode, and the default `BLACKONWHITE` was
+the dearest of the three modes measured. That is not a statement about GDI's stretch modes in general. The rule
+compares each mode only with the default. That `COLORONCOLOR` read 508 µs cheaper than `HALFTONE` at p50 is beside
+the rule and is not ruled on.
+
+**Beside the reading, not ruled on.** frame-ready → composited p50 rose by 2,563 µs (`COLORONCOLOR`) and 2,145 µs
+(`HALFTONE`), most of each blit saving. In this loop a frame that finishes earlier waits longer for the composition:
+the locked-phase absorption LATENCY-1R measured (`GHOSTS.md` G7). Every mode's envelope p50 stayed above the measured
+refresh. The blit result is therefore not an end-to-end latency result. The default's blit here (7.27 ms, the mode
+now set explicitly before every present) is a little below PRESENT-SCALE-0's half-size readings (7.46–7.76 ms). That
+is a cross-court difference, recorded and not interpreted. The three modes draw different pixels: `BLACKONWHITE` ANDs
+the eliminated pixels, `COLORONCOLOR` deletes them and `HALFTONE` averages them. Those semantics come from GDI's
+documentation and are not verified on the glass. What the shell should show remains a separate court.
+
 **Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the mode and client-area
-refusals and the sealer's rule. MEASURED: nothing yet. The host run is pending.
+refusals and the sealer's rule. MEASURED (host, one run): both non-default modes read MODE MATERIAL, cheaper than the
+default by 2.85 ms (`COLORONCOLOR`) and 2.35 ms (`HALFTONE`) at the blit's p50, on this host and apparatus. The
+preregistered confirmation (`--confirm`) is pending, and the reading is not reproduced until it returns.
 
 **does_not_show.** Which stretch mode the shell should use, or whether it should use one at all. That the modes'
 pixel semantics are what GDI documents them to be: they are recorded from the documentation and not verified on the
@@ -1734,7 +1766,7 @@ mode is accepted. `presentstretch-court` goes red if a plant passes, and `presen
 enters the present or the timed interval. On the host, a witness, mode or client-area mismatch, or a closed window,
 yields no number, and a reading that does not reproduce under `--confirm` is refuted.
 
-## ALLOC-REUSE-0 — preregistered: how much of the frame is allocating its buffers every frame (a diagnostic; host-run pending)
+## ALLOC-REUSE-0 — how much of the frame is allocating its buffers every frame (a diagnostic; measured once: ALLOCATION MATERIAL, reuse cheaper; confirmation pending)
 
 **Why it is next.** FRAME-SPLIT-0 attributes each buffer's allocation to the phase it happens in: the strips vector
 to strips, the 2 MB index frame to frame, the 6 MB pixel buffer to emit and the 6 MB BGR buffer to bgr (`GHOSTS.md`
@@ -1777,8 +1809,40 @@ marks and allocates none of its buffers (only `fast::blocked_floor` still alloca
 `to_blit`'s transform, the court runs in FRAME-SPLIT-0's window and
 checks both variants' bytes after every sample, and LATENCY-0's instrument is still a byte-exact prefix.
 
+**Measured (host DANIELDILLBERG, `shell/attest/allocreuse-DANIELDILLBERG.json`, cites ALLOC-REUSE-0 `aaaada37`).**
+300 samples per cell after 10 warm-up rounds, no close. The reused buffers' bytes equalled the fresh path's on every
+sealed frame before the clock and after every sample. Measured refresh 13,773 µs. p50 / p99 in µs:
+
+| | fresh (production) | reused | reused − fresh, p50 |
+|---|---|---|---|
+| **envelope render-start → frame-ready** | **17,294 / 19,380** | **15,705 / 17,671** | **−1,589 (91‰)** |
+| strips | 63 / 167 | 56 / 109 | −7 |
+| frame (the 2 MB index frame) | 3,741 / 5,204 | 3,678 / 5,047 | −63 |
+| emit (the 6 MB pixel buffer) | 3,782 / 4,944 | 3,110 / 4,177 | −672 |
+| bgr (the 6 MB BGR buffer) | 1,869 / 2,517 | 1,023 / 1,752 | −846 |
+| unchanged phases (floor swizzle, HUD, blit), p50 sum | 7,988 | 7,905 | −83 (10‰) |
+| instrumentation tax, p50 | −225 (13‰) | +56 (3‰) | |
+| frame-ready → composited | 8,290 / 12,411 | 9,639 / 13,366 | +1,349 |
+
+**The reading: ALLOCATION MATERIAL (reuse cheaper).** The envelope p50 fell 1,589 µs, 91‰ of the fresh envelope and
+past the 50‰ bound. The phases whose allocation does not change moved 10‰, inside the 50‰ confound bound, and both
+taxes stayed far inside the VOID bound. So on this host, in this apparatus and workload, allocating the strips,
+index-frame, pixel and BGR buffers every frame was a material part of the frame: about 1.6 ms of a ~17.3 ms envelope
+at the median. Nothing is adopted, and the production path still allocates fresh buffers every frame.
+
+**Beside the reading, not ruled on.** The per-phase deltas show where the saving sat: bgr (−846 µs) and emit
+(−672 µs), the phases of the two 6 MB buffers, carry 96% of the allocating phases' combined change, while frame
+(−63 µs, the 2 MB index frame) and strips (−7 µs) carry almost none. They are reported, never ruled on, and why the
+index frame moved so little is not measured here. frame-ready → composited p50 rose 1,349 µs, again the locked-phase
+absorption (`GHOSTS.md` G7). Both envelopes stayed above the refresh, so this is not an end-to-end latency result.
+The fresh envelope here (17.3 ms) reads above FRAME-SPLIT-0's 15.7 ms in the same window on the same arm, as
+PRESENT-SCALE-0's half-size condition did (17.0–17.1 ms). That is a cross-court difference, recorded and not
+interpreted.
+
 **Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the reuse path is byte-equal to the fresh path on
-every sealed frame, and the court's logic and the sealer's rule hold. MEASURED: nothing yet. The host run is pending.
+every sealed frame, and the court's logic and the sealer's rule hold. MEASURED (host, one run): ALLOCATION MATERIAL,
+reuse cheaper by 1.59 ms (91‰) at the envelope p50, on this host and apparatus. The preregistered confirmation
+(`--confirm`) is pending, and the reading is not reproduced until it returns.
 
 **does_not_show.** That the production path should reuse its buffers. Anything about another allocator, OS or buffer
 size: a fresh buffer's cost includes whatever this host's allocator and OS do for it (zeroing, first-touch page
