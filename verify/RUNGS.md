@@ -2298,8 +2298,20 @@ windowless build refuses both commands (SHELL-NO-WINDOW). Where the checkout car
 does), they must be the pinned ones (`2eee8efc`, `7af3b71a`), read the screen exact and adopt SETDIBITSTODEVICE.
 `allocreuse1-lock` was re-pinned on purpose for the presenter's blit-law guard.
 
-**Grade.** ESTABLISHED (gate): the presenter's structure, its fixed call, its readback after every present, and its
-refusals. MEASURED (PRESENT-EXACT-0, host, two runs): the composed screen equalled the certified picture on every
+**A fence tightened after review.** In the first version of this patch only the first present refused on failure.
+The later presents (each new playback frame, and each held-frame re-check) discarded the result, so a failed present
+could have been followed by a readback of the *previous* screen, which would have passed as a witness of a frame
+never presented. Now every present goes through `show_present`, which refuses (SHELL-SHOW-NO-PRESENT, exit 2) when
+the present fails, and each is followed at once by its readback. `presentexact-lock` checks that the section has
+exactly one present call, inside that helper, and that every helper call is immediately followed by a readback.
+
+**First host use (owner's host; observed, not sealed).** `shell show` on the witness view: 296 screen readbacks, 0
+differed, exit 0. `shell show-playback` on the sealed session: 4 frames, each "the screen is the certified picture",
+37 readbacks, 0 differed, exit 0. These are a viewer's own reports, not a court's number, and they are recorded here as
+observations only.
+
+**Grade.** ESTABLISHED (gate): the presenter's structure, its fixed call, every present refusing on failure and
+followed at once by its readback, and its refusals. MEASURED (PRESENT-EXACT-0, host, two runs): the composed screen equalled the certified picture on every
 checked frame under the adopted call, with the host overlay off. What `shell show` itself reads back on a given run is
 printed by that run and not sealed: it is a viewer, not a court.
 
@@ -2308,8 +2320,8 @@ colour transform will not appear: the presenter reports it rather than preventin
 100%. A live loop: `show` does not render per frame; that is the live-loop rung's own court, and it will enter through
 `LoopRenderer`.
 
-**Falsifier.** `presentexact-lock` goes red if the call can change, a present goes unread, the exit code hides a
-mismatch, the window stops closing on Esc, the blit law moves after the window, the frozen windows move, or the host
+**Falsifier.** `presentexact-lock` goes red if the call can change, a present can fail without a refusal, a present
+goes unread or is not read at once, the exit code hides a mismatch, the window stops closing on Esc, the blit law moves after the window, the frozen windows move, or the host
 records are not the pinned exact-screen pair.
 
 ## The open clause, now with named rungs (skybox, physics)

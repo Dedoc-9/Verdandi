@@ -4812,11 +4812,18 @@ def presentexact_lock():
     if "call: 1," not in show or "call: 0" in sect or "set_call(" in sect or "StretchDIBits(" in sect:
         raise Red("the presenter is not fixed to SetDIBitsToDevice through the witnessed surface")
     order = [show.find(t) for t in ("blit_roundtrip_ok(&c.composite)", "SetProcessDPIAware()", "= show_window(", "surf.geometry()",
-                                     "SHELL-SHOW-GEOMETRY", "surf.present(&blits[k])")]
+                                     "SHELL-SHOW-GEOMETRY", "show_present(&mut surf, &blits[k], k, n);")]
     if -1 in order or order != sorted(order):
         raise Red("the presenter does not guard the blit law, go DPI-aware, open the window and check the geometry, in that order, before presenting")
-    if show.count("surf.present(&blits[k])") != show.count("show_witness(&mut surf, &blits[k]") or show.count("show_witness(") < 3:
-        raise Red("a present is not followed by a screen readback")
+    # every present goes through show_present, which refuses on a failed present, and is followed at once by a readback
+    sp = src_span(sect, "fn show_present(", "\n}\n")
+    if ("if surf.present(bgr).is_none() {" not in sp or "SHELL-SHOW-NO-PRESENT" not in sp or "std::process::exit(2);" not in sp
+            or sect.count("surf.present(") != 1 or "let _ = surf.present(" in sect):
+        raise Red("a present in the presenter can fail without a refusal (every present must go through show_present)")
+    pairs = show.count("show_present(&mut surf, &blits[k], k, n);\n")
+    followed = len(re.findall(r"show_present\(&mut surf, &blits\[k\], k, n\);\n\s*show_witness\(&mut surf, &blits\[k\], k, n, (true|false), &mut st\);", show))
+    if pairs < 3 or followed != pairs or show.count("show_witness(") != pairs:
+        raise Red("a present is not followed at once by a screen readback")
     if "std::process::exit(if st.differed > 0 { 3 } else { 0 });" not in show:
         raise Red("the presenter does not exit non-zero when a readback differed")
     wsrc = src_span(sect, "fn show_window(", "\n}\n")
@@ -4858,8 +4865,9 @@ def presentexact_lock():
                     % tuple(h[:8] for h in PRESENTEXACT_RECORDS.values()))
     return ("PRESENT-EXACT-0 LOCK: `shell show` and `shell show-playback` present pre-rendered certified frames, each guarded by "
             "the blit-hash law before any window, 1:1 in the borderless DPI-aware topmost 1920x1080 window at (0,0), through the "
-            "witnessed surface with the call fixed at SetDIBitsToDevice; every present is followed by a composed-screen readback "
-            "and the run exits 3 if any differed; Esc closes; no clock, no record; a windowless build refuses both; run and "
+            "witnessed surface with the call fixed at SetDIBitsToDevice; every present goes through show_present, which refuses "
+            "(exit 2) if it fails, and is followed at once by a composed-screen readback; the run exits 3 if any readback "
+            "differed; Esc closes; no clock, no record; a windowless build refuses both; run and "
             "playback-window are unmoved; %s" % evidence)
 
 

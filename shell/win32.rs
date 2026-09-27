@@ -1881,6 +1881,19 @@ fn show_witness(surf: &mut ExactGdiSurface, bgr: &[u8], k: usize, n: usize, fres
     st.last = Some(exact);
 }
 
+/// Present one certified frame. A failed present refuses (exit 2): a readback of the previous screen must never stand
+/// in for a frame that was not presented.
+fn show_present(surf: &mut ExactGdiSurface, bgr: &[u8], k: usize, n: usize) {
+    if surf.present(bgr).is_none() {
+        eprintln!("SHELL-SHOW-NO-PRESENT: SetDIBitsToDevice or the composition barrier failed on frame {}/{}; nothing was read back for it",
+                  k + 1, n);
+        if unsafe { IsWindow(surf.hwnd) } != 0 {
+            unsafe { DestroyWindow(surf.hwnd) };
+        }
+        std::process::exit(2);
+    }
+}
+
 pub fn show(frames: Vec<Composed>, label: &str) {
     if frames.is_empty() {
         eprintln!("SHELL-SHOW-EMPTY: there is nothing to show");
@@ -1925,10 +1938,7 @@ pub fn show(frames: Vec<Composed>, label: &str) {
              label, n);
     let mut st = ShowState { checks: 0, differed: 0, last: None };
     let mut k = 0usize;
-    if surf.present(&blits[k]).is_none() {
-        eprintln!("SHELL-SHOW-NO-PRESENT: SetDIBitsToDevice or the composition barrier failed");
-        std::process::exit(2);
-    }
+    show_present(&mut surf, &blits[k], k, n);
     show_witness(&mut surf, &blits[k], k, n, true, &mut st);
     let (mut dwell, mut held) = (0u32, 0u32);
     loop {
@@ -1941,14 +1951,14 @@ pub fn show(frames: Vec<Composed>, label: &str) {
             if dwell >= SHOW_DWELL {
                 dwell = 0;
                 k += 1;
-                let _ = surf.present(&blits[k]);
+                show_present(&mut surf, &blits[k], k, n);
                 show_witness(&mut surf, &blits[k], k, n, true, &mut st);
             }
         } else {
             held += 1;
             if held >= SHOW_RECHECK {
                 held = 0;
-                let _ = surf.present(&blits[k]);
+                show_present(&mut surf, &blits[k], k, n);
                 show_witness(&mut surf, &blits[k], k, n, false, &mut st);
             }
         }

@@ -178,6 +178,15 @@ with the compositor with minimal copies, a frame-latency waitable object reaches
 Flip (and lets the DWM sleep), and `ALLOW_TEARING` with multi-plane overlay goes lower still. Built std-only against
 raw Win32/COM (as `win32.rs` already hand-rolls GDI); off-gate; `HARDWARE-144` additionally needs a ≥144 Hz panel.
 
+**Ordered after the live loop, and held as hypotheses until measured here.** The flip model's benefit is for a loop
+that renders every frame, so PRESENT-1 comes after the live loop below and is measured on it, not on the pre-rendered
+presenter. Until then, four things stay hypotheses for this shell. The borderless 1:1 geometry makes Independent Flip
+*eligible*, which is not proof that Windows will use it. A waitable swapchain's latency is documented behaviour, not
+evidence about this shell. A flip swapchain takes only 32-bit formats, so the blit-hash law needs a 32-bit carrier
+first. And the screen witness must be re-established under the new path: the GDI readback is established only for the
+GDI presentation it was measured on, and whether another capture path (for example Desktop Duplication) gives an
+exact witness there is itself to be measured.
+
 ### Interactive capture — the inverse of SHELL-PLAYBACK
 Raw window/device event → binding → typed action/edit → `SESSION-WALK` append → the *same* sealed representation that
 headless authoring produces. `SHELL-PLAYBACK` already proves a sealed session replays to the exact window frames;
@@ -186,7 +195,10 @@ shell/input problem, not a new authority — measured against the existing sessi
 industry pattern to borrow is the **authoring-data / runtime-data split** (e.g. Unity DOTS), with deterministic step
 and reload atomicity — which is exactly the workshop's edit → authority → record shape. The live loop this needs is its
 own rung (timing, cadence, ownership, input). ALLOC-REUSE-1 read ADOPT and is locked, so that loop renders through
-`LoopRenderer` rather than deciding its allocation again.
+`LoopRenderer` rather than deciding its allocation again. It presents through the locked 1:1 presenter's call and
+reads the screen back as that presenter does. It is the next major rung, ahead of PRESENT-1, and its first court is
+kept narrow: the loop itself, without live editing, input, the flip model or latency claims. After it, and after any
+change of presentation path, the frame's breakdown is re-measured rather than carried forward.
 
 ### SEMANTIC-0 — a float-free, geometry-bound semantic layer
 New VIEW semantics the studio did not inherit (filtering, variety) earned by a Verðandi-local reference pinned by
