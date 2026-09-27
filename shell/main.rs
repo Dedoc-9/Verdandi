@@ -530,6 +530,32 @@ fn main() {
                 }
             }
         }
+        "presentexact-probe" => {
+            // A diagnostic for PRESENT-EXACT-0's readback (window build only): no clock, no court, no record.
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            let root = opt("--root").unwrap_or_default();
+            let out = opt("--out");
+            let inputs: Vec<latency1r::FrameInput> = playback::frame_inputs(&session, &root)
+                .into_iter()
+                .map(|(lv, tl, cam, w)| latency1r::FrameInput {
+                    scene: present::scene_of(&lv, &tl, cam).unwrap_or_else(|Refusal(m)| refuse("INVALID-SCENE", &m)),
+                    witness: w,
+                })
+                .collect();
+            #[cfg(all(target_os = "windows", shell_window))]
+            {
+                win32::presentexact_probe(inputs, out);
+            }
+            #[cfg(not(all(target_os = "windows", shell_window)))]
+            {
+                let _ = (&inputs, &out);
+                refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run the probe");
+            }
+        }
         "presentexact-selftest" | "presentexact-window" => {
             // PRESENT-EXACT-0: the certified composite presented 1:1 by StretchDIBits and by SetDIBitsToDevice, the
             // composed screen read back before and after the court; headless through the mock (`-selftest`, what the

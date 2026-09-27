@@ -2192,9 +2192,20 @@ blit and the call, and the readback and clear run only before and after the roun
 byte-exact prefix. `allocreuse1-lock` was re-pinned on purpose for this court's two fresh-reference call sites (its
 witnesses compare the loop with the fresh path).
 
+**First host attempt: refused, no number.** On the owner's host the court refused PRESENTEXACT-READBACK-STALE before
+any clock: after the window was cleared to white, the composed screen under it did not read back as white. The
+geometry check had passed (a 1920×1080 client at (0,0) on a 1920×1080 screen). This is the refusal the method
+registers for anything over the window or any transform of its pixels, and it says only that the readback does not
+yet see the window exactly. A diagnostics patch followed, changing no method. The refusals now say where the pixels
+differ (how many, their bounding box, and the first one's bytes). `shell presentexact-probe` (window build only: no
+clock, no court, no record) repeats the court's clear-and-read-back, then varies one suspect at a time: a longer wait,
+the z-order and foreground re-asserted, the cursor hidden. Each time it reads back both the composed screen and the
+window's own surface, and it can save the images. Any fix the probe points to is a method change, so it would be
+registered as an amendment before a number is taken.
+
 **Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the readback's refusals
-(including a call that writes nothing) and the sealer's rule. MEASURED: nothing yet. The host run and its confirmation
-are pending.
+(including a call that writes nothing) and the sealer's rule. MEASURED: nothing yet. The first host attempt refused at
+the readback, which is under diagnosis.
 
 **does_not_show.** That the pixels reach the eye unchanged: the readback is the composed screen, before scan-out, the
 panel and any display-side colour processing. That every timed frame read back equal: the readback runs on the sealed

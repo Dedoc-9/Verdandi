@@ -4771,12 +4771,17 @@ def presentexact_fence():
         raise Red("the readback or the clear runs inside the court's rounds")
     if "s.set_call(c);\n            s.flush(); // the locked phase origin\n            let t0 = s.ticks();" not in loop:
         raise Red("the call is not set before the locked phase origin")
+    i_probe = tail.find("PRESENT-EXACT-0 probe (appended)")
+    if i_probe >= 0:
+        probe = tail[i_probe:]
+        if "write_raw(" in probe or "crate::presentexact::court(" in probe or "qpc()" in probe.split("pub fn presentexact_probe(")[-1]:
+            raise Red("the probe writes a record, runs the court or takes a clock: it is a diagnostic only")
     return ("only the call changes and the witness sits outside the clock: the exact surface's present is present_once's "
             "shape with StretchDIBits at 1:1 or SetDIBitsToDevice as its one difference, no stretch mode touched; the window "
             "is a DPI-aware, borderless, topmost 1920x1080 popup at (0,0) with LATENCY-0's procedure; the clear is a white "
             "PatBlt and the readback a screen-DC BitBlt into a 24-bit top-down DIB; the timed interval holds only the "
-            "LoopRenderer's render and blit and the call; the readback and clear run only before and after the rounds; "
-            "LATENCY-0's instrument is still a byte-exact prefix")
+            "LoopRenderer's render and blit and the call; the readback and clear run only before and after the rounds; the "
+            "probe takes no clock, runs no court and writes no record; LATENCY-0's instrument is still a byte-exact prefix")
 
 
 # ------------------------------------------------------------------ main

@@ -1608,3 +1608,201 @@ pub fn presentexact_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str,
         }
     }
 }
+
+// ================================================================== PRESENT-EXACT-0 probe (appended)
+// A diagnostic, not a court: PRESENT-EXACT-0's first host run refused PRESENTEXACT-READBACK-STALE (the white clear did
+// not read back as white). The probe opens the same borderless window, repeats the court's clear-and-read-back, then
+// varies one suspect at a time — a longer wait, the z-order and foreground re-asserted, the cursor hidden — and reads
+// back both the composed screen and the window's own surface each time, saying where the pixels differ. It then
+// presents sealed frame 0 under each call. It takes no clock, runs no court and writes no record; with --out it saves
+// the read-back images as top-down 24-bit BMPs for inspection.
+
+#[link(name = "user32")]
+extern "system" {
+    fn GetForegroundWindow() -> Hwnd;
+    fn BringWindowToTop(hwnd: Hwnd) -> Bool;
+    fn ShowCursor(show: Bool) -> i32;
+    fn IsWindowVisible(hwnd: Hwnd) -> Bool;
+    fn GetCursorInfo(info: *mut CursorInfo) -> Bool;
+}
+
+#[repr(C)]
+struct CursorInfo {
+    cb_size: Dword,
+    flags: Dword,
+    h_cursor: *mut c_void,
+    pt_screen_pos: Point,
+}
+
+const SWP_SHOWWINDOW: Uint = 0x0040;
+
+fn probe_read_dc(owner: Hwnd, x: i32, y: i32) -> Option<Vec<u8>> {
+    let src = unsafe { GetDC(owner) };
+    if src.is_null() {
+        return None;
+    }
+    let mem = unsafe { CreateCompatibleDC(src) };
+    let hdr = court_header();
+    let mut bits: *mut c_void = std::ptr::null_mut();
+    let dib = if mem.is_null() {
+        std::ptr::null_mut()
+    } else {
+        unsafe { CreateDIBSection(src, &hdr, DIB_RGB_COLORS, &mut bits, std::ptr::null_mut(), 0) }
+    };
+    let mut out = None;
+    if !dib.is_null() && !bits.is_null() {
+        let old = unsafe { SelectObject(mem, dib) };
+        let ok = unsafe { BitBlt(mem, 0, 0, W as i32, H as i32, src, x, y, SRCCOPY) };
+        unsafe { GdiFlush() };
+        if ok != 0 {
+            out = Some(unsafe { std::slice::from_raw_parts(bits as *const u8, W * H * 3) }.to_vec());
+        }
+        unsafe { SelectObject(mem, old) };
+    }
+    unsafe {
+        if !dib.is_null() {
+            DeleteObject(dib);
+        }
+        if !mem.is_null() {
+            DeleteDC(mem);
+        }
+        ReleaseDC(owner, src);
+    }
+    out
+}
+
+fn probe_state(hwnd: Hwnd) -> String {
+    let fg = unsafe { GetForegroundWindow() } == hwnd;
+    let vis = unsafe { IsWindowVisible(hwnd) } != 0;
+    let mut ci = CursorInfo { cb_size: std::mem::size_of::<CursorInfo>() as Dword, flags: 0, h_cursor: std::ptr::null_mut(),
+                              pt_screen_pos: Point { x: 0, y: 0 } };
+    let got = unsafe { GetCursorInfo(&mut ci) } != 0;
+    format!("foreground={} visible={} cursor={} at ({},{}) flags=0x{:x}", if fg { "yes" } else { "no" }, if vis { "yes" } else { "no" },
+            if !got { "unknown" } else if ci.flags & 1 != 0 { "showing" } else { "hidden" }, ci.pt_screen_pos.x, ci.pt_screen_pos.y, ci.flags)
+}
+
+fn probe_save(prefix: &Option<String>, name: &str, v: &Option<Vec<u8>>) {
+    let (Some(p), Some(v)) = (prefix, v) else { return };
+    let row = W * 3;
+    let size = 54 + row * H;
+    let mut b: Vec<u8> = Vec::with_capacity(size);
+    b.extend_from_slice(b"BM");
+    b.extend_from_slice(&(size as u32).to_le_bytes());
+    b.extend_from_slice(&0u32.to_le_bytes());
+    b.extend_from_slice(&54u32.to_le_bytes());
+    b.extend_from_slice(&40u32.to_le_bytes());
+    b.extend_from_slice(&(W as i32).to_le_bytes());
+    b.extend_from_slice(&(-(H as i32)).to_le_bytes());
+    b.extend_from_slice(&1u16.to_le_bytes());
+    b.extend_from_slice(&24u16.to_le_bytes());
+    b.extend_from_slice(&0u32.to_le_bytes());
+    b.extend_from_slice(&((row * H) as u32).to_le_bytes());
+    b.extend_from_slice(&2835i32.to_le_bytes());
+    b.extend_from_slice(&2835i32.to_le_bytes());
+    b.extend_from_slice(&0u32.to_le_bytes());
+    b.extend_from_slice(&0u32.to_le_bytes());
+    b.extend_from_slice(v);
+    let path = format!("{}-{}.bmp", p, name);
+    match std::fs::write(&path, &b) {
+        Ok(_) => println!("[probe] saved {}", path),
+        Err(e) => eprintln!("[probe] could not save {}: {}", path, e),
+    }
+}
+
+fn probe_report(label: &str, hwnd: Hwnd, want: &dyn Fn(usize) -> u8, prefix: &Option<String>, save: bool) {
+    let screen = probe_read_dc(std::ptr::null_mut(), 0, 0);
+    let window = probe_read_dc(hwnd, 0, 0);
+    let d = |v: &Option<Vec<u8>>| match v {
+        Some(v) => crate::presentexact::describe(v, want),
+        None => "could not be read".to_string(),
+    };
+    println!("[probe] {}: screen: {}", label, d(&screen));
+    println!("[probe] {}: window: {}", label, d(&window));
+    if save {
+        probe_save(prefix, &format!("{}-screen", label.split_whitespace().next().unwrap_or("step")), &screen);
+    }
+}
+
+pub fn presentexact_probe(inputs: Vec<FrameInput>, out: Option<String>) {
+    unsafe { SetProcessDPIAware() };
+    let (flush_fn, freq) = court_prelude("the PRESENT-EXACT-0 probe");
+    let hwnd = exact_window("VerdandiPresentExactProbe", "Verðandi — PRESENT-EXACT-0 probe");
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    unsafe { SetForegroundWindow(hwnd) };
+    let mut surf = ExactGdiSurface { hwnd, header: court_header(), flush_fn, freq, call: 0, last_input: 0, inputs_seen: 0 };
+    use crate::presentexact::ExactSurface;
+    let _ = surf.pump();
+    (surf.flush_fn)();
+    println!("[probe] borderless window over the whole screen for a few seconds — leave it alone (no clock, no record)");
+    let g = surf.geometry();
+    println!("[probe] geometry: client {}x{} at ({},{}); screen logical {}x{} physical {}x{}", g[0], g[1], g[2], g[3], g[4], g[5], g[6], g[7]);
+    println!("[probe] state: {}", probe_state(hwnd));
+    let white = |_: usize| 0xFFu8;
+    // 1. exactly the court's sequence
+    surf.clear();
+    surf.flush();
+    surf.flush();
+    probe_report("1-court clear, 2 flushes", hwnd, &white, &out, true);
+    // 2. the same clear after about half a second of composition
+    for _ in 0..30 {
+        let _ = surf.pump();
+        surf.flush();
+    }
+    probe_report("2-after 30 more compositions", hwnd, &white, &out, false);
+    // 3. z-order and foreground re-asserted, then the clear again
+    unsafe {
+        SetWindowPos(hwnd, -1isize as Hwnd, 0, 0, W as i32, H as i32, SWP_SHOWWINDOW);
+        BringWindowToTop(hwnd);
+        SetForegroundWindow(hwnd);
+    }
+    for _ in 0..5 {
+        let _ = surf.pump();
+        surf.flush();
+    }
+    println!("[probe] state after re-asserting topmost and foreground: {}", probe_state(hwnd));
+    surf.clear();
+    surf.flush();
+    surf.flush();
+    probe_report("3-topmost and foreground re-asserted", hwnd, &white, &out, true);
+    // 4. the cursor hidden over the window
+    let mut hidden = 0;
+    while unsafe { ShowCursor(0) } >= 0 && hidden < 16 {
+        hidden += 1;
+    }
+    for _ in 0..5 {
+        let _ = surf.pump();
+        surf.flush();
+    }
+    println!("[probe] state with the cursor hidden: {}", probe_state(hwnd));
+    surf.clear();
+    surf.flush();
+    surf.flush();
+    probe_report("4-cursor hidden", hwnd, &white, &out, true);
+    // 5. sealed frame 0 under each call, through the adopted render entry
+    if let Some(f) = inputs.first() {
+        let mut lr = crate::present::LoopRenderer::new();
+        lr.render(&f.scene);
+        let digest_ok = crate::mantle::frame_digest(lr.index_frame()) == f.witness;
+        let bgr = lr.blit().to_vec();
+        println!("[probe] sealed frame 0 rendered; its frame digest {} the sealed witness", if digest_ok { "equals" } else { "DIFFERS FROM" });
+        for call in 0..2 {
+            surf.clear();
+            surf.flush();
+            surf.set_call(call);
+            let _ = surf.present(&bgr);
+            surf.flush();
+            probe_report(&format!("5{}-frame 0 under {}", if call == 0 { "a" } else { "b" }, crate::presentexact::CALLS[call]),
+                         hwnd, &|i| bgr[i], &out, call == 0);
+        }
+    }
+    for _ in 0..hidden {
+        unsafe { ShowCursor(1) };
+    }
+    if unsafe { IsWindow(hwnd) } != 0 {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    println!("[probe] done");
+}

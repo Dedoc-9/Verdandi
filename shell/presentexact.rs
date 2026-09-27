@@ -55,6 +55,38 @@ fn mismatches(a: &[u8], b: &[u8]) -> u64 {
     a.iter().zip(b.iter()).filter(|(x, y)| x != y).count() as u64
 }
 
+/// Where a read-back differs from what was expected, pixel by pixel: how many pixels, their bounding box, and the first
+/// one's bytes (read, then wanted), so a refusal says whether it is a strip (a taskbar), a small box (a cursor), the
+/// whole frame shifted by a little (a colour transform) or nothing at all (a readback that sees nothing).
+pub fn describe(v: &[u8], want: &dyn Fn(usize) -> u8) -> String {
+    if v.len() != W * H * 3 {
+        return format!("the readback holds {} bytes, not {}", v.len(), W * H * 3);
+    }
+    let (mut n, mut x0, mut y0, mut x1, mut y1) = (0u64, W, H, 0usize, 0usize);
+    let mut first: Option<(usize, usize, [u8; 3], [u8; 3])> = None;
+    for p in 0..W * H {
+        let i = p * 3;
+        let got = [v[i], v[i + 1], v[i + 2]];
+        let exp = [want(i), want(i + 1), want(i + 2)];
+        if got != exp {
+            let (x, y) = (p % W, p / W);
+            n += 1;
+            x0 = x0.min(x);
+            y0 = y0.min(y);
+            x1 = x1.max(x);
+            y1 = y1.max(y);
+            if first.is_none() {
+                first = Some((x, y, got, exp));
+            }
+        }
+    }
+    match first {
+        None => "0 pixels differ".to_string(),
+        Some((x, y, g, e)) => format!("{} of {} pixels differ, box ({},{})-({},{}), first at ({},{}) read BGR {:?} want {:?}",
+                                      n, W * H, x0, y0, x1, y1, x, y, g, e),
+    }
+}
+
 /// Clear, present `bgr` under `call`, read back; Err(reason) on any failure or mismatch.
 fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Readback, what: &str) -> Result<(), String> {
     if !s.clear() {
@@ -64,7 +96,8 @@ fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Rea
     s.flush();
     match s.readback() {
         Some(v) if v.len() == bgr.len() && v.iter().all(|&b| b == 0xFF) => {}
-        Some(_) => return Err(format!("PRESENTEXACT-READBACK-STALE: the window cleared to white before {} under {} did not read back as white; the readback does not see the window exactly", what, CALLS[call])),
+        Some(v) => return Err(format!("PRESENTEXACT-READBACK-STALE: the window cleared to white before {} under {} did not read back as white ({}); the readback does not see the window exactly",
+                                      what, CALLS[call], describe(&v, &|_| 0xFF))),
         None => return Err("PRESENTEXACT-READBACK: the screen could not be read back".to_string()),
     }
     s.set_call(call);
@@ -81,8 +114,8 @@ fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Rea
     rb.bytes_compared += bgr.len() as u64;
     rb.mismatched_bytes += bad;
     if bad != 0 {
-        return Err(format!("PRESENTEXACT-READBACK: the composed screen differs from the certified picture on {} under {} ({} of {} bytes)",
-                           what, CALLS[call], bad, bgr.len()));
+        return Err(format!("PRESENTEXACT-READBACK: the composed screen differs from the certified picture on {} under {} ({} of {} bytes; {})",
+                           what, CALLS[call], bad, bgr.len(), describe(&v, &|i| bgr[i])));
     }
     Ok(())
 }
