@@ -186,6 +186,14 @@ preregistered entry. Still association, never cause. The first host look read ev
 118.5% of nominal (boost now visible) and 1 hard fault/s at 94% memory load. Processor Frequency read 1,658 against a
 2,000 maximum, so the entry's "nominal" gloss is not established, and neither is the meaning of the estimate built on it.
 
+### REFUSAL-LOG-0 — refusals that accumulate · **landed** (`424b7c9a`)
+Every refusal on the present path (the PRESENT-EXACT-0 court's and the locked presenter's, and every differing screen
+readback in `show`) appends one unsealed JSON line to `build/refusals.log`: run, sequence, operation, reason code,
+attribution token and context. A console line reports a refusal once. The log turns a recurring refusal into a count
+across runs (`python verify/refusallog.py`). It is an observation, never evidence: not sealed, not committed, read by
+no rule. The gate proves on the mock court that each refusal leaves exactly one record and each record one refusal.
+The refusal-attribution candidates are not in the log yet. Adding them is the next step.
+
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
 falsifiable hypothesis — to be measured, never assumed — is that a **flip-model / waitable-swapchain** present can

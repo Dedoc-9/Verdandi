@@ -56,6 +56,9 @@ mod allocreuse1;
 #[allow(dead_code)]
 #[path = "presentexact.rs"]
 mod presentexact;
+
+#[path = "refusallog.rs"]
+mod refusallog;
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -631,7 +634,12 @@ fn main() {
                         }
                         println!("presentexact court OK");
                     }
-                    Err(m) => refuse("PRESENTEXACT", &m),
+                    Err(r) => {
+                        // REFUSAL-LOG-0: the court's refusal is logged where it is emitted, then printed as before
+                        let (ev, m) = r.into_event("mock");
+                        refusallog::refuse(&ev, &format!("SHELL-PRESENTEXACT: {}", m));
+                        exit(2)
+                    }
                 }
             } else {
                 #[cfg(all(target_os = "windows", shell_window))]

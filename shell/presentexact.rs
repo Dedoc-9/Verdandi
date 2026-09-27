@@ -22,6 +22,7 @@
 use crate::latency1r::{percentiles, FrameInput, Surface};
 use crate::mantle::{frame_digest, H, W};
 use crate::present::{arm_composite, to_blit, Arm, LoopRenderer};
+use crate::refusallog::V;
 
 pub const CALLS: [&str; 2] = ["stretchdibits", "setdibitstodevice"];
 pub const WARM_ROUNDS: usize = 10;
@@ -112,6 +113,40 @@ pub fn diff_bbox(v: &[u8], want: &dyn Fn(usize) -> u8) -> Option<[usize; 4]> {
     if any { Some([x0, y0, x1, y1]) } else { None }
 }
 
+/// REFUSAL-LOG-0: a court refusal as data — where on the path it came from (the attribution), a few facts (the context)
+/// and its console message, unchanged. The court builds it and returns it; it writes nothing and prints nothing. Where
+/// the refusal is emitted (the selftest in main.rs, the host window in win32.rs) it is logged through
+/// `refusallog::refuse` and its message printed exactly as before.
+pub struct Refused {
+    pub attribution: &'static str,
+    pub context: Vec<(&'static str, V)>,
+    pub message: String,
+}
+
+fn refused(attribution: &'static str, context: Vec<(&'static str, V)>, message: String) -> Refused {
+    Refused { attribution, context, message }
+}
+
+impl Refused {
+    /// The log event and the message, for the caller that emits the refusal on `surface` ("mock" or "gdi").
+    pub fn into_event(self, surface: &'static str) -> (crate::refusallog::Event, String) {
+        let reason = crate::refusallog::code_of(&self.message);
+        (crate::refusallog::Event { operation: "presentexact.court", surface, reason, attribution: self.attribution, context: self.context },
+         self.message)
+    }
+}
+
+fn at(what: &str, call: usize) -> Vec<(&'static str, V)> {
+    vec![("what", V::S(what.to_string())), ("call", V::S(CALLS[call].to_string()))]
+}
+
+fn boxed(mut ctx: Vec<(&'static str, V)>, b: Option<[usize; 4]>) -> Vec<(&'static str, V)> {
+    if let Some(b) = b {
+        ctx.push(("box", V::S(format!("{},{},{},{}", b[0], b[1], b[2], b[3]))));
+    }
+    ctx
+}
+
 /// REFUSAL-WHY-0: a refusal's attribution suffix — decided afterwards, appended only.
 fn why<S: ExactSurface>(s: &mut S, v: &[u8], want: &dyn Fn(usize) -> u8) -> String {
     match diff_bbox(v, want).map(|b| s.attribute(b)) {
@@ -121,9 +156,10 @@ fn why<S: ExactSurface>(s: &mut S, v: &[u8], want: &dyn Fn(usize) -> u8) -> Stri
 }
 
 /// Clear, present `bgr` under `call`, read back; Err(reason) on any failure or mismatch.
-fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Readback, what: &str) -> Result<(), String> {
+fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Readback, what: &str) -> Result<(), Refused> {
     if !s.clear() {
-        return Err(format!("PRESENTEXACT-READBACK: the window could not be cleared before {} under {}", what, CALLS[call]));
+        return Err(refused("surface.clear", at(what, call),
+                           format!("PRESENTEXACT-READBACK: the window could not be cleared before {} under {}", what, CALLS[call])));
     }
     s.flush();
     s.flush();
@@ -131,19 +167,20 @@ fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Rea
         Some(v) if v.len() == bgr.len() && v.iter().all(|&b| b == 0xFF) => {}
         Some(v) => {
             let who = why(s, &v, &|_| 0xFF);
-            return Err(format!("PRESENTEXACT-READBACK-STALE: the window cleared to white before {} under {} did not read back as white ({}{}); the readback does not see the window exactly",
-                               what, CALLS[call], describe(&v, &|_| 0xFF), who));
+            return Err(refused("clear.readback", boxed(at(what, call), diff_bbox(&v, &|_| 0xFF)),
+                               format!("PRESENTEXACT-READBACK-STALE: the window cleared to white before {} under {} did not read back as white ({}{}); the readback does not see the window exactly",
+                                       what, CALLS[call], describe(&v, &|_| 0xFF), who)));
         }
-        None => return Err("PRESENTEXACT-READBACK: the screen could not be read back".to_string()),
+        None => return Err(refused("surface.readback", at(what, call), "PRESENTEXACT-READBACK: the screen could not be read back".to_string())),
     }
     s.set_call(call);
     if s.present(bgr).is_none() {
-        return Err(format!("PRESENTEXACT-NO-PRESENT: {} failed on {}", CALLS[call], what));
+        return Err(refused("surface.present", at(what, call), format!("PRESENTEXACT-NO-PRESENT: {} failed on {}", CALLS[call], what)));
     }
     s.flush();
     let v = match s.readback() {
         Some(v) => v,
-        None => return Err("PRESENTEXACT-READBACK: the screen could not be read back".to_string()),
+        None => return Err(refused("surface.readback", at(what, call), "PRESENTEXACT-READBACK: the screen could not be read back".to_string())),
     };
     let bad = mismatches(&v, bgr);
     rb.checks += 1;
@@ -151,8 +188,11 @@ fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Rea
     rb.mismatched_bytes += bad;
     if bad != 0 {
         let who = why(s, &v, &|i| bgr[i]);
-        return Err(format!("PRESENTEXACT-READBACK: the composed screen differs from the certified picture on {} under {} ({} of {} bytes; {}{})",
-                           what, CALLS[call], bad, bgr.len(), describe(&v, &|i| bgr[i]), who));
+        let mut ctx = at(what, call);
+        ctx.push(("differing_bytes", V::N(bad)));
+        return Err(refused("present.readback", boxed(ctx, diff_bbox(&v, &|i| bgr[i])),
+                           format!("PRESENTEXACT-READBACK: the composed screen differs from the certified picture on {} under {} ({} of {} bytes; {}{})",
+                                   what, CALLS[call], bad, bgr.len(), describe(&v, &|i| bgr[i]), who)));
     }
     Ok(())
 }
@@ -169,17 +209,19 @@ pub struct Exact {
     pub renders: u64,
 }
 
-pub fn court<S: ExactSurface>(s: &mut S, inputs: &[FrameInput], per_cell: usize) -> Result<Exact, String> {
+pub fn court<S: ExactSurface>(s: &mut S, inputs: &[FrameInput], per_cell: usize) -> Result<Exact, Refused> {
     if inputs.is_empty() || per_cell == 0 {
-        return Err("PRESENTEXACT-EMPTY: no sealed frames or no samples requested".to_string());
+        return Err(refused("court.input", vec![("frames", V::N(inputs.len() as u64)), ("per_cell", V::N(per_cell as u64))],
+                           "PRESENTEXACT-EMPTY: no sealed frames or no samples requested".to_string()));
     }
     // 1. the geometry: the whole certified frame, 1:1, at the screen's origin, on a 1920x1080 screen at 100%
     let _ = s.pump();
     let g = s.geometry();
     let want = [W as i32, H as i32, 0, 0, W as i32, H as i32, W as i32, H as i32];
     if g != want {
-        return Err(format!("PRESENTEXACT-GEOMETRY: client {}x{} at ({},{}), screen logical {}x{} physical {}x{}; the target is {}x{} at (0,0) on a {}x{} screen",
-                           g[0], g[1], g[2], g[3], g[4], g[5], g[6], g[7], W, H, W, H));
+        return Err(refused("window.geometry", vec![("stage", V::S("before the witnesses".to_string())), ("geometry", V::S(format!("{:?}", g)))],
+                           format!("PRESENTEXACT-GEOMETRY: client {}x{} at ({},{}), screen logical {}x{} physical {}x{}; the target is {}x{} at (0,0) on a {}x{} screen",
+                                   g[0], g[1], g[2], g[3], g[4], g[5], g[6], g[7], W, H, W, H)));
     }
     // 2. witnesses first — outside every clock: the fresh reference reproduces the sealed witness; the loop renderer
     //    reproduces the fresh bytes; each call's presented frame reads back from the composed screen byte for byte
@@ -190,16 +232,19 @@ pub fn court<S: ExactSurface>(s: &mut S, inputs: &[FrameInput], per_cell: usize)
     for (i, f) in inputs.iter().enumerate() {
         let (fr, comp) = arm_composite(&f.scene, Arm::Production);
         if frame_digest(&fr) != f.witness {
-            return Err(format!("PRESENTEXACT-WITNESS: the production frame {} is not the sealed witness", i));
+            return Err(refused("render.witness", vec![("frame", V::N(i as u64))],
+                               format!("PRESENTEXACT-WITNESS: the production frame {} is not the sealed witness", i)));
         }
         let bgr = to_blit(&comp);
         lr.render(&f.scene);
         if lr.composite() != &comp[..] || lr.blit() != &bgr[..] {
-            return Err(format!("PRESENTEXACT-REUSE: the loop renderer differs from the fresh path on frame {}", i));
+            return Err(refused("render.loop", vec![("frame", V::N(i as u64))],
+                               format!("PRESENTEXACT-REUSE: the loop renderer differs from the fresh path on frame {}", i)));
         }
         for call in 0..2 {
             if !s.pump() {
-                return Err("PRESENTEXACT-CLOSED: the window closed during the witnesses; no record".to_string());
+                return Err(refused("window.close", vec![("stage", V::S("witnesses".to_string())), ("frame", V::N(i as u64))],
+                                   "PRESENTEXACT-CLOSED: the window closed during the witnesses; no record".to_string()));
             }
             witness_one(s, call, &bgr, &mut rb, &format!("sealed frame {}", i))?;
         }
@@ -229,8 +274,9 @@ pub fn court<S: ExactSurface>(s: &mut S, inputs: &[FrameInput], per_cell: usize)
         let order: [usize; 2] = if round % 2 == 0 { [0, 1] } else { [1, 0] };
         for &c in order.iter() {
             if !s.pump() {
-                return Err(format!("PRESENTEXACT-CLOSED: the window closed before the court finished (round {} of {}); no partial record",
-                                   round + 1, total_rounds));
+                return Err(refused("window.close", vec![("stage", V::S("rounds".to_string())), ("round", V::N(round as u64 + 1))],
+                                   format!("PRESENTEXACT-CLOSED: the window closed before the court finished (round {} of {}); no partial record",
+                                           round + 1, total_rounds)));
             }
             s.set_call(c);
             s.flush(); // the locked phase origin
@@ -241,10 +287,12 @@ pub fn court<S: ExactSurface>(s: &mut S, inputs: &[FrameInput], per_cell: usize)
             let presented = s.present(bgr);
             let (t1, t2) = match presented {
                 Some(t) => t,
-                None => return Err(format!("PRESENTEXACT-NO-PRESENT: {} or the composition barrier failed", CALLS[c])),
+                None => return Err(refused("surface.present", vec![("stage", V::S("rounds".to_string())), ("call", V::S(CALLS[c].to_string()))],
+                                           format!("PRESENTEXACT-NO-PRESENT: {} or the composition barrier failed", CALLS[c]))),
             };
             if lr.composite() != &expected[k][..] || lr.bgr() != &expected_bgr[k][..] {
-                return Err(format!("PRESENTEXACT-DRIFT: a composite of frame {} drifted from its verified bytes", k));
+                return Err(refused("render.drift", vec![("frame", V::N(k as u64)), ("call", V::S(CALLS[c].to_string()))],
+                                   format!("PRESENTEXACT-DRIFT: a composite of frame {} drifted from its verified bytes", k)));
             }
             if record {
                 render[c].push(us(t1 - t0));
@@ -260,13 +308,15 @@ pub fn court<S: ExactSurface>(s: &mut S, inputs: &[FrameInput], per_cell: usize)
     let last = (total_rounds - 1) % inputs.len();
     for call in 0..2 {
         if !s.pump() {
-            return Err("PRESENTEXACT-CLOSED: the window closed during the closing readback; no record".to_string());
+            return Err(refused("window.close", vec![("stage", V::S("closing".to_string()))],
+                               "PRESENTEXACT-CLOSED: the window closed during the closing readback; no record".to_string()));
         }
         witness_one(s, call, &expected_bgr[last], &mut rb, "the last frame after the court")?;
     }
     let g2 = s.geometry();
     if g2 != want {
-        return Err("PRESENTEXACT-GEOMETRY: the geometry changed during the court".to_string());
+        return Err(refused("window.geometry", vec![("stage", V::S("after the court".to_string())), ("geometry", V::S(format!("{:?}", g2)))],
+                           "PRESENTEXACT-GEOMETRY: the geometry changed during the court".to_string()));
     }
     Ok(Exact { refresh_us, frames: inputs.len(), per_cell, geometry: g, readback: rb, render, call: callv, present, renders: lr.renders() })
 }

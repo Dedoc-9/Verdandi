@@ -62,7 +62,9 @@ read back as a hard gate, the same-run p99 rule, and the fence; presentexact-loc
 locked to SetDIBitsToDevice with the screen read back after every present), hoststate (HOST-STATE-0: the host's state
 recorded beside a court, never controlled and never read by a rule), refusalwhy (REFUSAL-WHY-0: a readback refusal
 names the windows above ours over the differing box, after its verdict, reading only), hoststate1 (HOST-STATE-1: the
-OS-computed clock and the paging rates, a version 2 snapshot that no court records yet), and — in the oracle stage —
+OS-computed clock and the paging rates, a version 2 snapshot that no court records yet), refusallog (REFUSAL-LOG-0:
+every refusal on the present path appends one unsealed line to an append-only log; one record per refusal, proven on
+the mock court), and — in the oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
@@ -5098,9 +5100,238 @@ def hoststate1_record():
             "becomes an unavailable snapshot of its version; no court asks for version 2; the recorder calls only PDH's "
             "reading functions (%s); no verify/*.py carries an invalid escape sequence" % ", ".join(sorted(HOSTSTATE1_PDH)))
 
+# ------------------------------------------------------------------ REFUSAL-LOG-0
+# the gate's own refusal log: every shell the gate runs writes here, never into the owner's build/refusals.log
+REFUSALLOG_ENV = "VERDANDI_REFUSAL_LOG"
+GATE_REFUSAL_LOG = os.path.join(BUILD, "refusals-gate.log")
+# the mock court's plants and the attribution each refusal must carry
+REFUSALLOG_PLANTS = {"witness": "render.witness", "close": "window.close", "geometry": "window.geometry",
+                     "readback": "present.readback", "noop": "present.readback", "stale": "clear.readback"}
+# the registered attribution vocabulary: the court's (presentexact.rs) and the presenter's (reason, attribution) pairs
+REFUSALLOG_COURT_ATTRIBUTIONS = {"court.input", "window.geometry", "render.witness", "render.loop", "window.close",
+                                 "surface.clear", "clear.readback", "surface.readback", "surface.present",
+                                 "present.readback", "render.drift"}
+REFUSALLOG_SHOW_PAIRS = {("SHELL-SHOW-SCREEN-DIFFERS", "present.readback"), ("SHELL-SHOW-SCREEN-UNREADABLE", "surface.readback"),
+                         ("SHELL-SHOW-NO-PRESENT", "surface.present"), ("SHELL-SHOW-EMPTY", "show.input"),
+                         ("SHELL-BLIT-REFUSE", "render.blit-law"), ("SHELL-NO-DWM", "surface.compositor"),
+                         ("SHELL-NO-WINDOW", "window.create"), ("SHELL-SHOW-GEOMETRY", "window.geometry")}
+REFUSALLOG_FORBIDDEN = (".truncate(", "write(true)", "fs::write", "File::create", "remove_file", "rename(", "set_len(",
+                        "File::open", "read_to_string", "std::net", "TcpStream", "UdpSocket")
+
+
+def _code_of(message: str) -> str:
+    m = re.match(r"([A-Z0-9-]+):", message)
+    return m.group(1) if m else "UNCODED"
+
+
+def refusallog_preregistered():
+    """REFUSAL-LOG-0's method is locked: an observation, never evidence or authority; one unsealed append-only record per
+    refusal event on the admitted present-path operations (the PRESENT-EXACT-0 court, the locked presenter, one record
+    per differing readback); the record's fields; recurrence only. The code's constants must equal the registered ones."""
+    import refusallog as RL
+    e = locked_entry("REFUSAL-LOG-0", {
+        "an observation, never evidence or authority": ("hyp", ("an observation, never evidence and never authority", "not sealed, not chained and not committed", "never read back")),
+        "the admitted operations and the grain": ("hyp", ("present-exact-0 court", "locked presenter", "every completed screen readback whose pixels differ", "one record each")),
+        "the record's fields": ("hyp", ("refusal_id", "run_id", "monotonic seq", "unix_ms", "reason_code", "attribution", "registered vocabulary", "never a prose diagnosis", "context_digest")),
+        "recurrence only": ("hyp", ("recurrence only", "a count is not a cause", "zero is not proof")),
+        "one-to-one, append-only, default, failure, gate isolation": ("succ", ("exactly one record", "exactly one emitted refusal", "six plants", "only grows", "build/refusals.log", "exit status and message are unchanged", "its own scratch file", "writes nothing")),
+        "no silent refusal, no rewrite, no dependence, no reading": ("fail", ("prints without a record", "record without a refusal", "two records for one refusal", "rewritten", "depends on the log", "reading the log", "network write", "owner's log", "changed by the instrumentation")),
+        "scope: the admitted operations; show fenced not run; a failed append": ("lims", ("outside refusal-log-0", "source-fenced, not executed on the gate", "failed append", "not a timing instrument", "zero records is not proof")),
+    })
+    rs = read(os.path.join(SHELL, "refusallog.rs")).decode("utf-8")
+    keys = re.findall(r'\\"(\w+)\\":', src_span(rs, "pub fn line(", "\n}\n"))
+    if ('pub const ENV: &str = "VERDANDI_REFUSAL_LOG";' not in rs or 'pub const DEFAULT_PATH: &str = "build/refusals.log";' not in rs
+            or 'pub const LOG: &str = "REFUSAL-LOG-0";' not in rs or tuple(keys) != RL.KEYS
+            or (RL.ENV, RL.DEFAULT_PATH, RL.LOG) != (REFUSALLOG_ENV, os.path.join("build", "refusals.log"), "REFUSAL-LOG-0")):
+        raise Red("the log's variable, default path, name or record keys are not the registered ones")
+    return ("REFUSAL-LOG-0's method is locked (hash %s): an observation, never evidence or authority — one unsealed, "
+            "append-only record per refusal event on the PRESENT-EXACT-0 court and the locked presenter (one per differing "
+            "readback), with refusal_id, run_id, seq, unix_ms, operation, surface, reason_code, a registered attribution "
+            "token, context and context_digest; recurrence only, never a cause; the variable, default path and record keys "
+            "in the shell and the reader equal the registered ones" % e["chain_hash"][:8])
+
+
+def refusallog_bijection():
+    """The one-to-one invariant, executed on the mock court: a clean run adds no record; each of the six plants refuses
+    once and adds exactly one record, whose reason_code is the code the console printed, whose attribution is the
+    registered one for the plant, whose refusal_id is run_id/seq; the log only grows; every run has its own run_id.
+    Without the variable the record goes to build/refusals.log under the working directory; a log that cannot be written
+    is said on the console and the refusal's exit status and message are unchanged."""
+    import refusallog as RL
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    log = os.path.join(BUILD, "refusallog-bijection.log")
+    if os.path.exists(log):
+        os.remove(log)
+    env = dict(os.environ, **{REFUSALLOG_ENV: log})
+    base = [SHELL_EXE, "presentexact-selftest", "--session", SESSIONWALK_DEMO, "--per-cell", "2"]
+    prev, runs, lines = b"", [], {}
+    for plant in [""] + list(REFUSALLOG_PLANTS):
+        cp = subprocess.run(base + (["--plant", plant] if plant else []), capture_output=True, text=True, cwd=ROOT, env=env)
+        now = read(log) if os.path.exists(log) else b""
+        if not now.startswith(prev):
+            raise Red("the log did not only grow: an earlier byte changed")
+        added = now[len(prev):].decode("utf-8").splitlines()
+        emitted = [ln for ln in cp.stderr.splitlines() if ln.startswith("SHELL-PRESENTEXACT: ")]
+        if not plant:
+            if cp.returncode != 0 or added or emitted:
+                raise Red("a clean court run refused or wrote a record")
+        else:
+            if cp.returncode != 2 or len(emitted) != 1 or len(added) != 1:
+                raise Red("PLANT %s: %d refusal(s) printed and %d record(s) added, not one of each" % (plant, len(emitted), len(added)))
+            rec = json.loads(added[0])
+            why = RL.problem(rec)
+            if why or rec["reason_code"] != _code_of(emitted[0][len("SHELL-PRESENTEXACT: "):]) or rec["seq"] != 0 \
+                    or (rec["operation"], rec["surface"], rec["attribution"]) != ("presentexact.court", "mock", REFUSALLOG_PLANTS[plant]):
+                raise Red("PLANT %s: the record does not match the printed refusal (%s)" % (plant, why or rec["reason_code"]))
+            runs.append(rec["run_id"])
+            lines[plant] = emitted[0]
+        prev = now
+    records, bad = RL.read(log)
+    if bad or len(records) != len(REFUSALLOG_PLANTS) or len(set(runs)) != len(runs):
+        raise Red("the log holds other than one well-formed record per plant, each from its own run")
+    # the default path: no variable, another working directory
+    cwd = os.path.join(BUILD, "refusallog-cwd")
+    shutil.rmtree(cwd, ignore_errors=True)
+    os.makedirs(cwd)
+    env2 = {k: v for k, v in os.environ.items() if k != REFUSALLOG_ENV}
+    cp = subprocess.run(base + ["--root", ROOT + os.sep, "--plant", "readback"], capture_output=True, text=True, cwd=cwd, env=env2)
+    got, gbad = RL.read(os.path.join(cwd, "build", "refusals.log"))
+    shutil.rmtree(cwd, ignore_errors=True)
+    if cp.returncode != 2 or len(got) != 1 or gbad or got[0]["attribution"] != "present.readback":
+        raise Red("without the variable the record did not go to build/refusals.log under the working directory")
+    # a log that cannot be written: the refusal stands exactly as it would without the log
+    cp = subprocess.run(base + ["--plant", "readback"], capture_output=True, text=True, cwd=ROOT, env=dict(os.environ, **{REFUSALLOG_ENV: BUILD}))
+    emitted = [ln for ln in cp.stderr.splitlines() if ln.startswith("SHELL-PRESENTEXACT: ")]
+    if (cp.returncode != 2 or emitted != [lines["readback"]]
+            or not any(ln.startswith("SHELL-REFUSAL-LOG-UNWRITTEN: ") for ln in cp.stderr.splitlines())):
+        raise Red("an unwritable log changed the refusal's exit status or message, or was not said")
+    return ("one record per refusal, one refusal per record, on the mock court: a clean run adds none; each of the %d plants "
+            "refuses once and adds exactly one record whose reason_code is the printed code, whose attribution is the "
+            "registered one and whose refusal_id is its run_id/seq; the log only grows; each run has its own run_id; "
+            "without the variable the record goes to build/refusals.log under the working directory; an unwritable log is "
+            "said on the console and the refusal's exit status and message are unchanged" % len(REFUSALLOG_PLANTS))
+
+
+def refusallog_fence():
+    """The log is written only by the primitive and read by nothing on the path: the court builds its refusals as data
+    (every Err is refused(...), with a registered attribution) and writes nothing; both of its emission points log
+    through refuse before exiting; in the presenter nothing prints a refusal except through refuse, every exit(2)
+    follows one, and each differing readback calls record once, after it is counted, with the registered (reason,
+    attribution) pairs; the primitive appends and never truncates, rewrites, removes or reaches the network; nothing
+    else names the log; the log is gitignored; the gate's variable points into verify/build."""
+    px = read(os.path.join(SHELL, "presentexact.rs")).decode("utf-8")
+    code = "\n".join(ln for ln in px.splitlines() if not ln.lstrip().startswith("//"))
+    errs = re.findall(r"Err\((\w+)", code)
+    if not errs or set(errs) != {"refused"} or "refusallog::record" in code or "refusallog::refuse" in code or "eprintln!" in code:
+        raise Red("the court returns a refusal that is not data, or writes or prints one itself")
+    if set(re.findall(r'refused\("([a-z.\-]+)"', px)) != REFUSALLOG_COURT_ATTRIBUTIONS:
+        raise Red("the court's attributions are not the registered vocabulary")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    if ('let (ev, m) = r.into_event("mock");\n                        refusallog::refuse(&ev, &format!("SHELL-PRESENTEXACT: {}", m));\n                        exit(2)'
+            not in main_src or 'refuse("PRESENTEXACT", &m)' in main_src):
+        raise Red("the selftest does not log the court's refusal where it emits it")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    win = src_span(tail, "pub fn presentexact_window(", "\n}\n")
+    if ('let (ev, m) = r.into_event("gdi");\n            crate::refusallog::refuse(&ev, &format!("SHELL-{}", m));' not in win
+            or 'eprintln!("SHELL-{}", m);' in win):
+        raise Red("the host window does not log the court's refusal where it emits it")
+    i_lock, i_why = tail.find("PRESENT-EXACT-0 LOCK: the conforming presenter (appended)"), tail.find("REFUSAL-WHY-0 (appended)")
+    pres = tail[i_lock:i_why]
+    exits = pres.split("std::process::exit(2);")[:-1]
+    if "eprintln!(" in pres or len(exits) != 6 or any(c.count("crate::refusallog::refuse(") != 1 for c in exits) \
+            or pres.count("crate::refusallog::refuse(") != 6:
+        raise Red("a presenter refusal prints or exits without the logging primitive")
+    for code_, console in re.findall(r'crate::refusallog::refuse\(&show_(?:event\(\(|setup\()"([A-Z-]+)".*?,\s*&?(?:format!\()?"([A-Z-]+):', pres, re.S):
+        if code_ != console:
+            raise Red("a presenter refusal logs %s but prints %s" % (code_, console))
+    pairs = set(re.findall(r'\("(SHELL-[A-Z-]+)", "([a-z.\-]+)"', pres))
+    if pairs != REFUSALLOG_SHOW_PAIRS:
+        raise Red("the presenter's (reason, attribution) pairs are not the registered ones")
+    sw = src_span(pres, "fn show_witness(", "\n}\n")
+    order = [sw.find(t) for t in ("st.differed += 1;", "crate::refusallog::record(", "if fresh || st.last != Some(exact) {")]
+    if -1 in order or order != sorted(order) or pres.count("crate::refusallog::record(") != 1 or sw.count("refusallog::") != 1:
+        raise Red("a differing readback is not recorded once, after it is counted")
+    rl = read(os.path.join(SHELL, "refusallog.rs")).decode("utf-8")
+    for tok in REFUSALLOG_FORBIDDEN:
+        if tok in rl:
+            raise Red("the refusal log's writer contains %r: it may only append" % tok)
+    ref = src_span(rl, "pub fn refuse(", "\n}\n")
+    if (rl.count("OpenOptions::new().create(true).append(true).open(") != 1 or rl.count("std::env::var(") != 1
+            or not (0 <= ref.find("record(ev);") < ref.find("eprintln!("))):
+        raise Red("the log is not opened for append only, or the primitive prints before it records")
+    for name in os.listdir(SHELL):
+        if name.endswith(".rs") and name != "refusallog.rs":
+            t = read(os.path.join(SHELL, name)).decode("utf-8")
+            if "VERDANDI_REFUSAL_LOG" in t or "refusals.log" in t or "refusallog::line(" in t:
+                raise Red("shell/%s names the refusal log: nothing on the path may read it" % name)
+    for name in os.listdir(os.path.join(ROOT, "verify")):
+        if name.endswith(".py") and name not in ("refusallog.py", "verify.py"):
+            t = read(os.path.join(ROOT, "verify", name)).decode("utf-8")
+            if "refusallog" in t or "REFUSAL-LOG" in t or "refusals.log" in t:
+                raise Red("verify/%s reads the refusal log: no rule may" % name)
+    gi = read(os.path.join(ROOT, ".gitignore")).decode("utf-8").splitlines()
+    if "*.log" not in gi or os.environ.get(REFUSALLOG_ENV) != GATE_REFUSAL_LOG or os.path.dirname(GATE_REFUSAL_LOG) != BUILD:
+        raise Red("the log is not gitignored, or the gate's own refusals are not kept out of the owner's log")
+    return ("the log is written only by the primitive and read by nothing on the path: the court returns its refusals as "
+            "data with registered attributions (%d) and writes nothing; both emission points log before exiting; in the "
+            "presenter every refusal prints through the primitive (6, each before its exit) and each differing readback is "
+            "recorded once after it is counted, with the registered (reason, attribution) pairs (%d); the writer only "
+            "appends, never truncates, removes or reaches the network; nothing else names the log; it is gitignored; the "
+            "gate's variable points into verify/build" % (len(REFUSALLOG_COURT_ATTRIBUTIONS), len(REFUSALLOG_SHOW_PAIRS)))
+
+
+def refusallog_reader():
+    """The reader validates and counts and writes nothing: the bijection row's log reads as six records with the
+    registered tallies; a tampered digest, a missing or extra key, a float, a refusal_id that is not run_id/seq, a
+    non-JSON line and a skipped seq are each reported by line and not counted; the command prints the counts with the
+    caveat and leaves the log's bytes unchanged."""
+    import refusallog as RL
+    log = os.path.join(BUILD, "refusallog-bijection.log")
+    records, bad = RL.read(log)
+    t = {(x["reason_code"], x["attribution"]): (x["count"], x["runs"]) for x in RL.tally(records)}
+    if bad or t.get(("PRESENTEXACT-READBACK", "present.readback")) != (2, 2) or sum(c for c, _ in t.values()) != len(REFUSALLOG_PLANTS):
+        raise Red("the reader did not count the bijection row's log as registered")
+    good = dict(records[0])
+    tampered = [dict(good, context_digest="0" * 64), {k: v for k, v in good.items() if k != "surface"}, dict(good, extra=1),
+                dict(good, seq=0.5), dict(good, refusal_id=good["run_id"] + "/9")]
+    skip = dict(good, run_id="skip", refusal_id="skip/2", seq=2)
+    scratch = os.path.join(BUILD, "refusallog-reader.log")
+    with open(scratch, "w", encoding="utf-8") as fh:
+        for r in [good] + tampered:
+            fh.write(json.dumps(r, separators=(",", ":"), ensure_ascii=False) + "\n")
+        fh.write("not json at all\n")
+        fh.write(json.dumps(skip, separators=(",", ":"), ensure_ascii=False) + "\n")
+    got, gbad = RL.read(scratch)
+    if len(got) != 2 or len(gbad) != 7 or {n for n, _ in gbad if n} != {2, 3, 4, 5, 6, 7}:
+        raise Red("the reader counted a tampered or malformed line, or missed one: %s" % gbad)
+    before = read(log)
+    cp = subprocess.run([sys.executable, os.path.join(ROOT, "verify", "refusallog.py"), log], capture_output=True, text=True, cwd=ROOT)
+    if (cp.returncode != 0 or "%d record(s) from %d run(s)" % (len(REFUSALLOG_PLANTS), len(REFUSALLOG_PLANTS)) not in cp.stdout
+            or "not proof that a refusal cannot occur" not in cp.stdout or read(log) != before):
+        raise Red("the reader's command did not print the counts with the caveat, or changed the log")
+    src = read(os.path.join(ROOT, "verify", "refusallog.py")).decode("utf-8")
+    for tok in (".write(", '"w"', "'w'", '"a"', "'a'", "os.remove", "unlink", "rename", "import requests", "urllib"):
+        if tok in src:
+            raise Red("the reader contains %r: it may only read" % tok)
+    os.remove(scratch)
+    return ("the reader validates and counts and writes nothing: the bijection log reads as %d records with the registered "
+            "tallies; a tampered digest, a missing and an extra key, a float, a refusal_id that is not run_id/seq, a non-"
+            "JSON line and a skipped seq are each reported and not counted; the command prints the counts and the caveat "
+            "and leaves the log unchanged" % len(REFUSALLOG_PLANTS))
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
+    # REFUSAL-LOG-0: every shell the gate runs logs its refusals to the gate's own scratch file, never the owner's log
+    os.makedirs(BUILD, exist_ok=True)
+    os.environ[REFUSALLOG_ENV] = GATE_REFUSAL_LOG
+    if os.path.exists(GATE_REFUSAL_LOG):
+        os.remove(GATE_REFUSAL_LOG)
     row("oracle-frozen", oracle_frozen)
     row("game-frozen", game_frozen)
     row("game-suites", game_suites)
@@ -5234,6 +5465,10 @@ def main() -> int:
     row("refusalwhy-fence", refusalwhy_fence)
     row("hoststate1-preregistered", hoststate1_preregistered)
     row("hoststate1-record", hoststate1_record)
+    row("refusallog-preregistered", refusallog_preregistered)
+    row("refusallog-bijection", refusallog_bijection)
+    row("refusallog-fence", refusallog_fence)
+    row("refusallog-reader", refusallog_reader)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

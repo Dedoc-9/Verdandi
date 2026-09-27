@@ -2429,6 +2429,62 @@ Thermal state. A cause: association, never cause.
 failure takes another with it, the estimate is computed otherwise, a bad snapshot is let through or mislabelled, or the
 recorder calls a PDH function that is not a reading one.
 
+## REFUSAL-LOG-0 — every refusal on the present path leaves one line (an observation; landed)
+
+**Why.** A console line says that a refusal happened, once, to whoever was watching. Nothing keeps it. So the only way
+to ask whether a refusal recurs is to compare transcripts by hand. REFUSAL-LOG-0 makes refusals accumulate: one line
+per refusal event, appended to a log that is never rewritten, so that "the same reason, from the same place, in six
+runs" becomes a count. **It is an observation about execution, never evidence and never authority.** It is not sealed,
+not chained and not committed. No rule reads it, and nothing on the present path reads it back. The console stays
+exactly as it was.
+
+**The method (`424b7c9a`).** The admitted operations are the PRESENT-EXACT-0 court and the locked presenter.
+The court now returns its refusals as data (`presentexact::Refused`): an attribution, a small context and the message,
+unchanged. It builds them and writes nothing. They are logged where they are emitted, by the headless selftest and by
+the host window. The presenter (`show`, `show-playback`) logs each of its refusals, and **each completed screen
+readback whose pixels differ from the presented certified frame** (the owner's grain: one record per differing
+readback, so the log's count equals the run's `differed` count, and a mismatch held under an overlay adds about one a
+second). One primitive does the writing (`shell/refusallog.rs`). `refuse` appends the record and then prints the
+console line, so a refusal cannot print without leaving its line. `record` is the same append, used once in the
+presenter, for a differing readback that has already been decided and counted. A record is one JSON line with these
+fields: `refusal_id` (`run_id/seq`), `run_id` (the process's start and id), `seq` (monotonic within the run),
+`unix_ms`, `operation`, `surface` (`mock` or `gdi`), `reason_code` (the refusal's console code), `attribution` (a fixed
+token from a registered vocabulary, such as `present.readback` or `clear.readback`, never a prose diagnosis), `context`
+(integers and strings: the frame, the call, the differing bytes, the box) and `context_digest` (the context's sha256).
+It is written to `$VERDANDI_REFUSAL_LOG` if that is set, otherwise to `build/refusals.log` under the working directory,
+which is gitignored. A log that cannot be written is said on the console (`SHELL-REFUSAL-LOG-UNWRITTEN`), and the
+refusal goes on unchanged. The gate points the variable at its own scratch file, so its planted refusals never reach
+the owner's log. `python verify/refusallog.py` validates the log and counts it by operation, surface, reason and
+attribution, with the number of distinct runs. It writes nothing.
+
+**Rows.** `refusallog-preregistered`: the method is locked, and the variable, default path and record keys are the same
+in the shell and the reader. `refusallog-bijection` executes the one-to-one invariant on the mock court. A clean run
+adds no record. Each of the six plants refuses once and adds exactly one record, with the printed code, the
+registered attribution, and `run_id/seq`. The log only grows. Without the variable, the record goes to
+`build/refusals.log` under the working directory. An unwritable log is said, and the refusal's exit status and message
+are byte-identical. `refusallog-fence`: every refusal the court returns is data with a registered attribution, and the
+court writes nothing. Both emission points log before they exit. In the presenter, all six refusals print through the
+primitive, each before its own exit, and the one differing-readback record comes after the count. The writer only
+appends. Nothing else in the shell or in the sealers names the log, and the gate's variable points into
+`verify/build`. `refusallog-reader`: a tampered digest, a missing or extra key, a float, a wrong `refusal_id`, a
+non-JSON line and a skipped `seq` are each reported and not counted. The command prints the counts and leaves the log
+unchanged. 29 mutations of the writer, the court, the presenter, the reader and the gate's isolation were each caught.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the one-to-one invariant on the court, append-only growth, the
+default path, the unchanged refusal under a failed append, the reader. ESTABLISHED (source): the presenter's call sites.
+NOT_MEASURED (host): no host refusal has been logged yet.
+
+**does_not_show.** Why a refusal happened: a count is not a cause. That a refusal cannot occur: zero records is not
+proof. Refusals outside the admitted operations: argument errors, the windowless build, and the host window court's
+harness (the shared DWM prelude and the window's creation, before the court function starts). The presenter's records
+executed on the gate: `show` needs a window, so its call sites are fenced from the source. A record whose append failed
+(the console says so). Timing: `unix_ms` is the wall clock, for grouping only.
+
+**Falsifier.** `refusallog-bijection` goes red if a refusal prints without a record, leaves two, or leaves one that does
+not match its printed code and registered attribution; if the log is rewritten; or if a failed append changes the
+refusal. `refusallog-fence` goes red if a presenter refusal bypasses the primitive, the court writes or prints its
+own refusal, the writer can truncate, anything else names the log, or the gate stops isolating its own refusals.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
