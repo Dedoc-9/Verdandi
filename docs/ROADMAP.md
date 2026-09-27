@@ -4,9 +4,10 @@
 # Roadmap — toward a live, authorable world
 
 *Where the program stands, what "a live authorable world" means for it, and the sequenced, falsifiable path to get
-there. This roadmap names only rungs that are already public in [`verify/RUNGS.md`](../verify/RUNGS.md); the
-general techniques it points at are cited prior art, not commitments. Specific new measurement and execution rungs
-are under private consideration pending the owner's consensus and are not enumerated here.*
+there. This roadmap names rungs that are already public in [`verify/RUNGS.md`](../verify/RUNGS.md), and — since the
+owner published it — the route to walking in a live, authorable world, whose rungs are named but not yet built. The
+general techniques it points at are cited prior art, not commitments. Other candidate rungs are under private
+consideration pending the owner's consensus and are not enumerated here.*
 
 ---
 
@@ -57,6 +58,57 @@ semantics reaches the screen without passing through a gate.
    the frozen oracle and need the new-semantics route. Physics is different: much of it is already in the tag (see
    below), so the question there is what to carry, not what to invent.
 4. **Can independent edits combine?** Two authored branches of a world need a deterministic, consensus-free merge.
+
+---
+
+## The route to walking in a live, authorable world (the owner's order)
+
+The substrate is built: a deterministic world, deterministic materials, a deterministic renderer, an exact presenter,
+workshop authority and the session walk. What is missing is the **closed live cycle**: input → authoring authority →
+render → present → observe → next input. It is mostly not a renderer problem any more. It is the live loop, live
+input and authoring, and making the live chain recoverable. The order:
+
+```text
+REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic foundation (landed: the first two)
+      ↓
+LIVE-LOOP-0      the shipped per-frame loop — until it exists the studio has a viewer, not a live world
+      ↓
+LIVE-INPUT-0     physical input → typed editor action → the workshop/session → a new W, M → the next frame
+      ↓
+LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders
+      ↓
+LIVE-SESSION-0   live events → append-only session → save → restart → replay → the same world
+      ↓
+walking in a live, authorable world
+      ↓
+PRESENT-1, the live-loop re-breakdown, BANDWIDTH-0 / POOL-0      afterwards, not blockers
+```
+
+- **The diagnostic foundation** is not on the critical path to walking. It gives the live loop an instrumented refusal
+  surface instead of console archaeology. REFUSAL-LOG-0 and RUN-LEDGER-0 have landed. REFUSAL-WHY's covering windows
+  go into the refusal log next, as program, class, rectangle and overlay flags. Titles stay console-only and are never
+  persisted, and the rectangle is diagnostic geometry, not identity. DRIFT-0 is observational first: it counts
+  recurrence and cross-run drift from the two files and the host state, with no intervention.
+- **LIVE-LOOP-0** is the gate that matters: the current (W, M, C) state → `LoopRenderer` on its persistent buffers →
+  one frame rendered from that state → SetDIBitsToDevice → the screen witness → the next frame. It includes window
+  events, clean shutdown, refusals logged and runs ledgered. The shell mutates nothing canonical. Its first court is
+  narrow: no authoring input, no flip model, no persistent workers, no latency claim.
+- **LIVE-INPUT-0** turns physical input into authoring operations through the authority boundary already built
+  (Urðr's input membrane `cue`, frozen in `oracle/game/`, the workshop and the session model). The shell never mutates the world directly. The first
+  vocabulary is tiny: move the camera, select a cell, open or close a cell, change a tile or material. It is named
+  LIVE-INPUT-0 because `INPUT-0` is already seat 9.
+- **LIVE-AUTHOR-0** proves the mutation/render bridge. One interaction must demonstrably go input → typed edit →
+  session event → authoritative W, M change → next render → changed pixels. The control must hold too: a camera-only
+  input may change pixels, and W and M stay unchanged. That preserves the W / M / C boundary the workshop already
+  enforces. The test is not "I can click something" but **the thing I author is the same authority that the next frame
+  renders**.
+- **LIVE-SESSION-0** makes the live chain recoverable by connecting the live loop to the session walk's existing
+  authority and deterministic replay, rather than inventing a second live-state system: live events → append-only
+  session → checkpoint or save → restart → replay → the same world.
+- **Afterwards:** PRESENT-1, the live-loop re-breakdown, and BANDWIDTH-0 / POOL-0 are optimization and latency work
+  measured on the real loop. They are not prerequisites for walking.
+
+Each of these rungs is ratified, preregistered and built in turn; none is claimed until its gate stands.
 
 ---
 
@@ -226,9 +278,10 @@ industry pattern to borrow is the **authoring-data / runtime-data split** (e.g. 
 and reload atomicity — which is exactly the workshop's edit → authority → record shape. The live loop this needs is its
 own rung (timing, cadence, ownership, input). ALLOC-REUSE-1 read ADOPT and is locked, so that loop renders through
 `LoopRenderer` rather than deciding its allocation again. It presents through the locked 1:1 presenter's call and
-reads the screen back as that presenter does. It is the next major rung, ahead of PRESENT-1, and its first court is
-kept narrow: the loop itself, without live editing, input, the flip model or latency claims. After it, and after any
-change of presentation path, the frame's breakdown is re-measured rather than carried forward.
+reads the screen back as that presenter does. It is LIVE-LOOP-0 in the route above, ahead of PRESENT-1, and its first
+court is kept narrow: the loop itself, without live editing, input, the flip model or latency claims. After it, and
+after any change of presentation path, the frame's breakdown is re-measured rather than carried forward. Interactive
+capture itself is LIVE-INPUT-0 through LIVE-SESSION-0.
 
 ### SEMANTIC-0 — a float-free, geometry-bound semantic layer
 New VIEW semantics the studio did not inherit (filtering, variety) earned by a Verðandi-local reference pinned by
