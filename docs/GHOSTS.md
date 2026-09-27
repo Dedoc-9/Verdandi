@@ -150,8 +150,9 @@ The preregistered confirmation reproduced the reading (NO SEAT; blit 427‰, emi
 share within 8‰ of the first run). What remains open is not the shape but its parts: the split cannot say how much of
 the largest phase, the blit, is `StretchDIBits`'s 2:1 downscale rather than the copy itself (G11), and the emit and
 frame phases include their buffers' allocation. `ALLOC-REUSE-0` (preregistered, `aaaada37`) measures how much of the
-frame that allocation is, as a diagnostic that adopts nothing. Its first run read ALLOCATION MATERIAL: reuse was
-1.59 ms (91‰) cheaper at the envelope p50, with the deltas mostly in bgr and emit. The confirmation is pending.
+frame that allocation is, as a diagnostic that adopts nothing. It read ALLOCATION MATERIAL twice: reuse was 1.59 and
+1.82 ms (91‰ and 105‰) cheaper at the envelope p50, with the deltas mostly in bgr and emit. The production path is
+unchanged; adopting reuse would be its own court.
 
 **Exorcism.** Because the multi-component result promotes nothing by itself, any next step is a narrower measurement of
 one named component, preregistered on its own — not an optimization chosen because a share looks large. The first was
@@ -175,7 +176,7 @@ tidiness ghost, not a correctness or performance one.
 
 ---
 
-## G10 — the latency statistics are thin, and one category boundary has no margin · MEASURED
+## G10 — the latency statistics are thin, and the category boundaries have no declared margin · MEASURED
 
 Some of the present-path statistics rest on very few samples. With n = 200, **p99 is the third-largest sample** (two
 lie beyond it): the first `LATENCY-1` run read DEGRADATION (p99 12,299 µs vs 7,318) on three slow samples, and its
@@ -183,7 +184,10 @@ confirmation read NO MATERIAL CHANGE (p99 7,339 µs) — the category flipped on
 held. The **refresh period** is the median of eight idle `DwmFlush` intervals, and across five runs on the same host it
 read between 13,089 and 13,926 µs, a 63‰ spread. And `LATENCY-1R`'s rule puts the boundary between ABSORBED (≤ 0‰) and
 PARTIALLY ABSORBED (1–499‰) at exactly zero, so the locked regime's label flipped between runs on 2 vs 24 µs of glass
-delta while its magnitude (under 1% propagated) held. None of these statistics is wrong; each is coarser than its
+delta while its magnitude (under 1% propagated) held. `PRESENT-STRETCH-0`'s confirmation added two more cases at the
+50‰ confound bound. `HALFTONE`'s label flipped from MODE MATERIAL to CONFOUNDED on a non-blit movement of 53‰, and
+`COLORONCOLOR` passed the same bound at 48‰. Both happened in a run where every phase was slower than in the first
+(the default's blit went from 7.3 to 11.6 ms). None of these statistics is wrong; each is coarser than its
 precision suggests, and the medians across repeated runs deserve more weight than any single tail or label.
 
 **Exorcism.** For a tail-sensitive verdict, raise N or report the number of samples beyond the threshold beside the
@@ -210,10 +214,11 @@ is the net of removing the scaling and adding the larger copy, and not a general
 **Exorcism.** As a measurement ghost this one is laid: the reading reproduced. What is still open is a choice, not a
 measurement — what the shell should present (its geometry, a stretch mode set and stated, or a 1:1 region) changes
 what the window shows, so each is its own court, never a consequence drawn from this diagnostic. `PRESENT-STRETCH-0`
-(`f5372890`) asks only whether the half-size blit's cost depends on the stretch mode, and it chooses none. Its first
-run read MODE MATERIAL for both alternatives. On this host the default `BLACKONWHITE` blit was the dearest of the three
-modes measured: `COLORONCOLOR` read 392‰ and `HALFTONE` 322‰ cheaper at p50. So the half-size blit's cost here depends
-materially on which reduction GDI performs. The confirmation is pending.
+(`f5372890`) asks only whether the half-size blit's cost depends on the stretch mode, and it chooses none. Over two
+runs `COLORONCOLOR`'s blit read MODE MATERIAL (cheaper) against the default both times (392‰ and 449‰ at p50). So on
+this host the half-size blit's cost depends materially on which reduction GDI performs, and the default
+`BLACKONWHITE` was dearer than `COLORONCOLOR` in both runs. `HALFTONE` read MODE MATERIAL once and CONFOUNDED on the
+confirmation, and it stays unresolved.
 
 ---
 

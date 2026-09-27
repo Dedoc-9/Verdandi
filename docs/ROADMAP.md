@@ -46,10 +46,10 @@ semantics reaches the screen without passing through a gate.
    14.8–15.7 ms at p50, longer than one refresh on the owner's host, and FRAME-SPLIT-0 found, twice, no single phase
    dominating it (blit largest at 427–434‰). Renderer latency: materially improved. End-to-end presentation latency:
    phase-dependent, no low-latency or competitive claim. The largest phase, the blit, is mostly the 2:1 reduction here:
-   at 1:1 it drops ~5.3–5.6 ms (PRESENT-SCALE-0, confirmed on this host). At half size under `COLORONCOLOR` or
-   `HALFTONE` instead of the default `BLACKONWHITE` it drops 2.3–2.9 ms, and reusing the frame's buffers instead of
-   allocating them every frame takes ~1.6 ms off the envelope (PRESENT-STRETCH-0 and ALLOC-REUSE-0, one run each,
-   confirmations pending). In this loop most of each saving waits at the composition instead. *(G7 — measured; G8 —
+   at 1:1 it drops ~5.3–5.6 ms (PRESENT-SCALE-0, confirmed on this host). At half size, `COLORONCOLOR`'s blit was
+   materially cheaper than the default `BLACKONWHITE`'s in both runs (392‰ and 449‰; `HALFTONE`'s reading did not
+   reproduce) (PRESENT-STRETCH-0). Reusing the frame's buffers instead of allocating them every frame took 1.6–1.8 ms
+   off the envelope (ALLOC-REUSE-0, confirmed). In this loop most of each saving waits at the composition instead. *(G7 — measured; G8 —
    confirmed, NO SEAT; G11 — confirmed.)*
 2. **Can an author edit the live window?** The pieces exist headless (input → typed edit → SESSION-WALK); they are
    not yet wired into the running present loop with live re-projection.
@@ -106,22 +106,26 @@ p50 from 17.1 to 11.4 ms — below the refresh at full size, above it at half. T
 separate court, because it changes what the window shows. The confirmation reproduced it (705‰; non-blit 33‰), on
 this host and apparatus. `PRESENT-1` below stays a hypothesis for the locked regime.
 
-### PRESENT-STRETCH-0 — does the half-size blit's cost depend on the stretch mode · **measured once** (`f5372890`): MODE MATERIAL, both cheaper; confirmation pending
+### PRESENT-STRETCH-0 — does the half-size blit's cost depend on the stretch mode · **measured twice** (`f5372890`): `COLORONCOLOR` MODE MATERIAL reproduced; `HALFTONE` not reproduced
 A diagnostic over the same half-size frame, with the stretch mode the only variable: `BLACKONWHITE` (the default, now
 set explicitly), `COLORONCOLOR` and `HALFTONE`, in 12 blocks with the effective mode read back. Per mode against the
 default it reads MODE MATERIAL or IMMATERIAL (100‰ of the default's blit), unless the court is VOID or that mode is
 CONFOUNDED. It adopts no mode: each draws different pixels, so choosing one is a separate court. On the owner's host
 the blit's p50 was 7.27 ms under the default, 4.42 ms under `COLORONCOLOR` (392‰ cheaper) and 4.93 ms under
-`HALFTONE` (322‰ cheaper), with the non-blit phases inside the confound bound (16‰, 15‰). frame-ready → composited
-rose by most of the saving (G7), so it is not an end-to-end result.
+`HALFTONE` (322‰ cheaper), with the non-blit phases inside the confound bound (16‰, 15‰). The confirmation, in a run
+that was slower across the board (the default's blit 11.59 ms), read `COLORONCOLOR` MODE MATERIAL again (449‰) and
+`HALFTONE` CONFOUNDED (non-blit 53‰). So `COLORONCOLOR` reproduced per mode, `HALFTONE` is unresolved, and the combined
+label did not reproduce, which the confirmation record states. No millisecond saving is carried as confirmed.
+frame-ready → composited rose by most of the saving in the first run (G7), so this is not an end-to-end result.
 
-### ALLOC-REUSE-0 — how much of the frame is per-frame buffer allocation · **measured once** (`aaaada37`): ALLOCATION MATERIAL (reuse cheaper); confirmation pending
+### ALLOC-REUSE-0 — how much of the frame is per-frame buffer allocation · **measured and confirmed** (`aaaada37`): ALLOCATION MATERIAL (reuse cheaper)
 A diagnostic over FRAME-SPLIT-0's apparatus with the buffers' lifetime the only variable: allocated every frame (the
 production path) or once and overwritten, the same calls and marks, the reused bytes proven equal first. On the
 envelope it reads ALLOCATION MATERIAL or IMMATERIAL (50‰ of the fresh envelope), with the per-phase deltas beside and
 never ruled on. The production path is unchanged by it. On the owner's host the envelope p50 fell 1.59 ms (17.29 →
-15.71 ms, 91‰), with the unchanged phases at 10‰. The saving sat mostly in bgr (−846 µs) and emit (−672 µs), which
-is reported and not ruled on.
+15.71 ms, 91‰), with the unchanged phases at 10‰. The confirmation reproduced it (17.36 → 15.53 ms, 105‰; unchanged
+phases 2‰). In both runs the saving sat mostly in bgr and emit, which is reported and not ruled on. Adopting reuse in
+the production path would be its own court.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
