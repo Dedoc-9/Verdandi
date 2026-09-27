@@ -116,6 +116,8 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/shell witness --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
     rustc -O --cfg shell_window shell/main.rs -o verify/build/shell.exe   # Windows: build WITH the window
     verify/build/shell.exe run --level ... --camera 34,28,W --measure 200 --host $env:COMPUTERNAME   # the window + present timing
+    verify/build/shell.exe show --level ... --camera 34,28,W                    # the certified picture 1:1, the screen read back; Esc closes
+    verify/build/shell.exe show-playback --session workshop/attest/sessionwalk-demo.json   # a sealed session, 1:1, each frame read back
     rustc -O workshop/edit.rs -o verify/build/edit           # the workshop
     verify/build/edit record --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles \
         --camera 34,28,W --edit cell:31,27,. --out-dir out --name cell

@@ -133,7 +133,8 @@ Every rung ran the same loop, and the loop is the product as much as the code:
 - What the shell shows is decided (PRESENTATION-CHOICE-0): the certified picture 1:1 in a borderless window.
   PRESENT-EXACT-0 read the composed screen back exact on every checked frame under both GDI calls (with the host's
   performance overlay switched off, which it had found drawn over the picture), found no material cost difference,
-  and adopted SetDIBitsToDevice (G11).
+  and adopted SetDIBitsToDevice (G11). `shell show` / `show-playback` is the locked presenter: it reads the screen
+  back after every present and exits 3 if the screen ever was not the certified picture.
 - The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two
   runs); presentation latency is phase-dependent, and no low-latency claim is made.
 - A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.

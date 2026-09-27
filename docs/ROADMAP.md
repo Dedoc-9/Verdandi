@@ -166,6 +166,9 @@ Outside that bar, frame 0 read back exact under both calls. With the overlay off
 back exact on all checked frames (20 checks, 0 differing bytes) and read NO MATERIAL DIFFERENCE between the calls
 (StretchDIBits at 1,006‰ and 1,013‰ of SetDIBitsToDevice's p99). So SetDIBitsToDevice, the simpler call, is adopted. At
 1:1 the call costs about 1.8 ms, and the frame's envelope (about 10 ms at p50) sits below the refresh.
+**PRESENT-EXACT-0 LOCK** (seat 25) ships it: `shell show` and `shell show-playback` present the certified frames 1:1
+through SetDIBitsToDevice, read the screen back after every present, report any mismatch, keep showing, and exit 3 if
+the screen ever differed.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

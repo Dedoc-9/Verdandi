@@ -530,6 +530,40 @@ fn main() {
                 }
             }
         }
+        "show" => {
+            // PRESENT-EXACT-0 LOCK: the certified frame 1:1 in the borderless window, SetDIBitsToDevice, the composed
+            // screen read back (window build only). Exit 0 if every readback was exact, 3 if any differed.
+            let a = parse(&args[2..]);
+            let c = composed(&a);
+            #[cfg(all(target_os = "windows", shell_window))]
+            {
+                win32::show(vec![c], "SHOW");
+            }
+            #[cfg(not(all(target_os = "windows", shell_window)))]
+            {
+                let _ = c;
+                refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to show the certified picture");
+            }
+        }
+        "show-playback" => {
+            // PRESENT-EXACT-0 LOCK: a sealed session's frames, each certified and shown 1:1 as above
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            let root = opt("--root").unwrap_or_default();
+            let frames = playback::frames(&session, &root);
+            #[cfg(all(target_os = "windows", shell_window))]
+            {
+                win32::show(frames, "SHOW-PLAYBACK");
+            }
+            #[cfg(not(all(target_os = "windows", shell_window)))]
+            {
+                let _ = frames;
+                refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to show the sealed session");
+            }
+        }
         "presentexact-probe" => {
             // A diagnostic for PRESENT-EXACT-0's readback (window build only): no clock, no court, no record.
             let a = &args[2..];

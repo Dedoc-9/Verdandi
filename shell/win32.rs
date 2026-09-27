@@ -1806,3 +1806,157 @@ pub fn presentexact_probe(inputs: Vec<FrameInput>, out: Option<String>) {
     }
     println!("[probe] done");
 }
+
+// ================================================================== PRESENT-EXACT-0 LOCK: the conforming presenter (appended)
+// PRESENTATION-CHOICE-0's presenter, locked to the call PRESENT-EXACT-0 adopted: SetDIBitsToDevice (both runs read NO
+// MATERIAL DIFFERENCE, so the simpler call). It shows certified composites rendered before its window opens — one frame
+// for `shell show`, a sealed session's frames for `shell show-playback` — each guarded by the blit-hash law first, 1:1
+// in a borderless, topmost, DPI-aware 1920x1080 window at (0,0), through the same surface the court witnessed with the
+// call fixed. It reads the composed screen back after every frame it shows and about once a second while a frame is
+// held, says whenever the match changes, keeps showing (the owner's choice), and exits 3 if any readback differed
+// (0 if all were exact, 2 on a refusal). Esc or Alt+F4 closes it. It takes no clock and writes no record. LATENCY-0's
+// instrument stays a byte-exact prefix of this file, and `run` / `playback-window` stay the frozen half-size windows.
+
+const WM_KEYDOWN: Uint = 0x0100;
+const VK_ESCAPE: Wparam = 0x1B;
+const SHOW_DWELL: u32 = 24; // compositions per frame of a played session, as SHELL-PLAYBACK-b's window
+const SHOW_RECHECK: u32 = 75; // compositions between readbacks of a held frame (about a second at 75 Hz)
+
+extern "system" fn wnd_proc_show(hwnd: Hwnd, msg: Uint, wp: Wparam, lp: Lparam) -> Lresult {
+    if msg == WM_KEYDOWN && wp == VK_ESCAPE {
+        unsafe { DestroyWindow(hwnd) };
+        return 0;
+    }
+    wnd_proc(hwnd, msg, wp, lp)
+}
+
+fn show_window(class: &str, title: &str) -> Hwnd {
+    let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
+    let class_name = wide(class);
+    let title_w = wide(title);
+    let wc = WndClassW {
+        style: 0,
+        lpfn_wnd_proc: Some(wnd_proc_show),
+        cb_cls_extra: 0,
+        cb_wnd_extra: 0,
+        h_instance: hinstance,
+        h_icon: std::ptr::null_mut(),
+        h_cursor: std::ptr::null_mut(),
+        hbr_background: std::ptr::null_mut(),
+        lpsz_menu_name: std::ptr::null(),
+        lpsz_class_name: class_name.as_ptr(),
+    };
+    unsafe { RegisterClassW(&wc) };
+    unsafe {
+        CreateWindowExW(WS_EX_TOPMOST, class_name.as_ptr(), title_w.as_ptr(), WS_POPUP | WS_VISIBLE, 0, 0, W as i32, H as i32,
+            std::ptr::null_mut(), std::ptr::null_mut(), hinstance, std::ptr::null_mut())
+    }
+}
+
+struct ShowState {
+    checks: u64,
+    differed: u64,
+    last: Option<bool>,
+}
+
+/// Read the composed screen back after a present and compare it with the certified blit bytes. A new frame is always
+/// reported; a held frame's re-check is reported only when the match changes.
+fn show_witness(surf: &mut ExactGdiSurface, bgr: &[u8], k: usize, n: usize, fresh: bool, st: &mut ShowState) {
+    use crate::presentexact::ExactSurface;
+    surf.flush();
+    let (exact, how) = match surf.readback() {
+        Some(v) => {
+            let ok = v[..] == bgr[..];
+            (ok, if ok { "the screen is the certified picture".to_string() } else { crate::presentexact::describe(&v, &|i| bgr[i]) })
+        }
+        None => (false, "the screen could not be read back".to_string()),
+    };
+    st.checks += 1;
+    if !exact {
+        st.differed += 1;
+    }
+    if fresh || st.last != Some(exact) {
+        println!("[show] frame {}/{}: {}{}", k + 1, n, if exact { "" } else { "SCREEN DIFFERS — " }, how);
+    }
+    st.last = Some(exact);
+}
+
+pub fn show(frames: Vec<Composed>, label: &str) {
+    if frames.is_empty() {
+        eprintln!("SHELL-SHOW-EMPTY: there is nothing to show");
+        std::process::exit(2);
+    }
+    // the blit-hash law on every frame, before any window: hand the OS only bytes that carry the kernel's composite
+    let blits: Vec<Vec<u8>> = frames.iter().map(|c| to_blit(&c.composite)).collect();
+    for (i, c) in frames.iter().enumerate() {
+        if !blit_roundtrip_ok(&c.composite) {
+            eprintln!("SHELL-BLIT-REFUSE: frame {} did not round-trip; not presenting", i);
+            std::process::exit(2);
+        }
+    }
+    unsafe { SetProcessDPIAware() };
+    let dwm = match load_dwm() {
+        Some(d) => d,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or DwmFlush is unavailable; cannot compose and read back");
+            std::process::exit(2);
+        }
+    };
+    let hwnd = show_window("VerdandiShow", &format!("Verðandi — {}", label));
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    unsafe { SetForegroundWindow(hwnd) };
+    // the surface PRESENT-EXACT-0 witnessed, the call fixed at SetDIBitsToDevice (1)
+    let mut surf = ExactGdiSurface { hwnd, header: court_header(), flush_fn: dwm.flush, freq: 1, call: 1, last_input: 0, inputs_seen: 0 };
+    use crate::presentexact::ExactSurface;
+    let _ = surf.pump();
+    surf.flush();
+    let g = surf.geometry();
+    if g != [W as i32, H as i32, 0, 0, W as i32, H as i32, W as i32, H as i32] {
+        eprintln!("SHELL-SHOW-GEOMETRY: client {}x{} at ({},{}), screen logical {}x{} physical {}x{}; PRESENTATION-CHOICE-0 needs the whole 1920x1080 frame at (0,0) on a 1920x1080 screen at 100%",
+                  g[0], g[1], g[2], g[3], g[4], g[5], g[6], g[7]);
+        unsafe { DestroyWindow(hwnd) };
+        std::process::exit(2);
+    }
+    let n = frames.len();
+    println!("[show] {}: {} certified frame(s), 1:1, borderless, SetDIBitsToDevice; the screen is read back after each; Esc closes",
+             label, n);
+    let mut st = ShowState { checks: 0, differed: 0, last: None };
+    let mut k = 0usize;
+    if surf.present(&blits[k]).is_none() {
+        eprintln!("SHELL-SHOW-NO-PRESENT: SetDIBitsToDevice or the composition barrier failed");
+        std::process::exit(2);
+    }
+    show_witness(&mut surf, &blits[k], k, n, true, &mut st);
+    let (mut dwell, mut held) = (0u32, 0u32);
+    loop {
+        if !surf.pump() {
+            break; // closed (Esc, Alt+F4)
+        }
+        surf.flush();
+        if k + 1 < n {
+            dwell += 1;
+            if dwell >= SHOW_DWELL {
+                dwell = 0;
+                k += 1;
+                let _ = surf.present(&blits[k]);
+                show_witness(&mut surf, &blits[k], k, n, true, &mut st);
+            }
+        } else {
+            held += 1;
+            if held >= SHOW_RECHECK {
+                held = 0;
+                let _ = surf.present(&blits[k]);
+                show_witness(&mut surf, &blits[k], k, n, false, &mut st);
+            }
+        }
+    }
+    if unsafe { IsWindow(hwnd) } != 0 {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    println!("[show] closed: {} screen readbacks, {} differed{}", st.checks, st.differed,
+             if st.differed > 0 { " — the certified picture was not what the screen showed throughout" } else { "" });
+    std::process::exit(if st.differed > 0 { 3 } else { 0 });
+}

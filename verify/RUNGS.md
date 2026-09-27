@@ -2141,8 +2141,8 @@ certified picture byte for byte. Which call implements it is PRESENT-EXACT-0's c
 **Grade.** DECLARED: a semantic decision, hash-locked. It earns nothing until an implementation is witnessed against
 it.
 
-**does_not_show.** That any window conforms yet: the half-size windows `run` and `playback-window` (LATENCY-0's frozen
-instrument) do not, and they are not changed. The conforming presenter is locked after PRESENT-EXACT-0. Also out of
+**does_not_show.** That the half-size windows conform: `run` and `playback-window` (LATENCY-0's frozen instrument) do
+not, and they are not changed. The conforming presenter, `shell show`, is locked by PRESENT-EXACT-0 LOCK (below). Also out of
 scope: anything after composition (scan-out, the panel, display-side colour processing), and another screen size or
 scaling setting.
 
@@ -2269,6 +2269,48 @@ driver. Input-to-photon.
 interval. `presentexact-sealer` goes red if a label fires anywhere other than where it was registered, if a p50
 decides, or if a differing byte is accepted. `presentexact-court` goes red if a plant passes, including a call that
 writes nothing. On the host, one differing byte, a stale clear, a wrong geometry or a closed window yields no number.
+
+## PRESENT-EXACT-0 LOCK — the conforming presenter: `shell show`, 1:1, SetDIBitsToDevice, the screen read back (seat 25)
+
+**What is locked.** PRESENT-EXACT-0 read the composed screen back exact under both calls and found no material cost
+difference, so its preregistered adoption is SetDIBitsToDevice. This rung carries out that adoption and gives
+PRESENTATION-CHOICE-0 a shipped implementation. `shell show --level L --tiles T --camera x,z,F` shows one certified
+frame. `shell show-playback --session S` shows a sealed session's frames, with SHELL-PLAYBACK-b's dwell, holding the
+last one. Both render before the window opens: one compose for `show`, the owned pre-render for `show-playback`. So the
+shipped shell still runs no per-frame render loop (`GHOSTS.md` G12).
+
+**How it presents.** Every frame is guarded by the blit-hash law before any window opens. Then the process goes
+DPI-aware, and the borderless, topmost 1920×1080 window opens at (0,0). The geometry is checked, and a screen that
+cannot hold the whole frame 1:1 refuses with SHELL-SHOW-GEOMETRY. Frames go out through the same surface the court
+witnessed, with the call fixed at SetDIBitsToDevice. **After every present the composed screen is read back** and
+compared with the certified bytes: after each new frame, and about once a second while a frame is held. Each new frame's
+result is printed, and a held frame's only when it changes. On a mismatch the presenter says where (pixel count, box,
+first bytes), **keeps showing** (the owner's choice), and exits with code 3 at close instead of 0. The bytes it hands
+over stay certified; only the on-screen claim is withheld, and it says so. Esc or Alt+F4 closes it. It takes no clock
+and writes no record. `run` and `playback-window`, LATENCY-0's frozen half-size windows, are unchanged.
+
+**The fence (row `presentexact-lock`).** The presenter is fixed to SetDIBitsToDevice through the witnessed surface,
+with no StretchDIBits and no call switch. It guards the blit law, goes DPI-aware, opens the window and checks the
+geometry, in that order, before its first present. Every present is followed by a screen readback, and the exit code
+is non-zero when one differed. Its window is the borderless topmost popup at (0,0) and closes on Esc. It writes no
+record and reads no clock. `show` and `show-playback` dispatch to it, and `run` and `playback-window` did not move. A
+windowless build refuses both commands (SHELL-NO-WINDOW). Where the checkout carries the two host records (the owner's
+does), they must be the pinned ones (`2eee8efc`, `7af3b71a`), read the screen exact and adopt SETDIBITSTODEVICE.
+`allocreuse1-lock` was re-pinned on purpose for the presenter's blit-law guard.
+
+**Grade.** ESTABLISHED (gate): the presenter's structure, its fixed call, its readback after every present, and its
+refusals. MEASURED (PRESENT-EXACT-0, host, two runs): the composed screen equalled the certified picture on every
+checked frame under the adopted call, with the host overlay off. What `shell show` itself reads back on a given run is
+printed by that run and not sealed: it is a viewer, not a court.
+
+**does_not_show.** What reaches the eye: the witness ends at the composed screen. That an overlay, notification or
+colour transform will not appear: the presenter reports it rather than preventing it. Any screen other than 1920×1080 at
+100%. A live loop: `show` does not render per frame; that is the live-loop rung's own court, and it will enter through
+`LoopRenderer`.
+
+**Falsifier.** `presentexact-lock` goes red if the call can change, a present goes unread, the exit code hides a
+mismatch, the window stops closing on Esc, the blit law moves after the window, the frozen windows move, or the host
+records are not the pinned exact-screen pair.
 
 ## The open clause, now with named rungs (skybox, physics)
 

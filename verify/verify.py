@@ -58,7 +58,8 @@ adversarial cameras and the sealed session from poisoned buffers in three orders
 pins the fresh reference; and allocreuse1-lock, the ADOPT carried out: LoopRenderer the production entry for in-loop
 rendering, every fresh render entry's call site pinned), presentexact (PRESENTATION-CHOICE-0, declared: the certified
 picture 1:1 in a borderless window; PRESENT-EXACT-0: StretchDIBits at 1:1 against SetDIBitsToDevice, the composed screen
-read back as a hard gate, the same-run p99 rule, and the fence), hoststate (HOST-STATE-0: the host's state
+read back as a hard gate, the same-run p99 rule, and the fence; presentexact-lock, the conforming presenter `shell show`
+locked to SetDIBitsToDevice with the screen read back after every present), hoststate (HOST-STATE-0: the host's state
 recorded beside a court, never controlled and never read by a rule), and — in the oracle stage — oracle-d0 (Urðr's own
 statecanon recomputes the oracle's D_0 in place).
 """
@@ -4414,7 +4415,8 @@ FRESH_ENTRY_SITES = {
     "presentstretch.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
     # re-pinned on purpose with PRESENT-EXACT-0: its witnesses compare the loop against the fresh reference
     "presentexact.rs": {"arm_composite(": 1, "to_blit(": 1},
-    "win32.rs": {"to_blit(": 3},
+    # re-pinned on purpose with PRESENT-EXACT-0 LOCK: the presenter's blit-hash guard on its pre-rendered frames
+    "win32.rs": {"to_blit(": 4},
 }
 # the adoption evidence, sealed on the owner's host (committed there; this checkout may not carry it)
 ALLOCREUSE1_RECORDS = {"allocreuse1-DANIELDILLBERG.json": "8036e65488f168b87cc3cf26798d25aed0c2b9fe249118c30a4b175258505b96",
@@ -4773,7 +4775,8 @@ def presentexact_fence():
         raise Red("the call is not set before the locked phase origin")
     i_probe = tail.find("PRESENT-EXACT-0 probe (appended)")
     if i_probe >= 0:
-        probe = tail[i_probe:]
+        i_end = tail.find("PRESENT-EXACT-0 LOCK: the conforming presenter (appended)")
+        probe = tail[i_probe:i_end] if i_end > i_probe else tail[i_probe:]
         if "write_raw(" in probe or "crate::presentexact::court(" in probe or "qpc()" in probe.split("pub fn presentexact_probe(")[-1]:
             raise Red("the probe writes a record, runs the court or takes a clock: it is a diagnostic only")
     return ("only the call changes and the witness sits outside the clock: the exact surface's present is present_once's "
@@ -4782,6 +4785,82 @@ def presentexact_fence():
             "PatBlt and the readback a screen-DC BitBlt into a 24-bit top-down DIB; the timed interval holds only the "
             "LoopRenderer's render and blit and the call; the readback and clear run only before and after the rounds; the "
             "probe takes no clock, runs no court and writes no record; LATENCY-0's instrument is still a byte-exact prefix")
+
+
+# ------------------------------------------------------------------ PRESENT-EXACT-0 LOCK (the conforming presenter)
+PRESENTEXACT_RECORDS = {"presentexact-DANIELDILLBERG.json": "2eee8efcbf8ab89c2bac072780d8ba8ed5afaa0ce7910dd3b3a8f0b2d6333175",
+                        "presentexact-confirm-DANIELDILLBERG.json": "7af3b71aae7ab35edcfb19f1150debabe4ef552aee0e2b534151f5704191e29d"}
+
+
+def presentexact_lock():
+    """PRESENT-EXACT-0 LOCK: the conforming presenter for PRESENTATION-CHOICE-0, locked to SetDIBitsToDevice. `shell show`
+    and `shell show-playback` present pre-rendered certified frames (never a per-frame render loop), each guarded by the
+    blit-hash law before any window, 1:1 in the borderless DPI-aware topmost window, through the witnessed surface with
+    the call fixed; the composed screen is read back after every present and the run exits 3 if any readback differed;
+    Esc closes; no clock, no record; the frozen half-size windows are untouched. Where the checkout carries the host
+    records, they are the pinned ones and read SETDIBITSTODEVICE."""
+    import presentexact as PX
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i_probe, i_lock = tail.find("PRESENT-EXACT-0 probe (appended)"), tail.find("PRESENT-EXACT-0 LOCK: the conforming presenter (appended)")
+    if i_probe < 0 or i_lock < i_probe:
+        raise Red("the presenter's section is not appended after the probe's")
+    sect = tail[i_lock:]
+    show = src_span(sect, "pub fn show(", "\n}\n")
+    if "call: 1," not in show or "call: 0" in sect or "set_call(" in sect or "StretchDIBits(" in sect:
+        raise Red("the presenter is not fixed to SetDIBitsToDevice through the witnessed surface")
+    order = [show.find(t) for t in ("blit_roundtrip_ok(&c.composite)", "SetProcessDPIAware()", "= show_window(", "surf.geometry()",
+                                     "SHELL-SHOW-GEOMETRY", "surf.present(&blits[k])")]
+    if -1 in order or order != sorted(order):
+        raise Red("the presenter does not guard the blit law, go DPI-aware, open the window and check the geometry, in that order, before presenting")
+    if show.count("surf.present(&blits[k])") != show.count("show_witness(&mut surf, &blits[k]") or show.count("show_witness(") < 3:
+        raise Red("a present is not followed by a screen readback")
+    if "std::process::exit(if st.differed > 0 { 3 } else { 0 });" not in show:
+        raise Red("the presenter does not exit non-zero when a readback differed")
+    wsrc = src_span(sect, "fn show_window(", "\n}\n")
+    proc_ = src_span(sect, "extern \"system\" fn wnd_proc_show(", "\n}\n")
+    if ("CreateWindowExW(WS_EX_TOPMOST, class_name.as_ptr(), title_w.as_ptr(), WS_POPUP | WS_VISIBLE, 0, 0, W as i32, H as i32," not in wsrc
+            or "lpfn_wnd_proc: Some(wnd_proc_show)" not in wsrc or "msg == WM_KEYDOWN && wp == VK_ESCAPE" not in proc_
+            or "wnd_proc(hwnd, msg, wp, lp)" not in proc_):
+        raise Red("the presenter's window is not the borderless topmost 1920x1080 popup at (0,0) closing on Esc")
+    if "write_raw(" in sect or "qpc()" in sect:
+        raise Red("the presenter writes a record or takes a clock")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    if ("win32::show(vec![c], \"SHOW\");" not in main_src or "win32::show(frames, \"SHOW-PLAYBACK\");" not in main_src
+            or PLAYBACK_WINDOW_DISPATCH not in main_src or "win32::run(c, a.measure, &a.host, a.camera);" not in main_src):
+        raise Red("show / show-playback are not dispatched to the presenter, or run / playback-window moved")
+    if SHELL_EXE is not None:
+        for args in (["show", "--level", os.path.join(ORACLE, "levels", "witness.lvl"), "--tiles", os.path.join(ORACLE, "tiles", "identity.tiles"),
+                      "--camera", "34,28,W"], ["show-playback", "--session", SESSIONWALK_DEMO]):
+            cp = subprocess.run([SHELL_EXE] + args, capture_output=True, text=True, cwd=ROOT)
+            if cp.returncode == 0 or "SHELL-NO-WINDOW" not in cp.stderr:
+                raise Red("a windowless build did not refuse `%s` with SHELL-NO-WINDOW" % args[0])
+    attest = os.path.join(ROOT, "shell", "attest")
+    present = [f for f in PRESENTEXACT_RECORDS if os.path.exists(os.path.join(attest, f))]
+    if present:
+        if len(present) != 2:
+            raise Red("the checkout carries one of the two PRESENT-EXACT-0 records but not the other")
+        first = envelope.read(os.path.join(attest, "presentexact-DANIELDILLBERG.json"))
+        conf = envelope.read(os.path.join(attest, "presentexact-confirm-DANIELDILLBERG.json"))
+        if (first["chain_hash"], conf["chain_hash"]) != tuple(PRESENTEXACT_RECORDS.values()):
+            raise Red("the PRESENT-EXACT-0 records are not the pinned ones")
+        l1, _ = PX.performance(first["data"]["derived"]["calls"])
+        l2, _ = PX.performance(conf["data"]["derived"]["calls"])
+        if (conf["provenance"]["confirms"]["chain_hash"] != first["chain_hash"] or PX.adoption(l1, l2) != "SETDIBITSTODEVICE"
+                or first["data"]["readback"]["mismatched_bytes"] or conf["data"]["readback"]["mismatched_bytes"]
+                or "ADOPTED CALL: SETDIBITSTODEVICE" not in conf["reading"]):
+            raise Red("the PRESENT-EXACT-0 records do not read an exact screen and SETDIBITSTODEVICE")
+        evidence = "the two host records are in this checkout, are the pinned ones, read the screen exact, and adopt SETDIBITSTODEVICE"
+    else:
+        evidence = ("the two host records are cited by hash (%s, %s); this checkout does not carry them"
+                    % tuple(h[:8] for h in PRESENTEXACT_RECORDS.values()))
+    return ("PRESENT-EXACT-0 LOCK: `shell show` and `shell show-playback` present pre-rendered certified frames, each guarded by "
+            "the blit-hash law before any window, 1:1 in the borderless DPI-aware topmost 1920x1080 window at (0,0), through the "
+            "witnessed surface with the call fixed at SetDIBitsToDevice; every present is followed by a composed-screen readback "
+            "and the run exits 3 if any differed; Esc closes; no clock, no record; a windowless build refuses both; run and "
+            "playback-window are unmoved; %s" % evidence)
 
 
 # ------------------------------------------------------------------ main
@@ -4915,6 +4994,7 @@ def main() -> int:
     row("allocreuse1-lock", allocreuse1_lock)
     row("presentexact-court", presentexact_court)
     row("presentexact-fence", presentexact_fence)
+    row("presentexact-lock", presentexact_lock)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

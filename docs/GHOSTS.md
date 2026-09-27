@@ -237,7 +237,9 @@ read back exact under both calls (a probe, not yet a sealed court). The court re
 bar. With the overlay off it ran twice, and **the composed screen equalled the certified picture on all 20 checked frames
 under both calls**, 0 differing bytes. For the chosen presentation (1:1, borderless, SetDIBitsToDevice adopted), the
 ghost's last clause, "which no row checks", is answered on this host up to the composed screen, while nothing draws over
-the window. What lies past composition (scan-out, the panel) stays outside every witness.
+the window. What lies past composition (scan-out, the panel) stays outside every witness. The shipped presenter
+(`shell show`, PRESENT-EXACT-0 LOCK) carries the check with it: it reads the screen back after every present and says
+when the screen is not the certified picture.
 
 ---
 
