@@ -127,7 +127,7 @@ never ruled on. The production path is unchanged by it. On the owner's host the 
 phases 2‰). In both runs the saving sat mostly in bgr and emit, which is reported and not ruled on. Adopting reuse in
 the production path would be its own court.
 
-### ALLOC-REUSE-1 — the render-loop entry's adoption court · **measured twice** (`dc904a6c`): PERFORMANCE PASS in both runs, ADOPT
+### ALLOC-REUSE-1 — the render-loop entry's adoption court · **measured twice** (`dc904a6c`): PERFORMANCE PASS in both runs, ADOPT — **LOCKED** (seat 24)
 The shipped shell has no per-frame render loop (`run` renders once, `playback-window` pre-renders owned frames;
 G12), so what can be adopted is an **entry contract**: the persistent-buffer `LoopRenderer` as the production entry for
 any loop that renders once per presented frame. The fresh path stays the frozen reference. Correctness first, on every
@@ -137,7 +137,9 @@ per cell, PERFORMANCE PASS iff p99(reused) ≤ 950‰ of p99(fresh) (an adoption
 `--confirm` both pass. No shipped window changes either way; a later live loop enters through the adopted entry. On
 the owner's host reuse's envelope p99 was 886‰ and then 929‰ of fresh's (−2.0 and −1.8 ms), with correctness holding on
 every sample, so the reading is **ADOPT**. The second run was 41% slower as a whole (G13), and in both runs the frame
-waited longer at the composition by about what it saved (G7).
+waited longer at the composition by about what it saved (G7). **ALLOC-REUSE-1 LOCK** carries out the ADOPT:
+`LoopRenderer` is the production entry for in-loop rendering, and every fresh render entry's call site in the shell is
+pinned (`allocreuse1-lock`), so the live loop renders through it. Nothing that ships today changes.
 
 ### HOST-STATE-0 — the host's state beside a court · **landed** (`58250382`)
 Record, don't control: what the OS reports about the CPU, power plan, load, memory, process, display and uptime, one
@@ -163,8 +165,8 @@ interactive capture closes the loop so a *live* edit produces a sealed session t
 shell/input problem, not a new authority — measured against the existing session machinery, never modifying it. The
 industry pattern to borrow is the **authoring-data / runtime-data split** (e.g. Unity DOTS), with deterministic step
 and reload atomicity — which is exactly the workshop's edit → authority → record shape. The live loop this needs is its
-own rung (timing, cadence, ownership, input): if ALLOC-REUSE-1 reads ADOPT, that loop renders through the adopted
-entry rather than deciding its allocation again.
+own rung (timing, cadence, ownership, input). ALLOC-REUSE-1 read ADOPT and is locked, so that loop renders through
+`LoopRenderer` rather than deciding its allocation again.
 
 ### SEMANTIC-0 — a float-free, geometry-bound semantic layer
 New VIEW semantics the studio did not inherit (filtering, variety) earned by a Verðandi-local reference pinned by

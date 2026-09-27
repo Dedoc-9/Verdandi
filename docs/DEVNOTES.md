@@ -126,7 +126,8 @@ Every rung ran the same loop, and the loop is the product as much as the code:
   twice: reusing the frame's buffers was 1.6–1.8 ms cheaper at the envelope p50. Neither adopts anything.
 - The render-loop courts time a modelled loop: the shipped shell renders once (`run`) or pre-renders (`playback-window`)
   and has no per-frame render loop (G12). ALLOC-REUSE-1 therefore adopts only an entry contract for a future live
-  loop. Both of its runs passed (reuse's p99 at 886‰ and 929‰ of fresh's), so it reads ADOPT.
+  loop. Both of its runs passed (reuse's p99 at 886‰ and 929‰ of fresh's), so it reads ADOPT, and ALLOC-REUSE-1 LOCK
+  makes `LoopRenderer` the production entry for in-loop rendering, with every fresh render call site pinned.
 - The same court can run 40–60% slower on another run the same day (G13). HOST-STATE-0 put memory pressure beside one
   such run: an association, not a cause. Read absolute milliseconds as belonging to their own run.
 - The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two

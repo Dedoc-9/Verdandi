@@ -55,7 +55,8 @@ the diagnostic attribution rule, the court over the mock with a clamped-geometry
 (ALLOC-REUSE-0: the frame with its buffers allocated every frame vs once, the lifetime the only variable), allocreuse1
 (ALLOC-REUSE-1: the persistent-buffer render-loop entry's adoption court — correctness first over the corpus, the
 adversarial cameras and the sealed session from poisoned buffers in three orders; the same-run p99 rule; the fence that
-pins the fresh reference and keeps the entry out of every shipped window), hoststate (HOST-STATE-0: the host's state
+pins the fresh reference; and allocreuse1-lock, the ADOPT carried out: LoopRenderer the production entry for in-loop
+rendering, every fresh render entry's call site pinned), hoststate (HOST-STATE-0: the host's state
 recorded beside a court, never controlled and never read by a rule), and — in the oracle stage — oracle-d0 (Urðr's own
 statecanon recomputes the oracle's D_0 in place).
 """
@@ -4325,9 +4326,9 @@ def allocreuse1_court():
 def allocreuse1_fence():
     """Only the buffers' lifetime changes, and the fresh reference stays frozen: LoopRenderer makes fast::render's calls
     in fast::render's order and then the HUD, into buffers it allocates only in new(); its blit is to_blit_into; the
-    fresh reference's source is pinned; no shipped window names LoopRenderer; the court runs in FRAME-SPLIT-0's window
-    with the locked phase origin and nothing but rendering and the blit inside its interval; LATENCY-0's instrument is
-    still a byte-exact prefix."""
+    fresh reference's source is pinned; the court runs in FRAME-SPLIT-0's window with the locked phase origin and
+    nothing but rendering and the blit inside its interval; LATENCY-0's instrument is still a byte-exact prefix. (Who
+    may render per frame, and through what, is allocreuse1-lock's since the ADOPT.)"""
     pr = read(os.path.join(SHELL, "present.rs")).decode("utf-8")
     impl = src_span(pr, "impl LoopRenderer {", "\n}\n")
     vp = src_span(impl, "pub fn viewport(&mut self", "pub fn overlay(")
@@ -4361,9 +4362,6 @@ def allocreuse1_fence():
     for (path, start), want in FRESH_REFERENCE_SHA256.items():
         if sha256(src_span(read(os.path.join(ROOT, path)).decode("utf-8"), start, "\n}\n").encode("utf-8")) != want:
             raise Red("the fresh reference was rewritten: %s in %s" % (start, path))
-    for fn in sorted(os.listdir(SHELL)):
-        if fn.endswith(".rs") and fn not in ("present.rs", "allocreuse1.rs") and "LoopRenderer" in read(os.path.join(SHELL, fn)).decode("utf-8"):
-            raise Red("%s names LoopRenderer: the loop entry is not adopted, and no shipped window may use it" % fn)
     w32 = read(os.path.join(SHELL, "win32.rs"))
     if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
         raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
@@ -4391,9 +4389,78 @@ def allocreuse1_fence():
     return ("only the buffers' lifetime changes and the fresh reference stays frozen: LoopRenderer makes fast::render's calls "
             "in fast::render's order and then the HUD into buffers it allocates only in new(), its render is exactly viewport "
             "then overlay, its blit is to_blit_into; the fresh reference's source (fast::render, arm_composite, to_blit, "
-            "compose_frame) is pinned; no file but present.rs and allocreuse1.rs names LoopRenderer, so no shipped window uses "
-            "it; the court runs in FRAME-SPLIT-0's window over LATENCY-1R's GDI surface with the locked phase origin and "
-            "only rendering and the blit inside its interval; LATENCY-0's instrument is still a byte-exact prefix")
+            "compose_frame) is pinned; the court runs in FRAME-SPLIT-0's window over LATENCY-1R's GDI surface with the "
+            "locked phase origin and only rendering and the blit inside its interval; LATENCY-0's instrument is still a "
+            "byte-exact prefix")
+
+
+# ALLOC-REUSE-1 LOCK: the fresh render entries' call sites, pinned per shell file. They are the frozen reference and
+# the courts that measure against it (present.rs's definitions, run's single compose, playback's owned pre-render, the
+# court modules, LATENCY-0's prefix). Any new site is a loop that bypasses the adopted LoopRenderer, or a new reference
+# site that must be re-pinned on purpose.
+FRESH_ENTRY_TOKENS = ("compose_frame(", "arm_composite(", "arm_composite_marked(", "arm_composite_reuse_marked(",
+                      "fast::render(", "fast::emit_threaded(", "fast::emit(", "to_blit(")
+FRESH_ENTRY_SITES = {
+    "allocreuse.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "arm_composite_reuse_marked(": 3, "to_blit(": 2},
+    "allocreuse1.rs": {"arm_composite(": 2, "fast::render(": 1, "to_blit(": 3},
+    "framesplit.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
+    "latency1r.rs": {"arm_composite(": 3, "to_blit(": 1},
+    "main.rs": {"compose_frame(": 1, "to_blit(": 1},
+    "playback.rs": {"compose_frame(": 2, "to_blit(": 2},
+    "present.rs": {"compose_frame(": 1, "arm_composite(": 2, "fast::render(": 2, "fast::emit_threaded(": 3, "fast::emit(": 2, "to_blit(": 6},
+    "presentscale.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
+    "presentstretch.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
+    "win32.rs": {"to_blit(": 3},
+}
+# the adoption evidence, sealed on the owner's host (committed there; this checkout may not carry it)
+ALLOCREUSE1_RECORDS = {"allocreuse1-DANIELDILLBERG.json": "8036e65488f168b87cc3cf26798d25aed0c2b9fe249118c30a4b175258505b96",
+                       "allocreuse1-confirm-DANIELDILLBERG.json": "256e8a6e8d8b07e59a92b16ee1303021c1a526f93aac095a08adf32760e0fc04"}
+
+
+def allocreuse1_lock():
+    """ALLOC-REUSE-1 LOCK: the persistent-buffer LoopRenderer is ADOPTED as the production entry for in-loop rendering.
+    Every call site of a fresh render entry in the shell is pinned (a new one is a loop bypassing the entry, or a new
+    reference site to re-pin on purpose); the renderer declares its adoption; the fresh reference stays pinned by
+    allocreuse1-fence. Where the checkout carries the host records, they are the pinned ones, both read PERFORMANCE PASS,
+    the confirmation cites the first, and the adoption reads ADOPT."""
+    import allocreuse1 as AR1
+    got = {}
+    for fn in sorted(os.listdir(SHELL)):
+        if fn.endswith(".rs"):
+            src = read(os.path.join(SHELL, fn)).decode("utf-8")
+            c = {t: src.count(t) for t in FRESH_ENTRY_TOKENS if src.count(t)}
+            if c:
+                got[fn] = c
+    if got != FRESH_ENTRY_SITES:
+        moved = sorted(set(got) ^ set(FRESH_ENTRY_SITES) | {f for f in set(got) & set(FRESH_ENTRY_SITES) if got[f] != FRESH_ENTRY_SITES[f]})
+        raise Red("a fresh render entry's call sites changed in %s: in-loop rendering enters through the adopted LoopRenderer; "
+                  "a new reference site is re-pinned on purpose" % ", ".join(moved))
+    pr = read(os.path.join(SHELL, "present.rs")).decode("utf-8")
+    doc = pr[pr.index("/// ALLOC-REUSE-1: the render-loop entry"):pr.index("pub struct LoopRenderer {")]
+    if "ADOPTED (ALLOC-REUSE-1 LOCK)" not in doc or "production entry for in-loop rendering" not in doc:
+        raise Red("the LoopRenderer does not declare its adoption")
+    attest = os.path.join(ROOT, "shell", "attest")
+    present = [f for f in ALLOCREUSE1_RECORDS if os.path.exists(os.path.join(attest, f))]
+    if present:
+        if len(present) != 2:
+            raise Red("the checkout carries one of the two adoption records but not the other")
+        first = envelope.read(os.path.join(attest, "allocreuse1-DANIELDILLBERG.json"))
+        conf = envelope.read(os.path.join(attest, "allocreuse1-confirm-DANIELDILLBERG.json"))
+        if (first["chain_hash"], conf["chain_hash"]) != tuple(ALLOCREUSE1_RECORDS.values()):
+            raise Red("the adoption records are not the pinned ones")
+        l1, _ = AR1.performance(first["data"]["derived"]["variants"])
+        l2, _ = AR1.performance(conf["data"]["derived"]["variants"])
+        if conf["provenance"]["confirms"]["chain_hash"] != first["chain_hash"] or AR1.adoption(l1, l2) != "ADOPT" \
+                or "ADOPTION: ADOPT" not in conf["reading"]:
+            raise Red("the adoption records do not read ADOPT")
+        evidence = "the two host records are in this checkout, are the pinned ones, both read PERFORMANCE PASS, and read ADOPT"
+    else:
+        evidence = ("the two host records are cited by hash (%s, %s); this checkout does not carry them"
+                    % tuple(h[:8] for h in ALLOCREUSE1_RECORDS.values()))
+    return ("ALLOC-REUSE-1 LOCK: the persistent-buffer LoopRenderer is the production entry for in-loop rendering and says so; "
+            "every fresh render entry's call site in the shell is pinned (%d files), so a new loop cannot render around the "
+            "entry and a new reference site is re-pinned on purpose; the fresh reference stays pinned (allocreuse1-fence); %s"
+            % (len(FRESH_ENTRY_SITES), evidence))
 
 
 def hoststate_preregistered():
@@ -4636,6 +4703,7 @@ def main() -> int:
     row("allocreuse1-equiv", allocreuse1_equiv)
     row("allocreuse1-court", allocreuse1_court)
     row("allocreuse1-fence", allocreuse1_fence)
+    row("allocreuse1-lock", allocreuse1_lock)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

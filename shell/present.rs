@@ -191,10 +191,14 @@ pub fn arm_composite_reuse_marked<M: Marks>(scene: &Scene, b: &mut ReuseBufs, m:
 /// frame. It makes `fast::render`'s calls in `fast::render`'s order (the strips, the index frame, the floor swizzle, the
 /// threaded pixel pass at `PROD_THREADS`) and then the HUD overlay, into four buffers it allocates once in `new()` and
 /// overwrites on every render; `blit()` is `to_blit`'s transform into its own BGR buffer. Only the floor swizzle, which
-/// is `fast::blocked_floor`'s own small buffer (fast.rs is untouched), is still allocated per render. It is a CANDIDATE
-/// until ALLOC-REUSE-1 reads ADOPT on a run and its confirmation. The fresh path (`compose_frame`, `arm_composite`,
-/// `fast::render`, `to_blit`) stays the frozen reference and differential oracle and is never rewritten. No shipped
-/// window uses this entry: `run` renders once, and `playback-window` pre-renders frames that must own their buffers.
+/// is `fast::blocked_floor`'s own small buffer (fast.rs is untouched), is still allocated per render.
+///
+/// ADOPTED (ALLOC-REUSE-1 LOCK): ALLOC-REUSE-1 read PERFORMANCE PASS on a run and on its confirmation, so this is the
+/// production entry for in-loop rendering. A loop that renders once per presented frame renders through it; the
+/// fresh render entries stay at their pinned reference sites (row `allocreuse1-lock`). The fresh path (`compose_frame`,
+/// `arm_composite`, `fast::render`, `to_blit`) stays the frozen reference and differential oracle and is never
+/// rewritten. No shipped window renders per frame yet: `run` renders once, and `playback-window` pre-renders frames
+/// that must own their buffers. The adoption is the contract a future live loop enters, not a change to either.
 pub struct LoopRenderer {
     pub(crate) b: ReuseBufs,
     renders: u64,

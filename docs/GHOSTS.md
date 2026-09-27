@@ -239,8 +239,8 @@ This came to light before ALLOC-REUSE-1 was preregistered. Adopting reuse "in th
 on, so what that court can adopt is an entry contract: the renderer a future live loop must enter.
 
 **Exorcism.** The live-loop rung (ROADMAP's interactive capture) will make the modelled loop a shipped one, and its own
-court will measure it. Until then, read "the shell's frame" in these courts as "the render-inclusive frame of the
-modelled loop".
+court will measure it. It will render through `LoopRenderer`, adopted by ALLOC-REUSE-1 LOCK. Until then, read "the
+shell's frame" in these courts as "the render-inclusive frame of the modelled loop".
 
 ---
 

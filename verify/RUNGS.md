@@ -2085,6 +2085,41 @@ standalone snapshot and in four snapshots around two court runs.
 **does_not_show.** That a recorded state caused, explains or corrects any number: association, never cause. That the
 OS-reported MHz is the effective clock. The court process's own priority (only the sealing process's). Thermal state.
 
+## ALLOC-REUSE-1 LOCK — the persistent-buffer render-loop entry adopted (seat 24)
+
+**What is adopted.** ALLOC-REUSE-1 read PERFORMANCE PASS on its run and on its confirmation (886‰ and 929‰), so its
+preregistered reading is ADOPT. This rung carries out what the entry said ADOPT would do. `present::LoopRenderer` is
+now **the production entry for in-loop rendering**: a loop that renders once per presented frame renders through it.
+Its declaration says so in the source. The fresh path (`compose_frame`, `arm_composite`, `fast::render`, `to_blit`)
+stays the frozen reference and differential oracle, its source pinned (`allocreuse1-fence`) and never rewritten.
+
+**What is not changed.** No shipped window. `run` still renders once, and `playback-window` still pre-renders frames
+that own their buffers (`GHOSTS.md` G12). The adoption is the contract a future live loop enters, not a speed-up of
+anything that ships today. The courts that measure against the fresh path keep measuring against it.
+
+**The call-site fence (row `allocreuse1-lock`).** Every call site of a fresh render entry in the shell (`compose_frame`,
+`arm_composite`, the marked mirrors, `fast::render`, the emits, `to_blit`) is pinned by count, per file: present.rs's
+definitions, `run`'s single compose, playback's owned pre-render, the court modules and LATENCY-0's prefix. A new site
+reddens the gate. Either it is a loop rendering around the adopted entry, or it is a new reference site and is
+re-pinned on purpose, in the patch that adds it. The row also requires the renderer to declare its adoption. Where the
+checkout carries the two host records (the owner's does), the row checks that they are the pinned ones
+(`8036e654`, `256e8a6e`), that both read PERFORMANCE PASS, that the confirmation cites the first, and that it reads
+ADOPT. `allocreuse1-fence` no longer forbids other files from naming the renderer, because since the ADOPT a live loop
+should.
+
+**Grade.** ESTABLISHED (gate): the entry is byte-identical to the fresh reference (`allocreuse1-equiv`), declared
+adopted, and the only sanctioned way for new code to render per frame (`allocreuse1-lock`). MEASURED (host, two runs,
+ALLOC-REUSE-1): its envelope p99 at 886‰ and 929‰ of the fresh path's in the same run.
+
+**does_not_show.** That any shipped window got faster. That the saving holds on another host, allocator, OS or buffer
+size, or reaches the glass: in this loop the frame waited longer at the composition by about what it saved (`GHOSTS.md`
+G7). What the live loop's cadence, ownership and input should be: that is its own rung, which renders through this
+entry.
+
+**Falsifier.** `allocreuse1-lock` goes red on any new fresh-render call site in the shell, on a renderer that stops
+declaring its adoption, or on host records that are not the pinned ADOPT pair. `allocreuse1-equiv` and
+`allocreuse1-fence` go on guarding the entry's bytes, its allocation and the frozen reference.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
