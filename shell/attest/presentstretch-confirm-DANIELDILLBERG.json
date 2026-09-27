@@ -1,0 +1,368 @@
+{
+ "name": "verdandi-presentstretch-confirm",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell presentstretch-window (shell/presentstretch.rs court over the half-size stretch-mode GDI surface appended to shell/win32.rs) + verify/presentstretch.py",
+  "surface": "shell/presentstretch.rs court over the half-size GDI window with a set stretch mode (StretchDIBits + DwmFlush, QPC) surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790484852,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "PRESENT-STRETCH-0",
+   "chain_hash": "f5372890ef9ed28139355e20732a0884055960a366881caef1871f658244e53d"
+  },
+  "confirms": {
+   "of": "shell/attest/presentstretch-DANIELDILLBERG.json",
+   "chain_hash": "c19b88e3c24a8754a49fab698dbd15efaadabe51027b859b8b21ae7ec6b715ff",
+   "original_label": "COLORONCOLOR: MODE MATERIAL (cheaper); HALFTONE: MODE MATERIAL (cheaper)"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the shell's production frame presented into the half-size 960x540 client area under stretch modes BLACKONWHITE, COLORONCOLOR and HALFTONE on host DANIELDILLBERG, envelope and split per mode, locked phase origin, 300 samples per cell over 4 frames (a confirmation run)",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "a seat, a winner or an adopted mode: each mode draws different pixels, so choosing one is a separate court",
+  "that any mode's pixels on the glass are certified (the modes' semantics are GDI's, recorded, not verified)",
+  "a statement about GDI or Windows in general: this host, this apparatus and workload only",
+  "input-to-photon latency, or a comparison with any emit p99",
+  "any other host, destination size, DPI setting or phase origin"
+ ],
+ "data": {
+  "modes": {
+   "BLACKONWHITE": {
+    "requested": 1,
+    "effective": 1,
+    "envelope": {
+     "render_us": {
+      "p50": 22817,
+      "p95": 24590,
+      "p99": 25153,
+      "max": 26540
+     },
+     "present_us": {
+      "p50": 3748,
+      "p95": 11444,
+      "p99": 14080,
+      "max": 14589
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 67,
+       "p95": 162,
+       "p99": 205,
+       "max": 592
+      },
+      "frame": {
+       "p50": 4871,
+       "p95": 6216,
+       "p99": 6519,
+       "max": 6784
+      },
+      "floor_swizzle": {
+       "p50": 84,
+       "p95": 168,
+       "p99": 264,
+       "max": 468
+      },
+      "emit": {
+       "p50": 3924,
+       "p95": 4472,
+       "p99": 4702,
+       "max": 4896
+      },
+      "hud": {
+       "p50": 93,
+       "p95": 162,
+       "p99": 234,
+       "max": 304
+      },
+      "bgr": {
+       "p50": 2300,
+       "p95": 2904,
+       "p99": 3024,
+       "max": 3300
+      },
+      "blit": {
+       "p50": 11589,
+       "p95": 12040,
+       "p99": 12416,
+       "max": 14350
+      }
+     },
+     "render_us": {
+      "p50": 22728,
+      "p95": 24617,
+      "p99": 25513,
+      "max": 27523
+     },
+     "present_us": {
+      "p50": 3764,
+      "p95": 11751,
+      "p99": 14119,
+      "max": 14900
+     },
+     "samples": 300
+    }
+   },
+   "COLORONCOLOR": {
+    "requested": 3,
+    "effective": 3,
+    "envelope": {
+     "render_us": {
+      "p50": 17386,
+      "p95": 19109,
+      "p99": 19400,
+      "max": 19742
+     },
+     "present_us": {
+      "p50": 9096,
+      "p95": 11841,
+      "p99": 12403,
+      "max": 13238
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 70,
+       "p95": 163,
+       "p99": 207,
+       "max": 214
+      },
+      "frame": {
+       "p50": 4691,
+       "p95": 5912,
+       "p99": 6276,
+       "max": 6561
+      },
+      "floor_swizzle": {
+       "p50": 95,
+       "p95": 156,
+       "p99": 227,
+       "max": 476
+      },
+      "emit": {
+       "p50": 3720,
+       "p95": 4264,
+       "p99": 4536,
+       "max": 4575
+      },
+      "hud": {
+       "p50": 90,
+       "p95": 201,
+       "p99": 235,
+       "max": 288
+      },
+      "bgr": {
+       "p50": 2118,
+       "p95": 3054,
+       "p99": 3488,
+       "max": 3584
+      },
+      "blit": {
+       "p50": 6382,
+       "p95": 6862,
+       "p99": 7181,
+       "max": 7496
+      }
+     },
+     "render_us": {
+      "p50": 17356,
+      "p95": 18940,
+      "p99": 19527,
+      "max": 20504
+     },
+     "present_us": {
+      "p50": 9092,
+      "p95": 11973,
+      "p99": 12980,
+      "max": 13526
+     },
+     "samples": 300
+    }
+   },
+   "HALFTONE": {
+    "requested": 4,
+    "effective": 4,
+    "envelope": {
+     "render_us": {
+      "p50": 17982,
+      "p95": 19537,
+      "p99": 20301,
+      "max": 20428
+     },
+     "present_us": {
+      "p50": 8437,
+      "p95": 11066,
+      "p99": 12113,
+      "max": 12655
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 77,
+       "p95": 176,
+       "p99": 292,
+       "max": 509
+      },
+      "frame": {
+       "p50": 4771,
+       "p95": 5992,
+       "p99": 6144,
+       "max": 6258
+      },
+      "floor_swizzle": {
+       "p50": 110,
+       "p95": 157,
+       "p99": 256,
+       "max": 283
+      },
+      "emit": {
+       "p50": 3597,
+       "p95": 4054,
+       "p99": 4193,
+       "max": 4490
+      },
+      "hud": {
+       "p50": 91,
+       "p95": 201,
+       "p99": 224,
+       "max": 235
+      },
+      "bgr": {
+       "p50": 2084,
+       "p95": 2682,
+       "p99": 2945,
+       "max": 3110
+      },
+      "blit": {
+       "p50": 7202,
+       "p95": 8026,
+       "p99": 9037,
+       "max": 11574
+      }
+     },
+     "render_us": {
+      "p50": 18118,
+      "p95": 19452,
+      "p99": 20307,
+      "max": 24184
+     },
+     "present_us": {
+      "p50": 8413,
+      "p95": 11364,
+      "p99": 12369,
+      "max": 13680
+     },
+     "samples": 300
+    }
+   }
+  },
+  "default_mode": "BLACKONWHITE",
+  "destination": [
+   960,
+   540
+  ],
+  "client": [
+   960,
+   540
+  ],
+  "source": [
+   1920,
+   1080
+  ],
+  "phases": [
+   "strips",
+   "frame",
+   "floor_swizzle",
+   "emit",
+   "hud",
+   "bgr",
+   "blit"
+  ],
+  "block_order": "BCHHCBBCHHCB",
+  "warm_rounds_per_block": 5,
+  "refresh_period_us": 13563,
+  "sequence_frames": 4,
+  "samples_per_cell": 300,
+  "production_threads": 8,
+  "phase_origin": "locked",
+  "derived": {
+   "modes": {
+    "BLACKONWHITE": {
+     "envelope_p50_us": 22817,
+     "envelope_p99_us": 25153,
+     "blit_p50_us": 11589,
+     "blit_p99_us": 12416,
+     "non_blit_p50_sum_us": 11339,
+     "tax_p50_us": -89,
+     "abs_tax_p50_permille_of_envelope": 3
+    },
+    "COLORONCOLOR": {
+     "envelope_p50_us": 17386,
+     "envelope_p99_us": 19400,
+     "blit_p50_us": 6382,
+     "blit_p99_us": 7181,
+     "non_blit_p50_sum_us": 10784,
+     "tax_p50_us": -30,
+     "abs_tax_p50_permille_of_envelope": 1
+    },
+    "HALFTONE": {
+     "envelope_p50_us": 17982,
+     "envelope_p99_us": 20301,
+     "blit_p50_us": 7202,
+     "blit_p99_us": 9037,
+     "non_blit_p50_sum_us": 10730,
+     "tax_p50_us": 136,
+     "abs_tax_p50_permille_of_envelope": 7
+    }
+   },
+   "against_default": {
+    "COLORONCOLOR": {
+     "blit_delta_p50_us": -5207,
+     "blit_delta_permille_of_default": 449,
+     "non_blit_delta_p50_us": -555,
+     "non_blit_delta_permille_of_default": 48,
+     "envelope_delta_p50_us": -5431
+    },
+    "HALFTONE": {
+     "blit_delta_p50_us": -4387,
+     "blit_delta_permille_of_default": 378,
+     "non_blit_delta_p50_us": -609,
+     "non_blit_delta_permille_of_default": 53,
+     "envelope_delta_p50_us": -4835
+    }
+   }
+  },
+  "rule_permille": {
+   "void_tax": 100,
+   "confounded": 50,
+   "material": 100
+  }
+ },
+ "reading": "CONFIRMATION run — does NOT replace the sealed PRESENT-STRETCH-0 record (chain c19b88e3). The reading did NOT reproduce: original COLORONCOLOR: MODE MATERIAL (cheaper); HALFTONE: MODE MATERIAL (cheaper); this run COLORONCOLOR: MODE MATERIAL (cheaper); HALFTONE: CONFOUNDED. PRESENT-STRETCH-0 on host DANIELDILLBERG (300 samples per cell, blocks BCHHCBBCHHCB, half-size 960x540). Blit p50/p99 us: BLACKONWHITE 11589/12416, COLORONCOLOR 6382/7181, HALFTONE 7202/9037. Against BLACKONWHITE: COLORONCOLOR: MODE MATERIAL (cheaper); HALFTONE: CONFOUNDED. A diagnostic: no seat, no winner, no mode adopted — each mode draws different pixels; not input-to-photon.",
+ "chain_hash": "c1f6431e9b3d79743e977f4bc339ce3143a24a6e51c862849d65bb8beeae6408"
+}
