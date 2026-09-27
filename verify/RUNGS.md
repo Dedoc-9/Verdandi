@@ -2146,7 +2146,7 @@ instrument) do not, and they are not changed. The conforming presenter is locked
 scope: anything after composition (scan-out, the panel, display-side colour processing), and another screen size or
 scaling setting.
 
-## PRESENT-EXACT-0 — preregistered: which GDI call presents the certified picture 1:1, with the composed screen read back (host-run pending)
+## PRESENT-EXACT-0 — which GDI call presents the certified picture 1:1, with the composed screen read back (measured twice: the screen read back exact; NO MATERIAL DIFFERENCE; SetDIBitsToDevice adopted)
 
 **Why it is next.** PRESENTATION-CHOICE-0 fixed the target. This court picks the call that implements it, and adds
 the witness G11 said was missing: something that checks what reaches the screen, not only the bytes handed to GDI.
@@ -2220,11 +2220,45 @@ because while the bar is on, the composed screen is not the certified picture. T
 reruns the court unchanged. What PRESENTATION-CHOICE-0 can promise is limited to what the shell controls: a host
 overlay drawn over every window is outside it, and the readback makes such an overlay visible rather than hiding it.
 
+**Measured, with the overlay off (host DANIELDILLBERG, `shell/attest/presentexact-DANIELDILLBERG.json` and
+`presentexact-confirm-DANIELDILLBERG.json`, citing PRESENT-EXACT-0 `bc910e2f`, PRESENTATION-CHOICE-0 `4a7a32d9` and
+HOST-STATE-0 `58250382`).** The owner switched off the vendor's real-time monitor, and the probe then read every step
+back exact, with 0 differing pixels on the screen and in the window. Both court runs passed the geometry check (a
+1920×1080 client at (0,0), the screen 1920×1080 logical and physical). Both passed the hard gate: **10 of 10 readback
+checks per run, 62,208,000 bytes compared, 0 differing.** That covers the four sealed frames under each call after a
+white clear, plus the last frame again after the rounds. 1000 samples per cell, ABBA, through the adopted
+`LoopRenderer`. In µs:
+
+| | first run: StretchDIBits | first run: SetDIBitsToDevice | confirmation: StretchDIBits | confirmation: SetDIBitsToDevice |
+|---|---|---|---|---|
+| **envelope p99 (the rule)** | **12,187** | **12,113** | **12,279** | **12,117** |
+| envelope p50 / p95 | 10,047 / 11,662 | 10,212 / 11,637 | 10,203 / 11,619 | 10,139 / 11,688 |
+| call interval p50 / p99 | 1,834 / 2,296 | 1,823 / 2,199 | 1,846 / 2,321 | 1,838 / 2,325 |
+| frame-ready → composited p50 / p99 | 2,584 / 14,851 | 2,423 / 14,810 | 2,352 / 15,195 | 2,430 / 15,211 |
+
+**The reading: NO MATERIAL DIFFERENCE, twice.** StretchDIBits' p99 was 1,006‰ and then 1,013‰ of
+SetDIBitsToDevice's, and SetDIBitsToDevice's was 993‰ and then 986‰ of StretchDIBits'. Neither came within the 950‰
+bound; the nearest was 36‰ away. So the preregistered adoption is **SetDIBitsToDevice**,
+the simpler call, with no stretch path at all. The confirmation record states it. Measured refresh: 13,129 and
+13,710 µs.
+
+**Beside the reading, not ruled on.** At 1:1 the call itself took about 1.8 ms at p50 under either call. The whole
+envelope (render, blit and call) was about 10.0–10.2 ms at p50, below the refresh. frame-ready → composited was therefore
+short at the median (2.4–2.6 ms), with a p99 near one refresh. The half-size courts' envelopes (13.7–17.4 ms p50, with
+a 7–8 ms blit) are a different window and destination. That is a cross-court difference, recorded and not interpreted.
+The two runs were within 2% of each other at p50, and before both, HOST-STATE-0 recorded the same clock state and plan
+and memory at 85–86% (`GHOSTS.md` G13). The owner reports bumping the mouse at the start of one run. The court records
+no input count in its record. The cursor is not part of the screen readback, the checks after the rounds read back
+exact, and the ABBA interleave spreads a brief disturbance over both calls. The nearest bound was 36‰ away in either
+run, too far for a few disturbed samples in the first rounds to cross. So it could not plausibly have moved the
+reading, and it is noted rather than hidden.
+
 **Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the readback's refusals
-(including a call that writes nothing) and the sealer's rule. MEASURED: nothing yet. The first host attempt refused at
-the readback, and the probe traced the refusal to the host's performance overlay (above); the rerun waits on the overlay
-being switched off. OBSERVED (probe, unsealed, one frame): outside the overlay's box, both calls' composed pixels
-equalled the certified picture.
+(including a call that writes nothing) and the sealer's rule. MEASURED (host, two runs): the composed screen equalled
+the certified picture on every checked frame under both calls (20 checks, 0 differing bytes), with the host overlay off.
+No material cost difference between the calls, so **SetDIBitsToDevice is adopted**. This is the first check in the
+program of what reaches the screen rather than what is handed to GDI. It holds on this host and screen, up to the
+composed screen, and only while nothing draws over the window.
 
 **does_not_show.** That the pixels reach the eye unchanged: the readback is the composed screen, before scan-out, the
 panel and any display-side colour processing. That every timed frame read back equal: the readback runs on the sealed

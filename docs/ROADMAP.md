@@ -155,14 +155,17 @@ The owner's decision: the certified picture, 1:1 (the kernel's 1920×1080 compos
 window covering the 1920×1080 screen at (0,0). No reduction by GDI or the kernel, and no new VIEW law. The half-size
 windows stay as LATENCY-0's frozen instrument, and a conforming presenter is locked after PRESENT-EXACT-0.
 
-### PRESENT-EXACT-0 — which GDI call presents it, with the screen read back · **preregistered** (`bc910e2f`), host-run pending
+### PRESENT-EXACT-0 — which GDI call presents it, with the screen read back · **measured twice** (`bc910e2f`): screen exact, SetDIBitsToDevice adopted
 StretchDIBits at 1:1 against SetDIBitsToDevice, the call the only variable, frames through the adopted
 `LoopRenderer`. The composed screen under the window is read back and must equal the certified picture byte for byte,
 after a white clear that is also read back, as a hard gate. The first check of what reaches the screen rather than
 what is handed to GDI (G11). Then same-run ABBA at 1000 per cell. StretchDIBits is adopted only if its p99 is ≤ 950‰ of
 SetDIBitsToDevice's in both runs; otherwise SetDIBitsToDevice, the simpler semantics. The first host attempt refused
 at the readback. A probe traced it to the host's performance overlay, a translucent bar drawn over every window.
-Outside that bar, frame 0 read back exact under both calls. The court reruns unchanged with the overlay off.
+Outside that bar, frame 0 read back exact under both calls. With the overlay off, both runs read the composed screen
+back exact on all checked frames (20 checks, 0 differing bytes) and read NO MATERIAL DIFFERENCE between the calls
+(StretchDIBits at 1,006‰ and 1,013‰ of SetDIBitsToDevice's p99). So SetDIBitsToDevice, the simpler call, is adopted. At
+1:1 the call costs about 1.8 ms, and the frame's envelope (about 10 ms at p50) sits below the refresh.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

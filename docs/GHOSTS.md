@@ -234,7 +234,10 @@ The readback's first use on the host found something nothing had checked before.
 what the shell hands the compositor: the host's performance overlay (a translucent bar across 446×28 pixels at the top
 of the screen) is drawn over every window, dimming the certified picture there to about 70%. Everywhere else, frame 0
 read back exact under both calls (a probe, not yet a sealed court). The court refused rather than measuring around the
-bar, and it reruns with the overlay off.
+bar. With the overlay off it ran twice, and **the composed screen equalled the certified picture on all 20 checked frames
+under both calls**, 0 differing bytes. For the chosen presentation (1:1, borderless, SetDIBitsToDevice adopted), the
+ghost's last clause, "which no row checks", is answered on this host up to the composed screen, while nothing draws over
+the window. What lies past composition (scan-out, the panel) stays outside every witness.
 
 ---
 
@@ -269,6 +272,7 @@ HOST-STATE-0 recorded the host around ALLOC-REUSE-1's two runs. The OS reported 
 before both. What differed was memory: 96% load with 359 MB available before the slower run, against 89% with
 1,222 MB before the faster one. That is one coincidence, on one pair of runs. It is not a cause: the OS-reported MHz
 cannot show boost, thermal state is not captured, and the snapshots bracket the run rather than sample it.
+PRESENT-EXACT-0's two runs add a pair without drift: they were within 2% at p50, with memory at 85–86% before both.
 
 **Exorcism.** Keep recording, and don't control yet. Each further pair of runs either repeats the association (slow runs
 under memory pressure) or breaks it (a slow run with memory to spare, which would say the recorded state is

@@ -131,9 +131,9 @@ Every rung ran the same loop, and the loop is the product as much as the code:
 - The same court can run 40–60% slower on another run the same day (G13). HOST-STATE-0 put memory pressure beside one
   such run: an association, not a cause. Read absolute milliseconds as belonging to their own run.
 - What the shell shows is decided (PRESENTATION-CHOICE-0): the certified picture 1:1 in a borderless window.
-  PRESENT-EXACT-0 picks the GDI call and reads the composed screen back as a hard gate. Its first host attempt found
-  the host's performance overlay drawn over the picture; outside it, the pixels read back exact. It reruns with the
-  overlay off (G11).
+  PRESENT-EXACT-0 read the composed screen back exact on every checked frame under both GDI calls (with the host's
+  performance overlay switched off, which it had found drawn over the picture), found no material cost difference,
+  and adopted SetDIBitsToDevice (G11).
 - The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two
   runs); presentation latency is phase-dependent, and no low-latency claim is made.
 - A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.
