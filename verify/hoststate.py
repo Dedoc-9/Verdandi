@@ -24,6 +24,16 @@ Fields (Windows only; on any other platform each is recorded as unavailable):
   display  the screen's logical and physical size, depth and nominal vertical refresh (GetDeviceCaps)
   uptime   milliseconds since boot (GetTickCount64)
   thermal  declared not captured: no reliable source without elevation
+
+HOST-STATE-1 (version 2, appended; HOST-STATE-0's version 1 is unchanged and stays the default, so every court that
+cites HOST-STATE-0 records exactly what it recorded before) adds two fields, read through the performance-counter
+library (PDH, English counter names, so the paths do not depend on the display language), each over its own 1000 ms
+window:
+  clock    \Processor Information(_Total): Processor Frequency (the nominal MHz), % Processor Performance and
+           % Processor Utility (uncapped: both exceed 100% under boost), and the effective-MHz estimate the OS's own
+           arithmetic gives (nominal x performance); the counters as the OS computes them, not a measured clock
+  faults   \Memory: Page Faults/sec, Page Reads/sec and Pages Input/sec — system-wide rates, hard faults are the reads
+A court asks for version 2 explicitly (`capture(version=2)`); `python verify/hoststate.py` prints a version 2 look.
 """
 from __future__ import annotations
 
@@ -38,6 +48,18 @@ FIELDS = ("cpu", "power", "load", "memory", "process", "display", "uptime", "the
 LOAD_WINDOW_MS = 1000
 NOT_WINDOWS = "not captured: HOST-STATE-0 reads a Windows host only"
 THERMAL = "not captured: no reliable source without elevation (declared, not attempted)"
+# HOST-STATE-1 (version 2): HOST-STATE-0's fields, then two appended; version 1 stays the default
+FIELDS_V2 = FIELDS + ("clock", "faults")
+COUNTER_WINDOW_MS = 1000
+VERSIONS = {1: ("HOST-STATE-0", FIELDS), 2: ("HOST-STATE-1", FIELDS_V2)}
+NOT_WINDOWS_V2 = "not captured: HOST-STATE-1 reads a Windows host only"
+CLOCK_COUNTERS = (("processor_frequency_mhz", r"\Processor Information(_Total)\Processor Frequency", 1),
+                  ("performance_permille", r"\Processor Information(_Total)\% Processor Performance", 10),
+                  ("utility_permille", r"\Processor Information(_Total)\% Processor Utility", 10))
+FAULT_COUNTERS = (("page_faults_per_s", r"\Memory\Page Faults/sec", 1),
+                  ("page_reads_per_s", r"\Memory\Page Reads/sec", 1),
+                  ("pages_input_per_s", r"\Memory\Pages Input/sec", 1))
+PDH_FMT_DOUBLE, PDH_FMT_NOCAP100 = 0x00000200, 0x00008000
 
 
 def cpu() -> dict:
@@ -177,29 +199,101 @@ def uptime() -> dict:
     return {"ms": int(k32.GetTickCount64())}
 
 
+def _pdh(counters) -> dict:
+    """Read `counters` ((name, English path, scale), ...) once over COUNTER_WINDOW_MS: two collections a window apart,
+    each value formatted uncapped as a double, scaled and rounded to an integer. A counter that cannot be added or
+    formatted is recorded as unavailable with its PDH status; the others still stand. Reads only."""
+    import ctypes
+
+    class FCV(ctypes.Structure):  # PDH_FMT_COUNTERVALUE: a status, then the 8-byte-aligned union read as a double
+        _fields_ = [("CStatus", ctypes.c_ulong), ("doubleValue", ctypes.c_double)]
+
+    pdh = ctypes.WinDLL("pdh")
+    pdh.PdhOpenQueryW.argtypes = [ctypes.c_wchar_p, ctypes.c_size_t, ctypes.POINTER(ctypes.c_void_p)]
+    pdh.PdhAddEnglishCounterW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_size_t, ctypes.POINTER(ctypes.c_void_p)]
+    pdh.PdhCollectQueryData.argtypes = [ctypes.c_void_p]
+    pdh.PdhGetFormattedCounterValue.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.POINTER(ctypes.c_ulong), ctypes.POINTER(FCV)]
+    pdh.PdhCloseQuery.argtypes = [ctypes.c_void_p]
+    for f in (pdh.PdhOpenQueryW, pdh.PdhAddEnglishCounterW, pdh.PdhCollectQueryData, pdh.PdhGetFormattedCounterValue, pdh.PdhCloseQuery):
+        f.restype = ctypes.c_long
+    status = lambda st: "PDH status 0x%08x" % (st & 0xFFFFFFFF)  # noqa: E731
+    q = ctypes.c_void_p()
+    st = pdh.PdhOpenQueryW(None, 0, ctypes.byref(q))
+    if st != 0:
+        raise OSError("PdhOpenQueryW: " + status(st))
+    try:
+        handles, out = {}, {}
+        for name, path, _ in counters:
+            h = ctypes.c_void_p()
+            st = pdh.PdhAddEnglishCounterW(q, path, 0, ctypes.byref(h))
+            if st != 0:
+                out[name] = {"unavailable": "PdhAddEnglishCounterW(%s): %s" % (path, status(st))}
+            else:
+                handles[name] = h
+        st = pdh.PdhCollectQueryData(q)
+        if st != 0:
+            raise OSError("PdhCollectQueryData (first): " + status(st))
+        time.sleep(COUNTER_WINDOW_MS / 1000)
+        st = pdh.PdhCollectQueryData(q)
+        if st != 0:
+            raise OSError("PdhCollectQueryData (second): " + status(st))
+        for name, path, scale in counters:
+            if name not in handles:
+                continue
+            v = FCV()
+            st = pdh.PdhGetFormattedCounterValue(handles[name], PDH_FMT_DOUBLE | PDH_FMT_NOCAP100, None, ctypes.byref(v))
+            if st != 0 or v.CStatus not in (0, 1):  # PDH_CSTATUS_VALID_DATA or PDH_CSTATUS_NEW_DATA
+                out[name] = {"unavailable": "PdhGetFormattedCounterValue(%s): %s, counter %s" % (path, status(st), status(v.CStatus))}
+            else:
+                out[name] = int(round(v.doubleValue * scale))
+        return {name: out[name] for name, _, _ in counters}
+    finally:
+        pdh.PdhCloseQuery(q)
+
+
+def clock() -> dict:
+    out = _pdh(CLOCK_COUNTERS)
+    f, p = out["processor_frequency_mhz"], out["performance_permille"]
+    out["effective_mhz_estimate"] = ((f * p) // 1000 if isinstance(f, int) and isinstance(p, int)
+                                     else {"unavailable": "needs processor_frequency_mhz and performance_permille"})
+    out["window_ms"] = COUNTER_WINDOW_MS
+    out["source"] = ("PDH \\Processor Information(_Total) over the window, uncapped; the estimate is nominal x performance, "
+                     "as the OS computes its counters, not a measured clock")
+    return out
+
+
+def faults() -> dict:
+    out = _pdh(FAULT_COUNTERS)
+    out["window_ms"] = COUNTER_WINDOW_MS
+    out["source"] = "PDH \\Memory rates over the window, system-wide; page reads are hard faults, not the court's own"
+    return out
+
+
 CAPTURE = {"cpu": cpu, "power": power, "load": load, "memory": memory, "process": process, "display": display,
-           "uptime": uptime}
+           "uptime": uptime, "clock": clock, "faults": faults}
 
 
 def _why(e: BaseException) -> str:
     return ("%s: %s" % (type(e).__name__, e))[:200]
 
 
-def capture(windows: bool | None = None) -> dict:
-    """One snapshot. Each field is captured on its own; a failing field is recorded as unavailable with its reason."""
+def capture(windows: bool | None = None, version: int = 1) -> dict:
+    """One snapshot. Each field is captured on its own; a failing field is recorded as unavailable with its reason.
+    Version 1 is HOST-STATE-0's snapshot, unchanged; version 2 (HOST-STATE-1) appends clock and faults."""
+    rung, names = VERSIONS[version]
     windows = (os.name == "nt") if windows is None else windows
     fields: dict = {}
-    for name in FIELDS:
+    for name in names:
         if name == "thermal":
             fields[name] = {"unavailable": THERMAL}
         elif not windows:
-            fields[name] = {"unavailable": NOT_WINDOWS}
+            fields[name] = {"unavailable": NOT_WINDOWS if version == 1 else NOT_WINDOWS_V2}
         else:
             try:
                 fields[name] = CAPTURE[name]()
             except Exception as e:
                 fields[name] = {"unavailable": _why(e)}
-    return {"hoststate": "HOST-STATE-0", "version": 1, "unix_seconds": int(time.time()), "platform": sys.platform,
+    return {"hoststate": rung, "version": version, "unix_seconds": int(time.time()), "platform": sys.platform,
             "fields": fields}
 
 
@@ -219,22 +313,24 @@ def validate(snap: dict) -> dict:
         elif not isinstance(x, (int, str)):
             raise ValueError("HOST-STATE-0 value at %s has type %s" % (where, type(x).__name__))
     walk(snap, "snapshot")
-    if snap.get("hoststate") != "HOST-STATE-0" or tuple(snap.get("fields", {}).keys()) != FIELDS:
-        raise ValueError("not a HOST-STATE-0 snapshot with the registered fields in order")
+    ver = snap.get("version")
+    if ver not in VERSIONS or snap.get("hoststate") != VERSIONS[ver][0] or tuple(snap.get("fields", {}).keys()) != VERSIONS[ver][1]:
+        raise ValueError("not a HOST-STATE-0 (version 1) or HOST-STATE-1 (version 2) snapshot with its registered fields in order")
     return snap
 
 
-def capture_safe(fn=None) -> dict:
+def capture_safe(fn=None, version: int = 1) -> dict:
     """Never raises: a snapshot that fails to capture or to validate is recorded as unavailable, so recording can
     never block or alter a court."""
     try:
-        return validate((fn or capture)())
+        return validate((fn or (lambda: capture(version=version)))())
     except Exception as e:
-        return {"hoststate": "HOST-STATE-0", "version": 1, "unavailable": _why(e)}
+        return {"hoststate": VERSIONS.get(version, VERSIONS[1])[0], "version": version if version in VERSIONS else 1,
+                "unavailable": _why(e)}
 
 
 def main() -> int:
-    print(json.dumps(capture_safe(), indent=1, ensure_ascii=False))
+    print(json.dumps(capture_safe(version=2), indent=1, ensure_ascii=False))
     return 0
 
 

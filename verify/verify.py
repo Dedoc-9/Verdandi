@@ -60,8 +60,10 @@ rendering, every fresh render entry's call site pinned), presentexact (PRESENTAT
 picture 1:1 in a borderless window; PRESENT-EXACT-0: StretchDIBits at 1:1 against SetDIBitsToDevice, the composed screen
 read back as a hard gate, the same-run p99 rule, and the fence; presentexact-lock, the conforming presenter `shell show`
 locked to SetDIBitsToDevice with the screen read back after every present), hoststate (HOST-STATE-0: the host's state
-recorded beside a court, never controlled and never read by a rule), and — in the oracle stage — oracle-d0 (Urðr's own
-statecanon recomputes the oracle's D_0 in place).
+recorded beside a court, never controlled and never read by a rule), refusalwhy (REFUSAL-WHY-0: a readback refusal
+names the windows above ours over the differing box, after its verdict, reading only), hoststate1 (HOST-STATE-1: the
+OS-computed clock and the paging rates, a version 2 snapshot that no court records yet), and — in the oracle stage —
+oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
 
@@ -4871,6 +4873,220 @@ def presentexact_lock():
             "playback-window are unmoved; %s" % evidence)
 
 
+# ------------------------------------------------------------------ REFUSAL-WHY-0 and HOST-STATE-1
+# REFUSAL-WHY-0 reads: none of these may appear in its section (it moves, shows, activates, closes, messages and
+# terminates nothing), and it declares exactly these read-only imports
+REFUSALWHY_FORBIDDEN = ("SetWindowPos", "ShowWindow", "PostMessage", "SendMessage", "SetForegroundWindow", "BringWindowToTop",
+                        "MoveWindow", "DestroyWindow", "TerminateProcess", "CloseWindow", "SetWindowLong", "SetLayeredWindowAttributes",
+                        "EnableWindow", "SetActiveWindow", "SetFocus", "SetParent", "InvalidateRect", "RedrawWindow", "EndTask",
+                        "PROCESS_TERMINATE", "PROCESS_ALL_ACCESS", "write_raw(", "qpc()", "std::process::exit")
+REFUSALWHY_EXTERNS = ["CloseHandle", "GetClassNameW", "GetTopWindow", "GetWindow", "GetWindowLongW", "GetWindowRect",
+                      "GetWindowTextW", "GetWindowThreadProcessId", "OpenProcess", "QueryFullProcessImageNameW"]
+REFUSALWHY_MOCK = "attribution: the mock screen has no windows; nothing lies above"
+# HOST-STATE-1's counters, by their English names (pdh.dll), and the only PDH calls it makes
+HOSTSTATE1_COUNTERS = {
+    "clock": (("processor_frequency_mhz", "\\Processor Information(_Total)\\Processor Frequency", 1),
+              ("performance_permille", "\\Processor Information(_Total)\\% Processor Performance", 10),
+              ("utility_permille", "\\Processor Information(_Total)\\% Processor Utility", 10)),
+    "faults": (("page_faults_per_s", "\\Memory\\Page Faults/sec", 1),
+               ("page_reads_per_s", "\\Memory\\Page Reads/sec", 1),
+               ("pages_input_per_s", "\\Memory\\Pages Input/sec", 1))}
+HOSTSTATE1_PDH = {"PdhOpenQueryW", "PdhAddEnglishCounterW", "PdhCollectQueryData", "PdhGetFormattedCounterValue", "PdhCloseQuery"}
+
+
+def refusalwhy_preregistered():
+    """REFUSAL-WHY-0's method is locked: explanatory apparatus appended to a readback refusal or mismatch only after its
+    verdict is decided; the differing box, then the visible uncloaked windows above ours that meet it, with their owners;
+    read-only; a candidate, never a cause; at most six named."""
+    e = locked_entry("REFUSAL-WHY-0", {
+        "explanatory apparatus, after the verdict": ("hyp", ("explanatory apparatus, never a correctness dependency", "after its verdict is decided", "changes nothing")),
+        "what an attribution names": ("hyp", ("bounding box of the differing pixels", "z order", "visible, not cloaked", "image name", "below the window layer")),
+        "a candidate, not a cause": ("hyp", ("a candidate is not a cause",)),
+        "where it appears; the decision first": ("succ", ("carry the attribution after the decided text", "computed before the attribution is called", "read-only window and process queries only", "default names nothing")),
+        "the gate's plants": ("succ", ("a changed byte, a clear that writes nothing", "no record")),
+        "no dependence, no control, no cause": ("fail", ("depends on the attribution", "called before the decision", "setwindowpos", "terminateprocess", "measures around a named window", "candidate, never a cause")),
+        "scope: after the fact, top-level only, six, no number": ("lims", ("read after the readback", "only top-level windows", "not a diagnosis", "at most six windows", "no number is produced")),
+    })
+    w32 = read(os.path.join(SHELL, "win32.rs")).decode("utf-8")
+    i = w32.find("REFUSAL-WHY-0 (appended)")
+    if i < 0 or "if meets && found.len() < 6 {" not in w32[i:]:
+        raise Red("the attribution does not stop at the registered six windows")
+    return ("REFUSAL-WHY-0's method is locked (hash %s): an attribution is explanatory apparatus, never a correctness "
+            "dependency — appended to a screen-readback refusal or mismatch only after its verdict is decided; it names the "
+            "differing box, then the visible, uncloaked top-level windows above ours in the Z order that meet it (owner "
+            "image, pid, class, title, rectangle, overlay styles), at most six, or says the cause is below the window layer; "
+            "read-only; a candidate, never a cause; no number" % e["chain_hash"][:8])
+
+
+def refusalwhy_fence():
+    """The attribution is decided after, and reads only: the section is appended after the presenter's, declares only
+    read-only window and process queries (OpenProcess with limited query rights only) and calls nothing that moves,
+    shows, activates, closes, messages or terminates; the court's two refusals call it after their decision and only
+    append it; the presenter counts a mismatch before it names one; the trait's default names nothing. PLANTS on the
+    mock court: a changed byte and a clear that writes nothing still refuse with no record, and each message carries the
+    mock's attribution after the decided text, over the same box the message describes."""
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i_lock, i_why = tail.find("PRESENT-EXACT-0 LOCK: the conforming presenter (appended)"), tail.find("REFUSAL-WHY-0 (appended)")
+    if i_lock < 0 or i_why < i_lock:
+        raise Red("the REFUSAL-WHY-0 section is not appended after the presenter's")
+    why = tail[i_why:]
+    for tok in REFUSALWHY_FORBIDDEN:
+        if tok in why:
+            raise Red("the REFUSAL-WHY-0 section contains %r: an attribution may read, never act" % tok)
+    externs = sorted(re.findall(r"^\s*fn (\w+)\(", "\n".join(re.findall(r'extern "system" \{(.*?)\n\}', why, re.S)), re.M))
+    if externs != REFUSALWHY_EXTERNS:
+        raise Red("the REFUSAL-WHY-0 section declares imports other than the read-only ones: %s" % externs)
+    if ("const PROCESS_QUERY_LIMITED_INFORMATION: Dword = 0x1000;" not in why or why.count("OpenProcess(") != 2
+            or "OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid)" not in why):
+        raise Red("a process is opened with more than limited query rights")
+    uses = [m.start() for m in re.finditer(r"covering_windows\(", tail)]
+    ex = src_span(tail, "impl crate::presentexact::ExactSurface for ExactGdiSurface", "\n}\n")
+    if (len(uses) != 4 or "fn attribute(&mut self, b: [usize; 4]) -> String {\n        covering_windows(self.hwnd, b)\n    }" not in ex):
+        raise Red("the attribution is called somewhere other than the exact surface, the presenter's mismatch line and the probe")
+    sw = src_span(tail, "fn show_witness(", "\n}\n")
+    order = [sw.find(t) for t in ("let exact = matches!(&screen, Some(v) if v[..] == bgr[..]);", "st.differed += 1;",
+                                  "if fresh || st.last != Some(exact) {", "covering_windows(surf.hwnd, b)", "println!(\"[show] frame")]
+    if -1 in order or order != sorted(order) or len(re.findall(r"\bexact\s*=(?![=>])", sw)) != 1:
+        raise Red("the presenter does not decide and count a mismatch before it names one")
+    px = read(os.path.join(SHELL, "presentexact.rs")).decode("utf-8")
+    trait = src_span(px, "pub trait ExactSurface: Surface {", "\n}\n")
+    if "fn attribute(&mut self, _bbox: [usize; 4]) -> String {\n        String::new()\n    }" not in trait:
+        raise Red("the trait's default attribution is not empty")
+    wo = src_span(px, "fn witness_one<S: ExactSurface>(", "\n}\n")
+    stale = [wo.find(t) for t in ("Some(v) if v.len() == bgr.len() && v.iter().all(|&b| b == 0xFF) => {}", "let who = why(s, &v, &|_| 0xFF);",
+                                  "PRESENTEXACT-READBACK-STALE:")]
+    diff = [wo.find(t) for t in ("if bad != 0 {", "let who = why(s, &v, &|i| bgr[i]);", "PRESENTEXACT-READBACK: the composed screen differs")]
+    if (-1 in stale + diff or stale != sorted(stale) or diff != sorted(diff) or wo.count("why(") != 2
+            or len(re.findall(r"\bwho\b", wo)) != 4 or wo.find("rb.mismatched_bytes += bad;") > diff[1]):
+        raise Red("the court calls the attribution before its decision, or uses it for more than the message")
+    if px.count(".attribute(") != 1 or "Some(w) if !w.is_empty() => format!(\"; {}\", w)," not in src_span(px, "fn why<S: ExactSurface>(", "\n}\n"):
+        raise Red("the attribution is reached other than through why(), or is not appended only")
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    box = r"\((\d+),(\d+)\)-\((\d+),(\d+)\)"
+    shapes = {"readback": r"PRESENTEXACT-READBACK: the composed screen differs from the certified picture on sealed frame 0 under "
+                          r"stretchdibits \(1 of \d+ bytes; 1 of \d+ pixels differ, box " + box + r", [^;]*; " + re.escape(REFUSALWHY_MOCK)
+                          + " " + box + r"\)$",
+              "stale": r"PRESENTEXACT-READBACK-STALE: the window cleared to white before sealed frame 0 under stretchdibits did not "
+                       r"read back as white \(\d+ of \d+ pixels differ, box " + box + r", [^;]*; " + re.escape(REFUSALWHY_MOCK) + " "
+                       + box + r"\); the readback does not see the window exactly$"}
+    for plant, shape in shapes.items():
+        pout = os.path.join(BUILD, f"refusalwhy-plant-{plant}.json")
+        if os.path.exists(pout):
+            os.remove(pout)
+        cp = subprocess.run([SHELL_EXE, "presentexact-selftest", "--session", SESSIONWALK_DEMO, "--per-cell", "2", "--plant", plant,
+                             "--out", pout], capture_output=True, text=True, cwd=ROOT)
+        lines = [ln for ln in cp.stderr.splitlines() if "PRESENTEXACT-" in ln]
+        m = re.search(shape, lines[-1]) if lines else None
+        if cp.returncode != 2 or os.path.exists(pout) or not m:
+            raise Red("PLANT %s: the court did not refuse with no record and the attribution after the decision" % plant)
+        if m.groups()[:4] != m.groups()[4:]:
+            raise Red("PLANT %s: the attribution names a box other than the one the message describes" % plant)
+    return ("an attribution is decided after and reads only: the REFUSAL-WHY-0 section is appended after the presenter's, "
+            "declares only read-only window and process queries (%d imports; OpenProcess with limited query rights) and calls "
+            "nothing that moves, shows, activates, closes, messages or terminates; the court's two refusals call it after their "
+            "decision and only append it; the presenter counts a mismatch before it names one; the trait's default names "
+            "nothing; PLANTS: a changed byte and a clear that writes nothing refuse with no record, each message carrying the "
+            "mock's attribution after the decided text over the box it describes" % len(REFUSALWHY_EXTERNS))
+
+
+def hoststate1_preregistered():
+    """HOST-STATE-1's method is locked: version 2 of the snapshot appends clock and faults (PDH counters by English name
+    over a 1000 ms window each), version 1 unchanged and the default everywhere; recorded, never controlled; association,
+    never cause. The code's fields, counters, format and defaults must equal the registered ones."""
+    import hoststate as HS
+    import inspect
+    e = locked_entry("HOST-STATE-1", {
+        "recorded, never controlled; version 2; version 1 the default": ("hyp", ("recorded, never controlled", "version 2 of the snapshot", "version 1 stays the default", "association only")),
+        "the two fields and their counters": ("hyp", ("processor frequency", "% processor performance", "% processor utility", "page faults/sec", "page reads/sec", "pages input/sec", "english names")),
+        "shape, independence, the default, a look": ("succ", ("then clock and faults", "each counter on its own", "rounded permille", "capture(version=1) is host-state-0's snapshot unchanged", "never raises for either version", "writes nothing", "its own preregistered entry")),
+        "no control, no version 1 change, no measured clock, no cause": ("fail", ("any control of the host", "a version 1 snapshot changed", "recording version 2", "measured clock", "court's own", "association, never cause")),
+        "scope: the OS's arithmetic, three windows, system-wide": ("lims", ("not a measured frequency", "about three seconds", "system-wide", "thermal state is still not captured", "never explained")),
+    })
+    if (HS.FIELDS_V2 != HS.FIELDS + ("clock", "faults") or HS.COUNTER_WINDOW_MS != 1000
+            or HS.VERSIONS != {1: ("HOST-STATE-0", HS.FIELDS), 2: ("HOST-STATE-1", HS.FIELDS_V2)}
+            or (HS.CLOCK_COUNTERS, HS.FAULT_COUNTERS) != (HOSTSTATE1_COUNTERS["clock"], HOSTSTATE1_COUNTERS["faults"])
+            or (HS.PDH_FMT_DOUBLE, HS.PDH_FMT_NOCAP100) != (0x200, 0x8000)):
+        raise Red("the recorder's version 2 fields, counters, window or format are not the registered ones")
+    if (inspect.signature(HS.capture).parameters["version"].default != 1
+            or inspect.signature(HS.capture_safe).parameters["version"].default != 1):
+        raise Red("version 1 is not the default")
+    return ("HOST-STATE-1's method is locked (hash %s): version 2 of the snapshot is HOST-STATE-0's fields unchanged and in "
+            "order, then clock (Processor Frequency, %% Processor Performance and %% Processor Utility of \\Processor "
+            "Information(_Total), uncapped, as permille, and the nominal x performance estimate) and faults (\\Memory Page "
+            "Faults/sec, Page Reads/sec, Pages Input/sec), each counter by its English name over its own 1000 ms window; "
+            "version 1 is the default of capture and capture_safe; recorded, never controlled; association, never cause"
+            % e["chain_hash"][:8])
+
+
+def hoststate1_record():
+    """The version 2 recorder on this gate, and version 1 unchanged: the default snapshot is HOST-STATE-0's shape and
+    markers exactly; off Windows version 2 marks every field unavailable and nothing raises; the Windows path degrades
+    field by field; clock's estimate is nominal x performance and needs both; a counter that fails stands alone; a
+    Windows-shaped version 2 snapshot validates and a mislabelled, mixed, float-bearing or unknown version becomes an
+    unavailable snapshot of its version; no court opts into version 2; the recorder calls only PDH's reading functions."""
+    import hoststate as HS
+    v1 = HS.validate(HS.capture())
+    golden_v1 = {"hoststate": "HOST-STATE-0", "version": 1, "platform": sys.platform,
+                 "fields": {k: {"unavailable": HS.THERMAL if k == "thermal" else HS.NOT_WINDOWS} for k in HS.FIELDS}}
+    if os.name != "nt" and {k: v for k, v in v1.items() if k != "unix_seconds"} != golden_v1:
+        raise Red("the default snapshot is no longer HOST-STATE-0's version 1, unchanged")
+    v2 = HS.validate(HS.capture(version=2))
+    if (v2["hoststate"], v2["version"], tuple(v2["fields"])) != ("HOST-STATE-1", 2, HS.FIELDS_V2):
+        raise Red("a version 2 snapshot is not HOST-STATE-1's fields in order")
+    if os.name != "nt":
+        if any(v != {"unavailable": HS.THERMAL if k == "thermal" else HS.NOT_WINDOWS_V2} for k, v in v2["fields"].items()):
+            raise Red("off Windows a version 2 field was captured or its marker is not the registered one")
+        forced = HS.validate(HS.capture(windows=True, version=2))
+        if not all("unavailable" in forced["fields"][k] for k in ("clock", "faults")):
+            raise Red("the version 2 Windows path did not degrade to unavailable where its APIs are absent")
+    real = HS._pdh
+    try:
+        HS._pdh = lambda counters: {n: {"processor_frequency_mhz": 2900, "performance_permille": 1433, "utility_permille": 1210,
+                                        "page_faults_per_s": 5120, "page_reads_per_s": 17, "pages_input_per_s": 64}[n] for n, _, _ in counters}
+        c, f = HS.clock(), HS.faults()
+        HS._pdh = lambda counters: {n: ({"unavailable": "planted PDH status"} if n == "performance_permille" else 1000) for n, _, _ in counters}
+        c_bad = HS.clock()
+    finally:
+        HS._pdh = real
+    if (c["effective_mhz_estimate"] != 2900 * 1433 // 1000 or c["window_ms"] != 1000 or f["page_reads_per_s"] != 17
+            or not isinstance(c_bad["effective_mhz_estimate"], dict) or c_bad["processor_frequency_mhz"] != 1000
+            or c_bad["utility_permille"] != 1000):
+        raise Red("clock's estimate is not nominal x performance, or a failed counter did not stand alone")
+    win1 = {"hoststate": "HOST-STATE-0", "version": 1, "unix_seconds": 1790000000, "platform": "win32",
+            "fields": {k: {"unavailable": "synthetic"} for k in HS.FIELDS}}
+    win2 = dict(win1, hoststate="HOST-STATE-1", version=2, fields=dict(win1["fields"], clock=c, faults=f))
+    if HS.capture_safe(lambda: win2, version=2) is not win2 or HS.capture_safe(lambda: win1) is not win1:
+        raise Red("a well-formed version 1 or version 2 snapshot did not validate")
+
+    def boom():
+        raise RuntimeError("planted capture failure")
+
+    bad = [(boom, 2), (lambda: dict(win2, hoststate="HOST-STATE-0"), 2), (lambda: dict(win1, fields=win2["fields"]), 1),
+           (lambda: dict(win2, version=3), 2), (lambda: dict(win2, fields=dict(win2["fields"], clock=dict(c, performance_permille=1433.5))), 2),
+           (lambda: dict(win2, fields=dict(win2["fields"], faults=dict(f, page_reads_per_s=True))), 2)]
+    for fn, ver in bad:
+        s = HS.capture_safe(fn, version=ver)
+        if set(s) != {"hoststate", "version", "unavailable"} or (s["hoststate"], s["version"]) != HS.VERSIONS[ver][:1] + (ver,):
+            raise Red("capture_safe let a bad snapshot through, raised, or marked it with the wrong version")
+    for name in os.listdir(os.path.join(ROOT, "verify")):
+        if name.endswith(".py") and name not in ("hoststate.py", "verify.py"):
+            if re.search(r"version\s*=\s*2", read(os.path.join(ROOT, "verify", name)).decode("utf-8")):
+                raise Red("%s asks for a version 2 snapshot without its own registered entry" % name)
+    src = read(os.path.join(ROOT, "verify", "hoststate.py")).decode("utf-8")
+    if set(re.findall(r"pdh\.(Pdh\w+)", src)) != HOSTSTATE1_PDH:
+        raise Red("the recorder calls a PDH function other than the reading ones")
+    return ("verify/hoststate.py, version 2 beside version 1: the default snapshot is still HOST-STATE-0's shape and markers; "
+            "off Windows version 2 marks every field unavailable and nothing raises, and the Windows path degrades field by "
+            "field; clock's estimate is nominal x performance and needs both, and a failed counter stands alone; well-formed "
+            "snapshots of both versions validate; a mislabelled, mixed, float- or boolean-bearing or unknown-version snapshot "
+            "becomes an unavailable snapshot of its version; no court asks for version 2; the recorder calls only PDH's "
+            "reading functions (%s)" % ", ".join(sorted(HOSTSTATE1_PDH)))
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -5003,6 +5219,10 @@ def main() -> int:
     row("presentexact-court", presentexact_court)
     row("presentexact-fence", presentexact_fence)
     row("presentexact-lock", presentexact_lock)
+    row("refusalwhy-preregistered", refusalwhy_preregistered)
+    row("refusalwhy-fence", refusalwhy_fence)
+    row("hoststate1-preregistered", hoststate1_preregistered)
+    row("hoststate1-record", hoststate1_record)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

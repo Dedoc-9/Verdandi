@@ -170,6 +170,20 @@ back exact on all checked frames (20 checks, 0 differing bytes) and read NO MATE
 through SetDIBitsToDevice, read the screen back after every present, report any mismatch, keep showing, and exit 3 if
 the screen ever differed.
 
+### REFUSAL-WHY-0 — why a readback refused · **landed** (`15701718`)
+When the screen read back differs, the refusal now names what lies above the window over the differing box: each
+visible, uncloaked top-level window above ours that meets it, with its program, process, class, title and overlay
+styles, or "below the window layer" when none does. It is appended after the verdict is decided, it reads and never
+acts, and it cannot change a verdict. The first host refusal needed a separate probe run and the owner's knowledge to
+be traced to an overlay. The next one names its candidates itself. A candidate is not a cause.
+
+### HOST-STATE-1 — the reported clock and paging · **landed** (`b992d9dd`); no court records it yet
+Version 2 of the host snapshot: HOST-STATE-0's fields unchanged, then the clock the OS computes (% Processor Performance
+and % Processor Utility, uncapped, with the nominal × performance estimate) and the system's paging rates, each over a
+1000 ms window. Version 1 stays the default, so no existing court's records change. It fills the two gaps G13 left: a
+reported MHz that cannot show boost, and memory pressure with no paging witness. A court records it only by its own
+preregistered entry. Still association, never cause.
+
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
 falsifiable hypothesis — to be measured, never assumed — is that a **flip-model / waitable-swapchain** present can

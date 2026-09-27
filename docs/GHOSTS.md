@@ -275,6 +275,9 @@ before both. What differed was memory: 96% load with 359 MB available before the
 1,222 MB before the faster one. That is one coincidence, on one pair of runs. It is not a cause: the OS-reported MHz
 cannot show boost, thermal state is not captured, and the snapshots bracket the run rather than sample it.
 PRESENT-EXACT-0's two runs add a pair without drift: they were within 2% at p50, with memory at 85–86% before both.
+HOST-STATE-1 now provides the two missing witnesses: the clock as the OS computes it (% Processor Performance against
+the nominal frequency, uncapped, so boost shows) and the system's paging rates. Both are recorded, never read by a rule,
+and only by a court whose own entry asks for them. They can make a drift explainable. They cannot explain it.
 
 **Exorcism.** Keep recording, and don't control yet. Each further pair of runs either repeats the association (slow runs
 under memory pressure) or breaks it (a slow run with memory to spare, which would say the recorded state is

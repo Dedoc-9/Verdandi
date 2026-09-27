@@ -1546,6 +1546,9 @@ impl crate::presentexact::ExactSurface for ExactGdiSurface {
         };
         [c.right - c.left, c.bottom - c.top, org.x, org.y, lw, lh, pw, ph]
     }
+    fn attribute(&mut self, b: [usize; 4]) -> String {
+        covering_windows(self.hwnd, b)
+    }
 }
 
 fn exact_window(class: &str, title: &str) -> Hwnd {
@@ -1717,6 +1720,11 @@ fn probe_report(label: &str, hwnd: Hwnd, want: &dyn Fn(usize) -> u8, prefix: &Op
         None => "could not be read".to_string(),
     };
     println!("[probe] {}: screen: {}", label, d(&screen));
+    if let Some(v) = &screen {
+        if let Some(b) = crate::presentexact::diff_bbox(v, want) {
+            println!("[probe] {}: {}", label, covering_windows(hwnd, b));
+        }
+    }
     println!("[probe] {}: window: {}", label, d(&window));
     if save {
         probe_save(prefix, &format!("{}-screen", label.split_whitespace().next().unwrap_or("step")), &screen);
@@ -1864,18 +1872,22 @@ struct ShowState {
 fn show_witness(surf: &mut ExactGdiSurface, bgr: &[u8], k: usize, n: usize, fresh: bool, st: &mut ShowState) {
     use crate::presentexact::ExactSurface;
     surf.flush();
-    let (exact, how) = match surf.readback() {
-        Some(v) => {
-            let ok = v[..] == bgr[..];
-            (ok, if ok { "the screen is the certified picture".to_string() } else { crate::presentexact::describe(&v, &|i| bgr[i]) })
-        }
-        None => (false, "the screen could not be read back".to_string()),
-    };
+    let screen = surf.readback();
+    let exact = matches!(&screen, Some(v) if v[..] == bgr[..]);
     st.checks += 1;
     if !exact {
         st.differed += 1;
     }
     if fresh || st.last != Some(exact) {
+        let how = match &screen {
+            Some(_) if exact => "the screen is the certified picture".to_string(),
+            Some(v) => {
+                // REFUSAL-WHY-0: the verdict is already decided and counted; the attribution only explains it
+                let who = crate::presentexact::diff_bbox(v, &|i| bgr[i]).map(|b| covering_windows(surf.hwnd, b)).unwrap_or_default();
+                format!("{}; {}", crate::presentexact::describe(v, &|i| bgr[i]), who)
+            }
+            None => "the screen could not be read back".to_string(),
+        };
         println!("[show] frame {}/{}: {}{}", k + 1, n, if exact { "" } else { "SCREEN DIFFERS — " }, how);
     }
     st.last = Some(exact);
@@ -1969,4 +1981,128 @@ pub fn show(frames: Vec<Composed>, label: &str) {
     println!("[show] closed: {} screen readbacks, {} differed{}", st.checks, st.differed,
              if st.differed > 0 { " — the certified picture was not what the screen showed throughout" } else { "" });
     std::process::exit(if st.differed > 0 { 3 } else { 0 });
+}
+
+// ================================================================== REFUSAL-WHY-0 (appended)
+// Explanatory apparatus, never a correctness dependency: when a screen readback differs, name what lies above our
+// window over the differing box. It walks the top-level windows in the Z order (GetTopWindow, then GetWindow
+// GW_HWNDNEXT: top first) until it reaches ours, and for every visible, uncloaked window whose rectangle meets the box
+// it reports the owning program, the class, the title and the extended styles an overlay usually carries (topmost,
+// layered, click-through, tool window). It is read-only: it moves, activates and closes nothing. A verdict is decided
+// before it runs and is never changed by it. If nothing above ours meets the box, it says so: the cause is then below
+// the window layer (a compositor-level overlay, a colour transform, or pixels drawn outside any window).
+
+#[link(name = "user32")]
+extern "system" {
+    fn GetTopWindow(hwnd: Hwnd) -> Hwnd;
+    fn GetWindow(hwnd: Hwnd, cmd: Uint) -> Hwnd;
+    fn GetWindowRect(hwnd: Hwnd, rect: *mut Rect) -> Bool;
+    fn GetWindowTextW(hwnd: Hwnd, text: *mut u16, max: i32) -> i32;
+    fn GetClassNameW(hwnd: Hwnd, name: *mut u16, max: i32) -> i32;
+    fn GetWindowThreadProcessId(hwnd: Hwnd, pid: *mut Dword) -> Dword;
+    fn GetWindowLongW(hwnd: Hwnd, index: i32) -> i32;
+}
+
+#[link(name = "kernel32")]
+extern "system" {
+    fn OpenProcess(access: Dword, inherit: Bool, pid: Dword) -> *mut c_void;
+    fn QueryFullProcessImageNameW(process: *mut c_void, flags: Dword, name: *mut u16, size: *mut Dword) -> Bool;
+    fn CloseHandle(handle: *mut c_void) -> Bool;
+}
+
+const GW_HWNDNEXT: Uint = 2;
+const GWL_EXSTYLE: i32 = -20;
+const PROCESS_QUERY_LIMITED_INFORMATION: Dword = 0x1000;
+const DWMWA_CLOAKED: Dword = 14;
+type DwmGetWindowAttributeFn = extern "system" fn(Hwnd, Dword, *mut c_void, Dword) -> i32;
+
+fn why_text(buf: &[u16], n: i32) -> String {
+    let n = n.max(0) as usize;
+    String::from_utf16_lossy(&buf[..n.min(buf.len())]).replace(['"', '\n', '\r'], " ").chars().take(60).collect()
+}
+
+fn why_image(pid: Dword) -> String {
+    let h = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) };
+    if h.is_null() {
+        return "(program unreadable)".to_string();
+    }
+    let mut buf = [0u16; 520];
+    let mut len: Dword = buf.len() as Dword;
+    let ok = unsafe { QueryFullProcessImageNameW(h, 0, buf.as_mut_ptr(), &mut len) };
+    unsafe { CloseHandle(h) };
+    if ok == 0 {
+        return "(program unreadable)".to_string();
+    }
+    let full = String::from_utf16_lossy(&buf[..(len as usize).min(buf.len())]);
+    full.rsplit(['\\', '/']).next().unwrap_or("").to_string()
+}
+
+/// DwmGetWindowAttribute, resolved once per attribution (dwmapi is already mapped in a composited session).
+fn why_dwm() -> Option<DwmGetWindowAttributeFn> {
+    unsafe {
+        let lib = LoadLibraryW(wide("dwmapi.dll").as_ptr());
+        if lib.is_null() {
+            return None;
+        }
+        let p = GetProcAddress(lib, b"DwmGetWindowAttribute\0".as_ptr());
+        if p.is_null() {
+            return None;
+        }
+        Some(std::mem::transmute::<*mut c_void, DwmGetWindowAttributeFn>(p))
+    }
+}
+
+/// A cloaked window (another virtual desktop, a suspended app) is not composed, so it cannot be what the screen shows.
+fn why_cloaked(dwm: Option<DwmGetWindowAttributeFn>, h: Hwnd) -> bool {
+    let Some(f) = dwm else { return false };
+    let mut cloaked: Dword = 0;
+    f(h, DWMWA_CLOAKED, &mut cloaked as *mut Dword as *mut c_void, std::mem::size_of::<Dword>() as Dword) == 0 && cloaked != 0
+}
+
+/// What lies above `own` over the box (x0, y0, x1, y1), inclusive, in screen pixels. Read-only.
+pub(crate) fn covering_windows(own: Hwnd, b: [usize; 4]) -> String {
+    let dwm = why_dwm();
+    let mut found: Vec<String> = Vec::new();
+    let mut reached_own = false;
+    let mut h = unsafe { GetTopWindow(std::ptr::null_mut()) };
+    let mut steps = 0;
+    while !h.is_null() && steps < 4096 {
+        steps += 1;
+        if h == own {
+            reached_own = true;
+            break;
+        }
+        let mut r = Rect { left: 0, top: 0, right: 0, bottom: 0 };
+        let meets = unsafe { IsWindowVisible(h) } != 0
+            && unsafe { GetWindowRect(h, &mut r) } != 0
+            && r.left <= b[2] as i32 && r.right > b[0] as i32 && r.top <= b[3] as i32 && r.bottom > b[1] as i32
+            && !why_cloaked(dwm, h);
+        if meets && found.len() < 6 {
+            let mut t = [0u16; 256];
+            let tn = unsafe { GetWindowTextW(h, t.as_mut_ptr(), t.len() as i32) };
+            let mut c = [0u16; 256];
+            let cn = unsafe { GetClassNameW(h, c.as_mut_ptr(), c.len() as i32) };
+            let mut pid: Dword = 0;
+            unsafe { GetWindowThreadProcessId(h, &mut pid) };
+            let ex = unsafe { GetWindowLongW(h, GWL_EXSTYLE) } as u32;
+            let mut flags = Vec::new();
+            for (bit, name) in [(0x0000_0008u32, "topmost"), (0x0008_0000, "layered"), (0x0000_0020, "click-through"), (0x0000_0080, "tool window"), (0x0800_0000, "no-activate")] {
+                if ex & bit != 0 {
+                    flags.push(name);
+                }
+            }
+            found.push(format!("{} (pid {}) class \"{}\" title \"{}\" at ({},{})-({},{}) [{}]", why_image(pid), pid, why_text(&c, cn),
+                               why_text(&t, tn), r.left, r.top, r.right, r.bottom, flags.join(", ")));
+        }
+        h = unsafe { GetWindow(h, GW_HWNDNEXT) };
+    }
+    if !reached_own {
+        return format!("attribution: our window was not found in the Z order ({} windows walked){}", steps,
+                       if found.is_empty() { String::new() } else { format!("; windows over the box: {}", found.join("; ")) });
+    }
+    if found.is_empty() {
+        "attribution: no visible window above ours meets the box — the cause is below the window layer (a compositor-level overlay, a colour transform, or pixels drawn outside any window)".to_string()
+    } else {
+        format!("attribution: above ours over the box: {}", found.join("; "))
+    }
 }

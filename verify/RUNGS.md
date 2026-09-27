@@ -2324,6 +2324,89 @@ colour transform will not appear: the presenter reports it rather than preventin
 goes unread or is not read at once, the exit code hides a mismatch, the window stops closing on Esc, the blit law moves after the window, the frozen windows move, or the host
 records are not the pinned exact-screen pair.
 
+## REFUSAL-WHY-0 — why a screen readback refused: the windows above ours over the differing box (an apparatus; landed)
+
+**Why.** PRESENT-EXACT-0's first host run refused at its readback, and the refusal could say only *that* the screen
+differed and where. Naming the cause took a separate probe run and the owner's knowledge of the host (a vendor's
+real-time monitor overlay, a translucent bar drawn over every window). REFUSAL-WHY-0 puts that second step into the
+refusal itself. **It is explanatory apparatus, never a correctness dependency.** It runs only after a verdict is
+decided and cannot change one.
+
+**The method (`15701718`).** When a screen readback differs, the message already gives the pixel count, the box and the
+first differing bytes. After that decided text it now appends an attribution. It walks the top-level windows in the Z
+order from the top down to ours (`GetTopWindow`, then `GetWindow(GW_HWNDNEXT)`). For every window that is visible, not
+cloaked (`DWMWA_CLOAKED`: another virtual desktop or a suspended app is not composed) and whose rectangle meets the
+box, it names the owning program's image, the process id, the class, the title, the rectangle, and the extended styles
+an overlay usually carries (topmost, layered, click-through, tool window, no-activate). At most six are named. If none
+meets the box, it says the cause is below the window layer: a compositor-level overlay, a colour transform, or pixels
+drawn outside any window. It uses read-only queries only. A process is opened with limited query rights, just to read
+its image name. It moves, shows, activates, closes, messages and terminates nothing. The attribution appears on
+the court's two readback refusals (READBACK and READBACK-STALE), on `shell show`'s mismatch lines, and on the probe's
+screen line. The presenter decides and counts a mismatch before it names one, and names it only on the lines it
+prints. The court's hook is a trait method whose default names nothing, so a surface without it keeps its old message.
+
+**Rows.** `refusalwhy-preregistered`: the method is locked, and the code stops at the registered six windows.
+`refusalwhy-fence`: the section is appended after the presenter's. It declares exactly ten read-only imports, opens
+processes with limited query rights only, and contains none of the calls that act on a window or process. The
+attribution is reached from three places only: the exact surface, the presenter's mismatch line and the probe. In the
+court both refusals call it after their decision and only append it, and the presenter's verdict and count come before
+it. PLANTS on the mock court: a changed byte, and a new plant, a clear that writes nothing. Each still refuses with no
+record, and its message carries the mock's attribution after the decided text, over the same box the message
+describes.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the order (decision first), the read-only surface, the append-only
+message, and the refusals unchanged under the mock. NOT_MEASURED (host): no refusal has met the attribution on a host
+yet. The next one will carry it.
+
+**does_not_show.** That a named window caused the difference: a candidate, never a cause. The instant of the readback:
+the Z order and rectangles are read just after it, so a window that moved or closed in between can be missed or named
+wrongly. Child windows, the cursor, or anything below the window layer: "below the window layer" is where the walk
+stops, not a diagnosis. An elevated or protected owner's image name (it reads as unreadable).
+
+**Falsifier.** `refusalwhy-fence` goes red if the section acts on a window or process, declares another import, opens
+a process with more rights, is reached from a fourth place, is called before a decision or used for more than the
+message, if the default names something, or if a planted refusal stops refusing or names a box other than its own.
+
+## HOST-STATE-1 — the clock the OS computes, and paging, recorded beside HOST-STATE-0 (an apparatus; landed; no court records it yet)
+
+**Why.** HOST-STATE-0's MHz is what `CallNtPowerInformation` reports. On the owner's host it never exceeded 2,000,
+limit included, so it cannot say whether the clock differed between two runs. HOST-STATE-0 also records nothing about
+paging, while G13's slower run sat beside 96% memory load. HOST-STATE-1 adds the two witnesses those gaps call for.
+**Record, don't control**, as before.
+
+**The method (`b992d9dd`).** Version 2 of the snapshot is HOST-STATE-0's eight fields, unchanged and in order, then two
+more, read through the performance-counter library (`pdh.dll`) by their English names, so the paths do not depend on
+the display language. `clock` is `\Processor Information(_Total)`'s Processor Frequency (the nominal MHz), %
+Processor Performance and % Processor Utility, uncapped because both exceed 100% under boost, recorded as permille. It
+also records the effective-MHz estimate that the OS's own arithmetic gives: nominal × performance. `faults` is
+`\Memory`'s Page Faults/sec, Page Reads/sec (hard faults) and Pages Input/sec. Each field takes its own 1000 ms
+window, so a version 2 snapshot takes about three seconds. Each counter stands on its own: one that cannot be added or
+formatted is recorded as unavailable with its PDH status. **Version 1 stays the default** of `capture`, `capture_safe`
+and `diagcommon.host_run`, so ALLOC-REUSE-1 and PRESENT-EXACT-0, which cite HOST-STATE-0, record exactly what they
+recorded before. A court records version 2 only when its own preregistered entry says so. `python verify/hoststate.py`
+now prints a version 2 look and writes nothing.
+
+**Rows.** `hoststate1-preregistered`: the method is locked. The code's fields, counters, window and format, and the
+version 1 default, equal the registered ones. `hoststate1-record`: the default snapshot is still HOST-STATE-0's shape
+and markers, exactly. Off Windows every version 2 field is unavailable, and the Windows path degrades field by field.
+Clock's estimate is nominal × performance, needs both, and a failed counter stands alone. Well-formed snapshots of both
+versions validate. A mislabelled, mixed, float- or boolean-bearing, or unknown-version snapshot becomes an unavailable
+snapshot of its version. No court asks for version 2. The recorder calls only PDH's reading functions.
+`hoststate-record` still holds for the whole source (no control API, no file written, one query command).
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the shape, the unchanged default, the degradation, the
+independence of each counter. NOT_MEASURED (host): whether these counters read on the owner's host. The first look
+(`python verify/hoststate.py`) will say, before any court relies on them.
+
+**does_not_show.** A measured clock: % Processor Performance is the OS's ratio of delivered to nominal clock,
+averaged over the window and every processor, and the estimate inherits that. The court's own paging: the rates are
+system-wide. Anything inside the court's interval: each window is a second of the whole system around the snapshot.
+Thermal state. A cause: association, never cause.
+
+**Falsifier.** `hoststate1-record` goes red if the default snapshot changes, a court asks for version 2, a counter's
+failure takes another with it, the estimate is computed otherwise, a bad snapshot is let through or mislabelled, or the
+recorder calls a PDH function that is not a reading one.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

@@ -39,6 +39,11 @@ pub trait ExactSurface: Surface {
     fn readback(&mut self) -> Option<Vec<u8>>;
     /// (client w, client h, client origin x, y on the screen, screen logical w, h, screen physical w, h)
     fn geometry(&mut self) -> [i32; 8];
+    /// REFUSAL-WHY-0: what lies above the window over a differing box, for a refusal's message. Explanatory only: it is
+    /// called after a verdict is decided and never changes one. The default names nothing.
+    fn attribute(&mut self, _bbox: [usize; 4]) -> String {
+        String::new()
+    }
 }
 
 pub struct Readback {
@@ -87,6 +92,34 @@ pub fn describe(v: &[u8], want: &dyn Fn(usize) -> u8) -> String {
     }
 }
 
+/// The bounding box (x0, y0, x1, y1) of the pixels that differ from what was expected, if any do.
+pub fn diff_bbox(v: &[u8], want: &dyn Fn(usize) -> u8) -> Option<[usize; 4]> {
+    if v.len() != W * H * 3 {
+        return Some([0, 0, W - 1, H - 1]);
+    }
+    let (mut x0, mut y0, mut x1, mut y1, mut any) = (W, H, 0usize, 0usize, false);
+    for p in 0..W * H {
+        let i = p * 3;
+        if v[i] != want(i) || v[i + 1] != want(i + 1) || v[i + 2] != want(i + 2) {
+            let (x, y) = (p % W, p / W);
+            x0 = x0.min(x);
+            y0 = y0.min(y);
+            x1 = x1.max(x);
+            y1 = y1.max(y);
+            any = true;
+        }
+    }
+    if any { Some([x0, y0, x1, y1]) } else { None }
+}
+
+/// REFUSAL-WHY-0: a refusal's attribution suffix — decided afterwards, appended only.
+fn why<S: ExactSurface>(s: &mut S, v: &[u8], want: &dyn Fn(usize) -> u8) -> String {
+    match diff_bbox(v, want).map(|b| s.attribute(b)) {
+        Some(w) if !w.is_empty() => format!("; {}", w),
+        _ => String::new(),
+    }
+}
+
 /// Clear, present `bgr` under `call`, read back; Err(reason) on any failure or mismatch.
 fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Readback, what: &str) -> Result<(), String> {
     if !s.clear() {
@@ -96,8 +129,11 @@ fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Rea
     s.flush();
     match s.readback() {
         Some(v) if v.len() == bgr.len() && v.iter().all(|&b| b == 0xFF) => {}
-        Some(v) => return Err(format!("PRESENTEXACT-READBACK-STALE: the window cleared to white before {} under {} did not read back as white ({}); the readback does not see the window exactly",
-                                      what, CALLS[call], describe(&v, &|_| 0xFF))),
+        Some(v) => {
+            let who = why(s, &v, &|_| 0xFF);
+            return Err(format!("PRESENTEXACT-READBACK-STALE: the window cleared to white before {} under {} did not read back as white ({}{}); the readback does not see the window exactly",
+                               what, CALLS[call], describe(&v, &|_| 0xFF), who));
+        }
         None => return Err("PRESENTEXACT-READBACK: the screen could not be read back".to_string()),
     }
     s.set_call(call);
@@ -114,8 +150,9 @@ fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Rea
     rb.bytes_compared += bgr.len() as u64;
     rb.mismatched_bytes += bad;
     if bad != 0 {
-        return Err(format!("PRESENTEXACT-READBACK: the composed screen differs from the certified picture on {} under {} ({} of {} bytes; {})",
-                           what, CALLS[call], bad, bgr.len(), describe(&v, &|i| bgr[i])));
+        let who = why(s, &v, &|i| bgr[i]);
+        return Err(format!("PRESENTEXACT-READBACK: the composed screen differs from the certified picture on {} under {} ({} of {} bytes; {}{})",
+                           what, CALLS[call], bad, bgr.len(), describe(&v, &|i| bgr[i]), who));
     }
     Ok(())
 }
@@ -300,7 +337,8 @@ pub fn summary(e: &Exact) -> Vec<String> {
 
 /// The gate's surface: LATENCY-1R's mock clock, with a screen that holds exactly what was last presented.
 /// Plants: "geometry" (a title bar's worth of client missing), "readback" (one byte changed on the way back under
-/// StretchDIBits), "noop" (SetDIBitsToDevice writes nothing).
+/// StretchDIBits), "noop" (SetDIBitsToDevice writes nothing), "stale" (the clear writes nothing; REFUSAL-WHY-0's
+/// witness that the STALE refusal carries its attribution).
 pub struct MockExact {
     pub inner: crate::latency1r::MockSurface,
     pub call: usize,
@@ -340,7 +378,9 @@ impl ExactSurface for MockExact {
         self.call = call;
     }
     fn clear(&mut self) -> bool {
-        self.screen.fill(0xFF);
+        if self.plant != "stale" {
+            self.screen.fill(0xFF);
+        }
         true
     }
     fn readback(&mut self) -> Option<Vec<u8>> {
@@ -356,5 +396,8 @@ impl ExactSurface for MockExact {
         } else {
             [W as i32, H as i32, 0, 0, W as i32, H as i32, W as i32, H as i32]
         }
+    }
+    fn attribute(&mut self, b: [usize; 4]) -> String {
+        format!("attribution: the mock screen has no windows; nothing lies above ({},{})-({},{})", b[0], b[1], b[2], b[3])
     }
 }
