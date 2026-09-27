@@ -230,6 +230,12 @@ window, read back, must equal the certified picture byte for byte. Once that cou
 "which no row checks", is answered for the chosen presentation. The half-size windows keep showing the AND-reduction
 as the frozen instrument they are.
 
+The readback's first use on the host found something nothing had checked before. The composed screen is not only
+what the shell hands the compositor: the host's performance overlay (a translucent bar across 446×28 pixels at the top
+of the screen) is drawn over every window, dimming the certified picture there to about 70%. Everywhere else, frame 0
+read back exact under both calls (a probe, not yet a sealed court). The court refused rather than measuring around the
+bar, and it reruns with the overlay off.
+
 ---
 
 ## G12 — the render-loop courts measure a loop the shipped shell does not run · ESTABLISHED (read from the code)

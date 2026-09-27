@@ -160,7 +160,9 @@ StretchDIBits at 1:1 against SetDIBitsToDevice, the call the only variable, fram
 `LoopRenderer`. The composed screen under the window is read back and must equal the certified picture byte for byte,
 after a white clear that is also read back, as a hard gate. The first check of what reaches the screen rather than
 what is handed to GDI (G11). Then same-run ABBA at 1000 per cell. StretchDIBits is adopted only if its p99 is ≤ 950‰ of
-SetDIBitsToDevice's in both runs; otherwise SetDIBitsToDevice, the simpler semantics.
+SetDIBitsToDevice's in both runs; otherwise SetDIBitsToDevice, the simpler semantics. The first host attempt refused
+at the readback. A probe traced it to the host's performance overlay, a translucent bar drawn over every window.
+Outside that bar, frame 0 read back exact under both calls. The court reruns unchanged with the overlay off.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

@@ -2203,9 +2203,28 @@ the z-order and foreground re-asserted, the cursor hidden. Each time it reads ba
 window's own surface, and it can save the images. Any fix the probe points to is a method change, so it would be
 registered as an amendment before a number is taken.
 
+**Diagnosed: a host overlay over every window (probe, owner's host; observed, not sealed).** The window's own surface
+matched exactly in every step. The white clear, and sealed frame 0 under both calls, all read back exact. The composed
+screen differed only inside one box, (1303,0)–(1748,27): 446×28 pixels at the top of the screen. That box is the host's
+performance overlay, a translucent bar reading "1:09 am | APU 9W 67°C | BATT 100% | FPS …", which the compositor draws
+over every window. It dims what lies under it to about 70% (white 255 read back as 179; frame 0's BGR (196,142,112)
+read back as (138,100,79)), and its white text left 388 of the box's pixels unchanged on the white clear. So 12,100
+pixels differed on the clear and 12,351 on frame 0. Re-asserting topmost and foreground changed nothing, and neither
+did waiting 30 more compositions. Hiding the cursor changed the count by 38 pixels, because the overlay's own figures
+had updated. **Outside that box the composed screen equalled the certified picture: the white clear, and frame 0 under
+StretchDIBits and under SetDIBitsToDevice, with zero differing pixels.**
+
+So the court refused for the reason its limits name: another window over the certified picture. The method is right
+and needs no amendment. Measuring around the bar is excluded by the preregistration, and it would also be wrong,
+because while the bar is on, the composed screen is not the certified picture. The owner switches the overlay off and
+reruns the court unchanged. What PRESENTATION-CHOICE-0 can promise is limited to what the shell controls: a host
+overlay drawn over every window is outside it, and the readback makes such an overlay visible rather than hiding it.
+
 **Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the readback's refusals
 (including a call that writes nothing) and the sealer's rule. MEASURED: nothing yet. The first host attempt refused at
-the readback, which is under diagnosis.
+the readback, and the probe traced the refusal to the host's performance overlay (above); the rerun waits on the overlay
+being switched off. OBSERVED (probe, unsealed, one frame): outside the overlay's box, both calls' composed pixels
+equalled the certified picture.
 
 **does_not_show.** That the pixels reach the eye unchanged: the readback is the composed screen, before scan-out, the
 panel and any display-side colour processing. That every timed frame read back equal: the readback runs on the sealed
