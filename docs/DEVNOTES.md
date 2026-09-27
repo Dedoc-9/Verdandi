@@ -125,8 +125,10 @@ Every rung ran the same loop, and the loop is the product as much as the code:
   `HALFTONE` read material once and then CONFOUNDED, so it is unresolved. ALLOC-REUSE-0 read ALLOCATION MATERIAL
   twice: reusing the frame's buffers was 1.6–1.8 ms cheaper at the envelope p50. Neither adopts anything.
 - The render-loop courts time a modelled loop: the shipped shell renders once (`run`) or pre-renders (`playback-window`)
-  and has no per-frame render loop (G12). ALLOC-REUSE-1 can therefore adopt only an entry contract for a future live
-  loop, and it waits on its host run and confirmation.
+  and has no per-frame render loop (G12). ALLOC-REUSE-1 therefore adopts only an entry contract for a future live
+  loop. Both of its runs passed (reuse's p99 at 886‰ and 929‰ of fresh's), so it reads ADOPT.
+- The same court can run 40–60% slower on another run the same day (G13). HOST-STATE-0 put memory pressure beside one
+  such run: an association, not a cause. Read absolute milliseconds as belonging to their own run.
 - The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two
   runs); presentation latency is phase-dependent, and no low-latency claim is made.
 - A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.

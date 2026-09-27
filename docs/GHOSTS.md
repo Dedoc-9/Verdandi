@@ -188,8 +188,10 @@ delta while its magnitude (under 1% propagated) held. `PRESENT-STRETCH-0`'s conf
 50‰ confound bound. `HALFTONE`'s label flipped from MODE MATERIAL to CONFOUNDED on a non-blit movement of 53‰, and
 `COLORONCOLOR` passed the same bound at 48‰. Both happened in a run where every phase was slower than in the first
 (the default's blit went from 7.3 to 11.6 ms). ALLOC-REUSE-1 takes this ghost's remedies before its number: 1000 samples
-per cell (p99 is the 10th-largest sample, with the 12 largest reported beside it), a same-run comparator, a declared
-adoption margin, and HOST-STATE-0's snapshots beside each run. None of these statistics is wrong; each is coarser than its
+per cell (p99 is the 11th-largest sample, with the 12 largest reported beside it), a same-run comparator, a declared
+adoption margin, and HOST-STATE-0's snapshots beside each run. Both of its runs passed, the second with its p99 at 929‰
+against a 950‰ bound. That margin was declared before either number, and the second run was 41% slower as a whole
+(G13). None of these statistics is wrong; each is coarser than its
 precision suggests, and the medians across repeated runs deserve more weight than any single tail or label.
 
 **Exorcism.** For a tail-sensitive verdict, raise N or report the number of samples beyond the threshold beside the
@@ -242,12 +244,33 @@ modelled loop".
 
 ---
 
+## G13 — the same court can run 40–60% slower on another run the same day, and the cause is unmeasured · MEASURED (the drift); UNDERDETERMINED (the cause)
+
+Twice now a preregistered second run has been much slower as a whole than its first, at a similar refresh.
+PRESENT-STRETCH-0's default-mode blit p50 went from 7,274 to 11,589 µs (+59%). ALLOC-REUSE-1's fresh envelope p50 went
+from 15,469 to 21,808 µs (+41%), about 45 minutes after the first run. The within-run comparisons the rules use
+absorbed a shift common to both cells: ALLOC-REUSE-1's saving held at about 1.8 ms in both runs. But a shift that is not
+common to both cells can move a label: PRESENT-STRETCH-0's HALFTONE flipped to CONFOUNDED in its slower run. And no
+millisecond figure from one run can be carried to another.
+
+HOST-STATE-0 recorded the host around ALLOC-REUSE-1's two runs. The OS reported the same CPU clock state, plan and power
+before both. What differed was memory: 96% load with 359 MB available before the slower run, against 89% with
+1,222 MB before the faster one. That is one coincidence, on one pair of runs. It is not a cause: the OS-reported MHz
+cannot show boost, thermal state is not captured, and the snapshots bracket the run rather than sample it.
+
+**Exorcism.** Keep recording, and don't control yet. Each further pair of runs either repeats the association (slow runs
+under memory pressure) or breaks it (a slow run with memory to spare, which would say the recorded state is
+insufficient). Only after that, and preregistered, might a court hold memory pressure or the power state fixed. Until
+then, read absolute milliseconds as belonging to their own run, and let within-run comparisons carry the rules.
+
+---
+
 ## The disposition
 
 None of these ghosts is load-bearing for a claim the program actually makes. G1 and G3 are execution refinements
 with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured and reproduced (twice), and
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
-and not a faithful scaling); G4, G5, G6, G9, G10 and G12 are caveats a careful reader must carry, recorded so they are carried on
+and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a careful reader must carry, recorded so they are carried on
 purpose.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously

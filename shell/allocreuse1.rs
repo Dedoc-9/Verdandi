@@ -255,7 +255,8 @@ fn pct_json(xs: &[u64]) -> String {
     format!("{{\"p50\":{},\"p95\":{},\"p99\":{},\"max\":{}}}", p50, p95, p99, max)
 }
 
-/// The TAIL largest samples, largest first: the p99 at N = 1000 is the 10th largest, so the samples around it are shown.
+/// The TAIL largest samples, largest first: the p99 at N = 1000 is the 11th largest (nearest rank), so the samples
+/// around it are shown.
 pub fn tail(xs: &[u64]) -> Vec<u64> {
     let mut v = xs.to_vec();
     v.sort_unstable_by(|a, b| b.cmp(a));

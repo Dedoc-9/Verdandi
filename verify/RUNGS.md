@@ -1916,7 +1916,7 @@ red if a plant passes, and `allocreuse-fence` if the reuse path changes a call, 
 allocate a buffer. On the host, a witness or reuse-byte mismatch, or a closed window, yields no number, and a reading that does
 not reproduce under `--confirm` is refuted.
 
-## ALLOC-REUSE-1 — preregistered: does the persistent-buffer render-loop entry earn adoption (an adoption court; host-run pending)
+## ALLOC-REUSE-1 — does the persistent-buffer render-loop entry earn adoption (an adoption court; measured twice: PERFORMANCE PASS in both runs, ADOPT)
 
 **Why it is next, and what it can adopt.** ALLOC-REUSE-0, confirmed, attributed 91‰ and then 105‰ of the envelope to
 allocating the frame's buffers every frame. Reading the code before preregistering turned up a boundary: **the
@@ -1952,8 +1952,10 @@ checked persistent after every sample. The rule:
 The 50‰ is an **adoption margin**: a declared engineering decision threshold, not a measurement uncertainty or a
 confidence interval. **ADOPT** requires PERFORMANCE PASS in the run **and** in its `--confirm` run. Anything else is
 **REJECT**. The comparator is the fresh path in the same run, because a p99 sealed in another run would bring in
-cross-run drift like PRESENT-STRETCH-0's +59% (`GHOSTS.md` G10). N = 1000 makes p99 the 10th-largest sample rather than
-the 3rd, and the 12 largest samples per variant are recorded beside it. The p50s and frame-ready → composited are
+cross-run drift like PRESENT-STRETCH-0's +59% (`GHOSTS.md` G10). N = 1000 makes p99 the 11th-largest sample rather than
+the 3rd, and the 12 largest samples per variant are recorded beside it. (The locked entry calls it the 10th-largest.
+Under the nearest-rank percentile the courts use, ten samples lie beyond it, so it is the 11th. The entry stays as
+locked. The rule used the p99 as the court computes it, so the reading is unaffected.) The p50s and frame-ready → composited are
 recorded beside the rule and never decide. On ADOPT, a following patch declares `LoopRenderer` the sole production
 entry for in-loop rendering, with a call-site fence that a new live loop cannot bypass. On REJECT, it stays an unused
 candidate and ALLOC-REUSE-0's diagnostic stands.
@@ -1979,10 +1981,55 @@ pinned by hash. No file except `present.rs` and `allocreuse1.rs` names `LoopRend
 The court runs in FRAME-SPLIT-0's window with the locked phase origin and nothing but rendering and the blit inside its
 interval. LATENCY-0's instrument is still a byte-exact prefix.
 
+**Measured (host DANIELDILLBERG, `shell/attest/allocreuse1-DANIELDILLBERG.json`, cites ALLOC-REUSE-1 `dc904a6c` and
+HOST-STATE-0 `58250382`).** 1000 samples per cell after 10 warm-up rounds, no close. The witnesses reproduced, every
+sample's composite and blit equalled their verified bytes, and the loop's buffers stayed persistent through all 1,014
+loop renders. Measured refresh 13,356 µs. In µs:
+
+| | fresh (reference) | reused (`LoopRenderer`) | reused against fresh |
+|---|---|---|---|
+| **envelope p99 (the rule)** | **17,604** | **15,600** | **886‰ (−2,004)** |
+| envelope p50 / p95 | 15,469 / 16,812 | 13,703 / 14,926 | −1,766 at p50 |
+| envelope max | 20,994 | 21,538 | |
+| frame-ready → composited p50 / p99 | 10,264 / 12,745 | 12,006 / 14,464 | +1,742 at p50 |
+
+**PERFORMANCE PASS**: reuse's p99 was 886‰ of fresh's, inside the 950‰ adoption bound.
+
+**Confirmed (`shell/attest/allocreuse1-confirm-DANIELDILLBERG.json`, cites the first record).** The same apparatus,
+about 45 minutes later. Measured refresh 13,240 µs. In µs:
+
+| | fresh (reference) | reused (`LoopRenderer`) | reused against fresh |
+|---|---|---|---|
+| **envelope p99 (the rule)** | **25,598** | **23,797** | **929‰ (−1,801)** |
+| envelope p50 / p95 | 21,808 / 24,433 | 20,058 / 22,688 | −1,750 at p50 |
+| envelope max | 30,527 | 26,256 | |
+| frame-ready → composited p50 / p99 | 4,830 / 12,311 | 6,521 / 13,266 | +1,691 at p50 |
+
+**PERFORMANCE PASS** again (929‰), so the confirmation record reads **ADOPT**: both preregistered runs passed, with
+correctness holding on every sample of both.
+
+**Beside the rule, not ruled on.** The second run was much slower as a whole: fresh's envelope p50 went from 15,469
+to 21,808 µs (+41%) at a similar refresh. The margin under the bound shrank with it, from 64‰ to 21‰. The saving in
+microseconds held steady: p99 −2,004 and then −1,801 µs, and p50 −1,766 and then −1,750 µs. In both runs the reused
+cell's frame-ready → composited p50 rose by about as much as its envelope fell (+1,742 and +1,691 µs). The frame is
+ready earlier and waits longer for the composition, the locked-phase absorption of `GHOSTS.md` G7, so this is not an
+end-to-end latency result. The tails: the 12 largest render samples per variant are in each record. In the first run
+one reused sample (21,538 µs) was the largest of either cell, and reuse's second-largest was 18,208 µs. The fresh
+envelope p50 here (15.5 ms, then 21.8 ms) against ALLOC-REUSE-0's 17.3 ms in the same window is a cross-court and
+cross-run difference, recorded and not interpreted.
+
+**Host state beside each run (HOST-STATE-0, association only).** Before both runs the OS reported the same CPU clock
+state (per-processor current MHz 1,610 median, 2,000 max), the Balanced plan, AC power and a 75 Hz mode. The recorded
+difference was memory: before the slower second run the memory load was 96% with 359 MB available, against 89% with
+1,222 MB before the first. The CPU was less busy before the slower run (24‰ against 72‰). After each run the memory
+load read 88–89%. This is a coincidence the record now carries, not a cause (`GHOSTS.md` G13).
+
 **Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the loop renderer is byte-identical to the fresh
 path over the corpus, the adversarial cameras and the sealed session, in three orders from poisoned buffers, with its
-buffers persistent; the court's logic and the sealer's rule hold. MEASURED: nothing yet. The host run and its
-confirmation are pending, and nothing is adopted until both pass.
+buffers persistent; the court's logic and the sealer's rule hold. MEASURED (host, two runs): PERFORMANCE PASS both
+times, with reuse's envelope p99 at 886‰ and then 929‰ of fresh's in the same run. So the preregistered reading is
+**ADOPT**, on this host and apparatus. What ADOPT does is declared by the following patch (ALLOC-REUSE-1 LOCK). No
+shipped window changes, because none renders per frame (`GHOSTS.md` G12).
 
 **does_not_show.** That any shipped window is faster: none renders through the entry. That the entry's saving holds
 under another allocator, OS, host or buffer size. The floor swizzle's allocation, which stays per render. What a live
@@ -2022,9 +2069,18 @@ two different host states gives the same label, derived numbers and reading. The
 and the host state is attached after the label and the adoption are fixed. The probe is optional and taken through
 `capture_safe`, and the diagnostic sealers pass none.
 
+**First host snapshots (DANIELDILLBERG).** A standalone look (`python verify/hoststate.py`) and ALLOC-REUSE-1's two
+runs each captured every field on the host, with no field unavailable except thermal, as declared. The host reads as
+an AMD Ryzen AI Z2 Extreme, 16 logical processors, 11,897 MB of memory, on AC power under the Balanced plan, with a
+1920×1080 32-bit mode at a nominal 75 Hz. The reported per-processor MHz never exceeded 2,000, including the limit.
+That is consistent with the recorded interpretation limit that `CallNtPowerInformation` need not show boost or the
+effective clock, so the CPU field cannot say whether the clock differed between runs. The runs' before and after
+snapshots are set out under ALLOC-REUSE-1 above. What they put beside the second run's slowdown is memory pressure (96%
+load, 359 MB available before it). That is an association, not a cause (`GHOSTS.md` G13).
+
 **Grade.** DECLARED: the method. ESTABLISHED (gate): the recorder's shape, its degradation, its independence from
-every rule, and its non-blocking use. NOT_MEASURED: every Windows field on a real host. The first host snapshots arrive
-with ALLOC-REUSE-1's runs, and `python verify/hoststate.py` shows one first.
+every rule, and its non-blocking use. MEASURED (host): every Windows field but thermal, as the OS reports it, in one
+standalone snapshot and in four snapshots around two court runs.
 
 **does_not_show.** That a recorded state caused, explains or corrects any number: association, never cause. That the
 OS-reported MHz is the effective clock. The court process's own priority (only the sealing process's). Thermal state.

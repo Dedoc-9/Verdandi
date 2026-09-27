@@ -127,21 +127,26 @@ never ruled on. The production path is unchanged by it. On the owner's host the 
 phases 2‰). In both runs the saving sat mostly in bgr and emit, which is reported and not ruled on. Adopting reuse in
 the production path would be its own court.
 
-### ALLOC-REUSE-1 — the render-loop entry's adoption court · **preregistered** (`dc904a6c`), host-run pending
+### ALLOC-REUSE-1 — the render-loop entry's adoption court · **measured twice** (`dc904a6c`): PERFORMANCE PASS in both runs, ADOPT
 The shipped shell has no per-frame render loop (`run` renders once, `playback-window` pre-renders owned frames;
 G12), so what can be adopted is an **entry contract**: the persistent-buffer `LoopRenderer` as the production entry for
 any loop that renders once per presented frame. The fresh path stays the frozen reference. Correctness first, on every
 gate: byte identity with the fresh path over the corpus (goldens), the adversarial cameras and the sealed session, in
 three orders from poisoned buffers, with no buffer replaced. Then performance, on the host: same-run ABBA, 1000 samples
 per cell, PERFORMANCE PASS iff p99(reused) ≤ 950‰ of p99(fresh) (an adoption margin). ADOPT only when the run and
-`--confirm` both pass. No shipped window changes either way; a later live loop enters through the adopted entry.
+`--confirm` both pass. No shipped window changes either way; a later live loop enters through the adopted entry. On
+the owner's host reuse's envelope p99 was 886‰ and then 929‰ of fresh's (−2.0 and −1.8 ms), with correctness holding on
+every sample, so the reading is **ADOPT**. The second run was 41% slower as a whole (G13), and in both runs the frame
+waited longer at the composition by about what it saved (G7).
 
 ### HOST-STATE-0 — the host's state beside a court · **landed** (`58250382`)
 Record, don't control: what the OS reports about the CPU, power plan, load, memory, process, display and uptime, one
 snapshot just before and one just after a court's window run. Every value is an integer or a string, a field that
 fails is recorded as unavailable, and recording can never block a court or feed a rule. ALLOC-REUSE-1 is the first court
 to carry it. It exists to make the next cross-run drift explainable (the +59% in PRESENT-STRETCH-0's confirmation had
-nothing to be set beside), never to explain it by itself.
+nothing to be set beside), never to explain it by itself. Its first snapshots put memory pressure (96% load, 359 MB
+free) beside ALLOC-REUSE-1's slower second run, with the same reported clock state and plan in both runs: an
+association (G13), not a cause.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
