@@ -11,6 +11,11 @@ it. This reader never writes, never repairs and never interprets. It checks each
 reports a line that is not a record by its number without guessing, and counts records by (operation, surface,
 reason_code, attribution) with the number of distinct runs each came from. A count is not a cause, and zero records
 is not proof that a refusal cannot occur.
+
+REFUSAL-WHY-1: a screen-readback record also carries what lay above the window over the differing box — the layer
+(windows, below, unplaced) and each window's program, class, flags and rectangle, never a title or a pid. The reader
+counts those by layer and by (program, class, flags); the rectangle is geometry, not identity, and is not a key. A
+program that recurs over the screen is a candidate, never a cause.
 """
 from __future__ import annotations
 
@@ -96,6 +101,26 @@ def tally(records: list[dict]) -> list[dict]:
              "runs": len(g["runs"])} for k, g in sorted(groups.items())]
 
 
+def covering(records: list[dict]) -> list[dict]:
+    """REFUSAL-WHY-1's covering windows by layer and by (program, class, flags), with the records and the distinct runs
+    each came from. Counting only; the rectangle is not a key."""
+    groups: dict = {}
+    for r in records:
+        c = r["context"]
+        if "covering_layer" not in c:
+            continue
+        keys = {("layer", str(c["covering_layer"]))}
+        for i in range(1, 7):
+            if "window_%d_program" % i in c:
+                keys.add(("window", "%s | %s | %s" % (c["window_%d_program" % i], c.get("window_%d_class" % i, ""),
+                                                      c.get("window_%d_flags" % i, ""))))
+        for k in keys:
+            g = groups.setdefault(k, {"count": 0, "runs": set()})
+            g["count"] += 1
+            g["runs"].add(r["run_id"])
+    return [{"kind": k[0], "key": k[1], "count": g["count"], "runs": len(g["runs"])} for k, g in sorted(groups.items())]
+
+
 def main(argv: list[str]) -> int:
     path = argv[1] if len(argv) > 1 else default_path()
     records, bad = read(path)
@@ -104,6 +129,8 @@ def main(argv: list[str]) -> int:
     for t in tally(records):
         print("  %-18s %-5s %-34s %-20s count=%d runs=%d" % (t["operation"], t["surface"], t["reason_code"], t["attribution"],
                                                            t["count"], t["runs"]))
+    for c in covering(records):
+        print("  covering %-6s %-58s count=%d runs=%d" % (c["kind"], c["key"], c["count"], c["runs"]))
     for n, why in bad:
         print("  not a record%s: %s" % (" (line %d)" % n if n else "", why))
     print("counts are observations, not causes; zero records is not proof that a refusal cannot occur")

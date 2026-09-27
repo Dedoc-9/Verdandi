@@ -65,7 +65,8 @@ names the windows above ours over the differing box, after its verdict, reading 
 OS-computed clock and the paging rates, a version 2 snapshot that no court records yet), refusallog (REFUSAL-LOG-0:
 every refusal on the present path appends one unsealed line to an append-only log; one record per refusal, proven on
 the mock court), runledger (RUN-LEDGER-0: one line per court or presenter run, refused or not, joined to the refusal
-log on run_id), and — in the oracle stage —
+log on run_id), refusalwhy1 (REFUSAL-WHY-1: a screen-readback refusal's covering windows written into the refusal
+log — program, class, flags and rectangle, never a title or a pid), and — in the oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
@@ -4945,27 +4946,31 @@ def refusalwhy_fence():
     if ("const PROCESS_QUERY_LIMITED_INFORMATION: Dword = 0x1000;" not in why or why.count("OpenProcess(") != 2
             or "OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid)" not in why):
         raise Red("a process is opened with more than limited query rights")
-    uses = [m.start() for m in re.finditer(r"covering_windows\(", tail)]
+    # REFUSAL-WHY-1: one walk (covering), reached from the exact surface, the presenter's differing readback and the
+    # probe's words (covering_windows) only
+    walks = re.findall(r"\bcovering\(", tail)
     ex = src_span(tail, "impl crate::presentexact::ExactSurface for ExactGdiSurface", "\n}\n")
-    if (len(uses) != 4 or "fn attribute(&mut self, b: [usize; 4]) -> String {\n        covering_windows(self.hwnd, b)\n    }" not in ex):
+    if (len(walks) != 4 or tail.count("covering_windows(") != 2
+            or "fn attribute(&mut self, b: [usize; 4]) -> crate::presentexact::Attribution {\n        // REFUSAL-WHY-0/1: one walk, the console's words and the log's fields\n        let w = covering(self.hwnd, b);" not in ex):
         raise Red("the attribution is called somewhere other than the exact surface, the presenter's mismatch line and the probe")
     sw = src_span(tail, "fn show_witness(", "\n}\n")
-    order = [sw.find(t) for t in ("let exact = matches!(&screen, Some(v) if v[..] == bgr[..]);", "st.differed += 1;",
-                                  "if fresh || st.last != Some(exact) {", "covering_windows(surf.hwnd, b)", "println!(\"[show] frame")]
-    if -1 in order or order != sorted(order) or len(re.findall(r"\bexact\s*=(?![=>])", sw)) != 1:
-        raise Red("the presenter does not decide and count a mismatch before it names one")
+    order = [sw.find(t) for t in ("let exact = matches!(&screen, Some(v) if v[..] == bgr[..]);", "st.differed += 1;", "covering(surf.hwnd, b)",
+                                  "crate::refusallog::record(", "if fresh || st.last != Some(exact) {", "seen.as_ref().map(crate::presentexact::seen_text)",
+                                  "println!(\"[show] frame")]
+    if -1 in order or order != sorted(order) or len(re.findall(r"\bexact\s*=(?![=>])", sw)) != 1 or sw.count("covering(") != 1:
+        raise Red("the presenter does not decide and count a mismatch before it names one, or walks more than once")
     px = read(os.path.join(SHELL, "presentexact.rs")).decode("utf-8")
     trait = src_span(px, "pub trait ExactSurface: Surface {", "\n}\n")
-    if "fn attribute(&mut self, _bbox: [usize; 4]) -> String {\n        String::new()\n    }" not in trait:
+    if "fn attribute(&mut self, _bbox: [usize; 4]) -> Attribution {\n        Attribution::default()\n    }" not in trait:
         raise Red("the trait's default attribution is not empty")
     wo = src_span(px, "fn witness_one<S: ExactSurface>(", "\n}\n")
-    stale = [wo.find(t) for t in ("Some(v) if v.len() == bgr.len() && v.iter().all(|&b| b == 0xFF) => {}", "let who = why(s, &v, &|_| 0xFF);",
+    stale = [wo.find(t) for t in ("Some(v) if v.len() == bgr.len() && v.iter().all(|&b| b == 0xFF) => {}", "let (who, seen) = why(s, &v, &|_| 0xFF);",
                                   "PRESENTEXACT-READBACK-STALE:")]
-    diff = [wo.find(t) for t in ("if bad != 0 {", "let who = why(s, &v, &|i| bgr[i]);", "PRESENTEXACT-READBACK: the composed screen differs")]
+    diff = [wo.find(t) for t in ("if bad != 0 {", "let (who, seen) = why(s, &v, &|i| bgr[i]);", "PRESENTEXACT-READBACK: the composed screen differs")]
     if (-1 in stale + diff or stale != sorted(stale) or diff != sorted(diff) or wo.count("why(") != 2
             or len(re.findall(r"\bwho\b", wo)) != 4 or wo.find("rb.mismatched_bytes += bad;") > diff[1]):
         raise Red("the court calls the attribution before its decision, or uses it for more than the message")
-    if px.count(".attribute(") != 1 or "Some(w) if !w.is_empty() => format!(\"; {}\", w)," not in src_span(px, "fn why<S: ExactSurface>(", "\n}\n"):
+    if px.count(".attribute(") != 1 or "Some(a) if !a.text.is_empty() => (format!(\"; {}\", a.text), a.context)," not in src_span(px, "fn why<S: ExactSurface>(", "\n}\n"):
         raise Red("the attribution is reached other than through why(), or is not appended only")
     need_rustc()
     if SHELL_EXE is None:
@@ -5546,6 +5551,124 @@ def runledger_reader():
             "reports a claimed refusal the log lacks and a refusal with no ledger line; the command prints the counts and "
             "the caveat and changes nothing" % (1 + len(RUNLEDGER_PLANTS)))
 
+# ------------------------------------------------------------------ REFUSAL-WHY-1
+REFUSALWHY1_OVERLAY = {"window_1_program": "mockoverlay.exe", "window_1_class": "MockOverlayClass",
+                       "window_1_flags": "topmost+layered+click-through", "window_1_rect": "0,0,1920,40"}
+REFUSALWHY1_TITLE, REFUSALWHY1_PID = "a private title the log must never hold", "4242"
+
+
+def refusalwhy1_preregistered():
+    """REFUSAL-WHY-1's method is locked: the covering windows carried into the refusal log after the verdict — layer,
+    count, and program, class, flags and rectangle per window; never a title or a pid; the rectangle geometry, not
+    identity; one walk for the console and the log; recurrence only."""
+    e = locked_entry("REFUSAL-WHY-1", {
+        "apparatus, into the log, after the verdict": ("hyp", ("explanatory apparatus, never a correctness dependency", "into the refusal log", "after the verdict is decided and counted")),
+        "the fields, and what is never kept": ("hyp", ("windows:", "below:", "unplaced:", "program's image name", "its class", "its overlay flags", "its rectangle", "titles are never persisted", "process ids are not persisted")),
+        "geometry not identity; one walk; a candidate": ("hyp", ("diagnostic geometry, not identity", "program, class and flags", "one walk", "a candidate is not a cause")),
+        "the plants, the overlay, the reader, one walk": ("succ", ("the refusal itself (code, attribution, exit status, message) is unchanged", "synthetic overlay window", "neither the title nor the pid appears anywhere in the log", "carry no covering fields", "reads neither the title nor the pid", "same single walk", "after it is counted and before it is recorded")),
+        "no title, no dependence, no second walk": ("fail", ("a title or a pid in the refusal log", "depends on the attribution", "twice for one readback", "rectangle used as a grouping key", "probe writing to the log")),
+        "scope": ("lims", ("not at its instant", "candidate kind of overlay", "group together", "source-fenced", "at most six windows", "not proof")),
+    })
+    px = read(os.path.join(SHELL, "presentexact.rs")).decode("utf-8")
+    keys = re.findall(r'"(window_\d_\w+)"', src_span(px, "const SEEN_KEYS", "\n];"))
+    if keys != ["window_%d_%s" % (i, f) for i in range(1, 7) for f in ("program", "class", "flags", "rect")]:
+        raise Red("the log's window fields are not the registered program, class, flags and rectangle, six times")
+    return ("REFUSAL-WHY-1's method is locked (hash %s): after the verdict, a screen-readback record carries the covering "
+            "layer, the count, and program, class, flags and rectangle for up to six windows; never a title or a pid; the "
+            "rectangle is geometry, not identity; one walk serves the console and the log; recurrence only, never a cause; "
+            "the code's window fields are the registered ones" % e["chain_hash"][:8])
+
+
+def refusalwhy1_log():
+    """Executed on the mock court: the three screen-readback plants' records carry the layer and the count after the
+    refusal's own context, with the refusal unchanged; the overlay plant names its window's program, pid, class, title
+    and flags on the console, and its record carries program, class, flags and rectangle while neither the title nor the
+    pid is anywhere in the log; the other refusals carry no covering fields; the reader counts the overlay by program,
+    class and flags."""
+    import refusallog as RL
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    log = os.path.join(BUILD, "refusalwhy1.log")
+    if os.path.exists(log):
+        os.remove(log)
+    env = dict(os.environ, **{REFUSALLOG_ENV: log})
+    base = [SHELL_EXE, "presentexact-selftest", "--session", SESSIONWALK_DEMO, "--per-cell", "2"]
+    got = {}
+    for plant in ("readback", "noop", "stale", "overlay", "witness", "geometry", "close"):
+        before = len(_runledger_lines(log))
+        cp = subprocess.run(base + ["--plant", plant], capture_output=True, text=True, cwd=ROOT, env=env)
+        added = _runledger_lines(log)[before:]
+        if cp.returncode != 2 or len(added) != 1:
+            raise Red("PLANT %s: the court did not refuse once with one record" % plant)
+        got[plant] = (json.loads(added[0]), [ln for ln in cp.stderr.splitlines() if ln.startswith("SHELL-PRESENTEXACT: ")][0])
+    for plant in ("readback", "noop", "stale"):
+        rec, _ = got[plant]
+        c = list(rec["context"].items())
+        if RL.problem(rec) or c[-2:] != [("covering_layer", "below"), ("covering_count", 0)] or c[-3][0] != "box":
+            raise Red("PLANT %s: the record does not carry the layer and count after the refusal's own context" % plant)
+    rec, line = got["overlay"]
+    base_rec, _ = got["readback"]
+    ctx = rec["context"]
+    for t in ("mockoverlay.exe (pid 4242)", 'class "MockOverlayClass"', 'title "%s"' % REFUSALWHY1_TITLE, "[topmost, layered, click-through]"):
+        if t not in line:
+            raise Red("the overlay's console line does not name %r" % t)
+    if (RL.problem(rec) or (rec["reason_code"], rec["attribution"]) != (base_rec["reason_code"], base_rec["attribution"])
+            or (ctx.get("covering_layer"), ctx.get("covering_count")) != ("windows", 1)
+            or {k: ctx.get(k) for k in REFUSALWHY1_OVERLAY} != REFUSALWHY1_OVERLAY):
+        raise Red("the overlay's record does not carry its window's program, class, flags and rectangle")
+    text = read(log).decode("utf-8")
+    if REFUSALWHY1_TITLE in text or "private title" in text or REFUSALWHY1_PID in text:
+        raise Red("a title or a pid reached the refusal log")
+    for plant in ("witness", "geometry", "close"):
+        if any(k.startswith(("covering_", "window_")) for k in got[plant][0]["context"]):
+            raise Red("PLANT %s: a refusal that is not a screen readback carries covering fields" % plant)
+    records, bad = RL.read(log)
+    cov = {(c["kind"], c["key"]): (c["count"], c["runs"]) for c in RL.covering(records)}
+    if bad or cov.get(("window", "mockoverlay.exe | MockOverlayClass | topmost+layered+click-through")) != (1, 1) \
+            or cov.get(("layer", "below")) != (3, 3) or cov.get(("layer", "windows")) != (1, 1):
+        raise Red("the reader did not count the covering windows by layer and by program, class and flags")
+    return ("on the mock court: the changed byte, the call that writes nothing and the clear that writes nothing carry the "
+            "layer and the count after their own context, the refusal unchanged; the overlay plant names its window's "
+            "program, pid, class, title and flags on the console, and its record carries program, class, flags and "
+            "rectangle while neither the title nor the pid is anywhere in the log; the other refusals carry no covering "
+            "fields; the reader counts the overlay by program, class and flags and the layers by run")
+
+
+def refusalwhy1_fence():
+    """The log's covering fields are built by one function that reads neither the title nor the pid; the host surface
+    and the presenter take the console's words and the log's fields from one walk; the presenter walks once per
+    differing readback, after the count and before the record, and passes its fields only through its context; the
+    probe and the log's writer never touch a title."""
+    px = read(os.path.join(SHELL, "presentexact.rs")).decode("utf-8")
+    sc = src_span(px, "pub fn seen_context(", "\n}\n")
+    if ".title" in sc or ".pid" in sc or "seen_text" in sc or px.count("seen_context(") != 3:
+        raise Red("the log's covering fields read a title or a pid, or are built other than by seen_context")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    ex = src_span(tail, "impl crate::presentexact::ExactSurface for ExactGdiSurface", "\n}\n")
+    att = ex[ex.index("fn attribute("):]
+    if att.count("covering(") != 1 or "seen_text(&w)" not in att or "seen_context(&w)" not in att:
+        raise Red("the host surface does not take the console's words and the log's fields from one walk")
+    i_lock, i_why = tail.find("PRESENT-EXACT-0 LOCK: the conforming presenter (appended)"), tail.find("REFUSAL-WHY-0 (appended)")
+    pres = tail[i_lock:i_why]
+    sw = src_span(pres, "fn show_witness(", "\n}\n")
+    ctx = src_span(pres, "fn show_ctx(", "\n}\n")
+    if (sw.count("covering(") != 1 or "show_ctx(k, n, fresh, Some((v, bgr)), seen.as_ref())" not in sw
+            or "c.extend(crate::presentexact::seen_context(w));" not in ctx or ".title" in ctx or ".pid" in ctx):
+        raise Red("the presenter does not pass one walk's fields through its context")
+    i_probe = tail.find("PRESENT-EXACT-0 probe (appended)")
+    probe = tail[i_probe:i_lock]
+    rl = read(os.path.join(SHELL, "refusallog.rs")).decode("utf-8")
+    if "refusallog::" in probe or "title" in rl or "covering(" in probe:
+        raise Red("the probe writes to the refusal log or walks for it, or the log's writer names a title")
+    return ("the log's covering fields are built by seen_context alone, which reads neither the title nor the pid; the host "
+            "surface and the presenter take the console's words and the log's fields from one walk; the presenter walks "
+            "once per differing readback and passes the fields only through its context; the probe never writes to the "
+            "log and the log's writer names no title")
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -5699,6 +5822,9 @@ def main() -> int:
     row("runledger-bijection", runledger_bijection)
     row("runledger-fence", runledger_fence)
     row("runledger-reader", runledger_reader)
+    row("refusalwhy1-preregistered", refusalwhy1_preregistered)
+    row("refusalwhy1-log", refusalwhy1_log)
+    row("refusalwhy1-fence", refusalwhy1_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

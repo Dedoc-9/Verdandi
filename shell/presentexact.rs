@@ -40,11 +40,81 @@ pub trait ExactSurface: Surface {
     fn readback(&mut self) -> Option<Vec<u8>>;
     /// (client w, client h, client origin x, y on the screen, screen logical w, h, screen physical w, h)
     fn geometry(&mut self) -> [i32; 8];
-    /// REFUSAL-WHY-0: what lies above the window over a differing box, for a refusal's message. Explanatory only: it is
-    /// called after a verdict is decided and never changes one. The default names nothing.
-    fn attribute(&mut self, _bbox: [usize; 4]) -> String {
-        String::new()
+    /// REFUSAL-WHY-0/1: what lies above the window over a differing box — the console's words and the refusal log's
+    /// fields, from one walk. Explanatory only: it is called after a verdict is decided and never changes one. The
+    /// default names nothing.
+    fn attribute(&mut self, _bbox: [usize; 4]) -> Attribution {
+        Attribution::default()
     }
+}
+
+/// REFUSAL-WHY-1: one top-level window found above ours over a differing box. The title and the pid are for the
+/// console only; the log's fields never carry them.
+pub struct Seen {
+    pub program: String,
+    pub pid: u32,
+    pub class: String,
+    pub title: String,
+    pub rect: [i32; 4],
+    pub flags: Vec<&'static str>,
+}
+
+/// What one walk of the Z order found: `reached` is whether our window was found (after `steps` windows), and the
+/// windows above it that meet the box (at most six).
+pub struct Seeing {
+    pub reached: bool,
+    pub steps: usize,
+    pub windows: Vec<Seen>,
+}
+
+/// The console's words and the log's fields of one attribution.
+#[derive(Default)]
+pub struct Attribution {
+    pub text: String,
+    pub context: Vec<(&'static str, V)>,
+}
+
+/// REFUSAL-WHY-0's console words for a walk: program, pid, class, title, rectangle and flags of each window named.
+pub fn seen_text(w: &Seeing) -> String {
+    let found: Vec<String> = w
+        .windows
+        .iter()
+        .map(|x| format!("{} (pid {}) class \"{}\" title \"{}\" at ({},{})-({},{}) [{}]", x.program, x.pid, x.class, x.title,
+                         x.rect[0], x.rect[1], x.rect[2], x.rect[3], x.flags.join(", ")))
+        .collect();
+    if !w.reached {
+        return format!("attribution: our window was not found in the Z order ({} windows walked){}", w.steps,
+                       if found.is_empty() { String::new() } else { format!("; windows over the box: {}", found.join("; ")) });
+    }
+    if found.is_empty() {
+        "attribution: no visible window above ours meets the box — the cause is below the window layer (a compositor-level overlay, a colour transform, or pixels drawn outside any window)".to_string()
+    } else {
+        format!("attribution: above ours over the box: {}", found.join("; "))
+    }
+}
+
+const SEEN_KEYS: [[&str; 4]; 6] = [
+    ["window_1_program", "window_1_class", "window_1_flags", "window_1_rect"],
+    ["window_2_program", "window_2_class", "window_2_flags", "window_2_rect"],
+    ["window_3_program", "window_3_class", "window_3_flags", "window_3_rect"],
+    ["window_4_program", "window_4_class", "window_4_flags", "window_4_rect"],
+    ["window_5_program", "window_5_class", "window_5_flags", "window_5_rect"],
+    ["window_6_program", "window_6_class", "window_6_flags", "window_6_rect"],
+];
+
+/// REFUSAL-WHY-1: the refusal log's fields for a walk — the layer, the count, and each window's program, class, flags
+/// and rectangle. Never a title, never a pid. The rectangle is diagnostic geometry; the grouping key is program,
+/// class and flags.
+pub fn seen_context(w: &Seeing) -> Vec<(&'static str, V)> {
+    let layer = if !w.reached { "unplaced" } else if w.windows.is_empty() { "below" } else { "windows" };
+    let mut c = vec![("covering_layer", V::S(layer.to_string())), ("covering_count", V::N(w.windows.len().min(6) as u64))];
+    for (x, k) in w.windows.iter().zip(SEEN_KEYS.iter()) {
+        c.push((k[0], V::S(x.program.clone())));
+        c.push((k[1], V::S(x.class.clone())));
+        c.push((k[2], V::S(if x.flags.is_empty() { "none".to_string() } else { x.flags.join("+") })));
+        c.push((k[3], V::S(format!("{},{},{},{}", x.rect[0], x.rect[1], x.rect[2], x.rect[3]))));
+    }
+    c
 }
 
 pub struct Readback {
@@ -147,11 +217,13 @@ fn boxed(mut ctx: Vec<(&'static str, V)>, b: Option<[usize; 4]>) -> Vec<(&'stati
     ctx
 }
 
-/// REFUSAL-WHY-0: a refusal's attribution suffix — decided afterwards, appended only.
-fn why<S: ExactSurface>(s: &mut S, v: &[u8], want: &dyn Fn(usize) -> u8) -> String {
+/// REFUSAL-WHY-0/1: a refusal's attribution — decided afterwards: the console suffix (appended only) and the log's
+/// fields (appended after the refusal's own context), from one walk.
+fn why<S: ExactSurface>(s: &mut S, v: &[u8], want: &dyn Fn(usize) -> u8) -> (String, Vec<(&'static str, V)>) {
     match diff_bbox(v, want).map(|b| s.attribute(b)) {
-        Some(w) if !w.is_empty() => format!("; {}", w),
-        _ => String::new(),
+        Some(a) if !a.text.is_empty() => (format!("; {}", a.text), a.context),
+        Some(a) => (String::new(), a.context),
+        None => (String::new(), Vec::new()),
     }
 }
 
@@ -166,8 +238,10 @@ fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Rea
     match s.readback() {
         Some(v) if v.len() == bgr.len() && v.iter().all(|&b| b == 0xFF) => {}
         Some(v) => {
-            let who = why(s, &v, &|_| 0xFF);
-            return Err(refused("clear.readback", boxed(at(what, call), diff_bbox(&v, &|_| 0xFF)),
+            let (who, seen) = why(s, &v, &|_| 0xFF);
+            let mut ctx = boxed(at(what, call), diff_bbox(&v, &|_| 0xFF));
+            ctx.extend(seen);
+            return Err(refused("clear.readback", ctx,
                                format!("PRESENTEXACT-READBACK-STALE: the window cleared to white before {} under {} did not read back as white ({}{}); the readback does not see the window exactly",
                                        what, CALLS[call], describe(&v, &|_| 0xFF), who)));
         }
@@ -188,10 +262,12 @@ fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Rea
     rb.mismatched_bytes += bad;
     crate::runledger::readback(bad != 0); // RUN-LEDGER-0: counted where the court counts its own
     if bad != 0 {
-        let who = why(s, &v, &|i| bgr[i]);
+        let (who, seen) = why(s, &v, &|i| bgr[i]);
         let mut ctx = at(what, call);
         ctx.push(("differing_bytes", V::N(bad)));
-        return Err(refused("present.readback", boxed(ctx, diff_bbox(&v, &|i| bgr[i])),
+        let mut ctx = boxed(ctx, diff_bbox(&v, &|i| bgr[i]));
+        ctx.extend(seen);
+        return Err(refused("present.readback", ctx,
                            format!("PRESENTEXACT-READBACK: the composed screen differs from the certified picture on {} under {} ({} of {} bytes; {}{})",
                                    what, CALLS[call], bad, bgr.len(), describe(&v, &|i| bgr[i]), who)));
     }
@@ -389,7 +465,8 @@ pub fn summary(e: &Exact) -> Vec<String> {
 /// The gate's surface: LATENCY-1R's mock clock, with a screen that holds exactly what was last presented.
 /// Plants: "geometry" (a title bar's worth of client missing), "readback" (one byte changed on the way back under
 /// StretchDIBits), "noop" (SetDIBitsToDevice writes nothing), "stale" (the clear writes nothing; REFUSAL-WHY-0's
-/// witness that the STALE refusal carries its attribution).
+/// witness that the STALE refusal carries its attribution), "overlay" (the changed byte under a synthetic overlay
+/// window that has a title; REFUSAL-WHY-1's witness that the title reaches the console and never the log).
 pub struct MockExact {
     pub inner: crate::latency1r::MockSurface,
     pub call: usize,
@@ -436,7 +513,7 @@ impl ExactSurface for MockExact {
     }
     fn readback(&mut self) -> Option<Vec<u8>> {
         let mut v = self.screen.clone();
-        if self.plant == "readback" && self.call == 0 && v[..] != vec![0xFFu8; v.len()][..] {
+        if (self.plant == "readback" || self.plant == "overlay") && self.call == 0 && v[..] != vec![0xFFu8; v.len()][..] {
             v[12_345] ^= 1;
         }
         Some(v)
@@ -448,7 +525,20 @@ impl ExactSurface for MockExact {
             [W as i32, H as i32, 0, 0, W as i32, H as i32, W as i32, H as i32]
         }
     }
-    fn attribute(&mut self, b: [usize; 4]) -> String {
-        format!("attribution: the mock screen has no windows; nothing lies above ({},{})-({},{})", b[0], b[1], b[2], b[3])
+    fn attribute(&mut self, b: [usize; 4]) -> Attribution {
+        if self.plant == "overlay" {
+            let w = Seeing {
+                reached: true,
+                steps: 2,
+                windows: vec![Seen { program: "mockoverlay.exe".to_string(), pid: 4242, class: "MockOverlayClass".to_string(),
+                                     title: "a private title the log must never hold".to_string(),
+                                     rect: [0, 0, W as i32, 40], flags: vec!["topmost", "layered", "click-through"] }],
+            };
+            return Attribution { text: seen_text(&w), context: seen_context(&w) };
+        }
+        Attribution {
+            text: format!("attribution: the mock screen has no windows; nothing lies above ({},{})-({},{})", b[0], b[1], b[2], b[3]),
+            context: seen_context(&Seeing { reached: true, steps: 1, windows: Vec::new() }),
+        }
     }
 }

@@ -2342,8 +2342,8 @@ meets the box, it says the cause is below the window layer: a compositor-level o
 drawn outside any window. It uses read-only queries only. A process is opened with limited query rights, just to read
 its image name. It moves, shows, activates, closes, messages and terminates nothing. The attribution appears on
 the court's two readback refusals (READBACK and READBACK-STALE), on `shell show`'s mismatch lines, and on the probe's
-screen line. The presenter decides and counts a mismatch before it names one, and names it only on the lines it
-prints. The court's hook is a trait method whose default names nothing, so a surface without it keeps its old message.
+screen line. The presenter decides and counts a mismatch before it names one. (It named it only on the lines it
+printed until REFUSAL-WHY-1, which walks once per differing readback so the refusal log can carry the result.) The court's hook is a trait method whose default names nothing, so a surface without it keeps its old message.
 
 **Rows.** `refusalwhy-preregistered`: the method is locked, and the code stops at the registered six windows.
 `refusalwhy-fence`: the section is appended after the presenter's. It declares exactly ten read-only imports, opens
@@ -2521,9 +2521,12 @@ never write into each other, and nothing else names the ledger. `runledger-reade
 repeated lines are reported and not counted. The join reports a claimed refusal the log lacks and a refusal with no
 ledger line. The command changes nothing. 22 mutations were each caught.
 
+**On the owner's host.** After two full gate runs, `python verify/runledger.py` read `build\runs.log` as absent: the
+gate's runs went to its own scratch ledger.
+
 **Grade.** DECLARED: the method. ESTABLISHED (gate): one line per run on the court, its counts, the join, append-only
 growth, the default path, the unchanged run under a failed append, the reader. ESTABLISHED (source): the presenter's
-begin and end points. NOT_MEASURED (host): no host run has been ledgered yet.
+begin and end points. ESTABLISHED (host): the gate's isolation. NOT_MEASURED (host): no host run has been ledgered yet.
 
 **does_not_show.** A rate as a cause. That a clean run proves a refusal cannot occur. Runs outside the admitted
 operations. A court run's raw-record write: its line records the court's outcome, so a later write failure exits 2
@@ -2533,6 +2536,49 @@ after a line that says 0. A process killed from outside: it ends without a line,
 disagree with the run, a usage error appends a line, the ledger is rewritten, or a failed append changes the run.
 `runledger-fence` goes red if a presenter exit is not preceded by its end, a readback is counted anywhere else, or the
 two files write into each other.
+
+## REFUSAL-WHY-1 — the covering windows written into the refusal log (an apparatus; landed)
+
+**Why.** REFUSAL-WHY-0 names the windows above ours over a differing box on the console, once. The refusal log keeps
+refusals but not what covered the screen. So "the same overlay, in six runs" still meant reading transcripts.
+REFUSAL-WHY-1 writes the same walk's result into the record, so the log accumulates it. Like REFUSAL-WHY-0, it is
+explanatory apparatus, never a correctness dependency.
+
+**The method (`ac75db51`), under the owner's rule.** After the verdict is decided and counted, a screen-readback
+record (the court's READBACK and READBACK-STALE, and each of the presenter's differing readbacks) carries these fields
+after its own context: `covering_layer` (`windows`: a window above ours meets the box; `below`: none does, so the cause
+is below the window layer; `unplaced`: our window was not found in the Z order), `covering_count`, and, for each window
+named (at most six), `window_N_program`, `window_N_class`, `window_N_flags` and `window_N_rect`. **Titles are never
+persisted.** They may appear on the console, but they never enter the log, and neither do process ids. The rectangle is
+diagnostic geometry, not identity, so the grouping key is program, class and flags. One walk serves both the console's
+words and the log's fields: `seen_text` renders REFUSAL-WHY-0's line unchanged, and `seen_context` builds the fields
+without reading a title or a pid. The presenter now walks once per differing readback, after it is counted and before
+it is recorded, and prints from the same walk. `python verify/refusallog.py` now also counts covering windows by layer
+and by program, class and flags, with the runs each came from.
+
+**Rows.** `refusalwhy1-preregistered`: the method is locked, and the code's window fields are the registered four, six
+times. `refusalwhy1-log`, on the mock court: the changed byte, the call that writes nothing and the clear that writes
+nothing carry the layer and count after their own context, with the refusal unchanged. A new plant places a synthetic
+overlay window, with a title, over the changed byte. Its console line names the window's program, pid, class, title
+and flags. Its record carries program, class, flags and rectangle, and neither the title nor the pid appears anywhere
+in the log. Refusals that are not screen readbacks carry no covering fields. The reader counts the overlay by program,
+class and flags. `refusalwhy1-fence`: the fields are built only by `seen_context`, which reads no title and no pid. The
+host surface and the presenter take words and fields from one walk. The presenter passes the fields only through its
+context, and the probe never writes to the log. `refusalwhy-fence` was updated to the one-walk shape and still holds
+REFUSAL-WHY-0's order and read-only surface. 12 mutations were each caught.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the fields and their order, no title or pid in the log, the
+refusal unchanged, the reader's counts. ESTABLISHED (source): the presenter's single walk. NOT_MEASURED (host): no
+host refusal has carried covering fields yet.
+
+**does_not_show.** That a named program caused the difference: a candidate, never a cause. Identity: image and class
+names can repeat across unrelated programs, so a group is a candidate kind of overlay. The instant of the readback:
+the Z order is read just after it. An owner that cannot be queried reads as unreadable, and all such owners group
+together.
+
+**Falsifier.** `refusalwhy1-log` goes red if a title or a pid reaches the log, a readback record loses its fields or
+carries them before its own context, a non-readback refusal carries them, or the reader keys on the rectangle.
+`refusalwhy1-fence` goes red if the fields read a title or a pid, a surface walks twice, or the probe writes to the log.
 
 ## The open clause, now with named rungs (skybox, physics)
 

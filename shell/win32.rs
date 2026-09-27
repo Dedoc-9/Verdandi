@@ -1546,8 +1546,10 @@ impl crate::presentexact::ExactSurface for ExactGdiSurface {
         };
         [c.right - c.left, c.bottom - c.top, org.x, org.y, lw, lh, pw, ph]
     }
-    fn attribute(&mut self, b: [usize; 4]) -> String {
-        covering_windows(self.hwnd, b)
+    fn attribute(&mut self, b: [usize; 4]) -> crate::presentexact::Attribution {
+        // REFUSAL-WHY-0/1: one walk, the console's words and the log's fields
+        let w = covering(self.hwnd, b);
+        crate::presentexact::Attribution { text: crate::presentexact::seen_text(&w), context: crate::presentexact::seen_context(&w) }
     }
 }
 
@@ -1884,20 +1886,26 @@ fn show_witness(surf: &mut ExactGdiSurface, bgr: &[u8], k: usize, n: usize, fres
     let exact = matches!(&screen, Some(v) if v[..] == bgr[..]);
     st.checks += 1;
     crate::runledger::readback(!exact); // RUN-LEDGER-0: counted where the presenter counts its own
+    let mut seen: Option<crate::presentexact::Seeing> = None;
     if !exact {
         st.differed += 1;
+        // REFUSAL-WHY-1: one walk per differing readback, after it is counted — its fields go into the record, its
+        // words into the printed line
+        if let Some(v) = &screen {
+            seen = crate::presentexact::diff_bbox(v, &|i| bgr[i]).map(|b| covering(surf.hwnd, b));
+        }
         // REFUSAL-LOG-0: every differing readback is one refusal-class event, one record (decided and counted above)
         crate::refusallog::record(&show_event(match &screen {
-            Some(v) => ("SHELL-SHOW-SCREEN-DIFFERS", "present.readback", show_ctx(k, n, fresh, Some((v, bgr)))),
-            None => ("SHELL-SHOW-SCREEN-UNREADABLE", "surface.readback", show_ctx(k, n, fresh, None)),
+            Some(v) => ("SHELL-SHOW-SCREEN-DIFFERS", "present.readback", show_ctx(k, n, fresh, Some((v, bgr)), seen.as_ref())),
+            None => ("SHELL-SHOW-SCREEN-UNREADABLE", "surface.readback", show_ctx(k, n, fresh, None, None)),
         }));
     }
     if fresh || st.last != Some(exact) {
         let how = match &screen {
             Some(_) if exact => "the screen is the certified picture".to_string(),
             Some(v) => {
-                // REFUSAL-WHY-0: the verdict is already decided and counted; the attribution only explains it
-                let who = crate::presentexact::diff_bbox(v, &|i| bgr[i]).map(|b| covering_windows(surf.hwnd, b)).unwrap_or_default();
+                // REFUSAL-WHY-0: the verdict is already decided and counted; the attribution (the same walk) only explains it
+                let who = seen.as_ref().map(crate::presentexact::seen_text).unwrap_or_default();
                 format!("{}; {}", crate::presentexact::describe(v, &|i| bgr[i]), who)
             }
             None => "the screen could not be read back".to_string(),
@@ -1911,7 +1919,7 @@ fn show_witness(surf: &mut ExactGdiSurface, bgr: &[u8], k: usize, n: usize, fres
 /// in for a frame that was not presented.
 fn show_present(surf: &mut ExactGdiSurface, bgr: &[u8], k: usize, n: usize) {
     if surf.present(bgr).is_none() {
-        crate::refusallog::refuse(&show_event(("SHELL-SHOW-NO-PRESENT", "surface.present", show_ctx(k, n, true, None))),
+        crate::refusallog::refuse(&show_event(("SHELL-SHOW-NO-PRESENT", "surface.present", show_ctx(k, n, true, None, None))),
                                   &format!("SHELL-SHOW-NO-PRESENT: SetDIBitsToDevice or the composition barrier failed on frame {}/{}; nothing was read back for it",
                                            k + 1, n));
         if unsafe { IsWindow(surf.hwnd) } != 0 {
@@ -1930,7 +1938,8 @@ fn show_event((reason, attribution, context): (&'static str, &'static str, Vec<(
 
 /// The frame (1-based), the frame count, whether it was a new frame or a held re-check, and, for a differing screen,
 /// how many bytes differ and their box.
-fn show_ctx(k: usize, n: usize, fresh: bool, diff: Option<(&Vec<u8>, &[u8])>) -> Vec<(&'static str, crate::refusallog::V)> {
+fn show_ctx(k: usize, n: usize, fresh: bool, diff: Option<(&Vec<u8>, &[u8])>, seen: Option<&crate::presentexact::Seeing>)
+            -> Vec<(&'static str, crate::refusallog::V)> {
     use crate::refusallog::V;
     let mut c = vec![("frame", V::N(k as u64 + 1)), ("of", V::N(n as u64)), ("check", V::S(if fresh { "new" } else { "held" }.to_string()))];
     if let Some((v, bgr)) = diff {
@@ -1939,6 +1948,9 @@ fn show_ctx(k: usize, n: usize, fresh: bool, diff: Option<(&Vec<u8>, &[u8])>) ->
         if let Some(b) = crate::presentexact::diff_bbox(v, &|i| bgr[i]) {
             c.push(("box", V::S(format!("{},{},{},{}", b[0], b[1], b[2], b[3]))));
         }
+    }
+    if let Some(w) = seen {
+        c.extend(crate::presentexact::seen_context(w)); // REFUSAL-WHY-1: no title, no pid
     }
     c
 }
@@ -2110,10 +2122,15 @@ fn why_cloaked(dwm: Option<DwmGetWindowAttributeFn>, h: Hwnd) -> bool {
     f(h, DWMWA_CLOAKED, &mut cloaked as *mut Dword as *mut c_void, std::mem::size_of::<Dword>() as Dword) == 0 && cloaked != 0
 }
 
-/// What lies above `own` over the box (x0, y0, x1, y1), inclusive, in screen pixels. Read-only.
+/// REFUSAL-WHY-0's console words for what lies above `own` over the box (the probe's line). Read-only.
 pub(crate) fn covering_windows(own: Hwnd, b: [usize; 4]) -> String {
+    crate::presentexact::seen_text(&covering(own, b))
+}
+
+/// The one walk: what lies above `own` over the box (x0, y0, x1, y1), inclusive, in screen pixels. Read-only.
+pub(crate) fn covering(own: Hwnd, b: [usize; 4]) -> crate::presentexact::Seeing {
     let dwm = why_dwm();
-    let mut found: Vec<String> = Vec::new();
+    let mut found: Vec<crate::presentexact::Seen> = Vec::new();
     let mut reached_own = false;
     let mut h = unsafe { GetTopWindow(std::ptr::null_mut()) };
     let mut steps = 0;
@@ -2142,18 +2159,10 @@ pub(crate) fn covering_windows(own: Hwnd, b: [usize; 4]) -> String {
                     flags.push(name);
                 }
             }
-            found.push(format!("{} (pid {}) class \"{}\" title \"{}\" at ({},{})-({},{}) [{}]", why_image(pid), pid, why_text(&c, cn),
-                               why_text(&t, tn), r.left, r.top, r.right, r.bottom, flags.join(", ")));
+            found.push(crate::presentexact::Seen { program: why_image(pid), pid, class: why_text(&c, cn), title: why_text(&t, tn),
+                                                   rect: [r.left, r.top, r.right, r.bottom], flags });
         }
         h = unsafe { GetWindow(h, GW_HWNDNEXT) };
     }
-    if !reached_own {
-        return format!("attribution: our window was not found in the Z order ({} windows walked){}", steps,
-                       if found.is_empty() { String::new() } else { format!("; windows over the box: {}", found.join("; ")) });
-    }
-    if found.is_empty() {
-        "attribution: no visible window above ours meets the box — the cause is below the window layer (a compositor-level overlay, a colour transform, or pixels drawn outside any window)".to_string()
-    } else {
-        format!("attribution: above ours over the box: {}", found.join("; "))
-    }
+    crate::presentexact::Seeing { reached: reached_own, steps, windows: found }
 }

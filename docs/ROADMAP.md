@@ -69,7 +69,7 @@ render → present → observe → next input. It is mostly not a renderer probl
 input and authoring, and making the live chain recoverable. The order:
 
 ```text
-REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic foundation (landed: the first two)
+REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic foundation (landed: all but DRIFT-0)
       ↓
 LIVE-LOOP-0      the shipped per-frame loop — until it exists the studio has a viewer, not a live world
       ↓
@@ -85,9 +85,10 @@ PRESENT-1, the live-loop re-breakdown, BANDWIDTH-0 / POOL-0      afterwards, not
 ```
 
 - **The diagnostic foundation** is not on the critical path to walking. It gives the live loop an instrumented refusal
-  surface instead of console archaeology. REFUSAL-LOG-0 and RUN-LEDGER-0 have landed. REFUSAL-WHY's covering windows
-  go into the refusal log next, as program, class, rectangle and overlay flags. Titles stay console-only and are never
-  persisted, and the rectangle is diagnostic geometry, not identity. DRIFT-0 is observational first: it counts
+  surface instead of console archaeology. REFUSAL-LOG-0, RUN-LEDGER-0 and REFUSAL-WHY-1 have landed. REFUSAL-WHY-1
+  writes the covering windows into the refusal log as program, class, rectangle and overlay flags. Titles stay
+  console-only and are never persisted, and the rectangle is diagnostic geometry, not identity. DRIFT-0 is
+  observational first: it counts
   recurrence and cross-run drift from the two files and the host state, with no intervention.
 - **LIVE-LOOP-0** is the gate that matters: the current (W, M, C) state → `LoopRenderer` on its persistent buffers →
   one frame rendered from that state → SetDIBitsToDevice → the screen witness → the next frame. It includes window
@@ -244,13 +245,19 @@ readback in `show`) appends one unsealed JSON line to `build/refusals.log`: run,
 attribution token and context. A console line reports a refusal once. The log turns a recurring refusal into a count
 across runs (`python verify/refusallog.py`). It is an observation, never evidence: not sealed, not committed, read by
 no rule. The gate proves on the mock court that each refusal leaves exactly one record and each record one refusal.
-The refusal-attribution candidates are not in the log yet: they follow the run ledger below.
+Since REFUSAL-WHY-1, a screen-readback record also carries what covered the screen (below).
 
 ### RUN-LEDGER-0 — the runs, refused or not · **landed** (`ecf3fdb9`)
 The refusal log's denominator: one unsealed line per court or presenter run, whatever its outcome, in its own file
 (`build/runs.log`), with the run's readback counts, its refusal count and its exit code, joined to the refusal log on
 `run_id`. A clean run is counted too, so a recurrence can be stated as "refused in N of M runs". It is an observation,
 not evidence, and it is kept out of the refusal log, which holds only refusals.
+
+### REFUSAL-WHY-1 — what covered the screen, accumulated · **landed** (`ac75db51`)
+A screen-readback refusal record now carries the covering layer and, for each window above ours over the differing
+box, its program, class, overlay flags and rectangle. Titles and process ids are never written, and the rectangle is
+geometry, not identity, so recurrence is counted by program, class and flags. The console and the log come from one
+walk. A recurring program over the screen is a candidate, never a cause.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
