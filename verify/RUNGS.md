@@ -2470,9 +2470,12 @@ appends. Nothing else in the shell or in the sealers names the log, and the gate
 non-JSON line and a skipped `seq` are each reported and not counted. The command prints the counts and leaves the log
 unchanged. 29 mutations of the writer, the court, the presenter, the reader and the gate's isolation were each caught.
 
+**On the owner's host.** After two full gate runs, `python verify/refusallog.py` read `build\refusals.log` as
+absent: the gate's planted refusals went to its own scratch file, not into the owner's log.
+
 **Grade.** DECLARED: the method. ESTABLISHED (gate): the one-to-one invariant on the court, append-only growth, the
 default path, the unchanged refusal under a failed append, the reader. ESTABLISHED (source): the presenter's call sites.
-NOT_MEASURED (host): no host refusal has been logged yet.
+ESTABLISHED (host): the gate's isolation. NOT_MEASURED (host): no host refusal has been logged yet.
 
 **does_not_show.** Why a refusal happened: a count is not a cause. That a refusal cannot occur: zero records is not
 proof. Refusals outside the admitted operations: argument errors, the windowless build, and the host window court's
@@ -2484,6 +2487,52 @@ executed on the gate: `show` needs a window, so its call sites are fenced from t
 not match its printed code and registered attribution; if the log is rewritten; or if a failed append changes the
 refusal. `refusallog-fence` goes red if a presenter refusal bypasses the primitive, the court writes or prints its
 own refusal, the writer can truncate, anything else names the log, or the gate stops isolating its own refusals.
+
+## RUN-LEDGER-0 — one line per run, refused or not: the refusal log's denominator (an observation; landed)
+
+**Why.** The refusal log holds refusals only. A run that refused nothing leaves no trace in it, so "no refusals
+occurred" cannot be told from "the run was not recorded", and a recurrence can only be stated as "N runs that
+refused", never as "refused in N of M runs". RUN-LEDGER-0 records the runs. It is kept in a file of its own, so every
+line of the refusal log is still a refusal.
+
+**The method (`ecf3fdb9`).** When an admitted run ends, whatever its outcome, one JSON line is appended to
+`$VERDANDI_RUN_LEDGER`, otherwise `build/runs.log` (gitignored). The line holds `run_id` (the refusal log's, so the two
+files join on it), `operation`, `surface`, `readbacks_checked` and `differed` (the operation's own counts of compared
+screen readbacks, counted exactly where it counts them), `refusals` (how many refusal records the run emitted),
+`exit_code`, `unix_ms_start` and `unix_ms_end`. A court run begins just before the court function and ends with the
+court's outcome, at both emission points (the selftest and the host window). A presenter run (`show`,
+`show-playback`) begins on entry and ends immediately before each of its seven exits, with that exit's code. A clean
+run is a line with `differed` 0 and exit 0. A failure before the run begins (a usage error) is not a run and appends
+nothing. Like the refusal log, the ledger is not sealed, not chained, not committed and read by no rule. A ledger that
+cannot be written is said on the console (`SHELL-RUN-LEDGER-UNWRITTEN`), and the run goes on unchanged. The gate points
+the variable at its own scratch file. `python verify/runledger.py` validates the ledger, counts runs by operation,
+surface and exit code with their readbacks, and joins it to the refusal log. It writes nothing.
+
+**Rows.** `runledger-preregistered`: the method is locked, and the variable, default path and line keys are the same in
+the shell and the reader. `runledger-bijection` runs the mock court's clean run and its six plants. Each appends exactly
+one line, with the process's exit status and the court's own readback counts. The clean run reads 10 checked and 0
+differed, equal to its raw record's readback checks. The plants read the counts the mock makes exact (a changed byte:
+1 checked, 1 differed; a call that writes nothing: 2 and 1; a mid-court close: 8 and 0). Each line's refusals equal
+the refusal records carrying its `run_id`. A usage error appends to neither file. The ledger only grows, the default
+path holds, and an unwritable ledger leaves the run's exit status and output byte-identical. `runledger-fence`: the
+begin and end points are where the operations begin and end, and every presenter exit is immediately preceded by an
+end with its own code. Readbacks are counted only where the court and the presenter count their own. The two files
+never write into each other, and nothing else names the ledger. `runledger-reader`: malformed, inconsistent and
+repeated lines are reported and not counted. The join reports a claimed refusal the log lacks and a refusal with no
+ledger line. The command changes nothing. 22 mutations were each caught.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): one line per run on the court, its counts, the join, append-only
+growth, the default path, the unchanged run under a failed append, the reader. ESTABLISHED (source): the presenter's
+begin and end points. NOT_MEASURED (host): no host run has been ledgered yet.
+
+**does_not_show.** A rate as a cause. That a clean run proves a refusal cannot occur. Runs outside the admitted
+operations. A court run's raw-record write: its line records the court's outcome, so a later write failure exits 2
+after a line that says 0. A process killed from outside: it ends without a line, and the ledger cannot say so.
+
+**Falsifier.** `runledger-bijection` goes red if a run leaves no line or two, a line's exit code, counts or refusals
+disagree with the run, a usage error appends a line, the ledger is rewritten, or a failed append changes the run.
+`runledger-fence` goes red if a presenter exit is not preceded by its end, a readback is counted anywhere else, or the
+two files write into each other.
 
 ## The open clause, now with named rungs (skybox, physics)
 

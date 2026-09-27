@@ -186,6 +186,7 @@ fn witness_one<S: ExactSurface>(s: &mut S, call: usize, bgr: &[u8], rb: &mut Rea
     rb.checks += 1;
     rb.bytes_compared += bgr.len() as u64;
     rb.mismatched_bytes += bad;
+    crate::runledger::readback(bad != 0); // RUN-LEDGER-0: counted where the court counts its own
     if bad != 0 {
         let who = why(s, &v, &|i| bgr[i]);
         let mut ctx = at(what, call);

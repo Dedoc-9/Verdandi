@@ -59,6 +59,9 @@ mod presentexact;
 
 #[path = "refusallog.rs"]
 mod refusallog;
+
+#[path = "runledger.rs"]
+mod runledger;
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -623,8 +626,10 @@ fn main() {
             let close_after = if plant == "close" { Some(12) } else { None };
             if args[1] == "presentexact-selftest" {
                 let mut surf = presentexact::MockExact::new(latency1r::MockSurface::new(13_333, 1, close_after), &plant);
+                runledger::begin("presentexact.court", "mock"); // RUN-LEDGER-0: the court run begins
                 match presentexact::court(&mut surf, &inputs, per_cell) {
                     Ok(ex) => {
+                        runledger::end(0);
                         for ln in presentexact::summary(&ex) {
                             println!("{}", ln);
                         }
@@ -638,6 +643,7 @@ fn main() {
                         // REFUSAL-LOG-0: the court's refusal is logged where it is emitted, then printed as before
                         let (ev, m) = r.into_event("mock");
                         refusallog::refuse(&ev, &format!("SHELL-PRESENTEXACT: {}", m));
+                        runledger::end(2);
                         exit(2)
                     }
                 }

@@ -64,7 +64,8 @@ recorded beside a court, never controlled and never read by a rule), refusalwhy 
 names the windows above ours over the differing box, after its verdict, reading only), hoststate1 (HOST-STATE-1: the
 OS-computed clock and the paging rates, a version 2 snapshot that no court records yet), refusallog (REFUSAL-LOG-0:
 every refusal on the present path appends one unsealed line to an append-only log; one record per refusal, proven on
-the mock court), and — in the oracle stage —
+the mock court), runledger (RUN-LEDGER-0: one line per court or presenter run, refused or not, joined to the refusal
+log on run_id), and — in the oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
@@ -5229,7 +5230,7 @@ def refusallog_fence():
     if set(re.findall(r'refused\("([a-z.\-]+)"', px)) != REFUSALLOG_COURT_ATTRIBUTIONS:
         raise Red("the court's attributions are not the registered vocabulary")
     main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
-    if ('let (ev, m) = r.into_event("mock");\n                        refusallog::refuse(&ev, &format!("SHELL-PRESENTEXACT: {}", m));\n                        exit(2)'
+    if ('let (ev, m) = r.into_event("mock");\n                        refusallog::refuse(&ev, &format!("SHELL-PRESENTEXACT: {}", m));\n                        runledger::end(2);\n                        exit(2)'
             not in main_src or 'refuse("PRESENTEXACT", &m)' in main_src):
         raise Red("the selftest does not log the court's refusal where it emits it")
     w32 = read(os.path.join(SHELL, "win32.rs"))
@@ -5270,7 +5271,7 @@ def refusallog_fence():
             if "VERDANDI_REFUSAL_LOG" in t or "refusals.log" in t or "refusallog::line(" in t:
                 raise Red("shell/%s names the refusal log: nothing on the path may read it" % name)
     for name in os.listdir(os.path.join(ROOT, "verify")):
-        if name.endswith(".py") and name not in ("refusallog.py", "verify.py"):
+        if name.endswith(".py") and name not in ("refusallog.py", "runledger.py", "verify.py"):
             t = read(os.path.join(ROOT, "verify", name)).decode("utf-8")
             if "refusallog" in t or "REFUSAL-LOG" in t or "refusals.log" in t:
                 raise Red("verify/%s reads the refusal log: no rule may" % name)
@@ -5324,6 +5325,227 @@ def refusallog_reader():
             "JSON line and a skipped seq are each reported and not counted; the command prints the counts and the caveat "
             "and leaves the log unchanged" % len(REFUSALLOG_PLANTS))
 
+# ------------------------------------------------------------------ RUN-LEDGER-0
+RUNLEDGER_ENV = "VERDANDI_RUN_LEDGER"
+GATE_RUN_LEDGER = os.path.join(BUILD, "runs-gate.log")
+# each mock plant's line: (readbacks_checked, differed) — the court's own counts when it refuses (the mock is exact:
+# witness and geometry refuse before any readback, stale at the first clear, close after the 8 witness readbacks, a
+# changed byte at the first presented readback, the call that writes nothing at the second)
+RUNLEDGER_PLANTS = {"witness": (0, 0), "close": (8, 0), "geometry": (0, 0), "readback": (1, 1), "noop": (2, 1), "stale": (0, 0)}
+
+
+def runledger_preregistered():
+    """RUN-LEDGER-0's method is locked: the denominator — one unsealed append-only line per admitted run, refused or
+    not, in a file of its own that joins the refusal log on run_id; exposure only. The shell's and the reader's
+    constants must equal the registered ones."""
+    import runledger as RLG
+    e = locked_entry("RUN-LEDGER-0", {
+        "the denominator, an observation": ("hyp", ("denominator", "an observation, never evidence", "cannot be told from", "whatever its outcome")),
+        "the line's fields": ("hyp", ("run_id (the refusal log's", "readbacks_checked and differed", "refusals (how many refusal records", "exit_code", "unix_ms_start and unix_ms_end")),
+        "the admitted runs, a separate file": ("hyp", ("court run", "presenter run", "ended at every exit", "the refusal log keeps only refusals", "refused in n of m runs")),
+        "one line per run, counts, join, isolation": ("succ", ("exactly one line", "exit_code equal to the process's exit status", "the court's own count", "refusals equal to the refusal records", "usage error", "only grows", "build/runs.log", "exit status and output are unchanged", "its own scratch file", "writes nothing")),
+        "no missing, extra or wrong lines; no mixing; no dependence": ("fail", ("without a line", "two lines for one run", "disagree with the run", "refusal records written into the ledger", "depends on the ledger", "rate read as a cause", "owner's ledger")),
+        "scope: admitted runs; the court's outcome; killed runs": ("lims", ("append no line", "court's outcome", "source-fenced", "killed from outside", "failed append", "not proof that a refusal cannot occur")),
+    })
+    rs = read(os.path.join(SHELL, "runledger.rs")).decode("utf-8")
+    keys = re.findall(r'\\"(\w+)\\":', src_span(rs, "fn line(", "\n}\n"))
+    if ('pub const ENV: &str = "VERDANDI_RUN_LEDGER";' not in rs or 'pub const DEFAULT_PATH: &str = "build/runs.log";' not in rs
+            or 'pub const LOG: &str = "RUN-LEDGER-0";' not in rs or tuple(keys) != RLG.KEYS
+            or (RLG.ENV, RLG.DEFAULT_PATH, RLG.LOG) != (RUNLEDGER_ENV, os.path.join("build", "runs.log"), "RUN-LEDGER-0")):
+        raise Red("the ledger's variable, default path, name or line keys are not the registered ones")
+    return ("RUN-LEDGER-0's method is locked (hash %s): the denominator — one unsealed, append-only line per admitted run "
+            "(a court run or a presenter run), refused or not, in its own file, joining the refusal log on run_id, with "
+            "the operation's own readback counts, its refusal count and its exit code; exposure only, never a cause; the "
+            "variable, default path and line keys in the shell and the reader equal the registered ones" % e["chain_hash"][:8])
+
+
+def _runledger_lines(path):
+    return read(path).decode("utf-8").splitlines() if os.path.exists(path) else []
+
+
+def runledger_bijection():
+    """One line per admitted run, executed on the mock court: the clean run and each of the six plants append exactly
+    one line, whose exit_code is the process's, whose counts are the court's own (the clean run's equal its raw
+    record's readback checks), whose refusals equal the refusal records carrying its run_id; a usage error appends
+    nothing to either file; the ledger only grows; without the variable the line goes to build/runs.log under the
+    working directory; an unwritable ledger is said and the run's exit status and output are unchanged."""
+    import refusallog as RL
+    import runledger as RLG
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    led, rlog = os.path.join(BUILD, "runledger-bijection.log"), os.path.join(BUILD, "runledger-bijection-refusals.log")
+    raw_out = os.path.join(BUILD, "runledger-clean-raw.json")
+    for f in (led, rlog, raw_out):
+        if os.path.exists(f):
+            os.remove(f)
+    env = dict(os.environ, **{RUNLEDGER_ENV: led, REFUSALLOG_ENV: rlog})
+    base = [SHELL_EXE, "presentexact-selftest", "--session", SESSIONWALK_DEMO, "--per-cell", "2"]
+    prev, clean_stdout = b"", None
+    for plant in [""] + list(RUNLEDGER_PLANTS):
+        before_r = len(_runledger_lines(rlog))
+        cp = subprocess.run(base + (["--plant", plant] if plant else ["--out", raw_out]), capture_output=True, text=True, cwd=ROOT, env=env)
+        now = read(led) if os.path.exists(led) else b""
+        if not now.startswith(prev):
+            raise Red("the ledger did not only grow: an earlier byte changed")
+        added = now[len(prev):].decode("utf-8").splitlines()
+        if len(added) != 1:
+            raise Red("PLANT %s: %d ledger line(s) for one run" % (plant or "none", len(added)))
+        line = json.loads(added[0])
+        new_refusals = [json.loads(x) for x in _runledger_lines(rlog)[before_r:]]
+        if RLG.problem(line) or line["exit_code"] != cp.returncode or (line["operation"], line["surface"]) != ("presentexact.court", "mock") \
+                or line["refusals"] != len(new_refusals) or any(r["run_id"] != line["run_id"] for r in new_refusals):
+            raise Red("PLANT %s: the line does not match the run (exit, operation, refusals or run_id)" % (plant or "none"))
+        if not plant:
+            with open(raw_out, encoding="utf-8") as fh:
+                checks = json.load(fh)["data"]["readback"]["checks"]
+            if cp.returncode != 0 or (line["readbacks_checked"], line["differed"], line["refusals"]) != (checks, 0, 0):
+                raise Red("the clean run's line is not the court's own count (%d readbacks), 0 differed, 0 refusals" % checks)
+            clean_stdout = cp.stdout
+        elif cp.returncode != 2 or (line["readbacks_checked"], line["differed"]) != RUNLEDGER_PLANTS[plant] or line["refusals"] != 1:
+            raise Red("PLANT %s: the line's counts %s are not the court's own %s" % (plant, (line["readbacks_checked"], line["differed"]), RUNLEDGER_PLANTS[plant]))
+        prev = now
+    runs, bad = RLG.read(led)
+    refusals, _ = RL.read(rlog)
+    if bad or len(runs) != 1 + len(RUNLEDGER_PLANTS) or RLG.join(runs, refusals):
+        raise Red("the ledger and the refusal log do not join one to one")
+    # a failure before the run begins appends nothing to either file
+    size = (len(read(led)), len(read(rlog)))
+    cp = subprocess.run([SHELL_EXE, "presentexact-selftest", "--per-cell", "2"], capture_output=True, text=True, cwd=ROOT, env=env)
+    if cp.returncode != 2 or (len(read(led)), len(read(rlog))) != size:
+        raise Red("a usage error appended a line: it is not an admitted run")
+    # the default path, and an unwritable ledger
+    cwd = os.path.join(BUILD, "runledger-cwd")
+    shutil.rmtree(cwd, ignore_errors=True)
+    os.makedirs(cwd)
+    env2 = {k: v for k, v in os.environ.items() if k not in (RUNLEDGER_ENV, REFUSALLOG_ENV)}
+    cp = subprocess.run(base + ["--root", ROOT + os.sep, "--plant", "readback"], capture_output=True, text=True, cwd=cwd, env=env2)
+    got, gbad = RLG.read(os.path.join(cwd, "build", "runs.log"))
+    shutil.rmtree(cwd, ignore_errors=True)
+    if cp.returncode != 2 or len(got) != 1 or gbad or got[0]["exit_code"] != 2:
+        raise Red("without the variable the line did not go to build/runs.log under the working directory")
+    cp = subprocess.run(base, capture_output=True, text=True, cwd=ROOT, env=dict(env, **{RUNLEDGER_ENV: BUILD}))
+    if cp.returncode != 0 or cp.stdout != clean_stdout or "SHELL-RUN-LEDGER-UNWRITTEN: " not in cp.stderr:
+        raise Red("an unwritable ledger changed the run's exit status or output, or was not said")
+    os.remove(raw_out)
+    return ("one line per admitted run, on the mock court: the clean run and each of the %d plants append exactly one line, "
+            "with the process's exit status, the court's own readback counts (the clean run's equal its raw record's), and "
+            "refusals equal to the refusal records carrying its run_id; a usage error appends nothing; the ledger only "
+            "grows; without the variable the line goes to build/runs.log under the working directory; an unwritable ledger "
+            "is said and the run's exit status and output are unchanged" % len(RUNLEDGER_PLANTS))
+
+
+def runledger_fence():
+    """Every admitted run begins where its operation begins and ends once before each exit, and nothing else writes or
+    reads the ledger: the court's two emission points begin just before the court and end with its outcome; the
+    presenter begins on entry and ends immediately before each of its seven exits with that exit's code; readbacks are
+    counted exactly where the court and the presenter count their own; the ledger only appends, never touches the
+    refusal log (nor the log it); nothing else names it; it is gitignored; the gate's variable points into
+    verify/build."""
+    rs = read(os.path.join(SHELL, "runledger.rs")).decode("utf-8")
+    for tok in REFUSALLOG_FORBIDDEN:
+        if tok in rs:
+            raise Red("the run ledger's writer contains %r: it may only append" % tok)
+    if (rs.count("OpenOptions::new().create(true).append(true).open(") != 1 or rs.count("std::env::var(") != 1
+            or "refusallog::record" in rs or "refusallog::refuse" in rs
+            or "runledger" in read(os.path.join(SHELL, "refusallog.rs")).decode("utf-8")):
+        raise Red("the ledger is not append-only, or the two files write into each other")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    if ('runledger::begin("presentexact.court", "mock"); // RUN-LEDGER-0: the court run begins\n                match presentexact::court(&mut surf, &inputs, per_cell) {\n                    Ok(ex) => {\n                        runledger::end(0);'
+            not in main_src or main_src.count("runledger::begin(") != 1 or main_src.count("runledger::end(") != 2):
+        raise Red("the selftest's court run does not begin just before the court and end with its outcome")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    win = src_span(tail, "pub fn presentexact_window(", "\n}\n")
+    if ('crate::runledger::begin("presentexact.court", "gdi"); // RUN-LEDGER-0: the court run begins\n    let result = crate::presentexact::court(&mut surf, &inputs, per_cell);' not in win
+            or "        Ok(ex) => {\n            crate::runledger::end(0);" not in win
+            or 'crate::refusallog::refuse(&ev, &format!("SHELL-{}", m));\n            crate::runledger::end(2);' not in win):
+        raise Red("the host window's court run does not begin just before the court and end with its outcome")
+    i_lock, i_why = tail.find("PRESENT-EXACT-0 LOCK: the conforming presenter (appended)"), tail.find("REFUSAL-WHY-0 (appended)")
+    pres = tail[i_lock:i_why]
+    show = src_span(pres, "pub fn show(", "\n}\n")
+    if not show.split("{", 1)[1].lstrip().startswith('crate::runledger::begin("show", "gdi");'):
+        raise Red("the presenter's run does not begin on entry")
+    exits = re.findall(r"\n( *)(?:crate::runledger::end\(([^;]*)\);\n\1)?std::process::exit\(([^;]*)\);", pres)
+    if len(exits) != 7 or any(e != x for _, e, x in exits) or pres.count("crate::runledger::end(") != 7:
+        raise Red("a presenter exit is not immediately preceded by the ledger's end with the same code")
+    px = read(os.path.join(SHELL, "presentexact.rs")).decode("utf-8")
+    sw = src_span(pres, "fn show_witness(", "\n}\n")
+    counted = []
+    for name in os.listdir(SHELL):
+        if name.endswith(".rs") and name != "runledger.rs":
+            t = read(os.path.join(SHELL, name)).decode("utf-8")
+            counted += re.findall(r"runledger::readback\(", t)
+            if "VERDANDI_RUN_LEDGER" in t or "runs.log" in t:
+                raise Red("shell/%s names the run ledger: nothing on the path may read it" % name)
+    if (len(counted) != 2 or "    st.checks += 1;\n    crate::runledger::readback(!exact);" not in sw
+            or "    rb.mismatched_bytes += bad;\n    crate::runledger::readback(bad != 0);" not in px):
+        raise Red("readbacks are counted somewhere other than where the court and the presenter count their own")
+    for name in os.listdir(os.path.join(ROOT, "verify")):
+        if name.endswith(".py") and name not in ("runledger.py", "verify.py"):
+            t = read(os.path.join(ROOT, "verify", name)).decode("utf-8")
+            if "runledger" in t or "RUN-LEDGER" in t or "runs.log" in t:
+                raise Red("verify/%s reads the run ledger: no rule may" % name)
+    gi = read(os.path.join(ROOT, ".gitignore")).decode("utf-8").splitlines()
+    if "*.log" not in gi or os.environ.get(RUNLEDGER_ENV) != GATE_RUN_LEDGER or os.path.dirname(GATE_RUN_LEDGER) != BUILD:
+        raise Red("the ledger is not gitignored, or the gate's own runs are not kept out of the owner's ledger")
+    return ("every admitted run begins where its operation begins and ends once before each exit: the court's two emission "
+            "points begin just before the court and end with its outcome; the presenter begins on entry and ends "
+            "immediately before each of its 7 exits with that exit's code; readbacks are counted exactly where the court "
+            "and the presenter count their own; the ledger only appends and the two files never write into each other; "
+            "nothing else names it; it is gitignored; the gate's variable points into verify/build")
+
+
+def runledger_reader():
+    """The reader validates, counts and joins, and writes nothing: the bijection ledger reads as seven runs that join
+    the refusal log one to one; a missing or extra key, a float, a boolean, more differed than checked, an end before
+    its start, a repeated run and a non-JSON line are each reported and not counted; a ledger line claiming a refusal the
+    log lacks and a refusal record with no ledger line are each reported by the join; the command prints and changes
+    nothing."""
+    import refusallog as RL
+    import runledger as RLG
+    led, rlog = os.path.join(BUILD, "runledger-bijection.log"), os.path.join(BUILD, "runledger-bijection-refusals.log")
+    runs, bad = RLG.read(led)
+    refusals, _ = RL.read(rlog)
+    t = {x["exit_code"]: x for x in RLG.tally(runs)}
+    if bad or RLG.join(runs, refusals) or t[0]["runs"] != 1 or t[2]["runs"] != len(RUNLEDGER_PLANTS) or t[2]["refused"] != len(RUNLEDGER_PLANTS):
+        raise Red("the reader did not count the bijection ledger as registered")
+    good = dict(runs[0])
+    scratch = os.path.join(BUILD, "runledger-reader.log")
+    # each wrong line has a run_id of its own, so each is reported for its own defect; the last repeats the first
+    wrong = [{k: v for k, v in good.items() if k != "surface"}, dict(good, extra=1), dict(good, differed=0.5),
+             dict(good, exit_code=True), dict(good, readbacks_checked=0, differed=1),
+             dict(good, unix_ms_end=good["unix_ms_start"] - 1)]
+    wrong = [dict(w, run_id="%s-%d" % (good["run_id"], i)) if "run_id" in w else w for i, w in enumerate(wrong)] + [good]
+    with open(scratch, "w", encoding="utf-8") as fh:
+        for r in [good] + wrong:
+            fh.write(json.dumps(r, separators=(",", ":"), ensure_ascii=False) + "\n")
+        fh.write("not json\n")
+    got, gbad = RLG.read(scratch)
+    os.remove(scratch)
+    if len(got) != 1 or [n for n, _ in gbad] != [2, 3, 4, 5, 6, 7, 8, 9]:
+        raise Red("the reader counted a malformed or repeated line, or missed one: %s" % gbad)
+    claims = dict(good, run_id="phantom", refusals=1)
+    orphan = dict(refusals[0], run_id="orphan", refusal_id="orphan/0")
+    j = RLG.join([good, claims], [orphan])
+    if len(j) != 2 or not any("phantom" in x for x in j) or not any("orphan" in x for x in j):
+        raise Red("the join did not report a claimed refusal the log lacks and a refusal with no ledger line")
+    before = (read(led), read(rlog))
+    cp = subprocess.run([sys.executable, os.path.join(ROOT, "verify", "runledger.py"), led, rlog], capture_output=True, text=True, cwd=ROOT)
+    if (cp.returncode != 0 or "%d run(s)" % (1 + len(RUNLEDGER_PLANTS)) not in cp.stdout or "join" in cp.stdout
+            or "not proof that a refusal cannot occur" not in cp.stdout or (read(led), read(rlog)) != before):
+        raise Red("the reader's command did not print the counts with the caveat, reported a false join, or changed a file")
+    src = read(os.path.join(ROOT, "verify", "runledger.py")).decode("utf-8")
+    for tok in (".write(", '"w"', "'w'", '"a"', "'a'", "os.remove", "unlink", "rename", "import requests", "urllib"):
+        if tok in src:
+            raise Red("the reader contains %r: it may only read" % tok)
+    return ("the reader validates, counts and joins, and writes nothing: the bijection ledger reads as %d runs joining the "
+            "refusal log one to one; malformed, inconsistent and repeated lines are reported and not counted; the join "
+            "reports a claimed refusal the log lacks and a refusal with no ledger line; the command prints the counts and "
+            "the caveat and changes nothing" % (1 + len(RUNLEDGER_PLANTS)))
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -5332,6 +5554,10 @@ def main() -> int:
     os.environ[REFUSALLOG_ENV] = GATE_REFUSAL_LOG
     if os.path.exists(GATE_REFUSAL_LOG):
         os.remove(GATE_REFUSAL_LOG)
+    # RUN-LEDGER-0: and its runs to the gate's own scratch ledger
+    os.environ[RUNLEDGER_ENV] = GATE_RUN_LEDGER
+    if os.path.exists(GATE_RUN_LEDGER):
+        os.remove(GATE_RUN_LEDGER)
     row("oracle-frozen", oracle_frozen)
     row("game-frozen", game_frozen)
     row("game-suites", game_suites)
@@ -5469,6 +5695,10 @@ def main() -> int:
     row("refusallog-bijection", refusallog_bijection)
     row("refusallog-fence", refusallog_fence)
     row("refusallog-reader", refusallog_reader)
+    row("runledger-preregistered", runledger_preregistered)
+    row("runledger-bijection", runledger_bijection)
+    row("runledger-fence", runledger_fence)
+    row("runledger-reader", runledger_reader)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

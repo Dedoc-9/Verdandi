@@ -192,7 +192,13 @@ readback in `show`) appends one unsealed JSON line to `build/refusals.log`: run,
 attribution token and context. A console line reports a refusal once. The log turns a recurring refusal into a count
 across runs (`python verify/refusallog.py`). It is an observation, never evidence: not sealed, not committed, read by
 no rule. The gate proves on the mock court that each refusal leaves exactly one record and each record one refusal.
-The refusal-attribution candidates are not in the log yet. Adding them is the next step.
+The refusal-attribution candidates are not in the log yet: they follow the run ledger below.
+
+### RUN-LEDGER-0 — the runs, refused or not · **landed** (`ecf3fdb9`)
+The refusal log's denominator: one unsealed line per court or presenter run, whatever its outcome, in its own file
+(`build/runs.log`), with the run's readback counts, its refusal count and its exit code, joined to the refusal log on
+`run_id`. A clean run is counted too, so a recurrence can be stated as "refused in N of M runs". It is an observation,
+not evidence, and it is kept out of the refusal log, which holds only refusals.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

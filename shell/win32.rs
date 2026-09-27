@@ -1589,6 +1589,7 @@ pub fn presentexact_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str,
     (surf.flush_fn)();
     println!("[presentexact] borderless window over the whole screen — leave it alone until it closes ({} samples + {} warm-up rounds; Alt+F4 aborts)",
              per_cell * 2, crate::presentexact::WARM_ROUNDS);
+    crate::runledger::begin("presentexact.court", "gdi"); // RUN-LEDGER-0: the court run begins
     let result = crate::presentexact::court(&mut surf, &inputs, per_cell);
     let alive = unsafe { IsWindow(hwnd) } != 0;
     if alive {
@@ -1596,6 +1597,7 @@ pub fn presentexact_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str,
     }
     match result {
         Ok(ex) => {
+            crate::runledger::end(0);
             for ln in crate::presentexact::summary(&ex) {
                 println!("{}", ln);
             }
@@ -1607,6 +1609,7 @@ pub fn presentexact_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str,
             // REFUSAL-LOG-0: the court's refusal is logged where it is emitted, then printed as before
             let (ev, m) = r.into_event("gdi");
             crate::refusallog::refuse(&ev, &format!("SHELL-{}", m));
+            crate::runledger::end(2);
             eprintln!("SHELL-PRESENTEXACT-DIAG: window_still_existed={} input_messages_seen={} last_input_msg=0x{:04X}",
                       alive, surf.inputs_seen, surf.last_input);
             std::process::exit(2);
@@ -1827,7 +1830,8 @@ pub fn presentexact_probe(inputs: Vec<FrameInput>, out: Option<String>) {
 // (0 if all were exact, 2 on a refusal). Esc or Alt+F4 closes it. It takes no clock and writes no record. LATENCY-0's
 // instrument stays a byte-exact prefix of this file, and `run` / `playback-window` stay the frozen half-size windows.
 // REFUSAL-LOG-0: each of its refusals prints through the logging primitive, and each differing readback, once counted,
-// leaves one line in the unsealed refusal log (shell/refusallog.rs) — an observation, not a record.
+// leaves one line in the unsealed refusal log (shell/refusallog.rs) — an observation, not a record. RUN-LEDGER-0: the
+// run begins on entry and every exit ends it with one line in the run ledger (shell/runledger.rs), refused or not.
 
 const WM_KEYDOWN: Uint = 0x0100;
 const VK_ESCAPE: Wparam = 0x1B;
@@ -1879,6 +1883,7 @@ fn show_witness(surf: &mut ExactGdiSurface, bgr: &[u8], k: usize, n: usize, fres
     let screen = surf.readback();
     let exact = matches!(&screen, Some(v) if v[..] == bgr[..]);
     st.checks += 1;
+    crate::runledger::readback(!exact); // RUN-LEDGER-0: counted where the presenter counts its own
     if !exact {
         st.differed += 1;
         // REFUSAL-LOG-0: every differing readback is one refusal-class event, one record (decided and counted above)
@@ -1912,6 +1917,7 @@ fn show_present(surf: &mut ExactGdiSurface, bgr: &[u8], k: usize, n: usize) {
         if unsafe { IsWindow(surf.hwnd) } != 0 {
             unsafe { DestroyWindow(surf.hwnd) };
         }
+        crate::runledger::end(2);
         std::process::exit(2);
     }
 }
@@ -1942,8 +1948,10 @@ fn show_setup(reason: &'static str, attribution: &'static str) -> crate::refusal
 }
 
 pub fn show(frames: Vec<Composed>, label: &str) {
+    crate::runledger::begin("show", "gdi"); // RUN-LEDGER-0: the presenter run begins; every exit below ends it
     if frames.is_empty() {
         crate::refusallog::refuse(&show_setup("SHELL-SHOW-EMPTY", "show.input"), "SHELL-SHOW-EMPTY: there is nothing to show");
+        crate::runledger::end(2);
         std::process::exit(2);
     }
     // the blit-hash law on every frame, before any window: hand the OS only bytes that carry the kernel's composite
@@ -1952,6 +1960,7 @@ pub fn show(frames: Vec<Composed>, label: &str) {
         if !blit_roundtrip_ok(&c.composite) {
             crate::refusallog::refuse(&show_event(("SHELL-BLIT-REFUSE", "render.blit-law", vec![("frame", crate::refusallog::V::N(i as u64))])),
                                       &format!("SHELL-BLIT-REFUSE: frame {} did not round-trip; not presenting", i));
+            crate::runledger::end(2);
             std::process::exit(2);
         }
     }
@@ -1961,12 +1970,14 @@ pub fn show(frames: Vec<Composed>, label: &str) {
         None => {
             crate::refusallog::refuse(&show_setup("SHELL-NO-DWM", "surface.compositor"),
                                       "SHELL-NO-DWM: dwmapi.dll or DwmFlush is unavailable; cannot compose and read back");
+            crate::runledger::end(2);
             std::process::exit(2);
         }
     };
     let hwnd = show_window("VerdandiShow", &format!("Verðandi — {}", label));
     if hwnd.is_null() {
         crate::refusallog::refuse(&show_setup("SHELL-NO-WINDOW", "window.create"), "SHELL-NO-WINDOW: CreateWindowExW failed");
+        crate::runledger::end(2);
         std::process::exit(2);
     }
     unsafe { SetForegroundWindow(hwnd) };
@@ -1981,6 +1992,7 @@ pub fn show(frames: Vec<Composed>, label: &str) {
                                   &format!("SHELL-SHOW-GEOMETRY: client {}x{} at ({},{}), screen logical {}x{} physical {}x{}; PRESENTATION-CHOICE-0 needs the whole 1920x1080 frame at (0,0) on a 1920x1080 screen at 100%",
                                            g[0], g[1], g[2], g[3], g[4], g[5], g[6], g[7]));
         unsafe { DestroyWindow(hwnd) };
+        crate::runledger::end(2);
         std::process::exit(2);
     }
     let n = frames.len();
@@ -2018,6 +2030,7 @@ pub fn show(frames: Vec<Composed>, label: &str) {
     }
     println!("[show] closed: {} screen readbacks, {} differed{}", st.checks, st.differed,
              if st.differed > 0 { " — the certified picture was not what the screen showed throughout" } else { "" });
+    crate::runledger::end(if st.differed > 0 { 3 } else { 0 });
     std::process::exit(if st.differed > 0 { 3 } else { 0 });
 }
 

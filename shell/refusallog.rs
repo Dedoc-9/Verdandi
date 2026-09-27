@@ -51,13 +51,18 @@ pub struct Event {
 static SEQ: AtomicU64 = AtomicU64::new(0);
 static RUN: OnceLock<String> = OnceLock::new();
 
-fn unix_ms() -> u64 {
+pub(crate) fn unix_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
 }
 
 /// This process's run identity: its start in unix milliseconds and its process id, in hex.
 pub fn run_id() -> &'static str {
     RUN.get_or_init(|| format!("{:x}-{:x}", unix_ms(), std::process::id()))
+}
+
+/// How many refusal records this run has emitted (appended or attempted): RUN-LEDGER-0's join count.
+pub fn emitted() -> u64 {
+    SEQ.load(Ordering::SeqCst)
 }
 
 /// The stable code at the head of a console refusal message ("PRESENTEXACT-READBACK: …" -> "PRESENTEXACT-READBACK").
@@ -67,7 +72,7 @@ pub fn code_of(message: &str) -> String {
 }
 
 /// JSON string escaping as Python's json.dumps(ensure_ascii=False) does it, so the digest can be recomputed there.
-fn esc(s: &str) -> String {
+pub(crate) fn esc(s: &str) -> String {
     let mut out = String::from("\"");
     for ch in s.chars() {
         match ch {
