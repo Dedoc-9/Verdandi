@@ -1,0 +1,269 @@
+{
+ "name": "verdandi-allocreuse",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell allocreuse-window (shell/allocreuse.rs court over LATENCY-1R's GDI surface in FRAME-SPLIT-0's window) + verify/allocreuse.py",
+  "surface": "shell/allocreuse.rs court over the GDI window (StretchDIBits + DwmFlush, QPC) surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790484035,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "ALLOC-REUSE-0",
+   "chain_hash": "aaaada378db1ba2b7a93b5c44052edf24827e88d5806ef4f28b53f400d5dd188"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the shell's production frame with its buffers allocated every frame and allocated once, on host DANIELDILLBERG, envelope and split per variant, locked phase origin, 300 samples per cell over 4 frames",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "a seat or an adopted change: the production path still allocates; adopting reuse would be its own change and court",
+  "that allocation cost is the same on another allocator, OS, host or buffer size",
+  "a per-phase verdict: the per-phase deltas are reported, the rule is on the envelope only",
+  "input-to-photon latency, or a comparison with any emit p99"
+ ],
+ "data": {
+  "variants": {
+   "fresh": {
+    "envelope": {
+     "render_us": {
+      "p50": 17294,
+      "p95": 18897,
+      "p99": 19380,
+      "max": 19805
+     },
+     "present_us": {
+      "p50": 8290,
+      "p95": 11034,
+      "p99": 12411,
+      "max": 13287
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 63,
+       "p95": 151,
+       "p99": 167,
+       "max": 240
+      },
+      "frame": {
+       "p50": 3741,
+       "p95": 4798,
+       "p99": 5204,
+       "max": 5520
+      },
+      "floor_swizzle": {
+       "p50": 64,
+       "p95": 135,
+       "p99": 185,
+       "max": 210
+      },
+      "emit": {
+       "p50": 3782,
+       "p95": 4561,
+       "p99": 4944,
+       "max": 5298
+      },
+      "hud": {
+       "p50": 58,
+       "p95": 101,
+       "p99": 142,
+       "max": 176
+      },
+      "bgr": {
+       "p50": 1869,
+       "p95": 2101,
+       "p99": 2517,
+       "max": 2899
+      },
+      "blit": {
+       "p50": 7866,
+       "p95": 8048,
+       "p99": 8447,
+       "max": 8586
+      }
+     },
+     "render_us": {
+      "p50": 17069,
+      "p95": 18903,
+      "p99": 19387,
+      "max": 19592
+     },
+     "present_us": {
+      "p50": 8113,
+      "p95": 10959,
+      "p99": 11775,
+      "max": 12685
+     },
+     "samples": 300
+    }
+   },
+   "reused": {
+    "envelope": {
+     "render_us": {
+      "p50": 15705,
+      "p95": 17215,
+      "p99": 17671,
+      "max": 18154
+     },
+     "present_us": {
+      "p50": 9639,
+      "p95": 12394,
+      "p99": 13366,
+      "max": 13762
+     },
+     "samples": 300
+    },
+    "split": {
+     "phases_us": {
+      "strips": {
+       "p50": 56,
+       "p95": 83,
+       "p99": 109,
+       "max": 421
+      },
+      "frame": {
+       "p50": 3678,
+       "p95": 4771,
+       "p99": 5047,
+       "max": 5127
+      },
+      "floor_swizzle": {
+       "p50": 61,
+       "p95": 141,
+       "p99": 151,
+       "max": 187
+      },
+      "emit": {
+       "p50": 3110,
+       "p95": 3928,
+       "p99": 4177,
+       "max": 4378
+      },
+      "hud": {
+       "p50": 55,
+       "p95": 125,
+       "p99": 137,
+       "max": 147
+      },
+      "bgr": {
+       "p50": 1023,
+       "p95": 1649,
+       "p99": 1752,
+       "max": 1809
+      },
+      "blit": {
+       "p50": 7789,
+       "p95": 7900,
+       "p99": 8111,
+       "max": 9401
+      }
+     },
+     "render_us": {
+      "p50": 15761,
+      "p95": 17334,
+      "p99": 17704,
+      "max": 18544
+     },
+     "present_us": {
+      "p50": 9378,
+      "p95": 12831,
+      "p99": 13875,
+      "max": 14692
+     },
+     "samples": 300
+    }
+   }
+  },
+  "phases": [
+   "strips",
+   "frame",
+   "floor_swizzle",
+   "emit",
+   "hud",
+   "bgr",
+   "blit"
+  ],
+  "warm_rounds": 10,
+  "refresh_period_us": 13773,
+  "sequence_frames": 4,
+  "samples_per_cell": 300,
+  "production_threads": 8,
+  "phase_origin": "locked",
+  "derived": {
+   "fresh": {
+    "envelope_p50_us": 17294,
+    "envelope_p99_us": 19380,
+    "phase_p50_us": {
+     "strips": 63,
+     "frame": 3741,
+     "floor_swizzle": 64,
+     "emit": 3782,
+     "hud": 58,
+     "bgr": 1869,
+     "blit": 7866
+    },
+    "unchanged_p50_sum_us": 7988,
+    "tax_p50_us": -225,
+    "abs_tax_p50_permille_of_envelope": 13
+   },
+   "reused": {
+    "envelope_p50_us": 15705,
+    "envelope_p99_us": 17671,
+    "phase_p50_us": {
+     "strips": 56,
+     "frame": 3678,
+     "floor_swizzle": 61,
+     "emit": 3110,
+     "hud": 55,
+     "bgr": 1023,
+     "blit": 7789
+    },
+    "unchanged_p50_sum_us": 7905,
+    "tax_p50_us": 56,
+    "abs_tax_p50_permille_of_envelope": 3
+   },
+   "deltas": {
+    "envelope_delta_p50_us": -1589,
+    "envelope_delta_permille_of_fresh": 91,
+    "envelope_delta_p99_us": -1709,
+    "unchanged_delta_p50_us": -83,
+    "unchanged_delta_permille_of_fresh": 10,
+    "phase_delta_p50_us": {
+     "strips": -7,
+     "frame": -63,
+     "floor_swizzle": -3,
+     "emit": -672,
+     "hud": -3,
+     "bgr": -846,
+     "blit": -77
+    }
+   }
+  },
+  "rule_permille": {
+   "void_tax": 100,
+   "confounded": 50,
+   "material": 50
+  }
+ },
+ "reading": "ALLOC-REUSE-0 on host DANIELDILLBERG (300 samples per cell). Envelope p50 fresh 17294 us, reused 15705 us (delta -1589 us, 91 permille); the phases whose allocation does not change moved 10 permille. Reading: ALLOCATION MATERIAL (reuse cheaper). Per-phase p50 deltas (reused - fresh, us): strips -7, frame -63, floor_swizzle -3, emit -672, hud -3, bgr -846, blit -77 — reported, not ruled on. A diagnostic: no seat, no change to the production path; not input-to-photon.",
+ "chain_hash": "5bcf9245eb49fd271d75166d8d3ad1839c3d82d064eba084ff8c1ed45c6c6123"
+}
