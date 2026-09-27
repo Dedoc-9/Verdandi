@@ -50,6 +50,9 @@ mod presentstretch;
 #[allow(dead_code)]
 #[path = "allocreuse.rs"]
 mod allocreuse;
+#[allow(dead_code)]
+#[path = "allocreuse1.rs"]
+mod allocreuse1;
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -425,6 +428,102 @@ fn main() {
                         let _ = (&inputs, per_cell, &out);
                         refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run this court in the window");
                     }
+                }
+            }
+        }
+        "loop-equiv" => {
+            // ALLOC-REUSE-1's correctness court (headless, no clock): one persistent-buffer loop renderer, poisoned
+            // first, renders every case in three orders; every render must equal the fresh path byte for byte, the
+            // corpus's goldens must reproduce, and no buffer may be replaced. Cases: a tab-separated file of
+            // `label level tiles camera golden_frame golden_pixels` (a golden of `-` is none), plus a sealed session.
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let mut cases: Vec<allocreuse1::EquivCase> = Vec::new();
+            if let Some(path) = opt("--cases") {
+                let text = String::from_utf8(read(&path)).unwrap_or_else(|_| refuse("USAGE", "the cases file is not UTF-8"));
+                for ln in text.lines().filter(|l| !l.trim().is_empty()) {
+                    let f: Vec<&str> = ln.split('\t').collect();
+                    if f.len() != 6 {
+                        refuse("USAGE", &format!("a case line needs 6 tab-separated fields: {}", ln));
+                    }
+                    let cam = parse_camera(f[3]).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m));
+                    let scene = present::scene_of(&read(f[1]), &read(f[2]), cam).unwrap_or_else(|Refusal(m)| refuse("INVALID-SCENE", &m));
+                    let g = |x: &str| if x == "-" { None } else { Some(x.to_string()) };
+                    cases.push(allocreuse1::EquivCase { label: f[0].to_string(), scene, golden_frame: g(f[4]), golden_pixels: g(f[5]) });
+                }
+            }
+            if let Some(session) = opt("--session") {
+                let root = opt("--root").unwrap_or_default();
+                for (i, (lv, tl, cam, w)) in playback::frame_inputs(&session, &root).into_iter().enumerate() {
+                    let scene = present::scene_of(&lv, &tl, cam).unwrap_or_else(|Refusal(m)| refuse("INVALID-SCENE", &m));
+                    cases.push(allocreuse1::EquivCase { label: format!("session:{}", i), scene, golden_frame: Some(w), golden_pixels: None });
+                }
+            }
+            let plant = opt("--plant").unwrap_or_default();
+            match allocreuse1::loop_equiv(&cases, &plant) {
+                Ok(r) => {
+                    for ln in &r.lines {
+                        println!("{}", ln);
+                    }
+                    println!("loop-equiv OK cases {} goldens {} orders 3 renders {} buffers persistent", r.cases, r.goldens, r.renders);
+                }
+                Err(m) => refuse("LOOP", &m),
+            }
+        }
+        "allocreuse1-selftest" | "allocreuse1-window" => {
+            // ALLOC-REUSE-1's performance court: the fresh reference and the persistent-buffer render-loop entry,
+            // driven headless through the mock surface (`-selftest`, what the gate runs) or the host window
+            // (`-window`, window build only). Plants (selftest): witness, close, persist.
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            let root = opt("--root").unwrap_or_default();
+            let per_cell = opt("--per-cell").and_then(|v| v.parse().ok()).unwrap_or(allocreuse1::DEFAULT_PER_CELL);
+            let out = opt("--out");
+            let mut inputs: Vec<latency1r::FrameInput> = playback::frame_inputs(&session, &root)
+                .into_iter()
+                .map(|(lv, tl, cam, w)| latency1r::FrameInput {
+                    scene: present::scene_of(&lv, &tl, cam).unwrap_or_else(|Refusal(m)| refuse("INVALID-SCENE", &m)),
+                    witness: w,
+                })
+                .collect();
+            let plant = opt("--plant").unwrap_or_default();
+            if plant == "witness" {
+                if let Some(f) = inputs.first_mut() {
+                    let flipped = if f.witness.starts_with('0') { "1" } else { "0" };
+                    f.witness = format!("{}{}", flipped, &f.witness[1..]);
+                }
+            }
+            let close_after = if plant == "close" { Some(5) } else { None };
+            if args[1] == "allocreuse1-selftest" {
+                let mut surf = latency1r::MockSurface::new(13_333, 1, close_after);
+                match allocreuse1::court(&mut surf, &inputs, per_cell, plant == "persist") {
+                    Ok(ad) => {
+                        for ln in allocreuse1::summary(&ad) {
+                            println!("{}", ln);
+                        }
+                        if let Some(o) = out {
+                            fs::write(&o, allocreuse1::raw_record("gate-mock", "mock", &ad, 0))
+                                .unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", o, e)));
+                        }
+                        println!("allocreuse1 court OK");
+                    }
+                    Err(m) => refuse("ALLOCREUSE1", &m),
+                }
+            } else {
+                #[cfg(all(target_os = "windows", shell_window))]
+                {
+                    let host = opt("--host").unwrap_or_else(|| "unnamed".to_string());
+                    win32::allocreuse1_window(inputs, per_cell, &host, out);
+                }
+                #[cfg(not(all(target_os = "windows", shell_window)))]
+                {
+                    let _ = (&inputs, per_cell, &out);
+                    refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run the ALLOC-REUSE-1 court in the window");
                 }
             }
         }

@@ -186,3 +186,78 @@ pub fn arm_composite_reuse_marked<M: Marks>(scene: &Scene, b: &mut ReuseBufs, m:
     hud::overlay(scene, &b.strips, &mut b.pixels);
     m.mark(); // HUD
 }
+
+/// ALLOC-REUSE-1: the render-loop entry, a persistent-buffer renderer for any loop that renders once per presented
+/// frame. It makes `fast::render`'s calls in `fast::render`'s order (the strips, the index frame, the floor swizzle, the
+/// threaded pixel pass at `PROD_THREADS`) and then the HUD overlay, into four buffers it allocates once in `new()` and
+/// overwrites on every render; `blit()` is `to_blit`'s transform into its own BGR buffer. Only the floor swizzle, which
+/// is `fast::blocked_floor`'s own small buffer (fast.rs is untouched), is still allocated per render. It is a CANDIDATE
+/// until ALLOC-REUSE-1 reads ADOPT on a run and its confirmation. The fresh path (`compose_frame`, `arm_composite`,
+/// `fast::render`, `to_blit`) stays the frozen reference and differential oracle and is never rewritten. No shipped
+/// window uses this entry: `run` renders once, and `playback-window` pre-renders frames that must own their buffers.
+pub struct LoopRenderer {
+    pub(crate) b: ReuseBufs,
+    renders: u64,
+}
+
+impl LoopRenderer {
+    pub fn new() -> LoopRenderer {
+        LoopRenderer { b: ReuseBufs::new(), renders: 0 }
+    }
+
+    /// The viewport: the strips, the index frame, the floor swizzle and the threaded pixel pass, in `fast::render`'s
+    /// order, into the persistent buffers. The pixels hold the viewport (no HUD yet).
+    pub fn viewport(&mut self, scene: &Scene) -> &[u8] {
+        scene.strips(&mut self.b.strips);
+        scene.frame(&self.b.strips, &mut self.b.frame);
+        let floor = fast::blocked_floor(&scene.floor);
+        fast::emit_threaded(scene, &self.b.strips, &self.b.frame, &mut self.b.pixels, &floor, fast::PROD_THREADS);
+        self.renders += 1;
+        &self.b.pixels
+    }
+
+    /// The HUD overlay onto the viewport just rendered: the pixels become the composite.
+    pub fn overlay(&mut self, scene: &Scene) -> &[u8] {
+        hud::overlay(scene, &self.b.strips, &mut self.b.pixels);
+        &self.b.pixels
+    }
+
+    /// The production entry: the viewport, then the HUD. Its composite is `arm_composite(scene, Arm::Production)`'s.
+    pub fn render(&mut self, scene: &Scene) -> &[u8] {
+        self.viewport(scene);
+        self.overlay(scene)
+    }
+
+    /// The exact bytes the GDI blit receives, written into the persistent BGR buffer (`to_blit`'s transform).
+    pub fn blit(&mut self) -> &[u8] {
+        to_blit_into(&self.b.pixels, &mut self.b.bgr);
+        &self.b.bgr
+    }
+
+    pub fn composite(&self) -> &[u8] {
+        &self.b.pixels
+    }
+
+    pub fn index_frame(&self) -> &[u8] {
+        &self.b.frame
+    }
+
+    pub fn bgr(&self) -> &[u8] {
+        &self.b.bgr
+    }
+
+    pub fn renders(&self) -> u64 {
+        self.renders
+    }
+
+    /// Each persistent buffer's address and capacity. Equal before and after a render iff no buffer was replaced.
+    /// Addresses are process-local: they are compared, never recorded.
+    pub fn identity(&self) -> [(usize, usize); 4] {
+        [
+            (self.b.strips.as_ptr() as usize, self.b.strips.capacity()),
+            (self.b.frame.as_ptr() as usize, self.b.frame.capacity()),
+            (self.b.pixels.as_ptr() as usize, self.b.pixels.capacity()),
+            (self.b.bgr.as_ptr() as usize, self.b.bgr.capacity()),
+        ]
+    }
+}

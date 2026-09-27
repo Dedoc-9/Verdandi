@@ -187,7 +187,9 @@ PARTIALLY ABSORBED (1–499‰) at exactly zero, so the locked regime's label fl
 delta while its magnitude (under 1% propagated) held. `PRESENT-STRETCH-0`'s confirmation added two more cases at the
 50‰ confound bound. `HALFTONE`'s label flipped from MODE MATERIAL to CONFOUNDED on a non-blit movement of 53‰, and
 `COLORONCOLOR` passed the same bound at 48‰. Both happened in a run where every phase was slower than in the first
-(the default's blit went from 7.3 to 11.6 ms). None of these statistics is wrong; each is coarser than its
+(the default's blit went from 7.3 to 11.6 ms). ALLOC-REUSE-1 takes this ghost's remedies before its number: 1000 samples
+per cell (p99 is the 10th-largest sample, with the 12 largest reported beside it), a same-run comparator, a declared
+adoption margin, and HOST-STATE-0's snapshots beside each run. None of these statistics is wrong; each is coarser than its
 precision suggests, and the medians across repeated runs deserve more weight than any single tail or label.
 
 **Exorcism.** For a tail-sensitive verdict, raise N or report the number of samples beyond the threshold beside the
@@ -222,12 +224,30 @@ confirmation, and it stays unresolved.
 
 ---
 
+## G12 — the render-loop courts measure a loop the shipped shell does not run · ESTABLISHED (read from the code)
+
+LATENCY-1R, FRAME-SPLIT-0, PRESENT-SCALE-0, PRESENT-STRETCH-0 and ALLOC-REUSE-0 all time a loop that renders a frame and
+then presents it, sample after sample. The shipped shell has no such loop. `run` renders one frame and presents it
+until the window closes. `playback-window` renders every frame and every blit before its window opens, then presents
+the stored bytes. So the courts' "production frame" is the production *render* inside a *modelled* loop: the loop a
+live, authorable window will need, not one that ships today. Their numbers stand as measurements of that model. They
+are not measurements of `run` or `playback-window`, whose present loops do no rendering at all.
+
+This came to light before ALLOC-REUSE-1 was preregistered. Adopting reuse "in the production path" had nothing to act
+on, so what that court can adopt is an entry contract: the renderer a future live loop must enter.
+
+**Exorcism.** The live-loop rung (ROADMAP's interactive capture) will make the modelled loop a shipped one, and its own
+court will measure it. Until then, read "the shell's frame" in these courts as "the render-inclusive frame of the
+modelled loop".
+
+---
+
 ## The disposition
 
 None of these ghosts is load-bearing for a claim the program actually makes. G1 and G3 are execution refinements
 with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured and reproduced (twice), and
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
-and not a faithful scaling); G4, G5, G6, G9 and G10 are caveats a careful reader must carry, recorded so they are carried on
+and not a faithful scaling); G4, G5, G6, G9, G10 and G12 are caveats a careful reader must carry, recorded so they are carried on
 purpose.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously

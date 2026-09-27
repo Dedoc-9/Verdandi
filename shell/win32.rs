@@ -1331,3 +1331,43 @@ pub fn allocreuse_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, o
         }
     }
 }
+
+// ================================================================== ALLOC-REUSE-1 (appended)
+// ALLOC-REUSE-1's adoption court runs in FRAME-SPLIT-0's window over LATENCY-1R's GDI surface, unchanged (as
+// ALLOC-REUSE-0 did): the fresh reference and the persistent-buffer render-loop entry, envelopes only. No shipped
+// window renders through the loop entry. LATENCY-0's instrument above stays a byte-exact prefix.
+
+pub fn allocreuse1_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, out: Option<String>) {
+    let (flush_fn, freq) = court_prelude("ALLOC-REUSE-1");
+    // FRAME-SPLIT-0's window, unchanged: the same outer size and default placement, LATENCY-1R's GDI surface
+    let hwnd = court_window("VerdandiAllocReuse1", "Verðandi — ALLOC-REUSE-1", CW_USEDEFAULT, CW_USEDEFAULT,
+                            (W as i32) / 2 + 16, (H as i32) / 2 + 39);
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    let mut surf = GdiSurface { hwnd, header: court_header(), flush_fn, freq, last_input: 0, inputs_seen: 0 };
+    println!("[allocreuse1] window open — leave it alone until it closes ({} samples + {} warm-up rounds)",
+             per_cell * 2, crate::allocreuse1::WARM_ROUNDS);
+    let result = crate::allocreuse1::court(&mut surf, &inputs, per_cell, false);
+    let alive = unsafe { IsWindow(hwnd) } != 0;
+    if alive {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    match result {
+        Ok(ad) => {
+            for ln in crate::allocreuse1::summary(&ad) {
+                println!("{}", ln);
+            }
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+            let raw = crate::allocreuse1::raw_record(host, "GDI window (StretchDIBits + DwmFlush, QPC)", &ad, now);
+            write_raw(out.unwrap_or_else(|| format!("verify/build/allocreuse1-raw-{}.json", host)), raw, "allocreuse1.py");
+        }
+        Err(m) => {
+            eprintln!("SHELL-{}", m);
+            eprintln!("SHELL-ALLOCREUSE1-DIAG: window_still_existed={} input_messages_seen={} last_input_msg=0x{:04X}",
+                      alive, surf.inputs_seen, surf.last_input);
+            std::process::exit(2);
+        }
+    }
+}

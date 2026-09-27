@@ -52,8 +52,12 @@ over the mock, and the fence that keeps the marked mirror on fast::render's call
 same frame presented into a half-size and a full-size client area, the destination the only variable — locked method,
 the diagnostic attribution rule, the court over the mock with a clamped-geometry plant, and the fence), presentstretch
 (PRESENT-STRETCH-0: the half-size blit under three GDI stretch modes, the mode the only variable), allocreuse
-(ALLOC-REUSE-0: the frame with its buffers allocated every frame vs once, the lifetime the only variable), and — in the
-oracle stage — oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
+(ALLOC-REUSE-0: the frame with its buffers allocated every frame vs once, the lifetime the only variable), allocreuse1
+(ALLOC-REUSE-1: the persistent-buffer render-loop entry's adoption court — correctness first over the corpus, the
+adversarial cameras and the sealed session from poisoned buffers in three orders; the same-run p99 rule; the fence that
+pins the fresh reference and keeps the entry out of every shipped window), hoststate (HOST-STATE-0: the host's state
+recorded beside a court, never controlled and never read by a rule), and — in the oracle stage — oracle-d0 (Urðr's own
+statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
 
@@ -4123,6 +4127,390 @@ def allocreuse_fence():
             "every sample; LATENCY-0's instrument is still a byte-exact prefix")
 
 
+# ------------------------------------------------------------------ ALLOC-REUSE-1 and HOST-STATE-0
+# the fresh reference's source, pinned: ALLOC-REUSE-1 keeps it as the frozen differential oracle, never rewritten
+FRESH_REFERENCE_SHA256 = {
+    ("kernel/fast.rs", "pub fn render(scene: &Scene)"): "6f9b5c0b7fb32a06cd4cdb2da06921908943a20032b842b40411c75c775e41bf",
+    ("shell/present.rs", "pub fn arm_composite(scene"): "b8d57e860fe3d9ef6d27b9f5ac8e273e4b137137438f4e87f410cc02e411a118",
+    ("shell/present.rs", "pub fn to_blit(rgb"): "35596a52318218c937380673fabbeb4e1aa4b08710efa7537919f9b4b1fa08cd",
+    ("shell/present.rs", "pub fn compose_frame("): "a353608befb32a4af06ca7a4bfc816e5c62bf1884bd2dad755acb3fb9f407446",
+}
+# HOST-STATE-0 records and never controls: none of these may appear in its source
+HOSTSTATE_FORBIDDEN = ("SetPriorityClass", "SetProcessAffinityMask", "SetThreadPriority", "SetThreadAffinityMask",
+                       "SetThreadExecutionState", "PowerSetActiveScheme", "SetSystemPowerState", "SetProcessPriorityBoost",
+                       "timeBeginPeriod", "NtSetTimerResolution", "SetProcessWorkingSetSize", "/setactive", "/change",
+                       "/hibernate", "open(", ".write(")
+
+
+def allocreuse1_preregistered():
+    """ALLOC-REUSE-1's method is locked before any host number: an entry contract (no shipped window changes), the fresh
+    path the frozen reference, correctness first over corpus + adversarial + session from poisoned buffers in three
+    orders, then the same-run ABBA p99 rule with its 50 permille adoption margin, ADOPT only when the run and --confirm
+    both pass. The code's constants must equal the registered ones."""
+    e = locked_entry("ALLOC-REUSE-1", {
+        "an entry contract, not a shipped-window change": ("hyp", ("entry contract", "run renders once", "playback-window pre-renders", "never deleted or rewritten")),
+        "the fresh path is the frozen reference": ("hyp", ("frozen reference and differential oracle",)),
+        "correctness first: corpus, adversarial, session, poisoned, three orders": ("succ", ("correctness first", "poisoned", "adversarial witness cameras", "three orders", "byte for byte", "no buffer replaced")),
+        "same-run ABBA, warm-up, 1000 per cell": ("succ", ("interleaved abba in the same run", "10 warm-up rounds", "1000 samples per cell")),
+        "the p99 rule and its adoption margin": ("succ", ("p99(reused) <= 950 permille x p99(fresh)", "adoption margin", "not a measurement uncertainty", "adopt iff the run and its --confirm run both read performance pass")),
+        "what ADOPT and REJECT do": ("succ", ("call-site fence", "unused candidate")),
+        "no p50, cross-run or one-run decision; no shipped claim": ("fail", ("off the p50s", "sealed in another run", "shipped window got faster", "deleting or rewriting the fresh reference")),
+        "--confirm and the LATENCY-0 prefix": ("fail", ("--confirm", "byte-exact prefix")),
+        "scope: a loop contract, the tail shown, host state never read": ("lims", ("entry contract for a render loop", "10th-largest sample", "host-state-0", "never read by the rule")),
+    })
+    import allocreuse1 as AR1
+    rs = read(os.path.join(SHELL, "allocreuse1.rs")).decode("utf-8")
+    for const in ("pub const WARM_ROUNDS: usize = 10;", "pub const DEFAULT_PER_CELL: usize = 1000;", "pub const TAIL: usize = 12;"):
+        if const not in rs:
+            raise Red("the court's constants are not the registered ones: %s is missing" % const)
+    if (AR1.REQUIRED_PER_CELL, AR1.ADOPT_P99_PERMILLE, AR1.WARM_ROUNDS, AR1.TAIL, AR1.VARIANTS) != (1000, 950, 10, 12, ("fresh", "reused")):
+        raise Red("the sealer's constants are not the registered ones")
+    return ("ALLOC-REUSE-1's method is locked before any host number: an entry contract for a render loop (no shipped window "
+            "changes; the fresh path stays the frozen reference); correctness first over the corpus, the adversarial cameras "
+            "and the sealed session from poisoned buffers in three orders; then fresh and reused ABBA in the same run, 10 "
+            "warm-up rounds, 1000 samples per cell; PERFORMANCE PASS iff p99(reused) <= 950 permille of p99(fresh) (an "
+            "adoption margin, not an uncertainty); ADOPT only if the run and --confirm both pass; the code's constants equal "
+            "the registered ones; hash-locked %s" % e["chain_hash"][:8])
+
+
+def _loop_cases_file() -> tuple[str, dict]:
+    """The correctness court's cases: every corpus scene x its tile sets (with the goldens) and the adversarial cameras."""
+    c = corpus()
+    goldens = {}
+    for _name, sc in c["scenes"].items():
+        x, z, f = sc["camera"]
+        for tiles, g in sc["witnesses"].items():
+            goldens[(sc["level"], tiles, "%d,%d,%s" % (x, z, f))] = (g["frame"], g["pixels"])
+    lines = []
+    for (lvl, tiles, cam) in _g1_cases():
+        gf, gp = goldens.get((lvl, tiles, cam), ("-", "-"))
+        lines.append("\t".join(["%s/%s@%s" % (lvl, tiles, cam), os.path.join(ORACLE, "levels", lvl + ".lvl"),
+                                os.path.join(ORACLE, "tiles", tiles + ".tiles"), cam, gf, gp]))
+    path = os.path.join(BUILD, "loop-equiv-cases.tsv")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+    return path, goldens
+
+
+def allocreuse1_equiv():
+    """ALLOC-REUSE-1's correctness court: one LoopRenderer, its byte buffers poisoned first, renders every corpus scene x
+    tile set (goldens), every adversarial camera and every sealed session frame, forward, reverse and zigzag; each render
+    equals the fresh reference byte for byte and no buffer is replaced. PLANTS: a renderer that skips the pixel pass on
+    alternate renders (stale pixels) is caught; a replaced buffer is caught."""
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    path, goldens = _loop_cases_file()
+    n_file = len(open(path, encoding="utf-8").read().strip().splitlines())
+    base = [SHELL_EXE, "loop-equiv", "--cases", path, "--session", SESSIONWALK_DEMO]
+    cp = subprocess.run(base, capture_output=True, text=True, cwd=ROOT)
+    m = re.search(r"loop-equiv OK cases (\d+) goldens (\d+) orders 3 renders (\d+) buffers persistent", cp.stdout)
+    if cp.returncode != 0 or not m:
+        raise Red("the loop renderer is not byte-identical to the fresh path: " + (cp.stderr.strip() or cp.stdout.strip())[-300:])
+    cases, gold, renders = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    session_lines = [ln for ln in cp.stdout.splitlines() if ln.startswith("case session:")]
+    if cases != n_file + len(session_lines) or not session_lines or renders != 3 * cases:
+        raise Red("the correctness court did not render every case in all three orders")
+    corpus_lines = 0
+    for ln in cp.stdout.splitlines():
+        parts = ln.split()
+        if len(parts) == 6 and parts[0] == "case" and not parts[1].startswith("session:"):
+            lvl, rest = parts[1].split("/", 1)
+            tiles, cam = rest.split("@")
+            g = goldens.get((lvl, tiles, cam))
+            if g is not None:
+                corpus_lines += 1
+                if (parts[3], parts[5]) != g:
+                    raise Red("the loop's printed identities are not the goldens on %s" % parts[1])
+    if corpus_lines != len(goldens) or gold != len(goldens) + len(session_lines):
+        raise Red("not every golden was checked")
+    for plant, code in (("stale", "LOOP-EQUIV"), ("realloc", "LOOP-PERSIST")):
+        pp = subprocess.run(base + ["--plant", plant], capture_output=True, text=True, cwd=ROOT)
+        if pp.returncode == 0 or code not in pp.stderr:
+            raise Red("PLANT %s: the correctness court did not refuse with %s" % (plant, code))
+    return ("one LoopRenderer, its byte buffers poisoned first, renders %d cases (every corpus scene x tile set with its goldens, "
+            "the adversarial witness cameras, the %d sealed session frames) forward, reverse and zigzag — %d renders, each one's "
+            "index frame, viewport, composite and blit byte-identical to the fresh reference, the corpus's frame digests and pixel "
+            "shas and the session's witnesses reproduced (%d goldens), no buffer ever replaced; PLANTS: skipping the pixel pass on "
+            "alternate renders (LOOP-EQUIV) and replacing a buffer (LOOP-PERSIST) are both caught"
+            % (cases, len(session_lines), renders, gold))
+
+
+def _ar1_raw(f99, r99, n=1000, f50=16000, r50=15000, **over):
+    def var(p50, p99):
+        t = [p99 + 400 - 20 * i for i in range(12)][:min(12, n)]
+        return {"envelope": {"render_us": {"p50": p50, "p95": p99 - 200, "p99": p99, "max": t[0]},
+                             "present_us": {"p50": 8000, "p95": 11000, "p99": 12000, "max": 13000}, "samples": n},
+                "tail_render_us": t}
+    d = {"variants": {"fresh": var(f50, f99), "reused": var(r50, r99)}, "block_order": "ABBA", "warm_rounds": 10,
+         "refresh_period_us": 13400, "sequence_frames": 4, "samples_per_cell": n, "production_threads": 8,
+         "phase_origin": "locked", "persistent_buffers": 4, "reuse_renders": n + 14}
+    d.update(over)
+    return {"name": "verdandi-allocreuse1", "provenance": {"tool": "synthetic", "unix_seconds": 0}, "data": d}
+
+
+def allocreuse1_sealer():
+    """The adoption sealer, with synthetic runs: PERFORMANCE PASS exactly at p99(reused) = 950 permille of p99(fresh) and
+    FAIL one microsecond above; the p50s never decide; ADOPT only when a run and its confirmation both pass; a run that
+    is not 1000 samples per cell, not ABBA, not warmed up, or with a malformed tail is refused."""
+    import allocreuse1 as AR1
+    cases = {
+        AR1.PASS: _ar1_raw(20000, 19000),                          # exactly 950 permille
+        AR1.FAIL: _ar1_raw(20000, 19001),                          # one microsecond over
+    }
+    diag_sealer_cases(AR1, "seal_allocreuse1", "ALLOC-REUSE-1", cases,
+                      [(_ar1_raw(20000, 18000, n=300), "300 samples per cell"),
+                       (_ar1_raw(20000, 18000, n=999), "999 samples per cell"),
+                       (_ar1_raw(20000, 18000, block_order="AABB"), "another block order"),
+                       (_ar1_raw(20000, 18000, warm_rounds=5), "another warm-up"),
+                       (_ar1_raw(20000, 18000, reuse_renders=500), "a loop that did not render every sample")])
+    bad_tail = _ar1_raw(20000, 18000)
+    bad_tail["data"]["variants"]["reused"]["tail_render_us"] = list(reversed(bad_tail["data"]["variants"]["reused"]["tail_render_us"]))
+    try:
+        AR1.seal_allocreuse1(bad_tail, json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"],
+                             "gate", {"path": "synthetic"}, {"rustc": "gate"})
+        raise Red("the sealer accepted a tail that is not largest-first")
+    except AR1.Refuse:
+        pass
+    # the p50s never decide: a far cheaper reused p50 with a failing p99 fails; a dearer reused p50 with a passing p99 passes
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    if AR1.seal_allocreuse1(_ar1_raw(20000, 19500, r50=9000), reg, "gate", {}, {})[1] != AR1.FAIL or \
+            AR1.seal_allocreuse1(_ar1_raw(20000, 18000, r50=17000), reg, "gate", {}, {})[1] != AR1.PASS:
+        raise Red("a p50 moved the performance label")
+    table = {(AR1.PASS, AR1.PASS): "ADOPT", (AR1.PASS, AR1.FAIL): "REJECT", (AR1.FAIL, AR1.PASS): "REJECT", (AR1.FAIL, AR1.FAIL): "REJECT"}
+    for (a, b), want in table.items():
+        if AR1.adoption(a, b) != want:
+            raise Red("the adoption rule reads %s for %s then %s" % (AR1.adoption(a, b), a, b))
+        run2 = _ar1_raw(20000, 19000) if b == AR1.PASS else _ar1_raw(20000, 19500)
+        rec, _ = AR1.seal_allocreuse1(run2, reg, "gate", {}, {}, confirm_of={"of": "synthetic", "chain_hash": "0" * 64, "original_label": a})
+        envelope.validate(rec)
+        if ("ADOPTION: %s" % want) not in rec["reading"] or "adoption" in rec["data"]:
+            raise Red("the confirmation record does not state %s in its reading (and only there)" % want)
+        if rec["provenance"]["host_state_preregistered"]["chain_hash"] != reg["HOST-STATE-0"]["chain_hash"]:
+            raise Red("the record does not cite HOST-STATE-0")
+    return ("verify/allocreuse1.py, driven with synthetic runs: PERFORMANCE PASS exactly at p99(reused) = 950 permille of "
+            "p99(fresh) and FAIL one microsecond above; the p50s never move the label; ADOPT only for PASS then PASS, REJECT "
+            "for the other three; the adoption is stated in the confirmation's reading, never stored as data; 300 or 999 "
+            "samples per cell, another block order or warm-up, an unrendered sample or a malformed tail are refused; records "
+            "cite ALLOC-REUSE-1 and HOST-STATE-0 and pass the firewall")
+
+
+def allocreuse1_court():
+    """The SAME adoption court the host window runs, headless over the mock: witnesses first (the poisoned loop renderer
+    reproduces the fresh index frame, composite and blit), 10 warm-up rounds, fresh and reused ABBA, the buffers
+    persistent throughout. Under the mock both variants take the same ticks, so the rule reads PERFORMANCE FAIL (1000
+    permille). PLANTS: a tampered witness, a mid-court close and a replaced buffer each refuse with no record."""
+    import allocreuse1 as AR1
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+
+    def check(raw):
+        d = raw["data"]
+        if d["samples_per_cell"] != 2 or d["warm_rounds"] != 10 or d["reuse_renders"] < 2 + 10 + 4:
+            raise Red("the court did not render the witnesses, the warm-up and 2 samples per cell through the loop")
+        rec, label = AR1.seal_allocreuse1(raw, reg, "gate-mock", {"path": "workshop/attest/sessionwalk-demo.json"},
+                                          {"rustc": "gate"}, required_per_cell=2)
+        envelope.validate(rec)
+        if label != AR1.FAIL:
+            raise Red("the mock adoption court read %r, not %r" % (label, AR1.FAIL))
+
+    diag_court("allocreuse1", "2", "allocreuse1 court OK",
+               [("witness", "ALLOCREUSE1-WITNESS"), ("close", "ALLOCREUSE1-CLOSED"), ("persist", "ALLOCREUSE1-PERSIST")], check)
+    return ("the ALLOC-REUSE-1 court runs headless over the mock surface on the sealed session: witnesses first (the poisoned "
+            "loop renderer reproduces the fresh index frame, composite and blit of every sealed frame), 10 warm-up rounds, "
+            "fresh and reused ABBA, the loop's buffers persistent throughout; its raw record seals and reads PERFORMANCE FAIL "
+            "under the mock (equal ticks, 1000 permille); PLANTS: a tampered witness (ALLOCREUSE1-WITNESS), a mid-court close "
+            "(ALLOCREUSE1-CLOSED) and a replaced buffer (ALLOCREUSE1-PERSIST) each refuse with no record")
+
+
+def allocreuse1_fence():
+    """Only the buffers' lifetime changes, and the fresh reference stays frozen: LoopRenderer makes fast::render's calls
+    in fast::render's order and then the HUD, into buffers it allocates only in new(); its blit is to_blit_into; the
+    fresh reference's source is pinned; no shipped window names LoopRenderer; the court runs in FRAME-SPLIT-0's window
+    with the locked phase origin and nothing but rendering and the blit inside its interval; LATENCY-0's instrument is
+    still a byte-exact prefix."""
+    pr = read(os.path.join(SHELL, "present.rs")).decode("utf-8")
+    impl = src_span(pr, "impl LoopRenderer {", "\n}\n")
+    vp = src_span(impl, "pub fn viewport(&mut self", "pub fn overlay(")
+    fr = src_span(read(os.path.join(KERNEL, "fast.rs")).decode("utf-8"), "pub fn render(scene: &Scene)", "\n}\n")
+
+    def order(body, calls):
+        pos = []
+        for c in calls:
+            i = body.find(c)
+            if i < 0:
+                return None
+            pos.append(i)
+        return pos == sorted(pos)
+
+    if not order(fr, ["scene.strips(", "scene.frame(", "blocked_floor(", "emit_threaded(", "PROD_THREADS"]) or \
+            not order(vp, ["scene.strips(&mut self.b.strips);", "scene.frame(&self.b.strips, &mut self.b.frame);",
+                           "fast::blocked_floor(&scene.floor)",
+                           "fast::emit_threaded(scene, &self.b.strips, &self.b.frame, &mut self.b.pixels, &floor, fast::PROD_THREADS);"]):
+        raise Red("the loop renderer's viewport does not make fast::render's calls in fast::render's order")
+    if "hud::overlay(scene, &self.b.strips, &mut self.b.pixels);" not in src_span(impl, "pub fn overlay(", "pub fn render("):
+        raise Red("the loop renderer's overlay is not the HUD over its own strips and pixels")
+    rend = src_span(impl, "pub fn render(&mut self", "pub fn blit(")
+    if not order(rend, ["self.viewport(scene);", "self.overlay(scene)"]) or rend.count("self.") != 2:
+        raise Red("the loop renderer's render is not exactly its viewport then its overlay")
+    if "to_blit_into(&self.b.pixels, &mut self.b.bgr);" not in src_span(impl, "pub fn blit(", "pub fn composite("):
+        raise Red("the loop renderer's blit is not to_blit_into into its own BGR buffer")
+    body = impl.replace(src_span(impl, "pub fn new()", "pub fn viewport("), "")
+    for alloc in ("vec![", "Vec::with_capacity", "Vec::new", ".to_vec()", ".clone()", "to_blit(", "Box::new", "String::"):
+        if alloc in body:
+            raise Red("the loop renderer allocates outside new(): %s" % alloc)
+    for (path, start), want in FRESH_REFERENCE_SHA256.items():
+        if sha256(src_span(read(os.path.join(ROOT, path)).decode("utf-8"), start, "\n}\n").encode("utf-8")) != want:
+            raise Red("the fresh reference was rewritten: %s in %s" % (start, path))
+    for fn in sorted(os.listdir(SHELL)):
+        if fn.endswith(".rs") and fn not in ("present.rs", "allocreuse1.rs") and "LoopRenderer" in read(os.path.join(SHELL, fn)).decode("utf-8"):
+            raise Red("%s names LoopRenderer: the loop entry is not adopted, and no shipped window may use it" % fn)
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i0, i1 = tail.find("PRESENT-STRETCH-0 and ALLOC-REUSE-0 (appended)"), tail.find("ALLOC-REUSE-1 (appended)")
+    if i0 < 0 or i1 < i0:
+        raise Red("the ALLOC-REUSE-1 section is not appended after ALLOC-REUSE-0's")
+    win = src_span(tail[i1:], "pub fn allocreuse1_window(", "\n}\n")
+    if ("CW_USEDEFAULT, CW_USEDEFAULT," not in win or "(W as i32) / 2 + 16, (H as i32) / 2 + 39" not in win or "GdiSurface {" not in win
+            or "crate::allocreuse1::court(&mut surf, &inputs, per_cell, false)" not in win):
+        raise Red("the adoption court does not run in FRAME-SPLIT-0's window over LATENCY-1R's GDI surface, unplanted")
+    rs = read(os.path.join(SHELL, "allocreuse1.rs")).decode("utf-8")
+    court = src_span(rs, "pub fn court(", "fn pct_json(")
+    if "s.flush(); // the locked phase origin\n            let t0 = s.ticks();" not in court:
+        raise Red("the adoption court does not start each sample at the locked phase origin")
+    fresh = src_span(court, "// FRESH", "let t = s.present(&bgr);")
+    reuse = src_span(court, "// REUSED", "let t = s.present(lr.blit());")
+    for b in (fresh, reuse):
+        for bad in ("sha256", "frame_digest", "identity", "!=", "poison"):
+            if bad in b:
+                raise Red("the timed interval holds %s" % bad)
+    if "arm_composite(&inputs[k].scene, Arm::Production).1" not in fresh or "to_blit(&comp)" not in fresh or \
+            "lr.render(&inputs[k].scene);" not in reuse:
+        raise Red("the two cells are not the fresh reference and the loop entry")
+    return ("only the buffers' lifetime changes and the fresh reference stays frozen: LoopRenderer makes fast::render's calls "
+            "in fast::render's order and then the HUD into buffers it allocates only in new(), its render is exactly viewport "
+            "then overlay, its blit is to_blit_into; the fresh reference's source (fast::render, arm_composite, to_blit, "
+            "compose_frame) is pinned; no file but present.rs and allocreuse1.rs names LoopRenderer, so no shipped window uses "
+            "it; the court runs in FRAME-SPLIT-0's window over LATENCY-1R's GDI surface with the locked phase origin and "
+            "only rendering and the blit inside its interval; LATENCY-0's instrument is still a byte-exact prefix")
+
+
+def hoststate_preregistered():
+    """HOST-STATE-0's method is locked: record, never control; every registered field or an unavailable marker; integers
+    and strings only; capture_safe never raises; before and after a window court; association, never cause."""
+    e = locked_entry("HOST-STATE-0", {
+        "recorded, never controlled; association only": ("hyp", ("recorded, never controlled", "association only", "changes nothing on the host")),
+        "the snapshot's shape": ("succ", ("every registered field in order", "integers and strings only", "thermal is declared not captured")),
+        "never blocks; before and after; writes nothing": ("succ", ("capture_safe never raises", "never blocks a court", "just before and one just after", "writes nothing")),
+        "no control, no rule reads it, no cause": ("fail", ("any control of the host", "any rule reading host state", "association, never cause", "reported mhz as a measured frequency")),
+        "scope: as reported; no thermal; never explained": ("lims", ("as it reports it", "thermal state is not captured", "never explained")),
+    })
+    import hoststate as HS
+    if (HS.FIELDS, HS.LOAD_WINDOW_MS) != (("cpu", "power", "load", "memory", "process", "display", "uptime", "thermal"), 1000):
+        raise Red("the recorder's fields or load window are not the registered ones")
+    return ("HOST-STATE-0's method is locked: the host's state is recorded, never controlled — every registered field in "
+            "order (cpu, power, load, memory, process, display, uptime, thermal), each captured or marked unavailable with its "
+            "reason, integers and strings only; capture_safe never raises, so recording never blocks a court; one snapshot "
+            "just before and one just after a window court; association, never cause; the code's fields and 1000 ms load "
+            "window equal the registered ones; hash-locked %s" % e["chain_hash"][:8])
+
+
+def hoststate_record():
+    """The recorder on this gate: off Windows every field is unavailable and nothing raises; the Windows capture path,
+    run where its APIs are absent, degrades field by field to unavailable; a float, a boolean, a missing field or a
+    raising capture becomes an unavailable snapshot, never an exception; a Windows-shaped snapshot validates; the
+    source calls no control API and writes no file."""
+    import hoststate as HS
+    snap = HS.validate(HS.capture())
+    if any(v != {"unavailable": HS.NOT_WINDOWS} for k, v in snap["fields"].items() if k != "thermal") and os.name != "nt":
+        raise Red("off Windows a field was captured or its marker is not the registered one")
+    if snap["fields"]["thermal"] != {"unavailable": HS.THERMAL} or not isinstance(snap["unix_seconds"], int):
+        raise Red("thermal is not declared not captured, or the time is not an integer")
+    if os.name != "nt":
+        forced = HS.validate(HS.capture(windows=True))
+        if not all("unavailable" in v for v in forced["fields"].values()):
+            raise Red("the Windows capture path did not degrade to unavailable where its APIs are absent")
+
+    def boom():
+        raise RuntimeError("planted capture failure")
+
+    bad = [boom,
+           lambda: dict(HS.capture(), unix_seconds=1.5),
+           lambda: dict(HS.capture(), platform=True),
+           lambda: {"hoststate": "HOST-STATE-0", "fields": {"cpu": {}}}]
+    for fn in bad:
+        s = HS.capture_safe(fn)
+        if set(s) != {"hoststate", "version", "unavailable"}:
+            raise Red("capture_safe let a bad snapshot through or raised")
+    win = {"hoststate": "HOST-STATE-0", "version": 1, "unix_seconds": 1790000000, "platform": "win32", "fields": {
+        "cpu": {"model": "synthetic CPU", "logical_processors": 16, "mhz": {"current_min": 3000, "current_median": 3600,
+                "current_max": 4200, "max": 4200, "limit_min": 4200, "source": "synthetic"}},
+        "power": {"ac_line_status": 1, "battery_flag": 128, "battery_percent": 255, "battery_saver": 0, "codes": "synthetic",
+                  "plan": {"guid": "381b4222-f694-41f0-9685-ff5bb260df2e", "name": "Balanced"}},
+        "load": {"cpu_busy_permille": 37, "window_ms": 1000, "source": "synthetic"},
+        "memory": {"load_percent": 41, "total_mb": 32000, "available_mb": 18000},
+        "process": {"priority_class": "0x20", "affinity_mask": "0xffff", "system_affinity_mask": "0xffff", "of": "synthetic"},
+        "display": {"logical": [1920, 1080], "physical": [1920, 1080], "bits_per_pixel": 32, "vertical_refresh_hz": 75, "source": "synthetic"},
+        "uptime": {"ms": 123456},
+        "thermal": {"unavailable": HS.THERMAL}}}
+    if HS.capture_safe(lambda: win) is not win:
+        raise Red("a well-formed Windows snapshot did not validate")
+    src = read(os.path.join(ROOT, "verify", "hoststate.py")).decode("utf-8")
+    for tok in HOSTSTATE_FORBIDDEN:
+        if tok in src:
+            raise Red("HOST-STATE-0's source contains %r: it may record, never control or write" % tok)
+    runs = re.findall(r"subprocess\.run\((\[[^\]]*\])", src)
+    if runs != ['["powercfg", "/getactivescheme"]']:
+        raise Red("HOST-STATE-0 runs a command other than the one query: %s" % runs)
+    return ("verify/hoststate.py on this gate: off Windows every field is recorded unavailable with the registered marker "
+            "and nothing raises; the Windows capture path, run where its APIs are absent, degrades field by field; a planted "
+            "failure, a float, a boolean or a missing field becomes an unavailable snapshot, never an exception; a Windows-"
+            "shaped snapshot validates; the source calls no control API, writes no file, and runs one command (powercfg "
+            "/getactivescheme, a query)")
+
+
+def hoststate_fence():
+    """No rule reads host state and recording cannot block: the same ALLOC-REUSE-1 raw sealed with no probe and with two
+    different host states gives the same label, the same derived numbers and the same reading; the rule takes only the
+    derived variants; the host state is attached after the label and the adoption are fixed; host_run's probe is
+    optional, taken through capture_safe just before and just after the window court, and the diagnostic sealers pass
+    none."""
+    import allocreuse1 as AR1
+    import inspect
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    raw = _ar1_raw(20000, 19000)
+    a = {"before": {"hoststate": "HOST-STATE-0", "version": 1, "unavailable": "A"}, "after": {"hoststate": "HOST-STATE-0", "version": 1, "unavailable": "A"}}
+    b = {"before": {"hoststate": "HOST-STATE-0", "version": 1, "unavailable": "B, a wholly different host"}, "after": {"hoststate": "HOST-STATE-0", "version": 1, "unavailable": "B"}}
+    outs = []
+    for hs in (None, a, b):
+        for conf in (None, {"of": "synthetic", "chain_hash": "0" * 64, "original_label": AR1.PASS}):
+            rec, label = AR1.seal_allocreuse1(raw, reg, "gate", {}, {}, confirm_of=conf, host_state=hs)
+            outs.append((conf is None, label, json.dumps(rec["data"]["derived"], sort_keys=True), rec["reading"]))
+    if len({o for o in outs if o[0]}) != 1 or len({o for o in outs if not o[0]}) != 1:
+        raise Red("the host state moved a label, a derived number or a reading")
+    if list(inspect.signature(AR1.performance).parameters) != ["dv"] or list(inspect.signature(AR1.adoption).parameters) != ["first_label", "confirm_label"]:
+        raise Red("the rule can receive more than the derived variants and the two labels")
+    seal_src = inspect.getsource(AR1.seal_allocreuse1)
+    i_rule, i_adopt, i_hs = seal_src.find("performance(dv)"), seal_src.find("adoption(confirm_of"), seal_src.find('data["host_state"] =')
+    if min(i_rule, i_adopt, i_hs) < 0 or not (i_rule < i_adopt < i_hs):
+        raise Red("the host state is not attached after the label and the adoption are fixed")
+    dc = read(os.path.join(ROOT, "verify", "diagcommon.py")).decode("utf-8")
+    hr = src_span(dc, "def host_run(", "\ndef ")
+    if ("probe: dict | None = None" not in hr or hr.count("hoststate.capture_safe()") != 2 or "hoststate.capture()" in hr
+            or not (hr.index('probe["before"]') < hr.index('f"{cmd}-window"') < hr.index('probe["after"]'))):
+        raise Red("host_run's probe is not optional, not safe, or not taken just before and just after the window court")
+    for sealer in ("presentstretch.py", "allocreuse.py"):
+        s = read(os.path.join(ROOT, "verify", sealer)).decode("utf-8")
+        if "probe=" in s:
+            raise Red("%s passes a probe: the diagnostic courts' flow must not change" % sealer)
+    return ("no rule reads host state and recording cannot block: one ALLOC-REUSE-1 raw sealed with no probe and with two "
+            "different host states gives the same label, derived numbers and reading (run and confirmation alike); the rule "
+            "takes only the derived variants and the adoption only the two labels; the host state is attached after both are "
+            "fixed; host_run's probe is optional and taken through capture_safe just before and just after the window court; "
+            "the diagnostic sealers pass none")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -4169,6 +4557,11 @@ def main() -> int:
     row("presentstretch-sealer", presentstretch_sealer)
     row("allocreuse-preregistered", allocreuse_preregistered)
     row("allocreuse-sealer", allocreuse_sealer)
+    row("allocreuse1-preregistered", allocreuse1_preregistered)
+    row("allocreuse1-sealer", allocreuse1_sealer)
+    row("hoststate-preregistered", hoststate_preregistered)
+    row("hoststate-record", hoststate_record)
+    row("hoststate-fence", hoststate_fence)
     row("gauntlet-preregistered", gauntlet_preregistered)
     row("gauntlet1-preregistered", gauntlet1_preregistered)
     row("gauntlet1-equiv", gauntlet1_equiv)
@@ -4240,6 +4633,9 @@ def main() -> int:
     row("presentstretch-fence", presentstretch_fence)
     row("allocreuse-court", allocreuse_court)
     row("allocreuse-fence", allocreuse_fence)
+    row("allocreuse1-equiv", allocreuse1_equiv)
+    row("allocreuse1-court", allocreuse1_court)
+    row("allocreuse1-fence", allocreuse1_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

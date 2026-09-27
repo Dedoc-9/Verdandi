@@ -1916,6 +1916,119 @@ red if a plant passes, and `allocreuse-fence` if the reuse path changes a call, 
 allocate a buffer. On the host, a witness or reuse-byte mismatch, or a closed window, yields no number, and a reading that does
 not reproduce under `--confirm` is refuted.
 
+## ALLOC-REUSE-1 — preregistered: does the persistent-buffer render-loop entry earn adoption (an adoption court; host-run pending)
+
+**Why it is next, and what it can adopt.** ALLOC-REUSE-0, confirmed, attributed 91‰ and then 105‰ of the envelope to
+allocating the frame's buffers every frame. Reading the code before preregistering turned up a boundary: **the
+shipped shell has no per-frame render loop.** `run` renders once. `playback-window` pre-renders every frame and every
+blit before its window opens, so each stored frame has to own its buffers. The per-frame allocation that ALLOC-REUSE-0
+measured happens only in the courts' modelled render loop (`GHOSTS.md` G12), which is the loop a future live window
+will need. So this court can adopt an **entry contract**, not a change to a shipped window:
+`present::LoopRenderer` as the production entry for any loop that renders once per presented frame. The fresh path
+(`compose_frame`, `arm_composite`, `fast::render`, `to_blit`) stays the **frozen reference and differential oracle**,
+and it is never deleted or rewritten. ALLOC-REUSE-0's numbers are the motivation, not the adoption evidence.
+
+**The candidate.** `LoopRenderer` makes `fast::render`'s calls in `fast::render`'s order (the strips, the index frame,
+the floor swizzle, the threaded pixel pass at `PROD_THREADS`) and then the HUD, into four buffers it allocates once in
+`new()` and overwrites on every render. Its `blit()` is `to_blit`'s transform into its own BGR buffer. Only the floor
+swizzle's small buffer, which belongs to `fast::blocked_floor` (fast.rs is untouched), is still allocated per render.
+
+**Correctness first, on every gate.** One `LoopRenderer`, its byte buffers first
+filled with a poison byte, renders 23 cases: every corpus scene × tile set (12, with the goldens), the adversarial
+witness cameras (7 more) and the sealed session's 4 frames. It renders them in three orders (forward, reverse, zigzag),
+so every render starts from another scene's leftovers. Each of the 69 renders must equal the fresh reference byte for
+byte (index frame, viewport, composite and blit). The corpus's frame digests and pixel shas must equal the goldens, the
+session's frame digests must equal their sealed witnesses, and no buffer may ever be replaced: each buffer's address
+and capacity are checked after every render.
+
+**Then performance, on the host (`dc904a6c`).** Witnesses first: the fresh path reproduces every sealed frame witness,
+and the poisoned loop renderer reproduces the fresh index frame, composite and blit. Then the uninstrumented envelope
+render-start → frame-ready is measured for fresh and reused, **interleaved ABBA in the same run**, after 10 warm-up
+rounds, with **1000 samples per cell**. Every composite and blit is compared after its composition, and the buffers are
+checked persistent after every sample. The rule:
+
+    PERFORMANCE PASS  iff  p99(reused) ≤ 950‰ × p99(fresh), in the same run
+
+The 50‰ is an **adoption margin**: a declared engineering decision threshold, not a measurement uncertainty or a
+confidence interval. **ADOPT** requires PERFORMANCE PASS in the run **and** in its `--confirm` run. Anything else is
+**REJECT**. The comparator is the fresh path in the same run, because a p99 sealed in another run would bring in
+cross-run drift like PRESENT-STRETCH-0's +59% (`GHOSTS.md` G10). N = 1000 makes p99 the 10th-largest sample rather than
+the 3rd, and the 12 largest samples per variant are recorded beside it. The p50s and frame-ready → composited are
+recorded beside the rule and never decide. On ADOPT, a following patch declares `LoopRenderer` the sole production
+entry for in-loop rendering, with a call-site fence that a new live loop cannot bypass. On REJECT, it stays an unused
+candidate and ALLOC-REUSE-0's diagnostic stands.
+
+**The instrument.** `shell/allocreuse1.rs` holds both courts: `loop_equiv` (the gate's correctness court, no clock,
+`shell loop-equiv`) and `court` (the performance court, over LATENCY-1R's `Surface`). On the host the performance court
+runs in FRAME-SPLIT-0's window over LATENCY-1R's GDI surface, through a driver appended to `shell/win32.rs`. On the gate
+it runs over the mock (`shell allocreuse1-selftest`). `verify/allocreuse1.py` seals
+`shell/attest/allocreuse1-<host>.json`. Its `--confirm` run seals `allocreuse1-confirm-<host>.json` and states ADOPT or
+REJECT in its reading; the verdict is never stored as a data key. Each record carries HOST-STATE-0's before and after
+snapshots, attached after the label is fixed.
+
+**Rows.** `allocreuse1-preregistered`: the method is locked, and the code's per-cell count, warm-up, tail and margin
+equal the registered ones. `allocreuse1-equiv`: the correctness court above. Plants: a renderer that skips the pixel
+pass on alternate renders is caught (LOOP-EQUIV), and a replaced buffer is caught (LOOP-PERSIST). `allocreuse1-sealer`:
+synthetic runs read PERFORMANCE PASS exactly at 950‰ and FAIL one microsecond above. The p50s never move the label,
+and ADOPT follows only PASS then PASS. A run that is not 1000 per cell, not ABBA, not warmed up, or has an unrendered
+sample or a malformed tail is refused. `allocreuse1-court`: the court over the mock on the sealed session. It reads
+PERFORMANCE FAIL under the mock, whose equal ticks give 1000‰. Plants: a tampered witness, a mid-court close and a
+replaced buffer each refuse with no record. `allocreuse1-fence`: the loop renderer makes `fast::render`'s calls in
+order and allocates only in `new()`, and its render is exactly viewport then overlay. The fresh reference's source is
+pinned by hash. No file except `present.rs` and `allocreuse1.rs` names `LoopRenderer`, so no shipped window uses it.
+The court runs in FRAME-SPLIT-0's window with the locked phase origin and nothing but rendering and the blit inside its
+interval. LATENCY-0's instrument is still a byte-exact prefix.
+
+**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the loop renderer is byte-identical to the fresh
+path over the corpus, the adversarial cameras and the sealed session, in three orders from poisoned buffers, with its
+buffers persistent; the court's logic and the sealer's rule hold. MEASURED: nothing yet. The host run and its
+confirmation are pending, and nothing is adopted until both pass.
+
+**does_not_show.** That any shipped window is faster: none renders through the entry. That the entry's saving holds
+under another allocator, OS, host or buffer size. The floor swizzle's allocation, which stays per render. What a live
+loop's timing, cadence, input or ownership should be: that is the live-loop rung's own court. Input-to-photon.
+
+**Falsifier.** `allocreuse1-equiv` goes red on one differing byte, one missed golden or one replaced buffer.
+`allocreuse1-fence` goes red if the renderer allocates, reorders a call, or is named by a shipped file, or if the fresh
+reference is edited. `allocreuse1-sealer` goes red if the label moves at the margin, if a p50 decides, or if one
+passing run adopts. On the host, a witness, drift or persistence failure, or a closed window, yields no number, and
+REJECT follows unless both runs pass.
+
+## HOST-STATE-0 — the host's state recorded beside a court, never controlled (an apparatus; landed)
+
+**Why.** PRESENT-STRETCH-0's confirmation ran with the default mode's blit p50 59% higher than its first run
+(7,274 → 11,589 µs) at a similar refresh, and no court could say why. HOST-STATE-0 records what the OS reports about
+the host, so the next drift can be set beside a host-state change. A drift that coincides with no recorded change is
+also evidence: it says the recorded state is insufficient. **Record, don't control.** It changes nothing on the host,
+and it is not a prerequisite for any court.
+
+**The method (`58250382`).** `verify/hoststate.py` takes a snapshot of eight registered fields, in order. `cpu`: the
+model, logical processors, and per-processor MHz as `CallNtPowerInformation` reports them. `power`: AC line and
+battery state, battery saver, and the active plan (`powercfg /getactivescheme`, a query). `load`: the system's CPU busy
+share over a 1000 ms window. `memory`: memory load and physical memory. `process`: the sealing process's priority class
+and affinity. `display`: the screen's logical and physical size, depth and nominal refresh. `uptime`. `thermal`:
+declared not captured, because there is no reliable source without elevation. Each field is captured on its own, and
+one that fails is recorded as unavailable with its reason. Every value is an integer or a string. Off Windows every
+field is unavailable. `capture_safe` never raises. A court opts in through `diagcommon.host_run(probe=…)`, which takes
+one snapshot just before its window court and one just after. ALLOC-REUSE-1 is the first court to opt in. The
+diagnostic courts' flow is unchanged. `python verify/hoststate.py` prints one snapshot and writes nothing.
+
+**Rows.** `hoststate-preregistered`: the method is locked, and the fields and load window equal the registered ones.
+`hoststate-record`: on this gate every field is unavailable with the registered marker. The Windows capture path, run
+where its APIs are absent, degrades field by field. A planted failure, a float, a boolean or a missing field becomes
+an unavailable snapshot, never an exception, and a Windows-shaped snapshot validates. The source calls no control API,
+writes no file and runs one command, the query. `hoststate-fence`: one ALLOC-REUSE-1 raw sealed with no probe and with
+two different host states gives the same label, derived numbers and reading. The rule takes only the derived variants,
+and the host state is attached after the label and the adoption are fixed. The probe is optional and taken through
+`capture_safe`, and the diagnostic sealers pass none.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the recorder's shape, its degradation, its independence from
+every rule, and its non-blocking use. NOT_MEASURED: every Windows field on a real host. The first host snapshots arrive
+with ALLOC-REUSE-1's runs, and `python verify/hoststate.py` shows one first.
+
+**does_not_show.** That a recorded state caused, explains or corrects any number: association, never cause. That the
+OS-reported MHz is the effective clock. The court process's own priority (only the sealing process's). Thermal state.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
