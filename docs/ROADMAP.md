@@ -150,6 +150,18 @@ nothing to be set beside), never to explain it by itself. Its first snapshots pu
 free) beside ALLOC-REUSE-1's slower second run, with the same reported clock state and plan in both runs: an
 association (G13), not a cause.
 
+### PRESENTATION-CHOICE-0 — what the shell shows · **declared** (`4a7a32d9`)
+The owner's decision: the certified picture, 1:1 (the kernel's 1920×1080 composite, pixel for pixel), in a borderless
+window covering the 1920×1080 screen at (0,0). No reduction by GDI or the kernel, and no new VIEW law. The half-size
+windows stay as LATENCY-0's frozen instrument, and a conforming presenter is locked after PRESENT-EXACT-0.
+
+### PRESENT-EXACT-0 — which GDI call presents it, with the screen read back · **preregistered** (`bc910e2f`), host-run pending
+StretchDIBits at 1:1 against SetDIBitsToDevice, the call the only variable, frames through the adopted
+`LoopRenderer`. The composed screen under the window is read back and must equal the certified picture byte for byte,
+after a white clear that is also read back, as a hard gate. The first check of what reaches the screen rather than
+what is handed to GDI (G11). Then same-run ABBA at 1000 per cell. StretchDIBits is adopted only if its p99 is ≤ 950‰ of
+SetDIBitsToDevice's in both runs; otherwise SetDIBitsToDevice, the simpler semantics.
+
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
 falsifiable hypothesis — to be measured, never assumed — is that a **flip-model / waitable-swapchain** present can

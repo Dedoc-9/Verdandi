@@ -2120,6 +2120,92 @@ entry.
 declaring its adoption, or on host records that are not the pinned ADOPT pair. `allocreuse1-equiv` and
 `allocreuse1-fence` go on guarding the entry's bytes, its allocation and the frozen reference.
 
+## PRESENTATION-CHOICE-0 — what the shell shows: the certified picture, 1:1, in a borderless window (a decision; declared)
+
+**The decision (`4a7a32d9`).** PRESENT-SCALE-0 and PRESENT-STRETCH-0 measured what the half-size window costs and
+deliberately chose nothing, because each option changes what the window shows. The owner has now chosen. The shell
+shows **the certified picture, 1:1**: the kernel's 1920×1080 composite, pixel for pixel, with no reduction by GDI or by
+the kernel. It shows it in a **borderless window covering the 1920×1080 screen at (0,0)**, so the whole frame is
+visible. No new VIEW law is needed, because the picture on the screen is meant to be the picture the gate certifies.
+The options considered and not chosen were a certified 2:1 reduction (new VIEW semantics) and a stated GDI stretch mode
+(pixels nothing checks).
+
+**What conforms.** An implementation presents the certified composite with destination = source = 1920×1080 and no
+scaling at any layer the shell controls. That means no GDI stretch and no DPI virtualisation: the process is DPI-aware
+and the screen's logical and physical size are both 1920×1080. The window is a borderless popup whose 1920×1080 client
+sits at the screen's (0,0). And a witness shows it: the composed screen under the window, read back, equals the
+certified picture byte for byte. Which call implements it is PRESENT-EXACT-0's court.
+
+**Row.** `presentationchoice-declared`: the decision is registered with its conformance clauses and its hash intact.
+
+**Grade.** DECLARED: a semantic decision, hash-locked. It earns nothing until an implementation is witnessed against
+it.
+
+**does_not_show.** That any window conforms yet: the half-size windows `run` and `playback-window` (LATENCY-0's frozen
+instrument) do not, and they are not changed. The conforming presenter is locked after PRESENT-EXACT-0. Also out of
+scope: anything after composition (scan-out, the panel, display-side colour processing), and another screen size or
+scaling setting.
+
+## PRESENT-EXACT-0 — preregistered: which GDI call presents the certified picture 1:1, with the composed screen read back (host-run pending)
+
+**Why it is next.** PRESENTATION-CHOICE-0 fixed the target. This court picks the call that implements it, and adds
+the witness G11 said was missing: something that checks what reaches the screen, not only the bytes handed to GDI.
+
+**The method (`bc910e2f`).** A borderless, topmost 1920×1080 popup at the screen's (0,0), the process made DPI-aware
+first. ONE variable, the present call: **StretchDIBits at 1:1** (destination = source) or **SetDIBitsToDevice** (no
+stretch path at all). Both presents otherwise keep LATENCY-0's `present_once` shape (GetDC, the call, frame-ready,
+DwmFlush, composited, ReleaseDC), and no stretch mode is touched. Frames render through the adopted `LoopRenderer`.
+
+**The witness, a hard gate.** Before any clock, the geometry is verified: a client of 1920×1080 at screen (0,0), on a
+screen whose logical and physical size are both 1920×1080. Then, for every sealed frame and each call: the window is
+cleared to white through `PatBlt`, a path that is neither call, and the white is read back. The call presents the
+frame. The **composed screen** under the window is read back (a screen-DC `BitBlt` into a 24-bit top-down DIB) and
+must equal the certified blit bytes, with zero differing bytes. Clearing first means a call that wrote nothing cannot
+pass on the previous call's pixels. After the court, the last frame is read back again under each call. Any mismatch,
+stale readback or wrong geometry refuses the court, with no record.
+
+**The reading, on the same-run p99 of the envelope** render-start → frame-ready (render, blit and call), the two
+calls interleaved ABBA after 10 warm-up rounds, 1000 samples per cell. **STRETCHDIBITS CHEAPER** if its p99 is at most
+950‰ of SetDIBitsToDevice's. **SETDIBITSTODEVICE CHEAPER** if the reverse holds. **NO MATERIAL DIFFERENCE** otherwise.
+The 50‰ is an adoption margin, a declared decision threshold. **The adoption**, read by `--confirm`: StretchDIBits only
+if both runs read it cheaper; otherwise **SetDIBitsToDevice**, the simpler semantics. The p50s, the call interval (call
+start → frame-ready) and frame-ready → composited are reported beside the rule and never decide. HOST-STATE-0's
+snapshots are recorded beside each run.
+
+**The instrument.** `shell/presentexact.rs` is the court, over an `ExactSurface`: a `Surface` that can set its call,
+clear, read the screen back and report its geometry. On the host it runs over a borderless GDI surface appended to
+`shell/win32.rs`. On the gate it runs over a mock screen that holds what was last presented. `verify/presentexact.py`
+seals `shell/attest/presentexact-<host>.json`, and its `--confirm` record states the adopted call in its reading. The
+window build was type-checked here; linking and running happen on the host.
+
+**Rows.** `presentexact-preregistered`: the method is locked, and the code's calls, per-cell count, warm-up, tail,
+margin and target equal the registered ones. `presentexact-sealer`: synthetic runs read each call cheaper exactly at
+950‰ and NO MATERIAL DIFFERENCE one microsecond short, and the p50s never move the label. StretchDIBits is adopted only
+for cheaper-then-cheaper, and SetDIBitsToDevice in the other eight cases. One differing readback byte, a short
+readback, a client below a title bar, a scaled screen, 300 samples per cell, another render entry or another block
+order is refused. `presentexact-court`: the court over the mock, with 10 readback checks, reading NO MATERIAL
+DIFFERENCE under the mock. Plants: a tampered witness, a mid-court close, a client below a title bar, one byte changed
+on the way back, and a call that writes nothing each refuse with no record. `presentexact-fence`: only the call
+changes, and no stretch mode is touched. The window is a DPI-aware, borderless, topmost 1920×1080 popup at (0,0). The
+clear is a white `PatBlt` and the readback a screen-DC `BitBlt`. The timed interval holds only the loop's render and
+blit and the call, and the readback and clear run only before and after the rounds. LATENCY-0's instrument is still a
+byte-exact prefix. `allocreuse1-lock` was re-pinned on purpose for this court's two fresh-reference call sites (its
+witnesses compare the loop with the fresh path).
+
+**Grade.** DECLARED: the method (hash-locked). ESTABLISHED (gate): the court's logic, the readback's refusals
+(including a call that writes nothing) and the sealer's rule. MEASURED: nothing yet. The host run and its confirmation
+are pending.
+
+**does_not_show.** That the pixels reach the eye unchanged: the readback is the composed screen, before scan-out, the
+panel and any display-side colour processing. That every timed frame read back equal: the readback runs on the sealed
+frames before the clock and on the last frame after it. Anything about another screen size, scaling setting or GPU
+driver. Input-to-photon.
+
+**Falsifier.** `presentexact-fence` goes red if a second variable enters the present, the window or the timed
+interval. `presentexact-sealer` goes red if a label fires anywhere other than where it was registered, if a p50
+decides, or if a differing byte is accepted. `presentexact-court` goes red if a plant passes, including a call that
+writes nothing. On the host, one differing byte, a stale clear, a wrong geometry or a closed window yields no number.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

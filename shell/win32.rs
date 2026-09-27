@@ -1371,3 +1371,240 @@ pub fn allocreuse1_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, 
         }
     }
 }
+
+// ================================================================== PRESENT-EXACT-0 (appended)
+// PRESENTATION-CHOICE-0's target: the certified composite 1:1 in a borderless window covering the 1920x1080 screen at
+// (0,0), the process DPI-aware so nothing rescales it. Two presents, identical but for the call: StretchDIBits at 1:1
+// (destination = source) and SetDIBitsToDevice. The witness reads the COMPOSED SCREEN back under the window (the
+// screen DC, BitBlt into a 24-bit top-down DIB section), after clearing the window to white through PatBlt, a path
+// that is neither call. Frames render through the adopted LoopRenderer. LATENCY-0's instrument stays a byte-exact
+// prefix of this file.
+
+#[link(name = "user32")]
+extern "system" {
+    fn SetProcessDPIAware() -> Bool;
+    fn ClientToScreen(hwnd: Hwnd, point: *mut Point) -> Bool;
+    fn SetForegroundWindow(hwnd: Hwnd) -> Bool;
+}
+
+#[link(name = "gdi32")]
+extern "system" {
+    fn SetDIBitsToDevice(hdc: Hdc, x_dest: i32, y_dest: i32, w: Dword, h: Dword, x_src: i32, y_src: i32, start_scan: Uint, lines: Uint, bits: *const c_void, info: *const BitmapInfoHeader, usage: Uint) -> i32;
+    fn PatBlt(hdc: Hdc, x: i32, y: i32, w: i32, h: i32, rop: Dword) -> Bool;
+    fn CreateCompatibleDC(hdc: Hdc) -> Hdc;
+    fn CreateDIBSection(hdc: Hdc, info: *const BitmapInfoHeader, usage: Uint, bits: *mut *mut c_void, section: *mut c_void, offset: Dword) -> *mut c_void;
+    fn SelectObject(hdc: Hdc, obj: *mut c_void) -> *mut c_void;
+    fn BitBlt(hdc: Hdc, x: i32, y: i32, w: i32, h: i32, src: Hdc, x_src: i32, y_src: i32, rop: Dword) -> Bool;
+    fn DeleteObject(obj: *mut c_void) -> Bool;
+    fn DeleteDC(hdc: Hdc) -> Bool;
+    fn GdiFlush() -> Bool;
+}
+
+const WS_POPUP: Dword = 0x8000_0000;
+const WS_EX_TOPMOST: Dword = 0x0000_0008;
+const WHITENESS: Dword = 0x00FF_0062;
+
+struct ExactGdiSurface {
+    hwnd: Hwnd,
+    header: BitmapInfoHeader,
+    flush_fn: DwmFlushFn,
+    freq: i64,
+    call: usize,
+    last_input: Uint,
+    inputs_seen: usize,
+}
+
+impl Surface for ExactGdiSurface {
+    fn ticks(&mut self) -> i64 {
+        qpc()
+    }
+    fn freq(&self) -> i64 {
+        self.freq
+    }
+    fn present(&mut self, bgr: &[u8]) -> Option<(i64, i64)> {
+        let hdc = unsafe { GetDC(self.hwnd) };
+        if hdc.is_null() {
+            return None;
+        }
+        let ok = if self.call == 0 {
+            unsafe {
+                StretchDIBits(hdc, 0, 0, W as i32, H as i32, 0, 0, W as i32, H as i32,
+                    bgr.as_ptr() as *const c_void, &self.header, DIB_RGB_COLORS, SRCCOPY)
+            }
+        } else {
+            unsafe {
+                SetDIBitsToDevice(hdc, 0, 0, W as Dword, H as Dword, 0, 0, 0, H as Uint,
+                    bgr.as_ptr() as *const c_void, &self.header, DIB_RGB_COLORS)
+            }
+        };
+        let ready = qpc();
+        let composited = if ok != 0 {
+            (self.flush_fn)();
+            Some(qpc())
+        } else {
+            None
+        };
+        unsafe { ReleaseDC(self.hwnd, hdc) };
+        composited.map(|t| (ready, t))
+    }
+    fn flush(&mut self) {
+        (self.flush_fn)();
+    }
+    fn pump(&mut self) -> bool {
+        let mut msg: Msg = unsafe { std::mem::zeroed() };
+        while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            let m = msg.message;
+            if (0x0100..=0x0109).contains(&m) || (0x00A0..=0x00AD).contains(&m) || (0x0200..=0x020E).contains(&m) || m == 0x0112 {
+                self.last_input = m;
+                self.inputs_seen += 1;
+            }
+            unsafe {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            if msg.message == 0x0012 {
+                return false;
+            }
+        }
+        true
+    }
+    fn progress(&mut self, done: usize, total: usize) {
+        if done % 100 == 0 || done == total {
+            println!("[court] {} of {} samples", done, total);
+        }
+    }
+}
+
+impl crate::presentexact::ExactSurface for ExactGdiSurface {
+    fn set_call(&mut self, call: usize) {
+        self.call = call;
+    }
+    fn clear(&mut self) -> bool {
+        let hdc = unsafe { GetDC(self.hwnd) };
+        if hdc.is_null() {
+            return false;
+        }
+        let ok = unsafe { PatBlt(hdc, 0, 0, W as i32, H as i32, WHITENESS) };
+        unsafe {
+            GdiFlush();
+            ReleaseDC(self.hwnd, hdc);
+        }
+        ok != 0
+    }
+    fn readback(&mut self) -> Option<Vec<u8>> {
+        let mut org = Point { x: 0, y: 0 };
+        if unsafe { ClientToScreen(self.hwnd, &mut org) } == 0 {
+            return None;
+        }
+        let screen = unsafe { GetDC(std::ptr::null_mut()) };
+        if screen.is_null() {
+            return None;
+        }
+        let mem = unsafe { CreateCompatibleDC(screen) };
+        let hdr = court_header();
+        let mut bits: *mut c_void = std::ptr::null_mut();
+        let dib = if mem.is_null() {
+            std::ptr::null_mut()
+        } else {
+            unsafe { CreateDIBSection(screen, &hdr, DIB_RGB_COLORS, &mut bits, std::ptr::null_mut(), 0) }
+        };
+        let mut out = None;
+        if !dib.is_null() && !bits.is_null() {
+            let old = unsafe { SelectObject(mem, dib) };
+            let ok = unsafe { BitBlt(mem, 0, 0, W as i32, H as i32, screen, org.x, org.y, SRCCOPY) };
+            unsafe { GdiFlush() };
+            if ok != 0 {
+                out = Some(unsafe { std::slice::from_raw_parts(bits as *const u8, W * H * 3) }.to_vec());
+            }
+            unsafe { SelectObject(mem, old) };
+        }
+        unsafe {
+            if !dib.is_null() {
+                DeleteObject(dib);
+            }
+            if !mem.is_null() {
+                DeleteDC(mem);
+            }
+            ReleaseDC(std::ptr::null_mut(), screen);
+        }
+        out
+    }
+    fn geometry(&mut self) -> [i32; 8] {
+        let mut c = Rect { left: 0, top: 0, right: 0, bottom: 0 };
+        let mut org = Point { x: 0, y: 0 };
+        unsafe {
+            GetClientRect(self.hwnd, &mut c);
+            ClientToScreen(self.hwnd, &mut org);
+        }
+        let screen = unsafe { GetDC(std::ptr::null_mut()) };
+        let (lw, lh, pw, ph) = if screen.is_null() {
+            (0, 0, 0, 0)
+        } else {
+            let v = unsafe { (GetDeviceCaps(screen, 8), GetDeviceCaps(screen, 10), GetDeviceCaps(screen, 118), GetDeviceCaps(screen, 117)) };
+            unsafe { ReleaseDC(std::ptr::null_mut(), screen) };
+            v
+        };
+        [c.right - c.left, c.bottom - c.top, org.x, org.y, lw, lh, pw, ph]
+    }
+}
+
+fn exact_window(class: &str, title: &str) -> Hwnd {
+    let hinstance = unsafe { GetModuleHandleW(std::ptr::null()) };
+    let class_name = wide(class);
+    let title_w = wide(title);
+    let wc = WndClassW {
+        style: 0,
+        lpfn_wnd_proc: Some(wnd_proc),
+        cb_cls_extra: 0,
+        cb_wnd_extra: 0,
+        h_instance: hinstance,
+        h_icon: std::ptr::null_mut(),
+        h_cursor: std::ptr::null_mut(),
+        hbr_background: std::ptr::null_mut(),
+        lpsz_menu_name: std::ptr::null(),
+        lpsz_class_name: class_name.as_ptr(),
+    };
+    unsafe { RegisterClassW(&wc) };
+    unsafe {
+        CreateWindowExW(WS_EX_TOPMOST, class_name.as_ptr(), title_w.as_ptr(), WS_POPUP | WS_VISIBLE, 0, 0, W as i32, H as i32,
+            std::ptr::null_mut(), std::ptr::null_mut(), hinstance, std::ptr::null_mut())
+    }
+}
+
+pub fn presentexact_window(inputs: Vec<FrameInput>, per_cell: usize, host: &str, out: Option<String>) {
+    // DPI-aware first, so the 1920x1080 window is 1920x1080 device pixels and nothing rescales it
+    unsafe { SetProcessDPIAware() };
+    let (flush_fn, freq) = court_prelude("PRESENT-EXACT-0");
+    let hwnd = exact_window("VerdandiPresentExact0", "Verðandi — PRESENT-EXACT-0");
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    unsafe { SetForegroundWindow(hwnd) };
+    let mut surf = ExactGdiSurface { hwnd, header: court_header(), flush_fn, freq, call: 0, last_input: 0, inputs_seen: 0 };
+    let _ = surf.pump();
+    (surf.flush_fn)();
+    println!("[presentexact] borderless window over the whole screen — leave it alone until it closes ({} samples + {} warm-up rounds; Alt+F4 aborts)",
+             per_cell * 2, crate::presentexact::WARM_ROUNDS);
+    let result = crate::presentexact::court(&mut surf, &inputs, per_cell);
+    let alive = unsafe { IsWindow(hwnd) } != 0;
+    if alive {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    match result {
+        Ok(ex) => {
+            for ln in crate::presentexact::summary(&ex) {
+                println!("{}", ln);
+            }
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+            let raw = crate::presentexact::raw_record(host, "borderless 1:1 GDI window with screen readback (DwmFlush, QPC)", &ex, now);
+            write_raw(out.unwrap_or_else(|| format!("verify/build/presentexact-raw-{}.json", host)), raw, "presentexact.py");
+        }
+        Err(m) => {
+            eprintln!("SHELL-{}", m);
+            eprintln!("SHELL-PRESENTEXACT-DIAG: window_still_existed={} input_messages_seen={} last_input_msg=0x{:04X}",
+                      alive, surf.inputs_seen, surf.last_input);
+            std::process::exit(2);
+        }
+    }
+}

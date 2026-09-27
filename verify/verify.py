@@ -56,7 +56,9 @@ the diagnostic attribution rule, the court over the mock with a clamped-geometry
 (ALLOC-REUSE-1: the persistent-buffer render-loop entry's adoption court — correctness first over the corpus, the
 adversarial cameras and the sealed session from poisoned buffers in three orders; the same-run p99 rule; the fence that
 pins the fresh reference; and allocreuse1-lock, the ADOPT carried out: LoopRenderer the production entry for in-loop
-rendering, every fresh render entry's call site pinned), hoststate (HOST-STATE-0: the host's state
+rendering, every fresh render entry's call site pinned), presentexact (PRESENTATION-CHOICE-0, declared: the certified
+picture 1:1 in a borderless window; PRESENT-EXACT-0: StretchDIBits at 1:1 against SetDIBitsToDevice, the composed screen
+read back as a hard gate, the same-run p99 rule, and the fence), hoststate (HOST-STATE-0: the host's state
 recorded beside a court, never controlled and never read by a rule), and — in the oracle stage — oracle-d0 (Urðr's own
 statecanon recomputes the oracle's D_0 in place).
 """
@@ -4410,6 +4412,8 @@ FRESH_ENTRY_SITES = {
     "present.rs": {"compose_frame(": 1, "arm_composite(": 2, "fast::render(": 2, "fast::emit_threaded(": 3, "fast::emit(": 2, "to_blit(": 6},
     "presentscale.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
     "presentstretch.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
+    # re-pinned on purpose with PRESENT-EXACT-0: its witnesses compare the loop against the fresh reference
+    "presentexact.rs": {"arm_composite(": 1, "to_blit(": 1},
     "win32.rs": {"to_blit(": 3},
 }
 # the adoption evidence, sealed on the owner's host (committed there; this checkout may not carry it)
@@ -4578,6 +4582,203 @@ def hoststate_fence():
             "the diagnostic sealers pass none")
 
 
+# ------------------------------------------------------------------ PRESENTATION-CHOICE-0 and PRESENT-EXACT-0
+def presentationchoice_declared():
+    """PRESENTATION-CHOICE-0 is a decision, hash-locked: the shell presents the certified composite 1:1 in a borderless
+    window covering the 1920x1080 screen at (0,0); conformance is witnessed by the composed screen read back; LATENCY-0's
+    frozen half-size windows are not changed to meet it."""
+    e = locked_entry("PRESENTATION-CHOICE-0", {
+        "a decision: the certified picture, 1:1, borderless": ("hyp", ("a decision, not a measurement", "the certified picture, 1:1", "borderless", "no new view law")),
+        "what conforms, and its witness": ("succ", ("destination = source = 1920x1080", "no dpi virtualisation", "read back, equals the certified picture byte for byte")),
+        "no scaling, no partial frame, frozen windows untouched": ("fail", ("partially visible frame", "reading this decision as a measurement", "latency-0's frozen windows")),
+        "scope: a decision; the composed screen; one screen size": ("lims", ("semantic decision", "outside every witness", "1920x1080 screen at 100% scaling only")),
+    })
+    return ("PRESENTATION-CHOICE-0 is declared and hash-locked %s: the shell presents the certified 1920x1080 composite 1:1, "
+            "no reduction by GDI or the kernel, in a borderless window covering the 1920x1080 screen at (0,0); an "
+            "implementation conforms when the composed screen read back equals the certified picture byte for byte; "
+            "LATENCY-0's frozen half-size windows are not changed to meet it; a decision, earning nothing until "
+            "PRESENT-EXACT-0 witnesses an implementation" % e["chain_hash"][:8])
+
+
+def presentexact_preregistered():
+    """PRESENT-EXACT-0's method is locked before any host number: the call the only variable, the screen readback a
+    hard gate, the same-run ABBA p99 rule with its 950 permille margin, SetDIBitsToDevice the default. The code's
+    constants must equal the registered ones."""
+    e = locked_entry("PRESENT-EXACT-0", {
+        "one variable: the call; the composed-screen witness": ("hyp", ("one variable: the present call", "stretchdibits at 1:1", "setdibitstodevice", "composed screen", "neither call", "adopted looprenderer")),
+        "the readback is a hard gate": ("succ", ("hard gate", "zero differing bytes", "read back white")),
+        "same-run ABBA, warm-up, 1000 per cell": ("succ", ("interleaved abba in the same run", "10 warm-up rounds", "1000 samples per cell")),
+        "the rule, its margin and the default": ("succ", ("950 permille", "adoption margin", "both runs read stretchdibits cheaper", "otherwise setdibitstodevice, the simpler semantics")),
+        "no p50, cross-run or one-run decision; nothing inside the clock": ("fail", ("off the p50s", "sealed in another run", "readback or clearing inside the timed interval", "reach the eye unchanged")),
+        "the LATENCY-0 prefix": ("fail", ("byte-exact prefix",)),
+        "scope: before scan-out, the tail shown, host state beside": ("lims", ("before scan-out", "11th-largest sample", "host-state-0", "refuses rather than measuring around it")),
+    })
+    import presentexact as PX
+    rs = read(os.path.join(SHELL, "presentexact.rs")).decode("utf-8")
+    for const in ('pub const CALLS: [&str; 2] = ["stretchdibits", "setdibitstodevice"];', "pub const WARM_ROUNDS: usize = 10;",
+                  "pub const DEFAULT_PER_CELL: usize = 1000;", "pub const TAIL: usize = 12;"):
+        if const not in rs:
+            raise Red("the court's constants are not the registered ones: %s is missing" % const)
+    if (PX.REQUIRED_PER_CELL, PX.MARGIN_PERMILLE, PX.WARM_ROUNDS, PX.TAIL, PX.CALLS, PX.TARGET) != \
+            (1000, 950, 10, 12, ("stretchdibits", "setdibitstodevice"), [1920, 1080]):
+        raise Red("the sealer's constants are not the registered ones")
+    return ("PRESENT-EXACT-0's method is locked before any host number: in a borderless 1920x1080 window at (0,0), DPI-aware, "
+            "the present call is the only variable (StretchDIBits at 1:1 or SetDIBitsToDevice), frames through the adopted "
+            "LoopRenderer; the composed screen read back equal to the certified picture, after a white clear read back, is a "
+            "hard gate; then ABBA in the same run, 10 warm-up rounds, 1000 samples per cell; a call is cheaper only at <= 950 "
+            "permille of the other's p99; StretchDIBits is adopted only if cheaper in both runs, else SetDIBitsToDevice; the "
+            "code's constants equal the registered ones; hash-locked %s" % e["chain_hash"][:8])
+
+
+def _px_raw(s99, d99, n=1000, s50=12000, d50=12000, frames=4, **over):
+    def call(p50, p99):
+        t = [p99 + 400 - 20 * i for i in range(12)][:min(12, n)]
+        return {"envelope": {"render_us": {"p50": p50, "p95": p99 - 200, "p99": p99, "max": t[0]},
+                             "call_us": {"p50": 2000, "p95": 2400, "p99": 2600, "max": 3000},
+                             "present_us": {"p50": 8000, "p95": 11000, "p99": 12000, "max": 13000}, "samples": n},
+                "tail_render_us": t}
+    checks = 2 * frames + 2
+    d = {"calls": {"stretchdibits": call(s50, s99), "setdibitstodevice": call(d50, d99)},
+         "geometry": {"client": [1920, 1080], "origin": [0, 0], "screen_logical": [1920, 1080],
+                      "screen_physical": [1920, 1080], "source": [1920, 1080]},
+         "readback": {"frames": frames, "checks": checks, "bytes_compared": checks * 1920 * 1080 * 3, "mismatched_bytes": 0,
+                      "method": "synthetic"},
+         "block_order": "ABBA", "warm_rounds": 10, "refresh_period_us": 13400, "sequence_frames": frames,
+         "samples_per_cell": n, "production_threads": 8, "phase_origin": "locked", "render_entry": "LoopRenderer",
+         "loop_renders": 2 * (n + 10) + frames}
+    for k, v in over.items():
+        if k in ("geometry", "readback"):
+            d[k] = dict(d[k], **v)
+        else:
+            d[k] = v
+    return {"name": "verdandi-presentexact", "provenance": {"tool": "synthetic", "unix_seconds": 0}, "data": d}
+
+
+def presentexact_sealer():
+    """The implementation sealer, with synthetic runs: each call reads cheaper exactly at 950 permille of the other's
+    p99 and NO MATERIAL DIFFERENCE one microsecond short; the p50s never decide; StretchDIBits is adopted only for
+    cheaper-then-cheaper, SetDIBitsToDevice otherwise; a readback with one differing byte, another geometry, a short
+    readback, another sample count, render entry or block order is refused."""
+    import presentexact as PX
+    cases = {PX.STRETCH: _px_raw(19000, 20000), PX.SETDIB: _px_raw(20000, 19000), PX.NEITHER: _px_raw(19001, 20000)}
+    diag_sealer_cases(PX, "seal_presentexact", "PRESENT-EXACT-0", cases,
+                      [(_px_raw(19000, 20000, readback={"mismatched_bytes": 1}), "a readback with one differing byte"),
+                       (_px_raw(19000, 20000, readback={"checks": 9, "bytes_compared": 9 * 1920 * 1080 * 3}), "a short readback"),
+                       (_px_raw(19000, 20000, geometry={"origin": [0, 39]}), "a client below a title bar"),
+                       (_px_raw(19000, 20000, geometry={"screen_logical": [1536, 864]}), "a scaled screen"),
+                       (_px_raw(19000, 20000, n=300), "300 samples per cell"),
+                       (_px_raw(19000, 20000, render_entry="fresh"), "another render entry"),
+                       (_px_raw(19000, 20000, block_order="AABB"), "another block order")])
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    if PX.seal_presentexact(_px_raw(19500, 20000, s50=9000), reg, "gate", {}, {})[1] != PX.NEITHER:
+        raise Red("a p50 moved the label")
+    for (a, b) in [(x, y) for x in (PX.STRETCH, PX.SETDIB, PX.NEITHER) for y in (PX.STRETCH, PX.SETDIB, PX.NEITHER)]:
+        want = "STRETCHDIBITS" if (a, b) == (PX.STRETCH, PX.STRETCH) else "SETDIBITSTODEVICE"
+        if PX.adoption(a, b) != want:
+            raise Red("the adoption reads %s for %s then %s" % (PX.adoption(a, b), a, b))
+    run2 = {PX.STRETCH: _px_raw(19000, 20000), PX.SETDIB: _px_raw(20000, 19000), PX.NEITHER: _px_raw(19001, 20000)}
+    for first in (PX.STRETCH, PX.NEITHER):
+        for second, raw in run2.items():
+            rec, _ = PX.seal_presentexact(raw, reg, "gate", {}, {}, confirm_of={"of": "synthetic", "chain_hash": "0" * 64, "original_label": first})
+            envelope.validate(rec)
+            if ("ADOPTED CALL: %s" % PX.adoption(first, second)) not in rec["reading"] or "adopted" in json.dumps(rec["data"]).lower():
+                raise Red("the confirmation does not state the adopted call in its reading (and only there)")
+            if rec["provenance"]["presentation_choice"]["chain_hash"] != reg["PRESENTATION-CHOICE-0"]["chain_hash"] or \
+                    rec["provenance"]["host_state_preregistered"]["chain_hash"] != reg["HOST-STATE-0"]["chain_hash"]:
+                raise Red("the record does not cite PRESENTATION-CHOICE-0 and HOST-STATE-0")
+    return ("verify/presentexact.py, driven with synthetic runs: STRETCHDIBITS CHEAPER and SETDIBITSTODEVICE CHEAPER fire "
+            "exactly at 950 permille of the other call's p99, NO MATERIAL DIFFERENCE one microsecond short; the p50s never "
+            "move the label; StretchDIBits is adopted only when both runs read it cheaper, SetDIBitsToDevice in the other "
+            "eight cases, stated in the confirmation's reading only; one differing readback byte, a short readback, a "
+            "client below a title bar, a scaled screen, 300 samples per cell, another render entry or block order are "
+            "refused; records cite PRESENT-EXACT-0, PRESENTATION-CHOICE-0 and HOST-STATE-0")
+
+
+def presentexact_court():
+    """The SAME court the borderless host window runs, headless over a mock screen that holds what was last presented:
+    the geometry verified, every sealed frame cleared, presented and read back under both calls, the court ABBA over
+    the LoopRenderer, the last frame read back again. Under the mock both calls take the same ticks: NO MATERIAL
+    DIFFERENCE. PLANTS: a tampered witness, a mid-court close, a client below a title bar, one byte changed on the way
+    back, and a call that writes nothing each refuse with no record."""
+    import presentexact as PX
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+
+    def check(raw):
+        d = raw["data"]
+        if d["readback"]["checks"] != 10 or d["readback"]["mismatched_bytes"] != 0 or d["render_entry"] != "LoopRenderer":
+            raise Red("the mock court did not read back every sealed frame and the closing frame under both calls")
+        rec, label = PX.seal_presentexact(raw, reg, "gate-mock", {"path": "workshop/attest/sessionwalk-demo.json"},
+                                          {"rustc": "gate"}, required_per_cell=2)
+        envelope.validate(rec)
+        if label != PX.NEITHER:
+            raise Red("the mock court read %r, not %r" % (label, PX.NEITHER))
+
+    diag_court("presentexact", "2", "presentexact court OK",
+               [("witness", "PRESENTEXACT-WITNESS"), ("close", "PRESENTEXACT-CLOSED"), ("geometry", "PRESENTEXACT-GEOMETRY"),
+                ("readback", "PRESENTEXACT-READBACK"), ("noop", "PRESENTEXACT-READBACK")], check)
+    return ("the PRESENT-EXACT-0 court runs headless over a mock screen on the sealed session: the geometry verified, every "
+            "sealed frame cleared to white, read back white, presented and read back equal under both calls (10 checks), the "
+            "court ABBA over the adopted LoopRenderer, the last frame read back again; it seals and reads NO MATERIAL "
+            "DIFFERENCE under the mock; PLANTS: a tampered witness, a mid-court close, a client below a title bar, one byte "
+            "changed on the way back and a call that writes nothing each refuse with no record")
+
+
+def presentexact_fence():
+    """Only the call changes, and the witness sits outside the clock: the two presents are LATENCY-0's present_once shape
+    with the 1:1 StretchDIBits or SetDIBitsToDevice as the one difference and no stretch mode touched; the window is a
+    borderless topmost 1920x1080 popup at (0,0), made DPI-aware first; the clear is PatBlt and the readback a screen-DC
+    BitBlt into a 24-bit top-down DIB; the timed interval holds only the loop render, its blit and the call; the
+    readback and clear run only before and after the court; LATENCY-0's instrument is still a byte-exact prefix."""
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i_ar1, i_px = tail.find("ALLOC-REUSE-1 (appended)"), tail.find("PRESENT-EXACT-0 (appended)")
+    if i_ar1 < 0 or i_px < i_ar1:
+        raise Red("the PRESENT-EXACT-0 section is not appended after ALLOC-REUSE-1's")
+    sect = tail[i_px:]
+    pres = src_span(sect, "fn present(&mut self", "fn flush(&mut self)")
+    order = [pres.find(t) for t in ("GetDC(self.hwnd)", "if self.call == 0", "StretchDIBits(hdc, 0, 0, W as i32, H as i32, 0, 0, W as i32, H as i32,",
+                                    "SetDIBitsToDevice(hdc, 0, 0, W as Dword, H as Dword, 0, 0, 0, H as Uint,", "let ready = qpc();",
+                                    "(self.flush_fn)();", "Some(qpc())", "ReleaseDC(")]
+    if -1 in order or order != sorted(order):
+        raise Red("the exact surface's present is not present_once's shape with the 1:1 call as its one difference")
+    if "SetStretchBltMode" in sect or "SetBrushOrgEx(" in sect:
+        raise Red("the exact section touches the stretch mode: a second variable")
+    if "PatBlt(hdc, 0, 0, W as i32, H as i32, WHITENESS)" not in src_span(sect, "fn clear(&mut self)", "fn readback(&mut self)"):
+        raise Red("the clear is not a white PatBlt over the whole client")
+    rb = src_span(sect, "fn readback(&mut self)", "fn geometry(&mut self)")
+    for t in ("ClientToScreen(self.hwnd, &mut org)", "GetDC(std::ptr::null_mut())", "CreateDIBSection(screen, &hdr, DIB_RGB_COLORS",
+              "let hdr = court_header();", "BitBlt(mem, 0, 0, W as i32, H as i32, screen, org.x, org.y, SRCCOPY)"):
+        if t not in rb:
+            raise Red("the readback is not a screen-DC BitBlt of the client into a 24-bit top-down DIB: %s" % t)
+    win = src_span(sect, "pub fn presentexact_window(", "\n}\n")
+    ew = src_span(sect, "fn exact_window(", "\n}\n")
+    if ("CreateWindowExW(WS_EX_TOPMOST, class_name.as_ptr(), title_w.as_ptr(), WS_POPUP | WS_VISIBLE, 0, 0, W as i32, H as i32," not in ew
+            or "lpfn_wnd_proc: Some(wnd_proc)" not in ew or win.find("SetProcessDPIAware()") < 0
+            or not (0 <= win.find("SetProcessDPIAware()") < win.find("= exact_window(")) or "crate::presentexact::court(&mut surf, &inputs, per_cell)" not in win):
+        raise Red("the window is not a DPI-aware, borderless, topmost 1920x1080 popup at (0,0) with LATENCY-0's procedure")
+    rs = read(os.path.join(SHELL, "presentexact.rs")).decode("utf-8")
+    court = src_span(rs, "pub fn court<", "fn pct_json(")
+    timed = src_span(court, "let t0 = s.ticks();", "let presented = s.present(bgr);")
+    for bad in ("readback", "clear", "witness_one", "sha256", "frame_digest", "set_call", "arm_composite", "to_blit("):
+        if bad in timed:
+            raise Red("the timed interval holds %s" % bad)
+    if "lr.render(&inputs[k].scene);" not in timed or "let bgr = lr.blit();" not in timed:
+        raise Red("the timed frames do not render through the adopted LoopRenderer")
+    loop = src_span(court, "// 4. the court", "// 5. after the court")
+    if "witness_one" in loop or "readback" in loop or "clear" in loop:
+        raise Red("the readback or the clear runs inside the court's rounds")
+    if "s.set_call(c);\n            s.flush(); // the locked phase origin\n            let t0 = s.ticks();" not in loop:
+        raise Red("the call is not set before the locked phase origin")
+    return ("only the call changes and the witness sits outside the clock: the exact surface's present is present_once's "
+            "shape with StretchDIBits at 1:1 or SetDIBitsToDevice as its one difference, no stretch mode touched; the window "
+            "is a DPI-aware, borderless, topmost 1920x1080 popup at (0,0) with LATENCY-0's procedure; the clear is a white "
+            "PatBlt and the readback a screen-DC BitBlt into a 24-bit top-down DIB; the timed interval holds only the "
+            "LoopRenderer's render and blit and the call; the readback and clear run only before and after the rounds; "
+            "LATENCY-0's instrument is still a byte-exact prefix")
+
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -4629,6 +4830,9 @@ def main() -> int:
     row("hoststate-preregistered", hoststate_preregistered)
     row("hoststate-record", hoststate_record)
     row("hoststate-fence", hoststate_fence)
+    row("presentationchoice-declared", presentationchoice_declared)
+    row("presentexact-preregistered", presentexact_preregistered)
+    row("presentexact-sealer", presentexact_sealer)
     row("gauntlet-preregistered", gauntlet_preregistered)
     row("gauntlet1-preregistered", gauntlet1_preregistered)
     row("gauntlet1-equiv", gauntlet1_equiv)
@@ -4704,6 +4908,8 @@ def main() -> int:
     row("allocreuse1-court", allocreuse1_court)
     row("allocreuse1-fence", allocreuse1_fence)
     row("allocreuse1-lock", allocreuse1_lock)
+    row("presentexact-court", presentexact_court)
+    row("presentexact-fence", presentexact_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

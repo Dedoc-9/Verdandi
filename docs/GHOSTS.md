@@ -224,6 +224,12 @@ this host the half-size blit's cost depends materially on which reduction GDI pe
 `BLACKONWHITE` was dearer than `COLORONCOLOR` in both runs. `HALFTONE` read MODE MATERIAL once and CONFOUNDED on the
 confirmation, and it stays unresolved.
 
+The choice is now made (PRESENTATION-CHOICE-0, `4a7a32d9`): the certified picture 1:1 in a borderless window, so no
+reduction at all. PRESENT-EXACT-0 (`bc910e2f`) implements it and adds the missing check: the composed screen under the
+window, read back, must equal the certified picture byte for byte. Once that court has run, the ghost's last clause,
+"which no row checks", is answered for the chosen presentation. The half-size windows keep showing the AND-reduction
+as the frozen instrument they are.
+
 ---
 
 ## G12 — the render-loop courts measure a loop the shipped shell does not run · ESTABLISHED (read from the code)

@@ -130,6 +130,9 @@ Every rung ran the same loop, and the loop is the product as much as the code:
   makes `LoopRenderer` the production entry for in-loop rendering, with every fresh render call site pinned.
 - The same court can run 40–60% slower on another run the same day (G13). HOST-STATE-0 put memory pressure beside one
   such run: an association, not a cause. Read absolute milliseconds as belonging to their own run.
+- What the shell shows is decided (PRESENTATION-CHOICE-0): the certified picture 1:1 in a borderless window.
+  PRESENT-EXACT-0 picks the GDI call and reads the composed screen back as a hard gate; until it runs, nothing checks
+  what reaches the screen (G11).
 - The render headroom reaches the screen out of phase and is absorbed in phase (G7, `LATENCY-1R`, reproduced over two
   runs); presentation latency is phase-dependent, and no low-latency claim is made.
 - A 200-sample p99 is three samples (G10); read a tail-sensitive category only after a confirmation.
