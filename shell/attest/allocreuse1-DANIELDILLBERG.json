@@ -1,0 +1,318 @@
+{
+ "name": "verdandi-allocreuse1",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell allocreuse1-window (shell/allocreuse1.rs court over LATENCY-1R's GDI surface in FRAME-SPLIT-0's window) + verify/allocreuse1.py",
+  "surface": "shell/allocreuse1.rs court over the GDI window (StretchDIBits + DwmFlush, QPC) surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790490373,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "ALLOC-REUSE-1",
+   "chain_hash": "dc904a6c8e4ffe9f17d296c02383ac4ca76e67d996adb32a819290b10529fb13"
+  },
+  "host_state_preregistered": {
+   "rung": "HOST-STATE-0",
+   "chain_hash": "582503823c360e07ee6b295117d870ec4eb3b1fe5f2bb422ede04947b35ff072"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the fresh production path and the persistent-buffer render-loop entry on host DANIELDILLBERG, uninstrumented envelopes interleaved ABBA, locked phase origin, 1000 samples per cell over 4 frames",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "that any shipped window got faster: run renders once and playback-window pre-renders frames that own their buffers",
+  "an adoption from one run, from a comparator sealed in another run, or from the p50s",
+  "that the fresh reference may be deleted or rewritten",
+  "that the recorded host state explains or caused a number: HOST-STATE-0 is recorded beside and never read",
+  "input-to-photon latency, or a comparison with any emit p99",
+  "any other host, allocator, OS or buffer size"
+ ],
+ "data": {
+  "variants": {
+   "fresh": {
+    "envelope": {
+     "render_us": {
+      "p50": 15469,
+      "p95": 16812,
+      "p99": 17604,
+      "max": 20994
+     },
+     "present_us": {
+      "p50": 10264,
+      "p95": 12090,
+      "p99": 12745,
+      "max": 13124
+     },
+     "samples": 1000
+    },
+    "tail_render_us": [
+     20994,
+     20219,
+     18897,
+     18372,
+     18304,
+     18091,
+     18020,
+     17980,
+     17752,
+     17615,
+     17604,
+     17560
+    ]
+   },
+   "reused": {
+    "envelope": {
+     "render_us": {
+      "p50": 13703,
+      "p95": 14926,
+      "p99": 15600,
+      "max": 21538
+     },
+     "present_us": {
+      "p50": 12006,
+      "p95": 13728,
+      "p99": 14464,
+      "max": 15049
+     },
+     "samples": 1000
+    },
+    "tail_render_us": [
+     21538,
+     18208,
+     16833,
+     16083,
+     15977,
+     15867,
+     15754,
+     15679,
+     15659,
+     15635,
+     15600,
+     15594
+    ]
+   }
+  },
+  "block_order": "ABBA",
+  "warm_rounds": 10,
+  "refresh_period_us": 13356,
+  "sequence_frames": 4,
+  "samples_per_cell": 1000,
+  "production_threads": 8,
+  "phase_origin": "locked",
+  "persistent_buffers": 4,
+  "reuse_renders": 1014,
+  "derived": {
+   "variants": {
+    "fresh": {
+     "render_p50_us": 15469,
+     "render_p95_us": 16812,
+     "render_p99_us": 17604,
+     "render_max_us": 20994,
+     "composited_p50_us": 10264,
+     "composited_p99_us": 12745,
+     "tail_render_us": [
+      20994,
+      20219,
+      18897,
+      18372,
+      18304,
+      18091,
+      18020,
+      17980,
+      17752,
+      17615,
+      17604,
+      17560
+     ]
+    },
+    "reused": {
+     "render_p50_us": 13703,
+     "render_p95_us": 14926,
+     "render_p99_us": 15600,
+     "render_max_us": 21538,
+     "composited_p50_us": 12006,
+     "composited_p99_us": 14464,
+     "tail_render_us": [
+      21538,
+      18208,
+      16833,
+      16083,
+      15977,
+      15867,
+      15754,
+      15679,
+      15659,
+      15635,
+      15600,
+      15594
+     ]
+    }
+   },
+   "against_fresh": {
+    "p99_reused_permille_of_fresh": 886,
+    "p99_delta_us": -2004,
+    "p50_delta_us": -1766,
+    "composited_p50_delta_us": 1742
+   }
+  },
+  "rule": {
+   "adopt_p99_permille_of_fresh": 950,
+   "required_per_cell": 1000,
+   "runs_that_must_pass": 2,
+   "margin": "an adoption margin (a declared decision threshold), not an uncertainty"
+  },
+  "host_state": {
+   "before": {
+    "hoststate": "HOST-STATE-0",
+    "version": 1,
+    "unix_seconds": 1790490292,
+    "platform": "win32",
+    "fields": {
+     "cpu": {
+      "model": "AMD Ryzen AI Z2 Extreme",
+      "logical_processors": 16,
+      "mhz": {
+       "current_min": 1610,
+       "current_median": 1610,
+       "current_max": 2000,
+       "max": 2000,
+       "limit_min": 2000,
+       "source": "CallNtPowerInformation(ProcessorInformation), as the OS reports it"
+      }
+     },
+     "power": {
+      "ac_line_status": 1,
+      "battery_flag": 1,
+      "battery_percent": 100,
+      "battery_saver": 0,
+      "codes": "ac_line_status 0 offline, 1 online, 255 unknown; battery_percent 255 unknown",
+      "plan": {
+       "guid": "381b4222-f694-41f0-9685-ff5bb260df2e",
+       "name": "Balanced"
+      }
+     },
+     "load": {
+      "cpu_busy_permille": 72,
+      "window_ms": 1000,
+      "source": "GetSystemTimes over the window, all processors"
+     },
+     "memory": {
+      "load_percent": 89,
+      "total_mb": 11897,
+      "available_mb": 1222
+     },
+     "process": {
+      "priority_class": "0x20",
+      "affinity_mask": "0xffff",
+      "system_affinity_mask": "0xffff",
+      "of": "the sealing process; the court process is its child"
+     },
+     "display": {
+      "logical": [
+       1920,
+       1080
+      ],
+      "physical": [
+       1920,
+       1080
+      ],
+      "bits_per_pixel": 32,
+      "vertical_refresh_hz": 75,
+      "source": "GetDeviceCaps on the screen DC: the nominal mode, not the court's measured refresh"
+     },
+     "uptime": {
+      "ms": 744838500
+     },
+     "thermal": {
+      "unavailable": "not captured: no reliable source without elevation (declared, not attempted)"
+     }
+    }
+   },
+   "after": {
+    "hoststate": "HOST-STATE-0",
+    "version": 1,
+    "unix_seconds": 1790490374,
+    "platform": "win32",
+    "fields": {
+     "cpu": {
+      "model": "AMD Ryzen AI Z2 Extreme",
+      "logical_processors": 16,
+      "mhz": {
+       "current_min": 1610,
+       "current_median": 2000,
+       "current_max": 2000,
+       "max": 2000,
+       "limit_min": 2000,
+       "source": "CallNtPowerInformation(ProcessorInformation), as the OS reports it"
+      }
+     },
+     "power": {
+      "ac_line_status": 1,
+      "battery_flag": 1,
+      "battery_percent": 100,
+      "battery_saver": 0,
+      "codes": "ac_line_status 0 offline, 1 online, 255 unknown; battery_percent 255 unknown",
+      "plan": {
+       "guid": "381b4222-f694-41f0-9685-ff5bb260df2e",
+       "name": "Balanced"
+      }
+     },
+     "load": {
+      "cpu_busy_permille": 55,
+      "window_ms": 1000,
+      "source": "GetSystemTimes over the window, all processors"
+     },
+     "memory": {
+      "load_percent": 89,
+      "total_mb": 11897,
+      "available_mb": 1206
+     },
+     "process": {
+      "priority_class": "0x20",
+      "affinity_mask": "0xffff",
+      "system_affinity_mask": "0xffff",
+      "of": "the sealing process; the court process is its child"
+     },
+     "display": {
+      "logical": [
+       1920,
+       1080
+      ],
+      "physical": [
+       1920,
+       1080
+      ],
+      "bits_per_pixel": 32,
+      "vertical_refresh_hz": 75,
+      "source": "GetDeviceCaps on the screen DC: the nominal mode, not the court's measured refresh"
+     },
+     "uptime": {
+      "ms": 744920468
+     },
+     "thermal": {
+      "unavailable": "not captured: no reliable source without elevation (declared, not attempted)"
+     }
+    }
+   }
+  }
+ },
+ "reading": "ALLOC-REUSE-1 on host DANIELDILLBERG (1000 samples per cell, ABBA). Envelope p99 fresh 17604 us, reused 15600 us (886 permille of fresh; the rule: <= 950). PERFORMANCE PASS. p50 fresh 15469 us, reused 13703 us (beside, not the rule). Correctness held on every sample, or there would be no record. One run adopts nothing: ADOPT needs this run and its --confirm to pass. An entry contract for a render loop; no shipped window changes; not input-to-photon.",
+ "chain_hash": "8036e65488f168b87cc3cf26798d25aed0c2b9fe249118c30a4b175258505b96"
+}

@@ -1,0 +1,323 @@
+{
+ "name": "verdandi-allocreuse1-confirm",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell allocreuse1-window (shell/allocreuse1.rs court over LATENCY-1R's GDI surface in FRAME-SPLIT-0's window) + verify/allocreuse1.py",
+  "surface": "shell/allocreuse1.rs court over the GDI window (StretchDIBits + DwmFlush, QPC) surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790493104,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "ALLOC-REUSE-1",
+   "chain_hash": "dc904a6c8e4ffe9f17d296c02383ac4ca76e67d996adb32a819290b10529fb13"
+  },
+  "host_state_preregistered": {
+   "rung": "HOST-STATE-0",
+   "chain_hash": "582503823c360e07ee6b295117d870ec4eb3b1fe5f2bb422ede04947b35ff072"
+  },
+  "confirms": {
+   "of": "shell/attest/allocreuse1-DANIELDILLBERG.json",
+   "chain_hash": "8036e65488f168b87cc3cf26798d25aed0c2b9fe249118c30a4b175258505b96",
+   "original_label": "PERFORMANCE PASS"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the fresh production path and the persistent-buffer render-loop entry on host DANIELDILLBERG, uninstrumented envelopes interleaved ABBA, locked phase origin, 1000 samples per cell over 4 frames (a confirmation run)",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "that any shipped window got faster: run renders once and playback-window pre-renders frames that own their buffers",
+  "an adoption from one run, from a comparator sealed in another run, or from the p50s",
+  "that the fresh reference may be deleted or rewritten",
+  "that the recorded host state explains or caused a number: HOST-STATE-0 is recorded beside and never read",
+  "input-to-photon latency, or a comparison with any emit p99",
+  "any other host, allocator, OS or buffer size"
+ ],
+ "data": {
+  "variants": {
+   "fresh": {
+    "envelope": {
+     "render_us": {
+      "p50": 21808,
+      "p95": 24433,
+      "p99": 25598,
+      "max": 30527
+     },
+     "present_us": {
+      "p50": 4830,
+      "p95": 10450,
+      "p99": 12311,
+      "max": 17608
+     },
+     "samples": 1000
+    },
+    "tail_render_us": [
+     30527,
+     29135,
+     28214,
+     27008,
+     26915,
+     26240,
+     26137,
+     25975,
+     25629,
+     25616,
+     25598,
+     25507
+    ]
+   },
+   "reused": {
+    "envelope": {
+     "render_us": {
+      "p50": 20058,
+      "p95": 22688,
+      "p99": 23797,
+      "max": 26256
+     },
+     "present_us": {
+      "p50": 6521,
+      "p95": 11339,
+      "p99": 13266,
+      "max": 14898
+     },
+     "samples": 1000
+    },
+    "tail_render_us": [
+     26256,
+     25140,
+     24718,
+     24583,
+     24138,
+     23966,
+     23932,
+     23906,
+     23905,
+     23802,
+     23797,
+     23716
+    ]
+   }
+  },
+  "block_order": "ABBA",
+  "warm_rounds": 10,
+  "refresh_period_us": 13240,
+  "sequence_frames": 4,
+  "samples_per_cell": 1000,
+  "production_threads": 8,
+  "phase_origin": "locked",
+  "persistent_buffers": 4,
+  "reuse_renders": 1014,
+  "derived": {
+   "variants": {
+    "fresh": {
+     "render_p50_us": 21808,
+     "render_p95_us": 24433,
+     "render_p99_us": 25598,
+     "render_max_us": 30527,
+     "composited_p50_us": 4830,
+     "composited_p99_us": 12311,
+     "tail_render_us": [
+      30527,
+      29135,
+      28214,
+      27008,
+      26915,
+      26240,
+      26137,
+      25975,
+      25629,
+      25616,
+      25598,
+      25507
+     ]
+    },
+    "reused": {
+     "render_p50_us": 20058,
+     "render_p95_us": 22688,
+     "render_p99_us": 23797,
+     "render_max_us": 26256,
+     "composited_p50_us": 6521,
+     "composited_p99_us": 13266,
+     "tail_render_us": [
+      26256,
+      25140,
+      24718,
+      24583,
+      24138,
+      23966,
+      23932,
+      23906,
+      23905,
+      23802,
+      23797,
+      23716
+     ]
+    }
+   },
+   "against_fresh": {
+    "p99_reused_permille_of_fresh": 929,
+    "p99_delta_us": -1801,
+    "p50_delta_us": -1750,
+    "composited_p50_delta_us": 1691
+   }
+  },
+  "rule": {
+   "adopt_p99_permille_of_fresh": 950,
+   "required_per_cell": 1000,
+   "runs_that_must_pass": 2,
+   "margin": "an adoption margin (a declared decision threshold), not an uncertainty"
+  },
+  "host_state": {
+   "before": {
+    "hoststate": "HOST-STATE-0",
+    "version": 1,
+    "unix_seconds": 1790493023,
+    "platform": "win32",
+    "fields": {
+     "cpu": {
+      "model": "AMD Ryzen AI Z2 Extreme",
+      "logical_processors": 16,
+      "mhz": {
+       "current_min": 1610,
+       "current_median": 1610,
+       "current_max": 2000,
+       "max": 2000,
+       "limit_min": 2000,
+       "source": "CallNtPowerInformation(ProcessorInformation), as the OS reports it"
+      }
+     },
+     "power": {
+      "ac_line_status": 1,
+      "battery_flag": 1,
+      "battery_percent": 100,
+      "battery_saver": 0,
+      "codes": "ac_line_status 0 offline, 1 online, 255 unknown; battery_percent 255 unknown",
+      "plan": {
+       "guid": "381b4222-f694-41f0-9685-ff5bb260df2e",
+       "name": "Balanced"
+      }
+     },
+     "load": {
+      "cpu_busy_permille": 24,
+      "window_ms": 1000,
+      "source": "GetSystemTimes over the window, all processors"
+     },
+     "memory": {
+      "load_percent": 96,
+      "total_mb": 11897,
+      "available_mb": 359
+     },
+     "process": {
+      "priority_class": "0x20",
+      "affinity_mask": "0xffff",
+      "system_affinity_mask": "0xffff",
+      "of": "the sealing process; the court process is its child"
+     },
+     "display": {
+      "logical": [
+       1920,
+       1080
+      ],
+      "physical": [
+       1920,
+       1080
+      ],
+      "bits_per_pixel": 32,
+      "vertical_refresh_hz": 75,
+      "source": "GetDeviceCaps on the screen DC: the nominal mode, not the court's measured refresh"
+     },
+     "uptime": {
+      "ms": 747569000
+     },
+     "thermal": {
+      "unavailable": "not captured: no reliable source without elevation (declared, not attempted)"
+     }
+    }
+   },
+   "after": {
+    "hoststate": "HOST-STATE-0",
+    "version": 1,
+    "unix_seconds": 1790493105,
+    "platform": "win32",
+    "fields": {
+     "cpu": {
+      "model": "AMD Ryzen AI Z2 Extreme",
+      "logical_processors": 16,
+      "mhz": {
+       "current_min": 1610,
+       "current_median": 1610,
+       "current_max": 2000,
+       "max": 2000,
+       "limit_min": 2000,
+       "source": "CallNtPowerInformation(ProcessorInformation), as the OS reports it"
+      }
+     },
+     "power": {
+      "ac_line_status": 1,
+      "battery_flag": 1,
+      "battery_percent": 100,
+      "battery_saver": 0,
+      "codes": "ac_line_status 0 offline, 1 online, 255 unknown; battery_percent 255 unknown",
+      "plan": {
+       "guid": "381b4222-f694-41f0-9685-ff5bb260df2e",
+       "name": "Balanced"
+      }
+     },
+     "load": {
+      "cpu_busy_permille": 56,
+      "window_ms": 1000,
+      "source": "GetSystemTimes over the window, all processors"
+     },
+     "memory": {
+      "load_percent": 88,
+      "total_mb": 11897,
+      "available_mb": 1364
+     },
+     "process": {
+      "priority_class": "0x20",
+      "affinity_mask": "0xffff",
+      "system_affinity_mask": "0xffff",
+      "of": "the sealing process; the court process is its child"
+     },
+     "display": {
+      "logical": [
+       1920,
+       1080
+      ],
+      "physical": [
+       1920,
+       1080
+      ],
+      "bits_per_pixel": 32,
+      "vertical_refresh_hz": 75,
+      "source": "GetDeviceCaps on the screen DC: the nominal mode, not the court's measured refresh"
+     },
+     "uptime": {
+      "ms": 747651593
+     },
+     "thermal": {
+      "unavailable": "not captured: no reliable source without elevation (declared, not attempted)"
+     }
+    }
+   }
+  }
+ },
+ "reading": "CONFIRMATION run — does NOT replace the sealed ALLOC-REUSE-1 record (chain 8036e654). First run PERFORMANCE PASS; this run PERFORMANCE PASS. ADOPTION: ADOPT: the persistent-buffer LoopRenderer becomes the production entry for in-loop rendering (declared, with its call-site fence, in the following patch); the fresh path stays the frozen reference. ALLOC-REUSE-1 on host DANIELDILLBERG (1000 samples per cell, ABBA). Envelope p99 fresh 25598 us, reused 23797 us (929 permille of fresh; the rule: <= 950). PERFORMANCE PASS. p50 fresh 21808 us, reused 20058 us (beside, not the rule). Correctness held on every sample, or there would be no record. One run adopts nothing: ADOPT needs this run and its --confirm to pass. An entry contract for a render loop; no shipped window changes; not input-to-photon.",
+ "chain_hash": "256e8a6e8d8b07e59a92b16ee1303021c1a526f93aac095a08adf32760e0fc04"
+}
