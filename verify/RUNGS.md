@@ -2627,15 +2627,14 @@ back exact (10 checks, 0 differing bytes), was sealed and committed by the owner
 joined in the report to exactly one run-ledger line (exit 0, 10 readbacks, 0 differed, 0 refusals). These are the
 first court runs in the host's ledger. An attempt at a fifth run was refused before it started (`DRIFT-FULL`), so it
 left no record and no ledger line. That is the protocol holding on the host. The numbers, in µs, with the refresh
-period the court measured and a few fields of the before-snapshot (run 4's snapshot is in its record; the panel will
-show it):
+period the court measured and a few fields of the before-snapshot, as the owner's panel printed them:
 
 | run | SetDIBitsToDevice p50 / p95 / p99 | StretchDIBits p50 / p95 / p99 | refresh | before: busy, perf, hard faults/s, available |
 |---|---|---|---|---|
 | s1 r1 | 10,146 / 12,147 / 13,139 | 10,085 / 12,220 / 13,335 | 13,270 | 112‰, 1,644‰, 179, 613 MB |
 | s1 r2 | 9,591 / 10,973 / 11,638 | 9,642 / 11,085 / 11,629 | 12,445 | 20‰, 1,058‰, 3, 524 MB |
 | s1 r3 | 9,450 / 10,888 / 11,461 | 9,407 / 10,950 / 11,492 | 13,566 | 26‰, 978‰, 0, 522 MB |
-| s1 r4 | 10,583 / 12,777 / 13,574 | 10,506 / 12,864 / 14,388 | 13,675 | (in the record) |
+| s1 r4 | 10,583 / 12,777 / 13,574 | 10,506 / 12,864 / 14,388 | 13,675 | 15‰, 1,444‰, 448, 558 MB |
 
 Within sitting 1, the p50 ranged 9,450–10,583 for SetDIBitsToDevice (range 1,133, 118‰ of the lower median 9,591) and
 9,407–10,506 for StretchDIBits (1,099, 113‰). The p99 ranged 11,461–13,574 (2,113, 181‰) and 11,492–14,388 (2,896,
@@ -2644,11 +2643,20 @@ medians of 2,047 and 2,085. The measured refresh period ran 12,445–13,675 (ran
 
 Runs 1 and 4 are the slower pair: p50 above 10,000 and p99 above 13,100 on both calls, and the widest within-run
 spreads. Runs 2 and 3 are the faster pair: p50 below 9,700 and p99 below 11,700. Run 4 also shows a longer call interval
-at p50 (2,321–2,325 against 1,793–1,887 in runs 1–3). Run 1's before-snapshot was the busiest of runs 1–3 (112‰ against
-20–26‰, performance 1,644‰, 179 hard faults a second). Memory load stayed at 94–95% where it was read. Runs 2 and 3 sit
-below both earlier PRESENT-EXACT-0 runs at p50 and p99; runs 1 and 4 sit above them at p99. Processor Frequency read
-1,634–1,878 across runs 1–3's snapshots, consistent with HOST-STATE-1's erratum. All of this is recorded, not read:
-four runs, association never cause, and the panel is DRIFT-0's answer only at 12.
+at p50 (2,321–2,325 against 1,793–1,887 in runs 1–3). Beside the pairs, the before-snapshots show two things. The slower
+pair's show the highest performance ratios (1,644‰ and 1,444‰ against 978‰ and 1,058‰) and the most hard faults (179
+and 448 a second against 0 and 3). CPU busy does not follow the pairs: 112‰ and 15‰ for the slower pair, against 20‰
+and 26‰. The after-snapshots show neither pattern (performance 872–1,114‰, hard faults 0–4 a second in all four).
+Memory load stayed at 94–95% throughout. Runs 2 and 3 sit below both earlier PRESENT-EXACT-0 runs at p50 and p99; runs
+1 and 4 sit above them at p99. Processor Frequency read 1,634–1,878 across the snapshots, consistent with HOST-STATE-1's
+erratum.
+
+**What "just before" contains (a fact about the apparatus, recorded now).** The before-snapshot is taken by
+`diagcommon.host_run` right after DRIFT-0's own steps: the shell is rebuilt with `rustc` and the headless selftest runs,
+and only then is the snapshot taken and the window court started. Its load, clock and faults are three successive
+one-second windows. So a before-snapshot's hard faults and clock may carry the build's and the selftest's, not an idle
+host's. That is why the association above is between a run and what immediately preceded it, and is no more than that.
+All of this is recorded, not read: four runs, association never cause, and the panel is DRIFT-0's answer only at 12.
 
 **A display added to the panel (after sitting 1 closed, at the owner's request).** The report now shows each run's
 measured refresh period, and its between-run spread within and across sittings. Every record already seals that
