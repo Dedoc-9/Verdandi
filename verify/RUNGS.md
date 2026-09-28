@@ -2676,7 +2676,7 @@ number, or the protocol lets a run through too soon, out of order, or past a ful
 the panel's spreads, joins or history are wrong, or if it says a verdict. `drift-fence` goes red if the workload
 changes.
 
-## LIVE-LOOP-0 — the first per-frame loop: the sealed session walked live (preregistered and built; host run pending)
+## LIVE-LOOP-0 — the first per-frame loop: the sealed session walked live (measured on the host: the first live walk exact)
 
 **Why.** Everything the shell has shown so far was rendered before its window opened, so the studio has been a
 viewer. LIVE-LOOP-0 is the first loop that renders every composition live from the current state. It is the first
@@ -2713,8 +2713,18 @@ refuses it. The fresh-entry pins now include `liveloop.rs`, on purpose, for its 
 `refusalwhy-fence` now bound their win32 sections at the next section rule, so the new appended section is judged by
 its own fence. 13 mutations were each caught.
 
+**The first live walk (DANIELDILLBERG).** After the gate read 152 rows twice, identical, `python verify/liveloop.py
+--host DANIELDILLBERG` built the window shell, passed the headless check, and walked the sealed session's 4 steps
+live in the borderless window. There were 246 compositions, each rendered through the LoopRenderer from the current
+step, byte-checked against the step's verified bytes and presented by SetDIBitsToDevice. All 6 screen readbacks were
+exact (0 differed), and the console printed its single line, "the screen is the certified picture". The session file
+was unchanged. The run was sealed as `shell/attest/liveloop-DANIELDILLBERG.json`, citing LIVE-LOOP-0 (`65550cc0`), and
+committed by the owner. For the first time, the shipped shell rendered every composition live from the current state
+and the screen showed exactly what it rendered at every readback.
+
 **Grade.** DECLARED: the method. ESTABLISHED (gate): the loop, executed over the mock, its plants, its logging and
-ledgering, the sealer and the fence. NOT_MEASURED (host): the first live walk on the owner's screen.
+ledgering, the sealer and the fence. MEASURED (host, one walk): 246 compositions rendered live and presented, 6 of 6
+screen readbacks exact, the session unchanged.
 
 **does_not_show.** Speed: counts only, no timing. What reached the screen between readbacks: the byte check covers what
 the loop handed the call. A fresh present versus a stale one during the hold, since the loop does not clear between

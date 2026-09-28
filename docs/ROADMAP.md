@@ -71,7 +71,7 @@ input and authoring, and making the live chain recoverable. The order:
 ```text
 REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic foundation (DRIFT-0: sitting 1 of 3 complete)
       ↓
-LIVE-LOOP-0      the shipped per-frame loop — preregistered and built; its first host walk is pending
+LIVE-LOOP-0      the shipped per-frame loop — walked on the host: 246 compositions live, every readback exact
       ↓
 LIVE-INPUT-0     physical input → typed editor action → the workshop/session → a new W, M → the next frame
       ↓
@@ -259,12 +259,13 @@ box, its program, class, overlay flags and rectangle. Titles and process ids are
 geometry, not identity, so recurrence is counted by program, class and flags. The console and the log come from one
 walk. A recurring program over the screen is a candidate, never a cause.
 
-### LIVE-LOOP-0 — the first per-frame loop · **preregistered and built** (`65550cc0`); host walk pending
+### LIVE-LOOP-0 — the first per-frame loop · **measured on the host** (`65550cc0`): the first live walk exact
 The sealed session walked live: 24 compositions per step and 150 held, every composition rendered through the
 `LoopRenderer` from the current step, checked against that step's verified bytes and presented by SetDIBitsToDevice in
 the presenter's borderless window. The screen is read back at every step and twice in the hold, and a differing screen
 is counted and logged, never hidden. There is no input, no camera, no clock: counts only. The gate executes the loop
-itself over the mock. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
+itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
+readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
 
 ### DRIFT-0 — variation within and between runs of the same workload · **preregistered** (`d445dcf9`); sitting 1 of 3 complete (4 of 12 runs)
 Observational: the locked PRESENT-EXACT-0 court repeated without modification, 3 sittings of 4 completed runs (60 s
