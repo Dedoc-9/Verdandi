@@ -66,7 +66,9 @@ OS-computed clock and the paging rates, a version 2 snapshot that no court recor
 every refusal on the present path appends one unsealed line to an append-only log; one record per refusal, proven on
 the mock court), runledger (RUN-LEDGER-0: one line per court or presenter run, refused or not, joined to the refusal
 log on run_id), refusalwhy1 (REFUSAL-WHY-1: a screen-readback refusal's covering windows written into the refusal
-log — program, class, flags and rectangle, never a title or a pid), and — in the oracle stage —
+log — program, class, flags and rectangle, never a title or a pid), drift (DRIFT-0: the locked PRESENT-EXACT-0 court
+repeated unchanged, 3 sittings of 4 runs, HOST-STATE-1 beside, a descriptive panel with no verdict), and — in the
+oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
@@ -4576,7 +4578,8 @@ def hoststate_fence():
         raise Red("the host state is not attached after the label and the adoption are fixed")
     dc = read(os.path.join(ROOT, "verify", "diagcommon.py")).decode("utf-8")
     hr = src_span(dc, "def host_run(", "\ndef ")
-    if ("probe: dict | None = None" not in hr or hr.count("hoststate.capture_safe()") != 2 or "hoststate.capture()" in hr
+    if ("probe: dict | None = None" not in hr or hr.count("hoststate.capture_safe(version=hoststate_version)") != 2
+            or "hoststate_version: int = 1" not in hr or "hoststate.capture()" in hr
             or not (hr.index('probe["before"]') < hr.index('f"{cmd}-window"') < hr.index('probe["after"]'))):
         raise Red("host_run's probe is not optional, not safe, or not taken just before and just after the window court")
     for sealer in ("presentstretch.py", "allocreuse.py"):
@@ -5082,7 +5085,7 @@ def hoststate1_record():
         if set(s) != {"hoststate", "version", "unavailable"} or (s["hoststate"], s["version"]) != HS.VERSIONS[ver][:1] + (ver,):
             raise Red("capture_safe let a bad snapshot through, raised, or marked it with the wrong version")
     for name in os.listdir(os.path.join(ROOT, "verify")):
-        if name.endswith(".py") and name not in ("hoststate.py", "verify.py"):
+        if name.endswith(".py") and name not in ("hoststate.py", "verify.py", "drift.py"):  # DRIFT-0's entry asks for version 2
             if re.search(r"version\s*=\s*2", read(os.path.join(ROOT, "verify", name)).decode("utf-8")):
                 raise Red("%s asks for a version 2 snapshot without its own registered entry" % name)
     src = read(os.path.join(ROOT, "verify", "hoststate.py")).decode("utf-8")
@@ -5276,7 +5279,7 @@ def refusallog_fence():
             if "VERDANDI_REFUSAL_LOG" in t or "refusals.log" in t or "refusallog::line(" in t:
                 raise Red("shell/%s names the refusal log: nothing on the path may read it" % name)
     for name in os.listdir(os.path.join(ROOT, "verify")):
-        if name.endswith(".py") and name not in ("refusallog.py", "runledger.py", "verify.py"):
+        if name.endswith(".py") and name not in ("refusallog.py", "runledger.py", "verify.py", "drift.py"):  # DRIFT-0's report reads it
             t = read(os.path.join(ROOT, "verify", name)).decode("utf-8")
             if "refusallog" in t or "REFUSAL-LOG" in t or "refusals.log" in t:
                 raise Red("verify/%s reads the refusal log: no rule may" % name)
@@ -5489,7 +5492,7 @@ def runledger_fence():
             or "    rb.mismatched_bytes += bad;\n    crate::runledger::readback(bad != 0);" not in px):
         raise Red("readbacks are counted somewhere other than where the court and the presenter count their own")
     for name in os.listdir(os.path.join(ROOT, "verify")):
-        if name.endswith(".py") and name not in ("runledger.py", "verify.py"):
+        if name.endswith(".py") and name not in ("runledger.py", "verify.py", "drift.py"):  # DRIFT-0's report reads it
             t = read(os.path.join(ROOT, "verify", name)).decode("utf-8")
             if "runledger" in t or "RUN-LEDGER" in t or "runs.log" in t:
                 raise Red("verify/%s reads the run ledger: no rule may" % name)
@@ -5669,6 +5672,210 @@ def refusalwhy1_fence():
             "once per differing readback and passes the fields only through its context; the probe never writes to the "
             "log and the log's writer names no title")
 
+# ------------------------------------------------------------------ DRIFT-0
+def drift_preregistered():
+    """DRIFT-0's method is locked: observational; the locked PRESENT-EXACT-0 court repeated without modification; 3
+    sittings of 4 completed runs, 60 s and 4 h apart; the overlay declared; HOST-STATE-1 before and after; every run
+    sealed, refused runs kept; the panel descriptive. The sealer's constants must equal the registered ones."""
+    import drift as D
+    import presentexact as PX
+    e = locked_entry("DRIFT-0", {
+        "observational, the workload unchanged": ("hyp", ("observational", "no intervention, no rule, no verdict, no threshold", "without modification", "changes repetition and observation, not the workload")),
+        "the design": ("hyp", ("3 sittings of 4 completed runs", "at least 60 s apart", "at least 4 hours apart", "declared overlay state", "host-state-1's version 2")),
+        "refused runs kept": ("hyp", ("kept and never discarded", "does not count toward the sitting's four")),
+        "records, protocol, panel": ("succ", ("drift-<host>-s<s>-r<r>.json", "exactly as present-exact-0's sealer derives them", "within-run spread", "never reads a number to decide", "within each sitting", "across the sittings' medians", "never pooled", "writes nothing")),
+        "no change, no verdict, no discard, no cause": ("fail", ("any change to the workload", "a stable or unstable label", "a run discarded", "left unsealed", "condition, exclude or correct a run", "history pooled", "association, never cause")),
+        "scope": ("lims", ("these 12 completed runs", "recorded percentiles", "lower median", "not verified", "by time", "association, never cause")),
+    })
+    if ((D.SITTINGS, D.RUNS_PER_SITTING, D.MIN_RUN_GAP_S, D.MIN_SITTING_GAP_S, D.OVERLAY, D.HOSTSTATE_VERSION, D.WORKLOAD)
+            != (3, 4, 60, 14400, ("on", "off", "unknown"), 2, "PRESENT-EXACT-0") or PX.REQUIRED_PER_CELL != 1000):
+        raise Red("the sealer's design constants are not the registered ones")
+    return ("DRIFT-0's method is locked (hash %s): observational — the locked PRESENT-EXACT-0 court repeated without "
+            "modification, 3 sittings of 4 completed runs, runs 60 s and sittings 4 h apart, the overlay declared, "
+            "HOST-STATE-1 before and after each run; every run sealed and refused runs kept; the panel descriptive, no "
+            "verdict or threshold; the sealer's constants equal the registered ones" % e["chain_hash"][:8])
+
+
+def _drift_rec(D, reg, sitting, run, start, s50, d50, host_state=None):
+    raw = _px_raw(s50 + 9000, d50 + 9000, s50=s50, d50=d50)
+    return D.seal_drift(raw, reg, "gate", {"path": "synthetic", "chain_hash": "0" * 64}, {"rustc": "gate"},
+                        D.protocol(sitting, run, "off", start, start + 90), host_state)
+
+
+def drift_sealer():
+    """The sealer, on synthetic runs: a completed run carries the workload's own derivation, the within-run spread, the
+    protocol and the host state, cites DRIFT-0, PRESENT-EXACT-0 and HOST-STATE-1, and holds no label; the host state
+    moves nothing; a raw the workload's check refuses is refused; a refused run seals; the protocol refuses a sitting
+    out of range or out of order, a full sitting, a run under 60 s after the previous and a sitting under 4 h after the
+    last, and counts refused runs for spacing but not for completion."""
+    import drift as D
+    import presentexact as PX
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    rec = _drift_rec(D, reg, 1, 1, 1_790_000_000, 10000, 9800)
+    envelope.validate(rec)
+    d = rec["data"]
+    want = {c: PX.derive(PX.check_raw(_px_raw(19000, 18800, s50=10000, d50=9800))["calls"][c]) for c in PX.CALLS}
+    if (d["derived"]["calls"] != want or d["derived"]["within_run"]["setdibitstodevice"]
+            != {"p95_minus_p50_us": 8800, "p99_minus_p50_us": 9000, "p95_minus_p50_permille": 897, "p99_minus_p50_permille": 918}):
+        raise Red("a completed run does not carry the workload's own derivation and the within-run spread")
+    prov = rec["provenance"]
+    if ((prov["preregistered"]["chain_hash"], prov["workload"]["chain_hash"], prov["host_state_preregistered"]["chain_hash"])
+            != (reg["DRIFT-0"]["chain_hash"], reg["PRESENT-EXACT-0"]["chain_hash"], reg["HOST-STATE-1"]["chain_hash"])):
+        raise Red("the record does not cite DRIFT-0, PRESENT-EXACT-0 and HOST-STATE-1")
+    body = json.dumps(d) + rec["reading"]
+    for label in (PX.STRETCH, PX.SETDIB, PX.NEITHER, "ADOPT", "stable", "unstable"):
+        if label in body:
+            raise Red("a DRIFT-0 record carries a label: %r" % label)
+    other = _drift_rec(D, reg, 1, 1, 1_790_000_000, 10000, 9800, {"before": {"unavailable": "B"}, "after": {"unavailable": "B"}})
+    if other["data"]["derived"] != d["derived"]:
+        raise Red("the host state moved a derived number")
+    for raw, why in ((_px_raw(19000, 20000, readback={"mismatched_bytes": 1}), "a differing byte"), (_px_raw(19000, 20000, n=300), "300 samples"),
+                     (_px_raw(19000, 20000, render_entry="fresh"), "another render entry")):
+        try:
+            D.seal_drift(raw, reg, "gate", {}, {}, D.protocol(1, 1, "off", 0, 1))
+            raise Red("the sealer accepted %s: the workload's own check must refuse it" % why)
+        except D.Refuse:
+            pass
+    ref = D.seal_refused(reg, "gate", D.protocol(1, 0, "on", 1_790_000_200, 1_790_000_260), "the window court refused")
+    envelope.validate(ref)
+    if ref["name"] != D.REFUSED or "derived" in ref["data"]:
+        raise Red("a refused run is not sealed as a refusal with no numbers")
+    t0 = 1_790_000_000
+
+    def run(s, r, start, name=None):
+        x = _drift_rec(D, reg, s, r, start, 10000, 9800)
+        return x if name is None else dict(x, name=name)
+
+    def refuses(recs, sitting, now):
+        try:
+            D.plan_next(recs, sitting, now)
+            return False
+        except D.Refuse:
+            return True
+
+    one = [run(1, 1, t0)]
+    four = [run(1, i, t0 + 200 * (i - 1)) for i in range(1, 5)]
+    end4 = t0 + 600 + 90
+    cases = [(D.plan_next([], 1, t0) == 1, "an empty first sitting starts at run 1"),
+             (refuses(one, 1, t0 + 90 + 59), "a run 59 s after the previous"),
+             (D.plan_next(one, 1, t0 + 90 + 60) == 2, "a run 60 s after the previous"),
+             (refuses(four, 1, end4 + 1000), "a fifth run in a full sitting"),
+             (refuses(four[:3], 2, end4 + 20000), "sitting 2 before sitting 1 is complete"),
+             (refuses(four, 2, end4 + 14399), "sitting 2 under 4 h after sitting 1"),
+             (D.plan_next(four, 2, end4 + 14400) == 1, "sitting 2 at 4 h"),
+             (refuses(four + [run(2, 1, end4 + 14400)], 1, end4 + 30000), "sitting 1 after sitting 2 began"),
+             (refuses([], 4, t0), "a fourth sitting"),
+             (refuses([run(1, 0, t0, D.REFUSED)], 1, t0 + 90 + 10), "a run 10 s after a refused run"),
+             (D.plan_next([run(1, 0, t0, D.REFUSED)], 1, t0 + 90 + 60) == 1, "a refused run does not count toward completion")]
+    for ok_, what in cases:
+        if not ok_:
+            raise Red("the protocol is wrong: %s" % what)
+    try:
+        D.protocol(1, 1, "maybe", 0, 1)
+        raise Red("an undeclared overlay state was accepted")
+    except D.Refuse:
+        pass
+    return ("the DRIFT-0 sealer on synthetic runs: a completed run carries PRESENT-EXACT-0's own derivation, the within-run "
+            "spread, the protocol and the host state, cites DRIFT-0, PRESENT-EXACT-0 and HOST-STATE-1 and holds no label; "
+            "the host state moves nothing; the workload's check refuses a differing byte, 300 samples and another render "
+            "entry; a refused run seals with no numbers; the protocol holds the sitting order, four completed runs, 60 s "
+            "between runs and 4 h between sittings, counting refused runs for spacing and not for completion")
+
+
+def drift_report():
+    """The panel, on 12 synthetic completed runs, one refused run, a synthetic ledger, refusal log and history: every run
+    with its within-run spread, host state, ledger line and refusals; the between-run spread (min, lower median, max,
+    range) within each sitting, across all runs and across the sittings' medians; the history beside; no verdict or
+    threshold word; the command writes nothing."""
+    import drift as D
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    t0 = 1_790_000_000
+    p50 = {1: [9800, 9900, 10000, 10100], 2: [10500, 10400, 10600, 10700], 3: [9700, 9600, 9900, 9800]}
+    hs = {"before": {"hoststate": "HOST-STATE-1", "version": 2, "fields": {"memory": {"load_percent": 94, "available_mb": 649},
+                                                                         "clock": {"performance_permille": 1185}}},
+          "after": {"unavailable": "synthetic"}}
+    recs, ledger, t = [], [], t0
+    for s in (1, 2, 3):
+        for i, v in enumerate(p50[s], 1):
+            recs.append(_drift_rec(D, reg, s, i, t, v + 100, v, hs))
+            ledger.append({"log": "RUN-LEDGER-0", "run_id": "r%d%d" % (s, i), "operation": "presentexact.court", "surface": "gdi",
+                           "readbacks_checked": 10, "differed": 0, "refusals": 0, "exit_code": 0,
+                           "unix_ms_start": (t + 5) * 1000, "unix_ms_end": (t + 80) * 1000})
+            t += 200
+        if s == 2:
+            recs.append(D.seal_refused(reg, "gate", D.protocol(2, 0, "on", t, t + 60), "the window court refused"))
+            ledger.append({"log": "RUN-LEDGER-0", "run_id": "rx", "operation": "presentexact.court", "surface": "gdi",
+                           "readbacks_checked": 1, "differed": 1, "refusals": 1, "exit_code": 2,
+                           "unix_ms_start": (t + 5) * 1000, "unix_ms_end": (t + 50) * 1000})
+            refusal = {"run_id": "rx", "unix_ms": (t + 40) * 1000, "operation": "presentexact.court", "surface": "gdi",
+                       "reason_code": "PRESENTEXACT-READBACK", "attribution": "present.readback",
+                       "context": {"covering_layer": "windows", "covering_count": 1, "window_1_program": "mockoverlay.exe",
+                                   "window_1_class": "MockOverlayClass", "window_1_flags": "topmost", "window_1_rect": "0,0,1920,40"}}
+            t += 200
+        t += 20000
+    history = [dict(_drift_rec(D, reg, 1, 1, t0 - 99999, 12000, 11000), name="verdandi-presentexact")]
+    lines = D.report("gate", sorted(recs, key=lambda r: r["data"]["protocol"]["unix_seconds_start"]), history, ledger, [refusal])
+    text = "\n".join(lines)
+    need = ["12 completed run(s), 1 refused",
+            "between runs, setdibitstodevice render_p50_us: min 9600 median 9900 max 10700 range 1100 us (111‰ of the median), 12 runs",
+            "within sitting 2: min 10400 median 10500 max 10700 range 300 us, 4 runs",
+            "between sittings (their medians): min 9700 median 9900 max 10500 range 800 us",
+            "refusal: PRESENTEXACT-READBACK / present.readback; covering windows: mockoverlay.exe | MockOverlayClass | topmost",
+            "ledger: exit=2 readbacks=1 differed=1 refusals=1", "mem 94% avail 649 MB", "perf 1185‰",
+            "history (beside, not pooled): verdandi-presentexact p50/p99 SetDIBitsToDevice 11000/20000 us",
+            "no verdict, no threshold"]
+    for n_ in need:
+        if n_ not in text:
+            raise Red("the panel does not say %r" % n_)
+    if text.count("ledger: exit=0 readbacks=10 differed=0 refusals=0") != 12:
+        raise Red("a completed run was not joined to its one ledger line")
+    hit = re.search(r"\b(stable|unstable|cheaper|adopt\w*|drift detected|material|pass\w*|fail\w*|significant\w*)\b", text.lower())
+    if hit:
+        raise Red("the panel carries a verdict word: %r" % hit.group(0))
+    before = sorted(os.listdir(os.path.join(ROOT, "shell"))) + sorted(os.listdir(BUILD))
+    env = dict(os.environ, **{REFUSALLOG_ENV: os.path.join(BUILD, "drift-none-refusals.log"),
+                              RUNLEDGER_ENV: os.path.join(BUILD, "drift-none-runs.log")})
+    cp = subprocess.run([sys.executable, os.path.join(ROOT, "verify", "drift.py"), "--host", "gate-none", "--report"],
+                        capture_output=True, text=True, cwd=ROOT, env=env)
+    after = sorted(os.listdir(os.path.join(ROOT, "shell"))) + sorted(os.listdir(BUILD))
+    if cp.returncode != 0 or "0 completed run(s), 0 refused" not in cp.stdout or before != after:
+        raise Red("the report command did not print an empty panel, or it wrote something")
+    return ("the panel on 12 synthetic runs, a refused run, a ledger, a refusal log and history: every run with its within-"
+            "run spread, host state, ledger line and refusals (the refused run's covering window named); the between-run "
+            "spread within each sitting, across all runs and across the sittings' medians (min, lower median, max, range); "
+            "the history beside; no verdict word; the command writes nothing")
+
+
+def drift_fence():
+    """DRIFT-0 changes repetition and observation, not the workload: the sealer takes the workload's own check and
+    derivation and never its rule; it runs the unchanged court command at the registered sample count with HOST-STATE-1;
+    the protocol reads no number; the sealing functions never read the shell's logs (only the report does); the shell
+    holds nothing of DRIFT-0; host_run raises CourtRefused only where the window court refused."""
+    src = read(os.path.join(ROOT, "verify", "drift.py")).decode("utf-8")
+    sd = src_span(src, "def seal_drift(", "\ndef ")
+    if "PX.check_raw(raw)" not in sd or "PX.derive(" not in sd or "performance(" in src or "adoption(" in src:
+        raise Red("the sealer does not take the workload's own check and derivation, or reads its rule")
+    if ('host_run("DRIFT-0", "presentexact", a.host, a.session, PX.REQUIRED_PER_CELL, 2, probe=probe,' not in src
+            or "hoststate_version=HOSTSTATE_VERSION)" not in src or src.count("host_run(") != 1):
+        raise Red("the run is not the unchanged court command at the registered sample count with HOST-STATE-1")
+    pn = src_span(src, "def plan_next(", "\ndef ")
+    if "derived" in pn or "render_" in pn or "calls" in pn:
+        raise Red("the protocol reads a number")
+    for fn in ("def plan_next(", "def protocol(", "def within_run(", "def seal_drift(", "def seal_refused(", "def load("):
+        if "refusallog" in src_span(src, fn, "\ndef ") or "runledger" in src_span(src, fn, "\ndef "):
+            raise Red("%s reads the shell's logs: only the report may" % fn.strip("def ("))
+    for name in os.listdir(SHELL):
+        if name.endswith(".rs") and ("DRIFT-0" in read(os.path.join(SHELL, name)).decode("utf-8")):
+            raise Red("shell/%s holds DRIFT-0: the workload must be unchanged" % name)
+    dc = read(os.path.join(ROOT, "verify", "diagcommon.py")).decode("utf-8")
+    hr = src_span(dc, "def host_run(", "\ndef ")
+    if (dc.count("raise CourtRefused(") != 1 or "if rc != 0 or not os.path.exists(raw_path):\n        raise CourtRefused(" not in hr):
+        raise Red("CourtRefused is raised other than where the window court refused")
+    return ("DRIFT-0 changes repetition and observation, not the workload: the sealer takes PRESENT-EXACT-0's own check and "
+            "derivation and never its rule, and runs the unchanged court command at 1000 per cell with HOST-STATE-1; the "
+            "protocol reads no number; only the report reads the shell's logs; the shell holds nothing of DRIFT-0; "
+            "CourtRefused marks only a window court's refusal")
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -5825,6 +6032,10 @@ def main() -> int:
     row("refusalwhy1-preregistered", refusalwhy1_preregistered)
     row("refusalwhy1-log", refusalwhy1_log)
     row("refusalwhy1-fence", refusalwhy1_fence)
+    row("drift-preregistered", drift_preregistered)
+    row("drift-sealer", drift_sealer)
+    row("drift-report", drift_report)
+    row("drift-fence", drift_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

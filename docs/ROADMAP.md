@@ -69,7 +69,7 @@ render → present → observe → next input. It is mostly not a renderer probl
 input and authoring, and making the live chain recoverable. The order:
 
 ```text
-REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic foundation (landed: all but DRIFT-0)
+REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic foundation (DRIFT-0: preregistered, host runs pending)
       ↓
 LIVE-LOOP-0      the shipped per-frame loop — until it exists the studio has a viewer, not a live world
       ↓
@@ -87,8 +87,8 @@ PRESENT-1, the live-loop re-breakdown, BANDWIDTH-0 / POOL-0      afterwards, not
 - **The diagnostic foundation** is not on the critical path to walking. It gives the live loop an instrumented refusal
   surface instead of console archaeology. REFUSAL-LOG-0, RUN-LEDGER-0 and REFUSAL-WHY-1 have landed. REFUSAL-WHY-1
   writes the covering windows into the refusal log as program, class, rectangle and overlay flags. Titles stay
-  console-only and are never persisted, and the rectangle is diagnostic geometry, not identity. DRIFT-0 is
-  observational first: it counts
+  console-only and are never persisted, and the rectangle is diagnostic geometry, not identity. DRIFT-0 (preregistered)
+  repeats the locked PRESENT-EXACT-0 court unchanged, 3 sittings of 4 runs, and is observational first: it counts
   recurrence and cross-run drift from the two files and the host state, with no intervention.
 - **LIVE-LOOP-0** is the gate that matters: the current (W, M, C) state → `LoopRenderer` on its persistent buffers →
   one frame rendered from that state → SetDIBitsToDevice → the screen witness → the next frame. It includes window
@@ -258,6 +258,14 @@ A screen-readback refusal record now carries the covering layer and, for each wi
 box, its program, class, overlay flags and rectangle. Titles and process ids are never written, and the rectangle is
 geometry, not identity, so recurrence is counted by program, class and flags. The console and the log come from one
 walk. A recurring program over the screen is a candidate, never a cause.
+
+### DRIFT-0 — variation within and between runs of the same workload · **preregistered** (`d445dcf9`); host runs pending
+Observational: the locked PRESENT-EXACT-0 court repeated without modification, 3 sittings of 4 completed runs (60 s
+between runs, 4 h between sittings), with the owner's declared overlay state and HOST-STATE-1 before and after each
+run. Refused runs are sealed and kept. The report is a panel: each run's p50, p95 and p99 per call, its within-run
+spread and host state, and the between-run spread within and across sittings, with the two earlier PRESENT-EXACT-0
+runs beside it as history. No verdict, no threshold, association never cause. It gives the next decision an empirical
+basis for G13's drift.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
 `LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s

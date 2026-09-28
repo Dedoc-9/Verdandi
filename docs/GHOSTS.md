@@ -279,7 +279,9 @@ HOST-STATE-1 now provides the two missing witnesses: the clock as the OS compute
 the nominal frequency, uncapped, so boost shows) and the system's paging rates. Both are recorded, never read by a rule,
 and only by a court whose own entry asks for them. They can make a drift explainable. They cannot explain it. Their
 first look already separates two things G13's association had merged: 94% memory load came with 1 hard fault per
-second, so a high memory load does not by itself mean paging (one second, one look).
+second, so a high memory load does not by itself mean paging (one second, one look). DRIFT-0 (preregistered) is the
+designed measurement of this ghost: the same locked court, 3 sittings of 4 runs, host state beside each, and a
+descriptive panel of within-run and between-run variation, with no verdict.
 
 **Exorcism.** Keep recording, and don't control yet. Each further pair of runs either repeats the association (slow runs
 under memory pressure) or breaks it (a slow run with memory to spare, which would say the recorded state is

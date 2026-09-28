@@ -2522,11 +2522,16 @@ repeated lines are reported and not counted. The join reports a claimed refusal 
 ledger line. The command changes nothing. 22 mutations were each caught.
 
 **On the owner's host.** After two full gate runs, `python verify/runledger.py` read `build\runs.log` as absent: the
-gate's runs went to its own scratch ledger.
+gate's runs went to its own scratch ledger. Then the first ledgered host run: `shell show` on the witness view, run as
+the overlay check. It printed 94 screen readbacks, 0 differed, and exited 0. The ledger's line read `show gdi exit=0
+readbacks=94 differed=0`, matching the console, and the refusal log stayed empty, as it should with nothing differing.
+No readback differed, so the refusal half of the join was not exercised on the host. Whether the overlay was on and
+above the window during that run was not recorded.
 
 **Grade.** DECLARED: the method. ESTABLISHED (gate): one line per run on the court, its counts, the join, append-only
 growth, the default path, the unchanged run under a failed append, the reader. ESTABLISHED (source): the presenter's
-begin and end points. ESTABLISHED (host): the gate's isolation. NOT_MEASURED (host): no host run has been ledgered yet.
+begin and end points. ESTABLISHED (host): the gate's isolation, and one clean presenter run ledgered with the console's
+counts. NOT_MEASURED (host): a refused or differing run.
 
 **does_not_show.** A rate as a cause. That a clean run proves a refusal cannot occur. Runs outside the admitted
 operations. A court run's raw-record write: its line records the court's outcome, so a later write failure exits 2
@@ -2579,6 +2584,54 @@ together.
 **Falsifier.** `refusalwhy1-log` goes red if a title or a pid reaches the log, a readback record loses its fields or
 carries them before its own context, a non-readback refusal carries them, or the reader keys on the rectangle.
 `refusalwhy1-fence` goes red if the fields read a title or a pid, a surface walks twice, or the probe writes to the log.
+
+## DRIFT-0 — what variation is present within a run and between runs of the same workload (observational; preregistered, host runs pending)
+
+**Why.** Twice a preregistered second run has been 40–60% slower than its first (G13), and no court has yet measured
+by design how the same workload varies across runs. DRIFT-0 is that measurement. It is observational: no intervention,
+no rule, no verdict, no threshold. It answers only what variation is present, within a run and between runs.
+
+**The method (`d445dcf9`), as the owner ratified it.** The workload is the locked PRESENT-EXACT-0 court, **unchanged**:
+the same shell command and flags, both calls, 1000 samples per cell, ABBA after 10 warm-up rounds, and the composed
+screen read back before and after, checked by PRESENT-EXACT-0's own sealer check. DRIFT-0 changes repetition and
+observation, not the workload. That keeps apparatus continuity: any variation it sees is the admitted presenter's, not
+a new instrument's. The live loop gets its own court later. The design is 3 sittings of 4 completed runs. Runs within
+a sitting are at least 60 s apart, and sittings at least 4 hours apart. The owner declares the overlay state for each
+run (on, off or unknown; recorded, not verified). HOST-STATE-1's version 2 snapshot is taken just before and just after
+each run; DRIFT-0 is the first court to record it. `python verify/drift.py --host NAME --sitting N --overlay off`
+enforces the protocol before a run starts (sitting order, four completed runs each, both spacings) and never reads a
+number to decide. A completed run is sealed as `shell/attest/drift-<host>-s<S>-r<R>.json`, with the workload's numbers,
+exactly as PRESENT-EXACT-0's sealer derives them, and the within-run spread per call (p95 − p50 and p99 − p50, in µs
+and in ‰ of the p50). A run whose court refuses is sealed as `drift-<host>-s<S>-x<K>.json`: kept, never discarded, and
+not counted toward the sitting's four. `python verify/drift.py --host NAME --report` prints the panel and writes
+nothing. It shows every run with its within-run spread, its host state, and the run-ledger line and refusal records
+inside its time window. Then, per call, it gives the between-run spread of p50 and p99 (min, lower median, max, range,
+and range in ‰ of the median) within each sitting, across all completed runs, and across the sittings' medians. The
+two sealed PRESENT-EXACT-0 runs are shown beside it as history, never pooled.
+
+**Rows.** `drift-preregistered`: the method is locked, and the sealer's design constants equal the registered ones.
+`drift-sealer`, on synthetic runs: a completed run carries PRESENT-EXACT-0's own derivation, the within-run spread,
+the protocol and the host state. It cites DRIFT-0, PRESENT-EXACT-0 and HOST-STATE-1, and holds no label. The host state
+moves nothing. The workload's check still refuses what it refuses. A refused run seals with no numbers. The protocol
+holds the sitting order, four completed runs each, and the two spacings, counting refused runs for spacing but not for
+completion. `drift-report`, on 12 synthetic runs, a refused run, a ledger, a refusal log and history: the panel says
+what it must, including the refused run's covering window. It joins each run to its one ledger line, carries no
+verdict word, and the command writes nothing. `drift-fence`: the sealer never reads PRESENT-EXACT-0's rule, runs the
+unchanged court command at 1000 per cell with HOST-STATE-1, and has a protocol that reads no number. Only the report
+reads the shell's logs, the shell holds nothing of DRIFT-0, and `CourtRefused` marks only a window court's refusal.
+17 mutations were each caught.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the sealer, the protocol, the panel and the fence. NOT_MEASURED
+(host): the 12 runs.
+
+**does_not_show.** Anything beyond this host, this screen, this workload and these runs. The within-run spread
+between the recorded percentiles: the court keeps no raw samples. That a host state or a declared overlay caused a
+variation: association, never cause. A verdict of any kind.
+
+**Falsifier.** `drift-sealer` goes red if a record carries a label or a changed derivation, the host state moves a
+number, or the protocol lets a run through too soon, out of order, or past a full sitting. `drift-report` goes red if
+the panel's spreads, joins or history are wrong, or if it says a verdict. `drift-fence` goes red if the workload
+changes.
 
 ## The open clause, now with named rungs (skybox, physics)
 

@@ -8,7 +8,11 @@ run the window court with its output streamed to the console, and write the seal
 
 HOST-STATE-0: a court that passes `probe=dict` gets one host-state snapshot immediately before its window court and
 one immediately after, through `hoststate.capture_safe`, which never raises. The probe is optional (the diagnostic
-courts do not pass one), it cannot refuse a run, and no rule reads what it records."""
+courts do not pass one), it cannot refuse a run, and no rule reads what it records. The snapshot is HOST-STATE-0's
+version 1 unless the court's own entry asks for HOST-STATE-1's version 2 through `hoststate_version` (DRIFT-0 does).
+
+DRIFT-0: a window court that refuses raises CourtRefused (a Refuse), so a sealer that keeps refused runs can tell a
+run that happened and refused from a run that never started; every other sealer treats it as the Refuse it always was."""
 from __future__ import annotations
 
 import json
@@ -27,15 +31,20 @@ class Refuse(Exception):
     pass
 
 
+class CourtRefused(Refuse):
+    """The window court ran and refused (or wrote nothing): a run that happened."""
+
+
 def registry() -> dict:
     with open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8") as fh:
         return json.load(fh)["entries"]
 
 
 def host_run(rung: str, cmd: str, host: str, session_path: str, per_cell: int, selftest_per_cell: int,
-             probe: dict | None = None) -> tuple[dict, dict, dict]:
+             probe: dict | None = None, hoststate_version: int = 1) -> tuple[dict, dict, dict]:
     """Build, witnesses first, run the window court -> (raw record, session provenance, build provenance). With `probe`,
-    HOST-STATE-0's snapshots are taken just before and just after the window court (recorded, never ruled on)."""
+    host-state snapshots (HOST-STATE-0's version 1 unless the court's entry asks for version 2) are taken just before
+    and just after the window court (recorded, never ruled on)."""
     run = dict(capture_output=True, text=True, encoding="utf-8", errors="replace")
     if os.name != "nt":
         raise Refuse(f"{rung} is Windows-only (the instrument is the GDI/DWM window)")
@@ -61,14 +70,14 @@ def host_run(rung: str, cmd: str, host: str, session_path: str, per_cell: int, s
     if os.path.exists(raw_path):
         os.remove(raw_path)
     if probe is not None:
-        probe["before"] = hoststate.capture_safe()
+        probe["before"] = hoststate.capture_safe(version=hoststate_version)
     sys.stdout.flush()
     rc = subprocess.run([exe, f"{cmd}-window", "--session", session_path, "--per-cell", str(per_cell), "--host", host,
                          "--out", raw_path], cwd=ROOT).returncode
     if probe is not None:
-        probe["after"] = hoststate.capture_safe()
+        probe["after"] = hoststate.capture_safe(version=hoststate_version)
     if rc != 0 or not os.path.exists(raw_path):
-        raise Refuse("the window court refused or wrote nothing (its reason is printed above)")
+        raise CourtRefused("the window court refused or wrote nothing (its reason is printed above)")
     with open(raw_path, encoding="utf-8") as fh:
         raw = json.load(fh)
     os.remove(raw_path)
