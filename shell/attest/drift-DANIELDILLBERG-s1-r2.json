@@ -1,0 +1,407 @@
+{
+ "name": "verdandi-drift",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell presentexact-window (the locked PRESENT-EXACT-0 court, unchanged) + verify/drift.py",
+  "host": "DANIELDILLBERG",
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "DRIFT-0",
+   "chain_hash": "d445dcf9c4319e0179694c03dc2b419f961289380471402689ab400166204e0e"
+  },
+  "workload": {
+   "rung": "PRESENT-EXACT-0",
+   "chain_hash": "bc910e2fa99cfc418e478e0b1587bd794f2638bc6d2ba8c6d87c72a8a4b3cffe"
+  },
+  "host_state_preregistered": {
+   "rung": "HOST-STATE-1",
+   "chain_hash": "b992d9ddb3c0aaeaf8e3066bed0ce363a4390398eab429443e0df46815f121a3"
+  },
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790560172
+ },
+ "validity_scope": {
+  "certifies": "one run of the locked PRESENT-EXACT-0 court on host DANIELDILLBERG, sealed as observed, with the host state just before and just after it",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "a verdict, a threshold or a stable/unstable reading: DRIFT-0 reports variation and decides nothing",
+  "that the recorded host state or the declared overlay state caused, explains or corrects a number: association, never cause",
+  "any adoption or rule reading: the workload's numbers are carried without PRESENT-EXACT-0's rule",
+  "input-to-photon latency, or any host, screen or workload other than this one"
+ ],
+ "data": {
+  "calls": {
+   "stretchdibits": {
+    "envelope": {
+     "render_us": {
+      "p50": 9642,
+      "p95": 11085,
+      "p99": 11629,
+      "max": 12606
+     },
+     "call_us": {
+      "p50": 1832,
+      "p95": 1999,
+      "p99": 2127,
+      "max": 2536
+     },
+     "present_us": {
+      "p50": 2698,
+      "p95": 5559,
+      "p99": 13752,
+      "max": 15594
+     },
+     "samples": 1000
+    },
+    "tail_render_us": [
+     12606,
+     12116,
+     11996,
+     11960,
+     11904,
+     11827,
+     11806,
+     11794,
+     11783,
+     11643,
+     11629,
+     11604
+    ]
+   },
+   "setdibitstodevice": {
+    "envelope": {
+     "render_us": {
+      "p50": 9591,
+      "p95": 10973,
+      "p99": 11638,
+      "max": 12351
+     },
+     "call_us": {
+      "p50": 1813,
+      "p95": 1963,
+      "p99": 2234,
+      "max": 2668
+     },
+     "present_us": {
+      "p50": 2889,
+      "p95": 5566,
+      "p99": 14524,
+      "max": 16461
+     },
+     "samples": 1000
+    },
+    "tail_render_us": [
+     12351,
+     12267,
+     11935,
+     11930,
+     11897,
+     11882,
+     11826,
+     11730,
+     11684,
+     11660,
+     11638,
+     11612
+    ]
+   }
+  },
+  "geometry": {
+   "client": [
+    1920,
+    1080
+   ],
+   "origin": [
+    0,
+    0
+   ],
+   "screen_logical": [
+    1920,
+    1080
+   ],
+   "screen_physical": [
+    1920,
+    1080
+   ],
+   "source": [
+    1920,
+    1080
+   ]
+  },
+  "readback": {
+   "frames": 4,
+   "checks": 10,
+   "bytes_compared": 62208000,
+   "mismatched_bytes": 0,
+   "method": "clear to white, read the clear back, present, read the composed screen back"
+  },
+  "block_order": "ABBA",
+  "warm_rounds": 10,
+  "refresh_period_us": 12445,
+  "sequence_frames": 4,
+  "samples_per_cell": 1000,
+  "production_threads": 8,
+  "phase_origin": "locked",
+  "render_entry": "LoopRenderer",
+  "loop_renders": 2024,
+  "derived": {
+   "calls": {
+    "stretchdibits": {
+     "render_p50_us": 9642,
+     "render_p95_us": 11085,
+     "render_p99_us": 11629,
+     "render_max_us": 12606,
+     "call_p50_us": 1832,
+     "call_p99_us": 2127,
+     "composited_p50_us": 2698,
+     "composited_p99_us": 13752,
+     "tail_render_us": [
+      12606,
+      12116,
+      11996,
+      11960,
+      11904,
+      11827,
+      11806,
+      11794,
+      11783,
+      11643,
+      11629,
+      11604
+     ]
+    },
+    "setdibitstodevice": {
+     "render_p50_us": 9591,
+     "render_p95_us": 10973,
+     "render_p99_us": 11638,
+     "render_max_us": 12351,
+     "call_p50_us": 1813,
+     "call_p99_us": 2234,
+     "composited_p50_us": 2889,
+     "composited_p99_us": 14524,
+     "tail_render_us": [
+      12351,
+      12267,
+      11935,
+      11930,
+      11897,
+      11882,
+      11826,
+      11730,
+      11684,
+      11660,
+      11638,
+      11612
+     ]
+    }
+   },
+   "within_run": {
+    "stretchdibits": {
+     "p95_minus_p50_us": 1443,
+     "p99_minus_p50_us": 1987,
+     "p95_minus_p50_permille": 149,
+     "p99_minus_p50_permille": 206
+    },
+    "setdibitstodevice": {
+     "p95_minus_p50_us": 1382,
+     "p99_minus_p50_us": 2047,
+     "p95_minus_p50_permille": 144,
+     "p99_minus_p50_permille": 213
+    }
+   }
+  },
+  "protocol": {
+   "sitting": 1,
+   "run_in_sitting": 2,
+   "sittings": 3,
+   "runs_per_sitting": 4,
+   "min_run_gap_s": 60,
+   "min_sitting_gap_s": 14400,
+   "overlay_declared": "off",
+   "unix_seconds_start": 1790560108,
+   "unix_seconds_end": 1790560175
+  },
+  "host_state": {
+   "before": {
+    "hoststate": "HOST-STATE-1",
+    "version": 2,
+    "unix_seconds": 1790560116,
+    "platform": "win32",
+    "fields": {
+     "cpu": {
+      "model": "AMD Ryzen AI Z2 Extreme",
+      "logical_processors": 16,
+      "mhz": {
+       "current_min": 1610,
+       "current_median": 1610,
+       "current_max": 2000,
+       "max": 2000,
+       "limit_min": 2000,
+       "source": "CallNtPowerInformation(ProcessorInformation), as the OS reports it"
+      }
+     },
+     "power": {
+      "ac_line_status": 1,
+      "battery_flag": 1,
+      "battery_percent": 100,
+      "battery_saver": 0,
+      "codes": "ac_line_status 0 offline, 1 online, 255 unknown; battery_percent 255 unknown",
+      "plan": {
+       "guid": "381b4222-f694-41f0-9685-ff5bb260df2e",
+       "name": "Balanced"
+      }
+     },
+     "load": {
+      "cpu_busy_permille": 20,
+      "window_ms": 1000,
+      "source": "GetSystemTimes over the window, all processors"
+     },
+     "memory": {
+      "load_percent": 95,
+      "total_mb": 11897,
+      "available_mb": 524
+     },
+     "process": {
+      "priority_class": "0x20",
+      "affinity_mask": "0xffff",
+      "system_affinity_mask": "0xffff",
+      "of": "the sealing process; the court process is its child"
+     },
+     "display": {
+      "logical": [
+       1920,
+       1080
+      ],
+      "physical": [
+       1920,
+       1080
+      ],
+      "bits_per_pixel": 32,
+      "vertical_refresh_hz": 75,
+      "source": "GetDeviceCaps on the screen DC: the nominal mode, not the court's measured refresh"
+     },
+     "uptime": {
+      "ms": 814659843
+     },
+     "thermal": {
+      "unavailable": "not captured: no reliable source without elevation (declared, not attempted)"
+     },
+     "clock": {
+      "processor_frequency_mhz": 1878,
+      "performance_permille": 1058,
+      "utility_permille": 51,
+      "effective_mhz_estimate": 1986,
+      "window_ms": 1000,
+      "source": "PDH \\Processor Information(_Total) over the window, uncapped; the estimate is Processor Frequency x % Processor Performance, the OS's counters multiplied, not a measured clock"
+     },
+     "faults": {
+      "page_faults_per_s": 2680,
+      "page_reads_per_s": 3,
+      "pages_input_per_s": 16,
+      "window_ms": 1000,
+      "source": "PDH \\Memory rates over the window, system-wide; page reads are hard faults, not the court's own"
+     }
+    }
+   },
+   "after": {
+    "hoststate": "HOST-STATE-1",
+    "version": 2,
+    "unix_seconds": 1790560175,
+    "platform": "win32",
+    "fields": {
+     "cpu": {
+      "model": "AMD Ryzen AI Z2 Extreme",
+      "logical_processors": 16,
+      "mhz": {
+       "current_min": 1610,
+       "current_median": 2000,
+       "current_max": 2000,
+       "max": 2000,
+       "limit_min": 2000,
+       "source": "CallNtPowerInformation(ProcessorInformation), as the OS reports it"
+      }
+     },
+     "power": {
+      "ac_line_status": 1,
+      "battery_flag": 1,
+      "battery_percent": 100,
+      "battery_saver": 0,
+      "codes": "ac_line_status 0 offline, 1 online, 255 unknown; battery_percent 255 unknown",
+      "plan": {
+       "guid": "381b4222-f694-41f0-9685-ff5bb260df2e",
+       "name": "Balanced"
+      }
+     },
+     "load": {
+      "cpu_busy_permille": 29,
+      "window_ms": 1000,
+      "source": "GetSystemTimes over the window, all processors"
+     },
+     "memory": {
+      "load_percent": 95,
+      "total_mb": 11897,
+      "available_mb": 511
+     },
+     "process": {
+      "priority_class": "0x20",
+      "affinity_mask": "0xffff",
+      "system_affinity_mask": "0xffff",
+      "of": "the sealing process; the court process is its child"
+     },
+     "display": {
+      "logical": [
+       1920,
+       1080
+      ],
+      "physical": [
+       1920,
+       1080
+      ],
+      "bits_per_pixel": 32,
+      "vertical_refresh_hz": 75,
+      "source": "GetDeviceCaps on the screen DC: the nominal mode, not the court's measured refresh"
+     },
+     "uptime": {
+      "ms": 814719312
+     },
+     "thermal": {
+      "unavailable": "not captured: no reliable source without elevation (declared, not attempted)"
+     },
+     "clock": {
+      "processor_frequency_mhz": 1683,
+      "performance_permille": 872,
+      "utility_permille": 24,
+      "effective_mhz_estimate": 1467,
+      "window_ms": 1000,
+      "source": "PDH \\Processor Information(_Total) over the window, uncapped; the estimate is Processor Frequency x % Processor Performance, the OS's counters multiplied, not a measured clock"
+     },
+     "faults": {
+      "page_faults_per_s": 916,
+      "page_reads_per_s": 2,
+      "pages_input_per_s": 12,
+      "window_ms": 1000,
+      "source": "PDH \\Memory rates over the window, system-wide; page reads are hard faults, not the court's own"
+     }
+    }
+   }
+  }
+ },
+ "reading": "DRIFT-0 sitting 1, run 2 on host DANIELDILLBERG: the locked PRESENT-EXACT-0 court, unchanged (1000 samples per cell, ABBA; the screen read back exact in all 10 checks). Envelope p50/p99 SetDIBitsToDevice 9591/11638 us, StretchDIBits 9642/11629 us. Overlay declared off. An observation: no rule, no verdict.",
+ "chain_hash": "4f39eadb8107e55758e97146c819d9b2e000c31ad293a171fc6b955bf64ca14f"
+}
