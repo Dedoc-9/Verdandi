@@ -62,6 +62,9 @@ mod refusallog;
 
 #[path = "runledger.rs"]
 mod runledger;
+
+#[path = "liveloop.rs"]
+mod liveloop;
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -657,6 +660,71 @@ fn main() {
                 {
                     let _ = (&inputs, per_cell, &out);
                     refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run the PRESENT-EXACT-0 court in the window");
+                }
+            }
+        }
+        "liveloop-selftest" | "liveloop-window" => {
+            // LIVE-LOOP-0: the sealed session walked live — every composition rendered through the LoopRenderer from
+            // the current step and presented by SetDIBitsToDevice; headless through the mock (`-selftest`, what the
+            // gate runs) or in the borderless host window (`-window`, window build only). Plants (selftest): witness,
+            // close, geometry, noop. `--per-cell` is accepted and ignored (the host flow passes it to every court).
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            let root = opt("--root").unwrap_or_default();
+            let out = opt("--out");
+            let before = mantle::hex(&mantle::sha256(&read(&session)));
+            let mut inputs: Vec<latency1r::FrameInput> = playback::frame_inputs(&session, &root)
+                .into_iter()
+                .map(|(lv, tl, cam, w)| latency1r::FrameInput {
+                    scene: present::scene_of(&lv, &tl, cam).unwrap_or_else(|Refusal(m)| refuse("INVALID-SCENE", &m)),
+                    witness: w,
+                })
+                .collect();
+            let plant = opt("--plant").unwrap_or_default();
+            if plant == "witness" {
+                if let Some(f) = inputs.first_mut() {
+                    let flipped = if f.witness.starts_with('0') { "1" } else { "0" };
+                    f.witness = format!("{}{}", flipped, &f.witness[1..]);
+                }
+            }
+            let close_after = if plant == "close" { Some(60) } else { None };
+            if args[1] == "liveloop-selftest" {
+                let mut surf = presentexact::MockExact::new(latency1r::MockSurface::new(13_333, 1, close_after), &plant);
+                runledger::begin("liveloop", "mock"); // RUN-LEDGER-0: the live-loop run begins
+                match liveloop::run(&mut surf, &inputs, "mock") {
+                    Ok(live) => {
+                        runledger::end(0);
+                        let after = mantle::hex(&mantle::sha256(&read(&session)));
+                        for ln in liveloop::summary(&live) {
+                            println!("{}", ln);
+                        }
+                        if let Some(o) = out {
+                            fs::write(&o, liveloop::raw_record("gate-mock", "mock", &live, &session, &before, &after, 0))
+                                .unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", o, e)));
+                        }
+                        println!("liveloop court OK");
+                    }
+                    Err(r) => {
+                        // REFUSAL-LOG-0: the loop's refusal is logged where it is emitted, then printed
+                        let (ev, m) = r.into_event("mock");
+                        refusallog::refuse(&ev, &format!("SHELL-LIVELOOP: {}", m));
+                        runledger::end(2);
+                        exit(2)
+                    }
+                }
+            } else {
+                #[cfg(all(target_os = "windows", shell_window))]
+                {
+                    let host = opt("--host").unwrap_or_else(|| "unnamed".to_string());
+                    win32::liveloop_window(inputs, &host, out, &session, &before);
+                }
+                #[cfg(not(all(target_os = "windows", shell_window)))]
+                {
+                    let _ = (&inputs, &out, &before);
+                    refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run LIVE-LOOP-0 in the window");
                 }
             }
         }

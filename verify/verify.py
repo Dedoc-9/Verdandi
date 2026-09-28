@@ -67,8 +67,9 @@ every refusal on the present path appends one unsealed line to an append-only lo
 the mock court), runledger (RUN-LEDGER-0: one line per court or presenter run, refused or not, joined to the refusal
 log on run_id), refusalwhy1 (REFUSAL-WHY-1: a screen-readback refusal's covering windows written into the refusal
 log — program, class, flags and rectangle, never a title or a pid), drift (DRIFT-0: the locked PRESENT-EXACT-0 court
-repeated unchanged, 3 sittings of 4 runs, HOST-STATE-1 beside, a descriptive panel with no verdict), and — in the
-oracle stage —
+repeated unchanged, 3 sittings of 4 runs, HOST-STATE-1 beside, a descriptive panel with no verdict), liveloop
+(LIVE-LOOP-0: the first per-frame loop — the sealed session walked live through the LoopRenderer and SetDIBitsToDevice,
+the screen read back at every step, counts only), and — in the oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
@@ -1100,6 +1101,13 @@ def entry_hash_ok(rung: str, e: dict) -> bool:
         "validity_scope": {"certifies": f"the conditions {rung} was seated under"},
         "forbidden_interpretations": ["that registering a condition earns it"],
         "data": {k: v for k, v in e.items() if k != "chain_hash"}})
+
+
+def w32_section(tail: str, marker: str) -> str:
+    """One appended section of shell/win32.rs: from its marker to the next section rule, or to the end of the file."""
+    i = tail.find(marker)
+    j = tail.find("\n// ==================================================================", i + len(marker))
+    return tail[i:] if j < 0 else tail[i:j]
 
 
 def src_span(src: str, start: str, end: str) -> str:
@@ -4425,6 +4433,8 @@ FRESH_ENTRY_SITES = {
     "presentexact.rs": {"arm_composite(": 1, "to_blit(": 1},
     # re-pinned on purpose with PRESENT-EXACT-0 LOCK: the presenter's blit-hash guard on its pre-rendered frames
     "win32.rs": {"to_blit(": 4},
+    # re-pinned on purpose with LIVE-LOOP-0: its witnesses verify each step's reference before the live walk
+    "liveloop.rs": {"arm_composite(": 1, "to_blit(": 1},
 }
 # the adoption evidence, sealed on the owner's host (committed there; this checkout may not carry it)
 ALLOCREUSE1_RECORDS = {"allocreuse1-DANIELDILLBERG.json": "8036e65488f168b87cc3cf26798d25aed0c2b9fe249118c30a4b175258505b96",
@@ -4816,7 +4826,7 @@ def presentexact_lock():
     i_probe, i_lock = tail.find("PRESENT-EXACT-0 probe (appended)"), tail.find("PRESENT-EXACT-0 LOCK: the conforming presenter (appended)")
     if i_probe < 0 or i_lock < i_probe:
         raise Red("the presenter's section is not appended after the probe's")
-    sect = tail[i_lock:]
+    sect = w32_section(tail, "PRESENT-EXACT-0 LOCK: the conforming presenter (appended)")
     show = src_span(sect, "pub fn show(", "\n}\n")
     if "call: 1," not in show or "call: 0" in sect or "set_call(" in sect or "StretchDIBits(" in sect:
         raise Red("the presenter is not fixed to SetDIBitsToDevice through the witnessed surface")
@@ -4939,7 +4949,7 @@ def refusalwhy_fence():
     i_lock, i_why = tail.find("PRESENT-EXACT-0 LOCK: the conforming presenter (appended)"), tail.find("REFUSAL-WHY-0 (appended)")
     if i_lock < 0 or i_why < i_lock:
         raise Red("the REFUSAL-WHY-0 section is not appended after the presenter's")
-    why = tail[i_why:]
+    why = w32_section(tail, "REFUSAL-WHY-0 (appended)")
     for tok in REFUSALWHY_FORBIDDEN:
         if tok in why:
             raise Red("the REFUSAL-WHY-0 section contains %r: an attribution may read, never act" % tok)
@@ -5460,7 +5470,8 @@ def runledger_fence():
         raise Red("the ledger is not append-only, or the two files write into each other")
     main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
     if ('runledger::begin("presentexact.court", "mock"); // RUN-LEDGER-0: the court run begins\n                match presentexact::court(&mut surf, &inputs, per_cell) {\n                    Ok(ex) => {\n                        runledger::end(0);'
-            not in main_src or main_src.count("runledger::begin(") != 1 or main_src.count("runledger::end(") != 2):
+            not in main_src or main_src.count("runledger::begin(") != 2 or main_src.count("runledger::end(") != 4
+            or 'runledger::begin("liveloop", "mock"); // RUN-LEDGER-0: the live-loop run begins\n                match liveloop::run(&mut surf, &inputs, "mock") {\n                    Ok(live) => {\n                        runledger::end(0);' not in main_src):
         raise Red("the selftest's court run does not begin just before the court and end with its outcome")
     w32 = read(os.path.join(SHELL, "win32.rs"))
     if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
@@ -5488,7 +5499,9 @@ def runledger_fence():
             counted += re.findall(r"runledger::readback\(", t)
             if "VERDANDI_RUN_LEDGER" in t or "runs.log" in t:
                 raise Red("shell/%s names the run ledger: nothing on the path may read it" % name)
-    if (len(counted) != 2 or "    st.checks += 1;\n    crate::runledger::readback(!exact);" not in sw
+    ll = read(os.path.join(SHELL, "liveloop.rs")).decode("utf-8")
+    if (len(counted) != 3 or "    st.checks += 1;\n    crate::runledger::readback(!exact);" not in sw
+            or "            live.screen_readbacks += 1;\n            crate::runledger::readback(!exact);" not in ll
             or "    rb.mismatched_bytes += bad;\n    crate::runledger::readback(bad != 0);" not in px):
         raise Red("readbacks are counted somewhere other than where the court and the presenter count their own")
     for name in os.listdir(os.path.join(ROOT, "verify")):
@@ -5879,6 +5892,204 @@ def drift_fence():
             "protocol reads no number; only the report reads the shell's logs; the shell holds nothing of DRIFT-0; "
             "CourtRefused marks only a window court's refusal")
 
+# ------------------------------------------------------------------ LIVE-LOOP-0
+LIVELOOP_PLANTS_REFUSE = {"witness": ("LIVELOOP-WITNESS", "render.witness"), "close": ("LIVELOOP-CLOSED", "window.close"),
+                          "geometry": ("LIVELOOP-GEOMETRY", "window.geometry")}
+
+
+def liveloop_preregistered():
+    """LIVE-LOOP-0's method is locked: the sealed session walked live — every composition rendered through the
+    LoopRenderer from the current step, byte-checked and presented by SetDIBitsToDevice; the screen read back at every
+    step and in the hold; counts only. The shell's and the sealer's constants must equal the registered ones."""
+    import liveloop as LL
+    e = locked_entry("LIVE-LOOP-0", {
+        "the first live loop, narrow": ("hyp", ("renders every composition live", "walks the sealed session live", "nothing is pre-rendered for presentation", "no authoring input, no camera control, no clock", "not how fast")),
+        "the walk and the witnesses": ("hyp", ("24 compositions per step", "held for 150 compositions", "adopted looprenderer", "setdibitstodevice", "witnesses first", "every 75th composition of the hold")),
+        "the gate, the plants, the host record": ("succ", ("steps x 24 + 150 compositions", "steps + 2 times", "session file's hash unchanged", "tampered witness, a mid-walk close and a client below a title bar", "a present that writes nothing", "liveloop-<host>.json")),
+        "no unrendered frame, no hidden difference, no input, no clock": ("fail", ("not rendered through the looprenderer", "a byte difference not refused", "a screen difference hidden", "pre-rendered frame presented", "a clock taken", "the sealed session changed", "a run that did not finish")),
+        "scope": ("lims", ("twice in the hold", "fresh present from a stale one", "sealed session is the state source", "counts only", "this host")),
+    })
+    rs = read(os.path.join(SHELL, "liveloop.rs")).decode("utf-8")
+    for const in ("pub const DWELL: u64 = 24;", "pub const HOLD: u64 = 150;", "pub const RECHECK: u64 = 75;", "pub const CALL: usize = 1;"):
+        if const not in rs:
+            raise Red("the loop's constants are not the registered ones: %s is missing" % const)
+    if (LL.DWELL, LL.HOLD, LL.RECHECK, LL.TARGET) != (24, 150, 75, [1920, 1080]):
+        raise Red("the sealer's constants are not the registered ones")
+    return ("LIVE-LOOP-0's method is locked (hash %s): the sealed session walked live — 24 compositions per step and 150 "
+            "held, every composition rendered through the LoopRenderer from the current step, byte-checked against the "
+            "step's verified bytes and presented by SetDIBitsToDevice; the screen read back at every step and every 75th "
+            "held composition; no input, no clock, counts only; the shell's and the sealer's constants equal the "
+            "registered ones" % e["chain_hash"][:8])
+
+
+def liveloop_court():
+    """The SAME loop the host window runs, headless over the mock: the clean walk completes with every composition
+    rendered, byte-checked and presented, the screen read back steps + 2 times with no difference, the session file
+    unchanged, and seals; PLANTS: a tampered witness, a mid-walk close and a client below a title bar refuse with no
+    record, logged and ledgered; a present that writes nothing completes with every readback differing, each counted,
+    logged once with its covering fields and ledgered. The ledger and the refusal log join one to one."""
+    import liveloop as LL
+    import refusallog as RL
+    import runledger as RLG
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    rlog, led, out = (os.path.join(BUILD, f) for f in ("liveloop-refusals.log", "liveloop-runs.log", "liveloop-mock.json"))
+    for f in (rlog, led, out):
+        if os.path.exists(f):
+            os.remove(f)
+    env = dict(os.environ, **{REFUSALLOG_ENV: rlog, RUNLEDGER_ENV: led})
+    base = [SHELL_EXE, "liveloop-selftest", "--session", SESSIONWALK_DEMO, "--per-cell", "0"]
+    cp = subprocess.run(base + ["--out", out], capture_output=True, text=True, cwd=ROOT, env=env)
+    if cp.returncode != 0 or "liveloop court OK" not in cp.stdout or not os.path.exists(out):
+        raise Red("the headless live loop did not run: " + (cp.stderr.strip() or cp.stdout.strip()))
+    with open(out, encoding="utf-8") as fh:
+        raw = json.load(fh)
+    os.remove(out)
+    d = raw["data"]
+    steps = d["steps"]
+    if (d["compositions"], d["frames_rendered"], d["frames_presented"], d["byte_checks"], d["screen_readbacks"], d["screen_differed"]) \
+            != (steps * 24 + 150,) * 4 + (steps + 2, 0) or d["session"]["sha256_before"] != sha256(read(SESSIONWALK_DEMO)):
+        raise Red("the clean walk's counts or its session hash are not the registered ones")
+    try:
+        rec = LL.seal_liveloop(raw, reg, "gate-mock", {"path": "workshop/attest/sessionwalk-demo.json"}, {"rustc": "gate"})
+    except LL.Refuse as e_:
+        raise Red("the sealer refused the clean walk: %s" % e_)
+    envelope.validate(rec)
+    if "exact at every one of its %d readbacks" % (steps + 2) not in rec["reading"]:
+        raise Red("the sealed reading does not say the screen was exact at every readback")
+    for plant, (code, attribution) in LIVELOOP_PLANTS_REFUSE.items():
+        pout = os.path.join(BUILD, f"liveloop-plant-{plant}.json")
+        cp = subprocess.run(base + ["--plant", plant, "--out", pout], capture_output=True, text=True, cwd=ROOT, env=env)
+        if cp.returncode != 2 or code not in cp.stderr or os.path.exists(pout):
+            raise Red("PLANT %s: the loop did not refuse with %s and no record" % (plant, code))
+    cp = subprocess.run(base + ["--plant", "noop", "--out", out], capture_output=True, text=True, cwd=ROOT, env=env)
+    if cp.returncode != 0 or not os.path.exists(out):
+        raise Red("PLANT noop: a present that writes nothing stopped the loop; a differing screen is counted, not refused")
+    with open(out, encoding="utf-8") as fh:
+        nd = json.load(fh)["data"]
+    os.remove(out)
+    if cp.returncode != 0 or nd["screen_differed"] != nd["screen_readbacks"] or nd["screen_readbacks"] != steps + 2:
+        raise Red("PLANT noop: a present that writes nothing was not counted at every readback, or the loop stopped")
+    records, rbad = RL.read(rlog)
+    runs, lbad = RLG.read(led)
+    by = {}
+    for r in records:
+        by.setdefault((r["reason_code"], r["attribution"]), []).append(r)
+    want_refusals = {v: 1 for v in LIVELOOP_PLANTS_REFUSE.values()}
+    diffs = by.get(("LIVELOOP-SCREEN-DIFFERS", "present.readback"), [])
+    if (rbad or lbad or any(len(by.get(k, [])) != n for k, n in want_refusals.items()) or len(diffs) != steps + 2
+            or any(r["operation"] != "liveloop" or r["surface"] != "mock" for r in records)
+            or any("covering_layer" not in r["context"] for r in diffs) or len(records) != 3 + steps + 2):
+        raise Red("the refusal log does not hold one record per refusal and per differing readback")
+    exits = sorted((x["exit_code"], x["readbacks_checked"], x["differed"]) for x in runs if x["operation"] == "liveloop")
+    if (len(runs) != 5 or RLG.join(runs, records) or [e_[0] for e_ in exits] != [0, 0, 2, 2, 2]
+            or (0, steps + 2, 0) not in exits or (0, steps + 2, steps + 2) not in exits):
+        raise Red("the run ledger does not hold one line per run with the loop's own counts, joined to the refusal log")
+    return ("the live loop runs headless over the mock on every gate: %d steps walked, %d compositions each rendered through "
+            "the LoopRenderer, byte-checked and presented, the screen read back %d times with no difference, the session "
+            "file unchanged, sealed; PLANTS: a tampered witness, a mid-walk close and a client below a title bar refuse "
+            "with no record; a present that writes nothing completes with all %d readbacks differing; each refusal and "
+            "each differing readback is one refusal-log record (with its covering fields), each run one ledger line, "
+            "joined one to one" % (steps, steps * 24 + 150, steps + 2, steps + 2))
+
+
+def _ll_raw(**over):
+    steps = over.pop("steps", 4)
+    total = steps * 24 + 150
+    d = {"steps": steps, "dwell": 24, "hold": 150, "recheck": 75, "compositions": total, "frames_rendered": total,
+         "frames_presented": total, "byte_checks": total, "screen_readbacks": steps + 2, "screen_differed": 0,
+         "geometry": {"client": [1920, 1080], "origin": [0, 0], "screen_logical": [1920, 1080], "screen_physical": [1920, 1080],
+                      "source": [1920, 1080]},
+         "call": "setdibitstodevice", "render_entry": "LoopRenderer", "loop_renders": total,
+         "session": {"path": "synthetic", "sha256_before": "a" * 64, "sha256_after": "a" * 64}}
+    for k, v in over.items():
+        d[k] = dict(d[k], **v) if k in ("geometry", "session") else v
+    return {"name": "verdandi-liveloop", "provenance": {"tool": "synthetic", "unix_seconds": 0}, "data": d}
+
+
+def liveloop_sealer():
+    """The sealer, on synthetic raws: a walk with the registered counts seals, cites LIVE-LOOP-0 and PRESENT-EXACT-0,
+    carries no timing, and its reading says exact or how many readbacks differed; a short walk, a render or present
+    count off, a missing byte check, a readback count off, more differing than read, a changed session, another
+    geometry, call or entry, and another dwell are refused."""
+    import liveloop as LL
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    try:
+        rec = LL.seal_liveloop(_ll_raw(), reg, "gate", {}, {})
+        other = LL.seal_liveloop(_ll_raw(screen_differed=2), reg, "gate", {}, {})
+    except LL.Refuse as e_:
+        raise Red("the sealer refused the registered walk: %s" % e_)
+    envelope.validate(rec)
+    if (rec["provenance"]["preregistered"]["chain_hash"], rec["provenance"]["presenter"]["chain_hash"]) != \
+            (reg["LIVE-LOOP-0"]["chain_hash"], reg["PRESENT-EXACT-0"]["chain_hash"]):
+        raise Red("the record does not cite LIVE-LOOP-0 and PRESENT-EXACT-0")
+    if any(k.endswith("_us") for k in rec["data"]) or "exact at every one of its 6 readbacks" not in rec["reading"]:
+        raise Red("the record carries timing, or its reading does not say the screen was exact")
+    if "differed at 2 of its 6 readbacks" not in other["reading"]:
+        raise Red("a run whose screen differed does not say how many readbacks differed")
+    bad = [(_ll_raw(compositions=245), "a short walk"), (_ll_raw(frames_rendered=245), "a render count off"),
+           (_ll_raw(frames_presented=245), "a present count off"), (_ll_raw(byte_checks=240), "missing byte checks"),
+           (_ll_raw(screen_readbacks=5), "a readback count off"), (_ll_raw(screen_differed=7), "more differing than read"),
+           (_ll_raw(session={"sha256_after": "b" * 64}), "a changed session"), (_ll_raw(geometry={"origin": [0, 39]}), "a client below a title bar"),
+           (_ll_raw(call="stretchdibits"), "another call"), (_ll_raw(render_entry="fresh"), "another entry"),
+           (_ll_raw(dwell=12), "another dwell"), (_ll_raw(loop_renders=10), "renders not from the loop")]
+    for raw, why in bad:
+        try:
+            LL.seal_liveloop(raw, reg, "gate", {}, {})
+            raise Red("the sealer accepted %s" % why)
+        except LL.Refuse:
+            pass
+    return ("the LIVE-LOOP-0 sealer on synthetic raws: the registered walk seals, cites LIVE-LOOP-0 and PRESENT-EXACT-0, "
+            "carries no timing and says whether the screen was exact or how many readbacks differed; %d malformed walks "
+            "(counts, readbacks, a changed session, geometry, call, entry, dwell) are refused" % len(bad))
+
+
+def liveloop_fence():
+    """The loop renders live and nothing else: the witnesses run before the walk; inside it the only render is the
+    LoopRenderer's from the current step, what is presented is its blit, the byte check precedes the present, the call
+    is fixed at SetDIBitsToDevice; the loop takes no clock and writes no file; its refusals are data and its only log
+    write is a differing readback's record. The host window is the presenter's borderless window procedure (Esc or
+    close only), appended after REFUSAL-WHY-0's section, DPI-aware first, the ledger begun just before the loop; a
+    windowless build refuses it."""
+    rs = read(os.path.join(SHELL, "liveloop.rs")).decode("utf-8")
+    run = src_span(rs, "pub fn run<S: ExactSurface>(", "\npub fn summary(")
+    walk = run[run.index("for c in 0..total {"):]
+    if run.index("arm_composite(&f.scene, Arm::Production)") > run.index("for c in 0..total {") or "arm_composite(" in walk or "to_blit(" in walk:
+        raise Red("the reference renders inside the walk, or the witnesses do not come first")
+    order = [walk.find(t) for t in ("if !s.pump()", "lr.render(&inputs[k].scene);", "lr.blit();", "if lr.composite() != &expected[k][..] || lr.bgr() != &expected_bgr[k][..]",
+                                    "if s.present(lr.bgr()).is_none()", "if reads_back(c, steps)", "s.readback()")]
+    if -1 in order or order != sorted(order) or walk.count("lr.render(") != 1 or walk.count("s.present(") != 1:
+        raise Red("the walk is not: events, render the current step, check its bytes, present them, then read back")
+    for tok in ("ticks(", "qpc", "Instant", "SystemTime", "fs::", "File::", "write_raw(", "refusallog::refuse(", "set_call(0", "StretchDIBits"):
+        if tok in rs:
+            raise Red("the loop contains %r: no clock, no file, refusals as data, the call fixed" % tok)
+    if run.count("s.set_call(CALL);") != 1 or rs.count("crate::refusallog::record(") != 1 or rs.count("crate::runledger::readback(") != 1:
+        raise Red("the call is not set once to the adopted call, or the loop logs more than a differing readback")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i_why, i_ll = tail.find("REFUSAL-WHY-0 (appended)"), tail.find("LIVE-LOOP-0 (appended)")
+    if i_why < 0 or i_ll < i_why:
+        raise Red("the LIVE-LOOP-0 section is not appended after REFUSAL-WHY-0's")
+    sect = w32_section(tail, "LIVE-LOOP-0 (appended)")
+    order = [sect.find(t) for t in ("SetProcessDPIAware()", "= show_window(", 'crate::runledger::begin("liveloop", "gdi");',
+                                    'crate::liveloop::run(&mut surf, &inputs, "gdi")')]
+    if (-1 in order or order != sorted(order) or "call: 1," not in sect or "call: 0" in sect or "set_call(" in sect
+            or "StretchDIBits" in sect or "qpc()" in sect or "WM_" in sect or "crate::refusallog::refuse(&ev" not in sect):
+        raise Red("the host window is not the presenter's DPI-aware borderless window with the call fixed and the ledger around the loop")
+    if SHELL_EXE is not None:
+        cp = subprocess.run([SHELL_EXE, "liveloop-window", "--session", SESSIONWALK_DEMO], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode == 0 or "SHELL-NO-WINDOW" not in cp.stderr:
+            raise Red("a windowless build did not refuse liveloop-window with SHELL-NO-WINDOW")
+    return ("the loop renders live and nothing else: witnesses before the walk; inside it the LoopRenderer renders the "
+            "current step, its bytes are checked, then presented; the call is fixed at SetDIBitsToDevice; no clock, no file; "
+            "refusals are data and a differing readback its only log write; the host window is the presenter's DPI-aware "
+            "borderless window with the ledger around the loop, appended after REFUSAL-WHY-0's section; a windowless build "
+            "refuses it")
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -6039,6 +6250,10 @@ def main() -> int:
     row("drift-sealer", drift_sealer)
     row("drift-report", drift_report)
     row("drift-fence", drift_fence)
+    row("liveloop-preregistered", liveloop_preregistered)
+    row("liveloop-court", liveloop_court)
+    row("liveloop-sealer", liveloop_sealer)
+    row("liveloop-fence", liveloop_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

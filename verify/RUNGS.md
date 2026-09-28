@@ -2676,6 +2676,55 @@ number, or the protocol lets a run through too soon, out of order, or past a ful
 the panel's spreads, joins or history are wrong, or if it says a verdict. `drift-fence` goes red if the workload
 changes.
 
+## LIVE-LOOP-0 — the first per-frame loop: the sealed session walked live (preregistered and built; host run pending)
+
+**Why.** Everything the shell has shown so far was rendered before its window opened, so the studio has been a
+viewer. LIVE-LOOP-0 is the first loop that renders every composition live from the current state. It is the first
+gate on the owner's route to a live, authorable world, and its first court is deliberately narrow: the loop itself.
+
+**The method (`65550cc0`), as the owner ratified it.** The state comes from the sealed session, stepped live: 24
+compositions per step (show-playback's dwell), then the last step held for 150 compositions, after which the run ends
+by itself. Every composition is rendered through the adopted `LoopRenderer` from the current step and presented by
+SetDIBitsToDevice, through the exact surface PRESENT-EXACT-0 witnessed, in the presenter's borderless 1920×1080 window
+at (0,0). Nothing is pre-rendered for presentation. The witnesses come first, outside the loop: the geometry, then
+each step's fresh reference reproducing its sealed witness. Those verified bytes become the step's expected bytes.
+Inside the loop, every composition's frame is compared with them before it is presented; a difference refuses
+(LIVELOOP-BYTES), because it means the renderer drifted. The composed screen is read back on the first composition of
+every step and every 75th composition of the hold. A differing screen is counted, logged once in the refusal log with
+its covering windows, and the loop goes on, as `show` does; it is not hidden and not a refusal. There is no authoring
+input, no camera control, no clock, no flip model and no persistent worker; Esc or close aborts. The loop reads the
+sealed session and writes nothing canonical: the session file's hash is taken before and after the run and must be
+equal. Refusals are logged and runs are ledgered as the operation `liveloop`. On the host, `python verify/liveloop.py
+--host NAME` seals `shell/attest/liveloop-<host>.json` with the counts only.
+
+**Rows.** `liveloop-preregistered`: the method is locked, and the shell's and the sealer's constants equal the
+registered ones. `liveloop-court` runs the same loop headless over the mock on every gate, so unlike `show` the loop
+is executed, not only fenced. It walks 4 steps: 246 compositions, each rendered, byte-checked and presented, and 6
+screen readbacks, none differing. The session file is unchanged, and the run is sealed. PLANTS: a tampered witness, a
+mid-walk close and a client below a title bar refuse with no record. A present that writes nothing completes with all
+6 readbacks differing, each counted, logged with its covering fields, and ledgered. Every refusal and every differing
+readback is one refusal-log record, every run one ledger line, joined one to one. `liveloop-sealer`: the registered
+walk seals and says whether the screen was exact, or how many readbacks differed. Twelve malformed walks are refused:
+counts, readbacks, a changed session, the geometry, the call, the entry and the dwell. `liveloop-fence`: the witnesses
+come before the walk. Inside it, the LoopRenderer renders the current step, its bytes are checked, and they are
+presented, in that order. The call is fixed, and the loop takes no clock and writes no file. The host window is the
+presenter's DPI-aware borderless window, with Esc or close only and the ledger around the loop, and a windowless build
+refuses it. The fresh-entry pins now include `liveloop.rs`, on purpose, for its witnesses. `presentexact-lock` and
+`refusalwhy-fence` now bound their win32 sections at the next section rule, so the new appended section is judged by
+its own fence. 13 mutations were each caught.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the loop, executed over the mock, its plants, its logging and
+ledgering, the sealer and the fence. NOT_MEASURED (host): the first live walk on the owner's screen.
+
+**does_not_show.** Speed: counts only, no timing. What reached the screen between readbacks: the byte check covers what
+the loop handed the call. A fresh present versus a stale one during the hold, since the loop does not clear between
+compositions. Authoring, input or camera: the state is the sealed session's steps. Any other host or screen.
+
+**Falsifier.** `liveloop-court` goes red if a composition is not rendered, checked and presented, a readback is
+missed, a difference is hidden, stops the loop or goes unlogged, the session changes, or a plant stops refusing.
+`liveloop-fence` goes red if a frame reaches the call without being rendered live from the current step, a clock or
+input enters, or the window changes.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

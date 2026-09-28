@@ -2166,3 +2166,54 @@ pub(crate) fn covering(own: Hwnd, b: [usize; 4]) -> crate::presentexact::Seeing 
     }
     crate::presentexact::Seeing { reached: reached_own, steps, windows: found }
 }
+
+// ================================================================== LIVE-LOOP-0 (appended)
+// The first per-frame loop in the shipped shell: the sealed session walked live in the presenter's borderless, topmost,
+// DPI-aware 1920x1080 window at (0,0), through the exact surface with the call fixed at SetDIBitsToDevice. The loop is
+// shell/liveloop.rs (the gate runs the same loop over the mock); this is only its host window. Esc or Alt+F4 closes it
+// (a refusal: the walk did not finish). It takes no clock. It writes the loop's raw counts for verify/liveloop.py to
+// seal, and the session file's hash before and after the run.
+
+pub fn liveloop_window(inputs: Vec<FrameInput>, host: &str, out: Option<String>, session: &str, before: &str) {
+    unsafe { SetProcessDPIAware() };
+    let dwm = match load_dwm() {
+        Some(d) => d,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or DwmFlush is unavailable; cannot compose and read back");
+            std::process::exit(2);
+        }
+    };
+    let hwnd = show_window("VerdandiLiveLoop0", "Verðandi — LIVE-LOOP-0");
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    unsafe { SetForegroundWindow(hwnd) };
+    let mut surf = ExactGdiSurface { hwnd, header: court_header(), flush_fn: dwm.flush, freq: 1, call: 1, last_input: 0, inputs_seen: 0 };
+    println!("[liveloop] the sealed session walked live, {} steps x {} compositions + {} held; the screen is read back at every step; Esc aborts",
+             inputs.len(), crate::liveloop::DWELL, crate::liveloop::HOLD);
+    crate::runledger::begin("liveloop", "gdi"); // RUN-LEDGER-0: the live-loop run begins
+    let result = crate::liveloop::run(&mut surf, &inputs, "gdi");
+    if unsafe { IsWindow(hwnd) } != 0 {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    match result {
+        Ok(live) => {
+            crate::runledger::end(0);
+            let after = crate::mantle::hex(&crate::mantle::sha256(&std::fs::read(session).unwrap_or_default()));
+            for ln in crate::liveloop::summary(&live) {
+                println!("{}", ln);
+            }
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+            let raw = crate::liveloop::raw_record(host, "borderless 1:1 GDI window, SetDIBitsToDevice, screen readback", &live, session, before, &after, now);
+            write_raw(out.unwrap_or_else(|| format!("verify/build/liveloop-raw-{}.json", host)), raw, "liveloop.py");
+        }
+        Err(r) => {
+            // REFUSAL-LOG-0: the loop's refusal is logged where it is emitted, then printed
+            let (ev, m) = r.into_event("gdi");
+            crate::refusallog::refuse(&ev, &format!("SHELL-{}", m));
+            crate::runledger::end(2);
+            std::process::exit(2);
+        }
+    }
+}
