@@ -3003,7 +3003,7 @@ red if a torn tail refuses or a bad middle record is dropped. `livesession-class
 is treated as corruption, or a content divergence is blamed on the renderer. `livesession-fence` goes red if durability
 is claimed before it is earned.
 
-## LIVE-AUTHOR-0 — the thing authored is what the next frame renders: tile classes painted live, commit-only (preregistered and built; the host walk is pending)
+## LIVE-AUTHOR-0 — the thing authored is what the next frame renders: tile classes painted live, commit-only (preregistered and built; on the host the editor walked, resumed and saved, but no class has been painted yet)
 
 **Why.** LIVE-INPUT-0 showed that cell edits reach the session and the screen, and LIVE-SESSION-0 made the session
 durable. LIVE-AUTHOR-0 is the owner's last authoring-primitive slice. It adds a second kind of authority, M (the
@@ -3062,9 +3062,32 @@ LIVE-SESSION-0's window under the binding, and a windowless build refuses it.
 binding as a parameter. 15 mutations were each caught. The first pass missed two, now caught: a stale presented frame
 (by the presented-frame witness) and a tile edit not journaled (by the journal check in `liveauthor-persist`).
 
+**The live editor on the host (DANIELDILLBERG).** After 0075 was applied, the gate read 169 rows (rowset
+`2d23d28286297bae`, the same as in the container), and `live-window` was built and run twice.
+- **First run:** one turn (A), then Esc. It was saved and verified as `build/sessions/1a0ea070209-b500/session.json`
+  (1 event, head `8759c67dece9…`).
+- **Second run:** `--resume` on that file loaded it as LOAD, and the walk went on. There were 104 presses: 95 new
+  events (93 moves, 4 of them blocked, and 2 edits), 5 auto-repeats ignored and 3 unbound keys ignored. The walk went
+  east to row 26's end, north up column 43 to (43,15), through the north-east rooms and back down to (43,23). The two
+  edits closed the cell ahead at (43,24) and opened it again, so the final content is the base content (`390109b5…`)
+  again, exactly. The loop presented 1,992 compositions, all 101 screen readbacks were exact, and the session ended by
+  Esc. It was saved and verified as `build/sessions/1a0ea11ce49-8208/session.json` (sha256 `f63024e3…15e4`, 96 events,
+  head `ace4bcd59cc7…`).
+
+Both files verify unchanged here in the workshop's `sessionwalk`. The second verifies in shell playback too, and its
+seal, journal (97 records, sha256 `dc8380ea…ca84`) and lineage check. Its lineage names the first file's head, its one
+event and its bytes, and lies on its own chain, and the renderer identity is the same on both hosts. The window held
+the foreground for 1,993 of 1,994 pumps.
+
+No class key (1–5) was pressed in either run, so no tile edit happened on the host. The live editor ran on the host as
+the durable, resumable loop, under the authoring binding. The painting itself — the reason the rung exists — is not yet
+measured there.
+
 **Grade.** DECLARED: the method. ESTABLISHED (gate): the binding and the palette order, the authority checks (tile edits,
 the off-screen controls, the camera control condition, the workshop's replay), persistence through save and resume, and
-the fence. NOT_MEASURED: the host walk, which has not been run.
+the fence. MEASURED (host): the live editor command itself. It walked, resumed a saved session as LOAD, and saved a
+verified continuation under the authoring binding, with every readback exact. NOT_MEASURED (host): a tile edit, because
+no class key was pressed.
 
 **does_not_show.** Per-cell materials, or a way back to a textured tile: an edit is a solid fill of a whole class.
 Colours outside the palette. Whether a class is on screen by any rule: it is registered per scripted state from the
