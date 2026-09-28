@@ -2858,6 +2858,94 @@ workshop's replay of the live log disagrees with the loop in any witness, camera
 presented after an edit is not the one certified for its W and camera. `liveinput-fence` goes red if the loop holds or
 writes a world of its own, takes a clock, writes a file, or the window changes.
 
+## LIVE-SESSION-0 — the live session made durable and recoverable (preregistered and built; the saved host walk is pending)
+
+**Why.** LIVE-INPUT-0's host runs showed a working live loop, but its evidence was console text that had to be replayed
+by hand, and the deciding walk's single typo could only be found by reading that text. The owner moved LIVE-SESSION-0
+ahead of LIVE-AUTHOR-0, so that every later host walk becomes a saved artifact before authoring widens: "the next
+deciding walks become artifacts, not things we reconstruct from console archaeology."
+
+**The method (`70086a72`), as the owner ratified it.** A new command, `livesession-window` on the host and
+`livesession-selftest` over the mock, runs LIVE-INPUT-0's loop unchanged. The session hands every appended event to a
+sink, and the sink is an append-only journal. It lives at `build/sessions/<run_id>/journal.vsj` (`VERDANDI_SESSIONS`
+overrides the root, which is gitignored). The journal holds one text record per line, `R <length> <sha256> <payload>`:
+a header, then one record per event, each flushed to the disk before it is counted. Esc, or a closed window, ends the
+session; it is not in itself "saved". The session is then written in the workshop's own session-walk format to a
+temporary file, flushed, and moved over `session.json` in one step: `MoveFileEx` with `MOVEFILE_REPLACE_EXISTING |
+MOVEFILE_WRITE_THROUGH` on Windows, and a rename and a directory flush elsewhere. The file carries a live block (the
+run, the renderer identity, the lineage, the journal's count and hash, how the session ended, and the keyboard-focus
+observation) and a seal, the sha256 of the bytes before it. The shell then reads the file back from the disk and
+verifies it: the seal, then a replay through the shell's SESSION-WALK machinery to every witness, camera, content and
+head of the live session. Only then does the run say saved and exit 0. A seal that cannot be written, or does not
+verify, is a refusal. The renderer identity is the sha256 of the render sources the shell was built from:
+`kernel/mantle.rs`, `formats.rs`, `fast.rs`, `hud.rs` and `shell/present.rs`, with line endings taken as the repository
+keeps them, so a CRLF checkout names the same renderer.
+
+Loading (`--resume`) goes in the owner's order. It verifies integrity first: the seal, or each journal record's length
+and checksum (a torn final record is dropped, any other bad record refuses), the base files' W and M, the chain's own
+fold, and the lineage. It then compares the renderer identity, replays, compares witnesses and classifies. Same
+identity and all reproduced: LOAD. Same identity and a divergence: TAMPERED. A different identity and all reproduced:
+LOAD, noted as a different renderer. A different identity and a *frame* witness diverging: DIFFERENT-RENDERER. One
+refinement is written into the method: a divergence no renderer can explain (an edit's content, a move's camera) is
+TAMPERED under any identity, because blaming it on the renderer would be a false attribution. A continued session is
+sealed as a new file whose log begins with its parent's events. The parent's head therefore lies on the child's own
+chain; the lineage names that head, its event count and the parent's bytes, and cannot merely claim a parent. The
+parent file is never modified. The keyboard-focus observation (the foreground request's result, whether the window
+held the foreground at the start, and how many compositions did and did not have it) is recorded, never ruled on.
+`verify/livesession.py` turns a saved session into a committed record: `shell/attest/livesession-<host>-<head>.json`,
+a RECORD-0 copy that shell playback and the workshop both replay. LIVE-INPUT-0's own command still writes nothing.
+
+**Rows.** `livesession-preregistered`: the method is locked, and the shell's constants, the five identity sources (in
+the shell and in the sealer) and the seal key are the registered ones. `livesession-save`: script A runs to Esc and is
+saved. The journal is a header and one checksummed record per saved event. The seal recomputes, the renderer identity
+is the one recomputed from the checkout, and the workshop's `sessionwalk verify` passes on the saved file itself. PLANTS:
+an unwritable seal, a file corrupted between its write and its verification, and a sealed, self-consistent file that is
+not the live session (added after a mutation that skipped the comparison went unseen) each refuse (logged, ledgered) and
+never say saved. `livesession-resume`: continuing the saved session writes a new file whose first 23 events are the parent's,
+whose lineage lies on its own chain, whose three new events are the expected ones, and which the workshop verifies; the
+parent's bytes are unchanged. `livesession-recover`: a run that dies after five journaled events leaves a torn final
+record, no saved session and no ledger line. Resuming from its journal drops the torn record and saves the five events
+with one more, naming the journal as the lineage. A bad middle record, a missing header and a record head that does not
+fold each refuse. `livesession-classify` checks the loader against real shells built from changed sources:
+- a consistent frame forgery under the same shell is TAMPERED;
+- CRLF line endings name the same renderer (LOAD);
+- a comment-only render change loads as LOAD with a different renderer, and its continuation names both identities;
+- a digest-changing render source is DIFFERENT-RENDERER;
+- a forged edit witness is TAMPERED under a different identity;
+- an altered seal, a changed base and an off-chain lineage refuse before any replay.
+
+`livesession-sealer` seals the gate's saved session and replays the copy in shell playback and the workshop; five
+malformed sessions are refused. `livesession-fence` covers the invariants:
+- each journal record is flushed before it is counted, and the journal only appends;
+- the saved file goes through a flushed temporary and the atomic replace with both flags, and is verified from the
+  disk before the run says saved and ends 0;
+- every refusal ends the ledger;
+- the loader runs in the registered order, with only a frame renderable;
+- the reader opens no file, and the sink sees each event after it is appended;
+- the host window loads first, observes the focus without ruling on it and writes nothing;
+- `build/sessions/` is gitignored;
+- a windowless build refuses the command.
+
+`liveinput-fence` now bounds its playback section at the next appended section (LIVE-SESSION-0's reader), which its own
+fence judges. 26 mutations were each caught. The first pass missed three, each now caught by a sharper check: a bad
+journal record just before the torn tail, the seal-stale plant, and the fence pinning the lineage condition.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): saving, resuming, recovery from a crashed journal, the loader's
+classification against real changed shells, the sealer, and the fence. NOT_MEASURED: a saved host walk, which has not
+been run.
+
+**does_not_show.** Durability beyond the file system's promise: a disk that acknowledges a flush it did not perform is
+outside the claim. The seal is a checksum, not a signature: forgery is caught by replay and by the committed RECORD-0
+copy. The renderer identity names sources, not pixels. A crashed run keeps only what was flushed. The focus observation
+explains nothing. New authoring vocabulary, a SendInput-driven walk and an independent screen witness are not part of
+this rung.
+
+**Falsifier.** `livesession-save` goes red if a run says saved without a verified file, or a plant stops refusing.
+`livesession-resume` goes red if the parent changes or the lineage leaves the child's chain. `livesession-recover` goes
+red if a torn tail refuses or a bad middle record is dropped. `livesession-classify` goes red if an identity mismatch
+is treated as corruption, or a content divergence is blamed on the renderer. `livesession-fence` goes red if durability
+is claimed before it is earned.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

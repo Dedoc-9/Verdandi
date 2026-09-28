@@ -68,6 +68,9 @@ mod liveloop;
 
 #[path = "liveinput.rs"]
 mod liveinput;
+
+#[path = "livesession.rs"]
+mod livesession;
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -780,6 +783,46 @@ fn main() {
                 {
                     let _ = &mut session;
                     refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run LIVE-INPUT-0 in the window");
+                }
+            }
+        }
+        "livesession-selftest" | "livesession-window" => {
+            // LIVE-SESSION-0: LIVE-INPUT-0's live session, journaled as it runs and sealed on Esc into
+            // build/sessions/<run_id>/session.json, which is read back and verified before the run counts as saved;
+            // --resume continues a saved session (or a crashed run's journal) into a new file with lineage. Through the
+            // mock with a key script (`-selftest`, what the gate runs) or in the borderless host window (`-window`,
+            // window build only). Plants (selftest): geometry, noop (the surface's); crash, seal-unwritable, seal-flip,
+            // seal-stale.
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let level = opt("--level").unwrap_or_else(|| "oracle/levels/witness.lvl".to_string());
+            let tiles = opt("--tiles").unwrap_or_else(|| "oracle/tiles/identity.tiles".to_string());
+            let cam0 = parse_camera(&opt("--camera").unwrap_or_else(|| "28,28,N".to_string())).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m));
+            let resume = opt("--resume");
+            if args[1] == "livesession-selftest" {
+                let script = liveinput::parse_script(&opt("--keys").unwrap_or_default()).unwrap_or_else(|m| refuse("USAGE", &m));
+                let plant = opt("--plant").unwrap_or_default();
+                let plan = livesession::Plan { level, tiles, cam0, resume, plant: plant.clone(), surface: "mock" };
+                let prepared = livesession::prepare(plan).unwrap_or_else(|code| exit(code));
+                let mock = presentexact::MockExact::new(latency1r::MockSurface::new(13_333, 1, None), &plant);
+                let mut surf = liveinput::ScriptedKeys::new(mock, script, liveinput::MOCK_EVERY);
+                let code = livesession::go(&mut surf, prepared);
+                if code == 0 {
+                    println!("livesession court OK");
+                }
+                exit(code)
+            } else {
+                #[cfg(all(target_os = "windows", shell_window))]
+                {
+                    let plan = livesession::Plan { level, tiles, cam0, resume, plant: String::new(), surface: "gdi" };
+                    win32::livesession_window(plan);
+                }
+                #[cfg(not(all(target_os = "windows", shell_window)))]
+                {
+                    let _ = (&level, &tiles, &cam0, &resume);
+                    refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run LIVE-SESSION-0 in the window");
                 }
             }
         }

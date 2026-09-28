@@ -71,7 +71,10 @@ repeated unchanged, 3 sittings of 4 runs, HOST-STATE-1 beside, a descriptive pan
 (LIVE-LOOP-0: the first per-frame loop — the sealed session walked live through the LoopRenderer and SetDIBitsToDevice,
 the screen read back at every step, counts only), liveinput (LIVE-INPUT-0: key presses become typed events in an
 in-memory session-walk whose replay the live loop renders — the binding proven on scripted keys, the log replayed
-through the workshop's SESSION-WALK to the state and head the loop reached, nothing saved), and — in the oracle stage —
+through the workshop's SESSION-WALK to the state and head the loop reached, nothing saved), livesession
+(LIVE-SESSION-0: the live session journaled as it runs, sealed on Esc by an atomic replace and verified from the disk
+before it counts as saved, resumed into new files with lineage, a crashed run recovered from its journal, the loader's
+TAMPERED / DIFFERENT-RENDERER classification), and — in the oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
@@ -6383,7 +6386,8 @@ def liveinput_fence():
     back; no clock, no file, refusals as data; the host window is the presenter's borderless window with the keyboard read
     from the message queue, appended after LIVE-LOOP-0's section, writing nothing; a windowless build refuses it."""
     pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
-    sect = pb[pb.index("// ================================================================== LIVE-INPUT-0 (appended): the live session"):]
+    # bounded at the next appended section (LIVE-SESSION-0's reader), which its own fence judges
+    sect = w32_section(pb, "// ================================================================== LIVE-INPUT-0 (appended): the live session")
     body = src_span(sect, "pub struct LiveSession {", "\n}\n")
     if re.search(r"\n\s+pub ", body) or sect.count("(&mut self,") != 2 or sect.count("self.log.push(") != 2:
         raise Red("the live session's state is not private, or it changes other than by appending one event")
@@ -6446,6 +6450,472 @@ def liveinput_fence():
             "reads WM_KEYDOWN from the queue, is appended after LIVE-LOOP-0's section and writes nothing; a windowless build "
             "refuses it")
 
+
+# ------------------------------------------------------------------ LIVE-SESSION-0
+LIVESESSION_ENV = "VERDANDI_SESSIONS"
+GATE_SESSIONS = os.path.join(BUILD, "sessions-gate")
+# what continuing script A's saved session with RIGHT, W, SPACE, ESC must append: turn east, step onto the stair cell,
+# close the floor beyond it
+LIVESESSION_RESUME_KEYS = "RIGHT,W,SPACE,ESC"
+LIVESESSION_RESUME_EVENTS = [("move", "R", "33,28,E"), ("move", "F", "34,28,E"), ("edit", "cell:35,28,#", "34,28,E")]
+LIVESESSION_DIGEST_SITE = "let digest = frame_digest(&frame);"
+
+
+def _ls_logs(name):
+    logs = (os.path.join(BUILD, "livesession-%s-refusals.log" % name), os.path.join(BUILD, "livesession-%s-runs.log" % name))
+    for f in logs:
+        if os.path.exists(f):
+            os.remove(f)
+    return logs
+
+
+def _ls_run(args, logs, exe=None):
+    """One livesession-selftest; returns (completed process, the saved session's path or None)."""
+    env = dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1], LIVESESSION_ENV: GATE_SESSIONS})
+    cp = subprocess.run([exe or SHELL_EXE, "livesession-selftest"] + args, capture_output=True, text=True, cwd=ROOT, env=env)
+    m = re.search(r"saved and verified: (.+?session\.json)", cp.stdout)
+    return cp, (m.group(1) if m else None)
+
+
+def _ls_script_a(logs, exe=None):
+    camera, steps = LIVEINPUT_SCRIPTS["A"]
+    cp, path = _ls_run(["--camera", camera, "--keys", _li_script(steps)], logs, exe)
+    if cp.returncode != 0 or path is None or "livesession court OK" not in cp.stdout:
+        raise Red("script A did not run to a saved and verified session: " + (cp.stderr.strip() or cp.stdout.strip()))
+    return path
+
+
+def _ls_journal(path):
+    """A journal's records: (payloads, torn) where torn says the final line was not a complete record."""
+    raw = read(path)
+    lines = raw.split(b"\n")
+    tail = lines.pop()
+    out = []
+    for n, ln in enumerate(lines):
+        parts = ln.split(b" ", 3)
+        if len(parts) != 4 or parts[0] != b"R" or int(parts[1]) != len(parts[3]) or hashlib.sha256(parts[3]).hexdigest().encode() != parts[2]:
+            raise Red("journal record %d is not a record whose length and checksum agree" % n)
+        out.append(json.loads(parts[3].decode("utf-8")))
+    return out, tail != b""
+
+
+def _ls_reseal(text):
+    """Recompute a saved file's seal after an edit (a forger's step)."""
+    import livesession as LS
+    b = text.encode("utf-8")
+    i = b.rfind(LS.SEAL_KEY)
+    return (b[:i + len(LS.SEAL_KEY)] + hashlib.sha256(b[:i + 1]).hexdigest().encode() + b'"\n}\n').decode("utf-8")
+
+
+def _ls_forge_witness(text, kind):
+    """Change the first `kind` event's witness, fold the head again and reseal: a consistent forgery."""
+    import livesession as LS
+    doc = json.loads(text)
+    d = doc["data"]
+    k = next(i for i, x in enumerate(d["log"]) if x["kind"] == kind)
+    old = d["log"][k]["witness"]
+    new = ("0" if old[0] != "0" else "1") + old[1:]
+    d["log"][k]["witness"] = new
+    head = LS.heads(d["base"]["content"], d["base"]["camera"], d["log"])[-1]
+    lines = text.split("\n")
+    items = [i for i, ln in enumerate(lines) if ln.startswith('   {"kind": ')]
+    if len(items) != len(d["log"]) or lines[items[k]].count(old) != 1 or text.count('"head": "%s"' % d["head"]) != 1:
+        raise Red("the forgery's strings are not where the saved file keeps them")
+    lines[items[k]] = lines[items[k]].replace(old, new)
+    return _ls_reseal("\n".join(lines).replace('"head": "%s"' % d["head"], '"head": "%s"' % head)), k
+
+
+def _ls_verify(exe, args):
+    cp = subprocess.run([exe] + args, capture_output=True, text=True, cwd=ROOT)
+    return cp.returncode, cp.stdout, cp.stderr
+
+
+def _ls_write(name, text):
+    p = os.path.join(BUILD, "livesession-%s.json" % name)
+    with open(p, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(text)
+    return p
+
+
+def livesession_preregistered():
+    """LIVE-SESSION-0's method is locked: the journal (length and checksum per record, flushed before counted), the seal
+    (atomic replace, then read back and verified before the run counts as saved), the loader's order and its
+    classification, lineage by chain prefix, the renderer identity's sources. The shell's and the sealer's constants
+    must be the registered ones."""
+    import livesession as LS
+    e = locked_entry("LIVE-SESSION-0", {
+        "durable without a second authority": ("hyp", ("durable and recoverable without a second authority", "moved ahead of live-author-0", "live-input-0's loop unchanged", "flushed to the disk before it is counted as journaled")),
+        "the seal, the identity, the load": ("hyp", ("movefile_replace_existing | movefile_write_through", "read back from the disk and verified", "never a quiet exit", "kernel mantle.rs, formats.rs, fast.rs, hud.rs and shell/present.rs", "an identity mismatch alone never means corruption", "the parent file is never modified")),
+        "the gate: save, resume, recovery, classification": ("succ", ("the workshop's sessionwalk verify passes on the saved file itself", "whose chain reaches that head at that count", "torn final record is dropped", "refuses different-renderer", "seals a record-0 copy citing live-session-0")),
+        "no false durability, no second state": ("fail", ("an exit 0 after a seal failure", "counted as journaled before its record was flushed", "a parent session modified", "a renderer-identity mismatch treated as corruption", "live-input-0's command writing to disk", "the focus observation read by any rule")),
+        "scope": ("lims", ("durability is the file system's", "the seal is a checksum, not a signature", "the renderer identity is evidence, not a verdict", "a journal recovers what was flushed", "recorded, not explained")),
+    })
+    rs = read(os.path.join(SHELL, "livesession.rs")).decode("utf-8")
+    for const in ('pub const ENV: &str = "VERDANDI_SESSIONS";', 'pub const DEFAULT_ROOT: &str = "build/sessions";',
+                  'pub const JOURNAL: &str = "journal.vsj";', 'pub const SESSION: &str = "session.json";',
+                  'pub const JOURNAL_MAGIC: &str = "VRDNLJ1";', 'pub const SEAL_KEY: &str = "\\n \\"seal\\": \\"";'):
+        if const not in rs:
+            raise Red("the shell's constants are not the registered ones: %s is missing" % const)
+    names = re.findall(r'\("((?:kernel|shell)/[a-z]+\.rs)", include_bytes!\("([^"]+)"\)\)', rs)
+    if [n for n, _ in names] != list(LS.SOURCES) or [p for _, p in names] != ["../kernel/mantle.rs", "../kernel/formats.rs", "../kernel/fast.rs", "../kernel/hud.rs", "present.rs"]:
+        raise Red("the renderer identity's sources are not the registered five, in order, in the shell and the sealer")
+    if LS.SEAL_KEY != b'\n "seal": "' or LIVESESSION_ENV != "VERDANDI_SESSIONS":
+        raise Red("the sealer's or the gate's constants are not the shell's")
+    return ("LIVE-SESSION-0's method is locked (hash %s): records with their length and sha256, each flushed before it is "
+            "counted; the seal written by an atomic replace and verified from the disk before the run counts as saved; "
+            "load in the registered order and classification; lineage by chain prefix; the renderer identity over the five "
+            "registered sources, the same in the shell and the sealer" % e["chain_hash"][:8])
+
+
+def livesession_save():
+    """Script A runs to Esc and is saved: the journal holds a header and one checksummed record per event, matching the
+    saved log; the saved file's seal recomputes; its renderer identity is the one recomputed from this checkout; the
+    workshop's sessionwalk verifies the saved file itself; its events are script A's; the run says saved and verified
+    only after that and exits 0. PLANTS: a seal that cannot be written, a saved file corrupted before its verification, and
+    a sealed, self-consistent file that is not the live session refuse (exit 2, logged, ledgered) and never say saved."""
+    import livesession as LS
+    import refusallog as RL
+    import runledger as RLG
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None:
+        raise Red("the shell or the workshop's sessionwalk was not built")
+    logs = _ls_logs("save")
+    path = _ls_script_a(logs)
+    run_dir = os.path.dirname(path)
+    if os.path.dirname(run_dir) != GATE_SESSIONS or os.path.basename(path) != "session.json":
+        raise Red("the saved session is not build/sessions/<run_id>/session.json under the gate's root")
+    raw = read(path)
+    try:
+        doc = LS.check_saved(raw, ROOT)
+    except LS.Refuse as e_:
+        raise Red("the saved session does not check: %s" % e_)
+    d, live = doc["data"], doc["live"]
+    typed = [(x["kind"], x.get("command", x.get("spec")), x.get("camera", "")) for x in d["log"]]
+    want = [o for _, o in LIVEINPUT_SCRIPTS["A"][1] if isinstance(o, tuple)]
+    if [(k, p) for k, p, _ in typed] != [(k, p) for k, p, _ in want] or [c for k, _, c in typed if k == "move"] != [c for k, _, c in want if k == "move"]:
+        raise Red("the saved log is not script A's events")
+    if live["renderer"] != LS.renderer_id(ROOT) or live["ended"] != "escape" or live["lineage"] is not None or not isinstance(live.get("focus"), dict):
+        raise Red("the live block does not name this checkout's renderer, the Esc end, no lineage and a focus observation")
+    records, torn = _ls_journal(os.path.join(run_dir, "journal.vsj"))
+    j = live["journal"]
+    if (torn or records[0].get("journal") != "VRDNLJ1" or records[0]["renderer"] != live["renderer"] or records[0]["base"] != d["base"]
+            or [(r["k"], r["witness"]) for r in records[1:]] != [(i, x["witness"]) for i, x in enumerate(d["log"])]
+            or (j["records"], j["events"], j["complete"]) != (len(d["log"]) + 1, len(d["log"]), True)
+            or j["sha256"] != sha256(read(os.path.join(run_dir, "journal.vsj")))):
+        raise Red("the journal is not a header and one checksummed record per saved event, as the live block says")
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+    if code != 0 or "SESSIONWALK verify OK" not in out or ("head " + d["head"][:12]) not in out:
+        raise Red("the workshop's sessionwalk does not verify the saved file itself: " + err.strip())
+    for plant, code_ in (("seal-unwritable", "LIVESESSION-SEAL-UNWRITTEN"), ("seal-flip", "LIVESESSION-SEAL-UNVERIFIED"),
+                         ("seal-stale", "LIVESESSION-SEAL-UNVERIFIED")):
+        cp, p = _ls_run(["--keys", LIVEINPUT_SHORT, "--plant", plant], logs)
+        if cp.returncode != 2 or code_ not in cp.stderr or p is not None or "saved and verified" in cp.stdout:
+            raise Red("PLANT %s: the run did not refuse %s without claiming durability" % (plant, code_))
+    records_, rbad = RL.read(logs[0])
+    runs, lbad = RLG.read(logs[1])
+    seals = sorted(r["reason_code"] for r in records_ if r["attribution"] == "session.seal")
+    if (rbad or lbad or seals != ["LIVESESSION-SEAL-UNVERIFIED", "LIVESESSION-SEAL-UNVERIFIED", "LIVESESSION-SEAL-UNWRITTEN"]
+            or RLG.join(runs, records_) or sorted(r["exit_code"] for r in runs) != [0, 2, 2, 2] or any(r["operation"] != "livesession" for r in runs)):
+        raise Red("the seal refusals are not one record each, or the runs not one ledger line each, joined")
+    return ("script A saved as a live session: %d events journaled one checksummed record each and saved in the workshop's "
+            "format, the seal recomputes, the renderer identity is this checkout's, and the workshop's sessionwalk "
+            "verifies the saved file itself (head %s...); only then the run said saved and exited 0; PLANTS: an "
+            "unwritable seal, a file corrupted before its verification and a self-consistent file that is not the live "
+            "session refuse, logged and ledgered, never saved"
+            % (len(d["log"]), d["head"][:12]))
+
+
+def livesession_resume():
+    """Continuing script A's saved session: a new file whose first events are the parent's, whose lineage names the
+    parent's head, event count and bytes, whose own chain reaches that head at that count, whose new events are the
+    expected ones, and which the workshop verifies; the parent's bytes are unchanged."""
+    import livesession as LS
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None:
+        raise Red("the shell or the workshop's sessionwalk was not built")
+    logs = _ls_logs("resume")
+    parent = _ls_script_a(logs)
+    before = read(parent)
+    cp, child = _ls_run(["--resume", parent, "--keys", LIVESESSION_RESUME_KEYS], logs)
+    if cp.returncode != 0 or child is None or "(LOAD)" not in cp.stdout or child == parent:
+        raise Red("the saved session did not resume into a new saved file: " + (cp.stderr.strip() or cp.stdout.strip()))
+    if read(parent) != before:
+        raise Red("resuming modified the parent session")
+    p, c = json.loads(before.decode("utf-8")), LS.check_saved(read(child), ROOT)
+    pd, cd, lin = p["data"], c["data"], c["live"]["lineage"]
+    n = len(pd["log"])
+    if cd["log"][:n] != pd["log"] or cd["base"] != pd["base"]:
+        raise Red("the child's log does not begin with the parent's events over the same base")
+    if (lin or {}).get("parent_head") != pd["head"] or lin["parent_events"] != n or lin["source"] != "session" or lin["parent_sha256"] != sha256(before):
+        raise Red("the lineage does not name the parent's head, event count and bytes")
+    if LS.heads(cd["base"]["content"], cd["base"]["camera"], cd["log"])[n] != pd["head"]:
+        raise Red("the parent's head is not on the child's own chain at the parent's event count")
+    new = [(x["kind"], x.get("command", x.get("spec")), x.get("camera", "")) for x in cd["log"][n:]]
+    if [(k, q) for k, q, _ in new] != [(k, q) for k, q, _ in LIVESESSION_RESUME_EVENTS] or c["live"]["resumed"]["classification"] != "LOAD":
+        raise Red("the continuation's events are not the expected ones, or it was not loaded as LOAD")
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", child])
+    if code != 0 or "SESSIONWALK verify OK" not in out:
+        raise Red("the workshop's sessionwalk does not verify the continued session: " + err.strip())
+    return ("script A's saved session continued into a new file: its first %d events are the parent's, its lineage names the "
+            "parent's head, count and bytes and lies on its own chain, its %d new events are the expected ones, the "
+            "workshop verifies it, and the parent's bytes are unchanged" % (n, len(new)))
+
+
+def livesession_recover():
+    """A run that crashes after five journaled events leaves a journal with a torn final record and no saved session and
+    no ledger line; resuming from the journal drops the torn record, recovers the five events and continues into a saved
+    session whose lineage says so; a journal with a bad record before its last, with no header, or whose record heads do
+    not fold, or that is bad just before its torn tail, refuses."""
+    import livesession as LS
+    import runledger as RLG
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None:
+        raise Red("the shell or the workshop's sessionwalk was not built")
+    logs = _ls_logs("recover")
+    camera, steps = LIVEINPUT_SCRIPTS["A"]
+    cp, p = _ls_run(["--camera", camera, "--keys", _li_script(steps), "--plant", "crash"], logs)
+    m = re.search(r"LIVESESSION-PLANT-CRASH: .*\((.+journal\.vsj)\)", cp.stderr)
+    if cp.returncode != 70 or p is not None or m is None:
+        raise Red("PLANT crash: the run did not die after journaling")
+    journal = m.group(1)
+    if os.path.dirname(os.path.dirname(journal)) != GATE_SESSIONS or os.path.exists(os.path.join(os.path.dirname(journal), "session.json")):
+        raise Red("PLANT crash: the crashed run left a saved session, or its journal is not under the gate's root")
+    records, torn = _ls_journal(journal)
+    runs, _lb = RLG.read(logs[1])
+    if not torn or len(records) != 1 + 5 or runs:
+        raise Red("the crashed run's journal is not a header, five records and a torn tail, or the crash left a ledger line")
+    cp, child = _ls_run(["--resume", journal, "--keys", "S,ESC"], logs)
+    if cp.returncode != 0 or child is None or "a torn final journal record was dropped" not in cp.stdout:
+        raise Red("the journal did not recover into a saved session: " + (cp.stderr.strip() or cp.stdout.strip()))
+    c = LS.check_saved(read(child), ROOT)
+    lin = c["live"]["lineage"]
+    if ([x["witness"] for x in c["data"]["log"][:5]] != [r["witness"] for r in records[1:]] or len(c["data"]["log"]) != 6
+            or (lin["source"], lin["parent_events"], lin["torn"], lin["parent_head"]) != ("journal", 5, 1, records[-1]["head"])):
+        raise Red("the recovered session is not the journal's five events and one more, with the journal as its lineage")
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", child])
+    if code != 0:
+        raise Red("the workshop does not verify the recovered session: " + err.strip())
+    raw = read(journal)
+    lines = raw.split(b"\n")
+    bad = []
+    mid = lines[:]
+    mid[2] = mid[2].replace(b'"witness":"', b'"witness":"0', 1)
+    bad.append(("a bad middle record", b"\n".join(mid)))
+    before_tail = lines[:]
+    before_tail[-1 - 1] = before_tail[-2].replace(b'"witness":"', b'"witness":"0', 1)
+    bad.append(("a bad record before the torn tail", b"\n".join(before_tail)))
+    bad.append(("no header", b"\n".join(lines[1:])))
+    rec = json.loads(lines[3].split(b" ", 3)[3].decode("utf-8"))
+    rec["head"] = "0" * 64
+    pl = json.dumps(rec, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    wrong = lines[:]
+    wrong[3] = b"R %d %s %s" % (len(pl), hashlib.sha256(pl).hexdigest().encode(), pl)
+    bad.append(("a record head that does not fold", b"\n".join(wrong)))
+    for why, blob in bad:
+        jp = os.path.join(BUILD, "livesession-bad.vsj")
+        with open(jp, "wb") as fh:
+            fh.write(blob)
+        cp, child = _ls_run(["--resume", jp, "--keys", "ESC"], logs)
+        if cp.returncode != 2 or "LIVESESSION-JOURNAL-CORRUPT" not in cp.stderr or child is not None:
+            raise Red("a journal with %s did not refuse LIVESESSION-JOURNAL-CORRUPT" % why)
+    return ("a run that died after five journaled events left a torn final record, no saved session and no ledger line; "
+            "resuming from its journal dropped the torn record, recovered the five events and saved them with one more, "
+            "the journal named as the lineage, verified by the workshop; a bad middle record, a missing header and a "
+            "record head that does not fold, and a bad record just before the torn tail each refuse")
+
+
+def livesession_classify():
+    """The loader's classification: a consistently forged frame witness under the same shell refuses TAMPERED; a shell
+    built from the same sources with CRLF line endings names the same renderer and loads as LOAD; a shell whose render
+    sources differ only by a comment loads the saved session as LOAD with a different renderer and seals its
+    continuation naming both identities; a shell whose render source changes the frame digest refuses
+    DIFFERENT-RENDERER; a forged edit witness refuses TAMPERED under a different identity; an altered seal, a changed base
+    and an off-chain lineage refuse before any replay."""
+    import livesession as LS
+    import refusallog as RL
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    logs = _ls_logs("classify")
+    parent = _ls_script_a(logs)
+    text = read(parent).decode("utf-8")
+    pr = read(os.path.join(SHELL, "present.rs")).decode("utf-8")
+    if pr.count(LIVESESSION_DIGEST_SITE) != 1:
+        raise Red("the digest site for the different-renderer shell is not unique in present.rs")
+    comment = compile_rs(SHELL, "main.rs", "shell-ls-comment", {"present.rs": pr + "\n// LIVE-SESSION-0 gate: a comment; the rendering is unchanged\n"})
+    digest = compile_rs(SHELL, "main.rs", "shell-ls-digest", {"present.rs": pr.replace(
+        LIVESESSION_DIGEST_SITE, "let digest = { let mut f2 = frame.clone(); f2[0] ^= 1; frame_digest(&f2) };")})
+    frame_forged, _k = _ls_forge_witness(text, "move")
+    edit_forged, _k2 = _ls_forge_witness(text, "edit")
+    s = text.rfind('"seal": "') + 9
+    bad_seal = text[:s] + ("0" if text[s] != "0" else "1") + text[s + 1:]
+    w = json.loads(text)["data"]["base"]["W"]
+    changed_base = _ls_reseal(text.replace('"W":"%s"' % w, '"W":"%s"' % ("0" * 64), 1))
+    off_chain = _ls_reseal(text.replace('"lineage":null', '"lineage":{"parent_head":"%s","parent_events":3,"source":"session","parent_sha256":"%s","torn":0}' % ("0" * 64, "0" * 64), 1))
+    cases = [("a forged frame witness, same shell", frame_forged, None, "LIVESESSION-TAMPERED"),
+             ("a forged frame witness, a digest-changing shell", text, digest, "LIVESESSION-DIFFERENT-RENDERER"),
+             ("a forged edit witness, a different identity", edit_forged, comment, "LIVESESSION-TAMPERED"),
+             ("an altered seal", bad_seal, None, "LIVESESSION-CORRUPT"),
+             ("a changed base", changed_base, None, "LIVESESSION-BASE"),
+             ("an off-chain lineage", off_chain, None, "LIVESESSION-LINEAGE")]
+    for i, (why, body, exe, code_) in enumerate(cases):
+        p = _ls_write("case%d" % i, body)
+        cp, child = _ls_run(["--resume", p, "--keys", "ESC"], logs, exe)
+        if cp.returncode != 2 or code_ not in cp.stderr or child is not None:
+            raise Red("%s did not refuse %s: %s" % (why, code_, (cp.stderr.strip() or cp.stdout.strip())[:200]))
+    crlf = compile_rs(SHELL, "main.rs", "shell-ls-crlf", {"present.rs": pr.replace("\r\n", "\n").replace("\n", "\r\n")})
+    cp, child = _ls_run(["--resume", parent, "--keys", "ESC"], logs, crlf)
+    if cp.returncode != 0 or child is None or "(LOAD)" not in cp.stdout:
+        raise Red("a checkout with CRLF line endings does not name the same renderer: " + (cp.stderr.strip() or cp.stdout.strip())[:200])
+    cp, child = _ls_run(["--resume", parent, "--keys", "ESC"], logs, comment)
+    if cp.returncode != 0 or child is None or "(LOAD-DIFFERENT-RENDERER)" not in cp.stdout:
+        raise Red("a comment-only render change did not load the session as LOAD with a different renderer: " + cp.stderr.strip())
+    live = LS.check_saved(read(child), ROOT)["live"]
+    parent_id = json.loads(text)["live"]["renderer"]
+    if (live["resumed"] != {"classification": "LOAD-DIFFERENT-RENDERER", "parent_renderer": parent_id}
+            or live["renderer"] == parent_id or live["renderer"] == LS.renderer_id(ROOT)):
+        raise Red("the continuation does not name the parent's renderer and its own, different, one")
+    records, rbad = RL.read(logs[0])
+    got = sorted(r["reason_code"] for r in records if r["operation"] == "livesession")
+    if rbad or got != sorted(c[3] for c in cases):
+        raise Red("the classification refusals are not one refusal-log record each: %s" % got)
+    return ("the loader classifies as registered: a consistent frame forgery under the same shell is TAMPERED; CRLF line "
+            "endings name the same renderer (LOAD); a digest-changing render source is DIFFERENT-RENDERER; a comment-only "
+            "change loads as LOAD with a different "
+            "renderer and its continuation names both identities; a forged edit witness is TAMPERED under a different "
+            "identity (no renderer explains a content); an altered seal, a changed base and an off-chain lineage refuse "
+            "before any replay; one refusal-log record each")
+
+
+def livesession_sealer():
+    """The sealer on the gate's saved session: it checks the seal, base, fold and counts, has the workshop verify the
+    file, and seals a RECORD-0 copy citing LIVE-SESSION-0 and LIVE-INPUT-0 that shell playback and the workshop both
+    replay to the same head; a bad seal, a changed base, a head that is not the fold, counts off and an off-chain
+    lineage are refused."""
+    import livesession as LS
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None:
+        raise Red("the shell or the workshop's sessionwalk was not built")
+    logs = _ls_logs("sealer")
+    path = _ls_script_a(logs)
+    raw = read(path)
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+    try:
+        rec = LS.seal_livesession(raw, reg, "gate-mock", out.strip())
+    except LS.Refuse as e_:
+        raise Red("the sealer refused the gate's saved session: %s" % e_)
+    envelope.validate(rec)
+    prov = rec["provenance"]
+    if ((prov["preregistered"]["chain_hash"], prov["loop"]["chain_hash"]) != (reg["LIVE-SESSION-0"]["chain_hash"], reg["LIVE-INPUT-0"]["chain_hash"])
+            or prov["saved_sha256"] != sha256(raw) or "the same as the one it was made with" not in rec["reading"]):
+        raise Red("the record does not cite LIVE-SESSION-0 and LIVE-INPUT-0, the saved bytes, and the same renderer")
+    out_p = os.path.join(BUILD, "livesession-record.json")
+    envelope.write(out_p, rec)
+    code, pout, perr = _ls_verify(SHELL_EXE, ["playback", "--session", out_p])
+    code2, wout, werr = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", out_p])
+    if code != 0 or ("playback head " + rec["data"]["head"]) not in pout or code2 != 0 or "SESSIONWALK verify OK" not in wout:
+        raise Red("the sealed copy does not replay in shell playback and the workshop to its head")
+    text = raw.decode("utf-8")
+    d = json.loads(text)["data"]
+    bad = [("a bad seal", text.replace('"seal": "', '"seal": "0', 1)),
+           ("a changed base", _ls_reseal(text.replace('"M":"%s"' % d["base"]["M"], '"M":"%s"' % ("1" * 64), 1))),
+           ("a head that is not the fold", _ls_reseal(text.replace('"head": "%s"' % d["head"], '"head": "%s"' % ("2" * 64), 1))),
+           ("counts off", _ls_reseal(text.replace('"moves": %d' % d["moves"], '"moves": %d' % (d["moves"] + 1), 1))),
+           ("an off-chain lineage", _ls_reseal(text.replace('"lineage":null', '"lineage":{"parent_head":"%s","parent_events":2,"source":"session","parent_sha256":"x","torn":0}' % ("3" * 64), 1)))]
+    for why, body in bad:
+        try:
+            LS.seal_livesession(body.encode("utf-8"), reg, "gate", "")
+            raise Red("the sealer accepted %s" % why)
+        except LS.Refuse:
+            pass
+    return ("the sealer checks the gate's saved session (seal, base, fold, counts), seals a RECORD-0 copy citing LIVE-SESSION-0 "
+            "and LIVE-INPUT-0 that shell playback and the workshop both replay to head %s...; %d malformed sessions are "
+            "refused" % (rec["data"]["head"][:12], len(bad)))
+
+
+def livesession_fence():
+    """Durability is claimed only where it is earned: each journal record is written and flushed before it is counted,
+    the journal only appends; the saved file is a flushed temporary moved over the destination atomically (MoveFileEx
+    with both registered flags on Windows), then read back and verified before the run says saved and ends 0; every
+    refusal ends the ledger; the loader's steps run in the registered order; the session's reader opens no file and the
+    sink is handed each event after it is appended; LIVE-INPUT-0's loop and command are unchanged; the host window loads
+    before it opens, observes the focus without ruling on it, writes nothing itself, and is appended after LIVE-INPUT-0's
+    section; build/sessions/ is gitignored and the gate's sessions stay in verify/build; a windowless build refuses."""
+    rs = read(os.path.join(SHELL, "livesession.rs")).decode("utf-8")
+    put = src_span(rs, "    fn put(&mut self, payload: &str)", "\n    }\n")
+    order = [put.find(t) for t in ("self.file.write_all(", "self.file.sync_data()", "self.records += 1;")]
+    if -1 in order or order != sorted(order) or "OpenOptions::new().create_new(true).append(true).open(path)" not in rs:
+        raise Red("a journal record is counted before it is flushed, or the journal does not only append")
+    for tok in (".truncate(", "set_len(", "remove_file", "remove_dir", "File::create"):
+        if tok in rs:
+            raise Red("shell/livesession.rs contains %r: nothing is truncated or removed" % tok)
+    ws = src_span(rs, "fn write_saved(", "\n}\n")
+    order = [ws.find(t) for t in ("create_new(true).write(true).open(&tmp)", "f.write_all(text.as_bytes())", "f.sync_all()", "replace::atomic_replace(&tmp, dst)?;")]
+    win = src_span(rs, '#[cfg(target_os = "windows")]\nmod replace {', "\n}\n")
+    if (-1 in order or order != sorted(order) or "const MOVEFILE_REPLACE_EXISTING: u32 = 0x1;" not in win or "const MOVEFILE_WRITE_THROUGH: u32 = 0x8;" not in win
+            or "MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)" not in win or "d.sync_all()" not in rs):
+        raise Red("the saved file is not a flushed temporary moved over the destination atomically with the registered flags")
+    go = src_span(rs, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n")
+    order = [go.find(t) for t in ("crate::liveinput::run(s, &mut session, surface)", "saved_text(&session, &base, &live_json)", "write_saved(&dst, &text, &plant)",
+                                  "fs::read(&dst)", "load(&dst)", 'println!("[livesession] saved and verified:', "crate::runledger::end(0);")]
+    if (-1 in order or order != sorted(order) or go.count("saved and verified") != 1 or go.count("crate::runledger::end(0);") != 1
+            or not all(t in go for t in ("if b != text.as_bytes() {", "l.session.head() != session.head()", "l.session.content() != session.content()",
+                                         "a.iter().zip(b2.iter()).any(|(x, y)| x.witness != y.witness || x.param != y.param)"))):
+        raise Red("the run says saved, or ends 0, other than after the saved file was read back and verified against the live session")
+    prep = src_span(rs, "pub fn prepare(plan: Plan)", "\n}\n")
+    if (not prep.split("{", 1)[1].lstrip().startswith('crate::runledger::begin("livesession", plan.surface);')
+            or len(re.findall(r"return Err\(refuse_run\(", prep)) != prep.count("return Err(") or "crate::runledger::end(2);" not in src_span(rs, "fn refuse_run(", "\n}\n")
+            or len(re.findall(r"return refuse_run\(", go)) != 2):
+        raise Red("the run does not begin its ledger first, or a refusal does not end it")
+    ld = src_span(rs, "pub fn load(path: &str)", "\nfn saved_event(")
+    order = [ld.find(t) for t in ("read_journal(&bytes)?", "check_seal(&bytes)?;", "chain_heads(", "LIVESESSION-LINEAGE", "renderer_id()", "LiveSession::new(", "s.push_move(", "LIVESESSION-DIFFERENT-RENDERER")]
+    bases = [m_.start() for m_ in re.finditer(r"read_base\(", ld)]
+    if (-1 in order or order != sorted(order) or len(bases) != 2 or not order[0] < bases[0] < order[1] < bases[1] < order[2]
+            or "let renderable = frame && camera_ok;" not in ld or "if renderable && !same" not in ld
+            or 'heads[n as usize] != l.get("parent_head").s()' not in ld or "None if last => torn = 1," not in rs):
+        raise Red("the loader does not go integrity, identity, replay, witnesses, classification, with only a frame renderable")
+    sealer = read(os.path.join(ROOT, "verify", "livesession.py")).decode("utf-8")
+    if rs.count(".focus()") != 1 or '["focus"]' in sealer or '.get("focus")' in sealer:
+        raise Red("the focus observation is read other than to be recorded")
+    pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
+    rd = pb[pb.index("// ================================================================== LIVE-SESSION-0 (appended)"):]
+    li = pb[pb.index("// ================================================================== LIVE-INPUT-0 (appended)"):pb.index("// ================================================================== LIVE-SESSION-0 (appended)")]
+    mv, ed = src_span(li, "pub fn push_move(", "\n    }\n"), src_span(li, "pub fn push_edit_cell(", "\n    }\n")
+    if (any(t in rd for t in ("fs::", "File::", "write(")) or li.count("self.handed();") != 2
+            or any(not (0 <= f.find("self.log.push(") < f.find("self.handed();")) for f in (mv, ed))
+            or "pub fn with_sink(mut self, sink: Box<dyn EventSink>) -> LiveSession {" not in li):
+        raise Red("the session's reader opens a file, or the sink is not handed each event after it is appended")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    sw = src_span(main_src, '"livesession-selftest" | "livesession-window" => {', "\n        other => ")
+    if 'plant: String::new(), surface: "gdi"' not in sw or "livesession::go(&mut surf, prepared)" not in sw:
+        raise Red("the host window's run is planted, or the selftest does not run the shared code")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i_li, i_ls = tail.find("LIVE-INPUT-0 (appended)"), tail.find("LIVE-SESSION-0 (appended)")
+    sect = w32_section(tail, "LIVE-SESSION-0 (appended)")
+    win = src_span(sect, "pub fn livesession_window(", "\n}\n")
+    order = [win.find(t) for t in ("SetProcessDPIAware()", "crate::livesession::prepare(plan)", "= show_window(", "crate::livesession::go(&mut keys, prepared)")]
+    if (i_li < 0 or i_ls < i_li or -1 in order or order != sorted(order) or "call: 1," not in sect or "set_call(" in win
+            or any(t in sect for t in ("fs::", "File::", "write_raw(", "WM_KEYDOWN", "StretchDIBits", "qpc()"))
+            or "unsafe { GetForegroundWindow() } == self.hwnd" not in sect):
+        raise Red("the host window is not LIVE-INPUT-0's window and keys with the focus observed, loading before it opens and writing nothing")
+    gi = read(os.path.join(ROOT, ".gitignore")).decode("utf-8").splitlines()
+    if "build/sessions/" not in gi or os.environ.get(LIVESESSION_ENV) != GATE_SESSIONS or os.path.dirname(GATE_SESSIONS) != BUILD:
+        raise Red("build/sessions/ is not gitignored, or the gate's sessions are not kept in verify/build")
+    if SHELL_EXE is not None:
+        cp = subprocess.run([SHELL_EXE, "livesession-window"], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode == 0 or "SHELL-NO-WINDOW" not in cp.stderr:
+            raise Red("a windowless build did not refuse livesession-window with SHELL-NO-WINDOW")
+    return ("durability is claimed only where earned: each journal record is flushed before it is counted and the journal "
+            "only appends; the saved file is a flushed temporary moved atomically (MoveFileEx with both flags on Windows), "
+            "then read back and verified before the run says saved and ends 0; every refusal ends the ledger; the loader "
+            "runs in the registered order; the reader opens no file and the sink sees each event after it is appended; the "
+            "host window loads first, observes the focus without ruling on it and writes nothing; build/sessions/ is "
+            "gitignored; a windowless build refuses")
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -6458,6 +6928,10 @@ def main() -> int:
     os.environ[RUNLEDGER_ENV] = GATE_RUN_LEDGER
     if os.path.exists(GATE_RUN_LEDGER):
         os.remove(GATE_RUN_LEDGER)
+    # LIVE-SESSION-0: and every session it saves into its own scratch root, never the owner's build/sessions
+    os.environ[LIVESESSION_ENV] = GATE_SESSIONS
+    if os.path.isdir(GATE_SESSIONS):
+        shutil.rmtree(GATE_SESSIONS)
     row("oracle-frozen", oracle_frozen)
     row("game-frozen", game_frozen)
     row("game-suites", game_suites)
@@ -6615,6 +7089,13 @@ def main() -> int:
     row("liveinput-continuity", liveinput_continuity)
     row("liveinput-court", liveinput_court)
     row("liveinput-fence", liveinput_fence)
+    row("livesession-preregistered", livesession_preregistered)
+    row("livesession-save", livesession_save)
+    row("livesession-resume", livesession_resume)
+    row("livesession-recover", livesession_recover)
+    row("livesession-classify", livesession_classify)
+    row("livesession-sealer", livesession_sealer)
+    row("livesession-fence", livesession_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

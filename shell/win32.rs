@@ -2329,3 +2329,114 @@ pub fn liveinput_window(mut session: crate::playback::LiveSession) {
         }
     }
 }
+
+// ================================================================== LIVE-SESSION-0 (appended)
+// The durable live session's host window: LIVE-INPUT-0's window and keys unchanged, with the keyboard-focus observation
+// added — whether the foreground request succeeded, whether the window held the foreground at the start, and how many
+// compositions it did and did not hold it. The observation is recorded in the saved session, never ruled on. The run
+// is shell/livesession.rs (the gate runs the same code over the mock): the journal, LIVE-INPUT-0's loop, the seal and
+// the saved file's verification. The session is loaded (or made) before the window opens.
+
+struct FocusKeysGdi {
+    inner: LiveKeysGdi,
+    hwnd: Hwnd,
+    request: i32,
+    at_start: bool,
+    with: u64,
+    without: u64,
+    changes: u64,
+    last: Option<bool>,
+}
+
+impl Surface for FocusKeysGdi {
+    fn ticks(&mut self) -> i64 {
+        self.inner.ticks()
+    }
+    fn freq(&self) -> i64 {
+        self.inner.freq()
+    }
+    fn present(&mut self, bgr: &[u8]) -> Option<(i64, i64)> {
+        self.inner.present(bgr)
+    }
+    fn flush(&mut self) {
+        self.inner.flush()
+    }
+    fn pump(&mut self) -> bool {
+        let open = self.inner.pump();
+        let held = unsafe { GetForegroundWindow() } == self.hwnd;
+        if held {
+            self.with += 1;
+        } else {
+            self.without += 1;
+        }
+        if self.last.is_some() && self.last != Some(held) {
+            self.changes += 1;
+        }
+        self.last = Some(held);
+        open
+    }
+}
+
+impl crate::presentexact::ExactSurface for FocusKeysGdi {
+    fn set_call(&mut self, call: usize) {
+        crate::presentexact::ExactSurface::set_call(&mut self.inner, call)
+    }
+    fn clear(&mut self) -> bool {
+        crate::presentexact::ExactSurface::clear(&mut self.inner)
+    }
+    fn readback(&mut self) -> Option<Vec<u8>> {
+        crate::presentexact::ExactSurface::readback(&mut self.inner)
+    }
+    fn geometry(&mut self) -> [i32; 8] {
+        crate::presentexact::ExactSurface::geometry(&mut self.inner)
+    }
+    fn attribute(&mut self, b: [usize; 4]) -> crate::presentexact::Attribution {
+        crate::presentexact::ExactSurface::attribute(&mut self.inner, b)
+    }
+}
+
+impl crate::liveinput::Keys for FocusKeysGdi {
+    fn keys(&mut self) -> Vec<(u32, bool)> {
+        crate::liveinput::Keys::keys(&mut self.inner)
+    }
+}
+
+impl crate::livesession::Focus for FocusKeysGdi {
+    fn focus(&self) -> String {
+        format!("{{\"source\":\"window\",\"foreground_request\":{},\"foreground_at_start\":{},\"compositions_with\":{},\"compositions_without\":{},\"changes\":{}}}",
+                self.request, self.at_start as u8, self.with, self.without, self.changes)
+    }
+}
+
+pub fn livesession_window(plan: crate::livesession::Plan) {
+    unsafe { SetProcessDPIAware() };
+    let prepared = match crate::livesession::prepare(plan) {
+        Ok(p) => p,
+        Err(code) => std::process::exit(code),
+    };
+    let dwm = match load_dwm() {
+        Some(d) => d,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or DwmFlush is unavailable; cannot compose and read back");
+            crate::runledger::end(2);
+            std::process::exit(2);
+        }
+    };
+    let hwnd = show_window("VerdandiLiveSession0", "Verðandi — LIVE-SESSION-0");
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        crate::runledger::end(2);
+        std::process::exit(2);
+    }
+    let request = unsafe { SetForegroundWindow(hwnd) };
+    let at_start = unsafe { GetForegroundWindow() } == hwnd;
+    let surf = ExactGdiSurface { hwnd, header: court_header(), flush_fn: dwm.flush, freq: 1, call: 1, last_input: 0, inputs_seen: 0 };
+    let mut keys = FocusKeysGdi { inner: LiveKeysGdi { surf, pending: Vec::new() }, hwnd, request, at_start, with: 0, without: 0, changes: 0, last: None };
+    println!("[livesession] the window {} the keyboard at the start (click it if keys do nothing); arrows or WASD walk and turn, Q/E strafe, Space opens or closes the cell ahead, Esc ends and saves",
+             if at_start { "holds" } else { "does NOT hold" });
+    let code = crate::livesession::go(&mut keys, prepared);
+    if unsafe { IsWindow(hwnd) } != 0 {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    std::process::exit(code);
+}

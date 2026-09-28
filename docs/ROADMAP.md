@@ -75,14 +75,18 @@ LIVE-LOOP-0      the shipped per-frame loop — walked on the host: 246 composit
       ↓
 LIVE-INPUT-0     physical input → typed editor action → the workshop/session → a new W, M → the next frame — walked and edited on the host by key presses, every readback exact
       ↓
-LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders
+LIVE-SESSION-0   live events → append-only session → save → restart → replay → the same world — preregistered and built; the saved host walk is pending
       ↓
-LIVE-SESSION-0   live events → append-only session → save → restart → replay → the same world
+LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders
       ↓
 walking in a live, authorable world
       ↓
-PRESENT-1, the live-loop re-breakdown, BANDWIDTH-0 / POOL-0      afterwards, not blockers
+DRIFT-0 continued (sittings 2 and 3, alongside), then PRESENT-1, the live-loop re-breakdown, BANDWIDTH-0 / POOL-0
 ```
+
+The owner swapped LIVE-SESSION-0 ahead of LIVE-AUTHOR-0 after LIVE-INPUT-0's host runs. The live loop worked, but its
+evidence was still console text that had to be replayed by hand. Durability first means every later host walk,
+including LIVE-AUTHOR-0's, is a saved file the workshop verifies, not a transcript.
 
 - **The diagnostic foundation** is not on the critical path to walking. It gives the live loop an instrumented refusal
   surface instead of console archaeology. REFUSAL-LOG-0, RUN-LEDGER-0 and REFUSAL-WHY-1 have landed. REFUSAL-WHY-1
@@ -108,9 +112,11 @@ PRESENT-1, the live-loop re-breakdown, BANDWIDTH-0 / POOL-0      afterwards, not
   renders**.
 - **LIVE-SESSION-0** makes the live chain recoverable by connecting the live loop to the session walk's existing
   authority and deterministic replay, rather than inventing a second live-state system: live events → append-only
-  session → checkpoint or save → restart → replay → the same world.
+  session → checkpoint or save → restart → replay → the same world. It now comes before LIVE-AUTHOR-0.
 - **Afterwards:** PRESENT-1, the live-loop re-breakdown, and BANDWIDTH-0 / POOL-0 are optimization and latency work
-  measured on the real loop. They are not prerequisites for walking.
+  measured on the real loop. They are not prerequisites for walking. PRESENT-1 starts with how the screen is witnessed
+  once presentation moves off GDI: the GDI readback cannot be assumed to remain a valid witness under flip-model
+  presentation, and whatever replaces it is measured before it is trusted.
 
 Each of these rungs is ratified, preregistered and built in turn; none is claimed until its gate stands.
 
@@ -269,6 +275,16 @@ the presenter's borderless window. The screen is read back at every step and twi
 is counted and logged, never hidden. There is no input, no camera, no clock: counts only. The gate executes the loop
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
+
+### LIVE-SESSION-0 — the live session made durable and recoverable · **preregistered and built** (`70086a72`); the saved host walk is pending
+LIVE-INPUT-0's loop, unchanged, over a session whose every appended event is journaled: one record per line with its
+length and sha256, each flushed before it counts. Esc seals the session in the workshop's own session-walk format by an
+atomic replace. The shell then reads the file back and verifies it before the run counts as saved; a seal that fails is
+a refusal, never a quiet exit. `--resume` continues a saved session, or recovers a crashed run from its journal, into a
+new file whose log begins with its parent's. Loading checks integrity, then the renderer identity (a hash of the render
+sources), then replays and classifies: an identity mismatch alone is never corruption, and only replay decides. Saved
+sessions live in `build/sessions/` (gitignored). `verify/livesession.py` seals one as a committed record that shell
+playback and the workshop both replay. The keyboard-focus observation is recorded, never ruled on.
 
 ### LIVE-INPUT-0 — key presses feed the session the live loop renders · **measured on the host** (`f81c2cf1`): the live session walked and edited by key presses
 Walking plus open/close. Arrows or WASD walk and turn, Q and E strafe, Space opens or closes the cell one step ahead of

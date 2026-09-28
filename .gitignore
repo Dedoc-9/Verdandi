@@ -1,5 +1,7 @@
 # build outputs of the gate and the drivers
 verify/build/
+# LIVE-SESSION-0: the shell's saved live sessions and their journals (a sealer commits a copy under shell/attest/)
+build/sessions/
 *.exe
 *.pdb
 *.o

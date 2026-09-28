@@ -610,6 +610,7 @@ pub struct LiveSession {
     base_content: String,
     genesis: String,
     log: Vec<LiveEvent>,
+    sink: Option<Box<dyn EventSink>>,
 }
 
 impl LiveSession {
@@ -623,7 +624,21 @@ impl LiveSession {
         let base_content = content_hex(&level_bytes, &tiles_bytes);
         let head = genesis(&base_content, cam0);
         Ok(LiveSession { level: level_bytes, tiles: tiles_bytes, cam: cam0, content: base_content.clone(), head: head.clone(),
-                         cam0, base_content, genesis: head, log: Vec::new() })
+                         cam0, base_content, genesis: head, log: Vec::new(), sink: None })
+    }
+
+    /// LIVE-SESSION-0: the same session, handing every event appended from now on to `sink`.
+    pub fn with_sink(mut self, sink: Box<dyn EventSink>) -> LiveSession {
+        self.sink = Some(sink);
+        self
+    }
+
+    /// Hand the event just appended to the sink, if there is one.
+    fn handed(&mut self) {
+        let k = self.log.len() - 1;
+        if let Some(s) = self.sink.as_mut() {
+            s.appended(k, &self.log[k]);
+        }
     }
 
     pub fn camera(&self) -> Camera {
@@ -697,6 +712,7 @@ impl LiveSession {
         self.head = fold(&self.head, b'M', &composed.frame_digest);
         self.log.push(LiveEvent { tag: b'M', param: (cmd as char).to_string(), camera: cam, witness: composed.frame_digest,
                                   content: self.content.clone(), head: self.head.clone() });
+        self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
 
@@ -719,6 +735,67 @@ impl LiveSession {
         self.head = fold(&self.head, b'E', &self.content);
         self.log.push(LiveEvent { tag: b'E', param: spec, camera: self.cam, witness: self.content.clone(),
                                   content: self.content.clone(), head: self.head.clone() });
+        self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
+}
+
+// ================================================================== LIVE-SESSION-0 (appended): reading a saved live session
+// The sink a LiveSession hands each appended event to (the journal lives in shell/livesession.rs), the session-walk
+// parser above lent to LIVE-SESSION-0's loader as a read-only view, and the chain's own fold: the heads a saved log's
+// witnesses fold to from its base, computed without rendering. Nothing here opens a file.
+
+/// LIVE-SESSION-0: where an appended event goes once it is appended (the journal). The session hands it each event
+/// after the replay advanced; a sink cannot refuse or change the event, and keeps its own account of what it did.
+pub trait EventSink {
+    fn appended(&mut self, index: usize, ev: &LiveEvent);
+}
+
+/// A parsed JSON value, read-only.
+pub struct JsonView(Json);
+
+impl JsonView {
+    pub fn get(&self, k: &str) -> JsonView {
+        JsonView(self.0.get(k).clone())
+    }
+    pub fn s(&self) -> String {
+        self.0.s().to_string()
+    }
+    pub fn is_str(&self) -> bool {
+        matches!(self.0, Json::Str(_))
+    }
+    pub fn is_null(&self) -> bool {
+        matches!(self.0, Json::Null)
+    }
+    pub fn num(&self) -> Option<i64> {
+        match &self.0 {
+            Json::Num(n) => Some(*n),
+            _ => None,
+        }
+    }
+    pub fn arr(&self) -> Vec<JsonView> {
+        self.0.arr().iter().map(|j| JsonView(j.clone())).collect()
+    }
+}
+
+/// Parse a saved session, or one journal record's payload, into a read-only view.
+pub fn parse_view(b: &[u8]) -> Result<JsonView, String> {
+    parse_json(b).map(JsonView)
+}
+
+/// content(W, M) of raw level and tiles bytes, as the chain defines it.
+pub fn content_of(level_bytes: &[u8], tiles_bytes: &[u8]) -> String {
+    content_hex(level_bytes, tiles_bytes)
+}
+
+/// The heads a log's witnesses fold to from a base: the genesis first, then one per event (tag b'M' or b'E', witness).
+/// The chain's own `genesis` and `fold`; no rendering.
+pub fn chain_heads(base_content: &str, cam0: Camera, events: &[(u8, String)]) -> Vec<String> {
+    let mut h = genesis(base_content, cam0);
+    let mut out = vec![h.clone()];
+    for (tag, w) in events {
+        h = fold(&h, *tag, w);
+        out.push(h.clone());
+    }
+    out
 }
