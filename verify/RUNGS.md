@@ -2858,7 +2858,7 @@ workshop's replay of the live log disagrees with the loop in any witness, camera
 presented after an edit is not the one certified for its W and camera. `liveinput-fence` goes red if the loop holds or
 writes a world of its own, takes a clock, writes a file, or the window changes.
 
-## LIVE-SESSION-0 — the live session made durable and recoverable (preregistered and built; the saved host walk is pending)
+## LIVE-SESSION-0 — the live session made durable and recoverable (measured on the host: the first saved walk, verified there and replayed here)
 
 **Why.** LIVE-INPUT-0's host runs showed a working live loop, but its evidence was console text that had to be replayed
 by hand, and the deciding walk's single typo could only be found by reading that text. The owner moved LIVE-SESSION-0
@@ -2930,9 +2930,41 @@ malformed sessions are refused. `livesession-fence` covers the invariants:
 fence judges. 26 mutations were each caught. The first pass missed three, each now caught by a sharper check: a bad
 journal record just before the torn tail, the seal-stale plant, and the fence pinning the lineage condition.
 
+**The first saved host walk (DANIELDILLBERG).** After 0072 was applied, the gate read 164 rows (rowset
+`ab16618fd6fadf04`, the same as in the container). The window shell was built with `--cfg shell_window` and started
+with `livesession-window`. The window said it held the keyboard at the start. The owner then walked freely, not
+script A, so no head had been stated beforehand and none is compared. There were 48 presses:
+- 37 events: 33 moves (11 of them blocked) and 4 edits;
+- the cell ahead at (29,28) closed, opened and closed again, and (25,29) opened;
+- 11 unbound keys ignored;
+- no refused edit.
+
+The loop rendered and presented 5,873 compositions live, and all 99 screen readbacks were exact. The session ended
+`closed`: the window was closed rather than Esc pressed, which the method treats as the same end. The seal and the
+verification ran all the same, and the shell printed that `build/sessions/1a0e9bbbb92-82c0/session.json` was saved and
+verified, with 37 events and head `aa850e786b6f0d33…627dea`.
+
+The saved file (sha256 `1e2e9f135af39ac0…865b`, 6,205 bytes) and its journal (sha256 `b1fa7c80…ace6e`, 38 records)
+were copied from the host unchanged and checked here, on another machine, without the host:
+- its seal, base, fold and counts check;
+- the journal's hash is the one its live block names;
+- the workshop's own `sessionwalk verify` passes on the file itself, to head `aa850e786b6f…`;
+- shell playback replays it to the same head and final camera 25,27,N;
+- the renderer identity it names (`629ae5c7…e3c9`) is the one this checkout's sources give, so the Windows host and the
+  container name the same renderer;
+- resuming it loads as LOAD with its 37 events, and so does resuming from its journal alone.
+
+The focus observation says the foreground request succeeded, the window held the foreground at the start, and it held
+it for 5,874 of 5,875 message pumps, losing it only at the closing pump. That is recorded and explains nothing about
+LIVE-INPUT-0's first run. The owner seals the committed copy with `verify/livesession.py`; its record names the saved
+file's sha256 above.
+
 **Grade.** DECLARED: the method. ESTABLISHED (gate): saving, resuming, recovery from a crashed journal, the loader's
-classification against real changed shells, the sealer, and the fence. NOT_MEASURED: a saved host walk, which has not
-been run.
+classification against real changed shells, the sealer, and the fence. MEASURED (host, one saved walk): a live walk
+saved by the shell and verified there before it counted as saved. The same bytes then verify on another machine through
+the workshop's own `sessionwalk`, shell playback and the loader, with the same renderer identity on both hosts. That
+makes the walk an artifact, not a transcript. NOT_MEASURED (host): a resumed walk, a recovery from a crashed run, and a
+refused edit.
 
 **does_not_show.** Durability beyond the file system's promise: a disk that acknowledges a flush it did not perform is
 outside the claim. The seal is a checksum, not a signature: forgery is caught by replay and by the committed RECORD-0
