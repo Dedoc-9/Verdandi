@@ -1,0 +1,297 @@
+{
+ "name": "verdandi-session-walk",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) + verify/livesession.py",
+  "host": "DANIELDILLBERG",
+  "saved_sha256": "1e2e9f135af39ac0cbf09e73910ac4fb9d67ed979ac610682a4f79633888865b",
+  "run_id": "1a0e9bbbb92-82c0",
+  "renderer_now": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+  "workshop": "SESSIONWALK verify OK head aa850e786b6f — moves 33 edits 4 (final 25,27,N)",
+  "python": "3.14.5",
+  "os": "Windows",
+  "preregistered": {
+   "rung": "LIVE-SESSION-0",
+   "chain_hash": "70086a721ef353ccb41afcda7e6c869c027f4f14eae0ef923dff2892981046bb"
+  },
+  "loop": {
+   "rung": "LIVE-INPUT-0",
+   "chain_hash": "f81c2cf110636835213321fe6f31cdb78ce23a1657a8003eaf895e55878fcc70"
+  }
+ },
+ "validity_scope": {
+  "certifies": "a live session walked on host DANIELDILLBERG and saved by the shell: the session-walk over the frozen base (W 1b84db41a5fb... M 52e8b54ae508...) from 28,28,N, which replays in log order to head aa850e786b6f0d33d5f1116d65492ee887935f2664012b43067051d88b627dea",
+  "host": "DANIELDILLBERG",
+  "head": "aa850e786b6f0d33d5f1116d65492ee887935f2664012b43067051d88b627dea",
+  "final_camera": "25,27,N"
+ },
+ "forbidden_interpretations": [
+  "any timing or latency: the session carries no time",
+  "that the renderer identity decides compatibility: it names sources, replay decides",
+  "that the focus observation explains anything: it is recorded, never ruled on",
+  "a second authority: the shell's session is the replay of this log, which the workshop verifies",
+  "durability beyond the file system's promise, or on any other host"
+ ],
+ "data": {
+  "magic": "VRDNSW1",
+  "base": {
+   "level": "oracle/levels/witness.lvl",
+   "tiles": "oracle/tiles/identity.tiles",
+   "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+   "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+   "content": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08",
+   "camera": "28,28,N"
+  },
+  "log": [
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "28,28,E",
+    "witness": "a7233a3905b058914fe7442cc925d45672a0edcd170353bb576926ac83269815"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,28,#",
+    "witness": "c35fc0a226b49a1346c0d5f6fa01b86b83e20e5b569096c9a5cd6012722e4d65"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,28,E",
+    "witness": "809bf41cb631d3cad3756a1942b2df8f638ad71d1177df30198f01237d806d0e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,28,E",
+    "witness": "809bf41cb631d3cad3756a1942b2df8f638ad71d1177df30198f01237d806d0e"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,28,.",
+    "witness": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "28,28,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "28,28,E",
+    "witness": "a7233a3905b058914fe7442cc925d45672a0edcd170353bb576926ac83269815"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,28,#",
+    "witness": "c35fc0a226b49a1346c0d5f6fa01b86b83e20e5b569096c9a5cd6012722e4d65"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "27,28,E",
+    "witness": "d338321e0cc53b2a0e2781874f86a717fb9b8ba86d833e311acd4d1bca62387a"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "Q",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "27,28,E",
+    "witness": "d338321e0cc53b2a0e2781874f86a717fb9b8ba86d833e311acd4d1bca62387a"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,28,E",
+    "witness": "2bee2b35df20c4057c7c5ea4b3f8939d9bb148d278b83327013e69727eaf339a"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:25,29,.",
+    "witness": "ea27208a3706e61c90b60531fadc4dd6ece395c8df4fe76e7c86b025cf7a1bba"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,28,W",
+    "witness": "1aed2922109d2bf260a598bdceebad5f9d3dfd596f1db41f296e2f05715a1d97"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "25,28,S",
+    "witness": "2ddc681866ad938a4c0f436986b52c9763c6f6cbbf4973949430e9d36359db50"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,27,S",
+    "witness": "666e5aec194b95b9850a1fbfe831745b7f216fed27156df30242f10e66f71d41"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "25,27,E",
+    "witness": "809bf41cb631d3cad3756a1942b2df8f638ad71d1177df30198f01237d806d0e"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,27,S",
+    "witness": "666e5aec194b95b9850a1fbfe831745b7f216fed27156df30242f10e66f71d41"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,28,S",
+    "witness": "2ddc681866ad938a4c0f436986b52c9763c6f6cbbf4973949430e9d36359db50"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,28,W",
+    "witness": "1aed2922109d2bf260a598bdceebad5f9d3dfd596f1db41f296e2f05715a1d97"
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "25,27,W",
+    "witness": "7730ad9c3066bbcf54e93341a89b28805e9a6c0cb9040ff2ca30bcb729edea5b"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,27,N",
+    "witness": "e6281ffaba93c814be2d2152ebf6064caf541fdb922f55897949ca338d39d081"
+   }
+  ],
+  "head": "aa850e786b6f0d33d5f1116d65492ee887935f2664012b43067051d88b627dea",
+  "final_camera": "25,27,N",
+  "final_content": "ea27208a3706e61c90b60531fadc4dd6ece395c8df4fe76e7c86b025cf7a1bba",
+  "moves": 33,
+  "edits": 4,
+  "live": {
+   "log": "LIVE-SESSION-0",
+   "run_id": "1a0e9bbbb92-82c0",
+   "renderer": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+   "lineage": null,
+   "resumed": null,
+   "journal": {
+    "file": "journal.vsj",
+    "records": 38,
+    "events": 37,
+    "complete": true,
+    "sha256": "b1fa7c803b5aa87f145ea77487fde445e2a843197c033dbd918226e9c87ace6e"
+   },
+   "ended": "closed",
+   "focus": {
+    "source": "window",
+    "foreground_request": 1,
+    "foreground_at_start": 1,
+    "compositions_with": 5874,
+    "compositions_without": 1,
+    "changes": 1
+   }
+  }
+ },
+ "reading": "LIVE-SESSION-0 on host DANIELDILLBERG: a live session saved by the shell and verified there before it counted as saved (37 events: 33 moves, 4 edits; ended by closed), a new session from its base; its seal, base, fold check here, the workshop's own sessionwalk verifies the saved file itself (head aa850e786b6f...), and this checkout's renderer identity is the same as the one it was made with.",
+ "chain_hash": "ef841693b55da4fc64137b86cd234c134626f451f3abaae9712e28f4bce15e43"
+}
