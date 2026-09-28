@@ -73,7 +73,7 @@ REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic fou
       ↓
 LIVE-LOOP-0      the shipped per-frame loop — walked on the host: 246 compositions live, every readback exact
       ↓
-LIVE-INPUT-0     physical input → typed editor action → the workshop/session → a new W, M → the next frame — built; host walk pending
+LIVE-INPUT-0     physical input → typed editor action → the workshop/session → a new W, M → the next frame — built; on the host the loop ran exact, but no key press reached it yet
       ↓
 LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders
       ↓
@@ -270,7 +270,7 @@ is counted and logged, never hidden. There is no input, no camera, no clock: cou
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
 
-### LIVE-INPUT-0 — key presses feed the session the live loop renders · **preregistered and built** (`f81c2cf1`); host walk pending
+### LIVE-INPUT-0 — key presses feed the session the live loop renders · **preregistered and built** (`f81c2cf1`); first host run: the loop exact, no key press reached it
 Walking plus open/close. Arrows or WASD walk and turn, Q and E strafe, Space opens or closes the cell one step ahead of
 the camera (rock to floor, floor to rock; a stair is not toggled), Esc ends; an auto-repeat is never bound and any
 other key is ignored. Every press becomes an event in an in-memory SESSION-WALK log, validated as the workshop
@@ -278,7 +278,9 @@ validates it. W, M, the camera and the head are that log's replay, private to th
 the world. Every composition is rendered through the `LoopRenderer` from the session's current state and presented,
 and the screen is read back after every change. The gate proves the binding on two key scripts and replays each
 script's log through the workshop's own SESSION-WALK to the state and head the loop reached. Nothing is saved; that is
-LIVE-SESSION-0's.
+LIVE-SESSION-0's. On the owner's host, the first run rendered and presented 31,640 compositions live from the session,
+and all 422 screen readbacks were exact. No key press reached the window, though, so the session ended at its genesis.
+Keyboard focus is the leading candidate, not an established cause, and the walk itself is still to come.
 
 ### DRIFT-0 — variation within and between runs of the same workload · **preregistered** (`d445dcf9`); sitting 1 of 3 complete (4 of 12 runs)
 Observational: the locked PRESENT-EXACT-0 court repeated without modification, 3 sittings of 4 completed runs (60 s

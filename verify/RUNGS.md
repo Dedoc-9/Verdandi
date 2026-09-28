@@ -2735,7 +2735,7 @@ missed, a difference is hidden, stops the loop or goes unlogged, the session cha
 `liveloop-fence` goes red if a frame reaches the call without being rendered live from the current step, a clock or
 input enters, or the window changes.
 
-## LIVE-INPUT-0 — key presses feed the session the live loop renders: walk plus open/close (preregistered and built; the host walk is pending)
+## LIVE-INPUT-0 — key presses feed the session the live loop renders: walk plus open/close (preregistered and built; first host run: the loop exact, no key press reached it)
 
 **Why.** LIVE-LOOP-0 rendered every composition live, but from a sealed session's fixed steps. LIVE-INPUT-0 is the
 next gate on the route: physical input becomes typed events in the same session authority that the live renderer
@@ -2790,9 +2790,28 @@ fresh-entry pins gain `liveinput.rs` (one reference render per change) and re-pi
 witness is `replay_from`'s own digest), both on purpose. `runledger-fence` counts the new run and its readbacks. 26
 mutations were each caught.
 
+**The first host run (DANIELDILLBERG).** After 0068 and 0069 were applied, the gate read 157 rows (rowset
+`8acef41cd5c447c9`, the same as in the container), and the window shell was built with `--cfg shell_window` and started
+with `liveinput-window`. It opened the live session at 28,28,N and said the screen was the session's picture. It then
+rendered 31,640 compositions live from the session's state through the LoopRenderer. Each was byte-checked against the
+state's reference and presented by SetDIBitsToDevice. All 422 screen readbacks were exact (0 differed). That is 1 on the
+first composition and 1 every 75th held composition after it, which is the registered schedule for a state that never
+changed. No key press reached the loop: keys 0, events 0, repeats 0 and unbound 0. The session ended `closed`, not by
+Esc, so the window was closed by something other than a WM_KEYDOWN in its queue. The final state is the genesis:
+camera 28,28,N, content `390109b5…` (the base) and head `73571153…`, the head `sessionwalk new` gives for the same base.
+Nothing was written but the standing logs.
+
+What this run shows is the loop half of the rung: on the host, a session-driven loop presented tens of thousands of
+compositions with every readback exact. What it does not show is the input half, because no press arrived. Why none
+arrived is not established by the run. The leading candidate is keyboard focus. The window is topmost, so it is on top
+whether or not it holds the keyboard, and Windows can refuse `SetForegroundWindow` to a process started from a console.
+In that case, the presses went to the console. That is a candidate, not a cause: the run recorded no focus state, and
+the owner's account of how the window was closed has not been taken.
+
 **Grade.** DECLARED: the method. ESTABLISHED (gate): the binding on two scripts, the continuity through the workshop's
-SESSION-WALK, the loop's refusals, logging and ledgering, and the fence. NOT_MEASURED: the host walk, which has not
-been run.
+SESSION-WALK, the loop's refusals, logging and ledgering, and the fence. MEASURED (host, one run): the loop — 31,640
+compositions rendered live from the session and presented, 422 of 422 screen readbacks exact, the final state the
+genesis. NOT_MEASURED: the input on the host, since no key press reached the window's queue. UNDERDETERMINED: why none did.
 
 **does_not_show.** What reached the screen between readbacks: the byte check covers what the loop handed the call.
 Presses between two compositions are all appended, but only the last state is presented. Holding a key does not walk.
