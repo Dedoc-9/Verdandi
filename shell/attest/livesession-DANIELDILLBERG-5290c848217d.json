@@ -1,0 +1,1486 @@
+{
+ "name": "verdandi-session-walk",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) + verify/livesession.py",
+  "host": "DANIELDILLBERG",
+  "saved_sha256": "16b011cfbe40fae474014af6a2b5a336a0824ed331854d0a7fed327ee133a3a3",
+  "run_id": "1a0e9cfc4f4-ac94",
+  "renderer_now": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+  "workshop": "SESSIONWALK verify OK head 5290c848217d — moves 228 edits 6 (final 25,27,S)",
+  "python": "3.14.5",
+  "os": "Windows",
+  "preregistered": {
+   "rung": "LIVE-SESSION-0",
+   "chain_hash": "70086a721ef353ccb41afcda7e6c869c027f4f14eae0ef923dff2892981046bb"
+  },
+  "loop": {
+   "rung": "LIVE-INPUT-0",
+   "chain_hash": "f81c2cf110636835213321fe6f31cdb78ce23a1657a8003eaf895e55878fcc70"
+  }
+ },
+ "validity_scope": {
+  "certifies": "a live session walked on host DANIELDILLBERG and saved by the shell: the session-walk over the frozen base (W 1b84db41a5fb... M 52e8b54ae508...) from 28,28,N, which replays in log order to head 5290c848217d4b953e3bc4289a28994a73b9c176b6521efdb48ad0c7d9a6632d",
+  "host": "DANIELDILLBERG",
+  "head": "5290c848217d4b953e3bc4289a28994a73b9c176b6521efdb48ad0c7d9a6632d",
+  "final_camera": "25,27,S"
+ },
+ "forbidden_interpretations": [
+  "any timing or latency: the session carries no time",
+  "that the renderer identity decides compatibility: it names sources, replay decides",
+  "that the focus observation explains anything: it is recorded, never ruled on",
+  "a second authority: the shell's session is the replay of this log, which the workshop verifies",
+  "durability beyond the file system's promise, or on any other host"
+ ],
+ "data": {
+  "magic": "VRDNSW1",
+  "base": {
+   "level": "oracle/levels/witness.lvl",
+   "tiles": "oracle/tiles/identity.tiles",
+   "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+   "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+   "content": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08",
+   "camera": "28,28,N"
+  },
+  "log": [
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "28,28,E",
+    "witness": "a7233a3905b058914fe7442cc925d45672a0edcd170353bb576926ac83269815"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,28,#",
+    "witness": "c35fc0a226b49a1346c0d5f6fa01b86b83e20e5b569096c9a5cd6012722e4d65"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,28,E",
+    "witness": "809bf41cb631d3cad3756a1942b2df8f638ad71d1177df30198f01237d806d0e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,28,E",
+    "witness": "809bf41cb631d3cad3756a1942b2df8f638ad71d1177df30198f01237d806d0e"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,28,.",
+    "witness": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "28,28,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "28,28,E",
+    "witness": "a7233a3905b058914fe7442cc925d45672a0edcd170353bb576926ac83269815"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,28,#",
+    "witness": "c35fc0a226b49a1346c0d5f6fa01b86b83e20e5b569096c9a5cd6012722e4d65"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "27,28,E",
+    "witness": "d338321e0cc53b2a0e2781874f86a717fb9b8ba86d833e311acd4d1bca62387a"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "Q",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "26,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "27,28,E",
+    "witness": "d338321e0cc53b2a0e2781874f86a717fb9b8ba86d833e311acd4d1bca62387a"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,28,E",
+    "witness": "2bee2b35df20c4057c7c5ea4b3f8939d9bb148d278b83327013e69727eaf339a"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:25,29,.",
+    "witness": "ea27208a3706e61c90b60531fadc4dd6ece395c8df4fe76e7c86b025cf7a1bba"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,28,W",
+    "witness": "1aed2922109d2bf260a598bdceebad5f9d3dfd596f1db41f296e2f05715a1d97"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "25,28,S",
+    "witness": "2ddc681866ad938a4c0f436986b52c9763c6f6cbbf4973949430e9d36359db50"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,27,S",
+    "witness": "666e5aec194b95b9850a1fbfe831745b7f216fed27156df30242f10e66f71d41"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "25,27,E",
+    "witness": "809bf41cb631d3cad3756a1942b2df8f638ad71d1177df30198f01237d806d0e"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,27,S",
+    "witness": "666e5aec194b95b9850a1fbfe831745b7f216fed27156df30242f10e66f71d41"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,28,S",
+    "witness": "2ddc681866ad938a4c0f436986b52c9763c6f6cbbf4973949430e9d36359db50"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,28,W",
+    "witness": "1aed2922109d2bf260a598bdceebad5f9d3dfd596f1db41f296e2f05715a1d97"
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "25,27,W",
+    "witness": "7730ad9c3066bbcf54e93341a89b28805e9a6c0cb9040ff2ca30bcb729edea5b"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,27,N",
+    "witness": "e6281ffaba93c814be2d2152ebf6064caf541fdb922f55897949ca338d39d081"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "25,27,W",
+    "witness": "7730ad9c3066bbcf54e93341a89b28805e9a6c0cb9040ff2ca30bcb729edea5b"
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "25,26,W",
+    "witness": "db8d0c0dd3af6dfeac06cfce77155791f1b4e562c16007eb83d46f83c7466f25"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,26,N",
+    "witness": "0285e62802e5f04ab1317a08d70f7561ac052dbe4be3304b908737d9a50f060e"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:25,25,#",
+    "witness": "60be37586aca5df076467744e53338242d14ed8ecf2a5c67dde3e6263ba5fba6"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,26,E",
+    "witness": "16ab0112d0ad04fd876e18f5af2731201cb249506b09638b161b443c1af3dda6"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,26,E",
+    "witness": "98f3ca42e05fb66d66832ba7afd6f1ee1c7b3b8d1e1d5bdb7f4ad79a859dbb29"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "26,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "26,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "26,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "26,26,E",
+    "witness": "98f3ca42e05fb66d66832ba7afd6f1ee1c7b3b8d1e1d5bdb7f4ad79a859dbb29"
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "26,26,E",
+    "witness": "98f3ca42e05fb66d66832ba7afd6f1ee1c7b3b8d1e1d5bdb7f4ad79a859dbb29"
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "26,26,E",
+    "witness": "98f3ca42e05fb66d66832ba7afd6f1ee1c7b3b8d1e1d5bdb7f4ad79a859dbb29"
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:27,26,#",
+    "witness": "8e5e98f19c583205a5ac0078ba23c9207cfa510710bdc63e609ce3f32ec01e41"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,26,E",
+    "witness": "d338321e0cc53b2a0e2781874f86a717fb9b8ba86d833e311acd4d1bca62387a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,26,E",
+    "witness": "809bf41cb631d3cad3756a1942b2df8f638ad71d1177df30198f01237d806d0e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,26,E",
+    "witness": "809bf41cb631d3cad3756a1942b2df8f638ad71d1177df30198f01237d806d0e"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,26,E",
+    "witness": "d338321e0cc53b2a0e2781874f86a717fb9b8ba86d833e311acd4d1bca62387a"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "24,26,E",
+    "witness": "ad9ba3ec6456f6577dc4c7a8027864f290d9b1a8d6b2212b8579620605cbc4bc"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "23,26,E",
+    "witness": "be42f6212360cd11a6bb4cf3fe908890f9dd775c21d7dbce3298d84f9ce9f99c"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "22,26,E",
+    "witness": "61aadda6637905dcfd79ed3a52ad472e869f0810177f342a020cfcc30906404e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,26,E",
+    "witness": "be42f6212360cd11a6bb4cf3fe908890f9dd775c21d7dbce3298d84f9ce9f99c"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,26,E",
+    "witness": "ad9ba3ec6456f6577dc4c7a8027864f290d9b1a8d6b2212b8579620605cbc4bc"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "24,26,S",
+    "witness": "13ce1b46c3f69595a8ec64e6201b5d7aa40480a68cca974e6504b89f2035dc0b"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "24,26,W",
+    "witness": "81bc0b1ea2c8bedf1cf460992617462b9e24469cc97ab8397bfbe8975f784f93"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,26,W",
+    "witness": "1bbd5c53f8f78b93a7b3acbe688210cf660652f643abc0f4db4423fe8dbcfaa4"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "22,26,W",
+    "witness": "447b73131e673f6dded9c67ddf547dc37bf55c621ffbe9a19626d02cdeb4f969"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "21,26,W",
+    "witness": "4a72fcaa01ebf1f5cefb2d0dd18bbd29b6b43bb4a3bbfe4be740e970b245948a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "20,26,W",
+    "witness": "f08d1b84b54ebfc5380efac29ee36451a217653d95ffbf83137c6216da93ac7b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "19,26,W",
+    "witness": "6fb9a4d9f054c56d57712330d5cfba3565ba02da6654c5d1125f8d7673cf28fb"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "18,26,W",
+    "witness": "a9d5630d66e990f9f9597b5fdfe32a5b76c36bb3892e83d1fd12d7bc64d4dd08"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "17,26,W",
+    "witness": "3490493d239e0b8189f2ac0452fa6efef03432ad5f69f7f59f908ab6c8277fc9"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "16,26,W",
+    "witness": "b060e434f13b126bafb6042c2a41650c46e4edf76208bf6769d86820e9ab0da2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "15,26,W",
+    "witness": "25725588cebcc125ca70b5521e6706652e2edf4032f5d4caeabc68cf8dd85bb1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "14,26,W",
+    "witness": "42f81240347793ad7a145c68eacb9701ffa130bf9dd494377c9671ada0d6776e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,26,W",
+    "witness": "e1bc6e401cc330836a3fe2b052ccba127110204564d3221f31d7a7caf7fd42aa"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,26,W",
+    "witness": "90805d341d52fd15e11d9e493996520936386c18419b775744fe478ec0cb130e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "11,26,W",
+    "witness": "c56e57e4d1f030bdecf6dfc896eba8ff0a0c2101c86bb12ca905783cefd319f8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "10,26,W",
+    "witness": "ff0e0af3e8221618b5ffcbf279151803f96c8d01cd61cd4881692aa54980c957"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "9,26,W",
+    "witness": "b9abfa285c0853bf9bc056776e6791d41175015746a59b7d2802d00cf3cac409"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "8,26,W",
+    "witness": "2174e3eed058e829ad67a5d3dbfa42af57f951ffa8872b7beeb06437a7cff33a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "7,26,W",
+    "witness": "eb8fcf4f1cdf20f2942262d11f10df21a5cff28e2bbcefd067ec68bf980206bf"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "6,26,W",
+    "witness": "b6b18117ad326b1d52ad10b5d15b4a6aa9d7546077800f0c0693d2dbf146e479"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,26,W",
+    "witness": "ab555e1e7d2798be52fab58e6a0bf49a0605a64f8285b0fae2577ca5a8fd68f5"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "4,26,W",
+    "witness": "cbbfc1fa9cbeba8283d15b454ae2ad519881c24c0a3dd06f324a3e0cf8cfe78a"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,26,W",
+    "witness": "ab555e1e7d2798be52fab58e6a0bf49a0605a64f8285b0fae2577ca5a8fd68f5"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,N",
+    "witness": "bc5c9803655cb1b7c8325ee1344a217ccb5326ffe8df42684d518bdb73aa2d17"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,E",
+    "witness": "2a2e9d2e3ca9995c11e00ae5bcc427b38e659f9b8fb6ba63e688ef8de88f7a15"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,S",
+    "witness": "a08e053978a30afb2ec68e4d5523b65d245da47728d24e4870b424d610a758f6"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,W",
+    "witness": "ab555e1e7d2798be52fab58e6a0bf49a0605a64f8285b0fae2577ca5a8fd68f5"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,N",
+    "witness": "bc5c9803655cb1b7c8325ee1344a217ccb5326ffe8df42684d518bdb73aa2d17"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,E",
+    "witness": "2a2e9d2e3ca9995c11e00ae5bcc427b38e659f9b8fb6ba63e688ef8de88f7a15"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,S",
+    "witness": "a08e053978a30afb2ec68e4d5523b65d245da47728d24e4870b424d610a758f6"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,W",
+    "witness": "ab555e1e7d2798be52fab58e6a0bf49a0605a64f8285b0fae2577ca5a8fd68f5"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,N",
+    "witness": "bc5c9803655cb1b7c8325ee1344a217ccb5326ffe8df42684d518bdb73aa2d17"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,E",
+    "witness": "2a2e9d2e3ca9995c11e00ae5bcc427b38e659f9b8fb6ba63e688ef8de88f7a15"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,S",
+    "witness": "a08e053978a30afb2ec68e4d5523b65d245da47728d24e4870b424d610a758f6"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,W",
+    "witness": "ab555e1e7d2798be52fab58e6a0bf49a0605a64f8285b0fae2577ca5a8fd68f5"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,26,N",
+    "witness": "bc5c9803655cb1b7c8325ee1344a217ccb5326ffe8df42684d518bdb73aa2d17"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,25,N",
+    "witness": "c607ff905399175d4aa87e8b4bbb0c659a36b3288ae64d8ee66f4f1fca5ea6e5"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,24,N",
+    "witness": "c2da540eec3f0dc7d267f6a47c7a797723546f3c6306aaf1870a92d506ca0ec8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,23,N",
+    "witness": "41d8e77427826aa1ddecc3df8629ca1d4fb415c72953255875433e1df7426b23"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,22,N",
+    "witness": "a8e4b25501946020080a5ee0103b4ec53f9812f8bca7bf900c1ccbeb998cbc54"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,21,N",
+    "witness": "2558fd90c0d420080f679f7a54cc1659412843f0b843e2cc92754080b6ec40be"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,20,N",
+    "witness": "08c1317c31b76795761c635bfc45ec393acbe2a5abff13d482d7c5ea2b6d5f98"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,19,N",
+    "witness": "10129d444901154be02ef7bc91c07f02d38aa80af12f19693db8a8f0265d89d1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,18,N",
+    "witness": "c16a5eaf83998835a17e9d6161a423cea3224484f3ddbdeb0caac2dde3cdc4ad"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,17,N",
+    "witness": "99cb7afee394734c04e7396423bc6abf26409063611065e14ee612e0d87a83c5"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,16,N",
+    "witness": "b1c618ccae7a8237aecf2833b11c5b00fe274a678d3ee9c8ba76e8f89024b8f4"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,15,N",
+    "witness": "228ae74c1ea386c002ebd01ece2f8fcd9375db751377242f769ebbf6f5833986"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,14,N",
+    "witness": "8e4463b79c3b85fb1f3ce298c0696b7decb02faaad037bd51abe0b322608898f"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,14,E",
+    "witness": "2199aad17a02ef6884bff36ac9e0e409bec786c6b3dcb39a44a45cebc0e8718b"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "5,14,N",
+    "witness": "8e4463b79c3b85fb1f3ce298c0696b7decb02faaad037bd51abe0b322608898f"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,13,N",
+    "witness": "8ecfc6f488f597558a684d1c8d877206daa2cfe5869aeabe39c106ac53f474cb"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,12,N",
+    "witness": "b462952c1eda87098ef81f055fe8468418b963d30f9a30f3b24fd11ff954c486"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,11,N",
+    "witness": "5ce5e9f13580e77864502a0b56e6882e3481473e064717d4cc9c1dc4ef2d30f1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,10,N",
+    "witness": "b9d3206065bf3684afa29df2cf229410c4b9653f275df9e19c89fd9ddf93dd0e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,9,N",
+    "witness": "59b1f322bf8bdce46f5f15124076be6214bd96639819f0b4fc990bb85ccdcf1d"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,8,N",
+    "witness": "ea588ee5d5002b09556656cf121747d7c00a3ea56107b4310cf61131ecfb491d"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,7,N",
+    "witness": "64186abc6a27bc6f7e4c55bf5beddd4c7a592b05030eb57dafc874afb4b35c43"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,6,N",
+    "witness": "b0db0e955d3211bd68c57fc7dfb05b7a1da8f2e399d6fc3def4f1af7a54895b7"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,7,N",
+    "witness": "64186abc6a27bc6f7e4c55bf5beddd4c7a592b05030eb57dafc874afb4b35c43"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,8,N",
+    "witness": "ea588ee5d5002b09556656cf121747d7c00a3ea56107b4310cf61131ecfb491d"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,9,N",
+    "witness": "59b1f322bf8bdce46f5f15124076be6214bd96639819f0b4fc990bb85ccdcf1d"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,10,N",
+    "witness": "b9d3206065bf3684afa29df2cf229410c4b9653f275df9e19c89fd9ddf93dd0e"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,11,N",
+    "witness": "5ce5e9f13580e77864502a0b56e6882e3481473e064717d4cc9c1dc4ef2d30f1"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,12,N",
+    "witness": "b462952c1eda87098ef81f055fe8468418b963d30f9a30f3b24fd11ff954c486"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,13,N",
+    "witness": "8ecfc6f488f597558a684d1c8d877206daa2cfe5869aeabe39c106ac53f474cb"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,14,N",
+    "witness": "8e4463b79c3b85fb1f3ce298c0696b7decb02faaad037bd51abe0b322608898f"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "5,15,N",
+    "witness": "228ae74c1ea386c002ebd01ece2f8fcd9375db751377242f769ebbf6f5833986"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "5,14,N",
+    "witness": "8e4463b79c3b85fb1f3ce298c0696b7decb02faaad037bd51abe0b322608898f"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,14,E",
+    "witness": "2199aad17a02ef6884bff36ac9e0e409bec786c6b3dcb39a44a45cebc0e8718b"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "5,14,N",
+    "witness": "8e4463b79c3b85fb1f3ce298c0696b7decb02faaad037bd51abe0b322608898f"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "5,14,E",
+    "witness": "2199aad17a02ef6884bff36ac9e0e409bec786c6b3dcb39a44a45cebc0e8718b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "6,14,E",
+    "witness": "5936987e50cd061e9832371784db68ec874d692bb5e6716b9cc91b227abb5282"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "7,14,E",
+    "witness": "1da45e781c14b1e015d122e777c4b2ffb745e7d135d9baa085938175fbc2512f"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "8,14,E",
+    "witness": "9fe0b45128425d90149298497ddd7f79ffc79ec76a51a23c256d8560533dc4a9"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "9,14,E",
+    "witness": "0f6990c3b8c0d2054fb215bda897bf7cf83128e35b1ef1d12dab1fa10a495fea"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "10,14,E",
+    "witness": "ec6807e1c852af82a5a27c8852e179d4933c28d150935969f4f6f74a0afa8368"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "11,14,E",
+    "witness": "3ce82cd7396f3dcb8bbeff82f3eb01afadea805845aa3802d3203f85a7da6466"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,14,E",
+    "witness": "c1a00255e2233b9403beade8d2faf365619ae095fd0d8076eef71b5c09c03090"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "12,14,S",
+    "witness": "76483958de8d7557467b19799e48b5be677996a56c6d915ab368a439d1ed93a6"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "12,14,E",
+    "witness": "c1a00255e2233b9403beade8d2faf365619ae095fd0d8076eef71b5c09c03090"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,14,E",
+    "witness": "5a8acff8fbf1dba14a370033156813d5be9e4d4deb18a1ea48b11f4966fc4c0f"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "13,14,S",
+    "witness": "206f420efc814192c12773f7ddf418b31bfd2f0ce816d34e8c363496489e846b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,15,S",
+    "witness": "8c49d757458a5d333a5909be99acd7116e6359c126a1568d8e5ed004b47250a3"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,16,S",
+    "witness": "4e7df4f9510e3bf94914f4fc18d381d14e468e99031db752945067f3412576ed"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,17,S",
+    "witness": "043b181bda3a973b3543705753c97579c88c01fc8feb3dfa59c3f49ba0704d23"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,18,S",
+    "witness": "bf7496e9f8fe243aa9cff77ddf7d5e15e574580889d0cbb1c1cb301845fb8142"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "13,18,E",
+    "witness": "78cc2032fc7dfaa02eba7f0a08d4583f76ce421ae3d5e265e52ac2ed3414ad19"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "13,18,S",
+    "witness": "bf7496e9f8fe243aa9cff77ddf7d5e15e574580889d0cbb1c1cb301845fb8142"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "13,18,W",
+    "witness": "c89bc7b393539ceede038c0b464624bdb7cf0adae35083a8a872429a53e43fde"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,18,W",
+    "witness": "833bd0ec5c31b9bd8187492b98b012fe2cae97078285536ae4818e1333777081"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "12,18,S",
+    "witness": "0218a9d635d171667b2545ca3d3dce5d7ae43fb93fb56e99ab98c817d6266f05"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "12,18,E",
+    "witness": "ee273045ea8ca194f994ed8429a098f60c3053ecf39399a1b1d1a38ad7fd6b57"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "12,18,S",
+    "witness": "0218a9d635d171667b2545ca3d3dce5d7ae43fb93fb56e99ab98c817d6266f05"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,19,S",
+    "witness": "28784a124d975369ae6304b181019df191da348237de656a398f9f62c02082f9"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "12,19,E",
+    "witness": "7f25b35962afa517485eb307b31dd97eb6fe4cc96a12967e63d8d8192d918f68"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "12,19,S",
+    "witness": "28784a124d975369ae6304b181019df191da348237de656a398f9f62c02082f9"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,20,S",
+    "witness": "b2b145e3bf12b0b8102a48bdc730ed2d6108d32bbf8edc9c593d818c8a70b18e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,21,S",
+    "witness": "f04dc77cebbac97cf6a2125acdebb61feef1c2f795f0bba78d1cc1b7374a4ba1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,22,S",
+    "witness": "853825b68ab63cf2c30b7a2408fe3c325e89bcfb7f921e8ff4b70471859ad92c"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,23,S",
+    "witness": "ba03639a7d52900d43754f1fcd93ce0d113a5806aae2eca218bcc7322362b13f"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,24,S",
+    "witness": "ec04b7a90569e36bd29f637844b55478ea5bebef27558b9187adfab702878c75"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,25,S",
+    "witness": "66c818d61094e73ed1bd43fd693314ad7f1db5d79e3482fa9d45adfefbeb4c7b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,26,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "12,26,W",
+    "witness": "90805d341d52fd15e11d9e493996520936386c18419b775744fe478ec0cb130e"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "12,26,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "12,26,E",
+    "witness": "576864b3c0388d07dc8e6e74b861b7eac7d093869e75756c88710e8c0cd09939"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,26,E",
+    "witness": "f8abb5ebcd5521ab377e00856f89eb5f559c0ed2c91df1848f39d1e267c97218"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "13,26,S",
+    "witness": "7195b17c67a78790fe518b0e808d33a6a0be2e12f94bb2a7aacde7284ea5bdc7"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,27,S",
+    "witness": "1d478ef4f094a81cf6cb8150216d1db8d98a5155a0836e321fcb7341bbad4261"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "13,28,E",
+    "witness": "a876597d2dcf7ddbe3992a91fffc675b341afe82eb90f102d113548b8aec6f69"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "14,28,E",
+    "witness": "8b1ade818b2af6f298e8647f13123351cb0f171cffa1f0c432b8debd6f0cb3e1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "15,28,E",
+    "witness": "d16274e9b67ee2f81437891ee9cfb55cc981d41635bb573c54da344b443ab4dc"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "16,28,E",
+    "witness": "baea56f7815916872090e639f9c605abed5a576b040b6d154fcc64a312d0c3f8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "17,28,E",
+    "witness": "d602ab6cf248fef78016956d31f7c6f4d265161c5c3ad39d6528be5718216204"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "18,28,E",
+    "witness": "9ccc0e3c91df46d1673138fb44079dc2a314cb6c2f65180a8e9cefd262f40b72"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "19,28,E",
+    "witness": "57bb43c5a71dca731a7f82421fcab4a598eec672ab6ca6f97e01387a901b55a2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "20,28,E",
+    "witness": "b33dae706a462fa2484e9477963172c117a61237539c62d738d69c5bfc4604f5"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "21,28,E",
+    "witness": "9cc6e368bb107da436351d77d77375e00137e53189da835db8770614a39baa91"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "22,28,E",
+    "witness": "de4e6323de9d353100d229114b41c975a14358afd9f5ef1798b279393955b070"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,28,E",
+    "witness": "34118ea0f5b1c9e61c31623db167c6ba092312afc02a3ec0b5b5867f134bfea1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,28,E",
+    "witness": "ec8a405db9ad06d3639f3db811eac0a49b7c5fec1065dc2821a9ffe4a9b0b65b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,28,E",
+    "witness": "2bee2b35df20c4057c7c5ea4b3f8939d9bb148d278b83327013e69727eaf339a"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,28,S",
+    "witness": "2ddc681866ad938a4c0f436986b52c9763c6f6cbbf4973949430e9d36359db50"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,29,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,28,S",
+    "witness": "2ddc681866ad938a4c0f436986b52c9763c6f6cbbf4973949430e9d36359db50"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,27,S",
+    "witness": "666e5aec194b95b9850a1fbfe831745b7f216fed27156df30242f10e66f71d41"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,26,S",
+    "witness": "e822c4a5d7e2b9ab36c3c249060ec8e50421632cf50c3b23979cdb270e2f48b8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,27,S",
+    "witness": "666e5aec194b95b9850a1fbfe831745b7f216fed27156df30242f10e66f71d41"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,28,S",
+    "witness": "2ddc681866ad938a4c0f436986b52c9763c6f6cbbf4973949430e9d36359db50"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "25,28,E",
+    "witness": "2bee2b35df20c4057c7c5ea4b3f8939d9bb148d278b83327013e69727eaf339a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,28,E",
+    "witness": "2bee2b35df20c4057c7c5ea4b3f8939d9bb148d278b83327013e69727eaf339a"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "24,28,E",
+    "witness": "ec8a405db9ad06d3639f3db811eac0a49b7c5fec1065dc2821a9ffe4a9b0b65b"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "24,28,N",
+    "witness": "b9c9d7daad00ba49f58be5deecb1a04bd0b06fcf409603bad68716d4d64ebc1c"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,27,N",
+    "witness": "b32642296deda05c3599421912185a5926631b31c2662afffcd62494041e95c2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,26,N",
+    "witness": "73754046adb11e65ca43efabd165cfd79e985a15defafac00ad8706c9cf7af1e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,25,N",
+    "witness": "51f5e8b859823919c73a7235714d5743382ac5201c5f34440042e2a2a6d8010f"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,24,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "24,24,E",
+    "witness": "d338321e0cc53b2a0e2781874f86a717fb9b8ba86d833e311acd4d1bca62387a"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "24,24,S",
+    "witness": "2cf44a00c1d215c99669bd73a0305af8201b170053a82405ec507add1b264f47"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,25,S",
+    "witness": "11c038e5c9ab4470228da6dbff0241af680f73683a963d873f1b7ce6c6d04750"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,26,S",
+    "witness": "13ce1b46c3f69595a8ec64e6201b5d7aa40480a68cca974e6504b89f2035dc0b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,27,S",
+    "witness": "1cc6b2a3f921caeeca65ea588f5a5c2d423e73e305e6460c5243b3e6f6295a4e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "24,28,E",
+    "witness": "ec8a405db9ad06d3639f3db811eac0a49b7c5fec1065dc2821a9ffe4a9b0b65b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,28,E",
+    "witness": "2bee2b35df20c4057c7c5ea4b3f8939d9bb148d278b83327013e69727eaf339a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "27,28,E",
+    "witness": "d338321e0cc53b2a0e2781874f86a717fb9b8ba86d833e311acd4d1bca62387a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,28,E",
+    "witness": "809bf41cb631d3cad3756a1942b2df8f638ad71d1177df30198f01237d806d0e"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "27,28,E",
+    "witness": "d338321e0cc53b2a0e2781874f86a717fb9b8ba86d833e311acd4d1bca62387a"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "26,28,E",
+    "witness": "9c391b38ad4815d0c931776ed3cb20a93a092eaa793ba484e7a20125b2f56faf"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,28,E",
+    "witness": "2bee2b35df20c4057c7c5ea4b3f8939d9bb148d278b83327013e69727eaf339a"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "24,28,E",
+    "witness": "ec8a405db9ad06d3639f3db811eac0a49b7c5fec1065dc2821a9ffe4a9b0b65b"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "23,28,E",
+    "witness": "34118ea0f5b1c9e61c31623db167c6ba092312afc02a3ec0b5b5867f134bfea1"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "22,28,E",
+    "witness": "de4e6323de9d353100d229114b41c975a14358afd9f5ef1798b279393955b070"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,28,E",
+    "witness": "34118ea0f5b1c9e61c31623db167c6ba092312afc02a3ec0b5b5867f134bfea1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,28,E",
+    "witness": "ec8a405db9ad06d3639f3db811eac0a49b7c5fec1065dc2821a9ffe4a9b0b65b"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "24,28,N",
+    "witness": "b9c9d7daad00ba49f58be5deecb1a04bd0b06fcf409603bad68716d4d64ebc1c"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "24,28,W",
+    "witness": "a5c496087fce3f4c7692633f5d2a2b1cac6f3ef63f66cd6743ff6a431b8e67df"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "24,28,S",
+    "witness": "5a2c7361d898780151bba3c8b5cbb5d9ad047f4f88ee83615545cbe6090300a2"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "24,28,W",
+    "witness": "a5c496087fce3f4c7692633f5d2a2b1cac6f3ef63f66cd6743ff6a431b8e67df"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "24,28,N",
+    "witness": "b9c9d7daad00ba49f58be5deecb1a04bd0b06fcf409603bad68716d4d64ebc1c"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "24,28,W",
+    "witness": "a5c496087fce3f4c7692633f5d2a2b1cac6f3ef63f66cd6743ff6a431b8e67df"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,28,W",
+    "witness": "27457343829f1ba0d8d457e7a0eccb4a7d51870bbf43acdf420539543eb6c446"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "23,28,N",
+    "witness": "b113625d56b79cee441f6bd92122b5fc4c4085438385eb91fc762935236b1f81"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "23,28,E",
+    "witness": "34118ea0f5b1c9e61c31623db167c6ba092312afc02a3ec0b5b5867f134bfea1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,28,E",
+    "witness": "ec8a405db9ad06d3639f3db811eac0a49b7c5fec1065dc2821a9ffe4a9b0b65b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,28,E",
+    "witness": "2bee2b35df20c4057c7c5ea4b3f8939d9bb148d278b83327013e69727eaf339a"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "25,28,N",
+    "witness": "61f482aabb5a23996d0492921964698a5119d567244ec8797067392de12823a5"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,28,E",
+    "witness": "2bee2b35df20c4057c7c5ea4b3f8939d9bb148d278b83327013e69727eaf339a"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "25,28,S",
+    "witness": "2ddc681866ad938a4c0f436986b52c9763c6f6cbbf4973949430e9d36359db50"
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "25,27,S",
+    "witness": "666e5aec194b95b9850a1fbfe831745b7f216fed27156df30242f10e66f71d41"
+   }
+  ],
+  "head": "5290c848217d4b953e3bc4289a28994a73b9c176b6521efdb48ad0c7d9a6632d",
+  "final_camera": "25,27,S",
+  "final_content": "8e5e98f19c583205a5ac0078ba23c9207cfa510710bdc63e609ce3f32ec01e41",
+  "moves": 228,
+  "edits": 6,
+  "live": {
+   "log": "LIVE-SESSION-0",
+   "run_id": "1a0e9cfc4f4-ac94",
+   "renderer": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+   "lineage": {
+    "parent_head": "aa850e786b6f0d33d5f1116d65492ee887935f2664012b43067051d88b627dea",
+    "parent_events": 37,
+    "source": "session",
+    "parent_sha256": "1e2e9f135af39ac0cbf09e73910ac4fb9d67ed979ac610682a4f79633888865b",
+    "torn": 0
+   },
+   "resumed": {
+    "classification": "LOAD",
+    "parent_renderer": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9"
+   },
+   "journal": {
+    "file": "journal.vsj",
+    "records": 235,
+    "events": 234,
+    "complete": true,
+    "sha256": "7145a5f360006abf13123c75cf492af7d5d5d813eb2eba3213ff12053c528978"
+   },
+   "ended": "escape",
+   "focus": {
+    "source": "window",
+    "foreground_request": 1,
+    "foreground_at_start": 1,
+    "compositions_with": 5558,
+    "compositions_without": 1,
+    "changes": 1
+   }
+  }
+ },
+ "reading": "LIVE-SESSION-0 on host DANIELDILLBERG: a live session saved by the shell and verified there before it counted as saved (234 events: 228 moves, 6 edits; ended by escape), a continuation of the session whose head is aa850e786b6f... (its first 37 events, from its session); its seal, base, fold and lineage check here, the workshop's own sessionwalk verifies the saved file itself (head 5290c848217d...), and this checkout's renderer identity is the same as the one it was made with.",
+ "chain_hash": "71df57acc928e32437715ce7be686fc9bba62d42702d625ea2f0e5ef6266cc3a"
+}
