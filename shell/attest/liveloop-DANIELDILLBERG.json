@@ -1,0 +1,90 @@
+{
+ "name": "verdandi-liveloop",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell liveloop-window (shell/liveloop.rs over the borderless 1:1 GDI window, appended to shell/win32.rs) + verify/liveloop.py",
+  "surface": "shell/liveloop.rs over the borderless 1:1 GDI window, SetDIBitsToDevice, screen readback surface",
+  "host": "DANIELDILLBERG",
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "chain_hash": "40eff81102295bf4bf1f073205338c6b2390ab2bd222c26afaf92b06d83e8fff",
+   "head": "07704e77a200c22850da10c067d878d4758904bf1bba477a897cbf05a170df9e"
+  },
+  "build": {
+   "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+   "flags": [
+    "-O",
+    "--cfg",
+    "shell_window"
+   ]
+  },
+  "raw_unix_seconds": 1790588719,
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "LIVE-LOOP-0",
+   "chain_hash": "65550cc0c093f80130e33695c90cecb1d9fe7edbdc2e55553309fe498373eab9"
+  },
+  "presenter": {
+   "rung": "PRESENT-EXACT-0",
+   "chain_hash": "bc910e2fa99cfc418e478e0b1587bd794f2638bc6d2ba8c6d87c72a8a4b3cffe"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the sealed session walked live on host DANIELDILLBERG: 4 steps x 24 compositions + 150 held, every composition rendered through the LoopRenderer from the current step and presented by SetDIBitsToDevice in a borderless 1920x1080 window at (0,0), the screen read back at every step",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "any timing or latency: the run takes no clock",
+  "that the screen was exact between readbacks: the byte check covers what the loop handed the call, the readback what reached the composed screen at its compositions only",
+  "that a held readback distinguishes a fresh present from a stale one: the loop does not clear between compositions",
+  "authoring, input or camera control: the state is the sealed session's steps",
+  "input-to-photon latency, or any other host, screen size, scaling setting or GPU driver"
+ ],
+ "data": {
+  "steps": 4,
+  "dwell": 24,
+  "hold": 150,
+  "recheck": 75,
+  "compositions": 246,
+  "frames_rendered": 246,
+  "frames_presented": 246,
+  "byte_checks": 246,
+  "screen_readbacks": 6,
+  "screen_differed": 0,
+  "geometry": {
+   "client": [
+    1920,
+    1080
+   ],
+   "origin": [
+    0,
+    0
+   ],
+   "screen_logical": [
+    1920,
+    1080
+   ],
+   "screen_physical": [
+    1920,
+    1080
+   ],
+   "source": [
+    1920,
+    1080
+   ]
+  },
+  "call": "setdibitstodevice",
+  "render_entry": "LoopRenderer",
+  "loop_renders": 246,
+  "session": {
+   "path": "workshop/attest/sessionwalk-demo.json",
+   "sha256_before": "f142ae39774b448e8816dc75c62cb99d0163dcb5c88d7f953a87b356fc58d203",
+   "sha256_after": "f142ae39774b448e8816dc75c62cb99d0163dcb5c88d7f953a87b356fc58d203"
+  }
+ },
+ "reading": "LIVE-LOOP-0 on host DANIELDILLBERG: the sealed session's 4 steps walked live — 246 compositions, each rendered through the LoopRenderer from the current step, byte-checked against the step's verified bytes and presented by SetDIBitsToDevice; the composed screen read back exact at every one of its 6 readbacks; the session file unchanged (sha256 f142ae39774b...). Counts only: no timing, no latency claim.",
+ "chain_hash": "2613287f863a4cba60bb59bcc1b43912f4879b2fe5b8004c6eac2665025b8885"
+}
