@@ -75,7 +75,7 @@ LIVE-LOOP-0      the shipped per-frame loop — walked on the host: 246 composit
       ↓
 LIVE-INPUT-0     physical input → typed editor action → the workshop/session → a new W, M → the next frame — walked and edited on the host by key presses, every readback exact
       ↓
-LIVE-SESSION-0   live events → append-only session → save → restart → replay → the same world — a host walk saved and verified there, replayed here
+LIVE-SESSION-0   live events → append-only session → save → restart → replay → the same world — a host walk saved, resumed into a new file, both replayed here
       ↓
 LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders
       ↓
@@ -276,7 +276,7 @@ is counted and logged, never hidden. There is no input, no camera, no clock: cou
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
 
-### LIVE-SESSION-0 — the live session made durable and recoverable · **measured on the host** (`70086a72`): the first saved walk
+### LIVE-SESSION-0 — the live session made durable and recoverable · **measured on the host** (`70086a72`): a saved walk and its resumed continuation
 LIVE-INPUT-0's loop, unchanged, over a session whose every appended event is journaled: one record per line with its
 length and sha256, each flushed before it counts. Esc seals the session in the workshop's own session-walk format by an
 atomic replace. The shell then reads the file back and verifies it before the run counts as saved; a seal that fails is
@@ -286,8 +286,9 @@ sources), then replays and classifies: an identity mismatch alone is never corru
 sessions live in `build/sessions/` (gitignored). `verify/livesession.py` seals one as a committed record that shell
 playback and the workshop both replay. The keyboard-focus observation is recorded, never ruled on. On the owner's host
 the first saved walk (37 events, 4 of them edits, every one of 99 readbacks exact) was saved and verified there. Its bytes
-verify unchanged on another machine through the workshop's own sessionwalk, with the same renderer identity. A resumed
-walk and a crash recovery on the host are still to come.
+verify unchanged on another machine through the workshop's own sessionwalk, with the same renderer identity. It was
+then resumed and walked on (197 more events, ended by Esc) into a new file whose lineage lies on its own chain, and the
+parent was untouched. A crash recovery on the host is still to come.
 
 ### LIVE-INPUT-0 — key presses feed the session the live loop renders · **measured on the host** (`f81c2cf1`): the live session walked and edited by key presses
 Walking plus open/close. Arrows or WASD walk and turn, Q and E strafe, Space opens or closes the cell one step ahead of

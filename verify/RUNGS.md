@@ -2858,7 +2858,7 @@ workshop's replay of the live log disagrees with the loop in any witness, camera
 presented after an edit is not the one certified for its W and camera. `liveinput-fence` goes red if the loop holds or
 writes a world of its own, takes a clock, writes a file, or the window changes.
 
-## LIVE-SESSION-0 — the live session made durable and recoverable (measured on the host: the first saved walk, verified there and replayed here)
+## LIVE-SESSION-0 — the live session made durable and recoverable (measured on the host: a saved walk and its resumed continuation, each verified there and replayed here)
 
 **Why.** LIVE-INPUT-0's host runs showed a working live loop, but its evidence was console text that had to be replayed
 by hand, and the deciding walk's single typo could only be found by reading that text. The owner moved LIVE-SESSION-0
@@ -2956,15 +2956,40 @@ were copied from the host unchanged and checked here, on another machine, withou
 
 The focus observation says the foreground request succeeded, the window held the foreground at the start, and it held
 it for 5,874 of 5,875 message pumps, losing it only at the closing pump. That is recorded and explains nothing about
-LIVE-INPUT-0's first run. The owner seals the committed copy with `verify/livesession.py`; its record names the saved
-file's sha256 above.
+LIVE-INPUT-0's first run. The owner sealed the committed copy with `verify/livesession.py`:
+`shell/attest/livesession-DANIELDILLBERG-aa850e786b6f.json` (chain `ef841693…`). Its record names the saved file's
+sha256 above, cites LIVE-SESSION-0 (`70086a72`), and replays here in shell playback and the workshop to head
+`aa850e786b6f…`.
+
+**The resumed host walk (DANIELDILLBERG).** `livesession-window --resume` on the saved file loaded it as LOAD (37
+events, head `aa850e786b6f…`, the same renderer), and the owner walked on. There were 255 presses:
+- 197 new events, 195 moves (7 of them blocked) and 2 edits, closing (25,25) and (27,26);
+- 51 auto-repeats counted and never bound, the first host evidence that holding a key does not walk;
+- 6 unbound keys ignored;
+- no refused edit.
+
+The walk went west along row 26 to (4,26), north up column 5 to (5,6), then east and south through the rooms and
+corridors back to (25,27). The loop rendered and presented 5,557 compositions live, and all 217 screen readbacks were
+exact. This time the session ended by Esc, the registered path, and was saved and verified as a new file,
+`build/sessions/1a0e9cfc4f4-ac94/session.json` (sha256 `16b011cf…a3a3`), with 234 events and head
+`5290c848217d4b95…6632d`. The foreground request succeeded again, and the window held the foreground for 5,558 of 5,559
+pumps.
+
+Checked here from the unchanged bytes:
+- **The child file:** its seal and counts check; the workshop's `sessionwalk verify` and shell playback both reach
+  head `5290c848217d…` and final camera 25,27,S; its journal (235 records, sha256 `7145a5f3…8978`) is the one its live
+  block names, and its header carries the lineage.
+- **The lineage:** the child's first 37 events are the parent's, over the same base; it names the parent's head
+  `aa850e786b6f…`, its 37 events and the parent's bytes (`1e2e9f13…`); the parent's head lies on the child's own chain
+  at event 37; and the parent file on the host is byte-for-byte unchanged.
+- **Resume here:** resuming the child loads as LOAD with its 234 events.
 
 **Grade.** DECLARED: the method. ESTABLISHED (gate): saving, resuming, recovery from a crashed journal, the loader's
-classification against real changed shells, the sealer, and the fence. MEASURED (host, one saved walk): a live walk
-saved by the shell and verified there before it counted as saved. The same bytes then verify on another machine through
-the workshop's own `sessionwalk`, shell playback and the loader, with the same renderer identity on both hosts. That
-makes the walk an artifact, not a transcript. NOT_MEASURED (host): a resumed walk, a recovery from a crashed run, and a
-refused edit.
+classification against real changed shells, the sealer, and the fence. MEASURED (host, two saved walks): a live walk,
+and its continuation into a new file, each saved by the shell and verified there before it counted as saved. Each
+verifies unchanged on another machine through the workshop's own `sessionwalk`, shell playback and the loader, with the
+same renderer identity on both hosts. The continuation's lineage lies on its own chain, and its parent was untouched.
+The walks are artifacts, not transcripts. NOT_MEASURED (host): recovery from a crashed run, and a refused edit.
 
 **does_not_show.** Durability beyond the file system's promise: a disk that acknowledges a flush it did not perform is
 outside the claim. The seal is a checksum, not a signature: forgery is caught by replay and by the committed RECORD-0
