@@ -2531,7 +2531,8 @@ above the window during that run was not recorded.
 **Grade.** DECLARED: the method. ESTABLISHED (gate): one line per run on the court, its counts, the join, append-only
 growth, the default path, the unchanged run under a failed append, the reader. ESTABLISHED (source): the presenter's
 begin and end points. ESTABLISHED (host): the gate's isolation, and one clean presenter run ledgered with the console's
-counts. NOT_MEASURED (host): a refused or differing run.
+counts. Since DRIFT-0 began, court runs too: each sealed DRIFT-0 run joined to exactly one court line with the court's
+10 readbacks. NOT_MEASURED (host): a refused or differing run.
 
 **does_not_show.** A rate as a cause. That a clean run proves a refusal cannot occur. Runs outside the admitted
 operations. A court run's raw-record write: its line records the court's outcome, so a later write failure exits 2
@@ -2585,7 +2586,7 @@ together.
 carries them before its own context, a non-readback refusal carries them, or the reader keys on the rectangle.
 `refusalwhy1-fence` goes red if the fields read a title or a pid, a surface walks twice, or the probe writes to the log.
 
-## DRIFT-0 — what variation is present within a run and between runs of the same workload (observational; preregistered, host runs pending)
+## DRIFT-0 — what variation is present within a run and between runs of the same workload (observational; preregistered, sitting 1 under way)
 
 **Why.** Twice a preregistered second run has been 40–60% slower than its first (G13), and no court has yet measured
 by design how the same workload varies across runs. DRIFT-0 is that measurement. It is observational: no intervention,
@@ -2621,8 +2622,32 @@ unchanged court command at 1000 per cell with HOST-STATE-1, and has a protocol t
 reads the shell's logs, the shell holds nothing of DRIFT-0, and `CourtRefused` marks only a window court's refusal.
 17 mutations were each caught.
 
-**Grade.** DECLARED: the method. ESTABLISHED (gate): the sealer, the protocol, the panel and the fence. NOT_MEASURED
-(host): the 12 runs.
+**Sitting 1, its first three runs (DANIELDILLBERG; observations, not a reading).** Each run completed, read the screen
+back exact (10 checks, 0 differing bytes), was sealed and committed by the owner, overlay declared off, and joined in
+the report to exactly one run-ledger line (exit 0, 10 readbacks, 0 differed, 0 refusals). These are the first court
+runs in the host's ledger. The numbers, in µs, with the measured refresh period from the court's own line and a few
+fields of the before-snapshot:
+
+| run | SetDIBitsToDevice p50 / p95 / p99 | StretchDIBits p50 / p95 / p99 | refresh | before: busy, perf, hard faults/s, available |
+|---|---|---|---|---|
+| s1 r1 | 10,146 / 12,147 / 13,139 | 10,085 / 12,220 / 13,335 | 13,270 | 112‰, 1,644‰, 179, 613 MB |
+| s1 r2 | 9,591 / 10,973 / 11,638 | 9,642 / 11,085 / 11,629 | 12,445 | 20‰, 1,058‰, 3, 524 MB |
+| s1 r3 | 9,450 / 10,888 / 11,461 | 9,407 / 10,950 / 11,492 | 13,566 | 26‰, 978‰, 0, 522 MB |
+
+Across these three runs, the p50 range was 696 µs for SetDIBitsToDevice (72‰ of the median) and 678 µs for
+StretchDIBits (70‰). The p99 range was 1,678 µs (144‰) and 1,843 µs (158‰). The within-run p99 − p50 had a median of
+2,047 and 2,085 µs. Run 1 was the slowest on every one of the six figures and the widest within a run (2,993 and
+3,250 µs). It is also the run whose before-snapshot shows the busiest host (112‰ against 20–26‰), the highest
+performance ratio (1,644‰ against about 1,000‰), and 179 hard faults a second (against 0–3). That is one run and an
+association, not a cause. Memory load stayed at 94–95% throughout. Runs 2 and 3 sit below both earlier PRESENT-EXACT-0
+runs at p50 and p99; run 1 sits above them at p99. The measured refresh period differed across the three runs
+(12,445–13,566 µs, against a nominal 75 Hz, 13,333 µs). It is sealed in each record, but the report does not yet show
+it; adding it to the panel waits on the owner. Processor Frequency read 1,634–1,878 across the snapshots, consistent
+with HOST-STATE-1's erratum that it is not a constant nominal. Nothing is read from three runs: the panel is DRIFT-0's
+answer, and it is not complete.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the sealer, the protocol, the panel and the fence. MEASURED
+(host, partial): 3 of the 12 runs, as recorded above. NOT_MEASURED (host): the remaining 9.
 
 **does_not_show.** Anything beyond this host, this screen, this workload and these runs. The within-run spread
 between the recorded percentiles: the court keeps no raw samples. That a host state or a declared overlay caused a

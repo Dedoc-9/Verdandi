@@ -69,7 +69,7 @@ render → present → observe → next input. It is mostly not a renderer probl
 input and authoring, and making the live chain recoverable. The order:
 
 ```text
-REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic foundation (DRIFT-0: preregistered, host runs pending)
+REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic foundation (DRIFT-0: 3 of 12 runs sealed)
       ↓
 LIVE-LOOP-0      the shipped per-frame loop — until it exists the studio has a viewer, not a live world
       ↓
@@ -259,7 +259,7 @@ box, its program, class, overlay flags and rectangle. Titles and process ids are
 geometry, not identity, so recurrence is counted by program, class and flags. The console and the log come from one
 walk. A recurring program over the screen is a candidate, never a cause.
 
-### DRIFT-0 — variation within and between runs of the same workload · **preregistered** (`d445dcf9`); host runs pending
+### DRIFT-0 — variation within and between runs of the same workload · **preregistered** (`d445dcf9`); sitting 1 under way (3 of 12 runs)
 Observational: the locked PRESENT-EXACT-0 court repeated without modification, 3 sittings of 4 completed runs (60 s
 between runs, 4 h between sittings), with the owner's declared overlay state and HOST-STATE-1 before and after each
 run. Refused runs are sealed and kept. The report is a panel: each run's p50, p95 and p99 per call, its within-run
