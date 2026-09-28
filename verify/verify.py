@@ -5696,8 +5696,8 @@ def drift_preregistered():
             "verdict or threshold; the sealer's constants equal the registered ones" % e["chain_hash"][:8])
 
 
-def _drift_rec(D, reg, sitting, run, start, s50, d50, host_state=None):
-    raw = _px_raw(s50 + 9000, d50 + 9000, s50=s50, d50=d50)
+def _drift_rec(D, reg, sitting, run, start, s50, d50, host_state=None, refresh=13400):
+    raw = _px_raw(s50 + 9000, d50 + 9000, s50=s50, d50=d50, refresh_period_us=refresh)
     return D.seal_drift(raw, reg, "gate", {"path": "synthetic", "chain_hash": "0" * 64}, {"rustc": "gate"},
                         D.protocol(sitting, run, "off", start, start + 90), host_state)
 
@@ -5784,9 +5784,9 @@ def drift_sealer():
 
 def drift_report():
     """The panel, on 12 synthetic completed runs, one refused run, a synthetic ledger, refusal log and history: every run
-    with its within-run spread, host state, ledger line and refusals; the between-run spread (min, lower median, max,
-    range) within each sitting, across all runs and across the sittings' medians; the history beside; no verdict or
-    threshold word; the command writes nothing."""
+    with its within-run spread, measured refresh, host state, ledger line and refusals; the between-run spread (min,
+    lower median, max, range) within each sitting, across all runs and across the sittings' medians, and of the
+    measured refresh; the history beside; no verdict or threshold word; the command writes nothing."""
     import drift as D
     reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
     t0 = 1_790_000_000
@@ -5797,7 +5797,7 @@ def drift_report():
     recs, ledger, t = [], [], t0
     for s in (1, 2, 3):
         for i, v in enumerate(p50[s], 1):
-            recs.append(_drift_rec(D, reg, s, i, t, v + 100, v, hs))
+            recs.append(_drift_rec(D, reg, s, i, t, v + 100, v, hs, refresh=12400 + 100 * (4 * (s - 1) + i)))
             ledger.append({"log": "RUN-LEDGER-0", "run_id": "r%d%d" % (s, i), "operation": "presentexact.court", "surface": "gdi",
                            "readbacks_checked": 10, "differed": 0, "refusals": 0, "exit_code": 0,
                            "unix_ms_start": (t + 5) * 1000, "unix_ms_end": (t + 80) * 1000})
@@ -5823,6 +5823,9 @@ def drift_report():
             "refusal: PRESENTEXACT-READBACK / present.readback; covering windows: mockoverlay.exe | MockOverlayClass | topmost",
             "ledger: exit=2 readbacks=1 differed=1 refusals=1", "mem 94% avail 649 MB", "perf 1185‰",
             "history (beside, not pooled): verdandi-presentexact p50/p99 SetDIBitsToDevice 11000/20000 us",
+            "refresh measured 12500 us (the court's idle compositions)",
+            "between runs, measured refresh period: min 12500 median 13000 max 13600 range 1100 us, 12 runs",
+            "within sitting 2: min 12900 median 13000 max 13200 range 300 us, 4 runs",
             "no verdict, no threshold"]
     for n_ in need:
         if n_ not in text:

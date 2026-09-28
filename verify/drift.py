@@ -17,9 +17,10 @@ shell/attest/drift-<host>-s<S>-x<K>.json, carrying the protocol, the host state 
 kept, never discarded, and does not count toward the sitting's four completed runs. The sealer enforces the protocol
 (sitting order, four completed runs each, the spacing) before a run starts; it never looks at a number to decide.
 
-The report prints, for every run, the per-call envelope p50/p95/p99, the within-run spread and the host state; then
-per call the between-run spread of p50 and p99 (min, median, max, range) within each sitting, across all runs and
-across the sittings' medians; the two sealed PRESENT-EXACT-0 runs are shown beside as history, never pooled. It joins
+The report prints, for every run, the per-call envelope p50/p95/p99, the within-run spread, the refresh period the
+court measured and the host state; then per call the between-run spread of p50 and p99 (min, median, max, range)
+within each sitting, across all runs and across the sittings' medians, and the same spread of the measured refresh
+(shown since sitting 1 closed, at the owner's request: a display of a value every record already seals); the two sealed PRESENT-EXACT-0 runs are shown beside as history, never pooled. It joins
 each run to the run ledger and the refusal log by time (the shell's unsealed observations) and prints what they hold.
 It answers only: what variation is present, within a run and between runs, under the same workload.
 """
@@ -198,6 +199,8 @@ def report(host: str, records: list[dict], history: list[dict], ledger: list[dic
                            f"p99-p50 {w['p99_minus_p50_us']} us ({w['p99_minus_p50_permille']}‰)")
         else:
             out.append(f"{head} {r['data']['refusal']}")
+        if r["name"] == DONE:
+            out.append(f"      refresh measured {r['data'].get('refresh_period_us', '-')} us (the court's idle compositions)")
         out.append(f"      host before: {_hs(hs.get('before', {}))}; after: {_hs(hs.get('after', {}))}")
         lo, hi = p["unix_seconds_start"] * 1000, (p["unix_seconds_end"] + 1) * 1000
         lines = [x for x in ledger if x["operation"] == "presentexact.court" and x["surface"] == "gdi"
@@ -234,6 +237,17 @@ def report(host: str, records: list[dict], history: list[dict], ledger: list[dic
         if w:
             a = spread(w)
             out.append(f"  within runs, {c} p99-p50: min {a['min']} median {a['median']} max {a['max']} us across {a['n']} runs")
+    fr = [r["data"]["refresh_period_us"] for r in done if isinstance(r["data"].get("refresh_period_us"), int)]
+    if fr:
+        a = spread(fr)
+        out.append(f"  between runs, measured refresh period: min {a['min']} median {a['median']} max {a['max']} range {a['range']} us, "
+                   f"{a['n']} runs")
+        for s in range(1, SITTINGS + 1):
+            sv = [r["data"]["refresh_period_us"] for r in done if r["data"]["protocol"]["sitting"] == s
+                  and isinstance(r["data"].get("refresh_period_us"), int)]
+            if sv:
+                b = spread(sv)
+                out.append(f"    within sitting {s}: min {b['min']} median {b['median']} max {b['max']} range {b['range']} us, {b['n']} runs")
     for h in history:
         dv = h["data"]["derived"]["calls"]
         out.append(f"  history (beside, not pooled): {h['name']} p50/p99 SetDIBitsToDevice {dv['setdibitstodevice']['render_p50_us']}/"
