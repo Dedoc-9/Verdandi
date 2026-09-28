@@ -1,0 +1,387 @@
+{
+ "name": "verdandi-session-walk",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) + verify/livesession.py",
+  "host": "DANIELDILLBERG",
+  "saved_sha256": "535daaae1579a60fcf89df72c67129b0372bcaeda572a816dd69d58ad5b41921",
+  "run_id": "1a0ea26c927-9cb4",
+  "renderer_now": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+  "workshop": "SESSIONWALK verify OK head dd874eff3a69 — moves 28 edits 28 (final 7,26,W)",
+  "python": "3.14.5",
+  "os": "Windows",
+  "preregistered": {
+   "rung": "LIVE-SESSION-0",
+   "chain_hash": "70086a721ef353ccb41afcda7e6c869c027f4f14eae0ef923dff2892981046bb"
+  },
+  "loop": {
+   "rung": "LIVE-INPUT-0",
+   "chain_hash": "f81c2cf110636835213321fe6f31cdb78ce23a1657a8003eaf895e55878fcc70"
+  }
+ },
+ "validity_scope": {
+  "certifies": "a live session walked on host DANIELDILLBERG and saved by the shell: the session-walk over the frozen base (W 1b84db41a5fb... M 52e8b54ae508...) from 28,28,N, which replays in log order to head dd874eff3a699f24345280387da131e139daf30ef51b1574fa09714824b7583e",
+  "host": "DANIELDILLBERG",
+  "head": "dd874eff3a699f24345280387da131e139daf30ef51b1574fa09714824b7583e",
+  "final_camera": "7,26,W"
+ },
+ "forbidden_interpretations": [
+  "any timing or latency: the session carries no time",
+  "that the renderer identity decides compatibility: it names sources, replay decides",
+  "that the focus observation explains anything: it is recorded, never ruled on",
+  "a second authority: the shell's session is the replay of this log, which the workshop verifies",
+  "durability beyond the file system's promise, or on any other host"
+ ],
+ "data": {
+  "magic": "VRDNSW1",
+  "base": {
+   "level": "oracle/levels/witness.lvl",
+   "tiles": "oracle/tiles/identity.tiles",
+   "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+   "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+   "content": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08",
+   "camera": "28,28,N"
+  },
+  "log": [
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "28,28,W",
+    "witness": "7b959b88263f632754b03bd2c0d4cba1914dbda976eaa2d88eca8dd93e7c40ba"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "27,28,W",
+    "witness": "a6483a9e037e6f5f1b366146d01ba9bc2ee614419162bc6a7c4eb1a1f4e8fd69"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,W",
+    "witness": "bc13494dc75b3f72c1482ea270ad0745108aff5158ca82a9d858dc42aa698e09"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,28,W",
+    "witness": "1aed2922109d2bf260a598bdceebad5f9d3dfd596f1db41f296e2f05715a1d97"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,28,W",
+    "witness": "a5c496087fce3f4c7692633f5d2a2b1cac6f3ef63f66cd6743ff6a431b8e67df"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,28,W",
+    "witness": "27457343829f1ba0d8d457e7a0eccb4a7d51870bbf43acdf420539543eb6c446"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "23,28,N",
+    "witness": "9153175811dba6e9ad793d624eb839cfd8f005a5e505e2b91039787862e443fd"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,27,N",
+    "witness": "d6b877c7d993f46d124a13d29ce3ee30e9b7f09d6d946fd024373de943b30148"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "23,27,W",
+    "witness": "bf7e4fd0abb7e03c1dbecd48466113def398380e38201bee5e59443ccbbda7f4"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "23,27,N",
+    "witness": "d6b877c7d993f46d124a13d29ce3ee30e9b7f09d6d946fd024373de943b30148"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,26,N",
+    "witness": "3d1da2883ac3a6a6da46472b5d63249462138a3a6af0deca7192001447113f68"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "23,26,W",
+    "witness": "1bbd5c53f8f78b93a7b3acbe688210cf660652f643abc0f4db4423fe8dbcfaa4"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "22,26,W",
+    "witness": "447b73131e673f6dded9c67ddf547dc37bf55c621ffbe9a19626d02cdeb4f969"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "21,26,W",
+    "witness": "4a72fcaa01ebf1f5cefb2d0dd18bbd29b6b43bb4a3bbfe4be740e970b245948a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "20,26,W",
+    "witness": "f08d1b84b54ebfc5380efac29ee36451a217653d95ffbf83137c6216da93ac7b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "19,26,W",
+    "witness": "6fb9a4d9f054c56d57712330d5cfba3565ba02da6654c5d1125f8d7673cf28fb"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "18,26,W",
+    "witness": "a9d5630d66e990f9f9597b5fdfe32a5b76c36bb3892e83d1fd12d7bc64d4dd08"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "17,26,W",
+    "witness": "3490493d239e0b8189f2ac0452fa6efef03432ad5f69f7f59f908ab6c8277fc9"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "16,26,W",
+    "witness": "b060e434f13b126bafb6042c2a41650c46e4edf76208bf6769d86820e9ab0da2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "15,26,W",
+    "witness": "25725588cebcc125ca70b5521e6706652e2edf4032f5d4caeabc68cf8dd85bb1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "14,26,W",
+    "witness": "42f81240347793ad7a145c68eacb9701ffa130bf9dd494377c9671ada0d6776e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,26,W",
+    "witness": "e1bc6e401cc330836a3fe2b052ccba127110204564d3221f31d7a7caf7fd42aa"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,26,W",
+    "witness": "90805d341d52fd15e11d9e493996520936386c18419b775744fe478ec0cb130e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "11,26,W",
+    "witness": "c56e57e4d1f030bdecf6dfc896eba8ff0a0c2101c86bb12ca905783cefd319f8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "10,26,W",
+    "witness": "ff0e0af3e8221618b5ffcbf279151803f96c8d01cd61cd4881692aa54980c957"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "9,26,W",
+    "witness": "b9abfa285c0853bf9bc056776e6791d41175015746a59b7d2802d00cf3cac409"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "8,26,W",
+    "witness": "2174e3eed058e829ad67a5d3dbfa42af57f951ffa8872b7beeb06437a7cff33a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "7,26,W",
+    "witness": "eb8fcf4f1cdf20f2942262d11f10df21a5cff28e2bbcefd067ec68bf980206bf"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall0,96,80,64",
+    "witness": "8c4c8e20b64c7750138a95e998b821321e8d685bb9e2265cf8b8bf0f67f33b58"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,96,80,64",
+    "witness": "70a64465ae150ffae3787987b646d2c82d2a710947a40f9e28e450206e1a1f2f"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall2,96,80,64",
+    "witness": "dce3174ba85e11581e536ad8979d32bb08a7be024473980d4c10a223b5f07c31"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,96,80,64",
+    "witness": "7ca6f09e42a68c96e948969a3dcff91f445ed9e39944e122b60ff71385228ea0"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,96,80,64",
+    "witness": "c7dd93e0c381881383650b799a7c7905aba4bb664d228f5f3550a4911d101da8"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,176,176,176",
+    "witness": "73eda44406610049cf50057d032f76320db19f85d77ca94efd67cca9274be1ea"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,176,176,176",
+    "witness": "a7b7f19cf8e593edde1b47bbfb9c36b9ce10a8e71d8609c9a2674c1b1f0c2f02"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall2,176,176,176",
+    "witness": "aa91a6884c1e3e1a042b138acb1fb2074c2a8c4e875e6cde31b7452fb26f5c8a"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,176,176,176",
+    "witness": "a4a7fe2cc69579d1e7f30b6f2959a23af2722aa82a742c7702b4900a76524606"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall0,176,176,176",
+    "witness": "2d63cd824a810d3705f166dff9a98e499b09b9e643366dbc15fe9df98078be3d"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall2,178,58,48",
+    "witness": "3a3e7915b77136f4f44872462309703c808be2d45e78f871270452acf7f5a3b5"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,178,58,48",
+    "witness": "899f07a77065c7809c27992ec178b755c6d8b07df4a609416c9bed958c972b79"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,56,104,168",
+    "witness": "609cd121bf6d7da6c722767d36a4ed3b52396a97df8253d17de12b9cf1001351"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,72,136,72",
+    "witness": "641324c08ea7efdb542108de851e7bf0665c0e9a4174a3ac4b59d22b168521d0"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,178,58,48",
+    "witness": "637e9e5d94eab0776af3bc62c3d4e7fdf69377c5c7155b92df9daf11d25bf6d0"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,56,104,168",
+    "witness": "1bc8814f2883eee6f06259b30c10407c32537abe3339ec1c1f8e23542ccd3b65"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,72,136,72",
+    "witness": "518db7df8aa4b90a92d6fecacc96877c7f97de1449ed77da94bef5b0cfe43d2e"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,200,176,96",
+    "witness": "9487ddd08ef6e9ce0be6668841e90afc269ba7b3cd5ab8d4314cd67c6116e2f9"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,120,80,152",
+    "witness": "a09dbc77c2f61375a1d649c247a79ad970f9ab607d8da0af108feb934f45ea2f"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,232,232,224",
+    "witness": "b9c2cc889585bbd4d5e523d4b0b97bbf2ac2c7d9cb4bbe1c2c0d5af1444c1941"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,200,176,96",
+    "witness": "a5a700b8eaaa478b4d92a26c72741087db161068d9be6392f00896bd0cbd7b8b"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall2,56,104,168",
+    "witness": "22f8aefd18dfc989c3f4ae3071167acfebb7cd1c4361434c93468ec15dc3c196"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,178,58,48",
+    "witness": "ee5abe867053bad146a698d061c93d8907f22ff8285e4ea4863425e72a0e8d86"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,56,104,168",
+    "witness": "7a567be661ea31db2df0ca69c5d6952cb529af59da990d531a6058b06074e2d0"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,72,136,72",
+    "witness": "6d7b2248345e12c2438c0d002b3b35540a10eba3c3598c344a3682ce9dfa26b3"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,200,176,96",
+    "witness": "8ed2b5b63573803ffc71a8ed70ae87315c0fca7f8fd05f7294ef269a4e73e65e"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall0,178,58,48",
+    "witness": "7a41a3c0018f0525a5da073842577e843c3743eede5a6bcd1994c495785900fa"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall0,56,104,168",
+    "witness": "0461485a1837638b931607b7691e79de809aa81f2c499232f2a4c9edf180110f"
+   }
+  ],
+  "head": "dd874eff3a699f24345280387da131e139daf30ef51b1574fa09714824b7583e",
+  "final_camera": "7,26,W",
+  "final_content": "0461485a1837638b931607b7691e79de809aa81f2c499232f2a4c9edf180110f",
+  "moves": 28,
+  "edits": 28,
+  "live": {
+   "log": "LIVE-SESSION-0",
+   "run_id": "1a0ea26c927-9cb4",
+   "renderer": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+   "lineage": null,
+   "resumed": null,
+   "journal": {
+    "file": "journal.vsj",
+    "records": 57,
+    "events": 56,
+    "complete": true,
+    "sha256": "986fa542dacf618643e93f317bb648be53a805bfab6b71537b1388a9c61686d7"
+   },
+   "ended": "escape",
+   "focus": {
+    "source": "window",
+    "foreground_request": 1,
+    "foreground_at_start": 1,
+    "compositions_with": 1643,
+    "compositions_without": 1,
+    "changes": 1
+   }
+  }
+ },
+ "reading": "LIVE-SESSION-0 on host DANIELDILLBERG: a live session saved by the shell and verified there before it counted as saved (56 events: 28 moves, 28 edits; ended by escape), a new session from its base; its seal, base, fold check here, the workshop's own sessionwalk verifies the saved file itself (head dd874eff3a69...), and this checkout's renderer identity is the same as the one it was made with.",
+ "chain_hash": "b6782367122b6ec27f04c3a384212a1154c51a409153cc7aa1dfb861484ca1a8"
+}
