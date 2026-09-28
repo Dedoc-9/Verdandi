@@ -29,7 +29,7 @@
 
 use crate::formats::{facing_letter, Camera};
 use crate::latency1r::Surface;
-use crate::mantle::{frame_digest, Scene, H, W};
+use crate::mantle::{frame_digest, hex, sha256, Scene, H, W};
 use crate::playback::LiveSession;
 use crate::present::{arm_composite, to_blit, Arm, LoopRenderer};
 use crate::presentexact::{describe, diff_bbox, Attribution, ExactSurface};
@@ -46,11 +46,13 @@ pub const VK_UP: u32 = 0x26;
 pub const VK_RIGHT: u32 = 0x27;
 pub const VK_DOWN: u32 = 0x28;
 
-/// A typed action: one of INPUT-0's six moves, the faced cell's open/close, the end, or nothing.
+/// A typed action: one of INPUT-0's six moves, the faced cell's open/close, a tile class's next colour (LIVE-AUTHOR-0's
+/// binding only; LIVE-INPUT-0's never makes one), the end, or nothing.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Action {
     Move(u8),
     Toggle,
+    Tile(u8),
     End,
     Unbound,
 }
@@ -256,6 +258,11 @@ pub struct Live {
     pub ended: &'static str,
     pub trace: Vec<Typed>,
     pub views: Vec<String>,
+    /// LIVE-AUTHOR-0: the sha256 of each state's reference composite (the pixels), in the order of `views`.
+    pub pixels: Vec<String>,
+    /// LIVE-AUTHOR-0: for each state the loop presented, the state and the sha256 of the composite it rendered at that
+    /// state's first composition — what was actually handed to the call, beside what the state's reference is.
+    pub shown: Vec<(u64, String)>,
 }
 
 fn cam_token(c: Camera) -> String {
@@ -264,7 +271,7 @@ fn cam_token(c: Camera) -> String {
 
 /// The fresh reference of the session's current state, rendered once when the state changes: its scene, its composite
 /// and blit bytes, and its frame digest. For a move, the digest must be the event's chain witness.
-fn reference(session: &LiveSession, witness: Option<(&str, u64)>) -> Result<(Scene, Vec<u8>, Vec<u8>, String), Refusal> {
+fn reference(session: &LiveSession, witness: Option<(&str, u64)>) -> Result<(Scene, Vec<u8>, Vec<u8>, String, String), Refusal> {
     let scene = session.scene().map_err(|crate::mantle::Refusal(m)| {
         refusal("render.scene", vec![("camera", V::S(cam_token(session.camera())))], format!("LIVEINPUT-SCENE: the session's state does not compose: {}", m))
     })?;
@@ -277,12 +284,18 @@ fn reference(session: &LiveSession, witness: Option<(&str, u64)>) -> Result<(Sce
         }
     }
     let bgr = to_blit(&comp);
-    Ok((scene, comp, bgr, view))
+    let px = hex(&sha256(&comp));
+    Ok((scene, comp, bgr, view, px))
 }
 
 /// The run: the initial state's reference, then compositions until Esc or the window closes, each one's key presses
-/// turned into events first, then the current state rendered live and presented.
+/// turned into events first, then the current state rendered live and presented. LIVE-INPUT-0's binding.
 pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface: &'static str) -> Result<Live, Refusal> {
+    run_with(s, session, surface, bind)
+}
+
+/// The same run under a given binding (LIVE-AUTHOR-0's adds the tile classes; nothing else about the loop changes).
+pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface: &'static str, binding: fn(u32) -> Action) -> Result<Live, Refusal> {
     let _ = s.pump();
     let g = s.geometry();
     if g != [W as i32, H as i32, 0, 0, W as i32, H as i32, W as i32, H as i32] {
@@ -293,10 +306,11 @@ pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface
     s.set_call(CALL);
     let mut live = Live { keys: 0, repeats: 0, unbound: 0, events: 0, moves: 0, blocked: 0, edits: 0, refused: 0, references: 0,
                           compositions: 0, rendered: 0, byte_checks: 0, presented: 0, screen_readbacks: 0, screen_differed: 0,
-                          renders: 0, geometry: g, ended: "", trace: Vec::new(), views: Vec::new() };
-    let (mut scene, mut expected, mut expected_bgr, view) = reference(session, None)?;
+                          renders: 0, geometry: g, ended: "", trace: Vec::new(), views: Vec::new(), pixels: Vec::new(), shown: Vec::new() };
+    let (mut scene, mut expected, mut expected_bgr, view, px) = reference(session, None)?;
     live.references += 1;
     live.views.push(view);
+    live.pixels.push(px);
     let mut lr = LoopRenderer::new();
     let (mut fresh, mut held, mut last): (bool, u64, Option<bool>) = (true, 0, None);
     let mut c: u64 = 0;
@@ -311,7 +325,7 @@ pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface
                 live.trace.push(Typed { key: vk, repeat, composition: c, outcome: "repeat".to_string() });
                 continue;
             }
-            let outcome = match bind(vk) {
+            let outcome = match binding(vk) {
                 Action::End => {
                     end = true;
                     "end".to_string()
@@ -343,6 +357,7 @@ pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface
                     expected = r.1;
                     expected_bgr = r.2;
                     live.views.push(r.3);
+                    live.pixels.push(r.4);
                     fresh = true;
                     println!("[liveinput] {} -> event {}: move {} -> {}{} head {}", name, k, cmd as char, cam_token(cam),
                              if blocked { " (blocked)" } else { "" }, &head[..12]);
@@ -371,6 +386,7 @@ pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface
                             expected = r.1;
                             expected_bgr = r.2;
                             live.views.push(r.3);
+                            live.pixels.push(r.4);
                             fresh = true;
                             println!("[liveinput] {} -> event {}: edit {} head {}", name, k, spec, &head[..12]);
                             format!("event {}", k)
@@ -388,6 +404,28 @@ pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface
                             format!("refused {}", code)
                         }
                     }
+                }
+                Action::Tile(class) => {
+                    // LIVE-AUTHOR-0: the class's next palette colour, read from the session's own M, appended as an
+                    // edit; nothing is shown until it is appended (commit-only)
+                    let k = live.events;
+                    let rgb = crate::liveauthor::next_colour(session.tile_rgb(class));
+                    let (spec, head) = match session.push_edit_tile(class, rgb) {
+                        Ok(ev) => (ev.param.clone(), ev.head.clone()),
+                        Err(m) => return Err(refusal("render.scene", vec![("event", V::N(k))], format!("LIVEINPUT-SCENE: tile edit did not replay: {}", m))),
+                    };
+                    live.events += 1;
+                    live.edits += 1;
+                    let r = reference(session, None)?;
+                    live.references += 1;
+                    scene = r.0;
+                    expected = r.1;
+                    expected_bgr = r.2;
+                    live.views.push(r.3);
+                    live.pixels.push(r.4);
+                    fresh = true;
+                    println!("[liveinput] {} -> event {}: edit {} head {}", name, k, spec, &head[..12]);
+                    format!("event {}", k)
                 }
             };
             live.trace.push(Typed { key: vk, repeat, composition: c, outcome });
@@ -417,6 +455,7 @@ pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface
         }
         live.presented += 1;
         let due = if fresh {
+            live.shown.push((live.events, hex(&sha256(lr.composite()))));
             fresh = false;
             held = 0;
             true
@@ -502,13 +541,28 @@ pub fn raw_json(l: &Live, s: &LiveSession, level: &str, tiles: &str) -> String {
                 kind, pk, esc(&e.param), esc(&cam_token(e.camera)), esc(&e.witness), esc(&e.content), esc(&e.head))
     }).collect();
     let views: Vec<String> = l.views.iter().map(|v| esc(v)).collect();
+    let pixels: Vec<String> = l.pixels.iter().map(|v| esc(v)).collect();
     let g = l.geometry;
     format!(
-        "{{\"name\":\"verdandi-liveinput-selftest\",\"data\":{{\"base\":{{\"level\":{},\"tiles\":{},\"camera\":{},\"content\":{},\"genesis\":{}}},\"trace\":[{}],\"events\":[{}],\"views\":[{}],\"counts\":{{\"keys\":{},\"repeats\":{},\"unbound\":{},\"events\":{},\"moves\":{},\"blocked\":{},\"edits\":{},\"refused\":{},\"references\":{},\"compositions\":{},\"frames_rendered\":{},\"frames_presented\":{},\"byte_checks\":{},\"screen_readbacks\":{},\"screen_differed\":{},\"loop_renders\":{}}},\"geometry\":{{\"client\":[{},{}],\"origin\":[{},{}],\"screen_logical\":[{},{}],\"screen_physical\":[{},{}]}},\"call\":\"setdibitstodevice\",\"render_entry\":\"LoopRenderer\",\"every\":{},\"recheck\":{},\"ended\":{},\"final\":{{\"camera\":{},\"W\":{},\"M\":{},\"content\":{},\"head\":{}}}}}}}",
+        "{{\"name\":\"verdandi-liveinput-selftest\",\"data\":{{\"base\":{{\"level\":{},\"tiles\":{},\"camera\":{},\"content\":{},\"genesis\":{}}},\"trace\":[{}],\"events\":[{}],\"views\":[{}],\"pixels\":[{}],\"counts\":{{\"keys\":{},\"repeats\":{},\"unbound\":{},\"events\":{},\"moves\":{},\"blocked\":{},\"edits\":{},\"refused\":{},\"references\":{},\"compositions\":{},\"frames_rendered\":{},\"frames_presented\":{},\"byte_checks\":{},\"screen_readbacks\":{},\"screen_differed\":{},\"loop_renders\":{}}},\"geometry\":{{\"client\":[{},{}],\"origin\":[{},{}],\"screen_logical\":[{},{}],\"screen_physical\":[{},{}]}},\"call\":\"setdibitstodevice\",\"render_entry\":\"LoopRenderer\",\"every\":{},\"recheck\":{},\"ended\":{},\"final\":{{\"camera\":{},\"W\":{},\"M\":{},\"content\":{},\"head\":{}}}}}}}",
         esc(level), esc(tiles), esc(&cam_token(s.cam0())), esc(s.base_content()), esc(s.genesis()),
-        trace.join(","), events.join(","), views.join(","),
+        trace.join(","), events.join(","), views.join(","), pixels.join(","),
         l.keys, l.repeats, l.unbound, l.events, l.moves, l.blocked, l.edits, l.refused, l.references, l.compositions, l.rendered,
         l.presented, l.byte_checks, l.screen_readbacks, l.screen_differed, l.renders,
         g[0], g[1], g[2], g[3], g[4], g[5], g[6], g[7], MOCK_EVERY, RECHECK, esc(l.ended),
         esc(&cam_token(s.camera())), esc(&s.w_hex()), esc(&s.m_hex()), esc(s.content()), esc(s.head()))
+}
+
+/// LIVE-AUTHOR-0: the live editor's gate output — the per-key trace, each state's frame witness and pixels, and the
+/// counts. The events themselves are the saved session's; this is the gate's scratch, not a record.
+pub fn raw_json_counts(l: &Live, level: &str, tiles: &str) -> String {
+    let trace: Vec<String> = l.trace.iter().map(|t| {
+        format!("{{\"key\":{},\"vk\":{},\"repeat\":{},\"composition\":{},\"outcome\":{}}}", esc(&key_name(t.key)), t.key, t.repeat, t.composition, esc(&t.outcome))
+    }).collect();
+    let views: Vec<String> = l.views.iter().map(|v| esc(v)).collect();
+    let pixels: Vec<String> = l.pixels.iter().map(|v| esc(v)).collect();
+    let shown: Vec<String> = l.shown.iter().map(|(k, v)| format!("[{},{}]", k, esc(v))).collect();
+    format!("{{\"name\":\"verdandi-live-selftest\",\"data\":{{\"level\":{},\"tiles\":{},\"trace\":[{}],\"views\":[{}],\"pixels\":[{}],\"shown\":[{}],\"counts\":{{\"keys\":{},\"repeats\":{},\"unbound\":{},\"events\":{},\"moves\":{},\"edits\":{},\"refused\":{},\"compositions\":{},\"frames_rendered\":{},\"frames_presented\":{},\"byte_checks\":{},\"screen_readbacks\":{},\"screen_differed\":{}}},\"ended\":{}}}}}",
+            esc(level), esc(tiles), trace.join(","), views.join(","), pixels.join(","), shown.join(","), l.keys, l.repeats, l.unbound, l.events, l.moves, l.edits, l.refused,
+            l.compositions, l.rendered, l.presented, l.byte_checks, l.screen_readbacks, l.screen_differed, esc(l.ended))
 }

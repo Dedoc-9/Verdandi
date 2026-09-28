@@ -474,13 +474,18 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
                 Err(_) => (false, false, false),
             }
         } else {
-            match cell_of(&e.param) {
-                Some((x, z, to)) => match s.push_edit_cell(x, z, to) {
+            match (cell_of(&e.param), tile_of(&e.param)) {
+                (Some((x, z, to)), _) => match s.push_edit_cell(x, z, to) {
                     Ok(ev) => (false, true, ev.witness == e.witness),
                     Err(_) => (false, false, false),
                 },
-                None => return Err(refusal("session.load", vec![("event", V::N(k as u64))],
-                                           format!("LIVESESSION-UNSUPPORTED: event {} is {:?}, not a cell edit (tiles are LIVE-AUTHOR-0's)", k, e.param))),
+                // LIVE-AUTHOR-0: a tile edit replays as a cell edit does, through the session
+                (None, Some((class, rgb))) => match s.push_edit_tile(class, rgb) {
+                    Ok(ev) => (false, true, ev.witness == e.witness),
+                    Err(_) => (false, false, false),
+                },
+                (None, None) => return Err(refusal("session.load", vec![("event", V::N(k as u64))],
+                                                   format!("LIVESESSION-UNSUPPORTED: event {} is {:?}, neither a cell nor a tile edit", k, e.param))),
             }
         };
         if !(camera_ok && witness_ok) {
@@ -517,6 +522,16 @@ fn saved_event(e: &JsonView) -> Result<SavedEvent, Refusal> {
         return Err(refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: move {:?}", param)));
     }
     Ok(SavedEvent { tag, param, camera: e.get("camera").s(), witness: e.get("witness").s() })
+}
+
+fn tile_of(spec: &str) -> Option<(u8, [u8; 3])> {
+    let rest = spec.strip_prefix("tile:")?;
+    let p: Vec<&str> = rest.split(',').collect();
+    if p.len() != 4 {
+        return None;
+    }
+    let class = crate::playback::TILE_CLASSES.iter().position(|c| *c == p[0])? as u8;
+    Some((class, [p[1].parse().ok()?, p[2].parse().ok()?, p[3].parse().ok()?]))
 }
 
 fn cell_of(spec: &str) -> Option<(i64, i64, u8)> {
@@ -618,15 +633,20 @@ pub fn prepare(plan: Plan) -> Result<Prepared, i32> {
 
 /// The run: LIVE-INPUT-0's loop, then the seal, then the saved file's verification. Returns the exit code.
 pub fn go<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared) -> i32 {
+    go_with(s, p, crate::liveinput::bind).0
+}
+
+/// The same run under a given binding (LIVE-AUTHOR-0's live editor); also hands back the loop's counts for the gate.
+pub fn go_with<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared, binding: fn(u32) -> crate::liveinput::Action) -> (i32, Option<crate::liveinput::Live>) {
     let Prepared { mut session, base, lineage, resumed, journal, dir, plant, surface } = p;
-    let live = match crate::liveinput::run(s, &mut session, surface) {
+    let live = match crate::liveinput::run_with(s, &mut session, surface, binding) {
         Ok(l) => l,
         Err(r) => {
             // the loop's refusal is LIVE-INPUT-0's (logged as its operation); the journal keeps what was flushed
             let (ev, m) = r.into_event(surface);
             crate::refusallog::refuse(&ev, &format!("SHELL-LIVEINPUT: {}", m));
             crate::runledger::end(2);
-            return 2;
+            return (2, None);
         }
     };
     for ln in crate::liveinput::summary(&live, &session) {
@@ -659,7 +679,7 @@ pub fn go<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared) -> i32 {
     };
     let dst = std::path::Path::new(&dir).join(SESSION).to_string_lossy().to_string();
     if let Err(m) = write_saved(&dst, &text, &plant) {
-        return refuse_run(refusal("session.seal", vec![("path", V::S(dst.clone()))], format!("LIVESESSION-SEAL-UNWRITTEN: {}", m)), surface);
+        return (refuse_run(refusal("session.seal", vec![("path", V::S(dst.clone()))], format!("LIVESESSION-SEAL-UNWRITTEN: {}", m)), surface), None);
     }
     // the saved artifact, read back from the disk, must verify before the run counts as saved
     let verified = fs::read(&dst).map_err(|e| e.to_string()).and_then(|b| {
@@ -675,12 +695,12 @@ pub fn go<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared) -> i32 {
         Ok(())
     });
     if let Err(m) = verified {
-        return refuse_run(refusal("session.seal", vec![("path", V::S(dst.clone()))], format!("LIVESESSION-SEAL-UNVERIFIED: {}", m)), surface);
+        return (refuse_run(refusal("session.seal", vec![("path", V::S(dst.clone()))], format!("LIVESESSION-SEAL-UNVERIFIED: {}", m)), surface), None);
     }
     if let Some(m) = jbroken {
         println!("[livesession] the journal failed during the run ({}); the saved session is complete and verified", m);
     }
     println!("[livesession] saved and verified: {} — {} events, head {}", dst, session.log().len(), session.head());
     crate::runledger::end(0);
-    0
+    (0, Some(live))
 }

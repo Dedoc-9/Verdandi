@@ -77,16 +77,26 @@ LIVE-INPUT-0     physical input → typed editor action → the workshop/session
       ↓
 LIVE-SESSION-0   live events → append-only session → save → restart → replay → the same world — a host walk saved, resumed into a new file, both replayed here
       ↓
-LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders
+LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders — preregistered and built; the host walk is pending
+      ↓
+free continuous movement → richer edits      vocabulary on the one live editor, not new pathways
       ↓
 walking in a live, authorable world
       ↓
-DRIFT-0 continued (sittings 2 and 3, alongside), then PRESENT-1, the live-loop re-breakdown, BANDWIDTH-0 / POOL-0
+PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
 
 The owner swapped LIVE-SESSION-0 ahead of LIVE-AUTHOR-0 after LIVE-INPUT-0's host runs. The live loop worked, but its
 evidence was still console text that had to be replayed by hand. Durability first means every later host walk,
 including LIVE-AUTHOR-0's, is a saved file the workshop verifies, not a transcript.
+
+After LIVE-AUTHOR-0 the owner stops adding bespoke input cases. LIVE-AUTHOR-0 is the last authoring-primitive slice.
+From then on the rule is general: every accepted live edit is a typed SESSION-WALK event, the event changes the
+authoritative W or M, the next frame is derived from the resulting authority, and the event is durable through
+LIVE-SESSION-0. Free continuous movement and richer edits are vocabulary and navigation semantics added to the one live
+editor (`shell live-window`), gated in its binding table, not new pathways or rungs. Mouse-look, cursor authoring,
+preview sliders, gizmos and an editor-pane interaction model are deliberately not on the route yet: those are where a
+shell starts accumulating an alternate authority.
 
 - **The diagnostic foundation** is not on the critical path to walking. It gives the live loop an instrumented refusal
   surface instead of console archaeology. REFUSAL-LOG-0, RUN-LEDGER-0 and REFUSAL-WHY-1 have landed. REFUSAL-WHY-1
@@ -275,6 +285,16 @@ the presenter's borderless window. The screen is read back at every step and twi
 is counted and logged, never hidden. There is no input, no camera, no clock: counts only. The gate executes the loop
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
+
+### LIVE-AUTHOR-0 — the thing authored is what the next frame renders · **preregistered and built** (`9a3e4521`); the host walk is pending
+The one live editor, `shell live-window`: LIVE-SESSION-0's durable loop under the authoring binding, which is
+LIVE-INPUT-0's keys plus 1–5 for the tile classes wall0–wall3 and floor. A class key paints its class with the next
+colour of a registered 8-colour palette, read from the session's own M, as one `tile:CLASS,R,G,B` session event. It is
+commit-only: nothing is shown before the edit is appended, and the shell holds no colour of its own. The frame witness
+does not see colour, so the picture is witnessed per state by the reference composite's sha256. The gate proves the
+camera control condition (a turn changes the pixels while W and M stay the same) and its converse (a tile edit changes
+M, leaves W alone, and changes the pixels exactly when its class is on screen). It also proves the painted world
+persists: a resumed session's first picture is its parent's last.
 
 ### LIVE-SESSION-0 — the live session made durable and recoverable · **measured on the host** (`70086a72`): a saved walk and its resumed continuation
 LIVE-INPUT-0's loop, unchanged, over a session whose every appended event is journaled: one record per line with its

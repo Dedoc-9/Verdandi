@@ -3003,6 +3003,79 @@ red if a torn tail refuses or a bad middle record is dropped. `livesession-class
 is treated as corruption, or a content divergence is blamed on the renderer. `livesession-fence` goes red if durability
 is claimed before it is earned.
 
+## LIVE-AUTHOR-0 — the thing authored is what the next frame renders: tile classes painted live, commit-only (preregistered and built; the host walk is pending)
+
+**Why.** LIVE-INPUT-0 showed that cell edits reach the session and the screen, and LIVE-SESSION-0 made the session
+durable. LIVE-AUTHOR-0 is the owner's last authoring-primitive slice. It adds a second kind of authority, M (the
+materials), through the same pathway, then stops adding bespoke input cases. From here on, new vocabulary joins one live
+editor rather than a new pathway.
+
+**The method (`9a3e4521`), as the owner ratified it.** One live editor command, `live-window` on the host and
+`live-selftest` over the mock, runs LIVE-SESSION-0's durable loop (journal, seal, verification, `--resume`) under the
+authoring binding. That is LIVE-INPUT-0's keys unchanged, plus 1, 2, 3, 4 and 5 for the tile classes wall0, wall1,
+wall2, wall3 and floor. A class key appends one edit, `tile:CLASS,R,G,B`, a solid fill of the whole class. Its colour
+is the entry after the class's current colour in a registered 8-colour palette (umber, stone, brick, slate, moss, sand,
+plum, chalk), or the palette's first entry if the class is textured. The current colour is read from the session's own
+M, so the same key over the same M always gives the same edit. The edit is a SESSION-WALK event like a cell edit: the
+session applies it, its witness is the new content, it folds into the head, and it is journaled and sealed. The loader
+now replays tile edits as it replays cell edits.
+
+It is commit-only. There is no preview and no provisional colour, and the authoring module holds no state; the loop
+changes M only by appending the edit. The frame witness is the index frame, which a colour does not move. So the
+picture is witnessed per state by the reference composite's sha256 (the pixels), and the loop now records it for every
+state. The camera control condition is that a camera-only event changes the pixels and the frame witness while W and M
+stay unchanged. Its converse is recorded too: a tile edit changes M, leaves W and the frame witness unchanged, and
+changes the pixels exactly when the class is on screen. `liveinput-*` and `livesession-*` keep their own bindings, so
+the class keys stay unbound there.
+
+One witness was added during the build. A reference-only check has a blind spot: a loop that recorded each new state's
+reference but kept presenting the previous state's frame would pass it, because its byte check compares the stale frame
+with the stale reference. A mutation showed exactly that. So the loop also records, at each state's first composition,
+the sha256 of the frame it actually handed to the call, and the gate requires that to be the state's own reference.
+
+**Rows.** `liveauthor-preregistered`: the method is locked, and the shell's palette, binding, next-colour rule and tile
+class order are the registered ones.
+
+`liveauthor-binding`: script C from 28,28,N becomes exactly its registered outcomes at its registered compositions. It
+paints the floor while the floor is off screen, turns west, cycles the floor through all 8 colours and back to the
+first, paints each wall class, turns back, opens a cell and walks through it, and ends with Esc. That is 18 presses and
+13 tile edits in palette order. The class keys stay unbound in `liveinput-selftest`.
+
+`liveauthor-authority`: every tile edit changes M and leaves W and the frame witness unchanged. Its pixels change
+exactly where script C registers the class on screen. The registration is taken from the renderer's own output: the
+floor is off screen facing north and wall1 facing west, and those two edits are the off-screen controls, whose pixels
+stay the same. Every turn changes the pixels and the frame witness with W and M unchanged. The tile edits alone leave
+the level's bytes unchanged. Every state's presented frame is the one rendered from its own authority. The workshop's
+`sessionwalk` replays the saved log to its head, and the content recomputed from the log is the saved one.
+
+`liveauthor-persist`: every tile edit was journaled as it was made, one record per saved event. Resuming script C's
+saved session loads as LOAD, and its first presented picture is its parent's last (the same pixels and frame witness). The next floor edit takes the palette's next colour and is sealed into a child
+with lineage, which the workshop verifies; the parent is unchanged.
+
+`liveauthor-fence`: the authoring module holds no colour, tile or preview state and makes no edit. The Tile arm reads the
+session's colour, appends `push_edit_tile`, then renders the resulting state. The session's tile edit follows the cell
+edit's own path (apply, content, fold, append, hand to the sink). The live command runs LIVE-SESSION-0's `go_with` under
+the authoring binding, while LIVE-INPUT-0's `run` and LIVE-SESSION-0's `go` keep their own. The host window is
+LIVE-SESSION-0's window under the binding, and a windowless build refuses it.
+
+`liveinput-fence` and `livesession-fence` are re-pinned on purpose: the loop, the runner and the window now take their
+binding as a parameter. 15 mutations were each caught. The first pass missed two, now caught: a stale presented frame
+(by the presented-frame witness) and a tile edit not journaled (by the journal check in `liveauthor-persist`).
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the binding and the palette order, the authority checks (tile edits,
+the off-screen controls, the camera control condition, the workshop's replay), persistence through save and resume, and
+the fence. NOT_MEASURED: the host walk, which has not been run.
+
+**does_not_show.** Per-cell materials, or a way back to a textured tile: an edit is a solid fill of a whole class.
+Colours outside the palette. Whether a class is on screen by any rule: it is registered per scripted state from the
+renderer's output. What reached the screen between readbacks. Continuous movement, a cursor, a preview. Timing.
+
+**Falsifier.** `liveauthor-binding` goes red if a class key or a colour is wrong, or the class keys leak into
+LIVE-INPUT-0. `liveauthor-authority` goes red if a tile edit touches W or the frame witness, misses M, changes the
+pixels of an off-screen class or not those of an on-screen one, or if a turn touches W or M or leaves the pixels alone.
+`liveauthor-persist` goes red if the resumed picture is not the parent's last. `liveauthor-fence` goes red if a colour
+is held, previewed or applied outside the session.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

@@ -2409,6 +2409,11 @@ impl crate::livesession::Focus for FocusKeysGdi {
 }
 
 pub fn livesession_window(plan: crate::livesession::Plan) {
+    session_window(plan, crate::liveinput::bind)
+}
+
+/// LIVE-SESSION-0's window under a binding (LIVE-AUTHOR-0's live editor passes its own; nothing else differs).
+fn session_window(plan: crate::livesession::Plan, binding: fn(u32) -> crate::liveinput::Action) {
     unsafe { SetProcessDPIAware() };
     let prepared = match crate::livesession::prepare(plan) {
         Ok(p) => p,
@@ -2434,9 +2439,18 @@ pub fn livesession_window(plan: crate::livesession::Plan) {
     let mut keys = FocusKeysGdi { inner: LiveKeysGdi { surf, pending: Vec::new() }, hwnd, request, at_start, with: 0, without: 0, changes: 0, last: None };
     println!("[livesession] the window {} the keyboard at the start (click it if keys do nothing); arrows or WASD walk and turn, Q/E strafe, Space opens or closes the cell ahead, Esc ends and saves",
              if at_start { "holds" } else { "does NOT hold" });
-    let code = crate::livesession::go(&mut keys, prepared);
+    let (code, _live) = crate::livesession::go_with(&mut keys, prepared, binding);
     if unsafe { IsWindow(hwnd) } != 0 {
         unsafe { DestroyWindow(hwnd) };
     }
     std::process::exit(code);
+}
+
+// ================================================================== LIVE-AUTHOR-0 (appended)
+// The live editor's host window: LIVE-SESSION-0's window, keys and focus observation, under the authoring binding
+// (LIVE-INPUT-0's keys, plus 1-5 for the tile classes). Esc seals; the saved session is verified before it counts.
+
+pub fn live_window(plan: crate::livesession::Plan) {
+    println!("[live] the live editor: 1-4 paint wall0-wall3 and 5 the floor with the next palette colour; every edit is a saved session event");
+    session_window(plan, crate::liveauthor::bind)
 }

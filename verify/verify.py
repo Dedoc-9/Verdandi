@@ -71,7 +71,9 @@ repeated unchanged, 3 sittings of 4 runs, HOST-STATE-1 beside, a descriptive pan
 (LIVE-LOOP-0: the first per-frame loop — the sealed session walked live through the LoopRenderer and SetDIBitsToDevice,
 the screen read back at every step, counts only), liveinput (LIVE-INPUT-0: key presses become typed events in an
 in-memory session-walk whose replay the live loop renders — the binding proven on scripted keys, the log replayed
-through the workshop's SESSION-WALK to the state and head the loop reached, nothing saved), livesession
+through the workshop's SESSION-WALK to the state and head the loop reached, nothing saved), liveauthor (LIVE-AUTHOR-0:
+the live editor — tile classes painted from a registered palette as session events, commit-only, the pixels witnessed
+per state, the camera control condition, the authored world persisting through save and resume), livesession
 (LIVE-SESSION-0: the live session journaled as it runs, sealed on Esc by an atomic replace and verified from the disk
 before it counts as saved, resumed into new files with lineage, a crashed run recovered from its journal, the loader's
 TAMPERED / DIFFERENT-RENDERER classification), and — in the oracle stage —
@@ -6406,11 +6408,11 @@ def liveinput_fence():
             raise Red("the loop contains %r: no clock, no file, no world of its own, refusals as data, the call fixed" % tok)
     if "ticks(" in runf or "ticks(" in src_span(rs, "fn reference(", "\n}\n"):
         raise Red("the loop reads a clock")
-    if set(re.findall(r"session\.(\w+)\(", runf)) - {"push_move", "push_edit_cell", "camera", "faced", "cell"} \
+    if set(re.findall(r"session\.(\w+)\(", runf)) - {"push_move", "push_edit_cell", "camera", "faced", "cell", "push_edit_tile", "tile_rgb"} \
             or "arm_composite(" in runf or src_span(rs, "fn reference(", "\n}\n").count("arm_composite(") != 1:
         raise Red("the loop reaches into the session other than to append and read, or renders a reference outside reference()")
     loop = runf[runf.index("    loop {"):]
-    order = [loop.find(t) for t in ("let open = s.pump();", "for (vk, repeat) in s.keys() {", "if repeat {", "match bind(vk) {",
+    order = [loop.find(t) for t in ("let open = s.pump();", "for (vk, repeat) in s.keys() {", "if repeat {", "match binding(vk) {",
                                     "lr.render(&scene);", "lr.blit();", "if lr.composite() != &expected[..] || lr.bgr() != &expected_bgr[..]",
                                     "if s.present(lr.bgr()).is_none()", "s.readback()")]
     if -1 in order or order != sorted(order) or loop.count("lr.render(") != 1 or loop.count("s.present(") != 1:
@@ -6856,8 +6858,11 @@ def livesession_fence():
     if (-1 in order or order != sorted(order) or "const MOVEFILE_REPLACE_EXISTING: u32 = 0x1;" not in win or "const MOVEFILE_WRITE_THROUGH: u32 = 0x8;" not in win
             or "MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)" not in win or "d.sync_all()" not in rs):
         raise Red("the saved file is not a flushed temporary moved over the destination atomically with the registered flags")
-    go = src_span(rs, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n")
-    order = [go.find(t) for t in ("crate::liveinput::run(s, &mut session, surface)", "saved_text(&session, &base, &live_json)", "write_saved(&dst, &text, &plant)",
+    # re-pinned on purpose with LIVE-AUTHOR-0: go is LIVE-INPUT-0's binding over go_with, which holds the run
+    if "go_with(s, p, crate::liveinput::bind).0" not in src_span(rs, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n"):
+        raise Red("LIVE-SESSION-0's go is not LIVE-INPUT-0's binding over go_with")
+    go = src_span(rs, "pub fn go_with<S: ExactSurface + Keys + Focus>(", "\n}\n")
+    order = [go.find(t) for t in ("crate::liveinput::run_with(s, &mut session, surface, binding)", "saved_text(&session, &base, &live_json)", "write_saved(&dst, &text, &plant)",
                                   "fs::read(&dst)", "load(&dst)", 'println!("[livesession] saved and verified:', "crate::runledger::end(0);")]
     if (-1 in order or order != sorted(order) or go.count("saved and verified") != 1 or go.count("crate::runledger::end(0);") != 1
             or not all(t in go for t in ("if b != text.as_bytes() {", "l.session.head() != session.head()", "l.session.content() != session.content()",
@@ -6866,7 +6871,7 @@ def livesession_fence():
     prep = src_span(rs, "pub fn prepare(plan: Plan)", "\n}\n")
     if (not prep.split("{", 1)[1].lstrip().startswith('crate::runledger::begin("livesession", plan.surface);')
             or len(re.findall(r"return Err\(refuse_run\(", prep)) != prep.count("return Err(") or "crate::runledger::end(2);" not in src_span(rs, "fn refuse_run(", "\n}\n")
-            or len(re.findall(r"return refuse_run\(", go)) != 2):
+            or len(re.findall(r"return \(refuse_run\(", go)) != 2):
         raise Red("the run does not begin its ledger first, or a refusal does not end it")
     ld = src_span(rs, "pub fn load(path: &str)", "\nfn saved_event(")
     order = [ld.find(t) for t in ("read_journal(&bytes)?", "check_seal(&bytes)?;", "chain_heads(", "LIVESESSION-LINEAGE", "renderer_id()", "LiveSession::new(", "s.push_move(", "LIVESESSION-DIFFERENT-RENDERER")]
@@ -6896,8 +6901,11 @@ def livesession_fence():
     tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
     i_li, i_ls = tail.find("LIVE-INPUT-0 (appended)"), tail.find("LIVE-SESSION-0 (appended)")
     sect = w32_section(tail, "LIVE-SESSION-0 (appended)")
-    win = src_span(sect, "pub fn livesession_window(", "\n}\n")
-    order = [win.find(t) for t in ("SetProcessDPIAware()", "crate::livesession::prepare(plan)", "= show_window(", "crate::livesession::go(&mut keys, prepared)")]
+    # re-pinned on purpose with LIVE-AUTHOR-0: the window takes its binding; LIVE-SESSION-0's passes LIVE-INPUT-0's
+    if "session_window(plan, crate::liveinput::bind)" not in src_span(sect, "pub fn livesession_window(", "\n}\n"):
+        raise Red("LIVE-SESSION-0's window is not LIVE-INPUT-0's binding over the shared window")
+    win = src_span(sect, "fn session_window(", "\n}\n")
+    order = [win.find(t) for t in ("SetProcessDPIAware()", "crate::livesession::prepare(plan)", "= show_window(", "crate::livesession::go_with(&mut keys, prepared, binding)")]
     if (i_li < 0 or i_ls < i_li or -1 in order or order != sorted(order) or "call: 1," not in sect or "set_call(" in win
             or any(t in sect for t in ("fs::", "File::", "write_raw(", "WM_KEYDOWN", "StretchDIBits", "qpc()"))
             or "unsafe { GetForegroundWindow() } == self.hwnd" not in sect):
@@ -6915,6 +6923,281 @@ def livesession_fence():
             "runs in the registered order; the reader opens no file and the sink sees each event after it is appended; the "
             "host window loads first, observes the focus without ruling on it and writes nothing; build/sessions/ is "
             "gitignored; a windowless build refuses")
+
+
+# ------------------------------------------------------------------ LIVE-AUTHOR-0
+LIVEAUTHOR_PALETTE = [(96, 80, 64), (176, 176, 176), (178, 58, 48), (56, 104, 168), (72, 136, 72), (200, 176, 96),
+                      (120, 80, 152), (232, 232, 224)]
+# script C from 28,28,N: (key, outcome, picture) — the outcome a typed event (kind, command or spec, camera after it);
+# the picture registers, from the renderer's own output, whether that state's pixels differ from the state before
+# ("changed") or not ("same"); "tile-offscreen" marks a tile edit of a class that is not on screen there
+_C = lambda rgb: "%d,%d,%d" % rgb
+LIVEAUTHOR_SCRIPT = ("28,28,N", [
+    ("5", ("edit", "tile:floor," + _C(LIVEAUTHOR_PALETTE[0]), "28,28,N"), "same"),   # the floor is off screen facing north
+    ("LEFT", ("move", "L", "28,28,W"), "changed"),
+] + [("5", ("edit", "tile:floor," + _C(LIVEAUTHOR_PALETTE[i % 8]), "28,28,W"), "changed") for i in range(1, 9)] + [
+    ("1", ("edit", "tile:wall0," + _C(LIVEAUTHOR_PALETTE[0]), "28,28,W"), "changed"),
+    ("2", ("edit", "tile:wall1," + _C(LIVEAUTHOR_PALETTE[0]), "28,28,W"), "same"),   # wall1 is off screen facing west
+    ("3", ("edit", "tile:wall2," + _C(LIVEAUTHOR_PALETTE[0]), "28,28,W"), "changed"),
+    ("4", ("edit", "tile:wall3," + _C(LIVEAUTHOR_PALETTE[0]), "28,28,W"), "changed"),
+    ("RIGHT", ("move", "R", "28,28,N"), "changed"),
+    ("SPACE", ("edit", "cell:28,27,.", "28,28,N"), "changed"),
+    ("W", ("move", "F", "28,27,N"), "changed"),
+    ("ESC", "end", None)])
+LIVEAUTHOR_RESUME = ("5,ESC", [("edit", "tile:floor," + _C(LIVEAUTHOR_PALETTE[1]), "28,27,N")])
+
+
+def _la_run(args, logs, out=None):
+    env = dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1], LIVESESSION_ENV: GATE_SESSIONS})
+    extra = ["--out", out] if out else []
+    cp = subprocess.run([SHELL_EXE, "live-selftest"] + args + extra, capture_output=True, text=True, cwd=ROOT, env=env)
+    m = re.search(r"saved and verified: (.+?session\.json)", cp.stdout)
+    raw = None
+    if out and os.path.exists(out):
+        with open(out, encoding="utf-8") as fh:
+            raw = json.load(fh)["data"]
+        os.remove(out)
+    return cp, (m.group(1) if m else None), raw
+
+
+def _la_script_c(logs):
+    camera, steps = LIVEAUTHOR_SCRIPT
+    out = os.path.join(BUILD, "liveauthor-c.json")
+    cp, path, raw = _la_run(["--camera", camera, "--keys", ",".join(k for k, _o, _p in steps)], logs, out)
+    if cp.returncode != 0 or path is None or raw is None or "live court OK" not in cp.stdout:
+        raise Red("script C did not run to a saved and verified live session: " + (cp.stderr.strip() or cp.stdout.strip()))
+    return path, raw
+
+
+def liveauthor_preregistered():
+    """LIVE-AUTHOR-0's method is locked: one live editor under the authoring binding (LIVE-INPUT-0's keys plus 1-5 for
+    the tile classes), the palette's next colour read from the session's own M, commit-only, the pixels witnessed per
+    state, the camera control condition and its converse. The palette and the binding must be the registered ones."""
+    e = locked_entry("LIVE-AUTHOR-0", {
+        "the last authoring primitive, one live editor": ("hyp", ("the last authoring-primitive slice", "one live editor command", "wall0, wall1, wall2, wall3 and floor", "fixed, registered palette of 8 colours", "the same key over the same m always gives the same edit")),
+        "commit-only; pixels; the control": ("hyp", ("commit-only: no preview", "the loop's only way to change m is to append the edit", "witnessed by the reference composite's sha256", "w and m stay unchanged", "exactly when the class is on screen")),
+        "the gate": ("succ", ("the floor cycled through the whole palette and back to its first colour", "the class keys stay unbound in liveinput-selftest", "and not for the off-screen control", "its first presented picture is the parent's last", "holds no colour or tile state")),
+        "no stray colour, no preview, no second authority": ("fail", ("an edit whose colour is not the palette's next", "a colour shown before it is appended", "w changed by a tile edit", "pixels unchanged by a turn", "liveinput-* or livesession-* changed in behaviour")),
+        "scope": ("lims", ("a solid fill of a whole class", "the frame witness does not see colour", "registered per scripted state", "no continuous movement", "8 fixed colours")),
+    })
+    la = read(os.path.join(SHELL, "liveauthor.rs")).decode("utf-8")
+    pal = [tuple(int(x) for x in m_.groups()) for m_ in re.finditer(r"\[(\d+), (\d+), (\d+)\],\s+//", src_span(la, "pub const PALETTE", "\n];"))]
+    if pal != LIVEAUTHOR_PALETTE:
+        raise Red("the shell's palette is not the registered one: %s" % pal)
+    b = src_span(la, "pub fn bind(vk: u32) -> Action {", "\n}\n")
+    if ("0x31..=0x35 => Action::Tile((vk - 0x31) as u8)," not in b or "_ => crate::liveinput::bind(vk)," not in b
+            or b.count("=>") != 2):
+        raise Red("the live editor's binding is not LIVE-INPUT-0's plus 1-5 for the tile classes")
+    nc = src_span(la, "pub fn next_colour(", "\n}\n")
+    if "Some(i) => PALETTE[(i + 1) % PALETTE.len()]," not in nc or "None => PALETTE[0]," not in nc:
+        raise Red("a class key's colour is not the palette's next after the current, or its first")
+    pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
+    if 'pub const TILE_CLASSES: [&str; 5] = ["wall0", "wall1", "wall2", "wall3", "floor"];' not in pb:
+        raise Red("the tile classes are not wall0..wall3, floor in the tiles file's order")
+    return ("LIVE-AUTHOR-0's method is locked (hash %s): the live editor is LIVE-INPUT-0's binding plus 1-5 for wall0..wall3 "
+            "and floor; a class key's colour is the registered 8-colour palette's next after the class's current colour, "
+            "or its first; the palette and the class order are the registered ones" % e["chain_hash"][:8])
+
+
+def liveauthor_binding():
+    """Binding determinism for the live editor: script C's presses become exactly their registered outcomes — the floor
+    painted off screen, a turn, the floor cycled through the whole palette back to its first colour, each wall class
+    painted, a turn back, a cell opened and walked through, Esc — at their registered compositions, with the tile specs
+    in palette order; the class keys stay unbound in liveinput-selftest; the run is saved and verified."""
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    logs = _ls_logs("liveauthor-binding")
+    path, raw = _la_script_c(logs)
+    camera, steps = LIVEAUTHOR_SCRIPT
+    saved = json.loads(read(path).decode("utf-8"))["data"]["log"]
+    typed = [(x["kind"], x.get("command", x.get("spec")), x.get("camera")) for x in saved]
+    want_ev = [(k, q, c_ if k == "move" else None) for _k, o, _p in steps if isinstance(o, tuple) for (k, q, c_) in [o]]
+    if typed != want_ev:
+        raise Red("script C's events are not the registered ones (a class, a colour or a camera): %r"
+                  % (next((g, w) for g, w in zip(typed + [None] * 99, want_ev) if g != w),))
+    got = [(t["key"], t["outcome"], t["composition"]) for t in raw["trace"]]
+    want, n = [], 0
+    for i, (k, o, _p) in enumerate(steps):
+        want.append((k, "event %d" % n if isinstance(o, tuple) else o, LIVEINPUT_EVERY * i + 1))
+        n += isinstance(o, tuple)
+    if got != want:
+        raise Red("script C's presses did not become their registered outcomes: %r" % (next((g, w) for g, w in zip(got + [None] * 99, want) if g != w),))
+    c = raw["counts"]
+    tiles = sum(1 for _k, o, _p in steps if isinstance(o, tuple) and o[1].startswith("tile:"))
+    if (c["events"], c["edits"], c["moves"], c["unbound"], c["refused"], raw["ended"]) != (n, tiles + 1, 3, 0, 0, "escape"):
+        raise Red("script C's counts are not the registered walk's: %s" % c)
+    cp = subprocess.run([SHELL_EXE, "liveinput-selftest", "--keys", "1,2,3,4,5,ESC"], capture_output=True, text=True, cwd=ROOT,
+                        env=dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1]}))
+    if cp.returncode != 0 or cp.stdout.count("-> unbound (ignored)") != 5 or "edit tile:" in cp.stdout:
+        raise Red("the class keys are not unbound in liveinput-selftest")
+    return ("the live editor's binding on the mock: script C's %d presses became exactly their registered outcomes — %d tile "
+            "edits in palette order (the floor cycled back to its first colour), a cell opened and walked through, two "
+            "turns — saved and verified; in liveinput-selftest the class keys stay unbound" % (len(steps), tiles))
+
+
+def liveauthor_authority():
+    """The thing authored is the authority the next frame renders: for every tile edit W is unchanged, M is the base tiles
+    with the log's tile edits applied, the frame witness is unchanged, and the pixels change exactly where script C
+    registers the class on screen (and not for the two off-screen controls); for every turn W and M are unchanged while
+    the pixels and the frame witness change; every state's presented frame is the one rendered from its own authority;
+    the workshop's sessionwalk replays the saved log to the loop's witnesses, final content and head."""
+    import livesession as LS
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None:
+        raise Red("the shell or the workshop's sessionwalk was not built")
+    logs = _ls_logs("liveauthor-authority")
+    path, raw = _la_script_c(logs)
+    doc = LS.check_saved(read(path), ROOT)
+    d = doc["data"]
+    events = d["log"]
+    camera, steps = LIVEAUTHOR_SCRIPT
+    typed = [o for _k, o, _p in steps if isinstance(o, tuple)]
+    pics = [p for _k, o, p in steps if isinstance(o, tuple)]
+    if [(x["kind"], x.get("command", x.get("spec"))) for x in events] != [(k, q) for k, q, _c in typed]:
+        raise Red("the saved log is not script C's events")
+    lv0, tl0 = read(os.path.join(ORACLE, "levels", "witness.lvl")), read(os.path.join(ORACLE, "tiles", "identity.tiles"))
+    lv, tl = lv0, tl0
+    contents = [_sw_content(lv, tl)]
+    for x in events:
+        if x["kind"] == "edit":
+            lv, tl = _sw_apply(lv, tl, x["spec"])
+        contents.append(_sw_content(lv, tl))
+    views, pixels = raw["views"], raw["pixels"]
+    if len(views) != len(events) + 1 or len(pixels) != len(events) + 1:
+        raise Red("the loop did not record a frame witness and the pixels for every state")
+    shown = raw["shown"]
+    if [k for k, _h in shown] != list(range(len(events) + 1)) or any(h != pixels[k] for k, h in shown):
+        raise Red("a state's presented frame is not the one rendered from its own authority (what the loop handed the "
+                  "call differs from the state's reference)")
+    level_now = lv0
+    for k, x in enumerate(events):
+        moved = x["kind"] == "move"
+        tile = x["kind"] == "edit" and x["spec"].startswith("tile:")
+        if tile:
+            if views[k + 1] != views[k]:
+                raise Red("event %d (%s) moved the frame witness: a colour must not" % (k, x["spec"]))
+            if contents[k + 1] == contents[k]:
+                raise Red("event %d (%s) did not change M" % (k, x["spec"]))
+        if moved and contents[k + 1] != contents[k]:
+            raise Red("event %d, a camera-only move, changed W or M" % k)
+        if moved and x["command"] in "LR" and (views[k + 1] == views[k] or pixels[k + 1] == pixels[k]):
+            raise Red("event %d, a turn, did not change the frame witness and the pixels" % k)
+        changed = pixels[k + 1] != pixels[k]
+        if changed != (pics[k] == "changed"):
+            raise Red("event %d (%s): the pixels %s, where script C registers them %s" % (k, x.get("spec", x.get("command")), "changed" if changed else "stayed", pics[k]))
+    lvt, tlt = lv0, tl0
+    for x in events:
+        if x["kind"] == "edit" and x["spec"].startswith("tile:"):
+            lvt, tlt = _sw_apply(lvt, tlt, x["spec"])
+    if lvt != lv0:
+        raise Red("the tile edits changed W")
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+    if code != 0 or "SESSIONWALK verify OK" not in out or (d["head"][:12] not in out):
+        raise Red("the workshop's sessionwalk does not replay the live editor's saved log: " + err.strip())
+    if contents[-1] != d["final_content"]:
+        raise Red("W and M recomputed from the log are not the saved session's")
+    offscreen = sum(1 for p, (k, q, _c) in zip(pics, typed) if q.startswith("tile:") and p == "same")
+    return ("the thing authored is what the next frame renders: %d tile edits each changed M and left W and the frame "
+            "witness alone, their pixels changing exactly where script C registers the class on screen (%d off-screen "
+            "controls unchanged); the turns changed the pixels and the frame witness with W and M unchanged; the "
+            "workshop's sessionwalk replays the saved log to its head" % (sum(1 for _k, q, _c in typed if q.startswith("tile:")), offscreen))
+
+
+def liveauthor_persist():
+    """Persistence: every tile edit was journaled as it was made (one record per saved event); script C's saved session
+    verifies in the workshop; resuming it in live-selftest loads as LOAD and its
+    first presented picture is the parent's last (the same pixels and frame witness); a tile edit after the resume is the
+    palette's next for that class and is sealed into a child whose lineage lies on its own chain; the parent is
+    unchanged."""
+    import livesession as LS
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None:
+        raise Red("the shell or the workshop's sessionwalk was not built")
+    logs = _ls_logs("liveauthor-persist")
+    parent, raw = _la_script_c(logs)
+    before = read(parent)
+    pdoc = json.loads(before.decode("utf-8"))
+    records, torn = _ls_journal(os.path.join(os.path.dirname(parent), "journal.vsj"))
+    if (torn or not pdoc["live"]["journal"]["complete"]
+            or [(r["k"], r["witness"]) for r in records[1:]] != [(i, x["witness"]) for i, x in enumerate(pdoc["data"]["log"])]):
+        raise Red("the tile edits were not journaled as they were made: the journal is not one record per saved event")
+    keys, want = LIVEAUTHOR_RESUME
+    out = os.path.join(BUILD, "liveauthor-resume.json")
+    cp, child, raw2 = _la_run(["--resume", parent, "--keys", keys], logs, out)
+    if cp.returncode != 0 or child is None or raw2 is None or "(LOAD)" not in cp.stdout:
+        raise Red("the live editor's saved session did not resume: " + (cp.stderr.strip() or cp.stdout.strip()))
+    if (raw2["pixels"][0], raw2["views"][0]) != (raw["pixels"][-1], raw["views"][-1]):
+        raise Red("the resumed session's first picture is not its parent's last: the authored look did not persist")
+    if read(parent) != before:
+        raise Red("resuming modified the parent")
+    c = LS.check_saved(read(child), ROOT)
+    n = len(json.loads(before.decode("utf-8"))["data"]["log"])
+    new = [(x["kind"], x.get("command", x.get("spec")), x.get("camera", "")) for x in c["data"]["log"][n:]]
+    if [(k, q) for k, q, _c in new] != [(k, q) for k, q, _c in want] or c["live"]["lineage"]["parent_events"] != n:
+        raise Red("the edit after the resume is not the palette's next, or the child's lineage is not the parent's")
+    code, out_, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", child])
+    if code != 0:
+        raise Red("the workshop does not verify the continued live session: " + err.strip())
+    return ("the authored world persists: script C's saved session resumed as LOAD with its first picture the parent's last "
+            "(pixels and frame witness), the next floor edit took the palette's next colour, the child's lineage is the "
+            "parent's %d events, the workshop verifies it, and the parent is unchanged" % n)
+
+
+def liveauthor_fence():
+    """Commit-only, one pathway: the authoring module holds no colour, tile or preview state and makes no edit itself;
+    the loop's Tile arm reads the class's colour from the session and appends push_edit_tile, then renders the reference
+    of the resulting state, like every other event; the session's tile edit applies, folds and hands to the sink like a
+    cell edit; the live command runs LIVE-SESSION-0's go_with under the authoring binding, and LIVE-INPUT-0 and
+    LIVE-SESSION-0 keep their own bindings; the host window is LIVE-SESSION-0's window under the binding, appended after
+    its section; a windowless build refuses live-window."""
+    la = read(os.path.join(SHELL, "liveauthor.rs")).decode("utf-8")
+    code_ = "\n".join(ln for ln in la.splitlines() if not ln.lstrip().startswith("//"))
+    for tok in ("static", "Vec<", "fs::", "push_edit", "LiveSession", "Cell<", "mut "):
+        if tok in code_:
+            raise Red("the authoring module contains %r: it holds no state and makes no edit" % tok)
+    li = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
+    runf = src_span(li, "pub fn run<S: ExactSurface + Keys>(", "\npub fn summary(")
+    if "run_with(s, session, surface, bind)" not in src_span(li, "pub fn run<S: ExactSurface + Keys>(", "\n}\n"):
+        raise Red("LIVE-INPUT-0's run is not its own binding over the shared loop")
+    arm = src_span(runf, "Action::Tile(class) => {", "\n                }\n")
+    order = [arm.find(t) for t in ("crate::liveauthor::next_colour(session.tile_rgb(class))", "session.push_edit_tile(class, rgb)", "reference(session, None)?", "live.pixels.push(r.4);")]
+    before = arm[:arm.find("session.push_edit_tile(class, rgb)")]
+    if -1 in order or order != sorted(order) or any(t in before for t in ("scene", "render", "present", "reference(", "blit", "expected")):
+        raise Red("the Tile arm does not read the session's colour, append the edit, then render the resulting state")
+    pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
+    sect = pb[pb.index("// ================================================================== LIVE-AUTHOR-0 (appended)"):]
+    pt = src_span(sect, "pub fn push_edit_tile(", "\n    }\n")
+    order = [pt.find(t) for t in ("apply_spec(&mut self.level, &mut self.tiles, &spec);", "self.content = content_hex(&self.level, &self.tiles);",
+                                  "self.head = fold(&self.head, b'E', &self.content);", "self.log.push(", "self.handed();")]
+    if -1 in order or order != sorted(order) or sect.count("&mut self") != 3 or any(t in sect for t in ("fs::", "File::")):
+        raise Red("the session's tile edit is not apply, content, fold, append, hand — the cell edit's own path")
+    ls = read(os.path.join(SHELL, "livesession.rs")).decode("utf-8")
+    if ("go_with(s, p, crate::liveinput::bind).0" not in src_span(ls, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n")
+            or "crate::liveinput::run_with(s, &mut session, surface, binding)" not in ls or "s.push_edit_tile(class, rgb)" not in ls):
+        raise Red("LIVE-SESSION-0's run is not its own binding over go_with, or the loader does not replay tile edits through the session")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    sw = src_span(main_src, '"live-selftest" | "live-window" => {', "\n        other => ")
+    if "livesession::go_with(&mut surf, prepared, liveauthor::bind)" not in sw or 'plant: String::new(), surface: "gdi"' not in sw:
+        raise Red("the live command does not run LIVE-SESSION-0's go_with under the authoring binding")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i_ls, i_la = tail.find("LIVE-SESSION-0 (appended)"), tail.find("LIVE-AUTHOR-0 (appended)")
+    sect = w32_section(tail, "LIVE-AUTHOR-0 (appended)")
+    lw = src_span(sect, "pub fn live_window(", "\n}\n")
+    if i_ls < 0 or i_la < i_ls or "session_window(plan, crate::liveauthor::bind)" not in lw or any(t in sect for t in ("fs::", "File::", "WM_", "set_call(")):
+        raise Red("the live editor's window is not LIVE-SESSION-0's window under the authoring binding, appended after its section")
+    if SHELL_EXE is not None:
+        cp = subprocess.run([SHELL_EXE, "live-window"], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode == 0 or "SHELL-NO-WINDOW" not in cp.stderr:
+            raise Red("a windowless build did not refuse live-window with SHELL-NO-WINDOW")
+    return ("commit-only, one pathway: the authoring module holds no colour, tile or preview state and makes no edit; the "
+            "Tile arm reads the session's colour, appends push_edit_tile and renders the resulting state; the session's tile "
+            "edit is the cell edit's own path (apply, content, fold, append, hand); the live command is LIVE-SESSION-0's "
+            "go_with under the authoring binding while LIVE-INPUT-0 and LIVE-SESSION-0 keep theirs; the host window is "
+            "LIVE-SESSION-0's under the binding; a windowless build refuses")
 
 # ------------------------------------------------------------------ main
 def main() -> int:
@@ -7096,6 +7379,11 @@ def main() -> int:
     row("livesession-classify", livesession_classify)
     row("livesession-sealer", livesession_sealer)
     row("livesession-fence", livesession_fence)
+    row("liveauthor-preregistered", liveauthor_preregistered)
+    row("liveauthor-binding", liveauthor_binding)
+    row("liveauthor-authority", liveauthor_authority)
+    row("liveauthor-persist", liveauthor_persist)
+    row("liveauthor-fence", liveauthor_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

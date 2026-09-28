@@ -799,3 +799,39 @@ pub fn chain_heads(base_content: &str, cam0: Camera, events: &[(u8, String)]) ->
     }
     out
 }
+
+// ================================================================== LIVE-AUTHOR-0 (appended): tile edits on the live session
+// A tile edit is a SESSION-WALK event like a cell edit: `apply_spec` fills the class, its witness is the new content,
+// it folds into the head and is handed to the sink. The loop reads a class's current colour here and appends; it holds
+// no colour of its own.
+
+/// The tile classes, in the order of the tiles file (and of `apply_spec`).
+pub const TILE_CLASSES: [&str; 5] = ["wall0", "wall1", "wall2", "wall3", "floor"];
+
+impl LiveSession {
+    /// A class's colour when its tile is one solid colour, or None (a textured tile).
+    pub fn tile_rgb(&self, class: u8) -> Option<[u8; 3]> {
+        if class as usize >= TILE_CLASSES.len() {
+            return None;
+        }
+        let off = 8 + class as usize * TILE_BYTES;
+        let t = self.tiles.get(off..off + TILE_BYTES)?;
+        let first = [t[0], t[1], t[2]];
+        if t.chunks_exact(3).all(|p| p == first) { Some(first) } else { None }
+    }
+
+    /// Append a tile edit and replay it: the class filled with one colour, the content, the fold.
+    pub fn push_edit_tile(&mut self, class: u8, rgb: [u8; 3]) -> Result<&LiveEvent, String> {
+        if class as usize >= TILE_CLASSES.len() {
+            return Err(format!("tile class {} is not one of wall0..wall3, floor", class));
+        }
+        let spec = format!("tile:{},{},{},{}", TILE_CLASSES[class as usize], rgb[0], rgb[1], rgb[2]);
+        apply_spec(&mut self.level, &mut self.tiles, &spec);
+        self.content = content_hex(&self.level, &self.tiles);
+        self.head = fold(&self.head, b'E', &self.content);
+        self.log.push(LiveEvent { tag: b'E', param: spec, camera: self.cam, witness: self.content.clone(),
+                                  content: self.content.clone(), head: self.head.clone() });
+        self.handed();
+        Ok(&self.log[self.log.len() - 1])
+    }
+}
