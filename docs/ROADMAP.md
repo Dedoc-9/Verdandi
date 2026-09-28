@@ -73,7 +73,7 @@ REFUSAL-LOG-0 → RUN-LEDGER-0 → REFUSAL-WHY / DRIFT-0      the diagnostic fou
       ↓
 LIVE-LOOP-0      the shipped per-frame loop — walked on the host: 246 compositions live, every readback exact
       ↓
-LIVE-INPUT-0     physical input → typed editor action → the workshop/session → a new W, M → the next frame
+LIVE-INPUT-0     physical input → typed editor action → the workshop/session → a new W, M → the next frame — built; host walk pending
       ↓
 LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders
       ↓
@@ -97,7 +97,10 @@ PRESENT-1, the live-loop re-breakdown, BANDWIDTH-0 / POOL-0      afterwards, not
 - **LIVE-INPUT-0** turns physical input into authoring operations through the authority boundary already built
   (Urðr's input membrane `cue`, frozen in `oracle/game/`, the workshop and the session model). The shell never mutates the world directly. The first
   vocabulary is tiny: move the camera, select a cell, open or close a cell, change a tile or material. It is named
-  LIVE-INPUT-0 because `INPUT-0` is already seat 9.
+  LIVE-INPUT-0 because `INPUT-0` is already seat 9. As ratified and built, the first slice is narrower still: the six
+  moves and opening or closing the faced cell, with no cursor and no tile or material keys (those wait for
+  LIVE-AUTHOR-0). The authority boundary it goes through is the session model: every press becomes an event in an
+  in-memory SESSION-WALK log, and W and M are that log's replay.
 - **LIVE-AUTHOR-0** proves the mutation/render bridge. One interaction must demonstrably go input → typed edit →
   session event → authoritative W, M change → next render → changed pixels. The control must hold too: a camera-only
   input may change pixels, and W and M stay unchanged. That preserves the W / M / C boundary the workshop already
@@ -266,6 +269,16 @@ the presenter's borderless window. The screen is read back at every step and twi
 is counted and logged, never hidden. There is no input, no camera, no clock: counts only. The gate executes the loop
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
+
+### LIVE-INPUT-0 — key presses feed the session the live loop renders · **preregistered and built** (`f81c2cf1`); host walk pending
+Walking plus open/close. Arrows or WASD walk and turn, Q and E strafe, Space opens or closes the cell one step ahead of
+the camera (rock to floor, floor to rock; a stair is not toggled), Esc ends; an auto-repeat is never bound and any
+other key is ignored. Every press becomes an event in an in-memory SESSION-WALK log, validated as the workshop
+validates it. W, M, the camera and the head are that log's replay, private to the session, so the shell never writes
+the world. Every composition is rendered through the `LoopRenderer` from the session's current state and presented,
+and the screen is read back after every change. The gate proves the binding on two key scripts and replays each
+script's log through the workshop's own SESSION-WALK to the state and head the loop reached. Nothing is saved; that is
+LIVE-SESSION-0's.
 
 ### DRIFT-0 — variation within and between runs of the same workload · **preregistered** (`d445dcf9`); sitting 1 of 3 complete (4 of 12 runs)
 Observational: the locked PRESENT-EXACT-0 court repeated without modification, 3 sittings of 4 completed runs (60 s

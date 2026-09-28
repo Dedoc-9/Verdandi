@@ -2217,3 +2217,115 @@ pub fn liveloop_window(inputs: Vec<FrameInput>, host: &str, out: Option<String>,
         }
     }
 }
+
+// ================================================================== LIVE-INPUT-0 (appended)
+// The live session's host window: the presenter's borderless, topmost, DPI-aware 1920x1080 window at (0,0), through the
+// exact surface with the call fixed at SetDIBitsToDevice, and the keyboard. The loop is shell/liveinput.rs (the gate
+// runs the same loop over the mock with a key script); this is only its host window and its key source: the pump reads
+// each key press (WM_KEYDOWN, its auto-repeat bit) from the message queue before dispatching it. Esc or Alt+F4 ends the
+// session (exit 0). It takes no clock and writes no file: the session lives in memory and is printed, never saved.
+
+const WM_KEYDOWN_LIVE: Uint = 0x0100;
+
+struct LiveKeysGdi {
+    surf: ExactGdiSurface,
+    pending: Vec<(u32, bool)>,
+}
+
+impl Surface for LiveKeysGdi {
+    fn ticks(&mut self) -> i64 {
+        self.surf.ticks()
+    }
+    fn freq(&self) -> i64 {
+        self.surf.freq()
+    }
+    fn present(&mut self, bgr: &[u8]) -> Option<(i64, i64)> {
+        self.surf.present(bgr)
+    }
+    fn flush(&mut self) {
+        self.surf.flush()
+    }
+    fn pump(&mut self) -> bool {
+        let mut msg: Msg = unsafe { std::mem::zeroed() };
+        while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            if msg.message == WM_KEYDOWN_LIVE {
+                // bit 30 of lParam: the key was already down (an auto-repeat)
+                self.pending.push((msg.w_param as u32, (msg.l_param >> 30) & 1 == 1));
+            }
+            unsafe {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            if msg.message == 0x0012 {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl crate::presentexact::ExactSurface for LiveKeysGdi {
+    fn set_call(&mut self, call: usize) {
+        crate::presentexact::ExactSurface::set_call(&mut self.surf, call)
+    }
+    fn clear(&mut self) -> bool {
+        crate::presentexact::ExactSurface::clear(&mut self.surf)
+    }
+    fn readback(&mut self) -> Option<Vec<u8>> {
+        crate::presentexact::ExactSurface::readback(&mut self.surf)
+    }
+    fn geometry(&mut self) -> [i32; 8] {
+        crate::presentexact::ExactSurface::geometry(&mut self.surf)
+    }
+    fn attribute(&mut self, b: [usize; 4]) -> crate::presentexact::Attribution {
+        crate::presentexact::ExactSurface::attribute(&mut self.surf, b)
+    }
+}
+
+impl crate::liveinput::Keys for LiveKeysGdi {
+    fn keys(&mut self) -> Vec<(u32, bool)> {
+        std::mem::take(&mut self.pending)
+    }
+}
+
+pub fn liveinput_window(mut session: crate::playback::LiveSession) {
+    unsafe { SetProcessDPIAware() };
+    let dwm = match load_dwm() {
+        Some(d) => d,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or DwmFlush is unavailable; cannot compose and read back");
+            std::process::exit(2);
+        }
+    };
+    let hwnd = show_window("VerdandiLiveInput0", "Verðandi — LIVE-INPUT-0");
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        std::process::exit(2);
+    }
+    unsafe { SetForegroundWindow(hwnd) };
+    let surf = ExactGdiSurface { hwnd, header: court_header(), flush_fn: dwm.flush, freq: 1, call: 1, last_input: 0, inputs_seen: 0 };
+    let mut keys = LiveKeysGdi { surf, pending: Vec::new() };
+    let c = session.camera();
+    println!("[liveinput] a live session from {},{},{}: arrows or WASD walk and turn, Q/E strafe, Space opens or closes the cell ahead, Esc ends; nothing is saved",
+             c.x, c.z, facing_letter(c.facing));
+    crate::runledger::begin("liveinput", "gdi"); // RUN-LEDGER-0: the live-input run begins
+    let result = crate::liveinput::run(&mut keys, &mut session, "gdi");
+    if unsafe { IsWindow(hwnd) } != 0 {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    match result {
+        Ok(live) => {
+            crate::runledger::end(0);
+            for ln in crate::liveinput::summary(&live, &session) {
+                println!("{}", ln);
+            }
+        }
+        Err(r) => {
+            // REFUSAL-LOG-0: the loop's refusal is logged where it is emitted, then printed
+            let (ev, m) = r.into_event("gdi");
+            crate::refusallog::refuse(&ev, &format!("SHELL-{}", m));
+            crate::runledger::end(2);
+            std::process::exit(2);
+        }
+    }
+}

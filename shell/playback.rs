@@ -577,3 +577,148 @@ pub fn frame_inputs(session: &str, root_prefix: &str) -> Vec<(Vec<u8>, Vec<u8>, 
     }
     out
 }
+
+// ================================================================== LIVE-INPUT-0 (appended): the live session
+// A session-walk written live, in memory. Its only inputs are events appended to its log — a move command, or a cell
+// edit validated as the workshop's `apply` validates one (inside the level; a border cell stays rock) — and W, M, the
+// camera and the head are that log's replay by the statements `replay_from` makes: `step`, `apply_spec`, `content_hex`,
+// the frame digest of `compose_frame`, `fold`. The replay is resumed one event at a time from the replay of the log
+// before it (a left fold: replaying log[..n+1] is replaying log[..n] and then one event — the equivalence the
+// checkpoint rows certify). Its fields are private: a caller reads the state and appends events, and cannot write W or
+// M. Nothing here touches a file: saving and recovering a live session is LIVE-SESSION-0's.
+
+/// One appended event and the state its replay reached: the tag (b'M' a move, b'E' an edit), the command letter or the
+/// edit's spec, the camera after it, its witness (the frame digest for a move, the content for an edit), and the
+/// content and the head after it.
+pub struct LiveEvent {
+    pub tag: u8,
+    pub param: String,
+    pub camera: Camera,
+    pub witness: String,
+    pub content: String,
+    pub head: String,
+}
+
+/// LIVE-INPUT-0's session: the replay of an in-memory log, appended to only by `push_move` and `push_edit_cell`.
+pub struct LiveSession {
+    level: Vec<u8>,
+    tiles: Vec<u8>,
+    cam: Camera,
+    content: String,
+    head: String,
+    cam0: Camera,
+    base_content: String,
+    genesis: String,
+    log: Vec<LiveEvent>,
+}
+
+impl LiveSession {
+    /// A new session over a base authority and an initial camera, as `sessionwalk new` makes one: the base must compose
+    /// and the camera must stand on a traversable cell. The log is empty and the head is the genesis.
+    pub fn new(level_bytes: Vec<u8>, tiles_bytes: Vec<u8>, cam0: Camera) -> Result<LiveSession, String> {
+        crate::present::scene_of(&level_bytes, &tiles_bytes, cam0).map_err(|Refusal(m)| m)?;
+        if !traversable(&level_bytes, cam0.x, cam0.z) {
+            return Err("the initial camera stands on rock or off the level".to_string());
+        }
+        let base_content = content_hex(&level_bytes, &tiles_bytes);
+        let head = genesis(&base_content, cam0);
+        Ok(LiveSession { level: level_bytes, tiles: tiles_bytes, cam: cam0, content: base_content.clone(), head: head.clone(),
+                         cam0, base_content, genesis: head, log: Vec::new() })
+    }
+
+    pub fn camera(&self) -> Camera {
+        self.cam
+    }
+
+    pub fn cam0(&self) -> Camera {
+        self.cam0
+    }
+
+    pub fn head(&self) -> &str {
+        &self.head
+    }
+
+    pub fn genesis(&self) -> &str {
+        &self.genesis
+    }
+
+    pub fn base_content(&self) -> &str {
+        &self.base_content
+    }
+
+    /// content(W, M) of the current state.
+    pub fn content(&self) -> &str {
+        &self.content
+    }
+
+    /// sha256 of the current level bytes (W) and of the current tiles bytes (M).
+    pub fn w_hex(&self) -> String {
+        hex(&sha256(&self.level))
+    }
+
+    pub fn m_hex(&self) -> String {
+        hex(&sha256(&self.tiles))
+    }
+
+    pub fn log(&self) -> &[LiveEvent] {
+        &self.log
+    }
+
+    /// The kernel's scene of the current state: what a live loop renders.
+    pub fn scene(&self) -> Result<crate::mantle::Scene, Refusal> {
+        crate::present::scene_of(&self.level, &self.tiles, self.cam)
+    }
+
+    /// The faced cell: one step ahead of the camera, the cell a forward step targets.
+    pub fn faced(&self) -> (i64, i64) {
+        let (dx, dz) = forward(self.cam.facing);
+        (self.cam.x + dx, self.cam.z + dz)
+    }
+
+    /// The current level's cell at (x, z), or None outside the level.
+    pub fn cell(&self, x: i64, z: i64) -> Option<u8> {
+        let (w, rows) = level_wh(&self.level);
+        if x < 0 || z < 0 || x as usize >= w || z as usize >= rows {
+            None
+        } else {
+            Some(self.level[16 + z as usize * w + x as usize])
+        }
+    }
+
+    /// Append a move and replay it: `step` against the current level (a blocked step stays put and is still logged),
+    /// the frame digest at the new camera over the current W and M, the fold.
+    pub fn push_move(&mut self, cmd: u8) -> Result<&LiveEvent, String> {
+        if !matches!(cmd, b'L' | b'R' | b'F' | b'B' | b'Q' | b'E') {
+            return Err(format!("unknown move {:?}", cmd as char));
+        }
+        let cam = step(&self.level, self.cam, cmd);
+        let composed = compose_frame(&self.level, &self.tiles, cam).map_err(|Refusal(m)| m)?;
+        self.cam = cam;
+        self.head = fold(&self.head, b'M', &composed.frame_digest);
+        self.log.push(LiveEvent { tag: b'M', param: (cmd as char).to_string(), camera: cam, witness: composed.frame_digest,
+                                  content: self.content.clone(), head: self.head.clone() });
+        Ok(&self.log[self.log.len() - 1])
+    }
+
+    /// Append a cell edit and replay it, after validating it as the workshop's `apply` does: the cell inside the level,
+    /// a border cell only ever rock, the value one of the level's alphabet. A refused edit is not appended.
+    pub fn push_edit_cell(&mut self, x: i64, z: i64, to: u8) -> Result<&LiveEvent, (&'static str, String)> {
+        let (w, rows) = level_wh(&self.level);
+        if x < 0 || z < 0 || x as usize >= w || z as usize >= rows {
+            return Err(("OUTSIDE", format!("cell ({}, {}) is outside the {}x{} level", x, z, w, rows)));
+        }
+        if (x == 0 || z == 0 || x as usize == w - 1 || z as usize == rows - 1) && to != b'#' {
+            return Err(("BORDER", format!("cell ({}, {}) is on the border, which must stay rock", x, z)));
+        }
+        if !matches!(to, b'#' | b'.' | b'<' | b'>') {
+            return Err(("VALUE", format!("cell value {:?} is not in #.<>", to as char)));
+        }
+        let spec = format!("cell:{},{},{}", x, z, to as char);
+        apply_spec(&mut self.level, &mut self.tiles, &spec);
+        self.content = content_hex(&self.level, &self.tiles);
+        self.head = fold(&self.head, b'E', &self.content);
+        self.log.push(LiveEvent { tag: b'E', param: spec, camera: self.cam, witness: self.content.clone(),
+                                  content: self.content.clone(), head: self.head.clone() });
+        Ok(&self.log[self.log.len() - 1])
+    }
+}

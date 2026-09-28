@@ -65,6 +65,9 @@ mod runledger;
 
 #[path = "liveloop.rs"]
 mod liveloop;
+
+#[path = "liveinput.rs"]
+mod liveinput;
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -725,6 +728,58 @@ fn main() {
                 {
                     let _ = (&inputs, &out, &before);
                     refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run LIVE-LOOP-0 in the window");
+                }
+            }
+        }
+        "liveinput-selftest" | "liveinput-window" => {
+            // LIVE-INPUT-0: key presses become typed events in an in-memory session-walk whose replay the loop renders
+            // live — through the mock with a key script (`-selftest`, what the gate runs) or in the borderless host
+            // window with the keyboard (`-window`, window build only). The base defaults to the frozen witness level and
+            // identity tiles at 28,28,N. Nothing is saved: the session lives in memory. Plants (selftest): geometry, noop.
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let level = opt("--level").unwrap_or_else(|| "oracle/levels/witness.lvl".to_string());
+            let tiles = opt("--tiles").unwrap_or_else(|| "oracle/tiles/identity.tiles".to_string());
+            let cam0 = parse_camera(&opt("--camera").unwrap_or_else(|| "28,28,N".to_string())).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m));
+            let mut session = playback::LiveSession::new(read(&level), read(&tiles), cam0).unwrap_or_else(|m| refuse("INVALID-SESSION", &m));
+            if args[1] == "liveinput-selftest" {
+                let script = liveinput::parse_script(&opt("--keys").unwrap_or_default()).unwrap_or_else(|m| refuse("USAGE", &m));
+                let plant = opt("--plant").unwrap_or_default();
+                let out = opt("--out");
+                let mock = presentexact::MockExact::new(latency1r::MockSurface::new(13_333, 1, None), &plant);
+                let mut surf = liveinput::ScriptedKeys::new(mock, script, liveinput::MOCK_EVERY);
+                runledger::begin("liveinput", "mock"); // RUN-LEDGER-0: the live-input run begins
+                match liveinput::run(&mut surf, &mut session, "mock") {
+                    Ok(live) => {
+                        runledger::end(0);
+                        for ln in liveinput::summary(&live, &session) {
+                            println!("{}", ln);
+                        }
+                        if let Some(o) = out {
+                            fs::write(&o, liveinput::raw_json(&live, &session, &level, &tiles))
+                                .unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", o, e)));
+                        }
+                        println!("liveinput court OK");
+                    }
+                    Err(r) => {
+                        // REFUSAL-LOG-0: the loop's refusal is logged where it is emitted, then printed
+                        let (ev, m) = r.into_event("mock");
+                        refusallog::refuse(&ev, &format!("SHELL-LIVEINPUT: {}", m));
+                        runledger::end(2);
+                        exit(2)
+                    }
+                }
+            } else {
+                #[cfg(all(target_os = "windows", shell_window))]
+                {
+                    win32::liveinput_window(session);
+                }
+                #[cfg(not(all(target_os = "windows", shell_window)))]
+                {
+                    let _ = &mut session;
+                    refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run LIVE-INPUT-0 in the window");
                 }
             }
         }

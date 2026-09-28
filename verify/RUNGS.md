@@ -2735,6 +2735,77 @@ missed, a difference is hidden, stops the loop or goes unlogged, the session cha
 `liveloop-fence` goes red if a frame reaches the call without being rendered live from the current step, a clock or
 input enters, or the window changes.
 
+## LIVE-INPUT-0 — key presses feed the session the live loop renders: walk plus open/close (preregistered and built; the host walk is pending)
+
+**Why.** LIVE-LOOP-0 rendered every composition live, but from a sealed session's fixed steps. LIVE-INPUT-0 is the
+next gate on the route: physical input becomes typed events in the same session authority that the live renderer
+consumes. The owner kept it narrow, walking plus opening and closing cells, and asked for one property above all: live
+input feeds the same session authority that the live renderer consumes, with no world held by the shell beside it.
+
+**The method (`f81c2cf1`), as the owner ratified it.** The binding is fixed. Up or W steps forward, Down or S steps
+back, Left or A and Right or D turn, Q and E strafe (INPUT-0's six moves), Space opens or closes the faced cell, and Esc
+ends the session. An auto-repeated press is counted and never bound, so one press is one action, because the repeat
+rate is a host setting and a clock. Any other key is unbound and ignored. The faced cell is the cell one step ahead of
+the camera, the same cell a forward step targets. Rock opens to floor (`cell:X,Z,.`), floor closes to rock
+(`cell:X,Z,#`), and a stair is not toggled. There is no cursor, no mouse and no new view semantics, so the same camera
+and the same press always address the same cell. Every action is appended as an event to an in-memory SESSION-WALK log.
+An edit is validated as the workshop validates one (a border cell stays rock); a refused edit is one refusal-log record
+and no event, and the loop goes on. W, M, the camera and the walk head are the replay of that log through the shell's
+SESSION-WALK machinery in `shell/playback.rs`, using `replay_from`'s own statements (`step`, `apply_spec`,
+`content_hex`, the `compose_frame` frame digest, `fold`). The replay advances one event at a time from the replay of
+the log before it. That is a left fold, the checkpoint equivalence SHELL-PLAYBACK's rows already certify. The session's
+state is private to that file: the loop appends events and reads the state, and cannot write W or M. After each event,
+the new state's fresh reference is rendered once. For a move, it must reproduce the event's chain witness; otherwise
+the loop refuses (LIVEINPUT-WITNESS), because it would render a state the chain did not witness. Every composition is
+rendered through the `LoopRenderer` from the session's current state, compared with that reference (a difference
+refuses) and presented by SetDIBitsToDevice in the presenter's borderless window. The screen is read back on the first
+composition after every change and every 75th composition a state is held. Esc or closing the window ends the session
+with exit 0. Nothing is saved: the log lives in memory and dies with the run, since persistence is LIVE-SESSION-0's.
+Refusals are logged and runs ledgered as the operation `liveinput`. The host run writes no record.
+
+**Rows.** `liveinput-preregistered`: the method is locked, and the loop's constants, its binding table and the faced
+cell's two edits are the registered ones. `liveinput-binding` proves binding determinism. Two scripts run over the mock
+with one press every 3 compositions. Script A, from 28,28,N, opens the faced cell and walks through it, takes a
+blocked step, opens a cell and closes it with a turn away and back between, steps back, strafes both ways, is refused
+at a stair, closes a cell and walks into it. It uses all six moves from both arrows and letters and passes an
+auto-repeat and an unbound key on the way. Script B, from 46,14,E, is refused at the east border. All 31 presses become
+exactly their registered outcomes at their registered compositions: 24 typed events in the expected order, the repeat
+and the unbound key ignored, and the stair and the border refused as one refusal-log record each and no event. Every
+composition is rendered, byte-checked and presented, the screen is read back once per change with no difference, and
+each run is one ledger line, joined one to one. `liveinput-continuity` proves authority continuity. Each script's event
+log is replayed headless through the workshop's own SESSION-WALK (`sessionwalk new`, one `move` or `edit` per event,
+then `verify`), a separate implementation built on the kernel's reference picture. It reproduces every event's witness
+and camera, the final camera, content and head the live loop reached, from the same genesis. W and M recomputed from
+the level with the log's edits applied are the loop's. The state after each of the 4 edits recurs at a move with the
+same W and camera, and the frame the loop presented after the edit has that move's workshop-certified frame digest.
+The level and tiles files are unchanged. `liveinput-court`: a client below a title bar refuses with no raw output; a
+present that writes nothing completes with all 3 readbacks differing, each counted and logged with its covering fields;
+the clean short run reads the screen exact; a spent script is a normal end; an unknown key and a camera on rock are
+refused before the run, with no ledger line. `liveinput-fence`: the session's state is private and changed only by
+`push_move` and `push_edit_cell`, each replaying one appended event by `replay_from`'s statements. A repeat never
+reaches the binding. A move's reference checks its witness. A composition is presses, then render, check, present and
+read back, in that order. There is no clock and no file. The host window reads WM_KEYDOWN and its auto-repeat bit from
+the message queue, is appended after LIVE-LOOP-0's section and writes nothing, and a windowless build refuses it. The
+fresh-entry pins gain `liveinput.rs` (one reference render per change) and re-pin `playback.rs` (its session's move
+witness is `replay_from`'s own digest), both on purpose. `runledger-fence` counts the new run and its readbacks. 26
+mutations were each caught.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the binding on two scripts, the continuity through the workshop's
+SESSION-WALK, the loop's refusals, logging and ledgering, and the fence. NOT_MEASURED: the host walk, which has not
+been run.
+
+**does_not_show.** What reached the screen between readbacks: the byte check covers what the loop handed the call.
+Presses between two compositions are all appended, but only the last state is presented. Holding a key does not walk.
+Tiles, materials, a cursor, saving or recovering a session: LIVE-AUTHOR-0 and LIVE-SESSION-0. Timing or
+input-to-photon latency. Any other host or screen. The host run leaves no record, only the console and the standing
+logs.
+
+**Falsifier.** `liveinput-binding` goes red if any press becomes anything but its registered outcome, a repeat or
+unbound key makes an event, or a refused edit is appended or goes unlogged. `liveinput-continuity` goes red if the
+workshop's replay of the live log disagrees with the loop in any witness, camera, the content or the head, or the frame
+presented after an edit is not the one certified for its W and camera. `liveinput-fence` goes red if the loop holds or
+writes a world of its own, takes a clock, writes a file, or the window changes.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

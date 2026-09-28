@@ -69,7 +69,9 @@ log on run_id), refusalwhy1 (REFUSAL-WHY-1: a screen-readback refusal's covering
 log — program, class, flags and rectangle, never a title or a pid), drift (DRIFT-0: the locked PRESENT-EXACT-0 court
 repeated unchanged, 3 sittings of 4 runs, HOST-STATE-1 beside, a descriptive panel with no verdict), liveloop
 (LIVE-LOOP-0: the first per-frame loop — the sealed session walked live through the LoopRenderer and SetDIBitsToDevice,
-the screen read back at every step, counts only), and — in the oracle stage —
+the screen read back at every step, counts only), liveinput (LIVE-INPUT-0: key presses become typed events in an
+in-memory session-walk whose replay the live loop renders — the binding proven on scripted keys, the log replayed
+through the workshop's SESSION-WALK to the state and head the loop reached, nothing saved), and — in the oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
@@ -4425,7 +4427,8 @@ FRESH_ENTRY_SITES = {
     "framesplit.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
     "latency1r.rs": {"arm_composite(": 3, "to_blit(": 1},
     "main.rs": {"compose_frame(": 1, "to_blit(": 1},
-    "playback.rs": {"compose_frame(": 2, "to_blit(": 2},
+    # re-pinned on purpose with LIVE-INPUT-0: the live session's move witness is replay_from's own compose_frame digest
+    "playback.rs": {"compose_frame(": 3, "to_blit(": 2},
     "present.rs": {"compose_frame(": 1, "arm_composite(": 2, "fast::render(": 2, "fast::emit_threaded(": 3, "fast::emit(": 2, "to_blit(": 6},
     "presentscale.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
     "presentstretch.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
@@ -4435,6 +4438,8 @@ FRESH_ENTRY_SITES = {
     "win32.rs": {"to_blit(": 4},
     # re-pinned on purpose with LIVE-LOOP-0: its witnesses verify each step's reference before the live walk
     "liveloop.rs": {"arm_composite(": 1, "to_blit(": 1},
+    # re-pinned on purpose with LIVE-INPUT-0: one reference render per state change, outside the compositions
+    "liveinput.rs": {"arm_composite(": 1, "to_blit(": 1},
 }
 # the adoption evidence, sealed on the owner's host (committed there; this checkout may not carry it)
 ALLOCREUSE1_RECORDS = {"allocreuse1-DANIELDILLBERG.json": "8036e65488f168b87cc3cf26798d25aed0c2b9fe249118c30a4b175258505b96",
@@ -5470,8 +5475,9 @@ def runledger_fence():
         raise Red("the ledger is not append-only, or the two files write into each other")
     main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
     if ('runledger::begin("presentexact.court", "mock"); // RUN-LEDGER-0: the court run begins\n                match presentexact::court(&mut surf, &inputs, per_cell) {\n                    Ok(ex) => {\n                        runledger::end(0);'
-            not in main_src or main_src.count("runledger::begin(") != 2 or main_src.count("runledger::end(") != 4
-            or 'runledger::begin("liveloop", "mock"); // RUN-LEDGER-0: the live-loop run begins\n                match liveloop::run(&mut surf, &inputs, "mock") {\n                    Ok(live) => {\n                        runledger::end(0);' not in main_src):
+            not in main_src or main_src.count("runledger::begin(") != 3 or main_src.count("runledger::end(") != 6
+            or 'runledger::begin("liveloop", "mock"); // RUN-LEDGER-0: the live-loop run begins\n                match liveloop::run(&mut surf, &inputs, "mock") {\n                    Ok(live) => {\n                        runledger::end(0);' not in main_src
+            or 'runledger::begin("liveinput", "mock"); // RUN-LEDGER-0: the live-input run begins\n                match liveinput::run(&mut surf, &mut session, "mock") {\n                    Ok(live) => {\n                        runledger::end(0);' not in main_src):
         raise Red("the selftest's court run does not begin just before the court and end with its outcome")
     w32 = read(os.path.join(SHELL, "win32.rs"))
     if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
@@ -5500,8 +5506,10 @@ def runledger_fence():
             if "VERDANDI_RUN_LEDGER" in t or "runs.log" in t:
                 raise Red("shell/%s names the run ledger: nothing on the path may read it" % name)
     ll = read(os.path.join(SHELL, "liveloop.rs")).decode("utf-8")
-    if (len(counted) != 3 or "    st.checks += 1;\n    crate::runledger::readback(!exact);" not in sw
+    li = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
+    if (len(counted) != 4 or "    st.checks += 1;\n    crate::runledger::readback(!exact);" not in sw
             or "            live.screen_readbacks += 1;\n            crate::runledger::readback(!exact);" not in ll
+            or "            live.screen_readbacks += 1;\n            crate::runledger::readback(!exact);" not in li
             or "    rb.mismatched_bytes += bad;\n    crate::runledger::readback(bad != 0);" not in px):
         raise Red("readbacks are counted somewhere other than where the court and the presenter count their own")
     for name in os.listdir(os.path.join(ROOT, "verify")):
@@ -6090,6 +6098,354 @@ def liveloop_fence():
             "borderless window with the ledger around the loop, appended after REFUSAL-WHY-0's section; a windowless build "
             "refuses it")
 
+
+# ------------------------------------------------------------------ LIVE-INPUT-0
+# The gate's two key scripts and what every press must become: a typed event (kind, command or spec, camera after it),
+# or "repeat", "unbound", "end" or "refused CODE". Script A walks from the witness base camera: the faced cell opened and
+# walked through, a blocked step, a cell opened and closed with a turn away and back between, a back step, both strafes,
+# a stair refused, a cell closed and then walked into; an auto-repeat and an unbound key on the way. Script B stands at
+# the east border and is refused there.
+LIVEINPUT_SCRIPTS = {
+    "A": ("28,28,N", [
+        ("SPACE", ("edit", "cell:28,27,.", "28,28,N")), ("W", ("move", "F", "28,27,N")), ("UP", ("move", "F", "28,26,N")),
+        ("UP", ("move", "F", "28,26,N")), ("SPACE", ("edit", "cell:28,25,.", "28,26,N")), ("A", ("move", "L", "28,26,W")),
+        ("D", ("move", "R", "28,26,N")), ("SPACE", ("edit", "cell:28,25,#", "28,26,N")), ("W+", "repeat"), ("F1", "unbound"),
+        ("S", ("move", "B", "28,27,N")), ("DOWN", ("move", "B", "28,28,N")), ("Q", ("move", "Q", "27,28,N")),
+        ("E", ("move", "E", "28,28,N")), ("RIGHT", ("move", "R", "28,28,E")), ("W", ("move", "F", "29,28,E")),
+        ("UP", ("move", "F", "30,28,E")), ("W", ("move", "F", "31,28,E")), ("UP", ("move", "F", "32,28,E")),
+        ("W", ("move", "F", "33,28,E")), ("SPACE", "refused LIVEINPUT-EDIT-STAIR"), ("LEFT", ("move", "L", "33,28,N")),
+        ("SPACE", ("edit", "cell:33,27,#", "33,28,N")), ("RIGHT", ("move", "R", "33,28,E")), ("LEFT", ("move", "L", "33,28,N")),
+        ("W", ("move", "F", "33,28,N")), ("ESC", "end")]),
+    "B": ("46,14,E", [
+        ("SPACE", "refused LIVEINPUT-EDIT-BORDER"), ("W", ("move", "F", "46,14,E")), ("SPACE", "refused LIVEINPUT-EDIT-BORDER"),
+        ("ESC", "end")]),
+}
+LIVEINPUT_EVERY = 3
+LIVEINPUT_SHORT = "W,SPACE,ESC"  # the plants' script: a blocked step, then the faced cell opened
+
+
+def _li_run(tag, camera, keys, logs, plant=None):
+    """One liveinput-selftest over the mock; returns (completed process, raw or None). Logs go to the row's own files."""
+    out = os.path.join(BUILD, "liveinput-%s.json" % tag)
+    if os.path.exists(out):
+        os.remove(out)
+    args = [SHELL_EXE, "liveinput-selftest", "--level", os.path.join("oracle", "levels", "witness.lvl"),
+            "--tiles", os.path.join("oracle", "tiles", "identity.tiles"), "--camera", camera, "--keys", keys, "--out", out]
+    if plant:
+        args += ["--plant", plant]
+    env = dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1]})
+    cp = subprocess.run(args, capture_output=True, text=True, cwd=ROOT, env=env)
+    raw = None
+    if os.path.exists(out):
+        with open(out, encoding="utf-8") as fh:
+            raw = json.load(fh)
+        os.remove(out)
+    return cp, raw
+
+
+def _li_logs(name):
+    logs = (os.path.join(BUILD, "liveinput-%s-refusals.log" % name), os.path.join(BUILD, "liveinput-%s-runs.log" % name))
+    for f in logs:
+        if os.path.exists(f):
+            os.remove(f)
+    return logs
+
+
+def _li_script(steps):
+    return ",".join(k for k, _ in steps)
+
+
+def _li_clean(tag, logs):
+    """Run script `tag` and require a clean end: exit 0, the court's line, a raw."""
+    camera, steps = LIVEINPUT_SCRIPTS[tag]
+    cp, raw = _li_run(tag, camera, _li_script(steps), logs)
+    if cp.returncode != 0 or "liveinput court OK" not in cp.stdout or raw is None:
+        raise Red("script %s did not run to its end: %s" % (tag, cp.stderr.strip() or cp.stdout.strip()))
+    return raw["data"]
+
+
+def liveinput_preregistered():
+    """LIVE-INPUT-0's method is locked: the fixed binding, the faced cell, the session log replayed and read-only to the
+    loop, every composition rendered live and presented, no persistence. The loop's constants and its binding table must
+    be the registered ones."""
+    e = locked_entry("LIVE-INPUT-0", {
+        "walk plus open/close, narrow": ("hyp", ("walk plus open/close", "one press, one action", "unbound and ignored", "no tile or material edit, no cursor, no clock")),
+        "the faced cell and the session": ("hyp", ("one step ahead of the camera", "a stair is not toggled", "a refused edit is not appended", "read-only to the loop", "the shell never writes w or m", "every 75th composition")),
+        "the gate: binding, continuity, the loop": ("succ", ("binding determinism", "authority continuity", "sessionwalk new, then one move or edit per event, then verify", "workshop-certified frame digest", "one press every 3 compositions", "no file is written but the refusal log and run ledger lines")),
+        "no stray event, no second authority, no disk": ("fail", ("auto-repeat or unbound key producing an event", "a refused edit appended", "other than by an event appended to the log", "disagreeing with the loop", "the session written to disk", "a clock taken")),
+        "scope": ("lims", ("only the last is presented", "holding a key does not walk", "no persistence, no save and no recovery", "the host run writes no record", "counts only")),
+    })
+    rs = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
+    for const in ("pub const RECHECK: u64 = 75;", "pub const CALL: usize = 1;", "pub const MOCK_EVERY: u64 = 3;",
+                  "pub const VK_SPACE: u32 = 0x20;", "pub const VK_ESCAPE: u32 = 0x1B;", "pub const VK_LEFT: u32 = 0x25;",
+                  "pub const VK_UP: u32 = 0x26;", "pub const VK_RIGHT: u32 = 0x27;", "pub const VK_DOWN: u32 = 0x28;"):
+        if const not in rs:
+            raise Red("the loop's constants are not the registered ones: %s is missing" % const)
+    bind = src_span(rs, "pub fn bind(vk: u32) -> Action {", "\n}\n")
+    arms = re.findall(r"\n\s+([^\n=]+?) => Action::([A-Za-z]+(?:\(b'[A-Z]'\))?),", bind)
+    want = [("VK_UP | 0x57", "Move(b'F')"), ("VK_DOWN | 0x53", "Move(b'B')"), ("VK_LEFT | 0x41", "Move(b'L')"),
+            ("VK_RIGHT | 0x44", "Move(b'R')"), ("0x51", "Move(b'Q')"), ("0x45", "Move(b'E')"), ("VK_SPACE", "Toggle"),
+            ("VK_ESCAPE", "End"), ("_", "Unbound")]
+    if arms != want:
+        raise Red("the binding table is not the registered one: %s" % arms)
+    tog = src_span(rs, "pub fn toggle(", "\n}\n")
+    if "Some(b'#') => Ok((faced.0, faced.1, b'.'))" not in tog or "Some(b'.') => Ok((faced.0, faced.1, b'#'))" not in tog \
+            or tog.count("Ok(") != 2:
+        raise Red("the faced cell's edit is not rock to floor and floor to rock, and nothing else")
+    return ("LIVE-INPUT-0's method is locked (hash %s): Up/W forward, Down/S back, Left/A and Right/D turn, Q and E strafe, "
+            "Space opens or closes the faced cell (rock to floor, floor to rock, nothing else), Esc ends, every other key "
+            "unbound; one press every %d compositions on the mock, the screen re-read every 75 held compositions, the call "
+            "fixed at SetDIBitsToDevice" % (e["chain_hash"][:8], LIVEINPUT_EVERY))
+
+
+def liveinput_binding():
+    """Binding determinism: each scripted press becomes exactly its registered outcome — the typed event (kind, command or
+    spec, the camera after it), or a repeat, an unbound key, a refused edit or the end — in order, at its registered
+    composition; the events are exactly the appended ones; a refused edit is one refusal-log record and no event; every
+    composition is rendered through the LoopRenderer, byte-checked and presented, the screen read back once per change
+    with no difference; the runs end on Esc, exit 0, one ledger line each, joined to the refusal log."""
+    import refusallog as RL
+    import runledger as RLG
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    logs = _li_logs("binding")
+    total = {"presses": 0, "events": 0}
+    for tag, (camera, steps) in sorted(LIVEINPUT_SCRIPTS.items()):
+        d = _li_clean(tag, logs)
+        got = [(t["key"] + ("+" if t["repeat"] else ""), t["outcome"], t["composition"]) for t in d["trace"]]
+        want, events = [], []
+        for i, (key, outcome) in enumerate(steps):
+            if isinstance(outcome, tuple):
+                want.append((key, "event %d" % len(events), LIVEINPUT_EVERY * i + 1))
+                events.append(outcome)
+            else:
+                want.append((key, outcome, LIVEINPUT_EVERY * i + 1))
+        if got != want:
+            diff = next((i, g, w) for i, (g, w) in enumerate(zip(got + [None] * len(want), want + [None] * len(got))) if g != w)
+            raise Red("script %s: press %d became %s, not %s" % (tag, diff[0], diff[1], diff[2]))
+        typed = [(e["kind"], e.get("command", e.get("spec")), e["camera"]) for e in d["events"]]
+        if typed != events:
+            raise Red("script %s: the typed events are not the expected sequence" % tag)
+        n, c = len(steps), d["counts"]
+        comps = LIVEINPUT_EVERY * (n - 1) + 1
+        moves = [e for e in events if e[0] == "move"]
+        exp = {"keys": n, "repeats": sum(o == "repeat" for _, o in steps), "unbound": sum(o == "unbound" for _, o in steps),
+               "events": len(events), "moves": len(moves), "edits": len(events) - len(moves),
+               "refused": sum(isinstance(o, str) and o.startswith("refused ") for _, o in steps),
+               "references": len(events) + 1, "compositions": comps, "frames_rendered": comps, "frames_presented": comps,
+               "byte_checks": comps, "loop_renders": comps, "screen_readbacks": len(events) + 1, "screen_differed": 0}
+        if any(c[k] != v for k, v in exp.items()) or d["ended"] != "escape" or (d["every"], d["recheck"]) != (LIVEINPUT_EVERY, 75):
+            raise Red("script %s: the counts are not the registered walk's: %s" % (tag, {k: (c[k], v) for k, v in exp.items() if c[k] != v}))
+        g = d["geometry"]
+        if (g["client"], g["origin"], g["screen_logical"], g["screen_physical"]) != ([1920, 1080], [0, 0], [1920, 1080], [1920, 1080]) \
+                or (d["call"], d["render_entry"]) != ("setdibitstodevice", "LoopRenderer"):
+            raise Red("script %s: not the certified frame 1:1 at (0,0) through SetDIBitsToDevice and the LoopRenderer" % tag)
+        total["presses"] += n
+        total["events"] += len(events)
+    records, rbad = RL.read(logs[0])
+    runs, lbad = RLG.read(logs[1])
+    got = sorted((r["reason_code"], r["attribution"], r["context"]["x"], r["context"]["z"], r["context"].get("cell")) for r in records)
+    want = sorted([("LIVEINPUT-EDIT-STAIR", "input.edit", "34", "28", "<")] + [("LIVEINPUT-EDIT-BORDER", "input.edit", "47", "14", "#")] * 2)
+    if rbad or lbad or got != want or any((r["operation"], r["surface"]) != ("liveinput", "mock") for r in records):
+        raise Red("the refused edits are not one refusal-log record each, with the faced cell: %s" % got)
+    if len(runs) != 2 or RLG.join(runs, records) or sorted((r["exit_code"], r["refusals"], r["differed"]) for r in runs) != [(0, 1, 0), (0, 2, 0)]:
+        raise Red("the run ledger does not hold one line per scripted run, joined to the refusal log")
+    return ("binding determinism on the mock: %d scripted presses (two scripts) each became exactly its registered outcome at "
+            "its registered composition — %d typed events in the expected order (all six moves from arrows and letters, "
+            "blocked steps, the faced cell opened and closed), an auto-repeat and an unbound key ignored, a stair and the "
+            "border refused as one refusal-log record each and no event; every composition rendered through the "
+            "LoopRenderer, byte-checked and presented, the screen read back once per change with no difference; both runs "
+            "end on Esc, exit 0, one ledger line each, joined one to one" % (total["presses"], total["events"]))
+
+
+def liveinput_continuity():
+    """Authority continuity: each script's event log, replayed headless through the workshop's SESSION-WALK (sessionwalk
+    new, then one move or edit per event, then verify), reproduces every event's witness and camera, the final camera,
+    the final content and the head the live loop reached; W and M recomputed from the level with the log's cell edits
+    applied are the loop's; every state after an edit recurs at a move with the same W and camera, and the frame the loop
+    presented after the edit has that move's workshop-certified frame digest; the level and tiles files are unchanged."""
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None:
+        raise Red("the shell or the workshop's sessionwalk was not built")
+    os.makedirs(SW, exist_ok=True)
+    lv_path, tl_path = os.path.join(ORACLE, "levels", "witness.lvl"), os.path.join(ORACLE, "tiles", "identity.tiles")
+    before = (sha256(read(lv_path)), sha256(read(tl_path)))
+    logs = _li_logs("continuity")
+    n_events, n_ties = 0, 0
+    for tag, (camera, _steps) in sorted(LIVEINPUT_SCRIPTS.items()):
+        d = _li_clean(tag, logs)
+        events = d["events"]
+        sp = os.path.join(SW, "liveinput-%s.json" % tag)
+        code, _o, err = run(SESSIONWALK_EXE, ["new", "--level", lv_path, "--tiles", tl_path, "--camera", camera, "--out", sp])
+        if code != 0:
+            raise Red("sessionwalk new: " + err.strip())
+        if json.load(open(sp, encoding="utf-8"))["data"]["head"] != d["base"]["genesis"]:
+            raise Red("script %s: the live session's genesis is not the workshop's" % tag)
+        for e in events:
+            verb, flag, param = ("move", "--command", e["command"]) if e["kind"] == "move" else ("edit", "--edit", e["spec"])
+            code, _o, err = run(SESSIONWALK_EXE, [verb, "--session", sp, flag, param])
+            if code != 0:
+                raise Red("script %s: the workshop refused the live log's %s %s: %s" % (tag, verb, param, err.strip()))
+        code, out, err = run(SESSIONWALK_EXE, ["verify", "--session", sp])
+        if code != 0 or "SESSIONWALK verify OK" not in out:
+            raise Red("script %s: the workshop's replay of the live log does not verify: %s" % (tag, err.strip()))
+        sw = json.load(open(sp, encoding="utf-8"))["data"]
+        if [(x["kind"], x["witness"]) for x in sw["log"]] != [(e["kind"], e["witness"]) for e in events]:
+            raise Red("script %s: an event's witness under the workshop's replay is not the live loop's" % tag)
+        if [x["camera"] for x in sw["log"] if x["kind"] == "move"] != [e["camera"] for e in events if e["kind"] == "move"]:
+            raise Red("script %s: a move's camera under the workshop's replay is not the live loop's" % tag)
+        f = d["final"]
+        if (sw["head"], sw["final_camera"], sw["final_content"], sw["base"]["content"]) != (f["head"], f["camera"], f["content"], d["base"]["content"]):
+            raise Red("script %s: the workshop's replay does not reach the live loop's head, camera and content" % tag)
+        lv, tl = read(lv_path), read(tl_path)
+        for e in events:
+            if e["kind"] == "edit":
+                lv, tl = _sw_apply(lv, tl, e["spec"])
+        if (sha256(lv), sha256(tl), _sw_content(lv, tl)) != (f["W"], f["M"], f["content"]):
+            raise Red("script %s: W and M recomputed from the log's edits are not the live loop's" % tag)
+        views = d["views"]
+        if len(views) != len(events) + 1 or any(views[k + 1] != e["witness"] for k, e in enumerate(events) if e["kind"] == "move"):
+            raise Red("script %s: a move's presented frame digest is not its chain witness" % tag)
+        for k, e in enumerate(events):
+            if e["kind"] != "edit":
+                continue
+            ties = [m for m in events if m["kind"] == "move" and (m["content"], m["camera"]) == (e["content"], e["camera"])]
+            if not ties:
+                raise Red("script %s: the state after edit %d never recurs at a move, so its presented frame is not tied" % (tag, k))
+            if views[k + 1] != ties[0]["witness"]:
+                raise Red("script %s: the frame presented after edit %d is not the workshop's frame for the same W and camera" % (tag, k))
+            n_ties += 1
+        n_events += len(events)
+    if (sha256(read(lv_path)), sha256(read(tl_path))) != before:
+        raise Red("the level or the tiles file changed: the live session wrote the authority's files")
+    return ("authority continuity: both scripts' logs (%d events), replayed headless through the workshop's SESSION-WALK "
+            "(sessionwalk new, one move or edit per event, verify), reproduce every witness and camera, the final camera, "
+            "content and head the live loop reached, from the same genesis; W and M recomputed from the level with the "
+            "log's edits are the loop's; each of the %d edits' states recurs at a move, and the frame presented after the "
+            "edit has that move's workshop-certified digest; the level and tiles files are unchanged" % (n_events, n_ties))
+
+
+def liveinput_court():
+    """The loop's refusals and its screen: a client below a title bar refuses with no raw output, logged and ledgered; a
+    present that writes nothing completes with every readback differing, each counted and logged once with its covering
+    fields; the clean short run reads the screen exact; a spent script closes the window, a normal end; an unknown key
+    and a camera on rock are usage errors before the run, with no ledger line."""
+    import refusallog as RL
+    import runledger as RLG
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    logs = _li_logs("court")
+    cp, raw = _li_run("clean", "28,28,N", LIVEINPUT_SHORT, logs)
+    if cp.returncode != 0 or raw is None or raw["data"]["counts"]["screen_readbacks"] != 3 or raw["data"]["counts"]["screen_differed"] != 0:
+        raise Red("the short script did not run clean with 3 exact readbacks")
+    cp, raw = _li_run("geometry", "28,28,N", LIVEINPUT_SHORT, logs, "geometry")
+    if cp.returncode != 2 or "LIVEINPUT-GEOMETRY" not in cp.stderr or raw is not None:
+        raise Red("PLANT geometry: a client below a title bar did not refuse with no raw output")
+    cp, raw = _li_run("noop", "28,28,N", LIVEINPUT_SHORT, logs, "noop")
+    if cp.returncode != 0 or raw is None:
+        raise Red("PLANT noop: a present that writes nothing stopped the loop; a differing screen is counted, not refused")
+    c = raw["data"]["counts"]
+    if (c["screen_readbacks"], c["screen_differed"], c["events"]) != (3, 3, 2):
+        raise Red("PLANT noop: not every readback was counted as differing")
+    cp, raw = _li_run("spent", "28,28,N", "W", logs)
+    if cp.returncode != 0 or raw is None or raw["data"]["ended"] != "closed" or raw["data"]["counts"]["events"] != 1:
+        raise Red("a spent script (the window closed) is not a normal end")
+    for args in (["--keys", "W,BOGUS"], ["--camera", "28,27,N", "--keys", "ESC"]):
+        cp = subprocess.run([SHELL_EXE, "liveinput-selftest"] + args, capture_output=True, text=True, cwd=ROOT,
+                            env=dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1]}))
+        if cp.returncode != 2:
+            raise Red("a usage error (%s) was not refused" % " ".join(args))
+    records, rbad = RL.read(logs[0])
+    runs, lbad = RLG.read(logs[1])
+    by = {}
+    for r in records:
+        by.setdefault((r["reason_code"], r["attribution"]), []).append(r)
+    diffs = by.get(("LIVEINPUT-SCREEN-DIFFERS", "present.readback"), [])
+    if (rbad or lbad or len(by.get(("LIVEINPUT-GEOMETRY", "window.geometry"), [])) != 1 or len(diffs) != 3 or len(records) != 4
+            or any("covering_layer" not in r["context"] for r in diffs) or any(r["operation"] != "liveinput" for r in records)):
+        raise Red("the refusal log does not hold one record per refusal and per differing readback")
+    exits = sorted((x["exit_code"], x["readbacks_checked"], x["differed"]) for x in runs)
+    if len(runs) != 4 or RLG.join(runs, records) or exits != [(0, 2, 0), (0, 3, 0), (0, 3, 3), (2, 0, 0)]:
+        raise Red("the run ledger does not hold one line per run (and none for a usage error), joined to the refusal log")
+    return ("the loop's refusals and its screen, on the mock: a client below a title bar refuses with no raw output; a "
+            "present that writes nothing completes with all 3 readbacks differing, each counted and logged once with its "
+            "covering fields; the clean short run reads the screen exact 3 times; a spent script is a normal end; an unknown "
+            "key and a camera on rock are refused before the run; each run one ledger line, joined one to one")
+
+
+def liveinput_fence():
+    """The loop appends and reads, and never holds a world: the session's state is private to shell/playback.rs and
+    changed only by push_move and push_edit_cell, each replaying one appended event by replay_from's own statements; the
+    loop turns each press into an action (a repeat never reaching the binding), renders the reference once per change,
+    and in every composition renders the current state through the LoopRenderer, checks its bytes, presents, then reads
+    back; no clock, no file, refusals as data; the host window is the presenter's borderless window with the keyboard read
+    from the message queue, appended after LIVE-LOOP-0's section, writing nothing; a windowless build refuses it."""
+    pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
+    sect = pb[pb.index("// ================================================================== LIVE-INPUT-0 (appended): the live session"):]
+    body = src_span(sect, "pub struct LiveSession {", "\n}\n")
+    if re.search(r"\n\s+pub ", body) or sect.count("(&mut self,") != 2 or sect.count("self.log.push(") != 2:
+        raise Red("the live session's state is not private, or it changes other than by appending one event")
+    mv, ed = src_span(sect, "pub fn push_move(", "\n    }\n"), src_span(sect, "pub fn push_edit_cell(", "\n    }\n")
+    if not all(t in mv for t in ("let cam = step(&self.level, self.cam, cmd);", "compose_frame(&self.level, &self.tiles, cam)", "fold(&self.head, b'M', &composed.frame_digest)")) \
+            or not all(t in ed for t in ("if (x == 0 || z == 0 || x as usize == w - 1 || z as usize == rows - 1) && to != b'#' {",
+                                         "apply_spec(&mut self.level, &mut self.tiles, &spec)", "content_hex(&self.level, &self.tiles)", "fold(&self.head, b'E', &self.content)")):
+        raise Red("the live session's replay is not replay_from's statements (step, compose_frame's digest, apply_spec, content_hex, fold)")
+    if any(t in sect for t in ("fs::", "File::", "write(")):
+        raise Red("the live session touches a file")
+    rs = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
+    runf = src_span(rs, "pub fn run<S: ExactSurface + Keys>(", "\npub fn summary(")
+    for tok in ("fs::", "File::", "write_raw(", "refusallog::refuse(", "set_call(0", "StretchDIBits", "apply_spec", "compose_frame(",
+                "LiveEvent {", "Instant", "SystemTime", "qpc"):
+        if tok in rs:
+            raise Red("the loop contains %r: no clock, no file, no world of its own, refusals as data, the call fixed" % tok)
+    if "ticks(" in runf or "ticks(" in src_span(rs, "fn reference(", "\n}\n"):
+        raise Red("the loop reads a clock")
+    if set(re.findall(r"session\.(\w+)\(", runf)) - {"push_move", "push_edit_cell", "camera", "faced", "cell"} \
+            or "arm_composite(" in runf or src_span(rs, "fn reference(", "\n}\n").count("arm_composite(") != 1:
+        raise Red("the loop reaches into the session other than to append and read, or renders a reference outside reference()")
+    loop = runf[runf.index("    loop {"):]
+    order = [loop.find(t) for t in ("let open = s.pump();", "for (vk, repeat) in s.keys() {", "if repeat {", "match bind(vk) {",
+                                    "lr.render(&scene);", "lr.blit();", "if lr.composite() != &expected[..] || lr.bgr() != &expected_bgr[..]",
+                                    "if s.present(lr.bgr()).is_none()", "s.readback()")]
+    if -1 in order or order != sorted(order) or loop.count("lr.render(") != 1 or loop.count("s.present(") != 1:
+        raise Red("a composition is not: presses to events (repeats unbound), render the current state, check, present, read back")
+    if (runf.count("s.set_call(CALL);") != 1 or rs.count("crate::refusallog::record(") != 2 or rs.count("crate::runledger::readback(") != 1
+            or runf.count("reference(session, Some((&witness, k)))?") != 1):
+        raise Red("the call is not fixed once, a move's reference does not check its witness, or the loop logs more than a refused edit and a differing readback")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    i_ll, i_li = tail.find("LIVE-LOOP-0 (appended)"), tail.find("LIVE-INPUT-0 (appended)")
+    if i_ll < 0 or i_li < i_ll:
+        raise Red("the LIVE-INPUT-0 section is not appended after LIVE-LOOP-0's")
+    ws = w32_section(tail, "LIVE-INPUT-0 (appended)")
+    win = src_span(ws, "pub fn liveinput_window(", "\n}\n")
+    order = [win.find(t) for t in ("SetProcessDPIAware()", "= show_window(", 'crate::runledger::begin("liveinput", "gdi");',
+                                   'crate::liveinput::run(&mut keys, &mut session, "gdi")')]
+    if (-1 in order or order != sorted(order) or "call: 1," not in ws or "call: 0" in ws or "set_call(" in win
+            or any(t in ws for t in ("StretchDIBits", "qpc()", "fs::", "File::", "write_raw(", "SystemTime"))
+            or "crate::refusallog::refuse(&ev" not in win or ws.count("self.pending.push(") != 1
+            or "if msg.message == WM_KEYDOWN_LIVE {" not in ws or "const WM_KEYDOWN_LIVE: Uint = 0x0100;" not in ws
+            or "self.pending.push((msg.w_param as u32, (msg.l_param >> 30) & 1 == 1));" not in ws):
+        raise Red("the host window is not the presenter's DPI-aware borderless window with the call fixed, the keys read from "
+                  "WM_KEYDOWN with their auto-repeat bit, the ledger around the loop and no file")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    if 'runledger::begin("liveinput", "mock"); // RUN-LEDGER-0: the live-input run begins\n                match liveinput::run(&mut surf, &mut session, "mock") {\n                    Ok(live) => {\n                        runledger::end(0);' not in main_src:
+        raise Red("the selftest's live-input run does not begin just before the loop and end with its outcome")
+    if SHELL_EXE is not None:
+        cp = subprocess.run([SHELL_EXE, "liveinput-window"], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode == 0 or "SHELL-NO-WINDOW" not in cp.stderr:
+            raise Red("a windowless build did not refuse liveinput-window with SHELL-NO-WINDOW")
+    return ("the loop appends and reads, and never holds a world: the session's state is private to shell/playback.rs and "
+            "changes only by push_move and push_edit_cell, each replaying one appended event by replay_from's statements; "
+            "a repeat never reaches the binding; a move's reference must reproduce its witness; every composition renders the "
+            "current state through the LoopRenderer, checks it, presents, then reads back; no clock, no file; the host window "
+            "reads WM_KEYDOWN from the queue, is appended after LIVE-LOOP-0's section and writes nothing; a windowless build "
+            "refuses it")
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -6254,6 +6610,11 @@ def main() -> int:
     row("liveloop-court", liveloop_court)
     row("liveloop-sealer", liveloop_sealer)
     row("liveloop-fence", liveloop_fence)
+    row("liveinput-preregistered", liveinput_preregistered)
+    row("liveinput-binding", liveinput_binding)
+    row("liveinput-continuity", liveinput_continuity)
+    row("liveinput-court", liveinput_court)
+    row("liveinput-fence", liveinput_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]
