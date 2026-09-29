@@ -77,7 +77,7 @@ LIVE-INPUT-0     physical input → typed editor action → the workshop/session
       ↓
 LIVE-SESSION-0   live events → append-only session → save → restart → replay → the same world — a host walk saved, resumed into a new file, both replayed here
       ↓
-LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders — painted live on the host by class keys, saved, replayed here
+LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders — painted live on the host by class keys, saved, resumed there with the painting intact
       ↓
 free continuous movement → richer edits      vocabulary on the one live editor, not new pathways
       ↓
@@ -286,7 +286,7 @@ is counted and logged, never hidden. There is no input, no camera, no clock: cou
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
 
-### LIVE-AUTHOR-0 — the thing authored is what the next frame renders · **measured on the host** (`9a3e4521`): tile classes painted live, saved and replayed
+### LIVE-AUTHOR-0 — the thing authored is what the next frame renders · **measured on the host** (`9a3e4521`): tile classes painted live, saved, and resumed
 The one live editor, `shell live-window`: LIVE-SESSION-0's durable loop under the authoring binding, which is
 LIVE-INPUT-0's keys plus 1–5 for the tile classes wall0–wall3 and floor. A class key paints its class with the next
 colour of a registered 8-colour palette, read from the session's own M, as one `tile:CLASS,R,G,B` session event. It is
@@ -298,7 +298,8 @@ persists: a resumed session's first picture is its parent's last. On the owner's
 saved session and saved a verified continuation. A later walk painted all five classes live: 28 tile edits by class
 keys, each the palette's next colour, every one of 62 readbacks exact. It was saved and verified there, and here its
 file verifies unchanged. The same presses replayed here reach the same head, and the level's bytes are unchanged by
-the edits. A resume of the painted session on the host is still to come.
+the edits. The painted session was then resumed on the host as LOAD, walked and painted further (two more edits),
+and saved as a verified child whose lineage names it, every readback exact.
 
 ### LIVE-SESSION-0 — the live session made durable and recoverable · **measured on the host** (`70086a72`): a saved walk and its resumed continuation
 LIVE-INPUT-0's loop, unchanged, over a session whose every appended event is journaled: one record per line with its
