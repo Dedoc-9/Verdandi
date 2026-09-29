@@ -3157,7 +3157,7 @@ pixels of an off-screen class or not those of an on-screen one, or if a turn tou
 `liveauthor-persist` goes red if the resumed picture is not the parent's last. `liveauthor-fence` goes red if a colour
 is held, previewed or applied outside the session.
 
-## HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete (preregistered and built; the gate passes on the host, the held walk not yet run there)
+## HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete (preregistered and built; a held walk measured on the host; not the free movement the owner wants)
 
 **Why.** The route's next step after LIVE-AUTHOR-0 was free continuous movement, as vocabulary on the one live editor.
 The frozen renderer draws the eye only at a cell centre facing N, E, S or W, and Urðr's frozen game boundary keeps
@@ -3215,14 +3215,37 @@ the mock's groups split.
 
 **On the host (DANIELDILLBERG).** After 0079 was applied, the gate read 174 rows with none failing, including the five
 `holdwalk-*` rows (rowset `2e986bf1e40bfc4b`, the same as in the container), and the window build was rebuilt. The held
-walk has not run yet. The first attempt left no run-ledger line and no session folder, so it never reached the point
+walk did not run on the first attempt: it left no run-ledger line and no session folder, so it never reached the point
 where a run opens its journal.
+
+**The held walk on the host.** After 0080 was applied, `live-window --resume` was run on the painted session's child
+(`build/sessions/1a0ea782d9e-b20c/session.json`).
+- **The load:** it loaded as LOAD (76 events, head `eaf27cf3fc0c…`), with the window holding the keyboard from the start.
+- **The walk:** a turn to face east, then W held along row 26 from (22,26) to (35,26); two turns, W held back west to
+  (23,26); two turns, W held east to (33,26); two turns to face west.
+- **The run:** 43 presses and 42 events, all moves, none blocked. Of the 31 auto-repeats, all 31 walked; none was
+  coalesced or ignored, so at this host's repeat rate each repeat arrived in a composition of its own. It ended by Esc.
+  The loop presented 839 compositions, all 48 screen readbacks were exact, and the window held the foreground for 840
+  of 841 pumps. The console reported `liveinput held repeats 31 walked 31 coalesced 0 ignored 0`.
+- **Saved:** as `build/sessions/1a0ef023794-b638/session.json` (sha256 `01d5d255…03f8`, 118 events, head
+  `47ae5de3c73a…`), saved and verified there.
+
+Here, from the staged bytes:
+- **The file:** the seal, base, fold, journal (119 records, sha256 `817bd21c…6552`) and lineage check. The lineage names
+  the parent's head, its 76 events and its bytes, and the child's log begins with them. The workshop's `sessionwalk`
+  verifies the file, the renderer identity is the same, and the content is the parent's (no edits).
+- **The equivalence:** the same 43 presses, typed as a key script into `live-selftest --resume` over the parent (each
+  repeat marked, one per composition), reach the same head. Typed with every press fresh, they reach the same head too:
+  the held walk saved exactly what pressing would have.
+
+**The owner's verdict.** After walking it, the owner judged that held keys over the grid are not the free movement he
+wants on this route. HOLD-WALK-0 stands as built and measured; what the route's free-movement item becomes is open.
 
 **Grade.** DECLARED: the method. ESTABLISHED (gate, in the container and on the host): the held set; one admitted repeat per composition, with the rest
 counted as coalesced; fresh presses never coalesced; a held walk saving the same data as the same walk pressed;
-LIVE-INPUT-0 and LIVE-SESSION-0 unchanged; the fence. NOT_MEASURED (host): a held walk in the window. Whether Windows'
-repeats reach the loop as the mock delivers them, and what the coalesced count is at the host's repeat rate, are what
-the host run shows.
+LIVE-INPUT-0 and LIVE-SESSION-0 unchanged; the fence. MEASURED (host): a held walk in the window. 31 held repeats each
+walked, saved and verified there and here, reaching the head the same presses reach when pressed, every readback exact.
+NOT_MEASURED (host): coalescing, since no repeat arrived in a composition that had already admitted one.
 
 **does_not_show.** Any position between cells, or any angle between the four facings: the world is as discrete as
 before. A walking speed or any timing: the speed is the keyboard's repeat rate capped by the loop, and only counts are

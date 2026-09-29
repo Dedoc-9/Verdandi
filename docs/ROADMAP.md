@@ -79,7 +79,7 @@ LIVE-SESSION-0   live events → append-only session → save → restart → re
       ↓
 LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders — painted live on the host by class keys, saved, resumed there with the painting intact
       ↓
-HOLD-WALK-0      free continuous movement as held keys: the input continuous, the world discrete — built, gated on the host; the held walk still to run there
+HOLD-WALK-0      held keys walk the grid: the input continuous, the world discrete — measured on the host; not the free movement the owner wants, which is open
       ↓
 richer edits     vocabulary on the one live editor, not new pathways
       ↓
@@ -96,9 +96,10 @@ After LIVE-AUTHOR-0 the owner stops adding bespoke input cases. LIVE-AUTHOR-0 is
 From then on the rule is general: every accepted live edit is a typed SESSION-WALK event, the event changes the
 authoritative W or M, the next frame is derived from the resulting authority, and the event is durable through
 LIVE-SESSION-0. Free continuous movement and richer edits are vocabulary and navigation semantics added to the one live
-editor (`shell live-window`), gated in its binding table, not new pathways or rungs. Free continuous movement became
-HOLD-WALK-0, registered under its own name but on the same pathway: holding a key keeps walking cell by cell over the
-same discrete world, because the frozen renderer draws the eye only at a cell centre facing N, E, S or W. Mouse-look,
+editor (`shell live-window`), gated in its binding table, not new pathways or rungs. HOLD-WALK-0, registered under its
+own name but on the same pathway, made held keys keep walking cell by cell over the same discrete world, because the
+frozen renderer draws the eye only at a cell centre facing N, E, S or W. After walking it on his host, the owner judged
+that this is not the free movement he wants, so what that item becomes is open. Mouse-look,
 cursor authoring, preview sliders, gizmos and an editor-pane interaction model are deliberately not on the route yet:
 those are where a
 shell starts accumulating an alternate authority.
@@ -291,7 +292,7 @@ is counted and logged, never hidden. There is no input, no camera, no clock: cou
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
 
-### HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete · **preregistered and built** (`c03260a2`); the gate passes on the host
+### HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete · **measured on the host** (`c03260a2`): a held walk saved and verified
 The live editor, `shell live-window`, now walks while a key is held. W, A, S, D and the arrows are the held keys: the
 steps and the quarter turns, so holding A or D looks around. A held key's auto-repeat is bound as its move and appends an
 ordinary move event, at most one per composition. Later repeats in the same composition are coalesced: counted, never
@@ -299,7 +300,9 @@ an event. A fresh press is never coalesced, and holding Space, Q, E or a class k
 the only speed source: the shell keeps no clock, reads no key-up and carries no key state between compositions. The
 gate proves the held set, the one-per-composition cap with its coalesced count, and that a held walk saves exactly the
 data the same walk pressed would. LIVE-INPUT-0's and LIVE-SESSION-0's commands still bind no repeat. On the owner's
-host the gate passes with the same 174 rows; a held walk in the window there is still to come.
+host the gate passes with the same 174 rows, and a held walk (31 repeats, each walked, every readback exact) was saved
+and verified; pressed instead, the same walk reaches the same head. The owner judged held keys over the grid not to be
+the free movement he wants, so that route item is open.
 
 ### LIVE-AUTHOR-0 — the thing authored is what the next frame renders · **measured on the host** (`9a3e4521`): tile classes painted live, saved, and resumed
 The one live editor, `shell live-window`: LIVE-SESSION-0's durable loop under the authoring binding, which is
