@@ -6383,7 +6383,8 @@ def liveinput_court():
 def liveinput_fence():
     """The loop appends and reads, and never holds a world: the session's state is private to shell/playback.rs and
     changed only by push_move and push_edit_cell, each replaying one appended event by replay_from's own statements; the
-    loop turns each press into an action (a repeat never reaching the binding), renders the reference once per change,
+    loop turns each press into an action (a repeat never reaching LIVE-INPUT-0's binding: its run passes no held set,
+    re-pinned on purpose with HOLD-WALK-0), renders the reference once per change,
     and in every composition renders the current state through the LoopRenderer, checks its bytes, presents, then reads
     back; no clock, no file, refusals as data; the host window is the presenter's borderless window with the keyboard read
     from the message queue, appended after LIVE-LOOP-0's section, writing nothing; a windowless build refuses it."""
@@ -6417,6 +6418,8 @@ def liveinput_fence():
                                     "if s.present(lr.bgr()).is_none()", "s.readback()")]
     if -1 in order or order != sorted(order) or loop.count("lr.render(") != 1 or loop.count("s.present(") != 1:
         raise Red("a composition is not: presses to events (repeats unbound), render the current state, check, present, read back")
+    if "run_with(s, session, surface, bind, None)" not in src_span(rs, "pub fn run<S: ExactSurface + Keys>(", "\n}\n"):
+        raise Red("LIVE-INPUT-0's run passes a held set: its repeats must never reach the binding")
     if (runf.count("s.set_call(CALL);") != 1 or rs.count("crate::refusallog::record(") != 2 or rs.count("crate::runledger::readback(") != 1
             or runf.count("reference(session, Some((&witness, k)))?") != 1):
         raise Red("the call is not fixed once, a move's reference does not check its witness, or the loop logs more than a refused edit and a differing readback")
@@ -6447,7 +6450,8 @@ def liveinput_fence():
             raise Red("a windowless build did not refuse liveinput-window with SHELL-NO-WINDOW")
     return ("the loop appends and reads, and never holds a world: the session's state is private to shell/playback.rs and "
             "changes only by push_move and push_edit_cell, each replaying one appended event by replay_from's statements; "
-            "a repeat never reaches the binding; a move's reference must reproduce its witness; every composition renders the "
+            "a repeat never reaches LIVE-INPUT-0's binding (its run passes no held set); a move's reference must reproduce its "
+            "witness; every composition renders the "
             "current state through the LoopRenderer, checks it, presents, then reads back; no clock, no file; the host window "
             "reads WM_KEYDOWN from the queue, is appended after LIVE-LOOP-0's section and writes nothing; a windowless build "
             "refuses it")
@@ -6858,11 +6862,12 @@ def livesession_fence():
     if (-1 in order or order != sorted(order) or "const MOVEFILE_REPLACE_EXISTING: u32 = 0x1;" not in win or "const MOVEFILE_WRITE_THROUGH: u32 = 0x8;" not in win
             or "MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)" not in win or "d.sync_all()" not in rs):
         raise Red("the saved file is not a flushed temporary moved over the destination atomically with the registered flags")
-    # re-pinned on purpose with LIVE-AUTHOR-0: go is LIVE-INPUT-0's binding over go_with, which holds the run
-    if "go_with(s, p, crate::liveinput::bind).0" not in src_span(rs, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n"):
+    # re-pinned on purpose with LIVE-AUTHOR-0: go is LIVE-INPUT-0's binding over go_with, which holds the run; and with
+    # HOLD-WALK-0: go passes no held set, so LIVE-SESSION-0 binds no repeat
+    if "go_with(s, p, crate::liveinput::bind, None).0" not in src_span(rs, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n"):
         raise Red("LIVE-SESSION-0's go is not LIVE-INPUT-0's binding over go_with")
     go = src_span(rs, "pub fn go_with<S: ExactSurface + Keys + Focus>(", "\n}\n")
-    order = [go.find(t) for t in ("crate::liveinput::run_with(s, &mut session, surface, binding)", "saved_text(&session, &base, &live_json)", "write_saved(&dst, &text, &plant)",
+    order = [go.find(t) for t in ("crate::liveinput::run_with(s, &mut session, surface, binding, hold)", "saved_text(&session, &base, &live_json)", "write_saved(&dst, &text, &plant)",
                                   "fs::read(&dst)", "load(&dst)", 'println!("[livesession] saved and verified:', "crate::runledger::end(0);")]
     if (-1 in order or order != sorted(order) or go.count("saved and verified") != 1 or go.count("crate::runledger::end(0);") != 1
             or not all(t in go for t in ("if b != text.as_bytes() {", "l.session.head() != session.head()", "l.session.content() != session.content()",
@@ -6902,10 +6907,10 @@ def livesession_fence():
     i_li, i_ls = tail.find("LIVE-INPUT-0 (appended)"), tail.find("LIVE-SESSION-0 (appended)")
     sect = w32_section(tail, "LIVE-SESSION-0 (appended)")
     # re-pinned on purpose with LIVE-AUTHOR-0: the window takes its binding; LIVE-SESSION-0's passes LIVE-INPUT-0's
-    if "session_window(plan, crate::liveinput::bind)" not in src_span(sect, "pub fn livesession_window(", "\n}\n"):
+    if "session_window(plan, crate::liveinput::bind, None)" not in src_span(sect, "pub fn livesession_window(", "\n}\n"):
         raise Red("LIVE-SESSION-0's window is not LIVE-INPUT-0's binding over the shared window")
     win = src_span(sect, "fn session_window(", "\n}\n")
-    order = [win.find(t) for t in ("SetProcessDPIAware()", "crate::livesession::prepare(plan)", "= show_window(", "crate::livesession::go_with(&mut keys, prepared, binding)")]
+    order = [win.find(t) for t in ("SetProcessDPIAware()", "crate::livesession::prepare(plan)", "= show_window(", "crate::livesession::go_with(&mut keys, prepared, binding, hold)")]
     if (i_li < 0 or i_ls < i_li or -1 in order or order != sorted(order) or "call: 1," not in sect or "set_call(" in win
             or any(t in sect for t in ("fs::", "File::", "write_raw(", "WM_KEYDOWN", "StretchDIBits", "qpc()"))
             or "unsafe { GetForegroundWindow() } == self.hwnd" not in sect):
@@ -7158,7 +7163,8 @@ def liveauthor_fence():
             raise Red("the authoring module contains %r: it holds no state and makes no edit" % tok)
     li = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
     runf = src_span(li, "pub fn run<S: ExactSurface + Keys>(", "\npub fn summary(")
-    if "run_with(s, session, surface, bind)" not in src_span(li, "pub fn run<S: ExactSurface + Keys>(", "\n}\n"):
+    # re-pinned on purpose with HOLD-WALK-0: LIVE-INPUT-0's run passes no held set
+    if "run_with(s, session, surface, bind, None)" not in src_span(li, "pub fn run<S: ExactSurface + Keys>(", "\n}\n"):
         raise Red("LIVE-INPUT-0's run is not its own binding over the shared loop")
     arm = src_span(runf, "Action::Tile(class) => {", "\n                }\n")
     order = [arm.find(t) for t in ("crate::liveauthor::next_colour(session.tile_rgb(class))", "session.push_edit_tile(class, rgb)", "reference(session, None)?", "live.pixels.push(r.4);")]
@@ -7173,12 +7179,13 @@ def liveauthor_fence():
     if -1 in order or order != sorted(order) or sect.count("&mut self") != 3 or any(t in sect for t in ("fs::", "File::")):
         raise Red("the session's tile edit is not apply, content, fold, append, hand — the cell edit's own path")
     ls = read(os.path.join(SHELL, "livesession.rs")).decode("utf-8")
-    if ("go_with(s, p, crate::liveinput::bind).0" not in src_span(ls, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n")
-            or "crate::liveinput::run_with(s, &mut session, surface, binding)" not in ls or "s.push_edit_tile(class, rgb)" not in ls):
+    if ("go_with(s, p, crate::liveinput::bind, None).0" not in src_span(ls, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n")
+            or "crate::liveinput::run_with(s, &mut session, surface, binding, hold)" not in ls or "s.push_edit_tile(class, rgb)" not in ls):
         raise Red("LIVE-SESSION-0's run is not its own binding over go_with, or the loader does not replay tile edits through the session")
     main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
     sw = src_span(main_src, '"live-selftest" | "live-window" => {', "\n        other => ")
-    if "livesession::go_with(&mut surf, prepared, liveauthor::bind)" not in sw or 'plant: String::new(), surface: "gdi"' not in sw:
+    # re-pinned on purpose with HOLD-WALK-0: the live editor runs with HOLD-WALK-0's held set (holdwalk-fence judges it)
+    if "livesession::go_with(&mut surf, prepared, liveauthor::bind, Some(holdwalk::held))" not in sw or 'plant: String::new(), surface: "gdi"' not in sw:
         raise Red("the live command does not run LIVE-SESSION-0's go_with under the authoring binding")
     w32 = read(os.path.join(SHELL, "win32.rs"))
     if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
@@ -7187,7 +7194,7 @@ def liveauthor_fence():
     i_ls, i_la = tail.find("LIVE-SESSION-0 (appended)"), tail.find("LIVE-AUTHOR-0 (appended)")
     sect = w32_section(tail, "LIVE-AUTHOR-0 (appended)")
     lw = src_span(sect, "pub fn live_window(", "\n}\n")
-    if i_ls < 0 or i_la < i_ls or "session_window(plan, crate::liveauthor::bind)" not in lw or any(t in sect for t in ("fs::", "File::", "WM_", "set_call(")):
+    if i_ls < 0 or i_la < i_ls or "session_window(plan, crate::liveauthor::bind, Some(crate::holdwalk::held))" not in lw or any(t in sect for t in ("fs::", "File::", "WM_", "set_call(")):
         raise Red("the live editor's window is not LIVE-SESSION-0's window under the authoring binding, appended after its section")
     if SHELL_EXE is not None:
         cp = subprocess.run([SHELL_EXE, "live-window"], capture_output=True, text=True, cwd=ROOT)
@@ -7198,6 +7205,254 @@ def liveauthor_fence():
             "edit is the cell edit's own path (apply, content, fold, append, hand); the live command is LIVE-SESSION-0's "
             "go_with under the authoring binding while LIVE-INPUT-0 and LIVE-SESSION-0 keep theirs; the host window is "
             "LIVE-SESSION-0's under the binding; a windowless build refuses")
+
+# ------------------------------------------------------------------ HOLD-WALK-0
+# the held set, registered: W, A, S, D, Up, Left, Down, Right — the steps and the quarter turns (not Q/E, not edits)
+HOLDWALK_HELD = [0x57, 0x41, 0x53, 0x44, 0x26, 0x25, 0x28, 0x27]
+# script H from 28,28,N: groups of (key, outcome); a group is the presses one composition drains (joined by "/"); the
+# outcome is a typed event (kind, command or spec, camera after it), "coalesced", "repeat" (ignored) or "end"
+HOLDWALK_SCRIPT = ("28,28,N", [
+    [("LEFT", ("move", "L", "28,28,W"))],
+    [("W", ("move", "F", "27,28,W"))],
+    [("W+", ("move", "F", "26,28,W"))],
+    [("W+", ("move", "F", "25,28,W")), ("W+", "coalesced"), ("W+", "coalesced")],
+    [("W+", ("move", "F", "24,28,W"))],
+    [("5", ("edit", "tile:floor,96,80,64", "24,28,W"))],
+    [("5+", "repeat")],                                          # holding a class key paints once
+    [("Q+", "repeat")],                                          # a strafe is not in the held set
+    [("A", ("move", "L", "24,28,S"))],
+    [("W", ("move", "F", "24,28,S"))],                           # blocked: rock to the south
+    [("W+", ("move", "F", "24,28,S"))],                          # a held step into rock is a blocked move, as pressed
+    [("D+", ("move", "R", "24,28,W")), ("D+", "coalesced")],     # a held quarter turn (free look), one per composition
+    [("D+", ("move", "R", "24,28,N"))],
+    [("W+", ("move", "F", "24,27,N")), ("W", ("move", "F", "24,26,N"))],   # a fresh press is never coalesced
+    [("W+", ("move", "F", "24,25,N")), ("A+", "coalesced")],     # one admitted repeat per composition, whichever key
+    [("SPACE", ("edit", "cell:24,24,#", "24,25,N"))],
+    [("SPACE+", "repeat")],                                      # holding Space toggles once
+    [("W+", ("move", "F", "24,25,N"))],                          # into the cell just closed: blocked
+    [("ESC", "end")]])
+HOLDWALK_COUNTS = {"keys": 24, "repeats": 16, "walked": 9, "coalesced": 4, "events": 16, "moves": 14, "edits": 2,
+                   "unbound": 0, "refused": 0}
+
+
+def _hw_keys(groups):
+    return ",".join("/".join(k for k, _o in g) for g in groups)
+
+
+def _hw_pressed(groups):
+    """The same walk pressed: each walked repeat typed as a fresh press, the coalesced and ignored repeats left out."""
+    out = []
+    for g in groups:
+        for k, o in g:
+            if isinstance(o, tuple) or o == "end":
+                out.append(k.rstrip("+"))
+    return ",".join(out)
+
+
+def _hw_script_h(logs, tag="h"):
+    camera, groups = HOLDWALK_SCRIPT
+    out = os.path.join(BUILD, "holdwalk-%s.json" % tag)
+    cp, path, raw = _la_run(["--camera", camera, "--keys", _hw_keys(groups)], logs, out)
+    if cp.returncode != 0 or path is None or raw is None or "live court OK" not in cp.stdout:
+        raise Red("script H did not run to a saved and verified live session: " + (cp.stderr.strip() or cp.stdout.strip()))
+    return cp, path, raw
+
+
+def holdwalk_preregistered():
+    """HOLD-WALK-0's method is locked: a held W/A/S/D or arrow walks the one live editor, at most one admitted repeat per
+    composition and the rest coalesced and counted, a fresh press never coalesced, no clock and no key state, the session
+    unchanged. The held set in the shell must be the registered one: exactly the keys LIVE-INPUT-0 binds to a step or a
+    quarter turn."""
+    e = locked_entry("HOLD-WALK-0", {
+        "vocabulary on the one live editor; the world stays discrete": ("hyp", ("vocabulary on the live editor", "not a new pathway", "the session, the renderer, replay, save and collision are unchanged", "w, a, s, d, up, down, left, right")),
+        "one admitted repeat per composition, the rest coalesced": ("hyp", ("at most one repeat is admitted per composition", "coalesced — counted and traced, never an event, never silently dropped", "a fresh press is never coalesced", "holding space or a class key edits once")),
+        "no clock, no key-up, no key state": ("hyp", ("keeps no clock, reads no key-up and holds no key state across compositions", "free look is a held quarter turn")),
+        "the gate": ("succ", ("repeats = walked + coalesced + ignored", "no composition admits more than one repeat", "the same walk pressed", "is identical to the held walk's", "a held key's repeats are counted and bind nothing")),
+        "no movement after release, no new session field": ("fail", ("an event made in a composition where no press arrived", "any new event kind, marker or field in the session", "a fresh press coalesced", "a coalesced repeat not counted")),
+        "scope": ("lims", ("the input is continuous, the world is not", "mouse-look and any angle between them stay out", "the message's own repeat count is not read", "no walking-speed claim")),
+    })
+    hw = read(os.path.join(SHELL, "holdwalk.rs")).decode("utf-8")
+    names = {"VK_UP": 0x26, "VK_LEFT": 0x25, "VK_DOWN": 0x28, "VK_RIGHT": 0x27}
+    toks = [t.strip() for t in src_span(hw, "pub const HELD: [u32; 8] = [", "];")[len("pub const HELD: [u32; 8] = ["):].split(",")]
+    got = [names[t] if t in names else int(t, 16) for t in toks]
+    if got != HOLDWALK_HELD:
+        raise Red("the shell's held set is not the registered one: %s" % [hex(x) for x in got])
+    if src_span(hw, "pub fn held(vk: u32) -> bool {", "\n}\n").split("{", 1)[1].strip() != "HELD.contains(&vk)":
+        raise Red("whether a repeat walks is decided by more than the key code's membership in the held set")
+    li = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
+    b = src_span(li, "pub fn bind(vk: u32) -> Action {", "\n}\n")
+    arms = {}
+    for m_ in re.finditer(r"^\s+([A-Z_0-9x| ]+) => Action::Move\(b'(\w)'\)", b, re.M):
+        for t in m_.group(1).split("|"):
+            t = t.strip()
+            arms[{"VK_UP": 0x26, "VK_DOWN": 0x28, "VK_LEFT": 0x25, "VK_RIGHT": 0x27}.get(t) or int(t, 16)] = m_.group(2)
+    steps_and_turns = sorted(k for k, c_ in arms.items() if c_ in "FBLR")
+    if sorted(HOLDWALK_HELD) != steps_and_turns or any(arms.get(k) in ("Q", "E") for k in HOLDWALK_HELD):
+        raise Red("the held set is not exactly the keys LIVE-INPUT-0 binds to a step or a quarter turn")
+    la = read(os.path.join(SHELL, "liveauthor.rs")).decode("utf-8")
+    if any(0x31 <= k <= 0x35 for k in HOLDWALK_HELD) or "0x31..=0x35 => Action::Tile((vk - 0x31) as u8)," not in la:
+        raise Red("a class key is in the held set")
+    return ("HOLD-WALK-0's method is locked (hash %s): the held set is W, A, S, D and the four arrows — exactly the keys "
+            "LIVE-INPUT-0 binds to a step or a quarter turn, no strafe, no edit key — and whether a repeat walks is the "
+            "key code's membership alone" % e["chain_hash"][:8])
+
+
+def holdwalk_binding():
+    """Script H's presses, delivered in groups, become exactly their registered outcomes at their registered compositions:
+    the first held repeat in a composition walks, later ones are coalesced, a fresh press acts, a repeat outside the held
+    set is ignored; the saved log is the registered events and the counts the registered ones; in liveinput-selftest and
+    livesession-selftest a held key's repeats bind nothing."""
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    logs = _ls_logs("holdwalk-binding")
+    cp, path, raw = _hw_script_h(logs)
+    camera, groups = HOLDWALK_SCRIPT
+    want, n = [], 0
+    for i, g in enumerate(groups):
+        for k, o in g:
+            want.append((k.rstrip("+"), k.endswith("+"), "event %d" % n if isinstance(o, tuple) else o, LIVEINPUT_EVERY * i + 1))
+            n += isinstance(o, tuple)
+    got = [(t["key"], t["repeat"], t["outcome"], t["composition"]) for t in raw["trace"]]
+    if got != want:
+        raise Red("script H's presses did not become their registered outcomes: %r" % (next((g, w) for g, w in zip(got + [None] * 99, want) if g != w),))
+    saved = json.loads(read(path).decode("utf-8"))["data"]["log"]
+    typed = [(x["kind"], x.get("command", x.get("spec")), x.get("camera")) for x in saved]
+    want_ev = [(k, q, c_ if k == "move" else None) for g in groups for _k, o in g if isinstance(o, tuple) for (k, q, c_) in [o]]
+    if typed != want_ev:
+        raise Red("script H's saved events are not the registered ones: %r" % (next((g, w) for g, w in zip(typed + [None] * 99, want_ev) if g != w),))
+    c = raw["counts"]
+    got_c = {k: c.get(k) for k in HOLDWALK_COUNTS}
+    if got_c != HOLDWALK_COUNTS or raw["ended"] != "escape":
+        raise Red("script H's counts are not the registered ones: %s" % got_c)
+    if "liveinput held repeats 16 walked 9 coalesced 4 ignored 3" not in cp.stdout:
+        raise Red("the live editor did not report its held repeats (walked, coalesced, ignored)")
+    for cmd, extra in (("liveinput-selftest", {}), ("livesession-selftest", {LIVESESSION_ENV: GATE_SESSIONS})):
+        cp2 = subprocess.run([SHELL_EXE, cmd, "--keys", "LEFT,W,W+,W+,ESC"], capture_output=True, text=True, cwd=ROOT,
+                             env=dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1]}, **extra))
+        if (cp2.returncode != 0 or "liveinput keys 5 repeats 2 unbound 0 events 2 moves 2" not in cp2.stdout
+                or "W+ ->" in cp2.stdout or "liveinput held" in cp2.stdout):
+            raise Red("%s bound a held key's repeat: LIVE-INPUT-0 and LIVE-SESSION-0 must bind none" % cmd)
+    return ("the held keys on the mock: script H's %d presses in %d groups became exactly their registered outcomes — %d "
+            "repeats walked, %d coalesced, %d ignored (Space, a class key, Q), fresh presses never coalesced, blocked held "
+            "steps appended as moves — saved and verified; in liveinput-selftest and livesession-selftest a held key's "
+            "repeats bind nothing" % (HOLDWALK_COUNTS["keys"], len(groups), HOLDWALK_COUNTS["walked"], HOLDWALK_COUNTS["coalesced"],
+                                     HOLDWALK_COUNTS["repeats"] - HOLDWALK_COUNTS["walked"] - HOLDWALK_COUNTS["coalesced"]))
+
+
+def holdwalk_coalesce():
+    """Coalescing is observable and bounded: from script H's trace, no composition admits more than one repeat, every
+    coalesced press follows that composition's admitted repeat, no fresh press is coalesced, repeats are exactly walked +
+    coalesced + ignored, and every saved event is one traced press's (no event without a press, so none after release)."""
+    need_rustc()
+    if SHELL_EXE is None:
+        raise Red("the shell was not built")
+    logs = _ls_logs("holdwalk-coalesce")
+    _cp, path, raw = _hw_script_h(logs, "coalesce")
+    trace = raw["trace"]
+    per = {}
+    for t in trace:
+        per.setdefault(t["composition"], []).append(t)
+    for comp, ts in per.items():
+        walked = [i for i, t in enumerate(ts) if t["repeat"] and t["outcome"].startswith("event")]
+        if len(walked) > 1:
+            raise Red("composition %d admitted %d repeats" % (comp, len(walked)))
+        for i, t in enumerate(ts):
+            if t["outcome"] == "coalesced" and (not t["repeat"] or not walked or i < walked[0]):
+                raise Red("composition %d coalesced a press that was not a repeat after its admitted one" % comp)
+    rep = [t for t in trace if t["repeat"]]
+    w_ = sum(1 for t in rep if t["outcome"].startswith("event"))
+    co = sum(1 for t in rep if t["outcome"] == "coalesced")
+    ig = sum(1 for t in rep if t["outcome"] == "repeat")
+    c = raw["counts"]
+    if (w_ + co + ig, w_, co) != (c["repeats"], c["walked"], c["coalesced"]) or co == 0 or w_ == 0:
+        raise Red("the repeats are not exactly walked + coalesced + ignored, or a coalesced repeat was not counted")
+    evs = [int(t["outcome"].split()[1]) for t in trace if t["outcome"].startswith("event")]
+    saved = json.loads(read(path).decode("utf-8"))["data"]["log"]
+    if evs != list(range(len(saved))) or c["events"] != len(saved):
+        raise Red("an event was made without a press (movement after release), or a press's event is missing")
+    return ("coalescing is observable and bounded: over script H's %d compositions with presses, none admitted more than "
+            "one repeat, every coalesced press followed its composition's admitted repeat, no fresh press was coalesced, "
+            "the %d repeats are %d walked + %d coalesced + %d ignored, and every one of the %d saved events is a traced "
+            "press's" % (len(per), c["repeats"], w_, co, ig, len(saved)))
+
+
+def holdwalk_equivalence():
+    """The world stays discrete: the same walk pressed — each walked repeat typed as a fresh press, the coalesced and
+    ignored repeats left out — saves a session whose data (base, log, head, final camera, final content) is byte-identical
+    to the held walk's; the workshop's sessionwalk verifies both."""
+    import livesession as LS
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None:
+        raise Red("the shell or the workshop's sessionwalk was not built")
+    logs = _ls_logs("holdwalk-equivalence")
+    _cp, held_path, _raw = _hw_script_h(logs, "equiv")
+    camera, groups = HOLDWALK_SCRIPT
+    cp, pressed_path, _r = _la_run(["--camera", camera, "--keys", _hw_pressed(groups)], logs)
+    if cp.returncode != 0 or pressed_path is None:
+        raise Red("the pressed walk did not run to a saved and verified session: " + (cp.stderr.strip() or cp.stdout.strip()))
+    a, b = read(held_path), read(pressed_path)
+    da, db = a[:a.index(b'\n "live": ')], b[:b.index(b'\n "live": ')]
+    if da != db:
+        raise Red("the held walk's saved data is not the pressed walk's: holding a key changed the session")
+    for p_ in (held_path, pressed_path):
+        LS.check_saved(read(p_), ROOT)
+        code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p_])
+        if code != 0 or "SESSIONWALK verify OK" not in out:
+            raise Red("the workshop does not verify %s: %s" % (p_, err.strip()))
+    d = json.loads(a.decode("utf-8"))["data"]
+    return ("the world stays discrete: script H held and the same walk pressed (%d presses) save byte-identical session data "
+            "— %d events, head %s…, final %s — and the workshop's sessionwalk verifies both"
+            % (len(_hw_pressed(groups).split(",")), len(d["log"]), d["head"][:12], d["final_camera"]))
+
+
+def holdwalk_fence():
+    """No clock, no key-up, no key state: the held set is a pure function of the key code in a stateless module; the
+    loop's admitted flag is declared inside each composition, and its repeat branch walks only the first held repeat and
+    counts the rest; LIVE-INPUT-0's run, LIVE-SESSION-0's go and window pass no held set, the live command (selftest and
+    window) passes HOLD-WALK-0's; the host window still reads only WM_KEYDOWN (no key-up) from LIVE-INPUT-0's section."""
+    hw = read(os.path.join(SHELL, "holdwalk.rs")).decode("utf-8")
+    code_ = "\n".join(ln for ln in hw.splitlines() if not ln.lstrip().startswith("//"))
+    for tok in ("static", "mut ", "Vec<", "Cell<", "fs::", "Instant", "SystemTime", "ticks(", "unsafe", "Keys", "LiveSession"):
+        if tok in code_:
+            raise Red("the held-set module contains %r: it holds no state, reads no clock and touches no session" % tok)
+    li = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
+    runf = src_span(li, "pub fn run_with<S: ExactSurface + Keys>(", "\npub fn summary(")
+    loop = runf[runf.index("    loop {"):]
+    order = [loop.find(t) for t in ("let open = s.pump();", "let mut admitted = false;", "for (vk, repeat) in s.keys() {", "if repeat {",
+                                    "let walks = hold.map_or(false, |h| h(vk));", "if !walks || admitted {", "live.coalesced += 1;", "continue;",
+                                    "admitted = true;", "live.walked += 1;", "match binding(vk) {")]
+    if -1 in order or order != sorted(order) or li.count("let mut admitted") != 1 or runf.count("admitted = true;") != 1 \
+            or "admitted" in runf[:runf.index("    loop {")]:
+        raise Red("the admitted flag is not declared inside each composition, or the repeat branch does not walk only the "
+                  "first held repeat and count the rest")
+    if "ticks(" in runf or any(t in li for t in ("Instant", "SystemTime", "qpc")):
+        raise Red("the loop reads a clock")
+    if "run_with(s, session, surface, bind, None)" not in src_span(li, "pub fn run<S: ExactSurface + Keys>(", "\n}\n"):
+        raise Red("LIVE-INPUT-0's run passes a held set")
+    ls = read(os.path.join(SHELL, "livesession.rs")).decode("utf-8")
+    if "go_with(s, p, crate::liveinput::bind, None).0" not in src_span(ls, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n"):
+        raise Red("LIVE-SESSION-0's go passes a held set")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    sw = src_span(main_src, '"live-selftest" | "live-window" => {', "\n        other => ")
+    if ("livesession::go_with(&mut surf, prepared, liveauthor::bind, Some(holdwalk::held))" not in sw
+            or "liveinput::ScriptedKeys::grouped(mock, script, liveinput::MOCK_EVERY)" not in sw or "holdwalk" in main_src.replace(sw, "").replace('#[path = "holdwalk.rs"]\nmod holdwalk;', "")):
+        raise Red("the held set reaches a command other than the live editor, or the live selftest does not run it")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    ls_sect, la_sect = w32_section(tail, "LIVE-SESSION-0 (appended)"), w32_section(tail, "LIVE-AUTHOR-0 (appended)")
+    if ("session_window(plan, crate::liveinput::bind, None)" not in src_span(ls_sect, "pub fn livesession_window(", "\n}\n")
+            or "session_window(plan, crate::liveauthor::bind, Some(crate::holdwalk::held))" not in src_span(la_sect, "pub fn live_window(", "\n}\n")
+            or tail.count("holdwalk") != 1):
+        raise Red("LIVE-SESSION-0's window passes a held set, or the live editor's window does not pass HOLD-WALK-0's")
+    if any(t in tail for t in ("WM_KEYUP", "0x0101", "GetAsyncKeyState", "GetKeyState")) or tail.count("self.pending.push(") != 1:
+        raise Red("the host window reads a key-up or a key state: the held keys must come only from WM_KEYDOWN's repeat bit")
+    return ("no clock, no key-up, no key state: the held set is the key code's membership in a stateless module; the "
+            "admitted flag lives inside each composition and only the first held repeat walks, the rest counted; "
+            "LIVE-INPUT-0's run and LIVE-SESSION-0's go and window pass no held set, the live editor (selftest and window) "
+            "passes HOLD-WALK-0's; the window still reads only WM_KEYDOWN and its repeat bit")
 
 # ------------------------------------------------------------------ main
 def main() -> int:
@@ -7384,6 +7639,11 @@ def main() -> int:
     row("liveauthor-authority", liveauthor_authority)
     row("liveauthor-persist", liveauthor_persist)
     row("liveauthor-fence", liveauthor_fence)
+    row("holdwalk-preregistered", holdwalk_preregistered)
+    row("holdwalk-binding", holdwalk_binding)
+    row("holdwalk-coalesce", holdwalk_coalesce)
+    row("holdwalk-equivalence", holdwalk_equivalence)
+    row("holdwalk-fence", holdwalk_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

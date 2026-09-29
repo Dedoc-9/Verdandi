@@ -2409,11 +2409,12 @@ impl crate::livesession::Focus for FocusKeysGdi {
 }
 
 pub fn livesession_window(plan: crate::livesession::Plan) {
-    session_window(plan, crate::liveinput::bind)
+    session_window(plan, crate::liveinput::bind, None)
 }
 
-/// LIVE-SESSION-0's window under a binding (LIVE-AUTHOR-0's live editor passes its own; nothing else differs).
-fn session_window(plan: crate::livesession::Plan, binding: fn(u32) -> crate::liveinput::Action) {
+/// LIVE-SESSION-0's window under a binding and held set (LIVE-AUTHOR-0's live editor passes its binding and HOLD-WALK-0's
+/// held set; LIVE-SESSION-0's passes none; nothing else differs).
+fn session_window(plan: crate::livesession::Plan, binding: fn(u32) -> crate::liveinput::Action, hold: Option<fn(u32) -> bool>) {
     unsafe { SetProcessDPIAware() };
     let prepared = match crate::livesession::prepare(plan) {
         Ok(p) => p,
@@ -2439,7 +2440,7 @@ fn session_window(plan: crate::livesession::Plan, binding: fn(u32) -> crate::liv
     let mut keys = FocusKeysGdi { inner: LiveKeysGdi { surf, pending: Vec::new() }, hwnd, request, at_start, with: 0, without: 0, changes: 0, last: None };
     println!("[livesession] the window {} the keyboard at the start (click it if keys do nothing); arrows or WASD walk and turn, Q/E strafe, Space opens or closes the cell ahead, Esc ends and saves",
              if at_start { "holds" } else { "does NOT hold" });
-    let (code, _live) = crate::livesession::go_with(&mut keys, prepared, binding);
+    let (code, _live) = crate::livesession::go_with(&mut keys, prepared, binding, hold);
     if unsafe { IsWindow(hwnd) } != 0 {
         unsafe { DestroyWindow(hwnd) };
     }
@@ -2448,9 +2449,10 @@ fn session_window(plan: crate::livesession::Plan, binding: fn(u32) -> crate::liv
 
 // ================================================================== LIVE-AUTHOR-0 (appended)
 // The live editor's host window: LIVE-SESSION-0's window, keys and focus observation, under the authoring binding
-// (LIVE-INPUT-0's keys, plus 1-5 for the tile classes). Esc seals; the saved session is verified before it counts.
+// (LIVE-INPUT-0's keys, plus 1-5 for the tile classes) and HOLD-WALK-0's held set (a held W/A/S/D or arrow walks).
+// Esc seals; the saved session is verified before it counts.
 
 pub fn live_window(plan: crate::livesession::Plan) {
-    println!("[live] the live editor: 1-4 paint wall0-wall3 and 5 the floor with the next palette colour; every edit is a saved session event");
-    session_window(plan, crate::liveauthor::bind)
+    println!("[live] the live editor: 1-4 paint wall0-wall3 and 5 the floor with the next palette colour; hold W/A/S/D or an arrow to keep walking or turning; every edit and step is a saved session event");
+    session_window(plan, crate::liveauthor::bind, Some(crate::holdwalk::held))
 }

@@ -74,6 +74,10 @@ mod livesession;
 
 #[path = "liveauthor.rs"]
 mod liveauthor;
+
+#[path = "holdwalk.rs"]
+mod holdwalk;
+
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -834,6 +838,8 @@ fn main() {
             // the authoring binding (LIVE-INPUT-0's keys, plus 1-5 for the tile classes). Through the mock with a key
             // script (`-selftest`, what the gate runs; --out writes the loop's counts, views and pixels for the gate) or
             // in the borderless host window (`-window`, window build only). Plants (selftest): the surface's.
+            // HOLD-WALK-0: under HOLD-WALK-0's held set (a held W/A/S/D or arrow walks, at most one admitted repeat per
+            // composition, the rest coalesced); the selftest's script may group presses with `/` (drained together).
             let a = &args[2..];
             let opt = |flag: &str| -> Option<String> {
                 a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
@@ -843,14 +849,14 @@ fn main() {
             let cam0 = parse_camera(&opt("--camera").unwrap_or_else(|| "28,28,N".to_string())).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m));
             let resume = opt("--resume");
             if args[1] == "live-selftest" {
-                let script = liveinput::parse_script(&opt("--keys").unwrap_or_default()).unwrap_or_else(|m| refuse("USAGE", &m));
+                let script = liveinput::parse_groups(&opt("--keys").unwrap_or_default()).unwrap_or_else(|m| refuse("USAGE", &m));
                 let plant = opt("--plant").unwrap_or_default();
                 let out = opt("--out");
                 let plan = livesession::Plan { level: level.clone(), tiles: tiles.clone(), cam0, resume, plant: plant.clone(), surface: "mock" };
                 let prepared = livesession::prepare(plan).unwrap_or_else(|code| exit(code));
                 let mock = presentexact::MockExact::new(latency1r::MockSurface::new(13_333, 1, None), &plant);
-                let mut surf = liveinput::ScriptedKeys::new(mock, script, liveinput::MOCK_EVERY);
-                let (code, live) = livesession::go_with(&mut surf, prepared, liveauthor::bind);
+                let mut surf = liveinput::ScriptedKeys::grouped(mock, script, liveinput::MOCK_EVERY);
+                let (code, live) = livesession::go_with(&mut surf, prepared, liveauthor::bind, Some(holdwalk::held));
                 if let (Some(o), Some(l)) = (out, live.as_ref()) {
                     fs::write(&o, liveinput::raw_json_counts(l, &level, &tiles)).unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", o, e)));
                 }

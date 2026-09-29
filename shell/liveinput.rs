@@ -26,6 +26,12 @@
 //
 // Esc or closing the window ends the session (exit 0). No clock, no file: the log lives in memory and dies with the run
 // (persistence is LIVE-SESSION-0's). Refusals are data, logged where they are emitted; every run is one ledger line.
+//
+// HOLD-WALK-0: the loop may be given a held set (the live editor's, shell/holdwalk.rs; LIVE-INPUT-0's run and
+// LIVE-SESSION-0's go give none). Then the first auto-repeat of a held key among the presses one composition drains is
+// bound like a fresh press (walked), and every later repeat in that composition is coalesced: counted and traced, never
+// an event. A fresh press is never coalesced; a repeat of a key outside the set is ignored as before. The admitted flag
+// lives inside one composition: no clock, no key-up, no key state carried between compositions.
 
 use crate::formats::{facing_letter, Camera};
 use crate::latency1r::Surface;
@@ -131,17 +137,27 @@ pub fn parse_script(s: &str) -> Result<Vec<(u32, bool)>, String> {
     Ok(out)
 }
 
+/// A grouped mock script (HOLD-WALK-0): comma-separated groups, each one or more presses joined by `/` that arrive
+/// together, drained by one composition. A script without `/` is `parse_script`'s, one press per group.
+pub fn parse_groups(s: &str) -> Result<Vec<Vec<(u32, bool)>>, String> {
+    let mut out = Vec::new();
+    for tok in s.split(',').map(|t| t.trim()).filter(|t| !t.is_empty()) {
+        out.push(parse_script(&tok.replace('/', ","))?);
+    }
+    Ok(out)
+}
+
 /// Where key presses come from: the window's message queue on the host, a script on the mock.
 pub trait Keys {
     /// The presses that arrived since the last call, in order: (virtual-key code, auto-repeat).
     fn keys(&mut self) -> Vec<(u32, bool)>;
 }
 
-/// The mock's keyboard: one scripted press every `every` pumps (the last pump of each group of `every`), over any exact
-/// surface. When the script is spent, the next due pump closes the window.
+/// The mock's keyboard: one scripted press (or one group of presses) every `every` pumps (the last pump of each group of
+/// `every`), over any exact surface. When the script is spent, the next due pump closes the window.
 pub struct ScriptedKeys<S> {
     pub inner: S,
-    script: Vec<(u32, bool)>,
+    script: Vec<Vec<(u32, bool)>>,
     every: u64,
     pumps: u64,
     next: usize,
@@ -150,6 +166,9 @@ pub struct ScriptedKeys<S> {
 
 impl<S> ScriptedKeys<S> {
     pub fn new(inner: S, script: Vec<(u32, bool)>, every: u64) -> ScriptedKeys<S> {
+        ScriptedKeys::grouped(inner, script.into_iter().map(|k| vec![k]).collect(), every)
+    }
+    pub fn grouped(inner: S, script: Vec<Vec<(u32, bool)>>, every: u64) -> ScriptedKeys<S> {
         ScriptedKeys { inner, script, every: every.max(1), pumps: 0, next: 0, pending: Vec::new() }
     }
 }
@@ -177,7 +196,7 @@ impl<S: ExactSurface> Surface for ScriptedKeys<S> {
             if self.next >= self.script.len() {
                 return false;
             }
-            self.pending.push(self.script[self.next]);
+            self.pending.extend_from_slice(&self.script[self.next]);
             self.next += 1;
         }
         true
@@ -227,7 +246,8 @@ fn refusal(attribution: &'static str, context: Vec<(&'static str, V)>, message: 
     Refusal { attribution, context, message }
 }
 
-/// One key press and what became of it: `event K` (appended as event K), `refused CODE`, `unbound`, `repeat` or `end`.
+/// One key press and what became of it: `event K` (appended as event K), `refused CODE`, `unbound`, `repeat`, `end`, or
+/// (HOLD-WALK-0) `coalesced`.
 pub struct Typed {
     pub key: u32,
     pub repeat: bool,
@@ -263,6 +283,10 @@ pub struct Live {
     /// LIVE-AUTHOR-0: for each state the loop presented, the state and the sha256 of the composite it rendered at that
     /// state's first composition — what was actually handed to the call, beside what the state's reference is.
     pub shown: Vec<(u64, String)>,
+    /// HOLD-WALK-0: whether the run had a held set; the repeats it walked (bound as moves) and coalesced.
+    pub hold: bool,
+    pub walked: u64,
+    pub coalesced: u64,
 }
 
 fn cam_token(c: Camera) -> String {
@@ -291,11 +315,13 @@ fn reference(session: &LiveSession, witness: Option<(&str, u64)>) -> Result<(Sce
 /// The run: the initial state's reference, then compositions until Esc or the window closes, each one's key presses
 /// turned into events first, then the current state rendered live and presented. LIVE-INPUT-0's binding.
 pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface: &'static str) -> Result<Live, Refusal> {
-    run_with(s, session, surface, bind)
+    run_with(s, session, surface, bind, None)
 }
 
-/// The same run under a given binding (LIVE-AUTHOR-0's adds the tile classes; nothing else about the loop changes).
-pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface: &'static str, binding: fn(u32) -> Action) -> Result<Live, Refusal> {
+/// The same run under a given binding (LIVE-AUTHOR-0's adds the tile classes) and held set (HOLD-WALK-0's walks held
+/// keys; None binds no repeat); nothing else about the loop changes.
+pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface: &'static str, binding: fn(u32) -> Action,
+                                        hold: Option<fn(u32) -> bool>) -> Result<Live, Refusal> {
     let _ = s.pump();
     let g = s.geometry();
     if g != [W as i32, H as i32, 0, 0, W as i32, H as i32, W as i32, H as i32] {
@@ -306,7 +332,8 @@ pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, su
     s.set_call(CALL);
     let mut live = Live { keys: 0, repeats: 0, unbound: 0, events: 0, moves: 0, blocked: 0, edits: 0, refused: 0, references: 0,
                           compositions: 0, rendered: 0, byte_checks: 0, presented: 0, screen_readbacks: 0, screen_differed: 0,
-                          renders: 0, geometry: g, ended: "", trace: Vec::new(), views: Vec::new(), pixels: Vec::new(), shown: Vec::new() };
+                          renders: 0, geometry: g, ended: "", trace: Vec::new(), views: Vec::new(), pixels: Vec::new(), shown: Vec::new(),
+                          hold: hold.is_some(), walked: 0, coalesced: 0 };
     let (mut scene, mut expected, mut expected_bgr, view, px) = reference(session, None)?;
     live.references += 1;
     live.views.push(view);
@@ -317,13 +344,27 @@ pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, su
     loop {
         let open = s.pump();
         let mut end = false;
+        let mut admitted = false; // HOLD-WALK-0: whether this composition has walked a repeat (it lives in this composition)
         for (vk, repeat) in s.keys() {
             live.keys += 1;
-            let name = key_name(vk);
+            let mut name = key_name(vk);
             if repeat {
                 live.repeats += 1;
-                live.trace.push(Typed { key: vk, repeat, composition: c, outcome: "repeat".to_string() });
-                continue;
+                let walks = hold.map_or(false, |h| h(vk));
+                if !walks || admitted {
+                    // a repeat outside the held set is ignored; a held one after this composition's first is coalesced
+                    let outcome = if walks {
+                        live.coalesced += 1;
+                        "coalesced"
+                    } else {
+                        "repeat"
+                    };
+                    live.trace.push(Typed { key: vk, repeat, composition: c, outcome: outcome.to_string() });
+                    continue;
+                }
+                admitted = true;
+                live.walked += 1;
+                name.push('+');
             }
             let outcome = match binding(vk) {
                 Action::End => {
@@ -505,13 +546,18 @@ pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, su
 }
 
 pub fn summary(l: &Live, s: &LiveSession) -> Vec<String> {
-    vec![
+    let mut out = vec![
         format!("liveinput keys {} repeats {} unbound {} events {} moves {} blocked {} edits {} refused {} ended {}",
                 l.keys, l.repeats, l.unbound, l.events, l.moves, l.blocked, l.edits, l.refused, l.ended),
         format!("liveinput compositions {} rendered {} presented {} byte_checks {} references {} screen_readbacks {} screen_differed {}",
                 l.compositions, l.rendered, l.presented, l.byte_checks, l.references, l.screen_readbacks, l.screen_differed),
         format!("liveinput final camera {} content {} head {}", cam_token(s.camera()), s.content(), s.head()),
-    ]
+    ];
+    if l.hold {
+        out.push(format!("liveinput held repeats {} walked {} coalesced {} ignored {}", l.repeats, l.walked, l.coalesced,
+                         l.repeats - l.walked - l.coalesced));
+    }
+    out
 }
 
 fn esc(s: &str) -> String {
@@ -562,7 +608,7 @@ pub fn raw_json_counts(l: &Live, level: &str, tiles: &str) -> String {
     let views: Vec<String> = l.views.iter().map(|v| esc(v)).collect();
     let pixels: Vec<String> = l.pixels.iter().map(|v| esc(v)).collect();
     let shown: Vec<String> = l.shown.iter().map(|(k, v)| format!("[{},{}]", k, esc(v))).collect();
-    format!("{{\"name\":\"verdandi-live-selftest\",\"data\":{{\"level\":{},\"tiles\":{},\"trace\":[{}],\"views\":[{}],\"pixels\":[{}],\"shown\":[{}],\"counts\":{{\"keys\":{},\"repeats\":{},\"unbound\":{},\"events\":{},\"moves\":{},\"edits\":{},\"refused\":{},\"compositions\":{},\"frames_rendered\":{},\"frames_presented\":{},\"byte_checks\":{},\"screen_readbacks\":{},\"screen_differed\":{}}},\"ended\":{}}}}}",
+    format!("{{\"name\":\"verdandi-live-selftest\",\"data\":{{\"level\":{},\"tiles\":{},\"trace\":[{}],\"views\":[{}],\"pixels\":[{}],\"shown\":[{}],\"counts\":{{\"keys\":{},\"repeats\":{},\"unbound\":{},\"events\":{},\"moves\":{},\"edits\":{},\"refused\":{},\"compositions\":{},\"frames_rendered\":{},\"frames_presented\":{},\"byte_checks\":{},\"screen_readbacks\":{},\"screen_differed\":{},\"walked\":{},\"coalesced\":{}}},\"ended\":{}}}}}",
             esc(level), esc(tiles), trace.join(","), views.join(","), pixels.join(","), shown.join(","), l.keys, l.repeats, l.unbound, l.events, l.moves, l.edits, l.refused,
-            l.compositions, l.rendered, l.presented, l.byte_checks, l.screen_readbacks, l.screen_differed, esc(l.ended))
+            l.compositions, l.rendered, l.presented, l.byte_checks, l.screen_readbacks, l.screen_differed, l.walked, l.coalesced, esc(l.ended))
 }

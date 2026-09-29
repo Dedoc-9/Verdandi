@@ -633,13 +633,15 @@ pub fn prepare(plan: Plan) -> Result<Prepared, i32> {
 
 /// The run: LIVE-INPUT-0's loop, then the seal, then the saved file's verification. Returns the exit code.
 pub fn go<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared) -> i32 {
-    go_with(s, p, crate::liveinput::bind).0
+    go_with(s, p, crate::liveinput::bind, None).0
 }
 
-/// The same run under a given binding (LIVE-AUTHOR-0's live editor); also hands back the loop's counts for the gate.
-pub fn go_with<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared, binding: fn(u32) -> crate::liveinput::Action) -> (i32, Option<crate::liveinput::Live>) {
+/// The same run under a given binding (LIVE-AUTHOR-0's live editor) and held set (HOLD-WALK-0's; None binds no repeat);
+/// also hands back the loop's counts for the gate.
+pub fn go_with<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared, binding: fn(u32) -> crate::liveinput::Action,
+                                               hold: Option<fn(u32) -> bool>) -> (i32, Option<crate::liveinput::Live>) {
     let Prepared { mut session, base, lineage, resumed, journal, dir, plant, surface } = p;
-    let live = match crate::liveinput::run_with(s, &mut session, surface, binding) {
+    let live = match crate::liveinput::run_with(s, &mut session, surface, binding, hold) {
         Ok(l) => l,
         Err(r) => {
             // the loop's refusal is LIVE-INPUT-0's (logged as its operation); the journal keeps what was flushed

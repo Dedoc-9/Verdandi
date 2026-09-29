@@ -3157,6 +3157,79 @@ pixels of an off-screen class or not those of an on-screen one, or if a turn tou
 `liveauthor-persist` goes red if the resumed picture is not the parent's last. `liveauthor-fence` goes red if a colour
 is held, previewed or applied outside the session.
 
+## HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete (preregistered and built)
+
+**Why.** The route's next step after LIVE-AUTHOR-0 was free continuous movement, as vocabulary on the one live editor.
+The frozen renderer draws the eye only at a cell centre facing N, E, S or W, and Urðr's frozen game boundary keeps
+in-between positions out of canonical state. So on this route, free movement is held keys over the same discrete
+world. The owner named the rung HOLD-WALK-0 to keep the claim precise: the input is continuous, the world state is not.
+
+**The method (`c03260a2`), as the owner ratified it.** The live editor (`live-window`, `live-selftest`) binds a fresh
+press exactly as LIVE-AUTHOR-0 does. The held keys are W, A, S, D and the four arrows: the steps and the quarter turns.
+A held key's auto-repeat (the repeat bit of WM_KEYDOWN) is bound as that key's move and appends an ordinary move event,
+the same event a press makes. Keyboard repeat is the speed source, capped at one admitted repeat per composition:
+
+- Among the presses one composition drains, the first repeat of a held key walks.
+- Every later repeat in that composition is coalesced: counted and traced, never an event, never silently dropped.
+- A fresh press is never coalesced.
+- A repeat of any other key (Q, E, Space, 1–5, Esc) is ignored as before, so holding Space or a class key edits once.
+- A held step into rock appends a blocked move for each admitted repeat, as pressing does.
+
+The shell keeps no clock, reads no key-up and carries no key state between compositions: the admitted flag lives inside
+one composition. When the key is released its repeats stop, so no event is made without a press. Free look is a held
+quarter turn. LIVE-INPUT-0's and LIVE-SESSION-0's commands pass no held set, so their repeats still bind nothing. The live
+editor's console adds one line, `liveinput held repeats R walked W coalesced C ignored I`. The mock's key scripts gained
+groups: presses joined by `/` arrive in one pump, so the gate can deliver several repeats to one composition.
+
+**Rows.** `holdwalk-preregistered`: the method is locked, and the shell's held set is the registered one. It is exactly
+the keys LIVE-INPUT-0 binds to a step or a quarter turn, with no strafe and no edit key, and the key code alone decides.
+
+`holdwalk-binding`: script H from 28,28,N, 24 presses in 19 groups, becomes exactly its registered outcomes at its
+registered compositions. It walks west on a held W, with one group of three repeats (one walked, two coalesced). It
+paints the floor and holds 5 (painted once), and holds Q (ignored). It turns south, steps, and holds W into rock (both
+blocked moves). It holds D to look around (a group of two: one walked, one coalesced). It walks north with a held W and a
+fresh W in one group (both events), then a held W and a held A in one group (one walked, one coalesced). It closes the
+cell ahead with Space and holds it (one edit), holds W into the closed cell (blocked), and ends with Esc. That is 16
+repeats (9 walked, 4 coalesced, 3 ignored) and 16 events. In `liveinput-selftest` and `livesession-selftest`, a held
+key's repeats bind nothing.
+
+`holdwalk-coalesce`: in script H's trace, no composition admits more than one repeat, every coalesced press follows its
+composition's admitted repeat, and no fresh press is coalesced. The repeats are exactly walked + coalesced + ignored, and
+every saved event is a traced press's.
+
+`holdwalk-equivalence`: the same walk pressed (each walked repeat typed as a fresh press, the coalesced and ignored
+repeats left out: 17 presses) saves session data byte-identical to the held walk's, with the same 16 events and head.
+The workshop's `sessionwalk` verifies both. Holding a key adds nothing to the saved world.
+
+`holdwalk-fence`: the held-set module holds no state and reads no clock. The admitted flag is declared inside each
+composition, and the repeat branch walks only the first held repeat and counts the rest. LIVE-INPUT-0's run and
+LIVE-SESSION-0's go and window pass no held set, and the live editor (selftest and window) passes HOLD-WALK-0's. The
+window still reads only WM_KEYDOWN and its repeat bit: no key-up, no key state.
+
+`liveinput-fence`, `livesession-fence` and `liveauthor-fence` are re-pinned on purpose: the loop, the runner and the
+window now take a held set as a parameter, and each pins that its own command passes none (the live editor passes
+HOLD-WALK-0's). 14 planted mutations were each caught: no coalescing; a coalesced or a walked repeat not counted; the
+admitted flag carried across compositions; Space or Q in the held set; LIVE-INPUT-0 or LIVE-SESSION-0 binding repeats; a
+fresh press coalesced; a stateful held-set module; a clock in the loop; a key-up read; an extra move on a walked repeat;
+the mock's groups split.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate): the held set; one admitted repeat per composition, with the rest
+counted as coalesced; fresh presses never coalesced; a held walk saving the same data as the same walk pressed;
+LIVE-INPUT-0 and LIVE-SESSION-0 unchanged; the fence. NOT_MEASURED (host): a held walk in the window. Whether Windows'
+repeats reach the loop as the mock delivers them, and what the coalesced count is at the host's repeat rate, are what
+the host run shows.
+
+**does_not_show.** Any position between cells, or any angle between the four facings: the world is as discrete as
+before. A walking speed or any timing: the speed is the keyboard's repeat rate capped by the loop, and only counts are
+recorded. What Windows does with repeats before they reach the queue (the message's own repeat count is not read). How
+long a key was held. Mouse-look, a cadence.
+
+**Falsifier.** `holdwalk-binding` goes red if a press's outcome, a count or a saved event differs from script H's
+registration, or if LIVE-INPUT-0 or LIVE-SESSION-0 binds a repeat. `holdwalk-coalesce` goes red if a composition admits
+two repeats, a fresh press is coalesced, a coalesced repeat goes uncounted, or an event appears without a press.
+`holdwalk-equivalence` goes red if holding a key changes the saved data. `holdwalk-fence` goes red if a clock, a key-up
+or a key state enters.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
