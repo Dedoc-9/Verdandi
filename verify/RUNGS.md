@@ -3157,7 +3157,7 @@ pixels of an off-screen class or not those of an on-screen one, or if a turn tou
 `liveauthor-persist` goes red if the resumed picture is not the parent's last. `liveauthor-fence` goes red if a colour
 is held, previewed or applied outside the session.
 
-## HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete (preregistered and built)
+## HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete (preregistered and built; the gate passes on the host, the held walk not yet run there)
 
 **Why.** The route's next step after LIVE-AUTHOR-0 was free continuous movement, as vocabulary on the one live editor.
 The frozen renderer draws the eye only at a cell centre facing N, E, S or W, and Urðr's frozen game boundary keeps
@@ -3213,7 +3213,12 @@ admitted flag carried across compositions; Space or Q in the held set; LIVE-INPU
 fresh press coalesced; a stateful held-set module; a clock in the loop; a key-up read; an extra move on a walked repeat;
 the mock's groups split.
 
-**Grade.** DECLARED: the method. ESTABLISHED (gate): the held set; one admitted repeat per composition, with the rest
+**On the host (DANIELDILLBERG).** After 0079 was applied, the gate read 174 rows with none failing, including the five
+`holdwalk-*` rows (rowset `2e986bf1e40bfc4b`, the same as in the container), and the window build was rebuilt. The held
+walk has not run yet. The first attempt left no run-ledger line and no session folder, so it never reached the point
+where a run opens its journal.
+
+**Grade.** DECLARED: the method. ESTABLISHED (gate, in the container and on the host): the held set; one admitted repeat per composition, with the rest
 counted as coalesced; fresh presses never coalesced; a held walk saving the same data as the same walk pressed;
 LIVE-INPUT-0 and LIVE-SESSION-0 unchanged; the fence. NOT_MEASURED (host): a held walk in the window. Whether Windows'
 repeats reach the loop as the mock delivers them, and what the coalesced count is at the host's repeat rate, are what

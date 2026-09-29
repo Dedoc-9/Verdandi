@@ -79,7 +79,7 @@ LIVE-SESSION-0   live events → append-only session → save → restart → re
       ↓
 LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders — painted live on the host by class keys, saved, resumed there with the painting intact
       ↓
-HOLD-WALK-0      free continuous movement as held keys: the input continuous, the world discrete — built; to walk on the host
+HOLD-WALK-0      free continuous movement as held keys: the input continuous, the world discrete — built, gated on the host; the held walk still to run there
       ↓
 richer edits     vocabulary on the one live editor, not new pathways
       ↓
@@ -291,15 +291,15 @@ is counted and logged, never hidden. There is no input, no camera, no clock: cou
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
 
-### HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete · **preregistered and built** (`c03260a2`)
+### HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete · **preregistered and built** (`c03260a2`); the gate passes on the host
 The live editor, `shell live-window`, now walks while a key is held. W, A, S, D and the arrows are the held keys: the
 steps and the quarter turns, so holding A or D looks around. A held key's auto-repeat is bound as its move and appends an
 ordinary move event, at most one per composition. Later repeats in the same composition are coalesced: counted, never
 an event. A fresh press is never coalesced, and holding Space, Q, E or a class key acts once. The keyboard's repeat is
 the only speed source: the shell keeps no clock, reads no key-up and carries no key state between compositions. The
 gate proves the held set, the one-per-composition cap with its coalesced count, and that a held walk saves exactly the
-data the same walk pressed would. LIVE-INPUT-0's and LIVE-SESSION-0's commands still bind no repeat. A held walk on the
-owner's host is still to come.
+data the same walk pressed would. LIVE-INPUT-0's and LIVE-SESSION-0's commands still bind no repeat. On the owner's
+host the gate passes with the same 174 rows; a held walk in the window there is still to come.
 
 ### LIVE-AUTHOR-0 — the thing authored is what the next frame renders · **measured on the host** (`9a3e4521`): tile classes painted live, saved, and resumed
 The one live editor, `shell live-window`: LIVE-SESSION-0's durable loop under the authoring binding, which is
