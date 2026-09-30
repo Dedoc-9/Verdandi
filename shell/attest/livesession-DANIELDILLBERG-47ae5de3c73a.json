@@ -1,0 +1,766 @@
+{
+ "name": "verdandi-session-walk",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) + verify/livesession.py",
+  "host": "DANIELDILLBERG",
+  "saved_sha256": "01d5d2553d251da4058796d6ec1b5c16a1b83858e158bf2941eeb5c06af603f8",
+  "run_id": "1a0ef023794-b638",
+  "renderer_now": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+  "workshop": "SESSIONWALK verify OK head 47ae5de3c73a — moves 88 edits 30 (final 33,26,W)",
+  "python": "3.14.5",
+  "os": "Windows",
+  "preregistered": {
+   "rung": "LIVE-SESSION-0",
+   "chain_hash": "70086a721ef353ccb41afcda7e6c869c027f4f14eae0ef923dff2892981046bb"
+  },
+  "loop": {
+   "rung": "LIVE-INPUT-0",
+   "chain_hash": "f81c2cf110636835213321fe6f31cdb78ce23a1657a8003eaf895e55878fcc70"
+  }
+ },
+ "validity_scope": {
+  "certifies": "a live session walked on host DANIELDILLBERG and saved by the shell: the session-walk over the frozen base (W 1b84db41a5fb... M 52e8b54ae508...) from 28,28,N, which replays in log order to head 47ae5de3c73a9e6eaf248ba72dc0147819a358b98dbc54a8a99b957e0bb832bb",
+  "host": "DANIELDILLBERG",
+  "head": "47ae5de3c73a9e6eaf248ba72dc0147819a358b98dbc54a8a99b957e0bb832bb",
+  "final_camera": "33,26,W"
+ },
+ "forbidden_interpretations": [
+  "any timing or latency: the session carries no time",
+  "that the renderer identity decides compatibility: it names sources, replay decides",
+  "that the focus observation explains anything: it is recorded, never ruled on",
+  "a second authority: the shell's session is the replay of this log, which the workshop verifies",
+  "durability beyond the file system's promise, or on any other host"
+ ],
+ "data": {
+  "magic": "VRDNSW1",
+  "base": {
+   "level": "oracle/levels/witness.lvl",
+   "tiles": "oracle/tiles/identity.tiles",
+   "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+   "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+   "content": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08",
+   "camera": "28,28,N"
+  },
+  "log": [
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "28,28,W",
+    "witness": "7b959b88263f632754b03bd2c0d4cba1914dbda976eaa2d88eca8dd93e7c40ba"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "27,28,W",
+    "witness": "a6483a9e037e6f5f1b366146d01ba9bc2ee614419162bc6a7c4eb1a1f4e8fd69"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,28,W",
+    "witness": "bc13494dc75b3f72c1482ea270ad0745108aff5158ca82a9d858dc42aa698e09"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,28,W",
+    "witness": "1aed2922109d2bf260a598bdceebad5f9d3dfd596f1db41f296e2f05715a1d97"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,28,W",
+    "witness": "a5c496087fce3f4c7692633f5d2a2b1cac6f3ef63f66cd6743ff6a431b8e67df"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,28,W",
+    "witness": "27457343829f1ba0d8d457e7a0eccb4a7d51870bbf43acdf420539543eb6c446"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "23,28,N",
+    "witness": "9153175811dba6e9ad793d624eb839cfd8f005a5e505e2b91039787862e443fd"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,27,N",
+    "witness": "d6b877c7d993f46d124a13d29ce3ee30e9b7f09d6d946fd024373de943b30148"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "23,27,W",
+    "witness": "bf7e4fd0abb7e03c1dbecd48466113def398380e38201bee5e59443ccbbda7f4"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "23,27,N",
+    "witness": "d6b877c7d993f46d124a13d29ce3ee30e9b7f09d6d946fd024373de943b30148"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,26,N",
+    "witness": "3d1da2883ac3a6a6da46472b5d63249462138a3a6af0deca7192001447113f68"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "23,26,W",
+    "witness": "1bbd5c53f8f78b93a7b3acbe688210cf660652f643abc0f4db4423fe8dbcfaa4"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "22,26,W",
+    "witness": "447b73131e673f6dded9c67ddf547dc37bf55c621ffbe9a19626d02cdeb4f969"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "21,26,W",
+    "witness": "4a72fcaa01ebf1f5cefb2d0dd18bbd29b6b43bb4a3bbfe4be740e970b245948a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "20,26,W",
+    "witness": "f08d1b84b54ebfc5380efac29ee36451a217653d95ffbf83137c6216da93ac7b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "19,26,W",
+    "witness": "6fb9a4d9f054c56d57712330d5cfba3565ba02da6654c5d1125f8d7673cf28fb"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "18,26,W",
+    "witness": "a9d5630d66e990f9f9597b5fdfe32a5b76c36bb3892e83d1fd12d7bc64d4dd08"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "17,26,W",
+    "witness": "3490493d239e0b8189f2ac0452fa6efef03432ad5f69f7f59f908ab6c8277fc9"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "16,26,W",
+    "witness": "b060e434f13b126bafb6042c2a41650c46e4edf76208bf6769d86820e9ab0da2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "15,26,W",
+    "witness": "25725588cebcc125ca70b5521e6706652e2edf4032f5d4caeabc68cf8dd85bb1"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "14,26,W",
+    "witness": "42f81240347793ad7a145c68eacb9701ffa130bf9dd494377c9671ada0d6776e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,26,W",
+    "witness": "e1bc6e401cc330836a3fe2b052ccba127110204564d3221f31d7a7caf7fd42aa"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,26,W",
+    "witness": "90805d341d52fd15e11d9e493996520936386c18419b775744fe478ec0cb130e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "11,26,W",
+    "witness": "c56e57e4d1f030bdecf6dfc896eba8ff0a0c2101c86bb12ca905783cefd319f8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "10,26,W",
+    "witness": "ff0e0af3e8221618b5ffcbf279151803f96c8d01cd61cd4881692aa54980c957"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "9,26,W",
+    "witness": "b9abfa285c0853bf9bc056776e6791d41175015746a59b7d2802d00cf3cac409"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "8,26,W",
+    "witness": "2174e3eed058e829ad67a5d3dbfa42af57f951ffa8872b7beeb06437a7cff33a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "7,26,W",
+    "witness": "eb8fcf4f1cdf20f2942262d11f10df21a5cff28e2bbcefd067ec68bf980206bf"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall0,96,80,64",
+    "witness": "8c4c8e20b64c7750138a95e998b821321e8d685bb9e2265cf8b8bf0f67f33b58"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,96,80,64",
+    "witness": "70a64465ae150ffae3787987b646d2c82d2a710947a40f9e28e450206e1a1f2f"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall2,96,80,64",
+    "witness": "dce3174ba85e11581e536ad8979d32bb08a7be024473980d4c10a223b5f07c31"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,96,80,64",
+    "witness": "7ca6f09e42a68c96e948969a3dcff91f445ed9e39944e122b60ff71385228ea0"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,96,80,64",
+    "witness": "c7dd93e0c381881383650b799a7c7905aba4bb664d228f5f3550a4911d101da8"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,176,176,176",
+    "witness": "73eda44406610049cf50057d032f76320db19f85d77ca94efd67cca9274be1ea"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,176,176,176",
+    "witness": "a7b7f19cf8e593edde1b47bbfb9c36b9ce10a8e71d8609c9a2674c1b1f0c2f02"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall2,176,176,176",
+    "witness": "aa91a6884c1e3e1a042b138acb1fb2074c2a8c4e875e6cde31b7452fb26f5c8a"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,176,176,176",
+    "witness": "a4a7fe2cc69579d1e7f30b6f2959a23af2722aa82a742c7702b4900a76524606"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall0,176,176,176",
+    "witness": "2d63cd824a810d3705f166dff9a98e499b09b9e643366dbc15fe9df98078be3d"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall2,178,58,48",
+    "witness": "3a3e7915b77136f4f44872462309703c808be2d45e78f871270452acf7f5a3b5"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,178,58,48",
+    "witness": "899f07a77065c7809c27992ec178b755c6d8b07df4a609416c9bed958c972b79"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,56,104,168",
+    "witness": "609cd121bf6d7da6c722767d36a4ed3b52396a97df8253d17de12b9cf1001351"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,72,136,72",
+    "witness": "641324c08ea7efdb542108de851e7bf0665c0e9a4174a3ac4b59d22b168521d0"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,178,58,48",
+    "witness": "637e9e5d94eab0776af3bc62c3d4e7fdf69377c5c7155b92df9daf11d25bf6d0"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,56,104,168",
+    "witness": "1bc8814f2883eee6f06259b30c10407c32537abe3339ec1c1f8e23542ccd3b65"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,72,136,72",
+    "witness": "518db7df8aa4b90a92d6fecacc96877c7f97de1449ed77da94bef5b0cfe43d2e"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,200,176,96",
+    "witness": "9487ddd08ef6e9ce0be6668841e90afc269ba7b3cd5ab8d4314cd67c6116e2f9"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,120,80,152",
+    "witness": "a09dbc77c2f61375a1d649c247a79ad970f9ab607d8da0af108feb934f45ea2f"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:floor,232,232,224",
+    "witness": "b9c2cc889585bbd4d5e523d4b0b97bbf2ac2c7d9cb4bbe1c2c0d5af1444c1941"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,200,176,96",
+    "witness": "a5a700b8eaaa478b4d92a26c72741087db161068d9be6392f00896bd0cbd7b8b"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall2,56,104,168",
+    "witness": "22f8aefd18dfc989c3f4ae3071167acfebb7cd1c4361434c93468ec15dc3c196"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,178,58,48",
+    "witness": "ee5abe867053bad146a698d061c93d8907f22ff8285e4ea4863425e72a0e8d86"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,56,104,168",
+    "witness": "7a567be661ea31db2df0ca69c5d6952cb529af59da990d531a6058b06074e2d0"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,72,136,72",
+    "witness": "6d7b2248345e12c2438c0d002b3b35540a10eba3c3598c344a3682ce9dfa26b3"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,200,176,96",
+    "witness": "8ed2b5b63573803ffc71a8ed70ae87315c0fca7f8fd05f7294ef269a4e73e65e"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall0,178,58,48",
+    "witness": "7a41a3c0018f0525a5da073842577e843c3743eede5a6bcd1994c495785900fa"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall0,56,104,168",
+    "witness": "0461485a1837638b931607b7691e79de809aa81f2c499232f2a4c9edf180110f"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "7,26,S",
+    "witness": "b4f72878de78cbbd8061fc6dafcdde1ffa088f6482729bd5f363ed5f0b53e6d1"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "7,26,E",
+    "witness": "55125640566af116245f466576700835885765b4819ab154ee19dc889428d922"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "8,26,E",
+    "witness": "3a020651dae42968f4ff286dcd6fbf080cc5f7b51d722cae3d92c90f8f63287a"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "9,26,E",
+    "witness": "acec007eb5f514f0e86fdba36548e3fac93357e09960ee1a01c139d266df0e95"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "10,26,E",
+    "witness": "6dec71b3f00fdbc736d24aed337b6ddc2227ad8246a36739a8c4b8004fe3f0de"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "11,26,E",
+    "witness": "2b0f3e7ab84ff7b04c0e5d24429b8d044664539d7a34e8aa2acd7b75da5071ac"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "12,26,E",
+    "witness": "7361185209874701285025493da76a0da339d27056d219b22ce333c19e330179"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "13,26,E",
+    "witness": "896ec12bcc102dd64b2df0cb17f369e84d276591682fe73139461a20379129bd"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "14,26,E",
+    "witness": "e43a99f859811fb30d997cc0ee373d02ffb5957aefe0ee4c50864edba8ddb81c"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "15,26,E",
+    "witness": "a22a3d723c5ba1482e2105b992b695acf19c9de383914ff011c8d28423acbad8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "16,26,E",
+    "witness": "55399dfb2dea0b57ab6afb184bf7c0418a8318bea7be2cca2d0b94b494b73c45"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "17,26,E",
+    "witness": "45e6ff981b5add3dc91913cd0358e397eba88c3bb6b2ccd56f72785493994c34"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "18,26,E",
+    "witness": "61a8a18d6b37078096ee3aea9ecfb11671319c2a2f212ef90f083814c9178605"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "19,26,E",
+    "witness": "6ef64674b72558849d7ae8a104cb27af0f7e75863c74a520a0b8cfc50af8b026"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "20,26,E",
+    "witness": "6145d0933d6da86aa503be71576dac9c0b39ea724a3038feefa250663098ca79"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "21,26,E",
+    "witness": "3fff79b836e4731fbcb05bacf25fe5e8288bc73ead9a096e13ac8d7b23d9669e"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "22,26,E",
+    "witness": "17c6c826819be59b19a40145d1010584330d632d3f9c814a4862641d418b5643"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "22,26,S",
+    "witness": "b33e5c69bf934367a18de29fc44a0f1bf087cea71d5a88da875e42b60d7416f1"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall3,120,80,152",
+    "witness": "d6f7dd908377c61bfe353c108bf748a21f2fd390230ae8d7e6662f380f70cd9c"
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall2,72,136,72",
+    "witness": "61f180d13665ef2a9022f4003e44345c161a467542095aa73f8af4d43671827c"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "22,26,E",
+    "witness": "17c6c826819be59b19a40145d1010584330d632d3f9c814a4862641d418b5643"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,26,E",
+    "witness": "66ae2a67c441b1c3667d4b3c6fafca39c36ae6cf227562746e28f46c7f5118f8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,26,E",
+    "witness": "3ac9ede45b9f977d1c2bebda383b26c8b814be3f88da72266afbd17fd7d1a69b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,26,E",
+    "witness": "16ab0112d0ad04fd876e18f5af2731201cb249506b09638b161b443c1af3dda6"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,26,E",
+    "witness": "98f3ca42e05fb66d66832ba7afd6f1ee1c7b3b8d1e1d5bdb7f4ad79a859dbb29"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "27,26,E",
+    "witness": "800154fd1130017e48b5252c684814d82522934358d3131be5ef89592c224fd0"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,26,E",
+    "witness": "b05c2b28f27b37cbbebced947e429cd9f6ff2ecfffc92951e16efc079d44110f"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "29,26,E",
+    "witness": "6d477b74891440e20fb7bee514aa19c3a85d416513bf9c42dbb45202e3d93e27"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "30,26,E",
+    "witness": "c51b35cd33808d582cc7ffd381b68f41dcdc2b8520f09c23114064b885ccb8a3"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "31,26,E",
+    "witness": "d81065b187a27722bb7f953a9dd0f414a5593954edc2ad62ebb314092dcd992d"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "32,26,E",
+    "witness": "b58575df3700faaf664531901af1a12af22cd046eb7c20d8f917fed85bc491a8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "33,26,E",
+    "witness": "300f277743c1cea55fe3cc38cd2801cc3f175b92d6f37a4ffbad6beb89e446f2"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "34,26,E",
+    "witness": "ba05c41c2036ba23efc8c771907fa26c07d5e405cbcf5fb6114e756fd20b1504"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "35,26,E",
+    "witness": "edb26299d2ae0740ef81e6befccab423d39dde6dd98fc0fe0a2734b20ebc7779"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "35,26,S",
+    "witness": "ee93539694ef8d3f21570683fff8e9bab426eaea68433e26536793bb9f5f9aea"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "35,26,W",
+    "witness": "e7b09583c6b52b0308947417409af3b77fdd1c9fb2657a9575805cf3eb740145"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "34,26,W",
+    "witness": "2dbf3a80ca3e893f4b3adfc631944fe14d9eee2431e3c9e23eca52d909660e3f"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "33,26,W",
+    "witness": "b9c53a43f78a0bf7e52e5d84f774e2c1e9a3fc2f034b3db73ae3f0427679781c"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "32,26,W",
+    "witness": "8e25b9e513d24206c965567f0461f4d321bcb3a7c41b458549d7187e7fb8deca"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "31,26,W",
+    "witness": "f7cadaeeeae7e67b163bd30fde27ee8f7a1fdc0a677cb4c39a4ee5910774ac25"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "30,26,W",
+    "witness": "7b56ffa510f49cf6dcbe1b233d5590a0b5e533119e96f150745d06cc667d6b9d"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "29,26,W",
+    "witness": "3a12c7164d1532244f50a9f4fd8c95dbbc705b53ef27b039a45af94088964c00"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,26,W",
+    "witness": "c0485f912a9d966ee72063f9261a8dc7ae53da05ba079ac451cd24f8c8dd8139"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "27,26,W",
+    "witness": "856178d6af2cee1db5abcdb5649e0e4f6f007d083bbe41deb3106af3adaed584"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,26,W",
+    "witness": "0298aa60e57e62326ab845a49a353a8bfcc599ed0d04fb15fd6514eb9ffe2897"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,26,W",
+    "witness": "db8d0c0dd3af6dfeac06cfce77155791f1b4e562c16007eb83d46f83c7466f25"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,26,W",
+    "witness": "81bc0b1ea2c8bedf1cf460992617462b9e24469cc97ab8397bfbe8975f784f93"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "23,26,W",
+    "witness": "1bbd5c53f8f78b93a7b3acbe688210cf660652f643abc0f4db4423fe8dbcfaa4"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "23,26,S",
+    "witness": "b33e5c69bf934367a18de29fc44a0f1bf087cea71d5a88da875e42b60d7416f1"
+   },
+   {
+    "kind": "move",
+    "command": "L",
+    "camera": "23,26,E",
+    "witness": "66ae2a67c441b1c3667d4b3c6fafca39c36ae6cf227562746e28f46c7f5118f8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "24,26,E",
+    "witness": "3ac9ede45b9f977d1c2bebda383b26c8b814be3f88da72266afbd17fd7d1a69b"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "25,26,E",
+    "witness": "16ab0112d0ad04fd876e18f5af2731201cb249506b09638b161b443c1af3dda6"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "26,26,E",
+    "witness": "98f3ca42e05fb66d66832ba7afd6f1ee1c7b3b8d1e1d5bdb7f4ad79a859dbb29"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "27,26,E",
+    "witness": "800154fd1130017e48b5252c684814d82522934358d3131be5ef89592c224fd0"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,26,E",
+    "witness": "b05c2b28f27b37cbbebced947e429cd9f6ff2ecfffc92951e16efc079d44110f"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "29,26,E",
+    "witness": "6d477b74891440e20fb7bee514aa19c3a85d416513bf9c42dbb45202e3d93e27"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "30,26,E",
+    "witness": "c51b35cd33808d582cc7ffd381b68f41dcdc2b8520f09c23114064b885ccb8a3"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "31,26,E",
+    "witness": "d81065b187a27722bb7f953a9dd0f414a5593954edc2ad62ebb314092dcd992d"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "32,26,E",
+    "witness": "b58575df3700faaf664531901af1a12af22cd046eb7c20d8f917fed85bc491a8"
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "33,26,E",
+    "witness": "300f277743c1cea55fe3cc38cd2801cc3f175b92d6f37a4ffbad6beb89e446f2"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "33,26,S",
+    "witness": "81bc70e95375570affc3e15d1dbd9312b0cc53e3a6e2a547d219a59048ca38cb"
+   },
+   {
+    "kind": "move",
+    "command": "R",
+    "camera": "33,26,W",
+    "witness": "b9c53a43f78a0bf7e52e5d84f774e2c1e9a3fc2f034b3db73ae3f0427679781c"
+   }
+  ],
+  "head": "47ae5de3c73a9e6eaf248ba72dc0147819a358b98dbc54a8a99b957e0bb832bb",
+  "final_camera": "33,26,W",
+  "final_content": "61f180d13665ef2a9022f4003e44345c161a467542095aa73f8af4d43671827c",
+  "moves": 88,
+  "edits": 30,
+  "live": {
+   "log": "LIVE-SESSION-0",
+   "run_id": "1a0ef023794-b638",
+   "renderer": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+   "lineage": {
+    "parent_head": "eaf27cf3fc0cf24ae7c6dc7ad4321c2e09bfb3800f63079334a943cfb01a4286",
+    "parent_events": 76,
+    "source": "session",
+    "parent_sha256": "196bc7e7bddcfb58a6cbc16f867acc8b60485298b33bed163f013877098c80da",
+    "torn": 0
+   },
+   "resumed": {
+    "classification": "LOAD",
+    "parent_renderer": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9"
+   },
+   "journal": {
+    "file": "journal.vsj",
+    "records": 119,
+    "events": 118,
+    "complete": true,
+    "sha256": "817bd21c475f3b980a6404b538cb4a771ff79417ce4f7e190b9b40268d446552"
+   },
+   "ended": "escape",
+   "focus": {
+    "source": "window",
+    "foreground_request": 1,
+    "foreground_at_start": 1,
+    "compositions_with": 840,
+    "compositions_without": 1,
+    "changes": 1
+   }
+  }
+ },
+ "reading": "LIVE-SESSION-0 on host DANIELDILLBERG: a live session saved by the shell and verified there before it counted as saved (118 events: 88 moves, 30 edits; ended by escape), a continuation of the session whose head is eaf27cf3fc0c... (its first 76 events, from its session); its seal, base, fold and lineage check here, the workshop's own sessionwalk verifies the saved file itself (head 47ae5de3c73a...), and this checkout's renderer identity is the same as the one it was made with.",
+ "chain_hash": "31af495fed821e85ef35db63a32eccbeac57d288cb7c65192d7e04896dc5bd30"
+}
