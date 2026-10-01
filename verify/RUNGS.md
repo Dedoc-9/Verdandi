@@ -3511,6 +3511,14 @@ the checked build, the bounds and the fence all hold on the owner's Windows host
   `ca` against the reference byte for byte (index frame and picture). **622,440 equal, 0 differing.** It ran 87
   minutes on 15 processes; that wall-clock is informational.
 
+**The owner's ruling after the court.** With the target met, the optimizing stops: `ca` is the production candidate, and
+MOUSE-LOOK-0 wires it into a live path, not before. D is not built. SIMD, structure-of-arrays, cache and GPU work are
+candidate courts to be measured first, with no gain claimed. The next evidence is the interaction seam (SIM-TICK-0,
+sensitivity, live mouse-look), then the presentation boundary (PRESENT-1). No scalar scorecard is kept, and outside
+estimates are not this repository's claims. A formal-methods branch, if opened, starts with one theorem: the exact
+walker produces the same pixel inputs as the reference kernel for every admissible row, camera and scene. The full
+order is in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+
 **Grade.** DECLARED: the method, the staircase rule, the target. ESTABLISHED (gate, in the container and on the host):
 byte-identity of every tread at the court set and the threads set, no overflow in the checked build over the court set,
 the bounds and the envelope, the fence. MEASURED (host): the speed court (A promoted, B not kept, `ca` kept, production

@@ -150,6 +150,47 @@ Each of these rungs is ratified, preregistered and built in turn; none is claime
 
 ---
 
+## After BEARING-FAST-0: what evidence is worth buying (the owner's ruling, 2026-10-01)
+
+BEARING-FAST-0 is built and measured, and no live path uses it yet. The owner ruled that the next work is chosen by
+what evidence is worth buying, not by which optimization can be imagined next. The order:
+
+| # | Work | Why | Where it stands |
+|---|---|---|---|
+| 1 | BEARING-FAST-0's host speed court | Establish whether the 6,667 µs target is met. | Run: met, 3,716 µs. |
+| 2 | Production promotion, only if the target is met | Do not optimize a kernel that is already sufficient. | Met: eight row bands of exact stepping is the production candidate. MOUSE-LOOK-0 wires it into a live path, not before. |
+| 3 | SIM-TICK-0, mouse sensitivity and live mouse-look | The actual interaction seam, now that the renderer can support it. | Next. |
+| 4 | PRESENT-1, the flip-model presentation | Renderer speed is not input-to-photon speed; LATENCY-0's evidence makes this the next presentation boundary. | After mouse-look. |
+| 5 | A cross-host correctness witness for the fast path | Portability evidence, not worth delaying the interactive path unless a cross-host failure appears. | The gate's court already runs on two hosts (Linux here, the owner's Windows). A further host is deferred. |
+| 6 | Benchmark regression recording | Protects a production fast path against performance regressions. | Once the fast path is in a live path. |
+| 7 | A persistent worker pool (tread D) | Only if a host court shows thread creation is material. | Its trigger did not fire. |
+| 8 | SIMD, structure-of-arrays and cache experiments | Candidate optimization courts: measure first. | Deferred; no gain is claimed. |
+| 9 | GPU | A separate architectural branch, not the next CPU optimization. | Deferred. |
+| 10 | Lean or SMT formalization | Assurance research, not a prerequisite for the renderer. | Deferred; see below. |
+| 11+ | Homotopy type theory, category theory, quantum-inspired work | A research track, not the production roadmap. | Not on the route. |
+
+The sequence is therefore BEARING-FAST-0's host court → promote or defer → SIM-TICK-0 → mouse-look → PRESENT-1 → drift
+and regression evidence. The optimization staircase reopens only if a court misses its target. The trap to avoid is
+optimizing a renderer that has already crossed its threshold while the actual experience (mouse timing, simulation
+ticks, presentation, input to photon) stays unmeasured.
+
+Three rulings on how claims are made:
+
+- **No scalar scorecard.** A letter grade collapses things this repository keeps apart: deterministic correctness,
+  mutation resistance, portability, host performance, presentation latency, maintainability and research maturity.
+  Each claim keeps its own grade from the existing vocabulary (MEASURED, ESTABLISHED, DECLARED, DEFERRED) and its own
+  `does_not_show`.
+- **Outside estimates are not Verðandi's claims.** Projected gains from outside analyses, such as a "3–5× ceiling",
+  "SIMD 25–50%", "GPU 10–100×" or "world-class", are hypotheses attributed to their sources until measured here. Those
+  analyses are not carried in this repository.
+- **Formal methods, if opened, start narrow.** A months-long mechanization of the whole studio is a research
+  investment, not the next rung. The existing court (1,972 cameras, checked bounds, 14 mutations, the host speed court,
+  and the live differential check to come) finishes its job first. The natural first theorem is the seam BEARING-FAST-0
+  created: for every admissible row, camera and scene, the exact walker produces the same pixel inputs as the reference
+  kernel.
+
+---
+
 ## The sequenced path (named rungs only)
 
 ### LATENCY-1 — does the headroom survive the present path · **measured and confirmed** (`8e93118e`, amended `b32d226f`)
