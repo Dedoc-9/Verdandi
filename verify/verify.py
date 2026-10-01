@@ -491,7 +491,7 @@ KERNEL_EXE: str | None = None
 def kernel_build():
     global KERNEL_EXE
     KERNEL_EXE = compile_rs(KERNEL, "main.rs", "kernel")
-    return "kernel/main.rs (+ mantle.rs, formats.rs, hud.rs) compiled live with " + " ".join(FLAGS)
+    return "kernel/main.rs (+ mantle.rs, formats.rs, hud.rs, fast.rs, vocab.rs, bearing.rs) compiled live with " + " ".join(FLAGS)
 
 
 def kernel_oracle():
@@ -7454,6 +7454,354 @@ def holdwalk_fence():
             "LIVE-INPUT-0's run and LIVE-SESSION-0's go and window pass no held set, the live editor (selftest and window) "
             "passes HOLD-WALK-0's; the window still reads only WM_KEYDOWN and its repeat bit")
 
+# ------------------------------------------------------------------ BEARING-0
+# The bearing camera of urdr-oracle-2, carried, and its reference kernel placed. The record and the octant are
+# Urðr's bytes at the tag; the vocabulary is their data, compiled into the kernel and fail-closed against the pin;
+# kernel/bearing.rs is the tag's bearing_rs with `pub` added — the correctness court for every faster bearing path.
+ORACLE2_PATH = os.path.join(ORACLE, "urdr-oracle-2.json")
+OCTANT_PATH = os.path.join(ORACLE, "bearing_octant.txt")
+ORACLE2_ORIGIN = ("urdr-oracle-2", "ad6d55fea165c13841d8305bec38b7f93e8f0f77")
+ORACLE2_SHA256 = "61d51062917bce7b25fb76c7fbbdc30d42bb3c98a7f044c4a863329d73e2d8c5"
+OCTANT_SHA256 = "f70b2fc20ba8ea8fde7f802ae0f1180ae003d2de5acb963524ca58421405a82c"
+# Urðr's tools/terrain/bearing_rs/bearing.rs at the tag, and the sha256 of its core — from the vista marker up to its
+# `fn percentiles(` — which kernel/bearing.rs must reproduce with `pub ` removed (both computed from the tag's file)
+BEARING_SOURCE_SHA256 = "aeda8e65dc56652fbfc5b67723f78800b2c2b55cb68609149b64910d8e6130be"
+BEARING_CORE_SHA256 = "7bcd8165b6856f7de98fb8a8a5ab40b386bb56c8b0b4abcaf83ab63ced02c9f6"
+BEARING_CORE_MARK = "// ------------------------------------------------------------------ vista: the camera and one column's strip"
+BEARING_ANCHORS = {0: "N", 90000: "E", 180000: "S", 270000: "W"}
+BEARING_YAW_MOD = 360000
+
+
+def oracle2() -> dict:
+    with open(ORACLE2_PATH, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def _octant_pairs() -> list:
+    return [tuple(int(x) for x in ln.split(" ")) for ln in read(OCTANT_PATH).decode("ascii").split("\n") if ln]
+
+
+def _bearing_triple(pairs: list, k: int) -> tuple:
+    """The record's `expansion`, restated here: the octant, its mirror, the gcd, then quarter turns."""
+    import math
+    turns, r = divmod(k, BEARING_YAW_MOD // 4)
+    if r <= BEARING_YAW_MOD // 8:
+        p, q = pairs[r]
+        a, b, c = 2 * p * q, -(q * q - p * p), p * p + q * q
+    else:
+        p, q = pairs[BEARING_YAW_MOD // 4 - r]
+        a, b, c = q * q - p * p, -2 * p * q, p * p + q * q
+    g = math.gcd(math.gcd(a, b), c)
+    a, b, c = a // g, b // g, c // g
+    for _ in range(turns):
+        a, b = -b, a
+    return a, b, c
+
+
+def bearing_lines(exe: str, level: str, tiles: str, at: str) -> dict:
+    code, out, err = run(exe, ["--level", os.path.join(ORACLE, "levels", level + ".lvl"),
+                               "--tiles", os.path.join(ORACLE, "tiles", tiles + ".tiles"), "--at", at])
+    if code != 0:
+        raise Red(f"the bearing kernel exited {code} at {level}/{tiles}/{at}: {err.strip()}")
+    lines = dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+    if lines.get("selfcheck") != "OK":
+        raise Red(f"the bearing kernel's selfcheck DIVERGED at {level}/{tiles}/{at}")
+    return lines
+
+
+def bearing_preregistered():
+    """BEARING-0's method is locked: the carry verbatim from the tag, the id authoritative and never normalized, the
+    vocabulary compiled in and fail-closed, the reference a port of the tag's source in shape only, and no live path."""
+    e = locked_entry("BEARING-0", {
+        "the ladder and this rung's place on it": ("hyp", ("bearing-0 (the reference)", "bearing-fast-0", "mouse-look-0 with sim-tick-0", "the presentation and latency measurement")),
+        "carried verbatim from the tag": ("hyp", ("carried verbatim from urðr at the tag urdr-oracle-2", "urdr-oracle-1's carry is untouched")),
+        "the camera and the vocabulary": ("hyp", ("c = (cell_x, cell_z, heading id)", "the id is authoritative", "never normalized", "fail-closed, never regenerated")),
+        "the reference, never a live path": ("hyp", ("visibility and shape only, never arithmetic", "the correctness court", "no live window uses it")),
+        "the gate": ("succ", ("all 104 witnesses", "48 pairs", "every one of the 52 non-anchor scenes", "with nothing of urðr imported", "the same span of the tag's source")),
+        "what fails it": ("fail", ("an id normalized", "the reference reachable from the shell or the workshop", "a speed, frame-rate or latency claim")),
+        "scope": ("lims", ("correctness, not speed", "the eye stays at a cell centre", "no mouse, no tick, no movement change", "stays declared")),
+    })
+    return ("BEARING-0's method is locked (hash %s): the record and the octant carried verbatim from urdr-oracle-2, the "
+            "camera (x, z, id) with the id authoritative and never normalized, the vocabulary compiled in and fail-closed, "
+            "the reference kernel the tag's arithmetic, and no live path renders at a bearing" % e["chain_hash"][:8])
+
+
+def oracle2_frozen():
+    raw, octant = read(ORACLE2_PATH), read(OCTANT_PATH)
+    if sha256(raw) != ORACLE2_SHA256:
+        raise Red("oracle/urdr-oracle-2.json is not the bytes carried from the tag")
+    if sha256(octant) != OCTANT_SHA256:
+        raise Red("oracle/bearing_octant.txt is not the bytes carried from the tag")
+    r = json.loads(raw.decode("utf-8"))
+    if r.get("name") != "studio-oracle-2" or r.get("capability") != "URDRBRG1":
+        raise Red("the carried record is not studio-oracle-2 (URDRBRG1)")
+    if r["vocabulary"]["octant_sha256"] != OCTANT_SHA256:
+        raise Red("the record pins another octant than the one carried")
+    if r["extends"]["sha256"] != sha256(read(os.path.join(ORACLE, "urdr-oracle-1.json"))):
+        raise Red("the record extends another studio-oracle-1 than the one carried")
+    o, c = oracle(), corpus()
+    for name, v in r["corpus"]["views"].items():
+        sc = c["scenes"].get(name)
+        if sc is None or sc["level"] != name:
+            raise Red(f"the record's view {name!r} is not a scene of witnesses.json on its own level")
+        lv = c["levels"][name]
+        if (int(lv["seed"], 16), lv["depth"]) != (int(v["seed"], 16), v["depth"]) or list(sc["camera"][:2]) != list(v["pos"]):
+            raise Red(f"the record's view {name!r} names another seed, depth or cell than the carried level")
+    aw = r["anchor_witness"]
+    if (aw["bearing"], aw["triple"]) != (270000, [-1, 0, 1]) or (aw["frame_digest_urdrfb1"], aw["identity_pixels_sha256"],
+            aw["oriented_pixels_sha256"]) != (o["frame_digest_urdrfb1"], o["identity_pixels_sha256"], o["oriented_pixels_sha256"]):
+        raise Red("the record's anchor witness is not urdr-oracle-1's three hashes at W")
+    fwd = {"N": [0, -1, 1], "E": [1, 0, 1], "S": [0, 1, 1], "W": [-1, 0, 1]}
+    if {int(k): (v["facing"], v["triple"]) for k, v in r["vocabulary"]["anchors"].items()} != {k: (f, fwd[f]) for k, f in BEARING_ANCHORS.items()}:
+        raise Red("the record's anchors are not the four cardinals")
+    return (f"urdr-oracle-2.json ({ORACLE2_SHA256[:12]}…) and bearing_octant.txt ({OCTANT_SHA256[:12]}…) are the bytes of "
+            f"{ORACLE2_ORIGIN[0]} @ {ORACLE2_ORIGIN[1][:7]}; the record extends the carried urdr-oracle-1.json by its sha256, "
+            f"its {len(r['corpus']['views'])} views are scenes of witnesses.json on their own levels, its anchor witness at W "
+            f"is urdr-oracle-1's three hashes, and its anchors are the cardinals")
+
+
+def oracle2_identity():
+    """The checker is not the prover: every digest the record states is recomputed from the record's own rules and the
+    carried octant, with nothing of Urðr imported."""
+    r = oracle2()
+    pairs = _octant_pairs()
+    if len(pairs) != BEARING_YAW_MOD // 8 + 1:
+        raise Red(f"the octant has {len(pairs)} pairs")
+    h = hashlib.sha256(b"URDRBRG1|table|")
+    top = 0
+    for k in range(BEARING_YAW_MOD):
+        a, b, cc = _bearing_triple(pairs, k)
+        h.update(b"%d,%d,%d;" % (a, b, cc))
+        top = max(top, cc)
+    if h.hexdigest() != r["vocabulary"]["table_digest"]:
+        raise Red("the table digest recomputed over all 360,000 ids is not the record's")
+    if top != r["vocabulary"]["largest_hypotenuse"]:
+        raise Red("the largest hypotenuse is not the record's")
+    views, adv = r["corpus"]["views"], r["corpus"]["adversarial"]
+    by = {(cs["view"], cs["bearing"]): cs for cs in r["corpus"]["cases"]}
+    if set(by) != {(n, k) for n in views for k in adv} or len(by) != len(r["corpus"]["cases"]):
+        raise Red("the cases are not exactly the views x the adversarial ids")
+    order = []
+    for n in sorted(views):
+        v = views[n]
+        for k in adv:
+            cs = by[(n, k)]
+            if tuple(cs["triple"]) != _bearing_triple(pairs, k):
+                raise Red(f"{n}:{k}: the case's triple is not the expansion's")
+            rowt = ("view=%s/%d/%d/(%d, %d)|bearing=%d|triple=%d,%d,%d|frame=%s|identity=%s|oriented=%s"
+                    % (n, int(v["seed"], 16), v["depth"], v["pos"][0], v["pos"][1], k, *cs["triple"],
+                       cs["frame_digest_urdrfb1"], cs["identity_pixels_sha256"], cs["oriented_pixels_sha256"]))
+            hc = sha256(b"URDRBRG1|" + rowt.encode("utf-8"))
+            if hc != cs["case"]:
+                raise Red(f"{n}:{k}: the case hash recomputed is not the record's")
+            order.append(hc)
+    ident = sha256(b"URDRBRG1|" + "|".join([r["vocabulary"]["table_digest"]] + order).encode("utf-8"))
+    if ident != r["identity"]["bearing"]:
+        raise Red("URDRBRG1's identity recomputed is not the record's")
+    return (f"from the record and the octant alone: the table digest over all 360,000 ids ({h.hexdigest()[:12]}…), the "
+            f"largest hypotenuse {top:,}, the {len(order)} case hashes and URDRBRG1's identity ({ident[:12]}…) recomputed by "
+            f"the record's own rules equal the record's — nothing of Urðr imported")
+
+
+def bearing_vocab():
+    need_rustc()
+    r = oracle2()
+    code, out, err = run(KERNEL_EXE, ["--bearing-table"])
+    lines = dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+    if code != 0 or lines.get("octant") != OCTANT_SHA256 or lines.get("table") != r["vocabulary"]["table_digest"]:
+        raise Red(f"the kernel's vocabulary is not the record's: {out.strip()} {err.strip()}")
+    pairs = _octant_pairs()
+    cases = {cs["bearing"]: tuple(cs["triple"]) for cs in r["corpus"]["cases"]}
+    ids = sorted(set(BEARING_ANCHORS) | set(r["corpus"]["adversarial"]))
+    for k in ids:
+        code, out, err = run(KERNEL_EXE, ["--bearing-triple", str(k)])
+        want = _bearing_triple(pairs, k)
+        if code != 0 or out.strip() != "triple %d %d,%d,%d" % (k, *want) or (k in cases and cases[k] != want):
+            raise Red(f"id {k}: the kernel's triple {out.strip()!r} is not the record's {want}")
+    bad = ["360000", "-1", "1.5", "007", "+5", " 5", "", "abc", "3600000", "0x10"]
+    for s in bad:
+        code, out, err = run(KERNEL_EXE, ["--bearing-triple", s])
+        if code == 0 or "BEARING-REFUSE" not in err or "triple" in out:
+            raise Red(f"the id {s!r} was not refused typed")
+    return (f"the kernel's table digest over all 360,000 ids is the record's, its triple at the {len(ids)} anchor and "
+            f"adversarial ids is the expansion's and the record's, and {len(bad)} malformed ids (out of range, signed, "
+            f"zero-padded, fractional, spaced, empty, hex) are each refused typed, never normalized")
+
+
+def bearing_oracle():
+    need_rustc()
+    r = oracle2()
+    views = r["corpus"]["views"]
+    n = 0
+    for cs in r["corpus"]["cases"]:
+        v = views[cs["view"]]
+        at = "%d,%d,%d" % (v["pos"][0], v["pos"][1], cs["bearing"])
+        frames = set()
+        for tname, key in (("identity", "identity_pixels_sha256"), ("oriented", "oriented_pixels_sha256")):
+            d = bearing_lines(KERNEL_EXE, cs["view"], tname, at)
+            if d.get("triple") != ",".join(str(x) for x in cs["triple"]):
+                raise Red(f"{cs['view']}:{cs['bearing']}: triple {d.get('triple')} is not the record's")
+            if d["frame"] != cs["frame_digest_urdrfb1"]:
+                raise Red(f"{cs['view']}:{cs['bearing']}/{tname}: frame {d['frame'][:12]} != oracle {cs['frame_digest_urdrfb1'][:12]}")
+            if d["pixels"] != cs[key]:
+                raise Red(f"{cs['view']}:{cs['bearing']}/{tname}: pixels {d['pixels'][:12]} != oracle {cs[key][:12]}")
+            frames.add(d["frame"])
+            n += 2
+        if len(frames) != 1:
+            raise Red(f"{cs['view']}:{cs['bearing']}: the tile sets do not share one frame digest")
+    a = bearing_lines(KERNEL_EXE, "witness", "identity", "34,28,123457")
+    b = bearing_lines(KERNEL_EXE, "witness", "identity", "34,28,123457")
+    if (a["frame"], a["pixels"]) != (b["frame"], b["pixels"]):
+        raise Red("two runs of one case disagree")
+    return (f"the reference bearing kernel reproduces all {n} witnesses of urdr-oracle-2 — {len(r['corpus']['cases'])} cases "
+            f"({len(r['corpus']['adversarial'])} adversarial ids from the {' and '.join(sorted(views))} views, hypotenuses "
+            f"up to 2^33) x 2 tile sets x the frame digest and the pixel sha256 — bit for bit, each selfcheck OK, the tile "
+            f"sets of a case sharing one frame, one case twice in separate processes")
+
+
+def bearing_anchors():
+    """At C = 1 the reference is the facing kernel: the frame and the picture at each anchor equal the facing
+    kernel's at that cardinal, live, over every corpus scene — and a mirrored screen-right is caught at every scene."""
+    need_rustc()
+    c = corpus()
+    pairs, pinned = 0, 0
+    for name, e in c["scenes"].items():
+        x, z, own = e["camera"]
+        for k, f in BEARING_ANCHORS.items():
+            for tname, w in e["witnesses"].items():
+                b = bearing_lines(KERNEL_EXE, e["level"], tname, f"{x},{z},{k}")
+                fd, ps = witnesses(KERNEL_EXE, e["level"], tname, f"{x},{z},{f}")
+                if (b["frame"], b["pixels"]) != (fd, ps):
+                    raise Red(f"{name}/{tname} at {k}: the reference is not the facing kernel at {f}")
+                if f == own:
+                    if (b["frame"], b["pixels"]) != (w["frame"], w["pixels"]):
+                        raise Red(f"{name}/{tname}: the anchor at the scene's own facing is not the frozen pin")
+                    pinned += 1
+                pairs += 1
+    src = read(os.path.join(KERNEL, "bearing.rs")).decode("utf-8")
+    anchor = "(a_ * b - b_ * a, b_ * b + a_ * a)"
+    if src.count(anchor) != 1:
+        raise Red("the ray anchor is not where the mirror plant expects it")
+    exe = compile_rs(KERNEL, "main.rs", "kernel-bearing-mirrored", {"bearing.rs": src.replace(anchor, "(a_ * b + b_ * a, b_ * b - a_ * a)")})
+    caught = 0
+    for name, e in c["scenes"].items():
+        x, z, _own = e["camera"]
+        if any(bearing_lines(exe, e["level"], "identity", f"{x},{z},{k}")["frame"]
+               != witnesses(KERNEL_EXE, e["level"], "identity", f"{x},{z},{f}")[0] for k, f in BEARING_ANCHORS.items()):
+            caught += 1
+    if caught != len(c["scenes"]):
+        raise Red(f"a mirrored screen-right was caught at {caught} of {len(c['scenes'])} scenes")
+    return (f"at the four anchors the reference IS the facing kernel: {pairs} pairs over {len(c['scenes'])} scenes x "
+            f"{len(c['tiles'])} tile sets equal the facing kernel's frame and pixels live, {pinned} of them the frozen pins; "
+            f"a reference with screen-right mirrored fails the anchor law at every one of the {caught} scenes")
+
+
+def bearing_selftest():
+    """The C law is load-bearing: a reference that drops the hypotenuse from the depth moves every non-anchor frame,
+    and at an anchor (C = 1) it moves nothing."""
+    need_rustc()
+    src = read(os.path.join(KERNEL, "bearing.rs")).decode("utf-8")
+    anchor = "let h2d = 2 * focal * self.c * tn;"
+    if src.count(anchor) != 1:
+        raise Red("the depth anchor is not where the selftest expects it")
+    exe = compile_rs(KERNEL, "main.rs", "kernel-bearing-dropc", {"bearing.rs": src.replace(anchor, "let h2d = 2 * focal * tn;")})
+    r = oracle2()
+    moved = 0
+    for cs in r["corpus"]["cases"]:
+        v = r["corpus"]["views"][cs["view"]]
+        for tname in ("identity", "oriented"):
+            d = bearing_lines(exe, cs["view"], tname, "%d,%d,%d" % (v["pos"][0], v["pos"][1], cs["bearing"]))
+            if d["frame"] == cs["frame_digest_urdrfb1"]:
+                raise Red(f"{cs['view']}:{cs['bearing']}/{tname}: dropping C did not move the frame — the row is vacuous")
+            moved += 1
+    o = oracle()
+    d = bearing_lines(exe, "witness", "identity", "34,28,270000")
+    if (d["frame"], d["pixels"]) != (o["frame_digest_urdrfb1"], o["identity_pixels_sha256"]):
+        raise Red("dropping C moved an anchor, where C = 1")
+    return (f"a reference that drops the hypotenuse from the depth (the frozen strip expression used verbatim) moves the "
+            f"frame digest of every one of the {moved} non-anchor scenes and leaves the witness anchor at W untouched: the "
+            f"C law is what the rows above measure")
+
+
+def bearing_refuse():
+    need_rustc()
+    raw = read(OCTANT_PATH)
+    # one pair altered into another CANONICAL pair (q + 1 beside p = 1 stays coprime), so only the pin can catch it
+    first = raw.split(b"\n")[1]
+    p_, q_ = first.split(b" ")
+    altered = raw.replace(b"\n" + first + b"\n", b"\n%s %d\n" % (p_, int(q_) + 1), 1)
+    if altered == raw or p_ != b"1":
+        raise Red("the octant plant did not alter the file as registered")
+    os.makedirs(BUILD, exist_ok=True)
+    with open(os.path.join(BUILD, "octant-altered.txt"), "wb") as fh:
+        fh.write(altered)
+    vsrc = read(os.path.join(KERNEL, "vocab.rs")).decode("utf-8")
+    inc = 'include_bytes!("../oracle/bearing_octant.txt")'
+    if vsrc.count(inc) != 1:
+        raise Red("the vocabulary's include is not where the plant expects it")
+    exe = compile_rs(KERNEL, "main.rs", "kernel-octant-altered", {"vocab.rs": vsrc.replace(inc, 'include_bytes!("../verify/build/octant-altered.txt")')})
+    code, out, err = run(exe, ["--bearing-table"])
+    if code == 0 or "BEARING-REFUSE" not in err or "table" in out:
+        raise Red("an altered octant compiled in was not refused at load")
+    code, out, err = run(exe, ["--level", os.path.join(ORACLE, "levels", "witness.lvl"), "--tiles",
+                               os.path.join(ORACLE, "tiles", "identity.tiles"), "--at", "34,28,123457"])
+    if code == 0 or "BEARING-REFUSE" not in err or "frame" in out:
+        raise Red("an altered octant compiled in still rendered at a bearing")
+    o = oracle()
+    if witnesses(exe, "witness", "identity", "34,28,W") != (o["frame_digest_urdrfb1"], o["identity_pixels_sha256"]):
+        raise Red("the altered octant reached the facing path")
+    lvl = read(os.path.join(ORACLE, "levels", "witness.lvl"))
+    w_, rows_ = int.from_bytes(lvl[8:12], "little"), int.from_bytes(lvl[12:16], "little")
+    cells = lvl[16:16 + w_ * rows_]
+    rock = next(i for i, ch in enumerate(cells) if ch == ord("#"))
+    code, out, err = run(KERNEL_EXE, ["--level", os.path.join(ORACLE, "levels", "witness.lvl"), "--tiles",
+                                      os.path.join(ORACLE, "tiles", "identity.tiles"), "--at", f"{rock % w_},{rock // w_},0"])
+    if code == 0 or "non-traversable" not in err or "frame" in out:
+        raise Red("an eye on rock was not refused")
+    for at in ("34,28,360000", "34,28,-1", "34,28,1.5", "34,28,0123", "34,28"):
+        code, out, err = run(KERNEL_EXE, ["--level", os.path.join(ORACLE, "levels", "witness.lvl"), "--tiles",
+                                          os.path.join(ORACLE, "tiles", "identity.tiles"), "--at", at])
+        if code == 0 or "BEARING-REFUSE" not in err or "frame" in out:
+            raise Red(f"the bearing camera {at!r} was not refused typed")
+    return ("fail-closed: an octant with one pair altered into another canonical pair, compiled in, is refused at load by "
+            "its pin (no table, no frame) while the "
+            "same binary's facing path still reproduces urdr-oracle-1; an eye on rock and five malformed bearing cameras "
+            "are refused typed")
+
+
+def bearing_fence():
+    src = read(os.path.join(KERNEL, "bearing.rs")).decode("utf-8")
+    voc = read(os.path.join(KERNEL, "vocab.rs")).decode("utf-8")
+    if BEARING_CORE_MARK not in src or "/// The two witnesses' material" not in src:
+        raise Red("the reference's core markers moved")
+    core = re.sub(r"\bpub ", "", src[src.index(BEARING_CORE_MARK):src.index("/// The two witnesses' material")]).rstrip() + "\n"
+    if sha256(core.encode("utf-8")) != BEARING_CORE_SHA256:
+        raise Red("kernel/bearing.rs's core is no longer the tag's text: the reference is never modified")
+    if BEARING_SOURCE_SHA256 not in src or "urdr-oracle-2" not in src:
+        raise Red("kernel/bearing.rs does not cite its source at the tag")
+    code_of = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())   # comments out; no literal holds //
+    for name, text in (("bearing.rs", code_of(src)), ("vocab.rs", code_of(voc))):
+        for tok in ("Instant", "std::time", "SystemTime", "thread", "fs::", "File", "unsafe", "env::"):
+            if tok in text:
+                raise Red(f"kernel/{name} uses {tok}")
+    if code_of(src).count("std::process::exit") != 1 or "exit" in code_of(voc):
+        raise Red("the reference exits anywhere but its invariant stop, or the vocabulary exits")
+    if len(re.findall(r"include_(bytes|str)!", voc)) != 1 or voc.count('include_bytes!("../oracle/bearing_octant.txt")') != 1 \
+            or re.findall(r"include_(bytes|str)!", src):
+        raise Red("the vocabulary includes anything but the carried octant, or the reference includes a file")
+    if f'pub const OCTANT_SHA256: &str = "{OCTANT_SHA256}";' not in voc:
+        raise Red("the vocabulary's pin is not the record's octant sha256")
+    for d in (SHELL, WORKSHOP):
+        for fn in sorted(os.listdir(d)):
+            if fn.endswith(".rs"):
+                t = read(os.path.join(d, fn)).decode("utf-8")
+                if re.search(r"kernel/(bearing|vocab)\.rs|\b(bearing|vocab)::", t):
+                    raise Red(f"{os.path.basename(d)}/{fn} reaches the reference bearing kernel or its vocabulary")
+    return ("the reference is the tag's arithmetic: its core, `pub` removed, hashes to the same span of Urðr's "
+            "bearing_rs at urdr-oracle-2; it and the vocabulary read no clock, spawn no thread, touch no file at run "
+            "time, use no unsafe; the vocabulary's one include is the carried octant under the record's pin; and no file "
+            "of the shell or the workshop reaches either — no live path renders at a bearing")
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -7644,7 +7992,16 @@ def main() -> int:
     row("holdwalk-coalesce", holdwalk_coalesce)
     row("holdwalk-equivalence", holdwalk_equivalence)
     row("holdwalk-fence", holdwalk_fence)
-    fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
+    row("bearing0-preregistered", bearing_preregistered)
+    row("oracle2-frozen", oracle2_frozen)
+    row("oracle2-identity", oracle2_identity)
+    row("bearing-vocab", bearing_vocab)
+    row("bearing-oracle", bearing_oracle)
+    row("bearing-anchors", bearing_anchors)
+    row("bearing-selftest", bearing_selftest)
+    row("bearing-refuse", bearing_refuse)
+    row("bearing-fence", bearing_fence)
+    fails =sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]
     print("GATE FAILED" if fails else "GATE PASSED")

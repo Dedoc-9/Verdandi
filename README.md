@@ -29,7 +29,7 @@ shell owns the window and nothing else.
       editor / inspector / tool panes = shell chrome, declared off-gate
 
     ORACLE
-      Urðr is frozen evidence (the tag urdr-oracle-1) · not a runtime dependency
+      Urðr is frozen evidence (the tags urdr-oracle-1 and urdr-oracle-2) · not a runtime dependency
 
 The dependency rule, and its negation:
 
@@ -56,8 +56,8 @@ is a second authority.
 
 | Folder | Contract |
 |---|---|
-| `oracle/` | frozen evidence from Urðr at `urdr-oracle-1`: the contract record, the corpus inputs the kernel is compared against, and (`oracle/game/`, GAME-0) Urðr's game layer with its own suites. Read-only by convention; a change here is a new oracle, named. |
-| `kernel/` | the deterministic per-frame work: a scene in, an index frame and a picture out, two witnesses. std-only. |
+| `oracle/` | frozen evidence from Urðr at `urdr-oracle-1`: the contract record, the corpus inputs the kernel is compared against, and (`oracle/game/`, GAME-0) Urðr's game layer with its own suites; and at `urdr-oracle-2` (BEARING-0) the bearing camera's record and its registered table of headings. Read-only by convention; a change here is a new oracle, named. |
+| `kernel/` | the deterministic per-frame work: a scene in, an index frame and a picture out, two witnesses. std-only. Since BEARING-0 also the reference bearing kernel (any registered heading), which no live path uses yet. |
 | `workshop/` | the design loop: an edit in, a new authority out, a consequence record beside it. Validates before it projects. |
 | `shell/` | the window: blit the kernel's framebuffer, pump input, time the present path. Owns no truth. |
 | `verify/` | the gate: every claim above as a row that can redden; two runs byte-identical or nothing landed. |
@@ -112,6 +112,7 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/kernel --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
     verify/build/kernel ... --bench 200 --warm 20            # off-gate: renderer time on this host
     verify/build/kernel ... --hud --write-png out.ppm         # the composite with the overlay, to look at
+    verify/build/kernel --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --at 34,28,123457 --write-png turned.ppm   # BEARING-0: the reference at a heading id
     python verify/bench.py --host $env:COMPUTERNAME           # off-gate: the kernel's frame time, sealed under the envelope
     verify/build/shell witness --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
     rustc -O --cfg shell_window shell/main.rs -o verify/build/shell.exe   # Windows: build WITH the window

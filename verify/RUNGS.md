@@ -3258,13 +3258,130 @@ two repeats, a fresh press is coalesced, a coalesced repeat goes uncounted, or a
 `holdwalk-equivalence` goes red if holding a key changes the saved data. `holdwalk-fence` goes red if a clock, a key-up
 or a key state enters.
 
+## BEARING-0 — the bearing camera of urdr-oracle-2 carried, its reference kernel placed (preregistered and built; the gate's, no host run yet)
+
+**Why.** After HOLD-WALK-0 the owner ruled what free movement means here: shooter-style mouse-look, taken in rungs. The
+first rung is the camera alone: any heading, the eye still at a cell centre. Outside the four cardinal cameras no frozen
+oracle existed to hold a renderer to, so the owner ruled that the turning camera be earned in Urðr and re-frozen there,
+not invented here. Urðr did that as VIEW-YAW-0: its D26 preregistration, then the `bearing` module (URDRBRG1) admitted
+against it. There, a heading is an integer id in [0, 360000), millidegrees clockwise from north, naming one primitive
+Pythagorean triple (A, B, C), so the renderer consumes exact rational directions and never an angle. The four cardinals
+are anchors that reproduce `vista`'s and `mantle`'s frames byte for byte, and a std-only Rust placement reproduces all
+104 corpus witnesses, on the gate's Linux host and on the owner's Windows host. The record `studio-oracle-2.json` froze
+it for consumers, and the owner cut the tag `urdr-oracle-2` (`ad6d55fe`) on 2026-09-30.
+
+**The court of 2026-10-01 (the owner's rulings).**
+
+- **The route.** BEARING-0 (the reference) → BEARING-FAST-0 (the production candidate) → MOUSE-LOOK-0 with SIM-TICK-0 →
+  the presentation and latency measurement. The reference renderer is the correctness court; a fast renderer is a
+  production candidate, held byte for byte to the reference over the bearing corpus and an adversarial camera set, and
+  never becomes the oracle. That is GAUNTLET-1's lesson, applied again. Mouse-look does not drive a renderer slower than
+  the display: the reference measured here is about twice the facing kernel's single-thread time, below a 60 Hz cadence
+  on the owner's host by estimate.
+- **The optimization order for BEARING-FAST-0.** (A) single-thread arithmetic and layout: hoist the camera's invariant
+  terms and turn per-pixel work into per-row or per-column recurrences where exactness permits, the floor DDA's lesson;
+  (B) memory and layout, measured rather than guessed; (C) parallel emission; (D) a persistent worker pool; then (E)
+  mouse-look as a thin input producer. The first target is to beat the measured display interval with margin, then to
+  measure the production render and present path. 144 Hz is not the first target.
+- **What a competitive claim needs.** Simulation and input, camera command, production render, frame ready, present,
+  display refresh and photon are separate segments. The renderer establishes one of them, and the present here is
+  refresh-coupled, so frame rate alone establishes no competitive latency; input to photon needs a physical measurement.
+- **W/A/S/D under a free heading.** W steps one cell toward the cardinal nearest the heading. Each cardinal owns the
+  90° sector centred on it (±45°). At the exact boundary ids (45000 + 90000n) the clockwise cardinal wins, so the rule
+  is a function of the id: forward = ((k + 45000) div 90000) mod 4, with 0 N, 1 E, 2 S and 3 W. S is its opposite, A and
+  D the cardinals 90° left and right of it. W/A/S/D never change the heading: the mouse changes the heading, the keys
+  read it, and the existing MOVE authority executes the cardinal step. Diagonal steps would be a new movement law,
+  with corner-cutting, distance and collision questions of their own, so they are not on this route.
+- **SIM-TICK-0.** 64 Hz (15,625 µs per tick). Each tick saves one command: the integer heading delta summed from the
+  mouse during the tick, plus the key presses. Replay runs the ticks exactly.
+- **Sensitivity.** Heading delta = mouse counts × multiplier × step, where the step is 88 ids (0.088°) coarse or 1 id
+  fine, toggled, and the multiplier is a positive integer, adjustable and saved in the session. The mouse-to-heading
+  path is integer from end to end. The session saves the resulting integer heading delta, or the exact inputs with
+  the registered configuration, never raw counts as the semantic result and never a float.
+- **The live check (carried from the first FPS court).** A live frame is rendered once. While live, preregistered
+  sampled checks are run by an independent path, and every session is certified by exhaustive replay at save and at
+  the gate. Sampling never certifies a session.
+
+MOUSE-LOOK-0 and SIM-TICK-0 register these rulings in their own preregistrations when they are seated.
+
+**The method (`de19660f`).** The record and the octant are carried verbatim from the tag as
+`oracle/urdr-oracle-2.json` and `oracle/bearing_octant.txt`; urdr-oracle-1's carry is untouched, and oracle-2 names it
+by its sha256. The camera is C = (cell_x, cell_z, heading id). The id is authoritative, read only in canonical decimal
+and never normalized. Its triple is the vocabulary's: `kernel/vocab.rs` compiles the carried octant in and checks it
+against the record's sha256 before reading any triple, so a file that does not match refuses and is never regenerated.
+It expands the octant by the record's exact symmetries and composes the bearing camera into the oracle's `URDRBRGI`
+scene. `kernel/bearing.rs` is Urðr's `bearing_rs/bearing.rs` at the tag. Only visibility and shape changed: its core is
+the source's text with `pub` added, the scene parser refuses typed (BEARING-REFUSE) instead of exiting, the command line
+moved to `kernel/main.rs` (`--at x,z,K`, `--bearing-table`, `--bearing-triple K`, apart from the facing path and
+combining with none of its flags), and SHA-256 is mantle.rs's. It is the reference: never modified for performance, and
+no live window uses it. The shell, `mantle.rs` and `fast.rs` are unchanged.
+
+**Rows.**
+
+- `bearing0-preregistered`: the method is locked.
+- `oracle2-frozen`: the two files are the tag's bytes. The record extends the carried `urdr-oracle-1.json` by its
+  sha256, its two views are scenes of `witnesses.json` on their own levels (seed, depth and cell agree), its anchor
+  witness at W is urdr-oracle-1's three hashes, and its anchors are the cardinals.
+- `oracle2-identity`: the checker is not the prover. From the record and the octant alone, with nothing of Urðr
+  imported, the row recomputes by the record's own stated rules the table digest over all 360,000 ids, the largest
+  hypotenuse (8,404,122,277), the 26 case hashes and URDRBRG1's identity. All equal the record's.
+- `bearing-vocab`: the kernel's table digest over all 360,000 ids is the record's. Its triple at the four anchors and
+  the thirteen adversarial ids is the expansion's and the record's. Ten malformed ids (out of range, signed,
+  zero-padded, fractional, spaced, empty, hex) are each refused typed.
+- `bearing-oracle`: the reference reproduces all 104 witnesses of urdr-oracle-2 bit for bit: 26 cases (13 adversarial
+  ids from the witness and corridor views, hypotenuses up to 2^33) × 2 tile sets × the frame digest and the pixel
+  sha256. Each selfcheck is OK, the tile sets of a case share one frame, and one case run twice in separate processes
+  agrees.
+- `bearing-anchors`: at C = 1 the reference is the facing kernel. Over the six corpus scenes in both tile sets, the
+  reference's frame and pixels at each anchor equal the facing kernel's at that cardinal, computed live (48 pairs, 12
+  of them the frozen pins). A reference with screen-right mirrored fails the anchor law at every scene.
+- `bearing-selftest`: a reference that drops C from the depth (the frozen strip expression used verbatim) moves the
+  frame digest of every one of the 52 non-anchor scenes and leaves the witness anchor at W untouched.
+- `bearing-refuse`: an octant with one pair altered into another canonical pair, compiled in, is refused at load by its
+  pin, with no table and no frame. The same binary's facing path still reproduces urdr-oracle-1. An eye on rock and
+  five malformed bearing cameras are refused typed.
+- `bearing-fence`: the reference's core, `pub` removed, hashes to the same span of the tag's source. Neither file reads a
+  clock, spawns a thread, touches a file at run time or uses unsafe. The vocabulary's one include is the carried octant
+  under the record's pin. No file of the shell or the workshop reaches either.
+
+The 104 witnesses reproduced on the first full run. Twelve planted mutations were each caught:
+- a sign flip in the mirror expansion;
+- zero-padded ids accepted;
+- the id range off by one;
+- A and B swapped in the composed scene;
+- the pin check skipped (caught only after the registered plant was made canonical: the first plant, a non-canonical
+  pair, was refused by the parser's structure and did not test the pin);
+- a floor term without C;
+- a comment edited inside the reference's core;
+- `--at` reading the identity tiles for the oriented set;
+- one byte of the record changed;
+- the shell naming the vocabulary;
+- the shell naming `kernel/bearing.rs`;
+- a clock in the vocabulary.
+
+**Grade.** DECLARED: the method, and the court's rulings for the rungs after this one. ESTABLISHED (gate, in the
+container): the carry, the identities recomputed from the record alone, the vocabulary over all 360,000 ids, the 104
+witnesses, the anchor law and its mirror plant, the C law's plant, the fail-closed pin, the fence. NOT_MEASURED: any
+speed. Off the gate here, the reference ran about twice the facing kernel's single-thread time; no record was sealed,
+and the frame rate is BEARING-FAST-0's court. DECLARED, as in Urðr: the quarter-millidegree angle bound.
+
+**does_not_show.** Speed, a frame rate or any latency. Any position between cells, pitch or eye height. The mouse, a
+tick, any movement change, or any live window at a bearing. Agreement between the oracle's 26 cases beyond the port
+being the source's arithmetic; the wider adversarial camera set is BEARING-FAST-0's to register.
+
+**Falsifier.** `bearing-oracle` goes red if one of the 104 witnesses differs. `bearing-anchors` goes red if an anchor
+is not the facing kernel's frame and picture. `oracle2-identity` goes red if any digest the record states does not
+follow from the record and the octant by its own rules. `bearing-refuse` goes red if the vocabulary is read after its
+pin fails. `bearing-fence` goes red if the reference's core changes or a live path reaches it.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
 
 - **SKYBOX-0 (new VIEW semantics).** The sky is `vista`'s LUT sky-bands per depth, frozen in Urðr. Authoring a
   skybox is a VIEW law Urðr never certified, so it takes one of the two open-clause routes: earned in Urðr and
-  re-frozen here as `urdr-oracle-2`, or a Verðandi-local VIEW reference pinned by rows here. Not built until a
+  re-frozen under a new oracle tag (the route the bearing camera took to `urdr-oracle-2`), or a Verðandi-local VIEW
+  reference pinned by rows here. Not built until a
   route is chosen and a semantics exists to render it.
 - **PHYSICS-0 (CORE semantics — corrected).** An earlier version of this clause said the frozen oracle holds no
   physics. That was wrong, and the correction is checked against the tag. `urdr-oracle-1` carries Urðr's

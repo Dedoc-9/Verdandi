@@ -79,7 +79,17 @@ LIVE-SESSION-0   live events → append-only session → save → restart → re
       ↓
 LIVE-AUTHOR-0    the thing authored is the same authority the next frame renders — painted live on the host by class keys, saved, resumed there with the painting intact
       ↓
-HOLD-WALK-0      held keys walk the grid: the input continuous, the world discrete — measured on the host; not the free movement the owner wants, which is open
+HOLD-WALK-0      held keys walk the grid: the input continuous, the world discrete — measured on the host; not the free movement the owner wants
+      ↓
+(Urðr)           VIEW-YAW-0: the turning camera earned in Urðr and frozen as urdr-oracle-2 — any heading, the eye still at a cell centre
+      ↓
+BEARING-0        the bearing camera carried and its reference kernel placed: all 104 witnesses of urdr-oracle-2 bit for bit — built, the gate's
+      ↓
+BEARING-FAST-0   the production candidate, held byte for byte to the reference; first target: beat the display interval with margin
+      ↓
+MOUSE-LOOK-0     the mouse turns the camera: an integer heading delta per 64 Hz tick (SIM-TICK-0), W/A/S/D toward the nearest cardinal
+      ↓
+the presentation and latency measurement      input to photon in separate segments; frame rate alone is no competitive claim
       ↓
 richer edits     vocabulary on the one live editor, not new pathways
       ↓
@@ -99,10 +109,12 @@ LIVE-SESSION-0. Free continuous movement and richer edits are vocabulary and nav
 editor (`shell live-window`), gated in its binding table, not new pathways or rungs. HOLD-WALK-0, registered under its
 own name but on the same pathway, made held keys keep walking cell by cell over the same discrete world, because the
 frozen renderer draws the eye only at a cell centre facing N, E, S or W. After walking it on his host, the owner judged
-that this is not the free movement he wants, so what that item becomes is open. Mouse-look,
-cursor authoring, preview sliders, gizmos and an editor-pane interaction model are deliberately not on the route yet:
-those are where a
-shell starts accumulating an alternate authority.
+that this is not the free movement he wants, and ruled what it becomes: shooter-style mouse-look, taken in rungs. The
+turning camera was earned in Urðr first (VIEW-YAW-0, frozen as `urdr-oracle-2`), because no frozen oracle existed to
+hold a renderer to outside the four cardinals; here it is carried and placed as a reference (BEARING-0), made fast
+against that reference (BEARING-FAST-0), and only then driven by the mouse at a fixed tick (MOUSE-LOOK-0, SIM-TICK-0).
+Cursor authoring, preview sliders, gizmos and an editor-pane interaction model are deliberately not on the route yet:
+those are where a shell starts accumulating an alternate authority.
 
 - **The diagnostic foundation** is not on the critical path to walking. It gives the live loop an instrumented refusal
   surface instead of console archaeology. REFUSAL-LOG-0, RUN-LEDGER-0 and REFUSAL-WHY-1 have landed. REFUSAL-WHY-1
@@ -291,6 +303,22 @@ the presenter's borderless window. The screen is read back at every step and twi
 is counted and logged, never hidden. There is no input, no camera, no clock: counts only. The gate executes the loop
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
+
+### BEARING-0 — the bearing camera carried, its reference kernel placed · **built** (`de19660f`): the gate's, no host run yet
+The first rung of the owner's mouse-look ladder on this side. Urðr earned the turning camera as VIEW-YAW-0 and froze it
+as `urdr-oracle-2`: a heading is an integer id in [0, 360000), millidegrees clockwise from north, naming one primitive
+Pythagorean triple, so the renderer consumes exact rational directions and never an angle; the four cardinals are
+anchors equal to the frozen frames. BEARING-0 carries the record and its table verbatim (`oracle/urdr-oracle-2.json`,
+`oracle/bearing_octant.txt`) and places the reference kernel, `kernel/bearing.rs`, the tag's Rust placement with only
+its visibility changed. The camera is (cell_x, cell_z, heading id), the id authoritative and never normalized; the table
+is compiled in and refused if it does not match its pin. The gate recomputes every digest the record states from the
+record alone, and the reference reproduces all 104 witnesses of urdr-oracle-2 bit for bit. At the four anchors it is
+the facing kernel, and dropping the hypotenuse from the depth moves every non-anchor frame. It is the correctness court
+for BEARING-FAST-0 and drives no window: the shell, `mantle.rs` and `fast.rs` are unchanged. Its speed (about twice the
+facing kernel's single-thread time, measured off the gate here) is why mouse-look waits for the fast path. The owner's
+rulings for the rungs after it, recorded in RUNGS.md, are a 64 Hz tick, W/A/S/D toward the nearest cardinal (ties
+clockwise, never changing the heading), and an integer sensitivity multiplier on a step of 88 or 1 ids, saved in the
+session.
 
 ### HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete · **measured on the host** (`c03260a2`): a held walk saved and verified
 The live editor, `shell live-window`, now walks while a key is held. W, A, S, D and the arrows are the held keys: the

@@ -20,6 +20,10 @@
 //     kernel ... --write-scene out.bin                           # the composed URDRMNTI bytes, for a record
 //     kernel ... --hud                                           # HUD-0: the overlay drawn, three more lines
 //     kernel ... --hud --write-png out.ppm                       # the composite as a binary PPM (P6), off-gate
+//     kernel --level L.lvl --tiles T.tiles --at 34,28,123457     # BEARING-0: the REFERENCE bearing kernel at a heading id
+//     kernel ... --at x,z,K --bench 200 --warm 20                # off-gate: the reference's per-phase timing (no record)
+//     kernel --bearing-table                                     # BEARING-0: the vocabulary's identity (all 360,000 ids)
+//     kernel --bearing-triple K                                  # BEARING-0: one id's registered triple
 //
 // Prints `frame <sha256>`, `pixels <sha256>`, `selfcheck OK|DIVERGED` (the picture computed twice); with --hud
 // also `hud_overlay <sha256>` (the overlay's own bytes), `hud <sha256>` (the composite picture) and
@@ -39,6 +43,12 @@ mod hud;
 #[allow(dead_code)]
 #[path = "fast.rs"]
 mod fast;
+#[allow(dead_code)]
+#[path = "vocab.rs"]
+mod vocab;
+#[allow(dead_code)]
+#[path = "bearing.rs"]
+mod bearing;
 
 use std::env;
 use std::fs;
@@ -55,6 +65,87 @@ fn refuse(msg: &str) -> ! {
 
 fn read(path: &str) -> Vec<u8> {
     fs::read(path).unwrap_or_else(|e| refuse(&format!("cannot read {}: {}", path, e)))
+}
+
+/// BEARING-0: the reference bearing kernel's command line, kept apart from the facing path so nothing above it
+/// changes. `--bearing-table` prints the vocabulary's identity over all 360,000 ids; `--bearing-triple K` one id's
+/// registered triple; `--at x,z,K` with --level and --tiles renders the bearing camera and prints its triple and its
+/// two witnesses, computed twice (the selfcheck); --write-scene, --write-png and the off-gate --bench apply.
+#[allow(clippy::too_many_arguments)]
+fn bearing_main(level: Option<String>, tiles: Option<String>, at: Option<String>, want_table: bool,
+                one: Option<String>, bench: usize, warm: usize, write_scene: Option<String>,
+                write_ppm: Option<String>) -> ! {
+    let v = vocab::load().unwrap_or_else(|Refusal(m)| refuse(&m));
+    if want_table {
+        println!("octant {}", vocab::OCTANT_SHA256);
+        println!("table {}", v.table_digest());
+    }
+    if let Some(s) = one {
+        let k = vocab::parse_id(&s).unwrap_or_else(|Refusal(m)| refuse(&m));
+        let (a, b, c) = v.triple(k).unwrap_or_else(|Refusal(m)| refuse(&m));
+        println!("triple {} {},{},{}", k, a, b, c);
+    }
+    if let Some(s) = at {
+        let (l, t) = match (level, tiles) {
+            (Some(l), Some(t)) => (l, t),
+            _ => refuse("--at needs --level and --tiles"),
+        };
+        let lvl = formats::parse_level(&read(&l)).unwrap_or_else(|Refusal(m)| refuse(&m));
+        let til = formats::parse_tiles(&read(&t)).unwrap_or_else(|Refusal(m)| refuse(&m));
+        let cam = vocab::parse_at(&s).unwrap_or_else(|Refusal(m)| refuse(&m));
+        let tri = v.triple(cam.k).unwrap_or_else(|Refusal(m)| refuse(&m));
+        let data = vocab::compose(&lvl, cam, tri, &til);
+        if let Some(out) = &write_scene {
+            fs::write(out, &data).unwrap_or_else(|e| refuse(&format!("cannot write {}: {}", out, e)));
+        }
+        let scene = bearing::parse_scene(&data).unwrap_or_else(|Refusal(m)| refuse(&m));
+        let first = bearing::picture(&scene);
+        let fd = first.frame_digest();
+        let ps = first.pixel_sha256();
+        let second = bearing::picture(&scene);
+        let same = second.frame_digest() == fd && second.pixel_sha256() == ps;
+        println!("triple {},{},{}", tri.0, tri.1, tri.2);
+        println!("frame {}", fd);
+        println!("pixels {}", ps);
+        println!("selfcheck {}", if same { "OK" } else { "DIVERGED" });
+        if let Some(path) = &write_ppm {
+            let mut ppm = format!("P6\n{} {}\n255\n", W, H).into_bytes();
+            ppm.extend_from_slice(&first.pixels);
+            fs::write(path, &ppm).unwrap_or_else(|e| refuse(&format!("cannot write {}: {}", path, e)));
+        }
+        if bench > 0 {
+            // off-gate, no record: warm-up excluded; each sample is one full frame, traversal+strip+floor then the texels
+            let mut strips: Vec<bearing::Strip> = Vec::with_capacity(W);
+            let mut buf = vec![0u8; W * H];
+            let mut rgb = vec![0u8; W * H * 3];
+            let mut t_frame: Vec<u128> = Vec::with_capacity(bench);
+            let mut t_pix: Vec<u128> = Vec::with_capacity(bench);
+            let mut t_tot: Vec<u128> = Vec::with_capacity(bench);
+            for k in 0..(warm + bench) {
+                let t0 = Instant::now();
+                scene.strips(&mut strips);
+                scene.frame(&strips, &mut buf);
+                let t1 = Instant::now();
+                scene.emit(&strips, &buf, &mut rgb);
+                let t2 = Instant::now();
+                if k >= warm {
+                    t_frame.push((t1 - t0).as_micros());
+                    t_pix.push((t2 - t1).as_micros());
+                    t_tot.push((t2 - t0).as_micros());
+                }
+            }
+            let same_after = bearing::frame_digest(&buf) == fd && hex(&sha256(&rgb)) == ps;
+            let (a, b, c, d) = percentiles(t_frame);
+            println!("bench_frame_us p50={} p95={} p99={} max={}", a, b, c, d);
+            let (a, b, c, d) = percentiles(t_pix);
+            println!("bench_pixels_us p50={} p95={} p99={} max={}", a, b, c, d);
+            let (a, b, c, d) = percentiles(t_tot);
+            println!("bench_total_us p50={} p95={} p99={} max={}", a, b, c, d);
+            println!("bench_samples {} warmup {} same_witnesses {}", bench, warm, if same_after { "OK" } else { "DIVERGED" });
+            println!("{}", host_line());
+        }
+    }
+    exit(0)
 }
 
 fn percentiles(mut xs: Vec<u128>) -> (u128, u128, u128, u128) {
@@ -181,6 +272,9 @@ fn main() {
     let mut n_threads = 1usize;
     let mut want_render = false;
     let mut write_ppm: Option<String> = None;
+    let mut at: Option<String> = None;
+    let mut want_btable = false;
+    let mut btriple: Option<String> = None;
     let mut i = 1;
     while i < args.len() {
         let next = |i: usize| -> String {
@@ -208,9 +302,21 @@ fn main() {
             "--threads" => { n_threads = next(i).parse().unwrap_or_else(|_| refuse("--threads needs a count")); i += 2; }
             "--render" => { want_render = true; i += 1; }
             "--write-png" => { write_ppm = Some(next(i)); i += 2; }
+            "--at" => { at = Some(next(i)); i += 2; }
+            "--bearing-table" => { want_btable = true; i += 1; }
+            "--bearing-triple" => { btriple = Some(next(i)); i += 2; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
         }
+    }
+    if at.is_some() || want_btable || btriple.is_some() {
+        // BEARING-0: the reference bearing kernel stands apart; no facing-path flag combines with it
+        if scene_path.is_some() || camera.is_some() || want_hud || want_fast || fast_bench > 0 || emit_bd > 0
+            || want_struct || want_loc || loc_bench > 0 || want_g2 || want_g2threads || g2_bench > 0 || want_render
+            || breakdown > 0 || loc_variant.is_some() {
+            refuse("--at, --bearing-table and --bearing-triple take --level, --tiles, --write-scene, --write-png, --bench and --warm only");
+        }
+        bearing_main(level, tiles, at, want_btable, btriple, bench, warm, write_scene, write_ppm);
     }
     let data: Vec<u8> = match (scene_path, level, tiles, camera) {
         (Some(p), None, None, None) => read(&p),
