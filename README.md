@@ -113,6 +113,8 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/kernel ... --bench 200 --warm 20            # off-gate: renderer time on this host
     verify/build/kernel ... --hud --write-png out.ppm         # the composite with the overlay, to look at
     verify/build/kernel --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --at 34,28,123457 --write-png turned.ppm   # BEARING-0: the reference at a heading id
+    python verify/bearingfast.py --host $env:COMPUTERNAME     # off-gate: BEARING-FAST-0's speed court, sealed
+    python verify/bearingsweep.py --host $env:COMPUTERNAME    # off-gate: BEARING-FAST-0's sweep (about an hour), sealed
     python verify/bench.py --host $env:COMPUTERNAME           # off-gate: the kernel's frame time, sealed under the envelope
     verify/build/shell witness --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
     rustc -O --cfg shell_window shell/main.rs -o verify/build/shell.exe   # Windows: build WITH the window

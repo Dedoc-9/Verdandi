@@ -3391,6 +3391,107 @@ is not the facing kernel's frame and picture. `oracle2-identity` goes red if any
 follow from the record and the octant by its own rules. `bearing-refuse` goes red if the vocabulary is read after its
 pin fails. `bearing-fence` goes red if the reference's core changes or a live path reaches it.
 
+## BEARING-FAST-0 — the bearing camera made fast, held byte for byte to the reference (preregistered and built; the host courts to run)
+
+**Why.** The reference bearing kernel is exact and slow: in the container it ran about twice the facing kernel's
+single-thread time, so mouse-look waits for a fast path. The owner's court of 2026-10-01 ruled the shape. There is one
+rung with its staircase inside, as GAUNTLET-1 was: A, exact stepping; B, memory layout; C, threads; D, persistent
+workers, only if needed. Each tread goes reference-equivalent, then byte-identical, then benchmarked on the host, then
+retained or rejected. The optimizing stops when the target is met, and a later tread is kept only by beating its
+predecessor by a margin, so none is kept merely because it exists. The owner added: try to do better than the target.
+The target is a production p99 of at most 6,667 µs, half the panel's 13,333 µs at 75 Hz. Every narrowing from 128 to
+64 bits carries a written bound, and the gate also runs a build with overflow checks on.
+
+**Where the time was.** Reading the reference: almost all of it was per-pixel 128-bit division. A floor pixel did six
+(two for its cell, four for its texel), a wall pixel one, and 128-bit division is a runtime routine (`__divti3`), not
+an instruction. The traversal is not the cost: profiled here, the reference's strips took about 0.1 ms of a frame.
+
+**The method (`f0a9a57d`), registered before any fast code existed.** `kernel/bearingfast.rs` is a sibling of the
+reference. It reuses the reference's traversal (`Scene::strips`) unchanged and replaces the index frame and the
+picture.
+
+- **The exact walker.** A quantity N(j) = N0 + j·s seen through floor(N·T/den) is carried as M = floor(N·T/den) and
+  its remainder e. One step adds s·T split once into a quotient and a remainder, with one carry. M and e are set up
+  once from N0 in 128 bits; every step after that is a few 64-bit adds.
+- **Tread A.** Along a screen row the floor point moves by a fixed exact step per column, at any heading: the floor
+  numerators step by −2·B·EYE_Y and +2·A·EYE_Y, because the ray is linear in the column. This is Lode's scanline floor
+  casting, made exact. With T = Q the walker's M is the floor point in texel units, so the cell is M >> 8 and the
+  texel M & 255, exactly the reference's div_euclid and texel. Down a wall column, v's numerator steps by 2·C·tn per
+  row, one walker per column, clamped as the reference clamps. The index frame and the picture are written together,
+  row by row, in address order; the reference fills them column by column.
+- **Tread B.** The floor tile is read from the 8×8 blocked execution format LOCALITY-0 locked (`fast::blocked_floor`,
+  once per scene).
+- **Tread C.** Contiguous row bands run on scoped threads (PROD_THREADS = 8), over either layout (`ca`, `cb`). Each
+  band seeds its own wall walkers at its first row, and the writes are disjoint.
+- **Bounds.** The envelope (C < 2^33, tn < 2^14, td < 2^45) is checked per scene and per strip, and a scene outside it
+  is refused (BEARING-FAST-REFUSE), never wrapped. The seven narrowings go through one checked `narrow`, because an
+  `as` cast is not covered by overflow checks; each carries its bound.
+
+**Rows.**
+
+- `bearingfast-preregistered`: the method is locked.
+- `bearingfast-court`: in kernel processes, all four treads (a, b, ca, cb) produce the reference's index frame and
+  picture byte for byte at all 1,972 cameras. Those are the 52 oracle scenes, whose reference digests are also
+  urdr-oracle-2's own, and the 1,920 registered frames: six corpus scenes × eight cells by the registered rule × forty
+  headings (anchors ±1, diagonals ±1, anchors ±88, eight generic ids), with the list's digest pinned. The gate splits
+  the list across processes for wall-clock only; every number reported is a function of the list.
+- `bearingfast-threads`: tread C is the reference at T in {1, 2, 3, 7, 8, 16}, both layouts, over the 52 oracle
+  scenes.
+- `bearingfast-checked`: the kernel built with overflow checks on renders every tread at all 1,972 cameras without an
+  overflow. Each camera hashes one tread in rotation, and that digest equals the reference's.
+- `bearingfast-bounds`: there are exactly seven narrowings, each through `narrow` with its bound, and no other
+  `as i64`. At the registered heading with the largest hypotenuse (id 1, C = 8,404,122,277) every tread is the
+  reference. Beyond the envelope (a triple with C = 5·2^31) the reference renders and the fast path refuses.
+- `bearingfast-fence`: the reference's core is still the tag's text, and mantle.rs and fast.rs are unchanged (both
+  pinned). The fast path reads no clock, touches no file, uses no unsafe and starts threads only in tread C's one
+  scope. No file of the shell or the workshop reaches it.
+
+**First runs.** The full court passed on its first complete run: every tread equal at every camera. The checked build
+did not pass on its first run. It stopped on a u8 overflow in a value the release build had wrapped silently: the
+sky's band, computed for every row, including rows below the horizon where no sky pixel can be (a strip's top is at
+most CY). The band is now formed only above the horizon. The release output was the same before and after, so only the
+checked build could have shown it. Fourteen planted mutations were each caught:
+- a walker carry off by one;
+- a floor step's sign;
+- the blocked index transposed;
+- band rows dropped;
+- wall walkers seeded at the strip's top instead of the band's;
+- the edge ink dropped;
+- the floor band off by one;
+- the sky guard removed (caught only by the checked build);
+- an unchecked narrowing;
+- the envelope check removed;
+- a comment edited in the reference's core;
+- a clock in the fast path;
+- the shell naming it;
+- a registered heading changed.
+
+**Off the gate, on the owner's host.**
+- **The speed court** (`verify/bearingfast.py`, sealed as `kernel/attest/bearingfast-<host>.json`). Each tread runs in
+  its own process, at four registered cameras, twice in mirrored order. Every process checks its tread against the
+  reference before printing a number. A tread's score is its worst camera's p99 (the larger of its two runs). Then:
+  A is promoted if below the reference at every camera; B is kept at ≤ 950‰ of A; C over the kept layout at ≤ 950‰ of
+  the best so far. The production candidate is the last tread kept, and the target is a score ≤ 6,667 µs.
+- **The sweep** (`verify/bearingsweep.py`, sealed as `kernel/attest/bearingsweep-<host>.json`). Every walkable cell of
+  the five corpus levels at every whole degree (622,440 frames), the production candidate against the reference.
+
+Container timings are engineering notes and decide nothing. Here, with two cores, tread A ran about 12–13 ms at p50
+against the reference's 40 ms, and C about 8 ms.
+
+**Grade.** DECLARED: the method, the staircase rule, the target. ESTABLISHED (gate, in the container): byte-identity of
+every tread at the court set and the threads set, no overflow in the checked build over the court set, the bounds and
+the envelope, the fence. NOT_MEASURED: any speed on the owner's host, which tread is production, whether the target is
+met, and the sweep. Those are the two host records.
+
+**does_not_show.** Any speed, until the host's record. Any present, blit, window or input-to-photon time: the score is
+renderer time only. Agreement at cameras outside the court set, the threads set and the sweep beyond the exact
+arithmetic the gate bounds and overflow-checks. Any live use: no window renders at a bearing until MOUSE-LOOK-0.
+
+**Falsifier.** `bearingfast-court` goes red if any tread differs from the reference at any registered camera, or the
+camera list changes. `bearingfast-checked` goes red on any overflow. `bearingfast-bounds` goes red if a narrowing
+escapes `narrow`, or the fast path renders outside its envelope. `bearingfast-fence` goes red if the reference, mantle.rs
+or fast.rs changes, or a clock, a file or a live path enters.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

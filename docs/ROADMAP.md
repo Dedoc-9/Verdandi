@@ -85,7 +85,7 @@ HOLD-WALK-0      held keys walk the grid: the input continuous, the world discre
       ↓
 BEARING-0        the bearing camera carried and its reference kernel placed: all 104 witnesses of urdr-oracle-2 bit for bit — built; the gate passes on the host
       ↓
-BEARING-FAST-0   the production candidate, held byte for byte to the reference; first target: beat the display interval with margin
+BEARING-FAST-0   the production candidate, held byte for byte to the reference (exact stepping, the blocked floor, row-banded threads) — built; its host speed court and sweep to run; target p99 <= 6,667 us
       ↓
 MOUSE-LOOK-0     the mouse turns the camera: an integer heading delta per 64 Hz tick (SIM-TICK-0), W/A/S/D toward the nearest cardinal
       ↓
@@ -303,6 +303,18 @@ the presenter's borderless window. The screen is read back at every step and twi
 is counted and logged, never hidden. There is no input, no camera, no clock: counts only. The gate executes the loop
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
+
+### BEARING-FAST-0 — the bearing camera made fast, held to the reference · **built** (`f0a9a57d`): the gate's; the host courts to run
+One rung with its staircase inside, as the owner ruled. The reference spent its time in per-pixel 128-bit division;
+the fast path, `kernel/bearingfast.rs`, keeps the reference's traversal and walks the floor and the walls exactly in
+64-bit integers instead: along a row the floor point moves by a fixed exact step per column at any heading (scanline
+floor casting, made exact), and down a wall column the texture moves by a fixed step per row, with one 128-bit setup
+per row or column. The frame and the picture are written in one row-major pass (tread A); tread B reads the floor from
+the blocked layout LOCALITY-0 locked; tread C runs eight row bands on threads. Every tread is the reference byte for
+byte at 1,972 registered cameras on every gate, also in a build with overflow checks on, and every narrowing from 128
+to 64 bits is checked and bounded. On the owner's host a speed court keeps a tread only by its margin and names the
+production candidate against the target, a p99 of at most 6,667 µs (half the 75 Hz refresh), and a sweep checks it
+against the reference at every walkable cell at every whole degree.
 
 ### BEARING-0 — the bearing camera carried, its reference kernel placed · **built** (`de19660f`): the gate passes on the host
 The first rung of the owner's mouse-look ladder on this side. Urðr earned the turning camera as VIEW-YAW-0 and froze it

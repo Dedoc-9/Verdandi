@@ -24,6 +24,9 @@
 //     kernel ... --at x,z,K --bench 200 --warm 20                # off-gate: the reference's per-phase timing (no record)
 //     kernel --bearing-table                                     # BEARING-0: the vocabulary's identity (all 360,000 ids)
 //     kernel --bearing-triple K                                  # BEARING-0: one id's registered triple
+//     kernel --bearing-court FILE [--no-reference] [--threads-set 1,2,8]   # BEARING-FAST-0: the treads vs the reference over a camera list
+//     kernel --level L --tiles T --at x,z,K --bearing-bench 200 --warm 20 --tread ref|a|b|ca|cb   # off-gate: one tread's timing
+//     kernel --fast-scene scene.bin                              # BEARING-FAST-0: a raw URDRBRGI scene, the reference then tread a (or its refusal)
 //
 // Prints `frame <sha256>`, `pixels <sha256>`, `selfcheck OK|DIVERGED` (the picture computed twice); with --hud
 // also `hud_overlay <sha256>` (the overlay's own bytes), `hud <sha256>` (the composite picture) and
@@ -49,6 +52,9 @@ mod vocab;
 #[allow(dead_code)]
 #[path = "bearing.rs"]
 mod bearing;
+#[allow(dead_code)]
+#[path = "bearingfast.rs"]
+mod bearingfast;
 
 use std::env;
 use std::fs;
@@ -145,6 +151,174 @@ fn bearing_main(level: Option<String>, tiles: Option<String>, at: Option<String>
             println!("{}", host_line());
         }
     }
+    exit(0)
+}
+
+/// BEARING-FAST-0's treads by name: a (exact stepping), b (a + the blocked floor), ca and cb (a or b in PROD_THREADS
+/// row bands).
+fn tread_of(name: &str) -> bearingfast::Tread {
+    match name {
+        "a" => bearingfast::A,
+        "b" => bearingfast::B,
+        "ca" => bearingfast::Tread { blocked: false, threads: bearingfast::PROD_THREADS },
+        "cb" => bearingfast::Tread { blocked: true, threads: bearingfast::PROD_THREADS },
+        other => refuse(&format!("no tread named {:?}", other)),
+    }
+}
+
+const COURT_TREADS: [&str; 4] = ["a", "b", "ca", "cb"];
+
+/// A camera list, one camera per line "LEVEL TILES x z K"; the level and tile files are read once each and every
+/// scene is composed when its turn comes.
+struct CourtList {
+    vocab: vocab::Vocab,
+    levels: std::collections::BTreeMap<String, formats::Level>,
+    tiles: std::collections::BTreeMap<String, formats::Tiles>,
+    cams: Vec<(String, String, vocab::BearingCamera)>,
+}
+
+impl CourtList {
+    fn read(path: &str) -> CourtList {
+        let text = String::from_utf8(read(path)).unwrap_or_else(|_| refuse("the camera list is not text"));
+        let mut cl = CourtList {
+            vocab: vocab::load().unwrap_or_else(|Refusal(m)| refuse(&m)),
+            levels: std::collections::BTreeMap::new(),
+            tiles: std::collections::BTreeMap::new(),
+            cams: Vec::new(),
+        };
+        for (n, ln) in text.lines().enumerate() {
+            let f: Vec<&str> = ln.split_whitespace().collect();
+            if f.is_empty() {
+                continue;
+            }
+            if f.len() != 5 {
+                refuse(&format!("camera list line {} is not LEVEL TILES x z K", n + 1));
+            }
+            if !cl.levels.contains_key(f[0]) {
+                cl.levels.insert(f[0].to_string(), formats::parse_level(&read(f[0])).unwrap_or_else(|Refusal(m)| refuse(&m)));
+            }
+            if !cl.tiles.contains_key(f[1]) {
+                cl.tiles.insert(f[1].to_string(), formats::parse_tiles(&read(f[1])).unwrap_or_else(|Refusal(m)| refuse(&m)));
+            }
+            let cam = vocab::parse_at(&format!("{},{},{}", f[2], f[3], f[4])).unwrap_or_else(|Refusal(m)| refuse(&m));
+            cl.cams.push((f[0].to_string(), f[1].to_string(), cam));
+        }
+        cl
+    }
+    fn scene(&self, i: usize) -> bearing::Scene {
+        let (l, t, cam) = &self.cams[i];
+        let tri = self.vocab.triple(cam.k).unwrap_or_else(|Refusal(m)| refuse(&m));
+        bearing::parse_scene(&vocab::compose(&self.levels[l], *cam, tri, &self.tiles[t])).unwrap_or_else(|Refusal(m)| refuse(&m))
+    }
+}
+
+/// BEARING-FAST-0's court: every tread's index frame and picture against the reference's, byte for byte, over a
+/// camera list, in this one process. One line per camera: `cam I ref FD PS` then, per tread, `NAME = = 1` when both
+/// buffers equal the reference's byte for byte (equal bytes have the reference's digests) or `NAME FD PS 0`.
+/// --no-reference (the checked build) renders every tread at every camera and hashes one, rotating: camera I hashes
+/// tread I mod n (`NAME FD PS -`, the others `NAME - - -`), so every tread's arithmetic runs everywhere and each is
+/// compared by digest on its share. --threads-set replaces the treads with tread C at each listed count, both layouts;
+/// --treads a,b,... chooses the treads; --no-digest (the sweep) prints the equality alone, hashing nothing.
+fn bearingfast_court(path: &str, no_ref: bool, threads_set: Option<String>, only: Option<String>, no_digest: bool) -> ! {
+    let list = CourtList::read(path);
+    let chosen: Vec<String> = match only {
+        Some(l) => l.split(',').map(|s| s.trim().to_string()).collect(),
+        None => COURT_TREADS.iter().map(|s| s.to_string()).collect(),
+    };
+    let mut names: Vec<String> = chosen.clone();
+    let mut treads: Vec<bearingfast::Tread> = chosen.iter().map(|s| tread_of(s)).collect();
+    if let Some(ts) = threads_set {
+        names.clear();
+        treads.clear();
+        for t in ts.split(',') {
+            let n: usize = t.trim().parse().unwrap_or_else(|_| refuse("--threads-set takes counts"));
+            for blocked in [false, true] {
+                names.push(format!("{}{}", if blocked { "cb" } else { "ca" }, n));
+                treads.push(bearingfast::Tread { blocked, threads: n });
+            }
+        }
+    }
+    let mut strips: Vec<bearing::Strip> = Vec::with_capacity(W);
+    let mut buf = vec![0u8; W * H];
+    let mut rgb = vec![0u8; W * H * 3];
+    for i in 0..list.cams.len() {
+        let scene = list.scene(i);
+        let reference = if no_ref { None } else { Some(bearing::picture(&scene)) };
+        let mut line = match &reference {
+            Some(_) if no_digest => format!("cam {} ref - -", i),
+            Some(p) => format!("cam {} ref {} {}", i, p.frame_digest(), p.pixel_sha256()),
+            None => format!("cam {} ref - -", i),
+        };
+        for (j, t) in treads.iter().enumerate() {
+            let floor = bearingfast::prepare(&scene, *t);
+            bearingfast::render_into(&scene, *t, &floor, &mut strips, &mut buf, &mut rgb).unwrap_or_else(|Refusal(m)| refuse(&m));
+            let cell = match &reference {
+                Some(p) if buf == p.frame && rgb == p.pixels => "= = 1".to_string(),
+                Some(_) if no_digest => "- - 0".to_string(),
+                Some(_) => format!("{} {} 0", bearing::frame_digest(&buf), hex(&sha256(&rgb))),
+                None if i % treads.len() == j => format!("{} {} -", bearing::frame_digest(&buf), hex(&sha256(&rgb))),
+                None => "- - -".to_string(),
+            };
+            line.push_str(&format!(" {} {}", names[j], cell));
+        }
+        println!("{}", line);
+    }
+    exit(0)
+}
+
+/// Off-gate: one tread's whole render (strips, frame and picture) timed in this process, its witnesses checked
+/// against the reference's first — a number of the wrong picture is refused.
+fn bearingfast_bench(level: Option<String>, tiles: Option<String>, at: Option<String>, n: usize, warm: usize,
+                     tread: Option<String>) -> ! {
+    let (l, t, a) = match (level, tiles, at) {
+        (Some(l), Some(t), Some(a)) => (l, t, a),
+        _ => refuse("--bearing-bench needs --level, --tiles and --at"),
+    };
+    let v = vocab::load().unwrap_or_else(|Refusal(m)| refuse(&m));
+    let lvl = formats::parse_level(&read(&l)).unwrap_or_else(|Refusal(m)| refuse(&m));
+    let til = formats::parse_tiles(&read(&t)).unwrap_or_else(|Refusal(m)| refuse(&m));
+    let cam = vocab::parse_at(&a).unwrap_or_else(|Refusal(m)| refuse(&m));
+    let tri = v.triple(cam.k).unwrap_or_else(|Refusal(m)| refuse(&m));
+    let scene = bearing::parse_scene(&vocab::compose(&lvl, cam, tri, &til)).unwrap_or_else(|Refusal(m)| refuse(&m));
+    let reference = bearing::picture(&scene);
+    let name = tread.unwrap_or_else(|| refuse("--bearing-bench needs --tread ref|a|b|ca|cb"));
+    let mut strips: Vec<bearing::Strip> = Vec::with_capacity(W);
+    let mut buf = vec![0u8; W * H];
+    let mut rgb = vec![0u8; W * H * 3];
+    let mut times: Vec<u128> = Vec::with_capacity(n);
+    if name == "ref" {
+        for k in 0..(warm + n) {
+            let t0 = Instant::now();
+            scene.strips(&mut strips);
+            scene.frame(&strips, &mut buf);
+            scene.emit(&strips, &buf, &mut rgb);
+            let t1 = Instant::now();
+            if k >= warm {
+                times.push((t1 - t0).as_micros());
+            }
+        }
+    } else {
+        let tr = tread_of(&name);
+        let floor = bearingfast::prepare(&scene, tr);
+        for k in 0..(warm + n) {
+            let t0 = Instant::now();
+            bearingfast::render_into(&scene, tr, &floor, &mut strips, &mut buf, &mut rgb).unwrap_or_else(|Refusal(m)| refuse(&m));
+            let t1 = Instant::now();
+            if k >= warm {
+                times.push((t1 - t0).as_micros());
+            }
+        }
+    }
+    let same = buf == reference.frame && rgb == reference.pixels;
+    println!("bench_tread {}", name);
+    println!("bench_witness {}", if same { "OK" } else { "DIVERGED" });
+    if !same {
+        exit(1);
+    }
+    let (p50, p95, p99, mx) = percentiles(times);
+    println!("bench_total_us p50={} p95={} p99={} max={}", p50, p95, p99, mx);
+    println!("bench_samples {} warmup {}", n, warm);
+    println!("{}", host_line());
     exit(0)
 }
 
@@ -275,6 +449,14 @@ fn main() {
     let mut at: Option<String> = None;
     let mut want_btable = false;
     let mut btriple: Option<String> = None;
+    let mut court: Option<String> = None;
+    let mut no_ref = false;
+    let mut threads_set: Option<String> = None;
+    let mut bbench = 0usize;
+    let mut tread: Option<String> = None;
+    let mut fast_scene: Option<String> = None;
+    let mut court_treads: Option<String> = None;
+    let mut no_digest = false;
     let mut i = 1;
     while i < args.len() {
         let next = |i: usize| -> String {
@@ -305,9 +487,39 @@ fn main() {
             "--at" => { at = Some(next(i)); i += 2; }
             "--bearing-table" => { want_btable = true; i += 1; }
             "--bearing-triple" => { btriple = Some(next(i)); i += 2; }
+            "--bearing-court" => { court = Some(next(i)); i += 2; }
+            "--no-reference" => { no_ref = true; i += 1; }
+            "--threads-set" => { threads_set = Some(next(i)); i += 2; }
+            "--bearing-bench" => { bbench = next(i).parse().unwrap_or_else(|_| refuse("--bearing-bench needs a count")); i += 2; }
+            "--tread" => { tread = Some(next(i)); i += 2; }
+            "--fast-scene" => { fast_scene = Some(next(i)); i += 2; }
+            "--treads" => { court_treads = Some(next(i)); i += 2; }
+            "--no-digest" => { no_digest = true; i += 1; }
             a if a.starts_with("--") => refuse(&format!("unknown argument {}", a)),
             _ => { scene_path = Some(args[i].clone()); i += 1; }
         }
+    }
+    if let Some(f) = fast_scene {
+        // BEARING-FAST-0's envelope probe: a raw URDRBRGI scene, the reference's witnesses, then tread a's or its refusal
+        let scene = bearing::parse_scene(&read(&f)).unwrap_or_else(|Refusal(m)| refuse(&m));
+        let p = bearing::picture(&scene);
+        println!("ref {} {}", p.frame_digest(), p.pixel_sha256());
+        let (b, o) = bearingfast::picture(&scene, bearingfast::A).unwrap_or_else(|Refusal(m)| refuse(&m));
+        println!("a {} {}", bearing::frame_digest(&b), hex(&sha256(&o)));
+        exit(0);
+    }
+    if court.is_some() || bbench > 0 {
+        // BEARING-FAST-0: the court and the off-gate bench stand apart from both other paths
+        if scene_path.is_some() || camera.is_some() || want_hud || want_fast || fast_bench > 0 || emit_bd > 0
+            || want_struct || want_loc || loc_bench > 0 || want_g2 || want_g2threads || g2_bench > 0 || want_render
+            || breakdown > 0 || loc_variant.is_some() || want_btable || btriple.is_some() || bench > 0
+            || write_scene.is_some() || write_ppm.is_some() {
+            refuse("--bearing-court and --bearing-bench take their own flags only");
+        }
+        if let Some(f) = court {
+            bearingfast_court(&f, no_ref, threads_set, court_treads, no_digest);
+        }
+        bearingfast_bench(level, tiles, at, bbench, warm, tread);
     }
     if at.is_some() || want_btable || btriple.is_some() {
         // BEARING-0: the reference bearing kernel stands apart; no facing-path flag combines with it

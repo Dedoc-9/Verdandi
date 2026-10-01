@@ -7802,6 +7802,238 @@ def bearing_fence():
             "time, use no unsafe; the vocabulary's one include is the carried octant under the record's pin; and no file "
             "of the shell or the workshop reaches either — no live path renders at a bearing")
 
+# ------------------------------------------------------------------ BEARING-FAST-0
+# The bearing camera made fast, held byte for byte to the reference (kernel/bearing.rs, never modified). The court runs
+# in kernel processes over a registered camera list; the gate splits the list across processes only for wall-clock,
+# and every number it reports is a function of the list, never of the split.
+BF_HEADINGS = (0, 90000, 180000, 270000, 1, 359999, 89999, 90001, 179999, 180001, 269999, 270001,
+               45000, 135000, 225000, 315000, 44999, 45001, 134999, 135001, 224999, 225001, 314999, 315001,
+               88, 359912, 89912, 90088, 179912, 180088, 269912, 270088,
+               12345, 77777, 123457, 166667, 199999, 234567, 300001, 333333)
+BF_TREADS = ("a", "b", "ca", "cb")
+BF_THREADS_SET = "1,2,3,7,8,16"
+# the registered camera list (the 52 oracle scenes, then the 1,920 court frames), as text with relative paths
+BF_LIST_SHA256 = "e34469b21c394fd704412881154ec631f0c2412a50e03ecf1fe14137982483db"
+# the production kernel this rung must not touch (re-pinned on purpose by a rung that changes it)
+MANTLE_RS_SHA256 = "ab08361dc82d9fd8c040fc96386c5d81118c04851efee718c4dc9a72d273095c"
+FAST_RS_SHA256 = "5de110834ac015ad6ab0e5fae0bed8a49aa6fd19cbb77bd1cb63edbbd0362f77"
+BF_NARROWINGS = 7
+BF_STATE: dict = {}
+
+
+def _bf_walkable(level: str) -> list:
+    b = read(os.path.join(ORACLE, "levels", level + ".lvl"))
+    w, h = int.from_bytes(b[8:12], "little"), int.from_bytes(b[12:16], "little")
+    cells = b[16:16 + w * h]
+    return [(x, z) for z in range(h) for x in range(w) if cells[z * w + x] != ord("#")]
+
+
+def bf_court_cameras() -> list:
+    """The registered set: the six corpus scenes in name order; per scene its own camera cell, then seven walkable cells
+    of its level (sorted by z then x) at floor((i+1)*n/8) + s mod n, repeats skipped forward; times the 40 headings."""
+    c = corpus()
+    cams = []
+    for s, name in enumerate(sorted(c["scenes"])):
+        e = c["scenes"][name]
+        cells = _bf_walkable(e["level"])
+        n = len(cells)
+        chosen = [(e["camera"][0], e["camera"][1])]
+        for i in range(7):
+            j = ((i + 1) * n // 8 + s) % n
+            while cells[j] in chosen:
+                j = (j + 1) % n
+            chosen.append(cells[j])
+        for (x, z) in chosen:
+            for k in BF_HEADINGS:
+                cams.append((e["level"], x, z, k))
+    return cams
+
+
+def bf_list() -> tuple:
+    """(text, expected): the camera list the kernel reads — the 52 oracle scenes (each case in the identity then the
+    oriented tiles) then the 1,920 court frames (tile sets alternating identity, oriented) — and, for the oracle lines,
+    the record's (frame, pixels)."""
+    r = oracle2()
+    lines, expected = [], {}
+    for cs in r["corpus"]["cases"]:
+        v = r["corpus"]["views"][cs["view"]]
+        for tname, key in (("identity", "identity_pixels_sha256"), ("oriented", "oriented_pixels_sha256")):
+            expected[len(lines)] = (cs["frame_digest_urdrfb1"], cs[key])
+            lines.append(f"oracle/levels/{cs['view']}.lvl oracle/tiles/{tname}.tiles {v['pos'][0]} {v['pos'][1]} {cs['bearing']}")
+    for j, (lvl, x, z, k) in enumerate(bf_court_cameras()):
+        lines.append(f"oracle/levels/{lvl}.lvl oracle/tiles/{'identity' if j % 2 == 0 else 'oriented'}.tiles {x} {z} {k}")
+    return "\n".join(lines) + "\n", expected
+
+
+def bf_run(exe: str, text: str, extra: list, tag: str) -> list:
+    """The court over a camera list, split across processes (camera i to process i mod P, for wall-clock only); returns
+    each camera's fields after `cam I ref` — the reference's FD PS, then NAME FD PS EQ per tread — in list order."""
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    procs_n = max(1, min(8, os.cpu_count() or 1, len(lines)))
+    os.makedirs(BUILD, exist_ok=True)
+    procs = []
+    for p in range(procs_n):
+        path = os.path.join(BUILD, f"bf-{tag}-{p}.txt")
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("\n".join(lines[p::procs_n]) + "\n")
+        procs.append(subprocess.Popen([exe, "--bearing-court", path] + extra, cwd=ROOT, stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE, text=True))
+    res = [None] * len(lines)
+    for p, pr in enumerate(procs):
+        out, err = pr.communicate()
+        if pr.returncode != 0:
+            raise Red(f"the court process exited {pr.returncode}: {err.strip()[-300:]}")
+        for ln in out.splitlines():
+            f = ln.split()
+            res[int(f[1]) * procs_n + p] = f[3:]
+    if any(x is None for x in res):
+        raise Red("the court did not report every camera")
+    return res
+
+
+def bearingfast_preregistered():
+    """BEARING-FAST-0's method is locked: one rung, its staircase inside, held byte for byte to the reference; the
+    camera set, the checked build, the bounds and the host courts registered before any build or timing."""
+    e = locked_entry("BEARING-FAST-0", {
+        "a sibling of the reference": ("hyp", ("a sibling of kernel/bearing.rs", "never modified", "reuses the reference's traversal")),
+        "the treads": ("hyp", ("tread a, exact stepping", "tread b, memory layout", "tread c, threads", "tread d, persistent workers, only on its trigger")),
+        "the exact walker and the bounds": ("hyp", ("m = floor(n*t/den)", "written worst-case bound", "refused by the fast path, never wrapped")),
+        "the gate": ("succ", ("1,920 frames", "the camera set's digest pinned", "t in {1, 2, 3, 7, 8, 16}", "overflow checks on")),
+        "the host courts": ("succ", ("950 permille", "the target is a production p99 at most 6,667 us", "622,440 frames")),
+        "what fails it": ("fail", ("a number kept before its witnesses were checked", "the target or the margin changed after a number was seen")),
+        "scope": ("lims", ("renderer time only", "never kept merely because it exists", "no live window renders at a bearing until mouse-look-0")),
+    })
+    return ("BEARING-FAST-0's method is locked (hash %s) before any build or timing: one rung, treads A (exact stepping), "
+            "B (the blocked floor), C (row-banded threads) and D only on its trigger, each byte-identical to the "
+            "reference; the camera set, the checked build, the bounds, the host speed court's margin and target "
+            "(p99 <= 6,667 us) and the sweep" % e["chain_hash"][:8])
+
+
+def bearingfast_court():
+    need_rustc()
+    text, expected = bf_list()
+    if sha256(text.encode("utf-8")) != BF_LIST_SHA256:
+        raise Red("the registered camera list is not the pinned one (%s)" % sha256(text.encode("utf-8"))[:16])
+    res = bf_run(KERNEL_EXE, text, [], "court")
+    for i, f in enumerate(res):
+        names = f[2::4]
+        if tuple(names) != BF_TREADS:
+            raise Red(f"camera {i}: the court ran {names}, not the registered treads")
+        for j, name in enumerate(names):
+            if f[2 + 4 * j + 3] != "1":
+                raise Red(f"camera {i} ({text.splitlines()[i]}): tread {name} differs from the reference")
+        if i in expected and (f[0], f[1]) != expected[i]:
+            raise Red(f"oracle camera {i}: the reference is not urdr-oracle-2's witness")
+    digest = sha256("".join(f"{f[0]} {f[1]}\n" for f in res).encode("utf-8"))
+    BF_STATE["ref"] = [(f[0], f[1]) for f in res]
+    BF_STATE["text"] = text
+    return (f"every tread (A exact stepping, B the blocked floor, C in {8} row bands over each) is byte-identical to the "
+            f"reference, index frame and picture, at all {len(res)} cameras: the 52 oracle scenes, each also urdr-oracle-2's "
+            f"own witness, and the 1,920 registered frames (six scenes x eight cells x forty headings, the list pinned); "
+            f"court digest {digest[:16]}")
+
+
+def bearingfast_threads():
+    need_rustc()
+    text, expected = bf_list()
+    oracle_text = "\n".join(text.splitlines()[:len(expected)]) + "\n"
+    res = bf_run(KERNEL_EXE, oracle_text, ["--threads-set", BF_THREADS_SET], "threads")
+    counts = [int(t) for t in BF_THREADS_SET.split(",")]
+    for i, f in enumerate(res):
+        if (f[0], f[1]) != expected[i]:
+            raise Red(f"oracle camera {i}: the reference is not urdr-oracle-2's witness")
+        names = f[2::4]
+        if len(names) != 2 * len(counts) or any(f[2 + 4 * j + 3] != "1" for j in range(len(names))):
+            raise Red(f"oracle camera {i}: tread C differs from the reference at some thread count")
+    return (f"tread C is byte-identical to the reference at T in {{{BF_THREADS_SET.replace(',', ', ')}}}, in both floor "
+            f"layouts, over the {len(res)} oracle scenes: uneven bands and more threads than cores move no byte")
+
+
+def bearingfast_checked():
+    need_rustc()
+    if "ref" not in BF_STATE:
+        raise Red("the court did not run before the checked build")
+    cp = subprocess.run([RUSTC] + FLAGS + ["-C", "overflow-checks=on", os.path.join(KERNEL, "main.rs"), "-o",
+                         os.path.join(BUILD, "kernel-checked" + EXE)], capture_output=True, text=True)
+    if cp.returncode != 0:
+        raise Red("rustc failed on the checked build: " + cp.stderr.strip().splitlines()[0])
+    res = bf_run(os.path.join(BUILD, "kernel-checked" + EXE), BF_STATE["text"], ["--no-reference"], "checked")
+    hashed = 0
+    for i, f in enumerate(res):
+        cells = [f[2 + 4 * j:2 + 4 * j + 4] for j in range(len(BF_TREADS))]
+        got = [(c[1], c[2]) for c in cells if c[1] != "-"]
+        if len(got) != 1 or got[0] != BF_STATE["ref"][i]:
+            raise Red(f"camera {i}: the checked build's rotated tread is not the reference's digest")
+        hashed += 1
+    return (f"the fast path built with overflow checks on renders every tread at all {len(res)} cameras without an "
+            f"overflow, and the tread each camera hashes in rotation ({hashed} digests, each tread a quarter) equals the "
+            f"reference's digest there: the 64-bit arithmetic does not wrap on the court set")
+
+
+def bearingfast_bounds():
+    need_rustc()
+    src = read(os.path.join(KERNEL, "bearingfast.rs")).decode("utf-8")
+    code = "\n".join(ln.split("//", 1)[0] for ln in src.splitlines())
+    calls = [ln for ln in src.splitlines() if "narrow(" in ln.split("//", 1)[0] and "fn narrow(" not in ln]
+    n_calls = sum(ln.split("//", 1)[0].count("narrow(") for ln in calls)
+    if n_calls != BF_NARROWINGS or any("2^" not in (ln.split("//", 1)[1] if "//" in ln else "") for ln in calls):
+        raise Red(f"{n_calls} narrowings, or one without its written bound (registered: {BF_NARROWINGS}, each with a 2^ bound)")
+    body = code[code.index("fn narrow("):]
+    body = body[body.index("\n}\n") + 3:]
+    if re.findall(r"as i64", body.replace("r as i64", "")):
+        raise Red("an `as i64` outside `narrow` (an unchecked narrowing)")
+    # the envelope's edge: the registered heading with the largest hypotenuse, every tread against the reference
+    pairs = _octant_pairs()
+    kmax = max(range(BEARING_YAW_MOD // 8 + 1), key=lambda k: _bearing_triple(pairs, k)[2])
+    cmax = _bearing_triple(pairs, kmax)[2]
+    res = bf_run(KERNEL_EXE, f"oracle/levels/witness.lvl oracle/tiles/identity.tiles 34 28 {kmax}\n"
+                             f"oracle/levels/witness.lvl oracle/tiles/oriented.tiles 34 28 {kmax}\n", [], "edge")
+    if any(f[2 + 4 * j + 3] != "1" for f in res for j in range(len(BF_TREADS))):
+        raise Red(f"at the largest registered hypotenuse (id {kmax}) a tread differs from the reference")
+    # beyond the edge: a Pythagorean triple with C >= 2^33 — the reference renders it, the fast path refuses it
+    lvl = read(os.path.join(ORACLE, "levels", "witness.lvl"))
+    w_, rows_ = int.from_bytes(lvl[8:12], "little"), int.from_bytes(lvl[12:16], "little")
+    cells = lvl[16:16 + w_ * rows_]
+    rest = lvl[16 + w_ * rows_:]
+    k_ = 1 << 31
+    a_, b_, c_ = -4 * k_, 3 * k_, 5 * k_
+    scene = (b"URDRBRGI" + lvl[8:16] + cells + (34).to_bytes(4, "little", signed=True) + (28).to_bytes(4, "little", signed=True)
+             + a_.to_bytes(8, "little", signed=True) + b_.to_bytes(8, "little", signed=True) + c_.to_bytes(8, "little", signed=True)
+             + rest[:4] + rest[4:] + read(os.path.join(ORACLE, "tiles", "identity.tiles"))[8:])
+    path = os.path.join(BUILD, "bf-beyond.bin")
+    with open(path, "wb") as fh:
+        fh.write(scene)
+    code_, out, err = run(KERNEL_EXE, ["--fast-scene", path])
+    if not out.startswith("ref ") or code_ == 0 or "BEARING-FAST-REFUSE" not in err or "\na " in out:
+        raise Red("beyond the envelope (C = 5 * 2^31 >= 2^33) the reference must render and the fast path refuse")
+    return (f"{BF_NARROWINGS} narrowings from 128 to 64 bits, each through the checked `narrow` with its bound written "
+            f"beside it, and no other; at the registered heading with the largest hypotenuse (id {kmax}, C = {cmax:,}) "
+            f"every tread is the reference; beyond the envelope (C = 5 * 2^31) the reference renders and the fast path "
+            f"refuses typed, never wraps")
+
+
+def bearingfast_fence():
+    src = read(os.path.join(KERNEL, "bearing.rs")).decode("utf-8")
+    core = re.sub(r"\bpub ", "", src[src.index(BEARING_CORE_MARK):src.index("/// The two witnesses' material")]).rstrip() + "\n"
+    if sha256(core.encode("utf-8")) != BEARING_CORE_SHA256:
+        raise Red("the reference's core changed: the correctness court is never modified")
+    if sha256(read(os.path.join(KERNEL, "mantle.rs"))) != MANTLE_RS_SHA256 or sha256(read(os.path.join(KERNEL, "fast.rs"))) != FAST_RS_SHA256:
+        raise Red("mantle.rs or fast.rs changed: BEARING-FAST-0 touches neither")
+    bf = read(os.path.join(KERNEL, "bearingfast.rs")).decode("utf-8")
+    code = "\n".join(ln.split("//", 1)[0] for ln in bf.splitlines())
+    for tok in ("Instant", "std::time", "SystemTime", "fs::", "File", "unsafe", "env::"):
+        if tok in code:
+            raise Red(f"kernel/bearingfast.rs uses {tok}")
+    if code.count("std::thread::scope") != 1 or code.count("thread::") != 1:
+        raise Red("a thread outside tread C's one scope")
+    for d in (SHELL, WORKSHOP):
+        for fn in sorted(os.listdir(d)):
+            if fn.endswith(".rs") and re.search(r"bearingfast", read(os.path.join(d, fn)).decode("utf-8")):
+                raise Red(f"{os.path.basename(d)}/{fn} reaches the fast bearing path before MOUSE-LOOK-0")
+    return ("the reference's core is still the tag's text; mantle.rs and fast.rs are unchanged; the fast path reads no "
+            "clock, touches no file, uses no unsafe and starts threads only in tread C's one scope; no file of the shell "
+            "or the workshop reaches it")
+
 # ------------------------------------------------------------------ main
 def main() -> int:
     print("VERÐANDI GATE")
@@ -8001,7 +8233,13 @@ def main() -> int:
     row("bearing-selftest", bearing_selftest)
     row("bearing-refuse", bearing_refuse)
     row("bearing-fence", bearing_fence)
-    fails =sum(1 for st, _, _ in ROWS if st == "FAIL")
+    row("bearingfast-preregistered", bearingfast_preregistered)
+    row("bearingfast-court", bearingfast_court)
+    row("bearingfast-threads", bearingfast_threads)
+    row("bearingfast-checked", bearingfast_checked)
+    row("bearingfast-bounds", bearingfast_bounds)
+    row("bearingfast-fence", bearingfast_fence)
+    fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]
     print("GATE FAILED" if fails else "GATE PASSED")
