@@ -3391,7 +3391,7 @@ is not the facing kernel's frame and picture. `oracle2-identity` goes red if any
 follow from the record and the octant by its own rules. `bearing-refuse` goes red if the vocabulary is read after its
 pin fails. `bearing-fence` goes red if the reference's core changes or a live path reaches it.
 
-## BEARING-FAST-0 — the bearing camera made fast, held byte for byte to the reference (preregistered and built; the host courts to run)
+## BEARING-FAST-0 — the bearing camera made fast, held byte for byte to the reference (preregistered and built; measured on the host: tread C meets the target, the sweep exact)
 
 **Why.** The reference bearing kernel is exact and slow: in the container it ran about twice the facing kernel's
 single-thread time, so mouse-look waits for a fast path. The owner's court of 2026-10-01 ruled the shape. There is one
@@ -3478,13 +3478,47 @@ checked build could have shown it. Fourteen planted mutations were each caught:
 Container timings are engineering notes and decide nothing. Here, with two cores, tread A ran about 12–13 ms at p50
 against the reference's 40 ms, and C about 8 ms.
 
-**Grade.** DECLARED: the method, the staircase rule, the target. ESTABLISHED (gate, in the container): byte-identity of
-every tread at the court set and the threads set, no overflow in the checked build over the court set, the bounds and
-the envelope, the fence. NOT_MEASURED: any speed on the owner's host, which tread is production, whether the target is
-met, and the sweep. Those are the two host records.
+**On the host (DANIELDILLBERG).** 0085 (the preregistration) was pushed alone first, then 0086. The gate read 189 rows
+with none failing or skipped, rowset `af17db8ca2521498`, the same as in the container, so the court, the threads set,
+the checked build, the bounds and the fence all hold on the owner's Windows host too.
 
-**does_not_show.** Any speed, until the host's record. Any present, blit, window or input-to-photon time: the score is
-renderer time only. Agreement at cameras outside the court set, the threads set and the sweep beyond the exact
+- **The speed court** (`kernel/attest/bearingfast-DANIELDILLBERG.json`, chain `d23443e5`, rustc 1.96.1, `-O`).
+  Worst-camera p99 of the whole render, each tread the larger of its two mirrored runs:
+
+  | tread | witness:123457 | witness:45000 | corridor:300001 | pointblank:270088 | score |
+  |---|---|---|---|---|---|
+  | reference | 59,901 | 39,060 | 49,559 | 21,345 | **59,901** |
+  | A (exact stepping) | 7,042 | 5,989 | 5,350 | 6,616 | **7,042** |
+  | B (A + blocked floor) | 7,290 | 5,880 | 5,542 | 6,261 | **7,290** |
+  | C over A (`ca`) | 3,692 | 3,380 | 3,326 | 3,716 | **3,716** |
+  | C over B (`cb`) | 3,636 | 3,168 | 3,335 | 3,211 | **3,636** |
+
+  The registered rule, applied in order:
+  - **A is promoted.** It is below the reference at every camera, by between about 3× (pointblank) and 9× (corridor).
+  - **B is not kept.** Its 7,290 µs is above 950‰ of A's (6,690 µs): the blocked floor did not pay single-threaded.
+  - **C over A's layout is kept.** Its 3,716 µs is under 6,690.
+  - **THE TARGET IS MET.** The production candidate is `ca`, eight row bands of exact stepping, at a worst-camera p99 of
+    3,716 µs. That is under 6,667 µs, and 28% of the panel's 13,333 µs period.
+  - **The staircase stops at C, and D's trigger does not fire.** A alone missed the target (7,042 > 6,667), so C was
+    required.
+  - **`cb` is not chosen.** Its score was 80 µs (2%) lower than `ca`'s, inside the margin, and C runs over the layout
+    already kept. This is recorded, not acted on.
+  - **Reference spread.** The reference's first process at witness:123457 read 59,901 µs against 36,306 µs on its
+    mirrored run. The larger-of-two rule kept the higher number. The reference's score decides only A's promotion,
+    which held at every camera by a wide margin.
+- **The sweep** (`kernel/attest/bearingsweep-DANIELDILLBERG.json`, chain `9c67987e`, naming the speed court's record as
+  the source of its tread). Every walkable cell of the five corpus levels at every whole degree: 622,440 frames,
+  `ca` against the reference byte for byte (index frame and picture). **622,440 equal, 0 differing.** It ran 87
+  minutes on 15 processes; that wall-clock is informational.
+
+**Grade.** DECLARED: the method, the staircase rule, the target. ESTABLISHED (gate, in the container and on the host):
+byte-identity of every tread at the court set and the threads set, no overflow in the checked build over the court set,
+the bounds and the envelope, the fence. MEASURED (host): the speed court (A promoted, B not kept, `ca` kept, production
+`ca` at a worst-camera p99 of 3,716 µs, the target met) and the sweep (`ca` equal to the reference at all 622,440
+frames).
+
+**does_not_show.** Any present, blit, window or input-to-photon time: the score is renderer time only, on this host, in
+this build, at these four cameras. Agreement at cameras outside the court set, the threads set and the sweep beyond the exact
 arithmetic the gate bounds and overflow-checks. Any live use: no window renders at a bearing until MOUSE-LOOK-0.
 
 **Falsifier.** `bearingfast-court` goes red if any tread differs from the reference at any registered camera, or the
