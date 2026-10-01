@@ -3258,7 +3258,7 @@ two repeats, a fresh press is coalesced, a coalesced repeat goes uncounted, or a
 `holdwalk-equivalence` goes red if holding a key changes the saved data. `holdwalk-fence` goes red if a clock, a key-up
 or a key state enters.
 
-## BEARING-0 — the bearing camera of urdr-oracle-2 carried, its reference kernel placed (preregistered and built; the gate's, no host run yet)
+## BEARING-0 — the bearing camera of urdr-oracle-2 carried, its reference kernel placed (preregistered and built; the gate passes on the host)
 
 **Why.** After HOLD-WALK-0 the owner ruled what free movement means here: shooter-style mouse-look, taken in rungs. The
 first rung is the camera alone: any heading, the eye still at a cell centre. Outside the four cardinal cameras no frozen
@@ -3359,15 +3359,32 @@ The 104 witnesses reproduced on the first full run. Twelve planted mutations wer
 - the shell naming `kernel/bearing.rs`;
 - a clock in the vocabulary.
 
+**On the host (DANIELDILLBERG).** The preregistration (0082) was applied and pushed alone first (`853970b`). The build
+(0083) first refused to apply: 0081, HOLD-WALK-0's host documentation, had not been applied there, and 0083 was cut on
+top of it. Applied in order, 0081 then 0083 landed. The first gate run there then read 182 of 183 rows passing:
+`oracle2-frozen` refused with "the record extends another studio-oracle-1 than the one carried". The cause was the
+host's working copy, not the carry. `oracle/urdr-oracle-1.json` had been checked out on 2026-09-23, three days before
+`.gitattributes` set `eol=lf`, and git does not rewrite a checked-out file when the rule changes. So that one file stood
+on the host with Windows line endings: 2,980 bytes against the repository's 2,890, the same content line for line.
+`oracle-frozen` reads the record as JSON, so until now no row had hashed its bytes. Its sha256
+`470d3ab2…`, pinned in `oracle/README.md`, was asserted but not enforced. `oracle2-frozen` is the first row to enforce
+it, because urdr-oracle-2 names urdr-oracle-1 by that hash. The row was kept strict and the file was re-checked out
+(deleted, then `git checkout`), and `git status` read clean. The gate then passed: 183 rows, none failing or skipped,
+rowset `0dfa172e19a93f80`, the same as in the container. The nine BEARING-0 rows were green both times, so the 104
+witnesses, the anchor law, the C law's plant and the fail-closed pin all hold on the owner's Windows host. It was
+pushed (`853970b..ac22fd3`). No turned frame was shown in a window there: BEARING-0 drives none.
+
 **Grade.** DECLARED: the method, and the court's rulings for the rungs after this one. ESTABLISHED (gate, in the
-container): the carry, the identities recomputed from the record alone, the vocabulary over all 360,000 ids, the 104
+container and on the host): the carry, the identities recomputed from the record alone, the vocabulary over all 360,000 ids, the 104
 witnesses, the anchor law and its mirror plant, the C law's plant, the fail-closed pin, the fence. NOT_MEASURED: any
 speed. Off the gate here, the reference ran about twice the facing kernel's single-thread time; no record was sealed,
 and the frame rate is BEARING-FAST-0's court. DECLARED, as in Urðr: the quarter-millidegree angle bound.
 
 **does_not_show.** Speed, a frame rate or any latency. Any position between cells, pitch or eye height. The mouse, a
 tick, any movement change, or any live window at a bearing. Agreement between the oracle's 26 cases beyond the port
-being the source's arithmetic; the wider adversarial camera set is BEARING-FAST-0's to register.
+being the source's arithmetic; the wider adversarial camera set is BEARING-FAST-0's to register. That every other
+file in an older checkout matches its committed bytes: the line-ending gap was found for the one file a row now
+hashes, and the rows that read the others parse them.
 
 **Falsifier.** `bearing-oracle` goes red if one of the 104 witnesses differs. `bearing-anchors` goes red if an anchor
 is not the facing kernel's frame and picture. `oracle2-identity` goes red if any digest the record states does not

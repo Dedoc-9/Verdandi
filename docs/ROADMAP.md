@@ -83,7 +83,7 @@ HOLD-WALK-0      held keys walk the grid: the input continuous, the world discre
       ↓
 (Urðr)           VIEW-YAW-0: the turning camera earned in Urðr and frozen as urdr-oracle-2 — any heading, the eye still at a cell centre
       ↓
-BEARING-0        the bearing camera carried and its reference kernel placed: all 104 witnesses of urdr-oracle-2 bit for bit — built, the gate's
+BEARING-0        the bearing camera carried and its reference kernel placed: all 104 witnesses of urdr-oracle-2 bit for bit — built; the gate passes on the host
       ↓
 BEARING-FAST-0   the production candidate, held byte for byte to the reference; first target: beat the display interval with margin
       ↓
@@ -304,7 +304,7 @@ is counted and logged, never hidden. There is no input, no camera, no clock: cou
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
 
-### BEARING-0 — the bearing camera carried, its reference kernel placed · **built** (`de19660f`): the gate's, no host run yet
+### BEARING-0 — the bearing camera carried, its reference kernel placed · **built** (`de19660f`): the gate passes on the host
 The first rung of the owner's mouse-look ladder on this side. Urðr earned the turning camera as VIEW-YAW-0 and froze it
 as `urdr-oracle-2`: a heading is an integer id in [0, 360000), millidegrees clockwise from north, naming one primitive
 Pythagorean triple, so the renderer consumes exact rational directions and never an angle; the four cardinals are
@@ -318,7 +318,10 @@ for BEARING-FAST-0 and drives no window: the shell, `mantle.rs` and `fast.rs` ar
 facing kernel's single-thread time, measured off the gate here) is why mouse-look waits for the fast path. The owner's
 rulings for the rungs after it, recorded in RUNGS.md, are a 64 Hz tick, W/A/S/D toward the nearest cardinal (ties
 clockwise, never changing the heading), and an integer sensitivity multiplier on a step of 88 or 1 ids, saved in the
-session.
+session. On the owner's host the gate passes with the same 183 rows and rowset as here. Its first run there failed one
+row, `oracle2-frozen`, on a working copy of `urdr-oracle-1.json` checked out with Windows line endings before
+`.gitattributes` existed. That hash was pinned in the docs and enforced by no row until this one. The file was
+re-checked out and the row kept strict.
 
 ### HOLD-WALK-0 — holding a key walks the live editor; the world stays discrete · **measured on the host** (`c03260a2`): a held walk saved and verified
 The live editor, `shell live-window`, now walks while a key is held. W, A, S, D and the arrows are the held keys: the
