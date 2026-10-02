@@ -1,0 +1,54 @@
+{
+ "name": "verdandi-bearingsweep",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "kernel/main.rs --bearing-court --treads T --no-digest (chunks across processes) + verify/bearingsweep.py",
+  "flags": [
+   "-O"
+  ],
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+  "host": "DANIELDILLBERG",
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "preregistered": {
+   "rung": "BEARING-FAST-0",
+   "chain_hash": "f0a9a57d9370bf11f88f20aab31002eff073f4e88231d5d6352d541ff286d993"
+  },
+  "production_from": {
+   "record": "kernel/attest/bearingfast-DANIELDILLBERG.json",
+   "chain_hash": "d23443e52193e8431b408ae996b1812220240a71ac0d25a6b437b6a79cc15152"
+  }
+ },
+ "validity_scope": {
+  "certifies": "byte-identity of tread ca to the reference at every walkable cell of the five corpus levels at every whole degree, on host DANIELDILLBERG",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "agreement between whole degrees or off the five corpus levels beyond the exact arithmetic the gate bounds",
+  "any speed: the wall-clock is the sweep's own, not a renderer number",
+  "any present, window or input path"
+ ],
+ "data": {
+  "frames": 622440,
+  "equal": 622440,
+  "differing": 0,
+  "first_differing": [],
+  "tread": "ca",
+  "list_sha256": "c616d6d699e9290b541f31cb7f71ed2d5c842d66b3af0c48adb40df1dcbd0817",
+  "frames_per_level": {
+   "corridor": 120240,
+   "landmark": 118440,
+   "neighbour": 139680,
+   "room": 124560,
+   "witness": 119520
+  },
+  "headings": "1000*d, d = 0..359",
+  "tiles": "alternating identity, oriented in list order",
+  "procs": 15,
+  "elapsed_s": 5232
+ },
+ "reading": "BEARING-FAST-0's sweep on host DANIELDILLBERG: every walkable cell of the five corpus levels at every whole degree, 622,440 frames, tread ca against the reference byte for byte (index frame and picture): 622,440 equal, 0 differing — the production candidate IS the reference at every one. Wall-clock 87 min on 15 processes, informational only.",
+ "chain_hash": "9c67987e18812dde8afeca3820ece8d612644238012dbe35342238a2aea34939"
+}

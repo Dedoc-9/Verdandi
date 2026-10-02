@@ -1,0 +1,337 @@
+{
+ "name": "verdandi-bearingfast",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "kernel/main.rs --bearing-bench (one tread per process, mirrored order per camera) + verify/bearingfast.py",
+  "kernel": "kernel/main.rs (+ bearing.rs, bearingfast.rs, vocab.rs, mantle.rs, formats.rs, fast.rs, hud.rs)",
+  "flags": [
+   "-O"
+  ],
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+  "host": "DANIELDILLBERG",
+  "host_line": "os=windows arch=x86_64 cpu=\"AMD64 Family 26 Model 36 Stepping 0, AuthenticAMD\"",
+  "python": "3.14.5",
+  "os": "Windows",
+  "machine": "AMD64",
+  "tiles": "identity",
+  "preregistered": {
+   "rung": "BEARING-FAST-0",
+   "chain_hash": "f0a9a57d9370bf11f88f20aab31002eff073f4e88231d5d6352d541ff286d993"
+  }
+ },
+ "validity_scope": {
+  "certifies": "the worst-camera p99 of each BEARING-FAST-0 tread and the reference on host DANIELDILLBERG, at the four registered cameras, 200 samples after 20 warm-up, two mirrored runs per camera",
+  "host": "DANIELDILLBERG"
+ },
+ "forbidden_interpretations": [
+  "input-to-photon latency, a present, a blit, a window or a frame rate: none is in this number",
+  "any other host, build, resolution or camera set; absolute us are host-specific",
+  "correctness: byte-identity is the gate's (bearingfast-court, -threads, -checked), checked here only per process",
+  "that a tread is retained by this record: retention is the registered rule applied in the reading"
+ ],
+ "data": {
+  "cameras": [
+   {
+    "label": "witness:123457",
+    "level": "witness",
+    "cell": [
+     34,
+     28
+    ],
+    "heading": 123457
+   },
+   {
+    "label": "witness:45000",
+    "level": "witness",
+    "cell": [
+     34,
+     28
+    ],
+    "heading": 45000
+   },
+   {
+    "label": "corridor:300001",
+    "level": "corridor",
+    "cell": [
+     34,
+     26
+    ],
+    "heading": 300001
+   },
+   {
+    "label": "pointblank:270088",
+    "level": "corridor",
+    "cell": [
+     29,
+     26
+    ],
+    "heading": 270088
+   }
+  ],
+  "runs": {
+   "ref": {
+    "witness:123457": [
+     {
+      "p50_us": 51466,
+      "p99_us": 59901
+     },
+     {
+      "p50_us": 33953,
+      "p99_us": 36306
+     }
+    ],
+    "witness:45000": [
+     {
+      "p50_us": 37830,
+      "p99_us": 39060
+     },
+     {
+      "p50_us": 37684,
+      "p99_us": 38978
+     }
+    ],
+    "corridor:300001": [
+     {
+      "p50_us": 46254,
+      "p99_us": 49559
+     },
+     {
+      "p50_us": 46582,
+      "p99_us": 47481
+     }
+    ],
+    "pointblank:270088": [
+     {
+      "p50_us": 20850,
+      "p99_us": 21161
+     },
+     {
+      "p50_us": 20879,
+      "p99_us": 21345
+     }
+    ]
+   },
+   "a": {
+    "witness:123457": [
+     {
+      "p50_us": 6246,
+      "p99_us": 7042
+     },
+     {
+      "p50_us": 6078,
+      "p99_us": 6468
+     }
+    ],
+    "witness:45000": [
+     {
+      "p50_us": 5472,
+      "p99_us": 5728
+     },
+     {
+      "p50_us": 5465,
+      "p99_us": 5989
+     }
+    ],
+    "corridor:300001": [
+     {
+      "p50_us": 4694,
+      "p99_us": 4864
+     },
+     {
+      "p50_us": 4855,
+      "p99_us": 5350
+     }
+    ],
+    "pointblank:270088": [
+     {
+      "p50_us": 5996,
+      "p99_us": 6597
+     },
+     {
+      "p50_us": 6148,
+      "p99_us": 6616
+     }
+    ]
+   },
+   "b": {
+    "witness:123457": [
+     {
+      "p50_us": 6094,
+      "p99_us": 7290
+     },
+     {
+      "p50_us": 6239,
+      "p99_us": 7178
+     }
+    ],
+    "witness:45000": [
+     {
+      "p50_us": 5396,
+      "p99_us": 5880
+     },
+     {
+      "p50_us": 5447,
+      "p99_us": 5839
+     }
+    ],
+    "corridor:300001": [
+     {
+      "p50_us": 4708,
+      "p99_us": 5542
+     },
+     {
+      "p50_us": 4818,
+      "p99_us": 5507
+     }
+    ],
+    "pointblank:270088": [
+     {
+      "p50_us": 5851,
+      "p99_us": 6045
+     },
+     {
+      "p50_us": 5898,
+      "p99_us": 6261
+     }
+    ]
+   },
+   "ca": {
+    "witness:123457": [
+     {
+      "p50_us": 2815,
+      "p99_us": 3601
+     },
+     {
+      "p50_us": 2786,
+      "p99_us": 3692
+     }
+    ],
+    "witness:45000": [
+     {
+      "p50_us": 2508,
+      "p99_us": 3214
+     },
+     {
+      "p50_us": 2521,
+      "p99_us": 3380
+     }
+    ],
+    "corridor:300001": [
+     {
+      "p50_us": 2494,
+      "p99_us": 3326
+     },
+     {
+      "p50_us": 2497,
+      "p99_us": 3161
+     }
+    ],
+    "pointblank:270088": [
+     {
+      "p50_us": 2730,
+      "p99_us": 3716
+     },
+     {
+      "p50_us": 2506,
+      "p99_us": 3055
+     }
+    ]
+   },
+   "cb": {
+    "witness:123457": [
+     {
+      "p50_us": 2719,
+      "p99_us": 3239
+     },
+     {
+      "p50_us": 2766,
+      "p99_us": 3636
+     }
+    ],
+    "witness:45000": [
+     {
+      "p50_us": 2510,
+      "p99_us": 3168
+     },
+     {
+      "p50_us": 2427,
+      "p99_us": 3167
+     }
+    ],
+    "corridor:300001": [
+     {
+      "p50_us": 2453,
+      "p99_us": 3335
+     },
+     {
+      "p50_us": 2414,
+      "p99_us": 3053
+     }
+    ],
+    "pointblank:270088": [
+     {
+      "p50_us": 2581,
+      "p99_us": 3211
+     },
+     {
+      "p50_us": 2544,
+      "p99_us": 3104
+     }
+    ]
+   }
+  },
+  "camera_p99_us": {
+   "ref": {
+    "witness:123457": 59901,
+    "witness:45000": 39060,
+    "corridor:300001": 49559,
+    "pointblank:270088": 21345
+   },
+   "a": {
+    "witness:123457": 7042,
+    "witness:45000": 5989,
+    "corridor:300001": 5350,
+    "pointblank:270088": 6616
+   },
+   "b": {
+    "witness:123457": 7290,
+    "witness:45000": 5880,
+    "corridor:300001": 5542,
+    "pointblank:270088": 6261
+   },
+   "ca": {
+    "witness:123457": 3692,
+    "witness:45000": 3380,
+    "corridor:300001": 3326,
+    "pointblank:270088": 3716
+   },
+   "cb": {
+    "witness:123457": 3636,
+    "witness:45000": 3168,
+    "corridor:300001": 3335,
+    "pointblank:270088": 3211
+   }
+  },
+  "score_p99_us": {
+   "ref": 59901,
+   "a": 7042,
+   "b": 7290,
+   "ca": 3716,
+   "cb": 3636
+  },
+  "retained_chain": [
+   "a",
+   "ca"
+  ],
+  "production_tread": "ca",
+  "production_score_p99_us": 3716,
+  "target_p99_us": 6667,
+  "panel_period_us": 13333,
+  "margin_permille": 950,
+  "samples": 200,
+  "warmup": 20
+ },
+ "reading": "BEARING-FAST-0's speed court on host DANIELDILLBERG, off-gate: worst-camera p99 of the whole render (strips, index frame and picture) per tread, each tread in its own process, mirrored order per camera, the larger of its two runs: ref=59901, a=7042, b=7290, ca=3716, cb=3636 us. A is promoted (below the reference at every camera); retained in order: a -> ca; the production candidate is ca with a worst-camera p99 of 3716 us. THE TARGET IS MET (3716 <= 6667 us, half the panel's 13333 us): the staircase may stop here, and MOUSE-LOOK-0 may drive ca. Every number was kept only after its process reproduced the reference's frame and picture. Renderer time on this host only: not the blit, the present or input to photon.",
+ "chain_hash": "d23443e52193e8431b408ae996b1812220240a71ac0d25a6b437b6a79cc15152"
+}
