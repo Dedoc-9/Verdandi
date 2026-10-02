@@ -23,6 +23,22 @@
 //   edit  i:  witness = content(W',M') after applying the edit
 //   head        = sha256( head ‖ ":" ‖ tag ‖ ":" ‖ witness )     tag = "M" (move) | "E" (edit)
 //
+// SIM-TICK-0: the camera gains a heading, an id in [0, 360000) (millidegrees clockwise from north, the carried
+// vocabulary of urdr-oracle-2). It starts at the base facing's anchor; a quarter turn turns it with the facing; a LOOK —
+// one more event kind — turns it by an integer delta. The facing is always the heading's nearest cardinal,
+// ((k + 45000) div 90000) mod 4, so a step, a strafe and an edit mean what they meant, taken toward that cardinal.
+//
+//   look  i:  witness = the frame digest at the new heading over the CURRENT (W,M)
+//             head    = sha256( head ‖ ":K:" ‖ token ‖ ":" ‖ witness )   — the camera token is folded with the witness,
+//                       because one index frame can be shared by neighbouring headings
+//
+// At one of the four anchor headings a frame is the facing kernel's, as before, and the token keeps its letter; at any
+// other it is the bearing REFERENCE kernel's (kernel/bearing.rs) and the token carries the id. This verifier renders
+// with the reference only: the production tread the shell renders live with is not here. An event may carry the tick a
+// tick run applied it at, and a timed look its inputs (counts, multiplier, step); `verify` checks their form — the delta
+// is counts x multiplier x step, ticks never decrease, a timed look is the first event of its tick — and never folds
+// them: a tick is when, not what.
+//
 // A move never changes W or M (the camera is projection-owned, WORKSHOP-0b); an edit never moves the camera.
 // `verify` replays from the base, re-derives every witness and the head, and catches a tampered event. Timing
 // is NOT here: the 144Hz/batch scheduler is a LATENCY-0 hypothesis; this file is headless and clock-free.
@@ -31,6 +47,7 @@
 //     sessionwalk new   --level L --tiles T --camera x,z,F --out S.json
 //     sessionwalk move  --session S.json --command F
 //     sessionwalk edit  --session S.json --edit cell:28,27,.
+//     sessionwalk look  --session S.json --delta D     # SIM-TICK-0: turn the heading by D ids (untimed)
 //     sessionwalk replay --session S.json     # recompute head/trajectory from the base (monolithic)
 //     sessionwalk verify --session S.json     # replay, check the stored head and every witness
 
@@ -40,6 +57,13 @@ mod mantle;
 #[allow(dead_code)]
 #[path = "../kernel/formats.rs"]
 mod formats;
+// SIM-TICK-0: the carried vocabulary and the bearing reference kernel (never the fast path)
+#[allow(dead_code)]
+#[path = "../kernel/vocab.rs"]
+mod vocab;
+#[allow(dead_code)]
+#[path = "../kernel/bearing.rs"]
+mod bearing;
 
 use std::collections::BTreeMap;
 use std::env;
@@ -451,6 +475,115 @@ fn frame_digest(auth: &Authority, cam: Camera) -> String {
     picture(&scene).frame_digest()
 }
 
+// ------------------------------------------------------------------ the heading (SIM-TICK-0)
+const YAW_MOD: i64 = 360_000;
+const QUARTER: i64 = 90_000;
+const TICK_HZ: i64 = 64;
+const STEP_COARSE: i64 = 88;
+const STEP_FINE: i64 = 1;
+const MULT_MAX: i64 = 64;
+const COUNTS_MAX: i64 = 2_147_483_647;
+const DELTA_MAX: i64 = COUNTS_MAX * MULT_MAX * STEP_COARSE;
+
+/// The heading after a turn of `delta` ids.
+fn turn(k: i64, delta: i64) -> i64 {
+    (k + delta).rem_euclid(YAW_MOD)
+}
+
+/// The nearest cardinal of a heading: 0 N, 1 E, 2 S, 3 W; the tie at 45 degrees goes clockwise.
+fn cardinal(k: i64) -> u8 {
+    (((k + QUARTER / 2) / QUARTER) % 4) as u8
+}
+
+fn is_anchor(k: i64) -> bool {
+    k % QUARTER == 0
+}
+
+/// The camera token: the letter at an anchor heading, the id anywhere else.
+fn token(cam: Camera, yaw: i64) -> String {
+    if is_anchor(yaw) {
+        format!("{},{},{}", cam.x, cam.z, facing_letter(cam.facing))
+    } else {
+        format!("{},{},{}", cam.x, cam.z, yaw)
+    }
+}
+
+/// The frame digest at a camera and heading: the facing kernel's at an anchor, the bearing reference kernel's elsewhere.
+fn frame_at(auth: &Authority, voc: &mut Option<vocab::Vocab>, cam: Camera, yaw: i64) -> String {
+    if is_anchor(yaw) {
+        return frame_digest(auth, cam);
+    }
+    if voc.is_none() {
+        *voc = Some(vocab::load().unwrap_or_else(|Refusal(m)| refuse("VOCABULARY", &m)));
+    }
+    let triple = voc.as_ref().unwrap().triple(yaw).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m));
+    let data = vocab::compose(&auth.level, vocab::BearingCamera { x: cam.x, z: cam.z, k: yaw }, triple, &auth.tiles);
+    let scene = bearing::parse_scene(&data).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m));
+    let mut strips: Vec<bearing::Strip> = Vec::with_capacity(bearing::W);
+    let mut frame = vec![0u8; bearing::W * bearing::H];
+    scene.strips(&mut strips);
+    scene.frame(&strips, &mut frame);
+    bearing::frame_digest(&frame)
+}
+
+/// The tick stamp an event may carry: the tick a tick run applied it at, and a timed look's inputs.
+#[derive(Clone, Copy, Default)]
+struct Stamp {
+    tick: Option<u64>,
+    input: Option<(i64, i64, i64)>,
+}
+
+/// The tick form of a log: a look's delta non-zero and inside the bound; inputs only beside a timed look, multiplying
+/// to its delta; ticks never decreasing; a timed look the first event of its tick; the tick block present exactly when
+/// the session ran on ticks, and covering every tick.
+fn check_form(log: &[Event], stamps: &[Stamp], ticks: Option<(i64, i64, i64, i64)>) -> Result<(), String> {
+    let mut last: Option<u64> = None;
+    for (k, (ev, st)) in log.iter().zip(stamps.iter()).enumerate() {
+        let look = match ev {
+            Event::Look(d) => {
+                if *d == 0 || *d > DELTA_MAX || *d < -DELTA_MAX {
+                    return Err(format!("event {}: a look of {} ids is zero or outside the bound", k, d));
+                }
+                Some(*d)
+            }
+            _ => None,
+        };
+        match (look, st.tick, st.input) {
+            (None, _, Some(_)) => return Err(format!("event {}: inputs beside an event that is not a look", k)),
+            (Some(_), None, Some(_)) => return Err(format!("event {}: a look with inputs and no tick", k)),
+            (Some(_), Some(_), None) => return Err(format!("event {}: a timed look without its inputs", k)),
+            (Some(d), Some(_), Some((c, m, s))) => {
+                let ok = c != 0 && (-COUNTS_MAX..=COUNTS_MAX).contains(&c) && (1..=MULT_MAX).contains(&m) && (s == STEP_COARSE || s == STEP_FINE);
+                if !ok || c.checked_mul(m).and_then(|v| v.checked_mul(s)) != Some(d) {
+                    return Err(format!("event {}: the delta {} is not counts {} x multiplier {} x step {}", k, d, c, m, s));
+                }
+            }
+            _ => {}
+        }
+        if let Some(t) = st.tick {
+            match last {
+                Some(l) if t < l => return Err(format!("event {}: tick {} after tick {} — a tick ran backwards", k, t, l)),
+                Some(l) if t == l && look.is_some() => return Err(format!("event {}: a look that is not the first event of tick {}", k, t)),
+                _ => {}
+            }
+            last = Some(t);
+        }
+    }
+    match (ticks, last) {
+        (None, Some(_)) => Err("an event carries a tick but the session has no tick block".to_string()),
+        (None, None) => Ok(()),
+        (Some((hz, count, m, s)), _) => {
+            if hz != TICK_HZ || count < 0 || !(1..=MULT_MAX).contains(&m) || !(s == STEP_COARSE || s == STEP_FINE) {
+                return Err(format!("the tick block (hz {}, count {}, multiplier {}, step {}) is not a registered one", hz, count, m, s));
+            }
+            match last {
+                Some(l) if l as i128 >= count as i128 => Err(format!("tick {} is not below the session's tick count {}", l, count)),
+                _ => Ok(()),
+            }
+        }
+    }
+}
+
 // ------------------------------------------------------------------ the head (one interleaved left fold)
 fn genesis(base_content: &str, cam0: Camera) -> String {
     let token = format!("{},{},{}", cam0.x, cam0.z, facing_letter(cam0.facing));
@@ -477,17 +610,20 @@ fn fold(head: &str, tag: u8, witness: &str) -> String {
 enum Event {
     Move(u8),
     Edit(Edit),
+    Look(i64), // SIM-TICK-0: the heading turned by an integer delta
 }
 
 struct Replay {
     head: String,
     cam: Camera,
+    yaw: i64,
     final_content: String,
     moves: usize,
     edits: usize,
+    looks: usize,
     // per-event witnesses, in log order (for `verify` to check against the stored file)
-    witnesses: Vec<(char, String)>, // ('M'|'E', witness hex)
-    cameras: Vec<Camera>,           // post-event camera for each move (for readability)
+    witnesses: Vec<(char, String)>, // ('M'|'E'|'K', witness hex)
+    tokens: Vec<String>,            // the camera token after each event
 }
 
 fn load_auth(level_path: &str, tiles_path: &str) -> Authority {
@@ -506,17 +642,20 @@ fn replay(level_path: &str, tiles_path: &str, cam0: Camera, log: &[Event]) -> Re
     let base_content = auth.content_hex();
     let mut head = genesis(&base_content, cam0);
     let mut cam = cam0;
-    let (mut moves, mut edits) = (0usize, 0usize);
+    let mut yaw = cam0.facing as i64 * QUARTER;
+    let mut voc: Option<vocab::Vocab> = None;
+    let (mut moves, mut edits, mut looks) = (0usize, 0usize, 0usize);
     let mut witnesses = Vec::new();
-    let mut cameras = Vec::new();
+    let mut tokens = Vec::new();
     for ev in log {
         match ev {
             Event::Move(c) => {
+                let before = cam.facing;
                 cam = step(&auth.level, cam, *c).unwrap_or_else(|m| refuse("INVALID-COMMAND", &m));
-                let w = frame_digest(&auth, cam);
+                yaw = turn(yaw, QUARTER * ((cam.facing + 4 - before) % 4) as i64); // a quarter turn turns the heading
+                let w = frame_at(&auth, &mut voc, cam, yaw);
                 head = fold(&head, b'M', &w);
                 witnesses.push(('M', w));
-                cameras.push(cam);
                 moves += 1;
             }
             Event::Edit(e) => {
@@ -526,9 +665,22 @@ fn replay(level_path: &str, tiles_path: &str, cam0: Camera, log: &[Event]) -> Re
                 witnesses.push(('E', w));
                 edits += 1;
             }
+            Event::Look(d) => {
+                if *d == 0 || *d > DELTA_MAX || *d < -DELTA_MAX {
+                    refuse("INVALID-LOOK", &format!("a look of {} ids is zero or outside the bound", d));
+                }
+                yaw = turn(yaw, *d);
+                cam.facing = cardinal(yaw);
+                let w = frame_at(&auth, &mut voc, cam, yaw);
+                // a look folds the camera token with the witness
+                head = fold(&head, b'K', &format!("{}:{}", token(cam, yaw), w));
+                witnesses.push(('K', w));
+                looks += 1;
+            }
         }
+        tokens.push(token(cam, yaw));
     }
-    Replay { head, cam, final_content: auth.content_hex(), moves, edits, witnesses, cameras }
+    Replay { head, cam, yaw, final_content: auth.content_hex(), moves, edits, looks, witnesses, tokens }
 }
 
 // ------------------------------------------------------------------ the session-walk file
@@ -541,44 +693,52 @@ struct SessionWalk {
     cam0: Camera,
     log: Vec<Event>,
     head: String,
+    // SIM-TICK-0: the tick stamp beside each event, and the session's tick block (hz, count, multiplier, step)
+    stamps: Vec<Stamp>,
+    ticks: Option<(i64, i64, i64, i64)>,
 }
 
 fn parse_camera_token(s: &str) -> Camera {
     parse_camera(s).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m))
 }
 
-fn event_json(ev: &Event, wit: &(char, String), cam: Option<Camera>) -> Json {
-    match ev {
-        Event::Move(c) => obj(vec![
+fn event_json(ev: &Event, wit: &(char, String), tok: &str, st: &Stamp) -> Json {
+    let mut pairs = match ev {
+        Event::Move(c) => vec![
             ("kind", Json::Str("move".into())),
             ("command", Json::Str((*c as char).to_string())),
-            ("camera", Json::Str(cam.map(|k| format!("{},{},{}", k.x, k.z, facing_letter(k.facing))).unwrap_or_default())),
+            ("camera", Json::Str(tok.to_string())),
             ("witness", Json::Str(wit.1.clone())),
-        ]),
-        Event::Edit(e) => obj(vec![
+        ],
+        Event::Edit(e) => vec![
             ("kind", Json::Str("edit".into())),
             ("spec", Json::Str(edit_spec(e))),
             ("witness", Json::Str(wit.1.clone())),
-        ]),
+        ],
+        Event::Look(d) => vec![
+            ("kind", Json::Str("look".into())),
+            ("delta", Json::Num(*d)),
+            ("camera", Json::Str(tok.to_string())),
+            ("witness", Json::Str(wit.1.clone())),
+        ],
+    };
+    // the tick stamp, kept as it was read (an untimed event has none)
+    if let Some(t) = st.tick {
+        pairs.push(("tick", Json::Num(t as i64)));
     }
+    if let Some((c, m, s)) = st.input {
+        pairs.push(("input", obj(vec![("counts", Json::Num(c)), ("multiplier", Json::Num(m)), ("step", Json::Num(s))])));
+    }
+    obj(pairs)
 }
 
 fn write_sessionwalk(path: &str, sw: &SessionWalk) {
     let r = replay(&sw.level, &sw.tiles, sw.cam0, &sw.log);
-    let mut mv_i = 0usize;
     let mut items = Vec::new();
     for (k, ev) in sw.log.iter().enumerate() {
-        let cam = match ev {
-            Event::Move(_) => {
-                let c = r.cameras[mv_i];
-                mv_i += 1;
-                Some(c)
-            }
-            Event::Edit(_) => None,
-        };
-        items.push(event_json(ev, &r.witnesses[k], cam));
+        items.push(event_json(ev, &r.witnesses[k], &r.tokens[k], &sw.stamps[k]));
     }
-    let data = obj(vec![
+    let mut data = vec![
         ("magic", Json::Str(String::from_utf8_lossy(MAGIC).into())),
         ("base", obj(vec![
             ("level", Json::Str(sw.level.clone())),
@@ -590,19 +750,40 @@ fn write_sessionwalk(path: &str, sw: &SessionWalk) {
         ])),
         ("log", Json::Arr(items)),
         ("head", Json::Str(r.head.clone())),
-        ("final_camera", Json::Str(format!("{},{},{}", r.cam.x, r.cam.z, facing_letter(r.cam.facing)))),
+        ("final_camera", Json::Str(token(r.cam, r.yaw))),
         ("final_content", Json::Str(r.final_content.clone())),
         ("moves", Json::Num(r.moves as i64)),
         ("edits", Json::Num(r.edits as i64)),
-    ]);
-    let root = obj(vec![("name", Json::Str("verdandi-session-walk".into())), ("data", data)]);
+    ];
+    // SIM-TICK-0: the looks are counted only when there are some, and the tick block is kept only if the session has
+    // one, so a walk with neither is written as it always was
+    if r.looks > 0 {
+        data.push(("looks", Json::Num(r.looks as i64)));
+    }
+    if let Some((hz, count, m, s)) = sw.ticks {
+        data.push(("ticks", obj(vec![("hz", Json::Num(hz)), ("count", Json::Num(count)), ("multiplier", Json::Num(m)), ("step", Json::Num(s))])));
+    }
+    let root = obj(vec![("name", Json::Str("verdandi-session-walk".into())), ("data", obj(data))]);
     let mut out = String::new();
     write_json(&root, 0, &mut out);
     out.push('\n');
     fs::write(path, out.as_bytes()).unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", path, e)));
 }
 
-fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, String) {
+fn num(j: &Json) -> Option<i64> {
+    match j {
+        Json::Num(n) => Some(*n),
+        _ => None,
+    }
+}
+
+fn is_null(j: &Json) -> bool {
+    matches!(j, Json::Null)
+}
+
+/// Returns the session, each event's stored (tag, witness), each event's stored camera token ("" for an edit) and the
+/// stored final camera.
+fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, Vec<String>, String) {
     let root = parse_json(&read(path)).unwrap_or_else(|m| refuse("INVALID-SESSION", &m));
     if root.get("name").s() != "verdandi-session-walk" {
         refuse("INVALID-SESSION", "not a verdandi-session-walk");
@@ -612,6 +793,8 @@ fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, String) {
     let cam0 = parse_camera_token(base.get("camera").s());
     let mut log = Vec::new();
     let mut stored = Vec::new();
+    let mut cameras = Vec::new();
+    let mut stamps = Vec::new();
     for item in d.get("log").arr() {
         match item.get("kind").s() {
             "move" => {
@@ -627,8 +810,39 @@ fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, String) {
                 log.push(Event::Edit(e));
                 stored.push(('E', item.get("witness").s().to_string()));
             }
+            "look" => {
+                let dl = num(item.get("delta")).unwrap_or_else(|| refuse("INVALID-SESSION", "a look without an integer delta"));
+                log.push(Event::Look(dl));
+                stored.push(('K', item.get("witness").s().to_string()));
+            }
             other => refuse("INVALID-SESSION", &format!("event kind {:?}", other)),
         }
+        cameras.push(item.get("camera").s().to_string());
+        let tick = match (is_null(item.get("tick")), num(item.get("tick"))) {
+            (true, _) => None,
+            (false, Some(t)) if t >= 0 => Some(t as u64),
+            _ => refuse("INVALID-SESSION", "an event's tick is not a whole number"),
+        };
+        let i = item.get("input");
+        let input = if is_null(i) {
+            None
+        } else {
+            match (num(i.get("counts")), num(i.get("multiplier")), num(i.get("step"))) {
+                (Some(c), Some(m), Some(s)) => Some((c, m, s)),
+                _ => refuse("INVALID-SESSION", "a look's inputs are not counts, multiplier and step"),
+            }
+        };
+        stamps.push(Stamp { tick, input });
+    }
+    let t = d.get("ticks");
+    let ticks = if is_null(t) {
+        None
+    } else {
+        let n = |k: &str| num(t.get(k)).unwrap_or(-1);
+        Some((n("hz"), n("count"), n("multiplier"), n("step")))
+    };
+    if let Err(m) = check_form(&log, &stamps, ticks) {
+        refuse("TICK-FORM", &m);
     }
     let sw = SessionWalk {
         level: base.get("level").s().to_string(),
@@ -639,8 +853,10 @@ fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, String) {
         cam0,
         log,
         head: d.get("head").s().to_string(),
+        stamps,
+        ticks,
     };
-    (sw, stored, d.get("final_camera").s().to_string())
+    (sw, stored, cameras, d.get("final_camera").s().to_string())
 }
 
 // ------------------------------------------------------------------ CLI
@@ -672,14 +888,30 @@ fn main() {
                 cam0,
                 log: Vec::new(),
                 head: genesis(&auth.content_hex(), cam0),
+                stamps: Vec::new(),
+                ticks: None,
             };
             write_sessionwalk(&out, &sw);
             println!("SESSIONWALK new head {} base {},{},{}", &sw.head[..12], cam0.x, cam0.z, facing_letter(cam0.facing));
         }
-        "move" | "edit" => {
+        "move" | "edit" | "look" => {
             let path = arg(&argv, "--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
-            let (mut sw, _st, _fc) = load_sessionwalk(&path);
-            if argv[1] == "move" {
+            let (mut sw, _st, _cams, _fc) = load_sessionwalk(&path);
+            sw.stamps.push(Stamp::default()); // the workshop appends outside time: no tick
+            if argv[1] == "look" {
+                // SIM-TICK-0: an untimed look of D ids (canonical decimal, an optional leading minus)
+                let dl = arg(&argv, "--delta").unwrap_or_else(|| refuse("USAGE", "look needs --delta"));
+                let digits = dl.strip_prefix('-').unwrap_or(&dl);
+                let canonical = !digits.is_empty() && digits.bytes().all(|c| c.is_ascii_digit()) && !digits.starts_with('0') && digits.len() <= 15;
+                let v: i64 = match (canonical, dl.parse()) {
+                    (true, Ok(v)) => v,
+                    _ => refuse("INVALID-LOOK", "the delta is a non-zero whole number of heading ids, in canonical decimal"),
+                };
+                if v > DELTA_MAX || v < -DELTA_MAX {
+                    refuse("INVALID-LOOK", &format!("a look of {} ids is outside the bound", v));
+                }
+                sw.log.push(Event::Look(v));
+            } else if argv[1] == "move" {
                 let c = arg(&argv, "--command").unwrap_or_else(|| refuse("USAGE", "move needs --command"));
                 let cb = c.as_bytes();
                 if cb.len() != 1 || !matches!(cb[0], b'L' | b'R' | b'F' | b'B' | b'Q' | b'E') {
@@ -703,20 +935,21 @@ fn main() {
             }
             write_sessionwalk(&path, &sw);
             let r = replay(&sw.level, &sw.tiles, sw.cam0, &sw.log);
-            println!("SESSIONWALK {} head {} — moves {} edits {} (final {},{},{})", argv[1], &r.head[..12], r.moves, r.edits, r.cam.x, r.cam.z, facing_letter(r.cam.facing));
+            println!("SESSIONWALK {} head {} — moves {} edits {}{} (final {})", argv[1], &r.head[..12], r.moves, r.edits,
+                     if r.looks > 0 { format!(" looks {}", r.looks) } else { String::new() }, token(r.cam, r.yaw));
         }
         "replay" => {
             let path = arg(&argv, "--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
-            let (sw, _st, _fc) = load_sessionwalk(&path);
+            let (sw, _st, _cams, _fc) = load_sessionwalk(&path);
             let r = replay(&sw.level, &sw.tiles, sw.cam0, &sw.log);
-            println!("final camera {} {} {}", r.cam.x, r.cam.z, facing_letter(r.cam.facing));
+            println!("final camera {}", token(r.cam, r.yaw).replace(',', " "));
             println!("final content {}", r.final_content);
-            println!("committed moves {} edits {}", r.moves, r.edits);
+            println!("committed moves {} edits {}{}", r.moves, r.edits, if r.looks > 0 { format!(" looks {}", r.looks) } else { String::new() });
             println!("head {}", r.head);
         }
         "verify" => {
             let path = arg(&argv, "--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
-            let (sw, stored, final_cam) = load_sessionwalk(&path);
+            let (sw, stored, cameras, final_cam) = load_sessionwalk(&path);
             let r = replay(&sw.level, &sw.tiles, sw.cam0, &sw.log);
             // every per-event witness must match, then the head, then the reported final camera
             if stored.len() != r.witnesses.len() {
@@ -727,14 +960,21 @@ fn main() {
                     refuse("CHAIN-BROKEN", &format!("event {} witness diverged on replay — an event was tampered", k));
                 }
             }
+            // SIM-TICK-0: a stored camera token must be the replay's — a look's heading is what its token says
+            for (k, (want, got)) in cameras.iter().zip(r.tokens.iter()).enumerate() {
+                if !want.is_empty() && want != got {
+                    refuse("CHAIN-BROKEN", &format!("event {}: stored camera {} != replay {}", k, want, got));
+                }
+            }
             if r.head != sw.head {
                 refuse("CHAIN-BROKEN", &format!("replay head {} != the stored head {} — the log was tampered", &r.head[..12], &sw.head[..12.min(sw.head.len())]));
             }
-            let want_cam = format!("{},{},{}", r.cam.x, r.cam.z, facing_letter(r.cam.facing));
+            let want_cam = token(r.cam, r.yaw);
             if !final_cam.is_empty() && final_cam != want_cam {
                 refuse("CHAIN-BROKEN", &format!("stored final camera {} != replay {}", final_cam, want_cam));
             }
-            println!("SESSIONWALK verify OK head {} — moves {} edits {} (final {})", &r.head[..12], r.moves, r.edits, want_cam);
+            println!("SESSIONWALK verify OK head {} — moves {} edits {}{} (final {})", &r.head[..12], r.moves, r.edits,
+                     if r.looks > 0 { format!(" looks {}", r.looks) } else { String::new() }, want_cam);
         }
         other => refuse("USAGE", &format!("unknown command {}", other)),
     }

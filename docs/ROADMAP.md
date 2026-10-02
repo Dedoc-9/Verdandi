@@ -87,7 +87,9 @@ BEARING-0        the bearing camera carried and its reference kernel placed: all
       ↓
 BEARING-FAST-0   the production candidate, held byte for byte to the reference — measured on the host: exact stepping in eight row bands, worst-camera p99 3,716 us (target 6,667); the sweep 622,440 of 622,440 equal
       ↓
-MOUSE-LOOK-0     the mouse turns the camera: an integer heading delta per 64 Hz tick (SIM-TICK-0), W/A/S/D toward the nearest cardinal
+SIM-TICK-0       the mouse-look rules as integer law, windowless: the 64 Hz tick, one command per tick, the look event in the one session, reference certification at save — built; not yet run on the host
+      ↓
+MOUSE-LOOK-0     a real mouse on those rules: raw input into the 64 Hz accumulator, the command into the existing live loop, the picture alone at a free heading
       ↓
 the presentation and latency measurement      input to photon in separate segments; frame rate alone is no competitive claim
       ↓
@@ -112,7 +114,8 @@ frozen renderer draws the eye only at a cell centre facing N, E, S or W. After w
 that this is not the free movement he wants, and ruled what it becomes: shooter-style mouse-look, taken in rungs. The
 turning camera was earned in Urðr first (VIEW-YAW-0, frozen as `urdr-oracle-2`), because no frozen oracle existed to
 hold a renderer to outside the four cardinals; here it is carried and placed as a reference (BEARING-0), made fast
-against that reference (BEARING-FAST-0), and only then driven by the mouse at a fixed tick (MOUSE-LOOK-0, SIM-TICK-0).
+against that reference (BEARING-FAST-0), given its rules with no window in the proof (SIM-TICK-0), and only then driven
+by a real mouse (MOUSE-LOOK-0). The owner ruled those two are never combined.
 Cursor authoring, preview sliders, gizmos and an editor-pane interaction model are deliberately not on the route yet:
 those are where a shell starts accumulating an alternate authority.
 
@@ -159,7 +162,7 @@ what evidence is worth buying, not by which optimization can be imagined next. T
 |---|---|---|---|
 | 1 | BEARING-FAST-0's host speed court | Establish whether the 6,667 µs target is met. | Run: met, 3,716 µs. |
 | 2 | Production promotion, only if the target is met | Do not optimize a kernel that is already sufficient. | Met: eight row bands of exact stepping is the production candidate. MOUSE-LOOK-0 wires it into a live path, not before. |
-| 3 | SIM-TICK-0, mouse sensitivity and live mouse-look | The actual interaction seam, now that the renderer can support it. | Next. |
+| 3 | SIM-TICK-0, mouse sensitivity and live mouse-look | The actual interaction seam, now that the renderer can support it. | SIM-TICK-0 (the rules and the sensitivity, windowless) is built. MOUSE-LOOK-0 (the real mouse and the window) is next. |
 | 4 | PRESENT-1, the flip-model presentation | Renderer speed is not input-to-photon speed; LATENCY-0's evidence makes this the next presentation boundary. | After mouse-look. |
 | 5 | A cross-host correctness witness for the fast path | Portability evidence, not worth delaying the interactive path unless a cross-host failure appears. | The gate's court already runs on two hosts (Linux here, the owner's Windows). A further host is deferred. |
 | 6 | Benchmark regression recording | Protects a production fast path against performance regressions. | Once the fast path is in a live path. |
@@ -344,6 +347,25 @@ the presenter's borderless window. The screen is read back at every step and twi
 is counted and logged, never hidden. There is no input, no camera, no clock: counts only. The gate executes the loop
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
+
+### SIM-TICK-0 — the mouse-look rules as integer law, windowless · **built** (`dc1dddf2`); the gate not yet run on the host
+The third rung of the owner's ladder, and deliberately half of the work: the owner ruled that the rules are locked with
+no window in the proof, and that the real mouse comes after, as its own rung. The boundary is raw input → tick command
+→ SESSION-WALK → authority. A tick is exactly 15,625 µs (64 Hz). A tick's mouse reports are summed and applied once, as
+one look; then its keys apply in arrival order. The look's delta is counts × multiplier × step, in integers: the
+multiplier a whole number from 1 to 64, the step 88 heading ids or 1. W, A, S and D step toward the heading's nearest
+cardinal, ((k + 45000) div 90000) mod 4 with the tie clockwise, and never turn. The one live session gains one event, a
+look, witnessed by the frame at the new heading: the facing kernel's at one of the four anchors, as before, and the
+bearing kernel's anywhere else. A tick run saves each event's tick and each look's inputs beside the event; the tick
+is recorded and is never authority. Live, a frame at a free heading is rendered once by BEARING-FAST-0's production
+tread; at save every such frame is recomputed by the reference across threads, and a session is saved
+reference-certified or not saved. The gate drives it all with scripted inputs and integer times: the laws are checked
+exhaustively over the 360,000 heading ids against a Python re-derivation, one script exercises the boundaries and the
+refusals, the saved session's frames are checked against the kernel executable and by the workshop's verifier, and a
+shell with a planted defect in its fast path is refused at the save. One thing was found while building: an index
+frame can be the same at two neighbouring headings, so a look folds its camera token together with its witness; the
+registration was revised for that before it left the build machine. Nothing here reads a mouse, a clock or a window,
+and nothing here says how it feels.
 
 ### BEARING-FAST-0 — the bearing camera made fast, held to the reference · **measured on the host** (`f0a9a57d`): the target met, the sweep exact
 One rung with its staircase inside, as the owner ruled. The reference spent its time in per-pixel 128-bit division;

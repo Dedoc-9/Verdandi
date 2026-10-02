@@ -402,6 +402,8 @@ fn load_sealed(path: &str, root_prefix: &str) -> Sealed {
                 log.push(Event::Edit(item.get("spec").s().to_string()));
                 stored.push(('E', item.get("witness").s().to_string()));
             }
+            // SIM-TICK-0: a look turns the heading off the four facings playback shows
+            "look" => refuse("HEADING", "the session holds a look: playback shows the four facings only; a free heading on the screen is MOUSE-LOOK-0's"),
             other => refuse("INVALID-SESSION", &format!("event kind {:?}", other)),
         }
     }
@@ -597,6 +599,11 @@ pub struct LiveEvent {
     pub witness: String,
     pub content: String,
     pub head: String,
+    /// SIM-TICK-0: the heading after the event (an anchor unless a look has turned it), the tick it was applied at when
+    /// a tick run appended it, and a timed look's inputs (counts, multiplier, step).
+    pub yaw: i64,
+    pub tick: Option<u64>,
+    pub input: Option<(i64, i64, i64)>,
 }
 
 /// LIVE-INPUT-0's session: the replay of an in-memory log, appended to only by `push_move` and `push_edit_cell`.
@@ -611,6 +618,13 @@ pub struct LiveSession {
     genesis: String,
     log: Vec<LiveEvent>,
     sink: Option<Box<dyn EventSink>>,
+    // SIM-TICK-0: the heading (the facing is always its nearest cardinal), the tick stamped on events appended now, the
+    // session's tick block (count, multiplier, step) once it ran on ticks, and the base bytes the log replays from
+    yaw: i64,
+    tick: Option<u64>,
+    ticks: Option<(u64, i64, i64)>,
+    base_level: Vec<u8>,
+    base_tiles: Vec<u8>,
 }
 
 impl LiveSession {
@@ -623,8 +637,10 @@ impl LiveSession {
         }
         let base_content = content_hex(&level_bytes, &tiles_bytes);
         let head = genesis(&base_content, cam0);
+        let (base_level, base_tiles) = (level_bytes.clone(), tiles_bytes.clone());
         Ok(LiveSession { level: level_bytes, tiles: tiles_bytes, cam: cam0, content: base_content.clone(), head: head.clone(),
-                         cam0, base_content, genesis: head, log: Vec::new(), sink: None })
+                         cam0, base_content, genesis: head, log: Vec::new(), sink: None,
+                         yaw: cam0.facing as i64 * crate::simtick::QUARTER, tick: None, ticks: None, base_level, base_tiles })
     }
 
     /// LIVE-SESSION-0: the same session, handing every event appended from now on to `sink`.
@@ -707,11 +723,15 @@ impl LiveSession {
             return Err(format!("unknown move {:?}", cmd as char));
         }
         let cam = step(&self.level, self.cam, cmd);
-        let composed = compose_frame(&self.level, &self.tiles, cam).map_err(|Refusal(m)| m)?;
+        // SIM-TICK-0: a quarter turn turns the heading with the facing; the frame is the facing kernel's at an anchor
+        // (as before) and the bearing kernel's at a free heading
+        let yaw = turned(self.yaw, self.cam.facing, cam.facing);
+        let witness = crate::heading::witness(&self.level, &self.tiles, cam, yaw)?;
         self.cam = cam;
-        self.head = fold(&self.head, b'M', &composed.frame_digest);
-        self.log.push(LiveEvent { tag: b'M', param: (cmd as char).to_string(), camera: cam, witness: composed.frame_digest,
-                                  content: self.content.clone(), head: self.head.clone() });
+        self.yaw = yaw;
+        self.head = fold(&self.head, b'M', &witness);
+        self.log.push(LiveEvent { tag: b'M', param: (cmd as char).to_string(), camera: cam, witness,
+                                  content: self.content.clone(), head: self.head.clone(), yaw, tick: self.tick, input: None });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -734,7 +754,7 @@ impl LiveSession {
         self.content = content_hex(&self.level, &self.tiles);
         self.head = fold(&self.head, b'E', &self.content);
         self.log.push(LiveEvent { tag: b'E', param: spec, camera: self.cam, witness: self.content.clone(),
-                                  content: self.content.clone(), head: self.head.clone() });
+                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -830,8 +850,119 @@ impl LiveSession {
         self.content = content_hex(&self.level, &self.tiles);
         self.head = fold(&self.head, b'E', &self.content);
         self.log.push(LiveEvent { tag: b'E', param: spec, camera: self.cam, witness: self.content.clone(),
-                                  content: self.content.clone(), head: self.head.clone() });
+                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
+    }
+}
+
+// ================================================================== SIM-TICK-0 (appended): the heading, the look, the tick stamp
+// The session's camera gains a heading: an id in [0, 360000), millidegrees clockwise from north. It starts at the base
+// facing's anchor; a quarter turn turns it with the facing; a look — the one new event — turns it by an integer delta.
+// The facing is always the heading's nearest cardinal, so a step, a strafe and the faced cell are what they were, taken
+// toward that cardinal. A look's witness is the frame digest at the new heading; it is folded with tag K over the camera
+// token and the witness together — head' = sha256(head : K : token : witness) — because one index frame can be shared
+// by neighbouring headings, and the head must tell them apart. The camera token keeps its letter at an anchor and
+// carries the id elsewhere. A tick run stamps the events it appends with their tick, and a timed look with its inputs;
+// the stamp is recorded beside the event and never folded.
+
+/// The camera token: "x,z,F" at an anchor heading, "x,z,K" (the id, in decimal) at any other.
+pub fn token(cam: Camera, yaw: i64) -> String {
+    match crate::simtick::anchor(yaw) {
+        Some(_) => format!("{},{},{}", cam.x, cam.z, facing_letter(cam.facing)),
+        None => format!("{},{},{}", cam.x, cam.z, yaw),
+    }
+}
+
+/// What a look folds into the head after its tag: the camera token it reached, then its witness.
+pub fn look_fold(token: &str, witness: &str) -> String {
+    format!("{}:{}", token, witness)
+}
+
+/// The heading after a move: turned by as many quarter turns as the facing was.
+fn turned(yaw: i64, before: u8, after: u8) -> i64 {
+    crate::simtick::turn(yaw, crate::simtick::QUARTER * ((after + 4 - before) % 4) as i64)
+}
+
+impl LiveSession {
+    /// The heading id.
+    pub fn yaw(&self) -> i64 {
+        self.yaw
+    }
+
+    /// The current camera's token.
+    pub fn token(&self) -> String {
+        token(self.cam, self.yaw)
+    }
+
+    /// Whether the heading is off the four anchors.
+    pub fn free_heading(&self) -> bool {
+        crate::simtick::anchor(self.yaw).is_none()
+    }
+
+    /// Stamp every event appended from now on with this tick (None: appended outside time).
+    pub fn at_tick(&mut self, tick: Option<u64>) {
+        self.tick = tick;
+    }
+
+    /// The session's tick block once it has run on ticks: the tick count, and the sensitivity's multiplier and step.
+    pub fn ticks(&self) -> Option<(u64, i64, i64)> {
+        self.ticks
+    }
+
+    pub fn set_ticks(&mut self, ticks: Option<(u64, i64, i64)>) {
+        self.ticks = ticks;
+    }
+
+    /// Append a look and replay it: the heading turned by `delta` ids, the facing its nearest cardinal, the frame digest
+    /// at the new heading over the current W and M, the fold. A zero delta, or one outside the bound, is not appended.
+    pub fn push_look(&mut self, delta: i64, input: Option<(i64, i64, i64)>) -> Result<&LiveEvent, String> {
+        if delta == 0 || delta > crate::simtick::DELTA_MAX || delta < -crate::simtick::DELTA_MAX {
+            return Err(format!("a look of {} ids is zero or outside the bound", delta));
+        }
+        let yaw = crate::simtick::turn(self.yaw, delta);
+        let cam = Camera { x: self.cam.x, z: self.cam.z, facing: crate::simtick::cardinal(yaw) };
+        let witness = crate::heading::witness(&self.level, &self.tiles, cam, yaw)?;
+        self.cam = cam;
+        self.yaw = yaw;
+        self.head = fold(&self.head, b'K', &look_fold(&token(cam, yaw), &witness));
+        self.log.push(LiveEvent { tag: b'K', param: delta.to_string(), camera: cam, witness, content: self.content.clone(),
+                                  head: self.head.clone(), yaw, tick: self.tick, input });
+        self.handed();
+        Ok(&self.log[self.log.len() - 1])
+    }
+
+    /// The log's frame events at free headings, in log order, each with the W and M it was rendered over — the frames
+    /// the reference recomputes before a save. The log is replayed from the base for W and M only (no rendering), and
+    /// the frames are handed over in batches of at most `batch`, so no more than a batch of states is held at once.
+    /// Returns how many frames were handed over, or the first error `each` gave.
+    pub fn free_frames<E>(&self, batch: usize, each: &mut dyn FnMut(&[crate::heading::FreeFrame]) -> Result<(), E>) -> Result<usize, E> {
+        use std::sync::Arc;
+        let (mut level, mut tiles) = (self.base_level.clone(), self.base_tiles.clone());
+        let (mut la, mut ta): (Option<Arc<Vec<u8>>>, Option<Arc<Vec<u8>>>) = (None, None);
+        let mut out: Vec<crate::heading::FreeFrame> = Vec::new();
+        let mut n = 0;
+        for (k, ev) in self.log.iter().enumerate() {
+            if ev.tag == b'E' {
+                apply_spec(&mut level, &mut tiles, &ev.param);
+                if ev.param.starts_with("cell:") { la = None } else { ta = None }
+                continue;
+            }
+            if crate::simtick::anchor(ev.yaw).is_some() {
+                continue;
+            }
+            let l = la.get_or_insert_with(|| Arc::new(level.clone())).clone();
+            let t = ta.get_or_insert_with(|| Arc::new(tiles.clone())).clone();
+            out.push(crate::heading::FreeFrame { event: k, level: l, tiles: t, x: ev.camera.x, z: ev.camera.z, yaw: ev.yaw, witness: ev.witness.clone() });
+            n += 1;
+            if out.len() >= batch.max(1) {
+                each(&out)?;
+                out.clear();
+            }
+        }
+        if !out.is_empty() {
+            each(&out)?;
+        }
+        Ok(n)
     }
 }

@@ -491,7 +491,7 @@ KERNEL_EXE: str | None = None
 def kernel_build():
     global KERNEL_EXE
     KERNEL_EXE = compile_rs(KERNEL, "main.rs", "kernel")
-    return "kernel/main.rs (+ mantle.rs, formats.rs, hud.rs, fast.rs, vocab.rs, bearing.rs) compiled live with " + " ".join(FLAGS)
+    return "kernel/main.rs (+ mantle.rs, formats.rs, hud.rs, fast.rs, vocab.rs, bearing.rs, bearingfast.rs) compiled live with " + " ".join(FLAGS)
 
 
 def kernel_oracle():
@@ -4432,8 +4432,10 @@ FRESH_ENTRY_SITES = {
     "framesplit.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
     "latency1r.rs": {"arm_composite(": 3, "to_blit(": 1},
     "main.rs": {"compose_frame(": 1, "to_blit(": 1},
-    # re-pinned on purpose with LIVE-INPUT-0: the live session's move witness is replay_from's own compose_frame digest
-    "playback.rs": {"compose_frame(": 3, "to_blit(": 2},
+    # re-pinned on purpose with LIVE-INPUT-0: the live session's move witness is replay_from's own compose_frame digest;
+    # and with SIM-TICK-0: that witness is taken through shell/heading.rs — the same compose_frame at an anchor heading
+    "playback.rs": {"compose_frame(": 2, "to_blit(": 2},
+    "heading.rs": {"compose_frame(": 1},
     "present.rs": {"compose_frame(": 1, "arm_composite(": 2, "fast::render(": 2, "fast::emit_threaded(": 3, "fast::emit(": 2, "to_blit(": 6},
     "presentscale.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
     "presentstretch.rs": {"arm_composite(": 2, "arm_composite_marked(": 2, "to_blit(": 1},
@@ -6395,7 +6397,9 @@ def liveinput_fence():
     if re.search(r"\n\s+pub ", body) or sect.count("(&mut self,") != 2 or sect.count("self.log.push(") != 2:
         raise Red("the live session's state is not private, or it changes other than by appending one event")
     mv, ed = src_span(sect, "pub fn push_move(", "\n    }\n"), src_span(sect, "pub fn push_edit_cell(", "\n    }\n")
-    if not all(t in mv for t in ("let cam = step(&self.level, self.cam, cmd);", "compose_frame(&self.level, &self.tiles, cam)", "fold(&self.head, b'M', &composed.frame_digest)")) \
+    # re-pinned on purpose with SIM-TICK-0: the move's witness is taken through shell/heading.rs, which is compose_frame's
+    # digest at an anchor heading (simtick-fence judges heading.rs); the statements are otherwise replay_from's
+    if not all(t in mv for t in ("let cam = step(&self.level, self.cam, cmd);", "crate::heading::witness(&self.level, &self.tiles, cam, yaw)?", "fold(&self.head, b'M', &witness)")) \
             or not all(t in ed for t in ("if (x == 0 || z == 0 || x as usize == w - 1 || z as usize == rows - 1) && to != b'#' {",
                                          "apply_spec(&mut self.level, &mut self.tiles, &spec)", "content_hex(&self.level, &self.tiles)", "fold(&self.head, b'E', &self.content)")):
         raise Red("the live session's replay is not replay_from's statements (step, compose_frame's digest, apply_spec, content_hex, fold)")
@@ -6409,7 +6413,8 @@ def liveinput_fence():
             raise Red("the loop contains %r: no clock, no file, no world of its own, refusals as data, the call fixed" % tok)
     if "ticks(" in runf or "ticks(" in src_span(rs, "fn reference(", "\n}\n"):
         raise Red("the loop reads a clock")
-    if set(re.findall(r"session\.(\w+)\(", runf)) - {"push_move", "push_edit_cell", "camera", "faced", "cell", "push_edit_tile", "tile_rgb"} \
+    # re-pinned on purpose with SIM-TICK-0: the loop also reads the heading (free_heading, token), to refuse a free one
+    if set(re.findall(r"session\.(\w+)\(", runf)) - {"push_move", "push_edit_cell", "camera", "faced", "cell", "push_edit_tile", "tile_rgb", "free_heading", "token"} \
             or "arm_composite(" in runf or src_span(rs, "fn reference(", "\n}\n").count("arm_composite(") != 1:
         raise Red("the loop reaches into the session other than to append and read, or renders a reference outside reference()")
     loop = runf[runf.index("    loop {"):]
@@ -6562,7 +6567,9 @@ def livesession_preregistered():
                   'pub const JOURNAL_MAGIC: &str = "VRDNLJ1";', 'pub const SEAL_KEY: &str = "\\n \\"seal\\": \\"";'):
         if const not in rs:
             raise Red("the shell's constants are not the registered ones: %s is missing" % const)
-    names = re.findall(r'\("((?:kernel|shell)/[a-z]+\.rs)", include_bytes!\("([^"]+)"\)\)', rs)
+    # re-pinned on purpose with SIM-TICK-0: read inside RENDER_SOURCES only (the bearing identity's sources are a second
+    # list, consulted for frames at free headings alone; simtick-certify holds it to the sealer's)
+    names = re.findall(r'\("((?:kernel|shell)/[a-z]+\.rs)", include_bytes!\("([^"]+)"\)\)', src_span(rs, "const RENDER_SOURCES:", "\n];"))
     if [n for n, _ in names] != list(LS.SOURCES) or [p for _, p in names] != ["../kernel/mantle.rs", "../kernel/formats.rs", "../kernel/fast.rs", "../kernel/hud.rs", "present.rs"]:
         raise Red("the renderer identity's sources are not the registered five, in order, in the shell and the sealer")
     if LS.SEAL_KEY != b'\n "seal": "' or LIVESESSION_ENV != "VERDANDI_SESSIONS":
@@ -6866,17 +6873,22 @@ def livesession_fence():
     # HOLD-WALK-0: go passes no held set, so LIVE-SESSION-0 binds no repeat
     if "go_with(s, p, crate::liveinput::bind, None).0" not in src_span(rs, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n"):
         raise Red("LIVE-SESSION-0's go is not LIVE-INPUT-0's binding over go_with")
+    # re-pinned on purpose with SIM-TICK-0: the seal is `finish`, shared by the loop's run (go_with: the loop, the focus,
+    # then finish) and the tick run; the order inside it is the registered one, after the reference's certification
     go = src_span(rs, "pub fn go_with<S: ExactSurface + Keys + Focus>(", "\n}\n")
-    order = [go.find(t) for t in ("crate::liveinput::run_with(s, &mut session, surface, binding, hold)", "saved_text(&session, &base, &live_json)", "write_saved(&dst, &text, &plant)",
-                                  "fs::read(&dst)", "load(&dst)", 'println!("[livesession] saved and verified:', "crate::runledger::end(0);")]
-    if (-1 in order or order != sorted(order) or go.count("saved and verified") != 1 or go.count("crate::runledger::end(0);") != 1
-            or not all(t in go for t in ("if b != text.as_bytes() {", "l.session.head() != session.head()", "l.session.content() != session.content()",
-                                         "a.iter().zip(b2.iter()).any(|(x, y)| x.witness != y.witness || x.param != y.param)"))):
+    fin = src_span(rs, "fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {", "\n}\n")
+    order_go = [go.find(t) for t in ("crate::liveinput::run_with(s, &mut session, surface, binding, hold)", "let focus = s.focus();", "finish(Prepared {")]
+    order = [fin.find(t) for t in ("saved_text(&session, &base, &live_json)", "write_saved(&dst, &text, &plant)",
+                                   "fs::read(&dst)", "load(&dst)", 'println!("[livesession] saved and verified:', "crate::runledger::end(0);")]
+    if (-1 in order or order != sorted(order) or -1 in order_go or order_go != sorted(order_go)
+            or rs.count("saved and verified:") != 1 or rs.count("crate::runledger::end(0);") != 1
+            or not all(t in fin for t in ("if b != text.as_bytes() {", "l.session.head() != session.head()", "l.session.content() != session.content()",
+                                          "a.iter().zip(b2.iter()).any(|(x, y)| x.witness != y.witness || x.param != y.param)"))):
         raise Red("the run says saved, or ends 0, other than after the saved file was read back and verified against the live session")
     prep = src_span(rs, "pub fn prepare(plan: Plan)", "\n}\n")
     if (not prep.split("{", 1)[1].lstrip().startswith('crate::runledger::begin("livesession", plan.surface);')
             or len(re.findall(r"return Err\(refuse_run\(", prep)) != prep.count("return Err(") or "crate::runledger::end(2);" not in src_span(rs, "fn refuse_run(", "\n}\n")
-            or len(re.findall(r"return \(refuse_run\(", go)) != 2):
+            or len(re.findall(r"return refuse_run\(", fin)) != 3 or "refuse_run(" in go):
         raise Red("the run does not begin its ledger first, or a refusal does not end it")
     ld = src_span(rs, "pub fn load(path: &str)", "\nfn saved_event(")
     order = [ld.find(t) for t in ("read_journal(&bytes)?", "check_seal(&bytes)?;", "chain_heads(", "LIVESESSION-LINEAGE", "renderer_id()", "LiveSession::new(", "s.push_move(", "LIVESESSION-DIFFERENT-RENDERER")]
@@ -7172,7 +7184,8 @@ def liveauthor_fence():
     if -1 in order or order != sorted(order) or any(t in before for t in ("scene", "render", "present", "reference(", "blit", "expected")):
         raise Red("the Tile arm does not read the session's colour, append the edit, then render the resulting state")
     pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
-    sect = pb[pb.index("// ================================================================== LIVE-AUTHOR-0 (appended)"):]
+    # re-pinned on purpose with SIM-TICK-0: bounded at the next appended section (SIM-TICK-0's, which simtick-fence judges)
+    sect = w32_section(pb, "// ================================================================== LIVE-AUTHOR-0 (appended)")
     pt = src_span(sect, "pub fn push_edit_tile(", "\n    }\n")
     order = [pt.find(t) for t in ("apply_spec(&mut self.level, &mut self.tiles, &spec);", "self.content = content_hex(&self.level, &self.tiles);",
                                   "self.head = fold(&self.head, b'E', &self.content);", "self.log.push(", "self.handed();")]
@@ -7791,16 +7804,26 @@ def bearing_fence():
         raise Red("the vocabulary includes anything but the carried octant, or the reference includes a file")
     if f'pub const OCTANT_SHA256: &str = "{OCTANT_SHA256}";' not in voc:
         raise Red("the vocabulary's pin is not the record's octant sha256")
+    # re-pinned on purpose with SIM-TICK-0: the windowless session witnesses a look by the frame at its heading, so
+    # shell/heading.rs uses the vocabulary and the reference (the frames and their certification at save), shell/main.rs
+    # declares the modules, shell/livesession.rs names the files in the bearing identity, and the workshop's session-walk
+    # verifier renders a look with the reference; nothing else does, and no window renders at a bearing
+    allowed = {(SHELL, "heading.rs"), (SHELL, "main.rs"), (SHELL, "livesession.rs"), (WORKSHOP, "sessionwalk.rs")}
     for d in (SHELL, WORKSHOP):
         for fn in sorted(os.listdir(d)):
-            if fn.endswith(".rs"):
+            if fn.endswith(".rs") and (d, fn) not in allowed:
                 t = read(os.path.join(d, fn)).decode("utf-8")
                 if re.search(r"kernel/(bearing|vocab)\.rs|\b(bearing|vocab)::", t):
                     raise Red(f"{os.path.basename(d)}/{fn} reaches the reference bearing kernel or its vocabulary")
+    tail = read(os.path.join(SHELL, "win32.rs"))[LATENCY0_WIN32_LEN:].decode("utf-8")
+    code_ = lambda fn: "\n".join(ln.split("//", 1)[0] for ln in read(os.path.join(SHELL, fn)).decode("utf-8").splitlines())
+    if "bearing" in tail or "heading::" in tail or re.search(r"\b(bearing|vocab)::", code_("main.rs")) or re.search(r"\b(bearing|vocab)::", code_("livesession.rs")):
+        raise Red("a window renders at a bearing, or shell/main.rs or shell/livesession.rs uses the reference itself")
     return ("the reference is the tag's arithmetic: its core, `pub` removed, hashes to the same span of Urðr's "
             "bearing_rs at urdr-oracle-2; it and the vocabulary read no clock, spawn no thread, touch no file at run "
-            "time, use no unsafe; the vocabulary's one include is the carried octant under the record's pin; and no file "
-            "of the shell or the workshop reaches either — no live path renders at a bearing")
+            "time, use no unsafe; the vocabulary's one include is the carried octant under the record's pin; in the "
+            "shell only heading.rs uses them (the windowless session's frames and their certification), in the workshop "
+            "only the session-walk verifier — no window renders at a bearing")
 
 # ------------------------------------------------------------------ BEARING-FAST-0
 # The bearing camera made fast, held byte for byte to the reference (kernel/bearing.rs, never modified). The court runs
@@ -8026,13 +8049,822 @@ def bearingfast_fence():
             raise Red(f"kernel/bearingfast.rs uses {tok}")
     if code.count("std::thread::scope") != 1 or code.count("thread::") != 1:
         raise Red("a thread outside tread C's one scope")
+    # re-pinned on purpose with SIM-TICK-0: the windowless session renders a free heading's frame once with the production
+    # tread, through shell/heading.rs alone (shell/main.rs declares the module, shell/livesession.rs names the file in the
+    # bearing identity); no window does until MOUSE-LOOK-0, and the workshop never does
     for d in (SHELL, WORKSHOP):
         for fn in sorted(os.listdir(d)):
-            if fn.endswith(".rs") and re.search(r"bearingfast", read(os.path.join(d, fn)).decode("utf-8")):
-                raise Red(f"{os.path.basename(d)}/{fn} reaches the fast bearing path before MOUSE-LOOK-0")
+            if fn.endswith(".rs") and (d, fn) not in ((SHELL, "heading.rs"), (SHELL, "main.rs"), (SHELL, "livesession.rs")) \
+                    and re.search(r"bearingfast", read(os.path.join(d, fn)).decode("utf-8")):
+                raise Red(f"{os.path.basename(d)}/{fn} reaches the fast bearing path: only shell/heading.rs does, and no window before MOUSE-LOOK-0")
+    w32 = read(os.path.join(SHELL, "win32.rs")).decode("utf-8", "replace")
+    ls = "\n".join(ln.split("//", 1)[0] for ln in read(os.path.join(SHELL, "livesession.rs")).decode("utf-8").splitlines())
+    if "bearing" in w32[LATENCY0_WIN32_LEN:] or "heading::" in w32 or ls.count("bearingfast") != 2 or "bearingfast::" in ls:
+        raise Red("a window reaches the bearing path before MOUSE-LOOK-0, or shell/livesession.rs does more than name the file in the identity")
     return ("the reference's core is still the tag's text; mantle.rs and fast.rs are unchanged; the fast path reads no "
-            "clock, touches no file, uses no unsafe and starts threads only in tread C's one scope; no file of the shell "
-            "or the workshop reaches it")
+            "clock, touches no file, uses no unsafe and starts threads only in tread C's one scope; in the shell only "
+            "heading.rs reaches it (the windowless session's frame at a free heading), no window does, and the workshop "
+            "never does")
+
+# ------------------------------------------------------------------ SIM-TICK-0
+# The mouse-look rules as integer law, windowless: raw input -> tick command -> SESSION-WALK -> authority. The twin
+# below re-derives the laws and a whole tick run in Python from the registered constants alone; frames come from the
+# kernel executable (the facing kernel at an anchor, the bearing REFERENCE at a free heading), never from the shell.
+ST_HZ, ST_TICK_US, ST_YAW, ST_QUARTER = 64, 15625, 360000, 90000
+ST_COARSE, ST_FINE, ST_MULT_MAX, ST_COUNTS_MAX = 88, 1, 64, 2 ** 31 - 1
+ST_DELTA_MAX = ST_COUNTS_MAX * ST_MULT_MAX * ST_COARSE
+ST_CAMERA = "28,28,N"
+# the tick binding: LIVE-AUTHOR-0's with A and D the strafes
+ST_BIND = {"W": ("move", "F"), "UP": ("move", "F"), "S": ("move", "B"), "DOWN": ("move", "B"), "A": ("move", "Q"),
+           "Q": ("move", "Q"), "D": ("move", "E"), "E": ("move", "E"), "LEFT": ("move", "L"), "RIGHT": ("move", "R"),
+           "SPACE": ("toggle",), "1": ("tile", 0), "2": ("tile", 1), "3": ("tile", 2), "4": ("tile", 3), "5": ("tile", 4),
+           "ESC": ("end",)}
+_ST_CLASSES = ["wall0", "wall1", "wall2", "wall3", "floor"]
+# script S, from 28,28,N on the witness level with identity tiles: (tick, microseconds into the tick, input). Each line
+# says what it registers.
+SIMTICK_SCRIPT = (
+    [(0, 0, "m+3"), (0, 5000, "m+2"), (0, 15624, "m-1"),      # three reports summed in one tick, the last a microsecond before the boundary
+     (1, 0, "m+1"),                                          # a report at exactly the boundary: tick 1's
+     (2, 0, "m+5"), (2, 8750, "m-5"),                        # a zero-sum tick: no look, no command
+     (3, 0, "m+506"),                                        # coarse steps up to 44968, still north
+     (4, 0, "W"), (4, 5, "m+1"),                             # the key first, the report after: the look is applied first (45056, east), then W steps east
+     (5, 0, "step"),                                         # fine steps from the next tick
+     (6, 0, "m-56"), (6, 1, "W"),                            # the exact tie, 45000: east (clockwise); W steps east
+     (7, 0, "m-1"), (7, 1, "W"),                             # one id below the tie, 44999: north; W is blocked by rock
+     (8, 0, "A"), (9, 0, "D"),                               # the strafes, toward the cardinals left and right of north
+     (10, 0, "S"),                                           # back, into rock: blocked
+     (11, 0, "SPACE"), (11, 1, "W"),                         # the cell ahead of the nearest cardinal opens; W steps into it
+     (12, 0, "1"),                                           # a class key at a free heading
+     (13, 0, "LEFT"),                                        # a quarter turn at a free heading: 44999 - 90000 = 314999
+     (14, 0, "step"),                                        # coarse again
+     (15, 0, "mult+"), (15, 1, "m+1"),                       # a sensitivity action in the same tick as a look: the look uses the old multiplier
+     (16, 0, "m+1"),                                         # the raised multiplier, used
+     (17, 0, "m+255"),                                       # through 360000 to 143
+     (18, 0, "m-1"),                                         # a negative look through 0
+     (19, 0, "mult-"), (19, 1, "step"),
+     (20, 0, "m+33"),                                        # exactly back to an anchor: 0, token N, the facing kernel's frame
+     (21, 0, "m+360000"),                                    # a whole turn: an event, the heading where it was
+     (22, 0, "mult-")]                                       # the multiplier pushed below 1: refused
+    + [(23, i, "mult+") for i in range(64)]                  # up to 64, then pushed above it: refused
+    + [(24, 0, "m+1"),                                       # multiplier 64, used
+       (25, 0, "m+2147483647"), (25, 1, "m+1"), (25, 2, "W"),  # the counts leave 2^31 - 1: the look refused, W still applied
+       (26, 0, "Z"),                                         # an unbound key
+       (27, 0, "ESC")])
+SIMTICK_COUNTS = {"inputs": 102, "reports": 19, "keys": 13, "actions": 70, "commands": 27, "looks": 13, "events": 24,
+                  "moves": 9, "blocked": 2, "edits": 2, "unbound": 1, "refused": 3}
+SIMTICK_FINAL = {"camera": "30,26,64", "ticks": 28, "sensitivity": [64, 1], "free_frames": 20}
+# the continuation of S's saved session: the heading back to an anchor with the saved multiplier, a blocked step, the
+# multiplier lowered and used, end — its ticks follow the parent's 28
+SIMTICK_RESUME = [(0, 0, "m-1"), (1, 0, "W"), (2, 0, "mult-"), (3, 0, "m+2"), (4, 0, "ESC")]
+SIMTICK_LAW_MUTANTS = {
+    "the tie-break reversed": ("(((k + HALF_SECTOR) / QUARTER) % 4) as u8", "(((k + HALF_SECTOR - 1) / QUARTER) % 4) as u8", ("cardinal_digest", "boundaries")),
+    "the tick one microsecond short": ("pub const TICK_US: u64 = 15_625;", "pub const TICK_US: u64 = 15_624;", ("tick", "tick_of")),
+    "the tick one microsecond long": ("pub const TICK_US: u64 = 15_625;", "pub const TICK_US: u64 = 15_626;", ("tick", "tick_of")),
+    "a coarse step of 87": ("pub const STEP_COARSE: i64 = 88;", "pub const STEP_COARSE: i64 = 87;", ("delta_digest", "delta", "sens")),
+}
+SIMTICK_LAW_MAIN = ('#[allow(dead_code)]\n#[path = "../kernel/mantle.rs"]\nmod mantle;\n#[allow(dead_code)]\n#[path = "simtick.rs"]\nmod simtick;\n'
+                    'fn main() {\n    for ln in simtick::law_lines(|b| mantle::hex(&mantle::sha256(b))) {\n        println!("{}", ln);\n    }\n}\n')
+# the planted fast-path defect for the certification row: the wall's bottom edge loses its ink — every frame with a
+# wall strip in view changes, the same way every time (live and on replay), so only the reference can see it
+SIMTICK_PLANT = ("(r == k.top || r == k.bot)", "(r == k.top)")
+BEARINGFAST_RS_SHA256 = "97ab3bf3a575954fdbaa0f1b4d3ed8bd511a6d8dffa01a3b99d864e393a2ee84"
+VOCAB_RS_SHA256 = "30b9199255b0e342c1a20b9b47043c567b54c756e178f4fd7b7d633708dc69c0"
+SIMTICK_KERNEL_PINS = {"formats.rs": "d948f8ce596400096271b6f9a63d257160540d424c06d0345dd8dc43ce3b0175", "hud.rs": "553d3ef7264b2587e724f974be3cc5a73299526e2a95480da6740d181c96dba4"}
+PRESENT_RS_SHA256 = "8834752cfe2f1bdac046ee0b6d8d5a791467fef8deea4d6516a382834a5b71a3"
+
+
+def _st_cardinal(k: int) -> int:
+    return ((k + 45000) // ST_QUARTER) % 4
+
+
+def _st_turn(k: int, d: int) -> int:
+    return (k + d) % ST_YAW
+
+
+def _st_delta(c: int, m: int, s: int):
+    if not -ST_COUNTS_MAX <= c <= ST_COUNTS_MAX or not 1 <= m <= ST_MULT_MAX or s not in (ST_FINE, ST_COARSE):
+        return None
+    return c * m * s
+
+
+def _st_token(x: int, z: int, yaw: int) -> str:
+    return "%d,%d,%s" % (x, z, _LETTER[yaw // ST_QUARTER] if yaw % ST_QUARTER == 0 else yaw)
+
+
+def _st_law_twin() -> list:
+    """The laws, re-derived: the lines shell simtick-law must print."""
+    L = "NESW"
+    show = lambda v: "refused" if v is None else str(v)
+    out = ["tick %d %d" % (ST_HZ, ST_TICK_US)]
+    out.append("tick_of " + " ".join("%d=%d" % (t, t // ST_TICK_US) for t in (0, 1, 15624, 15625, 15626, 31249, 31250, 999999, 1000000)))
+    cards = [_st_cardinal(k) for k in range(ST_YAW)]
+    out.append("cardinal_digest " + sha256(bytes(ord(L[c]) for c in cards)))
+    out.append("cardinal_owns " + " ".join("%s=%d" % (L[i], cards.count(i)) for i in range(4)))
+    out.append("boundaries " + " ".join("%d=%s" % (k, L[cards[k]]) for k in (0, 44999, 45000, 134999, 135000, 224999, 225000, 314999, 315000, 359999)))
+    out.append("quarter_law %d" % sum(1 for k in range(ST_YAW) if cards[(k + ST_QUARTER) % ST_YAW] == (cards[k] + 1) % 4
+                                      and cards[(k - ST_QUARTER) % ST_YAW] == (cards[k] + 3) % 4))
+    out.append("anchors " + " ".join("%d=%s" % (k, L[k // ST_QUARTER] if k % ST_QUARTER == 0 else "-") for k in (0, 1, 89999, 90000, 180000, 270000, 270001, 359999)))
+    grid = "".join("%d,%d=%d;" % (k, sg * d, _st_turn(k, sg * d))
+                   for k in (0, 1, 44999, 45000, 89999, 90000, 179999, 180000, 269999, 270000, 359999)
+                   for d in (0, 1, 87, 88, 89999, 90000, 359999, 360000, 360001, ST_DELTA_MAX) for sg in (1, -1))
+    out.append("turn_digest " + sha256(grid.encode()))
+    out.append("turn " + " ".join("%d%+d=%d" % (k, d, _st_turn(k, d)) for k, d in ((0, -1), (359999, 1), (0, 360000), (0, -360000), (44968, 88), (88, -176))))
+    grid = "".join("%d,%d,%d=%s;" % (c, m, s, show(_st_delta(c, m, s)))
+                   for c in (1, -1, 2, 511, -511, 65536, ST_COUNTS_MAX, -ST_COUNTS_MAX) for m in (1, 2, 63, 64) for s in (ST_FINE, ST_COARSE))
+    out.append("delta_digest " + sha256(grid.encode()))
+    out.append("delta " + " ".join("%d,%d,%d=%s" % (c, m, s, show(_st_delta(c, m, s))) for c, m, s in (
+        (1, 1, 88), (-3, 2, 88), (32, 1, 1), (ST_COUNTS_MAX, 64, 88), (ST_COUNTS_MAX + 1, 1, 1), (-ST_COUNTS_MAX - 1, 1, 1),
+        (1, 0, 88), (1, 65, 88), (1, 1, 87), (1, 1, 2))))
+    out.append("sens start=1,%d up(1)=2,%d up(64)=refused down(1)=refused down(64)=63,%d toggle(coarse)=1,%d toggle(fine)=1,%d"
+               % (ST_COARSE, ST_COARSE, ST_COARSE, ST_FINE, ST_COARSE))
+    out.append("rebind 41=51 44=45 57=57 53=53 51=51 45=45 25=25 27=27 20=20")
+    return out
+
+
+def _st_text(script) -> str:
+    return ",".join("%d:%s" % (t * ST_TICK_US + off, what) for t, off, what in script)
+
+
+def _st_frame(lvl, til, x, z, yaw, cache):
+    """The frame digest at a camera and heading from the kernel executable: the facing kernel at an anchor, the bearing
+    REFERENCE anywhere else (`--at x,z,K` renders with kernel/bearing.rs and selfchecks)."""
+    if yaw % ST_QUARTER == 0:
+        return _sw_frame(lvl, til, (x, z, yaw // ST_QUARTER), cache)
+    _sw_frame(lvl, til, (x, z, _st_cardinal(yaw)), cache) if cache.get("lvl") != lvl or cache.get("til") != til else None
+    key = ("free", x, z, yaw, hashlib.sha256(lvl).hexdigest(), hashlib.sha256(til).hexdigest())
+    if key not in cache:
+        code, out, err = run(KERNEL_EXE, ["--level", cache["lp"], "--tiles", cache["tp"], "--at", "%d,%d,%d" % (x, z, yaw)])
+        d = dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+        if code != 0 or d.get("selfcheck") != "OK":
+            raise Red("twin: the bearing reference at %d,%d,%d: %s" % (x, z, yaw, err.strip()))
+        cache[key] = d["frame"]
+    return cache[key]
+
+
+def _st_start(camera=ST_CAMERA):
+    lv = read(os.path.join(ORACLE, "levels", "witness.lvl"))
+    tl = read(os.path.join(ORACLE, "tiles", "identity.tiles"))
+    x, z, f = _cam_tuple(camera)
+    return {"lvl": lv, "til": tl, "x": x, "z": z, "yaw": f * ST_QUARTER, "head": _sw_genesis(_sw_content(lv, tl), (x, z, f)),
+            "sens": (1, ST_COARSE), "ticks": 0, "log": []}
+
+
+def _st_twin(script, st, cache):
+    """A whole tick run, re-derived: the commands (one per tick: the reports' sum applied once and first, then the other
+    inputs in arrival order), the events with their cameras, witnesses, ticks and inputs, the head, the trace, the
+    counts. `st` is the state the run starts from (a fresh base, or a parent's final state)."""
+    import struct as _s
+    first = st["ticks"]
+    per = {}
+    order = []
+    for t, off, what in script:
+        if t not in per:
+            per[t] = {"sum": 0, "acts": []}
+            order.append(t)
+        if what[0] == "m" and what[1] in "+-" and what[2:].isdigit():
+            per[t]["sum"] += int(what[1:])
+        else:
+            per[t]["acts"].append(what)
+    c = {k: 0 for k in SIMTICK_COUNTS}
+    trace, ended, last_tick = [], "script", None
+    lvl, til, x, z, yaw, head = st["lvl"], st["til"], st["x"], st["z"], st["yaw"], st["head"]
+    m, s = st["sens"]
+    log = list(st["log"])
+    for t in order:
+        if ended == "escape":
+            break
+        for _t, _o, what in [i for i in script if i[0] == t]:
+            c["inputs"] += 1
+            c["reports" if what[0] == "m" and what[1] in "+-" else ("actions" if what in ("mult+", "mult-", "step") else "keys")] += 1
+        tick = first + t
+        last_tick = tick
+        cmd = per[t]
+        over = abs(cmd["sum"]) > ST_COUNTS_MAX
+        if cmd["sum"] == 0 and not over and not cmd["acts"]:
+            continue
+        c["commands"] += 1
+        if over:
+            c["refused"] += 1
+            trace.append("tick %d look -> refused SIMTICK-COUNTS" % tick)
+        elif cmd["sum"] != 0:
+            d = cmd["sum"] * m * s
+            yaw = _st_turn(yaw, d)
+            wit = _st_frame(lvl, til, x, z, yaw, cache)
+            tok = _st_token(x, z, yaw)
+            head = _sw_fold(head, b"K", tok + ":" + wit)
+            trace.append("tick %d look counts=%d multiplier=%d step=%d -> event %d look %d %s" % (tick, cmd["sum"], m, s, len(log), d, tok))
+            log.append({"kind": "look", "delta": d, "camera": tok, "witness": wit, "tick": tick, "input": {"counts": cmd["sum"], "multiplier": m, "step": s}})
+            c["looks"] += 1
+            c["events"] += 1
+        for what in cmd["acts"]:
+            if what in ("mult+", "mult-"):
+                n = m + (1 if what == "mult+" else -1)
+                if 1 <= n <= ST_MULT_MAX:
+                    m = n
+                    trace.append("tick %d %s -> sensitivity %d,%d" % (tick, what, m, s))
+                else:
+                    c["refused"] += 1
+                    trace.append("tick %d %s -> refused SIMTICK-MULTIPLIER" % (tick, what))
+                continue
+            if what == "step":
+                s = ST_FINE if s == ST_COARSE else ST_COARSE
+                trace.append("tick %d step -> sensitivity %d,%d" % (tick, m, s))
+                continue
+            b = ST_BIND.get(what)
+            name = "key " + what
+            if b is None:
+                c["unbound"] += 1
+                trace.append("tick %d %s -> unbound" % (tick, name))
+            elif b[0] == "end":
+                trace.append("tick %d %s -> end" % (tick, name))
+                ended = "escape"
+                break
+            elif b[0] == "move":
+                f = _st_cardinal(yaw)
+                nx, nz, nf = _sw_step(lvl, (x, z, f), b[1])
+                if b[1] in "FBQE" and (nx, nz) == (x, z):
+                    c["blocked"] += 1
+                yaw = _st_turn(yaw, ST_QUARTER * ((nf - f) % 4))
+                x, z = nx, nz
+                wit = _st_frame(lvl, til, x, z, yaw, cache)
+                tok = _st_token(x, z, yaw)
+                head = _sw_fold(head, b"M", wit)
+                trace.append("tick %d %s -> event %d move %s %s" % (tick, name, len(log), b[1], tok))
+                log.append({"kind": "move", "command": b[1], "camera": tok, "witness": wit, "tick": tick})
+                c["moves"] += 1
+                c["events"] += 1
+            else:
+                if b[0] == "toggle":
+                    dx, dz = _FWD[_st_cardinal(yaw)]
+                    fx, fz = x + dx, z + dz
+                    w_, h_ = _s.unpack_from("<II", lvl, 8)
+                    cell = chr(lvl[16 + fz * w_ + fx]) if 0 <= fx < w_ and 0 <= fz < h_ else None
+                    code = ("LIVEINPUT-EDIT-OUTSIDE" if cell is None else "LIVEINPUT-EDIT-STAIR" if cell not in "#." else
+                            "LIVEINPUT-EDIT-BORDER" if cell == "#" and (fx in (0, w_ - 1) or fz in (0, h_ - 1)) else None)
+                    if code:
+                        c["refused"] += 1
+                        trace.append("tick %d %s -> refused %s" % (tick, name, code))
+                        continue
+                    spec = "cell:%d,%d,%s" % (fx, fz, "." if cell == "#" else "#")
+                else:
+                    off = 8 + b[1] * 256 * 256 * 3
+                    tile = til[off:off + 256 * 256 * 3]
+                    cur = tuple(tile[:3]) if tile == tile[:3] * (256 * 256) else None
+                    rgb = LIVEAUTHOR_PALETTE[(LIVEAUTHOR_PALETTE.index(cur) + 1) % 8] if cur in LIVEAUTHOR_PALETTE else LIVEAUTHOR_PALETTE[0]
+                    spec = "tile:%s,%d,%d,%d" % ((_ST_CLASSES[b[1]],) + tuple(rgb))
+                lvl, til = _sw_apply(lvl, til, spec)
+                wit = _sw_content(lvl, til)
+                head = _sw_fold(head, b"E", wit)
+                trace.append("tick %d %s -> event %d edit %s" % (tick, name, len(log), spec))
+                log.append({"kind": "edit", "spec": spec, "witness": wit, "tick": tick})
+                c["edits"] += 1
+                c["events"] += 1
+    ticks = first if last_tick is None else last_tick + 1
+    return ({"lvl": lvl, "til": til, "x": x, "z": z, "yaw": yaw, "head": head, "sens": (m, s), "ticks": ticks, "log": log},
+            trace, c, ended)
+
+
+def _st_run(script_text, logs, name, extra=None, exe=None):
+    """One shell simtick-selftest; returns (completed process, the saved session's path or None, the --out data or None)."""
+    env = dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1], LIVESESSION_ENV: GATE_SESSIONS})
+    out = os.path.join(BUILD, "simtick-%s.json" % name)
+    if os.path.exists(out):
+        os.remove(out)
+    cp = subprocess.run([exe or SHELL_EXE, "simtick-selftest", "--script", script_text, "--out", out] + (extra or []),
+                        capture_output=True, text=True, cwd=ROOT, env=env)
+    m_ = re.search(r"saved and verified: (.+?session\.json)", cp.stdout)
+    raw = None
+    if os.path.exists(out):
+        with open(out, encoding="utf-8") as fh:
+            raw = json.load(fh)["data"]
+        os.remove(out)
+    return cp, (m_.group(1) if m_ else None), raw
+
+
+def _st_script_s(logs, name):
+    cp, path, raw = _st_run(_st_text(SIMTICK_SCRIPT), logs, name, ["--camera", ST_CAMERA])
+    if cp.returncode != 0 or path is None or raw is None or "simtick court OK" not in cp.stdout:
+        raise Red("script S did not run to a saved and verified session: " + (cp.stderr.strip() or cp.stdout.strip())[-300:])
+    return cp, path, raw
+
+
+def _st_need():
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None or KERNEL_EXE is None:
+        raise Red("the shell, the workshop's sessionwalk or the kernel was not built")
+
+
+def simtick_preregistered():
+    """SIM-TICK-0's method is locked: the tick, one command per tick, the look's delta, the nearest cardinal, the binding,
+    the look event and its fold, ticks recorded and never authority, certification at save — registered before the build."""
+    e = locked_entry("SIM-TICK-0", {
+        "windowless, never combined with the window": ("hyp", ("completely windowless", "raw input -> tick command -> session-walk -> authority", "never combined")),
+        "the tick and one command per tick": ("hyp", ("exactly 15,625 us", "t div 15625", "applied once", "in arrival order", "an empty tick makes nothing")),
+        "the look": ("hyp", ("delta = counts x multiplier x step", "a whole number 1..64", "88 ids coarse or 1 id fine", "takes effect from the next tick")),
+        "the heading and the nearest cardinal": ("hyp", ("(k + delta) mod 360000", "((k + 45000) div 90000) mod 4", "going clockwise")),
+        "the binding": ("hyp", ("a and d rebound to the strafes", "w, a, s and d never change the heading", "stay quarter turns")),
+        "the look event and its fold": ("hyp", ("gains one event, a look", "sha256(head : k : token : witness)", "base camera stays one of the four facings")),
+        "ticks are when, not what": ("hyp", ("raw counts are never the meaning of a look", "the tick index is when, not what", "the head does not cover it")),
+        "certified at save or not saved": ("hyp", ("rendered once", "recomputed by the reference kernel", "no saved-but-uncertified state")),
+        "the law row": ("succ", ("all 360,000 ids", "44999 is n and 45000 is e", "15,624 us is tick 0 and 15,625 us is tick 1", "a coarse step of 87")),
+        "the script": ("succ", ("a zero-sum tick", "the look is still applied first", "the exact tie reached and left in fine steps", "a whole turn", "exceed 2^31 - 1")),
+        "replay, equivalence, certify, resume": ("succ", ("the kernel executable, asked directly", "refused by both verifiers", "the head covering the token",
+                                                          "saves identical data", "livesession-uncertified", "liveinput-heading")),
+        "what fails it": ("fail", ("any float, clock, window or win32 input", "going anticlockwise", "two looks to different headings folding to one head",
+                                   "saved-but-uncertified", "a rule changed after a row was seen")),
+        "scope": ("lims", ("rules only", "it is not authority", "+-45 degrees", "is not measured here", "no picture is shown")),
+    })
+    return ("SIM-TICK-0's method is locked (hash %s) before the build: the 64 Hz tick of exactly 15,625 us, one command per "
+            "tick (the reports' sum applied once and first, then the keys in arrival order), delta = counts x multiplier x "
+            "step, the nearest cardinal with the tie clockwise, the look event folded over its token and witness, ticks "
+            "recorded and never authority, and a session saved reference-certified or not saved" % e["chain_hash"][:8])
+
+
+def simtick_law():
+    """The laws are the registered ones, exhaustively: shell simtick-law's lines — the tick boundaries, the nearest
+    cardinal of all 360,000 ids, the quarter-turn law at every id, the turn's wrap, the delta over the grid, the
+    sensitivity's ends, the rebinding — equal a Python re-derivation line for line; and a build with the tie-break
+    reversed, the tick a microsecond short or long, or a coarse step of 87 prints different lines."""
+    _st_need()
+    want = _st_law_twin()
+    code, out, err = run(SHELL_EXE, ["simtick-law"])
+    got = out.strip().splitlines()
+    if code != 0 or got != want:
+        raise Red("the shell's laws are not the re-derived ones: %r" % (next(((g, w) for g, w in zip(got + [None] * 20, want) if g != w), err.strip()),))
+    d = dict(ln.split(" ", 1) for ln in want)
+    if (d["cardinal_owns"] != "N=90000 E=90000 S=90000 W=90000" or d["quarter_law"] != "360000"
+            or d["boundaries"] != "0=N 44999=N 45000=E 134999=E 135000=S 224999=S 225000=W 314999=W 315000=N 359999=N"
+            or "15624=0 15625=1" not in d["tick_of"]):
+        raise Red("the re-derived laws are not the registered boundaries")
+    src = read(os.path.join(SHELL, "simtick.rs")).decode("utf-8")
+    small = compile_rs(SHELL, "simticklaw.rs", "simtick-law", {"simticklaw.rs": SIMTICK_LAW_MAIN})
+    code, out, _e = run(small, [])
+    if code != 0 or out.strip().splitlines() != want:
+        raise Red("the law instrument (simtick.rs alone) does not print the shell's laws")
+    caught = []
+    for why, (a, b, lines) in SIMTICK_LAW_MUTANTS.items():
+        if src.count(a) != 1:
+            raise Red("the mutation site for %s is not unique in simtick.rs" % why)
+        exe = compile_rs(SHELL, "simticklaw.rs", "simtick-law-mutant", {"simticklaw.rs": SIMTICK_LAW_MAIN, "simtick.rs": src.replace(a, b)})
+        code, out, _e = run(exe, [])
+        md = dict(ln.split(" ", 1) for ln in out.strip().splitlines())
+        differing = [k for k in d if md.get(k) != d[k]]
+        if code != 0 or not all(k in differing for k in lines):
+            raise Red("a build with %s was not caught on %s (it differs on %s)" % (why, ", ".join(lines), ", ".join(differing) or "nothing"))
+        caught.append(why)
+    return ("the laws are the registered ones, line for line with a Python re-derivation: tick t div 15,625 (15,624 us is "
+            "tick 0, 15,625 us tick 1); the nearest cardinal of all 360,000 ids (digest %s…; each cardinal owns 90,000; "
+            "44999 N, 45000 E, 135000 S, 225000 W, 315000 N); cardinal(k +- 90000) = cardinal(k) +- 1 at all 360,000 ids; "
+            "the turn's wrap; delta = counts x multiplier x step over the grid with its refusals; the sensitivity's ends; "
+            "A and D rebound to the strafes. A build with %s is caught" % (d["cardinal_digest"][:12], ", with ".join(caught)))
+
+
+def simtick_script():
+    """Script S through shell simtick-selftest becomes exactly its registered commands and events: every outcome at its
+    tick, every saved event (kind, parameter, camera token, tick, inputs), the counts, the final camera, tick count and
+    sensitivity — against the twin's re-derivation from the script alone; the refusals are one refusal-log record each
+    and no event; the run is one ledger line."""
+    import refusallog as RL
+    import runledger as RLG
+    _st_need()
+    logs = _ls_logs("simtick-script")
+    cp, path, raw = _st_script_s(logs, "script")
+    cache = {}
+    st, trace, counts, ended = _st_twin(SIMTICK_SCRIPT, _st_start(), cache)
+    if raw["trace"] != trace:
+        raise Red("script S's outcomes are not the re-derived ones: %r" % (next((g, w) for g, w in zip(raw["trace"] + [None] * 200, trace + [None]) if g != w),))
+    if counts != SIMTICK_COUNTS or {k: raw["counts"].get(k) for k in SIMTICK_COUNTS} != SIMTICK_COUNTS or raw["ended"] != "escape" or ended != "escape":
+        raise Red("script S's counts are not the registered ones: %s" % raw["counts"])
+    d = json.loads(read(path).decode("utf-8"))["data"]
+    strip = lambda log: [{k: v for k, v in e.items() if k != "witness"} for e in log]
+    if strip(d["log"]) != strip(st["log"]):
+        raise Red("script S's saved events are not the re-derived ones: %r" % (next((g, w) for g, w in zip(strip(d["log"]) + [None] * 99, strip(st["log"])) if g != w),))
+    fin = SIMTICK_FINAL
+    if (d["final_camera"], d["ticks"], d["looks"], d["moves"], d["edits"]) != (
+            fin["camera"], {"hz": ST_HZ, "count": fin["ticks"], "multiplier": fin["sensitivity"][0], "step": fin["sensitivity"][1]},
+            counts["looks"], counts["moves"], counts["edits"]) or _st_token(st["x"], st["z"], st["yaw"]) != fin["camera"]:
+        raise Red("script S's final camera, tick block or counts are not the registered ones: %s %s" % (d["final_camera"], d["ticks"]))
+    # the registered particulars, read from the saved events
+    ev = d["log"]
+    at = lambda t: [e for e in ev if e["tick"] == t]
+    checks = [
+        (at(0) == [e for e in ev if e["tick"] == 0] and len(at(0)) == 1 and at(0)[0]["delta"] == 352 and at(0)[0]["input"]["counts"] == 4, "three reports summed in tick 0"),
+        (len(at(1)) == 1 and at(1)[0]["delta"] == 88, "the report at exactly 15,625 us is tick 1's"),
+        (at(2) == [], "the zero-sum tick made no event"),
+        ([e["kind"] for e in at(4)] == ["look", "move"] and at(4)[0]["camera"] == "28,28,45056" and at(4)[1]["camera"] == "29,28,45056", "the look is applied before the key that arrived first"),
+        (at(6)[0]["camera"] == "29,28,45000" and at(6)[1]["camera"] == "30,28,45000", "the exact tie is east"),
+        (at(7)[0]["camera"] == "30,28,44999" and at(7)[1]["camera"] == "30,28,44999", "one id below the tie is north, and the step is blocked"),
+        (at(13)[0]["camera"] == "30,27,314999", "a quarter turn at a free heading"),
+        (at(15)[0]["input"] == {"counts": 1, "multiplier": 1, "step": 88} and at(16)[0]["input"] == {"counts": 1, "multiplier": 2, "step": 88}, "a sensitivity action takes effect from the next tick"),
+        (at(18)[0]["delta"] == -176 and at(18)[0]["camera"] == "30,27,359967", "a negative look through 0"),
+        (at(20)[0]["camera"] == "30,27,N" and at(21)[0]["delta"] == 360000 and at(21)[0]["camera"] == "30,27,N" and at(21)[0]["witness"] == at(20)[0]["witness"], "back to an anchor, then a whole turn"),
+        ([e["kind"] for e in at(25)] == ["move"] and at(25)[0]["camera"] == "30,26,64", "the refused look's tick still applied its key"),
+    ]
+    bad = [why for ok, why in checks if not ok]
+    if bad:
+        raise Red("script S did not register: " + "; ".join(bad))
+    records, rbad = RL.read(logs[0])
+    runs, lbad = RLG.read(logs[1])
+    got = sorted((r["reason_code"], r["attribution"]) for r in records)
+    if rbad or lbad or got != [("SIMTICK-COUNTS", "input.look"), ("SIMTICK-MULTIPLIER", "input.sensitivity"), ("SIMTICK-MULTIPLIER", "input.sensitivity")] \
+            or len(runs) != 1 or (runs[0]["operation"], runs[0]["surface"], runs[0]["exit_code"], runs[0]["refusals"]) != ("livesession", "none", 0, 3):
+        raise Red("script S's refusals are not one record each, or the run is not one ledger line on surface none: %s" % got)
+    return ("script S on the tick run, windowless: %d inputs in 28 ticks became %d commands and exactly the re-derived "
+            "outcomes — %d looks, %d moves (%d blocked), %d edits; the look applied once and first in its tick; the tie at "
+            "45000 east and 44999 north; a quarter turn, the strafes, Space and a class key at free headings; a look back "
+            "to an anchor and a whole turn; the multiplier refused below 1 and above 64 and the over-bound counts refused "
+            "(%d refusal-log records, no event), the unbound key ignored — saved and verified, final %s, tick count %d, "
+            "sensitivity %d,%d" % (counts["inputs"], counts["commands"], counts["looks"], counts["moves"], counts["blocked"], counts["edits"],
+                                   counts["refused"], fin["camera"], fin["ticks"], fin["sensitivity"][0], fin["sensitivity"][1]))
+
+
+def _st_edit_event(text, k, fn):
+    """Edit saved event k's line with fn(line) -> line and reseal; the head is left as stored."""
+    lines = text.split("\n")
+    items = [i for i, ln in enumerate(lines) if ln.startswith('   {"kind": ')]
+    new = fn(lines[items[k]])
+    if new == lines[items[k]]:
+        raise Red("the forgery's strings are not where the saved file keeps them")
+    lines[items[k]] = new
+    return _ls_reseal("\n".join(lines))
+
+
+def simtick_replay():
+    """Replay produces the same state and frame witnesses, three ways: every frame witness of S's saved session is the
+    kernel executable's at that camera (the bearing reference at a free heading) and the head is the twin's fold; the
+    workshop's sessionwalk verifies the file; the same events authored in the workshop reach the same head. One changed
+    delta, input or camera token, and a tick run backwards, are each refused by both verifiers — and so is a look moved
+    consistently to a neighbouring heading with the same index frame, because the head covers the token."""
+    import livesession as LS
+    _st_need()
+    logs = _ls_logs("simtick-replay")
+    _cp, path, _raw = _st_script_s(logs, "replay")
+    text = read(path).decode("utf-8")
+    d = LS.check_saved(read(path), ROOT)["data"]
+    cache = {}
+    st, _t, _c, _e = _st_twin(SIMTICK_SCRIPT, _st_start(), cache)
+    if [e["witness"] for e in d["log"]] != [e["witness"] for e in st["log"]] or d["head"] != st["head"]:
+        k = next((i for i, (a, b) in enumerate(zip(d["log"], st["log"])) if a["witness"] != b["witness"]), None)
+        raise Red("the saved session's witnesses are not the kernel executable's (first at event %s), or its head is not the twin's fold" % k)
+    free = sum(1 for e in d["log"] if e["kind"] != "edit" and LS.free_heading(e["camera"]))
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+    if code != 0 or ("SESSIONWALK verify OK head %s" % d["head"][:12]) not in out:
+        raise Red("the workshop does not verify script S's saved session: " + (err.strip() or out.strip()))
+    # the same events authored in the workshop, outside time
+    sp = os.path.join(SW, "simtick-authored.json")
+    code, _o, err = run(SESSIONWALK_EXE, ["new", "--level", os.path.join(ORACLE, "levels", "witness.lvl"), "--tiles", os.path.join(ORACLE, "tiles", "identity.tiles"),
+                                          "--camera", ST_CAMERA, "--out", sp])
+    for e in d["log"] if code == 0 else []:
+        verb, flag, param = {"move": ("move", "--command", e.get("command")), "edit": ("edit", "--edit", e.get("spec")),
+                             "look": ("look", "--delta", str(e.get("delta")))}[e["kind"]]
+        code, _o, err = run(SESSIONWALK_EXE, [verb, "--session", sp, flag, param])
+        if code != 0:
+            break
+    if code != 0:
+        raise Red("the workshop could not author script S's events: " + err.strip())
+    authored = _sw_stored(sp)
+    if authored["head"] != d["head"] or authored["final_camera"] != d["final_camera"] or "ticks" in authored or any("tick" in e for e in authored["log"]):
+        raise Red("the same events authored in the workshop do not reach the saved session's head, or carry ticks")
+    # one changed thing, resealed, the stored head left alone: both verifiers refuse
+    k_look = next(i for i, e in enumerate(d["log"]) if e["kind"] == "look" and e["tick"] == 7)
+    k_move = next(i for i, e in enumerate(d["log"]) if e["kind"] == "move" and e["tick"] == 8)
+    cases = [
+        ("a changed delta", _st_edit_event(text, k_look, lambda ln: ln.replace('"delta": -1,', '"delta": -2,')), "LIVESESSION-CORRUPT", "TICK-FORM"),
+        ("a changed input", _st_edit_event(text, k_look, lambda ln: ln.replace('"counts": -1,', '"counts": -2,')), "LIVESESSION-CORRUPT", "TICK-FORM"),
+        ("a changed camera token on a look", _st_edit_event(text, k_look, lambda ln: ln.replace('"camera": "30,28,44999"', '"camera": "30,28,44998"')), "LIVESESSION-CORRUPT", "CHAIN-BROKEN"),
+        ("a changed camera token on a move", _st_edit_event(text, k_move, lambda ln: ln.replace('"camera": "29,28,44999"', '"camera": "29,28,44998"')), "LIVESESSION-TAMPERED", "CHAIN-BROKEN"),
+        ("a tick run backwards", _st_edit_event(text, k_move, lambda ln: ln.replace('"tick": 8}', '"tick": 6}')), "LIVESESSION-CORRUPT", "TICK-FORM"),
+        ("an untimed look given inputs away", _st_edit_event(text, k_look, lambda ln: ln.replace(', "tick": 7,', ',')), "LIVESESSION-CORRUPT", "TICK-FORM"),
+    ]
+    for i, (why, body, shell_code, ws_code) in enumerate(cases):
+        p = _ls_write("simtick-case%d" % i, body)
+        cp, child, _r = _st_run("0:ESC", logs, "replay-case", ["--resume", p])
+        if cp.returncode != 2 or shell_code not in cp.stderr or child is not None:
+            raise Red("%s was not refused by the shell with %s: %s" % (why, shell_code, (cp.stderr.strip() or cp.stdout.strip())[-200:]))
+        code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p])
+        if code != 2 or ws_code not in err:
+            raise Red("%s was not refused by the workshop with %s: %s" % (why, ws_code, err.strip()[-200:]))
+    # the head covers the token: two fine looks, one id apart, whose index frame the reference shows to be the same
+    lv, tl = read(os.path.join(ORACLE, "levels", "witness.lvl")), read(os.path.join(ORACLE, "tiles", "identity.tiles"))
+    pair = next(((h, h - 1) for h in range(100, 60, -1) if _st_frame(lv, tl, 28, 28, h, cache) == _st_frame(lv, tl, 28, 28, h - 1, cache)), None)
+    if pair is None:
+        raise Red("no two neighbouring headings at 28,28 share an index frame: the row has nothing to show (precondition)")
+    saved = {}
+    for h in pair:
+        cp, p, _r = _st_run("0:step,%d:m+%d,%d:ESC" % (ST_TICK_US, h, 2 * ST_TICK_US), logs, "replay-pair", ["--camera", ST_CAMERA])
+        if cp.returncode != 0 or p is None:
+            raise Red("a single fine look to %d did not save: %s" % (h, cp.stderr.strip()[-200:]))
+        saved[h] = read(p).decode("utf-8")
+    da, db = (json.loads(saved[h])["data"] for h in pair)
+    if da["log"][0]["witness"] != db["log"][0]["witness"] or da["head"] == db["head"]:
+        raise Red("two looks to neighbouring headings with one index frame fold to one head, or their frames differ")
+    a, b = pair
+    moved = _st_edit_event(saved[a], 0, lambda ln: ln.replace('"delta": %d,' % a, '"delta": %d,' % b).replace('"camera": "28,28,%d"' % a, '"camera": "28,28,%d"' % b)
+                           .replace('"counts": %d,' % a, '"counts": %d,' % b))
+    moved = _ls_reseal(moved.replace('"final_camera": "28,28,%d"' % a, '"final_camera": "28,28,%d"' % b))
+    p = _ls_write("simtick-moved", moved)
+    cp, child, _r = _st_run("0:ESC", logs, "replay-case", ["--resume", p])
+    code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p])
+    if cp.returncode != 2 or "LIVESESSION-CORRUPT" not in cp.stderr or "not the fold" not in cp.stderr or child is not None or code != 2 or "CHAIN-BROKEN" not in err:
+        raise Red("a look moved consistently to a neighbouring heading with the same index frame was accepted: the head does not cover the token")
+    return ("replay reproduces the state and the frame witnesses three ways: all %d of script S's saved events carry the "
+            "kernel executable's frame at their camera (%d at free headings, the bearing reference's) and the twin's fold "
+            "is the saved head %s…; the workshop's sessionwalk verifies the file; the same events authored in the workshop "
+            "reach the same head without ticks. A changed delta, input or camera token, a tick run backwards and a look "
+            "stripped of its tick are each refused by both verifiers; and a look moved consistently from %d to %d — one "
+            "index frame, the reference shows — is refused too: the head covers the token"
+            % (len(d["log"]), free, d["head"][:12], a, b))
+
+
+def _st_data(path):
+    raw = read(path)
+    return raw[:raw.index(b'\n "live": ')]
+
+
+def simtick_equivalence():
+    """The tick is the unit: script S with every input moved inside its own tick and every tick's reports split or
+    merged to the same sum saves byte-identical data; the same commands at later ticks save the same events, witnesses
+    and head, differing only in their tick fields and the tick count."""
+    _st_need()
+    logs = _ls_logs("simtick-equivalence")
+    _cp, path, _raw = _st_script_s(logs, "equiv")
+    # moved: per tick, the non-mouse inputs keep their order but take new times; the reports are merged into one sum
+    # (split in two where one report could not hold it) and placed last, a microsecond before the next tick
+    moved = []
+    ticks = sorted({t for t, _o, _w in SIMTICK_SCRIPT})
+    for t in ticks:
+        mine = [w for tt, _o, w in SIMTICK_SCRIPT if tt == t]
+        acts = [w for w in mine if not (w[0] == "m" and w[1] in "+-")]
+        total = sum(int(w[1:]) for w in mine if w[0] == "m" and w[1] in "+-")
+        for i, w in enumerate(acts):
+            moved.append((t, 100 + 7 * i, w))
+        reports = [w for w in mine if w[0] == "m" and w[1] in "+-"]
+        if reports:
+            parts = [total] if abs(total) <= ST_COUNTS_MAX else [ST_COUNTS_MAX, total - ST_COUNTS_MAX]
+            if abs(total) <= ST_COUNTS_MAX and abs(total) > 1:
+                parts = [total - total // 2, total // 2]      # split to the same sum
+            for i, v in enumerate(parts):
+                moved.append((t, ST_TICK_US - len(parts) + i, "m%+d" % v))
+    if _st_text(moved) == _st_text(SIMTICK_SCRIPT) or sorted(set(t for t, _o, _w in moved)) != ticks:
+        raise Red("the moved script is the script itself, or left its ticks")
+    cp, p_moved, _r = _st_run(_st_text(moved), logs, "equiv-moved", ["--camera", ST_CAMERA])
+    if cp.returncode != 0 or p_moved is None:
+        raise Red("the moved script did not save: " + cp.stderr.strip()[-200:])
+    if _st_data(p_moved) != _st_data(path):
+        raise Red("moving inputs inside their ticks, or splitting and merging a tick's reports, changed the saved data")
+    # later: every tick three times as late, plus 1000
+    later = [(1000 + 3 * t, off, w) for t, off, w in SIMTICK_SCRIPT]
+    cp, p_later, _r = _st_run(_st_text(later), logs, "equiv-later", ["--camera", ST_CAMERA])
+    if cp.returncode != 0 or p_later is None:
+        raise Red("the later script did not save: " + cp.stderr.strip()[-200:])
+    a, b = (json.loads(read(p_).decode("utf-8"))["data"] for p_ in (path, p_later))
+    untimed = lambda dd: [{k: v for k, v in e.items() if k != "tick"} for e in dd["log"]]
+    if (untimed(a) != untimed(b) or a["head"] != b["head"] or a["final_camera"] != b["final_camera"] or a["final_content"] != b["final_content"]
+            or [e["tick"] for e in b["log"]] != [1000 + 3 * e["tick"] for e in a["log"]] or b["ticks"]["count"] != 1000 + 3 * 27 + 1
+            or {k: v for k, v in b["ticks"].items() if k != "count"} != {k: v for k, v in a["ticks"].items() if k != "count"}):
+        raise Red("the same commands at later ticks did not save the same events, witnesses and head with only the tick fields different")
+    for p_ in (p_moved, p_later):
+        code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p_])
+        if code != 0:
+            raise Red("the workshop does not verify %s: %s" % (p_, err.strip()))
+    return ("the tick is the unit: script S with every input moved inside its own tick and every tick's reports split or "
+            "merged to the same sum saves byte-identical data (%d bytes); the same commands at ticks 1000 + 3t save the same "
+            "%d events, witnesses and head %s…, differing only in their tick fields and the tick count (%d, not %d) — the "
+            "tick index is recorded, and no world state or head depends on it"
+            % (len(_st_data(path)), len(a["log"]), a["head"][:12], b["ticks"]["count"], a["ticks"]["count"]))
+
+
+def simtick_certify():
+    """A session is saved reference-certified or not saved: script S's save recomputes every free-heading frame with the
+    reference and records how many; a shell built with a planted, self-consistent defect in the fast path renders,
+    journals and would replay its own wrong frames, and is refused at the save — LIVESESSION-UNCERTIFIED naming the
+    first free-heading event, no session file, exit 2, one refusal-log record; under the same planted shell a walk that
+    never leaves the four facings saves, zero frames recomputed."""
+    import livesession as LS
+    import refusallog as RL
+    import runledger as RLG
+    _st_need()
+    logs = _ls_logs("simtick-certify")
+    cp, path, _raw = _st_script_s(logs, "certify")
+    doc = LS.check_saved(read(path), ROOT)
+    d, live = doc["data"], doc["live"]
+    free = [i for i, e in enumerate(d["log"]) if e["kind"] != "edit" and LS.free_heading(e["camera"])]
+    if (live.get("certified") != {"reference": "kernel/bearing.rs", "frames": len(free)} or len(free) != SIMTICK_FINAL["free_frames"]
+            or live.get("bearing") != LS.bearing_id(ROOT)
+            or ("certified: %d free-heading frames recomputed by the reference kernel, all equal" % len(free)) not in cp.stdout):
+        raise Red("script S's save did not recompute its %d free-heading frames with the reference and record it: %s" % (len(free), live.get("certified")))
+    bf = read(os.path.join(KERNEL, "bearingfast.rs")).decode("utf-8")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    site = '#[path = "../kernel/bearingfast.rs"]'
+    if bf.count(SIMTICK_PLANT[0]) != 1 or main_src.count(site) != 1:
+        raise Red("the plant's site is not unique in kernel/bearingfast.rs, or the shell does not include it where expected")
+    planted = compile_rs(SHELL, "main.rs", "shell-simtick-planted", {
+        "main.rs": main_src.replace(site, '#[path = "bearingfast_planted.rs"]'),
+        "bearingfast_planted.rs": bf.replace(SIMTICK_PLANT[0], SIMTICK_PLANT[1])})
+    logs2 = _ls_logs("simtick-certify-planted")
+    before = set(os.listdir(GATE_SESSIONS))
+    cp, p, _r = _st_run(_st_text(SIMTICK_SCRIPT), logs2, "certify-planted", ["--camera", ST_CAMERA], planted)
+    m = re.search(r"LIVESESSION-UNCERTIFIED: event (\d+): the reference's frame", cp.stderr)
+    made = sorted(set(os.listdir(GATE_SESSIONS)) - before)
+    if cp.returncode != 2 or p is not None or m is None or int(m.group(1)) != free[0] or "saved and verified" in cp.stdout:
+        raise Red("a shell with a defective fast path was not refused at the save naming the first free-heading event: %s"
+                  % (cp.stderr.strip() or cp.stdout.strip())[-300:])
+    if len(made) != 1 or sorted(os.listdir(os.path.join(GATE_SESSIONS, made[0]))) != ["journal.vsj"]:
+        raise Red("the refused run left something other than its journal: %s" % made)
+    records, rbad = RL.read(logs2[0])
+    runs, lbad = RLG.read(logs2[1])
+    cert = [r for r in records if r["reason_code"] == "LIVESESSION-UNCERTIFIED"]
+    if rbad or lbad or len(cert) != 1 or cert[0]["attribution"] != "session.certify" or len(runs) != 1 or runs[0]["exit_code"] != 2:
+        raise Red("the uncertified save is not one refusal-log record and one ledger line ending 2")
+    # the planted shell's witnesses really are wrong, and self-consistently so: its journal's first look is not the reference's
+    recs, _torn = _ls_journal(os.path.join(GATE_SESSIONS, made[0], "journal.vsj"))
+    if recs[1 + free[0]]["witness"] == d["log"][free[0]]["witness"] or len(recs) != 1 + len(d["log"]):
+        raise Red("the planted shell did not journal a wrong frame at the first free-heading event: the plant did not bite")
+    cp, p, _r = _st_run("0:W,15625:RIGHT,31250:W,46875:SPACE,62500:ESC", logs2, "certify-anchors", ["--camera", ST_CAMERA], planted)
+    if cp.returncode != 0 or p is None or LS.check_saved(read(p), ROOT)["live"]["certified"]["frames"] != 0 or "certified:" in cp.stdout:
+        raise Red("a walk that never leaves the four facings did not save with zero frames recomputed under the planted shell")
+    code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p])
+    if code != 0:
+        raise Red("the workshop does not verify the anchors-only tick session: " + err.strip())
+    return ("a session is saved reference-certified or not saved: script S's save recomputed its %d free-heading frames "
+            "with kernel/bearing.rs across threads, all equal, and recorded it; a shell whose fast path drops the wall's "
+            "bottom edge — wrong the same way live and on replay — was refused at the save (LIVESESSION-UNCERTIFIED, event "
+            "%d, the first at a free heading), wrote no session file, left only its journal, ended 2 with one refusal-log "
+            "record; under that same shell a walk on the four facings saved with zero frames to recompute"
+            % (len(free), free[0]))
+
+
+def simtick_resume():
+    """A tick session resumes as itself: S's saved session continues with its heading, its tick count and its
+    sensitivity (the first new look uses the saved multiplier, the new ticks follow the parent's 28), re-derived by the
+    twin from the parent's state; a crashed tick run's journal recovers its look events, its tick count and its last
+    look's sensitivity; a session left at a free heading is refused by the window loop (LIVEINPUT-HEADING), and one left
+    at an anchor is continued by it, its untimed events beside the timed ones."""
+    import livesession as LS
+    _st_need()
+    logs = _ls_logs("simtick-resume")
+    _cp, parent, _raw = _st_script_s(logs, "resume")
+    cache = {}
+    st0, _t, _c, _e = _st_twin(SIMTICK_SCRIPT, _st_start(), cache)
+    st1, trace, _c1, _e1 = _st_twin(SIMTICK_RESUME, st0, cache)
+    cp, child, raw = _st_run(_st_text(SIMTICK_RESUME), logs, "resume-child", ["--resume", parent])
+    if cp.returncode != 0 or child is None or raw["trace"] != trace or raw["first_tick"] != 28:
+        raise Red("the continuation is not the twin's from the parent's state: %s" % ((cp.stderr.strip() or str(raw and raw["trace"]))[-300:]))
+    doc = LS.check_saved(read(child), ROOT)
+    d, lin = doc["data"], doc["live"]["lineage"]
+    pd = json.loads(read(parent).decode("utf-8"))["data"]
+    new = d["log"][len(pd["log"]):]
+    if (d["log"][:len(pd["log"])] != pd["log"] or d["head"] != st1["head"] or [e["tick"] for e in new] != [28, 29, 31]
+            or new[0]["input"] != {"counts": -1, "multiplier": 64, "step": 1} or new[0]["camera"] != "30,26,N"
+            or new[2]["input"] != {"counts": 2, "multiplier": 63, "step": 1} or d["final_camera"] != "30,26,126"
+            or d["ticks"] != {"hz": ST_HZ, "count": 33, "multiplier": 63, "step": 1}
+            or (lin["source"], lin["parent_events"], lin["parent_head"]) != ("session", len(pd["log"]), pd["head"])):
+        raise Red("the continuation did not keep the parent's heading, tick count and sensitivity: %s %s" % (new, d["ticks"]))
+    code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", child])
+    if code != 0:
+        raise Red("the workshop does not verify the continuation: " + err.strip())
+    # the window loop: a free heading refuses; an anchor continues
+    cp, p, _r = _la_run(["--resume", child, "--keys", "W,ESC"], logs)
+    if cp.returncode != 2 or "LIVEINPUT-HEADING" not in cp.stderr or p is not None:
+        raise Red("the window loop did not refuse a session left at a free heading: " + (cp.stderr.strip() or cp.stdout.strip())[-200:])
+    cp, anchored, _r = _st_run("0:m-2,15625:ESC", logs, "resume-anchor", ["--resume", child])   # -2 x 63 x 1: back to north
+    if cp.returncode != 0 or anchored is None or json.loads(read(anchored).decode("utf-8"))["data"]["final_camera"] != "30,26,N":
+        raise Red("the session did not return to an anchor: " + cp.stderr.strip()[-200:])
+    cp, cont, _r = _la_run(["--resume", anchored, "--keys", "LEFT,W,ESC"], logs)
+    if cp.returncode != 0 or cont is None:
+        raise Red("the window loop did not continue a tick session left at an anchor: " + (cp.stderr.strip() or cp.stdout.strip())[-200:])
+    cd = LS.check_saved(read(cont), ROOT)["data"]
+    tail = cd["log"][-2:]
+    if ([e.get("tick") for e in tail] != [None, None] or [e["kind"] for e in tail] != ["move", "move"] or tail[0]["camera"] != "30,26,W"
+            or cd["ticks"] != {"hz": ST_HZ, "count": 35, "multiplier": 63, "step": 1}):
+        raise Red("the window loop's continuation is not two untimed moves beside the timed events, the tick block kept: %s" % tail)
+    code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", cont])
+    if code != 0:
+        raise Red("the workshop does not verify the mixed session: " + err.strip())
+    # a crashed tick run
+    cp, p, _r = _st_run(_st_text(SIMTICK_SCRIPT), logs, "resume-crash", ["--camera", ST_CAMERA, "--plant", "crash"])
+    m = re.search(r"LIVESESSION-PLANT-CRASH: .*\((.+journal\.vsj)\)", cp.stderr)
+    if cp.returncode != 70 or p is not None or m is None:
+        raise Red("PLANT crash: the tick run did not die after journaling")
+    records, torn = _ls_journal(m.group(1))
+    if not torn or len(records) != 6 or [r["kind"] for r in records[1:]] != ["look", "look", "look", "look", "move"] \
+            or records[4].get("input") != {"counts": 1, "multiplier": 1, "step": 88} or records[5].get("tick") != 4:
+        raise Red("the crashed tick run's journal is not a header and five timed records with a torn tail")
+    cp, rec, raw = _st_run("0:W,15625:m+1,31250:ESC", logs, "resume-recovered", ["--resume", m.group(1)])
+    if cp.returncode != 0 or rec is None or "a torn final journal record was dropped" not in cp.stdout:
+        raise Red("the tick journal did not recover into a saved session: " + (cp.stderr.strip() or cp.stdout.strip())[-200:])
+    rd = LS.check_saved(read(rec), ROOT)
+    tail = rd["data"]["log"][5:]
+    if (rd["data"]["log"][:5] != pd["log"][:5] or [e.get("tick") for e in tail] != [5, 6] or tail[0]["camera"] != "30,28,45056"
+            or tail[1]["input"] != {"counts": 1, "multiplier": 1, "step": 88} or rd["data"]["ticks"]["count"] != 8
+            or (rd["live"]["lineage"]["source"], rd["live"]["lineage"]["parent_events"], rd["live"]["lineage"]["torn"]) != ("journal", 5, 1)):
+        raise Red("the recovered tick session is not the journal's five events continued at tick 5 with its last look's sensitivity: %s" % tail)
+    code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", rec])
+    if code != 0:
+        raise Red("the workshop does not verify the recovered tick session: " + err.strip())
+    return ("a tick session resumes as itself: script S's saved session continued at tick 28 with its multiplier of 64 — "
+            "the twin's own continuation, head %s… — then lowered and used; left at 126 (a free heading) the window loop "
+            "refuses it (LIVEINPUT-HEADING), and looked back to north the window loop continues it, two untimed moves "
+            "beside the timed events, the tick block kept; a tick run that died after five journaled events recovered "
+            "its four looks and a move from the journal and went on at tick 5 with its last look's sensitivity; the "
+            "workshop verifies every one" % st1["head"][:12])
+
+
+def simtick_fence():
+    """The rule proof stays windowless and pure: shell/simtick.rs has no clock, file, static, unsafe, float or thread and
+    touches no session; shell/win32.rs reads no mouse and still begins with LATENCY-0's instrument; the live loop reads
+    no clock and binds no look; only shell/heading.rs reaches the bearing kernels; the look is folded over its token;
+    the kernel's renderers and shell/present.rs are byte-for-byte what they were."""
+    code_of_src = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
+    st = code_of_src(read(os.path.join(SHELL, "simtick.rs")).decode("utf-8"))
+    for tok in ("static", "unsafe", "f32", "f64", "fs::", "File", "Instant", "SystemTime", "std::time", "thread", "Mutex", "Cell<", "env::",
+                "LiveSession", "crate::", "extern"):
+        if tok in st:
+            raise Red("shell/simtick.rs contains %r: the rules are pure integer functions of their arguments" % tok)
+    if re.search(r"\bas f|\d\.\d", st):
+        raise Red("shell/simtick.rs holds a float")
+    for k_, v_ in (("TICK_HZ: u64", "64"), ("TICK_US: u64", "15_625"), ("YAW_MOD: i64", "360_000"), ("QUARTER: i64", "90_000"),
+                   ("HALF_SECTOR: i64", "45_000"), ("STEP_COARSE: i64", "88"), ("STEP_FINE: i64", "1"), ("MULT_MIN: i64", "1"),
+                   ("MULT_MAX: i64", "64"), ("COUNTS_MAX: i64", "2_147_483_647")):
+        if "pub const %s = %s;" % (k_, v_) not in st:
+            raise Red("shell/simtick.rs does not hold the registered constant %s = %s" % (k_, v_))
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    for tok in ("WM_INPUT", "WM_MOUSEMOVE", "RegisterRawInputDevices", "GetRawInputData", "GetCursorPos", "SetCursorPos", "simtick", "tickrun",
+                "heading::", "push_look", "bearing"):
+        if tok in tail:
+            raise Red("shell/win32.rs contains %r: no window reads a mouse or reaches the tick rules before MOUSE-LOOK-0" % tok)
+    li = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
+    runf = src_span(li, "pub fn run_with<S: ExactSurface + Keys>(", "\npub fn summary(")
+    guard = runf.find("if session.free_heading() {")
+    if (guard < 0 or not guard < runf.find("s.set_call(CALL);") < runf.find("    loop {") or "LIVEINPUT-HEADING" not in runf
+            or any(t in li for t in ("push_look", "simtick", "tickrun", "Instant", "SystemTime", "qpc", "at_tick"))):
+        raise Red("the live loop does not refuse a free heading before it renders, or it binds a look, a tick or a clock")
+    tr = code_of_src(read(os.path.join(SHELL, "tickrun.rs")).decode("utf-8"))
+    for tok in ("Instant", "SystemTime", "std::time", "fs::", "File", "unsafe", "Surface", "present", "thread"):
+        if tok in tr or re.search(r"\bstatic\s+(mut\s+)?[A-Z_]+\s*:", tr):
+            raise Red("shell/tickrun.rs contains %r or a static: the tick run has no clock, file, surface, thread or state of its own" % tok)
+    ap = tr[tr.index("fn apply("):tr.index("pub fn run(")]
+    order = [ap.find(t) for t in ("session.at_tick(Some(cmd.tick));", "if cmd.over {", "session.push_look(d, Some((cmd.counts, sens.multiplier, sens.step)))",
+                                  "for act in cmd.acts.iter() {", "crate::liveauthor::bind(simtick::rebind(vk))", "session.at_tick(None);")]
+    if -1 in order or order != sorted(order) or ap.count("push_look(") != 1:
+        raise Red("the tick run does not apply a command as the look once and first, then the other inputs in arrival order")
+    for d_ in (SHELL, WORKSHOP):
+        for fn in sorted(os.listdir(d_)):
+            if not fn.endswith(".rs"):
+                continue
+            src = code_of_src(read(os.path.join(d_, fn)).decode("utf-8"))
+            if d_ == WORKSHOP and "bearingfast" in src:
+                raise Red("workshop/%s reaches the fast bearing path: the workshop verifies with the reference alone" % fn)
+            if d_ == SHELL and fn != "heading.rs" and re.search(r"\bbearingfast::|\bbearing::|\bvocab::", src):
+                raise Red("shell/%s reaches the bearing kernels: only shell/heading.rs does" % fn)
+    if code_of_src(read(os.path.join(SHELL, "main.rs")).decode("utf-8")).count("mod bearingfast;") != 1:
+        raise Red("shell/main.rs does not declare the fast bearing path exactly once")
+    hd = code_of_src(read(os.path.join(SHELL, "heading.rs")).decode("utf-8"))
+    ref = src_span(hd, "pub fn reference(", "\n}\n")
+    wit = src_span(hd, "pub fn witness(", "\n}\n")
+    if ("bearingfast" in ref or "sc.strips(&mut strips);" not in ref or "sc.frame(&strips, &mut frame);" not in ref
+            or "crate::present::compose_frame(level_bytes, tiles_bytes, cam)" not in wit or "bearingfast::picture(&sc, PROD)" not in wit
+            or "pub const PROD: bearingfast::Tread = bearingfast::Tread { blocked: false, threads: bearingfast::PROD_THREADS };" not in hd
+            or any(t in hd for t in ("fs::", "File", "Instant", "SystemTime", "unsafe"))):
+        raise Red("shell/heading.rs is not the facing kernel at an anchor, tread ca elsewhere, and the reference's own traversal and frame for the recomputation")
+    pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
+    sect = pb[pb.index("// ================================================================== SIM-TICK-0 (appended)"):]
+    pl = src_span(sect, "pub fn push_look(", "\n    }\n")
+    order = [pl.find(t) for t in ("crate::simtick::turn(self.yaw, delta)", "facing: crate::simtick::cardinal(yaw)", "crate::heading::witness(&self.level, &self.tiles, cam, yaw)?",
+                                  "fold(&self.head, b'K', &look_fold(&token(cam, yaw), &witness))", "self.log.push(", "self.handed();")]
+    if -1 in order or order != sorted(order) or 'format!("{}:{}", token, witness)' not in src_span(sect, "pub fn look_fold(", "\n}\n") \
+            or any(t in sect for t in ("fs::", "File::", "Instant")):
+        raise Red("the session's look is not turn, nearest cardinal, witness, fold over the token and the witness, append, hand")
+    ls = read(os.path.join(SHELL, "livesession.rs")).decode("utf-8")
+    fin = src_span(ls, "fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {", "\n}\n")
+    if not 0 <= fin.find("certify(&session)") < fin.find("write_saved(&dst, &text, &plant)") or "Err(r) => return refuse_run(r, surface)," not in fin \
+            or "crate::heading::certify(batch, threads)" not in src_span(ls, "pub fn certify(", "\n}\n"):
+        raise Red("the save does not recompute the free-heading frames with the reference before anything is written")
+    pins = {"bearingfast.rs": BEARINGFAST_RS_SHA256, "vocab.rs": VOCAB_RS_SHA256, "mantle.rs": MANTLE_RS_SHA256, "fast.rs": FAST_RS_SHA256}
+    pins.update(SIMTICK_KERNEL_PINS)
+    for fn, want in pins.items():
+        if sha256(read(os.path.join(KERNEL, fn)).replace(b"\r\n", b"\n")) != want:
+            raise Red("kernel/%s changed: SIM-TICK-0 touches no renderer" % fn)
+    src = read(os.path.join(KERNEL, "bearing.rs")).decode("utf-8")
+    core = re.sub(r"\bpub ", "", src[src.index(BEARING_CORE_MARK):src.index("/// The two witnesses' material")]).rstrip() + "\n"
+    if sha256(core.encode("utf-8")) != BEARING_CORE_SHA256 or sha256(read(os.path.join(SHELL, "present.rs")).replace(b"\r\n", b"\n")) != PRESENT_RS_SHA256:
+        raise Red("the reference's core or shell/present.rs changed")
+    if SHELL_EXE is not None:
+        cp = subprocess.run([SHELL_EXE, "simtick-selftest", "--script", "15625:W,0:W"], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode != 2 or "SHELL-USAGE" not in cp.stderr or "earlier than the input before it" not in cp.stderr:
+            raise Red("a script whose time runs backwards was not refused before anything ran")
+    return ("the rule proof stays windowless and pure: shell/simtick.rs holds the registered constants and no clock, file, "
+            "static, unsafe, float or thread; the tick run applies a command as the look once and first, then the other "
+            "inputs in order, with no clock or surface; shell/win32.rs reads no mouse and still begins with LATENCY-0's "
+            "instrument; the live loop refuses a free heading before it renders and binds no look; only shell/heading.rs "
+            "reaches the bearing kernels (the facing kernel at an anchor, tread ca elsewhere, the reference's own traversal "
+            "and frame to recompute) and the workshop never reaches the fast path; the look folds over its token; the save "
+            "certifies before it writes; mantle.rs, fast.rs, formats.rs, hud.rs, vocab.rs, bearingfast.rs, the "
+            "reference's core and shell/present.rs are what they were; a script whose time runs backwards is refused")
+
 
 # ------------------------------------------------------------------ main
 def main() -> int:
@@ -8239,6 +9071,14 @@ def main() -> int:
     row("bearingfast-checked", bearingfast_checked)
     row("bearingfast-bounds", bearingfast_bounds)
     row("bearingfast-fence", bearingfast_fence)
+    row("simtick-preregistered", simtick_preregistered)
+    row("simtick-law", simtick_law)
+    row("simtick-script", simtick_script)
+    row("simtick-replay", simtick_replay)
+    row("simtick-equivalence", simtick_equivalence)
+    row("simtick-certify", simtick_certify)
+    row("simtick-resume", simtick_resume)
+    row("simtick-fence", simtick_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

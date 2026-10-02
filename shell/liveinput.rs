@@ -32,6 +32,9 @@
 // bound like a fresh press (walked), and every later repeat in that composition is coalesced: counted and traced, never
 // an event. A fresh press is never coalesced; a repeat of a key outside the set is ignored as before. The admitted flag
 // lives inside one composition: no clock, no key-up, no key state carried between compositions.
+//
+// SIM-TICK-0: this loop shows the four facings. A session left at a free heading (by a tick run's look) is refused
+// before anything is rendered, LIVEINPUT-HEADING, until MOUSE-LOOK-0 gives the loop the bearing picture.
 
 use crate::formats::{facing_letter, Camera};
 use crate::latency1r::Surface;
@@ -328,6 +331,11 @@ pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, su
         return Err(refusal("window.geometry", vec![("geometry", V::S(format!("{:?}", g)))],
                            format!("LIVEINPUT-GEOMETRY: client {}x{} at ({},{}), screen logical {}x{} physical {}x{}; the target is {}x{} at (0,0) on a {}x{} screen",
                                    g[0], g[1], g[2], g[3], g[4], g[5], g[6], g[7], W, H, W, H)));
+    }
+    // SIM-TICK-0: this loop renders the four facings; a session left at a free heading is not shown as one of them
+    if session.free_heading() {
+        return Err(refusal("render.heading", vec![("camera", V::S(session.token()))],
+                           format!("LIVEINPUT-HEADING: the session stands at {}, a free heading; the window loop shows the four facings only until MOUSE-LOOK-0", session.token())));
     }
     s.set_call(CALL);
     let mut live = Live { keys: 0, repeats: 0, unbound: 0, events: 0, moves: 0, blocked: 0, edits: 0, refused: 0, references: 0,

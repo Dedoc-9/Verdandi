@@ -3534,6 +3534,148 @@ camera list changes. `bearingfast-checked` goes red on any overflow. `bearingfas
 escapes `narrow`, or the fast path renders outside its envelope. `bearingfast-fence` goes red if the reference, mantle.rs
 or fast.rs changes, or a clock, a file or a live path enters.
 
+## SIM-TICK-0 — the mouse-look rules as integer law, windowless (preregistered and built; the gate not yet run on the host)
+
+**Why.** BEARING-FAST-0 gave a renderer fast enough to turn, and nothing yet says what a turn is. The owner's court
+of 2026-10-02 split the work in two and forbade combining it: SIM-TICK-0 locks the rules with no window, and
+MOUSE-LOOK-0 then puts a real mouse on them. The boundary is the owner's: raw input → tick command → SESSION-WALK →
+authority, with "no Win32 input, clock scheduling, or live window behavior" allowed to contaminate the rule proof. The
+same court ruled that the look is vocabulary on the one live editor (the saved session gains one event), that a free
+heading shows the picture alone for now, and that a saved session is certified by the reference renderer, in parallel,
+before it counts as saved, with no second, uncertified session state.
+
+**The rules (`dc1dddf2`), registered before the build.** They are integers end to end, in `shell/simtick.rs`, which
+holds no clock, file, static, float or thread.
+
+- **The tick.** 64 Hz, exactly 15,625 µs. An input stamped t microseconds after the run began belongs to tick
+  t div 15625. A time is an integer the caller hands over; this rung has no clock.
+- **One command per tick.** A tick's mouse reports are summed (signed horizontal counts) and applied once, as one look.
+  Then the tick's key presses and sensitivity actions apply, in arrival order. A tick whose counts sum to zero makes no
+  look, and an empty tick makes nothing. Only the sum decides: how the counts were split into reports, and when inside
+  the tick they arrived, cannot matter.
+- **The look.** delta = counts × multiplier × step. The multiplier is a whole number from 1 to 64, starting at 1. The
+  step is 88 ids (coarse) or 1 id (fine), starting coarse. The look uses the two in force when the tick began, so a
+  sensitivity action takes effect from the next tick. A tick whose counts leave ±(2³¹ − 1) has its look refused; its
+  keys still apply.
+- **The heading.** k′ = (k + delta) mod 360000, into [0, 360000).
+- **The nearest cardinal.** ((k + 45000) div 90000) mod 4: N, E, S, W, each owning 90,000 ids, the tie at an exact
+  45° boundary going clockwise. The owner's ruling said ±22.5° in its text and fixed the tie at the 45° boundaries;
+  the registration records the ±45° reading, to be corrected by a new registration if it is wrong.
+- **The binding.** LIVE-AUTHOR-0's, with A and D rebound to the strafes. W and Up step toward the nearest cardinal, S
+  and Down away from it, A and Q to the cardinal 90° left, D and E 90° right. Space and 1–5 edit as before; the faced
+  cell is the one ahead of the nearest cardinal. Left and Right stay quarter turns of the heading. W, A, S and D never
+  change the heading.
+
+**The session.** The one live session (`playback::LiveSession`) gains a heading and one event.
+
+- **The look event.** Its parameter is the integer delta and its witness is the frame digest at the new heading. The
+  facing is always the heading's nearest cardinal, so a step, a strafe and the faced cell mean what they meant. A
+  quarter turn turns the heading with the facing. A session's base camera stays one of the four facings.
+- **The frame.** At one of the four anchor headings it is the facing kernel's, as before, and the camera token keeps
+  its letter, so a walk that never looks saves the bytes it always saved. At any other heading it is the bearing
+  kernel's index frame at (x, z, k), and the token carries the id in decimal.
+- **The fold.** A look folds with tag K over its camera token and its witness together:
+  head′ = sha256(head : K : token : witness). A move and an edit fold as before.
+- **The stamp.** A tick run saves, beside each event it appended, the tick it was applied at, and beside each look its
+  inputs (counts, multiplier, step). The typed command sequence is the log grouped by tick. The session also saves its
+  tick count and final sensitivity. Raw counts are never the meaning of a look: the delta is the event. A tick is when,
+  not what: no world state depends on it, and the head does not cover it. Both verifiers check its form: the delta is
+  counts × multiplier × step, ticks never decrease, and a timed look is the first event of its tick.
+- **Certification at save.** Live, a frame at a free heading is rendered once, by BEARING-FAST-0's production tread
+  (`ca`), through `shell/heading.rs`, the only file of the shell that reaches the bearing kernels. At save, before
+  anything is written, every such frame is recomputed by the reference (`kernel/bearing.rs`: its traversal and its
+  index frame) across threads. One difference refuses the save with `LIVESESSION-UNCERTIFIED`, and no session file is
+  written. A crashed run's journal is what was flushed, not a saved session.
+- **The verifiers.** The workshop's `sessionwalk` learns the look event (`sessionwalk look --delta D`), the heading
+  token and the tick form, and renders with the reference alone. `verify/livesession.py`, the session sealer, learns
+  the look's fold. `shell playback` shows the four facings and refuses a session that holds a look.
+
+**The tick run.** `shell simtick-selftest --script …` is the rung's instrument: a script of raw inputs with their times
+(`T:m+N`, `T:KEY`, `T:mult+`, `T:mult-`, `T:step`) goes through the accumulator, one command per tick, into the same
+session, journal and seal the live editor uses. It has no surface, no loop and no present; a run is ledgered as
+`livesession` on surface `none`. The seal is now one function, `finish`, shared by the loop's run and the tick run.
+
+**What the gate holds (8 rows, 197 in all).**
+
+- `simtick-law`. The shell prints its laws and a Python twin re-derives them, line for line: the tick boundaries
+  (15,624 µs is tick 0, 15,625 µs is tick 1), the nearest cardinal of all 360,000 ids as one digest (each cardinal owns
+  exactly 90,000; 44999 is N and 45000 is E, and so on round), the quarter-turn law at every id, the turn's wrap, the
+  delta over a grid with its refusals, the sensitivity's ends, the rebinding. A build with the tie-break reversed, with
+  the tick one microsecond short or long, or with a coarse step of 87 prints different lines.
+- `simtick-script`. Script S, from 28,28,N on the witness level: 102 inputs in 28 ticks become 27 commands and 24
+  events (13 looks, 9 moves of which 2 are blocked, 2 edits), with 3 refusals and 1 unbound key, each outcome equal to
+  the twin's re-derivation from the script alone. It registers, among others: three reports summed in one tick; a
+  report at exactly 15,625 µs belonging to tick 1; a zero-sum tick; a key that arrived before the report in its tick and
+  still stepped toward the cardinal after the look; the tie at 45000 (east) and 44999 (north) reached in fine steps; a
+  quarter turn, the strafes, Space and a class key at free headings; a negative look through 0; a look back to an
+  anchor and a whole turn; the multiplier refused below 1 and above 64.
+- `simtick-replay`. Every frame witness of the saved session equals the kernel executable's at that camera (20 of them
+  at free headings, the bearing reference's), and the twin's fold is the saved head. The workshop verifies the file,
+  and the same events authored in the workshop reach the same head, without ticks. A changed delta, input or camera
+  token, a tick run backwards and a look stripped of its tick are each refused by both verifiers. So is a look moved
+  consistently from heading 100 to 99, which the reference shows to have one index frame.
+- `simtick-equivalence`. Script S with every input moved inside its own tick, and every tick's reports split or merged
+  to the same sum, saves byte-identical data. The same commands at ticks 1000 + 3t save the same events, witnesses and
+  head, and differ only in their tick fields and the tick count.
+- `simtick-certify`. Script S's save recomputes its 20 free-heading frames with the reference and records it. A shell
+  built with a planted defect in the fast path (the wall's bottom edge loses its ink, the same way live and on replay)
+  is refused at the save, naming event 0, writes no session file and ends 2. Under that same shell a walk on the four
+  facings saves, with zero frames to recompute.
+- `simtick-resume`. S's saved session continues at tick 28 with its multiplier of 64, equal to the twin's own
+  continuation. A session left at a free heading is refused by the window loop (`LIVEINPUT-HEADING`); looked back to
+  north, the window loop continues it, its untimed events beside the timed ones. A tick run that died after five
+  journaled events recovers its four looks and a move, and goes on at tick 5 with its last look's sensitivity.
+- `simtick-fence`. `simtick.rs` is pure and holds the registered constants; the tick run applies the look once and
+  first; `win32.rs` reads no mouse and still begins with LATENCY-0's instrument; the live loop binds no look and reads
+  no clock; only `heading.rs` reaches the bearing kernels, and the workshop never reaches the fast path; the save
+  certifies before it writes; `mantle.rs`, `fast.rs`, `formats.rs`, `hud.rs`, `vocab.rs`, `bearingfast.rs`, the
+  reference's core and `shell/present.rs` are unchanged.
+- `simtick-preregistered`. The entry's method phrases and its hash.
+
+**Found while building.**
+
+- **One index frame, two headings.** The first draft of the registration folded a look's witness alone, as a move's is
+  folded. The first development run showed two looks ten ids apart with the same index frame (28,28 at 176 and at 166):
+  the index frame holds material indices, and a turn of a hundredth of a degree in front of a near wall can leave every
+  one of them where it was. That fold could not tell the two headings apart. The registration was revised once, before
+  it left the build machine and before any gate row existed: a look now folds its camera token with its witness, and
+  the row that would catch the difference is registered (`simtick-replay`, headings 100 and 99). The entry's commit
+  message records the revision.
+- **Ten mutations, ten caught.** Each was applied to a scratch copy and the named rows run: the look dropped from a
+  command; the last report winning instead of the sum; the look folded without its token; certification skipped; the
+  tick form unchecked on load; the loop's free-heading guard removed; the workshop ignoring stored camera tokens; a
+  quarter turn leaving the heading; the workshop's tie-break reversed; resumed ticks restarting at zero. A first form
+  of the fifth mutation was ineffective (the error still propagated) and was repaired before it counted.
+- **Seven earlier fences re-pinned on purpose**, each with a comment at its pin: `allocreuse1-lock` (the move's witness
+  is taken through `heading.rs`, the same `compose_frame` at an anchor), `liveinput-fence` (the same, and the loop now
+  reads the heading to refuse a free one), `livesession-preregistered` (the renderer identity's five sources are read
+  inside their own list, now that the bearing identity has a second), `livesession-fence` (the seal is `finish`),
+  `liveauthor-fence` (its section is bounded at the next), `bearing-fence` (`heading.rs` and the workshop's verifier
+  use the reference; no window does) and `bearingfast-fence` (`heading.rs` reaches the fast path; no window does). No
+  behavioural row of LIVE-INPUT-0, LIVE-SESSION-0, LIVE-AUTHOR-0 or HOLD-WALK-0 moved.
+- **The window build was type-checked here, not run.** No Windows target is installed in the build container, so the
+  windowed shell was type-checked in a scratch copy with the platform switch flipped. It has not been linked or run;
+  the host build is the test.
+
+**Grade.** DECLARED: the tick, the command, the delta, the nearest cardinal (the ±45° reading), the binding, the fold,
+ticks as recorded and never authority, certification at save. ESTABLISHED (gate, in the build container): the eight
+rows above. MEASURED: nothing; this rung takes no number. NOT_MEASURED: how a real mouse's reports reach a tick, any
+latency or feel, and how long a long session takes to certify at save.
+
+**does_not_show.** That mouse-look works on the host: nothing here reads a mouse, a clock or a window. Any feel,
+latency or frame rate. That the tick index is authority: it is recorded, sealed with the file and checked for form, and
+the same commands at other ticks reach the same head. That the head pins every heading: a look's heading is folded; a
+move's camera is still re-derived by replay, as it always was. Anything about a picture on the screen at a free
+heading: the witness is the index frame's digest, and the picture alone, with no overlay, is MOUSE-LOOK-0's.
+
+**Falsifier.** `simtick-law` goes red if any law line differs from the twin's, or a mutant build is not caught.
+`simtick-script` goes red if any outcome, event, tick or input of script S differs. `simtick-replay` goes red if a
+witness is not the kernel executable's, if the workshop disagrees, if a tamper is accepted, or if two looks to different
+headings fold to one head. `simtick-equivalence` goes red if timing inside a tick, or the tick index, changes the data
+or the head. `simtick-certify` goes red if a defective fast path can save. `simtick-resume` goes red if a continuation
+loses its heading, tick count or sensitivity, or the window loop shows a free heading. `simtick-fence` goes red if a
+clock, a float, a mouse or a window enters the rule proof, or a renderer source changes.
+
 ## The open clause, now with named rungs (skybox, physics)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

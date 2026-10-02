@@ -30,6 +30,9 @@ from diagcommon import Refuse, registry, write_record  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCES = ("kernel/mantle.rs", "kernel/formats.rs", "kernel/fast.rs", "kernel/hud.rs", "shell/present.rs")
+# SIM-TICK-0: the sources that decide a frame at a free heading (the shell's BEARING_SOURCES, in its order)
+BEARING_SOURCES = ("kernel/vocab.rs", "oracle/bearing_octant.txt", "kernel/bearing.rs", "kernel/bearingfast.rs")
+TAGS = {"move": "M", "edit": "E", "look": "K"}
 SEAL_KEY = b'\n "seal": "'
 MAGIC = b"VRDNSW1"
 
@@ -41,6 +44,20 @@ def renderer_id(root: str = ROOT) -> str:
         with open(os.path.join(root, *rel.split("/")), "rb") as fh:
             lines += "%s %s\n" % (rel, hashlib.sha256(fh.read().replace(b"\r\n", b"\n")).hexdigest())
     return hashlib.sha256(lines.encode("utf-8")).hexdigest()
+
+
+def bearing_id(root: str = ROOT) -> str:
+    """SIM-TICK-0: the shell's bearing renderer identity, formed as the renderer identity is."""
+    lines = ""
+    for rel in BEARING_SOURCES:
+        with open(os.path.join(root, *rel.split("/")), "rb") as fh:
+            lines += "%s %s\n" % (rel, hashlib.sha256(fh.read().replace(b"\r\n", b"\n")).hexdigest())
+    return hashlib.sha256(lines.encode("utf-8")).hexdigest()
+
+
+def free_heading(token: str) -> bool:
+    """SIM-TICK-0: whether a camera token carries a heading id (a free heading) rather than a facing letter."""
+    return token.rsplit(",", 1)[-1] not in ("N", "E", "S", "W")
 
 
 def seal_ok(raw: bytes) -> bool:
@@ -56,8 +73,10 @@ def heads(content: str, camera: str, log: list) -> list:
     h = hashlib.sha256(MAGIC + content.encode("utf-8") + b"@" + camera.encode("utf-8")).hexdigest()
     out = [h]
     for item in log:
-        tag = "M" if item["kind"] == "move" else "E"
-        h = hashlib.sha256(("%s:%s:%s" % (h, tag, item["witness"])).encode("utf-8")).hexdigest()
+        tag = TAGS[item["kind"]]
+        # SIM-TICK-0: a look folds its camera token with its witness
+        wit = item["camera"] + ":" + item["witness"] if tag == "K" else item["witness"]
+        h = hashlib.sha256(("%s:%s:%s" % (h, tag, wit)).encode("utf-8")).hexdigest()
         out.append(h)
     return out
 
@@ -82,8 +101,9 @@ def check_saved(raw: bytes, root: str = ROOT) -> dict:
     if hs[-1] != d["head"]:
         raise Refuse("the stored head is not the fold of the stored witnesses")
     moves = sum(1 for x in d["log"] if x["kind"] == "move")
-    if (d["moves"], d["edits"]) != (moves, len(d["log"]) - moves):
-        raise Refuse("the move and edit counts are not the log's")
+    looks = sum(1 for x in d["log"] if x["kind"] == "look")
+    if (d["moves"], d["edits"], d.get("looks", 0)) != (moves, len(d["log"]) - moves - looks, looks):
+        raise Refuse("the move, edit and look counts are not the log's")
     lin = live.get("lineage")
     if lin is not None:
         n = lin.get("parent_events")
@@ -113,13 +133,21 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
     d, live = doc["data"], doc["live"]
     now = renderer_id(root)
     same = now == live.get("renderer")
+    # SIM-TICK-0: a frame at a free heading is the bearing kernels'; their identity counts only if there is one
+    looks = d.get("looks", 0)
+    free = sum(1 for x in d["log"] if x["kind"] != "edit" and free_heading(x["camera"]))
+    if free:
+        same = same and bearing_id(root) == live.get("bearing")
     lin = live.get("lineage")
     resumed = "a new session from its base" if lin is None else (
         "a continuation of the session whose head is %s... (its first %d events, from its %s)" % (lin["parent_head"][:12], lin["parent_events"], lin["source"]))
     reading = ("LIVE-SESSION-0 on host %s: a live session saved by the shell and verified there before it counted as saved "
-               "(%d events: %d moves, %d edits; ended by %s), %s; its seal, base, fold%s check here, the workshop's own "
+               "(%d events: %d moves, %d edits%s; ended by %s), %s; its seal, base, fold%s check here, the workshop's own "
                "sessionwalk verifies the saved file itself (head %s...), and this checkout's renderer identity is %s the "
-               "one it was made with." % (host, len(d["log"]), d["moves"], d["edits"], live.get("ended"), resumed,
+               "one it was made with." % (host, len(d["log"]), d["moves"], d["edits"],
+                                         "" if not looks else ", %d looks, %d frames at free headings recomputed by the reference before the save"
+                                         % (looks, (live.get("certified") or {}).get("frames", 0)),
+                                         live.get("ended"), resumed,
                                          "" if lin is None else " and lineage", d["head"][:12],
                                          "the same as" if same else "NOT the same as (replay, not identity, decides)"))
     prov = {"tool": "shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) "

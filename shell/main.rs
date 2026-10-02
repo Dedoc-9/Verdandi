@@ -78,6 +78,26 @@ mod liveauthor;
 #[path = "holdwalk.rs"]
 mod holdwalk;
 
+// SIM-TICK-0: the bearing kernels (reached only through heading.rs), the tick rules, the frame at a heading, the tick run
+#[allow(dead_code)]
+#[path = "../kernel/vocab.rs"]
+mod vocab;
+#[allow(dead_code)]
+#[path = "../kernel/bearing.rs"]
+mod bearing;
+#[allow(dead_code)]
+#[path = "../kernel/bearingfast.rs"]
+mod bearingfast;
+
+#[path = "simtick.rs"]
+mod simtick;
+
+#[path = "heading.rs"]
+mod heading;
+
+#[path = "tickrun.rs"]
+mod tickrun;
+
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
 mod win32;
@@ -876,6 +896,40 @@ fn main() {
                     refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run the live editor in the window");
                 }
             }
+        }
+        "simtick-law" => {
+            // SIM-TICK-0: the laws as lines — the tick, the nearest cardinal of every id, the quarter-turn law, the
+            // turn's wrap, the delta, the sensitivity, the rebinding — for the gate to compare with its own derivation.
+            for ln in simtick::law_lines(|b| mantle::hex(&mantle::sha256(b))) {
+                println!("{}", ln);
+            }
+        }
+        "simtick-selftest" => {
+            // SIM-TICK-0: the tick run, windowless — a script of raw inputs with their times (`T:m+N`, `T:KEY`, `T:mult+`,
+            // `T:mult-`, `T:step`; T in microseconds) through the accumulator, one command per tick, into the live
+            // session; journaled as it runs and sealed (certified by the reference, written, read back, verified) into
+            // build/sessions/<run_id>/session.json; --resume continues a saved session or a crashed run's journal.
+            // No surface, no loop, no clock. --out writes the trace and the counts for the gate. Plants: crash,
+            // seal-unwritable, seal-flip, seal-stale (LIVE-SESSION-0's).
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let level = opt("--level").unwrap_or_else(|| "oracle/levels/witness.lvl".to_string());
+            let tiles = opt("--tiles").unwrap_or_else(|| "oracle/tiles/identity.tiles".to_string());
+            let cam0 = parse_camera(&opt("--camera").unwrap_or_else(|| "28,28,N".to_string())).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m));
+            let script = simtick::parse_script(&opt("--script").unwrap_or_default(), liveinput::vk_named).unwrap_or_else(|m| refuse("USAGE", &m));
+            let out = opt("--out");
+            let plan = livesession::Plan { level, tiles, cam0, resume: opt("--resume"), plant: opt("--plant").unwrap_or_default(), surface: "none" };
+            let prepared = livesession::prepare(plan).unwrap_or_else(|code| exit(code));
+            let (code, raw) = livesession::go_ticks(prepared, &script);
+            if let (Some(o), Some(r)) = (out, raw.as_ref()) {
+                fs::write(&o, r).unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", o, e)));
+            }
+            if code == 0 {
+                println!("simtick court OK");
+            }
+            exit(code)
         }
         other => refuse("USAGE", &format!("unknown command {}", other)),
     }

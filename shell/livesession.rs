@@ -28,6 +28,15 @@
 // The session stays the authority: its W and M change only by the replay of appended events (playback.rs), and the
 // saved file is what the workshop's sessionwalk verifies. No clock is taken. The focus observation is recorded, never
 // read by a rule.
+//
+// SIM-TICK-0: the session may hold looks (the heading turned by an integer delta) and tick stamps. The journal and the
+// saved file carry them; the loader checks the tick form before anything replays and replays a look through the
+// session like a move. The seal is one function, `finish`, shared by the loop's run (go_with) and the windowless tick
+// run (go_ticks). Before `finish` writes anything, every frame of the log at a free heading — rendered live, once, by
+// the production tread — is recomputed by the reference kernel across threads (`certify`); one difference refuses
+// LIVESESSION-UNCERTIFIED and nothing is saved. A session is saved reference-certified or it is not saved. The bearing
+// kernels have their own identity (`bearing_id`), recorded beside the renderer's and consulted only for frames at free
+// headings, so a walk that never looks is classified exactly as before.
 
 use std::cell::RefCell;
 use std::fs;
@@ -37,7 +46,7 @@ use std::rc::Rc;
 use crate::formats::{facing_letter, parse_camera, Camera};
 use crate::liveinput::{Keys, ScriptedKeys};
 use crate::mantle::{hex, sha256};
-use crate::playback::{chain_heads, content_of, parse_view, EventSink, JsonView, LiveEvent, LiveSession};
+use crate::playback::{chain_heads, content_of, look_fold, parse_view, token, EventSink, JsonView, LiveEvent, LiveSession};
 use crate::presentexact::ExactSurface;
 use crate::refusallog::{esc, V};
 
@@ -66,6 +75,25 @@ pub fn renderer_id() -> String {
     for (name, bytes) in RENDER_SOURCES.iter() {
         let lf: Vec<u8> = normalize(bytes);
         s.push_str(&format!("{} {}\n", name, hex(&sha256(&lf))));
+    }
+    hex(&sha256(s.as_bytes()))
+}
+
+/// SIM-TICK-0: the sources that decide a frame at a free heading, in a fixed order: the vocabulary's code and its
+/// carried octant, the reference kernel and the production tread.
+const BEARING_SOURCES: [(&str, &[u8]); 4] = [
+    ("kernel/vocab.rs", include_bytes!("../kernel/vocab.rs")),
+    ("oracle/bearing_octant.txt", include_bytes!("../oracle/bearing_octant.txt")),
+    ("kernel/bearing.rs", include_bytes!("../kernel/bearing.rs")),
+    ("kernel/bearingfast.rs", include_bytes!("../kernel/bearingfast.rs")),
+];
+
+/// SIM-TICK-0: the bearing renderer's identity, formed as the renderer identity is. It is consulted only for frames at
+/// free headings: a session that never looks is classified by `renderer_id` alone, as before.
+pub fn bearing_id() -> String {
+    let mut s = String::new();
+    for (name, bytes) in BEARING_SOURCES.iter() {
+        s.push_str(&format!("{} {}\n", name, hex(&sha256(&normalize(bytes)))));
     }
     hex(&sha256(s.as_bytes()))
 }
@@ -153,9 +181,27 @@ pub fn record_line(payload: &str) -> String {
 }
 
 fn event_payload(k: usize, ev: &LiveEvent) -> String {
-    let (kind, pk) = if ev.tag == b'M' { ("move", "command") } else { ("edit", "spec") };
-    format!("{{\"k\":{},\"kind\":\"{}\",\"{}\":{},\"camera\":{},\"witness\":{},\"content\":{},\"head\":{}}}",
-            k, kind, pk, esc(&ev.param), esc(&cam_token(ev.camera)), esc(&ev.witness), esc(&ev.content), esc(&ev.head))
+    // SIM-TICK-0: a look's parameter is its integer delta; the camera token carries the heading; a tick run's stamp
+    // follows the head (an event appended outside time has none, and its record is what it always was)
+    let (kind, pk, pv) = match ev.tag {
+        b'M' => ("move", "command", esc(&ev.param)),
+        b'K' => ("look", "delta", ev.param.clone()),
+        _ => ("edit", "spec", esc(&ev.param)),
+    };
+    format!("{{\"k\":{},\"kind\":\"{}\",\"{}\":{},\"camera\":{},\"witness\":{},\"content\":{},\"head\":{}{}}}",
+            k, kind, pk, pv, esc(&token(ev.camera, ev.yaw)), esc(&ev.witness), esc(&ev.content), esc(&ev.head), stamp_json(ev, ""))
+}
+
+/// SIM-TICK-0: the tick stamp of an event as JSON members (with a leading comma), or nothing for an untimed event.
+fn stamp_json(ev: &LiveEvent, sp: &str) -> String {
+    let mut s = String::new();
+    if let Some(t) = ev.tick {
+        s.push_str(&format!(",{}\"tick\":{}{}", sp, sp, t));
+    }
+    if let Some((c, m, st)) = ev.input {
+        s.push_str(&format!(",{}\"input\":{}{{\"counts\":{}{},{}\"multiplier\":{}{},{}\"step\":{}{}}}", sp, sp, sp, c, sp, sp, m, sp, sp, st));
+    }
+    s
 }
 
 /// The append-only journal. A record is counted only after its bytes were flushed to the disk.
@@ -307,10 +353,13 @@ fn check_seal(bytes: &[u8]) -> Result<(), Refusal> {
 }
 
 fn event_item(ev: &LiveEvent) -> String {
+    // SIM-TICK-0: a look is {kind, delta, camera, witness}; a tick run's stamp follows the witness
     if ev.tag == b'M' {
-        format!("{{\"kind\": \"move\", \"command\": {}, \"camera\": {}, \"witness\": {}}}", esc(&ev.param), esc(&cam_token(ev.camera)), esc(&ev.witness))
+        format!("{{\"kind\": \"move\", \"command\": {}, \"camera\": {}, \"witness\": {}{}}}", esc(&ev.param), esc(&token(ev.camera, ev.yaw)), esc(&ev.witness), stamp_json(ev, " "))
+    } else if ev.tag == b'K' {
+        format!("{{\"kind\": \"look\", \"delta\": {}, \"camera\": {}, \"witness\": {}{}}}", ev.param, esc(&token(ev.camera, ev.yaw)), esc(&ev.witness), stamp_json(ev, " "))
     } else {
-        format!("{{\"kind\": \"edit\", \"spec\": {}, \"witness\": {}}}", esc(&ev.param), esc(&ev.witness))
+        format!("{{\"kind\": \"edit\", \"spec\": {}, \"witness\": {}{}}}", esc(&ev.param), esc(&ev.witness), stamp_json(ev, " "))
     }
 }
 
@@ -318,11 +367,21 @@ fn event_item(ev: &LiveEvent) -> String {
 fn saved_text(s: &LiveSession, base: &Base, live: &str) -> String {
     let log = s.log();
     let moves = log.iter().filter(|e| e.tag == b'M').count();
+    let looks = log.iter().filter(|e| e.tag == b'K').count();
     let items: Vec<String> = log.iter().map(|e| format!("   {}", event_item(e))).collect();
+    // SIM-TICK-0: the looks are counted only when there are some, and the tick block is written only for a session that
+    // ran on ticks, so a walk with neither saves the bytes it always did
+    let mut more = String::new();
+    if looks > 0 {
+        more.push_str(&format!(",\n  \"looks\": {}", looks));
+    }
+    if let Some((count, multiplier, step)) = s.ticks() {
+        more.push_str(&format!(",\n  \"ticks\": {{\"hz\": {}, \"count\": {}, \"multiplier\": {}, \"step\": {}}}", crate::simtick::TICK_HZ, count, multiplier, step));
+    }
     let prefix = format!(
-        "{{\n \"name\": \"verdandi-session-walk\",\n \"data\": {{\n  \"magic\": \"VRDNSW1\",\n  \"base\": {},\n  \"log\": [{}{}{}],\n  \"head\": {},\n  \"final_camera\": {},\n  \"final_content\": {},\n  \"moves\": {},\n  \"edits\": {}\n }},\n \"live\": {},\n",
+        "{{\n \"name\": \"verdandi-session-walk\",\n \"data\": {{\n  \"magic\": \"VRDNSW1\",\n  \"base\": {},\n  \"log\": [{}{}{}],\n  \"head\": {},\n  \"final_camera\": {},\n  \"final_content\": {},\n  \"moves\": {},\n  \"edits\": {}{}\n }},\n \"live\": {},\n",
         base_json(base), if items.is_empty() { "" } else { "\n" }, items.join(",\n"), if items.is_empty() { "" } else { "\n  " },
-        esc(s.head()), esc(&cam_token(s.camera())), esc(s.content()), moves, log.len() - moves, live);
+        esc(s.head()), esc(&s.token()), esc(s.content()), moves, log.len() - moves - looks, more, live);
     format!("{} \"seal\": \"{}\"\n}}\n", prefix, seal_of(prefix.as_bytes()))
 }
 
@@ -392,6 +451,9 @@ struct SavedEvent {
     param: String,
     camera: String,
     witness: String,
+    // SIM-TICK-0: the tick stamp saved beside the event, if a tick run appended it
+    tick: Option<u64>,
+    input: Option<(i64, i64, i64)>,
 }
 
 fn read_base(v: &JsonView, level: &str, tiles: &str) -> Result<(Base, Vec<u8>, Vec<u8>), Refusal> {
@@ -413,6 +475,8 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
     let file_sha = hex(&sha256(&bytes));
     let is_journal = bytes.starts_with(b"R ");
     // 1. integrity: the seal or the records, the base, the chain's own fold, the lineage
+    let parent_bearing: String;
+    let mut ticks: Option<(i64, i64, i64, i64)> = None;
     let (base, lv, tl, events, stored_head, stored_final, parent_renderer, torn, heads_given) = if is_journal {
         let j = read_journal(&bytes)?;
         let h = &j.header;
@@ -424,6 +488,12 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
             heads.push(e.get("head").s());
         }
         let last = heads.last().cloned();
+        parent_bearing = h.get("bearing").s();
+        // a journal has no tick block: the count follows its last timed event, the sensitivity is its last look's
+        if let Some(t) = evs.iter().filter_map(|e| e.tick).last() {
+            let (_, m, st) = evs.iter().filter_map(|e| e.input).last().unwrap_or((0, crate::simtick::START.multiplier, crate::simtick::START.step));
+            ticks = Some((crate::simtick::TICK_HZ as i64, t as i64 + 1, m, st));
+        }
         (base, lv, tl, evs, last, None, h.get("renderer").s(), j.torn, Some(heads))
     } else {
         check_seal(&bytes)?;
@@ -438,9 +508,20 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
             evs.push(saved_event(&e)?);
         }
         let fin = (d.get("final_camera").s(), d.get("final_content").s());
+        parent_bearing = root.get("live").get("bearing").s();
+        let t = d.get("ticks");
+        if !t.is_null() {
+            let n = |k: &str| t.get(k).num().unwrap_or(-1);
+            ticks = Some((n("hz"), n("count"), n("multiplier"), n("step")));
+        }
         (base, lv, tl, evs, Some(d.get("head").s()), Some(fin), root.get("live").get("renderer").s(), 0, None)
     };
-    let pairs: Vec<(u8, String)> = events.iter().map(|e| (e.tag, e.witness.clone())).collect();
+    // SIM-TICK-0: the tick form — a look's delta and inputs, the ticks' order, the tick block — before anything replays
+    let timed: Vec<crate::simtick::Timed> = events.iter().map(|e| crate::simtick::Timed {
+        look: e.tag == b'K', delta: if e.tag == b'K' { e.param.parse().unwrap_or(0) } else { 0 }, tick: e.tick, input: e.input }).collect();
+    crate::simtick::check_form(&timed, ticks).map_err(|m| refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: the tick form: {}", m)))?;
+    // SIM-TICK-0: a look folds its camera token with its witness
+    let pairs: Vec<(u8, String)> = events.iter().map(|e| (e.tag, if e.tag == b'K' { look_fold(&e.camera, &e.witness) } else { e.witness.clone() })).collect();
     let heads = chain_heads(&base.content, base.camera, &pairs);
     let folded = heads.last().cloned().unwrap_or_default();
     if let Some(h) = &stored_head {
@@ -465,12 +546,22 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
     }
     // 2. the renderer identity
     let same = parent_renderer == renderer_id();
+    // SIM-TICK-0: a frame at a free heading is the bearing kernels'; their identity is consulted for those frames only
+    let same_bearing = parent_bearing == bearing_id();
+    let mut free = false;
     // 3. the replay, 4. the witnesses
     let mut s = LiveSession::new(lv, tl, base.camera).map_err(|m| refusal("session.load", vec![], format!("LIVESESSION-BASE: {}", m)))?;
     for (k, e) in events.iter().enumerate() {
+        s.at_tick(e.tick);
         let (frame, camera_ok, witness_ok) = if e.tag == b'M' {
             match s.push_move(e.param.as_bytes()[0]) {
-                Ok(ev) => (true, cam_token(ev.camera) == e.camera, ev.witness == e.witness),
+                Ok(ev) => (true, token(ev.camera, ev.yaw) == e.camera, ev.witness == e.witness),
+                Err(_) => (false, false, false),
+            }
+        } else if e.tag == b'K' {
+            // SIM-TICK-0: a look replays through the session like a move: the heading, then the frame at it
+            match s.push_look(e.param.parse().unwrap_or(0), e.input) {
+                Ok(ev) => (true, token(ev.camera, ev.yaw) == e.camera, ev.witness == e.witness),
                 Err(_) => (false, false, false),
             }
         } else {
@@ -488,6 +579,9 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
                                                    format!("LIVESESSION-UNSUPPORTED: event {} is {:?}, neither a cell nor a tile edit", k, e.param))),
             }
         };
+        let here = s.free_heading();
+        free = free || (frame && here);
+        let same = same && (!(frame && here) || same_bearing);
         if !(camera_ok && witness_ok) {
             // 5. classify: only a frame witness can be the renderer's; a camera or a content is not
             let renderable = frame && camera_ok;
@@ -502,8 +596,11 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
                                format!("{}: event {}: {}", code, k, why)));
         }
     }
+    s.at_tick(None);
+    s.set_ticks(ticks.map(|(_, count, m, st)| (count as u64, m, st)));
+    let same = same && (!free || same_bearing);
     if let Some((cam, content)) = &stored_final {
-        if cam_token(s.camera()) != *cam || s.content() != content {
+        if s.token() != *cam || s.content() != content {
             return Err(refusal("session.replay", vec![], "LIVESESSION-TAMPERED: the stored final camera or content is not the replay's".to_string()));
         }
     }
@@ -513,15 +610,32 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
 }
 
 fn saved_event(e: &JsonView) -> Result<SavedEvent, Refusal> {
+    let corrupt = |m: String| refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: {}", m));
     let (tag, param) = match e.get("kind").s().as_str() {
         "move" => (b'M', e.get("command").s()),
         "edit" => (b'E', e.get("spec").s()),
-        k => return Err(refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: event kind {:?}", k))),
+        // SIM-TICK-0: a look's parameter is its integer delta
+        "look" => (b'K', e.get("delta").num().ok_or_else(|| corrupt("a look without an integer delta".to_string()))?.to_string()),
+        k => return Err(corrupt(format!("event kind {:?}", k))),
     };
     if tag == b'M' && !matches!(param.as_str(), "L" | "R" | "F" | "B" | "Q" | "E") {
-        return Err(refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: move {:?}", param)));
+        return Err(corrupt(format!("move {:?}", param)));
     }
-    Ok(SavedEvent { tag, param, camera: e.get("camera").s(), witness: e.get("witness").s() })
+    let tick = match (e.get("tick").is_null(), e.get("tick").num()) {
+        (true, _) => None,
+        (false, Some(t)) if t >= 0 => Some(t as u64),
+        _ => return Err(corrupt("an event's tick is not a whole number".to_string())),
+    };
+    let i = e.get("input");
+    let input = if i.is_null() {
+        None
+    } else {
+        match (i.get("counts").num(), i.get("multiplier").num(), i.get("step").num()) {
+            (Some(c), Some(m), Some(st)) => Some((c, m, st)),
+            _ => return Err(corrupt("a look's inputs are not counts, multiplier and step".to_string())),
+        }
+    };
+    Ok(SavedEvent { tag, param, camera: e.get("camera").s(), witness: e.get("witness").s(), tick, input })
 }
 
 fn tile_of(spec: &str) -> Option<(u8, [u8; 3])> {
@@ -612,8 +726,8 @@ pub fn prepare(plan: Plan) -> Result<Prepared, i32> {
         Ok(j) => j,
         Err(m) => return Err(refuse_run(refusal("session.journal", vec![], format!("LIVESESSION-JOURNAL-UNWRITTEN: {}", m)), surface)),
     };
-    let header = format!("{{\"journal\":\"{}\",\"run_id\":{},\"base\":{},\"renderer\":{},\"lineage\":{}}}",
-                         JOURNAL_MAGIC, esc(crate::refusallog::run_id()), base_json(&base), esc(&renderer_id()), lineage_json(&lineage));
+    let header = format!("{{\"journal\":\"{}\",\"run_id\":{},\"base\":{},\"renderer\":{},\"bearing\":{},\"lineage\":{}}}",
+                         JOURNAL_MAGIC, esc(crate::refusallog::run_id()), base_json(&base), esc(&renderer_id()), esc(&bearing_id()), lineage_json(&lineage));
     let mut wrote = journal.put(&header);
     for (k, ev) in session.log().iter().enumerate() {
         if wrote.is_ok() {
@@ -654,6 +768,52 @@ pub fn go_with<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared, binding: 
     for ln in crate::liveinput::summary(&live, &session) {
         println!("{}", ln);
     }
+    let focus = s.focus();
+    // SIM-TICK-0: the seal is `finish`, shared with the tick run
+    let code = finish(Prepared { session, base, lineage, resumed, journal, dir, plant, surface }, live.ended, &focus);
+    (code, if code == 0 { Some(live) } else { None })
+}
+
+/// SIM-TICK-0: the tick run — raw inputs with their times through the accumulator, one command per tick, into the same
+/// session, journal and seal. Windowless: no surface, no loop, no present, no clock.
+pub fn go_ticks(p: Prepared, script: &[(u64, crate::simtick::Input)]) -> (i32, Option<String>) {
+    let Prepared { mut session, base, lineage, resumed, journal, dir, plant, surface } = p;
+    let run = match crate::tickrun::run(&mut session, script, surface) {
+        Ok(r) => r,
+        Err(m) => return (refuse_run(refusal("input.tick", vec![], m), surface), None),
+    };
+    for ln in crate::tickrun::summary(&run, &session) {
+        println!("{}", ln);
+    }
+    let raw = crate::tickrun::raw_json(&run, &session);
+    let code = finish(Prepared { session, base, lineage, resumed, journal, dir, plant, surface }, run.ended, "{\"source\":\"none\"}");
+    (code, if code == 0 { Some(raw) } else { None })
+}
+
+/// SIM-TICK-0: every frame of the session's log at a free heading, recomputed by the reference kernel across threads.
+/// The live witness of such a frame is the production tread's; this is what makes a saved session reference-certified.
+/// Returns how many frames were recomputed (none for a walk that never leaves the four facings).
+pub fn certify(session: &LiveSession) -> Result<usize, Refusal> {
+    let threads = crate::heading::threads();
+    session.free_frames(threads * 8, &mut |batch| crate::heading::certify(batch, threads)).map_err(|(event, why)| {
+        refusal("session.certify", vec![("event", V::N(event as u64))],
+                format!("LIVESESSION-UNCERTIFIED: event {}: {} — the session is not saved", event, why))
+    })
+}
+
+/// The seal, after a run: the reference's certification, then the saved file written, read back and verified. Returns
+/// the exit code. Shared by the loop's run (go_with) and the tick run (go_ticks).
+fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {
+    let Prepared { session, base, lineage, resumed, journal, dir, plant, surface } = p;
+    // SIM-TICK-0: nothing is written until every free-heading frame is the reference's; a session is saved
+    // reference-certified or it is not saved
+    let certified = match certify(&session) {
+        Ok(n) => n,
+        Err(r) => return refuse_run(r, surface),
+    };
+    if certified > 0 {
+        println!("[livesession] certified: {} free-heading frames recomputed by the reference kernel, all equal", certified);
+    }
     let (jrecords, jevents, jbroken, jpath) = {
         let j = journal.borrow();
         (j.records, j.events, j.broken.clone(), j.path.clone())
@@ -664,9 +824,9 @@ pub fn go_with<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared, binding: 
         Some((c, r)) => format!("{{\"classification\":{},\"parent_renderer\":{}}}", esc(c), esc(r)),
     };
     let live_json = format!(
-        "{{\"log\":\"{}\",\"run_id\":{},\"renderer\":{},\"lineage\":{},\"resumed\":{},\"journal\":{{\"file\":\"{}\",\"records\":{},\"events\":{},\"complete\":{},\"sha256\":{}}},\"ended\":{},\"focus\":{}}}",
-        LOG, esc(crate::refusallog::run_id()), esc(&renderer_id()), lineage_json(&lineage), resumed_json, JOURNAL, jrecords, jevents,
-        jbroken.is_none() && jevents as usize == session.log().len(), esc(&jsha), esc(live.ended), s.focus());
+        "{{\"log\":\"{}\",\"run_id\":{},\"renderer\":{},\"bearing\":{},\"lineage\":{},\"resumed\":{},\"journal\":{{\"file\":\"{}\",\"records\":{},\"events\":{},\"complete\":{},\"sha256\":{}}},\"certified\":{{\"reference\":\"kernel/bearing.rs\",\"frames\":{}}},\"ended\":{},\"focus\":{}}}",
+        LOG, esc(crate::refusallog::run_id()), esc(&renderer_id()), esc(&bearing_id()), lineage_json(&lineage), resumed_json, JOURNAL, jrecords, jevents,
+        jbroken.is_none() && jevents as usize == session.log().len(), esc(&jsha), certified, esc(ended), focus);
     let text = if plant == "seal-stale" {
         // PLANT seal-stale: a sealed, self-consistent file that is not this live session (its base alone)
         match (fs::read(&base.level), fs::read(&base.tiles)) {
@@ -681,7 +841,7 @@ pub fn go_with<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared, binding: 
     };
     let dst = std::path::Path::new(&dir).join(SESSION).to_string_lossy().to_string();
     if let Err(m) = write_saved(&dst, &text, &plant) {
-        return (refuse_run(refusal("session.seal", vec![("path", V::S(dst.clone()))], format!("LIVESESSION-SEAL-UNWRITTEN: {}", m)), surface), None);
+        return refuse_run(refusal("session.seal", vec![("path", V::S(dst.clone()))], format!("LIVESESSION-SEAL-UNWRITTEN: {}", m)), surface);
     }
     // the saved artifact, read back from the disk, must verify before the run counts as saved
     let verified = fs::read(&dst).map_err(|e| e.to_string()).and_then(|b| {
@@ -690,19 +850,20 @@ pub fn go_with<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared, binding: 
         }
         let l = load(&dst).map_err(|r| r.message)?;
         let (a, b2) = (l.session.log(), session.log());
-        if l.session.head() != session.head() || cam_token(l.session.camera()) != cam_token(session.camera()) || l.session.content() != session.content()
-            || a.len() != b2.len() || a.iter().zip(b2.iter()).any(|(x, y)| x.witness != y.witness || x.param != y.param) {
+        if l.session.head() != session.head() || l.session.token() != session.token() || l.session.content() != session.content()
+            || a.len() != b2.len() || a.iter().zip(b2.iter()).any(|(x, y)| x.witness != y.witness || x.param != y.param)
+            || l.session.ticks() != session.ticks() || a.iter().zip(b2.iter()).any(|(x, y)| x.yaw != y.yaw || x.tick != y.tick || x.input != y.input) {
             return Err("the replay of the saved file does not reach the live session's state".to_string());
         }
         Ok(())
     });
     if let Err(m) = verified {
-        return (refuse_run(refusal("session.seal", vec![("path", V::S(dst.clone()))], format!("LIVESESSION-SEAL-UNVERIFIED: {}", m)), surface), None);
+        return refuse_run(refusal("session.seal", vec![("path", V::S(dst.clone()))], format!("LIVESESSION-SEAL-UNVERIFIED: {}", m)), surface);
     }
     if let Some(m) = jbroken {
         println!("[livesession] the journal failed during the run ({}); the saved session is complete and verified", m);
     }
     println!("[livesession] saved and verified: {} — {} events, head {}", dst, session.log().len(), session.head());
     crate::runledger::end(0);
-    (0, Some(live))
+    0
 }
