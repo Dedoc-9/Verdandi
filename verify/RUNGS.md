@@ -3700,7 +3700,7 @@ or the head. `simtick-certify` goes red if a defective fast path can save. `simt
 loses its heading, tick count or sensitivity, or the window loop shows a free heading. `simtick-fence` goes red if a
 clock, a float, a mouse or a window enters the rule proof, or a renderer source changes.
 
-## SIM-TICK-0a — sensitivity as a typed configuration event; held keys by the tick (preregistered and built; an amendment to SIM-TICK-0; the gate not yet run on the host)
+## SIM-TICK-0a — sensitivity as a typed configuration event; held keys by the tick (preregistered and built; an amendment to SIM-TICK-0; the gate passes on the host)
 
 **Why.** MOUSE-LOOK-0's court was held on 2026-10-02. Two of the owner's four rulings there are not about a window at
 all: they are rules of the tick. The owner had ruled that SIM-TICK-0 stays completely windowless and that the two rungs
@@ -3787,9 +3787,29 @@ before it, no longer loads. None exists outside the gate's scratch: no window ha
 - **`shell playback` refuses a session that holds a sensitivity event**, as it refuses one that holds a look. It
   replays moves and edits on the four facings. Playback of a tick session is not built.
 
+**On the owner's host (2026-10-02).** The registration was pushed first, with LLM-BUILDER-0's declaration
+(`2c5fa11`); then the build (`322970f`).
+
+- **The gate.** `GATE PASSED`, 201 rows, none failed and none skipped, rowset `e17a948eb19f7f92`: the same rows and
+  rowset as in the build container.
+- **An informal timing of a look, taken to size MOUSE-LOOK-0.** One windowless tick run of 640 looks, one a tick (ten
+  seconds of continuous looking, one count each at multiplier 1 and step 88), through `shell simtick-selftest` in the
+  gate's own build, timed from outside with PowerShell's `Measure-Command`: **13.26 s** for the whole process. That is
+  20.7 ms per look, summed over everything the run does for it: the live path (the scene composed, the frame rendered
+  once by the production tread, its digest, the event journaled and flushed), the reference's recomputation of all 640
+  frames across threads at the save, and the saved file's replay (each frame rendered and digested again), plus the
+  process's start and the file's writing. The run saved, so all 640 frames were equal under the reference.
+  - **What it is.** One run, one wall-clock number, taken once. It is not a sealed record and no rule reads it.
+  - **What it bounds.** No phase of a look can cost more than the sum, so the live path of a look is under 20.7 ms on
+    this host, and a ten-second look saves in under 13.3 s after it ends.
+  - **What it does not say.** How the 20.7 ms splits between the live path, the reference and the replay; whether the
+    live path fits inside one 15,625 µs tick; anything about a window, a blit or a present. A split needs a clock
+    inside the run, and this rung has none.
+
 **Grade.** DECLARED: the sensitivity event and its not being folded, the configuration as replayed state, the binding,
-the tick as the coalescing boundary. ESTABLISHED (gate, in the build container): the four rows above and SIM-TICK-0's
-rows under the amended form. MEASURED: nothing. NOT_MEASURED: anything about a window, a real key or a real mouse.
+the tick as the coalescing boundary. ESTABLISHED (gate, in the build container and on the owner's host): the four rows
+above and SIM-TICK-0's rows under the amended form. MEASURED: nothing sealed; the timing above is an observation of one
+run. NOT_MEASURED: anything about a window, a real key or a real mouse, and the cost of a look phase by phase.
 
 **does_not_show.** That the keys work in the window: the map is from a key code, and nothing here reads one. That the
 head covers the settings a world was walked under: it does not, on purpose, and a legal transition added and undone
