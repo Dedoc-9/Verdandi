@@ -629,6 +629,10 @@ pub struct LiveSession {
     base_tiles: Vec<u8>,
     // SIM-TICK-0a: the sensitivity in force — configuration, replayed from the log's sensitivity events
     sens: crate::simtick::Sens,
+    // MOUSE-LOOK-0: the renderer that witnesses a frame, and which state its kept picture is of (the cell, the heading
+    // and the content it was rendered over), so the loop can present the render the witness came from
+    painter: crate::heading::Painter,
+    painted: Option<(i64, i64, i64, String)>,
 }
 
 impl LiveSession {
@@ -645,7 +649,7 @@ impl LiveSession {
         Ok(LiveSession { level: level_bytes, tiles: tiles_bytes, cam: cam0, content: base_content.clone(), head: head.clone(),
                          cam0, base_content, genesis: head, log: Vec::new(), sink: None,
                          yaw: cam0.facing as i64 * crate::simtick::QUARTER, tick: None, ticks: None, base_level, base_tiles,
-                         sens: crate::simtick::START })
+                         sens: crate::simtick::START, painter: crate::heading::Painter::new(), painted: None })
     }
 
     /// LIVE-SESSION-0: the same session, handing every event appended from now on to `sink`.
@@ -731,7 +735,8 @@ impl LiveSession {
         // SIM-TICK-0: a quarter turn turns the heading with the facing; the frame is the facing kernel's at an anchor
         // (as before) and the bearing kernel's at a free heading
         let yaw = turned(self.yaw, self.cam.facing, cam.facing);
-        let witness = crate::heading::witness(&self.level, &self.tiles, cam, yaw)?;
+        let witness = self.painter.witness(&self.level, &self.tiles, cam, yaw)?;
+        self.painted = Some((cam.x, cam.z, yaw, self.content.clone())); // MOUSE-LOOK-0: the picture kept is this state's
         self.cam = cam;
         self.yaw = yaw;
         self.head = fold(&self.head, b'M', &witness);
@@ -954,7 +959,8 @@ impl LiveSession {
         }
         let yaw = crate::simtick::turn(self.yaw, delta);
         let cam = Camera { x: self.cam.x, z: self.cam.z, facing: crate::simtick::cardinal(yaw) };
-        let witness = crate::heading::witness(&self.level, &self.tiles, cam, yaw)?;
+        let witness = self.painter.witness(&self.level, &self.tiles, cam, yaw)?;
+        self.painted = Some((cam.x, cam.z, yaw, self.content.clone())); // MOUSE-LOOK-0: the picture kept is this state's
         self.cam = cam;
         self.yaw = yaw;
         self.head = fold(&self.head, b'K', &look_fold(&token(cam, yaw), &witness));
@@ -996,5 +1002,44 @@ impl LiveSession {
             each(&out)?;
         }
         Ok(n)
+    }
+}
+
+// ================================================================== MOUSE-LOOK-0 (appended): the picture of the state, and one frame for a sample
+// The loop presents a free heading from the session's own render. A move or a look at a free heading is witnessed by
+// one render of the production tread, and its picture is kept; this section hands that picture out, re-rendering only
+// when the state has changed without a frame event (an edit made while the heading is free). Nothing here appends an
+// event, folds a head or writes W or M: it reads the state the log's replay reached.
+
+impl LiveSession {
+    /// The picture (RGB, top-down) of the current state at a free heading: the render its last frame event's witness
+    /// came from, or a fresh render of the same tread if the world has been edited since. At an anchor heading there is
+    /// none: the loop presents the facing kernel's composite there.
+    pub fn picture(&mut self) -> Result<&[u8], String> {
+        if !self.free_heading() {
+            return Err("the heading is an anchor: its picture is the facing kernel's composite".to_string());
+        }
+        let now = (self.cam.x, self.cam.z, self.yaw, self.content.clone());
+        if self.painted.as_ref() != Some(&now) {
+            self.painter.witness(&self.level, &self.tiles, self.cam, self.yaw)?;
+            self.painted = Some(now);
+        }
+        Ok(self.painter.pixels())
+    }
+
+    /// The log's event `index` as a frame for the reference to recompute, with the W and M it was rendered over, if it
+    /// is a frame event at a free heading. The log is replayed from the base for W and M only, as `free_frames` does.
+    pub fn free_frame_at(&self, index: usize) -> Option<crate::heading::FreeFrame> {
+        use std::sync::Arc;
+        let ev = self.log.get(index)?;
+        if ev.tag == b'E' || ev.tag == b'S' || crate::simtick::anchor(ev.yaw).is_some() {
+            return None;
+        }
+        let (mut level, mut tiles) = (self.base_level.clone(), self.base_tiles.clone());
+        for e in self.log[..index].iter().filter(|e| e.tag == b'E') {
+            apply_spec(&mut level, &mut tiles, &e.param);
+        }
+        Some(crate::heading::FreeFrame { event: index, level: Arc::new(level), tiles: Arc::new(tiles), x: ev.camera.x, z: ev.camera.z, yaw: ev.yaw,
+                                         witness: ev.witness.clone() })
     }
 }

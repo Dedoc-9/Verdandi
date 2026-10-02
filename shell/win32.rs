@@ -2456,3 +2456,277 @@ pub fn live_window(plan: crate::livesession::Plan) {
     println!("[live] the live editor: 1-4 paint wall0-wall3 and 5 the floor with the next palette colour; hold W/A/S/D or an arrow to keep walking or turning; every edit and step is a saved session event");
     session_window(plan, crate::liveauthor::bind, Some(crate::holdwalk::held))
 }
+
+// ================================================================== MOUSE-LOOK-0 (appended)
+// The live editor's host window with the mouse: LIVE-SESSION-0's window and focus observation, with the three things a
+// tick source needs and nothing else —
+//   the clock     QueryPerformanceCounter, in microseconds since the loop's first composition;
+//   the mouse     Windows raw input: each WM_INPUT message's relative horizontal count, as the device reports it.
+//                 Nothing else of the mouse is read: no pointer position, no vertical motion, no button, no wheel;
+//   the capture   while this window is the foreground window the cursor is hidden and confined to it and what arrives is
+//                 admitted; when it is not, the cursor is released and what arrives is dropped (and counted).
+// CAPTURE IS SHELL STATE. This section decides only whether a count or a key press is handed to the loop at all. It
+// calls no method of the session and reaches no renderer: a focus or capture change makes no event of any kind — the
+// loop simply receives nothing while the window is out of the foreground. Esc ends the run: the loop returns, the mouse
+// is released, and only then is the session certified and saved (shell/livesession.rs).
+// The loop is shell/liveinput.rs under a tick source (shell/mouselook.rs); the gate runs that same loop over the mock.
+// This section first runs on the owner's host.
+
+const WM_INPUT_LOOK: Uint = 0x00FF;
+const RID_INPUT_LOOK: Uint = 0x1000_0003;
+const RIM_TYPEMOUSE_LOOK: Dword = 0;
+const MOUSE_MOVE_ABSOLUTE_LOOK: u16 = 0x0001;
+const HID_PAGE_GENERIC_LOOK: u16 = 0x01;
+const HID_USAGE_MOUSE_LOOK: u16 = 0x02;
+
+#[repr(C)]
+struct RawInputDevice {
+    usage_page: u16,
+    usage: u16,
+    flags: Dword,
+    target: Hwnd,
+}
+
+#[repr(C)]
+struct RawInputHeader {
+    kind: Dword,
+    size: Dword,
+    device: *mut c_void,
+    w_param: Wparam,
+}
+
+// RAWMOUSE: the button union is one 32-bit field here (never read); lLastX is the signed relative horizontal count
+#[repr(C)]
+struct RawMouse {
+    flags: u16,
+    buttons: u32,
+    raw_buttons: u32,
+    last_x: i32,
+    last_y: i32,
+    extra: u32,
+}
+
+#[repr(C)]
+struct RawInputMouse {
+    header: RawInputHeader,
+    mouse: RawMouse,
+}
+
+#[link(name = "user32")]
+extern "system" {
+    fn RegisterRawInputDevices(devices: *const RawInputDevice, count: Uint, size: Uint) -> Bool;
+    fn GetRawInputData(raw: *mut c_void, command: Uint, data: *mut c_void, size: *mut Uint, header_size: Uint) -> Uint;
+    fn ClipCursor(rect: *const Rect) -> Bool;
+}
+
+struct LookGdi {
+    surf: ExactGdiSurface,
+    hwnd: Hwnd,
+    pressed: Vec<(u32, bool)>,
+    counts: Vec<i64>,
+    captured: bool,
+    released: bool,
+    started: Option<i64>,
+    freq: i64,
+    // the observation: recorded in the saved session's live block, never ruled on, never an event
+    request: i32,
+    at_start: bool,
+    with: u64,
+    without: u64,
+    changes: u64,
+    last: Option<bool>,
+    captures: u64,
+    releases: u64,
+    reports: u64,
+    dropped: u64,
+    dropped_keys: u64,
+    absolute: u64,
+}
+
+impl LookGdi {
+    /// Take or give up the mouse: the cursor hidden and confined to the window, or shown and free. Shell state only.
+    fn capture(&mut self, want: bool) {
+        if want == self.captured {
+            return;
+        }
+        if want {
+            let mut r: Rect = unsafe { std::mem::zeroed() };
+            unsafe {
+                GetWindowRect(self.hwnd, &mut r);
+                ClipCursor(&r);
+                ShowCursor(0);
+            }
+            self.captures += 1;
+        } else {
+            unsafe {
+                ClipCursor(std::ptr::null());
+                ShowCursor(1);
+            }
+            self.releases += 1;
+        }
+        self.captured = want;
+    }
+}
+
+impl Surface for LookGdi {
+    fn ticks(&mut self) -> i64 {
+        self.surf.ticks()
+    }
+    fn freq(&self) -> i64 {
+        self.surf.freq()
+    }
+    fn present(&mut self, bgr: &[u8]) -> Option<(i64, i64)> {
+        self.surf.present(bgr)
+    }
+    fn flush(&mut self) {
+        self.surf.flush()
+    }
+    fn pump(&mut self) -> bool {
+        // the foreground decides the capture, and the capture decides what this pump admits
+        let held = unsafe { GetForegroundWindow() } == self.hwnd;
+        if held {
+            self.with += 1;
+        } else {
+            self.without += 1;
+        }
+        if self.last.is_some() && self.last != Some(held) {
+            self.changes += 1;
+        }
+        self.last = Some(held);
+        if !self.released {
+            self.capture(held);
+        }
+        let mut msg: Msg = unsafe { std::mem::zeroed() };
+        while unsafe { PeekMessageW(&mut msg, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0 {
+            if msg.message == WM_KEYDOWN_LIVE {
+                if self.captured {
+                    // bit 30 of lParam: the key was already down (an auto-repeat)
+                    self.pressed.push((msg.w_param as u32, (msg.l_param >> 30) & 1 == 1));
+                } else {
+                    self.dropped_keys += 1;
+                }
+            } else if msg.message == WM_INPUT_LOOK {
+                let mut raw: RawInputMouse = unsafe { std::mem::zeroed() };
+                let mut size = std::mem::size_of::<RawInputMouse>() as Uint;
+                let got = unsafe {
+                    GetRawInputData(msg.l_param as *mut c_void, RID_INPUT_LOOK, &mut raw as *mut RawInputMouse as *mut c_void, &mut size,
+                                    std::mem::size_of::<RawInputHeader>() as Uint)
+                };
+                // a mouse report fills the structure exactly; anything else (another device class, a failure) is not read
+                if got == std::mem::size_of::<RawInputMouse>() as Uint && raw.header.kind == RIM_TYPEMOUSE_LOOK {
+                    if raw.mouse.flags & MOUSE_MOVE_ABSOLUTE_LOOK != 0 {
+                        self.absolute += 1; // an absolute device (a tablet, a remote session): not counts, never used
+                    } else if raw.mouse.last_x != 0 {
+                        if self.captured {
+                            self.reports += 1;
+                            self.counts.push(raw.mouse.last_x as i64);
+                        } else {
+                            self.dropped += 1;
+                        }
+                    }
+                }
+            }
+            unsafe {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+            if msg.message == 0x0012 {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl crate::presentexact::ExactSurface for LookGdi {
+    fn set_call(&mut self, call: usize) {
+        crate::presentexact::ExactSurface::set_call(&mut self.surf, call)
+    }
+    fn clear(&mut self) -> bool {
+        crate::presentexact::ExactSurface::clear(&mut self.surf)
+    }
+    fn readback(&mut self) -> Option<Vec<u8>> {
+        crate::presentexact::ExactSurface::readback(&mut self.surf)
+    }
+    fn geometry(&mut self) -> [i32; 8] {
+        crate::presentexact::ExactSurface::geometry(&mut self.surf)
+    }
+    fn attribute(&mut self, b: [usize; 4]) -> crate::presentexact::Attribution {
+        crate::presentexact::ExactSurface::attribute(&mut self.surf, b)
+    }
+}
+
+impl crate::liveinput::Keys for LookGdi {
+    fn keys(&mut self) -> Vec<(u32, bool)> {
+        std::mem::take(&mut self.pressed)
+    }
+}
+
+impl crate::mouselook::Look for LookGdi {
+    fn now_us(&mut self) -> u64 {
+        // microseconds since the first read (the loop's first composition)
+        let now = qpc();
+        let start = *self.started.get_or_insert(now);
+        ((now - start).max(0) as u128 * 1_000_000 / self.freq.max(1) as u128) as u64
+    }
+    fn reports(&mut self) -> Vec<i64> {
+        std::mem::take(&mut self.counts)
+    }
+    fn release(&mut self) {
+        self.capture(false);
+        self.released = true;
+    }
+}
+
+impl crate::livesession::Focus for LookGdi {
+    fn focus(&self) -> String {
+        format!("{{\"source\":\"window\",\"foreground_request\":{},\"foreground_at_start\":{},\"compositions_with\":{},\"compositions_without\":{},\"changes\":{},\"mouse\":{{\"captures\":{},\"releases\":{},\"reports\":{},\"dropped\":{},\"dropped_keys\":{},\"absolute\":{},\"released\":{}}}}}",
+                self.request, self.at_start as u8, self.with, self.without, self.changes, self.captures, self.releases, self.reports,
+                self.dropped, self.dropped_keys, self.absolute, self.released)
+    }
+}
+
+pub fn look_window(plan: crate::livesession::Plan) {
+    unsafe { SetProcessDPIAware() };
+    let prepared = match crate::livesession::prepare(plan) {
+        Ok(p) => p,
+        Err(code) => std::process::exit(code),
+    };
+    let dwm = match load_dwm() {
+        Some(d) => d,
+        None => {
+            eprintln!("SHELL-NO-DWM: dwmapi.dll or DwmFlush is unavailable; cannot compose and read back");
+            crate::runledger::end(2);
+            std::process::exit(2);
+        }
+    };
+    let hwnd = show_window("VerdandiMouseLook0", "Verðandi — MOUSE-LOOK-0");
+    if hwnd.is_null() {
+        eprintln!("SHELL-NO-WINDOW: CreateWindowExW failed");
+        crate::runledger::end(2);
+        std::process::exit(2);
+    }
+    let request = unsafe { SetForegroundWindow(hwnd) };
+    let at_start = unsafe { GetForegroundWindow() } == hwnd;
+    // raw input from the mouse, delivered to this window while it is in the foreground (no flags: no background input)
+    let device = RawInputDevice { usage_page: HID_PAGE_GENERIC_LOOK, usage: HID_USAGE_MOUSE_LOOK, flags: 0, target: hwnd };
+    if unsafe { RegisterRawInputDevices(&device, 1, std::mem::size_of::<RawInputDevice>() as Uint) } == 0 {
+        eprintln!("SHELL-NO-RAWINPUT: RegisterRawInputDevices failed; the mouse's counts cannot be read");
+        crate::runledger::end(2);
+        std::process::exit(2);
+    }
+    let mut freq = 0i64;
+    unsafe { QueryPerformanceFrequency(&mut freq) };
+    let surf = ExactGdiSurface { hwnd, header: court_header(), flush_fn: dwm.flush, freq: 1, call: 1, last_input: 0, inputs_seen: 0 };
+    let mut look = LookGdi { surf, hwnd, pressed: Vec::new(), counts: Vec::new(), captured: false, released: false, started: None, freq,
+                             request, at_start, with: 0, without: 0, changes: 0, last: None, captures: 0, releases: 0, reports: 0,
+                             dropped: 0, dropped_keys: 0, absolute: 0 };
+    println!("[look] the live editor with the mouse: move the mouse to turn; W/S walk, A/D strafe, arrows turn a quarter, Space opens or closes the cell ahead, 1-5 paint; PgUp/PgDn change the multiplier, Tab the step; Esc ends and saves");
+    println!("[look] the window {} the foreground at the start (click it if nothing answers); the mouse is captured while it does and released when it does not",
+             if at_start { "holds" } else { "does NOT hold" });
+    let (code, _raw) = crate::livesession::go_look(&mut look, prepared);
+    if unsafe { IsWindow(hwnd) } != 0 {
+        unsafe { DestroyWindow(hwnd) };
+    }
+    std::process::exit(code);
+}

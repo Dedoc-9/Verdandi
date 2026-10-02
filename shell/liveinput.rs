@@ -35,6 +35,20 @@
 //
 // SIM-TICK-0: this loop shows the four facings. A session left at a free heading (by a tick run's look) is refused
 // before anything is rendered, LIVEINPUT-HEADING, until MOUSE-LOOK-0 gives the loop the bearing picture.
+//
+// MOUSE-LOOK-0: the loop may be given a tick source (shell/mouselook.rs). `run` and `run_with` give none and are the
+// loop described above, clockless as before; `run_look` gives one, and then, each composition:
+//   - the presses and the mouse reports it drains are not bound here: they are stamped with the tick of the source's
+//     clock and gathered, and the command of a tick the clock has passed is applied once by the tick run
+//     (shell/tickrun.rs) — SIM-TICK-0's rules, to which the loop adds nothing;
+//   - at an anchor heading it renders, checks and presents the composite exactly as above; at a free heading it presents
+//     the picture alone: the session's own render of that state, the one its witness came from, with no overlay —
+//     nothing is rendered a second time;
+//   - the screen is read back at the first composition and every READBACK_EVERY-th after it, not at every change;
+//   - a composition at which no command changed the state repeats the picture before it, and is counted;
+//   - a sample the reference recomputed differently (one free-heading frame in 64, off the loop) refuses the run,
+//     LIVEINPUT-SAMPLE.
+// The clock is read only there, and only through the source: nothing else in this file knows the time.
 
 use crate::formats::{facing_letter, Camera};
 use crate::latency1r::Surface;
@@ -290,6 +304,16 @@ pub struct Live {
     pub hold: bool,
     pub walked: u64,
     pub coalesced: u64,
+    /// MOUSE-LOOK-0: under a tick source — the tick run's counts and trace (None without one); the compositions that
+    /// presented the session's picture (a free heading); the compositions that repeated the picture before them; the
+    /// samples handed to the reference; the most ticks the clock moved between two compositions; and for every
+    /// read-back composition its index, the camera token and the sha256 of the picture handed to the call (RGB).
+    pub tick: Option<crate::tickrun::Run>,
+    pub looked: u64,
+    pub repeated: u64,
+    pub samples: u64,
+    pub span: u64,
+    pub read: Vec<(u64, String, String)>,
 }
 
 fn cam_token(c: Camera) -> String {
@@ -315,6 +339,27 @@ fn reference(session: &LiveSession, witness: Option<(&str, u64)>) -> Result<(Sce
     Ok((scene, comp, bgr, view, px))
 }
 
+/// MOUSE-LOOK-0: the picture alone at a free heading — the session's own render of its state (the render its last frame
+/// event's witness came from; a fresh one of the same tread only if the world was edited since), converted for the
+/// call. No overlay, and no second render.
+fn picture(session: &mut LiveSession, bgr: &mut [u8]) -> Result<(), Refusal> {
+    let at = session.token();
+    match session.picture() {
+        Ok(rgb) => {
+            crate::present::to_blit_into(rgb, bgr);
+            Ok(())
+        }
+        Err(m) => Err(refusal("render.picture", vec![("camera", V::S(at.clone()))],
+                              format!("LIVEINPUT-PICTURE: the session has no picture of its state at {}: {}", at, m))),
+    }
+}
+
+/// MOUSE-LOOK-0: a sample the reference recomputed differently ends the run refused; nothing is saved.
+fn sampled(bad: (usize, String)) -> Refusal {
+    refusal("render.sample", vec![("event", V::N(bad.0 as u64))],
+            format!("LIVEINPUT-SAMPLE: event {}: {} — the run is refused and the session is not saved", bad.0, bad.1))
+}
+
 /// The run: the initial state's reference, then compositions until Esc or the window closes, each one's key presses
 /// turned into events first, then the current state rendered live and presented. LIVE-INPUT-0's binding.
 pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface: &'static str) -> Result<Live, Refusal> {
@@ -325,6 +370,20 @@ pub fn run<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface
 /// keys; None binds no repeat); nothing else about the loop changes.
 pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface: &'static str, binding: fn(u32) -> Action,
                                         hold: Option<fn(u32) -> bool>) -> Result<Live, Refusal> {
+    run_loop(s, session, surface, binding, hold, None)
+}
+
+/// MOUSE-LOOK-0: the same run with a tick source switched on — the live editor with the mouse. The presses and reports
+/// go to the tick run, which binds them (the live editor's binding with A and D the strafes, HOLD-WALK-0's held set
+/// with the tick as its boundary); the binding and held set given here are the loop's parameters and bind nothing.
+pub fn run_look<S: ExactSurface + Keys + crate::mouselook::Look>(s: &mut S, session: &mut LiveSession, surface: &'static str) -> Result<Live, Refusal> {
+    run_loop(s, session, surface, crate::liveauthor::bind, None, Some(crate::mouselook::Source::of()))
+}
+
+/// The loop itself. `look` is the tick source: None for every clockless entry point (run, run_with), Some only from
+/// run_look.
+fn run_loop<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surface: &'static str, binding: fn(u32) -> Action,
+                                    hold: Option<fn(u32) -> bool>, look: Option<crate::mouselook::Source<S>>) -> Result<Live, Refusal> {
     let _ = s.pump();
     let g = s.geometry();
     if g != [W as i32, H as i32, 0, 0, W as i32, H as i32, W as i32, H as i32] {
@@ -333,27 +392,64 @@ pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, su
                                    g[0], g[1], g[2], g[3], g[4], g[5], g[6], g[7], W, H, W, H)));
     }
     // SIM-TICK-0: this loop renders the four facings; a session left at a free heading is not shown as one of them
-    if session.free_heading() {
+    // (MOUSE-LOOK-0: unless the loop has a tick source, which presents the session's picture there)
+    if look.is_none() && session.free_heading() {
         return Err(refusal("render.heading", vec![("camera", V::S(session.token()))],
-                           format!("LIVEINPUT-HEADING: the session stands at {}, a free heading; the window loop shows the four facings only until MOUSE-LOOK-0", session.token())));
+                           format!("LIVEINPUT-HEADING: the session stands at {}, a free heading; this loop shows the four facings only (shell look-window continues such a session)", session.token())));
     }
     s.set_call(CALL);
     let mut live = Live { keys: 0, repeats: 0, unbound: 0, events: 0, moves: 0, blocked: 0, edits: 0, refused: 0, references: 0,
                           compositions: 0, rendered: 0, byte_checks: 0, presented: 0, screen_readbacks: 0, screen_differed: 0,
                           renders: 0, geometry: g, ended: "", trace: Vec::new(), views: Vec::new(), pixels: Vec::new(), shown: Vec::new(),
-                          hold: hold.is_some(), walked: 0, coalesced: 0 };
+                          hold: hold.is_some(), walked: 0, coalesced: 0,
+                          tick: None, looked: 0, repeated: 0, samples: 0, span: 0, read: Vec::new() };
     let (mut scene, mut expected, mut expected_bgr, view, px) = reference(session, None)?;
     live.references += 1;
     live.views.push(view);
     live.pixels.push(px);
+    // MOUSE-LOOK-0: the ticker exists only with a tick source; a session resumed at a free heading starts on its picture
+    let mut ticker = look.as_ref().map(|_| crate::mouselook::Ticker::new(session));
+    let mut unblit: Vec<u8> = Vec::new();
+    if ticker.is_some() && session.free_heading() {
+        picture(session, &mut expected_bgr)?;
+    }
     let mut lr = LoopRenderer::new();
     let (mut fresh, mut held, mut last): (bool, u64, Option<bool>) = (true, 0, None);
     let mut c: u64 = 0;
     loop {
         let open = s.pump();
         let mut end = false;
+        if let (Some(src), Some(t)) = (look.as_ref(), ticker.as_mut()) {
+            // MOUSE-LOOK-0: the clock is read here and nowhere else. What this composition drains takes the tick of now;
+            // the tick the clock has passed is closed and its command applied, once, by the tick run
+            let now = (src.now_us)(s);
+            let step = t.step(session, now, s.keys(), (src.reports)(s), surface);
+            t.poll().map_err(sampled)?;
+            if step.changed {
+                if session.free_heading() {
+                    picture(session, &mut expected_bgr)?;
+                } else {
+                    // at an anchor the reference is rendered as before; if the last thing that happened is a frame
+                    // event, its digest must be that event's chain witness (LIVEINPUT-WITNESS, as for a pressed move)
+                    let seen = session.log().last().filter(|e| e.tag == b'M' || e.tag == b'K').map(|e| e.witness.clone());
+                    let k = session.log().len() as u64 - 1;
+                    let r = reference(session, seen.as_ref().map(|w| (w.as_str(), k)))?;
+                    live.references += 1;
+                    scene = r.0;
+                    expected = r.1;
+                    expected_bgr = r.2;
+                }
+                fresh = true;
+            }
+            end = step.ended;
+        }
+        // the presses bound here: none under a tick source (they went to the tick above)
+        let presses = match ticker {
+            Some(_) => Vec::new(),
+            None => s.keys(),
+        };
         let mut admitted = false; // HOLD-WALK-0: whether this composition has walked a repeat (it lives in this composition)
-        for (vk, repeat) in s.keys() {
+        for (vk, repeat) in presses {
             live.keys += 1;
             let mut name = key_name(vk);
             if repeat {
@@ -490,20 +586,49 @@ pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, su
             live.ended = "closed";
             break;
         }
-        lr.render(&scene);
-        lr.blit();
-        live.rendered += 1;
-        if lr.composite() != &expected[..] || lr.bgr() != &expected_bgr[..] {
-            return Err(refusal("render.loop", vec![("state", V::N(live.events)), ("composition", V::N(c + 1))],
-                               format!("LIVEINPUT-BYTES: the loop's frame for state {} differs from its reference at composition {}", live.events, c + 1)));
+        // the state's number for the console and the log: the events of this run (under ticks, the tick run's)
+        let state = ticker.as_ref().map_or(live.events, |t| t.run.events + t.run.settings);
+        // MOUSE-LOOK-0: at a free heading (only ever under a tick source) the picture alone, already the session's render
+        let free = ticker.is_some() && session.free_heading();
+        if ticker.is_some() && !fresh {
+            live.repeated += 1; // no command changed the state: this composition repeats the picture before it
         }
-        live.byte_checks += 1;
-        if s.present(lr.bgr()).is_none() {
-            return Err(refusal("surface.present", vec![("state", V::N(live.events)), ("composition", V::N(c + 1))],
+        let out: &[u8] = if free {
+            live.looked += 1;
+            &expected_bgr
+        } else {
+            lr.render(&scene);
+            lr.blit();
+            live.rendered += 1;
+            if lr.composite() != &expected[..] || lr.bgr() != &expected_bgr[..] {
+                return Err(refusal("render.loop", vec![("state", V::N(state)), ("composition", V::N(c + 1))],
+                                   format!("LIVEINPUT-BYTES: the loop's frame for state {} differs from its reference at composition {}", state, c + 1)));
+            }
+            live.byte_checks += 1;
+            lr.bgr()
+        };
+        if s.present(out).is_none() {
+            return Err(refusal("surface.present", vec![("state", V::N(state)), ("composition", V::N(c + 1))],
                                format!("LIVEINPUT-NO-PRESENT: SetDIBitsToDevice or the composition barrier failed at composition {}", c + 1)));
         }
         live.presented += 1;
-        let due = if fresh {
+        let due = if ticker.is_some() {
+            // MOUSE-LOOK-0: under ticks the readback is sampled — the first composition and every READBACK_EVERY-th after
+            // it — and what was handed to the call there is recorded: the picture's sha256, as RGB
+            fresh = false;
+            let due = c % crate::mouselook::READBACK_EVERY == 0;
+            if due {
+                let sha = if free {
+                    unblit.resize(out.len(), 0);
+                    crate::present::to_blit_into(out, &mut unblit); // the swap of R and B is its own inverse
+                    hex(&sha256(&unblit))
+                } else {
+                    hex(&sha256(lr.composite()))
+                };
+                live.read.push((c, session.token(), sha));
+            }
+            due
+        } else if fresh {
             live.shown.push((live.events, hex(&sha256(lr.composite()))));
             fresh = false;
             held = 0;
@@ -522,7 +647,7 @@ pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, su
                 live.screen_differed += 1;
                 // a differing screen: counted above, then one record (and its covering windows), never hidden
                 let want = &expected_bgr;
-                let mut ctx = vec![("state", V::N(live.events)), ("composition", V::N(c + 1))];
+                let mut ctx = vec![("state", V::N(state)), ("composition", V::N(c + 1))];
                 let (reason, attribution, how) = match &screen {
                     Some(v) => {
                         let bytes = if v.len() == want.len() { v.iter().zip(want.iter()).filter(|(a, b)| a != b).count() } else { v.len().max(want.len()) };
@@ -539,10 +664,10 @@ pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, su
                 };
                 crate::refusallog::record(&crate::refusallog::Event { operation: "liveinput", surface, reason: reason.to_string(), attribution, context: ctx });
                 if last != Some(false) {
-                    println!("[liveinput] state {}: SCREEN DIFFERS — {}", live.events, how);
+                    println!("[liveinput] state {}: SCREEN DIFFERS — {}", state, how);
                 }
             } else if last != Some(true) {
-                println!("[liveinput] state {}: the screen is the session's picture", live.events);
+                println!("[liveinput] state {}: the screen is the session's picture", state);
             }
             last = Some(exact);
         }
@@ -550,10 +675,26 @@ pub fn run_with<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, su
     }
     live.compositions = c;
     live.renders = lr.renders();
+    if let Some(mut t) = ticker {
+        // MOUSE-LOOK-0: the run is over — a tick still open when the window closed is applied, the session's tick count
+        // is set, and every sample in flight is waited for; one that differs refuses the run
+        t.finish(session, surface).map_err(sampled)?;
+        live.samples = t.samples;
+        live.span = t.span;
+        live.tick = Some(t.run);
+    }
     Ok(live)
 }
 
 pub fn summary(l: &Live, s: &LiveSession) -> Vec<String> {
+    if let Some(run) = l.tick.as_ref() {
+        // MOUSE-LOOK-0: under a tick source the inputs are the tick run's to count; the loop counts what it showed
+        let mut out = crate::tickrun::summary(run, s);
+        out.push(format!("look compositions {} picture {} composite {} repeated {} presented {} byte_checks {} references {} screen_readbacks {} screen_differed {} samples {} span {} ended {}",
+                         l.compositions, l.looked, l.rendered, l.repeated, l.presented, l.byte_checks, l.references, l.screen_readbacks,
+                         l.screen_differed, l.samples, l.span, l.ended));
+        return out;
+    }
     let mut out = vec![
         format!("liveinput keys {} repeats {} unbound {} events {} moves {} blocked {} edits {} refused {} ended {}",
                 l.keys, l.repeats, l.unbound, l.events, l.moves, l.blocked, l.edits, l.refused, l.ended),

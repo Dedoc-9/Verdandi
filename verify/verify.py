@@ -6398,8 +6398,9 @@ def liveinput_fence():
         raise Red("the live session's state is not private, or it changes other than by appending one event")
     mv, ed = src_span(sect, "pub fn push_move(", "\n    }\n"), src_span(sect, "pub fn push_edit_cell(", "\n    }\n")
     # re-pinned on purpose with SIM-TICK-0: the move's witness is taken through shell/heading.rs, which is compose_frame's
-    # digest at an anchor heading (simtick-fence judges heading.rs); the statements are otherwise replay_from's
-    if not all(t in mv for t in ("let cam = step(&self.level, self.cam, cmd);", "crate::heading::witness(&self.level, &self.tiles, cam, yaw)?", "fold(&self.head, b'M', &witness)")) \
+    # digest at an anchor heading (simtick-fence judges heading.rs); the statements are otherwise replay_from's.
+    # And with MOUSE-LOOK-0: it is taken by the session's own Painter there (the same render, its picture kept)
+    if not all(t in mv for t in ("let cam = step(&self.level, self.cam, cmd);", "self.painter.witness(&self.level, &self.tiles, cam, yaw)?", "fold(&self.head, b'M', &witness)")) \
             or not all(t in ed for t in ("if (x == 0 || z == 0 || x as usize == w - 1 || z as usize == rows - 1) && to != b'#' {",
                                          "apply_spec(&mut self.level, &mut self.tiles, &spec)", "content_hex(&self.level, &self.tiles)", "fold(&self.head, b'E', &self.content)")):
         raise Red("the live session's replay is not replay_from's statements (step, compose_frame's digest, apply_spec, content_hex, fold)")
@@ -6414,13 +6415,18 @@ def liveinput_fence():
     if "ticks(" in runf or "ticks(" in src_span(rs, "fn reference(", "\n}\n"):
         raise Red("the loop reads a clock")
     # re-pinned on purpose with SIM-TICK-0: the loop also reads the heading (free_heading, token), to refuse a free one
-    if set(re.findall(r"session\.(\w+)\(", runf)) - {"push_move", "push_edit_cell", "camera", "faced", "cell", "push_edit_tile", "tile_rgb", "free_heading", "token"} \
+    # and with MOUSE-LOOK-0: under a tick source it reads the log's last event, to hold an anchor's reference to its witness
+    if set(re.findall(r"session\.(\w+)\(", runf)) - {"push_move", "push_edit_cell", "camera", "faced", "cell", "push_edit_tile", "tile_rgb", "free_heading", "token", "log"} \
             or "arm_composite(" in runf or src_span(rs, "fn reference(", "\n}\n").count("arm_composite(") != 1:
         raise Red("the loop reaches into the session other than to append and read, or renders a reference outside reference()")
     loop = runf[runf.index("    loop {"):]
-    order = [loop.find(t) for t in ("let open = s.pump();", "for (vk, repeat) in s.keys() {", "if repeat {", "match binding(vk) {",
+    # re-pinned on purpose with MOUSE-LOOK-0: the presses bound here are the surface's unless the loop has a tick source
+    # (then none: they went to the tick), and what is presented is the checked LoopRenderer bytes unless the heading is
+    # free under a tick source (then the session's picture) — one render site and one present site still; mouselook-fence
+    # judges the tick source's side
+    order = [loop.find(t) for t in ("let open = s.pump();", "None => s.keys(),", "for (vk, repeat) in presses {", "if repeat {", "match binding(vk) {",
                                     "lr.render(&scene);", "lr.blit();", "if lr.composite() != &expected[..] || lr.bgr() != &expected_bgr[..]",
-                                    "if s.present(lr.bgr()).is_none()", "s.readback()")]
+                                    "lr.bgr()\n        };", "if s.present(out).is_none()", "s.readback()")]
     if -1 in order or order != sorted(order) or loop.count("lr.render(") != 1 or loop.count("s.present(") != 1:
         raise Red("a composition is not: presses to events (repeats unbound), render the current state, check, present, read back")
     if "run_with(s, session, surface, bind, None)" not in src_span(rs, "pub fn run<S: ExactSurface + Keys>(", "\n}\n"):
@@ -6898,7 +6904,9 @@ def livesession_fence():
             or 'heads[n as usize] != l.get("parent_head").s()' not in ld or "None if last => torn = 1," not in rs):
         raise Red("the loader does not go integrity, identity, replay, witnesses, classification, with only a frame renderable")
     sealer = read(os.path.join(ROOT, "verify", "livesession.py")).decode("utf-8")
-    if rs.count(".focus()") != 1 or '["focus"]' in sealer or '.get("focus")' in sealer:
+    # re-pinned on purpose with MOUSE-LOOK-0: go_look records its surface's observation too (the second read), and the
+    # sealer still never reads it
+    if rs.count(".focus()") != 2 or '["focus"]' in sealer or '.get("focus")' in sealer or '"focus"' in sealer:
         raise Red("the focus observation is read other than to be recorded")
     pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
     rd = pb[pb.index("// ================================================================== LIVE-SESSION-0 (appended)"):]
@@ -7432,7 +7440,9 @@ def holdwalk_fence():
     li = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
     runf = src_span(li, "pub fn run_with<S: ExactSurface + Keys>(", "\npub fn summary(")
     loop = runf[runf.index("    loop {"):]
-    order = [loop.find(t) for t in ("let open = s.pump();", "let mut admitted = false;", "for (vk, repeat) in s.keys() {", "if repeat {",
+    # re-pinned on purpose with MOUSE-LOOK-0: the presses this loop binds are named `presses` (the surface's, or none
+    # under a tick source, where the tick's accumulator holds the held set instead)
+    order = [loop.find(t) for t in ("let open = s.pump();", "let mut admitted = false;", "for (vk, repeat) in presses {", "if repeat {",
                                     "let walks = hold.map_or(false, |h| h(vk));", "if !walks || admitted {", "live.coalesced += 1;", "continue;",
                                     "admitted = true;", "live.walked += 1;", "match binding(vk) {")]
     if -1 in order or order != sorted(order) or li.count("let mut admitted") != 1 or runf.count("admitted = true;") != 1 \
@@ -8669,6 +8679,24 @@ def simtick_equivalence():
             % (len(_st_data(path)), len(a["log"]), a["head"][:12], b["ticks"]["count"], a["ticks"]["count"]))
 
 
+_ST_PLANTED = {}
+
+
+def _st_planted():
+    """The shell built with the planted, self-consistent fast-path defect (once a gate; MOUSE-LOOK-0's sample row runs
+    the same build)."""
+    if "exe" not in _ST_PLANTED:
+        bf = read(os.path.join(KERNEL, "bearingfast.rs")).decode("utf-8")
+        main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+        site = '#[path = "../kernel/bearingfast.rs"]'
+        if bf.count(SIMTICK_PLANT[0]) != 1 or main_src.count(site) != 1:
+            raise Red("the plant's site is not unique in kernel/bearingfast.rs, or the shell does not include it where expected")
+        _ST_PLANTED["exe"] = compile_rs(SHELL, "main.rs", "shell-simtick-planted", {
+            "main.rs": main_src.replace(site, '#[path = "bearingfast_planted.rs"]'),
+            "bearingfast_planted.rs": bf.replace(SIMTICK_PLANT[0], SIMTICK_PLANT[1])})
+    return _ST_PLANTED["exe"]
+
+
 def simtick_certify():
     """A session is saved reference-certified or not saved: script S's save recomputes every free-heading frame with the
     reference and records how many; a shell built with a planted, self-consistent defect in the fast path renders,
@@ -8688,14 +8716,7 @@ def simtick_certify():
             or live.get("bearing") != LS.bearing_id(ROOT)
             or ("certified: %d free-heading frames recomputed by the reference kernel, all equal" % len(free)) not in cp.stdout):
         raise Red("script S's save did not recompute its %d free-heading frames with the reference and record it: %s" % (len(free), live.get("certified")))
-    bf = read(os.path.join(KERNEL, "bearingfast.rs")).decode("utf-8")
-    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
-    site = '#[path = "../kernel/bearingfast.rs"]'
-    if bf.count(SIMTICK_PLANT[0]) != 1 or main_src.count(site) != 1:
-        raise Red("the plant's site is not unique in kernel/bearingfast.rs, or the shell does not include it where expected")
-    planted = compile_rs(SHELL, "main.rs", "shell-simtick-planted", {
-        "main.rs": main_src.replace(site, '#[path = "bearingfast_planted.rs"]'),
-        "bearingfast_planted.rs": bf.replace(SIMTICK_PLANT[0], SIMTICK_PLANT[1])})
+    planted = _st_planted()
     logs2 = _ls_logs("simtick-certify-planted")
     before = set(os.listdir(GATE_SESSIONS))
     cp, p, _r = _st_run(_st_text(SIMTICK_SCRIPT), logs2, "certify-planted", ["--camera", ST_CAMERA], planted)
@@ -8809,8 +8830,9 @@ def simtick_resume():
 
 def simtick_fence():
     """The rule proof stays windowless and pure: shell/simtick.rs has no clock, file, static, unsafe, float or thread and
-    touches no session; shell/win32.rs reads no mouse and still begins with LATENCY-0's instrument; the live loop reads
-    no clock and binds no look; only shell/heading.rs reaches the bearing kernels; the look is folded over its token;
+    touches no session; shell/win32.rs reads a mouse only in MOUSE-LOOK-0's own section (re-pinned on purpose with that
+    rung) and still begins with LATENCY-0's instrument; the live loop's clockless entry points refuse a free heading and
+    the loop binds no look; only shell/heading.rs reaches the bearing kernels; the look is folded over its token;
     the kernel's renderers and shell/present.rs are byte-for-byte what they were."""
     code_of_src = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
     st = code_of_src(read(os.path.join(SHELL, "simtick.rs")).decode("utf-8"))
@@ -8829,15 +8851,25 @@ def simtick_fence():
     if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
         raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
     tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
-    for tok in ("WM_INPUT", "WM_MOUSEMOVE", "RegisterRawInputDevices", "GetRawInputData", "GetCursorPos", "SetCursorPos", "simtick", "tickrun",
-                "heading::", "push_look", "bearing"):
-        if tok in tail:
-            raise Red("shell/win32.rs contains %r: no window reads a mouse or reaches the tick rules before MOUSE-LOOK-0" % tok)
+    # re-pinned on purpose with MOUSE-LOOK-0: raw input is read in that rung's own appended section and nowhere else;
+    # no section, that one included, reads the pointer's position or reaches the tick rules, the session's look or a
+    # bearing kernel (mouselook-fence judges the section itself)
+    outside = tail.replace(w32_section(tail, "MOUSE-LOOK-0 (appended)"), "") if "MOUSE-LOOK-0 (appended)" in tail else tail
+    for tok, where in (("WM_INPUT", outside), ("RegisterRawInputDevices", outside), ("GetRawInputData", outside), ("WM_MOUSEMOVE", tail),
+                       ("GetCursorPos", tail), ("SetCursorPos", tail), ("simtick", tail), ("tickrun", tail), ("heading::", tail),
+                       ("push_look", tail), ("bearing", tail)):
+        if tok in where:
+            raise Red("shell/win32.rs contains %r: only MOUSE-LOOK-0's section reads a mouse, by raw input alone, and no window reaches the tick rules" % tok)
     li = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
     runf = src_span(li, "pub fn run_with<S: ExactSurface + Keys>(", "\npub fn summary(")
-    guard = runf.find("if session.free_heading() {")
+    # re-pinned on purpose with MOUSE-LOOK-0: a clockless entry point (no tick source) still refuses a free heading
+    # before it renders; the loop names the tick run only for its counts and their summary, and still binds no look,
+    # stamps no tick and reads no clock of its own
+    guard = runf.find("if look.is_none() && session.free_heading() {")
+    li_code = code_of_src(li)
     if (guard < 0 or not guard < runf.find("s.set_call(CALL);") < runf.find("    loop {") or "LIVEINPUT-HEADING" not in runf
-            or any(t in li for t in ("push_look", "simtick", "tickrun", "Instant", "SystemTime", "qpc", "at_tick"))):
+            or any(t in li for t in ("push_look", "simtick::", "tickrun::apply", "tickrun::run", "Instant", "SystemTime", "qpc", "at_tick"))
+            or sorted(re.findall(r"tickrun::\w+", li_code)) != ["tickrun::Run", "tickrun::summary"]):
         raise Red("the live loop does not refuse a free heading before it renders, or it binds a look, a tick or a clock")
     tr = code_of_src(read(os.path.join(SHELL, "tickrun.rs")).decode("utf-8"))
     for tok in ("Instant", "SystemTime", "std::time", "fs::", "File", "unsafe", "Surface", "present", "thread"):
@@ -8861,16 +8893,21 @@ def simtick_fence():
         raise Red("shell/main.rs does not declare the fast bearing path exactly once")
     hd = code_of_src(read(os.path.join(SHELL, "heading.rs")).decode("utf-8"))
     ref = src_span(hd, "pub fn reference(", "\n}\n")
-    wit = src_span(hd, "pub fn witness(", "\n}\n")
+    # re-pinned on purpose with MOUSE-LOOK-0: the witness is a method of the session's Painter — the same tread ca,
+    # entered as its prepare and render_into (what bearingfast::picture is) so the buffers and the picture are kept
+    wit = src_span(hd, "pub fn witness(&mut self", "\n    }\n")
     if ("bearingfast" in ref or "sc.strips(&mut strips);" not in ref or "sc.frame(&strips, &mut frame);" not in ref
-            or "crate::present::compose_frame(level_bytes, tiles_bytes, cam)" not in wit or "bearingfast::picture(&sc, PROD)" not in wit
+            or "crate::present::compose_frame(level_bytes, tiles_bytes, cam)" not in wit or "bearingfast::prepare(&sc, PROD)" not in wit
+            or "bearingfast::render_into(&sc, PROD, &floor, &mut self.strips, &mut self.frame, &mut self.pixels)" not in wit
+            or hd.count("bearingfast::render_into(") != 1 or hd.count("bearingfast::prepare(") != 1 or "bearingfast::picture(" in hd
             or "pub const PROD: bearingfast::Tread = bearingfast::Tread { blocked: false, threads: bearingfast::PROD_THREADS };" not in hd
             or any(t in hd for t in ("fs::", "File", "Instant", "SystemTime", "unsafe"))):
         raise Red("shell/heading.rs is not the facing kernel at an anchor, tread ca elsewhere, and the reference's own traversal and frame for the recomputation")
     pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
     sect = pb[pb.index("// ================================================================== SIM-TICK-0 (appended)"):]
     pl = src_span(sect, "pub fn push_look(", "\n    }\n")
-    order = [pl.find(t) for t in ("crate::simtick::turn(self.yaw, delta)", "facing: crate::simtick::cardinal(yaw)", "crate::heading::witness(&self.level, &self.tiles, cam, yaw)?",
+    # re-pinned on purpose with MOUSE-LOOK-0: the look's witness is taken by the session's Painter (shell/heading.rs)
+    order = [pl.find(t) for t in ("crate::simtick::turn(self.yaw, delta)", "facing: crate::simtick::cardinal(yaw)", "self.painter.witness(&self.level, &self.tiles, cam, yaw)?",
                                   "fold(&self.head, b'K', &look_fold(&token(cam, yaw), &witness))", "self.log.push(", "self.handed();")]
     if -1 in order or order != sorted(order) or 'format!("{}:{}", token, witness)' not in src_span(sect, "pub fn look_fold(", "\n}\n") \
             or any(t in sect for t in ("fs::", "File::", "Instant")):
@@ -8895,8 +8932,9 @@ def simtick_fence():
             raise Red("a script whose time runs backwards was not refused before anything ran")
     return ("the rule proof stays windowless and pure: shell/simtick.rs holds the registered constants and no clock, file, "
             "static, unsafe, float or thread; the tick run applies a command as the look once and first, then the other "
-            "inputs in order, with no clock or surface; shell/win32.rs reads no mouse and still begins with LATENCY-0's "
-            "instrument; the live loop refuses a free heading before it renders and binds no look; only shell/heading.rs "
+            "inputs in order, with no clock or surface; shell/win32.rs reads a mouse only in MOUSE-LOOK-0's own section, by raw "
+            "input alone, and still begins with LATENCY-0's instrument; the live loop's clockless entry points refuse a "
+            "free heading before they render, and the loop binds no look; only shell/heading.rs "
             "reaches the bearing kernels (the facing kernel at an anchor, tread ca elsewhere, the reference's own traversal "
             "and frame to recompute) and the workshop never reaches the fast path; the look folds over its token; the save "
             "certifies before it writes; mantle.rs, fast.rs, formats.rs, hud.rs, vocab.rs, bearingfast.rs, the "
@@ -9143,7 +9181,8 @@ def simtick0a_fence():
     """The amendment stays inside the rules: the session's sensitivity event is one legal transition that folds nothing
     and writes no W, M or camera; every fold skips it; the tick run resolves the control keys to their typed effect
     before the editor's binding and reads the configuration from the session; the accumulator admits one held repeat a
-    tick under HOLD-WALK-0's own set; the editor's bindings, the window loop and shell/win32.rs are unchanged."""
+    tick under HOLD-WALK-0's own set; the editor's bindings and the window loop do not know the control keys, and
+    outside MOUSE-LOOK-0's own section (re-pinned on purpose with that rung) shell/win32.rs reads no mouse."""
     code_of_src = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
     pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
     sect = pb[pb.index("// ================================================================== SIM-TICK-0 (appended)"):]
@@ -9187,8 +9226,12 @@ def simtick0a_fence():
     if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
         raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
     tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
-    if any(t in tail for t in ("WM_INPUT", "WM_MOUSEMOVE", "RegisterRawInputDevices", "GetRawInputData", "ClipCursor", "SetCapture", "simtick", "tickrun", "push_sensitivity")):
-        raise Red("shell/win32.rs reads a mouse, confines a cursor or reaches the tick rules: that is MOUSE-LOOK-0's")
+    # re-pinned on purpose with MOUSE-LOOK-0: its own appended section reads raw input and confines the cursor; no other
+    # section does, and none reaches the tick rules or the session's configuration
+    outside = tail.replace(w32_section(tail, "MOUSE-LOOK-0 (appended)"), "") if "MOUSE-LOOK-0 (appended)" in tail else tail
+    if any(t in outside for t in ("WM_INPUT", "RegisterRawInputDevices", "GetRawInputData", "ClipCursor")) \
+            or any(t in tail for t in ("WM_MOUSEMOVE", "SetCapture", "simtick", "tickrun", "push_sensitivity")):
+        raise Red("shell/win32.rs reads a mouse or confines a cursor outside MOUSE-LOOK-0's section, or reaches the tick rules")
     pins = {"bearingfast.rs": BEARINGFAST_RS_SHA256, "vocab.rs": VOCAB_RS_SHA256, "mantle.rs": MANTLE_RS_SHA256, "fast.rs": FAST_RS_SHA256}
     pins.update(SIMTICK_KERNEL_PINS)
     for fn, want in pins.items():
@@ -9201,7 +9244,576 @@ def simtick0a_fence():
             "sealer's) skips it; the tick run keeps no sensitivity of its own, reads the session's, and resolves PgUp, PgDn "
             "and Tab to their typed effect before the editor's binding; the accumulator admits one held repeat a tick "
             "under HOLD-WALK-0's own set, a fresh press always acting; the editor's bindings and the window loop do not "
-            "know the control keys; shell/win32.rs reads no mouse and confines no cursor; no renderer source changed")
+            "know the control keys; outside MOUSE-LOOK-0's own section shell/win32.rs reads no mouse and confines no cursor; "
+            "no renderer source changed")
+
+
+# ------------------------------------------------------------------ MOUSE-LOOK-0
+# A real mouse on the locked tick rules: the live loop under a tick source. The gate runs the loop over the mock — a
+# scripted mouse, keyboard and focus, and a clock that is the composition count times 13,333 us.
+ML_PERIOD_US, ML_READBACK, ML_SAMPLE, ML_IDLE = 13333, 75, 64, 8
+SIMTICK0A_HASH = "471f4d7253ca52139b5073e964c3f79550a872e673454033b99ddac557719450"
+SIMTICK_RS_SHA256 = "3122c541d2370f7dc5fe85140dc82470680c1babbaa33205dc000675dfd28ac3"
+# script L, from 28,28,N on the witness level with identity tiles: (microseconds, input). The times are not multiples of
+# anything: an input's tick is the tick of the composition that drains it. Each line says what it registers.
+MOUSELOOK_SCRIPT = [
+    (0, "m+3"), (9000, "m+2"),                       # compositions 0 and 1 are both in tick 0: one look of 5 counts, applied at composition 2
+    (30000, "W"),                                    # a step at a free heading (north is rock: blocked, still a frame event)
+    (41000, "m+500"),                                # 44440: still nearest north
+    (60000, "PGUP"),                                 # the multiplier, a configuration event
+    (70000, "m+4"), (85000, "m-1"),                  # compositions 6 and 7 share tick 5: 3 counts at multiplier 2
+    (100000, "TAB"),                                 # fine steps
+    (110000, "m+17"),                                # 45002: the nearest cardinal is now east
+    (125000, "W"), (126000, "W+"), (127000, "W+"),   # one composition drains a press and two repeats: two steps east, one coalesced
+    (140000, "SPACE"),                               # an edit at a free heading: no frame event, the picture is rendered for the new world
+    (160000, "D"),                                   # a strafe at a free heading
+    (300000, "m-9"), (313000, "m-9"), (326000, "m-9"), (339000, "m-9"), (352000, "m-9"),   # a steady turn, a report at every composition
+    (700000, "LEFT"),                                # a quarter turn at a free heading
+    (930000, "5"),                                   # the floor repainted at a free heading: the last change before composition 75's readback
+    (1100000, "m-22456"),                           # back to an anchor exactly: the composite again
+    (1150000, "W"),                                  # a step on the facing kernel, in the edited world
+    (1300000, "m+1"), (1900000, "m-1"),              # off the anchor and, later, back onto it: composition 150 reads back an anchor
+    (2050000, "ESC")]
+# the capture stretch: the window out of the foreground from 400,000 us to 650,000 us, with mouse motion and key presses
+# arriving meanwhile — script L has no input of its own in that stretch
+MOUSELOOK_AWAY = [(400000, "blur"), (410000, "m+700"), (450000, "W"), (470000, "SPACE"), (500000, "m-33"), (560000, "PGUP"),
+                  (600000, "ESC"), (650000, "focus")]
+
+
+def _ml_text(items) -> str:
+    return ",".join("%d:%s" % (us, what) for us, what in items)
+
+
+def _ml_schedule(items):
+    """The mock's schedule, re-derived. Composition c happens at c * 13,333 us; it drains every scripted item whose time
+    has come (those arriving while the window is out of the foreground are dropped); a tick that received inputs is
+    closed at the first composition whose clock is in a later tick; the window closes by itself a few compositions
+    after the script is spent. Returns the admitted inputs with their drain times, the composition of every close, what
+    was dropped, the blurs, the out-of-foreground stretches (as the first and last tick inside them) and the last
+    composition the mock allows."""
+    c, nxt, fore, idle, open_tick = 0, 0, True, 0, None
+    drained, closes, dropped, blurs, away, since = [], {}, 0, 0, [], None
+    while True:
+        now = c * ML_PERIOD_US
+        tick = now // ST_TICK_US
+        got = []
+        while nxt < len(items) and items[nxt][0] <= now:
+            what = items[nxt][1]
+            if what == "blur":
+                fore, blurs, since = False, blurs + 1, tick
+            elif what == "focus":
+                fore = True
+                away.append((since, tick))
+            elif not fore:
+                dropped += 1
+            else:
+                got.append(what)
+            nxt += 1
+        if nxt >= len(items):
+            idle += 1
+        if open_tick is not None and open_tick < tick:
+            closes[c] = open_tick
+            open_tick = None
+        if got:
+            open_tick = tick
+            drained += [(now, what) for what in got]
+        if idle > ML_IDLE:
+            return {"drained": drained, "closes": closes, "dropped": dropped, "blurs": blurs, "away": away, "closed_at": c}
+        c += 1
+
+
+def _ml_pixels(lvl, til, token, cache):
+    """sha256 of the picture at a camera token, from the kernel executable: the composite (the frame under its overlay)
+    at an anchor, the bearing REFERENCE's picture alone at a free heading."""
+    key = ("px", token, hashlib.sha256(lvl).hexdigest(), hashlib.sha256(til).hexdigest())
+    if key not in cache:
+        x, z, h = token.split(",")
+        _sw_frame(lvl, til, (int(x), int(z), 0), cache) if cache.get("lvl") != lvl or cache.get("til") != til else None
+        args = ["--camera", token, "--hud"] if h in "NESW" else ["--at", token]
+        code, out, err = run(KERNEL_EXE, ["--level", cache["lp"], "--tiles", cache["tp"]] + args)
+        d = dict(ln.split(" ", 1) for ln in out.strip().splitlines() if " " in ln)
+        if code != 0 or d.get("selfcheck") != "OK":
+            raise Red("twin: the kernel's picture at %s: %s" % (token, err.strip()))
+        cache[key] = d["hud"] if h in "NESW" else d["pixels"]
+    return cache[key]
+
+
+def _ml_twin(items, st, cache):
+    """A whole look run, re-derived: the schedule gives each admitted input its drain time; the tick run's twin gives
+    the events; then, composition by composition, what the loop shows — whether a command changed the state there,
+    whether the heading is free (the picture) or an anchor (the composite), and the camera and world at every read-back
+    composition."""
+    sch = _ml_schedule(items)
+    script = [(us // ST_TICK_US, us % ST_TICK_US, what) for us, what in sch["drained"]]
+    st2, trace, counts, ended = _st_twin(script, st, cache)
+    first = st["ticks"]
+    new = st2["log"][len(st["log"]):]
+    lvl, til = st["lvl"], st["til"]
+    token = _st_token(st["x"], st["z"], st["yaw"])
+    loop = {"compositions": 0, "picture": 0, "composite": 0, "repeated": 0, "references": 1, "read": [], "free_frames": [], "ended": "closed"}
+    k = len(st["log"])
+    for c in range(sch["closed_at"] + 1):
+        changed = False
+        if c in sch["closes"]:
+            tick = first + sch["closes"][c]
+            for e in [e for e in new if e["tick"] == tick]:
+                changed = True
+                if e["kind"] in ("move", "look"):
+                    token = e["camera"]
+                    if token.split(",")[2] not in "NESW":
+                        loop["free_frames"].append(k)
+                elif e["kind"] == "edit":
+                    lvl, til = _sw_apply(lvl, til, e["spec"])
+                k += 1
+            if ("tick %d key ESC -> end" % tick) in trace:
+                loop["ended"] = "escape"
+                break
+        if c == sch["closed_at"]:
+            break
+        free = token.split(",")[2] not in "NESW"
+        loop["compositions"] += 1
+        loop["picture" if free else "composite"] += 1
+        if c > 0 and not changed:
+            loop["repeated"] += 1
+        if changed and not free:
+            loop["references"] += 1
+        if c % ML_READBACK == 0:
+            loop["read"].append([c, token, _ml_pixels(lvl, til, token, cache)])
+    loop["samples"] = len(loop["free_frames"]) // ML_SAMPLE
+    return sch, script, st2, trace, counts, loop
+
+
+def _ml_run(script_text, logs, name, extra=None, exe=None):
+    """One shell look-selftest; returns (completed process, the saved session's path or None, the --out data or None)."""
+    env = dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1], LIVESESSION_ENV: GATE_SESSIONS})
+    out = os.path.join(BUILD, "look-%s.json" % name)
+    if os.path.exists(out):
+        os.remove(out)
+    cp = subprocess.run([exe or SHELL_EXE, "look-selftest", "--script", script_text, "--out", out] + (extra or []),
+                        capture_output=True, text=True, cwd=ROOT, env=env)
+    m_ = re.search(r"saved and verified: (.+?session\.json)", cp.stdout)
+    raw = None
+    if os.path.exists(out):
+        with open(out, encoding="utf-8") as fh:
+            raw = json.load(fh)["data"]
+        os.remove(out)
+    return cp, (m_.group(1) if m_ else None), raw
+
+
+def _ml_script_l(logs, name, items=None):
+    cp, path, raw = _ml_run(_ml_text(items or MOUSELOOK_SCRIPT), logs, name, ["--camera", ST_CAMERA])
+    if cp.returncode != 0 or path is None or raw is None or "look court OK" not in cp.stdout:
+        raise Red("script L did not run to a saved and verified session: " + (cp.stderr.strip() or cp.stdout.strip())[-300:])
+    return cp, path, raw
+
+
+# the steady script: a report at every composition for 160 compositions, then Esc — more than 128 looks at free headings
+MOUSELOOK_STEADY = [(i * ML_PERIOD_US, "m+1") for i in range(160)] + [(160 * ML_PERIOD_US + 20000, "ESC")]
+
+
+def mouselook_preregistered():
+    """MOUSE-LOOK-0's method is locked: the live editor with the mouse is a new entry on the same loop, session, journal
+    and seal; an input's tick is the tick of the composition that drained it; capture is shell state and never a session
+    event; the picture alone at a free heading; the readback and the reference sampled; SIM-TICK-0's and SIM-TICK-0a's
+    entries unedited."""
+    e = locked_entry("MOUSE-LOOK-0", {
+        "the entry": ("hyp", ("shell look-window on the host and shell look-selftest on the mock", "the same loop function, session, journal and seal",
+                              "live-window, liveinput-* and livesession-* stay exactly as registered and pass no tick source")),
+        "the rules are not proved again": ("hyp", ("the rules are sim-tick-0's and sim-tick-0a's, unchanged", "the clock, the mouse, the capture, and the loop presenting a free heading")),
+        "the clock": ("hyp", ("an input's tick is the tick of the microsecond at which the loop drained it", "its composition count times 13,333 us",
+                              "applied at the first composition whose clock has passed the tick's end")),
+        "the mouse": ("hyp", ("windows raw input (wm_input), relative horizontal counts", "pointer movement (wm_mousemove) is never used as counts")),
+        "capture is shell state": ("hyp", ("capture is shell state, never session state", "makes no session event of any kind", "no look of zero, no pause, no synthetic input",
+                                           "esc releases, then saves, then the reference recomputes")),
+        "the picture": ("hyp", ("the picture alone", "the render its witness came from, rendered once, with no overlay", "at an anchor heading it presents the composite as before")),
+        "the readback and the sample": ("hyp", ("at the first composition and at every 75th after it", "every 64th frame event at a free heading", "on a worker thread, off the loop",
+                                                "a mismatch ends the run refused and nothing is saved", "a sample certifies nothing")),
+        "the loop row": ("succ", ("stamped with the tick of the composition that drained it", "byte-identical to what shell simtick-selftest saves from the same inputs at those times",
+                                  "a python model of the schedule derives")),
+        "the capture row": ("succ", ("none of them reaches the session", "no event carries a tick inside the stretch", "the mouse is released before the save begins")),
+        "the present row": ("succ", ("the kernel executable's pixels at that camera", "exactly the first composition and every 75th after it", "counted and logged as a differing screen")),
+        "the sample row": ("succ", ("more than 128 frame events at free headings", "exactly one sample per 64", "refused liveinput-sample naming the event of the 64th free-heading frame",
+                                    "writes no session file")),
+        "the fence row": ("succ", ("pass no tick source and read no clock", "calls no session method and reaches no renderer", "simtick.rs, the kernels and shell/present.rs are unchanged")),
+        "what fails it": ("fail", ("a focus or capture change that makes, removes or alters a session event", "mouse motion admitted while the window is not in the foreground",
+                                   "a look applied more than once in a tick or before its tick ended", "an overlay drawn at a free heading",
+                                   "a session saved after a sample differed, or a sample read as certification", "a latency, frame-rate or feel claim")),
+        "scope": ("lims", ("the gate cannot hold a real mouse, a real clock or a real window", "no latency is claimed", "not the tick the device moved in",
+                           "about 11 compositions in 75 repeat the picture before them", "only the save's recomputation is exhaustive",
+                           "vertical motion, buttons and the wheel are not read")),
+    })
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    for rung, want in (("SIM-TICK-0", SIMTICK0_HASH), ("SIM-TICK-0a", SIMTICK0A_HASH)):
+        if reg[rung]["chain_hash"] != want or not entry_hash_ok(rung, reg[rung]):
+            raise Red("%s's entry was edited: MOUSE-LOOK-0 leaves the rules as registered" % rung)
+    return ("MOUSE-LOOK-0's method is locked (hash %s) before the build, and the rules' entries are unedited (SIM-TICK-0 "
+            "%s, SIM-TICK-0a %s): look-window and look-selftest are the live editor on the same loop, session, journal and "
+            "seal with a tick source switched on; an input's tick is the tick of the composition that drained it; capture "
+            "is shell state and never a session event; at a free heading the loop presents the session's own picture; the "
+            "screen is read back one composition in 75 and the reference recomputes one free-heading frame in 64, off the "
+            "loop; no latency is claimed" % (e["chain_hash"][:8], SIMTICK0_HASH[:8], SIMTICK0A_HASH[:8]))
+
+
+def mouselook_loop():
+    """The window loop adds nothing to the rules: script L through shell look-selftest stamps every input with the tick
+    of the composition that drained it, and saves data byte-identical to what shell simtick-selftest saves from the same
+    inputs at those times; its trace and counts are the tick run's twin's; its compositions, the ones that showed the
+    picture and the composite, the ones that repeated the picture before them, and its references are the ones the
+    schedule's model derives; the workshop verifies the file."""
+    import livesession as LS
+    _st_need()
+    logs = _ls_logs("mouselook-loop")
+    cache = {}
+    cp, path, raw = _ml_script_l(logs, "loop")
+    sch, script, st2, trace, counts, loop = _ml_twin(MOUSELOOK_SCRIPT, _st_start(), cache)
+    # the model's drain times, stated independently: an item scripted at T is drained by composition ceil(T / 13,333)
+    if sch["drained"] != [(-(-us // ML_PERIOD_US) * ML_PERIOD_US, what) for us, what in MOUSELOOK_SCRIPT] or sch["dropped"] or sch["blurs"]:
+        raise Red("the schedule's model does not drain each input at the first composition at or after its time")
+    cp2, p2, raw2 = _st_run(_st_text(script), logs, "look-as-ticks", ["--camera", ST_CAMERA])
+    if cp2.returncode != 0 or p2 is None or raw2 is None:
+        raise Red("the same inputs at their drain times did not save through simtick-selftest: " + cp2.stderr.strip()[-200:])
+    if _st_data(path) != _st_data(p2):
+        raise Red("the look loop's saved data is not the windowless tick run's on the same inputs at their drain times: the window loop added something to the rules")
+    tick = raw["tick"]["data"]
+    if tick["trace"] != trace or raw2["trace"] != trace:
+        raise Red("the look run's trace is not the twin's: %r" % (next((g, w) for g, w in zip(tick["trace"] + [None] * 99, trace + [None]) if g != w),))
+    if tick["counts"] != counts or tick["ended"] != "escape" or tick["ticks"] != st2["ticks"] or tick["sensitivity"] != list(st2["sens"]):
+        raise Red("the look run's counts, tick count or sensitivity are not the twin's: %s" % tick["counts"])
+    d = LS.check_saved(read(path), ROOT)
+    log = d["data"]["log"]
+    # the two places script L puts two compositions in one tick: one look each, of the summed counts
+    shared = [(e["tick"], e["input"]["counts"]) for e in log if e["kind"] == "look" and e["tick"] in (0, 5)]
+    if shared != [(0, 5), (5, 3)] or log[7]["tick"] != log[8]["tick"] or [e["kind"] for e in log[7:9]] != ["move", "move"]:
+        raise Red("two compositions in one tick did not make one look of the summed counts, or one composition's press and repeat did not share its tick")
+    lp = raw["loop"]
+    got = {k: lp[k] for k in ("compositions", "picture", "composite", "repeated", "references", "samples", "ended")}
+    want = {k: loop[k] for k in got}
+    if got != want:
+        raise Red("the loop's compositions are not the schedule's: %s, not %s" % (got, want))
+    if (lp["presented"] != lp["compositions"] or lp["byte_checks"] != lp["composite"] or lp["picture"] + lp["composite"] != lp["compositions"]
+            or lp["span"] != 1 or (lp["sample_every"], lp["readback_every"], lp["period_us"]) != (ML_SAMPLE, ML_READBACK, ML_PERIOD_US)):
+        raise Red("a composition was not presented, an anchor composition was not byte-checked, or the clock moved more than a tick between two compositions: %s" % lp)
+    look = d["live"].get("look") or {}
+    if {k: look.get(k) for k in ("compositions", "picture", "composite", "repeated", "samples", "span")} != {k: lp[k] for k in ("compositions", "picture", "composite", "repeated", "samples", "span")} \
+            or look.get("rung") != "MOUSE-LOOK-0" or look.get("tick_hz") != ST_HZ:
+        raise Red("the saved file's live block does not record what the loop showed: %s" % look)
+    if "look" in json.loads(read(p2).decode("utf-8"))["live"]:
+        raise Red("a windowless tick run's saved file claims a look loop")
+    code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+    if code != 0:
+        raise Red("the workshop does not verify script L's session: " + err.strip())
+    return ("the window loop adds nothing to the rules: script L's %d inputs, each stamped with the tick of the composition "
+            "that drained it, saved data byte-identical (%d bytes, %d events, head %s…) to shell simtick-selftest on the "
+            "same inputs at those times, with the twin's trace and counts; two compositions inside one tick made one look "
+            "of the summed counts; of %d compositions %d presented the session's picture and %d the composite, %d repeated "
+            "the picture before them, and the clock never moved more than one tick between two — all as the schedule's "
+            "model derives; the counts are in the saved file's live block; the workshop verifies the file"
+            % (len(MOUSELOOK_SCRIPT), len(_st_data(path)), len(log), d["data"]["head"][:12], lp["compositions"], lp["picture"],
+               lp["composite"], lp["repeated"]))
+
+
+def mouselook_capture():
+    """Capture is shell state: script L with the window out of the foreground for a stretch — mouse motion and key
+    presses (an Esc among them) arriving meanwhile — saves byte-identical data and shows the same compositions; none of
+    the stretch's inputs reaches the session, no event carries a tick inside it, nothing about the focus is in the
+    session's data; the mouse is released before the save begins; and the same inputs with the window in the foreground
+    do change the session."""
+    import livesession as LS
+    _st_need()
+    logs = _ls_logs("mouselook-capture")
+    cp, path, raw = _ml_script_l(logs, "capture-plain")
+    away = sorted(MOUSELOOK_SCRIPT + MOUSELOOK_AWAY, key=lambda i: i[0])
+    inside = [i for i in MOUSELOOK_AWAY if i[1] not in ("blur", "focus")]
+    lo_us, hi_us = MOUSELOOK_AWAY[0][0], MOUSELOOK_AWAY[-1][0]
+    if any(lo_us <= us <= hi_us + 2 * ST_TICK_US for us, _w in MOUSELOOK_SCRIPT) or len(inside) != 6 or not any(w == "ESC" for _u, w in inside):
+        raise Red("the capture stretch is not clear of script L's own inputs, or does not carry its six inputs and an Esc")
+    cp2, p2, raw2 = _ml_script_l(logs, "capture-away", away)
+    if _st_data(p2) != _st_data(path):
+        raise Red("the window leaving the foreground changed the saved data: a focus or capture change reached the session")
+    sch = _ml_schedule(away)
+    a, b = (LS.check_saved(read(p_), ROOT) for p_ in (path, p2))
+    if (b["live"]["focus"] != {"source": "mock", "mouse": {"blurs": 1, "dropped": len(inside), "released": True}}
+            or a["live"]["focus"] != {"source": "mock", "mouse": {"blurs": 0, "dropped": 0, "released": True}}
+            or (sch["blurs"], sch["dropped"]) != (1, len(inside))):
+        raise Red("the stretch's inputs were not all dropped and counted, or the mouse was not released: %s" % b["live"]["focus"])
+    lo, hi = sch["away"][0]
+    if not lo < hi or any(lo <= e["tick"] <= hi for e in b["data"]["log"]) or b["data"]["ticks"] != a["data"]["ticks"]:
+        raise Red("an event carries a tick inside the out-of-foreground stretch (ticks %d..%d)" % (lo, hi))
+    text = json.dumps(b["data"])
+    if any(w in text for w in ("blur", "focus", "capture", "pause", "foreground")) or raw2["loop"] != raw["loop"] or raw2["tick"]["data"]["trace"] != raw["tick"]["data"]["trace"]:
+        raise Red("the session's data names the focus, or the loop did not show the same compositions with the window away")
+    for cp_ in (cp, cp2):
+        out = cp_.stdout
+        order = [out.find(t) for t in ("[look] the mouse is released", "[livesession] certified:", "[livesession] saved and verified:")]
+        if -1 in order or order != sorted(order):
+            raise Red("the mouse was not released before the save began")
+    # the control: the same six inputs with the window in the foreground are not inert
+    cp3, p3, raw3 = _ml_run(_ml_text([i for i in away if i[1] not in ("blur", "focus")]), logs, "capture-control", ["--camera", ST_CAMERA])
+    if cp3.returncode != 0 or p3 is None or _st_data(p3) == _st_data(path):
+        raise Red("the stretch's inputs changed nothing even with the window in the foreground: the capture row would prove nothing")
+    code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p2])
+    if code != 0:
+        raise Red("the workshop does not verify the session walked with the window away: " + err.strip())
+    return ("capture is shell state: with the window out of the foreground from tick %d to tick %d and %d inputs arriving "
+            "meanwhile (mouse motion, W, Space, PgUp, an Esc), script L saved byte-identical data (head %s…) and showed the "
+            "same %d compositions — all %d dropped and counted in the live block, none an event, no event's tick inside the "
+            "stretch, no word of the focus in the session's data; the mouse was released before the save began; the same "
+            "inputs with the window in the foreground do change the session (it ends at the Esc)"
+            % (lo, hi, len(inside), a["data"]["head"][:12], raw["loop"]["compositions"], len(inside)))
+
+
+def mouselook_present():
+    """What the loop hands to the call: at every read-back composition of script L the presented picture's sha256 is the
+    kernel executable's — the bearing reference's picture alone at a free heading (in the edited world, after an edit
+    that made no frame event), the composite at an anchor (LIVE-INPUT-0's own at the start); the readbacks are exactly
+    the first composition and every 75th after it, all exact; a surface whose call writes nothing completes with every
+    readback counted and logged as differing, and the same session saved."""
+    import livesession as LS
+    import refusallog as RL
+    import runledger as RLG
+    _st_need()
+    logs = _ls_logs("mouselook-present")
+    cache = {}
+    cp, path, raw = _ml_script_l(logs, "present")
+    sch, _script, st2, _trace, _counts, loop = _ml_twin(MOUSELOOK_SCRIPT, _st_start(), cache)
+    lp = raw["loop"]
+    read_ = lp["read"]
+    if [r[0] for r in read_] != list(range(0, lp["compositions"], ML_READBACK)) or (lp["screen_readbacks"], lp["screen_differed"]) != (len(read_), 0):
+        raise Red("the readbacks are not exactly the first composition and every %dth after it, all exact: %s" % (ML_READBACK, [r[0] for r in read_]))
+    if read_ != loop["read"]:
+        bad = next((g, w) for g, w in zip(read_, loop["read"]) if g != w)
+        raise Red("at composition %d (camera %s) the presented picture is %s…, not the kernel executable's %s… at %s" % (bad[0][0], bad[0][1], bad[0][2][:12], bad[1][2][:12], bad[1][1]))
+    kinds = ["anchor" if r[1].split(",")[2] in "NESW" else "free" for r in read_]
+    edited = LS.check_saved(read(path), ROOT)["data"]
+    if kinds != ["anchor", "free", "anchor"] or edited["edits"] != 2 or read_[0][1] != ST_CAMERA or read_[2][1] == ST_CAMERA:
+        raise Red("script L's readbacks do not cover an anchor, a free heading in the edited world and an anchor reached again: %s" % [r[:2] for r in read_])
+    # composition 75's picture follows an edit that made no frame event (the session rendered the new world for it), and
+    # the edit shows there: the same camera over the world before it is a different picture
+    closed_at = {t: c for c, t in sch["closes"].items()}
+    k2 = [i for i, e in enumerate(st2["log"]) if e["kind"] == "edit"][1]
+    after = next(e for e in st2["log"][k2 + 1:] if e["kind"] in ("move", "look"))
+    st0 = _st_start()
+    before_edit = _sw_apply(st0["lvl"], st0["til"], st2["log"][[i for i, e in enumerate(st2["log"]) if e["kind"] == "edit"][0]]["spec"])
+    if (not closed_at[st2["log"][k2]["tick"]] <= ML_READBACK < closed_at[after["tick"]] or st2["log"][k2 - 1]["kind"] == "edit"
+            or _ml_pixels(before_edit[0], before_edit[1], read_[1][1], cache) == read_[1][2]):
+        raise Red("composition %d's picture does not follow a visible edit made with no frame event after it: the row would not see a stale picture" % ML_READBACK)
+    # the composite at the start is the one LIVE-INPUT-0's loop presents from the same camera
+    li_logs = _li_logs("mouselook-present")
+    cpl, rawl = _li_run("mouselook-present", ST_CAMERA, "ESC", li_logs)
+    if cpl.returncode != 0 or rawl is None or rawl["data"]["pixels"][0] != read_[0][2]:
+        raise Red("the composite the look loop presents at an anchor is not the one LIVE-INPUT-0's loop presents there")
+    # a surface whose call writes nothing: every readback differs, counted and logged, and the run goes on
+    logs2 = _ls_logs("mouselook-present-noop")
+    cpn, pn, rawn = _ml_run(_ml_text(MOUSELOOK_SCRIPT), logs2, "present-noop", ["--camera", ST_CAMERA, "--plant", "noop"])
+    if cpn.returncode != 0 or pn is None or rawn is None:
+        raise Red("PLANT noop: a present that writes nothing stopped the look loop; a differing screen is counted, not refused")
+    ln = rawn["loop"]
+    records, rbad = RL.read(logs2[0])
+    runs, lbad = RLG.read(logs2[1])
+    diffs = [r for r in records if (r["reason_code"], r["attribution"]) == ("LIVEINPUT-SCREEN-DIFFERS", "present.readback")]
+    if ((ln["screen_readbacks"], ln["screen_differed"]) != (len(read_), len(read_)) or rbad or lbad or len(diffs) != len(read_) or len(records) != len(read_)
+            or len(runs) != 1 or (runs[0]["exit_code"], runs[0]["readbacks_checked"], runs[0]["differed"]) != (0, len(read_), len(read_))
+            or LS.check_saved(read(pn), ROOT)["live"]["look"]["screen_differed"] != len(read_) or _st_data(pn) != _st_data(path)):
+        raise Red("PLANT noop: not every readback was counted and logged as differing, or the session saved is not the same")
+    return ("what the loop hands to the call: at script L's %d read-back compositions (%s — the first and every %dth after "
+            "it) the presented picture's sha256 is the kernel executable's: the composite at %s (LIVE-INPUT-0's own), the "
+            "bearing reference's picture alone at %s in the edited world (%s…, no overlay), the composite again at %s; the "
+            "screen read back exact each time; a surface whose call writes nothing completed with all %d readbacks counted, "
+            "logged and recorded in the live block as differing, and the same session saved"
+            % (len(read_), ", ".join(str(r[0]) for r in read_), ML_READBACK, read_[0][1], read_[1][1], read_[1][2][:12], read_[2][1], len(read_)))
+
+
+def mouselook_sample():
+    """The reference samples the run, off the loop: the steady script (a report at every composition, more than 128
+    looks at free headings) takes exactly one sample per 64 free-heading frames, all equal, and saves; in every 75 of
+    its compositions 11 repeat the picture before them; a shell built with the planted, self-consistent fast-path defect
+    is refused LIVEINPUT-SAMPLE naming the event of the 64th free-heading frame, with the mouse released, exit 2, no
+    session file, one refusal-log record."""
+    import livesession as LS
+    import refusallog as RL
+    import runledger as RLG
+    _st_need()
+    logs = _ls_logs("mouselook-sample")
+    cache = {}
+    cp, path, raw = _ml_script_l(logs, "sample", MOUSELOOK_STEADY)
+    sch, _script, st2, _trace, counts, loop = _ml_twin(MOUSELOOK_STEADY, _st_start(), cache)
+    free = loop["free_frames"]
+    lp = raw["loop"]
+    if len(free) <= 2 * ML_SAMPLE or loop["samples"] != len(free) // ML_SAMPLE or lp["samples"] != loop["samples"] or counts["looks"] != len(free):
+        raise Red("the steady script did not take exactly one sample per %d free-heading frames: %d samples over %d frames" % (ML_SAMPLE, lp["samples"], len(free)))
+    d = LS.check_saved(read(path), ROOT)
+    if d["live"]["look"]["samples"] != lp["samples"] or d["live"]["certified"]["frames"] != len(free) or d["data"]["head"] != st2["head"]:
+        raise Red("the sampled run's save did not still recompute every free-heading frame, or its head is not the twin's")
+    # 64 ticks against 75 compositions: with an input at every composition, 11 compositions in 75 close no tick
+    # 64 ticks against 75 compositions: with an input at every composition, the compositions that close no tick are
+    # the ones that repeat the picture — about 11 in 75 (the mock's 13,333 us period is a third of a microsecond short of
+    # a 75th of a second, so the count over a stretch is 11 or 12)
+    quiet = [c for c in range(76, 151) if c not in sch["closes"]]
+    if len(quiet) != 11 or lp["repeated"] != loop["repeated"] or lp["repeated"] != lp["compositions"] - 1 - counts["looks"]:
+        raise Red("the steady script's repeated compositions are not the ticks' beat against the compositions: %d in compositions 76..150, %d in all" % (len(quiet), lp["repeated"]))
+    planted = _st_planted()
+    logs2 = _ls_logs("mouselook-sample-planted")
+    before = set(os.listdir(GATE_SESSIONS))
+    cpp, pp, rawp = _ml_run(_ml_text(MOUSELOOK_STEADY), logs2, "sample-planted", ["--camera", ST_CAMERA], planted)
+    m = re.search(r"LIVEINPUT-SAMPLE: event (\d+): the reference's frame", cpp.stderr)
+    made = sorted(set(os.listdir(GATE_SESSIONS)) - before)
+    if cpp.returncode != 2 or pp is not None or rawp is not None or m is None or int(m.group(1)) != free[ML_SAMPLE - 1] or "saved and verified" in cpp.stdout:
+        raise Red("a shell with a defective fast path was not refused by its first sample, naming the 64th free-heading frame's event: %s"
+                  % (cpp.stderr.strip() or cpp.stdout.strip())[-300:])
+    if len(made) != 1 or sorted(os.listdir(os.path.join(GATE_SESSIONS, made[0]))) != ["journal.vsj"] or "[look] the mouse is released" not in cpp.stdout:
+        raise Red("the refused run left something other than its journal, or did not release the mouse: %s" % made)
+    records, rbad = RL.read(logs2[0])
+    runs, lbad = RLG.read(logs2[1])
+    hit = [r for r in records if r["reason_code"] == "LIVEINPUT-SAMPLE"]
+    if (rbad or lbad or len(hit) != 1 or len(records) != 1 or hit[0]["attribution"] != "render.sample" or hit[0]["context"].get("event") != free[ML_SAMPLE - 1]
+            or len(runs) != 1 or runs[0]["exit_code"] != 2):
+        raise Red("the refused sample is not one refusal-log record and one ledger line ending 2")
+    return ("the reference samples the run, off the loop: the steady script's %d looks at free headings took exactly %d "
+            "samples (one per %d frames), all equal, and its save still recomputed all %d; with an input at every "
+            "composition, 11 of compositions 76 to 150 close no tick and repeat the picture before them (%d of its %d in all); a "
+            "shell whose fast path drops the wall's bottom edge was refused by its first sample (LIVEINPUT-SAMPLE, event "
+            "%d, the 64th free-heading frame), released the mouse, wrote no session file, left only its journal and ended 2 "
+            "with one refusal-log record"
+            % (len(free), lp["samples"], ML_SAMPLE, len(free), lp["repeated"], lp["compositions"], free[ML_SAMPLE - 1]))
+
+
+def mouselook_fence():
+    """The tick source is fenced: LIVE-INPUT-0's clockless entry points pass none and the loop reads a clock only
+    through one, in one place; only run_look gives one, only go_look calls run_look, and only look-selftest and
+    look-window call go_look; the ticker applies every command through the tick run and appends nothing itself; the
+    sample is one worker thread per 64th free-heading frame and the save still certifies; the mouse is released before
+    the seal; the window's raw input, cursor and clock sit in their own appended section, which calls no session method
+    and reaches no renderer; simtick.rs, the kernels and present.rs are unchanged; a windowless build refuses."""
+    code_of_src = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
+    li = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
+    lic = code_of_src(li)
+    body = lambda src, head: src_span(src, head, "\n}\n").split("{", 1)[1].rsplit("}", 1)[0].strip()
+    if (body(li, "pub fn run<S: ExactSurface + Keys>(") != "run_with(s, session, surface, bind, None)"
+            or body(li, "pub fn run_with<S: ExactSurface + Keys>(") != "run_loop(s, session, surface, binding, hold, None)"
+            or body(li, "pub fn run_look<S: ExactSurface + Keys + crate::mouselook::Look>(") != "run_loop(s, session, surface, crate::liveauthor::bind, None, Some(crate::mouselook::Source::of()))"
+            or lic.count("run_loop(") != 2 or lic.count("mouselook::Source::of()") != 1 or lic.count("fn run_loop<S: ExactSurface + Keys>(") != 1):
+        raise Red("a clockless entry point of the live loop passes a tick source, or the tick source has a second way in")
+    loopf = code_of_src(src_span(li, "fn run_loop<S: ExactSurface + Keys>(", "\npub fn summary("))
+    gate_ = "if let (Some(src), Some(t)) = (look.as_ref(), ticker.as_mut()) {"
+    blk = src_span(loopf, gate_, "\n        }\n")
+    if (loopf.count(gate_) != 1 or loopf.count("(src.now_us)(s)") != 1 or loopf.count("(src.reports)(s)") != 1 or "(src.now_us)(s)" not in blk
+            or "t.step(session, now, s.keys(), (src.reports)(s), surface)" not in blk or "t.poll().map_err(sampled)?;" not in blk
+            or "let mut ticker = look.as_ref().map(|_| crate::mouselook::Ticker::new(session));" not in loopf
+            or loopf.count("src.") != 2 or loopf.count("look.") != 3 or "ticks(" in loopf or any(t in li for t in ("Instant", "SystemTime", "qpc", "std::time"))):
+        raise Red("the loop reads the clock or the mouse outside its one tick-source block, or holds a clock of its own")
+    order = [loopf.find(t) for t in ("let free = ticker.is_some() && session.free_heading();", "let out: &[u8] = if free {", "&expected_bgr\n        } else {",
+                                     "lr.render(&scene);", "if s.present(out).is_none()", "let due = c % crate::mouselook::READBACK_EVERY == 0;",
+                                     "t.finish(session, surface).map_err(sampled)?;")]
+    pic = code_of_src(src_span(li, "fn picture(session: &mut LiveSession, bgr: &mut [u8])", "\n}\n"))
+    if (-1 in order or order != sorted(order) or "session.picture()" not in pic or "crate::present::to_blit_into(rgb, bgr);" not in pic
+            or any(t in pic for t in ("overlay", "hud", "arm_composite", "lr.", "render(")) or lic.count("session.picture()") != 1
+            or 'format!("LIVEINPUT-SAMPLE: ' not in li or lic.count("map_err(sampled)") != 2):
+        raise Red("at a free heading the loop does not present the session's own picture, unrendered and with no overlay, or a differing sample does not refuse")
+    ml = read(os.path.join(SHELL, "mouselook.rs")).decode("utf-8")
+    mlc = code_of_src(ml)
+    for tok in ("Instant", "SystemTime", "std::time", "fs::", "File", "unsafe", "push_look", "push_move", "push_edit", "push_sensitivity", "at_tick",
+                "bearing", "present::", "LoopRenderer", "arm_composite", "compose_frame"):
+        if tok in mlc or re.search(r"\bstatic\s+(mut\s+)?[A-Z_]+\s*:", mlc):
+            raise Red("shell/mouselook.rs contains %r or a static: the tick source has no clock of its own, appends nothing and renders nothing" % tok)
+    if (set(re.findall(r"session\.(\w+)\(", mlc)) != {"log", "free_frame_at", "sensitivity", "set_tick_count"}
+            or mlc.count("tickrun::apply(session, cmd, &mut self.run, surface)") != 1 or mlc.count("tickrun::apply(") != 1
+            or "Accumulator::holding(Some(crate::holdwalk::held))" not in mlc
+            or mlc.count("std::thread::spawn(move || crate::heading::certify(&[frame], 1))") != 1 or mlc.count("thread::spawn(") != 1
+            or "if self.free % SAMPLE_EVERY == 0 {" not in mlc
+            or not all(("pub const %s;" % t) in mlc for t in ("SAMPLE_EVERY: u64 = 64", "READBACK_EVERY: u64 = 75", "MOCK_PERIOD_US: u64 = 13_333"))):
+        raise Red("the ticker does not apply every command through the tick run under HOLD-WALK-0's held set, or the sample is not one reference recomputation per 64th free-heading frame on a worker thread")
+    stp = src_span(mlc, "pub fn step(", "\n    }\n")
+    order = [stp.find(t) for t in ("let tick = self.run.first_tick + simtick::tick_of(now_us);", "if t < tick {", "self.acc.close()", "self.apply(session, &cmd, surface, &mut step);",
+                                   "for input in inputs {", "self.acc.feed(tick, input)")]
+    mock = src_span(mlc, "fn pump(&mut self) -> bool {", "\n    }\n")
+    if (-1 in order or order != sorted(order) or "Item::Input(_) if !self.foreground => self.dropped += 1," not in mock
+            or not mock.find("Item::Input(_) if !self.foreground") < mock.find("Item::Input(Input::Mouse(c)) => self.reports.push(c),")
+            or "self.now = self.pumps.saturating_sub(1) * MOCK_PERIOD_US;" not in mock):
+        raise Red("a tick is not closed before the composition's inputs are fed, or the mock admits an input while out of the foreground, or its clock is not the composition count")
+    ls = read(os.path.join(SHELL, "livesession.rs")).decode("utf-8")
+    go = src_span(ls, "pub fn go_look<S: ExactSurface + Keys + Focus + crate::mouselook::Look>(", "\n}\n")
+    order = [go.find(t) for t in ("crate::liveinput::run_look(s, &mut session, surface)", "s.release();", "let live = match result {", "s.focus()", "finish(Prepared {")]
+    fin = src_span(ls, "fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {", "\n}\n")
+    callers = {fn: code_of_src(read(os.path.join(SHELL, fn)).decode("utf-8")) for fn in sorted(os.listdir(SHELL)) if fn.endswith(".rs")}
+    if (-1 in order or order != sorted(order) or not 0 <= fin.find("certify(&session)") < fin.find("write_saved(&dst, &text, &plant)")
+            or {fn: src.count("run_look(") for fn, src in callers.items() if src.count("run_look(")} != {"livesession.rs": 1}
+            or {fn: src.count("go_look(") for fn, src in callers.items() if src.count("go_look(")} != {"main.rs": 1, "win32.rs": 1}
+            or {fn for fn, src in callers.items() if "mouselook::" in src} != {"liveinput.rs", "livesession.rs", "main.rs", "win32.rs"}):
+        raise Red("the mouse is not released before the seal, the save no longer certifies, or the tick source is reached by something other than look-selftest and look-window")
+    main_src = read(os.path.join(SHELL, "main.rs")).decode("utf-8")
+    sw = src_span(main_src, '"look-selftest" | "look-window" => {', '\n        "simtick-law" => {')
+    if (main_src.count("go_look(") != 1 or "livesession::go_look(&mut surf, prepared)" not in sw or "mouselook::ScriptedLook::new(mock, script)" not in sw
+            or "mouselook::parse_script(" not in sw or "win32::look_window(plan);" not in sw or 'plant: String::new(), surface: "gdi"' not in sw
+            or code_of_src(main_src).count("mouselook::") != 2):
+        raise Red("look-selftest does not run the shared code over the scripted mock, or the host window's run is planted")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    sect = w32_section(tail, "MOUSE-LOOK-0 (appended)")
+    sc = code_of_src(sect) + "\n"
+    if not tail.rstrip().endswith(sect.rstrip()) or tail.find("LIVE-AUTHOR-0 (appended)") > tail.find("MOUSE-LOOK-0 (appended)"):
+        raise Red("the MOUSE-LOOK-0 section is not appended last, after LIVE-AUTHOR-0's")
+    for tok in ("LiveSession", "playback", "LoopRenderer", "render", "present::", "arm_composite", "to_blit", "compose_frame", "fs::", "File::", "write_raw(",
+                "StretchDIBits", "set_call(1", "set_call(0", "GetCursorPos", "SetCursorPos", "SetCapture", "GetAsyncKeyState", "GetKeyState", "0x0101", "0x0200",
+                "SystemTime", "refusallog", "push_"):
+        if tok in sc:
+            raise Red("the MOUSE-LOOK-0 window section contains %r: it calls no session method, reaches no renderer, writes nothing and reads no pointer position" % tok)
+    pump = src_span(sc, "fn pump(&mut self) -> bool {", "\n    }\n")
+    split = pump.find("} else if msg.message == WM_INPUT_LOOK {")
+    keys_, mouse_ = pump[:split], pump[split:]
+    order = [keys_.find(t) for t in ("let held = unsafe { GetForegroundWindow() } == self.hwnd;", "self.capture(held);", "PeekMessageW(", "if msg.message == WM_KEYDOWN_LIVE {",
+                                     "if self.captured {", "self.pressed.push((msg.w_param as u32, (msg.l_param >> 30) & 1 == 1));", "self.dropped_keys += 1;")] \
+        + [split + mouse_.find(t) if mouse_.find(t) >= 0 else -1 for t in (
+            "GetRawInputData(msg.l_param as *mut c_void, RID_INPUT_LOOK,", "raw.header.kind == RIM_TYPEMOUSE_LOOK",
+            "if raw.mouse.flags & MOUSE_MOVE_ABSOLUTE_LOOK != 0 {", "} else if raw.mouse.last_x != 0 {", "if self.captured {",
+            "self.counts.push(raw.mouse.last_x as i64);", "self.dropped += 1;")]
+    cap = src_span(sc, "fn capture(&mut self, want: bool) {", "\n    }\n")
+    win = src_span(sc, "pub fn look_window(", "\n}\n")
+    order_w = [win.find(t) for t in ("SetProcessDPIAware()", "crate::livesession::prepare(plan)", "= show_window(", "SetForegroundWindow(hwnd)",
+                                     "RawInputDevice { usage_page: HID_PAGE_GENERIC_LOOK, usage: HID_USAGE_MOUSE_LOOK, flags: 0, target: hwnd }",
+                                     "RegisterRawInputDevices(&device, 1,", "crate::livesession::go_look(&mut look, prepared)", "DestroyWindow(hwnd)")]
+    if (split < 0 or -1 in order or order != sorted(order) or -1 in order_w or order_w != sorted(order_w)
+            or pump.count("if self.captured {") != 2 or sc.count(".counts.push(") != 1 or sc.count(".pressed.push(") != 1 or sc.count("last_y") != 1 or sc.count("buttons") != 2
+            or not all(t in cap for t in ("ClipCursor(&r);", "ShowCursor(0);", "ClipCursor(std::ptr::null());", "ShowCursor(1);"))
+            or sc.count("qpc()") != 1 or "qpc()" not in src_span(sc, "fn now_us(&mut self) -> u64 {", "\n    }\n")
+            or "self.capture(false);" not in src_span(sc, "fn release(&mut self) {", "\n    }\n")
+            or not all(t in sc for t in ("const WM_INPUT_LOOK: Uint = 0x00FF;", "const RID_INPUT_LOOK: Uint = 0x1000_0003;", "const RIM_TYPEMOUSE_LOOK: Dword = 0;",
+                                         "const MOUSE_MOVE_ABSOLUTE_LOOK: u16 = 0x0001;", "const HID_PAGE_GENERIC_LOOK: u16 = 0x01;", "const HID_USAGE_MOUSE_LOOK: u16 = 0x02;"))
+            or "call: 1," not in sc or re.search(r"\bsession\.\w+\(", sc)):
+        raise Red("the MOUSE-LOOK-0 window does not capture by the foreground, admit only captured keys and relative horizontal raw counts, "
+                  "read its clock in one place, or load before it opens")
+    pins = {"bearingfast.rs": BEARINGFAST_RS_SHA256, "vocab.rs": VOCAB_RS_SHA256, "mantle.rs": MANTLE_RS_SHA256, "fast.rs": FAST_RS_SHA256}
+    pins.update(SIMTICK_KERNEL_PINS)
+    for fn, want in pins.items():
+        if sha256(read(os.path.join(KERNEL, fn)).replace(b"\r\n", b"\n")) != want:
+            raise Red("kernel/%s changed: MOUSE-LOOK-0 touches no renderer" % fn)
+    src = read(os.path.join(KERNEL, "bearing.rs")).decode("utf-8")
+    core = re.sub(r"\bpub ", "", src[src.index(BEARING_CORE_MARK):src.index("/// The two witnesses' material")]).rstrip() + "\n"
+    if (sha256(core.encode("utf-8")) != BEARING_CORE_SHA256 or sha256(read(os.path.join(SHELL, "present.rs")).replace(b"\r\n", b"\n")) != PRESENT_RS_SHA256
+            or sha256(read(os.path.join(SHELL, "simtick.rs")).replace(b"\r\n", b"\n")) != SIMTICK_RS_SHA256):
+        raise Red("the reference's core, shell/present.rs or shell/simtick.rs changed: MOUSE-LOOK-0 changes no rule and no renderer")
+    sealer = read(os.path.join(ROOT, "verify", "livesession.py")).decode("utf-8")
+    if 'mouse = live.get("look")' not in sealer or 'prov["look"] = {"rung": "MOUSE-LOOK-0", "chain_hash": reg["MOUSE-LOOK-0"]["chain_hash"]}' not in sealer:
+        raise Red("the sealer does not cite MOUSE-LOOK-0 for a session whose live block carries the look loop's counts")
+    if SHELL_EXE is not None:
+        cp = subprocess.run([SHELL_EXE, "look-window"], capture_output=True, text=True, cwd=ROOT)
+        if cp.returncode == 0 or "SHELL-NO-WINDOW" not in cp.stderr:
+            raise Red("a windowless build did not refuse look-window with SHELL-NO-WINDOW")
+        for bad, why in (("0:mult+,15625:ESC", "a window receives keys and a mouse"), ("15625:m+1,0:ESC", "earlier than the input before it"),
+                         ("0:blur,05:focus", "is not whole microseconds")):
+            cp = subprocess.run([SHELL_EXE, "look-selftest", "--script", bad], capture_output=True, text=True, cwd=ROOT)
+            if cp.returncode != 2 or "SHELL-USAGE" not in cp.stderr or why not in cp.stderr:
+                raise Red("the look script %r was not refused before anything ran" % bad)
+    return ("the tick source is fenced: LIVE-INPUT-0's run and run_with pass none, and the loop reads the clock and the "
+            "mouse only through one, in one block; only run_look gives one, only go_look calls it, and only look-selftest "
+            "and look-window call go_look; the ticker closes a tick before it feeds the composition's inputs, applies every "
+            "command through the tick run and appends nothing itself; at a free heading the loop presents the session's own "
+            "picture, unrendered and with no overlay; the sample is one reference recomputation per 64th free-heading frame "
+            "on a worker thread and the save still certifies every one; the mouse is released before the seal; the window's "
+            "raw input (relative, horizontal, captured only), cursor and clock sit in the last appended section of "
+            "shell/win32.rs, which calls no session method, reaches no renderer and writes nothing; simtick.rs, the kernels "
+            "and present.rs are what they were; a windowless build refuses look-window")
 
 
 # ------------------------------------------------------------------ main
@@ -9421,6 +10033,12 @@ def main() -> int:
     row("simtick0a-config", simtick0a_config)
     row("simtick0a-hold", simtick0a_hold)
     row("simtick0a-fence", simtick0a_fence)
+    row("mouselook-preregistered", mouselook_preregistered)
+    row("mouselook-loop", mouselook_loop)
+    row("mouselook-capture", mouselook_capture)
+    row("mouselook-present", mouselook_present)
+    row("mouselook-sample", mouselook_sample)
+    row("mouselook-fence", mouselook_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

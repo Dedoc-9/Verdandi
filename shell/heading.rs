@@ -9,7 +9,9 @@
 //   witness     at one of the four anchor headings: the facing kernel's frame, exactly as before (present::compose_frame),
 //               so a walk that never looks is witnessed as it always was. At any other heading: the bearing camera
 //               (x, z, k) composed from the carried vocabulary (kernel/vocab.rs) and rendered ONCE by BEARING-FAST-0's
-//               production tread (kernel/bearingfast.rs, tread ca) — the live path.
+//               production tread (kernel/bearingfast.rs, tread ca) — the live path. MOUSE-LOOK-0: that one render is
+//               made by a Painter the session keeps, into buffers it reuses, and its picture stays readable, so the
+//               loop presents the very render the witness came from.
 //   reference   the same camera's index frame by the reference kernel (kernel/bearing.rs: its traversal and its frame,
 //               the text the tag carries), and nothing of the fast path.
 //   certify     a batch of free-heading frames recomputed by the reference across threads; the lowest event whose
@@ -45,15 +47,41 @@ fn scene_at(level_bytes: &[u8], tiles_bytes: &[u8], x: i64, z: i64, k: i64) -> R
     bearing::parse_scene(&data).map_err(|Refusal(m)| m)
 }
 
-/// The frame digest the session witnesses at a camera and heading: the facing kernel's at an anchor, the production
-/// tread's anywhere else.
-pub fn witness(level_bytes: &[u8], tiles_bytes: &[u8], cam: Camera, yaw: i64) -> Result<String, String> {
-    if crate::simtick::anchor(yaw).is_some() {
-        return crate::present::compose_frame(level_bytes, tiles_bytes, cam).map(|c| c.frame_digest).map_err(|Refusal(m)| m);
+/// MOUSE-LOOK-0: the session's renderer at a heading, with the buffers it keeps. One render serves the witness and the
+/// screen: the index frame is digested, and the picture stays readable until the next free-heading render.
+pub struct Painter {
+    strips: Vec<bearing::Strip>,
+    frame: Vec<u8>,
+    pixels: Vec<u8>,
+}
+
+impl Painter {
+    /// A painter with no buffers yet: they are made at the first free-heading render and reused after.
+    pub fn new() -> Painter {
+        Painter { strips: Vec::new(), frame: Vec::new(), pixels: Vec::new() }
     }
-    let sc = scene_at(level_bytes, tiles_bytes, cam.x, cam.z, yaw)?;
-    let (frame, _picture) = bearingfast::picture(&sc, PROD).map_err(|Refusal(m)| m)?;
-    Ok(bearing::frame_digest(&frame))
+
+    /// The frame digest the session witnesses at a camera and heading: the facing kernel's at an anchor (as before;
+    /// nothing is kept), the production tread's anywhere else, rendered once into the kept buffers.
+    pub fn witness(&mut self, level_bytes: &[u8], tiles_bytes: &[u8], cam: Camera, yaw: i64) -> Result<String, String> {
+        if crate::simtick::anchor(yaw).is_some() {
+            return crate::present::compose_frame(level_bytes, tiles_bytes, cam).map(|c| c.frame_digest).map_err(|Refusal(m)| m);
+        }
+        let sc = scene_at(level_bytes, tiles_bytes, cam.x, cam.z, yaw)?;
+        if self.frame.is_empty() {
+            self.strips = Vec::with_capacity(bearing::W);
+            self.frame = vec![0u8; bearing::W * bearing::H];
+            self.pixels = vec![0u8; bearing::W * bearing::H * 3];
+        }
+        let floor = bearingfast::prepare(&sc, PROD);
+        bearingfast::render_into(&sc, PROD, &floor, &mut self.strips, &mut self.frame, &mut self.pixels).map_err(|Refusal(m)| m)?;
+        Ok(bearing::frame_digest(&self.frame))
+    }
+
+    /// The picture (RGB, top-down) of the last free-heading render.
+    pub fn pixels(&self) -> &[u8] {
+        &self.pixels
+    }
 }
 
 /// The same frame's digest by the reference kernel alone: its traversal, then its index frame.

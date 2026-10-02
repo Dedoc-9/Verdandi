@@ -3823,6 +3823,166 @@ loses a configuration change. `simtick0a-hold` goes red if two repeats walk in o
 a repeat of another key acts, or a held walk's data differs from the same walk pressed. `simtick0a-fence` goes red if
 the event folds or touches the world, if the tick run keeps its own sensitivity, or if a window reads a mouse.
 
+## MOUSE-LOOK-0 — a real mouse on the locked tick rules: the live editor with mouse-look (preregistered and built; the loop is held on the mock; the window code has not run yet)
+
+**Why.** The fourth rung of the owner's ladder: real mouse → 64 Hz accumulator → command → the existing live loop.
+The rules were locked windowless first (SIM-TICK-0, SIM-TICK-0a), and they are not proved again here. This rung adds
+only what they left out: the clock, the mouse, the capture, and the loop presenting a free heading. Registered before
+the build (`60870497`), and the registration was cut as its own patch to be pushed first.
+
+**The owner's rulings.** The four from the court of 2026-10-02 are recorded under SIM-TICK-0a above. Two of them are
+built here: capture is shell state and never session state, and the reference samples every 64th free-heading frame
+off the loop. One more was asked for this rung and answered:
+
+- **A new command, `look-window`.** The live editor with the mouse is its own entry (`shell look-window` on the host,
+  `shell look-selftest` on the mock) on the same loop function, session, journal and seal. `shell live-window` and
+  every earlier command stay exactly as registered and are given no tick source.
+
+**The rules, registered before the build.**
+
+- **The clock.** An input's tick is the tick of the microsecond at which the loop drained it. In the window that is
+  QueryPerformanceCounter since the loop's first composition; on the mock it is the composition count times 13,333 µs.
+  A tick's command is applied at the first composition whose clock has passed the tick's end.
+- **The mouse.** Windows raw input (WM_INPUT): the relative horizontal count, as the device reports it. Nothing else
+  of the mouse is read. The pointer's position is never used as counts.
+- **Capture.** While the window is the foreground window the cursor is hidden and confined to it, and what arrives is
+  admitted. When it is not, the mouse is released and nothing is admitted. Returning recaptures. No focus or capture
+  change makes a session event of any kind: no look of zero, no pause, no synthetic input. Esc releases, then saves,
+  then the reference recomputes.
+- **The picture.** At a free heading the loop presents the picture alone: the session's own render of that state by
+  the production tread, the render its witness came from, rendered once, with no overlay. At an anchor it presents
+  the composite as before.
+- **The readback** under ticks is sampled: the first composition and every 75th after it.
+- **The live sample.** Every 64th frame event at a free heading in the run is recomputed by the reference on a worker
+  thread. A mismatch ends the run refused and nothing is saved. A sample certifies nothing; the save still recomputes
+  every free-heading frame.
+- **The beat.** 64 ticks a second against 75 compositions means some compositions repeat the picture before them.
+  They are counted on every run and nothing is done about them here.
+
+**What was built.**
+
+- `shell/mouselook.rs`, new. The tick source's trait (a clock, the admitted counts, the release). The ticker: each
+  composition it closes the tick the clock has passed and applies that tick's command through the tick run's own
+  function (`tickrun::apply`), then stamps what the composition drained with the tick of now and feeds it to the
+  accumulator. It appends nothing itself. The sampler: one thread per 64th free-heading frame, read back oldest first
+  so the first difference reported is the earliest. The mock: a scripted mouse, keyboard and focus (`T:m+N`, `T:KEY`,
+  `T:KEY+`, `T:blur`, `T:focus`) and a clock that is the composition count.
+- `shell/liveinput.rs`. The loop takes an optional tick source. `run` and `run_with` pass none and are the loop they
+  were; `run_look` passes one. Under a tick source the presses and reports go to the ticker in one block, which is the
+  only place the clock is read; at a free heading the loop presents the session's picture and renders nothing; at an
+  anchor it renders, checks and presents the composite as before, and holds the reference to the last frame event's
+  witness as it does for a pressed move.
+- `shell/heading.rs` and `shell/playback.rs`. The session keeps a painter: the one render that witnesses a free-heading
+  frame is made into buffers the session reuses, and its picture stays readable. If the world is edited while the
+  heading is free (no frame event), the picture is rendered once for the new world when the loop asks for it.
+- `shell/tickrun.rs`. `apply` is public, so the ticker and the windowless run apply a command through the same code.
+- `shell/livesession.rs`. `go_look`: the loop, the release, then the shared seal. The saved file's live block gains a
+  `look` object for such a run: the compositions, how many showed the picture and how many the composite, how many
+  repeated, the readbacks, the samples.
+- `shell/win32.rs`, a section appended last: raw input, the cursor's capture and release by the foreground, the
+  clock, and `look_window`.
+- `verify/livesession.py` cites this entry, with SIM-TICK-0 and SIM-TICK-0a, for a session whose live block carries
+  the look loop's counts.
+
+**What the gate holds (6 rows, 207 in all).**
+
+- `mouselook-loop`. Script L: 26 inputs (14 mouse reports, 12 key presses) at times that are multiples of nothing,
+  from 28,28,N. Each is stamped with the tick of the composition that drained it, and the saved data is byte-identical
+  to what `shell simtick-selftest` saves from the same inputs at those times, so the window loop adds nothing to the
+  rules. Two compositions inside one tick make one look of the summed counts. Of 155 compositions 128 presented the
+  session's picture and 27 the composite, 133 repeated the picture before them, and the clock never moved more than
+  one tick between two, all as a Python model of the schedule derives. The workshop verifies the file.
+- `mouselook-capture`. The same script with the window out of the foreground from tick 26 to tick 41, and six inputs
+  arriving meanwhile (mouse motion, W, Space, PgUp, an Esc). The saved data is byte-identical and the loop showed the
+  same 155 compositions. All six are dropped and counted in the live block, none is an event, no event carries a tick
+  inside the stretch, and the session's data holds no word of the focus. The mouse is released before the save
+  begins. As a control, the same six inputs with the window in the foreground do change the session.
+- `mouselook-present`. At the three read-back compositions (0, 75 and 150) the sha256 of the picture handed to the
+  call is the kernel executable's: the composite at 28,28,N (the one LIVE-INPUT-0's loop presents there), the bearing
+  reference's picture alone at 30,28,314912 in the edited world, and the composite again at 29,28,W. Composition 75
+  follows a floor repaint that made no frame event, and the row checks that the repaint shows there, so a stale
+  picture would be seen. A surface whose call writes nothing completes with all three readbacks counted, logged and
+  recorded as differing, and the same session saved.
+- `mouselook-sample`. The steady script: a report at every composition, 136 looks at free headings. Exactly two
+  samples, one per 64 frames, both equal, and the save still recomputes all 136. With an input at every composition,
+  11 of compositions 76 to 150 close no tick and repeat the picture before them. A shell built with the planted,
+  self-consistent fast-path defect is refused by its first sample (LIVEINPUT-SAMPLE, event 63, the 64th free-heading
+  frame), releases the mouse, writes no session file and ends 2 with one refusal-log record.
+- `mouselook-fence`. The clockless entry points pass no tick source. The loop reads the clock and the mouse only
+  through one, in one block. Only `run_look` gives one, only `go_look` calls it, and only `look-selftest` and
+  `look-window` call `go_look`. The ticker closes a tick before it feeds the composition's inputs and appends nothing
+  itself. The mouse is released before the seal. The window section is the last one in `shell/win32.rs`, admits only
+  captured keys and relative horizontal raw counts, reads its clock in one place, calls no session method, reaches no
+  renderer and writes nothing. `simtick.rs`, the kernels and `present.rs` are what they were.
+- `mouselook-preregistered`. The entry's method phrases, and SIM-TICK-0's and SIM-TICK-0a's entries at their hashes.
+
+Five earlier fences were re-pinned on purpose, each named at its pin: `liveinput-fence` and `holdwalk-fence` (the
+presses the loop binds are the surface's or, under a tick source, none; what is presented is the checked composite
+or, at a free heading under a tick source, the session's picture), `livesession-fence` (`go_look` records its
+surface's observation too), and `simtick-fence` and `simtick0a-fence` (raw input and the cursor's confinement exist
+now, in this rung's section only; the witness is a method of the session's painter).
+
+**Found while building.**
+
+- **A registered limit names a mechanism the registered clock rule excludes.** The entry's limits say that a loop
+  which falls behind "applies several ticks' commands in one composition" and that "the largest such burst is counted".
+  Under the entry's own clock rule that cannot happen: every input a composition drains takes that composition's tick,
+  so one tick is open at a time and a composition applies at most one command. What a slow loop does instead is gather
+  a longer stretch of inputs into one tick. The entry is not edited. What is counted and saved is the `span`: the most
+  ticks the clock moved between two compositions, 1 on a loop that keeps up and more on one that falls behind.
+- **Twenty mutations, all caught at once.** Applied to scratch copies: the mock admitting inputs while out of the
+  foreground; an input stamped with the next tick; a tick's command applied before its tick ended; the composite
+  presented at a free heading; the picture not rendered again after an edit at a free heading; a sample every 65th
+  frame; a differing sample ignored; a readback every 74th composition; the mouse not released before the seal; the
+  ticker with no held set; the mock's clock one composition ahead; the presses bound by the clockless loop under a
+  tick source; the live block not recording the loop; a focus change making an input; the picture presented with
+  stale overlay bytes; repeated compositions miscounted; the window admitting counts while not captured; the window
+  reading the vertical count; a clockless entry point reading the clock; the ticker appending an event of its own.
+  With the differing sample ignored, the planted shell was still refused, at the save (LIVESESSION-UNCERTIFIED): the
+  sample is an earlier refusal, and the save's recomputation is the one that decides.
+- **Key presses are dropped while the window is out of the foreground, as mouse counts are.** A window without the
+  foreground receives no key presses in practice. The window section applies the same rule to a press as to a count,
+  and counts what it drops, so the mock and the window say the same thing.
+- **The sealer does not read the focus observation.** LIVE-SESSION-0's fence forbids it: the observation is recorded,
+  never ruled on. So the loop's own counts go into a separate `look` object in the live block, and the sealer cites
+  this entry when that object is there. A windowless tick run's file has none and is cited as before.
+- **What "repeated" counts.** A composition at which no event was applied. A blocked step or a sensitivity change is
+  an event, so its composition is not counted as a repeat even where the picture comes out equal.
+- **The witness check at an anchor under ticks is parity, not held by a row.** When a tick's command leaves the heading
+  on an anchor and its last event is a frame event, the loop requires its reference of the new state to reproduce that
+  event's witness, as it does for a pressed move. No row plants a defect there.
+- **The mock's period is a third of a microsecond short of a 75th of a second.** 13,333 µs, so 75 compositions span
+  just under 64 ticks and a stretch of 75 repeats 11 or 12, not always 11. The row states which stretch it counts.
+- **How the window section was checked here.** A scratch copy of the tree with the shell's `target_os = "windows"`
+  conditions turned to this host's, then `rustc --cfg shell_window --emit=metadata`: no error and no warning. That
+  checks types and names against the declarations in the file. It does not link, and it runs nothing.
+
+**What has not run.** The window section. The build container cannot hold a window, a mouse or QueryPerformanceCounter.
+The section is type-checked here against the same declarations the Windows build uses and has never executed. Its
+first run is the owner's, on his host, and that run is the test: whether raw input arrives, whether the capture takes
+and releases, whether the loop keeps up, and what the walk feels like.
+
+**Grade.** DECLARED: the entry point, the drain-time clock rule, capture as shell state, the picture alone at a free
+heading, the two sampling periods. ESTABLISHED (gate, in the build container): the six rows above, over the mock.
+MEASURED: nothing. NOT_MEASURED: everything about the real window, the real mouse and the real clock; latency; what a
+look costs phase by phase; whether the loop holds 75 compositions a second while looking.
+
+**does_not_show.** That mouse-look works on the host: no window has run this. Any latency: by design an input is
+applied up to one tick and one composition after it is drained, and what that costs on the screen is the next rung's
+measurement. When the device moved: an input's tick is the tick it was drained in. That a run was right because its
+samples were equal: one frame in 64 is sampled, and only the save's recomputation is exhaustive. That the screen
+showed every picture: one composition in 75 is read back. Counts per degree: they depend on the mouse and are not
+normalized.
+
+**Falsifier.** `mouselook-loop` goes red if the look loop's saved data differs from the windowless run's on the same
+inputs at their drain times, or its compositions are not the schedule's. `mouselook-capture` goes red if anything
+arriving while the window is away reaches the session, or the mouse is still held when the save begins.
+`mouselook-present` goes red if a read-back picture is not the kernel executable's at that camera, or a differing
+screen is not counted. `mouselook-sample` goes red if the samples are not one per 64, or a defective fast path is not
+refused by its first sample. `mouselook-fence` goes red if a clockless entry point is given a tick source, the clock
+is read anywhere else, the ticker appends an event, or the window section calls the session or a renderer. On the
+host: a look that turns the wrong way, a walk that Alt-Tab changes, or a saved session the workshop refuses.
+
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

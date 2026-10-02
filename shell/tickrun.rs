@@ -104,8 +104,33 @@ fn configure(session: &mut LiveSession, action: Input, what: &str, tick: u64, ru
     }
 }
 
-/// One tick's command applied to the session. Returns whether the run ended (Esc).
-fn apply(session: &mut LiveSession, cmd: &Command, run: &mut Run, surface: &'static str) -> bool {
+impl Run {
+    /// A run that has done nothing yet, beginning at the session's tick count.
+    pub fn begin(session: &LiveSession) -> Run {
+        let first = session.ticks().map_or(0, |(count, _, _)| count);
+        Run { inputs: 0, reports: 0, keys: 0, actions: 0, commands: 0, looks: 0, events: 0, moves: 0, blocked: 0, edits: 0,
+              unbound: 0, refused: 0, settings: 0, repeats: 0, walked: 0, coalesced: 0, ignored: 0,
+              first_tick: first, ticks: first, sens: session.sensitivity(), ended: "script", trace: Vec::new() }
+    }
+
+    /// Count one raw input by its kind.
+    pub fn count(&mut self, input: Input) {
+        self.inputs += 1;
+        match input {
+            Input::Mouse(_) => self.reports += 1,
+            Input::Key(_) => self.keys += 1,
+            Input::Repeat(_) => {
+                self.keys += 1;
+                self.repeats += 1;
+            }
+            _ => self.actions += 1,
+        }
+    }
+}
+
+/// One tick's command applied to the session. Returns whether the run ended (Esc). MOUSE-LOOK-0's ticker applies a
+/// closed tick's command through this same function: the window loop adds nothing to the rules.
+pub fn apply(session: &mut LiveSession, cmd: &Command, run: &mut Run, surface: &'static str) -> bool {
     run.commands += 1;
     session.at_tick(Some(cmd.tick));
     // the look: once, first, with the sensitivity in force when the tick began (the session's own)
@@ -240,10 +265,8 @@ fn apply(session: &mut LiveSession, cmd: &Command, run: &mut Run, surface: &'sta
 /// The run: every scripted input fed to the accumulator at its tick, each finished tick's command applied, until Esc or
 /// the end of the script. The session's ticks continue after its parent's; its tick count is set at the end.
 pub fn run(session: &mut LiveSession, script: &[(u64, Input)], surface: &'static str) -> Result<Run, String> {
-    let first = session.ticks().map_or(0, |(count, _, _)| count);
-    let mut run = Run { inputs: 0, reports: 0, keys: 0, actions: 0, commands: 0, looks: 0, events: 0, moves: 0, blocked: 0, edits: 0,
-                        unbound: 0, refused: 0, settings: 0, repeats: 0, walked: 0, coalesced: 0, ignored: 0,
-                        first_tick: first, ticks: first, sens: session.sensitivity(), ended: "script", trace: Vec::new() };
+    let mut run = Run::begin(session);
+    let first = run.first_tick;
     // SIM-TICK-0a: HOLD-WALK-0's held set, with the tick as the coalescing boundary
     let mut acc = Accumulator::holding(Some(crate::holdwalk::held));
     let mut ended_at: Option<u64> = None;
@@ -255,16 +278,7 @@ pub fn run(session: &mut LiveSession, script: &[(u64, Input)], surface: &'static
                 break;
             }
         }
-        run.inputs += 1;
-        match input {
-            Input::Mouse(_) => run.reports += 1,
-            Input::Key(_) => run.keys += 1,
-            Input::Repeat(_) => {
-                run.keys += 1;
-                run.repeats += 1;
-            }
-            _ => run.actions += 1,
-        }
+        run.count(input);
         run.ticks = tick + 1;
     }
     if ended_at.is_none() {

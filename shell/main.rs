@@ -97,6 +97,9 @@ mod heading;
 
 #[path = "tickrun.rs"]
 mod tickrun;
+// MOUSE-LOOK-0: the tick source of the live loop — the ticker, the off-loop sample, the mock's mouse, focus and clock
+#[path = "mouselook.rs"]
+mod mouselook;
 
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
@@ -894,6 +897,52 @@ fn main() {
                 {
                     let _ = (&level, &tiles, &cam0, &resume);
                     refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run the live editor in the window");
+                }
+            }
+        }
+        "look-selftest" | "look-window" => {
+            // MOUSE-LOOK-0: the live editor with the mouse — the same loop, session, journal and seal as live-window,
+            // with a tick source switched on: every key press and horizontal mouse count the loop drains is stamped
+            // with the tick of the clock (64 Hz), a tick's command is applied once by the tick run, and at a free
+            // heading the loop presents the session's own picture. Through the mock (`-selftest`, what the gate runs: a
+            // scripted mouse, keyboard and focus — `T:m+N`, `T:KEY`, `T:KEY+`, `T:blur`, `T:focus`, T in microseconds —
+            // and a clock that is the composition count times 13,333 us; --out writes the counts for the gate) or in
+            // the borderless host window with the real mouse (`-window`, window build only). Plants (selftest): the
+            // surface's and LIVE-SESSION-0's.
+            let a = &args[2..];
+            let opt = |flag: &str| -> Option<String> {
+                a.iter().position(|x| x == flag).and_then(|i| a.get(i + 1).cloned())
+            };
+            let level = opt("--level").unwrap_or_else(|| "oracle/levels/witness.lvl".to_string());
+            let tiles = opt("--tiles").unwrap_or_else(|| "oracle/tiles/identity.tiles".to_string());
+            let cam0 = parse_camera(&opt("--camera").unwrap_or_else(|| "28,28,N".to_string())).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m));
+            let resume = opt("--resume");
+            if args[1] == "look-selftest" {
+                let script = mouselook::parse_script(&opt("--script").unwrap_or_default()).unwrap_or_else(|m| refuse("USAGE", &m));
+                let plant = opt("--plant").unwrap_or_default();
+                let out = opt("--out");
+                let plan = livesession::Plan { level, tiles, cam0, resume, plant: plant.clone(), surface: "mock" };
+                let prepared = livesession::prepare(plan).unwrap_or_else(|code| exit(code));
+                let mock = presentexact::MockExact::new(latency1r::MockSurface::new(13_333, 1, None), &plant);
+                let mut surf = mouselook::ScriptedLook::new(mock, script);
+                let (code, raw) = livesession::go_look(&mut surf, prepared);
+                if let (Some(o), Some(r)) = (out, raw.as_ref()) {
+                    fs::write(&o, r).unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", o, e)));
+                }
+                if code == 0 {
+                    println!("look court OK");
+                }
+                exit(code)
+            } else {
+                #[cfg(all(target_os = "windows", shell_window))]
+                {
+                    let plan = livesession::Plan { level, tiles, cam0, resume, plant: String::new(), surface: "gdi" };
+                    win32::look_window(plan);
+                }
+                #[cfg(not(all(target_os = "windows", shell_window)))]
+                {
+                    let _ = (&level, &tiles, &cam0, &resume);
+                    refuse("NO-WINDOW", "this build has no window (built without --cfg shell_window, or not on Windows); rebuild with `rustc --cfg shell_window` on the host to run the live editor with the mouse in the window");
                 }
             }
         }

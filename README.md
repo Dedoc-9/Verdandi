@@ -122,6 +122,7 @@ one route only. Which, is decided when such a rung is seated.
     python verify/bearingfast.py --host $env:COMPUTERNAME     # off-gate: BEARING-FAST-0's speed court, sealed
     verify/build/shell simtick-selftest --script "0:m+3,15625:W,31250:PGUP,46875:m-2,62500:ESC"   # SIM-TICK-0: a windowless tick run (T:m+N a mouse report at T microseconds, T:KEY, T:KEY+ an auto-repeat, PGUP/PGDN/TAB the sensitivity keys), saved under build/sessions/
     verify/build/shell simtick-law                             # SIM-TICK-0: the laws as lines (the tick, the nearest cardinal of every id, the delta)
+    verify/build/shell look-selftest --script "0:m+3,20000:W,40000:blur,60000:m+9,80000:focus,100000:m-2,300000:ESC"   # MOUSE-LOOK-0: the live loop under a tick source, on the mock (a scripted mouse, keyboard and focus; the clock is the composition count), saved under build/sessions/
     python verify/bearingsweep.py --host $env:COMPUTERNAME    # off-gate: BEARING-FAST-0's sweep (about an hour), sealed
     python verify/bench.py --host $env:COMPUTERNAME           # off-gate: the kernel's frame time, sealed under the envelope
     verify/build/shell witness --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
@@ -129,6 +130,7 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/shell.exe run --level ... --camera 34,28,W --measure 200 --host $env:COMPUTERNAME   # the window + present timing
     verify/build/shell.exe show --level ... --camera 34,28,W                    # the certified picture 1:1, the screen read back; Esc closes
     verify/build/shell.exe show-playback --session workshop/attest/sessionwalk-demo.json   # a sealed session, 1:1, each frame read back
+    verify/build/shell.exe look-window                          # MOUSE-LOOK-0: the live editor with the mouse — move it to turn, W/S walk, A/D strafe, PgUp/PgDn/Tab the sensitivity; captured while the window is in the foreground; Esc ends and saves
     rustc -O workshop/edit.rs -o verify/build/edit           # the workshop
     verify/build/edit record --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles \
         --camera 34,28,W --edit cell:31,27,. --out-dir out --name cell

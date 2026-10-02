@@ -143,6 +143,10 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
     free = sum(1 for x in d["log"] if x["kind"] in ("move", "look") and free_heading(x["camera"]))
     if free:
         same = same and bearing_id(root) == live.get("bearing")
+    # MOUSE-LOOK-0: a session whose live block carries the look loop's counts ran under a tick source (shell look-window,
+    # or look-selftest on the mock); it is the same saved form, and this entry is cited beside the others. The focus and
+    # capture observation is not read here: it is recorded, never ruled on
+    mouse = live.get("look")
     lin = live.get("lineage")
     resumed = "a new session from its base" if lin is None else (
         "a continuation of the session whose head is %s... (its first %d events, from its %s)" % (lin["parent_head"][:12], lin["parent_events"], lin["source"]))
@@ -152,15 +156,23 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
                "one it was made with." % (host, len(d["log"]), d["moves"], d["edits"],
                                          "" if not looks else ", %d looks, %d frames at free headings recomputed by the reference before the save"
                                          % (looks, (live.get("certified") or {}).get("frames", 0)),
-                                         live.get("ended"), resumed,
+                                         live.get("ended") if mouse is None else "%s, walked and looked with the mouse on the 64 Hz tick (%s)" % (
+                                             live.get("ended"), ", ".join("%s %s" % (k, mouse[k]) for k in sorted(mouse) if k != "rung")),
+                                         resumed,
                                          "" if lin is None else " and lineage", d["head"][:12],
                                          "the same as" if same else "NOT the same as (replay, not identity, decides)"))
-    prov = {"tool": "shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) "
-                    "+ verify/livesession.py", "host": host,
+    prov = {"tool": ("shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) "
+                     "+ verify/livesession.py") if mouse is None else
+                    ("shell look-window (shell/livesession.rs's go_look over shell/liveinput.rs under shell/mouselook.rs's tick "
+                     "source; the MOUSE-LOOK-0 section appended to shell/win32.rs) + verify/livesession.py"), "host": host,
             "saved_sha256": hashlib.sha256(raw).hexdigest(), "run_id": live.get("run_id"),
             "renderer_now": now, "workshop": workshop, "python": platform.python_version(), "os": platform.system(),
             "preregistered": {"rung": "LIVE-SESSION-0", "chain_hash": reg["LIVE-SESSION-0"]["chain_hash"]},
             "loop": {"rung": "LIVE-INPUT-0", "chain_hash": reg["LIVE-INPUT-0"]["chain_hash"]}}
+    if mouse is not None:
+        prov["look"] = {"rung": "MOUSE-LOOK-0", "chain_hash": reg["MOUSE-LOOK-0"]["chain_hash"]}
+        prov["ticks"] = {"rung": "SIM-TICK-0", "chain_hash": reg["SIM-TICK-0"]["chain_hash"]}
+        prov["configuration"] = {"rung": "SIM-TICK-0a", "chain_hash": reg["SIM-TICK-0a"]["chain_hash"]}
     data = dict(d)
     data["live"] = live
     return envelope.seal(
@@ -169,7 +181,8 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
                       "(W %s... M %s...) from %s, which replays in log order to head %s" % (host, d["base"]["W"][:12], d["base"]["M"][:12],
                                                                                       d["base"]["camera"], d["head"]),
          "host": host, "head": d["head"], "final_camera": d["final_camera"]},
-        ["any timing or latency: the session carries no time",
+        ["any timing or latency: the session carries no time" if mouse is None else
+         "any latency, frame rate or feel: the session carries tick indices, not times, and an input's tick is the tick it was drained in",
          "that the renderer identity decides compatibility: it names sources, replay decides",
          "that the focus observation explains anything: it is recorded, never ruled on",
          "a second authority: the shell's session is the replay of this log, which the workshop verifies",
@@ -197,7 +210,10 @@ def main() -> int:
         print("REFUSE: %s" % e)
         return 2
     out = write_record("livesession-%s-%s.json" % (a.host, rec["data"]["head"][:12]), rec)
-    print("[livesession] %s -> %s  (cites LIVE-SESSION-0 %s)" % (rec["reading"], os.path.relpath(out), reg["LIVE-SESSION-0"]["chain_hash"][:8]))
+    cites = "LIVE-SESSION-0 %s" % reg["LIVE-SESSION-0"]["chain_hash"][:8]
+    if "look" in rec["provenance"]:
+        cites += ", MOUSE-LOOK-0 %s" % reg["MOUSE-LOOK-0"]["chain_hash"][:8]
+    print("[livesession] %s -> %s  (cites %s)" % (rec["reading"], os.path.relpath(out), cites))
     return 0
 
 

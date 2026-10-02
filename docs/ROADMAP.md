@@ -91,7 +91,7 @@ SIM-TICK-0       the mouse-look rules as integer law, windowless: the 64 Hz tick
       ↓
 SIM-TICK-0a      two rulings of MOUSE-LOOK-0's court that are rules of the tick, still windowless: a sensitivity change is a typed configuration event in the session, never folded; a held key walks once a tick — built; the gate passes on the host with the same 201 rows
       ↓
-MOUSE-LOOK-0     a real mouse on those rules: captured until Esc (shell state, never session state), raw counts into the 64 Hz accumulator, the command into the existing live loop, the picture alone at a free heading, every 64th free-heading frame recomputed off the loop
+MOUSE-LOOK-0     a real mouse on those rules: captured until Esc (shell state, never session state), raw counts into the 64 Hz accumulator, the command into the existing live loop, the picture alone at a free heading, every 64th free-heading frame recomputed off the loop — built; the loop is held on a mock with 207 rows; the window code has not run yet (the owner's host is the test)
       ↓
 the presentation and latency measurement      input to photon in separate segments; frame rate alone is no competitive claim
       ↓
@@ -166,7 +166,7 @@ what evidence is worth buying, not by which optimization can be imagined next. T
 |---|---|---|---|
 | 1 | BEARING-FAST-0's host speed court | Establish whether the 6,667 µs target is met. | Run: met, 3,716 µs. |
 | 2 | Production promotion, only if the target is met | Do not optimize a kernel that is already sufficient. | Met: eight row bands of exact stepping is the production candidate. MOUSE-LOOK-0 wires it into a live path, not before. |
-| 3 | SIM-TICK-0, mouse sensitivity and live mouse-look | The actual interaction seam, now that the renderer can support it. | SIM-TICK-0 (the rules and the sensitivity, windowless) is built, and its gate passes on the host. SIM-TICK-0a (the court's two tick rulings, windowless) is built, and its gate passes on the host. MOUSE-LOOK-0 (the real mouse and the window) is next; its court is held. |
+| 3 | SIM-TICK-0, mouse sensitivity and live mouse-look | The actual interaction seam, now that the renderer can support it. | SIM-TICK-0 (the rules and the sensitivity, windowless) is built, and its gate passes on the host. SIM-TICK-0a (the court's two tick rulings, windowless) is built, and its gate passes on the host. MOUSE-LOOK-0 (the real mouse and the window) is built: its loop is held on a mock by six rows, and `shell look-window` waits for its first run on the host. |
 | 4 | PRESENT-1, the flip-model presentation | Renderer speed is not input-to-photon speed; LATENCY-0's evidence makes this the next presentation boundary. | After mouse-look. |
 | 5 | A cross-host correctness witness for the fast path | Portability evidence, not worth delaying the interactive path unless a cross-host failure appears. | The gate's court already runs on two hosts (Linux here, the owner's Windows). A further host is deferred. |
 | 6 | Benchmark regression recording | Protects a production fast path against performance regressions. | Once the fast path is in a live path. |
@@ -351,6 +351,23 @@ the presenter's borderless window. The screen is read back at every step and twi
 is counted and logged, never hidden. There is no input, no camera, no clock: counts only. The gate executes the loop
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
+
+### MOUSE-LOOK-0 — a real mouse on the locked tick rules · **built** (`60870497`): held on the mock; the window has not run yet
+The fourth rung of the owner's ladder: real mouse → 64 Hz accumulator → command → the existing live loop. By the
+owner's ruling it is a new entry, `shell look-window` (and `shell look-selftest` on the mock), on the same loop
+function, session, journal and seal; `shell live-window` and every earlier command stay as they were and are given no
+tick source. The rules are SIM-TICK-0's and SIM-TICK-0a's and are not touched. What this rung adds is the clock (an
+input's tick is the tick of the composition that drained it), the mouse (Windows raw input, the relative horizontal
+count and nothing else), the capture (the cursor hidden and confined while the window is in the foreground, released
+when it is not, and never an event in the session), and the loop presenting a free heading: the session's own render,
+the one its witness came from, with no overlay and no second render. The screen is read back one composition in 75,
+and the reference recomputes one free-heading frame in 64 on a worker thread, a difference refusing the run; the save
+still recomputes every one. The gate runs the loop over a mock mouse, keyboard, focus and clock: the saved data is
+byte-identical to the windowless tick run's on the same inputs at their drain times; a window out of the foreground
+changes nothing in the session; the picture handed to the call is the kernel executable's; a defective fast path is
+refused by its first sample. The window section itself has never run: the build container has no window, and its
+first run is the owner's. No latency is claimed anywhere. 64 ticks against 75 compositions repeats about 11
+compositions in 75, and they are counted in every saved session.
 
 ### SIM-TICK-0a — sensitivity as a typed configuration event; held keys by the tick · **built** (`471f4d72`): the gate passes on the host
 MOUSE-LOOK-0's court (2026-10-02) gave four rulings. Two are about the window and wait for it: the mouse is captured

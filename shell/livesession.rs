@@ -729,6 +729,8 @@ pub struct Prepared {
     dir: String,
     plant: String,
     surface: &'static str,
+    /// MOUSE-LOOK-0: the look loop's counts for the saved file's live block (None unless the run had a tick source).
+    look: Option<String>,
 }
 
 /// Begin the run: the ledger, the session, the journal. A refusal ends the ledger and gives the exit code.
@@ -782,7 +784,7 @@ pub fn prepare(plan: Plan) -> Result<Prepared, i32> {
     }
     let journal = Rc::new(RefCell::new(journal));
     let session = session.with_sink(Box::new(JournalSink(journal.clone())));
-    Ok(Prepared { session, base, lineage, resumed, journal, dir, plant: plan.plant, surface })
+    Ok(Prepared { session, base, lineage, resumed, journal, dir, plant: plan.plant, surface, look: None })
 }
 
 /// The run: LIVE-INPUT-0's loop, then the seal, then the saved file's verification. Returns the exit code.
@@ -794,7 +796,7 @@ pub fn go<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared) -> i32 {
 /// also hands back the loop's counts for the gate.
 pub fn go_with<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared, binding: fn(u32) -> crate::liveinput::Action,
                                                hold: Option<fn(u32) -> bool>) -> (i32, Option<crate::liveinput::Live>) {
-    let Prepared { mut session, base, lineage, resumed, journal, dir, plant, surface } = p;
+    let Prepared { mut session, base, lineage, resumed, journal, dir, plant, surface, look } = p;
     let live = match crate::liveinput::run_with(s, &mut session, surface, binding, hold) {
         Ok(l) => l,
         Err(r) => {
@@ -810,14 +812,44 @@ pub fn go_with<S: ExactSurface + Keys + Focus>(s: &mut S, p: Prepared, binding: 
     }
     let focus = s.focus();
     // SIM-TICK-0: the seal is `finish`, shared with the tick run
-    let code = finish(Prepared { session, base, lineage, resumed, journal, dir, plant, surface }, live.ended, &focus);
+    let code = finish(Prepared { session, base, lineage, resumed, journal, dir, plant, surface, look }, live.ended, &focus);
     (code, if code == 0 { Some(live) } else { None })
+}
+
+/// MOUSE-LOOK-0: the live editor with the mouse — LIVE-INPUT-0's loop under a tick source (the surface's clock and
+/// mouse), the mouse released, then the same seal. Capture is shell state: the release happens before anything is
+/// certified or written, whatever the loop returned, and the session never hears of it. Also hands back the run's
+/// output for the gate (the trace and the counts).
+pub fn go_look<S: ExactSurface + Keys + Focus + crate::mouselook::Look>(s: &mut S, p: Prepared) -> (i32, Option<String>) {
+    let Prepared { mut session, base, lineage, resumed, journal, dir, plant, surface, look } = p;
+    let result = crate::liveinput::run_look(s, &mut session, surface);
+    s.release();
+    println!("[look] the mouse is released");
+    let live = match result {
+        Ok(l) => l,
+        Err(r) => {
+            // the loop's refusal is LIVE-INPUT-0's (logged as its operation); the journal keeps what was flushed
+            let (ev, m) = r.into_event(surface);
+            crate::refusallog::refuse(&ev, &format!("SHELL-LIVEINPUT: {}", m));
+            crate::runledger::end(2);
+            return (2, None);
+        }
+    };
+    for ln in crate::liveinput::summary(&live, &session) {
+        println!("{}", ln);
+    }
+    let observed = s.focus();
+    let raw = crate::mouselook::raw_json(&live, &session);
+    // the loop's counts go into the saved file's live block: what was shown, repeated, read back and sampled is recorded
+    let look = look.or(Some(crate::mouselook::live_json(&live)));
+    let code = finish(Prepared { session, base, lineage, resumed, journal, dir, plant, surface, look }, live.ended, &observed);
+    (code, if code == 0 { Some(raw) } else { None })
 }
 
 /// SIM-TICK-0: the tick run — raw inputs with their times through the accumulator, one command per tick, into the same
 /// session, journal and seal. Windowless: no surface, no loop, no present, no clock.
 pub fn go_ticks(p: Prepared, script: &[(u64, crate::simtick::Input)]) -> (i32, Option<String>) {
-    let Prepared { mut session, base, lineage, resumed, journal, dir, plant, surface } = p;
+    let Prepared { mut session, base, lineage, resumed, journal, dir, plant, surface, look } = p;
     let run = match crate::tickrun::run(&mut session, script, surface) {
         Ok(r) => r,
         Err(m) => return (refuse_run(refusal("input.tick", vec![], m), surface), None),
@@ -826,7 +858,7 @@ pub fn go_ticks(p: Prepared, script: &[(u64, crate::simtick::Input)]) -> (i32, O
         println!("{}", ln);
     }
     let raw = crate::tickrun::raw_json(&run, &session);
-    let code = finish(Prepared { session, base, lineage, resumed, journal, dir, plant, surface }, run.ended, "{\"source\":\"none\"}");
+    let code = finish(Prepared { session, base, lineage, resumed, journal, dir, plant, surface, look }, run.ended, "{\"source\":\"none\"}");
     (code, if code == 0 { Some(raw) } else { None })
 }
 
@@ -844,7 +876,7 @@ pub fn certify(session: &LiveSession) -> Result<usize, Refusal> {
 /// The seal, after a run: the reference's certification, then the saved file written, read back and verified. Returns
 /// the exit code. Shared by the loop's run (go_with) and the tick run (go_ticks).
 fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {
-    let Prepared { session, base, lineage, resumed, journal, dir, plant, surface } = p;
+    let Prepared { session, base, lineage, resumed, journal, dir, plant, surface, look } = p;
     // SIM-TICK-0: nothing is written until every free-heading frame is the reference's; a session is saved
     // reference-certified or it is not saved
     let certified = match certify(&session) {
@@ -864,9 +896,10 @@ fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {
         Some((c, r)) => format!("{{\"classification\":{},\"parent_renderer\":{}}}", esc(c), esc(r)),
     };
     let live_json = format!(
-        "{{\"log\":\"{}\",\"run_id\":{},\"renderer\":{},\"bearing\":{},\"lineage\":{},\"resumed\":{},\"journal\":{{\"file\":\"{}\",\"records\":{},\"events\":{},\"complete\":{},\"sha256\":{}}},\"certified\":{{\"reference\":\"kernel/bearing.rs\",\"frames\":{}}},\"ended\":{},\"focus\":{}}}",
+        "{{\"log\":\"{}\",\"run_id\":{},\"renderer\":{},\"bearing\":{},\"lineage\":{},\"resumed\":{},\"journal\":{{\"file\":\"{}\",\"records\":{},\"events\":{},\"complete\":{},\"sha256\":{}}},\"certified\":{{\"reference\":\"kernel/bearing.rs\",\"frames\":{}}},\"ended\":{},\"focus\":{}{}}}",
         LOG, esc(crate::refusallog::run_id()), esc(&renderer_id()), esc(&bearing_id()), lineage_json(&lineage), resumed_json, JOURNAL, jrecords, jevents,
-        jbroken.is_none() && jevents as usize == session.log().len(), esc(&jsha), certified, esc(ended), focus);
+        jbroken.is_none() && jevents as usize == session.log().len(), esc(&jsha), certified, esc(ended), focus,
+        look.map_or(String::new(), |l| format!(",\"look\":{}", l))); // MOUSE-LOOK-0: only a run under a tick source has it
     let text = if plant == "seal-stale" {
         // PLANT seal-stale: a sealed, self-consistent file that is not this live session (its base alone)
         match (fs::read(&base.level), fs::read(&base.tiles)) {
