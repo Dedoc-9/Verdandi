@@ -32,7 +32,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCES = ("kernel/mantle.rs", "kernel/formats.rs", "kernel/fast.rs", "kernel/hud.rs", "shell/present.rs")
 # SIM-TICK-0: the sources that decide a frame at a free heading (the shell's BEARING_SOURCES, in its order)
 BEARING_SOURCES = ("kernel/vocab.rs", "oracle/bearing_octant.txt", "kernel/bearing.rs", "kernel/bearingfast.rs")
-TAGS = {"move": "M", "edit": "E", "look": "K"}
+TAGS = {"move": "M", "edit": "E", "look": "K", "sensitivity": "S"}
 SEAL_KEY = b'\n "seal": "'
 MAGIC = b"VRDNSW1"
 
@@ -74,6 +74,10 @@ def heads(content: str, camera: str, log: list) -> list:
     out = [h]
     for item in log:
         tag = TAGS[item["kind"]]
+        if tag == "S":
+            # SIM-TICK-0a: a sensitivity event is configuration, not a world event: it folds nothing
+            out.append(h)
+            continue
         # SIM-TICK-0: a look folds its camera token with its witness
         wit = item["camera"] + ":" + item["witness"] if tag == "K" else item["witness"]
         h = hashlib.sha256(("%s:%s:%s" % (h, tag, wit)).encode("utf-8")).hexdigest()
@@ -102,8 +106,9 @@ def check_saved(raw: bytes, root: str = ROOT) -> dict:
         raise Refuse("the stored head is not the fold of the stored witnesses")
     moves = sum(1 for x in d["log"] if x["kind"] == "move")
     looks = sum(1 for x in d["log"] if x["kind"] == "look")
-    if (d["moves"], d["edits"], d.get("looks", 0)) != (moves, len(d["log"]) - moves - looks, looks):
-        raise Refuse("the move, edit and look counts are not the log's")
+    settings = sum(1 for x in d["log"] if x["kind"] == "sensitivity")
+    if (d["moves"], d["edits"], d.get("looks", 0), d.get("sensitivity_changes", 0)) != (moves, len(d["log"]) - moves - looks - settings, looks, settings):
+        raise Refuse("the move, edit, look and sensitivity counts are not the log's")
     lin = live.get("lineage")
     if lin is not None:
         n = lin.get("parent_events")
@@ -135,7 +140,7 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
     same = now == live.get("renderer")
     # SIM-TICK-0: a frame at a free heading is the bearing kernels'; their identity counts only if there is one
     looks = d.get("looks", 0)
-    free = sum(1 for x in d["log"] if x["kind"] != "edit" and free_heading(x["camera"]))
+    free = sum(1 for x in d["log"] if x["kind"] in ("move", "look") and free_heading(x["camera"]))
     if free:
         same = same and bearing_id(root) == live.get("bearing")
     lin = live.get("lineage")

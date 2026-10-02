@@ -37,6 +37,10 @@
 // LIVESESSION-UNCERTIFIED and nothing is saved. A session is saved reference-certified or it is not saved. The bearing
 // kernels have their own identity (`bearing_id`), recorded beside the renderer's and consulted only for frames at free
 // headings, so a walk that never looks is classified exactly as before.
+//
+// SIM-TICK-0a: a tick session's sensitivity changes are events of kind sensitivity in the journal and the saved file,
+// carrying the configuration after them and their tick. They have no witness and fold nothing; the loader replays them
+// through the session (one legal transition each), and a crashed run's configuration comes back from them.
 
 use std::cell::RefCell;
 use std::fs;
@@ -183,6 +187,13 @@ pub fn record_line(payload: &str) -> String {
 fn event_payload(k: usize, ev: &LiveEvent) -> String {
     // SIM-TICK-0: a look's parameter is its integer delta; the camera token carries the heading; a tick run's stamp
     // follows the head (an event appended outside time has none, and its record is what it always was)
+    if ev.tag == b'S' {
+        // SIM-TICK-0a: a sensitivity event carries the configuration after it; it has no witness and its head is the
+        // head before it
+        let (m, st) = sens_of(&ev.param);
+        return format!("{{\"k\":{},\"kind\":\"sensitivity\",\"multiplier\":{},\"step\":{},\"camera\":{},\"witness\":\"\",\"content\":{},\"head\":{}{}}}",
+                       k, m, st, esc(&token(ev.camera, ev.yaw)), esc(&ev.content), esc(&ev.head), stamp_json(ev, ""));
+    }
     let (kind, pk, pv) = match ev.tag {
         b'M' => ("move", "command", esc(&ev.param)),
         b'K' => ("look", "delta", ev.param.clone()),
@@ -190,6 +201,12 @@ fn event_payload(k: usize, ev: &LiveEvent) -> String {
     };
     format!("{{\"k\":{},\"kind\":\"{}\",\"{}\":{},\"camera\":{},\"witness\":{},\"content\":{},\"head\":{}{}}}",
             k, kind, pk, pv, esc(&token(ev.camera, ev.yaw)), esc(&ev.witness), esc(&ev.content), esc(&ev.head), stamp_json(ev, ""))
+}
+
+/// SIM-TICK-0a: a sensitivity event's parameter, "multiplier,step", as its two numbers (zeros if it is not that).
+fn sens_of(param: &str) -> (i64, i64) {
+    let mut it = param.split(',').map(|v| v.parse::<i64>().unwrap_or(0));
+    (it.next().unwrap_or(0), it.next().unwrap_or(0))
 }
 
 /// SIM-TICK-0: the tick stamp of an event as JSON members (with a leading comma), or nothing for an untimed event.
@@ -358,6 +375,10 @@ fn event_item(ev: &LiveEvent) -> String {
         format!("{{\"kind\": \"move\", \"command\": {}, \"camera\": {}, \"witness\": {}{}}}", esc(&ev.param), esc(&token(ev.camera, ev.yaw)), esc(&ev.witness), stamp_json(ev, " "))
     } else if ev.tag == b'K' {
         format!("{{\"kind\": \"look\", \"delta\": {}, \"camera\": {}, \"witness\": {}{}}}", ev.param, esc(&token(ev.camera, ev.yaw)), esc(&ev.witness), stamp_json(ev, " "))
+    } else if ev.tag == b'S' {
+        // SIM-TICK-0a: a sensitivity event is {kind, multiplier, step} and its tick; it has no witness
+        let (m, st) = sens_of(&ev.param);
+        format!("{{\"kind\": \"sensitivity\", \"multiplier\": {}, \"step\": {}{}}}", m, st, stamp_json(ev, " "))
     } else {
         format!("{{\"kind\": \"edit\", \"spec\": {}, \"witness\": {}{}}}", esc(&ev.param), esc(&ev.witness), stamp_json(ev, " "))
     }
@@ -368,6 +389,7 @@ fn saved_text(s: &LiveSession, base: &Base, live: &str) -> String {
     let log = s.log();
     let moves = log.iter().filter(|e| e.tag == b'M').count();
     let looks = log.iter().filter(|e| e.tag == b'K').count();
+    let settings = log.iter().filter(|e| e.tag == b'S').count();
     let items: Vec<String> = log.iter().map(|e| format!("   {}", event_item(e))).collect();
     // SIM-TICK-0: the looks are counted only when there are some, and the tick block is written only for a session that
     // ran on ticks, so a walk with neither saves the bytes it always did
@@ -375,13 +397,16 @@ fn saved_text(s: &LiveSession, base: &Base, live: &str) -> String {
     if looks > 0 {
         more.push_str(&format!(",\n  \"looks\": {}", looks));
     }
+    if settings > 0 {
+        more.push_str(&format!(",\n  \"sensitivity_changes\": {}", settings));
+    }
     if let Some((count, multiplier, step)) = s.ticks() {
         more.push_str(&format!(",\n  \"ticks\": {{\"hz\": {}, \"count\": {}, \"multiplier\": {}, \"step\": {}}}", crate::simtick::TICK_HZ, count, multiplier, step));
     }
     let prefix = format!(
         "{{\n \"name\": \"verdandi-session-walk\",\n \"data\": {{\n  \"magic\": \"VRDNSW1\",\n  \"base\": {},\n  \"log\": [{}{}{}],\n  \"head\": {},\n  \"final_camera\": {},\n  \"final_content\": {},\n  \"moves\": {},\n  \"edits\": {}{}\n }},\n \"live\": {},\n",
         base_json(base), if items.is_empty() { "" } else { "\n" }, items.join(",\n"), if items.is_empty() { "" } else { "\n  " },
-        esc(s.head()), esc(&s.token()), esc(s.content()), moves, log.len() - moves - looks, more, live);
+        esc(s.head()), esc(&s.token()), esc(s.content()), moves, log.len() - moves - looks - settings, more, live);
     format!("{} \"seal\": \"{}\"\n}}\n", prefix, seal_of(prefix.as_bytes()))
 }
 
@@ -489,9 +514,11 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
         }
         let last = heads.last().cloned();
         parent_bearing = h.get("bearing").s();
-        // a journal has no tick block: the count follows its last timed event, the sensitivity is its last look's
+        // a journal has no tick block: the count follows its last timed event, and (SIM-TICK-0a) the sensitivity is
+        // what its journaled sensitivity events replay to
         if let Some(t) = evs.iter().filter_map(|e| e.tick).last() {
-            let (_, m, st) = evs.iter().filter_map(|e| e.input).last().unwrap_or((0, crate::simtick::START.multiplier, crate::simtick::START.step));
+            let (m, st) = evs.iter().filter(|e| e.tag == b'S').map(|e| sens_of(&e.param)).last()
+                .unwrap_or((crate::simtick::START.multiplier, crate::simtick::START.step));
             ticks = Some((crate::simtick::TICK_HZ as i64, t as i64 + 1, m, st));
         }
         (base, lv, tl, evs, last, None, h.get("renderer").s(), j.torn, Some(heads))
@@ -518,7 +545,8 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
     };
     // SIM-TICK-0: the tick form — a look's delta and inputs, the ticks' order, the tick block — before anything replays
     let timed: Vec<crate::simtick::Timed> = events.iter().map(|e| crate::simtick::Timed {
-        look: e.tag == b'K', delta: if e.tag == b'K' { e.param.parse().unwrap_or(0) } else { 0 }, tick: e.tick, input: e.input }).collect();
+        look: e.tag == b'K', delta: if e.tag == b'K' { e.param.parse().unwrap_or(0) } else { 0 }, tick: e.tick, input: e.input,
+        sens: if e.tag == b'S' { Some(sens_of(&e.param)) } else { None } }).collect();
     crate::simtick::check_form(&timed, ticks).map_err(|m| refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: the tick form: {}", m)))?;
     // SIM-TICK-0: a look folds its camera token with its witness
     let pairs: Vec<(u8, String)> = events.iter().map(|e| (e.tag, if e.tag == b'K' { look_fold(&e.camera, &e.witness) } else { e.witness.clone() })).collect();
@@ -564,6 +592,13 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
                 Ok(ev) => (true, token(ev.camera, ev.yaw) == e.camera, ev.witness == e.witness),
                 Err(_) => (false, false, false),
             }
+        } else if e.tag == b'S' {
+            // SIM-TICK-0a: a sensitivity event replays through the session: one legal transition, nothing folded
+            let (m, st) = sens_of(&e.param);
+            match s.push_sensitivity(crate::simtick::Sens { multiplier: m, step: st }) {
+                Ok(_) => (false, true, true),
+                Err(_) => (false, false, false),
+            }
         } else {
             match (cell_of(&e.param), tile_of(&e.param)) {
                 (Some((x, z, to)), _) => match s.push_edit_cell(x, z, to) {
@@ -597,7 +632,7 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
         }
     }
     s.at_tick(None);
-    s.set_ticks(ticks.map(|(_, count, m, st)| (count as u64, m, st)));
+    s.set_tick_count(ticks.map(|(_, count, _, _)| count as u64));
     let same = same && (!free || same_bearing);
     if let Some((cam, content)) = &stored_final {
         if s.token() != *cam || s.content() != content {
@@ -616,6 +651,11 @@ fn saved_event(e: &JsonView) -> Result<SavedEvent, Refusal> {
         "edit" => (b'E', e.get("spec").s()),
         // SIM-TICK-0: a look's parameter is its integer delta
         "look" => (b'K', e.get("delta").num().ok_or_else(|| corrupt("a look without an integer delta".to_string()))?.to_string()),
+        // SIM-TICK-0a: a sensitivity event's parameter is the configuration after it
+        "sensitivity" => match (e.get("multiplier").num(), e.get("step").num()) {
+            (Some(m), Some(st)) => (b'S', format!("{},{}", m, st)),
+            _ => return Err(corrupt("a sensitivity event without its multiplier and step".to_string())),
+        },
         k => return Err(corrupt(format!("event kind {:?}", k))),
     };
     if tag == b'M' && !matches!(param.as_str(), "L" | "R" | "F" | "B" | "Q" | "E") {

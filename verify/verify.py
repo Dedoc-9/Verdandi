@@ -8110,8 +8110,14 @@ SIMTICK_SCRIPT = (
        (25, 0, "m+2147483647"), (25, 1, "m+1"), (25, 2, "W"),  # the counts leave 2^31 - 1: the look refused, W still applied
        (26, 0, "Z"),                                         # an unbound key
        (27, 0, "ESC")])
+# re-pinned on purpose with SIM-TICK-0a: the 68 sensitivity actions of script S that take effect are now sensitivity
+# events in its saved log (the two refused ones still are not), and the run counts its repeats (script S has none)
 SIMTICK_COUNTS = {"inputs": 102, "reports": 19, "keys": 13, "actions": 70, "commands": 27, "looks": 13, "events": 24,
-                  "moves": 9, "blocked": 2, "edits": 2, "unbound": 1, "refused": 3}
+                  "moves": 9, "blocked": 2, "edits": 2, "unbound": 1, "refused": 3,
+                  "settings": 68, "repeats": 0, "walked": 0, "coalesced": 0, "ignored": 0}
+# SIM-TICK-0a: HOLD-WALK-0's held set by key name, and the control keys' typed effects
+ST_HELD = ("W", "A", "S", "D", "UP", "LEFT", "DOWN", "RIGHT")
+ST_CONTROL = {"PGUP": "mult+", "PGDN": "mult-", "TAB": "step"}
 SIMTICK_FINAL = {"camera": "30,26,64", "ticks": 28, "sensitivity": [64, 1], "free_frames": 20}
 # the continuation of S's saved session: the heading back to an anchor with the saved multiplier, a blocked step, the
 # multiplier lowered and used, end — its ticks follow the parent's 28
@@ -8178,6 +8184,13 @@ def _st_law_twin() -> list:
     out.append("sens start=1,%d up(1)=2,%d up(64)=refused down(1)=refused down(64)=63,%d toggle(coarse)=1,%d toggle(fine)=1,%d"
                % (ST_COARSE, ST_COARSE, ST_COARSE, ST_FINE, ST_COARSE))
     out.append("rebind 41=51 44=45 57=57 53=53 51=51 45=45 25=25 27=27 20=20")
+    # SIM-TICK-0a: the control map and the legal transitions (lines added on purpose with the amendment)
+    out.append("control 21=mult+ 22=mult- 09=step 57=- 20=- 23=-")
+    legal = lambda a, b: all(1 <= x[0] <= ST_MULT_MAX and x[1] in (ST_FINE, ST_COARSE) for x in (a, b)) and (
+        (a[1] == b[1] and abs(a[0] - b[0]) == 1) or (a[0] == b[0] and a[1] != b[1]))
+    out.append("transition " + " ".join("%d,%d>%d,%d=%s" % (a + b + ("legal" if legal(a, b) else "refused",)) for a, b in (
+        ((1, 88), (2, 88)), ((2, 88), (1, 88)), ((1, 88), (1, 1)), ((1, 1), (1, 88)), ((1, 88), (3, 88)), ((1, 88), (2, 1)),
+        ((1, 88), (1, 88)), ((64, 88), (65, 88)), ((1, 88), (0, 88)), ((64, 1), (63, 1)))))
     return out
 
 
@@ -8221,11 +8234,12 @@ def _st_twin(script, st, cache):
         if t not in per:
             per[t] = {"sum": 0, "acts": []}
             order.append(t)
-        if what[0] == "m" and what[1] in "+-" and what[2:].isdigit():
+        if what[0] == "m" and what[1] in "+-" and what[2:].isdigit():   # a mouse report
             per[t]["sum"] += int(what[1:])
         else:
             per[t]["acts"].append(what)
     c = {k: 0 for k in SIMTICK_COUNTS}
+    is_report = lambda w: w[0] == "m" and w[1] in "+-" and w[2:].isdigit()
     trace, ended, last_tick = [], "script", None
     lvl, til, x, z, yaw, head = st["lvl"], st["til"], st["x"], st["z"], st["yaw"], st["head"]
     m, s = st["sens"]
@@ -8235,7 +8249,7 @@ def _st_twin(script, st, cache):
             break
         for _t, _o, what in [i for i in script if i[0] == t]:
             c["inputs"] += 1
-            c["reports" if what[0] == "m" and what[1] in "+-" else ("actions" if what in ("mult+", "mult-", "step") else "keys")] += 1
+            c["reports" if is_report(what) else ("actions" if what in ("mult+", "mult-", "step") else "keys")] += 1
         tick = first + t
         last_tick = tick
         cmd = per[t]
@@ -8256,22 +8270,38 @@ def _st_twin(script, st, cache):
             log.append({"kind": "look", "delta": d, "camera": tok, "witness": wit, "tick": tick, "input": {"counts": cmd["sum"], "multiplier": m, "step": s}})
             c["looks"] += 1
             c["events"] += 1
+        admitted = False   # SIM-TICK-0a: the tick is the coalescing boundary — one walked repeat a tick
         for what in cmd["acts"]:
-            if what in ("mult+", "mult-"):
-                n = m + (1 if what == "mult+" else -1)
-                if 1 <= n <= ST_MULT_MAX:
-                    m = n
-                    trace.append("tick %d %s -> sensitivity %d,%d" % (tick, what, m, s))
+            typed = what in ("mult+", "mult-", "step")
+            repeat = not typed and what.endswith("+")
+            key = what[:-1] if repeat else what
+            if repeat:
+                c["repeats"] += 1
+                if key not in ST_HELD:
+                    c["ignored"] += 1
+                    trace.append("tick %d key %s+ -> repeat" % (tick, key))
+                    continue
+                if admitted:
+                    c["coalesced"] += 1
+                    trace.append("tick %d key %s+ -> coalesced" % (tick, key))
+                    continue
+                admitted = True
+                c["walked"] += 1
+            name = what if typed else "key " + what
+            action = what if typed else ST_CONTROL.get(key)
+            if action:
+                # SIM-TICK-0a: a sensitivity action that takes effect is one configuration event; it folds nothing
+                n = (m + 1, s) if action == "mult+" else (m - 1, s) if action == "mult-" else (m, ST_FINE if s == ST_COARSE else ST_COARSE)
+                if 1 <= n[0] <= ST_MULT_MAX:
+                    m, s = n
+                    trace.append("tick %d %s -> event %d sensitivity %d,%d" % (tick, name, len(log), m, s))
+                    log.append({"kind": "sensitivity", "multiplier": m, "step": s, "tick": tick})
+                    c["settings"] += 1
                 else:
                     c["refused"] += 1
-                    trace.append("tick %d %s -> refused SIMTICK-MULTIPLIER" % (tick, what))
+                    trace.append("tick %d %s -> refused SIMTICK-MULTIPLIER" % (tick, name))
                 continue
-            if what == "step":
-                s = ST_FINE if s == ST_COARSE else ST_COARSE
-                trace.append("tick %d step -> sensitivity %d,%d" % (tick, m, s))
-                continue
-            b = ST_BIND.get(what)
-            name = "key " + what
+            b = ST_BIND.get(key)
             if b is None:
                 c["unbound"] += 1
                 trace.append("tick %d %s -> unbound" % (tick, name))
@@ -8440,9 +8470,9 @@ def simtick_script():
     if strip(d["log"]) != strip(st["log"]):
         raise Red("script S's saved events are not the re-derived ones: %r" % (next((g, w) for g, w in zip(strip(d["log"]) + [None] * 99, strip(st["log"])) if g != w),))
     fin = SIMTICK_FINAL
-    if (d["final_camera"], d["ticks"], d["looks"], d["moves"], d["edits"]) != (
+    if (d["final_camera"], d["ticks"], d["looks"], d["moves"], d["edits"], d["sensitivity_changes"]) != (
             fin["camera"], {"hz": ST_HZ, "count": fin["ticks"], "multiplier": fin["sensitivity"][0], "step": fin["sensitivity"][1]},
-            counts["looks"], counts["moves"], counts["edits"]) or _st_token(st["x"], st["z"], st["yaw"]) != fin["camera"]:
+            counts["looks"], counts["moves"], counts["edits"], counts["settings"]) or _st_token(st["x"], st["z"], st["yaw"]) != fin["camera"]:
         raise Red("script S's final camera, tick block or counts are not the registered ones: %s %s" % (d["final_camera"], d["ticks"]))
     # the registered particulars, read from the saved events
     ev = d["log"]
@@ -8455,7 +8485,8 @@ def simtick_script():
         (at(6)[0]["camera"] == "29,28,45000" and at(6)[1]["camera"] == "30,28,45000", "the exact tie is east"),
         (at(7)[0]["camera"] == "30,28,44999" and at(7)[1]["camera"] == "30,28,44999", "one id below the tie is north, and the step is blocked"),
         (at(13)[0]["camera"] == "30,27,314999", "a quarter turn at a free heading"),
-        (at(15)[0]["input"] == {"counts": 1, "multiplier": 1, "step": 88} and at(16)[0]["input"] == {"counts": 1, "multiplier": 2, "step": 88}, "a sensitivity action takes effect from the next tick"),
+        (at(15)[0]["input"] == {"counts": 1, "multiplier": 1, "step": 88} and at(16)[0]["input"] == {"counts": 1, "multiplier": 2, "step": 88}
+         and at(15)[1] == {"kind": "sensitivity", "multiplier": 2, "step": 88, "tick": 15}, "a sensitivity action takes effect from the next tick, and is its own event after the look"),
         (at(18)[0]["delta"] == -176 and at(18)[0]["camera"] == "30,27,359967", "a negative look through 0"),
         (at(20)[0]["camera"] == "30,27,N" and at(21)[0]["delta"] == 360000 and at(21)[0]["camera"] == "30,27,N" and at(21)[0]["witness"] == at(20)[0]["witness"], "back to an anchor, then a whole turn"),
         ([e["kind"] for e in at(25)] == ["move"] and at(25)[0]["camera"] == "30,26,64", "the refused look's tick still applied its key"),
@@ -8503,10 +8534,11 @@ def simtick_replay():
     d = LS.check_saved(read(path), ROOT)["data"]
     cache = {}
     st, _t, _c, _e = _st_twin(SIMTICK_SCRIPT, _st_start(), cache)
-    if [e["witness"] for e in d["log"]] != [e["witness"] for e in st["log"]] or d["head"] != st["head"]:
-        k = next((i for i, (a, b) in enumerate(zip(d["log"], st["log"])) if a["witness"] != b["witness"]), None)
+    # re-pinned on purpose with SIM-TICK-0a: a sensitivity event has no witness
+    if [e.get("witness") for e in d["log"]] != [e.get("witness") for e in st["log"]] or d["head"] != st["head"]:
+        k = next((i for i, (a, b) in enumerate(zip(d["log"], st["log"])) if a.get("witness") != b.get("witness")), None)
         raise Red("the saved session's witnesses are not the kernel executable's (first at event %s), or its head is not the twin's fold" % k)
-    free = sum(1 for e in d["log"] if e["kind"] != "edit" and LS.free_heading(e["camera"]))
+    free = sum(1 for e in d["log"] if e["kind"] in ("move", "look") and LS.free_heading(e["camera"]))
     code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
     if code != 0 or ("SESSIONWALK verify OK head %s" % d["head"][:12]) not in out:
         raise Red("the workshop does not verify script S's saved session: " + (err.strip() or out.strip()))
@@ -8515,6 +8547,8 @@ def simtick_replay():
     code, _o, err = run(SESSIONWALK_EXE, ["new", "--level", os.path.join(ORACLE, "levels", "witness.lvl"), "--tiles", os.path.join(ORACLE, "tiles", "identity.tiles"),
                                           "--camera", ST_CAMERA, "--out", sp])
     for e in d["log"] if code == 0 else []:
+        if e["kind"] == "sensitivity":
+            continue   # SIM-TICK-0a: configuration, not a world event — the workshop authors the world events alone
         verb, flag, param = {"move": ("move", "--command", e.get("command")), "edit": ("edit", "--edit", e.get("spec")),
                              "look": ("look", "--delta", str(e.get("delta")))}[e["kind"]]
         code, _o, err = run(SESSIONWALK_EXE, [verb, "--session", sp, flag, param])
@@ -8556,10 +8590,11 @@ def simtick_replay():
             raise Red("a single fine look to %d did not save: %s" % (h, cp.stderr.strip()[-200:]))
         saved[h] = read(p).decode("utf-8")
     da, db = (json.loads(saved[h])["data"] for h in pair)
-    if da["log"][0]["witness"] != db["log"][0]["witness"] or da["head"] == db["head"]:
+    # re-pinned on purpose with SIM-TICK-0a: the step toggle is now event 0, so the look is event 1
+    if da["log"][1]["witness"] != db["log"][1]["witness"] or da["head"] == db["head"]:
         raise Red("two looks to neighbouring headings with one index frame fold to one head, or their frames differ")
     a, b = pair
-    moved = _st_edit_event(saved[a], 0, lambda ln: ln.replace('"delta": %d,' % a, '"delta": %d,' % b).replace('"camera": "28,28,%d"' % a, '"camera": "28,28,%d"' % b)
+    moved = _st_edit_event(saved[a], 1, lambda ln: ln.replace('"delta": %d,' % a, '"delta": %d,' % b).replace('"camera": "28,28,%d"' % a, '"camera": "28,28,%d"' % b)
                            .replace('"counts": %d,' % a, '"counts": %d,' % b))
     moved = _ls_reseal(moved.replace('"final_camera": "28,28,%d"' % a, '"final_camera": "28,28,%d"' % b))
     p = _ls_write("simtick-moved", moved)
@@ -8567,13 +8602,13 @@ def simtick_replay():
     code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p])
     if cp.returncode != 2 or "LIVESESSION-CORRUPT" not in cp.stderr or "not the fold" not in cp.stderr or child is not None or code != 2 or "CHAIN-BROKEN" not in err:
         raise Red("a look moved consistently to a neighbouring heading with the same index frame was accepted: the head does not cover the token")
-    return ("replay reproduces the state and the frame witnesses three ways: all %d of script S's saved events carry the "
+    return ("replay reproduces the state and the frame witnesses three ways: all %d of script S's saved world events carry the "
             "kernel executable's frame at their camera (%d at free headings, the bearing reference's) and the twin's fold "
             "is the saved head %s…; the workshop's sessionwalk verifies the file; the same events authored in the workshop "
             "reach the same head without ticks. A changed delta, input or camera token, a tick run backwards and a look "
             "stripped of its tick are each refused by both verifiers; and a look moved consistently from %d to %d — one "
             "index frame, the reference shows — is refused too: the head covers the token"
-            % (len(d["log"]), free, d["head"][:12], a, b))
+            % (sum(1 for e in d["log"] if "witness" in e), free, d["head"][:12], a, b))
 
 
 def _st_data(path):
@@ -8648,7 +8683,7 @@ def simtick_certify():
     cp, path, _raw = _st_script_s(logs, "certify")
     doc = LS.check_saved(read(path), ROOT)
     d, live = doc["data"], doc["live"]
-    free = [i for i, e in enumerate(d["log"]) if e["kind"] != "edit" and LS.free_heading(e["camera"])]
+    free = [i for i, e in enumerate(d["log"]) if e["kind"] in ("move", "look") and LS.free_heading(e["camera"])]
     if (live.get("certified") != {"reference": "kernel/bearing.rs", "frames": len(free)} or len(free) != SIMTICK_FINAL["free_frames"]
             or live.get("bearing") != LS.bearing_id(ROOT)
             or ("certified: %d free-heading frames recomputed by the reference kernel, all equal" % len(free)) not in cp.stdout):
@@ -8714,9 +8749,11 @@ def simtick_resume():
     d, lin = doc["data"], doc["live"]["lineage"]
     pd = json.loads(read(parent).decode("utf-8"))["data"]
     new = d["log"][len(pd["log"]):]
-    if (d["log"][:len(pd["log"])] != pd["log"] or d["head"] != st1["head"] or [e["tick"] for e in new] != [28, 29, 31]
+    # re-pinned on purpose with SIM-TICK-0a: the lowered multiplier is its own event, at tick 30
+    if (d["log"][:len(pd["log"])] != pd["log"] or d["head"] != st1["head"] or [e["tick"] for e in new] != [28, 29, 30, 31]
             or new[0]["input"] != {"counts": -1, "multiplier": 64, "step": 1} or new[0]["camera"] != "30,26,N"
-            or new[2]["input"] != {"counts": 2, "multiplier": 63, "step": 1} or d["final_camera"] != "30,26,126"
+            or new[2] != {"kind": "sensitivity", "multiplier": 63, "step": 1, "tick": 30}
+            or new[3]["input"] != {"counts": 2, "multiplier": 63, "step": 1} or d["final_camera"] != "30,26,126"
             or d["ticks"] != {"hz": ST_HZ, "count": 33, "multiplier": 63, "step": 1}
             or (lin["source"], lin["parent_events"], lin["parent_head"]) != ("session", len(pd["log"]), pd["head"])):
         raise Red("the continuation did not keep the parent's heading, tick count and sensitivity: %s %s" % (new, d["ticks"]))
@@ -8864,6 +8901,307 @@ def simtick_fence():
             "and frame to recompute) and the workshop never reaches the fast path; the look folds over its token; the save "
             "certifies before it writes; mantle.rs, fast.rs, formats.rs, hud.rs, vocab.rs, bearingfast.rs, the "
             "reference's core and shell/present.rs are what they were; a script whose time runs backwards is refused")
+
+
+# ------------------------------------------------------------------ SIM-TICK-0a
+# Two of the owner's rulings from MOUSE-LOOK-0's court taken into the tick command, windowless: a sensitivity change is
+# a typed configuration event in the session (never folded), and a held key walks at most once a tick.
+SIMTICK0_HASH = "dc1dddf255749f878802f3f73543840edf3a5d87a3c3ea816162d59ed5f8ea62"
+# the owner's sequence: PgUp, mouse, Tab, mouse, PgDn
+SIMTICK0A_CONFIG = [(0, 0, "PGUP"), (1, 0, "m+3"), (2, 0, "TAB"), (3, 0, "m+88"), (4, 0, "PGDN"), (5, 0, "ESC")]
+SIMTICK0A_CONFIG_LOG = [
+    {"kind": "sensitivity", "multiplier": 2, "step": 88, "tick": 0},
+    {"kind": "look", "delta": 528, "camera": "28,28,528", "tick": 1, "input": {"counts": 3, "multiplier": 2, "step": 88}},
+    {"kind": "sensitivity", "multiplier": 2, "step": 1, "tick": 2},
+    {"kind": "look", "delta": 176, "camera": "28,28,704", "tick": 3, "input": {"counts": 88, "multiplier": 2, "step": 1}},
+    {"kind": "sensitivity", "multiplier": 1, "step": 1, "tick": 4}]
+# the same two looks with no sensitivity change: other counts, the same deltas
+SIMTICK0A_PLAIN = [(1, 0, "m+6"), (3, 0, "m+2"), (5, 0, "ESC")]
+# a run that dies after five journaled events, its last sensitivity changes made after its last look
+SIMTICK0A_CRASH = [(0, 0, "PGUP"), (1, 0, "m+1"), (2, 0, "PGUP"), (3, 0, "TAB"), (4, 0, "W"), (5, 0, "W"), (6, 0, "ESC")]
+# script R, from 28,28,N: presses with their auto-repeat marks (a trailing +). Each line says what it registers.
+SIMTICK0A_HOLD = (
+    [(0, 0, "RIGHT"),                                             # a fresh quarter turn: east
+     (1, 0, "W"), (1, 1, "W+"),                                   # a fresh press and a repeat in one tick: both act
+     (2, 0, "W+"), (2, 1, "W+"), (2, 2, "W+"),                    # three repeats in one tick: one walks, two coalesced
+     (3, 0, "W+"), (4, 0, "W+"),                                  # repeats in successive ticks: one walks in each
+     (5, 0, "W+"), (5, 1, "A+"),                                  # two held keys in one tick: the first walks
+     (6, 0, "A+"), (6, 1, "W+")]                                  # and the other way round: the strafe walks
+    + [(7, i, "W+") for i in range(6)]                            # a burst, as after a slow frame: one step
+    + [(8, 0, "SPACE"), (8, 1, "SPACE+"),                         # holding Space edits once
+       (9, 0, "1"), (9, 1, "1+"),                                 # holding a class key paints once
+       (10, 0, "Q+"), (10, 1, "E+"),                              # Q and E are not in the held set
+       (11, 0, "PGUP"), (11, 1, "PGUP+"),                         # holding PgUp raises the multiplier once
+       (12, 0, "TAB+"),                                           # a repeat of Tab alone changes nothing
+       (13, 0, "LEFT+"), (13, 1, "D+"),                           # a held quarter turn walks; the strafe behind it is coalesced
+       (14, 0, "ESC")])
+SIMTICK0A_HOLD_COUNTS = {"keys": 30, "repeats": 24, "walked": 8, "coalesced": 10, "ignored": 6, "events": 12, "moves": 10,
+                         "edits": 2, "settings": 1, "refused": 0, "unbound": 0}
+
+
+def _st0a_delete_event(text, k):
+    """Remove saved event k's line (and keep the list's commas right), then reseal."""
+    lines = text.split("\n")
+    items = [i for i, ln in enumerate(lines) if ln.startswith('   {"kind": ')]
+    i = items[k]
+    if k == len(items) - 1:
+        lines[items[k - 1]] = lines[items[k - 1]].rstrip(",")
+    del lines[i]
+    return _ls_reseal("\n".join(lines))
+
+
+def simtick0a_preregistered():
+    """SIM-TICK-0a's method is locked: an amendment to SIM-TICK-0 (whose entry is unedited) — a sensitivity change is a
+    typed configuration event, never folded, the configuration replayed; a held key walks at most once a tick."""
+    e = locked_entry("SIM-TICK-0a", {
+        "an amendment, windowless": ("hyp", ("an amendment to sim-tick-0, whose entry stands unedited (dc1dddf2)", "no window, no clock and no win32 input")),
+        "sensitivity is a typed configuration event": ("hyp", ("one event of kind sensitivity", "the configuration after it", "it is not folded",
+                                                               "the head after it is the head before it", "exactly one legal transition",
+                                                               "must carry the configuration in force")),
+        "the physical binding": ("hyp", ("pgup is multiplier up, pgdn multiplier down, tab the step toggle", "a pure map")),
+        "the tick is the coalescing boundary": ("hyp", ("a fresh press always acts and is never coalesced", "only the first repeat in a tick",
+                                                        "is coalesced", "is ignored and counted", "nothing about a repeat is saved")),
+        "the configuration row": ("succ", ("pgup, mouse, tab, mouse, pgdn", "a different log and the same head", "refused by both verifiers",
+                                           "a change made after the last look is kept")),
+        "the held-keys row": ("succ", ("three repeats in one tick", "a burst of repeats in one tick", "repeats = walked + coalesced + ignored",
+                                       "saves byte-identical data")),
+        "what fails it": ("fail", ("leaves no event, or one folded into the head", "a key itself, rather than its typed effect", "more than one repeat walking in a tick",
+                                   "sim-tick-0's entry edited")),
+        "scope": ("lims", ("rules only", "it is not in the head", "no longer loads", "never saved", "capture, focus and the cursor are shell state")),
+    })
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    if reg["SIM-TICK-0"]["chain_hash"] != SIMTICK0_HASH or not entry_hash_ok("SIM-TICK-0", reg["SIM-TICK-0"]):
+        raise Red("SIM-TICK-0's entry was edited: the amendment leaves it as registered")
+    return ("SIM-TICK-0a's method is locked (hash %s) before the build, and SIM-TICK-0's entry is unedited (%s): a "
+            "sensitivity change is one typed configuration event carrying the configuration after it, never folded, the "
+            "configuration replayed by one legal transition at a time; PgUp, PgDn and Tab are the binding; a fresh press "
+            "always acts and a held key's repeats walk at most once a tick" % (e["chain_hash"][:8], SIMTICK0_HASH[:8]))
+
+
+def simtick0a_config():
+    """The configuration is in the session's command stream and out of its head: the owner's sequence PgUp, mouse, Tab,
+    mouse, PgDn saves exactly its three sensitivity events and two looks, each look carrying the configuration in
+    force; the head after a sensitivity event is the head before it; the same looks under no sensitivity change save a
+    different log and the same head; a sensitivity event removed, made an illegal transition, stripped of its tick, or
+    a tick block that is not the final configuration is refused by both verifiers; a crashed run's journal recovers
+    the configuration from its sensitivity events."""
+    import livesession as LS
+    _st_need()
+    logs = _ls_logs("simtick0a-config")
+    cache = {}
+    cp, path, raw = _st_run(_st_text(SIMTICK0A_CONFIG), logs, "0a-config", ["--camera", ST_CAMERA])
+    if cp.returncode != 0 or path is None:
+        raise Red("the configuration script did not save: " + (cp.stderr.strip() or cp.stdout.strip())[-300:])
+    st, trace, counts, _e = _st_twin(SIMTICK0A_CONFIG, _st_start(), cache)
+    text = read(path).decode("utf-8")
+    d = LS.check_saved(read(path), ROOT)["data"]
+    strip = lambda log: [{k: v for k, v in e.items() if k != "witness"} for e in log]
+    if strip(d["log"]) != SIMTICK0A_CONFIG_LOG or strip(st["log"]) != SIMTICK0A_CONFIG_LOG or raw["trace"] != trace or d["head"] != st["head"]:
+        raise Red("the owner's sequence did not save its three sensitivity events and two looks as registered: %s" % strip(d["log"]))
+    if (d["ticks"], d["sensitivity_changes"], d["looks"], raw["counts"]["settings"]) != ({"hz": ST_HZ, "count": 6, "multiplier": 1, "step": 1}, 3, 2, 3) \
+            or any("witness" in e for e in d["log"] if e["kind"] == "sensitivity"):
+        raise Red("the tick block is not the final configuration, the counts are off, or a sensitivity event carries a witness")
+    # the head after a sensitivity event is the head before it (the journal holds every event's head)
+    made = os.path.dirname(path)
+    recs, _torn = _ls_journal(os.path.join(made, "journal.vsj"))
+    heads = [_sw_genesis(d["base"]["content"], _cam_tuple(d["base"]["camera"]))] + [r["head"] for r in recs[1:]]
+    for i, e in enumerate(d["log"]):
+        same = heads[i + 1] == heads[i]
+        if (e["kind"] == "sensitivity") != same:
+            raise Red("event %d (%s): the head %s" % (i, e["kind"], "moved at a sensitivity event" if not same else "did not move at a world event"))
+    cp, plain, _r = _st_run(_st_text(SIMTICK0A_PLAIN), logs, "0a-plain", ["--camera", ST_CAMERA])
+    if cp.returncode != 0 or plain is None:
+        raise Red("the plain script did not save: " + cp.stderr.strip()[-200:])
+    pd = json.loads(read(plain).decode("utf-8"))["data"]
+    world = lambda log: [(e["kind"], e.get("delta"), e.get("camera"), e["witness"]) for e in log if e["kind"] != "sensitivity"]
+    if pd["head"] != d["head"] or world(pd["log"]) != world(d["log"]) or pd["log"] == d["log"] or "sensitivity_changes" in pd:
+        raise Red("the same looks under no sensitivity change do not reach the same head with a different log")
+    for p_ in (path, plain):
+        code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p_])
+        if code != 0:
+            raise Red("the workshop does not verify %s: %s" % (p_, err.strip()))
+    first = lambda fn: _st_edit_event(text, 0, fn)
+    cases = [
+        ("a sensitivity event removed", _st0a_delete_event(text, 0)),
+        ("two steps at once", first(lambda ln: ln.replace('"multiplier": 2,', '"multiplier": 3,'))),
+        ("a multiplier of 65", first(lambda ln: ln.replace('"multiplier": 2,', '"multiplier": 65,'))),
+        ("a multiplier of 0", _st_edit_event(text, 4, lambda ln: ln.replace('"multiplier": 1,', '"multiplier": 0,'))),
+        ("a step of 87", first(lambda ln: ln.replace('"step": 88,', '"step": 87,'))),
+        ("a sensitivity event with no tick", first(lambda ln: ln.replace(', "tick": 0}', '}'))),
+        ("a tick block that is not the final configuration", _ls_reseal(text.replace('"count": 6, "multiplier": 1,', '"count": 6, "multiplier": 2,'))),
+        # the delta still multiplies out (6 x 1 x 88 = 528) and every transition is legal: only the configuration in
+        # force can refuse it
+        ("a look whose inputs are not the configuration in force", _st_edit_event(text, 1, lambda ln: ln.replace('"counts": 3, "multiplier": 2, "step": 88', '"counts": 6, "multiplier": 1, "step": 88'))),
+    ]
+    for i, (why, body) in enumerate(cases):
+        if body == text:
+            raise Red("the forgery for %s changed nothing" % why)
+        p = _ls_write("simtick0a-case%d" % i, body)
+        cp, child, _r = _st_run("0:ESC", logs, "0a-case", ["--resume", p])
+        code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p])
+        if cp.returncode != 2 or "LIVESESSION-CORRUPT: the tick form" not in cp.stderr or child is not None or code != 2 or "TICK-FORM" not in err:
+            raise Red("%s was not refused by both verifiers: %s | %s" % (why, (cp.stderr.strip() or cp.stdout.strip())[-160:], err.strip()[-160:]))
+    # a crashed run: the configuration comes back from the journaled sensitivity events, not from the last look
+    cp, p, _r = _st_run(_st_text(SIMTICK0A_CRASH), logs, "0a-crash", ["--camera", ST_CAMERA, "--plant", "crash"])
+    m = re.search(r"LIVESESSION-PLANT-CRASH: .*\((.+journal\.vsj)\)", cp.stderr)
+    if cp.returncode != 70 or p is not None or m is None:
+        raise Red("PLANT crash: the tick run did not die after journaling")
+    recs, torn = _ls_journal(m.group(1))
+    if not torn or [r["kind"] for r in recs[1:]] != ["sensitivity", "look", "sensitivity", "sensitivity", "move"] \
+            or (recs[4]["multiplier"], recs[4]["step"], recs[2]["input"]) != (3, 1, {"counts": 1, "multiplier": 2, "step": 88}):
+        raise Red("the crashed run's journal is not its five events, three of them sensitivity events")
+    cp, rec, _r = _st_run("0:m+1,15625:ESC", logs, "0a-recovered", ["--resume", m.group(1)])
+    if cp.returncode != 0 or rec is None:
+        raise Red("the journal did not recover: " + (cp.stderr.strip() or cp.stdout.strip())[-200:])
+    rd = LS.check_saved(read(rec), ROOT)["data"]
+    if rd["log"][5].get("input") != {"counts": 1, "multiplier": 3, "step": 1} or rd["log"][5]["delta"] != 3 or rd["log"][5]["tick"] != 5 \
+            or rd["ticks"] != {"hz": ST_HZ, "count": 7, "multiplier": 3, "step": 1}:
+        raise Red("the recovered run did not keep the sensitivity changed after its last look: %s %s" % (rd["log"][5], rd["ticks"]))
+    code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", rec])
+    if code != 0:
+        raise Red("the workshop does not verify the recovered session: " + err.strip())
+    return ("the configuration is in the command stream and out of the head: PgUp, mouse, Tab, mouse, PgDn saved a "
+            "sensitivity event (2, 88), a look carrying 2 and 88, a sensitivity event (2, 1), a look carrying 2 and 1 and "
+            "a sensitivity event (1, 1), each at its tick, as the twin re-derives; the head moved at the two looks and at "
+            "no sensitivity event; the same looks from other counts with no sensitivity change saved a different log and "
+            "the same head %s…; the workshop verifies both; a sensitivity event removed, two steps at once, a multiplier of "
+            "0 or 65, a step of 87, no tick, a tick block that is not the final configuration, and a look whose inputs "
+            "multiply to its delta under another configuration are each refused by both verifiers; a run that died after a PgUp and a Tab made after its last look came back at multiplier 3, step 1, "
+            "and its next look used them" % d["head"][:12])
+
+
+def simtick0a_hold():
+    """The tick is the coalescing boundary: script R's presses, with their auto-repeat marks, become exactly their
+    registered outcomes — a fresh press always acts, the first repeat of a held key in a tick walks, later repeats in
+    that tick are coalesced, a repeat of any other key is ignored; no tick walks more than one repeat; and the same walk
+    with each walked repeat pressed saves byte-identical data."""
+    import livesession as LS
+    _st_need()
+    logs = _ls_logs("simtick0a-hold")
+    cache = {}
+    cp, path, raw = _st_run(_st_text(SIMTICK0A_HOLD), logs, "0a-hold", ["--camera", ST_CAMERA])
+    if cp.returncode != 0 or path is None:
+        raise Red("script R did not save: " + (cp.stderr.strip() or cp.stdout.strip())[-300:])
+    st, trace, counts, _e = _st_twin(SIMTICK0A_HOLD, _st_start(), cache)
+    if raw["trace"] != trace:
+        raise Red("script R's presses did not become their registered outcomes: %r" % (next((g, w) for g, w in zip(raw["trace"] + [None] * 99, trace + [None]) if g != w),))
+    got = {k: raw["counts"].get(k) for k in SIMTICK0A_HOLD_COUNTS}
+    if got != SIMTICK0A_HOLD_COUNTS or {k: counts[k] for k in SIMTICK0A_HOLD_COUNTS} != SIMTICK0A_HOLD_COUNTS \
+            or got["repeats"] != got["walked"] + got["coalesced"] + got["ignored"]:
+        raise Red("script R's counts are not the registered ones, or repeats are not walked + coalesced + ignored: %s" % got)
+    per = {}
+    for ln in trace:
+        t = int(ln.split()[1])
+        per.setdefault(t, []).append(ln)
+    for t, lns in per.items():
+        walked = [i for i, ln in enumerate(lns) if "+ -> event" in ln]
+        if len(walked) > 1 or any("-> coalesced" in ln and (not walked or i < walked[0]) for i, ln in enumerate(lns)):
+            raise Red("tick %d walked more than one repeat, or coalesced a repeat with none walked before it" % t)
+    by_tick = lambda t: [ln.split(" -> ")[1] for ln in per[t]]
+    checks = [
+        (len(by_tick(1)) == 2 and all(o.startswith("event") for o in by_tick(1)), "a fresh press and a repeat in one tick both act"),
+        ([o.split()[0] for o in by_tick(2)] == ["event", "coalesced", "coalesced"], "three repeats in one tick: one walks"),
+        ([o.split()[0] for o in by_tick(5)] == ["event", "coalesced"] and "move F" in by_tick(5)[0], "two held keys in one tick: the first walks"),
+        ([o.split()[0] for o in by_tick(6)] == ["event", "coalesced"] and "move Q" in by_tick(6)[0], "the first repeat walks whichever key it is"),
+        ([o.split()[0] for o in by_tick(7)] == ["event"] + ["coalesced"] * 5, "a burst of repeats in one tick is one step"),
+        ([o.split()[0] for o in by_tick(8)] == ["event", "repeat"] and [o.split()[0] for o in by_tick(9)] == ["event", "repeat"], "holding an edit key edits once"),
+        (by_tick(10) == ["repeat", "repeat"], "Q and E do not walk on a repeat"),
+        ([o.split()[0] for o in by_tick(11)] == ["event", "repeat"] and by_tick(12) == ["repeat"], "holding a sensitivity key changes it once"),
+    ]
+    bad = [why for ok, why in checks if not ok]
+    if bad:
+        raise Red("script R did not register: " + "; ".join(bad))
+    d = LS.check_saved(read(path), ROOT)["data"]
+    if any(k in e for e in d["log"] for k in ("repeat", "coalesced", "held")) or [e["witness"] for e in d["log"] if "witness" in e] != [e["witness"] for e in st["log"] if "witness" in e]:
+        raise Red("something about a repeat was saved, or the saved witnesses are not the twin's")
+    # the same walk pressed: each walked repeat a fresh press at its own time, the coalesced and ignored ones left out
+    outcome = {}
+    acts = [i for i in SIMTICK0A_HOLD if not (i[2][0] == "m" and i[2][1] in "+-")]
+    for item, ln in zip(acts, trace):
+        outcome[item] = ln.split(" -> ")[1]
+    pressed = [(t, off, w.rstrip("+")) for (t, off, w) in SIMTICK0A_HOLD if not w.endswith("+") or outcome[(t, off, w)].startswith("event")]
+    if len(pressed) != len(SIMTICK0A_HOLD) - SIMTICK0A_HOLD_COUNTS["coalesced"] - SIMTICK0A_HOLD_COUNTS["ignored"] or any(w.endswith("+") for _t, _o, w in pressed):
+        raise Red("the pressed walk is not script R without its coalesced and ignored repeats")
+    cp, p2, raw2 = _st_run(_st_text(pressed), logs, "0a-pressed", ["--camera", ST_CAMERA])
+    if cp.returncode != 0 or p2 is None or raw2["counts"]["repeats"] != 0:
+        raise Red("the pressed walk did not save: " + cp.stderr.strip()[-200:])
+    if _st_data(p2) != _st_data(path):
+        raise Red("the held walk's saved data is not the pressed walk's: holding a key changed the session")
+    code, _o, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+    if code != 0:
+        raise Red("the workshop does not verify script R's session: " + err.strip())
+    c = SIMTICK0A_HOLD_COUNTS
+    return ("the tick is the coalescing boundary: script R's %d key presses, %d of them auto-repeats, became exactly their "
+            "registered outcomes — %d repeats walked (never two in one tick), %d coalesced behind them, %d ignored (Space, "
+            "a class key, Q, E, PgUp, Tab); a fresh press and a repeat in one tick both acted, three repeats in a tick "
+            "were one step and a burst of six was one step; nothing about a repeat is in the saved session, and the same "
+            "walk pressed saves byte-identical data (%d events, head %s…)"
+            % (c["keys"], c["repeats"], c["walked"], c["coalesced"], c["ignored"], len(d["log"]), d["head"][:12]))
+
+
+def simtick0a_fence():
+    """The amendment stays inside the rules: the session's sensitivity event is one legal transition that folds nothing
+    and writes no W, M or camera; every fold skips it; the tick run resolves the control keys to their typed effect
+    before the editor's binding and reads the configuration from the session; the accumulator admits one held repeat a
+    tick under HOLD-WALK-0's own set; the editor's bindings, the window loop and shell/win32.rs are unchanged."""
+    code_of_src = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
+    pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
+    sect = pb[pb.index("// ================================================================== SIM-TICK-0 (appended)"):]
+    ps = src_span(sect, "pub fn push_sensitivity(", "\n    }\n")
+    order = [ps.find(t) for t in ("crate::simtick::transition(self.sens, to)", "self.sens = to;", "self.log.push(", "head: self.head.clone()", "self.handed();")]
+    if -1 in order[:3] or order[4] < order[2] or order[0] > order[1] or order[1] > order[2] \
+            or any(t in ps for t in ("fold(", "self.level", "self.tiles", "self.cam =", "self.yaw =", "self.head =", "self.content =")) \
+            or "tag: b'S'" not in ps or "witness: String::new()" not in ps or sect.count("self.sens = ") != 1:
+        raise Red("the session's sensitivity event is not one legal transition that folds nothing and writes no W, M or camera")
+    ch = src_span(pb, "pub fn chain_heads(", "\n}\n")
+    if "if *tag != b'S' {" not in ch or "ev.tag == b'S' || crate::simtick::anchor(ev.yaw).is_some()" not in sect:
+        raise Red("the chain's fold does not skip a sensitivity event, or the certification walk treats one as a frame")
+    tr = code_of_src(read(os.path.join(SHELL, "tickrun.rs")).decode("utf-8"))
+    ap = tr[tr.index("fn apply("):tr.index("pub fn run(")]
+    order = [ap.find(t) for t in ("let sens = session.sensitivity();", "session.push_look(d, Some((cmd.counts, sens.multiplier, sens.step)))",
+                                  "if let Some(action) = simtick::control(vk) {", "crate::liveauthor::bind(simtick::rebind(vk))")]
+    cf = tr[tr.index("fn configure("):tr.index("fn apply(")]
+    if -1 in order or order != sorted(order) or "session.push_sensitivity(n)" not in cf or "let now = session.sensitivity();" not in cf \
+            or "Accumulator::holding(Some(crate::holdwalk::held))" not in tr or "mut sens" in tr or "Sens {" in tr:
+        raise Red("the tick run keeps a sensitivity of its own, or does not resolve the control keys before the editor's binding under HOLD-WALK-0's held set")
+    st = code_of_src(read(os.path.join(SHELL, "simtick.rs")).decode("utf-8"))
+    fd = src_span(st, "pub fn feed(", "\n    }\n")
+    order = [fd.find(t) for t in ("Input::Key(vk) => self.acts.push(Act::Key(vk)),", "let walks = self.held.map_or(false, |h| h(vk));", "Act::Ignored(vk)",
+                                  "} else if self.admitted {", "Act::Coalesced(vk)", "self.admitted = true;", "Act::Walked(vk)")]
+    if -1 in order or order != sorted(order) or st.count("self.admitted = true;") != 1 or "self.admitted = false;" not in src_span(st, "pub fn close(", "\n    }\n") \
+            or not all(t in src_span(st, "pub fn control(", "\n}\n") for t in ("0x21 => Some(Input::MultUp)", "0x22 => Some(Input::MultDown)", "0x09 => Some(Input::StepToggle)")):
+        raise Red("the accumulator does not admit exactly one held repeat a tick, or the control map is not PgUp, PgDn and Tab")
+    hw = read(os.path.join(SHELL, "holdwalk.rs")).decode("utf-8")
+    if "pub const HELD: [u32; 8] = [0x57, 0x41, 0x53, 0x44, VK_UP, VK_LEFT, VK_DOWN, VK_RIGHT];" not in hw:
+        raise Red("HOLD-WALK-0's held set changed")
+    for fn in ("liveinput.rs", "liveauthor.rs"):
+        src = code_of_src(read(os.path.join(SHELL, fn)).decode("utf-8"))
+        if any(t in src for t in ("0x21", "0x22", "0x09", "control(", "push_sensitivity", "Accumulator")):
+            raise Red("shell/%s binds a sensitivity key or reaches the tick's accumulator: the editor's bindings and the window loop are unchanged" % fn)
+    ws = code_of_src(read(os.path.join(WORKSHOP, "sessionwalk.rs")).decode("utf-8"))
+    arm = src_span(ws[ws.index("fn replay("):], "Event::Sens(_, _) => {", "\n            }\n")
+    sealer = read(os.path.join(ROOT, "verify", "livesession.py")).decode("utf-8")
+    if "fold(" in arm or "head =" in arm or 'if tag == "S":\n            # SIM-TICK-0a' not in sealer:
+        raise Red("the workshop or the sealer folds a sensitivity event")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    tail = w32[LATENCY0_WIN32_LEN:].decode("utf-8")
+    if any(t in tail for t in ("WM_INPUT", "WM_MOUSEMOVE", "RegisterRawInputDevices", "GetRawInputData", "ClipCursor", "SetCapture", "simtick", "tickrun", "push_sensitivity")):
+        raise Red("shell/win32.rs reads a mouse, confines a cursor or reaches the tick rules: that is MOUSE-LOOK-0's")
+    pins = {"bearingfast.rs": BEARINGFAST_RS_SHA256, "vocab.rs": VOCAB_RS_SHA256, "mantle.rs": MANTLE_RS_SHA256, "fast.rs": FAST_RS_SHA256}
+    pins.update(SIMTICK_KERNEL_PINS)
+    for fn, want in pins.items():
+        if sha256(read(os.path.join(KERNEL, fn)).replace(b"\r\n", b"\n")) != want:
+            raise Red("kernel/%s changed: SIM-TICK-0a touches no renderer" % fn)
+    if sha256(read(os.path.join(SHELL, "present.rs")).replace(b"\r\n", b"\n")) != PRESENT_RS_SHA256:
+        raise Red("shell/present.rs changed")
+    return ("the amendment stays inside the rules: the session's sensitivity event is one legal transition, carries no "
+            "witness, folds nothing and writes no W, M or camera, and every fold (the shell's, the workshop's, the "
+            "sealer's) skips it; the tick run keeps no sensitivity of its own, reads the session's, and resolves PgUp, PgDn "
+            "and Tab to their typed effect before the editor's binding; the accumulator admits one held repeat a tick "
+            "under HOLD-WALK-0's own set, a fresh press always acting; the editor's bindings and the window loop do not "
+            "know the control keys; shell/win32.rs reads no mouse and confines no cursor; no renderer source changed")
 
 
 # ------------------------------------------------------------------ main
@@ -9079,6 +9417,10 @@ def main() -> int:
     row("simtick-certify", simtick_certify)
     row("simtick-resume", simtick_resume)
     row("simtick-fence", simtick_fence)
+    row("simtick0a-preregistered", simtick0a_preregistered)
+    row("simtick0a-config", simtick0a_config)
+    row("simtick0a-hold", simtick0a_hold)
+    row("simtick0a-fence", simtick0a_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

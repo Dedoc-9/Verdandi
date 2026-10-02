@@ -120,7 +120,7 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/kernel ... --hud --write-png out.ppm         # the composite with the overlay, to look at
     verify/build/kernel --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --at 34,28,123457 --write-png turned.ppm   # BEARING-0: the reference at a heading id
     python verify/bearingfast.py --host $env:COMPUTERNAME     # off-gate: BEARING-FAST-0's speed court, sealed
-    verify/build/shell simtick-selftest --script "0:m+3,15625:W,31250:mult+,46875:m-2,62500:ESC"   # SIM-TICK-0: a windowless tick run (T:m+N a mouse report at T microseconds, T:KEY, T:mult+, T:mult-, T:step), saved under build/sessions/
+    verify/build/shell simtick-selftest --script "0:m+3,15625:W,31250:PGUP,46875:m-2,62500:ESC"   # SIM-TICK-0: a windowless tick run (T:m+N a mouse report at T microseconds, T:KEY, T:KEY+ an auto-repeat, PGUP/PGDN/TAB the sensitivity keys), saved under build/sessions/
     verify/build/shell simtick-law                             # SIM-TICK-0: the laws as lines (the tick, the nearest cardinal of every id, the delta)
     python verify/bearingsweep.py --host $env:COMPUTERNAME    # off-gate: BEARING-FAST-0's sweep (about an hour), sealed
     python verify/bench.py --host $env:COMPUTERNAME           # off-gate: the kernel's frame time, sealed under the envelope

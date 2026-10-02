@@ -39,6 +39,12 @@
 // is counts x multiplier x step, ticks never decrease, a timed look is the first event of its tick — and never folds
 // them: a tick is when, not what.
 //
+// SIM-TICK-0a: a tick session also records its sensitivity changes, each as one event of kind sensitivity carrying the
+// configuration after it (the multiplier and the step). It is configuration, not a world event: it has no witness and
+// folds nothing, so the head after it is the head before it. `verify` replays the configuration from multiplier 1,
+// step 88: each sensitivity event must be exactly one legal transition and carry a tick, a timed look's inputs must
+// carry the configuration in force, and the tick block the configuration at the end.
+//
 // A move never changes W or M (the camera is projection-owned, WORKSHOP-0b); an edit never moves the camera.
 // `verify` replays from the base, re-derives every witness and the head, and catches a tampered event. Timing
 // is NOT here: the 144Hz/batch scheduler is a LATENCY-0 hypothesis; this file is headless and clock-free.
@@ -538,7 +544,25 @@ struct Stamp {
 /// the session ran on ticks, and covering every tick.
 fn check_form(log: &[Event], stamps: &[Stamp], ticks: Option<(i64, i64, i64, i64)>) -> Result<(), String> {
     let mut last: Option<u64> = None;
+    // SIM-TICK-0a: the configuration in force, replayed from the start
+    let mut config: (i64, i64) = (1, STEP_COARSE);
     for (k, (ev, st)) in log.iter().zip(stamps.iter()).enumerate() {
+        if let Event::Sens(m, s) = ev {
+            let valid = (1..=MULT_MAX).contains(m) && (*s == STEP_COARSE || *s == STEP_FINE);
+            let one_step = (*s == config.1 && (*m == config.0 + 1 || *m == config.0 - 1)) || (*m == config.0 && *s != config.1);
+            if st.tick.is_none() {
+                return Err(format!("event {}: a sensitivity event with no tick", k));
+            }
+            if !valid || !one_step {
+                return Err(format!("event {}: the sensitivity {},{} is not one legal transition from {},{}", k, m, s, config.0, config.1));
+            }
+            config = (*m, *s);
+        }
+        if let (Event::Look(_), Some((_, m, s))) = (ev, st.input) {
+            if (m, s) != config {
+                return Err(format!("event {}: a look's inputs carry the sensitivity {},{} and {},{} is in force", k, m, s, config.0, config.1));
+            }
+        }
         let look = match ev {
             Event::Look(d) => {
                 if *d == 0 || *d > DELTA_MAX || *d < -DELTA_MAX {
@@ -576,6 +600,9 @@ fn check_form(log: &[Event], stamps: &[Stamp], ticks: Option<(i64, i64, i64, i64
             if hz != TICK_HZ || count < 0 || !(1..=MULT_MAX).contains(&m) || !(s == STEP_COARSE || s == STEP_FINE) {
                 return Err(format!("the tick block (hz {}, count {}, multiplier {}, step {}) is not a registered one", hz, count, m, s));
             }
+            if (m, s) != config {
+                return Err(format!("the tick block's sensitivity {},{} is not the configuration at the end of the log ({},{})", m, s, config.0, config.1));
+            }
             match last {
                 Some(l) if l as i128 >= count as i128 => Err(format!("tick {} is not below the session's tick count {}", l, count)),
                 _ => Ok(()),
@@ -611,6 +638,7 @@ enum Event {
     Move(u8),
     Edit(Edit),
     Look(i64), // SIM-TICK-0: the heading turned by an integer delta
+    Sens(i64, i64), // SIM-TICK-0a: the sensitivity after a change (multiplier, step) — configuration, not a world event
 }
 
 struct Replay {
@@ -621,8 +649,9 @@ struct Replay {
     moves: usize,
     edits: usize,
     looks: usize,
+    settings: usize,
     // per-event witnesses, in log order (for `verify` to check against the stored file)
-    witnesses: Vec<(char, String)>, // ('M'|'E'|'K', witness hex)
+    witnesses: Vec<(char, String)>, // ('M'|'E'|'K', witness hex; 'S' with no witness)
     tokens: Vec<String>,            // the camera token after each event
 }
 
@@ -644,7 +673,7 @@ fn replay(level_path: &str, tiles_path: &str, cam0: Camera, log: &[Event]) -> Re
     let mut cam = cam0;
     let mut yaw = cam0.facing as i64 * QUARTER;
     let mut voc: Option<vocab::Vocab> = None;
-    let (mut moves, mut edits, mut looks) = (0usize, 0usize, 0usize);
+    let (mut moves, mut edits, mut looks, mut settings) = (0usize, 0usize, 0usize, 0usize);
     let mut witnesses = Vec::new();
     let mut tokens = Vec::new();
     for ev in log {
@@ -677,10 +706,15 @@ fn replay(level_path: &str, tiles_path: &str, cam0: Camera, log: &[Event]) -> Re
                 witnesses.push(('K', w));
                 looks += 1;
             }
+            Event::Sens(_, _) => {
+                // SIM-TICK-0a: configuration, not a world event — no witness, nothing folded, nothing moved
+                witnesses.push(('S', String::new()));
+                settings += 1;
+            }
         }
         tokens.push(token(cam, yaw));
     }
-    Replay { head, cam, yaw, final_content: auth.content_hex(), moves, edits, looks, witnesses, tokens }
+    Replay { head, cam, yaw, final_content: auth.content_hex(), moves, edits, looks, settings, witnesses, tokens }
 }
 
 // ------------------------------------------------------------------ the session-walk file
@@ -721,6 +755,11 @@ fn event_json(ev: &Event, wit: &(char, String), tok: &str, st: &Stamp) -> Json {
             ("camera", Json::Str(tok.to_string())),
             ("witness", Json::Str(wit.1.clone())),
         ],
+        Event::Sens(m, s) => vec![
+            ("kind", Json::Str("sensitivity".into())),
+            ("multiplier", Json::Num(*m)),
+            ("step", Json::Num(*s)),
+        ],
     };
     // the tick stamp, kept as it was read (an untimed event has none)
     if let Some(t) = st.tick {
@@ -759,6 +798,9 @@ fn write_sessionwalk(path: &str, sw: &SessionWalk) {
     // one, so a walk with neither is written as it always was
     if r.looks > 0 {
         data.push(("looks", Json::Num(r.looks as i64)));
+    }
+    if r.settings > 0 {
+        data.push(("sensitivity_changes", Json::Num(r.settings as i64)));
     }
     if let Some((hz, count, m, s)) = sw.ticks {
         data.push(("ticks", obj(vec![("hz", Json::Num(hz)), ("count", Json::Num(count)), ("multiplier", Json::Num(m)), ("step", Json::Num(s))])));
@@ -814,6 +856,13 @@ fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, Vec<String
                 let dl = num(item.get("delta")).unwrap_or_else(|| refuse("INVALID-SESSION", "a look without an integer delta"));
                 log.push(Event::Look(dl));
                 stored.push(('K', item.get("witness").s().to_string()));
+            }
+            "sensitivity" => {
+                match (num(item.get("multiplier")), num(item.get("step"))) {
+                    (Some(m), Some(s)) => log.push(Event::Sens(m, s)),
+                    _ => refuse("INVALID-SESSION", "a sensitivity event without its multiplier and step"),
+                }
+                stored.push(('S', item.get("witness").s().to_string()));
             }
             other => refuse("INVALID-SESSION", &format!("event kind {:?}", other)),
         }

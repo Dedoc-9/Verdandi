@@ -404,6 +404,8 @@ fn load_sealed(path: &str, root_prefix: &str) -> Sealed {
             }
             // SIM-TICK-0: a look turns the heading off the four facings playback shows
             "look" => refuse("HEADING", "the session holds a look: playback shows the four facings only; a free heading on the screen is MOUSE-LOOK-0's"),
+            // SIM-TICK-0a: a sensitivity event belongs to a tick session's command stream, which playback does not replay
+            "sensitivity" => refuse("CONFIG", "the session holds a sensitivity event: playback replays moves and edits only"),
             other => refuse("INVALID-SESSION", &format!("event kind {:?}", other)),
         }
     }
@@ -622,9 +624,11 @@ pub struct LiveSession {
     // session's tick block (count, multiplier, step) once it ran on ticks, and the base bytes the log replays from
     yaw: i64,
     tick: Option<u64>,
-    ticks: Option<(u64, i64, i64)>,
+    ticks: Option<u64>,
     base_level: Vec<u8>,
     base_tiles: Vec<u8>,
+    // SIM-TICK-0a: the sensitivity in force — configuration, replayed from the log's sensitivity events
+    sens: crate::simtick::Sens,
 }
 
 impl LiveSession {
@@ -640,7 +644,8 @@ impl LiveSession {
         let (base_level, base_tiles) = (level_bytes.clone(), tiles_bytes.clone());
         Ok(LiveSession { level: level_bytes, tiles: tiles_bytes, cam: cam0, content: base_content.clone(), head: head.clone(),
                          cam0, base_content, genesis: head, log: Vec::new(), sink: None,
-                         yaw: cam0.facing as i64 * crate::simtick::QUARTER, tick: None, ticks: None, base_level, base_tiles })
+                         yaw: cam0.facing as i64 * crate::simtick::QUARTER, tick: None, ticks: None, base_level, base_tiles,
+                         sens: crate::simtick::START })
     }
 
     /// LIVE-SESSION-0: the same session, handing every event appended from now on to `sink`.
@@ -814,7 +819,10 @@ pub fn chain_heads(base_content: &str, cam0: Camera, events: &[(u8, String)]) ->
     let mut h = genesis(base_content, cam0);
     let mut out = vec![h.clone()];
     for (tag, w) in events {
-        h = fold(&h, *tag, w);
+        // SIM-TICK-0a: a sensitivity event (tag S) is configuration, not a world event: it folds nothing
+        if *tag != b'S' {
+            h = fold(&h, *tag, w);
+        }
         out.push(h.clone());
     }
     out
@@ -865,6 +873,9 @@ impl LiveSession {
 // by neighbouring headings, and the head must tell them apart. The camera token keeps its letter at an anchor and
 // carries the id elsewhere. A tick run stamps the events it appends with their tick, and a timed look with its inputs;
 // the stamp is recorded beside the event and never folded.
+// SIM-TICK-0a: the session also owns the sensitivity (the multiplier and the step a look's counts are scaled by) as
+// replayed configuration. A sensitivity event changes it by one legal transition; it is in the log, in order, with its
+// tick, and it folds nothing: the head is the worldline's, and a setting is not part of the world.
 
 /// The camera token: "x,z,F" at an anchor heading, "x,z,K" (the id, in decimal) at any other.
 pub fn token(cam: Camera, yaw: i64) -> String {
@@ -905,13 +916,34 @@ impl LiveSession {
         self.tick = tick;
     }
 
-    /// The session's tick block once it has run on ticks: the tick count, and the sensitivity's multiplier and step.
+    /// The session's tick block once it has run on ticks: the tick count, and the multiplier and step in force.
     pub fn ticks(&self) -> Option<(u64, i64, i64)> {
-        self.ticks
+        self.ticks.map(|count| (count, self.sens.multiplier, self.sens.step))
     }
 
-    pub fn set_ticks(&mut self, ticks: Option<(u64, i64, i64)>) {
-        self.ticks = ticks;
+    /// Set the tick count (None: the session has not run on ticks).
+    pub fn set_tick_count(&mut self, count: Option<u64>) {
+        self.ticks = count;
+    }
+
+    /// SIM-TICK-0a: the sensitivity in force. It starts at multiplier 1, step 88, and only a sensitivity event changes it.
+    pub fn sensitivity(&self) -> crate::simtick::Sens {
+        self.sens
+    }
+
+    /// SIM-TICK-0a: append a sensitivity event and replay it: the configuration becomes `to`, which must be exactly one
+    /// legal transition from the one in force (the multiplier one up or down inside 1..64, or the step toggled). It is
+    /// a configuration event, not a world event: it has no witness and folds nothing — the head after it is the head
+    /// before it — and W, M and the camera are untouched. A refused transition is not appended.
+    pub fn push_sensitivity(&mut self, to: crate::simtick::Sens) -> Result<&LiveEvent, String> {
+        if !to.valid() || !crate::simtick::transition(self.sens, to) {
+            return Err(format!("the sensitivity {},{} is not one legal transition from {},{}", to.multiplier, to.step, self.sens.multiplier, self.sens.step));
+        }
+        self.sens = to;
+        self.log.push(LiveEvent { tag: b'S', param: format!("{},{}", to.multiplier, to.step), camera: self.cam, witness: String::new(),
+                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None });
+        self.handed();
+        Ok(&self.log[self.log.len() - 1])
     }
 
     /// Append a look and replay it: the heading turned by `delta` ids, the facing its nearest cardinal, the frame digest
@@ -948,7 +980,7 @@ impl LiveSession {
                 if ev.param.starts_with("cell:") { la = None } else { ta = None }
                 continue;
             }
-            if crate::simtick::anchor(ev.yaw).is_some() {
+            if ev.tag == b'S' || crate::simtick::anchor(ev.yaw).is_some() {
                 continue;
             }
             let l = la.get_or_insert_with(|| Arc::new(level.clone())).clone();

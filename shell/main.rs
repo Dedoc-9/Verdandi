@@ -906,7 +906,8 @@ fn main() {
         }
         "simtick-selftest" => {
             // SIM-TICK-0: the tick run, windowless — a script of raw inputs with their times (`T:m+N`, `T:KEY`, `T:mult+`,
-            // `T:mult-`, `T:step`; T in microseconds) through the accumulator, one command per tick, into the live
+            // `T:mult-`, `T:step`; T in microseconds; SIM-TICK-0a: `T:KEY+` an auto-repeated press, and PGUP, PGDN and
+            // TAB the sensitivity's control keys) through the accumulator, one command per tick, into the live
             // session; journaled as it runs and sealed (certified by the reference, written, read back, verified) into
             // build/sessions/<run_id>/session.json; --resume continues a saved session or a crashed run's journal.
             // No surface, no loop, no clock. --out writes the trace and the counts for the gate. Plants: crash,
@@ -918,7 +919,7 @@ fn main() {
             let level = opt("--level").unwrap_or_else(|| "oracle/levels/witness.lvl".to_string());
             let tiles = opt("--tiles").unwrap_or_else(|| "oracle/tiles/identity.tiles".to_string());
             let cam0 = parse_camera(&opt("--camera").unwrap_or_else(|| "28,28,N".to_string())).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m));
-            let script = simtick::parse_script(&opt("--script").unwrap_or_default(), liveinput::vk_named).unwrap_or_else(|m| refuse("USAGE", &m));
+            let script = simtick::parse_script(&opt("--script").unwrap_or_default(), tickrun::key_named).unwrap_or_else(|m| refuse("USAGE", &m));
             let out = opt("--out");
             let plan = livesession::Plan { level, tiles, cam0, resume: opt("--resume"), plant: opt("--plant").unwrap_or_default(), surface: "none" };
             let prepared = livesession::prepare(plan).unwrap_or_else(|code| exit(code));

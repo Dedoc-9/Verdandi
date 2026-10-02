@@ -3675,6 +3675,10 @@ session, journal and seal the live editor uses. It has no surface, no loop and n
 The walk is the console's account of one run. It is not a sealed record and nothing was committed from it; the saved
 session stays under `build/sessions/` on the host.
 
+**Amended by SIM-TICK-0a.** A sensitivity action that takes effect is now a typed configuration event in the log,
+never folded, and a held key's repeats walk at most once a tick. The section below this one has the rules. What is
+said above about a sensitivity action leaving no event describes this rung as it was registered and run on the host.
+
 **Grade.** DECLARED: the tick, the command, the delta, the nearest cardinal (the ±45° reading), the binding, the fold,
 ticks as recorded and never authority, certification at save. ESTABLISHED (gate, in the build container and on the
 owner's host): the eight rows above, and every earlier row beside them. MEASURED: nothing; this rung takes no number.
@@ -3695,6 +3699,109 @@ headings fold to one head. `simtick-equivalence` goes red if timing inside a tic
 or the head. `simtick-certify` goes red if a defective fast path can save. `simtick-resume` goes red if a continuation
 loses its heading, tick count or sensitivity, or the window loop shows a free heading. `simtick-fence` goes red if a
 clock, a float, a mouse or a window enters the rule proof, or a renderer source changes.
+
+## SIM-TICK-0a — sensitivity as a typed configuration event; held keys by the tick (preregistered and built; an amendment to SIM-TICK-0; the gate not yet run on the host)
+
+**Why.** MOUSE-LOOK-0's court was held on 2026-10-02. Two of the owner's four rulings there are not about a window at
+all: they are rules of the tick. The owner had ruled that SIM-TICK-0 stays completely windowless and that the two rungs
+are never combined, so those two rulings are taken here, with no window, no clock and no Win32 input, before
+MOUSE-LOOK-0 puts a real mouse on them. SIM-TICK-0's entry (`dc1dddf2`) is not edited; this rung has its own
+(`471f4d72`).
+
+**The court's four rulings.**
+
+- **Capture is shell state, never session state** (for MOUSE-LOOK-0). The mouse is captured from the start until Esc,
+  the cursor hidden and confined, and raw counts feed the tick's accumulator while the window is in the foreground.
+  Alt-Tab releases the mouse and pauses the look; returning recaptures it. No look of zero, no pause event and no
+  synthetic input is ever made by a focus change. Esc releases, then saves, then the reference recomputes. The
+  owner's words: the shell owns where the mouse is allowed to speak; the session owns what the mouse actually said.
+- **PgUp, PgDn and Tab change the sensitivity, and the change is a typed configuration event** (taken here). The keys
+  are physical bindings at the shell level. Their effects, not the keys, are what the session records. A change takes
+  effect at the next tick and is itself in the session's command stream, so the session remembers the configuration
+  transitions and not only the heading they produced. The vocabulary is then LOOK (mouse), MOVE (W, A, S, D), EDIT
+  (Space, 1–5), SENSITIVITY (PgUp, PgDn, Tab) and SHELL CONTROL (Esc, focus, capture).
+- **A held key walks once a tick** (taken here). HOLD-WALK-0's law stands, with the tick as the coalescing boundary:
+  keyboard repeat frequency is input production, 64 Hz is simulation authority.
+- **The live sample is every 64th free-heading frame, off the loop** (for MOUSE-LOOK-0). The reference recomputes it
+  on a worker thread, a mismatch ends the run refused, and the save still recomputes every frame.
+
+**The rules, registered before the build.**
+
+- **The sensitivity event.** A sensitivity action that takes effect is appended to the log as one event of kind
+  `sensitivity`. It carries the configuration after it (the multiplier and the step) and the tick it was applied at.
+  A refused action (below 1, above 64) is still no event.
+- **Configuration, not world.** The event has no witness and it is not folded: the head after it is the head before
+  it. The head is the worldline's, frames and content, and the same world reached under another sensitivity is the
+  same worldline. One consequence was chosen on purpose: pressing PgUp does not move the head, so it cannot invalidate
+  anything anchored to a head.
+- **Replayed state.** The session owns the configuration, as it owns the camera. It starts at multiplier 1, step 88.
+  Only a sensitivity event changes it, by exactly one legal transition: the multiplier one up or one down inside 1 to
+  64, or the step toggled between 88 and 1. A timed look's inputs must carry the configuration in force when it was
+  applied, and the session's tick block must carry the configuration at the end. Both verifiers replay it.
+- **The binding.** A pure map from a key code: PgUp is multiplier up, PgDn multiplier down, Tab the step toggle.
+  Reading those keys from the window is MOUSE-LOOK-0's.
+- **Held keys.** A fresh press always acts and is never coalesced. An auto-repeated press of a key in HOLD-WALK-0's
+  held set (W, A, S, D and the four arrows) is bound as that key's press, but only the first repeat in a tick. Every
+  later repeat in that tick, of any held key, is coalesced: counted and traced, never an event. A repeat of any other
+  key is ignored and counted, so holding Space, a class key or PgUp acts once. Nothing about a repeat is saved; a
+  walked repeat's move is an ordinary move.
+
+**What this amends.** SIM-TICK-0 said a sensitivity action is not an event and is saved only inside the looks that
+follow it. It is still not a world event; it is now a configuration event in the log. SIM-TICK-0's rows were re-pinned
+on purpose for that and are named at their pins: script S's saved log now holds its 68 sensitivity events between its
+24 world events, the look moved to a neighbouring heading is event 1 of its file and not event 0, and a continuation's
+lowered multiplier is its own event. Script S's head did not change (`3aa992fc70bf…`), which is the rule working. A
+crashed run's journal now recovers the configuration exactly from its sensitivity events, where before it took the
+last look's. A tick session saved in SIM-TICK-0's form, a look carrying a changed multiplier with no sensitivity event
+before it, no longer loads. None exists outside the gate's scratch: no window has made a look.
+
+**What the gate holds (4 rows, 201 in all).**
+
+- `simtick0a-config`. The owner's sequence, PgUp, mouse, Tab, mouse, PgDn, saves a sensitivity event (2, 88), a look
+  carrying 2 and 88, a sensitivity event (2, 1), a look carrying 2 and 1, and a sensitivity event (1, 1), as the twin
+  re-derives. The head moves at the two looks and at no sensitivity event. The same two looks from other counts, with
+  no sensitivity change, save a different log and the same head. Eight forgeries are each refused by both verifiers: a
+  sensitivity event removed, two steps at once, a multiplier of 0 or 65, a step of 87, a missing tick, a tick block
+  that is not the final configuration, and a look whose inputs multiply to its delta under another configuration. A
+  run that died after a PgUp and a Tab made after its last look comes back at multiplier 3, step 1, and its next look
+  uses them.
+- `simtick0a-hold`. Script R: 30 key presses, 24 of them auto-repeats. 8 repeats walk, never two in one tick; 10 are
+  coalesced; 6 are ignored (Space, a class key, Q, E, PgUp, Tab). A fresh press and a repeat in one tick both act;
+  three repeats in a tick are one step; a burst of six, as after a slow frame, is one step. Nothing about a repeat is
+  in the saved session, and the same walk with each walked repeat pressed saves byte-identical data.
+- `simtick0a-fence`. The session's sensitivity event is one legal transition, folds nothing and writes no W, M or
+  camera; every fold (the shell's, the workshop's, the sealer's) skips it; the tick run keeps no sensitivity of its
+  own; the accumulator admits one held repeat a tick under HOLD-WALK-0's own set; the editor's bindings and the window
+  loop do not know the control keys; `win32.rs` reads no mouse and confines no cursor.
+- `simtick0a-preregistered`. The entry's method phrases, and SIM-TICK-0's entry still at its registered hash.
+
+**Found while building.**
+
+- **Two mutations slipped through the first form of the configuration row, and the row was strengthened.** Eight
+  mutations were applied to scratch copies. A shell, and then a workshop, with the configuration-in-force check removed
+  both still passed: every forgery in the row was also an illegal transition, so that check was never the only thing
+  refusing. A forgery that isolates it was added, a look whose inputs multiply to the same delta under another
+  configuration (6 × 1 × 88 for 3 × 2 × 88), and both mutants are now caught. The other six were caught at once: the
+  sensitivity event folded into the head, every held repeat walking, a journal recovering its last look's
+  sensitivity, Tab raising the multiplier, every key treated as held, and the session accepting an illegal transition.
+- **`shell playback` refuses a session that holds a sensitivity event**, as it refuses one that holds a look. It
+  replays moves and edits on the four facings. Playback of a tick session is not built.
+
+**Grade.** DECLARED: the sensitivity event and its not being folded, the configuration as replayed state, the binding,
+the tick as the coalescing boundary. ESTABLISHED (gate, in the build container): the four rows above and SIM-TICK-0's
+rows under the amended form. MEASURED: nothing. NOT_MEASURED: anything about a window, a real key or a real mouse.
+
+**does_not_show.** That the keys work in the window: the map is from a key code, and nothing here reads one. That the
+head covers the settings a world was walked under: it does not, on purpose, and a legal transition added and undone
+between two looks is caught by the file's seal and by nothing else. Anything about capture, focus or the cursor: that
+ruling is recorded above and built in MOUSE-LOOK-0. How fast a held key walks on the host: the keyboard's repeat rate,
+capped at one step a tick, is not observed here.
+
+**Falsifier.** `simtick0a-config` goes red if a sensitivity change that takes effect leaves no event, if a head moves
+at one, if two sessions with the same world events have different heads, if a forgery is accepted, or if a journal
+loses a configuration change. `simtick0a-hold` goes red if two repeats walk in one tick, a fresh press is coalesced,
+a repeat of another key acts, or a held walk's data differs from the same walk pressed. `simtick0a-fence` goes red if
+the event folds or touches the world, if the tick run keeps its own sensitivity, or if a window reads a mouse.
 
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 

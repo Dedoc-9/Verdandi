@@ -22,6 +22,16 @@
 //   THE BINDING under ticks is LIVE-AUTHOR-0's with A and D rebound to the strafes (Q and E): W, A, S and D step
 //   toward the nearest cardinal's four directions and never change the heading.
 //
+// SIM-TICK-0a (the owner's rulings in MOUSE-LOOK-0's court, taken into the tick command):
+//   SENSITIVITY IS A TYPED CONFIGURATION EVENT. A sensitivity action that takes effect is recorded in the session as one
+//   event carrying the configuration after it; the session owns the configuration as replayed state, changed only by
+//   one legal transition at a time; a timed look's inputs must carry the configuration in force. The physical binding
+//   is a pure map here: PgUp multiplier up, PgDn multiplier down, Tab the step toggle.
+//   HELD KEYS: THE TICK IS THE COALESCING BOUNDARY. A fresh press always acts. The first auto-repeat of a held key in a
+//   tick acts as that key's press; every later repeat in that tick, of any held key, is coalesced; a repeat of any
+//   other key is ignored. The held set is handed in by the caller (HOLD-WALK-0's): this module names no key but the
+//   three control keys and A and D.
+//
 // Nothing here is a float, a static, a file, a thread or unsafe; the gate's fence reads this file for them.
 
 pub const TICK_HZ: u64 = 64;
@@ -103,11 +113,38 @@ pub fn rebind(vk: u32) -> u32 {
     }
 }
 
-/// One raw input: a mouse report (signed horizontal counts), a key press (a virtual-key code), or a sensitivity action.
+/// SIM-TICK-0a: the physical binding of the sensitivity actions under ticks — PgUp, PgDn and Tab. Any other key is
+/// not a control key.
+pub fn control(vk: u32) -> Option<Input> {
+    match vk {
+        0x21 => Some(Input::MultUp),     // PgUp (VK_PRIOR)
+        0x22 => Some(Input::MultDown),   // PgDn (VK_NEXT)
+        0x09 => Some(Input::StepToggle), // Tab
+        _ => None,
+    }
+}
+
+/// One raw input: a mouse report (signed horizontal counts), a fresh key press (a virtual-key code), an auto-repeated
+/// press of a key already down, or a sensitivity action.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Input {
     Mouse(i64),
     Key(u32),
+    Repeat(u32),
+    MultUp,
+    MultDown,
+    StepToggle,
+}
+
+/// One of a tick's inputs other than its reports, as the accumulator admitted it: a fresh key press; a held key's
+/// repeat that walks (the tick's first); a repeat coalesced behind it; a repeat of a key that does not walk, ignored; or
+/// a sensitivity action.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Act {
+    Key(u32),
+    Walked(u32),
+    Coalesced(u32),
+    Ignored(u32),
     MultUp,
     MultDown,
     StepToggle,
@@ -120,7 +157,7 @@ pub struct Command {
     pub tick: u64,
     pub counts: i64,
     pub over: bool,
-    pub acts: Vec<Input>,
+    pub acts: Vec<Act>,
 }
 
 /// The accumulator: the inputs of the tick being gathered. `feed` hands back the finished command of the tick before
@@ -128,13 +165,17 @@ pub struct Command {
 pub struct Accumulator {
     tick: u64,
     sum: i128,
-    acts: Vec<Input>,
+    acts: Vec<Act>,
     open: bool,
+    held: Option<fn(u32) -> bool>,
+    admitted: bool, // whether the tick being gathered has walked a repeat
 }
 
 impl Accumulator {
-    pub fn new() -> Accumulator {
-        Accumulator { tick: 0, sum: 0, acts: Vec::new(), open: false }
+    /// SIM-TICK-0a: an accumulator under a held set — the keys whose repeats walk, one a tick. With no held set a repeat
+    /// of any key is ignored.
+    pub fn holding(held: Option<fn(u32) -> bool>) -> Accumulator {
+        Accumulator { tick: 0, sum: 0, acts: Vec::new(), open: false, held, admitted: false }
     }
 
     /// One input at its tick. A tick earlier than the one being gathered, or a report outside +-(2^31 - 1), refuses.
@@ -154,7 +195,22 @@ impl Accumulator {
         }
         match input {
             Input::Mouse(c) => self.sum += c as i128, // each report is below 2^31: an i128 holds any run's sum
-            other => self.acts.push(other),
+            Input::Key(vk) => self.acts.push(Act::Key(vk)), // a fresh press always acts
+            Input::Repeat(vk) => {
+                // SIM-TICK-0a: the tick is the coalescing boundary — one walked repeat a tick, whichever held key
+                let walks = self.held.map_or(false, |h| h(vk));
+                self.acts.push(if !walks {
+                    Act::Ignored(vk)
+                } else if self.admitted {
+                    Act::Coalesced(vk)
+                } else {
+                    self.admitted = true;
+                    Act::Walked(vk)
+                });
+            }
+            Input::MultUp => self.acts.push(Act::MultUp),
+            Input::MultDown => self.acts.push(Act::MultDown),
+            Input::StepToggle => self.acts.push(Act::StepToggle),
         }
         Ok(done)
     }
@@ -165,6 +221,7 @@ impl Accumulator {
             return None;
         }
         self.open = false;
+        self.admitted = false;
         let sum = std::mem::replace(&mut self.sum, 0);
         let acts = std::mem::replace(&mut self.acts, Vec::new());
         let over = sum > COUNTS_MAX as i128 || sum < -(COUNTS_MAX as i128);
@@ -178,7 +235,7 @@ impl Accumulator {
 
 /// A script of raw inputs: comma-separated `T:WHAT`, T the time in whole microseconds since the run began (never
 /// decreasing), WHAT a mouse report (`m+N` or `m-N`), a sensitivity action (`mult+`, `mult-`, `step`) or a key name
-/// (resolved by `key`).
+/// (resolved by `key`), with a trailing `+` when the press is an auto-repeat (SIM-TICK-0a).
 pub fn parse_script(s: &str, key: fn(&str) -> Option<u32>) -> Result<Vec<(u64, Input)>, String> {
     let mut out: Vec<(u64, Input)> = Vec::new();
     for tok in s.split(',').map(|t| t.trim()).filter(|t| !t.is_empty()) {
@@ -212,9 +269,10 @@ pub fn parse_script(s: &str, key: fn(&str) -> Option<u32>) -> Result<Vec<(u64, I
                 }
                 Input::Mouse(if w.as_bytes()[1] == b'-' { -n } else { n })
             }
-            name => match key(name) {
-                Some(vk) => Input::Key(vk),
-                None => return Err(format!("script input {:?} is neither a mouse report, a sensitivity action nor a key", name)),
+            name => match (key(name.strip_suffix('+').unwrap_or(name)), name.ends_with('+')) {
+                (Some(vk), false) => Input::Key(vk),
+                (Some(vk), true) => Input::Repeat(vk),
+                (None, _) => return Err(format!("script input {:?} is neither a mouse report, a sensitivity action nor a key", name)),
             },
         };
         out.push((us, input));
@@ -222,21 +280,47 @@ pub fn parse_script(s: &str, key: fn(&str) -> Option<u32>) -> Result<Vec<(u64, I
     Ok(out)
 }
 
-/// One saved event as the tick form sees it: whether it is a look, its delta, and the tick and inputs saved beside it.
+/// One saved event as the tick form sees it: whether it is a look, its delta, the tick and inputs saved beside it, and
+/// (SIM-TICK-0a) the configuration a sensitivity event carries.
 pub struct Timed {
     pub look: bool,
     pub delta: i64,
     pub tick: Option<u64>,
     pub input: Option<(i64, i64, i64)>,
+    pub sens: Option<(i64, i64)>,
+}
+
+/// SIM-TICK-0a: whether `to` is one legal transition from `from` — the multiplier one up or one down inside its range,
+/// or the step toggled.
+pub fn transition(from: Sens, to: Sens) -> bool {
+    from.up() == Some(to) || from.down() == Some(to) || from.toggled() == to
 }
 
 /// The tick form of a saved log, checked: a look's delta is non-zero and inside the bound; inputs sit only beside a
 /// timed look and multiply to its delta; the ticks never decrease; a timed look is the first event of its tick; and
 /// the session's tick block (the rate, the count, the final sensitivity), which must be present exactly when the
-/// session ran on ticks, covers every tick.
+/// session ran on ticks, covers every tick. SIM-TICK-0a: the configuration is replayed from the start — a sensitivity
+/// event carries a tick and is exactly one legal transition, a timed look's inputs carry the configuration in force,
+/// and the tick block carries the configuration at the end.
 pub fn check_form(events: &[Timed], ticks: Option<(i64, i64, i64, i64)>) -> Result<(), String> {
     let mut last: Option<u64> = None;
+    let mut config = START;
     for (k, e) in events.iter().enumerate() {
+        if let Some((multiplier, step)) = e.sens {
+            let to = Sens { multiplier, step };
+            if e.tick.is_none() {
+                return Err(format!("event {}: a sensitivity event with no tick", k));
+            }
+            if !to.valid() || !transition(config, to) {
+                return Err(format!("event {}: the sensitivity {},{} is not one legal transition from {},{}", k, multiplier, step, config.multiplier, config.step));
+            }
+            config = to;
+        }
+        if let (true, Some((_, multiplier, step))) = (e.look, e.input) {
+            if (multiplier, step) != (config.multiplier, config.step) {
+                return Err(format!("event {}: a look's inputs carry the sensitivity {},{} and {},{} is in force", k, multiplier, step, config.multiplier, config.step));
+            }
+        }
         if e.look && (e.delta == 0 || e.delta > DELTA_MAX || e.delta < -DELTA_MAX) {
             return Err(format!("event {}: a look of {} ids is zero or outside the bound", k, e.delta));
         }
@@ -266,6 +350,9 @@ pub fn check_form(events: &[Timed], ticks: Option<(i64, i64, i64, i64)>) -> Resu
         (Some((hz, count, multiplier, step)), _) => {
             if hz != TICK_HZ as i64 || count < 0 || !(Sens { multiplier, step }).valid() {
                 return Err(format!("the tick block (hz {}, count {}, multiplier {}, step {}) is not a registered one", hz, count, multiplier, step));
+            }
+            if (multiplier, step) != (config.multiplier, config.step) {
+                return Err(format!("the tick block's sensitivity {},{} is not the configuration at the end of the log ({},{})", multiplier, step, config.multiplier, config.step));
             }
             match last {
                 Some(l) if l as i128 >= count as i128 => Err(format!("tick {} is not below the session's tick count {}", l, count)),
@@ -331,5 +418,17 @@ pub fn law_lines(sha: fn(&[u8]) -> String) -> Vec<String> {
                      s(Some(START)), s(START.up()), s(Sens { multiplier: MULT_MAX, step: STEP_COARSE }.up()), s(START.down()),
                      s(Sens { multiplier: MULT_MAX, step: STEP_COARSE }.down()), s(Some(START.toggled())), s(Some(START.toggled().toggled()))));
     out.push(format!("rebind {}", [0x41u32, 0x44, 0x57, 0x53, 0x51, 0x45, 0x25, 0x27, 0x20].iter().map(|v| format!("{:02X}={:02X}", v, rebind(*v))).collect::<Vec<_>>().join(" ")));
+    // SIM-TICK-0a: the control map, and the transitions
+    let name = |i: Option<Input>| match i {
+        Some(Input::MultUp) => "mult+",
+        Some(Input::MultDown) => "mult-",
+        Some(Input::StepToggle) => "step",
+        _ => "-",
+    };
+    out.push(format!("control {}", [0x21u32, 0x22, 0x09, 0x57, 0x20, 0x23].iter().map(|v| format!("{:02X}={}", v, name(control(*v)))).collect::<Vec<_>>().join(" ")));
+    let t = |a: (i64, i64), b: (i64, i64)| format!("{},{}>{},{}={}", a.0, a.1, b.0, b.1,
+                                                   if transition(Sens { multiplier: a.0, step: a.1 }, Sens { multiplier: b.0, step: b.1 }) { "legal" } else { "refused" });
+    out.push(format!("transition {}", [t((1, 88), (2, 88)), t((2, 88), (1, 88)), t((1, 88), (1, 1)), t((1, 1), (1, 88)), t((1, 88), (3, 88)), t((1, 88), (2, 1)),
+                                        t((1, 88), (1, 88)), t((64, 88), (65, 88)), t((1, 88), (0, 88)), t((64, 1), (63, 1))].join(" ")));
     out
 }
