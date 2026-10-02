@@ -3823,7 +3823,7 @@ loses a configuration change. `simtick0a-hold` goes red if two repeats walk in o
 a repeat of another key acts, or a held walk's data differs from the same walk pressed. `simtick0a-fence` goes red if
 the event folds or touches the world, if the tick run keeps its own sensitivity, or if a window reads a mouse.
 
-## MOUSE-LOOK-0 — a real mouse on the locked tick rules: the live editor with mouse-look (preregistered and built; the loop is held on the mock; the window code has not run yet)
+## MOUSE-LOOK-0 — a real mouse on the locked tick rules: the live editor with mouse-look (preregistered and built; the gate passes on the host; the window ran there and its keys walked on the tick, but no mouse report reached the loop, so a look is not shown yet)
 
 **Why.** The fourth rung of the owner's ladder: real mouse → 64 Hz accumulator → command → the existing live loop.
 The rules were locked windowless first (SIM-TICK-0, SIM-TICK-0a), and they are not proved again here. This rung adds
@@ -3957,17 +3957,82 @@ now, in this rung's section only; the witness is a method of the session's paint
   conditions turned to this host's, then `rustc --cfg shell_window --emit=metadata`: no error and no warning. That
   checks types and names against the declarations in the file. It does not link, and it runs nothing.
 
-**What has not run.** The window section. The build container cannot hold a window, a mouse or QueryPerformanceCounter.
-The section is type-checked here against the same declarations the Windows build uses and has never executed. Its
-first run is the owner's, on his host, and that run is the test: whether raw input arrives, whether the capture takes
-and releases, whether the loop keeps up, and what the walk feels like.
+**On the owner's host (2026-10-02): the gate, and the first run of the window.** The registration was pushed first,
+with SIM-TICK-0a's host note (`422388c`); then the build (`8041070`).
+
+- **The gate.** `GATE PASSED`, 207 rows, none failed and none skipped, rowset `188ac5ddbce45680`: the same rows and
+  rowset as in the build container.
+- **The window build.** `rustc -O --cfg shell_window` compiled with no output. That is the window section's first
+  compile and link on Windows.
+- **The run.** One run of `shell look-window`, 1,873 ticks long by the window's own clock.
+  - *The window and the capture.* The window held the foreground at the start and at every one of its 1,828 pumps. The
+    mouse was captured once and released once.
+  - *The keys, on the tick.* 48 key presses, each stamped with a tick read from QueryPerformanceCounter, made 48
+    commands and 47 events: 37 moves (17 of them blocked) and 10 edits (8 cells opened or closed, 2 tile classes
+    painted). A and D strafed, as the tick's binding has them. Esc, at tick 1,872, ended the run.
+  - *The screen.* 1,826 compositions, all of the composite, each rendered through the `LoopRenderer` and checked
+    against its reference; 48 references; 25 screen readbacks (the first composition and every 75th after it), none
+    differing.
+  - *The save.* Released, then saved and verified by the shell: 47 events, head `e9dafb482675…`. The live block
+    carries the loop's counts.
+- **What the run did not show: a look.** No mouse report reached the loop. The live block reads reports 0, dropped 0,
+  absolute 0, and the session holds no look; the heading never left north. So no picture was presented at a free
+  heading (picture 0), no sample was taken (samples 0), and the save had no free-heading frame to recompute
+  (certified 0). The rung's own question, whether a real mouse turns the camera, is not answered by this run.
+  - *Why is not known.* The record cannot say whether the mouse was moved. If it was, then either no raw input
+    message arrived, or one arrived and was not read; the window section counts neither case. It counts the reports
+    it admits, the ones it drops while not captured, and the absolute ones, and nothing before that point. That is a
+    gap in the observation, found by this run.
+- **What the run did not exercise.** The window never left the foreground (0 changes), so nothing is shown about a
+  focus loss or a recapture. No sensitivity key was pressed, no key was held long enough to repeat, and no arrow was
+  pressed.
+- **Found: the saved file says the run ended `closed`, and the tick run says `escape`.** Both lines are in the same
+  output. The presenter's window procedure, which this window shares, destroys the window when Esc is pressed. So in
+  the pump that reads the Esc the window is already gone: the loop sees a closed window with the Esc's tick still
+  open, ends there, and the tick is closed and its command applied as the run finishes. The session is right (the
+  Esc ended it, 47 events, tick count 1,873). The label in the live block is not, and the mock did not model this:
+  its Esc was applied a composition or two later, with the window still open.
+- **The beat, as counted.** 1,826 compositions against 1,873 ticks, 1,778 of them repeating the picture before them
+  (every composition at which no key's event was applied), and a span of 7: at least once, seven ticks passed between
+  two compositions. The loop did not keep to the tick schedule everywhere. Nothing is concluded from that here and
+  nothing is changed because of it: why, and what it costs on the screen, is the next rung's measurement.
+
+**Against the eight points the owner asked of the first host run.**
+
+| # | The point | This run |
+|---|---|---|
+| 1 | A real mouse produces real look events | Not shown: no mouse report reached the loop. |
+| 2 | A focus loss produces no session event | Not exercised: the window never left the foreground. |
+| 3 | Returning focus recaptures | Not exercised. |
+| 4 | Esc releases before the save | Shown: the release is printed before the save, and the live block reads releases 1, released true. |
+| 5 | The saved session certifies completely | Vacuous: there was no free-heading frame to recompute. The shell's own replay of the saved file verified. |
+| 6 | No overlay at a free heading | Not exercised: no free heading was reached. |
+| 7 | The live render and the reference agree | Not exercised for the bearing path. On the four facings: 1,826 byte checks and 25 screen readbacks, none differing. |
+| 8 | No latency claim | None is made. |
+
+**The owner's rulings after the build (2026-10-02).**
+
+- **The registered limit's wording is to be corrected, not only counted differently.** `span` is the useful
+  quantity, but it does not make the entry's statement about several commands in one composition true. The owner's
+  wording: a composition applies at most one closed tick command; `span` records the largest number of tick
+  boundaries between consecutive compositions; a span above 1 means the loop fell behind the tick schedule and does
+  not mean several commands were applied in that composition. Entries here are never edited after registration, so
+  the correction is an amendment with its own entry, MOUSE-LOOK-0a, as LATENCY-1a and SIM-TICK-0a were.
+- **The check with no row gets a row only if it asserts a semantic invariant.** It does not. It recomputes, at an
+  anchor, a frame the event already witnessed and compares the two digests. The shell's replay of the saved file, the
+  workshop and the sealer each verify the same witnesses again before a session counts. It is an earlier refusal of
+  something those would refuse anyway, so it stays a sanity check, and no row is added for it.
+- **The implementation is locked and nothing is optimized from the first run.** The host run is this rung's
+  execution witness, not a latency measurement.
 
 **Grade.** DECLARED: the entry point, the drain-time clock rule, capture as shell state, the picture alone at a free
-heading, the two sampling periods. ESTABLISHED (gate, in the build container): the six rows above, over the mock.
-MEASURED: nothing. NOT_MEASURED: everything about the real window, the real mouse and the real clock; latency; what a
-look costs phase by phase; whether the loop holds 75 compositions a second while looking.
+heading, the two sampling periods. ESTABLISHED (gate, in the build container and on the owner's host): the six rows
+above, over the mock. OBSERVED (one run on the host, not sealed yet): the window, the capture taken and released, key
+presses stamped by the window's clock and applied on the tick, the composite read back exact, the save. NOT_MEASURED:
+a look made by a real mouse; a focus loss; the picture at a free heading on the host; the sample on the host; latency;
+what a look costs phase by phase.
 
-**does_not_show.** That mouse-look works on the host: no window has run this. Any latency: by design an input is
+**does_not_show.** That mouse-look works on the host: the window ran, and no mouse report reached its loop. Any latency: by design an input is
 applied up to one tick and one composition after it is drained, and what that costs on the screen is the next rung's
 measurement. When the device moved: an input's tick is the tick it was drained in. That a run was right because its
 samples were equal: one frame in 64 is sampled, and only the save's recomputation is exhaustive. That the screen
