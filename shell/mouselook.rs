@@ -277,7 +277,9 @@ pub fn parse_script(s: &str) -> Result<Vec<(u64, Item)>, String> {
 /// MOCK_PERIOD_US, and every scripted item whose time has come is delivered: a key press, a mouse report, or the window
 /// leaving or regaining the foreground. While it is out of the foreground nothing is delivered — the items due then
 /// are dropped and counted, as a window without the focus receives none. When the script is spent the window closes a
-/// few pumps later (a script normally ends with ESC before that).
+/// few pumps later. MOUSE-LOOK-0a: an admitted Esc (pressed or repeated) closes the window in the pump that delivers
+/// it, and nothing scripted after it arrives — as on the host, where the presenter's window procedure destroys the
+/// window when Esc is pressed.
 pub struct ScriptedLook<S> {
     pub inner: S,
     script: Vec<(u64, Item)>,
@@ -291,12 +293,13 @@ pub struct ScriptedLook<S> {
     pub dropped: u64,
     pub released: bool,
     idle: u64,
+    closed: bool,
 }
 
 impl<S> ScriptedLook<S> {
     pub fn new(inner: S, script: Vec<(u64, Item)>) -> ScriptedLook<S> {
         ScriptedLook { inner, script, next: 0, pumps: 0, now: 0, foreground: true, keys: Vec::new(), reports: Vec::new(),
-                       blurs: 0, dropped: 0, released: false, idle: 0 }
+                       blurs: 0, dropped: 0, released: false, idle: 0, closed: false }
     }
 }
 
@@ -324,7 +327,7 @@ impl<S: ExactSurface> Surface for ScriptedLook<S> {
         if first {
             return true;
         }
-        while self.next < self.script.len() && self.script[self.next].0 <= self.now {
+        while !self.closed && self.next < self.script.len() && self.script[self.next].0 <= self.now {
             match self.script[self.next].1 {
                 Item::Blur => {
                     self.foreground = false;
@@ -333,8 +336,11 @@ impl<S: ExactSurface> Surface for ScriptedLook<S> {
                 Item::Focus => self.foreground = true,
                 Item::Input(_) if !self.foreground => self.dropped += 1,
                 Item::Input(Input::Mouse(c)) => self.reports.push(c),
-                Item::Input(Input::Key(vk)) => self.keys.push((vk, false)),
-                Item::Input(Input::Repeat(vk)) => self.keys.push((vk, true)),
+                Item::Input(Input::Key(vk)) | Item::Input(Input::Repeat(vk)) => {
+                    self.keys.push((vk, matches!(self.script[self.next].1, Item::Input(Input::Repeat(_)))));
+                    // the host's window is destroyed by an Esc key-down, in the pump that reads it
+                    self.closed = vk == crate::liveinput::VK_ESCAPE;
+                }
                 Item::Input(_) => {}
             }
             self.next += 1;
@@ -342,7 +348,7 @@ impl<S: ExactSurface> Surface for ScriptedLook<S> {
         if self.next >= self.script.len() {
             self.idle += 1;
         }
-        self.idle <= 8
+        !self.closed && self.idle <= 8
     }
 }
 

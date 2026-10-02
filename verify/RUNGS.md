@@ -4048,6 +4048,93 @@ refused by its first sample. `mouselook-fence` goes red if a clockless entry poi
 is read anywhere else, the ticker appends an event, or the window section calls the session or a renderer. On the
 host: a look that turns the wrong way, a walk that Alt-Tab changes, or a saved session the workshop refuses.
 
+## MOUSE-LOOK-0a — the timing limit's wording corrected; a run's end and the window's observation, from the first host run (preregistered and built; an amendment to MOUSE-LOOK-0; held on the mock, the window not yet run again)
+
+**Why.** Two things. The owner ruled that a sentence in MOUSE-LOOK-0's entry be corrected, not only counted around.
+And the first host run of `shell look-window` found two things the mock had not: the saved file mislabelled how the
+run ended, and the window section could not say whether raw input had arrived. MOUSE-LOOK-0's entry (`60870497`) is
+not edited; this amendment has its own (`3778b592`), registered and cut as its own patch.
+
+**When it was registered.** After the first host run. That run's counts (no mouse report, a span of 7, an end
+labelled `closed`) were seen before this entry was written. No condition in it reads those counts, no rule of the
+tick or the loop changes, and nothing is optimized from the run.
+
+**What it registers.**
+
+- **The timing limit, in the owner's wording.** A composition applies at most one closed tick command. `span`
+  records the largest number of tick boundaries between consecutive compositions. A span above 1 therefore indicates
+  the loop fell behind the tick schedule; it does not imply multiple commands were applied in that composition.
+  MOUSE-LOOK-0's limit that a slow loop "applies several ticks' commands in one composition", with "the largest such
+  burst" counted, is withdrawn: under that entry's own clock rule it cannot happen.
+- **The end of a run.** When the run ends, by Esc or by the window closing, the tick still open is closed there and
+  its command applied, as the windowless tick run does at the end of its script. That is the one case in which a
+  command is applied before the clock has passed its tick's end. On the host the presenter's window procedure
+  destroys the window when Esc is pressed, in the pump that reads it, so the loop ends at that composition. A run its
+  Esc ended is recorded as ended by `escape`, whatever the loop saw of the window; a run whose window closed with no
+  Esc is recorded `closed`. The mock closes its window at an admitted Esc, as the host's does, and delivers nothing
+  scripted after it.
+- **The window's observation of the mouse, extended.** Beside the reports it admits, drops and finds absolute, the
+  window section counts every raw input message it receives, every one it could not read as a mouse report (with the
+  size the last such read returned), and every relative report whose horizontal count is zero. A read counts as a
+  mouse report when it succeeds, holds at least the mouse structure and names the mouse type, whatever exact size it
+  returns; before, the size had to be exactly the structure's, and a read of any other size was skipped without a
+  count. The run prints the observation when it ends. It is observation only: nothing but a captured, relative,
+  horizontal count is ever handed to the loop.
+- **The sealer's reading.** A session run under the tick source is described as that, with its look count. One that
+  holds no look is said to hold none.
+
+**What the gate holds (2 rows, 209 in all).**
+
+- `mouselook0a-ending`. Four scripts, each also run through `shell simtick-selftest` on the same inputs at their
+  drain times, each saving byte-identical data and printing the observation it recorded. A key and an Esc drained
+  by composition 16 end the run there, 16 compositions presented, the key's move an event of the Esc's tick, and
+  nothing scripted after the Esc delivered: `escape` in the loop's output and in the live block. A script with no Esc
+  ends `closed` in both. An auto-repeated Esc closes the window and, ignored by the tick's rules, ends the run
+  `closed`. A keys-only session, as the first host run was, is sealed citing MOUSE-LOOK-0 as holding no look.
+- `mouselook0a-preregistered`. The entry's method phrases; MOUSE-LOOK-0's entry at its hash, the withdrawn sentence
+  still in it.
+- MOUSE-LOOK-0's rows hold under the mock that closes at Esc, re-derived by the model: script L now presents 154
+  compositions (128 the picture, 26 the composite, 132 repeated) where it presented 155, because the composition that
+  drains the Esc is not presented; the steady script presents 162. `mouselook-fence` is re-pinned on purpose for the
+  section's new counters and for the printed observation.
+
+**Found while building.**
+
+- **Seven mutations, all caught at once.** Applied to scratch copies: a run its Esc ended recorded as closed; the
+  mock's window staying open at an Esc; the tick still open at the end dropped; a raw input message counted only after
+  it was read; the sealer saying a keys-only session looked; an unread raw input message handed on as a count; the run
+  not printing the observation.
+- **Nothing shows the old read was what failed.** It required the returned size to be exactly the structure's, and
+  skipped anything else without a count. A mouse report on this platform is expected to be exactly that size, so the
+  old read may well have been right, and then the cause is elsewhere. It was changed because a skipped read was
+  invisible, not because it is known to be the fault.
+- **The first host session replays here.** The saved file of the first `look-window` run, read from the owner's
+  folder, is verified by the workshop built in the container (head `e9dafb482675…`, 37 moves, 10 edits). With the
+  amended sealer, in a scratch copy, its reading says it was run under the tick source holding no look and ended
+  `closed`, which is the label that file carries. The record itself is the owner's to seal, on his host.
+- **The model had the same blind spot as the mock.** The gate's twin counted the frames at free headings only for
+  ticks closed at a composition. The tick applied as the run ends has frames too, and they are sampled like any
+  other; the twin now counts them.
+
+**What the next host run is for.** The observation line. If `raw_messages` is zero after the mouse has been moved,
+raw input is not arriving at the window, and the cause is in the registration or the device. If it is not zero and
+`unread` is, the reads failed, and `unread_size` says what they returned. If `reports` is not zero, looks were made,
+and the run is the rung's execution witness. Whichever it is, the run is recorded.
+
+**Grade.** DECLARED: the corrected wording, the rule for the end of a run, the observation's counters. ESTABLISHED
+(gate, in the build container): the two rows above, and MOUSE-LOOK-0's six under the amended mock. NOT_MEASURED:
+everything about the window after this change; why the first run had no mouse report.
+
+**does_not_show.** Why no mouse report reached the loop in the first run, or whether the mouse was moved in it. That
+the changed read fixes anything: nothing here shows the old read was what failed. That a span above 1 costs anything
+on the screen. Anything about the window section beyond its types: it has not run since it changed.
+
+**Falsifier.** `mouselook0a-ending` goes red if a run its Esc ended is recorded as closed, if the composition that
+drains the Esc is presented, if an input is lost or applied twice at the end, or if the sealer says a session with no
+look looked. `mouselook-fence` goes red if a raw input message is not counted before it is read, or if anything but a
+captured relative horizontal count reaches the loop. On the host: an observation that does not add up
+(`raw_messages` is not the sum of `unread`, `absolute`, `still`, `reports` and `dropped`).
+
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

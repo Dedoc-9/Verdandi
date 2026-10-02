@@ -48,6 +48,10 @@
 //   - a composition at which no command changed the state repeats the picture before it, and is counted;
 //   - a sample the reference recomputed differently (one free-heading frame in 64, off the loop) refuses the run,
 //     LIVEINPUT-SAMPLE.
+// MOUSE-LOOK-0a: a composition applies at most one closed tick's command (what it drains takes its own tick, so one tick
+// is open at a time). `span` is the largest number of tick boundaries between two compositions: above 1, the loop fell
+// behind the tick schedule there; it never means several commands in one composition. When the run ends, by Esc or by
+// the window closing, the tick still open is closed and applied; a run its Esc ended is recorded as ended by escape.
 // The clock is read only there, and only through the source: nothing else in this file knows the time.
 
 use crate::formats::{facing_letter, Camera};
@@ -681,6 +685,11 @@ fn run_loop<S: ExactSurface + Keys>(s: &mut S, session: &mut LiveSession, surfac
         t.finish(session, surface).map_err(sampled)?;
         live.samples = t.samples;
         live.span = t.span;
+        // MOUSE-LOOK-0a: the run's end is the tick run's. The host's window is destroyed in the pump that reads the Esc,
+        // so the loop sees a closed window while the Esc's tick is still open; the run was ended by the Esc all the same
+        if t.run.ended == "escape" {
+            live.ended = "escape";
+        }
         live.tick = Some(t.run);
     }
     Ok(live)

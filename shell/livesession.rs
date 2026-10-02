@@ -839,6 +839,7 @@ pub fn go_look<S: ExactSurface + Keys + Focus + crate::mouselook::Look>(s: &mut 
         println!("{}", ln);
     }
     let observed = s.focus();
+    println!("[look] the surface observed {}", observed); // MOUSE-LOOK-0a: recorded below, never ruled on
     let raw = crate::mouselook::raw_json(&live, &session);
     // the loop's counts go into the saved file's live block: what was shown, repeated, read back and sampled is recorded
     let look = look.or(Some(crate::mouselook::live_json(&live)));

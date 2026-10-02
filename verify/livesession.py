@@ -156,8 +156,11 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
                "one it was made with." % (host, len(d["log"]), d["moves"], d["edits"],
                                          "" if not looks else ", %d looks, %d frames at free headings recomputed by the reference before the save"
                                          % (looks, (live.get("certified") or {}).get("frames", 0)),
-                                         live.get("ended") if mouse is None else "%s, walked and looked with the mouse on the 64 Hz tick (%s)" % (
-                                             live.get("ended"), ", ".join("%s %s" % (k, mouse[k]) for k in sorted(mouse) if k != "rung")),
+                                         # MOUSE-LOOK-0a: said as what it was — a run under the tick source — and never
+                                         # as having looked when the session holds no look
+                                         live.get("ended") if mouse is None else "%s; run under MOUSE-LOOK-0's tick source at 64 Hz, %s (%s)" % (
+                                             live.get("ended"), ("with %d looks" % looks) if looks else "holding no look",
+                                             ", ".join("%s %s" % (k, mouse[k]) for k in sorted(mouse) if k != "rung")),
                                          resumed,
                                          "" if lin is None else " and lineage", d["head"][:12],
                                          "the same as" if same else "NOT the same as (replay, not identity, decides)"))

@@ -2465,6 +2465,10 @@ pub fn live_window(plan: crate::livesession::Plan) {
 //                 Nothing else of the mouse is read: no pointer position, no vertical motion, no button, no wheel;
 //   the capture   while this window is the foreground window the cursor is hidden and confined to it and what arrives is
 //                 admitted; when it is not, the cursor is released and what arrives is dropped (and counted).
+// MOUSE-LOOK-0a: the section also counts what arrives before that point — every raw input message, every one it could
+// not read as a mouse report, every report with no horizontal count — and the run prints the observation when it ends.
+// Counting is all it does with them: only a captured, relative, horizontal count is ever handed to the loop. Esc is
+// read as a key press like any other; the presenter's window procedure, shared here, destroys the window on it.
 // CAPTURE IS SHELL STATE. This section decides only whether a count or a key press is handed to the loop at all. It
 // calls no method of the session and reaches no renderer: a focus or capture change makes no event of any kind — the
 // loop simply receives nothing while the window is out of the foreground. Esc ends the run: the loop returns, the mouse
@@ -2541,6 +2545,12 @@ struct LookGdi {
     dropped: u64,
     dropped_keys: u64,
     absolute: u64,
+    // MOUSE-LOOK-0a: what arrived before the point of admission — every raw input message, every one that could not be
+    // read as a mouse report (and the size the last such read returned), every relative report with no horizontal count
+    raw_messages: u64,
+    unread: u64,
+    unread_size: i64,
+    still: u64,
 }
 
 impl LookGdi {
@@ -2606,24 +2616,28 @@ impl Surface for LookGdi {
                     self.dropped_keys += 1;
                 }
             } else if msg.message == WM_INPUT_LOOK {
-                let mut raw: RawInputMouse = unsafe { std::mem::zeroed() };
-                let mut size = std::mem::size_of::<RawInputMouse>() as Uint;
+                // MOUSE-LOOK-0a: the message is counted before it is read, so a run can say whether raw input arrived
+                self.raw_messages += 1;
+                let mut buf = [0u64; 8]; // 64 bytes, aligned as the structure is: room beyond the mouse report
+                let mut size = std::mem::size_of_val(&buf) as Uint;
                 let got = unsafe {
-                    GetRawInputData(msg.l_param as *mut c_void, RID_INPUT_LOOK, &mut raw as *mut RawInputMouse as *mut c_void, &mut size,
+                    GetRawInputData(msg.l_param as *mut c_void, RID_INPUT_LOOK, buf.as_mut_ptr() as *mut c_void, &mut size,
                                     std::mem::size_of::<RawInputHeader>() as Uint)
                 };
-                // a mouse report fills the structure exactly; anything else (another device class, a failure) is not read
-                if got == std::mem::size_of::<RawInputMouse>() as Uint && raw.header.kind == RIM_TYPEMOUSE_LOOK {
-                    if raw.mouse.flags & MOUSE_MOVE_ABSOLUTE_LOOK != 0 {
-                        self.absolute += 1; // an absolute device (a tablet, a remote session): not counts, never used
-                    } else if raw.mouse.last_x != 0 {
-                        if self.captured {
-                            self.reports += 1;
-                            self.counts.push(raw.mouse.last_x as i64);
-                        } else {
-                            self.dropped += 1;
-                        }
-                    }
+                // a mouse report: the read succeeded, holds at least the mouse structure, and names the mouse type
+                let raw: &RawInputMouse = unsafe { &*(buf.as_ptr() as *const RawInputMouse) };
+                if got == Uint::MAX || (got as usize) < std::mem::size_of::<RawInputMouse>() || raw.header.kind != RIM_TYPEMOUSE_LOOK {
+                    self.unread += 1;
+                    self.unread_size = got as i32 as i64; // -1: the read failed
+                } else if raw.mouse.flags & MOUSE_MOVE_ABSOLUTE_LOOK != 0 {
+                    self.absolute += 1; // an absolute device (a tablet, a remote session): not counts, never used
+                } else if raw.mouse.last_x == 0 {
+                    self.still += 1; // no horizontal count (a vertical movement, a button, the wheel): nothing to hand on
+                } else if self.captured {
+                    self.reports += 1;
+                    self.counts.push(raw.mouse.last_x as i64);
+                } else {
+                    self.dropped += 1;
                 }
             }
             unsafe {
@@ -2680,9 +2694,9 @@ impl crate::mouselook::Look for LookGdi {
 
 impl crate::livesession::Focus for LookGdi {
     fn focus(&self) -> String {
-        format!("{{\"source\":\"window\",\"foreground_request\":{},\"foreground_at_start\":{},\"compositions_with\":{},\"compositions_without\":{},\"changes\":{},\"mouse\":{{\"captures\":{},\"releases\":{},\"reports\":{},\"dropped\":{},\"dropped_keys\":{},\"absolute\":{},\"released\":{}}}}}",
-                self.request, self.at_start as u8, self.with, self.without, self.changes, self.captures, self.releases, self.reports,
-                self.dropped, self.dropped_keys, self.absolute, self.released)
+        format!("{{\"source\":\"window\",\"foreground_request\":{},\"foreground_at_start\":{},\"compositions_with\":{},\"compositions_without\":{},\"changes\":{},\"mouse\":{{\"captures\":{},\"releases\":{},\"raw_messages\":{},\"unread\":{},\"unread_size\":{},\"still\":{},\"absolute\":{},\"reports\":{},\"dropped\":{},\"dropped_keys\":{},\"released\":{}}}}}",
+                self.request, self.at_start as u8, self.with, self.without, self.changes, self.captures, self.releases, self.raw_messages,
+                self.unread, self.unread_size, self.still, self.absolute, self.reports, self.dropped, self.dropped_keys, self.released)
     }
 }
 
@@ -2720,7 +2734,7 @@ pub fn look_window(plan: crate::livesession::Plan) {
     let surf = ExactGdiSurface { hwnd, header: court_header(), flush_fn: dwm.flush, freq: 1, call: 1, last_input: 0, inputs_seen: 0 };
     let mut look = LookGdi { surf, hwnd, pressed: Vec::new(), counts: Vec::new(), captured: false, released: false, started: None, freq,
                              request, at_start, with: 0, without: 0, changes: 0, last: None, captures: 0, releases: 0, reports: 0,
-                             dropped: 0, dropped_keys: 0, absolute: 0 };
+                             dropped: 0, dropped_keys: 0, absolute: 0, raw_messages: 0, unread: 0, unread_size: 0, still: 0 };
     println!("[look] the live editor with the mouse: move the mouse to turn; W/S walk, A/D strafe, arrows turn a quarter, Space opens or closes the cell ahead, 1-5 paint; PgUp/PgDn change the multiplier, Tab the step; Esc ends and saves");
     println!("[look] the window {} the foreground at the start (click it if nothing answers); the mouse is captured while it does and released when it does not",
              if at_start { "holds" } else { "does NOT hold" });

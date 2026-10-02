@@ -93,6 +93,8 @@ SIM-TICK-0a      two rulings of MOUSE-LOOK-0's court that are rules of the tick,
       ↓
 MOUSE-LOOK-0     a real mouse on those rules: captured until Esc (shell state, never session state), raw counts into the 64 Hz accumulator, the command into the existing live loop, the picture alone at a free heading, every 64th free-heading frame recomputed off the loop — built; the gate passes on the host with the same 207 rows; the window ran there and its keys walked on the tick, but no mouse report reached the loop: a look is not shown yet
       ↓
+MOUSE-LOOK-0a    an amendment from the owner's review and the first host run: a composition applies at most one closed tick command and span counts tick boundaries between compositions; a run its Esc ended is recorded as escape; the window counts the raw input it receives before it reads it — built; the window waits for its second run
+      ↓
 the presentation and latency measurement      input to photon in separate segments; frame rate alone is no competitive claim
       ↓
 richer edits     vocabulary on the one live editor, not new pathways
@@ -166,7 +168,7 @@ what evidence is worth buying, not by which optimization can be imagined next. T
 |---|---|---|---|
 | 1 | BEARING-FAST-0's host speed court | Establish whether the 6,667 µs target is met. | Run: met, 3,716 µs. |
 | 2 | Production promotion, only if the target is met | Do not optimize a kernel that is already sufficient. | Met: eight row bands of exact stepping is the production candidate. MOUSE-LOOK-0 wires it into a live path, not before. |
-| 3 | SIM-TICK-0, mouse sensitivity and live mouse-look | The actual interaction seam, now that the renderer can support it. | SIM-TICK-0 (the rules and the sensitivity, windowless) is built, and its gate passes on the host. SIM-TICK-0a (the court's two tick rulings, windowless) is built, and its gate passes on the host. MOUSE-LOOK-0 (the real mouse and the window) is built and its gate passes on the host. `shell look-window` ran there once: the keys walked on the tick and the save verified, but no mouse report reached the loop, so the look itself is still to be shown. |
+| 3 | SIM-TICK-0, mouse sensitivity and live mouse-look | The actual interaction seam, now that the renderer can support it. | SIM-TICK-0 (the rules and the sensitivity, windowless) is built, and its gate passes on the host. SIM-TICK-0a (the court's two tick rulings, windowless) is built, and its gate passes on the host. MOUSE-LOOK-0 (the real mouse and the window) is built and its gate passes on the host. `shell look-window` ran there once: the keys walked on the tick and the save verified, but no mouse report reached the loop, so the look itself is still to be shown. MOUSE-LOOK-0a (the owner's correction of a registered limit, the run's end, and the window's observation of raw input) is built; the second host run reads its observation. |
 | 4 | PRESENT-1, the flip-model presentation | Renderer speed is not input-to-photon speed; LATENCY-0's evidence makes this the next presentation boundary. | After mouse-look. |
 | 5 | A cross-host correctness witness for the fast path | Portability evidence, not worth delaying the interactive path unless a cross-host failure appears. | The gate's court already runs on two hosts (Linux here, the owner's Windows). A further host is deferred. |
 | 6 | Benchmark regression recording | Protects a production fast path against performance regressions. | Once the fast path is in a live path. |
@@ -378,6 +380,18 @@ counted nothing before the point where it admits a report. The run also found th
 pump that reads it, so the saved file labelled the run's end `closed` where the tick run says `escape`; the session
 itself is right. The owner ruled that a registered limit's wording be corrected by an amendment (MOUSE-LOOK-0a), that
 the one check with no row stays a sanity check, and that nothing is optimized from this run.
+
+### MOUSE-LOOK-0a — the timing limit corrected; a run's end and the window's observation · **built** (`3778b592`): held on the mock
+An amendment to MOUSE-LOOK-0, whose entry is not edited, registered after the first host run and reading none of its
+counts. By the owner's ruling the registered timing limit is corrected: a composition applies at most one closed tick
+command, `span` records the largest number of tick boundaries between consecutive compositions, and a span above 1
+means the loop fell behind the tick schedule, not that several commands were applied. From the host run: Esc destroys
+the window in the pump that reads it, so the loop ends there, the tick still open is applied, and the run is recorded
+as ended by escape; the mock now closes its window at an Esc as the host's does. And the window section counts every
+raw input message before it reads it, every read that was not a mouse report and every report with no horizontal
+count, and the run prints that observation, because the first run could not say whether raw input had arrived at all.
+The read itself no longer requires an exact size. Nothing is optimized from the first run. The next host run's
+observation line decides what is known about the mouse.
 
 ### SIM-TICK-0a — sensitivity as a typed configuration event; held keys by the tick · **built** (`471f4d72`): the gate passes on the host
 MOUSE-LOOK-0's court (2026-10-02) gave four rulings. Two are about the window and wait for it: the mouse is captured

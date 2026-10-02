@@ -9288,16 +9288,17 @@ def _ml_schedule(items):
     """The mock's schedule, re-derived. Composition c happens at c * 13,333 us; it drains every scripted item whose time
     has come (those arriving while the window is out of the foreground are dropped); a tick that received inputs is
     closed at the first composition whose clock is in a later tick; the window closes by itself a few compositions
-    after the script is spent. Returns the admitted inputs with their drain times, the composition of every close, what
-    was dropped, the blurs, the out-of-foreground stretches (as the first and last tick inside them) and the last
-    composition the mock allows."""
+    after the script is spent, and (MOUSE-LOOK-0a) at once when an Esc is admitted, pressed or repeated, with nothing
+    after it delivered. Returns the admitted inputs with their drain times, the composition of every close, what was
+    dropped, the blurs, the out-of-foreground stretches (as the first and last tick inside them) and the composition at
+    which the window is closed (not presented)."""
     c, nxt, fore, idle, open_tick = 0, 0, True, 0, None
     drained, closes, dropped, blurs, away, since = [], {}, 0, 0, [], None
     while True:
         now = c * ML_PERIOD_US
         tick = now // ST_TICK_US
-        got = []
-        while nxt < len(items) and items[nxt][0] <= now:
+        got, esc = [], False
+        while not esc and nxt < len(items) and items[nxt][0] <= now:
             what = items[nxt][1]
             if what == "blur":
                 fore, blurs, since = False, blurs + 1, tick
@@ -9308,6 +9309,7 @@ def _ml_schedule(items):
                 dropped += 1
             else:
                 got.append(what)
+                esc = what in ("ESC", "ESC+")
             nxt += 1
         if nxt >= len(items):
             idle += 1
@@ -9317,7 +9319,7 @@ def _ml_schedule(items):
         if got:
             open_tick = tick
             drained += [(now, what) for what in got]
-        if idle > ML_IDLE:
+        if esc or idle > ML_IDLE:
             return {"drained": drained, "closes": closes, "dropped": dropped, "blurs": blurs, "away": away, "closed_at": c}
         c += 1
 
@@ -9342,7 +9344,8 @@ def _ml_twin(items, st, cache):
     """A whole look run, re-derived: the schedule gives each admitted input its drain time; the tick run's twin gives
     the events; then, composition by composition, what the loop shows — whether a command changed the state there,
     whether the heading is free (the picture) or an anchor (the composite), and the camera and world at every read-back
-    composition."""
+    composition. The tick still open when the window closes is applied as the run ends (MOUSE-LOOK-0a): its events are
+    in the session and are never presented; the run ended by escape if that tick's command reached an Esc."""
     sch = _ml_schedule(items)
     script = [(us // ST_TICK_US, us % ST_TICK_US, what) for us, what in sch["drained"]]
     st2, trace, counts, ended = _st_twin(script, st, cache)
@@ -9365,9 +9368,6 @@ def _ml_twin(items, st, cache):
                 elif e["kind"] == "edit":
                     lvl, til = _sw_apply(lvl, til, e["spec"])
                 k += 1
-            if ("tick %d key ESC -> end" % tick) in trace:
-                loop["ended"] = "escape"
-                break
         if c == sch["closed_at"]:
             break
         free = token.split(",")[2] not in "NESW"
@@ -9379,6 +9379,13 @@ def _ml_twin(items, st, cache):
             loop["references"] += 1
         if c % ML_READBACK == 0:
             loop["read"].append([c, token, _ml_pixels(lvl, til, token, cache)])
+    # the tick still open at the end: applied as the run ends, sampled like any other, presented never
+    for i in range(k, len(st2["log"])):
+        e = st2["log"][i]
+        if e["kind"] in ("move", "look") and e["camera"].split(",")[2] not in "NESW":
+            loop["free_frames"].append(i)
+    if any(ln.endswith("key ESC -> end") for ln in trace):
+        loop["ended"] = "escape"
     loop["samples"] = len(loop["free_frames"]) // ML_SAMPLE
     return sch, script, st2, trace, counts, loop
 
@@ -9732,7 +9739,9 @@ def mouselook_fence():
         raise Red("a tick is not closed before the composition's inputs are fed, or the mock admits an input while out of the foreground, or its clock is not the composition count")
     ls = read(os.path.join(SHELL, "livesession.rs")).decode("utf-8")
     go = src_span(ls, "pub fn go_look<S: ExactSurface + Keys + Focus + crate::mouselook::Look>(", "\n}\n")
-    order = [go.find(t) for t in ("crate::liveinput::run_look(s, &mut session, surface)", "s.release();", "let live = match result {", "s.focus()", "finish(Prepared {")]
+    # and with MOUSE-LOOK-0a: the run prints the surface's observation, between reading it and the seal
+    order = [go.find(t) for t in ("crate::liveinput::run_look(s, &mut session, surface)", "s.release();", "let live = match result {", "s.focus()",
+                                  'println!("[look] the surface observed {}", observed);', "finish(Prepared {")]
     fin = src_span(ls, "fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {", "\n}\n")
     callers = {fn: code_of_src(read(os.path.join(SHELL, fn)).decode("utf-8")) for fn in sorted(os.listdir(SHELL)) if fn.endswith(".rs")}
     if (-1 in order or order != sorted(order) or not 0 <= fin.find("certify(&session)") < fin.find("write_saved(&dst, &text, &plant)")
@@ -9765,16 +9774,20 @@ def mouselook_fence():
     order = [keys_.find(t) for t in ("let held = unsafe { GetForegroundWindow() } == self.hwnd;", "self.capture(held);", "PeekMessageW(", "if msg.message == WM_KEYDOWN_LIVE {",
                                      "if self.captured {", "self.pressed.push((msg.w_param as u32, (msg.l_param >> 30) & 1 == 1));", "self.dropped_keys += 1;")] \
         + [split + mouse_.find(t) if mouse_.find(t) >= 0 else -1 for t in (
-            "GetRawInputData(msg.l_param as *mut c_void, RID_INPUT_LOOK,", "raw.header.kind == RIM_TYPEMOUSE_LOOK",
-            "if raw.mouse.flags & MOUSE_MOVE_ABSOLUTE_LOOK != 0 {", "} else if raw.mouse.last_x != 0 {", "if self.captured {",
-            "self.counts.push(raw.mouse.last_x as i64);", "self.dropped += 1;")]
+            # re-pinned on purpose with MOUSE-LOOK-0a: the message is counted before it is read; a read that fails, is
+            # short or is not the mouse's is counted unread; then absolute, then no horizontal count, then captured
+            "self.raw_messages += 1;", "GetRawInputData(msg.l_param as *mut c_void, RID_INPUT_LOOK,",
+            "if got == Uint::MAX || (got as usize) < std::mem::size_of::<RawInputMouse>() || raw.header.kind != RIM_TYPEMOUSE_LOOK {",
+            "self.unread += 1;", "} else if raw.mouse.flags & MOUSE_MOVE_ABSOLUTE_LOOK != 0 {", "} else if raw.mouse.last_x == 0 {",
+            "self.still += 1;", "} else if self.captured {", "self.counts.push(raw.mouse.last_x as i64);", "self.dropped += 1;")]
     cap = src_span(sc, "fn capture(&mut self, want: bool) {", "\n    }\n")
     win = src_span(sc, "pub fn look_window(", "\n}\n")
     order_w = [win.find(t) for t in ("SetProcessDPIAware()", "crate::livesession::prepare(plan)", "= show_window(", "SetForegroundWindow(hwnd)",
                                      "RawInputDevice { usage_page: HID_PAGE_GENERIC_LOOK, usage: HID_USAGE_MOUSE_LOOK, flags: 0, target: hwnd }",
                                      "RegisterRawInputDevices(&device, 1,", "crate::livesession::go_look(&mut look, prepared)", "DestroyWindow(hwnd)")]
     if (split < 0 or -1 in order or order != sorted(order) or -1 in order_w or order_w != sorted(order_w)
-            or pump.count("if self.captured {") != 2 or sc.count(".counts.push(") != 1 or sc.count(".pressed.push(") != 1 or sc.count("last_y") != 1 or sc.count("buttons") != 2
+            or pump.count("if self.captured {") != 2 or pump.count("} else if self.captured {") != 1 or sc.count(".counts.push(") != 1
+            or sc.count("raw.mouse.") != 3 or sc.count("self.raw_messages += 1;") != 1 or sc.count(".pressed.push(") != 1 or sc.count("last_y") != 1 or sc.count("buttons") != 2
             or not all(t in cap for t in ("ClipCursor(&r);", "ShowCursor(0);", "ClipCursor(std::ptr::null());", "ShowCursor(1);"))
             or sc.count("qpc()") != 1 or "qpc()" not in src_span(sc, "fn now_us(&mut self) -> u64 {", "\n    }\n")
             or "self.capture(false);" not in src_span(sc, "fn release(&mut self) {", "\n    }\n")
@@ -9814,6 +9827,122 @@ def mouselook_fence():
             "raw input (relative, horizontal, captured only), cursor and clock sit in the last appended section of "
             "shell/win32.rs, which calls no session method, reaches no renderer and writes nothing; simtick.rs, the kernels "
             "and present.rs are what they were; a windowless build refuses look-window")
+
+# ------------------------------------------------------------------ MOUSE-LOOK-0a
+# An amendment to MOUSE-LOOK-0 (its entry unedited): the timing limit's wording corrected by the owner's ruling, and what
+# the first host run found — a run ended by Esc is recorded as escape (the host's window is destroyed in the pump that
+# reads the Esc), and the window counts the raw input it receives before it reads it.
+MOUSELOOK0_HASH = "60870497ce57094dd6072b923fa0a0a2070d3d899cae081aff893f4831b5eb1d"
+# (microseconds, input), from 28,28,N. SAME: a key and the Esc drained by one composition — the key is an event of that
+# tick, then the run ends. SPENT: no Esc; the window closes by itself. REPEAT: an auto-repeated Esc closes the window,
+# and the tick's rules ignore it. KEYS: no mouse at all, as the first host run was.
+MOUSELOOK0A_SAME = [(0, "m+2"), (30000, "W"), (200000, "D"), (200500, "ESC"), (200900, "W"), (260000, "m+50")]
+MOUSELOOK0A_SPENT = [(0, "m+2"), (30000, "W")]
+MOUSELOOK0A_REPEAT = [(0, "m+2"), (30000, "ESC+"), (90000, "W")]
+MOUSELOOK0A_KEYS = [(0, "W"), (30000, "D"), (60000, "ESC")]
+
+
+def mouselook0a_preregistered():
+    """MOUSE-LOOK-0a's method is locked: an amendment to MOUSE-LOOK-0, whose entry is unedited — a composition applies
+    at most one closed tick command and span is the largest number of tick boundaries between two compositions; a run
+    ended by Esc is recorded as escape; the window counts the raw input it receives before it reads it."""
+    e = locked_entry("MOUSE-LOOK-0a", {
+        "an amendment, registered after the first host run": ("hyp", ("an amendment to mouse-look-0, whose entry stands unedited (60870497)", "it is registered after that run",
+                                                                       "no condition below reads them", "no rule of the tick, no rule of the loop and no renderer changes")),
+        "the timing limit, in the owner's wording": ("hyp", ("a composition applies at most one closed tick command",
+                                                              "span records the largest number of tick boundaries between consecutive compositions",
+                                                              "it does not imply multiple commands were applied in that composition", "is withdrawn")),
+        "the end of a run": ("hyp", ("the tick still open is closed there and its command applied", "destroys the window when esc is pressed",
+                                     "is recorded as ended by escape", "the mock closes its window at an admitted esc press")),
+        "the observation, extended": ("hyp", ("counts every raw input message it receives", "could not read as a mouse report", "whose horizontal count is zero",
+                                              "observation only", "nothing but the captured relative horizontal count is ever handed to the loop")),
+        "the sealer's reading": ("hyp", ("is not said to have looked when it holds no look",)),
+        "the ending row": ("succ", ("ends at the composition that drains the esc", "a key pressed in the same composition before the esc is an event of that tick",
+                                    "both the loop's output and the saved file's live block say escape", "a script with no esc ends closed in both",
+                                    "an auto-repeated esc closes the window and ends the run closed")),
+        "the fence": ("succ", ("counts a raw input message before it reads it", "mouse-look-0's entry is unedited at its hash")),
+        "what fails it": ("fail", ("mouse-look-0's entry edited", "a run ended by esc recorded as closed", "an input lost or applied twice at the end of a run",
+                                   "an observation counter used to admit, alter or make an input", "because of the first host run's counts")),
+        "scope": ("lims", ("registered after the first host run", "it does not say why", "is not known and is not claimed here", "nothing is optimized from the first run")),
+    })
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    if reg["MOUSE-LOOK-0"]["chain_hash"] != MOUSELOOK0_HASH or not entry_hash_ok("MOUSE-LOOK-0", reg["MOUSE-LOOK-0"]):
+        raise Red("MOUSE-LOOK-0's entry was edited: the amendment leaves it as registered")
+    if "applies several ticks' commands in one composition" not in " ".join(reg["MOUSE-LOOK-0"]["interpretation_limits"]):
+        raise Red("MOUSE-LOOK-0's entry no longer holds the sentence this amendment withdraws")
+    return ("MOUSE-LOOK-0a's method is locked (hash %s), and MOUSE-LOOK-0's entry is unedited (%s), the withdrawn sentence "
+            "still in it: a composition applies at most one closed tick command and span is the largest number of tick "
+            "boundaries between two compositions; the tick still open when a run ends is applied there, and a run its Esc "
+            "ended is recorded as escape; the window counts every raw input message before it reads it, as observation only; "
+            "registered after the first host run, none of whose counts a condition reads"
+            % (e["chain_hash"][:8], MOUSELOOK0_HASH[:8]))
+
+
+def mouselook0a_ending():
+    """A run's end is the tick run's: a script whose Esc is drained with a key before it ends at that composition
+    (not presented), with the key's event in the Esc's tick, nothing after the Esc delivered, data byte-identical to
+    simtick-selftest's, and escape in both the loop's output and the live block; a script with no Esc ends closed in
+    both; an auto-repeated Esc closes the window and ends the run closed; a keys-only session is sealed citing
+    MOUSE-LOOK-0 and is not said to have looked."""
+    import livesession as LS
+    _st_need()
+    logs = _ls_logs("mouselook0a-ending")
+    cache = {}
+    out = {}
+    for name, items, want_end in (("same", MOUSELOOK0A_SAME, "escape"), ("spent", MOUSELOOK0A_SPENT, "closed"),
+                                  ("repeat", MOUSELOOK0A_REPEAT, "closed"), ("keys", MOUSELOOK0A_KEYS, "escape")):
+        cp, path, raw = _ml_script_l(logs, "0a-" + name, items)
+        sch, script, st2, trace, counts, loop = _ml_twin(items, _st_start(), cache)
+        doc = LS.check_saved(read(path), ROOT)
+        lp = raw["loop"]
+        if (lp["ended"], doc["live"]["ended"], loop["ended"]) != (want_end, want_end, want_end):
+            raise Red("script %s: the run's end is recorded as %s by the loop and %s in the live block, not %s"
+                      % (name, lp["ended"], doc["live"]["ended"], want_end))
+        if {k: lp[k] for k in ("compositions", "picture", "composite", "repeated", "references")} != {k: loop[k] for k in ("compositions", "picture", "composite", "repeated", "references")}:
+            raise Red("script %s: the loop's compositions are not the schedule's: %s" % (name, lp))
+        if raw["tick"]["data"]["trace"] != trace or raw["tick"]["data"]["counts"] != counts or raw["tick"]["data"]["ticks"] != st2["ticks"]:
+            raise Red("script %s: the trace, counts or tick count are not the twin's" % name)
+        cp2, p2, _r2 = _st_run(_st_text(script), logs, "0a-%s-as-ticks" % name, ["--camera", ST_CAMERA])
+        if cp2.returncode != 0 or p2 is None or _st_data(path) != _st_data(p2):
+            raise Red("script %s: the saved data is not the windowless tick run's on the same inputs at their drain times: an input was lost or applied twice at the end" % name)
+        if ("[look] the surface observed " + json.dumps(doc["live"]["focus"], separators=(",", ":"))) not in cp.stdout:
+            raise Red("script %s: the run did not print the observation it recorded" % name)
+        out[name] = (path, raw, sch, trace, doc, lp)
+    # SAME: D and the Esc are drained by one composition; D's move is an event of the Esc's tick; nothing after the Esc arrives
+    path, raw, sch, trace, doc, lp = out["same"]
+    esc_c = -(-200500 // ML_PERIOD_US)
+    esc_tick = esc_c * ML_PERIOD_US // ST_TICK_US
+    last = doc["data"]["log"][-1]
+    if (lp["compositions"] != esc_c or sch["closed_at"] != esc_c or -(-200000 // ML_PERIOD_US) != esc_c
+            or not trace[-2].startswith("tick %d key D -> event %d move E " % (esc_tick, len(doc["data"]["log"]) - 1)) or trace[-1] != "tick %d key ESC -> end" % esc_tick
+            or (last["kind"], last["command"], last["tick"]) != ("move", "E", esc_tick)
+            or raw["tick"]["data"]["counts"]["inputs"] != 4 or doc["data"]["ticks"]["count"] != esc_tick + 1):
+        raise Red("the Esc did not end the run at the composition that drained it with the key before it applied in its tick: %s" % trace[-2:])
+    # REPEAT: the window closed at the repeated Esc, the rules ignored it, and the W scripted after it never arrived
+    path, raw, sch, trace, doc, lp = out["repeat"]
+    if trace[-1] != "tick %d key ESC+ -> repeat" % (-(-30000 // ML_PERIOD_US) * ML_PERIOD_US // ST_TICK_US) or lp["compositions"] != -(-30000 // ML_PERIOD_US) \
+            or raw["tick"]["data"]["counts"]["inputs"] != 2:
+        raise Red("an auto-repeated Esc did not close the window with the tick's rules ignoring it: %s" % trace[-1:])
+    # KEYS: no mouse at all — sealed citing MOUSE-LOOK-0, and not said to have looked
+    path, raw, sch, trace, doc, lp = out["keys"]
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    code, wout, werr = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+    if code != 0:
+        raise Red("the workshop does not verify the keys-only look session: " + werr.strip())
+    rec = LS.seal_livesession(read(path), reg, "gate-mock", wout.strip())
+    envelope.validate(rec)
+    rec_l = LS.seal_livesession(read(out["same"][0]), reg, "gate-mock", "")
+    if (rec["provenance"].get("look") != {"rung": "MOUSE-LOOK-0", "chain_hash": MOUSELOOK0_HASH} or "holding no look" not in rec["reading"]
+            or "looked" in rec["reading"] or doc["data"].get("looks", 0) != 0 or "with 1 looks" not in rec_l["reading"] or "looked" in rec_l["reading"]):
+        raise Red("the sealer does not cite MOUSE-LOOK-0 for a keys-only look session, or says it looked: %s" % rec["reading"][:200])
+    return ("a run's end is the tick run's: a key and the Esc drained by composition %d ended the run there (%d compositions "
+            "presented), the key's move an event of the Esc's tick %d and nothing scripted after the Esc delivered — escape "
+            "in the loop's output and in the live block; a script with no Esc ended closed in both; an auto-repeated Esc "
+            "closed the window and, ignored by the tick's rules, ended the run closed; each of the four saved data "
+            "byte-identical to shell simtick-selftest's on the same inputs at their drain times, and printed the "
+            "observation it recorded; a keys-only session is sealed citing MOUSE-LOOK-0 as holding no look"
+            % (esc_c, out["same"][5]["compositions"], esc_tick))
+
 
 
 # ------------------------------------------------------------------ main
@@ -10039,6 +10168,8 @@ def main() -> int:
     row("mouselook-present", mouselook_present)
     row("mouselook-sample", mouselook_sample)
     row("mouselook-fence", mouselook_fence)
+    row("mouselook0a-preregistered", mouselook0a_preregistered)
+    row("mouselook0a-ending", mouselook0a_ending)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]
