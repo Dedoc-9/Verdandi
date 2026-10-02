@@ -40,6 +40,12 @@ The dependency rule, and its negation:
 
     shell ──────► kernel framebuffer
 
+A declared goal beside the charter (the owner's, 2026-10-02; the ratified block above is not edited, and nothing of
+this is built): **Verðandi does not execute what the model writes; it records what the verifier admits.** A language
+model may one day propose typed, anchored changes against the sealed session, from outside canonical authority; only
+the verifier admits them, and the reference kernel shows their consequence. It is LLM-BUILDER-0 in
+[`docs/ROADMAP.md`](docs/ROADMAP.md).
+
 ## Why this repository exists (the measurement that preceded it)
 
 Urðr grew to 1,612 files and a thirty-six-minute gate; the game/render kernel is one fortieth of that tree.

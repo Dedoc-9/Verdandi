@@ -96,6 +96,8 @@ the presentation and latency measurement      input to photon in separate segmen
 richer edits     vocabulary on the one live editor, not new pathways
       ↓
 walking in a live, authorable world
+      ⋮
+LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -513,6 +515,88 @@ an authored, hash-chained edit history rather than a live distributed store. The
 delta-state CRDTs; deterministic lockstep simulation) supplies the convergence theory; the Verðandi constraint is
 that the merge must produce a *sealed, replayable* history whose result is byte-identical regardless of merge order.
 
+### LLM-BUILDER-0 — the living proposal machine · **declared** (the owner's goal, 2026-10-02); not registered, nothing built
+The owner's stated goal for what a language model may be in this studio. It is recorded here before any of it exists,
+so that the rungs built before it are built in respect of it. The law:
+
+> **The model may propose becoming; only the verifier may admit it.**
+
+The model is not a programmer inside the runtime. It is a proposal engine working against a sealed worldline, and it
+stays outside canonical authority. Four things are kept apart:
+
+```text
+IMAGINATION    the model                  "what could change?"                 untrusted
+ADMISSIBILITY  the verifier               can refuse; never proposes
+AUTHORITY      the session, the workshop  the admitted event, in order
+CONSEQUENCE    the kernel, the reference  the frame and the digest it produces
+```
+
+```text
+model ──► PROPOSAL (typed, bounded, anchored) ──► VERIFIER ──► refuse
+                                                      │
+                                                  admissible
+                                                      ▼
+                         SESSION EVENT ──► ordered replay ──► candidate W, M
+                                                      │
+                                              reference witnesses
+                                                      ▼
+                                                   COMMIT ──► the new worldline
+```
+
+- **A proposer, not an authority.** The model's output is a typed proposal: a target, an operation, its parameters, the
+  session head and the authority digest it was made against, and its provenance. It may say "at this exact worldline,
+  open cell (28,27)", and later "create a corridor generator with these declared parameters". It may never say "here
+  is some code; run it inside the renderer". Arbitrary live code is not the primitive. That distinction is what keeps a
+  second authority out.
+- **The worldline anchor.** A proposal is born at a session head, an authority digest, a renderer identity and its own
+  digest. It proposes what, from exactly here. If the live session has moved on before the proposal is admitted, the
+  verifier does not guess whether it still applies: the proposal is rebased explicitly or it is refused. There is no
+  silent merge across time. A proposal has no authority until its ancestry is proven.
+- **Speculation is an object.** A preview is not a hot swap. It is a speculative worldline: a candidate authority
+  replayed from the proposal's anchor, rendered as much as is needed, and never touching the live world. One preview
+  frame serves interaction and certifies nothing. Certification asks for the witness set the proposal's kind calls
+  for: the authority's validity, targeted falsifiers, the reference's frames, replay from the anchor, exact digests
+  where they apply. Only then does the branch become history.
+- **The prefix is sacred.** The model appends becoming. It never rewrites what has become. The sealed history is a
+  prefix of every continuation; a stream of events is concatenated, never permuted.
+- **The commit envelope.** An admitted proposal is recorded with more than an action: its id, the parent head, the
+  base authority digest, the proposal's digest, the operation and parameters, the provenance, the verifier's identity,
+  the verification witnesses, and the resulting head and authority digest. The model's text is provenance, not
+  authority. The authority is the verified typed event, so the session replays the same with the model gone.
+- **How it grows.** From "turn this cell into a door" to "generate a corridor", to "author a new material", to
+  "propose a new deterministic gameplay mechanism". Each step asks for stronger verifier laws. None gives the model
+  more privilege in the runtime.
+
+The sentence the owner would put in the charter: **Verðandi does not execute what the model writes; it records what
+the verifier admits.** It stands beside the charter in the README as a declared goal. The ratified charter block is not
+edited.
+
+**What it would stand on, already built.** Each of these is a rung with rows, and none was built for a model.
+WORKSHOP-1's session has `propose` and `commit`: a proposal is validated against the current authority and writes
+nothing, and a refused one leaves the log and the head unchanged. WORKSHOP-0 refuses a record whose projection is
+stale under a moved authority. SESSION-WALK is one ordered log of typed events folded to a head, verified by replay
+without its author. LIVE-SESSION-0 seals a continuation as a new file whose log begins with the parent's events, never
+modifies the parent, and refuses a lineage that is not on the session's own chain; it also names the renderer
+identity a session was made under. SIM-TICK-0 keeps what is recorded about an event beside it and out of the head (the
+tick, the inputs), which is where provenance would sit, and it certifies a session with the reference before it saves.
+The carried game layer's input membrane (GAME-0, `cue`) proves its binding is a homomorphism over concatenation, with
+refusal atomic for a batch: appended streams compose, and nothing there licenses reordering.
+
+**What does not exist.** No model is anywhere in this tree, and none is a dependency. There is no proposal envelope,
+no proposal digest, no anchor check against a live head, no rebase, no speculative worldline as an object, no verifier
+law beyond the validation each edit already gets, and no vocabulary above a cell edit, a tile edit, a move and a look.
+MERGE-0, above, is still unbuilt, and an explicit rebase would lean on it.
+
+**What it asks of the rungs before it.** These are constraints on the route as it continues, not new work. Every new
+event kind stays typed, validated by the session before it is appended, and replayable without whatever produced it.
+What is recorded about where an event came from sits beside the event and is never folded into the head. Nothing but
+the session's own replay writes W or M. No rung adds a path that executes text.
+
+**Grade.** DECLARED: all of it. Nothing here is established or measured. **does_not_show.** That a model can author
+anything useful here; that any verifier law beyond today's edit validation exists; that speculation, rebase or the
+commit envelope work; any safety property of a system that includes a model. When it is seated it registers its own
+hypothesis, failure condition and limits, like every rung.
+
 ### GAME-0 — Urðr's game layer as frozen evidence · **landed**
 The seventeen discrete game-layer slices (`gamegen` … `cue`), their corpora, suites, briefs and the D24/D25 boundaries,
 carried verbatim from `urdr-oracle-1` into `oracle/game/`, each file listed with its sha256 and Urðr git blob id, and
@@ -544,6 +628,9 @@ Everything above obeys the same discipline that carried the render campaign:
   Verðandi-local but must be pinned by rows here. The shell never mints truth.
 - **Byte-identity where an oracle exists; a pinned reference where one does not.** A rung with a frozen oracle proves
   byte-identity against it; a rung inventing new semantics defines a reference and pins it, then defends *that*.
+- **The model may propose; only the verifier may admit** (declared, LLM-BUILDER-0). Anything that suggests a change —
+  a key, a mouse, a script, one day a model — reaches the world only as a typed event the session validates and
+  replays. Verðandi does not execute what a proposer writes; it records what the verifier admits.
 - **Preregister the method before the number,** including the failure condition and the null. Measure before
   optimize; re-measure after. Correctness on the gate, speed off it. The record stores numbers; the reading
   interprets.

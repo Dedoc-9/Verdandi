@@ -3696,7 +3696,7 @@ or the head. `simtick-certify` goes red if a defective fast path can save. `simt
 loses its heading, tick count or sensitivity, or the window loop shows a free heading. `simtick-fence` goes red if a
 clock, a float, a mouse or a window enters the rule proof, or a renderer source changes.
 
-## The open clause, now with named rungs (skybox, physics)
+## The open clause, now with named rungs (skybox, physics, the proposal machine)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
 
@@ -3717,6 +3717,15 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   carry is still new CORE semantics with one route only, earned in Urðr and re-frozen: Urðr's own `contact` law
   records that its 3D tick does not exist yet. The studio authors no physics that a certified semantics does not
   already define.
+
+- **LLM-BUILDER-0 (a proposer outside authority — declared, the owner's goal of 2026-10-02).** The model may propose
+  becoming; only the verifier may admit it. A model would emit typed proposals anchored to a session head and an
+  authority digest. The verifier refuses or admits; an admitted proposal is a session event like any other, its
+  consequence shown by the reference, and the model's text is provenance beside the event, never authority. A stale
+  anchor is rebased explicitly or refused. Nothing is built and no model is in the tree. It is not seated; when it is,
+  it registers its own hypothesis and failure condition. Until then it constrains the rungs before it: every event
+  kind typed and replayable without its source, provenance never folded into the head, no path that executes text.
+  The design is in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two
