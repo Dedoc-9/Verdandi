@@ -87,7 +87,7 @@ BEARING-0        the bearing camera carried and its reference kernel placed: all
       ↓
 BEARING-FAST-0   the production candidate, held byte for byte to the reference — measured on the host: exact stepping in eight row bands, worst-camera p99 3,716 us (target 6,667); the sweep 622,440 of 622,440 equal
       ↓
-SIM-TICK-0       the mouse-look rules as integer law, windowless: the 64 Hz tick, one command per tick, the look event in the one session, reference certification at save — built; not yet run on the host
+SIM-TICK-0       the mouse-look rules as integer law, windowless: the 64 Hz tick, one command per tick, the look event in the one session, reference certification at save — built; the gate passes on the host with the same 197 rows
       ↓
 MOUSE-LOOK-0     a real mouse on those rules: raw input into the 64 Hz accumulator, the command into the existing live loop, the picture alone at a free heading
       ↓
@@ -162,7 +162,7 @@ what evidence is worth buying, not by which optimization can be imagined next. T
 |---|---|---|---|
 | 1 | BEARING-FAST-0's host speed court | Establish whether the 6,667 µs target is met. | Run: met, 3,716 µs. |
 | 2 | Production promotion, only if the target is met | Do not optimize a kernel that is already sufficient. | Met: eight row bands of exact stepping is the production candidate. MOUSE-LOOK-0 wires it into a live path, not before. |
-| 3 | SIM-TICK-0, mouse sensitivity and live mouse-look | The actual interaction seam, now that the renderer can support it. | SIM-TICK-0 (the rules and the sensitivity, windowless) is built. MOUSE-LOOK-0 (the real mouse and the window) is next. |
+| 3 | SIM-TICK-0, mouse sensitivity and live mouse-look | The actual interaction seam, now that the renderer can support it. | SIM-TICK-0 (the rules and the sensitivity, windowless) is built, and its gate passes on the host. MOUSE-LOOK-0 (the real mouse and the window) is next. |
 | 4 | PRESENT-1, the flip-model presentation | Renderer speed is not input-to-photon speed; LATENCY-0's evidence makes this the next presentation boundary. | After mouse-look. |
 | 5 | A cross-host correctness witness for the fast path | Portability evidence, not worth delaying the interactive path unless a cross-host failure appears. | The gate's court already runs on two hosts (Linux here, the owner's Windows). A further host is deferred. |
 | 6 | Benchmark regression recording | Protects a production fast path against performance regressions. | Once the fast path is in a live path. |
@@ -348,7 +348,7 @@ is counted and logged, never hidden. There is no input, no camera, no clock: cou
 itself over the mock. On the owner's host, the first live walk rendered and presented 246 compositions, and all 6 screen
 readbacks were exact. It is the first gate on the route; the authoring input that changes the state is LIVE-INPUT-0's.
 
-### SIM-TICK-0 — the mouse-look rules as integer law, windowless · **built** (`dc1dddf2`); the gate not yet run on the host
+### SIM-TICK-0 — the mouse-look rules as integer law, windowless · **built** (`dc1dddf2`): the gate passes on the host
 The third rung of the owner's ladder, and deliberately half of the work: the owner ruled that the rules are locked with
 no window in the proof, and that the real mouse comes after, as its own rung. The boundary is raw input → tick command
 → SESSION-WALK → authority. A tick is exactly 15,625 µs (64 Hz). A tick's mouse reports are summed and applied once, as
@@ -364,8 +364,11 @@ exhaustively over the 360,000 heading ids against a Python re-derivation, one sc
 refusals, the saved session's frames are checked against the kernel executable and by the workshop's verifier, and a
 shell with a planted defect in its fast path is refused at the save. One thing was found while building: an index
 frame can be the same at two neighbouring headings, so a look folds its camera token together with its witness; the
-registration was revised for that before it left the build machine. Nothing here reads a mouse, a clock or a window,
-and nothing here says how it feels.
+registration was revised for that before it left the build machine. On the owner's host the gate passed with the same
+197 rows and rowset as here. The window build, which the build container could only type-check, compiled there, and a
+walk of 46 moves in the live editor rendered, presented and byte-checked 1,034 compositions with 50 screen readbacks,
+none differing, and saved and verified as before. That walk held no look: nothing here reads a mouse, a clock or a
+window, and nothing here says how it feels.
 
 ### BEARING-FAST-0 — the bearing camera made fast, held to the reference · **measured on the host** (`f0a9a57d`): the target met, the sweep exact
 One rung with its staircase inside, as the owner ruled. The reference spent its time in per-pixel 128-bit division;

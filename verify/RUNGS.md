@@ -3534,7 +3534,7 @@ camera list changes. `bearingfast-checked` goes red on any overflow. `bearingfas
 escapes `narrow`, or the fast path renders outside its envelope. `bearingfast-fence` goes red if the reference, mantle.rs
 or fast.rs changes, or a clock, a file or a live path enters.
 
-## SIM-TICK-0 — the mouse-look rules as integer law, windowless (preregistered and built; the gate not yet run on the host)
+## SIM-TICK-0 — the mouse-look rules as integer law, windowless (preregistered and built; the gate passes on the host, and the window build walks there as before)
 
 **Why.** BEARING-FAST-0 gave a renderer fast enough to turn, and nothing yet says what a turn is. The owner's court
 of 2026-10-02 split the work in two and forbade combining it: SIM-TICK-0 locks the rules with no window, and
@@ -3654,15 +3654,35 @@ session, journal and seal the live editor uses. It has no surface, no loop and n
   use the reference; no window does) and `bearingfast-fence` (`heading.rs` reaches the fast path; no window does). No
   behavioural row of LIVE-INPUT-0, LIVE-SESSION-0, LIVE-AUTHOR-0 or HOLD-WALK-0 moved.
 - **The window build was type-checked here, not run.** No Windows target is installed in the build container, so the
-  windowed shell was type-checked in a scratch copy with the platform switch flipped. It has not been linked or run;
-  the host build is the test.
+  windowed shell was type-checked in a scratch copy with the platform switch flipped. It was not linked or run here;
+  the host build was the test, and it is recorded below.
+
+**On the owner's host (2026-10-02).** The registration was applied and pushed first, alone (`87b152b`); then the build
+(`998dbe4`).
+
+- **The gate.** `GATE PASSED`, 197 rows, none failed and none skipped, rowset `b2dd25aedf2b0c32`: the same rows and the
+  same rowset as in the build container. The eight `simtick-*` rows ran there on Windows, with the host's committed
+  records present.
+- **The window build.** `rustc -O --cfg shell_window shell\main.rs` compiled with no error and no warning. This is the
+  first time the changed session code was linked into the window.
+- **A walk in the live editor**, `shell live-window`, to see that the window loop behaves as it did. The owner pressed
+  47 keys from 28,28,N: 46 moves (2 of them blocked) and Esc, with no key held and no edit. The loop rendered and
+  presented 1,034 compositions, checked the bytes of every one, and read the screen back 50 times; none differed. The
+  walk ended at 7,26,W and was saved and verified: 46 events, head `7815732d91dc…`. Every heading in it is one of the
+  four facings, so the save had no free-heading frame to recompute and printed no certification line. That is the
+  registered behaviour: a walk with no look saves as before.
+
+The walk is the console's account of one run. It is not a sealed record and nothing was committed from it; the saved
+session stays under `build/sessions/` on the host.
 
 **Grade.** DECLARED: the tick, the command, the delta, the nearest cardinal (the ±45° reading), the binding, the fold,
-ticks as recorded and never authority, certification at save. ESTABLISHED (gate, in the build container): the eight
-rows above. MEASURED: nothing; this rung takes no number. NOT_MEASURED: how a real mouse's reports reach a tick, any
+ticks as recorded and never authority, certification at save. ESTABLISHED (gate, in the build container and on the
+owner's host): the eight rows above, and every earlier row beside them. MEASURED: nothing; this rung takes no number.
+The host walk is an observation of one run, not a record. NOT_MEASURED: how a real mouse's reports reach a tick, any
 latency or feel, and how long a long session takes to certify at save.
 
-**does_not_show.** That mouse-look works on the host: nothing here reads a mouse, a clock or a window. Any feel,
+**does_not_show.** That mouse-look works on the host: nothing here reads a mouse, a clock or a window, and the host
+walk held no look. The window has not shown a free heading; a session left at one is still refused by the window loop. Any feel,
 latency or frame rate. That the tick index is authority: it is recorded, sealed with the file and checked for form, and
 the same commands at other ticks reach the same head. That the head pins every heading: a look's heading is folded; a
 move's camera is still re-derived by replay, as it always was. Anything about a picture on the screen at a free
