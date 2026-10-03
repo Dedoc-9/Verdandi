@@ -4265,9 +4265,29 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   SHA-256 of the exact bytes; the saved-form reader is hardened in its own rung after this one (`READER-COURT-0`),
   its files re-pinned once there; the admitter grants the scope; the anchor is what a session already records
   (renderer identity, bearing identity, head, language version), and no program identity is minted. The owner's
-  order: ADMIT-0, `READER-COURT-0`, `DESIGN-EVENT-0`, `LIVE-AI-EDIT-0`, then branch and preview. Both courts, the
-  research with its sources, the table, the review and what the registration still has to settle are in
+  order: ADMIT-0, `READER-COURT-0`, `DESIGN-EVENT-0`, `LIVE-AI-EDIT-0`, then branch and preview. A third court
+  fixed the lines (eight; no program line, no scope line) and the proposal id (the proposer's 64-hex handle).
+  **Registered** (`bdd38593`) as its own commit: the bytes of `VRDNP1` (327 to 337 bytes, one byte sequence per
+  typed proposal, a worked example and its digest), the anchor, the grant, the envelope beside the event and never
+  in the head, typed refusals in a fixed order, and the rows `admit-preregistered`, `admit-reader`, `admit-single`,
+  `admit-anchor`, `admit-capability`, `admit-idempotent`, `admit-crash`, `admit-replay` and `admit-fence`.
+  MEASURED on the owner's host: the gate passes with the entry in the registry, 209 rows, rowset
+  `a15345720a81009c`, pushed as `0669ecf`. Those rows are the gate as it stood plus the registration; none of the
+  entry's success conditions is shown yet. The owner accepted the registration as the design, with its limit kept
+  explicit: the admitting shell records the digest of the bytes it received, and no later verifier can recompute it,
+  because the proposal's bytes are not kept. In his words the state is `REGISTERED / BUILD PENDING`. The courts, the
+  research with its sources, the table, the review, the registration and the acceptance are in
   [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+- **The design language: one design authority, many editors (declared, the owner's, 2026-10-03; not registered,
+  nothing built).** The design environment as a typed, deterministic, inspectable program: design objects,
+  relations and constraints and not tools; constraints as persistent objects with witnesses; one authority seen
+  through many projections (spatial, gameplay, simulation, narrative, performance); a model given a design language
+  and nothing else. *Don't build an AI level editor. Build a deterministic design language with many editors.* It
+  proposes a small rung, `DESIGN-IR-0`, which is a declared name and not seated: where it sits against the owner's
+  locked order was not ruled. Nothing in the tree is a design object, a relation or a constraint, and the world has
+  no units beyond cells. It meets rules in force: anything that decides W or M is earned in Urðr; a constraint's
+  status is a witness to recompute and not a field to trust; integers of the world and no floats; a panel and no
+  score; preview only as a speculative worldline. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two

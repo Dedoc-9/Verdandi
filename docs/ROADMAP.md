@@ -102,7 +102,7 @@ richer edits     vocabulary on the one live editor, not new pathways
 walking in a live, authorable world
       ⋮
 LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03), and by the owner's ruling what the route builds towards: the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
-ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by the owner's order next after MOUSE-LOOK-0: the admission seam. One strict recognizer for a line language whose accepted bytes are canonical (VRDNP1), an anchor refused when stale, a scope the admitter grants, an admitted proposal an ordinary session event. The gate certifies the machine; ADMIT admits the world's changes — not registered, nothing built
+ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by the owner's order next after MOUSE-LOOK-0: the admission seam. One strict recognizer for a line language whose accepted bytes are canonical (VRDNP1), an anchor refused when stale, a scope the admitter grants, an admitted proposal an ordinary session event. The gate certifies the machine; ADMIT admits the world's changes — registered (`bdd38593`), the gate passing on the host with the entry; build pending
       ↓
 READER-COURT-0 → DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered
       ↓
@@ -792,11 +792,11 @@ anything useful here; that any verifier law beyond today's edit validation exist
 commit envelope work; any safety property of a system that includes a model. When it is seated it registers its own
 hypothesis, failure condition and limits, like every rung.
 
-### ADMIT-0 — the admission seam · **chosen** (the owner's court, 2026-10-03), its hardenings ruled in his review and a second court of the same day; not registered, nothing built
+### ADMIT-0 — the admission seam · **preregistered** (`bdd38593`): the gate passes on the host with the entry; build pending
 The first rung towards the design-event stream above. It was chosen in court, then researched, then reviewed by the
-owner, then taken to a second court on the questions the review left, all before any registration. This section
-records the first court, what the research found, one observation made here while checking it, the review, and the
-second court. Nothing is registered and nothing is built. The registration is its own commit and comes next.
+owner, then taken to a second and a third court on the questions the review left, and then registered. This section
+records the first court, what the research found, one observation made here while checking it, the review, the
+second and third courts, the registration and the owner's acceptance of it. Nothing is built.
 
 **The court (2026-10-03).** Three rulings.
 
@@ -1010,8 +1010,84 @@ for the registration. The owner's rulings:
    moves or the rendering sources change, and not when an unrelated file of the shell changes. The gate's rowset is
    not an anchor: it would tie content time to the gate.
 
-**Where the review meets what stands.** Read against the tree. The second court above has since ruled on four of
-these; the rest are for the registration to settle.
+**The third court (2026-10-03), on the frozen bytes.** The owner's sketch of the language had a `program=` line
+and a `scope=` line, and the second court's rulings 3 and 4 took both away. Two rulings settled the lines.
+
+1. **Eight lines, per the rulings.** `VRDNP1`, `renderer=`, `bearing=`, `parent=`, `proposal=`, `op=`, `target=`,
+   `value=`. No program line, because nothing is minted. No scope line, because the grant is the admitter's and one
+   operation per proposal leaves nothing narrower to ask for.
+2. **The proposal id is the proposer's 64-hex handle.** Chosen by the proposer, carried in the bytes, untrusted and
+   recorded. An id already in the session's admitted history is refused as a duplicate. The digest stays the SHA-256
+   of the exact bytes.
+
+**The registration (`bdd3859302f61b127c6df050cebf9ca521dc8bc2ca8a96e67b7f27150b39796d`).** Its own commit, with
+nothing built. What it freezes, in `verify/preregister.json`:
+
+- **The bytes.** Exactly eight lines, each ended by one LF, nothing before the first and nothing after the last.
+  `renderer=`, `bearing=`, `parent=` and `proposal=` carry 64 lower-case hex characters. `op=` is `open`, `close` or
+  `paint`. For open and close the target is `x,z` and the last line is exactly `value=0`; for paint the target is
+  one of the five tile classes and the value is one integer, R×65536 + G×256 + B. Coordinates lie in 0..65535 and a
+  colour in 0..16777215, with no leading zero. No other byte is legal. A proposal is therefore 327 to 337 bytes, each
+  typed proposal has one byte sequence, and its digest is the SHA-256 of those bytes. The entry carries a worked
+  example of 328 bytes and its digest.
+- **What a proposal is checked against.** The renderer and bearing identities of the admitting shell; the head of
+  the saved session as loaded (a stale parent refused, always, naming both heads); the ids already admitted in that
+  session; the grant given on the command line; and the session's own validation of the edit, with one law added:
+  a proposal that would leave W and M as they are is refused.
+- **What an admitted proposal becomes.** The edit a key would make, with the head that edit gives. Its envelope
+  (the language, the id, the digest, the two identities, the parent head, the resulting head, the grant) sits
+  beside the event in the journal record and the saved item, travels with it through later continuations, and is
+  never folded into the head.
+- **Typed refusals, in a fixed order.** `ADMIT-IO`, `ADMIT-SIZE`, `ADMIT-PARSE`, `ADMIT-RANGE`, `ADMIT-PROGRAM`, the
+  session loader's own, `ADMIT-SESSION`, `ADMIT-ANCHOR`, `ADMIT-DUPLICATE`, `ADMIT-CAPABILITY`, `ADMIT-AUTHORITY`. A
+  refused admission leaves no run directory, no journal and no file.
+- **The courts, as rows.** `admit-reader`, `admit-single`, `admit-anchor`, `admit-capability`, `admit-idempotent`,
+  `admit-crash`, `admit-replay`, `admit-fence`, with `admit-preregistered` locking the entry.
+
+Choices the registration makes beyond the rulings, each stated in the entry:
+
+- One operation per proposal and one proposal per run. There is no batch.
+- The review's parse, depth, duplicate-key, unknown-field and schema refusals are one refusal, `ADMIT-PARSE`, naming
+  the line and what was expected. In a language with fixed positions and no nesting those cases are not distinct.
+- Only a saved session can be admitted to. A crashed run's journal is refused `ADMIT-SESSION`.
+- The proposal's bytes are not kept. The envelope is a record written by the admitting shell, and the seal is a
+  hash and not a signature.
+- The seam is per saved session. The same bytes offered to the child are refused as stale; admitted again to the
+  untouched parent file, they make a second child with the same head.
+- The crash court ends the process at eight points and shows process death, not power loss.
+- `shell admit-anchor` prints the first four lines of a proposal for a saved session, and only reads.
+
+**On the owner's host (2026-10-03).** The registration was applied and the gate run with the entry in the
+registry: `GATE PASSED`, `RECONCILE  rowset a15345720a81009c  209 rows / 0 fail / 0 skipped`, the rowset and the
+count it had before. The host's `verify/preregister.json` is byte-identical to the one registered here, 37 entries.
+It was pushed as `0669ecf`. The registration reached the host before the docs commit that records the courts; the
+two touch different files, and either order gives the same tree.
+
+**The owner's acceptance (2026-10-03).** A review of the registration, brought by the owner and recorded at his
+instruction. He accepts it as the ADMIT-0 design, with the distinction that it is a preregistered specification
+and not an implementation result. In its words, the state is:
+
+> **ADMIT-0: REGISTERED / BUILD PENDING.**
+
+- **What the 209 rows show.** They are the gate as it stood plus the registration. They do not establish any of
+  the entry's success conditions; the eight courts' rows do not exist yet.
+- **The digest's limit, kept explicit.** The proposal's bytes are not kept, so the workshop and the sealer cannot
+  recompute the digest in an envelope. The claim is that *the admitting shell measured and recorded the digest of
+  the exact proposal bytes it received*. It is not that any later verifier can prove the recorded digest belongs to
+  the original bytes. He would not add persistence of the proposal's bytes to remove the limit: that would enlarge
+  the seam and bring the parser back into the downstream readers.
+- **One operation, one proposal.** It gives atomicity without inventing batch semantics, and it leaves the crash
+  court one possible new authority transition to interpret.
+- **A boring vocabulary on purpose.** Open, close, paint. ADMIT-0 proves admission, not whether Verðandi can
+  understand arbitrary landscape concepts.
+- **The route is not changed, and the saved-form reader stays out.** MOUSE-LOOK-0, ADMIT-0, `READER-COURT-0`,
+  `DESIGN-EVENT-0`, `LIVE-AI-EDIT-0`, then branch and preview. The saved-form JSON disagreement is not pulled back
+  into ADMIT-0.
+- **What comes next.** *The next work is therefore implementation against the frozen 0105 bytes—not another
+  design round.*
+
+**Where the review meets what stands.** Read against the tree as it stood at the review. The courts above have
+since ruled on these, and the registration settled the rest.
 
 - **There is no proposal boundary yet.** The review speaks of the current proposal boundary having shown parser
   disagreement and crashes. What was observed is the saved-form reader, alone, on bytes no command was given. It is
@@ -1037,8 +1113,8 @@ these; the rest are for the registration to settle.
   names a gate outcome, not a binary. Ruled (the second court, ruling 4): the anchor is what a session already
   records, and no program identity is minted.
 - **`proposal_id`.** If the proposer chooses it, it is as untrusted as the rest of the proposal. Refuse-always
-  already makes a second admission of the same bytes stale. The registration says who assigns the id and what a
-  duplicate-proposal refusal compares.
+  already makes a second admission of the same bytes stale. Ruled (the third court, ruling 2): the id is the
+  proposer's handle, and a duplicate refusal compares it with the ids already admitted in the session.
 - **What a crash court can show.** Terminating the process shows what a restart finds after the process dies. It
   does not show a power loss: bytes written and not flushed survive a killed process in the system's cache.
   Microsoft's page promises the write-through flush for a move performed as a copy and delete and is silent on
@@ -1051,12 +1127,101 @@ these; the rest are for the registration to settle.
 - **Refusal codes.** The review's list gives the reasons. The registration gives them codes in the tree's form and
   says that a refused admission writes nothing to the session and is recorded like any other refusal.
 
-**Grade.** DECLARED: the first court's three rulings, the review and its seven courts, the second court's four
-rulings. OBSERVED: the 19-input table,
-here, outside the gate. Attributed and not claimed: everything under "What the research found". Nothing is
-ESTABLISHED or MEASURED by this section. **does_not_show.** That a strict recognizer exists; that any of the seven
-courts holds; that a model can write a proposal worth admitting; any safety property of a system that includes a
-model. ADMIT-0 registers its own hypothesis, failure condition and limits before a line of it is built.
+**Grade.** DECLARED: the three courts' rulings, the review and its seven courts, the registration's conditions,
+the owner's acceptance. MEASURED (on the host): the gate passes with the entry in the registry, 209 rows, the rowset
+unchanged. OBSERVED: the 19-input table, here, outside the gate. Attributed and not claimed: everything under "What
+the research found". Nothing about the seam itself is ESTABLISHED or MEASURED. **does_not_show.** That a strict
+recognizer exists; that any of the courts holds; that a model can write a proposal worth admitting; any safety
+property of a system that includes a model. The state is registered, build pending.
+
+### The design language — one design authority, many editors · **declared** (the owner's, 2026-10-03); not registered, nothing built
+A design text the owner brought on 2026-10-03, after the registration, and asked to have recorded. Like the two
+texts above it is a reply to his own description of what he is after, so its wording is quoted where it states the
+rule and summarized elsewhere. It extends the design-event stream and seats nothing.
+
+> **Intent → constrained design operation → verified state transition → provenance → deterministic projection.**
+
+- **The design environment is itself a typed, deterministic, inspectable program.** In the text's phrase, *a CAD
+  for interactive worlds*, where every design operation has the properties the admission seam is establishing.
+- **Design objects and constraints, not tools.** The environment is not built around a wall tool, a terrain tool
+  and a mesh tool. It is built around a design state with five parts: geometry (surfaces, volumes, boundaries,
+  transforms), semantics (rooms, paths, cover, spawn zones, gameplay volumes, tags), relations (adjacent to,
+  contains, connects, blocks, visible from), constraints (dimensions, reachability, clearance, performance,
+  visibility, gameplay invariants) and provenance (author, operation, parent, constraint result, resulting
+  identity). A viewport is one projection of that state.
+- **Geometry is not the primitive.** Conventional CAD goes point, line, surface, solid. Here the order is *intent →
+  relation → constraint → realization*. A request is turned into a bounded design representation, and the system
+  asks whether the intent can be represented, whether its constraints can coexist, what authority it touches, what
+  changed and which constraints became invalid. The answer is a design diff.
+- **Constraints are first-class world objects.** Persistent objects with a kind, a subject, a value, a status and a
+  witness, and not validation code alone. A design change then has a consequence graph: the operation, the objects
+  it changed, the constraints it affected, each satisfied, violated or unknown. What that gives, in the text's
+  words: *a machine-readable explanation of why a world is still valid.*
+- **One authority, many projections.** The same object seen as geometry (walls, doors, materials), as gameplay
+  (cover, routes, spawns) and as runtime cost (draw cost, memory, streaming), with no editor copy of the object
+  beside a runtime copy. The text names five such environments over one authority: spatial, gameplay, simulation,
+  narrative and performance.
+- **A model gets a design language and nothing else.** A proposal goes through a compiler to a candidate diff, the
+  constraints are evaluated, a human sees a preview, and only then is it admitted. The model never writes
+  arbitrary files, executes arbitrary code or mutates authority. The renderer stays downstream, the model is not an
+  authority, and the interface is not the source of truth.
+- **Reversible design, as provenance.** Every object keeps its lineage: the event that created it, the events that
+  changed it, the constraints on it, the projection that shows it. "Why is this wall here?" is answered from that
+  record. The text calls it design provenance and not merely undo history.
+- **What the text would not do, and the rung it proposes instead.** It would not start *a giant "next-gen CAD
+  editor"*. It proposes a small rung, `DESIGN-IR-0`, proving only a typed design object, a typed relation, a typed
+  constraint, a bounded diff, a deterministic serialization and provenance: no viewport, no model, no mesh editor,
+  no giant schema. Its one vertical slice is *a rectangular room with doors, connectivity, clearance, and a gameplay
+  tag*, produced identically by a human-authored operation and by a hypothetical model's proposal, then mutated on
+  purpose to show the constraint's witness change deterministically.
+
+Its last lines:
+
+> **Don't build an AI level editor. Build a deterministic design language with many editors.**
+
+and: the thing that survives every editor is *the design authority + constraints + provenance*.
+
+**What already stands that it would rest on.** The admission seam is registered, with a vocabulary that is boring
+on purpose. A projection that never writes is the existing separation of workshop, kernel and shell, and the
+invariants below already forbid a view from holding authority. WORKSHOP-0 refuses a record whose projection is
+stale under a moved authority, which is one derived thing already tied to the authority it was derived from.
+SEMANTIC-0, above, is the named and unbuilt rung for meaning beyond what the oracle certifies. The HUD's pins are
+the one case so far of VIEW semantics earned here and held by rows.
+
+**What does not exist.** A design object of any kind. Rooms, doors as objects, paths, cover, spawn zones, volumes
+or tags. A relation. A constraint, a constraint's witness, or a solver. A compiler from intent to operations. A
+second projection of the world beside the frame and the HUD. Units: the world is a grid of cells and five tile
+classes, with no metre, no second and no height.
+
+**Where it meets rules already in force.** Each of these wants the owner's ruling before a rung is seated.
+
+- **Earn the authority.** Anything that decides W or M is CORE and comes only from Urðr, carried or earned there
+  and re-frozen. A layer that only names and reads what W already holds (a room as a set of cells, reachability as
+  a path over open cells) could instead be VIEW semantics by SEMANTIC-0's route: a reference here, pinned by rows,
+  never writing the world. Which route each kind of object takes is a ruling, object kind by object kind.
+- **A constraint's status is a witness, not a field.** The declaration of a constraint is authored content, and if
+  it is admitted it is an event. Its status is derived from the world. A saved `status = SATISFIED` that a reader
+  trusts is a second authority. In this tree the equivalent of a status is a witness: recomputed by replay, compared
+  and refused when it differs, never taken from the file.
+- **Float-free, and in the world's own units.** The examples speak in metres, seconds and percentages. The rules
+  here are integers of the world: cells, ticks, reduced rationals.
+- **A panel, not a score.** "14 satisfied, 1 degraded, 0 violated" is a count per status and is admissible as
+  that. It is not folded into one number, and "degraded" needs a definition before it is a status.
+- **Preview before admission.** The text's flow shows a human preview before the admit. Commit-only still holds: a
+  preview is a speculative worldline, a typed log replayed from an anchored head, and that is the branch rung's
+  business, after admission works.
+- **The compiler.** If it is code in this tree it is program and the gate certifies it. If it is a model it is
+  outside the tree. Either way its output is a proposal in a registered language, and the seam admits or refuses it.
+- **The order.** The owner's locked order is ADMIT-0, `READER-COURT-0`, `DESIGN-EVENT-0`, `LIVE-AI-EDIT-0`, then
+  branch and preview, and his acceptance of the registration says the next work is implementation and not another
+  design round. Where `DESIGN-IR-0` sits against `DESIGN-EVENT-0` was not ruled. It is recorded here as a declared
+  name and is not seated.
+
+**Grade.** DECLARED: all of it. Nothing here is established or measured. **does_not_show.** That a design object,
+a relation or a constraint can be defined over this world without new CORE semantics; that a constraint's witness
+can be computed deterministically for anything beyond what the grid already says; that a model can write in such a
+language. When a rung is seated from it, the rung registers its own hypothesis, failure condition and limits.
+
 
 ### GAME-0 — Urðr's game layer as frozen evidence · **landed**
 The seventeen discrete game-layer slices (`gamegen` … `cue`), their corpora, suites, briefs and the D24/D25 boundaries,
