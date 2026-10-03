@@ -46,6 +46,12 @@ model may one day propose typed, anchored changes against the sealed session, fr
 the verifier admits them, and the reference kernel shows their consequence. It is LLM-BUILDER-0 in
 [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
+Declared with it (the owner's, 2026-10-03; also beside the charter, also unbuilt): **the engineering gate certifies
+the program; a content admission layer certifies that an artifact conforms to the already-certified program; content
+generation does not invoke the engineering gate.** A model may generate content freely and may not redefine the laws
+content runs under. Language can propose, the verifier admits, the session records, the kernel renders. Whether this
+becomes part of the ratified charter is the owner's to rule.
+
 ## Why this repository exists (the measurement that preceded it)
 
 Urðr grew to 1,612 files and a thirty-six-minute gate; the game/render kernel is one fortieth of that tree.

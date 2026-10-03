@@ -4230,6 +4230,17 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   it registers its own hypothesis and failure condition. Until then it constrains the rungs before it: every event
   kind typed and replayable without its source, provenance never folded into the head, no path that executes text.
   The design is in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+- **Program time and content time; the design-event stream (declared with LLM-BUILDER-0, the owner's, 2026-10-03).**
+  The engineering gate certifies the program and runs when the program changes. Content is admitted by a check on the
+  artifact itself and does not invoke the gate; a model may generate content and may not redefine the laws content
+  runs under. Conversation is meant to become the editor: intent becomes a bounded world diff, previewed on a
+  speculative branch, and what the verifier admits is a design event in the session. Language can propose, the
+  verifier admits, the session records, the kernel renders. Nothing is built. Today the only content is a session's
+  events over W and M, admitted by seal, base, fold and replay, and the world has no regions, heights, structures or
+  named objects for a design vocabulary to refer to. Four rules already in force meet it and want rulings before any
+  rung: commit-only (a preview only as a speculative worldline, never shell state), earn the authority (new world
+  semantics come from Urðr), the witnesses a lighter check must still ask for, and merges as explicit anchored
+  events. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two

@@ -101,7 +101,7 @@ richer edits     vocabulary on the one live editor, not new pathways
       ↓
 walking in a live, authorable world
       ⋮
-LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it
+LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03): the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -648,6 +648,115 @@ The sentence the owner would put in the charter: **Verðandi does not execute wh
 the verifier admits.** It stands beside the charter in the README as a declared goal. The ratified charter block is not
 edited.
 
+### LLM-BUILDER-0, continued — program time and content time; the design-event stream · **declared** (the owner's, 2026-10-03); not registered, nothing built
+Two design texts the owner brought on 2026-10-03 and asked to have recorded. Both are replies to his own description
+of what he is after, so their wording is quoted where it states the rule and summarized elsewhere. They extend
+LLM-BUILDER-0 above and change nothing in it. Nothing here is built, and no rung is seated by it.
+
+**1. The gate certifies the program. Content is admitted, not gated.**
+
+> **The engineering gate certifies the program. The content admission layer certifies that an artifact conforms to
+> the already-certified program. Content generation does not invoke the engineering gate.**
+
+```text
+PROGRAM TIME    source ──► GATE ──► certified build            runs when the program changes
+─────────────────────────────────────────────────────────────────────────────────────────────
+CONTENT TIME    prompt ──► proposal ──► CONTENT CHECK ──► admitted artifact ──► the certified runtime
+                                                                        runs when the world changes
+```
+
+- **`GATE`: engineering certification.** It answers questions about the program: is the kernel deterministic, does
+  replay reproduce, does authority stay apart from presentation, does the fast renderer equal the reference, do the
+  seams hold. It runs when the kernel, the renderer, the authority, the session's semantics, the workshop's
+  semantics, an optimization or the shell's architecture changes: a targeted gate, then the full gate, then a
+  certified build.
+- **`CONTENT CHECK`: artifact admission.** It answers questions about one piece of content: is its form valid, are
+  its coordinates in bounds, do the things it refers to exist, are its constraints satisfied, does it load without
+  breaking the runtime's contracts. It runs when the world changes: a new landscape, a building, a material set, a
+  generated scene. It is meant to be fast, and it does not rerun the architectural certification.
+- **What a model may do.** In the text's words: *AI may generate content freely, but it may not redefine the laws
+  under which content executes.* A model asked for a landscape produces a bounded content description. It does not
+  write kernel code. A change to the laws is a new program build, and that is the gate's business, not content
+  generation.
+- **Why it is written down now.** Without the line, new features leak content generation back into the expensive
+  certification loop, and the verification architecture becomes the bottleneck of creation. The text's phrase: the
+  engineering gate is *the constitution of the design environment, not the toll booth every time someone creates a
+  mountain.*
+
+**2. Conversation as the editor, over a semantic world-edit stream.**
+
+> **Language can propose. The verifier admits. The session records. The kernel renders.**
+
+```text
+human ──► LLM designer ──► intent ──► design IR (a bounded world diff) ──┬──► speculative branch ──► fast preview
+              ▲                                                           └──► verifier ──► admitted DESIGN EVENT
+              │                                                                                   │
+        world context (queried, bounded)  ◄──────────────  world authority  ◄──  SESSION  ◄───────┘
+```
+
+- **Intent, not code.** The model translates "make the valley narrower, raise the cliffs, put a road through the
+  bottom" into typed operations on named targets. It designs transformations. It is not the authority that executes
+  them, and it never edits files or reloads a renderer.
+- **A spatial vocabulary.** The model does not think in files or pixel coordinates. The world offers regions,
+  features, materials and structures by name, and an instruction becomes a relationship between them (above, facing,
+  within a distance), which the verifier resolves.
+- **Persistent identity.** Every generated object has a stable name, so "move the tower I added earlier" names one
+  thing, across hours of conversation.
+- **Every action a reversible transaction.** An edit carries its parent world, the intent, the proposed diff, the
+  objects it touches, the resulting world and a preview frame. Undo is another event, a semantic inverse or a
+  compensating edit; nothing is rewritten.
+- **Preview before authority.** A proposal's first result is a speculative branch, fast and disposable. Only "keep
+  it" appends it to the authoritative session. Preview is not authority.
+- **Three speeds.** The fast path (prompt, proposal, diff, speculative projection, render), the commit path (accept,
+  typed session event, authoritative world, save), and the engineering path (source change, gate, certified
+  program), which is rare. Hundreds of accepted edits never invoke the gate.
+- **A world microscope.** The model can query bounded context (the camera, a region, an object, a material, its
+  neighbours, recent edits), so a proposal is made from the world's actual state and not from the words alone.
+- **Why did you change that.** Every edit keeps its intent, its proposal, the operations accepted and refused, the
+  objects affected, the parent and resulting digests and the model's provenance. The answer comes from that record.
+  The world's provenance is authoritative; the model only reads it.
+- **The design event.** An `AI_PROPOSAL` never mutates authority. It goes to the verifier, and what the verifier
+  admits is a design event in the session, beside edits, moves and looks.
+- **Branches.** "Three versions of this coastline" are three branches of one world, each previewed. "The cliffs from
+  B, the vegetation from C, the road from A" is an explicit merge of typed events.
+
+The endpoint the text describes is a creator who says what a place should be and watches it change, and never thinks
+about source files, compilation, hashes, verification scripts or restarts, while every accepted change underneath is
+typed, bounded, provenanced, reversible, deterministic and replayable. Its last line: *a world can be continuously
+invented without continuously rebuilding the machine that knows how worlds work.*
+
+**What already stands on each side of the line.**
+
+- **Program time.** The gate is `verify/verify.py`. It runs when a patch lands in the repository. No session event has
+  ever invoked it.
+- **Content time, as far as it exists.** A live session is content: typed events over W and M, appended by keys and
+  a mouse. On the owner's host one run appended 1,832 events with no gate between them. A saved session is admitted
+  by checks on the artifact alone: its seal, its base, the fold of its witnesses, and its replay by the shell, the
+  workshop and the sealer. That is the studio's content check today, for the one kind of content it has.
+- **What LLM-BUILDER-0 already declares.** The typed, anchored proposal; the speculative worldline; the sacred
+  prefix; the commit envelope; no silent merge across time.
+
+**What does not exist.** A model in the tree. A proposal format. A verifier for proposals. An intent compiler or a
+design IR. Regions, features, structures, vegetation, heights or any named object: the world is a grid of cells (W)
+and five tile classes (M), and the renderer draws exactly that. Object identity. Branches, previews or merges. A
+content package, or a check for one. The examples in the texts (a valley, cliffs, a coastline, a village) are far
+beyond what the frozen oracle certifies.
+
+**Where it meets rules already in force.** Each of these wants the owner's ruling before a rung is seated.
+
+- **Commit-only.** LIVE-AUTHOR-0 forbids showing a change before it is appended, and this roadmap keeps previews and
+  gizmos off the route because that is where a shell starts to hold an alternate authority. A preview is admissible
+  only in the form LLM-BUILDER-0 gives it: a speculative worldline, itself a typed log replayed from an anchored
+  head, never state the shell holds.
+- **Earn the authority.** Terrain, heights, vegetation and structures are new CORE semantics. By the rule below they
+  come only from Urðr, carried or earned there and re-frozen. A content vocabulary cannot be minted here.
+- **How light a content check may be.** Today a session at a free heading is saved only after the reference has
+  recomputed every one of its frames. A lighter check for new content kinds has to say which witnesses that kind
+  needs, as LLM-BUILDER-0 already asks, and may not become a second, weaker verifier beside replay.
+- **Merging branches.** A merge is an explicit, typed, anchored event, or it is refused. There is no silent merge.
+- **The charter.** The first text says this boundary should become a charter-level rule. The ratified charter block
+  is not edited. The rule stands beside it in the README as declared, and ratifying it is the owner's to do.
+
 **What it would stand on, already built.** Each of these is a rung with rows, and none was built for a model.
 WORKSHOP-1's session has `propose` and `commit`: a proposal is validated against the current authority and writes
 nothing, and a refused one leaves the log and the head unchanged. WORKSHOP-0 refuses a record whose projection is
@@ -708,6 +817,9 @@ Everything above obeys the same discipline that carried the render campaign:
 - **The model may propose; only the verifier may admit** (declared, LLM-BUILDER-0). Anything that suggests a change —
   a key, a mouse, a script, one day a model — reaches the world only as a typed event the session validates and
   replays. Verðandi does not execute what a proposer writes; it records what the verifier admits.
+- **The gate certifies the program; content is admitted, not gated** (declared, 2026-10-03). The engineering gate
+  runs when the program changes. Content, which today means a session's events, is admitted by checks on the
+  artifact itself and never invokes the gate. A change to the laws content runs under is a program change.
 - **Preregister the method before the number,** including the failure condition and the null. Measure before
   optimize; re-measure after. Correctness on the gate, speed off it. The record stores numbers; the reading
   interprets.
