@@ -4205,7 +4205,7 @@ look looked. `mouselook-fence` goes red if a raw input message is not counted be
 captured relative horizontal count reaches the loop. On the host: an observation that does not add up
 (`raw_messages` is not the sum of `unread`, `absolute`, `still`, `reports` and `dropped`).
 
-## ADMIT-0 — the admission seam: a proposal in VRDNP1 recognized or refused, and admitted as one ordinary edit with its envelope beside it (preregistered and built; not yet run on the host)
+## ADMIT-0 — the admission seam: a proposal in VRDNP1 recognized or refused, and admitted as one ordinary edit with its envelope beside it (preregistered and built; the gate passes on the host, and the first admission was made and sealed there)
 
 **Why.** The owner declared that the gate certifies the program and that content is admitted, not gated, and ruled
 that this is what the route builds towards. ADMIT-0 is the first rung of it: the seam through which a change to the
@@ -4309,13 +4309,53 @@ the world's changes.* The courts, the research, his review and the registration 
 - **The Windows build is type-checked here and not run.** The seam has no window code; `shell/win32.rs` is not
   touched.
 
-**What the host run is for.** `shell admit` is windowless and is the same program on the host as on the gate. The
+**What the host run was for.** `shell admit` is windowless and is the same program on the host as on the gate. The
 host witness is one admission to a session sealed there: the proposal recognized, the child saved and verified by
-the shell, verified by the workshop built there, and sealed by `verify/livesession.py` citing this entry.
+the shell, verified by the workshop built there, and sealed by `verify/livesession.py` citing this entry. This was
+written before the run.
 
-**Grade.** DECLARED: the registered conditions. ESTABLISHED (by rows, on every gate): the reader, single-parser,
-anchor, capability, idempotency, crash and replay courts over the gate's own proposals and the session's mock, and
-the fence. NOT_MEASURED: anything on the host; what an admission costs; durability under power loss.
+**On the owner's host (2026-10-03): the gate, and the first admission.** The owner applied the build, with the two
+docs commits before it, ran the gate, pushed (`8e3f13b`), admitted one proposal to a session sealed on that host,
+offered it a second time, sealed the result (`3f3e0e2`) and pushed.
+
+- **The gate.** `GATE PASSED`, 218 rows, none failed and none skipped, rowset `0b423b279a40c85c`: the same rows and
+  the same rowset as here. The nine `admit-*` rows ran there on Windows, with the shell built there.
+- **The parent.** The session of the second `look-window` run, sealed there earlier: 1,832 events, head
+  `b28e42be62c4…`, ending at a free heading at cell 23,27.
+- **The proposal.** 329 bytes of `VRDNP1`, anchored to that head, opening the cell 20,27, two cells ahead of where the
+  session ended. Its bytes were produced in the build container by a short script, from the four lines `shell
+  admit-anchor` printed for a copy of the session. No model generated it from a prompt, and nothing is claimed about
+  one. The grant on the command line: open, cells 1,1 to 46,30.
+- **The admission.** Recognized (proposal `8e54172b6f72…`, digest `f15fbb474fa4…`). Admitted as `cell:20,27,.`,
+  head `b28e42be62c4…` to `a0861e0e837b…`. All 1,775 free-heading frames of the log recomputed by the reference
+  before the save, all equal. Saved and verified by the shell: 1,833 events, run `1a1039bef21-63c0`.
+- **The head was written down before the run.** The same bytes were admitted here first, to a copy of the session
+  read from the owner's folder, and gave the head `a0861e0e837b5593…`. The host gave the same head. Its saved data
+  block is the one saved here, byte for byte (375,430 bytes), across two machines and two operating systems. The
+  envelope holds nothing of the run that made it.
+- **The same bytes, offered again.** To the child: `ADMIT-ANCHOR`, naming both heads, no rebase. One record in the
+  host's refusal log, with both heads in its context; one line in its run ledger, ended 2 with one refusal. No run
+  directory: the sessions folder's last entry is still the child's.
+- **The parent is as it was.** Its bytes on the host hash to what the child's lineage recorded when it loaded them
+  (`6d60d51c…`).
+- **The envelope.** The language, the proposer's id, the digest (equal to the SHA-256 of the proposal file), this
+  build's renderer and bearing identities, the two heads, and the grant's line `allow=open cells=1,1,46,30
+  classes=-`. It is in the journal's last record and in the saved item.
+- **Sealed.** `shell/attest/livesession-DANIELDILLBERG-a0861e0e837b.json`, citing LIVE-SESSION-0 and ADMIT-0. Its
+  reading: 1,833 events, 14 moves, 1 edit, 1,761 looks, one of the edits admitted through this seam, ended by
+  admission, a continuation of the session whose head is `b28e42be62c4…`. The workshop built on the host verified
+  the saved file there and counted one envelope; the workshop built here verifies the same file to the same head.
+- **What the run ledger says of the two runs.** 44.2 seconds between the start and the end of the admission, and
+  16.3 seconds for the refused one, by the ledger's wall-clock stamps. One run each. It is recorded and nothing is
+  claimed from it. It is what the registered limit says: an admission loads, certifies and reads back the whole
+  session, and a stale proposal is refused only after the session it names has been loaded and replayed.
+
+**Grade.** DECLARED: the registered conditions. ESTABLISHED (by rows, on every gate, here and on the host): the
+reader, single-parser, anchor, capability, idempotency, crash and replay courts over the gate's own proposals and
+the session's mock, and the fence. MEASURED (on the host, sealed): one admission to a session sealed there, its
+head the one computed here beforehand and its data block byte-identical to the one saved here; the same bytes
+refused as stale against the child, leaving nothing. OBSERVED: the run ledger's two intervals. NOT_MEASURED: what an
+admission costs; durability under power loss; anything about a model.
 
 **does_not_show.** That a model can write a proposal worth admitting, or any safety property of a system that
 includes a model: no model is in the tree and the gate wrote every proposal here. That a later verifier can
@@ -4380,7 +4420,7 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   semantics come from Urðr), the witnesses a lighter check must still ask for, and merges as explicit anchored
   events. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 - **ADMIT-0 (the admission seam — chosen in the owner's court of 2026-10-03; registered and built, its own section
-  above; not yet run on the host).** The
+  above; the gate passes on the host and the first admission is sealed there).** The
   first rung towards the design-event stream. Windowless: a typed, anchored proposal read from a file is refused or
   admitted, and an admitted one is an ordinary session event in today's vocabulary (a cell edit, a tile edit) with
   its envelope beside it. A stale anchor is refused, always, naming both heads; rebase is a later rung. No model is
