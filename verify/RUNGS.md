@@ -3823,7 +3823,7 @@ loses a configuration change. `simtick0a-hold` goes red if two repeats walk in o
 a repeat of another key acts, or a held walk's data differs from the same walk pressed. `simtick0a-fence` goes red if
 the event folds or touches the world, if the tick run keeps its own sensitivity, or if a window reads a mouse.
 
-## MOUSE-LOOK-0 — a real mouse on the locked tick rules: the live editor with mouse-look (preregistered and built; the gate passes on the host; the window ran there and its keys walked on the tick, but no mouse report reached the loop, so a look is not shown yet)
+## MOUSE-LOOK-0 — a real mouse on the locked tick rules: the live editor with mouse-look (preregistered and built; the gate passes on the host; on the second host run, under MOUSE-LOOK-0a, a real mouse turned the camera: 1,761 looks, every free-heading frame the reference's)
 
 **Why.** The fourth rung of the owner's ladder: real mouse → 64 Hz accumulator → command → the existing live loop.
 The rules were locked windowless first (SIM-TICK-0, SIM-TICK-0a), and they are not proved again here. This rung adds
@@ -4027,12 +4027,13 @@ with SIM-TICK-0a's host note (`422388c`); then the build (`8041070`).
 
 **Grade.** DECLARED: the entry point, the drain-time clock rule, capture as shell state, the picture alone at a free
 heading, the two sampling periods. ESTABLISHED (gate, in the build container and on the owner's host): the six rows
-above, over the mock. OBSERVED (one run on the host, not sealed yet): the window, the capture taken and released, key
-presses stamped by the window's clock and applied on the tick, the composite read back exact, the save. NOT_MEASURED:
-a look made by a real mouse; a focus loss; the picture at a free heading on the host; the sample on the host; latency;
-what a look costs phase by phase.
+above, over the mock. MEASURED (the first host run, sealed: `livesession-DANIELDILLBERG-e9dafb482675.json`): the
+window, the capture taken and released, key presses stamped by the window's clock and applied on the tick, the
+composite read back exact, the save; no look. OBSERVED (the second host run, under MOUSE-LOOK-0a, recorded in that
+section): a real mouse making looks, a focus loss with no session event, the picture at a free heading, the samples
+and the save's certification. NOT_MEASURED: latency; what a look costs phase by phase.
 
-**does_not_show.** That mouse-look works on the host: the window ran, and no mouse report reached its loop. Any latency: by design an input is
+**does_not_show.** Any latency: by design an input is
 applied up to one tick and one composition after it is drained, and what that costs on the screen is the next rung's
 measurement. When the device moved: an input's tick is the tick it was drained in. That a run was right because its
 samples were equal: one frame in 64 is sampled, and only the save's recomputation is exhaustive. That the screen
@@ -4048,7 +4049,7 @@ refused by its first sample. `mouselook-fence` goes red if a clockless entry poi
 is read anywhere else, the ticker appends an event, or the window section calls the session or a renderer. On the
 host: a look that turns the wrong way, a walk that Alt-Tab changes, or a saved session the workshop refuses.
 
-## MOUSE-LOOK-0a — the timing limit's wording corrected; a run's end and the window's observation, from the first host run (preregistered and built; an amendment to MOUSE-LOOK-0; held on the mock, the window not yet run again)
+## MOUSE-LOOK-0a — the timing limit's wording corrected; a run's end and the window's observation, from the first host run (preregistered and built; an amendment to MOUSE-LOOK-0; the gate passes on the host, and the second host run is the rung's execution witness)
 
 **Why.** Two things. The owner ruled that a sentence in MOUSE-LOOK-0's entry be corrected, not only counted around.
 And the first host run of `shell look-window` found two things the mock had not: the saved file mislabelled how the
@@ -4116,18 +4117,82 @@ tick or the loop changes, and nothing is optimized from the run.
   ticks closed at a composition. The tick applied as the run ends has frames too, and they are sampled like any
   other; the twin now counts them.
 
-**What the next host run is for.** The observation line. If `raw_messages` is zero after the mouse has been moved,
-raw input is not arriving at the window, and the cause is in the registration or the device. If it is not zero and
-`unread` is, the reads failed, and `unread_size` says what they returned. If `reports` is not zero, looks were made,
-and the run is the rung's execution witness. Whichever it is, the run is recorded.
+**What the next host run was for.** The observation line, written before the run. If `raw_messages` is zero after
+the mouse has been moved, raw input is not arriving at the window, and the cause is in the registration or the device.
+If it is not zero and `unread` is, the reads failed, and `unread_size` says what they returned. If `reports` is not
+zero, looks were made, and the run is the rung's execution witness. Whichever it is, the run is recorded.
+
+**On the owner's host (2026-10-03): the gate, the first session sealed, and the second run of the window.** The
+host note and the registration were pushed first (`82e7799`), then the build (`2c4c155`).
+
+- **The gate.** `GATE PASSED`, 209 rows, none failed and none skipped, rowset `a15345720a81009c`: the same rows and
+  rowset as in the build container.
+- **The first run's session, sealed.** `shell/attest/livesession-DANIELDILLBERG-e9dafb482675.json` (`82b1627`). Its
+  reading says what the file carries: run under the tick source, holding no look, ended `closed`.
+- **The second run.** `shell look-window`, 5,470 ticks long by the window's clock. A real mouse turned the camera.
+  - *The observation adds up.* 14,867 raw input messages arrived: 13,931 relative reports with a horizontal count,
+    all admitted, and 936 with none. None was unread, none absolute, none dropped.
+  - *The looks.* The 13,931 reports became 1,761 looks, at most one in a tick and always the first event of its
+    tick, none of zero. A tick's counts ran from −939 to 457. Every multiplier from 1 to 14 and both steps were used:
+    57 sensitivity events, and 28 presses of PgDn at multiplier 1 refused, each one record and no event.
+  - *The walk.* 14 moves, none blocked, with A strafing. W held: 4 repeats walked, one in each of ticks 333, 334, 336
+    and 338, never two in a tick. 20 repeats of other keys were ignored.
+  - *The focus.* The window left the foreground once and came back: 2 changes, 404 compositions without the
+    foreground, the mouse captured twice and released twice. While it was away Windows delivered nothing to it
+    (dropped 0, dropped keys 0), so the section's own drop was not exercised here; it is exercised on the mock. The
+    log holds looks, moves and sensitivity changes and nothing else (1,832 = 1,761 + 14 + 57). The stretch away lies
+    inside ticks 1,064 to 1,560, the session's longest stretch with no event and the only one long enough to hold
+    404 compositions, so no event carries a tick inside it.
+  - *The picture.* 4,649 compositions: 4,541 presented the session's own picture, and 108 the composite, before the
+    first look. 62 screen readbacks, the first composition and every 75th after it, none differing.
+  - *The reference.* 27 samples during the run, one per 64 free-heading frames, none differing. At the save the
+    reference recomputed all 1,775 free-heading frames, all equal.
+  - *The end.* Esc at tick 5,469. The mouse was released, then the session was certified, saved and verified: 1,832
+    events, head `b28e42be62c4…`. Both the loop's output and the live block say `escape`.
+  - *The beat, as counted.* 4,649 compositions against 5,470 ticks, 2,852 of them repeating the picture before them,
+    and a span of 6. The loop fell behind the tick schedule. Nothing is concluded from that and nothing is changed
+    because of it.
+- **The owner's report of the run.** The look worked, and only horizontally. That is the scope this rung registered,
+  not a fault in it. The camera carried from `urdr-oracle-2` turns in heading alone, the session's look is a change
+  of heading, and the window hands the loop the horizontal count and nothing else. The 936 raw reports counted as
+  `still` are the movements with no horizontal part: read, counted and not used. Looking up and down is not built.
+  No frozen oracle holds a camera that pitches, so there is nothing yet to hold such a renderer to; as with the
+  turning camera (VIEW-YAW-0), it would be earned in Urðr first. Whether it goes on the route is the owner's to rule.
+- **The host's session replays here.** Read from the owner's folder, the saved file is verified by the workshop built
+  in the container: its reference recomputed all 1,775 free-heading frames and reached head `b28e42be62c4…`. Those
+  witnesses were made by the production tread on the owner's Windows host and reproduced by the reference kernel on
+  Linux. The record is the owner's to seal on his host.
+
+**Against the eight points, for the second run.**
+
+| # | The point | The second run |
+|---|---|---|
+| 1 | A real mouse produces real look events | Shown: 13,931 raw reports, 1,761 looks. |
+| 2 | A focus loss produces no session event | Shown: the window left the foreground and the log holds no event of any kind for it, and none with a tick inside the stretch. |
+| 3 | Returning focus recaptures | Shown: captured twice, and looks follow the return. |
+| 4 | Esc releases before the save | Shown: the release is printed before the certification and the save; ended `escape`. |
+| 5 | The saved session certifies completely | Shown: 1,775 of 1,775 free-heading frames equal under the reference, on the host and again in the container. |
+| 6 | No overlay at a free heading | Shown at the readbacks: the screen is the session's picture alone, one composition in 75. |
+| 7 | The live render and the reference agree | Shown: 27 samples during the run and all 1,775 frames at the save. |
+| 8 | No latency claim | None is made. |
+
+**What the second run does not decide.** Why the first run had no mouse report. In the second run every raw input
+message was read (unread 0), under the amended read. The section records the size of a read that fails and not of one
+that succeeds, so the record cannot say whether the earlier read, which required an exact size, would have admitted
+the same messages. Whether the mouse was moved in the first run is not in its record either.
 
 **Grade.** DECLARED: the corrected wording, the rule for the end of a run, the observation's counters. ESTABLISHED
-(gate, in the build container): the two rows above, and MOUSE-LOOK-0's six under the amended mock. NOT_MEASURED:
-everything about the window after this change; why the first run had no mouse report.
+(gate, in the build container and on the owner's host): the two rows above, and MOUSE-LOOK-0's six under the amended
+mock. OBSERVED (the second host run; its session saved and verified there, verified again here, not sealed yet): a
+real mouse making looks on the tick, the focus lost and regained with no session event, the session's picture on the
+screen, the reference agreeing at every sample and every frame, the end recorded as `escape`. NOT_MEASURED: latency;
+what a look costs phase by phase; why the loop fell behind the tick schedule; why the first run had no mouse report.
 
 **does_not_show.** Why no mouse report reached the loop in the first run, or whether the mouse was moved in it. That
-the changed read fixes anything: nothing here shows the old read was what failed. That a span above 1 costs anything
-on the screen. Anything about the window section beyond its types: it has not run since it changed.
+the changed read fixed anything: nothing shows the old read was what failed. That a span above 1 costs anything on
+the screen, or how often the loop fell behind. That the section's own drop works on the host: Windows delivered
+nothing to drop. That the screen showed the picture at every composition: one in 75 is read back. Anything about
+looking up or down: vertical motion is counted and never used. Anything on another host or with another mouse.
 
 **Falsifier.** `mouselook0a-ending` goes red if a run its Esc ended is recorded as closed, if the composition that
 drains the Esc is presented, if an input is lost or applied twice at the end, or if the sealer says a session with no
