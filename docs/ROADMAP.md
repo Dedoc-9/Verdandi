@@ -102,6 +102,9 @@ richer edits     vocabulary on the one live editor, not new pathways
 walking in a live, authorable world
       ⋮
 LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03), and by the owner's ruling what the route builds towards: the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
+ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by the owner's order next after MOUSE-LOOK-0: the admission seam. One strict recognizer for a line language whose accepted bytes are canonical (VRDNP1), an anchor refused when stale, a scope the admitter grants, an admitted proposal an ordinary session event. The gate certifies the machine; ADMIT admits the world's changes — not registered, nothing built
+      ↓
+READER-COURT-0 → DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -789,6 +792,272 @@ anything useful here; that any verifier law beyond today's edit validation exist
 commit envelope work; any safety property of a system that includes a model. When it is seated it registers its own
 hypothesis, failure condition and limits, like every rung.
 
+### ADMIT-0 — the admission seam · **chosen** (the owner's court, 2026-10-03), its hardenings ruled in his review and a second court of the same day; not registered, nothing built
+The first rung towards the design-event stream above. It was chosen in court, then researched, then reviewed by the
+owner, then taken to a second court on the questions the review left, all before any registration. This section
+records the first court, what the research found, one observation made here while checking it, the review, and the
+second court. Nothing is registered and nothing is built. The registration is its own commit and comes next.
+
+**The court (2026-10-03).** Three rulings.
+
+- **The first rung is the admission seam.** Windowless. A typed, anchored proposal read from a file is refused or
+  admitted by a verifier, and an admitted one becomes an ordinary session event with its envelope beside it. Only
+  today's vocabulary: open or close a cell, repaint a tile class. No model in the tree. No gate at content time.
+- **A stale anchor is refused, always.** The refusal names both heads. Rebase is a later rung. LLM-BUILDER-0 says a
+  stale anchor is "rebased explicitly or refused"; this rung takes the second half only.
+- **The charter: beside it for now.** The ratified block is not edited.
+
+**What the research found.** The owner asked for a varied search for hardenings. These are outside sources and
+attributed hypotheses, not claims of this repository; the links are under Sources below.
+
+- **Recognition.** LangSec's rule is that input is a formal language, recognized completely before anything acts on
+  it, kept as simple as the job allows, and read by equivalent recognizers at every endpoint. Bishop Fox's survey of
+  JSON parsers found them disagreeing on duplicate keys, on invalid Unicode (two different keys collapsing into one),
+  and on numbers too large to represent, and advises a fatal error for each and never re-serializing input that was
+  already validated. RFC 8259 itself only says names should be unique and calls behaviour unpredictable otherwise
+  (section 4), and says the same of unpaired surrogates (section 8.2).
+- **Binding.** A 2026 preprint on canonicalization failures (Brömme) names the class: a digest binds bytes while the
+  system compares meanings, so one meaning with two encodings, or one encoding with two meanings, breaks the binding.
+  Its rule is one accepted form, with the others refused and not normalized. Trail of Bits adds that hashed fields
+  must be encoded unambiguously and that digests with different purposes carry different tags. RFC 8785 (JCS) gets a
+  canonical JSON only by first requiring unique names and bounded numbers.
+- **Authority.** The agent design-patterns paper (IBM, Invariant Labs, ETH Zurich, Google, Microsoft) and CaMeL
+  (Google DeepMind) both constrain the system and not the model: what a model emits selects among actions a
+  deterministic layer already permits, and never decides them. The de Bruijn criterion from proof checking is the
+  same shape: anything may propose, and a checker small enough to inspect decides. JSONSchemaBench found
+  schema-constrained decoding enforced unevenly across frameworks, and conformance to a schema is not validity
+  against a world.
+- **Agreement between implementations.** Fluffy (OSDI '21) found consensus bugs in Ethereum's most used client by
+  running independent clients on the same adversarial inputs and comparing results. Independent implementations are
+  an oracle when they are actually run against each other.
+- **Anchors.** EventStoreDB appends against an expected version and refuses a mismatch, and its documentation says
+  idempotence is not guaranteed when the expected version is waived. An event-store survey gives the same advice on
+  conflict: refuse, and let the caller decide again from the new state.
+- **Crashes.** ALICE (OSDI '14) found 60 crash vulnerabilities in 11 applications, among them Git, Mercurial and
+  LevelDB. The recurring mistakes were assuming an append is atomic, assuming operations persist in order, and not
+  flushing the directory. On Windows, Microsoft documents `MOVEFILE_WRITE_THROUGH` as a flush promise for a move
+  performed as a copy and delete, says nothing there about atomicity, and marks `ReplaceFile`'s write-through flag
+  as not supported.
+- **Generated worlds.** A 2025 level-generation paper (Xu et al.) has the model write constraints in a small
+  description language and a solver place the level, and still reports that not every generated level is valid in
+  simulation. Agentic PCG shows its agents repeating failed edits before changing approach. Both separate proposing
+  from placing, and neither repairs its way to a guarantee.
+- **Not acted on.** Microsoft's raw-input documentation recommends buffered reads for high-frequency mice. The
+  owner's ruling stands that nothing is optimized from the first host runs; this belongs to the latency rung.
+
+**One observation made here (OBSERVED, outside the gate).** The saved form is read by a small JSON reader in
+`shell/playback.rs`, byte-identical in `workshop/sessionwalk.rs` and `workshop/session.rs`. The sealer,
+`verify/livesession.py`, reads the same files with Python's `json.loads`. The Rust reader was compiled alone from
+its source lines and both were given 19 hostile inputs.
+
+| input | the Rust reader | Python's `json.loads` |
+|---|---|---|
+| two equal keys | accepts, keeps the last | accepts, keeps the last |
+| bytes after the value | accepts | refuses |
+| a second object after the first | accepts the first | refuses |
+| a leading zero (`007`) | accepts as 7 | refuses |
+| a string ending at a backslash | panics | refuses |
+| a `\u` escape cut short | panics | refuses |
+| an escaped surrogate pair | accepts as two U+FFFD | accepts as one character |
+| two keys differing in a lone surrogate | accepts as one key | accepts as two keys |
+| a raw newline in a string | accepts | refuses |
+| `\b` and `\f` escapes | refuses | accepts |
+| an integer beyond 64 bits | refuses | accepts |
+| a fraction (`1.5`) | refuses | accepts |
+| `NaN` | refuses | accepts |
+| a lone minus | refuses | refuses |
+| empty input | refuses | refuses |
+| a byte-order mark | refuses | refuses |
+| a NUL byte in a string | accepts | refuses |
+| 20,000 nested arrays | accepts | raises a recursion error |
+| 2,000,000 open brackets | aborts on stack overflow | raises a recursion error |
+
+The two differ on 12 of the 19. They agree on four, and on one of those, the duplicate key, both accept silently.
+On the other three the Rust reader does not return a verdict at all: two panics and one abort.
+
+**does_not_show.** That any sealed record or saved session is wrong. The shell writes the saved form itself, both
+seal checks pin the file's last bytes, and the heads are recomputed by replay. The reader was run alone, not
+through any command of the shell, so how a panic surfaces there was not observed; no panic hook was found in
+`shell/`. The harness is not in the tree and no row holds any of this. It is where the reader court below starts.
+
+**The owner's review (2026-10-03).** A reply to the research, brought by the owner and recorded at his instruction.
+Its outside citations are its own and are attributed the same way. Its first line:
+
+> **ADMIT-0 is the right first rung, but its first hardening should be parser unification, not merely a stricter
+> JSON grammar.**
+
+```text
+proposal bytes ──► STRICT RECOGNIZER ──► typed proposal ──► ANCHOR CHECK ──► BOUNDED VERIFIER ──► DESIGN EVENT ──► SESSION
+                        │ refuse                                │ stale: refuse
+```
+
+1. **One recognizer.** *Don't make three independent components parse the proposal language.* One admission parser
+   turns the bytes into a typed proposal, and the verifier and the sealer receive that typed object and never the
+   text. Three parsers that must agree is a permanent differential-parsing problem; one parser is one recognition
+   boundary. Independent implementations stay as test oracles only.
+2. **A language smaller than JSON.** Not "a JSON parser with a lot of security rules" but *a tiny world-design
+   language with a formally bounded grammar*: an envelope and a bounded list of operations from a fixed vocabulary
+   with bounded fields. The model's prose is metadata. The operation is what bears authority. The printable-ASCII,
+   no-escape, no-leading-zero rules from the research are not locked as the architecture; the accepted representation
+   of a purpose-built language is already canonical. JCS is not made the heart of it: *You control the admission
+   language.*
+3. **The anchor binds more than the head.** Program identity, renderer identity, session head and proposal schema.
+   A proposal made against one head is never applied to another: no automatic rebase, no "close enough", no semantic
+   merge hidden inside admission.
+4. **Three identities.** `proposal_id` is this attempted admission. `proposal_digest` is these exact bytes. The
+   session head is the authority it was proposed against. An admission record carries the id, the digest, the
+   program and renderer identities, the parent head, the admitted event's digest and the resulting head.
+5. **Typed refusals.** Not one "refused" but a reason: parse, size, depth, duplicate, unknown field, schema, range,
+   anchor, program, capability, authority, duplicate proposal, I/O. A creator sees that an edit was not applied
+   because the world moved while the model was writing it, and not that "AI failed".
+6. **Proposal and admission are different objects.** The proposal is disposable. The design event is authoritative.
+   Once admitted, the model's prose is irrelevant to authority.
+7. **No filesystem capability for a model.** Not `write_file`, `execute`, `modify_source` or `shell`. A model gets
+   `world.query` and `world.propose`, and perhaps later `world.preview` and `world.branch`. It describes a
+   transformation, and only Verðandi turns one into an admitted event.
+8. **The preview branch comes after admission works.** The order: `ADMIT-0`, then `DESIGN-EVENT-0`, then
+   `LIVE-AI-EDIT-0`, then `BRANCH-0`. First prove prompt, proposal, admission, session, world, frame; then make that
+   path disposable.
+9. **Crash consistency belongs inside ADMIT-0.** After a death anywhere in an admission the session is exactly one
+   of NOT ADMITTED or ADMITTED, never a half-state.
+10. **Kill every boundary.** Proposal received, parsed, verified, anchor accepted, event materialized, event
+    durable, session head durable, admission acknowledged. The process is terminated at each, and a restart finds
+    the old head or the new head, never "I don't know".
+11. **Capability bounds.** A proposal carries or inherits a scope: an authority, a region, a set of operations. An
+    operation outside it is refused by the verifier however well formed it is. The enforcement sits below the model
+    and is not a sentence in a prompt.
+12. **Provenance attaches to the result.** An admitted event keeps its parent head, the proposal's digest, the
+    intent text's digest, the proposer, the scope, the operation's digest, the resulting authority's digest, the
+    renderer identity and a reference witness, so what changed, why, from which prompt and what the renderer showed
+    are answered from the record and not from a model's memory.
+
+**The courts the review registers with the rung.** They are part of ADMIT-0 and not rungs before it.
+
+- **A. Reader court.** A hostile corpus: duplicate keys, unknown keys, trailing data, malformed UTF-8, invalid
+  escapes, leading zeros, oversized numbers, excessive depth, oversized strings, an oversized proposal, truncated
+  input, empty input, wrong types. Every one ends in a coded refusal and never in a panic.
+- **B. Single-parser court.** The production parser produces the sole typed representation. Independent parsers
+  are test oracles.
+- **C. Anchor court.** The current head equals the proposal's parent head, or the proposal is refused. No rebase.
+- **D. Capability court.** Operations outside the permitted vocabulary or scope all refuse.
+- **E. Idempotency court.** The same proposal twice: the first is admitted, the second refused.
+- **F. Crash court.** Termination at every admission boundary; recovery yields the old head or the new one.
+- **G. Replay court.** The admitted event reproduces the exact resulting authority from the sealed parent.
+
+The sentence the review locks:
+
+> **The gate certifies the machine. ADMIT admits the world's changes.**
+
+One correction the review makes to the research as pasted: `ReplaceFile` with its write-through flag is not to be
+cited as the Windows durability mechanism, because Microsoft marks that flag unsupported. Checked here against
+Microsoft's page: it does. The tree never calls `ReplaceFile`. Its replace is `MoveFileExW` with
+`MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH` (`shell/livesession.rs`), which is the primitive the review
+names.
+
+**The second court (2026-10-03), for the registration.** Held after the review, on the four questions it left
+for the registration. The owner's rulings:
+
+1. **The proposal language is a line language, locked for ADMIT-0.** In his words, *the proposal itself becomes a
+   canonical byte artifact, rather than something that must be canonicalized after parsing.* The registration
+   freezes the field vocabulary, the order, the line count, the separators and the integer domains. No optional
+   lines, no arbitrary ordering, no nesting, no quoted strings, no escaping, no whitespace normalization, no
+   Unicode, no duplicate fields (a field occurs once, at its registered position), nothing before the first line and
+   nothing after the last, and LF (`0A`) the only line terminator. There is no parse, normalize, canonicalize and
+   hash; there is recognize or refuse, and
+
+   ```text
+   proposal_digest = SHA256(exact proposal bytes)
+   ```
+
+   - **Not a world language.** *ADMIT-0 should admit the admission envelope*, with a small registered vocabulary
+     for its operation, target and value. It does not try to encode the future landscape-edit language.
+   - **Versions.** The first language is `VRDNP1`, frozen. A later one is a new version (`VRDNP2`) with
+     deliberately different semantics, never a change to this one. That keeps the edit language from growing into
+     an unbounded small programming language.
+   - **The model writes the language and does not interpret it.** Natural language, then a line-language proposal,
+     then admission, then a design event, then the world; never natural language, then arbitrary JSON or code,
+     then an interpreter.
+   - **Why not the others.** A strict JSON subset brings duplicate keys, escapes, Unicode, numbers, nesting and
+     canonicalization back for no architectural gain. A binary record is a good storage form and the wrong proposal
+     form: it puts an encoder between the model and admission, which is another trust boundary in front of the
+     seam. Binary may still become an internal or session representation later.
+   - **What the registration must fix.** *The exact ABNF-like grammar, allowed tokens, integer ranges, byte/line
+     limits, and one worked canonical byte example.* Changing any of them afterwards is a new language version and
+     not an implementation change.
+   - **His sketch, recorded as a sketch.** `VRDNP1`, then `program=`, `renderer=`, `parent=`, `proposal=`,
+     `scope=`, `op=`, `target=`, `value=`, one per line. It is "something along these lines"; the registration
+     fixes the actual lines. Two things in it meet other rulings: its `program=` line meets ruling 4 below, which
+     mints no program identity, and its example operation (`TERRAIN_RAISE` on `west_cliff`) is beyond today's
+     vocabulary, which is a cell opened or closed and a tile class repainted.
+2. **The saved-form reader is hardened in its own rung, after ADMIT-0: `READER-COURT-0`.** The two are different
+   trust boundaries. ADMIT-0 establishes a new language and its recognition rules; the saved-form reader is old
+   infrastructure with an observed disagreement surface, and joining them would make the first admission rung carry
+   an unrelated migration. `READER-COURT-0` gives the shell's reader, the workshop's and the sealer's one coded
+   verdict on the hostile corpus and closes the observed cases by name: trailing bytes and a second object,
+   duplicate keys, malformed escapes, a `\u` cut short, a string ending at a backslash, excessive nesting and
+   stack exhaustion, the disagreement on accepted numbers and strings, and the surrogate collision. No panic and no
+   process abort. The affected reader files are re-pinned once, in that rung, and not dragged through ADMIT-0's
+   development. *First we create the new admission seam; then we harden the legacy persistence seam it must
+   coexist with.*
+   - **The order he locks.** MOUSE-LOOK-0, the LLM-BUILDER-0 declaration, `ADMIT-0`, `READER-COURT-0`,
+     `DESIGN-EVENT-0`, `LIVE-AI-EDIT-0`, then branch and preview. This puts ADMIT-0 next after MOUSE-LOOK-0. Where
+     the presentation and latency measurement, which the route above still lists, sits against this order was not
+     ruled in this court.
+3. **The admitter grants the scope.** The admit command takes the grant from whoever runs it. A proposal can only
+   do less. The grant is recorded in the envelope, and the capability court tries to exceed it.
+4. **The anchor's identity is what a session already records.** The renderer identity, the bearing identity, the
+   session head and the proposal language's version. Nothing new is minted. A proposal goes stale when the head
+   moves or the rendering sources change, and not when an unrelated file of the shell changes. The gate's rowset is
+   not an anchor: it would tie content time to the gate.
+
+**Where the review meets what stands.** Read against the tree. The second court above has since ruled on four of
+these; the rest are for the registration to settle.
+
+- **There is no proposal boundary yet.** The review speaks of the current proposal boundary having shown parser
+  disagreement and crashes. What was observed is the saved-form reader, alone, on bytes no command was given. It is
+  the reason to build the proposal's recognizer new and strict. It is not a defect found in an admission path,
+  because none exists.
+- **The gate.** The review's "PowerShell gate" is `verify/verify.py`, which the owner runs from PowerShell.
+- **One recognizer, and the three verifiers of a saved session.** A saved session is verified today by three
+  programs that each read the saved form: the shell, the workshop and the sealer. The review's rule is about the
+  proposal language, and it holds only if nothing downstream ever needs the proposal's text again. So what is saved
+  beside the admitted event is typed values the shell writes in its own saved form, and the digest of the
+  proposal's bytes, which any verifier recomputes over bytes without parsing them. Embedding the proposal's text
+  for the other verifiers to parse again, which was the draft before the review, is dropped. The three readers of
+  the saved form remain, and their observed disagreement is closed in `READER-COURT-0`, after this rung (the second
+  court, ruling 2).
+- **The event ADMIT-0 admits.** By the court it is an ordinary session event in today's vocabulary: a cell edit or
+  a tile edit, with the same head the same edit made by a key would give. A design-event kind of its own is
+  `DESIGN-EVENT-0`'s business, not this rung's.
+- **Scope.** A scope the proposal writes for itself bounds nothing. It bounds something when whoever admits grants
+  it, and a proposal can only ask for less: ruled so (the second court, ruling 3). The world has no regions (see
+  the section above), so today a scope can name operation kinds, cells and tile classes and nothing larger.
+- **Identity.** The tree has a renderer identity (a digest over the render sources compiled into the shell) and a
+  bearing identity, both recorded in a session's live block. It has no single program identity; the gate's rowset
+  names a gate outcome, not a binary. Ruled (the second court, ruling 4): the anchor is what a session already
+  records, and no program identity is minted.
+- **`proposal_id`.** If the proposer chooses it, it is as untrusted as the rest of the proposal. Refuse-always
+  already makes a second admission of the same bytes stale. The registration says who assigns the id and what a
+  duplicate-proposal refusal compares.
+- **What a crash court can show.** Terminating the process shows what a restart finds after the process dies. It
+  does not show a power loss: bytes written and not flushed survive a killed process in the system's cache.
+  Microsoft's page promises the write-through flush for a move performed as a copy and delete and is silent on
+  atomicity. The court's claim is worded as process death; durability under power loss stays DECLARED from the
+  platform's documentation and NOT_MEASURED.
+- **The names after ADMIT-0.** `DESIGN-EVENT-0`, `LIVE-AI-EDIT-0` and `BRANCH-0` are the review's order. Each is
+  still chosen in its own court. The four rules at the end of the section above stand: commit-only meets
+  `BRANCH-0`, and earn-the-authority meets every example the review uses (cliffs, a valley, terrain, materials,
+  populations), none of which the frozen oracle certifies.
+- **Refusal codes.** The review's list gives the reasons. The registration gives them codes in the tree's form and
+  says that a refused admission writes nothing to the session and is recorded like any other refusal.
+
+**Grade.** DECLARED: the first court's three rulings, the review and its seven courts, the second court's four
+rulings. OBSERVED: the 19-input table,
+here, outside the gate. Attributed and not claimed: everything under "What the research found". Nothing is
+ESTABLISHED or MEASURED by this section. **does_not_show.** That a strict recognizer exists; that any of the seven
+courts holds; that a model can write a proposal worth admitting; any safety property of a system that includes a
+model. ADMIT-0 registers its own hypothesis, failure condition and limits before a line of it is built.
+
 ### GAME-0 — Urðr's game layer as frozen evidence · **landed**
 The seventeen discrete game-layer slices (`gamegen` … `cue`), their corpora, suites, briefs and the D24/D25 boundaries,
 carried verbatim from `urdr-oracle-1` into `oracle/game/`, each file listed with its sha256 and Urðr git blob id, and
@@ -847,3 +1116,27 @@ its more interesting test: proving that a *living, editable world* can be as hon
 - [Conflict-free replicated data type — Wikipedia](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) and
   [Delta-state replicated data types (Almeida et al.)](https://members.loria.fr/CIgnat/files/replication/Delta-CRDT.pdf) (MERGE-0's convergence theory)
 - [Scoped threads (`std::thread::scope`) — Rust](https://doc.rust-lang.org/std/thread/fn.scope.html) (structured concurrency; see [`GHOSTS.md`](GHOSTS.md) G1)
+- ADMIT-0 (outside sources, attributed; hypotheses, not claims of this repository):
+  [LangSec explained in a few slogans](https://sergey.cs.dartmouth.edu/langsec/occupy/),
+  [JSON interoperability vulnerabilities — Bishop Fox](https://bishopfox.com/blog/json-interoperability-vulnerabilities),
+  [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259.txt),
+  [RFC 8785 (JCS)](https://www.rfc-editor.org/rfc/rfc8785.html),
+  [Canonicalization Failures as a Recurring Vulnerability Class (Brömme)](https://arxiv.org/abs/2608.06508),
+  ["YOLO" is not a valid hash construction — Trail of Bits](https://blog.trailofbits.com/2024/08/21/yolo-is-not-a-valid-hash-construction/),
+  Design Patterns for Securing LLM Agents against Prompt Injections (arXiv 2506.08837) and CaMeL: Defeating Prompt
+  Injections by Design (arXiv 2503.18813), both read in Simon Willison's summaries
+  ([patterns](https://simonwillison.net/2025/Jun/13/prompt-injection-design-patterns/),
+  [CaMeL](https://simonwillison.net/2025/apr/11/camel/)),
+  [The kernel and the De Bruijn criterion](https://bnaskrecki.faculty.wmi.amu.edu.pl/vietnam2026/book/peano/kernel.html),
+  [JSONSchemaBench](https://arxiv.org/html/2501.10868v2),
+  [Finding Consensus Bugs in Ethereum via Multi-transaction Differential Fuzzing (Fluffy, OSDI '21)](https://www.usenix.org/conference/osdi21/presentation/yang),
+  [Appending events — EventStoreDB](https://docs.kurrent.io/clients/tcp/dotnet/21.2/appending.html),
+  [Essential features of an Event Store](https://eventsandstuff.substack.com/p/essential-features-of-an-event-store),
+  [All File Systems Are Not Created Equal (ALICE, OSDI '14)](https://cs.uwaterloo.ca/~alkiswan/papers/alice-osdi14.pdf),
+  [MoveFileExA — Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexa),
+  [ReplaceFileW — Microsoft Learn](https://learn.microsoft.com/windows/win32/api/winbase/nf-winbase-replacefilew),
+  [Constraint Is All You Need (Xu et al.)](https://www.pcgworkshop.com/archive/xu2025constraint.pdf),
+  [Agentic PCG](https://zehua-jiang.github.io/AgenticPCG/),
+  [About Raw Input — Microsoft Learn](https://learn.microsoft.com/en-au/windows/win32/inputdev/about-raw-input).
+  The review's own citations, not opened here: the LangSec workshop page, SLSA provenance v1.2 and OWASP's AI Agent
+  Security cheat sheet.

@@ -51,7 +51,9 @@ charter, also unbuilt): **the engineering gate certifies
 the program; a content admission layer certifies that an artifact conforms to the already-certified program; content
 generation does not invoke the engineering gate.** A model may generate content freely and may not redefine the laws
 content runs under. Language can propose, the verifier admits, the session records, the kernel renders. Whether this
-becomes part of the ratified charter is the owner's to rule.
+becomes part of the ratified charter is the owner's to rule. The first rung towards it is chosen and not yet
+registered: ADMIT-0, the admission seam. In the owner's words, **the gate certifies the machine; ADMIT admits the
+world's changes.**
 
 ## Why this repository exists (the measurement that preceded it)
 

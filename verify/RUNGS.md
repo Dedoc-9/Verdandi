@@ -4247,6 +4247,27 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   rung: commit-only (a preview only as a speculative worldline, never shell state), earn the authority (new world
   semantics come from Urðr), the witnesses a lighter check must still ask for, and merges as explicit anchored
   events. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+- **ADMIT-0 (the admission seam — chosen in the owner's court of 2026-10-03; not registered, nothing built).** The
+  first rung towards the design-event stream. Windowless: a typed, anchored proposal read from a file is refused or
+  admitted, and an admitted one is an ordinary session event in today's vocabulary (a cell edit, a tile edit) with
+  its envelope beside it. A stale anchor is refused, always, naming both heads; rebase is a later rung. No model is
+  in the tree and no gate runs at content time. The owner then asked for a search for hardenings and reviewed what
+  it found. His review's rulings: one strict recognizer for a proposal language smaller than JSON, with every other
+  component receiving the typed proposal and never the text; an anchor that binds the program, the renderer, the
+  head and the proposal's schema; a proposal id apart from the digest of its bytes; typed refusals; a scope the
+  verifier enforces; provenance on the result; and seven courts registered with the rung and not before it (reader,
+  single parser, anchor, capability, idempotency, crash, replay). In his words: *the gate certifies the machine;
+  ADMIT admits the world's changes.* OBSERVED while checking the research, outside the gate: the saved-form reader
+  compiled alone and Python's `json.loads` differ on 12 of 19 hostile inputs, and the Rust reader panics on two and
+  aborts on one. That does not show any sealed record wrong; the reader was not run through the shell, and no row
+  holds it. A second court then ruled for the registration: the proposal language is a line language whose
+  accepted bytes are the canonical form (`VRDNP1`, frozen; a later language is a new version), its digest the
+  SHA-256 of the exact bytes; the saved-form reader is hardened in its own rung after this one (`READER-COURT-0`),
+  its files re-pinned once there; the admitter grants the scope; the anchor is what a session already records
+  (renderer identity, bearing identity, head, language version), and no program identity is minted. The owner's
+  order: ADMIT-0, `READER-COURT-0`, `DESIGN-EVENT-0`, `LIVE-AI-EDIT-0`, then branch and preview. Both courts, the
+  research with its sources, the table, the review and what the registration still has to settle are in
+  [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two
