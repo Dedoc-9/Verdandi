@@ -12,6 +12,12 @@ renderer identity from this checkout's rendering sources and says whether it is 
 identity mismatch alone is not corruption: replay decides); and it has the workshop's own sessionwalk verify the saved
 file itself. It then writes shell/attest/livesession-<host>-<head12>.json: a RECORD-0 envelope around the same
 session-walk data, with the live block inside it, which shell playback and the workshop both replay.
+
+ADMIT-0: an edit admitted through the shell's admission seam carries an envelope beside it. This sealer never reads the
+proposal language. It takes the envelope as typed values of the saved form and checks them against the chain: eight
+text members, the language's name, 64 lower-case hex where an id, a digest, an identity or a head goes, the grant's
+line, on an edit, naming the head before the event and the head after it, and no proposal id twice. The digest, the
+id, the identities and the grant are the admitting shell's record: nothing in a saved file can check them.
 """
 from __future__ import annotations
 
@@ -20,6 +26,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -35,6 +42,11 @@ BEARING_SOURCES = ("kernel/vocab.rs", "oracle/bearing_octant.txt", "kernel/beari
 TAGS = {"move": "M", "edit": "E", "look": "K", "sensitivity": "S"}
 SEAL_KEY = b'\n "seal": "'
 MAGIC = b"VRDNSW1"
+# ADMIT-0: the envelope beside an admitted edit — its members, and the alphabets of their values
+ENVELOPE_KEYS = ("language", "proposal", "digest", "renderer", "bearing", "parent", "head", "grant")
+ENVELOPE_LANGUAGE = "VRDNP1"
+HEX64 = re.compile(r"[0-9a-f]{64}\Z")
+GRANT_LINE = re.compile(r"[a-z0-9=,\- ]{1,96}\Z")
 
 
 def renderer_id(root: str = ROOT) -> str:
@@ -85,6 +97,33 @@ def heads(content: str, camera: str, log: list) -> list:
     return out
 
 
+def check_envelopes(log: list, hs: list) -> int:
+    """ADMIT-0: every envelope in the log against the chain's heads; returns how many events were admitted."""
+    seen = set()
+    for k, item in enumerate(log):
+        a = item.get("admit")
+        if a is None:
+            continue
+        if not isinstance(a, dict) or len(a) != len(ENVELOPE_KEYS) or any(not isinstance(a.get(x), str) for x in ENVELOPE_KEYS):
+            raise Refuse("event %d: an envelope is not its eight text members" % k)
+        if a["language"] != ENVELOPE_LANGUAGE:
+            raise Refuse("event %d: an envelope's language is not VRDNP1" % k)
+        if any(not HEX64.match(a[x]) for x in ("proposal", "digest", "renderer", "bearing", "parent", "head")):
+            raise Refuse("event %d: an envelope's id, digest, identity or head is not 64 lower-case hex" % k)
+        if not GRANT_LINE.match(a["grant"]):
+            raise Refuse("event %d: an envelope's grant is not a grant's line" % k)
+        if item.get("kind") != "edit":
+            raise Refuse("event %d: its envelope is not on an edit" % k)
+        if a["parent"] != hs[k]:
+            raise Refuse("event %d: its envelope's parent is not the head before the event" % k)
+        if a["head"] != hs[k + 1]:
+            raise Refuse("event %d: its envelope's head is not the head after the event" % k)
+        if a["proposal"] in seen:
+            raise Refuse("event %d: its envelope's proposal id was already admitted" % k)
+        seen.add(a["proposal"])
+    return len(seen)
+
+
 def check_saved(raw: bytes, root: str = ROOT) -> dict:
     """The saved session's own integrity, without rendering: the seal, the shape, the base, the fold, the lineage."""
     if not seal_ok(raw):
@@ -114,6 +153,7 @@ def check_saved(raw: bytes, root: str = ROOT) -> dict:
         n = lin.get("parent_events")
         if not isinstance(n, int) or not 0 <= n <= len(d["log"]) or hs[n] != lin.get("parent_head"):
             raise Refuse("the lineage names a parent head that is not on this session's own chain")
+    check_envelopes(d["log"], hs)   # ADMIT-0: an envelope stands against the chain or the session is refused
     return doc
 
 
@@ -147,6 +187,10 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
     # or look-selftest on the mock); it is the same saved form, and this entry is cited beside the others. The focus and
     # capture observation is not read here: it is recorded, never ruled on
     mouse = live.get("look")
+    # ADMIT-0: the edits that came through the admission seam, counted from their envelopes (already checked against
+    # the chain by check_saved); a session with none reads, cites and seals exactly as before
+    admitted = sum(1 for x in d["log"] if x.get("admit") is not None)
+    by_admission = live.get("ended") == "admission"
     lin = live.get("lineage")
     resumed = "a new session from its base" if lin is None else (
         "a continuation of the session whose head is %s... (its first %d events, from its %s)" % (lin["parent_head"][:12], lin["parent_events"], lin["source"]))
@@ -154,8 +198,10 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
                "(%d events: %d moves, %d edits%s; ended by %s), %s; its seal, base, fold%s check here, the workshop's own "
                "sessionwalk verifies the saved file itself (head %s...), and this checkout's renderer identity is %s the "
                "one it was made with." % (host, len(d["log"]), d["moves"], d["edits"],
-                                         "" if not looks else ", %d looks, %d frames at free headings recomputed by the reference before the save"
-                                         % (looks, (live.get("certified") or {}).get("frames", 0)),
+                                         ("" if not looks else ", %d looks, %d frames at free headings recomputed by the reference before the save"
+                                          % (looks, (live.get("certified") or {}).get("frames", 0)))
+                                         + ("" if not admitted else ", %d of the edits admitted through ADMIT-0's seam from a proposal in "
+                                            "VRDNP1, each envelope naming the chain's own heads around its event" % admitted),
                                          # MOUSE-LOOK-0a: said as what it was — a run under the tick source — and never
                                          # as having looked when the session holds no look
                                          live.get("ended") if mouse is None else "%s; run under MOUSE-LOOK-0's tick source at 64 Hz, %s (%s)" % (
@@ -164,7 +210,9 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
                                          resumed,
                                          "" if lin is None else " and lineage", d["head"][:12],
                                          "the same as" if same else "NOT the same as (replay, not identity, decides)"))
-    prov = {"tool": ("shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) "
+    prov = {"tool": ("shell admit (shell/admit.rs: the recognizer and the checks; shell/livesession.rs: the journal and the seal) "
+                     "+ verify/livesession.py") if by_admission else
+                    ("shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) "
                      "+ verify/livesession.py") if mouse is None else
                     ("shell look-window (shell/livesession.rs's go_look over shell/liveinput.rs under shell/mouselook.rs's tick "
                      "source; the MOUSE-LOOK-0 section appended to shell/win32.rs) + verify/livesession.py"), "host": host,
@@ -176,6 +224,8 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
         prov["look"] = {"rung": "MOUSE-LOOK-0", "chain_hash": reg["MOUSE-LOOK-0"]["chain_hash"]}
         prov["ticks"] = {"rung": "SIM-TICK-0", "chain_hash": reg["SIM-TICK-0"]["chain_hash"]}
         prov["configuration"] = {"rung": "SIM-TICK-0a", "chain_hash": reg["SIM-TICK-0a"]["chain_hash"]}
+    if admitted:
+        prov["admission"] = {"rung": "ADMIT-0", "chain_hash": reg["ADMIT-0"]["chain_hash"]}
     data = dict(d)
     data["live"] = live
     return envelope.seal(
@@ -189,7 +239,10 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
          "that the renderer identity decides compatibility: it names sources, replay decides",
          "that the focus observation explains anything: it is recorded, never ruled on",
          "a second authority: the shell's session is the replay of this log, which the workshop verifies",
-         "durability beyond the file system's promise, or on any other host"],
+         "durability beyond the file system's promise, or on any other host"] + ([] if not admitted else [
+             "that an envelope's digest, proposal id, identities or grant can be checked from this file: they are the "
+             "admitting shell's record, the seal is a hash and not a signature, and the proposal's bytes are not kept",
+             "that a model wrote the proposal, or that one could write a proposal worth admitting"]),
         data, reading)
 
 
@@ -216,6 +269,8 @@ def main() -> int:
     cites = "LIVE-SESSION-0 %s" % reg["LIVE-SESSION-0"]["chain_hash"][:8]
     if "look" in rec["provenance"]:
         cites += ", MOUSE-LOOK-0 %s" % reg["MOUSE-LOOK-0"]["chain_hash"][:8]
+    if "admission" in rec["provenance"]:
+        cites += ", ADMIT-0 %s" % reg["ADMIT-0"]["chain_hash"][:8]
     print("[livesession] %s -> %s  (cites %s)" % (rec["reading"], os.path.relpath(out), cites))
     return 0
 

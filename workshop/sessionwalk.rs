@@ -653,6 +653,7 @@ struct Replay {
     // per-event witnesses, in log order (for `verify` to check against the stored file)
     witnesses: Vec<(char, String)>, // ('M'|'E'|'K', witness hex; 'S' with no witness)
     tokens: Vec<String>,            // the camera token after each event
+    heads: Vec<String>,             // ADMIT-0: the genesis, then the head after each event
 }
 
 fn load_auth(level_path: &str, tiles_path: &str) -> Authority {
@@ -676,6 +677,7 @@ fn replay(level_path: &str, tiles_path: &str, cam0: Camera, log: &[Event]) -> Re
     let (mut moves, mut edits, mut looks, mut settings) = (0usize, 0usize, 0usize, 0usize);
     let mut witnesses = Vec::new();
     let mut tokens = Vec::new();
+    let mut heads = vec![head.clone()];
     for ev in log {
         match ev {
             Event::Move(c) => {
@@ -713,8 +715,9 @@ fn replay(level_path: &str, tiles_path: &str, cam0: Camera, log: &[Event]) -> Re
             }
         }
         tokens.push(token(cam, yaw));
+        heads.push(head.clone());
     }
-    Replay { head, cam, yaw, final_content: auth.content_hex(), moves, edits, looks, settings, witnesses, tokens }
+    Replay { head, cam, yaw, final_content: auth.content_hex(), moves, edits, looks, settings, witnesses, tokens, heads }
 }
 
 // ------------------------------------------------------------------ the session-walk file
@@ -730,13 +733,15 @@ struct SessionWalk {
     // SIM-TICK-0: the tick stamp beside each event, and the session's tick block (hz, count, multiplier, step)
     stamps: Vec<Stamp>,
     ticks: Option<(i64, i64, i64, i64)>,
+    // ADMIT-0: the envelope beside each event, kept as it was read (None for an event that was not admitted)
+    admits: Vec<Option<Json>>,
 }
 
 fn parse_camera_token(s: &str) -> Camera {
     parse_camera(s).unwrap_or_else(|Refusal(m)| refuse("INVALID-CAMERA", &m))
 }
 
-fn event_json(ev: &Event, wit: &(char, String), tok: &str, st: &Stamp) -> Json {
+fn event_json(ev: &Event, wit: &(char, String), tok: &str, st: &Stamp, admit: &Option<Json>) -> Json {
     let mut pairs = match ev {
         Event::Move(c) => vec![
             ("kind", Json::Str("move".into())),
@@ -768,6 +773,10 @@ fn event_json(ev: &Event, wit: &(char, String), tok: &str, st: &Stamp) -> Json {
     if let Some((c, m, s)) = st.input {
         pairs.push(("input", obj(vec![("counts", Json::Num(c)), ("multiplier", Json::Num(m)), ("step", Json::Num(s))])));
     }
+    // ADMIT-0: the envelope of an admitted edit, kept as it was read
+    if let Some(a) = admit {
+        pairs.push(("admit", a.clone()));
+    }
     obj(pairs)
 }
 
@@ -775,7 +784,7 @@ fn write_sessionwalk(path: &str, sw: &SessionWalk) {
     let r = replay(&sw.level, &sw.tiles, sw.cam0, &sw.log);
     let mut items = Vec::new();
     for (k, ev) in sw.log.iter().enumerate() {
-        items.push(event_json(ev, &r.witnesses[k], &r.tokens[k], &sw.stamps[k]));
+        items.push(event_json(ev, &r.witnesses[k], &r.tokens[k], &sw.stamps[k], &sw.admits[k]));
     }
     let mut data = vec![
         ("magic", Json::Str(String::from_utf8_lossy(MAGIC).into())),
@@ -837,6 +846,7 @@ fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, Vec<String
     let mut stored = Vec::new();
     let mut cameras = Vec::new();
     let mut stamps = Vec::new();
+    let mut admits = Vec::new();
     for item in d.get("log").arr() {
         match item.get("kind").s() {
             "move" => {
@@ -882,6 +892,7 @@ fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, Vec<String
             }
         };
         stamps.push(Stamp { tick, input });
+        admits.push(if is_null(item.get("admit")) { None } else { Some(item.get("admit").clone()) });
     }
     let t = d.get("ticks");
     let ticks = if is_null(t) {
@@ -904,8 +915,62 @@ fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, Vec<String
         head: d.get("head").s().to_string(),
         stamps,
         ticks,
+        admits,
     };
     (sw, stored, cameras, d.get("final_camera").s().to_string())
+}
+
+// ------------------------------------------------------------------ ADMIT-0: the envelope beside an admitted edit
+// An admitted proposal is an ordinary edit with an envelope beside it. The workshop never reads the proposal language;
+// it takes the envelope as typed values of the saved form and checks them against the chain it has replayed: eight
+// text members, the language's name, 64 lower-case hex where an id, a digest, an identity or a head goes, the grant's
+// line, on an edit, naming the head before the event and the head after it, and no proposal id twice.
+
+fn hex64(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+}
+
+/// How many events carry an envelope, or why one of them does not stand.
+fn check_envelopes(sw: &SessionWalk, heads: &[String]) -> Result<usize, String> {
+    const KEYS: [&str; 8] = ["language", "proposal", "digest", "renderer", "bearing", "parent", "head", "grant"];
+    let mut seen: Vec<&str> = Vec::new();
+    for (k, a) in sw.admits.iter().enumerate() {
+        let a = match a {
+            Some(a) => a,
+            None => continue,
+        };
+        let members = match a {
+            Json::Obj(m) => m.len(),
+            _ => 0,
+        };
+        if members != KEYS.len() || KEYS.iter().any(|key| !matches!(a.get(key), Json::Str(_))) {
+            return Err(format!("event {}: an envelope is not its eight text members", k));
+        }
+        if a.get("language").s() != "VRDNP1" {
+            return Err(format!("event {}: an envelope's language is not VRDNP1", k));
+        }
+        if ["proposal", "digest", "renderer", "bearing", "parent", "head"].iter().any(|key| !hex64(a.get(key).s())) {
+            return Err(format!("event {}: an envelope's id, digest, identity or head is not 64 lower-case hex", k));
+        }
+        let g = a.get("grant").s();
+        if g.is_empty() || g.len() > 96 || !g.bytes().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, b'=' | b',' | b'-' | b' ')) {
+            return Err(format!("event {}: an envelope's grant is not a grant's line", k));
+        }
+        if !matches!(sw.log[k], Event::Edit(_)) {
+            return Err(format!("event {}: its envelope is not on an edit", k));
+        }
+        if a.get("parent").s() != heads[k] {
+            return Err(format!("event {}: its envelope's parent is not the head before the event", k));
+        }
+        if a.get("head").s() != heads[k + 1] {
+            return Err(format!("event {}: its envelope's head is not the head after the event", k));
+        }
+        if seen.contains(&a.get("proposal").s()) {
+            return Err(format!("event {}: its envelope's proposal id was already admitted", k));
+        }
+        seen.push(a.get("proposal").s());
+    }
+    Ok(seen.len())
 }
 
 // ------------------------------------------------------------------ CLI
@@ -939,6 +1004,7 @@ fn main() {
                 head: genesis(&auth.content_hex(), cam0),
                 stamps: Vec::new(),
                 ticks: None,
+                admits: Vec::new(),
             };
             write_sessionwalk(&out, &sw);
             println!("SESSIONWALK new head {} base {},{},{}", &sw.head[..12], cam0.x, cam0.z, facing_letter(cam0.facing));
@@ -947,6 +1013,7 @@ fn main() {
             let path = arg(&argv, "--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
             let (mut sw, _st, _cams, _fc) = load_sessionwalk(&path);
             sw.stamps.push(Stamp::default()); // the workshop appends outside time: no tick
+            sw.admits.push(None); // and outside the admission seam: no envelope
             if argv[1] == "look" {
                 // SIM-TICK-0: an untimed look of D ids (canonical decimal, an optional leading minus)
                 let dl = arg(&argv, "--delta").unwrap_or_else(|| refuse("USAGE", "look needs --delta"));
@@ -1022,8 +1089,11 @@ fn main() {
             if !final_cam.is_empty() && final_cam != want_cam {
                 refuse("CHAIN-BROKEN", &format!("stored final camera {} != replay {}", final_cam, want_cam));
             }
-            println!("SESSIONWALK verify OK head {} — moves {} edits {}{} (final {})", &r.head[..12], r.moves, r.edits,
-                     if r.looks > 0 { format!(" looks {}", r.looks) } else { String::new() }, want_cam);
+            // ADMIT-0: an envelope is checked against the replayed chain; a session without one prints what it always did
+            let admitted = check_envelopes(&sw, &r.heads).unwrap_or_else(|m| refuse("ENVELOPE", &m));
+            println!("SESSIONWALK verify OK head {} — moves {} edits {}{}{} (final {})", &r.head[..12], r.moves, r.edits,
+                     if r.looks > 0 { format!(" looks {}", r.looks) } else { String::new() },
+                     if admitted > 0 { format!(" admitted {}", admitted) } else { String::new() }, want_cam);
         }
         other => refuse("USAGE", &format!("unknown command {}", other)),
     }

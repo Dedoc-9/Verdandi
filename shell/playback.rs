@@ -606,6 +606,8 @@ pub struct LiveEvent {
     pub yaw: i64,
     pub tick: Option<u64>,
     pub input: Option<(i64, i64, i64)>,
+    /// ADMIT-0: the envelope of an admitted edit, recorded beside it and never folded (None for every other event).
+    pub admit: Option<Admit>,
 }
 
 /// LIVE-INPUT-0's session: the replay of an in-memory log, appended to only by `push_move` and `push_edit_cell`.
@@ -633,6 +635,8 @@ pub struct LiveSession {
     // and the content it was rendered over), so the loop can present the render the witness came from
     painter: crate::heading::Painter,
     painted: Option<(i64, i64, i64, String)>,
+    // ADMIT-0: the envelope the next appended edit carries (set by the admission seam, or by the loader's replay)
+    pending: Option<Admit>,
 }
 
 impl LiveSession {
@@ -649,7 +653,7 @@ impl LiveSession {
         Ok(LiveSession { level: level_bytes, tiles: tiles_bytes, cam: cam0, content: base_content.clone(), head: head.clone(),
                          cam0, base_content, genesis: head, log: Vec::new(), sink: None,
                          yaw: cam0.facing as i64 * crate::simtick::QUARTER, tick: None, ticks: None, base_level, base_tiles,
-                         sens: crate::simtick::START, painter: crate::heading::Painter::new(), painted: None })
+                         sens: crate::simtick::START, painter: crate::heading::Painter::new(), painted: None, pending: None })
     }
 
     /// LIVE-SESSION-0: the same session, handing every event appended from now on to `sink`.
@@ -741,7 +745,7 @@ impl LiveSession {
         self.yaw = yaw;
         self.head = fold(&self.head, b'M', &witness);
         self.log.push(LiveEvent { tag: b'M', param: (cmd as char).to_string(), camera: cam, witness,
-                                  content: self.content.clone(), head: self.head.clone(), yaw, tick: self.tick, input: None });
+                                  content: self.content.clone(), head: self.head.clone(), yaw, tick: self.tick, input: None, admit: None });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -762,9 +766,11 @@ impl LiveSession {
         let spec = format!("cell:{},{},{}", x, z, to as char);
         apply_spec(&mut self.level, &mut self.tiles, &spec);
         self.content = content_hex(&self.level, &self.tiles);
+        let before = self.head.clone();
         self.head = fold(&self.head, b'E', &self.content);
+        let admit = self.enveloped(before); // ADMIT-0: beside the event, after the fold, never in it
         self.log.push(LiveEvent { tag: b'E', param: spec, camera: self.cam, witness: self.content.clone(),
-                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None });
+                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None, admit });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -805,6 +811,13 @@ impl JsonView {
     }
     pub fn arr(&self) -> Vec<JsonView> {
         self.0.arr().iter().map(|j| JsonView(j.clone())).collect()
+    }
+    /// ADMIT-0: how many members an object has (None for anything that is not an object).
+    pub fn members(&self) -> Option<usize> {
+        match &self.0 {
+            Json::Obj(m) => Some(m.len()),
+            _ => None,
+        }
     }
 }
 
@@ -861,9 +874,11 @@ impl LiveSession {
         let spec = format!("tile:{},{},{},{}", TILE_CLASSES[class as usize], rgb[0], rgb[1], rgb[2]);
         apply_spec(&mut self.level, &mut self.tiles, &spec);
         self.content = content_hex(&self.level, &self.tiles);
+        let before = self.head.clone();
         self.head = fold(&self.head, b'E', &self.content);
+        let admit = self.enveloped(before); // ADMIT-0: beside the event, after the fold, never in it
         self.log.push(LiveEvent { tag: b'E', param: spec, camera: self.cam, witness: self.content.clone(),
-                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None });
+                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None, admit });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -946,7 +961,7 @@ impl LiveSession {
         }
         self.sens = to;
         self.log.push(LiveEvent { tag: b'S', param: format!("{},{}", to.multiplier, to.step), camera: self.cam, witness: String::new(),
-                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None });
+                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None, admit: None });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -965,7 +980,7 @@ impl LiveSession {
         self.yaw = yaw;
         self.head = fold(&self.head, b'K', &look_fold(&token(cam, yaw), &witness));
         self.log.push(LiveEvent { tag: b'K', param: delta.to_string(), camera: cam, witness, content: self.content.clone(),
-                                  head: self.head.clone(), yaw, tick: self.tick, input });
+                                  head: self.head.clone(), yaw, tick: self.tick, input, admit: None });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -1041,5 +1056,44 @@ impl LiveSession {
         }
         Some(crate::heading::FreeFrame { event: index, level: Arc::new(level), tiles: Arc::new(tiles), x: ev.camera.x, z: ev.camera.z, yaw: ev.yaw,
                                          witness: ev.witness.clone() })
+    }
+}
+
+// ================================================================== ADMIT-0 (appended): the envelope beside an admitted edit
+// An admitted proposal becomes one ordinary edit event. What is recorded about its admission — the language, the
+// proposer's id, the digest of the proposal's exact bytes, the identities it was admitted under, the head it was
+// anchored to, the head it gave and the grant — is this envelope. It sits beside the event in the journal record and
+// the saved item and travels with it; the head is the fold of the witnesses, and the envelope is never in it. The
+// session fills in the two heads itself, at the fold: nobody can hand it a parent or a resulting head.
+
+/// The envelope of an admitted edit. Every field is text of a narrow alphabet (the language's name, 64 lower-case hex,
+/// the grant's canonical line), so its saved form has one spelling.
+#[derive(Clone, PartialEq, Debug)]
+pub struct Admit {
+    pub language: String,
+    pub proposal: String,
+    pub digest: String,
+    pub renderer: String,
+    pub bearing: String,
+    pub parent: String,
+    pub head: String,
+    pub grant: String,
+}
+
+impl LiveSession {
+    /// The next edit appended carries this envelope. Its parent and its resulting head are overwritten with the
+    /// session's own at the fold.
+    pub fn admit_next(&mut self, a: Admit) {
+        self.pending = Some(a);
+    }
+
+    /// The pending envelope, if any, with the head before the fold and the head after it.
+    fn enveloped(&mut self, before: String) -> Option<Admit> {
+        let head = self.head.clone();
+        self.pending.take().map(|mut a| {
+            a.parent = before;
+            a.head = head;
+            a
+        })
     }
 }

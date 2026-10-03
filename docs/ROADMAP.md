@@ -102,7 +102,7 @@ richer edits     vocabulary on the one live editor, not new pathways
 walking in a live, authorable world
       ⋮
 LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03), and by the owner's ruling what the route builds towards: the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
-ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by the owner's order next after MOUSE-LOOK-0: the admission seam. One strict recognizer for a line language whose accepted bytes are canonical (VRDNP1), an anchor refused when stale, a scope the admitter grants, an admitted proposal an ordinary session event. The gate certifies the machine; ADMIT admits the world's changes — registered (`bdd38593`), the gate passing on the host with the entry; build pending
+ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by the owner's order next after MOUSE-LOOK-0: the admission seam. One strict recognizer for a line language whose accepted bytes are canonical (VRDNP1), an anchor refused when stale, a scope the admitter grants, an admitted proposal an ordinary session event. The gate certifies the machine; ADMIT admits the world's changes — registered (`bdd38593`) and built, nine rows on every gate; not yet run on the host
       ↓
 READER-COURT-0 → DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered
       ↓
@@ -792,11 +792,12 @@ anything useful here; that any verifier law beyond today's edit validation exist
 commit envelope work; any safety property of a system that includes a model. When it is seated it registers its own
 hypothesis, failure condition and limits, like every rung.
 
-### ADMIT-0 — the admission seam · **preregistered** (`bdd38593`): the gate passes on the host with the entry; build pending
+### ADMIT-0 — the admission seam · **built** (`bdd38593`): nine rows hold it on every gate; not yet run on the host
 The first rung towards the design-event stream above. It was chosen in court, then researched, then reviewed by the
 owner, then taken to a second and a third court on the questions the review left, and then registered. This section
 records the first court, what the research found, one observation made here while checking it, the review, the
-second and third courts, the registration and the owner's acceptance of it. Nothing is built.
+second and third courts, the registration and the owner's acceptance of it. It has since been built: what was
+built, the nine rows that hold it and what they do not show are in [`verify/RUNGS.md`](../verify/RUNGS.md).
 
 **The court (2026-10-03).** Three rulings.
 

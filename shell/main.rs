@@ -100,6 +100,8 @@ mod tickrun;
 // MOUSE-LOOK-0: the tick source of the live loop — the ticker, the off-loop sample, the mock's mouse, focus and clock
 #[path = "mouselook.rs"]
 mod mouselook;
+#[path = "admit.rs"]
+mod admit;
 
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
@@ -980,6 +982,39 @@ fn main() {
                 println!("simtick court OK");
             }
             exit(code)
+        }
+        "admit" | "admit-selftest" | "admit-anchor" => {
+            // ADMIT-0: the admission seam, windowless. `admit --session S --proposal P [--allow open,close,paint]
+            // [--cells x0,z0,x1,z1] [--classes wall0,...]` recognizes P (VRDNP1) or refuses it, checks it against this
+            // shell, the saved session S and the grant, and admits it as one edit event sealed into
+            // build/sessions/<run_id>/session.json; S is never modified. `admit-anchor --session S` prints lines 1 to
+            // 4 of a proposal anchored to S and reads only. `admit-selftest` is the same run with `--plant` naming a
+            // death point (die-received, die-recognized, die-verified, die-opened, die-torn, die-appended,
+            // die-written, die-replaced), or the reader court in process: `--neighbourhood P` gives every single-byte
+            // mutant of P to the recognizer.
+            let a = &args[2..];
+            let known: &[&str] = match args[1].as_str() {
+                "admit" => &["--session", "--proposal", "--allow", "--cells", "--classes"],
+                "admit-anchor" => &["--session"],
+                _ => &["--session", "--proposal", "--allow", "--cells", "--classes", "--plant", "--neighbourhood"],
+            };
+            if a.len() % 2 != 0 || a.chunks(2).any(|c| !known.contains(&c[0].as_str()))
+                || known.iter().any(|k| a.chunks(2).filter(|c| c[0] == *k).count() > 1) {
+                refuse("USAGE", &format!("{} takes each of {} at most once, each with a value", args[1], known.join(", ")));
+            }
+            let opt = |flag: &str| -> Option<String> { a.chunks(2).find(|c| c[0] == flag).map(|c| c[1].clone()) };
+            if let Some(p) = opt("--neighbourhood") {
+                println!("{}", admit::neighbourhood(&read(&p)));
+                exit(0)
+            }
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            if args[1] == "admit-anchor" {
+                exit(admit::anchor(&session))
+            }
+            let proposal = opt("--proposal").unwrap_or_else(|| refuse("USAGE", "needs --proposal"));
+            let grant = admit::grant_of(opt("--allow").as_deref(), opt("--cells").as_deref(), opt("--classes").as_deref())
+                .unwrap_or_else(|m| refuse("USAGE", &m));
+            exit(admit::run(&session, &proposal, &grant, &opt("--plant").unwrap_or_default()))
         }
         other => refuse("USAGE", &format!("unknown command {}", other)),
     }

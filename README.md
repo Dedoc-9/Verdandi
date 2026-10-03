@@ -51,8 +51,8 @@ charter, also unbuilt): **the engineering gate certifies
 the program; a content admission layer certifies that an artifact conforms to the already-certified program; content
 generation does not invoke the engineering gate.** A model may generate content freely and may not redefine the laws
 content runs under. Language can propose, the verifier admits, the session records, the kernel renders. Whether this
-becomes part of the ratified charter is the owner's to rule. The first rung towards it is registered and not yet
-built: ADMIT-0, the admission seam. In the owner's words, **the gate certifies the machine; ADMIT admits the
+becomes part of the ratified charter is the owner's to rule. The first rung towards it is registered and built,
+and not yet run on the host: ADMIT-0, the admission seam. In the owner's words, **the gate certifies the machine; ADMIT admits the
 world's changes.**
 
 ## Why this repository exists (the measurement that preceded it)
@@ -132,6 +132,8 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/shell simtick-selftest --script "0:m+3,15625:W,31250:PGUP,46875:m-2,62500:ESC"   # SIM-TICK-0: a windowless tick run (T:m+N a mouse report at T microseconds, T:KEY, T:KEY+ an auto-repeat, PGUP/PGDN/TAB the sensitivity keys), saved under build/sessions/
     verify/build/shell simtick-law                             # SIM-TICK-0: the laws as lines (the tick, the nearest cardinal of every id, the delta)
     verify/build/shell look-selftest --script "0:m+3,20000:W,40000:blur,60000:m+9,80000:focus,100000:m-2,300000:ESC"   # MOUSE-LOOK-0: the live loop under a tick source, on the mock (a scripted mouse, keyboard and focus; the clock is the composition count), saved under build/sessions/
+    verify/build/shell admit-anchor --session build/sessions/<run_id>/session.json   # ADMIT-0: the four lines a proposal for that saved session begins with (VRDNP1, renderer=, bearing=, parent=); reads only
+    verify/build/shell admit --session build/sessions/<run_id>/session.json --proposal p.vrdnp --allow open,close --cells 1,1,62,62   # ADMIT-0: the proposal (eight lines of VRDNP1) recognized or refused with a typed reason; admitted, it is one edit in a new saved session with its envelope beside it; the grant is this command line's
     python verify/bearingsweep.py --host $env:COMPUTERNAME    # off-gate: BEARING-FAST-0's sweep (about an hour), sealed
     python verify/bench.py --host $env:COMPUTERNAME           # off-gate: the kernel's frame time, sealed under the envelope
     verify/build/shell witness --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W

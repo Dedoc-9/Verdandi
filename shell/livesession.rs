@@ -41,6 +41,12 @@
 // SIM-TICK-0a: a tick session's sensitivity changes are events of kind sensitivity in the journal and the saved file,
 // carrying the configuration after them and their tick. They have no witness and fold nothing; the loader replays them
 // through the session (one legal transition each), and a crashed run's configuration comes back from them.
+//
+// ADMIT-0: an admitted edit carries its envelope (playback::Admit) beside it, in its journal record and in its saved
+// item. The loader checks an envelope's form, that it sits on an edit, that the heads it names are the chain's own
+// around that event and that its proposal id occurs once, before anything replays; a continuation writes it back as it
+// read it. A run can be opened from a session already loaded (`go_admitted`), so the seam checks its anchor against
+// the very bytes it continues. The seal is still `finish`.
 
 use std::cell::RefCell;
 use std::fs;
@@ -50,7 +56,7 @@ use std::rc::Rc;
 use crate::formats::{facing_letter, parse_camera, Camera};
 use crate::liveinput::{Keys, ScriptedKeys};
 use crate::mantle::{hex, sha256};
-use crate::playback::{chain_heads, content_of, look_fold, parse_view, token, EventSink, JsonView, LiveEvent, LiveSession};
+use crate::playback::{chain_heads, content_of, look_fold, parse_view, token, Admit, EventSink, JsonView, LiveEvent, LiveSession};
 use crate::presentexact::ExactSurface;
 use crate::refusallog::{esc, V};
 
@@ -137,7 +143,7 @@ fn refusal(attribution: &'static str, context: Vec<(&'static str, V)>, message: 
     Refusal { attribution, context, message }
 }
 
-fn refuse_run(r: Refusal, surface: &'static str) -> i32 {
+pub fn refuse_run(r: Refusal, surface: &'static str) -> i32 {
     let reason = crate::refusallog::code_of(&r.message);
     let ev = crate::refusallog::Event { operation: "livesession", surface, reason, attribution: r.attribution, context: r.context };
     crate::refusallog::refuse(&ev, &format!("SHELL-{}", r.message));
@@ -200,7 +206,34 @@ fn event_payload(k: usize, ev: &LiveEvent) -> String {
         _ => ("edit", "spec", esc(&ev.param)),
     };
     format!("{{\"k\":{},\"kind\":\"{}\",\"{}\":{},\"camera\":{},\"witness\":{},\"content\":{},\"head\":{}{}}}",
-            k, kind, pk, pv, esc(&token(ev.camera, ev.yaw)), esc(&ev.witness), esc(&ev.content), esc(&ev.head), stamp_json(ev, ""))
+            k, kind, pk, pv, esc(&token(ev.camera, ev.yaw)), esc(&ev.witness), esc(&ev.content), esc(&ev.head), stamp_json(ev, "") + &admit_json(ev, ""))
+}
+
+/// ADMIT-0: the envelope of an admitted edit as a JSON member (with a leading comma), or nothing. Its members are in
+/// one fixed order and every value is text of a narrow alphabet, so the member has one spelling per envelope.
+fn admit_json(ev: &LiveEvent, sp: &str) -> String {
+    match &ev.admit {
+        None => String::new(),
+        Some(a) => {
+            let m = |k: &str, v: &str| format!("\"{}\":{}{}", k, sp, esc(v));
+            format!(",{}\"admit\":{}{{{}}}", sp, sp, [m("language", &a.language), m("proposal", &a.proposal), m("digest", &a.digest),
+                    m("renderer", &a.renderer), m("bearing", &a.bearing), m("parent", &a.parent), m("head", &a.head),
+                    m("grant", &a.grant)].join(&format!(",{}", sp)))
+        }
+    }
+}
+
+/// ADMIT-0: 64 characters of 0-9 and a-f.
+pub fn hex64(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+}
+
+/// ADMIT-0: a death plant ends the process here, with nothing after it run (admit-selftest only).
+pub fn die(plant: &str, point: &str) {
+    if plant == point {
+        eprintln!("SHELL-ADMIT-PLANT-DEATH: {}", point);
+        std::process::exit(70);
+    }
 }
 
 /// SIM-TICK-0a: a sensitivity event's parameter, "multiplier,step", as its two numbers (zeros if it is not that).
@@ -230,12 +263,15 @@ pub struct Journal {
     pub broken: Option<String>,
     crash: bool,
     surface: &'static str,
+    // ADMIT-0: the death plants of an appended record (1 torn half-way, 2 after its flush); 0 on every real run
+    die: u8,
 }
 
 impl Journal {
-    fn open(path: &str, crash: bool, surface: &'static str) -> Result<Journal, String> {
+    fn open(path: &str, plant: &str, surface: &'static str) -> Result<Journal, String> {
         let file = fs::OpenOptions::new().create_new(true).append(true).open(path).map_err(|e| format!("{}: {}", path, e))?;
-        Ok(Journal { file, path: path.to_string(), records: 0, events: 0, broken: None, crash, surface })
+        let die = match plant { "die-torn" => 1, "die-appended" => 2, _ => 0 };
+        Ok(Journal { file, path: path.to_string(), records: 0, events: 0, broken: None, crash: plant == "crash", surface, die })
     }
 
     /// Append one record and flush it; only then count it.
@@ -259,8 +295,20 @@ impl Journal {
             eprintln!("SHELL-LIVESESSION-PLANT-CRASH: the process dies after {} journaled events ({})", self.events, self.path);
             std::process::exit(70);
         }
+        if self.die == 1 {
+            // PLANT die-torn (ADMIT-0): the record is torn half-way and the process dies
+            let line = record_line(&event_payload(k, ev));
+            let _ = self.file.write_all(&line.as_bytes()[..line.len() / 2]);
+            let _ = self.file.sync_data();
+            die("die-torn", "die-torn");
+        }
         match self.put(&event_payload(k, ev)) {
-            Ok(()) => self.events += 1,
+            Ok(()) => {
+                self.events += 1;
+                if self.die == 2 {
+                    die("die-appended", "die-appended"); // PLANT (ADMIT-0): the record is flushed and the process dies
+                }
+            }
             Err(m) => {
                 // the journal failed: said once, logged once; the session goes on in memory, and only a verified seal
                 // can make it durable
@@ -380,7 +428,7 @@ fn event_item(ev: &LiveEvent) -> String {
         let (m, st) = sens_of(&ev.param);
         format!("{{\"kind\": \"sensitivity\", \"multiplier\": {}, \"step\": {}{}}}", m, st, stamp_json(ev, " "))
     } else {
-        format!("{{\"kind\": \"edit\", \"spec\": {}, \"witness\": {}{}}}", esc(&ev.param), esc(&ev.witness), stamp_json(ev, " "))
+        format!("{{\"kind\": \"edit\", \"spec\": {}, \"witness\": {}{}{}}}", esc(&ev.param), esc(&ev.witness), stamp_json(ev, " "), admit_json(ev, " "))
     }
 }
 
@@ -449,7 +497,9 @@ fn write_saved(dst: &str, text: &str, plant: &str) -> Result<(), String> {
         f.write_all(text.as_bytes()).map_err(|e| e.to_string())?;
         f.sync_all().map_err(|e| e.to_string())?;
     }
+    die(plant, "die-written"); // PLANT (ADMIT-0): the temporary file is written and flushed, not yet moved
     replace::atomic_replace(&tmp, dst)?;
+    die(plant, "die-replaced"); // PLANT (ADMIT-0): the saved file is in place, not yet read back
     if plant == "seal-flip" {
         // PLANT seal-flip: one byte of the saved file changes between its write and its verification
         let mut b = fs::read(dst).map_err(|e| e.to_string())?;
@@ -479,6 +529,8 @@ struct SavedEvent {
     // SIM-TICK-0: the tick stamp saved beside the event, if a tick run appended it
     tick: Option<u64>,
     input: Option<(i64, i64, i64)>,
+    // ADMIT-0: the envelope saved beside an admitted edit
+    admit: Option<Admit>,
 }
 
 fn read_base(v: &JsonView, level: &str, tiles: &str) -> Result<(Base, Vec<u8>, Vec<u8>), Refusal> {
@@ -572,6 +624,27 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
             }
         }
     }
+    // ADMIT-0: an envelope sits on an edit, names the chain's own heads around it, and its proposal id occurs once
+    let mut admitted: Vec<&str> = Vec::new();
+    for (k, e) in events.iter().enumerate() {
+        if let Some(a) = &e.admit {
+            let bad = if e.tag != b'E' {
+                Some("it is not on an edit")
+            } else if a.parent != heads[k] {
+                Some("its parent is not the head before the event")
+            } else if a.head != heads[k + 1] {
+                Some("its head is not the head after the event")
+            } else if admitted.contains(&a.proposal.as_str()) {
+                Some("its proposal id was already admitted")
+            } else {
+                None
+            };
+            if let Some(why) = bad {
+                return Err(refusal("session.load", vec![("event", V::N(k as u64))], format!("LIVESESSION-ENVELOPE: event {}: {}", k, why)));
+            }
+            admitted.push(&a.proposal);
+        }
+    }
     // 2. the renderer identity
     let same = parent_renderer == renderer_id();
     // SIM-TICK-0: a frame at a free heading is the bearing kernels'; their identity is consulted for those frames only
@@ -600,6 +673,10 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
                 Err(_) => (false, false, false),
             }
         } else {
+            // ADMIT-0: an admitted edit replays as any edit does, and takes its envelope back with it
+            if let Some(a) = &e.admit {
+                s.admit_next(a.clone());
+            }
             match (cell_of(&e.param), tile_of(&e.param)) {
                 (Some((x, z, to)), _) => match s.push_edit_cell(x, z, to) {
                     Ok(ev) => (false, true, ev.witness == e.witness),
@@ -675,7 +752,30 @@ fn saved_event(e: &JsonView) -> Result<SavedEvent, Refusal> {
             _ => return Err(corrupt("a look's inputs are not counts, multiplier and step".to_string())),
         }
     };
-    Ok(SavedEvent { tag, param, camera: e.get("camera").s(), witness: e.get("witness").s(), tick, input })
+    // ADMIT-0: an envelope is exactly eight text members: the language, five 64-hex values around the grant's line
+    let a = e.get("admit");
+    let admit = if a.is_null() {
+        None
+    } else {
+        let bad = |m: &str| refusal("session.load", vec![], format!("LIVESESSION-ENVELOPE: {}", m));
+        const KEYS: [&str; 8] = ["language", "proposal", "digest", "renderer", "bearing", "parent", "head", "grant"];
+        if a.members() != Some(KEYS.len()) || KEYS.iter().any(|k| !a.get(k).is_str()) {
+            return Err(bad("an envelope is not its eight text members"));
+        }
+        let v = |k: &str| a.get(k).s();
+        if v("language") != crate::admit::LANGUAGE {
+            return Err(bad("an envelope's language is not VRDNP1"));
+        }
+        if ["proposal", "digest", "renderer", "bearing", "parent", "head"].iter().any(|k| !hex64(&v(k))) {
+            return Err(bad("an envelope's id, digest, identity or head is not 64 lower-case hex"));
+        }
+        if !crate::admit::grant_text(&v("grant")) {
+            return Err(bad("an envelope's grant is not a grant's line"));
+        }
+        Some(Admit { language: v("language"), proposal: v("proposal"), digest: v("digest"), renderer: v("renderer"), bearing: v("bearing"),
+                     parent: v("parent"), head: v("head"), grant: v("grant") })
+    };
+    Ok(SavedEvent { tag, param, camera: e.get("camera").s(), witness: e.get("witness").s(), tick, input, admit })
 }
 
 fn tile_of(spec: &str) -> Option<(u8, [u8; 3])> {
@@ -761,9 +861,17 @@ pub fn prepare(plan: Plan) -> Result<Prepared, i32> {
             }
         }
     };
+    let events = session.log().len();
+    open(session, base, lineage, resumed, plan.plant, surface, events)
+}
+
+/// The run's directory and journal: the header, then the session's first `opening` events as records. ADMIT-0 opens a
+/// run from a session it has already loaded and checked, with the parent's events as the opening.
+fn open(session: LiveSession, base: Base, lineage: Option<Lineage>, resumed: Option<(&'static str, String)>, plant: String,
+        surface: &'static str, opening: usize) -> Result<Prepared, i32> {
     let dir = std::path::Path::new(&root()).join(crate::refusallog::run_id()).to_string_lossy().to_string();
     let jpath = std::path::Path::new(&dir).join(JOURNAL).to_string_lossy().to_string();
-    let opened = fs::create_dir_all(&dir).map_err(|e| e.to_string()).and_then(|_| Journal::open(&jpath, plan.plant == "crash", surface));
+    let opened = fs::create_dir_all(&dir).map_err(|e| e.to_string()).and_then(|_| Journal::open(&jpath, &plant, surface));
     let mut journal = match opened {
         Ok(j) => j,
         Err(m) => return Err(refuse_run(refusal("session.journal", vec![], format!("LIVESESSION-JOURNAL-UNWRITTEN: {}", m)), surface)),
@@ -771,7 +879,7 @@ pub fn prepare(plan: Plan) -> Result<Prepared, i32> {
     let header = format!("{{\"journal\":\"{}\",\"run_id\":{},\"base\":{},\"renderer\":{},\"bearing\":{},\"lineage\":{}}}",
                          JOURNAL_MAGIC, esc(crate::refusallog::run_id()), base_json(&base), esc(&renderer_id()), esc(&bearing_id()), lineage_json(&lineage));
     let mut wrote = journal.put(&header);
-    for (k, ev) in session.log().iter().enumerate() {
+    for (k, ev) in session.log().iter().enumerate().take(opening) {
         if wrote.is_ok() {
             wrote = journal.put(&event_payload(k, ev));
             if wrote.is_ok() {
@@ -784,7 +892,26 @@ pub fn prepare(plan: Plan) -> Result<Prepared, i32> {
     }
     let journal = Rc::new(RefCell::new(journal));
     let session = session.with_sink(Box::new(JournalSink(journal.clone())));
-    Ok(Prepared { session, base, lineage, resumed, journal, dir, plant: plan.plant, surface, look: None })
+    Ok(Prepared { session, base, lineage, resumed, journal, dir, plant, surface, look: None })
+}
+
+/// ADMIT-0: the run of an admission. `l` is the saved session as loaded, with the one admitted edit already appended
+/// to it in memory by the seam (the session's own validation and replay; nothing written). The journal opens with the
+/// parent's events, takes the admitted event's record, and the shared seal follows.
+pub fn go_admitted(l: Loaded, plant: String, surface: &'static str) -> i32 {
+    let parent_events = l.lineage.parent_events;
+    let p = match open(l.session, l.base, Some(l.lineage), Some((l.classification, l.parent_renderer)), plant.clone(), surface, parent_events) {
+        Ok(p) => p,
+        Err(code) => return code,
+    };
+    die(&plant, "die-opened"); // PLANT: the journal holds the parent's events and nothing else
+    {
+        let mut j = p.journal.borrow_mut();
+        for (k, ev) in p.session.log().iter().enumerate().skip(parent_events) {
+            j.put_event(k, ev);
+        }
+    }
+    finish(p, "admission", "{\"source\":\"none\"}")
 }
 
 /// The run: LIVE-INPUT-0's loop, then the seal, then the saved file's verification. Returns the exit code.
@@ -926,7 +1053,8 @@ fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {
         let (a, b2) = (l.session.log(), session.log());
         if l.session.head() != session.head() || l.session.token() != session.token() || l.session.content() != session.content()
             || a.len() != b2.len() || a.iter().zip(b2.iter()).any(|(x, y)| x.witness != y.witness || x.param != y.param)
-            || l.session.ticks() != session.ticks() || a.iter().zip(b2.iter()).any(|(x, y)| x.yaw != y.yaw || x.tick != y.tick || x.input != y.input) {
+            || l.session.ticks() != session.ticks() || a.iter().zip(b2.iter()).any(|(x, y)| x.yaw != y.yaw || x.tick != y.tick || x.input != y.input)
+            || a.iter().zip(b2.iter()).any(|(x, y)| x.admit != y.admit) {
             return Err("the replay of the saved file does not reach the live session's state".to_string());
         }
         Ok(())

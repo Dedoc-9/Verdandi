@@ -9946,6 +9946,920 @@ def mouselook0a_ending():
 
 
 # ------------------------------------------------------------------ main
+# ================================================================== ADMIT-0: the admission seam
+# The gate certifies the machine; ADMIT admits the world's changes. `shell admit` reads a proposal in VRDNP1 — a line
+# language of exactly eight lines whose accepted bytes are the canonical form — refuses it with a typed reason or admits
+# it as one ordinary edit event of a saved session, its envelope beside the event and never in the head. These rows are
+# the courts the owner's review registered with the rung: the reader, the single parser, the anchor, the capability,
+# idempotency, the crash, the replay, and a fence. No model is anywhere here: every proposal below is written by the gate.
+ADMIT0_HASH = "bdd3859302f61b127c6df050cebf9ca521dc8bc2ca8a96e67b7f27150b39796d"
+ADMIT_MIN, ADMIT_MAX = 327, 337
+ADMIT_CLASSES = ("wall0", "wall1", "wall2", "wall3", "floor")
+ADMIT_EXAMPLE = (b"VRDNP1\n"
+                 b"renderer=e173d7c365dc91276e7976e3260d0dd5f73b486ee0486dfc124de4f4eac36348\n"
+                 b"bearing=5cce76fcc31eeeef6635f2616acdeb7fbadb7cd365a20e23511676e7c0e4982d\n"
+                 b"parent=b02d86b948c4926b01978cb03b3b22bc4f0b013c2e93e3987f21a1ee23f6f37c\n"
+                 b"proposal=7454d41a3731607fba536bcfd045189eab260d37c8e15d65f8b2118ffd2c8da9\n"
+                 b"op=open\ntarget=7,12\nvalue=0\n")
+ADMIT_EXAMPLE_SHA256 = "2e00fa35707be5294a3976f26274ec97991b9e294dce2983dddc3d2b91118789"
+# the saved form's JSON reader (struct P … parse_json), identical in the three files and not touched by this rung
+ADMIT_JSON_READER_SHA256 = "3b6ceb220b823394050beaa247d53e9c35967807adf501332e2ae42fdc887013"
+ADMIT_CAMERA, ADMIT_PARENT_KEYS = "28,28,N", "LEFT,RIGHT,ESC"   # the parent: two moves, standing at 28,28 facing a closed cell
+ADMIT_CELL = "28,27"                                             # the faced cell: rock in the parent, not on the border
+ADMIT_PAINT = ("wall2", 96 * 65536 + 80 * 256 + 64)              # the palette's first colour: what the key 3 paints first
+ADMIT_ALL = ["--allow", "open,close,paint", "--cells", "0,0,65535,65535", "--classes", "wall0,wall1,wall2,wall3,floor"]
+ADMIT_DEATHS = ("die-received", "die-recognized", "die-verified", "die-opened", "die-torn", "die-appended", "die-written", "die-replaced")
+_AD_COORD = rb"(0|[1-9][0-9]{0,4})"
+
+
+def _ad_recognize(b: bytes):
+    """The gate's own recognizer of VRDNP1, written apart from the shell's (regular expressions over the split lines): a
+    test oracle and nothing else. Returns ("A", fields) for a proposal or ("R", code, line) for anything else. The whole
+    byte sequence is recognized before an integer's domain is looked at."""
+    if len(b) > ADMIT_MAX:
+        return ("R", "ADMIT-SIZE", 0)
+    parts = b.split(b"\n")
+    lines, tail = parts[:-1], parts[-1]
+    at = lambda k: lines[k - 1] if len(lines) >= k else None
+    if at(1) != b"VRDNP1":
+        return ("R", "ADMIT-PARSE", 1)
+    ids = []
+    for k, key in ((2, b"renderer="), (3, b"bearing="), (4, b"parent="), (5, b"proposal=")):
+        m = None if at(k) is None else re.fullmatch(key + rb"([0-9a-f]{64})", at(k))
+        if m is None:
+            return ("R", "ADMIT-PARSE", k)
+        ids.append(m.group(1).decode("ascii"))
+    op = {b"op=open": "open", b"op=close": "close", b"op=paint": "paint"}.get(at(6))
+    if op is None:
+        return ("R", "ADMIT-PARSE", 6)
+    late = None
+    if op != "paint":
+        m = None if at(7) is None else re.fullmatch(rb"target=" + _AD_COORD + rb"," + _AD_COORD, at(7))
+        if m is None:
+            return ("R", "ADMIT-PARSE", 7)
+        if at(8) != b"value=0":
+            return ("R", "ADMIT-PARSE", 8)
+        a, c = int(m.group(1)), int(m.group(2))
+        if a > 65535 or c > 65535:
+            late = ("R", "ADMIT-RANGE", 7)
+    else:
+        names = [("target=" + n).encode("ascii") for n in ADMIT_CLASSES]
+        if at(7) not in names:
+            return ("R", "ADMIT-PARSE", 7)
+        m = None if at(8) is None else re.fullmatch(rb"value=(0|[1-9][0-9]{0,7})", at(8))
+        if m is None:
+            return ("R", "ADMIT-PARSE", 8)
+        a, c = names.index(at(7)), int(m.group(1))
+        if c > 16777215:
+            late = ("R", "ADMIT-RANGE", 8)
+    if len(lines) > 8 or tail != b"":
+        return ("R", "ADMIT-PARSE", 9)
+    if late is not None:
+        return late
+    return ("A", "%s %s %s %s %s %d %d" % (ids[0], ids[1], ids[2], ids[3], op, a, c))
+
+
+def _ad_verdict(b: bytes) -> str:
+    v = _ad_recognize(b)
+    return "A " + v[1] if v[0] == "A" else "R %s %d" % (v[1], v[2])
+
+
+def _ad_neighbourhood(base: bytes):
+    """Every single-byte substitution, deletion and insertion of `base`, in the shell's order; the oracle's counts and
+    the sha256 of its verdicts, one per line."""
+    h = hashlib.sha256()
+    n = refused = 0
+    def take(m):
+        nonlocal n, refused
+        v = _ad_verdict(bytes(m))
+        n += 1
+        refused += v[0] == "R"
+        h.update(v.encode("ascii") + b"\n")
+    m = bytearray(base)
+    for i in range(len(base)):
+        for v in range(256):
+            if v != base[i]:
+                m[i] = v
+                take(m)
+        m[i] = base[i]
+    for i in range(len(base)):
+        take(base[:i] + base[i + 1:])
+    for i in range(len(base) + 1):
+        d = bytearray(base[:i] + b"\x00" + base[i:])
+        for v in range(256):
+            d[i] = v
+            take(d)
+    return n, refused, n - refused, h.hexdigest()
+
+
+def _ad_proposal(parent, op, target, value, pid=None, renderer=None, bearing=None) -> bytes:
+    import livesession as LS
+    pid = pid or sha256(("admit-gate %s %s %s %s" % (parent, op, target, value)).encode("ascii"))
+    return ("VRDNP1\nrenderer=%s\nbearing=%s\nparent=%s\nproposal=%s\nop=%s\ntarget=%s\nvalue=%s\n"
+            % (renderer or LS.renderer_id(ROOT), bearing or LS.bearing_id(ROOT), parent, pid, op, target, value)).encode("ascii")
+
+
+def _ad_need():
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None:
+        raise Red("the shell or the workshop's sessionwalk was not built")
+
+
+def _ad_root(name):
+    """A sessions root of this row's own, empty: what a run leaves there is exactly what the run made."""
+    root = os.path.join(BUILD, "sessions-admit-%s" % name)
+    if os.path.isdir(root):
+        shutil.rmtree(root)
+    os.makedirs(root)
+    return root
+
+
+def _ad_shell(cmd, args, root, logs, exe=None):
+    env = dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1], LIVESESSION_ENV: root})
+    cp = subprocess.run([exe or SHELL_EXE, cmd] + args, capture_output=True, text=True, cwd=ROOT, env=env, errors="replace")
+    m = re.search(r"saved and verified: (.+?session\.json)", cp.stdout)
+    return cp, (m.group(1) if m else None)
+
+
+def _ad_parent(root, logs):
+    """The parent session S: the live editor's mock, two moves, saved and verified. Returns (path, bytes, document)."""
+    cp, path = _ad_shell("live-selftest", ["--camera", ADMIT_CAMERA, "--keys", ADMIT_PARENT_KEYS], root, logs)
+    if cp.returncode != 0 or path is None:
+        raise Red("the parent session did not save: " + (cp.stderr.strip() or cp.stdout.strip())[-300:])
+    raw = read(path)
+    return path, raw, json.loads(raw.decode("utf-8"))
+
+
+def _ad_write(name, b: bytes) -> str:
+    p = os.path.join(BUILD, "admit-%s.vrdnp" % name)
+    with open(p, "wb") as fh:
+        fh.write(b)
+    return p
+
+
+def _ad_records(logs):
+    if not os.path.exists(logs[0]):
+        return []
+    with open(logs[0], encoding="utf-8") as fh:
+        return [json.loads(ln) for ln in fh if ln.strip()]
+
+
+def _ad_admit(session, proposal: bytes, grant, root, logs, name, cmd="admit", extra=None):
+    """One admission. Returns (completed process, the child's path or None)."""
+    return _ad_shell(cmd, ["--session", session, "--proposal", _ad_write(name, proposal)] + grant + (extra or []), root, logs)
+
+
+def _ad_admitted(session, proposal, grant, root, logs, name):
+    cp, path = _ad_admit(session, proposal, grant, root, logs, name)
+    if cp.returncode != 0 or path is None or "[admit] admitted: " not in cp.stdout:
+        raise Red("%s was not admitted: %s" % (name, (cp.stderr.strip() or cp.stdout.strip())[-300:]))
+    raw = read(path)
+    return path, raw, json.loads(raw.decode("utf-8"))
+
+
+def _ad_refusal(what, cp, logs, seen, code, root, dirs, parent, line=None):
+    """A refused admission: exit 2 and the coded line, never a panic or an abort; exactly one new refusal record with
+    that code (and the line, for a parse or range refusal); one line of the run ledger, ended 2; no new directory; the
+    parent's bytes as they were.
+    Returns the refusal log's new length."""
+    recs = _ad_records(logs)
+    new = recs[seen:]
+    if cp.returncode != 2 or ("SHELL-%s: " % code) not in cp.stderr or "panicked" in cp.stderr or "[admit] admitted" in cp.stdout:
+        raise Red("%s: expected the refusal %s, exit 2; got exit %d: %s" % (what, code, cp.returncode, (cp.stderr.strip() or cp.stdout.strip())[-240:]))
+    if len(new) != 1 or new[0]["reason_code"] != code or new[0]["operation"] not in ("admit", "livesession") \
+            or (line is not None and new[0]["context"].get("line") != line):
+        raise Red("%s: the refusal log does not hold exactly one %s record%s" % (what, code, "" if line is None else " naming line %d" % line))
+    with open(logs[1], encoding="utf-8") as fh:
+        last = json.loads(fh.read().strip().splitlines()[-1])
+    if (last["run_id"], last["operation"], last["exit_code"], last["refusals"]) != (new[0]["run_id"], "admit", 2, 1):
+        raise Red("%s: the refused admission is not one line of the run ledger, ended 2 with one refusal" % what)
+    if sorted(os.listdir(root)) != dirs:
+        raise Red("%s: a refused admission left something under the sessions root" % what)
+    if parent is not None and read(parent[0]) != parent[1]:
+        raise Red("%s: the parent session's bytes changed" % what)
+    return len(recs)
+
+
+def _ad_item_lines(text):
+    return [i for i, ln in enumerate(text.split("\n")) if ln.startswith('   {"kind": ')]
+
+
+def admit_preregistered():
+    """ADMIT-0's method is locked before the build: the language's eight lines and its bytes, the anchor, the grant, the
+    event and its envelope, one recognizer, the refusals and their order, and the courts. The shell's constants are the
+    registered ones, and the registered worked example is a proposal of 328 bytes with the registered digest."""
+    e = locked_entry("ADMIT-0", {
+        "the seam": ("hyp", ("shell admit --session s --proposal p", "s itself is never modified", "one operation per proposal and one proposal per run",
+                             "no model is in the tree", "the gate is not invoked at content time")),
+        "the language, frozen": ("hyp", ("frozen as vrdnp1", "exactly eight lines, each ended by one lf", "nothing before the first and nothing after the last",
+                                         "64 characters of 0-9 and a-f", "line 8 is exactly 'value=0'", "in 0..65535", "in 0..16777215",
+                                         "r*65536 + g*256 + b", "no other byte is legal anywhere", "327 to 337 bytes",
+                                         "each typed proposal has exactly one byte sequence", "sha-256 of the exact bytes")),
+        "the worked example": ("hyp", ("328 bytes, sha-256 " + ADMIT_EXAMPLE_SHA256,)),
+        "the anchor": ("hyp", ("no program identity is minted", "must be the head of s as loaded", "a stale parent is refused, always, naming both heads", "there is no rebase")),
+        "the id and the grant": ("hyp", ("the proposer's 64-hex handle", "an id already in s's admitted history is refused", "the admitter grants the scope",
+                                         "what is not granted is refused, and with no grant everything is")),
+        "the event and the envelope": ("hyp", ("is the edit a key would make", "leave w and m as they are is refused", "its head is the head that edit gives",
+                                               "is never folded into the head", "travels with it through every later continuation")),
+        "one recognizer": ("hyp", ("read by one function of the shell and by nothing else", "the workshop and the sealer never read the language")),
+        "typed refusals in order": ("hyp", ("admit-io", "admit-size", "admit-parse", "admit-range", "admit-program", "admit-session", "admit-anchor",
+                                            "admit-duplicate", "admit-capability", "admit-authority", "creates no run directory, no journal and no file")),
+        "the reader court": ("succ", ("every proper prefix of a valid proposal", "never a panic, an abort or exit 0", "leaves no run directory",
+                                      "every single-byte substitution, deletion and insertion of three valid proposals", "no proposal has a second spelling")),
+        "the single-parser court": ("succ", ("an independent recognizer written in python inside the gate, a test oracle and nothing else",
+                                             "contain no reader of the language")),
+        "the anchor, capability and idempotency courts": ("succ", ("refused admit-anchor naming both heads", "refused admit-program", "refused admit-session",
+                                                                   "with no grant a valid proposal is refused admit-capability", "refused admit-authority",
+                                                                   "refused admit-duplicate", "the first child's head, content and admitted item")),
+        "the crash court": ("succ", ("at each of eight points", "exit 70", "s's bytes are unchanged", "no run directory exists",
+                                     "to exactly s's head", "to exactly the child's head with its envelope intact",
+                                     "no state holds the event without its envelope or the envelope without its event")),
+        "the replay court": ("succ", ("those of the same edit made by a key", "the workshop's sessionwalk verifies the child without the shell",
+                                      "cites this entry and counts the admitted events", "is refused by the shell, the workshop and the sealer",
+                                      "keeps the envelope byte for byte")),
+        "the fence": ("succ", ("spawns no process, opens no socket and reads nothing under verify/", "json reader", "is untouched")),
+        "what fails it": ("fail", ("a second reader of the language", "a recognized proposal with a second spelling", "a panic, an abort or an uncoded exit",
+                                   "a stale anchor admitted, rebased or merged", "an envelope folded into the head", "a grant taken from the proposal",
+                                   "invoked or read at content time", "is a new language version", "that is reader-court-0", "a durability claim under power loss")),
+        "scope": ("lims", ("no model is in the tree", "the seal is a hash and not a signature", "the proposal's bytes are not kept",
+                           "not after a power loss", "the seam is per saved session", "authenticates nobody", "closed in reader-court-0, not here")),
+    })
+    if e["chain_hash"] != ADMIT0_HASH:
+        raise Red("the ADMIT-0 entry is not the one registered (%s)" % ADMIT0_HASH[:8])
+    src = read(os.path.join(SHELL, "admit.rs")).decode("utf-8")
+    for const in ('pub const LANGUAGE: &str = "VRDNP1";', "pub const MIN_BYTES: usize = 327;", "pub const MAX_BYTES: usize = 337;",
+                  "pub const COORD_MAX: u64 = 65_535;", "pub const COLOUR_MAX: u64 = 16_777_215;", 'const OPS: [&str; 3] = ["open", "close", "paint"];'):
+        if src.count(const) != 1:
+            raise Red("shell/admit.rs does not hold the registered constant: %s" % const)
+    if (len(ADMIT_EXAMPLE), sha256(ADMIT_EXAMPLE)) != (328, ADMIT_EXAMPLE_SHA256) or _ad_recognize(ADMIT_EXAMPLE)[0] != "A" \
+            or " | ".join(ADMIT_EXAMPLE.decode("ascii").split("\n")[:-1]) not in e["hypothesis"]:
+        raise Red("the worked example is not the registered one: 328 bytes, its lines in the entry, its digest, a proposal")
+    return ("ADMIT-0's method is locked (hash %s) before the build: VRDNP1 is exactly eight lines, each ended by one LF, of "
+            "327 to 337 bytes, one byte sequence per typed proposal, its digest the sha256 of the exact bytes; the anchor is "
+            "the renderer and bearing identities and the saved session's head, a stale one refused always and never rebased; "
+            "the proposer's id is recorded and refused when repeated; the admitter grants the scope; the admitted event is the "
+            "edit a key would make with its envelope beside it and never in the head; one recognizer; ten typed refusals in a "
+            "fixed order; the registered worked example is 328 bytes with digest %s...; the shell's constants are the "
+            "registered ones" % (e["chain_hash"][:8], ADMIT_EXAMPLE_SHA256[:12]))
+
+
+def _ad_corpus(valid: bytes, paint: bytes):
+    """The hostile corpus: (name, bytes, code, line). `valid` opens a cell and `paint` paints a class."""
+    L = valid.split(b"\n")[:-1]
+    P = paint.split(b"\n")[:-1]
+    j = lambda lines: b"\n".join(lines) + b"\n"
+    swap = lambda lines, k, new: lines[:k - 1] + [new] + lines[k:]
+    c = [
+        ("a repeated line", j(L[:6] + [L[5]] + L[6:]), "ADMIT-PARSE", 7),
+        ("a repeated identity line, which is too long to be a proposal", j(L[:2] + [L[1]] + L[2:]), "ADMIT-SIZE", 0),
+        ("a missing line", j(L[:2] + L[3:]), "ADMIT-PARSE", 3),
+        ("two lines exchanged", j([L[0], L[2], L[1]] + L[3:]), "ADMIT-PARSE", 2),
+        ("an unknown key", j(swap(L, 6, b"operation=open")), "ADMIT-PARSE", 6),
+        ("a byte before the first line", b"x" + valid, "ADMIT-PARSE", 1),
+        ("a byte after the last LF", valid + b"x", "ADMIT-PARSE", 9),
+        ("a ninth line", valid + b"\n", "ADMIT-PARSE", 9),
+        ("a missing final LF", valid[:-1], "ADMIT-PARSE", 8),
+        ("CR LF", valid.replace(b"\n", b"\r\n"), "ADMIT-PARSE", 1),
+        ("a space after the key", j(swap(L, 6, b"op= open")), "ADMIT-PARSE", 6),
+        ("a space ending a line", j(swap(L, 1, b"VRDNP1 ")), "ADMIT-PARSE", 1),
+        ("a tab", j(swap(L, 7, b"target=" + ADMIT_CELL.encode().replace(b",", b"\t"))), "ADMIT-PARSE", 7),
+        ("a NUL", j(swap(L, 2, L[1][:20] + b"\x00" + L[1][21:])), "ADMIT-PARSE", 2),
+        ("a byte of 0x80 or more", j(swap(L, 4, L[3][:30] + b"\xc3" + L[3][31:])), "ADMIT-PARSE", 4),
+        ("upper-case hex", j(swap(L, 2, b"renderer=" + L[1][9:].upper().replace(b"0", b"A"))), "ADMIT-PARSE", 2),
+        ("hex of 63 characters", j(swap(L, 3, L[2][:-1])), "ADMIT-PARSE", 3),
+        ("hex of 65 characters", j(swap(L, 5, L[4] + b"0")), "ADMIT-PARSE", 5),
+        ("a leading zero", j(swap(L, 7, b"target=07,12")), "ADMIT-PARSE", 7),
+        ("a sign", j(swap(L, 7, b"target=+7,12")), "ADMIT-PARSE", 7),
+        ("a minus", j(swap(L, 7, b"target=-7,12")), "ADMIT-PARSE", 7),
+        ("a letter where an integer goes", j(swap(L, 7, b"target=a,12")), "ADMIT-PARSE", 7),
+        ("a third coordinate", j(swap(L, 7, b"target=7,12,1")), "ADMIT-PARSE", 7),
+        ("a six-digit coordinate", j(swap(L, 7, b"target=100000,1")), "ADMIT-PARSE", 7),
+        ("a coordinate of 65536", j(swap(L, 7, b"target=65536,1")), "ADMIT-RANGE", 7),
+        ("a second coordinate of 99999", j(swap(L, 7, b"target=1,99999")), "ADMIT-RANGE", 7),
+        ("a value other than 0 for open", j(swap(L, 8, b"value=1")), "ADMIT-PARSE", 8),
+        ("a range fault before a parse fault", j(swap(swap(L, 7, b"target=65536,1"), 8, b"value=1")), "ADMIT-PARSE", 8),
+        ("a range fault and a byte after the last LF", j(swap(L, 7, b"target=65536,1")) + b"x", "ADMIT-PARSE", 9),
+        ("a colour out of range and a ninth line, which is too long to be a proposal", j(swap(P, 8, b"value=16777216")) + b"\n", "ADMIT-SIZE", 0),
+        ("an unknown operation", j(swap(L, 6, b"op=erase")), "ADMIT-PARSE", 6),
+        ("an operation in upper case", j(swap(L, 6, b"op=OPEN")), "ADMIT-PARSE", 6),
+        ("an unknown class", j(swap(P, 7, b"target=wall4")), "ADMIT-PARSE", 7),
+        ("a cell where a class goes", j(swap(P, 7, b"target=7,12")), "ADMIT-PARSE", 7),
+        ("a colour of 16777216", j(swap(P, 8, b"value=16777216")), "ADMIT-RANGE", 8),
+        ("a nine-digit colour, which is too long to be a proposal", j(swap(P, 8, b"value=100000000")), "ADMIT-SIZE", 0),
+        ("an eight-digit colour out of range", j(swap(P, 8, b"value=99999999")), "ADMIT-RANGE", 8),
+        ("a colour with a leading zero", j(swap(P, 8, b"value=064")), "ADMIT-PARSE", 8),
+        ("a colour as three numbers", j(swap(P, 8, b"value=96,80,64")), "ADMIT-PARSE", 8),
+        ("a file of 338 bytes", valid + b"\n" * (ADMIT_MAX + 1 - len(valid)), "ADMIT-SIZE", 0),
+        ("a file of a megabyte", valid * (1 + (1 << 20) // len(valid)), "ADMIT-SIZE", 0),
+        ("a megabyte of one line", b"V" * (1 << 20), "ADMIT-SIZE", 0),
+    ]
+    return c
+
+
+def admit_reader():
+    """The reader court: the registered worked example is a proposal with its digest; every case of the hostile corpus
+    given to shell admit — every proper prefix of a valid proposal (the empty file among them) and the named cases —
+    ends in its registered refusal, exit 2, one record, never a panic, and leaves no run directory; an unreadable
+    proposal is ADMIT-IO; and in process, over every single-byte substitution, deletion and insertion of three valid
+    proposals, each mutant is refused or is a proposal whose emission is the mutant byte for byte."""
+    _ad_need()
+    logs = _ls_logs("admit-reader")
+    root = _ad_root("reader")
+    spath, sraw, sdoc = _ad_parent(root, logs)
+    parent = (spath, sraw)
+    head = sdoc["data"]["head"]
+    dirs = sorted(os.listdir(root))
+    valid = _ad_proposal(head, "open", ADMIT_CELL, 0)
+    paint = _ad_proposal(head, "paint", ADMIT_PAINT[0], ADMIT_PAINT[1])
+    closing = _ad_proposal(head, "close", "65535,65535", 0)
+    longest = _ad_proposal(head, "paint", "wall0", 16777215)   # 337 bytes: every insertion into it is a size refusal
+    if not (ADMIT_MIN <= len(valid) <= ADMIT_MAX) or len(closing) != 336 or len(longest) != ADMIT_MAX \
+            or len(_ad_proposal(head, "open", "0,0", 0)) != ADMIT_MIN:
+        raise Red("a proposal's length is not within the registered 327 to 337 bytes")
+    ex = _ad_write("example", ADMIT_EXAMPLE)
+    cp, _p = _ad_shell("admit-selftest", ["--neighbourhood", ex], root, logs)
+    if cp.returncode != 0 or "base recognized (328 bytes)" not in cp.stdout or "respelled 0 " not in cp.stdout or sha256(read(ex)) != ADMIT_EXAMPLE_SHA256:
+        raise Red("the shell does not recognize the registered worked example, a mutant of it is recognized with a second spelling, or its bytes are not the registered ones: " + cp.stdout.strip()[-200:])
+    seen = len(_ad_records(logs))
+    # every proper prefix of a valid proposal, the empty file among them
+    for n in range(len(valid)):
+        cp, _p = _ad_admit(spath, valid[:n], ADMIT_ALL, root, logs, "prefix")
+        if cp.returncode != 2 or "SHELL-ADMIT-PARSE: line " not in cp.stderr or "panicked" in cp.stderr:
+            raise Red("the %d-byte prefix of a valid proposal was not refused ADMIT-PARSE: exit %d: %s" % (n, cp.returncode, cp.stderr.strip()[-200:]))
+    recs = _ad_records(logs)
+    if len(recs) - seen != len(valid) or any(r["reason_code"] != "ADMIT-PARSE" for r in recs[seen:]) or sorted(os.listdir(root)) != dirs or read(spath) != sraw:
+        raise Red("the prefixes did not each leave one ADMIT-PARSE record and nothing else")
+    seen = len(recs)
+    corpus = _ad_corpus(valid, paint)
+    for name, b, code, line in corpus:
+        cp, _p = _ad_admit(spath, b, ADMIT_ALL, root, logs, "hostile")
+        seen = _ad_refusal(name, cp, logs, seen, code, root, dirs, parent, line)
+    cp, _p = _ad_shell("admit", ["--session", spath, "--proposal", os.path.join(BUILD, "admit-no-such-file.vrdnp")] + ADMIT_ALL, root, logs)
+    seen = _ad_refusal("an unreadable proposal", cp, logs, seen, "ADMIT-IO", root, dirs, parent)
+    counts = []
+    for tag, b in (("open", valid), ("close", closing), ("paint", longest)):
+        cp, _p = _ad_shell("admit-selftest", ["--neighbourhood", _ad_write("base-" + tag, b)], root, logs)
+        m = re.search(r"neighbourhood base recognized \((\d+) bytes\) mutants (\d+) refused (\d+) recognized (\d+) respelled (\d+) verdicts ([0-9a-f]{64})", cp.stdout)
+        if cp.returncode != 0 or m is None:
+            raise Red("the reader court did not run in process over the %s proposal: %s" % (tag, (cp.stderr.strip() or cp.stdout.strip())[-200:]))
+        nb, mutants, refused, recognized, respelled = (int(m.group(i)) for i in range(1, 6))
+        if nb != len(b) or mutants != 255 * nb + nb + 256 * (nb + 1) or refused + recognized != mutants or respelled != 0 or recognized == 0:
+            raise Red("the %s proposal's neighbourhood is not every single-byte mutant, or a mutant was recognized with a second spelling" % tag)
+        counts.append((tag, mutants, refused, recognized))
+    return ("the reader court: the registered worked example is a proposal (328 bytes, digest %s...); each of the %d proper "
+            "prefixes of a valid proposal, the empty file among them, is refused ADMIT-PARSE; %d named cases (a repeated, "
+            "missing, exchanged or unknown line; bytes before and after; CR LF, a space, a tab, a NUL, a high byte; "
+            "upper-case, short and long hex; a leading zero, a sign, a letter; coordinates and colours out of form and out "
+            "of range; a megabyte) each end in their registered refusal, exit 2, one record, no panic, and an unreadable "
+            "proposal in ADMIT-IO; nothing was left under the sessions root and the parent's bytes are as they were; in "
+            "process, of %s single-byte mutants of three valid proposals every one is refused or is a proposal emitted "
+            "byte for byte (%s recognized, none with a second spelling)"
+            % (ADMIT_EXAMPLE_SHA256[:12], len(valid), len(corpus), sum(c[1] for c in counts), sum(c[3] for c in counts)))
+
+
+def admit_single():
+    """The single-parser court: the gate's own Python recognizer, a test oracle, gives the shell's verdict — the same
+    refusal and line, or the same typed fields — on every named case, every prefix and every single-byte mutant of three
+    valid proposals; and by source, a proposal's bytes are read in one function of shell/admit.rs, the workshop and the
+    sealer hold no reader of the language, and the oracle is used by the admit rows only."""
+    _ad_need()
+    logs = _ls_logs("admit-single")
+    root = _ad_root("single")
+    spath, sraw, sdoc = _ad_parent(root, logs)
+    head = sdoc["data"]["head"]
+    valid = _ad_proposal(head, "open", ADMIT_CELL, 0)
+    paint = _ad_proposal(head, "paint", ADMIT_PAINT[0], ADMIT_PAINT[1])
+    closing = _ad_proposal(head, "close", "65535,65535", 0)
+    longest = _ad_proposal(head, "paint", "wall0", 16777215)
+    corpus = _ad_corpus(valid, paint)
+    for name, b, code, line in corpus:
+        if _ad_recognize(b) != ("R", code, line):
+            raise Red("the oracle's verdict on %s is %r, and the registered refusal is %s at line %d" % (name, _ad_recognize(b), code, line))
+    seen = len(_ad_records(logs))
+    # the shell on the named cases: its refusal and line are the oracle's
+    for name, b, code, line in corpus:
+        cp, _p = _ad_admit(spath, b, ADMIT_ALL, root, logs, "hostile")
+        recs = _ad_records(logs)
+        want = _ad_recognize(b)
+        if len(recs) != seen + 1 or (recs[-1]["reason_code"], recs[-1]["context"].get("line")) != (want[1], want[2]):
+            raise Red("the shell and the oracle differ on %s: the oracle says %r" % (name, want))
+        seen = len(recs)
+    agree = 0
+    for n in range(len(valid)):
+        cp, _p = _ad_admit(spath, valid[:n], ADMIT_ALL, root, logs, "prefix")
+        recs = _ad_records(logs)
+        want = _ad_recognize(valid[:n])
+        if len(recs) != seen + 1 or (recs[-1]["reason_code"], recs[-1]["context"].get("line")) != (want[1], want[2]):
+            raise Red("the shell and the oracle differ on the %d-byte prefix: the oracle says %r" % (n, want))
+        seen = len(recs)
+        agree += 1
+    total = 0
+    for tag, b in (("open", valid), ("close", closing), ("paint", longest)):
+        cp, _p = _ad_shell("admit-selftest", ["--neighbourhood", _ad_write("base-" + tag, b)], root, logs)
+        m = re.search(r"mutants (\d+) refused (\d+) recognized (\d+) respelled 0 verdicts ([0-9a-f]{64})", cp.stdout)
+        n, refused, recognized, digest = _ad_neighbourhood(b)
+        if cp.returncode != 0 or m is None or (int(m.group(1)), int(m.group(2)), int(m.group(3)), m.group(4)) != (n, refused, recognized, digest):
+            raise Red("the shell and the oracle differ somewhere in the %s proposal's neighbourhood (%d mutants): the verdicts' digests are not equal" % (tag, n))
+        total += n
+    code = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
+    shell = {fn: code(read(os.path.join(SHELL, fn)).decode("utf-8")) for fn in sorted(os.listdir(SHELL)) if fn.endswith(".rs")}
+    ad = shell["admit.rs"]
+    runf = src_span(ad, "pub fn run(session: &str, proposal: &str, grant: &Grant, plant: &str) -> i32 {", "\n}\n")
+    if ({fn: s.count("recognize(") for fn, s in shell.items() if s.count("recognize(")} != {"admit.rs": 3}
+            or ad.count("pub fn recognize(b: &[u8]) -> Result<Proposal, Unrecognized> {") != 1 or runf.count("recognize(&bytes)") != 1
+            or src_span(ad, "fn verdict(b: &[u8])", "\n}\n").count("recognize(b)") != 1
+            or {fn for fn, s in shell.items() if '"VRDNP1"' in s} != {"admit.rs"} or ad.count('"VRDNP1"') != 1
+            or {fn for fn, s in shell.items() if "read_bounded(" in s} != {"admit.rs"} or ad.count("read_bounded(") != 2
+            or len(re.findall(r"\bbytes\b", re.sub(r'"(?:[^"\\]|\\.)*"', '""', runf))) != 4 or "sha256(&bytes)" not in runf or "bytes.len()" not in runf):
+        raise Red("a proposal's bytes are read by more than the one recognizer, or reach more than the recognizer and the digest")
+    ws = {fn: code(read(os.path.join(WORKSHOP, fn)).decode("utf-8")) for fn in sorted(os.listdir(WORKSHOP)) if fn.endswith(".rs")}
+    sealer = read(os.path.join(ROOT, "verify", "livesession.py")).decode("utf-8")
+    words = ('"renderer="', '"op=', '"target=', '"value=', "op=open", "fn recognize", "def recognize", "ADMIT-PARSE")
+    if ({fn: s.count('"VRDNP1"') for fn, s in ws.items() if "VRDNP1" in s} != {"sessionwalk.rs": 1}
+            or 'a.get("language").s() != "VRDNP1"' not in ws["sessionwalk.rs"] or sealer.count('"VRDNP1"') != 1
+            or 'ENVELOPE_LANGUAGE = "VRDNP1"' not in sealer or any(w in s for s in list(ws.values()) + [sealer] for w in words)):
+        raise Red("the workshop or the sealer holds something of the proposal language beyond its name in an envelope")
+    me = read(os.path.join(ROOT, "verify", "verify.py")).decode("utf-8")
+    owner = None
+    for ln in me.splitlines():
+        m = re.match(r"def (\w+)\(", ln)
+        if m:
+            owner = m.group(1)
+        elif "_ad_recognize(" in ln or "_ad_verdict(" in ln or "_ad_neighbourhood(" in ln:
+            if owner is None or not (owner.startswith("admit_") or owner.startswith("_ad_")):
+                raise Red("the Python recognizer is used outside the admit rows (in %s): it is a test oracle and nothing else" % owner)
+    return ("the single-parser court: the gate's own Python recognizer, written apart from the shell's, gives the registered "
+            "refusal and line on each of the %d named cases, and so does the shell; the two agree on all %d proper prefixes and on all %d "
+            "single-byte mutants of three valid proposals (equal counts, equal digests of the verdicts, refusal and line or "
+            "typed fields); by source the proposal's bytes are read in one function of shell/admit.rs and reach only it and "
+            "the digest, the workshop and the sealer hold the language's name in an envelope and nothing else of it, and the "
+            "oracle is used by the admit rows only" % (len(corpus), agree, total))
+
+
+def admit_anchor():
+    """The anchor court: a proposal made against another head is refused ADMIT-ANCHOR, both heads named; one whose
+    renderer or bearing identity is not this shell's is refused ADMIT-PROGRAM; a journal given as the session is refused
+    ADMIT-SESSION; each leaves nothing. shell admit-anchor prints the four lines a proposal for the session begins with."""
+    import livesession as LS
+    _ad_need()
+    logs = _ls_logs("admit-anchor")
+    root = _ad_root("anchor")
+    spath, sraw, sdoc = _ad_parent(root, logs)
+    parent = (spath, sraw)
+    head = sdoc["data"]["head"]
+    dirs = sorted(os.listdir(root))
+    cp, _p = _ad_shell("admit-anchor", ["--session", spath], root, logs)
+    want = "VRDNP1\nrenderer=%s\nbearing=%s\nparent=%s\n" % (LS.renderer_id(ROOT), LS.bearing_id(ROOT), head)
+    if cp.returncode != 0 or cp.stdout != want or sorted(os.listdir(root)) != dirs:
+        raise Red("shell admit-anchor does not print the four leading lines of a proposal for the session, or it wrote something")
+    seen = len(_ad_records(logs))
+    genesis = LS.heads(sdoc["data"]["base"]["content"], sdoc["data"]["base"]["camera"], [])[0]
+    for what, stale in (("an earlier head of the same session", genesis), ("a head one character off", ("0" if head[0] != "0" else "1") + head[1:])):
+        cp, _p = _ad_admit(spath, _ad_proposal(stale, "open", ADMIT_CELL, 0), ADMIT_ALL, root, logs, "stale")
+        seen = _ad_refusal(what, cp, logs, seen, "ADMIT-ANCHOR", root, dirs, parent)
+        if stale not in cp.stderr or head not in cp.stderr or "no rebase" not in cp.stderr:
+            raise Red("the stale anchor's refusal does not name both heads")
+    other = sha256(b"another build")
+    cp, _p = _ad_admit(spath, _ad_proposal(head, "open", ADMIT_CELL, 0, renderer=other), ADMIT_ALL, root, logs, "renderer")
+    seen = _ad_refusal("another renderer identity", cp, logs, seen, "ADMIT-PROGRAM", root, dirs, parent)
+    cp, _p = _ad_admit(spath, _ad_proposal(head, "open", ADMIT_CELL, 0, bearing=other), ADMIT_ALL, root, logs, "bearing")
+    seen = _ad_refusal("another bearing identity", cp, logs, seen, "ADMIT-PROGRAM", root, dirs, parent)
+    # the program is checked before the anchor: a proposal wrong in both is refused for the program
+    cp, _p = _ad_admit(spath, _ad_proposal(genesis, "open", ADMIT_CELL, 0, renderer=other), ADMIT_ALL, root, logs, "both")
+    seen = _ad_refusal("another identity and a stale head", cp, logs, seen, "ADMIT-PROGRAM", root, dirs, parent)
+    journal = os.path.join(os.path.dirname(spath), "journal.vsj")
+    cp, _p = _ad_admit(journal, _ad_proposal(head, "open", ADMIT_CELL, 0), ADMIT_ALL, root, logs, "journal")
+    seen = _ad_refusal("a journal given as the session", cp, logs, seen, "ADMIT-SESSION", root, dirs, parent)
+    cp, _p = _ad_shell("admit-anchor", ["--session", journal], root, logs)
+    seen = _ad_refusal("admit-anchor on a journal", cp, logs, seen, "ADMIT-SESSION", root, dirs, parent)
+    return ("the anchor court: a proposal made against an earlier head of the same session, or a head one character off, is "
+            "refused ADMIT-ANCHOR with both heads named and no rebase; another renderer identity or another bearing identity "
+            "is refused ADMIT-PROGRAM, before the anchor is looked at; a journal given as the session is refused "
+            "ADMIT-SESSION; each is exit 2 with one record, leaves no run directory and leaves the parent's bytes as they "
+            "were; shell admit-anchor prints exactly the four lines a proposal for the session begins with, and reads only")
+
+
+def admit_capability():
+    """The capability court: with no grant a valid proposal is refused; an operation kind not granted, a cell outside
+    the granted rectangle, cells not named and a class not granted are each refused ADMIT-CAPABILITY; inside the grant,
+    a cell outside the level, a border cell opened and a proposal that changes nothing are each refused ADMIT-AUTHORITY;
+    a malformed grant is a usage refusal; each leaves nothing."""
+    _ad_need()
+    logs = _ls_logs("admit-capability")
+    root = _ad_root("capability")
+    spath, sraw, sdoc = _ad_parent(root, logs)
+    parent = (spath, sraw)
+    head = sdoc["data"]["head"]
+    dirs = sorted(os.listdir(root))
+    seen = len(_ad_records(logs))
+    opening = _ad_proposal(head, "open", ADMIT_CELL, 0)
+    painting = _ad_proposal(head, "paint", ADMIT_PAINT[0], ADMIT_PAINT[1])
+    cap = [
+        ("no grant", opening, []),
+        ("a grant of close only", opening, ["--allow", "close", "--cells", "0,0,65535,65535"]),
+        ("a grant of paint only", opening, ["--allow", "paint", "--classes", "wall0,wall1,wall2,wall3,floor"]),
+        ("a grant naming no cells", opening, ["--allow", "open"]),
+        ("a rectangle beside the cell", opening, ["--allow", "open", "--cells", "0,0,27,65535"]),
+        ("a rectangle above the cell", opening, ["--allow", "open", "--cells", "0,28,65535,65535"]),
+        ("a paint with no paint granted", painting, ["--allow", "open,close", "--cells", "0,0,65535,65535", "--classes", "wall2"]),
+        ("a class not granted", painting, ["--allow", "paint", "--classes", "wall0,wall1,wall3,floor"]),
+        ("a paint with no class named", painting, ["--allow", "paint"]),
+    ]
+    for what, b, grant in cap:
+        cp, _p = _ad_admit(spath, b, grant, root, logs, "cap")
+        seen = _ad_refusal(what, cp, logs, seen, "ADMIT-CAPABILITY", root, dirs, parent)
+    auth = [
+        ("a cell outside the level", _ad_proposal(head, "open", "60000,60000", 0), "OUTSIDE"),
+        ("a border cell opened", _ad_proposal(head, "open", "0,5", 0), "BORDER"),
+        ("a closed cell closed", _ad_proposal(head, "close", ADMIT_CELL, 0), "nothing to change"),
+        ("an open cell opened", _ad_proposal(head, "open", "28,28", 0), "nothing to change"),
+    ]
+    for what, b, why in auth:
+        cp, _p = _ad_admit(spath, b, ADMIT_ALL, root, logs, "auth")
+        seen = _ad_refusal(what, cp, logs, seen, "ADMIT-AUTHORITY", root, dirs, parent)
+        if why not in cp.stderr:
+            raise Red("%s: the authority's refusal does not say %r" % (what, why))
+    usage = [["--allow", "fly"], ["--allow", "open,open"], ["--allow", "open", "--cells", "5,5,4,9"], ["--allow", "open", "--cells", "1,1,70000,2"],
+             ["--allow", "paint", "--classes", "wall9"], ["--allow", "open", "--allow", "paint"], ["--grant", "everything"], ["--plant", "die-verified"]]
+    for grant in usage:
+        cp, _p = _ad_admit(spath, opening, grant, root, logs, "usage")
+        if cp.returncode != 2 or "SHELL-USAGE: " not in cp.stderr or len(_ad_records(logs)) != seen or sorted(os.listdir(root)) != dirs or read(spath) != sraw:
+            raise Red("a malformed grant (%s) is not a usage refusal that leaves nothing" % " ".join(grant))
+    # the grant is the admitter's and exact: the smallest grant that covers the proposal admits it
+    path, raw, doc = _ad_admitted(spath, opening, ["--allow", "open", "--cells", "%s,%s" % (ADMIT_CELL, ADMIT_CELL)], root, logs, "exact")
+    if doc["data"]["log"][-1]["admit"]["grant"] != "allow=open cells=28,27,28,27 classes=-" or read(spath) != sraw:
+        raise Red("the smallest covering grant did not admit the proposal with that grant recorded")
+    return ("the capability court: with no grant a valid proposal is refused ADMIT-CAPABILITY, and so are an operation kind "
+            "not granted, a grant that names no cells, a rectangle that ends one cell short on either axis, a paint with no "
+            "paint granted, a class not granted and a paint with no class named (%d cases); inside the grant a cell outside "
+            "the level, a border cell opened, a closed cell closed and an open cell opened are refused ADMIT-AUTHORITY by "
+            "the session's own validation or as nothing to change; %d malformed command lines are usage refusals, a plant "
+            "on shell admit among them; each leaves no run directory and the parent as it was; the smallest grant that "
+            "covers the proposal admits it, and that grant is what its envelope records" % (len(cap), len(usage)))
+
+
+def admit_idempotent():
+    """The idempotency court: a proposal admitted to S gives a child S'; the same bytes offered to S' are refused
+    ADMIT-ANCHOR; a proposal with the same id and S''s head as its parent is refused ADMIT-DUPLICATE; the same bytes
+    admitted again to the untouched S give a child with the first child's head, content and admitted item."""
+    _ad_need()
+    logs = _ls_logs("admit-idempotent")
+    root = _ad_root("idempotent")
+    spath, sraw, sdoc = _ad_parent(root, logs)
+    head = sdoc["data"]["head"]
+    opening = _ad_proposal(head, "open", ADMIT_CELL, 0)
+    pid = _ad_recognize(opening)[1].split(" ")[3]
+    c1, raw1, doc1 = _ad_admitted(spath, opening, ADMIT_ALL, root, logs, "first")
+    d1 = doc1["data"]
+    if d1["head"] == head or len(d1["log"]) != len(sdoc["data"]["log"]) + 1 or d1["log"][-1].get("admit", {}).get("proposal") != pid or read(spath) != sraw:
+        raise Red("the first admission did not append one enveloped edit to a new file, leaving the parent as it was")
+    dirs = sorted(os.listdir(root))
+    seen = len(_ad_records(logs))
+    cp, _p = _ad_admit(c1, opening, ADMIT_ALL, root, logs, "again")
+    seen = _ad_refusal("the same bytes offered to the child", cp, logs, seen, "ADMIT-ANCHOR", root, dirs, (c1, raw1))
+    cp, _p = _ad_admit(c1, _ad_proposal(d1["head"], "close", ADMIT_CELL, 0, pid=pid), ADMIT_ALL, root, logs, "reused")
+    seen = _ad_refusal("the same id re-anchored to the child", cp, logs, seen, "ADMIT-DUPLICATE", root, dirs, (c1, raw1))
+    # the same edit under a new id is a new proposal and is admitted: it is the id, not the edit, that was refused
+    c3, raw3, doc3 = _ad_admitted(c1, _ad_proposal(d1["head"], "close", ADMIT_CELL, 0), ADMIT_ALL, root, logs, "new-id")
+    dirs, seen = sorted(os.listdir(root)), len(_ad_records(logs))
+    cp, _p = _ad_admit(c3, _ad_proposal(doc3["data"]["head"], "open", ADMIT_CELL, 0, pid=pid), ADMIT_ALL, root, logs, "reused-later")
+    seen = _ad_refusal("the first id two admissions later", cp, logs, seen, "ADMIT-DUPLICATE", root, dirs, (c3, raw3))
+    c2, raw2, doc2 = _ad_admitted(spath, opening, ADMIT_ALL, root, logs, "second")
+    d2 = doc2["data"]
+    if c2 == c1 or (d2["head"], d2["final_content"], d2["log"]) != (d1["head"], d1["final_content"], d1["log"]) or _st_data(c2) != _st_data(c1) or read(spath) != sraw:
+        raise Red("the same bytes admitted again to the untouched parent did not give the first child's head, content and admitted item")
+    return ("the idempotency court: a proposal admitted to S gives a child with one more event, the enveloped edit, and S's "
+            "bytes are as they were; the same bytes offered to the child are refused ADMIT-ANCHOR (stale); the same id "
+            "re-anchored to the child's head is refused ADMIT-DUPLICATE, and again two admissions later, while the same edit "
+            "under a new id is admitted; the same bytes admitted again to the untouched S give a second file whose data "
+            "block is the first child's byte for byte (head %s...): the same world, not a second change" % d1["head"][:12])
+
+
+def _ad_resumed(path, logs, name):
+    """What the shell's loader makes of a saved session or a journal: resumed by the session's mock with no key but Esc,
+    in a root of its own. Returns the continuation's document (its lineage names what was loaded)."""
+    root = _ad_root("loader-" + name)
+    cp, out = _ad_shell("livesession-selftest", ["--resume", path, "--keys", "ESC"], root, logs)
+    if cp.returncode != 0 or out is None:
+        raise Red("the shell's loader does not load what the %s run left: %s" % (name, (cp.stderr.strip() or cp.stdout.strip())[-300:]))
+    return json.loads(read(out).decode("utf-8"))
+
+
+def admit_crash():
+    """The crash court: an admission is ended (exit 70, nothing after it run) at each of eight points. After each the
+    parent's bytes are unchanged; after the first three no run directory exists; what the run left after the fourth and
+    fifth loads through the shell's loader to exactly the parent's head; after the last three to exactly the child's
+    head with its envelope intact; and no state holds the event without its envelope or the envelope without its event."""
+    import livesession as LS
+    _ad_need()
+    logs = _ls_logs("admit-crash")
+    root = _ad_root("crash")
+    spath, sraw, sdoc = _ad_parent(root, logs)
+    head, n = sdoc["data"]["head"], len(sdoc["data"]["log"])
+    opening = _ad_proposal(head, "open", ADMIT_CELL, 0)
+    grant = ["--allow", "open", "--cells", "0,0,65535,65535"]
+    c1, raw1, doc1 = _ad_admitted(spath, opening, grant, root, logs, "clean")
+    child, item = doc1["data"]["head"], doc1["data"]["log"][-1]
+    if "admit" not in item:
+        raise Red("the clean admission's event carries no envelope")
+    seen_runs = sum(1 for _ in open(logs[1], encoding="utf-8")) if os.path.exists(logs[1]) else 0
+    report = []
+    for plant in ADMIT_DEATHS:
+        r = _ad_root("crash-" + plant)
+        cp, out = _ad_admit(spath, opening, grant, r, logs, "crash", cmd="admit-selftest", extra=["--plant", plant])
+        if cp.returncode != 70 or ("SHELL-ADMIT-PLANT-DEATH: " + plant) not in cp.stderr or out is not None or "saved and verified" in cp.stdout:
+            raise Red("%s: the run did not end at its death point with exit 70: exit %d: %s" % (plant, cp.returncode, cp.stderr.strip()[-200:]))
+        if read(spath) != sraw:
+            raise Red("%s: the parent session's bytes changed" % plant)
+        left = sorted(os.listdir(r))
+        if plant in ("die-received", "die-recognized", "die-verified"):
+            if left:
+                raise Red("%s: a run directory exists though nothing had been admitted" % plant)
+            report.append("%s: nothing" % plant)
+            continue
+        if len(left) != 1:
+            raise Red("%s: the run did not leave exactly one run directory" % plant)
+        d = os.path.join(r, left[0])
+        files = sorted(os.listdir(d))
+        jrecs, torn = _ls_journal(os.path.join(d, "journal.vsj"))
+        evs = jrecs[1:]
+        if any(("admit" in e_) != (k == n) for k, e_ in enumerate(evs)):
+            raise Red("%s: a journal record holds the event without its envelope, or an envelope without the admitted event" % plant)
+        if plant in ("die-opened", "die-torn"):
+            if files != ["journal.vsj"] or len(evs) != n or torn != (plant == "die-torn"):
+                raise Red("%s: the run left something other than a journal of the parent's %d events%s" % (plant, n, " and a torn record" if plant == "die-torn" else ""))
+            lin = _ad_resumed(os.path.join(d, "journal.vsj"), logs, plant)["live"]["lineage"]
+            if (lin["parent_head"], lin["parent_events"], lin["source"], lin["torn"]) != (head, n, "journal", 1 if plant == "die-torn" else 0):
+                raise Red("%s: what the run left does not load to exactly the parent's head" % plant)
+            report.append("%s: a journal -> the parent's head" % plant)
+            continue
+        want = {"die-appended": ["journal.vsj"], "die-written": ["journal.vsj", "session.json.tmp"], "die-replaced": ["journal.vsj", "session.json"]}[plant]
+        if files != want or len(evs) != n + 1 or torn or evs[n].get("admit") != item["admit"] or evs[n]["head"] != child:
+            raise Red("%s: the run did not leave %s with the admitted event's record complete and enveloped" % (plant, " and ".join(want)))
+        loads = [os.path.join(d, "journal.vsj")] + ([os.path.join(d, "session.json")] if plant == "die-replaced" else [])
+        for p_ in loads:
+            cont = _ad_resumed(p_, logs, plant)
+            lin = cont["live"]["lineage"]
+            if (lin["parent_head"], lin["parent_events"], lin["torn"]) != (child, n + 1, 0) or cont["data"]["log"][n] != item:
+                raise Red("%s: %s does not load to exactly the child's head with its envelope intact" % (plant, os.path.basename(p_)))
+        if plant == "die-replaced":
+            saved = read(os.path.join(d, "session.json"))
+            dd = LS.check_saved(saved, ROOT)["data"]
+            if (dd["head"], dd["log"][n]) != (child, item) or _st_data(os.path.join(d, "session.json")) != _st_data(c1):
+                raise Red("die-replaced: the saved file in place is not the child")
+        report.append("%s: %s -> the child's head, enveloped" % (plant, " and ".join(want)))
+    runs = [json.loads(ln) for ln in open(logs[1], encoding="utf-8") if ln.strip()][seen_runs:]
+    if any(r_.get("operation") == "admit" for r_ in runs):
+        raise Red("a run that died is in the run ledger as ended")
+    return ("the crash court: an admission ended with exit 70 at each of eight points leaves the parent's bytes unchanged; "
+            "after the bytes are read, the proposal recognized and every check passed, no run directory exists; after the "
+            "journal is opened with the parent's %d events, and after the admitted event's record is torn half-way, the "
+            "journal loads through the shell's loader to exactly the parent's head (%s...), the torn record dropped; after "
+            "that record is flushed, after the temporary saved file is written, and after the saved file is moved into "
+            "place, what is left loads to exactly the child's head (%s...) with the envelope the clean admission wrote; no "
+            "journal record holds the event without its envelope or an envelope without the event; a dead run has no line "
+            "in the run ledger [%s]" % (n, head[:12], child[:12], "; ".join(report)))
+
+
+def _ad_forge(text, k, fn):
+    """Rewrite the saved file's item line k with fn, and reseal: a forger's step."""
+    lines = text.split("\n")
+    items = _ad_item_lines(text)
+    new = fn(lines[items[k]])
+    if new == lines[items[k]]:
+        raise Red("a forgery changed nothing: its strings are not where the saved file keeps them")
+    lines[items[k]] = new
+    return _ls_reseal("\n".join(lines))
+
+
+def admit_replay():
+    """The replay court: for each operation the admitted child's head, content and event are those of the same edit made
+    by a key in the live editor's mock from the same parent, the saved item differing only by the envelope; the workshop
+    verifies the child without the shell; the sealer checks it and its record cites this entry and counts the admitted
+    events; a resealed file whose envelope does not stand is refused by the shell, the workshop and the sealer; the child
+    continued by keys keeps the envelope byte for byte."""
+    import livesession as LS
+    _ad_need()
+    logs = _ls_logs("admit-replay")
+    root = _ad_root("replay")
+    spath, sraw, sdoc = _ad_parent(root, logs)
+    head = sdoc["data"]["head"]
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+
+    def key_made(session, keys, what):
+        cp, path = _ad_shell("live-selftest", ["--resume", session, "--keys", keys], root, logs)
+        if cp.returncode != 0 or path is None:
+            raise Red("the key-made %s did not save: %s" % (what, (cp.stderr.strip() or cp.stdout.strip())[-300:]))
+        return path, json.loads(read(path).decode("utf-8"))
+
+    def same(what, adoc, kdoc, spec):
+        a, k = adoc["data"], kdoc["data"]
+        ai, ki = dict(a["log"][-1]), k["log"][-1]
+        env = ai.pop("admit", None)
+        if env is None or "admit" in ki or ai != ki or ai.get("spec") != spec or (a["head"], a["final_content"], a["final_camera"]) != (k["head"], k["final_content"], k["final_camera"]):
+            raise Red("%s: the admitted event is not the edit a key makes (the same spec, witness, head and content, the envelope beside it)" % what)
+        return env
+
+    a_open, raw_open, doc_open = _ad_admitted(spath, _ad_proposal(head, "open", ADMIT_CELL, 0), ADMIT_ALL, root, logs, "open")
+    k_open, kdoc_open = key_made(spath, "SPACE,ESC", "open")
+    env = same("open", doc_open, kdoc_open, "cell:%s,." % ADMIT_CELL)
+    h1 = doc_open["data"]["head"]
+    a_close, raw_close, doc_close = _ad_admitted(a_open, _ad_proposal(h1, "close", ADMIT_CELL, 0), ADMIT_ALL, root, logs, "close")
+    k_close, kdoc_close = key_made(a_open, "SPACE,ESC", "close")
+    same("close", doc_close, kdoc_close, "cell:%s,#" % ADMIT_CELL)
+    rgb = "%d,%d,%d" % (ADMIT_PAINT[1] >> 16, (ADMIT_PAINT[1] >> 8) & 255, ADMIT_PAINT[1] & 255)
+    a_paint, raw_paint, doc_paint = _ad_admitted(spath, _ad_proposal(head, "paint", ADMIT_PAINT[0], ADMIT_PAINT[1]), ADMIT_ALL, root, logs, "paint")
+    k_paint, kdoc_paint = key_made(spath, "3,ESC", "paint")
+    same("paint", doc_paint, kdoc_paint, "tile:%s,%s" % (ADMIT_PAINT[0], rgb))
+    if (env["language"], env["parent"], env["head"], env["renderer"], env["bearing"], env["digest"]) != (
+            "VRDNP1", head, h1, LS.renderer_id(ROOT), LS.bearing_id(ROOT), sha256(_ad_proposal(head, "open", ADMIT_CELL, 0))):
+        raise Red("the envelope does not record the language, the heads around the event, this shell's identities and the digest of the proposal's exact bytes")
+    # the child continued by keys keeps the envelope byte for byte (the key-made close above continued the admitted open)
+    t_open, t_kclose = raw_open.decode("utf-8"), read(k_close).decode("utf-8")
+    n = len(sdoc["data"]["log"])
+    line_a = t_open.split("\n")[_ad_item_lines(t_open)[n]]
+    line_k = t_kclose.split("\n")[_ad_item_lines(t_kclose)[n]]
+    if '"admit": {' not in line_a or line_k != line_a + "," or "admit" in kdoc_close["data"]["log"][n + 1]:
+        raise Red("a continuation by keys did not keep the admitted event's saved item byte for byte, or enveloped its own edit")
+    # the workshop, without the shell; the sealer; the sealed copy replayed by both
+    for what, path, count in (("open", a_open, 1), ("close", a_close, 2), ("paint", a_paint, 1)):
+        code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+        if code != 0 or "SESSIONWALK verify OK" not in out or (" admitted %d " % count) not in out:
+            raise Red("the workshop's sessionwalk does not verify the admitted %s child and count its envelopes: %s" % (what, (err or out).strip()[-200:]))
+    # the workshop continuing an admitted session in its own format carries the envelope with the event
+    wcopy = os.path.join(BUILD, "admit-workshop.json")
+    shutil.copy(a_open, wcopy)
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["move", "--session", wcopy, "--command", "L"])
+    code2, out2, err2 = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", wcopy])
+    wdoc = json.loads(read(wcopy).decode("utf-8"))["data"]
+    if code != 0 or code2 != 0 or " admitted 1 " not in out2 or wdoc["log"][n].get("admit") != env or len(wdoc["log"]) != n + 2 or "admit" in wdoc["log"][n + 1]:
+        raise Red("the workshop continuing an admitted session did not keep the envelope beside its event: %s" % (err or err2 or out2).strip()[-200:])
+    code, wout, werr = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", a_close])
+    try:
+        rec = LS.seal_livesession(raw_close, reg, "gate-mock", wout.strip())
+    except LS.Refuse as e_:
+        raise Red("the sealer refused the admitted session: %s" % e_)
+    envelope.validate(rec)
+    prov = rec["provenance"]
+    if (prov.get("admission") != {"rung": "ADMIT-0", "chain_hash": ADMIT0_HASH} or "2 of the edits admitted through ADMIT-0's seam" not in rec["reading"]
+            or "shell admit (" not in prov["tool"] or "ended by admission" not in rec["reading"]
+            or not any("the proposal's bytes are not kept" in f for f in rec["forbidden_interpretations"])):
+        raise Red("the sealed record does not cite ADMIT-0, count the admitted events and keep the digest's limit")
+    out_p = os.path.join(BUILD, "admit-record.json")
+    envelope.write(out_p, rec)
+    code, pout, perr = _ls_verify(SHELL_EXE, ["playback", "--session", out_p])
+    code2, wout2, werr2 = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", out_p])
+    if code != 0 or ("playback head " + rec["data"]["head"]) not in pout or code2 != 0 or " admitted 2 " not in wout2:
+        raise Red("the sealed copy of the admitted session does not replay in shell playback and the workshop to its head")
+    plain = LS.seal_livesession(sraw, reg, "gate-mock", "x")
+    if "admission" in plain["provenance"] or "ADMIT-0" in plain["reading"] or len(plain["forbidden_interpretations"]) != 5:
+        raise Red("the sealer reads a session with no envelope differently than before")
+    # envelopes that do not stand: the saved file edited and resealed, refused by all three verifiers
+    text = raw_close.decode("utf-8")
+    first, second = doc_close["data"]["log"][n]["admit"], doc_close["data"]["log"][n + 1]["admit"]
+    flip = lambda h: ("0" if h[0] != "0" else "1") + h[1:]
+    sub = lambda a, b: (lambda ln: ln.replace(a, b, 1))
+    env_text = lambda ln: ln[ln.index(', "admit": {'):ln.rindex("}")]
+    chain = LS.heads(doc_close["data"]["base"]["content"], doc_close["data"]["base"]["camera"], doc_close["data"]["log"])
+    def onto_move(t, own_heads):
+        """The second envelope taken off its edit and put on the first move; with own_heads, naming that move's own
+        heads, so that being on a move is the only thing wrong with it."""
+        lines = t.split("\n")
+        items = _ad_item_lines(t)
+        e_ = env_text(lines[items[n + 1]])
+        lines[items[n + 1]] = lines[items[n + 1]].replace(e_, "", 1)
+        if own_heads:
+            e_ = e_.replace('"parent": "%s"' % second["parent"], '"parent": "%s"' % chain[0]).replace('"head": "%s"' % second["head"], '"head": "%s"' % chain[1])
+        lines[items[0]] = lines[items[0]].rstrip(",")[:-1] + e_ + "}" + ("," if lines[items[0]].endswith(",") else "")
+        return _ls_reseal("\n".join(lines))
+    forged = [
+        ("a parent that is not the chain's", _ad_forge(text, n + 1, sub('"parent": "%s"' % second["parent"], '"parent": "%s"' % flip(second["parent"])))),
+        ("a parent that is another head of the chain", _ad_forge(text, n + 1, sub('"parent": "%s"' % second["parent"], '"parent": "%s"' % head))),
+        ("a resulting head that is not the chain's", _ad_forge(text, n + 1, sub('"head": "%s"' % second["head"], '"head": "%s"' % flip(second["head"])))),
+        ("a language that is not VRDNP1", _ad_forge(text, n + 1, sub('"language": "VRDNP1"', '"language": "VRDNP2"'))),
+        ("an id of 63 characters", _ad_forge(text, n + 1, sub('"proposal": "%s"' % second["proposal"], '"proposal": "%s"' % second["proposal"][:-1]))),
+        ("an id in upper case", _ad_forge(text, n + 1, sub('"proposal": "%s"' % second["proposal"], '"proposal": "%s"' % second["proposal"].upper().replace("0", "A")))),
+        ("a digest that is not hex", _ad_forge(text, n + 1, sub('"digest": "%s"' % second["digest"], '"digest": "g%s"' % second["digest"][1:]))),
+        ("an identity that is not hex", _ad_forge(text, n + 1, sub('"renderer": "%s"' % second["renderer"], '"renderer": "%s"' % ("z" * 64)))),
+        ("a proposal id twice", _ad_forge(text, n + 1, sub('"proposal": "%s"' % second["proposal"], '"proposal": "%s"' % first["proposal"]))),
+        ("a ninth member", _ad_forge(text, n + 1, sub('"grant": "%s"' % second["grant"], '"grant": "%s", "note": "x"' % second["grant"]))),
+        ("a missing member", _ad_forge(text, n + 1, sub(', "grant": "%s"' % second["grant"], ""))),
+        ("a member that is not text", _ad_forge(text, n + 1, sub('"grant": "%s"' % second["grant"], '"grant": 5'))),
+        ("a grant that is not a grant's line", _ad_forge(text, n + 1, sub('"grant": "%s"' % second["grant"], '"grant": "Allow=open"'))),
+        ("an envelope that is not an object", _ad_forge(text, n + 1, lambda ln: ln.replace(env_text(ln), ', "admit": "x"', 1))),
+        ("an envelope on a move", onto_move(text, False)),
+        ("an envelope on a move, naming that move's own heads", onto_move(text, True)),
+    ]
+    for what, bad in forged:
+        p = _ls_write("admit-forged", bad)
+        cp, _o = _ad_shell("admit-anchor", ["--session", p], root, logs)
+        code, wout3, werr3 = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p])
+        try:
+            LS.check_saved(bad.encode("utf-8"), ROOT)
+            sealer_ok = True
+        except LS.Refuse as e_:
+            sealer_ok = "envelope" not in str(e_)
+        if cp.returncode != 2 or "SHELL-LIVESESSION-ENVELOPE: " not in cp.stderr or code == 0 or "SESSIONWALK-ENVELOPE" not in werr3 or sealer_ok:
+            raise Red("%s: not refused for its envelope by the shell, the workshop and the sealer alike (shell %d, workshop %d, sealer %s)"
+                      % (what, cp.returncode, code, "accepts" if sealer_ok else "refuses"))
+    # the envelope is not in the head: the forgeries above changed envelopes only, and the stored head still folds
+    if chain[-1] != doc_close["data"]["head"] or (chain[n], chain[n + 1], chain[n + 2]) != (first["parent"], first["head"], second["head"]):
+        raise Red("the admitted session's head is not the fold of its witnesses alone")
+    return ("the replay court: an admitted open, close and paint each give the head, content and event (spec and witness) of "
+            "the same edit made by a key in the live editor's mock from the same parent, the saved item differing by the "
+            "envelope alone; the envelope records VRDNP1, the heads around the event, this shell's identities and the sha256 "
+            "of the proposal's exact bytes; the workshop's sessionwalk verifies each child without the shell and counts its "
+            "envelopes; the sealer checks the twice-admitted session, cites ADMIT-0 (%s), counts 2 admitted edits and keeps "
+            "the digest's limit, its sealed copy replays in shell playback and the workshop, and a session with no envelope "
+            "is sealed as before; %d resealed forgeries (a parent or a head off the chain, another language, ids and digests "
+            "out of form, an id twice, members added, missing or not text, an envelope on a move) are each refused by the "
+            "shell, the workshop and the sealer; the admitted child continued by keys keeps the admitted item byte for byte, "
+            "and continued by the workshop keeps the envelope beside its event"
+            % (ADMIT0_HASH[:8], len(forged)))
+
+
+def admit_fence():
+    """The seam is fenced: shell/admit.rs spawns no process, opens no socket, reads no clock and nothing under verify/;
+    the run is reached only by shell admit and admit-selftest, and shell admit takes no plant; the admitted edit is
+    appended by the session's own push on the session as loaded, before anything is written; the envelope is filled at
+    the fold and never enters it; the saved form's JSON reader is untouched in its three files; kernel sources and the
+    LATENCY-0 prefix are unchanged; no pin of an earlier rung moved."""
+    code = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
+    shell = {fn: code(read(os.path.join(SHELL, fn)).decode("utf-8")) for fn in sorted(os.listdir(SHELL)) if fn.endswith(".rs")}
+    ad = shell["admit.rs"]
+    for tok in ("Command", "std::process", "process::", "std::net", "TcpStream", "UdpSocket", "verify", "unsafe", "thread::", "SystemTime", "Instant",
+                "std::env", "fs::write", "create_dir", "OpenOptions", "remove_file", "rename("):
+        if tok in ad:
+            raise Red("shell/admit.rs contains %r: the seam spawns nothing, connects to nothing, reads no clock, writes no file of its own and never reaches the gate" % tok)
+    runf = src_span(ad, "pub fn run(session: &str, proposal: &str, grant: &Grant, plant: &str) -> i32 {", "\n}\n")
+    order = [runf.find(t) for t in ('crate::runledger::begin("admit", "none");', "read_bounded(proposal)", "recognize(&bytes)", "sha256(&bytes)",
+                                    "p.renderer != renderer || p.bearing != bearing", "crate::livesession::load(session)", 'l.lineage.source != "session"',
+                                    "p.parent != head", "a.proposal == p.id", "grant.permits(p.op)", "l.session.admit_next(Admit {", "l.session.push_edit_cell(",
+                                    "l.session.push_edit_tile(", "l.session.content() == content", 'crate::livesession::die(plant, "die-verified");',
+                                    "crate::livesession::go_admitted(l, plant.to_string(), \"none\")")]
+    codes = re.findall(r'refuse\("(ADMIT-[A-Z]+)"', runf)
+    if (-1 in order or order != sorted(order) or codes != ["ADMIT-IO", "ADMIT-PROGRAM", "ADMIT-SESSION", "ADMIT-ANCHOR", "ADMIT-DUPLICATE", "ADMIT-CAPABILITY",
+                                                           "ADMIT-AUTHORITY", "ADMIT-AUTHORITY"]
+            or "return refuse(u.code," not in runf or runf.count("crate::livesession::load(") != 1 or runf.count("go_admitted(") != 1
+            or sorted(set(re.findall(r'code: "(ADMIT-[A-Z]+)"', ad))) != ["ADMIT-PARSE", "ADMIT-RANGE", "ADMIT-SIZE"]):
+        raise Red("the admission does not make its checks in the registered order, on one load of the session, before anything is written")
+    rec = src_span(ad, "pub fn recognize(b: &[u8]) -> Result<Proposal, Unrecognized> {", "\n}\n")
+    if not 0 <= rec.find("if b.len() > MAX_BYTES {") < rec.find("lines.push(") or not 0 <= rec.find('return Err(parse(9, "nothing after the eighth line\'s LF"));') < rec.find("if let Some(r) = range {"):
+        raise Red("the recognizer does not bound the size first and recognize the whole byte sequence before a range refusal")
+    main_src = code(read(os.path.join(SHELL, "main.rs")).decode("utf-8"))
+    arm = src_span(main_src, '"admit" | "admit-selftest" | "admit-anchor" => {', '\n        other => refuse("USAGE"')
+    if ({fn: s.count("admit::run(") for fn, s in shell.items() if "admit::run(" in s} != {"main.rs": 1}
+            or {fn: s.count("go_admitted(") for fn, s in shell.items() if "go_admitted(" in s} != {"admit.rs": 1, "livesession.rs": 1}
+            or '"admit" => &["--session", "--proposal", "--allow", "--cells", "--classes"],' not in arm or '"admit-anchor" => &["--session"],' not in arm
+            or arm.count('"--plant"') != 2 or arm.count('"--neighbourhood"') != 2
+            or {fn: s.count("admit_next(") for fn, s in shell.items() if "admit_next(" in s} != {"admit.rs": 1, "livesession.rs": 1, "playback.rs": 1}):
+        raise Red("the admission is reached by something other than shell admit and admit-selftest, shell admit takes a plant, or an envelope is set outside the seam and the loader")
+    ls = shell["livesession.rs"]
+    ga = src_span(ls, "pub fn go_admitted(l: Loaded, plant: String, surface: &'static str) -> i32 {", "\n}\n")
+    order = [ga.find(t) for t in ("let parent_events = l.lineage.parent_events;", "open(l.session, l.base, Some(l.lineage),", 'die(&plant, "die-opened");',
+                                  ".skip(parent_events)", "j.put_event(k, ev);", 'finish(p, "admission",')]
+    ws_ = src_span(ls, "fn write_saved(dst: &str, text: &str, plant: &str) -> Result<(), String> {", "\n}\n")
+    order_w = [ws_.find(t) for t in ("f.sync_all()", 'die(plant, "die-written");', "replace::atomic_replace(&tmp, dst)?;", 'die(plant, "die-replaced");')]
+    if -1 in order or order != sorted(order) or -1 in order_w or order_w != sorted(order_w) or ls.count("std::process::exit(70)") != 2:
+        raise Red("the admission's run does not open the journal with the parent's events, append the admitted record and seal, or its death points are not where the crash court says")
+    pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
+    sect = code(w32_section(pb, "// ================================================================== ADMIT-0 (appended)"))
+    cell, tile = src_span(pb, "pub fn push_edit_cell(", "\n    }\n"), src_span(pb, "pub fn push_edit_tile(", "\n    }\n")
+    if (not pb.rstrip().endswith(w32_section(pb, "// ================================================================== ADMIT-0 (appended)").rstrip())
+            or "fold(" in sect or "sha256" in sect or sect.count("fn ") != 2 or code(pb).count("self.pending") != 2 or code(pb).count("pending: None") != 1
+            or any(not 0 <= f.find("self.head = fold(&self.head, b'E', &self.content);") < f.find("let admit = self.enveloped(before);") < f.find("self.log.push(") for f in (cell, tile))
+            or code(pb).count("admit: None") != 3 or code(pb).count("self.enveloped(before)") != 2):
+        raise Red("the envelope is not filled at the fold and kept out of it, or an event other than an edit can carry one")
+    reader = {}
+    for rel in ("shell/playback.rs", "workshop/sessionwalk.rs", "workshop/session.rs"):
+        s = read(os.path.join(ROOT, *rel.split("/"))).decode("utf-8").replace("\r\n", "\n")
+        i = s.index("struct P<'a> {")
+        j = s.index("\n}\n", s.index("fn parse_json(b: &[u8]) -> Result<Json, String> {", i)) + 3
+        reader[rel] = sha256(s[i:j].encode("utf-8"))
+    if set(reader.values()) != {ADMIT_JSON_READER_SHA256}:
+        raise Red("the saved form's JSON reader was altered in %s: that is READER-COURT-0's, after this rung" % ", ".join(k for k, v in reader.items() if v != ADMIT_JSON_READER_SHA256))
+    pins = {"bearingfast.rs": BEARINGFAST_RS_SHA256, "vocab.rs": VOCAB_RS_SHA256, "mantle.rs": MANTLE_RS_SHA256, "fast.rs": FAST_RS_SHA256}
+    pins.update(SIMTICK_KERNEL_PINS)
+    for fn, want in pins.items():
+        if sha256(read(os.path.join(KERNEL, fn)).replace(b"\r\n", b"\n")) != want:
+            raise Red("kernel/%s changed: ADMIT-0 touches no renderer" % fn)
+    if (sha256(read(os.path.join(SHELL, "present.rs")).replace(b"\r\n", b"\n")) != PRESENT_RS_SHA256
+            or sha256(read(os.path.join(SHELL, "simtick.rs")).replace(b"\r\n", b"\n")) != SIMTICK_RS_SHA256):
+        raise Red("shell/present.rs or shell/simtick.rs changed: ADMIT-0 changes no rule and no renderer")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256 or b"admit::" in w32 or b"go_admitted" in w32 or b"admit_next" in w32:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs, or the window code reaches the seam")
+    return ("the seam is fenced: shell/admit.rs spawns no process, opens no socket, reads no clock, writes no file of its own "
+            "and holds no path into verify/; its run makes the registered checks in the registered order on one load of the "
+            "session, appends the admitted edit by the session's own push in memory, and only then opens a run; it is reached "
+            "by shell admit and admit-selftest alone, and shell admit takes no plant; the journal opens with the parent's "
+            "events and takes the admitted record, and the death points sit where the crash court ends a run; the envelope "
+            "is filled after the fold in both edit paths and nothing in its section folds or hashes; the saved form's JSON "
+            "reader is byte-identical in its three files and untouched (%s...); kernel sources, shell/present.rs, "
+            "shell/simtick.rs and the LATENCY-0 prefix are unchanged; no pin of an earlier rung was moved"
+            % ADMIT_JSON_READER_SHA256[:12])
+
+
 def main() -> int:
     print("VERÐANDI GATE")
     # REFUSAL-LOG-0: every shell the gate runs logs its refusals to the gate's own scratch file, never the owner's log
@@ -10170,6 +11084,18 @@ def main() -> int:
     row("mouselook-fence", mouselook_fence)
     row("mouselook0a-preregistered", mouselook0a_preregistered)
     row("mouselook0a-ending", mouselook0a_ending)
+    # ADMIT-0: the admission seam — a proposal in VRDNP1 recognized or refused, checked against the shell, the saved
+    # session and the admitter's grant, admitted as one ordinary edit with its envelope beside it; the courts the
+    # owner's review registered with the rung, and a fence
+    row("admit-preregistered", admit_preregistered)
+    row("admit-reader", admit_reader)
+    row("admit-single", admit_single)
+    row("admit-anchor", admit_anchor)
+    row("admit-capability", admit_capability)
+    row("admit-idempotent", admit_idempotent)
+    row("admit-crash", admit_crash)
+    row("admit-replay", admit_replay)
+    row("admit-fence", admit_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

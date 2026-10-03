@@ -4205,6 +4205,138 @@ look looked. `mouselook-fence` goes red if a raw input message is not counted be
 captured relative horizontal count reaches the loop. On the host: an observation that does not add up
 (`raw_messages` is not the sum of `unread`, `absolute`, `still`, `reports` and `dropped`).
 
+## ADMIT-0 — the admission seam: a proposal in VRDNP1 recognized or refused, and admitted as one ordinary edit with its envelope beside it (preregistered and built; not yet run on the host)
+
+**Why.** The owner declared that the gate certifies the program and that content is admitted, not gated, and ruled
+that this is what the route builds towards. ADMIT-0 is the first rung of it: the seam through which a change to the
+world enters the one session from bytes nobody trusts. In his words, *the gate certifies the machine; ADMIT admits
+the world's changes.* The courts, the research, his review and the registration are recorded in
+[`docs/ROADMAP.md`](../docs/ROADMAP.md).
+
+**What it registers** (`bdd38593…`, registered and pushed before any of this was built).
+
+- **The language.** `VRDNP1`: exactly eight lines, each ended by one LF. `VRDNP1`; `renderer=`, `bearing=`,
+  `parent=` and `proposal=`, each with 64 lower-case hex characters; `op=` open, close or paint; `target=`; `value=`.
+  327 to 337 bytes. Each typed proposal has one byte sequence, and its digest is the SHA-256 of those bytes.
+- **The checks, in order.** `ADMIT-IO`, `ADMIT-SIZE`, `ADMIT-PARSE`, `ADMIT-RANGE`, `ADMIT-PROGRAM`, the session
+  loader's own refusals, `ADMIT-SESSION`, `ADMIT-ANCHOR`, `ADMIT-DUPLICATE`, `ADMIT-CAPABILITY`, `ADMIT-AUTHORITY`.
+- **The event.** The edit a key would make, with the head that edit gives, and an envelope beside it that is never
+  folded.
+- **One recognizer.** The proposal's bytes are read by one function of the shell. The workshop and the sealer never
+  read the language.
+
+**What was built.**
+
+- **`shell/admit.rs`.** The recognizer (`recognize`) and the emission (`emit`), which is its inverse on every
+  accepted input. The grant, read from `--allow`, `--cells` and `--classes`. The run: the proposal's bytes read
+  (never past byte 338), recognized, the identities compared with this shell's, the saved session loaded once, then
+  the anchor, the id, the grant and the authority, in that order.
+- **The authority is the session's own.** The admitted edit is appended to the loaded session in memory by the
+  session's own push, with its validation, its replay and its fold, before anything is written. There is no second
+  copy of the edit's rules in the seam. A proposal the session refuses, or one that leaves W and M as they are, is
+  refused with nothing on the disk.
+- **The run opens after the checks.** `go_admitted` (in `shell/livesession.rs`) creates the run's directory and
+  journal with the parent's events, appends the admitted event's record, and hands over to `finish`, the seal every
+  live session uses: certified by the reference, written to a temporary file, flushed, moved into place, read back
+  and verified. The parent's file is never opened for writing.
+- **The envelope.** `playback::Admit`: the language, the proposer's id, the digest, the renderer and bearing
+  identities, the parent head, the resulting head and the grant's line. The session fills in the two heads itself, at
+  the fold, so nothing can hand it a head. It is written beside the event in the journal record and the saved item,
+  with its members in one order, and the loader gives it back to the event when it replays.
+- **Three checks of an envelope, none of them a parser of the language.** The shell's loader, the workshop's
+  `sessionwalk verify` and `verify/livesession.py` each take the envelope as typed values of the saved form and check
+  the same things: eight text members, the language's name, 64 lower-case hex where an id, a digest, an identity or a
+  head goes, the grant's line, on an edit, the head before the event and the head after it, no proposal id twice.
+- **The commands.** `shell admit`; `shell admit-anchor`, which prints the four lines a proposal for a session begins
+  with and reads only; `shell admit-selftest`, the same run with a death point named, or the reader court in process.
+  `shell admit` takes no plant.
+- **The sealer.** A session with admitted edits is sealed citing ADMIT-0, with the count, and with the digest's limit
+  among the readings it forbids. A session with no envelope is read, cited and sealed as before.
+
+**What the gate holds (9 rows, 218 in all).**
+
+| Row | What it holds |
+|---|---|
+| `admit-preregistered` | The entry is the registered one, its clauses present; the shell's constants are the registered ones; the registered worked example is a proposal of 328 bytes with the registered digest. |
+| `admit-reader` | The reader court. All 329 proper prefixes of a valid proposal and 42 named cases given to `shell admit` each end in their registered refusal: exit 2, one record, one ledger line, no panic, nothing left under the sessions root, the parent as it was. In process, every single-byte substitution, deletion and insertion of three valid proposals (513,792 mutants) is refused or is a proposal emitted byte for byte. |
+| `admit-single` | The single-parser court. A recognizer written apart in Python inside the gate, a test oracle, gives the registered refusal and line on the 42 cases and agrees with the shell on each of them, on every prefix and on all 513,792 mutants (equal counts and equal digests of the verdicts). By source: one function reads the bytes; the workshop and the sealer hold the language's name and nothing else of it; the oracle is used by these rows only. |
+| `admit-anchor` | A stale parent refused `ADMIT-ANCHOR` with both heads named; another renderer or bearing identity refused `ADMIT-PROGRAM`, before the anchor is looked at; a journal refused `ADMIT-SESSION`; `admit-anchor` prints exactly the four leading lines. |
+| `admit-capability` | No grant, an operation kind not granted, no cells named, a rectangle one cell short, a class not granted: `ADMIT-CAPABILITY`. Inside the grant, a cell outside the level, a border cell opened, a closed cell closed and an open cell opened: `ADMIT-AUTHORITY`. Eight malformed command lines are usage refusals. The smallest covering grant admits, and is what the envelope records. |
+| `admit-idempotent` | The same bytes offered to the child are stale; the same id re-anchored is `ADMIT-DUPLICATE`, also two admissions later; the same edit under a new id is admitted; the same bytes admitted again to the untouched parent give a second file with the first child's data block byte for byte. |
+| `admit-crash` | The run ended with exit 70 at eight points. The parent's bytes never change. After the first three nothing exists. After the journal is opened, and after the admitted record is torn half-way, the journal loads to exactly the parent's head. After the record is flushed, the temporary file written, and the saved file moved into place, what is left loads to exactly the child's head with the envelope the clean run wrote. No journal record holds the event without its envelope. |
+| `admit-replay` | An admitted open, close and paint each have the head, content, spec and witness of the same edit made by a key from the same parent, differing by the envelope alone. The workshop verifies each child without the shell. The sealer cites ADMIT-0 and counts the admitted edits. Sixteen resealed forgeries of an envelope are each refused by the shell, the workshop and the sealer. A continuation by keys keeps the admitted item byte for byte, and one by the workshop keeps the envelope. |
+| `admit-fence` | `shell/admit.rs` spawns nothing, connects to nothing, reads no clock and nothing under `verify/`. The checks are in the registered order on one load. The run is reached by `admit` and `admit-selftest` alone. The envelope is filled after the fold in both edit paths. The saved form's JSON reader is byte-identical in its three files and untouched. Kernel sources, `shell/present.rs`, `shell/simtick.rs` and the LATENCY-0 prefix are unchanged. |
+
+**Found while building.**
+
+- **Thirty-nine mutations: thirty-seven caught at once, two after the rows were strengthened.** Each was applied to a
+  scratch copy and is a defect that leaves the program running. In the recognizer: bytes after the eighth line
+  accepted, a leading zero accepted, upper-case hex accepted, a range refusal returned early, the size not bounded
+  first, a refusal naming the wrong line, an emission that is not the bytes, the reader court skipping its
+  insertions, a coordinate bound moved by one. In the checks: the digest taken of re-emitted bytes, a stale anchor
+  admitted, the bearing identity not checked, a repeated id admitted, duplicates compared by digest, the grant not
+  consulted, the rectangle or the classes not looked at, a proposal that changes nothing admitted, a journal
+  admitted to, the program checked after the anchor. In the envelope: folded into the head, dropped by the loader,
+  its parent unchecked, its id allowed twice, allowed on a move, its digest taken of something else, put on a key's
+  own edit, left out of the journal record, dropped by the workshop. In the verifiers: the workshop not checking the
+  resulting head or the member count, the sealer not checking the language or the grant's line, or not citing this
+  entry. In the run: a refused admission leaving a directory, `shell admit` taking a plant, a process spawned, a
+  death point moved, a torn record written whole.
+- **The two that survived showed gaps in the rows, not in the seam.** A range refusal returned before the rest of the
+  bytes were recognized passed, because the corpus had a range fault followed by a fault on line 8, which the
+  recognizer reaches before it looks at any domain, and nothing with a range fault followed by a byte after the last
+  line. That case was added. And a loader that let an envelope sit on a move passed, because the forged envelope
+  still named the heads of the edit it was taken from and was refused for those. A forgery naming the move's own
+  heads was added, so that being on a move is the only thing wrong with it. Both mutations are caught now.
+- **Two refusals have a second line behind them.** With the seam's duplicate check removed, the admission is still
+  refused: at the save, by the loader's check of the file it has just written. With the envelope folded into the
+  head, the save refuses because the stored head is no longer the fold of the witnesses.
+- **The two recognizers agreed at the first comparison.** The shell's recognizer scans bytes; the gate's oracle
+  splits lines and matches regular expressions. Run against each other over all 513,792 single-byte mutants they
+  gave the same verdicts. What needed correcting was the corpus: three of its cases as first written (a repeated
+  identity line, a paint with a nine-digit colour, and a colour out of range followed by a ninth line) are longer
+  than 337 bytes, so by the registered order they are size refusals and never reach the parser. They stay in the
+  corpus as that. The registration's "repeated line" is held by repeating the short `op=` line, which fits. One of
+  the three bases is a proposal of the greatest length, so that every insertion into it is a size refusal and both
+  recognizers are compared on that precedence too.
+- **No pin of an earlier rung moved.** The envelope is taken beside the fold with the fold's statement left as it
+  was, so the fences that pin that statement pass unchanged. The JSON reader's text is untouched in all three files.
+- **The workshop carries an envelope when it continues a session.** Its own verbs rewrite a session-walk in the
+  workshop's format. An envelope is kept as read and written back beside its event, so a workshop continuation does
+  not drop it. The row checks that.
+- **A refused admission is one line in each log and nothing else.** The rows use a sessions root of their own, so
+  "leaves nothing" is a listing of that root before and after, and not a search.
+- **The Windows build is type-checked here and not run.** The seam has no window code; `shell/win32.rs` is not
+  touched.
+
+**What the host run is for.** `shell admit` is windowless and is the same program on the host as on the gate. The
+host witness is one admission to a session sealed there: the proposal recognized, the child saved and verified by
+the shell, verified by the workshop built there, and sealed by `verify/livesession.py` citing this entry.
+
+**Grade.** DECLARED: the registered conditions. ESTABLISHED (by rows, on every gate): the reader, single-parser,
+anchor, capability, idempotency, crash and replay courts over the gate's own proposals and the session's mock, and
+the fence. NOT_MEASURED: anything on the host; what an admission costs; durability under power loss.
+
+**does_not_show.** That a model can write a proposal worth admitting, or any safety property of a system that
+includes a model: no model is in the tree and the gate wrote every proposal here. That a later verifier can
+recompute an envelope's digest: the proposal's bytes are not kept, and the envelope is the admitting shell's record
+under a seal that is a hash and not a signature. Durability after a power loss: the crash court ends the process at
+eight registered points and nothing else. Agreement of the two recognizers beyond the corpus and the single-byte
+neighbourhood of three proposals. Anything about the saved form's JSON reader, which the seam reads the session
+through and which `READER-COURT-0` hardens after this rung. Anything about a vocabulary beyond a cell opened or
+closed and a tile class painted.
+
+**Falsifier.** `admit-reader` goes red if any byte sequence outside the language is recognized, if a recognized one
+has a second spelling, or if a refusal panics, leaves a directory or changes the parent. `admit-single` goes red if
+the shell and the oracle differ on one verdict, or if a second reader of the language appears. `admit-anchor` goes
+red if a stale parent or another identity is admitted. `admit-capability` goes red if anything outside the grant is
+admitted, or a proposal that changes nothing is. `admit-idempotent` goes red if a repeated id is admitted or the
+same bytes give a different world. `admit-crash` goes red if what a dead run left loads to anything but the
+parent's head or the child's, or if an event and its envelope are ever apart. `admit-replay` goes red if an
+admitted event's head is not the key-made edit's, if a forged envelope passes any of the three verifiers, or if a
+continuation drops an envelope. `admit-fence` goes red if the seam reaches a process, a socket, the gate or the
+JSON reader's text.
+
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -4247,7 +4379,8 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   rung: commit-only (a preview only as a speculative worldline, never shell state), earn the authority (new world
   semantics come from Urðr), the witnesses a lighter check must still ask for, and merges as explicit anchored
   events. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
-- **ADMIT-0 (the admission seam — chosen in the owner's court of 2026-10-03; not registered, nothing built).** The
+- **ADMIT-0 (the admission seam — chosen in the owner's court of 2026-10-03; registered and built, its own section
+  above; not yet run on the host).** The
   first rung towards the design-event stream. Windowless: a typed, anchored proposal read from a file is refused or
   admitted, and an admitted one is an ordinary session event in today's vocabulary (a cell edit, a tile edit) with
   its envelope beside it. A stale anchor is refused, always, naming both heads; rebase is a later rung. No model is
