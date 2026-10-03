@@ -4029,9 +4029,9 @@ with SIM-TICK-0a's host note (`422388c`); then the build (`8041070`).
 heading, the two sampling periods. ESTABLISHED (gate, in the build container and on the owner's host): the six rows
 above, over the mock. MEASURED (the first host run, sealed: `livesession-DANIELDILLBERG-e9dafb482675.json`): the
 window, the capture taken and released, key presses stamped by the window's clock and applied on the tick, the
-composite read back exact, the save; no look. OBSERVED (the second host run, under MOUSE-LOOK-0a, recorded in that
-section): a real mouse making looks, a focus loss with no session event, the picture at a free heading, the samples
-and the save's certification. NOT_MEASURED: latency; what a look costs phase by phase.
+composite read back exact, the save; no look. MEASURED (the second host run, under MOUSE-LOOK-0a, sealed and
+recorded in that section): a real mouse making looks, a focus loss with no session event, the picture at a free
+heading, the samples and the save's certification. NOT_MEASURED: latency; what a look costs phase by phase.
 
 **does_not_show.** Any latency: by design an input is
 applied up to one tick and one composition after it is drained, and what that costs on the screen is the next rung's
@@ -4161,7 +4161,12 @@ host note and the registration were pushed first (`82e7799`), then the build (`2
 - **The host's session replays here.** Read from the owner's folder, the saved file is verified by the workshop built
   in the container: its reference recomputed all 1,775 free-heading frames and reached head `b28e42be62c4…`. Those
   witnesses were made by the production tread on the owner's Windows host and reproduced by the reference kernel on
-  Linux. The record is the owner's to seal on his host.
+  Linux.
+- **Sealed.** The owner pushed the host note and the declaration (`47fd54d`), then sealed the session on his host:
+  `shell/attest/livesession-DANIELDILLBERG-b28e42be62c4.json` (`fcf48b2`). The record cites LIVE-SESSION-0,
+  LIVE-INPUT-0, MOUSE-LOOK-0, SIM-TICK-0 and SIM-TICK-0a. Its reading: 1,832 events, 14 moves, 1,761 looks, 1,775
+  frames at free headings recomputed by the reference before the save, ended by escape, run under the tick source
+  with 1,761 looks. The workshop built on the host verified the saved file there, as the one built here did.
 
 **Against the eight points, for the second run.**
 
@@ -4183,8 +4188,8 @@ the same messages. Whether the mouse was moved in the first run is not in its re
 
 **Grade.** DECLARED: the corrected wording, the rule for the end of a run, the observation's counters. ESTABLISHED
 (gate, in the build container and on the owner's host): the two rows above, and MOUSE-LOOK-0's six under the amended
-mock. OBSERVED (the second host run; its session saved and verified there, verified again here, not sealed yet): a
-real mouse making looks on the tick, the focus lost and regained with no session event, the session's picture on the
+mock. MEASURED (the second host run; its session saved and verified there, verified again here, and sealed:
+`livesession-DANIELDILLBERG-b28e42be62c4.json`): a real mouse making looks on the tick, the focus lost and regained with no session event, the session's picture on the
 screen, the reference agreeing at every sample and every frame, the end recorded as `escape`. NOT_MEASURED: latency;
 what a look costs phase by phase; why the loop fell behind the tick schedule; why the first run had no mouse report.
 
@@ -4230,7 +4235,8 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   it registers its own hypothesis and failure condition. Until then it constrains the rungs before it: every event
   kind typed and replayable without its source, provenance never folded into the head, no path that executes text.
   The design is in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
-- **Program time and content time; the design-event stream (declared with LLM-BUILDER-0, the owner's, 2026-10-03).**
+- **Program time and content time; the design-event stream (declared with LLM-BUILDER-0, the owner's, 2026-10-03;
+  by his ruling of the same day, what the route builds towards).**
   The engineering gate certifies the program and runs when the program changes. Content is admitted by a check on the
   artifact itself and does not invoke the gate; a model may generate content and may not redefine the laws content
   runs under. Conversation is meant to become the editor: intent becomes a bounded world diff, previewed on a

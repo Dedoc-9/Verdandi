@@ -101,7 +101,7 @@ richer edits     vocabulary on the one live editor, not new pathways
       ↓
 walking in a live, authorable world
       ⋮
-LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03): the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
+LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03), and by the owner's ruling what the route builds towards: the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -400,7 +400,8 @@ tick. The window left the foreground once and came back, the mouse released and 
 event of any kind for it. Of 4,649 compositions 4,541 presented the session's own picture; 62 screen readbacks, none
 differing. The reference agreed at all 27 samples during the run and at all 1,775 free-heading frames at the save,
 and the workshop built in the container recomputes those 1,775 frames from the saved file and reaches the same head:
-the production tread on Windows, the reference kernel on Linux. Esc ended the run, recorded as `escape`. Counted and
+the production tread on Windows, the reference kernel on Linux. Esc ended the run, recorded as `escape`. The owner
+sealed the session on his host (`livesession-DANIELDILLBERG-b28e42be62c4.json`). Counted and
 not interpreted: 4,649 compositions against 5,470 ticks, 2,852 repeating the picture before them, a span of 6. The
 run does not decide why the first run had no mouse report. No latency is claimed. The owner's report of the run: the
 look worked, and only horizontally. That is the registered scope (the carried camera turns in heading alone, and the
@@ -648,10 +649,15 @@ The sentence the owner would put in the charter: **Verðandi does not execute wh
 the verifier admits.** It stands beside the charter in the README as a declared goal. The ratified charter block is not
 edited.
 
-### LLM-BUILDER-0, continued — program time and content time; the design-event stream · **declared** (the owner's, 2026-10-03); not registered, nothing built
+### LLM-BUILDER-0, continued — program time and content time; the design-event stream · **declared** (the owner's, 2026-10-03), and by his ruling what the route builds towards; not registered, nothing built
 Two design texts the owner brought on 2026-10-03 and asked to have recorded. Both are replies to his own description
 of what he is after, so their wording is quoted where it states the rule and summarized elsewhere. They extend
 LLM-BUILDER-0 above and change nothing in it. Nothing here is built, and no rung is seated by it.
+
+**The owner's ruling (2026-10-03): this is what the studio builds towards.** He brought the two texts again with
+those words. That makes them the route's destination and not only a record. It seats nothing by itself: each rung
+towards it is still chosen in its own court, registered before it is built, and held by rows. The four rules listed
+at the end of this section still want their rulings first.
 
 **1. The gate certifies the program. Content is admitted, not gated.**
 
