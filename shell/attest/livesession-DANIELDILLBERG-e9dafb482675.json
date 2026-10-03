@@ -1,0 +1,444 @@
+{
+ "name": "verdandi-session-walk",
+ "version": 1,
+ "claim_class": "measured",
+ "provenance": {
+  "tool": "shell look-window (shell/livesession.rs's go_look over shell/liveinput.rs under shell/mouselook.rs's tick source; the MOUSE-LOOK-0 section appended to shell/win32.rs) + verify/livesession.py",
+  "host": "DANIELDILLBERG",
+  "saved_sha256": "be46c9d6df297cc8920a7f10ae5ba8387ddc25540ce545ac84e164bdfc256495",
+  "run_id": "1a0feb82637-5f40",
+  "renderer_now": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+  "workshop": "SESSIONWALK verify OK head e9dafb482675 — moves 37 edits 10 (final 30,26,N)",
+  "python": "3.14.5",
+  "os": "Windows",
+  "preregistered": {
+   "rung": "LIVE-SESSION-0",
+   "chain_hash": "70086a721ef353ccb41afcda7e6c869c027f4f14eae0ef923dff2892981046bb"
+  },
+  "loop": {
+   "rung": "LIVE-INPUT-0",
+   "chain_hash": "f81c2cf110636835213321fe6f31cdb78ce23a1657a8003eaf895e55878fcc70"
+  },
+  "look": {
+   "rung": "MOUSE-LOOK-0",
+   "chain_hash": "60870497ce57094dd6072b923fa0a0a2070d3d899cae081aff893f4831b5eb1d"
+  },
+  "ticks": {
+   "rung": "SIM-TICK-0",
+   "chain_hash": "dc1dddf255749f878802f3f73543840edf3a5d87a3c3ea816162d59ed5f8ea62"
+  },
+  "configuration": {
+   "rung": "SIM-TICK-0a",
+   "chain_hash": "471f4d7253ca52139b5073e964c3f79550a872e673454033b99ddac557719450"
+  }
+ },
+ "validity_scope": {
+  "certifies": "a live session walked on host DANIELDILLBERG and saved by the shell: the session-walk over the frozen base (W 1b84db41a5fb... M 52e8b54ae508...) from 28,28,N, which replays in log order to head e9dafb4826754874d9572af13a81466fccb6515802a9fd654fe38f6055e83936",
+  "host": "DANIELDILLBERG",
+  "head": "e9dafb4826754874d9572af13a81466fccb6515802a9fd654fe38f6055e83936",
+  "final_camera": "30,26,N"
+ },
+ "forbidden_interpretations": [
+  "any latency, frame rate or feel: the session carries tick indices, not times, and an input's tick is the tick it was drained in",
+  "that the renderer identity decides compatibility: it names sources, replay decides",
+  "that the focus observation explains anything: it is recorded, never ruled on",
+  "a second authority: the shell's session is the replay of this log, which the workshop verifies",
+  "durability beyond the file system's promise, or on any other host"
+ ],
+ "data": {
+  "magic": "VRDNSW1",
+  "base": {
+   "level": "oracle/levels/witness.lvl",
+   "tiles": "oracle/tiles/identity.tiles",
+   "W": "1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec",
+   "M": "52e8b54ae508218e3858e59780557c722837de3615e571f8662c24e254a3458a",
+   "content": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08",
+   "camera": "28,28,N"
+  },
+  "log": [
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "29,28,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 171
+   },
+   {
+    "kind": "move",
+    "command": "Q",
+    "camera": "28,28,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 195
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,28,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 240
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "28,28,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 278
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:28,27,.",
+    "witness": "f38fd268788eaf4146b19299061200367972ea8a68015d6e578eef5a243f3d70",
+    "tick": 322
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:28,27,#",
+    "witness": "390109b528d4655b08b7f362033da63927b5db5b5e8549d0622adb21dc02de08",
+    "tick": 377
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:28,27,.",
+    "witness": "f38fd268788eaf4146b19299061200367972ea8a68015d6e578eef5a243f3d70",
+    "tick": 410
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,27,N",
+    "witness": "51f5e8b859823919c73a7235714d5743382ac5201c5f34440042e2a2a6d8010f",
+    "tick": 454
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "28,27,N",
+    "witness": "51f5e8b859823919c73a7235714d5743382ac5201c5f34440042e2a2a6d8010f",
+    "tick": 493
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "28,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 521
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "29,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 548
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 598
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 631
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "29,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 657
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 681
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,25,.",
+    "witness": "1a6b4073346b616d2474765d8f4285d1f433c2d82617bee388afb8cd796b91de",
+    "tick": 701
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,25,#",
+    "witness": "f38fd268788eaf4146b19299061200367972ea8a68015d6e578eef5a243f3d70",
+    "tick": 748
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,25,.",
+    "witness": "1a6b4073346b616d2474765d8f4285d1f433c2d82617bee388afb8cd796b91de",
+    "tick": 775
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 845
+   },
+   {
+    "kind": "move",
+    "command": "Q",
+    "camera": "28,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 891
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 933
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "29,25,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 971
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "29,25,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 999
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 1022
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 1046
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 1070
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,25,#",
+    "witness": "f38fd268788eaf4146b19299061200367972ea8a68015d6e578eef5a243f3d70",
+    "tick": 1110
+   },
+   {
+    "kind": "edit",
+    "spec": "cell:29,25,.",
+    "witness": "1a6b4073346b616d2474765d8f4285d1f433c2d82617bee388afb8cd796b91de",
+    "tick": 1144
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "30,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1185
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "31,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1220
+   },
+   {
+    "kind": "move",
+    "command": "Q",
+    "camera": "30,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1244
+   },
+   {
+    "kind": "move",
+    "command": "Q",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 1268
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 1288
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 1313
+   },
+   {
+    "kind": "move",
+    "command": "F",
+    "camera": "29,25,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1344
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "29,25,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1389
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "29,25,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1414
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall0,96,80,64",
+    "witness": "ec27deee19c07e513ae2a7f578b3e40b11fd46c66236ef277c038b5fea98e26a",
+    "tick": 1475
+   },
+   {
+    "kind": "edit",
+    "spec": "tile:wall1,96,80,64",
+    "witness": "ebdae4b9cd62b31e43c3822d9e9696d5d9910d64b2bf63fccfd290124916ee32",
+    "tick": 1524
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 1583
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 1628
+   },
+   {
+    "kind": "move",
+    "command": "Q",
+    "camera": "28,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1666
+   },
+   {
+    "kind": "move",
+    "command": "Q",
+    "camera": "27,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1699
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "28,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1740
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "29,26,N",
+    "witness": "0c499ed1c88c8a71b633cc99723adc416d8797ffd82b9127818ae9813b3acdc1",
+    "tick": 1748
+   },
+   {
+    "kind": "move",
+    "command": "E",
+    "camera": "30,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1768
+   },
+   {
+    "kind": "move",
+    "command": "B",
+    "camera": "30,26,N",
+    "witness": "87777c8c248f641bd7d121fc44e785761a585f7e61c50ffe87958060f2024871",
+    "tick": 1787
+   }
+  ],
+  "head": "e9dafb4826754874d9572af13a81466fccb6515802a9fd654fe38f6055e83936",
+  "final_camera": "30,26,N",
+  "final_content": "ebdae4b9cd62b31e43c3822d9e9696d5d9910d64b2bf63fccfd290124916ee32",
+  "moves": 37,
+  "edits": 10,
+  "ticks": {
+   "hz": 64,
+   "count": 1873,
+   "multiplier": 1,
+   "step": 88
+  },
+  "live": {
+   "log": "LIVE-SESSION-0",
+   "run_id": "1a0feb82637-5f40",
+   "renderer": "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9",
+   "bearing": "2d1a264300a8a7a163ec3a3c61e5a614e24e7b8f32dd77fce4b7edbd612a1db5",
+   "lineage": null,
+   "resumed": null,
+   "journal": {
+    "file": "journal.vsj",
+    "records": 48,
+    "events": 47,
+    "complete": true,
+    "sha256": "586f48347e907d920266e6dca81d09a24938a69c77175d0976460e3b64b5afc1"
+   },
+   "certified": {
+    "reference": "kernel/bearing.rs",
+    "frames": 0
+   },
+   "ended": "closed",
+   "focus": {
+    "source": "window",
+    "foreground_request": 1,
+    "foreground_at_start": 1,
+    "compositions_with": 1828,
+    "compositions_without": 0,
+    "changes": 0,
+    "mouse": {
+     "captures": 1,
+     "releases": 1,
+     "reports": 0,
+     "dropped": 0,
+     "dropped_keys": 0,
+     "absolute": 0,
+     "released": true
+    }
+   },
+   "look": {
+    "rung": "MOUSE-LOOK-0",
+    "tick_hz": 64,
+    "compositions": 1826,
+    "picture": 0,
+    "composite": 1826,
+    "repeated": 1778,
+    "screen_readbacks": 25,
+    "screen_differed": 0,
+    "readback_every": 75,
+    "samples": 0,
+    "sample_every": 64,
+    "span": 7
+   }
+  }
+ },
+ "reading": "LIVE-SESSION-0 on host DANIELDILLBERG: a live session saved by the shell and verified there before it counted as saved (47 events: 37 moves, 10 edits; ended by closed; run under MOUSE-LOOK-0's tick source at 64 Hz, holding no look (composite 1826, compositions 1826, picture 0, readback_every 75, repeated 1778, sample_every 64, samples 0, screen_differed 0, screen_readbacks 25, span 7, tick_hz 64)), a new session from its base; its seal, base, fold check here, the workshop's own sessionwalk verifies the saved file itself (head e9dafb482675...), and this checkout's renderer identity is the same as the one it was made with.",
+ "chain_hash": "ef29d5446e4d6c173ab66daa555f6d943b0b9d9df131ca505d717ee811df0b04"
+}
