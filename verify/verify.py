@@ -2428,8 +2428,8 @@ def shell_playback_sealed_input():
         raise Red("playback head %s != the sealed demo head %s" % (head[:12], d["head"][:12]))
     # it refuses a NON-session artifact (an ad-hoc/reconstructed stream is not accepted)
     bad = os.path.join(PB, "not-a-session.json")
-    with open(bad, "w", encoding="utf-8") as fh:
-        fh.write('{"name":"verdandi-walk","data":{}}\n')   # READER-COURT-0: inside the saved form, refused for what it is
+    with open(bad, "wb") as fh:   # bytes, so the line ending is LF on every host: inside the saved form, refused for what it is
+        fh.write(b'{"name":"verdandi-walk","data":{}}\n')
     code, _o, err = _pb_playback(SHELL_EXE, bad)
     if code != 2 or "INVALID-SESSION" not in err:
         raise Red("playback accepted a non-session artifact: %d %s" % (code, err.strip()[:60]))
