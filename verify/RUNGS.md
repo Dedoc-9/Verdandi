@@ -4377,7 +4377,7 @@ admitted event's head is not the key-made edit's, if a forged envelope passes an
 continuation drops an envelope. `admit-fence` goes red if the seam reaches a process, a socket, the gate or the
 JSON reader's text.
 
-## READER-COURT-0 — the saved form is one bounded language, and every reader gives one verdict (preregistered `f53017cd` and built; the gate passes here with its eight rows; the host's run is the owner's)
+## READER-COURT-0 — the saved form is one bounded language, and every reader gives one verdict (preregistered `f53017cd` and built; the gate passes here; the first host run read 225 of 226, the one red a planted file written CR LF on Windows, fixed; the second host run is the owner's)
 
 **Why.** ADMIT-0 made a new language with one reader. The old language, the JSON the tree saves and reads back, has
 four Rust parsers (one text copied into `shell/playback.rs`, `workshop/sessionwalk.rs` and `workshop/session.rs`,
@@ -4574,10 +4574,30 @@ and sealed again by the new sealer from the saved files: each record's data is t
 host. The provenance differs in the Python version and the operating system, as it must. On the owner's host both
 are his to run.
 
+**On the host (DANIELDILLBERG), the first run.** 0113 and 0114 were applied and the gate read 226 rows, rowset
+`39e5874a7127cfa4`, 1 fail, 0 skipped. The red row was `readercourt-fence`: *a forgery of an earlier row was refused
+by the saved form's reader and not for the row's own reason: shell-playback-sealed-input.* Every other row passed
+there, the corpus with the host's records among them.
+
+- **The cause.** That row plants a file that is not a session. The build rewrote the plant to end in a line feed and
+  left it opened in text mode. On Windows the final LF was written as CR LF. The language holds no CR before the
+  final LF, so the reader refused the file (`READER-TRAILING 34`, reproduced here on the same bytes) before the
+  row's own rule was reached. On Linux the same code wrote LF, so the three passes here were green.
+- **What caught it.** Not the row, which stayed green on the host as it had before the build. The watch did, on its
+  first host run. The reader's verdict was the correct one for the bytes it was given.
+- **The fix.** The plant is written as bytes, so its line ending is LF on every host. One line of the gate; no
+  rule, no reader and no registered entry is changed. The owner's reading: *the host found a real registration
+  defect, the fix is byte-level, and the reason is now understood.*
+- **What it says about the method.** The gate here cannot see what another platform does to a file. The mutation
+  test had this very defect as a planted case (a forgery put back outside the form) and the watch caught it there;
+  the real instance differed by a line ending only the host produces. Three green passes here were three samples
+  of one platform.
+
 **Grade.** DECLARED: the registered conditions, and the owner's eight locks. ESTABLISHED (gate, here): the eight
-rows. OBSERVED (here, off the gate): the census, the depth count, the prototype's result, the mutation test, the
-gate with the host's records copied in, the eight sessions sealed again to the same data. NOT_MEASURED: the gate
-on the owner's host with this build, and how long the new rows take there.
+rows. MEASURED (host, the first run): 225 of 226 rows pass, the new rows among them except the fence, whose red was
+a true finding. OBSERVED (here, off the gate): the census, the depth count, the prototype's result, the mutation
+test, the gate with the host's records copied in, the eight sessions sealed again to the same data. NOT_MEASURED:
+the gate on the owner's host with the fix, and how long the new rows take there.
 
 **does_not_show.** That the language is right: it is one author's grammar, and what stands against a shared mistake
 is the registered cases, offsets computed from the place of a mutation, and the writers' own output. Anything about
@@ -4706,6 +4726,20 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   ruled. It meets rules in force: no floats, units or scores; a constraint's status a witness; shown numbers are
   measurements; preview only as a speculative worldline; a batch a new language version; a plugin inside the
   program is code the gate did not certify. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+- **REASON-COURT-0 (chosen in the owner's court of 2026-10-04; not registered, nothing built; its census is its
+  first operation).** A row that asks only for a refusal passes whatever refused. READER-COURT-0's watch showed it:
+  `shell-playback-sealed-input` stayed green while its plant was refused for its form. The owner locked the idea and
+  ruled it its own rung, after READER-COURT-0 and before DESIGN-EVENT-0, and READER-COURT-0 is not amended for it.
+  Its scope is every refusal check in the gate. Each is held to an expected reason that is either an exact code or
+  `REFUSE(any)`, and `REFUSE(any)` is a registered decision with its why, not a failure to specify. A semantic
+  refusal code is contract; diagnostic text is not; a byte offset is, where a rung already specified one; an
+  internal exception, a stack or a branch never is. A row's expected code comes from its rung's registered text or
+  ledger entry and never from what the program emits today. The census comes first and changes no row: it records
+  each check's row, evidence and strength (an exact code, a fragment of text, the exit status alone, other
+  evidence). Only then is what the court will strengthen registered. A first, crude count here found about fifty
+  refusal checks, about half naming a code, three matching a word of diagnostic text, and about ten resting on the
+  exit status beside other evidence; that count is not the census. Recorded in
+  [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 - **Self-optimizing code, and its correction to a layout court (declared: two texts the owner brought, 2026-10-04;
   considered at his word; not registered, nothing built).** The first text proposes a toolchain that mutates the
   kernel's memory layout, thread partitioning and instruction selection continuously, on live workloads, with byte

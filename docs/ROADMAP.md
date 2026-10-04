@@ -119,6 +119,8 @@ ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by 
       ↓
 READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — registered (`f53017cd`) and built: eight rows, 226 in the gate; the host's run is the owner's
       ↓
+REASON-COURT-0   the owner's ruling (2026-10-04): next after READER-COURT-0 and before DESIGN-EVENT-0. Every refusal check in the gate is held to an expected reason, an exact code or a deliberately open REFUSE(any). Its first operation is a census that changes no row — chosen in court; not registered, nothing built
+      ↓
 DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered. Whether a design representation, a design diff or constraints are promoted ahead of DESIGN-EVENT-0 is a question the owner has reserved for its own ruling; until he rules, this order stands
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
@@ -1245,7 +1247,7 @@ can be computed deterministically for anything beyond what the grid already says
 language. When a rung is seated from it, the rung registers its own hypothesis, failure condition and limits.
 
 
-### READER-COURT-0 — the saved form's readers brought to one verdict · **built** (`f53017cd`): the gate passes here with its eight rows; the host's run is the owner's
+### READER-COURT-0 — the saved form's readers brought to one verdict · **built** (`f53017cd`): the gate passes here; the first host run read 225 of 226 and the one red is fixed; the second host run is the owner's
 The rung after ADMIT-0, by the owner's order. ADMIT-0 made a new language with one reader. This rung hardens the old
 one: the JSON the tree saves and reads back. The disagreement it closes was observed on 2026-10-03 and is recorded in
 ADMIT-0's section above. This section records what was read from the code before the courts, the two courts, a
@@ -1386,7 +1388,13 @@ the host's 33 records present), each with the code and offset its place gives; t
 refused by seven real commands with the same code and offset; one reader by source; and the fence. Nine earlier
 rows' forgeries were rewritten inside the language, and one pin moved, both listed in the ledger. 55 planted
 defects are each caught. The details, the limits and the falsifier are in
-[`verify/RUNGS.md`](../verify/RUNGS.md). What is not yet shown is the gate on the owner's host with this build.
+[`verify/RUNGS.md`](../verify/RUNGS.md).
+
+**The first host run.** 226 rows, one red: `readercourt-fence`, naming `shell-playback-sealed-input`. That row's
+planted file had been opened in text mode, so on Windows it ended in CR LF, which the language refuses before the
+row's own rule is reached. The row stayed green; the watch this rung added went red. The plant is now written as
+bytes. Every other row passed on the host, the corpus with the host's records among them. What is not yet shown is
+the gate on the host with that fix.
 
 **The next question, reserved.** The owner asked whether DESIGN-EVENT-0 remains the next rung after this one, or
 whether a design representation, a design diff and constraints are promoted ahead of it, as the review of the
@@ -1504,6 +1512,68 @@ runs.
 mode, constraint, recipe, bundle or plugin can be built under the rules above; that the fifteen are the right
 fifteen; anything about how a user would fare with them. Each rung seated from it registers its own hypothesis,
 failure condition and limits.
+
+### REASON-COURT-0 — every refusal held to its reason · **chosen** (the owner's court, 2026-10-04); not registered, nothing built
+The rung after READER-COURT-0, by the owner's ruling. Nothing is registered and nothing is built. Its first
+operation is a census.
+
+**Where it came from.** READER-COURT-0 made the gate watch every refusal by the saved form's reader. The watch
+showed a row, `shell-playback-sealed-input`, that had stayed green while its planted file was refused for its form
+and not for being what the row says it is. A row that asks only for a refusal passes whatever refused. That gap is
+not the reader's: READER-COURT-0 holds its own refusals to an exact code and a byte offset. It is in the rows of
+the rungs before it.
+
+**The owner's ruling on the idea.** *LOCK the idea, REGISTER the court.* A reason-code court, not a general proof of
+diagnostics. For each refusal row: the input, the expected verdict, the expected reason code, the observed verdict,
+the observed reason code; an acceptance must equal an acceptance, and a refusal's observed code must equal the
+expected one. Where the precise reason is intentionally unspecified the row keeps `REFUSE(any)`, because otherwise
+an incidental ordering inside the implementation is frozen as authority. Four things are told apart:
+
+| | |
+|---|---|
+| a semantic refusal code | locked contract |
+| an implementation's diagnostic text | not locked |
+| a byte offset | locked where a rung already specified it |
+| an internal exception, stack or branch | never authority |
+
+The most valuable cases are the same input failing for a different cause. Where a malformed input could fail at
+either of two boundaries, the registration says which boundary owns the failure; otherwise the court turns today's
+branch order into tomorrow's contract. And the expected reasons are registered before results are observed, so
+they are not fitted to what a program happens to emit.
+
+**The court (2026-10-04).** Three rulings.
+
+1. **Its own rung, REASON-COURT-0.** READER-COURT-0 is not amended. The red row on the host was a defect in
+   READER-COURT-0's build (a planted file written CR LF on Windows), and the reader's verdict on it was the correct
+   one; it is no evidence that the reader court's reason contract is wrong. The ladder as the owner wrote it:
+   ADMIT-0, READER-COURT-0, REASON-COURT-0, DESIGN-EVENT-0.
+2. **Every refusal check in the gate.** A court that covered only the codes already named would keep the blind spot
+   and not measure it. Each check is classed as an exact code or as `REFUSE(any)`. *`REFUSE(any)` is not a failure to
+   specify*: it is a registered decision that the court does not constrain that row's reason, with why. A check that
+   rests on a fragment of text or on the exit status alone is classed as that and is not silently promoted. A row
+   is not made exact merely because its reason can be named. Once a reason is promoted to an exact code, a later
+   change to it needs an explicit decision.
+3. **The expected code comes from the rung's registered text or its ledger entry.** Where neither names one, the
+   row is `REFUSE(any)` and is listed. Never from what the program emits today.
+
+**The census comes first, and it changes nothing.** The owner's boundary: old rows are not strengthened during the
+census. It records, for every refusal assertion in the gate, the row, the evidence it rests on and the strength of
+the assertion as it stands (an exact code, a fragment of text, the exit status alone, other evidence), and the
+rung whose text owns the reason. Only then is what REASON-COURT-0 will strengthen preregistered. Otherwise the
+census would be a way to rewrite history quietly.
+
+**What was counted so far (OBSERVED, crude, not the census).** A pattern search over the gate found about fifty
+checks of an exit status of 2. About half name a code. Three match a word of diagnostic text (`"alphabet"`,
+`"width"`, `"border"`), which a message could contain by accident. About ten rest on the exit status beside other
+evidence, such as a count of log records or a file that must not exist. The owner's note: do not assume that
+figure is the population.
+
+**What the first text left open, and how the court settled it.** It said both to register the court separately and
+to add it to READER-COURT-0 as a sub-court built with the reader. READER-COURT-0's entry was already pushed and
+its build delivered, so the second was no longer available as written; the court chose the first.
+
+**Grade.** DECLARED: the idea and the three rulings. OBSERVED: the crude count. **does_not_show.** How many refusal
+checks there are, how many have a registered reason, or that any row is wrong today: one was, and it is fixed.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

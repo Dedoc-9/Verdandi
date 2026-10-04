@@ -96,6 +96,8 @@ row that would redden if the claim were false.
 - **Count again.** The gate reads what it is pointed at. Two facts recorded for READER-COURT-0 (the number of JSON
   parsers, the deepest nesting among the records) were each off by one until they were recounted. Neither was a
   row's to catch.
+- **A plant is bytes.** A file the gate plants for a command is written in binary mode or with a fixed line ending.
+  One opened in text mode became CR LF on the owner's Windows host and was refused for its form; the watch said so.
 - **A mutant can be a non-mutant.** In READER-COURT-0's mutation test four planted defects survived because they
   were written so that they changed nothing. A survivor is first a question about the mutant.
 - **The dev harness is not the gate.** Running chosen rows alone can fail a row that depends on an earlier row's

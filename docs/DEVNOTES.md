@@ -290,6 +290,31 @@ registered.
   checked out with other line endings, and runs that received no input.
 - **Documentation is a patch too.** What the host did is written down from the host's own output, after the fact,
   as its own commit. A claim about a host run is never written before the run.
+- **The three passes run at once.** Until READER-COURT-0 the three gate passes of a landing ran one after another.
+  They are independent (each has its own copy of the tree and writes only inside it), so they now run together.
+  %s The procedure is unchanged: the same three passes, the same comparison of their logs.
+
+**A text on the shape of a build turn (declared; the owner brought it, 2026-10-04).** It reads a long build turn as
+mostly sequential project management and proposes: run the three independent gate passes at once and let the shell
+wait for them; give the build one bounded instruction against a locked plan; fold the repeated chores (hashes,
+counts, stale-reference scans, the mutation court, the passes, the comparison) into one driver command; use less
+reasoning effort for mechanical phases; and split code, documents and court preparation into parallel tracks where
+they do not share an authority. Its own summary: *lock the certification procedure; optimize its execution harness*,
+and never omit a registered court or gate to save time.
+
+What stands against the tree, as reviewed:
+
+- **Adopted.** The parallel passes, above. The owner ruled that any driver stays in the build's scratch for now and
+  nothing of it enters the repository.
+- **Already so.** The passes were already run in the background and polled; what changes is that there is one wait
+  and not three.
+- **Not the gate's.** The 36-minute gate the text mentions is Urðr's. Here a pass takes about 18 to 20 minutes on
+  the build container's two cores. The gain from running three at once is bounded by those two cores, and is
+  measured above, not assumed.
+- **Not the build's to set.** Which model and how much reasoning effort a turn uses is the owner's setting.
+- **Kept sequential on purpose.** An edit, its test and its commit; a gate result, its reading and its correction;
+  a registration and then its build.
+- **Its citations** are its own and were not opened here.
 
 ## Lessons worth keeping
 
@@ -319,10 +344,14 @@ registered.
 8. **A green row can be wrong about why.** A forgery refused for its form passes a row that only asks for a refusal.
    Watching what refused it, on every gate, is cheaper than trusting that each forgery still reaches its own rule.
 
-9. **Count twice.** Both corrections in READER-COURT-0's record came from counting again by a different method. A
+9. **Write a planted file as bytes.** A plant opened in text mode ends in CR LF on Windows. The first host run of
+   READER-COURT-0 went red on exactly that, on a row that three passes here had shown green. The container is one
+   platform; a file's bytes should not depend on which one wrote it.
+
+10. **Count twice.** Both corrections in READER-COURT-0's record came from counting again by a different method. A
    count that feeds a registered bound deserves the same suspicion as a number that feeds a verdict.
 
-10. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+11. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
