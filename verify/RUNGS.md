@@ -4636,7 +4636,9 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   does not choose the renderer, an adoption needs a margin and a confirming run, the court set is this tree's and
   not Urðr's twenty witnesses, and three of its terms (`conventions.py`, an Arbitrary-Boundary Law, Temporal
   Fidelity Accounting) are not in this tree. Lawful is not next: the order is unchanged and READER-COURT-0's build
-  is next. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+  is next. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md). *On the host:* this record was applied (0112), the
+  gate passed with it (218 rows, rowset `0b423b279a40c85c`, 0 fail, 0 skipped) and it was pushed,
+  `25b5c17..b847810`. The owner's word after it: *take the next.*
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two

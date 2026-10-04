@@ -1592,6 +1592,10 @@ layout court is ever taken up it is courted and registered like any rung, and th
 (offline, a small registered space, byte identity on the gate, timing on the host, adoption by the owner's lock)
 is a reading and has not been ruled.
 
+**On the host (DANIELDILLBERG).** This record was applied, the gate passed with it (GATE PASSED, rowset
+`0b423b279a40c85c`, 218 rows, 0 fail, 0 skipped) and it was pushed, `25b5c17..b847810`. The owner's word after it:
+*take the next.* The next, by the order that stands, is READER-COURT-0's build.
+
 ### GAME-0 — Urðr's game layer as frozen evidence · **landed**
 The seventeen discrete game-layer slices (`gamegen` … `cue`), their corpora, suites, briefs and the D24/D25 boundaries,
 carried verbatim from `urdr-oracle-1` into `oracle/game/`, each file listed with its sha256 and Urðr git blob id, and
