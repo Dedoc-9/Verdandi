@@ -1242,7 +1242,7 @@ can be computed deterministically for anything beyond what the grid already says
 language. When a rung is seated from it, the rung registers its own hypothesis, failure condition and limits.
 
 
-### READER-COURT-0 — the saved form's readers brought to one verdict · **registered** (`f53017cd`); nothing built
+### READER-COURT-0 — the saved form's readers brought to one verdict · **registered** (`f53017cd`, pushed); nothing built
 The rung after ADMIT-0, by the owner's order. ADMIT-0 made a new language with one reader. This rung hardens the old
 one: the JSON the tree saves and reads back. The disagreement it closes was observed on 2026-10-03 and is recorded in
 ADMIT-0's section above. This section records what was read from the code before the courts, the two courts, a
@@ -1368,6 +1368,11 @@ showing six levels accepted, seven accepted and eight refused at the exact offse
 eight cases were in the draft. The six was not. The entry was amended while its commit was still unpushed, as the
 rules allow, and its hash is now `f53017cd`. *0110: LOCK / PUSH. No redesign.*
 
+**On the host (DANIELDILLBERG).** The unpushed draft was dropped (`git reset --hard f504829`), the registration and
+the documents were applied, and the gate passed there: GATE PASSED, rowset `0b423b279a40c85c`, 218 rows, 0 fail, 0
+skipped, the same as here. Pushed, `f504829..25b5c17`. The entry is public; from here it changes only by an
+amendment with its own hash.
+
 **The next question, reserved.** The owner asked whether DESIGN-EVENT-0 remains the next rung after this one, or
 whether a design representation, a design diff and constraints are promoted ahead of it, as the review of the
 development environment below would have it. His words: *I would not silently reorder that based on the 15-pivot
@@ -1485,6 +1490,108 @@ mode, constraint, recipe, bundle or plugin can be built under the rules above; t
 fifteen; anything about how a user would fare with them. Each rung seated from it registers its own hypothesis,
 failure condition and limits.
 
+### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
+Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the
+owner in the third person. Nothing here is registered, nothing is built, and the order of the route is unchanged.
+
+**The first text: *Microarchitectural Polymorphic Compilation (Self-Optimizing Immutable Code)*.** It starts from the
+Epistemic Invariance theorem and LOCALITY-0, and proposes a compiler toolchain that takes the rendering kernel and
+"continuously, dynamically mutates its memory layout, thread partitioning, and assembly instruction selection while
+running live production workloads". Its argument: because byte identity is a hard landing condition, thousands of
+such experiments can be tried safely under process isolation; a mutation that moves a single bit turns the gate
+red and is discarded; one that passes the byte-identity court and lowers latency is adopted by the machine itself.
+It says this moves optimization "away from human guesswork", and that the result is a permanently mutating
+substrate "completely invisible to memory-scraping cheat engines".
+
+**The owner's words.** *i think you should pause for this tool for this repo.* Asked in court what the pause meant
+for the route, he answered: *consider:*. On the form it would take if it were ever taken up, and on how its
+anti-cheat sentence should be recorded, he stated no preference. The review's reading is therefore recorded for
+both, as a reading and not as a ruling.
+
+**The review, as considered.** One thing fits and seven collide.
+
+- **What fits.** The tree already does a small version of this by hand. LOCALITY-0 built its layouts as separate
+  monomorphized binaries, held each byte-identical on the gate, timed them process-isolated and interleaved on the
+  host, and adopted one by a rule locked before the number, keeping the loser on the record. GAUNTLET-2's thread
+  sweep and BEARING-FAST-0's treads are the same shape. Enumerating a registered, finite space of such variants and
+  running that court for each is the existing method, mechanized.
+- **1. Live measurement contradicts the theorem it cites.** Epistemic Invariance says a layout's cost can be
+  extracted only while the execution boundary is held static: monomorphize, process-isolate, interleave. A live
+  loop taking a person's input is the opposite condition.
+- **2. A program that changes itself at content time is a program the gate did not certify.** The gate certifies
+  the machine; content time never runs it. Every saved session names the renderer it was made with, by the sha256
+  of the render sources. A binary that mutates has no such name.
+- **3. Automatic adoption meets `built ≠ adopted`, and the noise on record.** The same court has run 40–60% slower
+  on another run the same day (G13), and labels have flipped on three samples (G10). LOCALITY-0's adopted gain was
+  about 1.07×. Taking the best of thousands of trials at that noise selects the noise.
+- **4. Byte identity over a court set is evidence about that set.** A layout that is a bijection is also right by
+  construction, and a row checks the bijection. A mutated instruction sequence has no such backing.
+- **5. Generating or rewriting code at run time is not std-only.**
+- **6. The ruling of 2026-10-01.** The next work is chosen by what evidence is worth buying. The staircase reopens
+  only if a court misses its target, and layout and cache experiments are on that list as deferred, with no gain
+  claimed. The live loop's timing is not measured at all (G21).
+- **7. The security sentence has nothing under it.** This repository has no threat model and claims nothing about
+  an adversary. What a cheat reads is state, and the saved form keeps the world's state open and replayable on
+  purpose.
+
+**The second text.** It accepts the review point by point and offers a correction it calls a *Static Layout
+Synthesis Gate (SYNTH-LAYOUT-0)*, which is a declared name and not seated. Its three terms: it runs at compile
+time, as a pre-build step under `verify/`; it enumerates only structural data-layout variants and never mutates
+instructions, runs the interleaved courts, selects by a rule locked beforehand and bakes one static layout into the
+binary; and the winner carries a permanent content-addressed identity, so every session it makes names a fixed
+source hash. Nothing mutates at run time. On the security sentence it agrees with the review: the world's state is
+open by design, and diversity gives probabilistic mitigation of control-flow hijacking, not protection against
+reading data.
+
+**Where the correction still meets rules in force.** It is close. Six things in it are not this tree's.
+
+- **The gate does not time anything.** The correction puts the interleaved timing and the selection inside the
+  development gate. Here correctness is on the gate and speed is off it: no row reads a wall-clock number, and two
+  passes must be byte-identical on any machine. A gate that timed variants would give a different answer on every
+  host and on every run. What the gate can hold is that each variant is byte-identical and that the adopted one is
+  the one in the source. Timing is a host court with a sealer, as LOCALITY-0's was.
+- **A build does not choose the renderer.** If a pre-build step picked the winner, two hosts could build two
+  renderers from one tree, and a session's renderer identity would stop naming one program. Here the choice is
+  made once, on a named host, sealed as a record, and then committed as source by the owner's lock. The identity
+  follows from the committed source and needs no new stamp.
+- **"Selects the optimal" needs the same care as any adoption.** A margin declared beforehand, a confirming run on
+  fresh samples, the losers kept on the record, and the space small enough that the best of it is not just the
+  luckiest. ALLOC-REUSE-1's court is the model.
+- **The court set is not "the standard twenty witnesses".** Those are Urðr's, from the placement that preceded
+  this repository. Here a fast path is held to the corpus (six scenes, two tile sets) and the gate's adversarial
+  cameras, 19 cases for the facing emit, and the bearing camera has its own court set.
+- **Three of its terms are not in this tree.** `conventions.py`, an "Arbitrary-Boundary Law" and "Temporal Fidelity
+  Accounting" appear nowhere in Verðandi. They are recorded as the text's own terms and were not opened here. What
+  this tree has in their place is a registered entry that keeps its rejected alternatives (Morton, in LOCALITY-0)
+  and the ruling of 2026-10-01. Likewise there are no crates and no build macros here: a variant is a
+  monomorphization inside `kernel/fast.rs`, as the two layouts already are.
+- **Two readings of the evidence are stronger than the evidence.** FRAME-SPLIT-0 is not unmeasured: it was measured
+  twice, for the modelled loop; what is unmeasured is the live loop. And the outside sources are reported below in
+  their own terms: one found a bias, in its own benchmarks; neither proved a law.
+
+And one thing the correction does not change: it is still an optimization of the kernel. Being lawful does not make
+it next. By the ruling of 2026-10-01 it waits behind the measurement of the live loop, and it reopens when a court
+misses a target.
+
+**Outside sources (attributed; hypotheses, not claims of this repository).** Curtsinger and Berger's Stabilizer
+treats one binary as a single sample from the space of memory layouts, re-randomizes the layout during a run so
+that layout effects can be tested statistically, and reports that across its benchmark suite the difference
+between two compiler optimization levels could not be told from layout noise. Mytkowicz and others report that
+details of an experimental setup that look harmless can bias a performance measurement enough to reverse a
+conclusion, and recommend randomizing the setup. Schkufza and others' stochastic superoptimizer searches with test
+cases and accepts a rewrite only after a formal equivalence check, on loop-free code. Larsen and others'
+systematization of software diversity describes its protection as probabilistic and lists disclosure of the
+diversified implementation as an open problem. Read here in the first paper, in the authors' summary page, in
+Adrian Colyer's summary, and in the authors' publication page.
+
+**Grade.** DECLARED: both texts, and the name. OBSERVED: nothing; no variant was built and nothing was timed.
+**does_not_show.** That a wider layout space holds any gain on this host: LOCALITY-0 measured two layouts, and its
+gain was small beside the drift between runs. That any of this would matter to the live editor, whose timing is
+unmeasured. Anything about security. **What stands.** The order is unchanged: READER-COURT-0's build is next. If a
+layout court is ever taken up it is courted and registered like any rung, and the review's reading of its form
+(offline, a small registered space, byte identity on the gate, timing on the host, adoption by the owner's lock)
+is a reading and has not been ruled.
+
 ### GAME-0 — Urðr's game layer as frozen evidence · **landed**
 The seventeen discrete game-layer slices (`gamegen` … `cue`), their corpora, suites, briefs and the D24/D25 boundaries,
 carried verbatim from `urdr-oracle-1` into `oracle/game/`, each file listed with its sha256 and Urðr git blob id, and
@@ -1565,5 +1672,10 @@ its more interesting test: proving that a *living, editable world* can be as hon
   [Constraint Is All You Need (Xu et al.)](https://www.pcgworkshop.com/archive/xu2025constraint.pdf),
   [Agentic PCG](https://zehua-jiang.github.io/AgenticPCG/),
   [About Raw Input — Microsoft Learn](https://learn.microsoft.com/en-au/windows/win32/inputdev/about-raw-input).
+  For the self-optimizing-code texts (outside sources, attributed):
+  [Stabilizer: Statistically Sound Performance Evaluation (Curtsinger and Berger)](https://people.cs.umass.edu/~emery/pubs/stabilizer-asplos13.pdf),
+  [Producing Wrong Data Without Doing Anything Obviously Wrong! (Mytkowicz et al.)](https://sape.inf.usi.ch/publications/asplos09.html),
+  [Stochastic program optimization (Schkufza et al.), in Adrian Colyer's summary](https://blog.acolyer.org/2017/03/30/stochastic-program-optimization/),
+  [SoK: Automated Software Diversity (Larsen et al.)](https://ics.uci.edu/~perl/publication/diversity_sok).
   The review's own citations, not opened here: the LangSec workshop page, SLSA provenance v1.2 and OWASP's AI Agent
   Security cheat sheet.

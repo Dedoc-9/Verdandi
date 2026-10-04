@@ -4377,7 +4377,7 @@ admitted event's head is not the key-made edit's, if a forged envelope passes an
 continuation drops an envelope. `admit-fence` goes red if the seam reaches a process, a socket, the gate or the
 JSON reader's text.
 
-## READER-COURT-0 — preregistered: the saved form is one bounded language, and every reader gives one verdict (method locked `f53017cd`; nothing built)
+## READER-COURT-0 — preregistered: the saved form is one bounded language, and every reader gives one verdict (method locked `f53017cd`, pushed; nothing built)
 
 **Why.** ADMIT-0 made a new language with one reader. The old language, the JSON the tree saves and reads back, has
 four Rust parsers (one text copied into `shell/playback.rs`, `workshop/sessionwalk.rs` and `workshop/session.rs`,
@@ -4487,10 +4487,16 @@ sessions, the registry) and 4,298 journal payloads, each to the typed value `jso
 tree's existing files lie inside the registered language. It does not show the reader is equivalent to Python's
 (it is registered to be stricter), and no gate row rests on it.
 
+**On the host (DANIELDILLBERG).** `git status` read one commit ahead of `origin/main`: the draft. It was dropped
+with `git reset --hard f504829`. The registration (0110, `f53017cd`) and the documents (0111) were applied in that
+order, and the gate passed: GATE PASSED, rowset `0b423b279a40c85c`, 218 rows, 0 fail, 0 skipped, the same rowset
+as in the container. Pushed, `f504829..25b5c17`. The draft was never public. The entry is, and from here it
+changes only by an amendment with its own hash.
+
 **Grade.** DECLARED: the registered conditions, and the owner's eight locks. OBSERVED: the census, the depth count,
 the prototype's result, the scan of the gate's files. ESTABLISHED: nothing; no row of this rung exists. The gate
 with the entry reads 218 rows, rowset `0b423b279a40c85c`, unchanged, here (the registration alone, and with these
-documents, twice byte-identical).
+documents, twice byte-identical) and on the host.
 
 **does_not_show.** That a shared reader exists, that two readers agree on anything, or that any writer checks its
 bytes: nothing is built. That the language is right: it is one author's grammar, and what stands against a shared
@@ -4615,6 +4621,22 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   ruled. It meets rules in force: no floats, units or scores; a constraint's status a witness; shown numbers are
   measurements; preview only as a speculative worldline; a batch a new language version; a plugin inside the
   program is code the gate did not certify. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+- **Self-optimizing code, and its correction to a layout court (declared: two texts the owner brought, 2026-10-04;
+  considered at his word; not registered, nothing built).** The first text proposes a toolchain that mutates the
+  kernel's memory layout, thread partitioning and instruction selection continuously, on live workloads, with byte
+  identity as the kill switch and automatic adoption of whatever is faster, and calls the result invisible to
+  memory-scraping cheats. The owner: *i think you should pause for this tool for this repo*, and in court,
+  *consider:*. Considered, one thing fits (LOCALITY-0's court, mechanized over a registered finite space) and seven
+  collide: live measurement against the theorem it cites; a self-changing program the gate did not certify and no
+  renderer identity names; automatic adoption against `built ≠ adopted` and the drift on record (G10, G13); byte
+  identity over a court set as evidence about that set only; run-time code generation against std-only; the ruling
+  of 2026-10-01 that the staircase reopens only when a court misses its target; and a security claim with no
+  threat model under it. The second text accepts this and offers a static, compile-time layout court it names
+  `SYNTH-LAYOUT-0`, a declared name and not seated. It still meets rules in force: the gate times nothing, a build
+  does not choose the renderer, an adoption needs a margin and a confirming run, the court set is this tree's and
+  not Urðr's twenty witnesses, and three of its terms (`conventions.py`, an Arbitrary-Boundary Law, Temporal
+  Fidelity Accounting) are not in this tree. Lawful is not next: the order is unchanged and READER-COURT-0's build
+  is next. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two
