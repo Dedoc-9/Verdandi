@@ -262,7 +262,7 @@ or feel is claimed (G21), and the screen is read back on a schedule, not at ever
 
 Two different things can change, and they are certified differently.
 
-    program time    the machine changes ──► the gate runs: 218 rows, twice, byte-identical
+    program time    the machine changes ──► the gate runs: 226 rows, twice, byte-identical
     content time    the world changes   ──► the artifact is checked and admitted; the gate does not run
 
 *The gate certifies the machine. ADMIT admits the world's changes.* `ADMIT-0` is the first seam built on that
@@ -295,12 +295,12 @@ is said there too.
 
 ---
 
-## 13. The saved form — one language for everything read back (registered, not built)
+## 13. The saved form — one language for everything read back
 
 Every artifact the program saves and later reads (a session, a journal record's payload, a checkpoint's line, every
-sealed record) is JSON written by one of three writers and read by one of eight readers. On files the tree has
-written they all agree. On hostile bytes they were seen not to (G19). `READER-COURT-0` is registered (`f53017cd`) to
-close that, and its design is the same move ADMIT-0 made, applied to the old language instead of a new one.
+sealed record) is JSON written by one of three writers. It used to be read by one of eight readers, which agreed
+on files the tree had written and were seen not to on hostile bytes (G19). `READER-COURT-0` (`f53017cd`) closed that,
+and its design is the same move ADMIT-0 made, applied to the old language instead of a new one.
 
 - **The language is the writers'.** Not general JSON and not canonical bytes: the bounded language the tree's own
   writers are permitted to emit. One object and one final line feed; spaces and line feeds alone between tokens; no
@@ -317,4 +317,6 @@ close that, and its design is the same move ADMIT-0 made, applied to the old lan
 - **Writers refuse beyond it.** Each writer gives its bytes to the reader before it writes them, so the language is
   enforced where a file is made and not only where it is read.
 
-Nothing of it is built. Until it is, the saved form is read as it was, and G19 stands as observed.
+It is built: `kernel/savedform.rs`, `verify/savedform.py`, and eight rows. The two readers give the same verdict
+on all 163,072 single-byte mutants of the three registered documents and on every registered boundary mutation of
+every real file the gate holds. What that does and does not reach is G19 and G23.

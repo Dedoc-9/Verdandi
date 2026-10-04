@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import os
 import platform
 import re
@@ -33,6 +32,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import envelope  # noqa: E402
+import savedform  # noqa: E402
 from diagcommon import Refuse, registry, write_record  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -128,7 +128,10 @@ def check_saved(raw: bytes, root: str = ROOT) -> dict:
     """The saved session's own integrity, without rendering: the seal, the shape, the base, the fold, the lineage."""
     if not seal_ok(raw):
         raise Refuse("the saved session's seal does not match its bytes")
-    doc = json.loads(raw.decode("utf-8"))
+    try:
+        doc = savedform.read_document(raw)       # READER-COURT-0: the strict reader, never the json module
+    except savedform.Refused as r:
+        raise Refuse("the saved session is not in the saved form: %s" % r.line())
     d, live = doc.get("data", {}), doc.get("live", {})
     if doc.get("name") != "verdandi-session-walk" or d.get("magic") != "VRDNSW1" or live.get("log") != "LIVE-SESSION-0":
         raise Refuse("not a LIVE-SESSION-0 session-walk")

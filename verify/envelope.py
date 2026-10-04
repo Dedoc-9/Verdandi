@@ -17,11 +17,17 @@ two languages and read by one gate. The rules, kept:
 Canonical JSON (the Rust twin in workshop/edit.rs writes the same bytes): UTF-8; object keys sorted by code
 point; no whitespace; integers only; strings escaped as \\" \\\\ \\n \\r \\t \\b \\f and \\u00xx (lowercase) for other
 control characters, everything else raw. Two writers, one gate: `records-twins` proves they agree.
+
+READER-COURT-0: a record on the disk is a document of the saved form. `read` reads it through verify/savedform.py,
+the strict reader, and never through the json module; `write` gives the bytes it is about to write to that reader
+first and writes nothing the saved form does not hold. The json module here only renders: it never parses.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+
+import savedform
 
 CLAIM_CLASSES = ("measured", "established", "declared", "predicted")
 REQUIRED = ("name", "version", "claim_class", "provenance", "validity_scope", "forbidden_interpretations", "data")
@@ -87,15 +93,49 @@ def seal(name: str, version: int, claim_class: str, provenance: dict, validity_s
     return rec
 
 
-def write(path: str, rec: dict) -> None:
+def _names(node, path: str):
+    """Every name in a record is a string: the json module would quietly write another kind of key as text."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if not isinstance(k, str):
+                raise EnvelopeViolation(f"name_not_a_string:{path}.{k!r}")
+            _names(v, f"{path}.{k}")
+    elif isinstance(node, (list, tuple)):
+        for i, v in enumerate(node):
+            _names(v, f"{path}[{i}]")
+
+
+def document(rec: dict) -> bytes:
+    """The bytes `write` puts on the disk for a record, checked: they are a document of the saved form and they
+    read back to the record's own value. A record that cannot be written that way raises EnvelopeViolation."""
+    _names(rec, "record")
     validate(rec)
-    with open(path, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(rec, fh, indent=1, ensure_ascii=False)
-        fh.write("\n")
+    try:
+        text = json.dumps(rec, indent=1, ensure_ascii=False) + "\n"
+        raw = text.encode("utf-8")
+    except (TypeError, ValueError) as e:
+        raise EnvelopeViolation(f"saved_form:not_writable:{e}")
+    try:
+        back = savedform.read_document(raw)
+    except savedform.Refused as r:
+        raise EnvelopeViolation(f"saved_form:{r.line()}")
+    if canonical(back) != canonical(rec):
+        raise EnvelopeViolation("saved_form:the bytes do not read back to the record")
+    return raw
+
+
+def write(path: str, rec: dict) -> None:
+    raw = document(rec)        # refused here, nothing is written
+    with open(path, "wb") as fh:
+        fh.write(raw)
 
 
 def read(path: str) -> dict:
-    with open(path, encoding="utf-8") as fh:
-        rec = json.load(fh)
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    try:
+        rec = savedform.read_document(raw)
+    except savedform.Refused as r:
+        raise EnvelopeViolation(f"saved_form:{r.line()}")
     validate(rec)
     return rec

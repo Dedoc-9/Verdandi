@@ -11,21 +11,24 @@ anchored the same way as every other record. The session's own head is left in `
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "verify"))
 import envelope  # noqa: E402
+import savedform  # noqa: E402
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--session", required=True)
     a = ap.parse_args()
-    with open(a.session, encoding="utf-8") as fh:
-        raw = json.load(fh)
+    try:
+        raw = savedform.read_file(a.session)     # READER-COURT-0: the strict reader, never the json module
+    except savedform.Refused as r:
+        print("REFUSE: the session is not in the saved form: %s" % r.line())
+        return 2
     if raw.get("name") != "verdandi-session":
         print("REFUSE: not a verdandi-session")
         return 2

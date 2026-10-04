@@ -76,11 +76,16 @@ the live editor — tile classes painted from a registered palette as session ev
 per state, the camera control condition, the authored world persisting through save and resume), livesession
 (LIVE-SESSION-0: the live session journaled as it runs, sealed on Esc by an atomic replace and verified from the disk
 before it counts as saved, resumed into new files with lineage, a crashed run recovered from its journal, the loader's
-TAMPERED / DIFFERENT-RENDERER classification), and — in the oracle stage —
+TAMPERED / DIFFERENT-RENDERER classification), readercourt (READER-COURT-0: everything the tree saves and reads back is
+one bounded language — one Rust reader shared by path and an independent Python reader give the same code and byte
+offset, or the same typed value, on the registered cases, on every single-byte mutant of three registered documents and
+on the boundary mutations of every real file; every writer checks its bytes first; and no earlier row's forgery is
+refused for its form), and — in the oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
 
+import glob
 import hashlib
 import json
 import os
@@ -91,6 +96,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import envelope  # noqa: E402
+import savedform  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ORACLE = os.path.join(ROOT, "oracle")
@@ -109,6 +115,27 @@ ROWS: list[tuple[str, str, str]] = []   # (status, name, text)
 VERBOSE = ("-v" in sys.argv) or ("--verbose" in sys.argv)
 
 
+# READER-COURT-0: every command the gate runs, and every read the gate makes itself, is watched for a refusal by the
+# saved form's reader. A row before this rung's own that provokes one has had its forgery refused for this rung's
+# reason and not for its own, and `readercourt-fence` says so.
+CURRENT_ROW = [""]
+READER_REFUSALS: list[tuple[str, str]] = []   # (the row running, the refusal's code and offset)
+_SUBPROCESS_RUN = subprocess.run
+
+
+def _watched_run(*a, **k):
+    cp = _SUBPROCESS_RUN(*a, **k)
+    for s in (getattr(cp, "stdout", None), getattr(cp, "stderr", None)):
+        if s:
+            text = s if isinstance(s, str) else s.decode("utf-8", "replace")
+            for m in re.finditer(r"READER-[A-Z]+ [0-9]+", text):
+                READER_REFUSALS.append((CURRENT_ROW[0], m.group()))
+    return cp
+
+
+subprocess.run = _watched_run
+
+
 class Skip(Exception):
     pass
 
@@ -118,6 +145,8 @@ class Red(Exception):
 
 
 def row(name, fn):
+    CURRENT_ROW[0] = name
+    refused_before = savedform.REFUSALS
     try:
         text = fn()
         ROWS.append(("PASS", name, text))
@@ -127,6 +156,8 @@ def row(name, fn):
         ROWS.append(("FAIL", name, str(e)))
     except Exception as e:  # a crash is a red row, never a missing one
         ROWS.append(("FAIL", name, f"{type(e).__name__}: {e}"))
+    if savedform.REFUSALS != refused_before:
+        READER_REFUSALS.append((name, "in this process x%d" % (savedform.REFUSALS - refused_before)))
     st, _, text = ROWS[-1]
     if VERBOSE or st == "FAIL":
         print(f"[{st}] {name:<28} {text}")
@@ -136,6 +167,13 @@ def row(name, fn):
 
 def sha256(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
+
+
+def write_form(path: str, doc) -> None:
+    """READER-COURT-0: write a forged or edited document inside the saved form (indented, non-ASCII raw, one final LF),
+    so that the command it is given to refuses it for the row's own reason and not for its form."""
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(doc, indent=1, ensure_ascii=False) + "\n")
 
 
 def read(path: str) -> bytes:
@@ -615,8 +653,7 @@ def tampered(name: str, suffix: str, mutate, reseal: bool = True) -> str:
     if reseal:
         r["chain_hash"] = envelope.chain_hash(r)
     path = os.path.join(WS, f"{name}.{suffix}.record.json")
-    with open(path, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(r, fh, indent=1, ensure_ascii=False)
+    write_form(path, r)
     return path
 
 
@@ -1792,8 +1829,7 @@ def workshop1_tamper():
     original = read(sp)
     # tamper: change the second entry's op param (30,26 -> 31,26) WITHOUT touching its stored digests
     doc["data"]["log"][1]["edit"]["x"] = 31
-    with open(sp, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(doc, fh, indent=1)
+    write_form(sp, doc)
     code, out = _verify(sp)
     if code != 2 or "CHAIN-BROKEN" not in out:
         raise Red("a tampered log entry was not caught: %d %s" % (code, out[:60]))
@@ -2278,8 +2314,7 @@ def sessionwalk_tamper():
         if e["kind"] == "move":
             e["command"] = "B" if e["command"] != "B" else "L"
             break
-    with open(sp, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(doc, fh, indent=1)
+    write_form(sp, doc)
     code, _o, err = run(SESSIONWALK_EXE, ["verify", "--session", sp])
     if code != 2 or "CHAIN-BROKEN" not in err:
         raise Red("a tampered move was not caught: %d %s" % (code, err.strip()[:60]))
@@ -2394,7 +2429,7 @@ def shell_playback_sealed_input():
     # it refuses a NON-session artifact (an ad-hoc/reconstructed stream is not accepted)
     bad = os.path.join(PB, "not-a-session.json")
     with open(bad, "w", encoding="utf-8") as fh:
-        fh.write('{"name":"verdandi-walk","data":{}}')
+        fh.write('{"name":"verdandi-walk","data":{}}\n')   # READER-COURT-0: inside the saved form, refused for what it is
     code, _o, err = _pb_playback(SHELL_EXE, bad)
     if code != 2 or "INVALID-SESSION" not in err:
         raise Red("playback accepted a non-session artifact: %d %s" % (code, err.strip()[:60]))
@@ -2491,8 +2526,7 @@ def shell_playback_order():
     doc = json.load(open(sp, encoding="utf-8"))
     log = doc["data"]["log"]
     log[0], log[1] = log[1], log[0]
-    with open(sp, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(doc, fh, indent=1)
+    write_form(sp, doc)
     code, _o, err = _pb_playback(SHELL_EXE, sp)
     if code != 2 or "DIVERGED" not in err:
         raise Red("a reordered sealed log was not caught: %d %s" % (code, err.strip()[:60]))
@@ -2514,8 +2548,7 @@ def shell_playback_tamper():
         if e["kind"] == "move":
             e["command"] = "B"
             break
-    with open(sp, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(doc, fh, indent=1)
+    write_form(sp, doc)
     code, _o, err = _pb_playback(SHELL_EXE, sp)
     if code != 2 or "DIVERGED" not in err:
         raise Red("a tampered move was not caught by playback: %d %s" % (code, err.strip()[:60]))
@@ -2523,8 +2556,7 @@ def shell_playback_tamper():
     sp2 = _sw_build("pb_trunc", "28,28,N", [("edit", "cell:28,27,."), ("move", "F"), ("move", "F")])
     doc2 = json.load(open(sp2, encoding="utf-8"))
     doc2["data"]["log"] = doc2["data"]["log"][:-1]
-    with open(sp2, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(doc2, fh, indent=1)
+    write_form(sp2, doc2)
     code, _o, err = _pb_playback(SHELL_EXE, sp2)
     if code != 2 or "DIVERGED" not in err:
         raise Red("a truncated log was not caught by playback: %d %s" % (code, err.strip()[:60]))
@@ -10782,8 +10814,8 @@ def admit_fence():
     """The seam is fenced: shell/admit.rs spawns no process, opens no socket, reads no clock and nothing under verify/;
     the run is reached only by shell admit and admit-selftest, and shell admit takes no plant; the admitted edit is
     appended by the session's own push on the session as loaded, before anything is written; the envelope is filled at
-    the fold and never enters it; the saved form's JSON reader is untouched in its three files; kernel sources and the
-    LATENCY-0 prefix are unchanged; no pin of an earlier rung moved."""
+    the fold and never enters it; shell/admit.rs is what ADMIT-0 left (the pin on the old JSON reader's text moved to
+    READER-COURT-0 with the reader); kernel sources and the LATENCY-0 prefix are unchanged."""
     code = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
     shell = {fn: code(read(os.path.join(SHELL, fn)).decode("utf-8")) for fn in sorted(os.listdir(SHELL)) if fn.endswith(".rs")}
     ad = shell["admit.rs"]
@@ -10830,14 +10862,12 @@ def admit_fence():
             or any(not 0 <= f.find("self.head = fold(&self.head, b'E', &self.content);") < f.find("let admit = self.enveloped(before);") < f.find("self.log.push(") for f in (cell, tile))
             or code(pb).count("admit: None") != 3 or code(pb).count("self.enveloped(before)") != 2):
         raise Red("the envelope is not filled at the fold and kept out of it, or an event other than an edit can carry one")
-    reader = {}
-    for rel in ("shell/playback.rs", "workshop/sessionwalk.rs", "workshop/session.rs"):
-        s = read(os.path.join(ROOT, *rel.split("/"))).decode("utf-8").replace("\r\n", "\n")
-        i = s.index("struct P<'a> {")
-        j = s.index("\n}\n", s.index("fn parse_json(b: &[u8]) -> Result<Json, String> {", i)) + 3
-        reader[rel] = sha256(s[i:j].encode("utf-8"))
-    if set(reader.values()) != {ADMIT_JSON_READER_SHA256}:
-        raise Red("the saved form's JSON reader was altered in %s: that is READER-COURT-0's, after this rung" % ", ".join(k for k, v in reader.items() if v != ADMIT_JSON_READER_SHA256))
+    # READER-COURT-0 moved this pin on purpose. This row held the saved form's JSON reader byte-identical in its three
+    # files (ADMIT_JSON_READER_SHA256, kept above as what was pinned). That reader is gone: READER-COURT-0 replaced it
+    # with kernel/savedform.rs, and `readercourt-fence` pins the new one. What this row still holds is that the seam
+    # itself was not touched by the change.
+    if sha256(read(os.path.join(SHELL, "admit.rs")).replace(b"\r\n", b"\n")) != RC_ADMIT_RS_SHA256:
+        raise Red("shell/admit.rs changed after ADMIT-0: the seam reads the session through the loader and holds no reader of its own")
     pins = {"bearingfast.rs": BEARINGFAST_RS_SHA256, "vocab.rs": VOCAB_RS_SHA256, "mantle.rs": MANTLE_RS_SHA256, "fast.rs": FAST_RS_SHA256}
     pins.update(SIMTICK_KERNEL_PINS)
     for fn, want in pins.items():
@@ -10854,10 +10884,803 @@ def admit_fence():
             "session, appends the admitted edit by the session's own push in memory, and only then opens a run; it is reached "
             "by shell admit and admit-selftest alone, and shell admit takes no plant; the journal opens with the parent's "
             "events and takes the admitted record, and the death points sit where the crash court ends a run; the envelope "
-            "is filled after the fold in both edit paths and nothing in its section folds or hashes; the saved form's JSON "
-            "reader is byte-identical in its three files and untouched (%s...); kernel sources, shell/present.rs, "
-            "shell/simtick.rs and the LATENCY-0 prefix are unchanged; no pin of an earlier rung was moved"
-            % ADMIT_JSON_READER_SHA256[:12])
+            "is filled after the fold in both edit paths and nothing in its section folds or hashes; shell/admit.rs is "
+            "byte for byte what ADMIT-0 left (%s...; the pin this row held on the old JSON reader's text, %s..., moved to "
+            "READER-COURT-0 with the reader); kernel sources, shell/present.rs, shell/simtick.rs and the LATENCY-0 prefix "
+            "are unchanged" % (RC_ADMIT_RS_SHA256[:12], ADMIT_JSON_READER_SHA256[:12]))
+
+
+
+# ------------------------------------------------------------------ READER-COURT-0: the saved form, one verdict from every reader
+READERCOURT0_HASH = "f53017cd8145d7c181ff812f2d29b9de3055ccf055412ededebbea39bbae05f7"
+RC = os.path.join(BUILD, "rc")
+RC_CODES = ("READER-TRUNCATED", "READER-TRAILING", "READER-DEPTH", "READER-DUPLICATE", "READER-STRING", "READER-NUMBER", "READER-STRUCTURE")
+# what the two identities were before this rung, and are: the sha256 of the render sources, and of the bearing sources
+RC_RENDERER_ID = "629ae5c7686d681c9da93b5b7bd97bc147ac00efe0671a6941ce185b1aafe3c9"
+RC_BEARING_ID = "2d1a264300a8a7a163ec3a3c61e5a614e24e7b8f32dd77fce4b7edbd612a1db5"
+# shell/admit.rs as ADMIT-0 left it: this rung does not touch it
+RC_ADMIT_RS_SHA256 = "99366fea8540e3b4cebc8f973485e0915db042a7cb549d3b06706a476e48a3cd"
+# the two readers as built. The language may not change in a byte it accepts or refuses, so neither may its readers
+# without this pin being moved on purpose.
+# the records of the sessions sealed on the owner's host before this rung, each with the sha256 of its typed value's
+# canonical JSON as it was read then: a session saved before this rung is read to the value it had
+RC_SEALED_BEFORE = {
+    "livesession-DANIELDILLBERG-47ae5de3c73a.json": "7c4fe38b083d0403d6e1d25b8e00193dc66adcc72d266f842efc07a3a509798f",
+    "livesession-DANIELDILLBERG-5290c848217d.json": "a9515e1baca3829a6006c5345fb1a1078ed604e1047293179b7d060c538e1d3f",
+    "livesession-DANIELDILLBERG-a0861e0e837b.json": "fcab5f5990562a46d52bd8c46a7f54af82fc8b5d6e4dc453dcea33a7c0dae1d8",
+    "livesession-DANIELDILLBERG-aa850e786b6f.json": "864d305470d8656a326e32192a0377be6a3dc5ede21633704ba423ba2812d8aa",
+    "livesession-DANIELDILLBERG-b28e42be62c4.json": "ba804100ded1276410b15bfe8c3c7d086352ba7c757de643f8b60df337053971",
+    "livesession-DANIELDILLBERG-dd874eff3a69.json": "3ff9609e0e1d6fc43ee543dd5a6f0371c2ebd94c9082905851c40906a4047abc",
+    "livesession-DANIELDILLBERG-e9dafb482675.json": "0c0d14710a3f790638aefb8b73e3bec6ef5ff1c15902a0d76a095f3b6fea26bb",
+    "livesession-DANIELDILLBERG-eaf27cf3fc0c.json": "f7b3458783c70b230b9a046df94a9404b74b4db9cb2efe4597f3cc9ec89ee00b",
+}
+RC_RUST_READER_SHA256 = "a6c6fb66ca5d45393e97c6bf9f9f44e9a3fbcdf87f54ea65dcfd23d98acf8655"
+RC_PYTHON_READER_SHA256 = "f33ee6fbbff314032fd238b6623470089c7e1ae26fe780177b3daecd52c0af7a"
+
+
+def _rc_x(shown: str) -> bytes:
+    """The registered notation: the bytes between the brackets, ⏎ standing for LF and <XX> for one raw byte in hex."""
+    out, i = bytearray(), 0
+    s = shown.replace("⏎", "<0A>")
+    for m in re.finditer(r"<([0-9A-F]{2})>", s):
+        out += s[i:m.start()].encode("ascii")
+        out.append(int(m.group(1), 16))
+        i = m.end()
+    out += s[i:].encode("ascii")
+    return bytes(out)
+
+
+# the 45 registered boundary cases: (name, the bytes as registered, a payload?, the registered verdict)
+RC_CASES = [
+    ("an empty file", "", False, "READER-TRUNCATED 0"),
+    ("no final LF", '{"n":1}', False, "READER-TRUNCATED 7"),
+    ("a byte after the final LF", '{"n":1}⏎x', False, "READER-TRAILING 8"),
+    ("CR LF", '{"n":1}<0D>⏎', False, "READER-TRAILING 7"),
+    ("a space before the object", ' {"n":1}⏎', False, "READER-STRUCTURE 0"),
+    ("a byte-order mark", '<EF><BB><BF>{"n":1}⏎', False, "READER-STRUCTURE 0"),
+    ("an array at the root", '[1]⏎', False, "READER-STRUCTURE 0"),
+    ("an empty object", '{}⏎', False, "accepted"),
+    ("a leading zero", '{"n":01}⏎', False, "READER-NUMBER 6"),
+    ("minus zero", '{"n":-0}⏎', False, "READER-NUMBER 6"),
+    ("a fraction", '{"n":1.5}⏎', False, "READER-NUMBER 6"),
+    ("an exponent", '{"n":1e3}⏎', False, "READER-NUMBER 6"),
+    ("the greatest integer", '{"n":9223372036854775807}⏎', False, "accepted"),
+    ("one more than the greatest", '{"n":9223372036854775808}⏎', False, "READER-NUMBER 23"),
+    ("the least integer", '{"n":-9223372036854775808}⏎', False, "accepted"),
+    ("one less than the least", '{"n":-9223372036854775809}⏎', False, "READER-NUMBER 24"),
+    ("the two-character escapes", '{"s":"\\"\\\\\\b\\f\\n\\r\\t"}⏎', False, "accepted"),
+    ("an escaped solidus", '{"s":"\\/"}⏎', False, "READER-STRING 7"),
+    ("a \\u escape of a letter", '{"s":"\\u0041"}⏎', False, "READER-STRING 10"),
+    ("a \\u escape of a character that has a short escape", '{"s":"\\u000a"}⏎', False, "READER-STRING 11"),
+    ("backspace spelled \\u0008", '{"s":"\\u0008"}⏎', False, "READER-STRING 11"),
+    ("a \\u escape in upper-case hex", '{"s":"\\u001F"}⏎', False, "READER-STRING 11"),
+    ("the last control character, escaped", '{"s":"\\u001f"}⏎', False, "accepted"),
+    ("an escaped surrogate pair", '{"s":"\\ud834\\udd1e"}⏎', False, "READER-STRING 8"),
+    ("a raw control character", '{"s":"<01>"}⏎', False, "READER-STRING 6"),
+    ("a lead byte with no continuation", '{"s":"<C3>"}⏎', False, "READER-STRING 7"),
+    ("an encoded surrogate", '{"s":"<ED><A0><80>"}⏎', False, "READER-STRING 7"),
+    ("an overlong encoding", '{"s":"<C0><80>"}⏎', False, "READER-STRING 6"),
+    ("a code point past U+10FFFF", '{"s":"<F4><90><80><80>"}⏎', False, "READER-STRING 7"),
+    ("a four-byte character", '{"s":"<F0><9D><84><9E>"}⏎', False, "accepted"),
+    ("a repeated name", '{"a":1,"a":2}⏎', False, "READER-DUPLICATE 9"),
+    ("a comma before the closing brace", '{"a":1,}⏎', False, "READER-STRUCTURE 7"),
+    ("a comma before the closing bracket", '{"a":[1,]}⏎', False, "READER-STRUCTURE 8"),
+    ("a literal cut short", '{"a":tru}⏎', False, "READER-STRUCTURE 8"),
+    ("a tab between tokens", '{"a":<09>1}⏎', False, "READER-STRUCTURE 5"),
+    ("six levels", '{"a":[[[[[1]]]]]}⏎', False, "accepted"),
+    ("seven levels", '{"a":[[[[[[1]]]]]]}⏎', False, "accepted"),
+    ("eight levels", '{"a":[[[[[[[1]]]]]]]}⏎', False, "READER-DEPTH 11"),
+    ("a document cut short in a string", '{"a":"x', False, "READER-TRUNCATED 7"),
+    ("a missing colon", '{"a" 1}⏎', False, "READER-STRUCTURE 5"),
+    ("a name without quotes", '{a:1}⏎', False, "READER-STRUCTURE 1"),
+    ("a second object", '{"a":1}{"a":2}⏎', False, "READER-TRAILING 7"),
+    ("NaN", '{"a":NaN}⏎', False, "READER-STRUCTURE 5"),
+    ("a payload", '{"n":1}', True, "accepted"),
+    ("a payload followed by LF", '{"n":1}⏎', True, "READER-TRAILING 7"),
+]
+# the three registered documents of the exhaustive court: (name, what it is, bytes, a payload?, sha256, typed value)
+RC_DOCS = [
+    ("D1", "a payload using every kind of value and every escape",
+     '{"a":[0,-1,9223372036854775807,-9223372036854775808],"b":"é\\"\\\\\\b\\f\\n\\r\\t\\u0000\\u001f\U0001d11e\x7f","c":{"d":[true,false,null],"e":{},"f":[]}}'.encode("utf-8"),
+     True, "15600320603d1e22f2ed2f91e8865d1134c4240d1d1e36c1bf0f0b068214c05c", "15600320603d1e22f2ed2f91e8865d1134c4240d1d1e36c1bf0f0b068214c05c"),
+    ("D2", "an indented document seven levels deep",
+     '{\n "name": "verdandi-x",\n "data": {\n  "log": [\n   {"kind": "edit", "at": [[[1]]]}\n  ],\n  "n": 0\n }\n}\n'.encode("utf-8"),
+     False, "39faeda09d6ad57fa6935e4d5583be27b6ecc83829483a7d6335e4c2ac1f8c9a", "5b43dc5b0e9b3a23cb45f2b92703a4ab1e2d1e270572214e3fe968cf93bca389"),
+    ("D3", "a journal record's payload",
+     b'{"k":3,"kind":"move","command":"F","camera":"28,27,N","witness":"ab12","tick":99}',
+     True, "e708b620e16823ec02301595bb3a250c44039c5f891c2f8c4a0bd134838797c9", "1b5a1d3f56e0a4b1f6280a24c77ab651f4a115a485ced63fd617b67ce752fa6f"),
+]
+# the 19 inputs observed on 2026-10-03, each with its one verdict as a document and as a payload
+RC_OBSERVED = [
+    ("two equal keys", b'{"op":"open","op":"close"}', "R READER-DUPLICATE 16", "R READER-DUPLICATE 16"),
+    ("bytes after the value", b'{"a":1} garbage', "R READER-TRAILING 7", "R READER-TRAILING 7"),
+    ("a second object after the first", b'{"a":1}{"a":2}', "R READER-TRAILING 7", "R READER-TRAILING 7"),
+    ("a leading zero", b'{"a":007}', "R READER-NUMBER 6", "R READER-NUMBER 6"),
+    ("a string ending at a backslash", b'{"a":"x\\', "R READER-TRUNCATED 8", "R READER-TRUNCATED 8"),
+    ("a \\u escape cut short", b'{"a":"\\u12', "R READER-STRING 8", "R READER-STRING 8"),
+    ("an escaped surrogate pair", b'{"a":"\\ud83d\\ude00"}', "R READER-STRING 8", "R READER-STRING 8"),
+    ("two keys differing in a lone surrogate", b'{"k\\ud800":1,"k\\udc00":2}', "R READER-STRING 5", "R READER-STRING 5"),
+    ("a raw newline in a string", b'{"a":"x\ny"}', "R READER-STRING 7", "R READER-STRING 7"),
+    ("\\b and \\f escapes", b'{"a":"\\b\\f"}', "R READER-TRUNCATED 12", "A"),
+    ("an integer beyond 64 bits", b'{"a":99999999999999999999}', "R READER-NUMBER 23", "R READER-NUMBER 23"),
+    ("a fraction", b'{"a":1.5}', "R READER-NUMBER 6", "R READER-NUMBER 6"),
+    ("NaN", b'{"a":NaN}', "R READER-STRUCTURE 5", "R READER-STRUCTURE 5"),
+    ("a lone minus", b'{"a":-}', "R READER-NUMBER 6", "R READER-NUMBER 6"),
+    ("empty input", b'', "R READER-TRUNCATED 0", "R READER-TRUNCATED 0"),
+    ("a byte-order mark", b'\xef\xbb\xbf{"a":1}', "R READER-STRUCTURE 0", "R READER-STRUCTURE 0"),
+    ("a NUL byte in a string", b'{"a":"x\x00y"}', "R READER-STRING 7", "R READER-STRING 7"),
+    ("20,000 nested arrays", b'[' * 20000 + b']' * 20000, "R READER-STRUCTURE 0", "R READER-STRUCTURE 0"),
+    ("2,000,000 open brackets", b'[' * 2000000, "R READER-STRUCTURE 0", "R READER-STRUCTURE 0"),
+]
+RC_BIG = 65536   # a document larger than this gets each kind of mutation at its first and its last place only
+
+
+def _rc_need():
+    need_rustc()
+    if SHELL_EXE is None or SESSIONWALK_EXE is None or SESSION_EXE is None or EDIT_EXE is None:
+        raise Red("the shell or one of the workshop's tools was not built")
+    os.makedirs(RC, exist_ok=True)
+
+
+def _rc_file(name: str, b: bytes) -> str:
+    p = os.path.join(RC, name)
+    with open(p, "wb") as fh:
+        fh.write(b)
+    return p
+
+
+def _rc_rust(b: bytes, payload: bool, name: str = "verdict.bin") -> str:
+    """The Rust reader's verdict on some bytes, through the shell's court command."""
+    cp = subprocess.run([SHELL_EXE, "form-verdict", "--payload" if payload else "--document", _rc_file(name, b)],
+                        capture_output=True, text=True, cwd=ROOT)
+    line = cp.stdout.strip()
+    if cp.returncode != 0 or cp.stderr.strip() or not re.fullmatch(r"A [0-9a-f]{64}|R READER-[A-Z]+ [0-9]+", line):
+        raise Red("the reader's court command gave no verdict: exit %d %s" % (cp.returncode, (cp.stderr.strip() or line)[:160]))
+    return line
+
+
+def _rc_both(b: bytes, payload: bool, what: str) -> str:
+    """One verdict from both readers, or Red."""
+    py, ru = savedform.verdict(b, payload), _rc_rust(b, payload)
+    if py != ru:
+        raise Red("%s: the two readers differ: Python %s, Rust %s" % (what, py, ru))
+    return py
+
+
+_RC_TOKEN = re.compile(rb'"(?:[^"\\]|\\.)*"|-?[0-9]+|[{}\[\]:,]|true|false|null')
+
+
+def _rc_places(b: bytes):
+    """The places of an accepted input, found without either reader: its integers, its strings, the first name of
+    each object that has one, where a value can be nested deeper (with the level its container opens), and the gaps
+    between adjacent tokens."""
+    toks = [(m.start(), m.end()) for m in _RC_TOKEN.finditer(b)]
+    rest = bytearray(b)
+    for p, q in toks:
+        rest[p:q] = b" " * (q - p)
+    if rest.strip(b" \n"):
+        raise Red("the place finder did not account for every byte of an accepted input")
+    ints, strs, objs, nests, gaps = [], [], [], [], []
+    depth = 0
+    for k, (p, q) in enumerate(toks):
+        c = b[p]
+        if c == 0x22:
+            strs.append((p, q))
+        elif c == 0x2D or 0x30 <= c <= 0x39:
+            ints.append((p, q))
+        elif c == 0x7B:
+            depth += 1
+            if b[toks[k + 1][0]] == 0x22:                    # a first member: its name, then a colon, then its value
+                objs.append(toks[k + 1])
+                nests.append((toks[k + 3][0], depth))
+        elif c == 0x5B:
+            depth += 1
+            nests.append((q, depth))                          # right after the bracket, also when the array is empty
+        elif c in (0x7D, 0x5D):
+            depth -= 1
+        if k + 1 < len(toks):
+            gaps.append(q)
+    return ints, strs, objs, nests, gaps
+
+
+def _rc_mutations(b: bytes, payload: bool):
+    """The registered boundary mutations of an accepted input, each a splice (offset, bytes removed, bytes inserted)
+    with the verdict the language gives it: the code and the offset are computed from the place, not by a reader."""
+    ints, strs, objs, nests, gaps = _rc_places(b)
+    if len(b) > RC_BIG:
+        ints, strs, objs, nests, gaps = [x[:1] + x[-1:] if len(x) > 1 else x for x in (ints, strs, objs, nests, gaps)]
+    out = []
+    add = lambda at, cut, ins, code, off: out.append((at, cut, ins, "R %s %d" % (code, off)))
+    for p, q in ints:
+        neg = b[p] == 0x2D
+        d = p + 1 if neg else p
+        add(d, 0, b"0", "READER-NUMBER", d if neg else d + 1)                    # a leading zero
+        add(p, q - p, b"-0", "READER-NUMBER", p + 1)                             # minus zero
+        add(q, 0, b".5", "READER-NUMBER", q)                                     # a fraction
+        add(q, 0, b"e3", "READER-NUMBER", q)                                     # an exponent
+        add(p, q - p, b"9223372036854775808", "READER-NUMBER", p + 18)           # one more than the greatest
+        add(p, q - p, b"-9223372036854775809", "READER-NUMBER", p + 19)          # one less than the least
+    for p, q in strs:
+        c = p + 1
+        add(c, 0, b"\\/", "READER-STRING", c + 1)
+        add(c, 0, b"\\u0041", "READER-STRING", c + 4)
+        add(c, 0, b"\\u000a", "READER-STRING", c + 5)
+        add(c, 0, b"\\ud834\\udd1e", "READER-STRING", c + 2)                     # an escaped surrogate pair
+        add(c, 0, b"\x01", "READER-STRING", c)                                   # a raw control character
+        add(c, 0, b"\xc3", "READER-STRING", c + 1)                               # a lead byte alone
+        add(c, 0, b"\xed\xa0\x80", "READER-STRING", c + 1)                       # an encoded surrogate
+        add(c, 0, b"\xc0\x80", "READER-STRING", c)                               # an overlong form
+    for p, q in objs:                                                             # the first member's name, repeated
+        add(p, 0, b[p:q] + b":0,", "READER-DUPLICATE", (q - 1) + (q - p) + 3)
+    for at, depth in nests:                                                       # nesting pushed to an eighth level
+        add(at, 0, b"[" * (8 - depth), "READER-DEPTH", at + (7 - depth))
+    for q in gaps:
+        add(q, 0, b"\t", "READER-STRUCTURE", q)                                  # a tab between tokens
+    n = len(b)
+    if not payload:
+        add(n - 1, 1, b"", "READER-TRUNCATED", n - 1)                            # the final LF removed
+        add(n, 0, b"x", "READER-TRAILING", n)                                    # a byte added after it
+        add(n - 1, 0, b"\r", "READER-TRAILING", n - 1)                           # CR before it
+    add(0, 0, b" ", "READER-STRUCTURE", 0)                                       # a space before the object
+    add(0, 0, b"\xef\xbb\xbf", "READER-STRUCTURE", 0)                            # a byte-order mark before it
+    return out
+
+
+def _rc_splice(b: bytes, m) -> bytes:
+    return b[:m[0]] + m[2] + b[m[0] + m[1]:]
+
+
+def _rc_court(inputs):
+    """Give every registered boundary mutation of every input to both readers; returns the number of mutants. Each
+    reader reads every mutant from its first byte, through its own court command; Python's is run in several
+    processes at once, which changes how long it takes and nothing it says."""
+    manifests = {"rust": [], "py": []}
+    want = []
+    for k, (label, payload, b) in enumerate(inputs):
+        muts = _rc_mutations(b, payload)
+        src = _rc_file("in-%04d.bin" % k, b)
+        script = os.path.join(RC, "in-%04d.script" % k)
+        with open(script, "w", encoding="ascii", newline="\n") as fh:
+            fh.write("".join("%d %d %s\n" % (at, cut, ins.hex() or "-") for at, cut, ins, _v in muts))
+        for who in manifests:
+            manifests[who].append((len(b) * len(muts), "\t".join(["payload" if payload else "document", src, script,
+                                                                   os.path.join(RC, "in-%04d.%s" % (k, who))])))
+        want.append((label, [v for _a, _c, _i, v in muts]))
+    mr = os.path.join(RC, "manifest.rust")
+    with open(mr, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("".join(line + "\n" for _w, line in manifests["rust"]))
+    cp = subprocess.run([SHELL_EXE, "form-splice", "--manifest", mr], capture_output=True, text=True, cwd=ROOT)
+    if cp.returncode != 0:
+        raise Red("the Rust reader's court did not finish: exit %d %s" % (cp.returncode, cp.stderr.strip()[:200]))
+    shards = [[] for _ in range(max(1, min(8, os.cpu_count() or 1, len(inputs))))]
+    for i, (_w, line) in enumerate(sorted(manifests["py"], reverse=True)):
+        shards[i % len(shards)].append(line)
+    procs = []
+    for i, lines in enumerate(shards):
+        mp = os.path.join(RC, "manifest.py-%d" % i)
+        with open(mp, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("".join(line + "\n" for line in lines))
+        procs.append(subprocess.Popen([sys.executable, "-B", os.path.join(ROOT, "verify", "savedform.py"), "--splice", mp],
+                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=ROOT))
+    for pr in procs:
+        _o, err = pr.communicate()
+        if pr.returncode != 0:
+            raise Red("the Python reader's court did not finish: exit %d %s" % (pr.returncode, err.decode("utf-8", "replace").strip()[-200:]))
+    total = 0
+    for k, (label, verdicts) in enumerate(want):
+        for who in ("rust", "py"):
+            got = read(os.path.join(RC, "in-%04d.%s" % (k, who))).decode("ascii").split("\n")[:-1]
+            if len(got) != len(verdicts):
+                raise Red("%s: the %s reader gave %d verdicts for %d mutants" % (label, who, len(got), len(verdicts)))
+            for j, (g, w) in enumerate(zip(got, verdicts)):
+                if g != w:
+                    raise Red("%s: mutant %d: the %s reader says %s, the place says %s" % (label, j, who, g, w))
+        total += len(verdicts)
+    return total
+
+
+def _rc_payloads(journal: str):
+    """The payloads of a journal's complete records."""
+    out = []
+    for ln in read(journal).split(b"\n"):
+        parts = ln.split(b" ", 3)
+        if len(parts) == 4 and parts[0] == b"R":
+            out.append(parts[3])
+    return out
+
+
+_RC_MADE = []
+
+
+def _rc_made():
+    """What the gate makes for this court, one of each thing a registered writer writes: (label, payload?, bytes).
+    Made once a gate and kept."""
+    if _RC_MADE:
+        return _RC_MADE
+    made = _RC_MADE
+    logs = _ls_logs("readercourt")
+    sp = _ls_script_a(logs)                                              # the shell: a saved session and its journal
+    made.append(("the shell's saved session (script A)", False, read(sp)))
+    for i, pl in enumerate(_rc_payloads(os.path.join(os.path.dirname(sp), "journal.vsj"))):
+        made.append(("script A's journal, record %d" % i, True, pl))
+    _cp, tp, _raw = _st_script_s(logs, "readercourt")                    # a tick session: looks, ticks, a sensitivity event
+    made.append(("the shell's saved tick session (script S)", False, read(tp)))
+    for i, pl in enumerate(_rc_payloads(os.path.join(os.path.dirname(tp), "journal.vsj"))):
+        made.append(("script S's journal, record %d" % i, True, pl))
+    root = _ad_root("readercourt")                                       # an admitted edit: the envelope beside it
+    ppath, _praw, pdoc = _ad_parent(root, logs)
+    cpath, craw, _cdoc = _ad_admitted(ppath, _ad_proposal(pdoc["data"]["head"], "open", ADMIT_CELL, "0"), ADMIT_ALL, root, logs, "readercourt")
+    made.append(("the shell's saved session with an admitted edit", False, craw))
+    for i, pl in enumerate(_rc_payloads(os.path.join(os.path.dirname(cpath), "journal.vsj"))):
+        made.append(("the admission's journal, record %d" % i, True, pl))
+    ck = os.path.join(RC, "checkpoint")                                  # a checkpoint's line
+    cp = subprocess.run([SHELL_EXE, "checkpoint", "--session", SESSIONWALK_DEMO, "--at", "3", "--out", ck], capture_output=True, text=True, cwd=ROOT)
+    if cp.returncode != 0:
+        raise Red("the checkpoint was not written: " + cp.stderr.strip()[:160])
+    made.append(("a checkpoint's line", False, read(ck)))
+    made.append(("the workshop's session-walk document", False,
+                 read(_sw_build("readercourt", "28,28,N", [("edit", "cell:28,27,."), ("move", "F"), ("edit", "tile:floor,96,80,64"), ("move", "L")]))))
+    made.append(("the workshop's session document", False, read(_new_session("readercourt", ["cell:30,25,#", "tile:floor,96,80,64"]))))
+    record("readercourt", "cell:31,27,.")
+    made.append(("the workshop's edit record", False, read(os.path.join(WS, "readercourt.record.json"))))
+    return made
+
+
+def readercourt_preregistered():
+    """READER-COURT-0's method is locked before the build, and the gate's constants are the registered ones: the 45
+    cases with their verdicts, the three documents with their hashes, the seven codes, the depth."""
+    e = locked_entry("READER-COURT-0", {
+        "the language": ("hyp", ("not a general json reader", "the tree's registered writers are permitted to emit", "one object followed by exactly", "one lf",
+                                 "any run of spaces (0x20) and lfs and nothing else", "no name occurs twice",
+                                 "-9223372036854775808..9223372036854775807", "no leading zero, no minus zero, no fraction, no exponent",
+                                 "\\u00xx with xx in lower-case hex", "no upper-case hex, no raw control character")),
+        "depth, one number": ("hyp", ("nest at most seven deep", "the root object counted as the first", "opens no level", "seven is one number in three places",
+                                      "six levels and seven are accepted")),
+        "the verdict": ("hyp", ("refused with a code and a byte offset", "stops being the beginning of any document", "no reader owns it",
+                                "reader-truncated", "reader-trailing", "reader-depth", "reader-duplicate", "reader-string", "reader-number", "reader-structure",
+                                "the sha256 of its record-0 canonical json")),
+        "one rust reader": ("hyp", ("kernel/savedform.rs", "the four parsers there today", "are removed", "and nothing else")),
+        "an independent python reader": ("hyp", ("verify/savedform.py", "no json.loads underneath", "neither reader is right because the other agrees")),
+        "writers refuse beyond it": ("hyp", ("gives the bytes it is about to write to the reader first",)),
+        "the courts": ("succ", ("each registered boundary case", "every single-byte substitution, deletion and insertion of three registered documents",
+                                "at every place they fit when the document is at most 65,536 bytes", "the first and the last place of each kind",
+                                "computed from the place itself", "refuses and writes nothing, and handed seven levels it writes them",
+                                "refuses the save", "naming the same code and offset", "each of the 19 inputs observed on 2026-10-03",
+                                "is the only json reader under shell/, workshop/ and kernel/", "every pin moved on purpose is listed",
+                                "refused for its own row's reason")),
+        "what would falsify it": ("fail", ("a second json reader", "two readers differing in verdict, code, offset or typed value", "a panic, an abort or an uncoded exit",
+                                           "a writer writing bytes the language does not hold", "refused by the reader for a reason that is not its row's",
+                                           "a pin moved without being listed", "the renderer or bearing identity changed")),
+        "what it does not show": ("lims", ("written by one author from one grammar", "three small registered documents", "frozen evidence, read by python alone",
+                                           "an observation of the records and sessions present")),
+    })
+    if e["chain_hash"] != READERCOURT0_HASH:
+        raise Red("the registered entry is not the one this build was made against")
+    show = lambda n, s, p, v: "%s%s [%s] -> %s" % (n, " (as a payload)" if p else "", s, v)
+    cases = "; ".join(show(*c) for c in RC_CASES)
+    if len(RC_CASES) != 45 or cases not in e["success_condition"]:
+        raise Red("the gate's boundary cases are not the 45 registered ones, verdict for verdict")
+    for name, what, b, _p, sha, typed in RC_DOCS:
+        if sha256(b) != sha or ("%s, %s: %d bytes, sha256 %s, typed value %s" % (name, what, len(b), sha, typed)) not in e["success_condition"]:
+            raise Red("%s is not the registered document" % name)
+    rs = read(os.path.join(KERNEL, "savedform.rs")).decode("utf-8")
+    if ("pub const DEPTH_MAX: usize = 7;" not in rs or savedform.DEPTH_MAX != 7 or (savedform.INT_MIN, savedform.INT_MAX) != (-(1 << 63), (1 << 63) - 1)
+            or sorted(set(re.findall(r'"(READER-[A-Z]+)"', rs))) != sorted(RC_CODES) or any(c.lower() not in e["hypothesis"].lower() for c in RC_CODES)):
+        raise Red("a reader's depth, range or codes are not the registered ones")
+    return ("READER-COURT-0 is preregistered (%s...): the language, its seven-level depth with the root object the first, the verdict "
+            "as a code and an offset no reader owns, one Rust reader and an independent Python one, the writers' check, and the "
+            "courts; the gate's 45 boundary cases are the registered ones verdict for verdict, its three documents have the "
+            "registered bytes, hashes and typed values, and both readers hold depth 7, signed 64 bits and the seven codes"
+            % READERCOURT0_HASH[:8])
+
+
+def readercourt_language():
+    """Each reader gives the registered verdict on each of the 45 registered boundary cases."""
+    _rc_need()
+    accepted = 0
+    for name, shown, payload, want in RC_CASES:
+        b = _rc_x(shown)
+        py, ru = savedform.verdict(b, payload), _rc_rust(b, payload)
+        for who, got in (("Python", py), ("Rust", ru)):
+            if (got[:2] != "A ") if want == "accepted" else (got != "R " + want):
+                raise Red("%s: the %s reader says %s, the registration says %s" % (name, who, got, want))
+        if want == "accepted":
+            accepted += 1
+            if py != ru:
+                raise Red("%s: accepted by both readers to different typed values" % name)
+    return ("each of the 45 registered boundary cases gets its registered verdict from the Rust reader and from the Python reader: "
+            "%d accepted to one typed value, %d refused with the registered code at the registered offset; six levels and seven are "
+            "accepted and the bracket at offset 11 that would open the eighth is refused" % (accepted, len(RC_CASES) - accepted))
+
+
+def readercourt_agree():
+    """Over every single-byte substitution, deletion and insertion of the three registered documents, the two readers
+    give the same verdict for every mutant, and neither leaves one without a verdict."""
+    _rc_need()
+    total, tally = 0, {}
+    for name, _what, b, payload, _sha, typed in RC_DOCS:
+        if _rc_both(b, payload, name) != "A " + typed:
+            raise Red("%s is not accepted to its registered typed value" % name)
+        out = os.path.join(RC, name + ".court")
+        cp = subprocess.run([SHELL_EXE, "form-court", "--payload" if payload else "--document", _rc_file(name + ".bin", b), "--out", out],
+                            capture_output=True, text=True, cwd=ROOT)
+        n = len(b)
+        expect = 255 * n + n + 256 * (n + 1)
+        m = re.fullmatch(r"court (\d+) bytes (\d+) mutants sha256 ([0-9a-f]{64})", cp.stdout.strip())
+        if cp.returncode != 0 or cp.stderr.strip() or not m or (int(m.group(1)), int(m.group(2))) != (n, expect) or sha256(read(out)) != m.group(3):
+            raise Red("%s: the Rust reader's court did not give a verdict for every mutant: exit %d %s" % (name, cp.returncode, (cp.stderr or cp.stdout).strip()[:160]))
+        lines = read(out).decode("ascii").split("\n")
+        if lines.pop() != "" or len(lines) != expect:
+            raise Red("%s: the Rust reader's court wrote %d verdicts for %d mutants" % (name, len(lines), expect))
+
+        def mutants():
+            for p in range(n):
+                for v in range(256):
+                    if v != b[p]:
+                        yield b[:p] + bytes((v,)) + b[p + 1:]
+            for p in range(n):
+                yield b[:p] + b[p + 1:]
+            for p in range(n + 1):
+                for v in range(256):
+                    yield b[:p] + bytes((v,)) + b[p:]
+
+        k = 0
+        for mb in mutants():
+            v = savedform.verdict(mb, payload)
+            if v != lines[k]:
+                raise Red("%s: mutant %d: Python %s, Rust %s" % (name, k, v, lines[k]))
+            key = "accepted" if v[0] == "A" else v.split(" ")[1]
+            tally[key] = tally.get(key, 0) + 1
+            k += 1
+        if k != expect:
+            raise Red("%s: %d mutants were made for %d verdicts" % (name, k, expect))
+        total += k
+    return ("over every single-byte substitution, deletion and insertion of the three registered documents (%s), %d mutants, the "
+            "Rust reader in process and the Python reader give the same verdict for every one: the same code and offset, or the "
+            "same typed value (%s); neither left a mutant without a verdict"
+            % (", ".join("%s %d bytes" % (d[0], len(d[2])) for d in RC_DOCS), total, ", ".join("%s %d" % kv for kv in sorted(tally.items()))))
+
+
+def readercourt_corpus():
+    """Every committed record, the host's records when present, and what the gate makes are accepted by both readers
+    to one typed value; and every registered boundary mutation of each gets the code and offset its place gives."""
+    _rc_need()
+    inputs = []
+    committed = sorted(glob.glob(os.path.join(ROOT, "workshop", "attest", "*.json")) + glob.glob(os.path.join(ROOT, "verify", "pins", "*.json")))
+    for p in committed:
+        inputs.append((os.path.relpath(p, ROOT).replace(os.sep, "/"), False, read(p)))
+    host = sorted(glob.glob(os.path.join(ROOT, "shell", "attest", "*.json")) + glob.glob(os.path.join(ROOT, "kernel", "attest", "*.json")))
+    for p in host:
+        inputs.append((os.path.relpath(p, ROOT).replace(os.sep, "/"), False, read(p)))
+    made = _rc_made()
+    inputs += made
+    if len(committed) < 6:
+        raise Red("the committed records were not found")
+    for label, payload, b in inputs:
+        if _rc_both(b, payload, label)[:2] != "A ":
+            raise Red("%s is refused: %s" % (label, savedform.verdict(b, payload)))
+    mutants = _rc_court(inputs)
+    big = sum(1 for _l, _p, b in inputs if len(b) > RC_BIG)
+    return ("%d committed records, %d records under shell/attest and kernel/attest, and %d things the gate makes (three saved "
+            "sessions, their journals' payloads, a checkpoint's line, and the workshop's three documents) are each accepted by "
+            "both readers to one typed value; the registered boundary mutations, placed without either reader, were applied at "
+            "every place they fit (%d inputs larger than 65,536 bytes: the first and the last place of each kind) and all %d "
+            "mutants got from both readers the code and the offset their place gives"
+            % (len(committed), len(host), len(made), big, mutants))
+
+
+def _rc_sessions(root):
+    return sorted(os.listdir(root)) if os.path.isdir(root) else []
+
+
+def readercourt_writers():
+    """Every registered writer's bytes are of the language; the one spelling is Python's; a writer handed what the
+    language does not hold refuses and writes nothing; by source every writer checks before it writes."""
+    _rc_need()
+    made = _rc_made()
+    for label, payload, b in made:
+        if _rc_both(b, payload, label)[:2] != "A ":
+            raise Red("a registered writer wrote bytes outside the language: %s" % label)
+    # Python's writer: three layouts are now among the accepted (the shell's by format strings, the workshop's from a
+    # value, Python's json.dumps)
+    rec = envelope.seal("verdandi-readercourt-probe", 1, "declared", {"tool": "verify/verify.py"}, {"certifies": "nothing: a probe of the writer"},
+                        ["that this probe is a record of anything"], {"seven": [[[[[1]]]]], "text": "é \" \\ \b \f \n \r \t \x00 \x1f \U0001d11e"}, "a probe")
+    probe = os.path.join(RC, "probe.json")
+    if os.path.exists(probe):
+        os.remove(probe)
+    envelope.write(probe, rec)
+    if _rc_both(read(probe), False, "the envelope's write")[:2] != "A " or envelope.read(probe) != rec:
+        raise Red("verify/envelope.py did not write seven levels, or they did not read back")
+    # the one spelling: the shared spelling and Python's give the same bytes
+    texts = [chr(c) for c in range(0x80)] + ["\u0080", "é", "߿", "ࠀ", "ð", "￿", "\U00010000", "\U0001d11e", "\U0010ffff",
+                                             "Urðr \"x\" \\ \n", "\x00\x1f\x7f é\U0001d11e"]
+    inp, outp = os.path.join(RC, "spell.in"), os.path.join(RC, "spell.out")
+    with open(inp, "w", encoding="ascii", newline="\n") as fh:
+        fh.write("".join(t.encode("utf-8").hex() + "\n" for t in texts))
+    cp = subprocess.run([SHELL_EXE, "form-spell", "--in", inp, "--out", outp], capture_output=True, text=True, cwd=ROOT)
+    spelled = read(outp).decode("ascii").split("\n")[:-1] if cp.returncode == 0 else []
+    if len(spelled) != len(texts):
+        raise Red("the shell did not spell every text: exit %d %s" % (cp.returncode, cp.stderr.strip()[:160]))
+    for t, got in zip(texts, spelled):
+        want = json.dumps(t, ensure_ascii=False).encode("utf-8")
+        if bytes.fromhex(got) != want:
+            raise Red("the shared spelling of %r is %r, Python's is %r" % (t, bytes.fromhex(got), want))
+        if savedform.read_payload(b'{"s":' + want + b'}') != {"s": t}:
+            raise Red("the spelling of %r does not read back" % t)
+    # a writer handed what the language does not hold: verify/envelope.py's write refuses and writes nothing
+    def refused(why, mutate, needle):
+        bad = json.loads(json.dumps(rec))
+        mutate(bad)
+        bad["chain_hash"] = envelope.chain_hash(bad) if needle != "name_not_a_string" else bad["chain_hash"]
+        target = os.path.join(RC, "refused.json")
+        if os.path.exists(target):
+            os.remove(target)
+        try:
+            envelope.write(target, bad)
+        except envelope.EnvelopeViolation as ex:
+            if needle not in str(ex):
+                raise Red("the envelope refused %s for another reason: %s" % (why, ex))
+            if os.path.exists(target):
+                raise Red("the envelope refused %s and still wrote a file" % why)
+            return
+        raise Red("the envelope wrote %s" % why)
+    refused("an integer outside the range", lambda r: r["provenance"].__setitem__("n", 1 << 63), "saved_form:READER-NUMBER")
+    refused("an eighth level", lambda r: r["data"].__setitem__("eight", [[[[[[1]]]]]]), "saved_form:READER-DEPTH")
+    refused("a fraction", lambda r: r["provenance"].__setitem__("f", 1.5), "saved_form:READER-NUMBER")
+    refused("a name that is not a string", lambda r: r["provenance"].__setitem__(7, "x"), "name_not_a_string")
+    # the shell, planted to produce a saved session the language does not hold, refuses the save
+    camera, steps = LIVEINPUT_SCRIPTS["A"]
+    for plant, code in (("form-range", "READER-NUMBER"), ("form-depth", "READER-DEPTH"), ("form-duplicate", "READER-DUPLICATE")):
+        logs = _ls_logs("readercourt-" + plant)
+        before = _rc_sessions(GATE_SESSIONS)
+        cp, path = _ls_run(["--camera", camera, "--keys", _li_script(steps), "--plant", plant], logs)
+        new = [d for d in _rc_sessions(GATE_SESSIONS) if d not in before]
+        if (cp.returncode != 2 or path is not None or not re.search(r"LIVESESSION-FORM: .*\(%s [0-9]+\)" % code, cp.stdout + cp.stderr)
+                or len(new) != 1 or sorted(os.listdir(os.path.join(GATE_SESSIONS, new[0]))) != ["journal.vsj"]):
+            raise Red("a shell planted with %s did not refuse the save and leave only its journal: exit %d %s"
+                      % (plant, cp.returncode, (cp.stderr.strip() or cp.stdout.strip())[-200:]))
+    # by source: every writer of the saved form gives its bytes to the reader before it writes them
+    code_of = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines()) + "\n"
+    src = lambda *rel: code_of(read(os.path.join(ROOT, *rel)).decode("utf-8"))
+    ls, pb = src("shell", "livesession.rs"), src("shell", "playback.rs")
+    wsv = src_span(ls, "fn write_saved(dst: &str, text: &str, plant: &str) -> Result<(), String> {", "\n}\n")
+    put = src_span(ls, "    fn put(&mut self, payload: &str) -> Result<(), String> {", "\n    }\n")
+    ck = src_span(pb, "pub fn checkpoint(", "\n}\n")
+    order = [(wsv, "crate::savedform::check_document(text.as_bytes())", "fs::OpenOptions::new().create_new(true)"),
+             (put, "crate::savedform::check_payload(payload.as_bytes())", "self.file.write_all("),
+             (ck, "savedform::check_document(meta.as_bytes())", "fs::write(")]
+    for fn_, pattern in (("sessionwalk.rs", "fs::write(path, out.as_bytes())"), ("session.rs", "fs::write(path, text.as_bytes())")):
+        s = src("workshop", fn_)
+        order.append((s, "savedform::check_document(%s.as_bytes())" % ("out" if fn_ == "sessionwalk.rs" else "text"), pattern))
+    ed = src("workshop", "edit.rs")
+    if ed.count("savedform::check_document(text.as_bytes())") != 2 or ed.count("json_write(&record, 0, &mut text);") != 2:
+        raise Red("workshop/edit.rs does not check each document it writes")
+    for part in ed.split("json_write(&record, 0, &mut text);")[1:]:
+        order.append((part, "savedform::check_document(text.as_bytes())", "write("))
+    for text, check, write_ in order:
+        if not 0 <= text.find(check) < text.find(write_, text.find(check)):
+            raise Red("a writer of the saved form writes before it has given its bytes to the reader (%s)" % check)
+    if ls.count("write_saved(") != 2 or ls.count("self.file.write_all(") != 3 or ls.count("fn put(") != 1:
+        raise Red("the shell writes a saved session or a journal record by a path the check does not stand on")
+    env = read(os.path.join(ROOT, "verify", "envelope.py")).decode("utf-8")
+    wr = src_span(env, "def write(path: str, rec: dict) -> None:", "\n\n")
+    if not 0 <= wr.find("raw = document(rec)") < wr.find("open(path") or env.count("open(path, \"wb\")") != 1 or "json.dump(" in env:
+        raise Red("verify/envelope.py writes a record by a path that does not check its bytes first")
+    return ("the bytes of every registered writer are accepted by both readers (%d things: the shell's saved sessions, journal "
+            "payloads and checkpoint line, the workshop's three documents, and a record written by verify/envelope.py with seven "
+            "levels) — three layouts, one language; the shared spelling and Python's give the same bytes for every character "
+            "below U+0080 and for raw multi-byte characters (%d texts), and each reads back; verify/envelope.py's write, handed an "
+            "integer outside the range, an eighth level, a fraction or a name that is not a string, refuses and writes nothing; a "
+            "shell planted to save a session holding an out-of-range integer, an eighth level or a repeated name refuses the "
+            "save, naming the code, and leaves only its journal; by source, each writer gives its bytes to the reader before it "
+            "writes them" % (len(made) + 1, len(texts)))
+
+
+def _rc_hostile(b: bytes, payload: bool, codes):
+    """For each wanted code, the first registered boundary mutation of an accepted input that the language refuses
+    with it: {code: (bytes, "CODE offset")}."""
+    out = {}
+    for m in _rc_mutations(b, payload):
+        code = m[3].split(" ")[1]
+        if code in codes and code not in out:
+            out[code] = (_rc_splice(b, m), m[3][2:])
+    if sorted(out) != sorted(codes):
+        raise Red("no boundary mutation gives one of %s" % ", ".join(codes))
+    return out
+
+
+def readercourt_commands():
+    """A hostile document given to each real command is refused there, naming the code and the offset the language
+    gives it; each of the 19 inputs observed on 2026-10-03 has one verdict from every reader, and nothing panics."""
+    _rc_need()
+    import livesession as LS
+    logs = _ls_logs("readercourt-commands")
+    saved = read(_ls_script_a(logs))
+    inner = ("READER-NUMBER", "READER-STRING", "READER-DUPLICATE", "READER-DEPTH", "READER-STRUCTURE")
+    env = dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1], LIVESESSION_ENV: GATE_SESSIONS})
+
+    def refuses(what, argv, path, verdict, cwd=ROOT):
+        cp = subprocess.run(argv + [path], capture_output=True, text=True, cwd=cwd, env=env, errors="replace")
+        said = cp.stdout + cp.stderr
+        if cp.returncode != 2 or verdict not in said or "panicked" in said:
+            raise Red("%s did not refuse a hostile document naming %s: exit %d %s" % (what, verdict, cp.returncode, said.strip()[-200:]))
+
+    given = 0
+    # a saved session with a fault inside it, sealed again: the seal holds, so the reader is what refuses it
+    for code, (hb, _v) in sorted(_rc_hostile(saved, False, inner).items()):
+        sealed = _ls_reseal(hb.decode("utf-8")).encode("utf-8")
+        verdict = savedform.verdict(sealed, False)[2:]
+        if verdict.split(" ")[0] != code or not LS.seal_ok(sealed) or _rc_rust(sealed, False) != "R " + verdict:
+            raise Red("the resealed session with a %s fault is not refused as one by both readers" % code)
+        p = _rc_file("hostile-session-%s.json" % code, sealed)
+        refuses("shell playback", [SHELL_EXE, "playback", "--session"], p, verdict)
+        refuses("the shell's session loader", [SHELL_EXE, "livesession-selftest", "--camera", "28,28,N", "--keys", "ESC", "--resume"], p, verdict)
+        refuses("sessionwalk verify", [SESSIONWALK_EXE, "verify", "--session"], p, verdict)
+        refuses("the sealer", [sys.executable, "-B", os.path.join(ROOT, "verify", "livesession.py"), "--host", "GATE", "--session"], p, verdict)
+        given += 4
+    # commands with no seal in front of the reader take all seven codes
+    bases = {"shell playback": ([SHELL_EXE, "playback", "--session"], saved),
+             "sessionwalk verify": ([SESSIONWALK_EXE, "verify", "--session"], saved),
+             "session verify": ([SESSION_EXE, "verify", "--session"], read(_new_session("readercourt-commands", ["cell:30,25,#"]))),
+             "edit check": ([EDIT_EXE, "check", "--record"], None)}
+    record("readercourt-commands", "cell:31,27,.")
+    bases["edit check"] = (bases["edit check"][0], read(os.path.join(WS, "readercourt-commands.record.json")))
+    for what, (argv, base) in sorted(bases.items()):
+        for code, (hb, verdict) in sorted(_rc_hostile(base, False, RC_CODES).items()):
+            refuses(what, argv, _rc_file("hostile-%s-%s.json" % (what.replace(" ", "-"), code), hb), verdict)
+            given += 1
+    demo = read(os.path.join(ROOT, "workshop", "attest", "walk-demo.json"))
+    for code, (hb, verdict) in sorted(_rc_hostile(demo, False, RC_CODES).items()):
+        try:
+            envelope.read(_rc_file("hostile-record-%s.json" % code, hb))
+        except envelope.EnvelopeViolation as ex:
+            if str(ex) != "saved_form:" + verdict:
+                raise Red("envelope.read refused a hostile record for another reason: %s" % ex)
+            given += 1
+        else:
+            raise Red("envelope.read read a hostile record (%s)" % verdict)
+    # the 19 inputs of 2026-10-03: one verdict from every reader, as a document and as a payload, and from the commands
+    for name, b, as_doc, as_payload in RC_OBSERVED:
+        for payload, want in ((False, as_doc), (True, as_payload)):
+            got = _rc_both(b, payload, name)
+            if (got[:1] != "A") if want == "A" else (got != want):
+                raise Red("%s (as a %s): the readers say %s, the language says %s" % (name, "payload" if payload else "document", got, want))
+        p = _rc_file("observed.json", b)
+        for what, (argv, _base) in sorted(bases.items()):
+            refuses(what, argv, p, as_doc[2:])
+        try:
+            envelope.read(p)
+        except envelope.EnvelopeViolation as ex:
+            if str(ex) != "saved_form:" + as_doc[2:]:
+                raise Red("envelope.read refused %s for another reason: %s" % (name, ex))
+        else:
+            raise Red("envelope.read read %s" % name)
+    return ("a hostile document is refused by each real command, naming the code and the offset the language gives it: a saved "
+            "session with a fault inside and its seal recomputed, by shell playback, the shell's session loader, sessionwalk "
+            "verify and the sealer (five codes each); documents with each of the seven codes by shell playback, sessionwalk "
+            "verify, session verify and edit check, and records by envelope.read (%d refusals in all, every one exit 2 or a "
+            "coded exception, none a panic); each of the 19 inputs observed on 2026-10-03 has one verdict from both readers, "
+            "as a document and as a payload, and the same from every command it is given to" % given)
+
+
+def _rc_json_reads(path: str):
+    """Every call of json.load or json.loads in a Python source, by its syntax tree (a docstring is not a call)."""
+    import ast
+    tree = ast.parse(read(path).decode("utf-8"))
+    return [n.lineno for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+            and n.func.attr in ("load", "loads") and isinstance(n.func.value, ast.Name) and n.func.value.id == "json"]
+
+
+def readercourt_single():
+    """By source: kernel/savedform.rs is the only JSON reader under shell/, workshop/ and kernel/, included by path
+    where it is used; the four Python tools read through verify/savedform.py; neither calls the json module to read."""
+    code_of = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
+    marks = ("b'{'", "fn parse_json", "fn json_parse", "enum Json", "struct P<", "struct Parser<", "pub fn read_document", "from_str_radix(h, 16)")
+    users = {"shell/main.rs": 0, "workshop/sessionwalk.rs": 0, "workshop/session.rs": 0, "workshop/edit.rs": 0}
+    for d in ("shell", "workshop", "kernel"):
+        for fn in sorted(os.listdir(os.path.join(ROOT, d))):
+            if not fn.endswith(".rs"):
+                continue
+            rel = d + "/" + fn
+            s = code_of(read(os.path.join(ROOT, d, fn)).decode("utf-8"))
+            if rel == "kernel/savedform.rs":
+                if not all(m in s for m in ("b'{'", "enum Json", "pub fn read_document", "pub fn read_payload", "pub fn spell")):
+                    raise Red("kernel/savedform.rs is not the reader")
+                continue
+            hit = [m for m in marks if m in s]
+            if hit:
+                raise Red("%s holds a JSON reader of its own, or a copy of the shared one (%s)" % (rel, ", ".join(hit)))
+            included = s.count('#[path = "../kernel/savedform.rs"]\nmod savedform;')
+            if rel in users:
+                if included != 1:
+                    raise Red("%s does not include kernel/savedform.rs by path, once" % rel)
+                users[rel] = 1
+            elif included or "mod savedform" in s:
+                raise Red("%s includes the reader: it is included once per program, by the file that is the program" % rel)
+    if sum(users.values()) != 4:
+        raise Red("the shell and the workshop's three tools do not each include the one reader")
+    pb, ls = code_of(read(os.path.join(SHELL, "playback.rs")).decode("utf-8")), code_of(read(os.path.join(SHELL, "livesession.rs")).decode("utf-8"))
+    if (pb.count("savedform::read_document(") != 3 or pb.count("savedform::read_payload(") != 1 or "view_document(&bytes)" not in ls
+            or ls.count("view_payload(") != 2 or "esc(" in code_of(read(os.path.join(ROOT, "workshop", "sessionwalk.rs")).decode("utf-8"))
+            or "esc(" in code_of(read(os.path.join(ROOT, "workshop", "session.rs")).decode("utf-8"))
+            or "json_escape(" in code_of(read(os.path.join(ROOT, "workshop", "edit.rs")).decode("utf-8"))):
+        raise Red("a consumer reads the saved form by another path than the shared reader, or the workshop still spells strings itself")
+    spells = {"workshop/sessionwalk.rs": 2, "workshop/session.rs": 2, "workshop/edit.rs": 4}
+    for rel, want in sorted(spells.items()):
+        if code_of(read(os.path.join(ROOT, *rel.split("/"))).decode("utf-8")).count("savedform::spell(") != want:
+            raise Red("%s does not spell every string it writes by the one spelling" % rel)
+    if "use crate::savedform::spell as esc;" not in ls or "refusallog::esc" in ls or "fn esc(" in ls:
+        raise Red("shell/livesession.rs spells the strings it saves by something other than the one spelling")
+    tools = {"livesession.py": "savedform.read_document(raw)", "seal_sessionwalk.py": "savedform.read_file(sp)",
+             "seal_session.py": "savedform.read_file(a.session)", "envelope.py": "savedform.read_document(raw)"}
+    for fn, call in sorted(tools.items()):
+        p = os.path.join(ROOT, "verify", fn)
+        if _rc_json_reads(p) or call not in read(p).decode("utf-8"):
+            raise Red("verify/%s reads a saved-form document with the json module, or not through verify/savedform.py" % fn)
+    if _rc_json_reads(os.path.join(ROOT, "verify", "savedform.py")):
+        raise Red("verify/savedform.py calls json.load or json.loads")
+    return ("by source: kernel/savedform.rs is the only JSON reader under shell/, workshop/ and kernel/ (no other file there holds "
+            "a parser, a value type of its own or a copy), and it is included by path once in each of the four programs that use "
+            "it; the workshop's three tools and the shell's saved-session writer spell every string by the one spelling; verify/livesession.py, seal_sessionwalk.py, seal_session.py and envelope.py "
+            "read through verify/savedform.py and make no call of json.load or json.loads; verify/savedform.py makes none either")
+
+
+def readercourt_fence():
+    """The reader is fenced: it knows the language and nothing else; the identities, shell/admit.rs and the LATENCY-0
+    prefix are what they were; both readers are pinned; a session sealed before this rung is read to the value it
+    had; and no earlier row's forgery was refused by the reader."""
+    raw = read(os.path.join(KERNEL, "savedform.rs")).replace(b"\r\n", b"\n")
+    text = raw.decode("utf-8")
+    body = "\n".join(ln.split("//", 1)[0] for ln in text.splitlines())
+    uses = re.findall(r"^\s*use\s+([^;]+);", body, re.M)
+    for tok in ("std::fs", "std::io", "std::process", "std::env", "std::net", "std::thread", "std::time", "crate::", "super::", "#[path", "mod ", "unsafe",
+                "File", "Command", "println!", "eprintln!", "panic!", "unwrap()", "expect("):
+        if tok in body:
+            raise Red("kernel/savedform.rs contains %r: the reader opens no file, starts nothing, prints nothing and cannot panic by its own hand" % tok)
+    for word in ("shell", "workshop", "session", "admit", "render", "mantle", "playback", "journal", "record"):
+        if re.search(r"\b%s" % word, body, re.I):
+            raise Red("kernel/savedform.rs names %r in its code: it knows the language and nothing of who reads it" % word)
+    if uses != ["std::collections::BTreeMap"]:
+        raise Red("kernel/savedform.rs uses %s: it uses the standard map and nothing else" % ", ".join(uses))
+    import livesession as LS
+    if LS.renderer_id(ROOT) != RC_RENDERER_ID or LS.bearing_id(ROOT) != RC_BEARING_ID or "savedform" in " ".join(LS.SOURCES):
+        raise Red("the renderer or the bearing identity is not what it was before this rung")
+    if sha256(read(os.path.join(SHELL, "admit.rs")).replace(b"\r\n", b"\n")) != RC_ADMIT_RS_SHA256:
+        raise Red("shell/admit.rs changed: this rung does not touch the admission seam")
+    if sha256(raw) != RC_RUST_READER_SHA256 or sha256(read(os.path.join(ROOT, "verify", "savedform.py")).replace(b"\r\n", b"\n")) != RC_PYTHON_READER_SHA256:
+        raise Red("a reader's text changed: the language may not change in a byte it accepts or refuses, and a reader is re-pinned on purpose or not at all")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256 or b"savedform" in w32 or b"readercourt" in w32:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs, or the window code reaches the reader")
+    # the old reader is gone from the three files ADMIT-0's fence held it byte-identical in (that pin moved here)
+    for rel in ("shell/playback.rs", "workshop/sessionwalk.rs", "workshop/session.rs", "workshop/edit.rs"):
+        s = read(os.path.join(ROOT, *rel.split("/"))).decode("utf-8")
+        if "struct P<'a> {" in s or "fn parse_json(" in s or "struct Parser<'a> {" in s:
+            raise Red("%s still holds a parser" % rel)
+    # a session sealed before this rung, when its record is present, is read by both readers to the value it had
+    old = 0
+    for name, typed in sorted(RC_SEALED_BEFORE.items()):
+        p = os.path.join(ROOT, "shell", "attest", name)
+        if not os.path.exists(p):
+            continue
+        old += 1
+        b = read(p)
+        if savedform.verdict(b, False) != "A " + typed or (SHELL_EXE is not None and _rc_rust(b, False) != "A " + typed):
+            raise Red("%s, sealed before this rung, is no longer read to the typed value it had" % name)
+    # no row before this rung's own had a forgery refused by the reader
+    strays = sorted(set(r for r, _w in READER_REFUSALS if not r.startswith("readercourt-")))
+    if strays:
+        raise Red("a forgery of an earlier row was refused by the saved form's reader and not for the row's own reason: %s" % ", ".join(strays))
+    ours = sum(1 for r, _w in READER_REFUSALS if r.startswith("readercourt-"))
+    if ours == 0:
+        raise Red("the watch saw no refusal at all: it is not watching")
+    return ("kernel/savedform.rs opens no file, starts nothing, prints nothing, uses the standard map alone and names nothing of "
+            "the shell, the workshop, a session, admission or a renderer in its code; the renderer identity (%s...) and the "
+            "bearing identity (%s...) are what they were; shell/admit.rs is untouched; both readers are pinned (%s..., %s...); the "
+            "old parser is gone from its four files; the LATENCY-0 prefix is intact; %d of the 8 records of sessions sealed before "
+            "this rung are present, each read by both readers to the typed value it had; and of the reader's refusals this gate saw, every one was provoked by this rung's own rows: no "
+            "earlier row's forgery was refused for its form"
+            % (RC_RENDERER_ID[:12], RC_BEARING_ID[:12], RC_RUST_READER_SHA256[:12], RC_PYTHON_READER_SHA256[:12], old))
 
 
 def main() -> int:
@@ -11096,6 +11919,14 @@ def main() -> int:
     row("admit-crash", admit_crash)
     row("admit-replay", admit_replay)
     row("admit-fence", admit_fence)
+    row("readercourt-preregistered", readercourt_preregistered)
+    row("readercourt-language", readercourt_language)
+    row("readercourt-agree", readercourt_agree)
+    row("readercourt-corpus", readercourt_corpus)
+    row("readercourt-writers", readercourt_writers)
+    row("readercourt-commands", readercourt_commands)
+    row("readercourt-single", readercourt_single)
+    row("readercourt-fence", readercourt_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

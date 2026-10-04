@@ -58,6 +58,7 @@ shell rendered live with is not compiled here, so a saved session is checked by 
 | Order is meaning; batching is not | one fold; every split point resumes to the same head | `sessionwalk-interleave`, `sessionwalk-batch-invariance` |
 | A changed event is caught at that event | every witness re-derived | `sessionwalk-tamper`, `workshop1-tamper`, `input-tamper` |
 | A live session saved by the shell replays here | the workshop's own replay of the saved file | `liveinput-continuity`, `livesession-save`, `admit-replay` |
+| A document is read by the one reader and written only after it accepts the bytes | `../kernel/savedform.rs`, included by path | `readercourt-single`, `readercourt-writers`, `readercourt-commands` |
 
 | File | What it is |
 |---|---|
@@ -87,12 +88,13 @@ moved; one material moves M and the pixels and leaves the frame digest where it 
 - **An expected-change field was declined.** A record that stored what the author expected to move could not be
   falsified. The record stores what moved.
 - **Each tool is one file and one binary.** `edit`, `text`, `session`, `input`, `sessionwalk` and `membrane` each
-  include the kernel's files by path and nothing of each other. That is why the JSON reader was copied: one text in
-  `sessionwalk.rs` and `session.rs` (and in the shell), and a different one in `edit.rs`. READER-COURT-0, registered
-  and not built, replaces all four with one file shared by path.
-- **Two spellings of two characters.** This folder's writer spells backspace and form feed `\u0008` and `\u000c`;
-  the shell and Python spell them `\b` and `\f`. No file has ever held either character. READER-COURT-0 aligns the
-  workshop's writer to the one spelling.
+  include the kernel's files by path and nothing of each other. That is how the JSON reader came to be copied: one
+  text in `sessionwalk.rs` and `session.rs` (and in the shell), and a different one in `edit.rs`. READER-COURT-0
+  removed all four. `sessionwalk`, `session` and `edit` now include `../kernel/savedform.rs` by path, read through
+  it, and give every document to it before writing. A refusal names a code and a byte offset.
+- **One spelling.** This folder's writer used to spell backspace and form feed `\u0008` and `\u000c` where the
+  shell and Python spell them `\b` and `\f`. No file ever held either character. All three tools now spell
+  through `savedform::spell`.
 - **The reference renders the replay.** `sessionwalk` replays a look with `kernel/bearing.rs`. It is slower than
   the shell's fast tread and that is the point: the check and the thing checked are different code.
 
@@ -102,8 +104,9 @@ In full in [`../docs/GHOSTS.md`](../docs/GHOSTS.md). The ones that live in this 
 
 - **G17.** The shell replays a session with its own copy of this folder's fold. The two are held together by rows
   and by this folder verifying every saved file, not by sharing one text.
-- **G19.** The saved form has four Rust parsers and four Python readers today, and on hostile input they were seen
-  to disagree. Nothing in the tree's own files reaches the disagreement.
+- **G19.** The saved form had four Rust parsers and four Python readers, and on hostile input they disagreed. It
+  has one reader in the programs now and an independent one in the sealers. The check each writer here makes
+  before it writes is held by source: that shows it is written before the write, not that it fires.
 - **G16.** A session's head is its integrity, not its authorship: a single-writer chain, a hash and no signature.
 - The census and the signatures are for the witness level under one camera. Another level, another camera or
   another tile set has its own table, and none has been populated.

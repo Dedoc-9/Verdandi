@@ -4377,7 +4377,7 @@ admitted event's head is not the key-made edit's, if a forged envelope passes an
 continuation drops an envelope. `admit-fence` goes red if the seam reaches a process, a socket, the gate or the
 JSON reader's text.
 
-## READER-COURT-0 — preregistered: the saved form is one bounded language, and every reader gives one verdict (method locked `f53017cd`, pushed; nothing built)
+## READER-COURT-0 — the saved form is one bounded language, and every reader gives one verdict (preregistered `f53017cd` and built; the gate passes here with its eight rows; the host's run is the owner's)
 
 **Why.** ADMIT-0 made a new language with one reader. The old language, the JSON the tree saves and reads back, has
 four Rust parsers (one text copied into `shell/playback.rs`, `workshop/sessionwalk.rs` and `workshop/session.rs`,
@@ -4418,8 +4418,8 @@ the roadmap.
   most 65,536 bytes, and at the first and the last place of each kind when it is larger, the expected code and
   offset computed from the place and not by a reader. A hostile document given to each real command is refused
   there with the same code and offset.
-- **Rows to come:** `readercourt-preregistered`, `-language`, `-agree`, `-corpus`, `-writers`, `-commands`,
-  `-single`, `-fence`. None exists yet.
+- **Rows:** `readercourt-preregistered`, `-language`, `-agree`, `-corpus`, `-writers`, `-commands`, `-single`,
+  `-fence`, under *What was built* below.
 
 **The three depths are one number.** The owner's check before the push: the deepest a writer emits, the deepest the
 readers accept and the deepest the court tests must be the same, and the court must show the edge from both sides.
@@ -4493,22 +4493,107 @@ order, and the gate passed: GATE PASSED, rowset `0b423b279a40c85c`, 218 rows, 0 
 as in the container. Pushed, `f504829..25b5c17`. The draft was never public. The entry is, and from here it
 changes only by an amendment with its own hash.
 
-**Grade.** DECLARED: the registered conditions, and the owner's eight locks. OBSERVED: the census, the depth count,
-the prototype's result, the scan of the gate's files. ESTABLISHED: nothing; no row of this rung exists. The gate
-with the entry reads 218 rows, rowset `0b423b279a40c85c`, unchanged, here (the registration alone, and with these
-documents, twice byte-identical) and on the host.
+**What was built.** The owner's word after the registration was pushed: *take the next.*
 
-**does_not_show.** That a shared reader exists, that two readers agree on anything, or that any writer checks its
-bytes: nothing is built. That the language is right: it is one author's grammar, and what stands against a shared
-mistake is the registered cases, offsets computed from the place of a mutation, and the writers' own output.
-Anything about bytes outside the three small documents and the registered mutations. Anything about a document's
-meaning: the loaders are as they were.
+- **`kernel/savedform.rs`, the one Rust reader.** A typed value, or a code and a byte offset. It reads with a stack
+  it keeps itself, so no input can exhaust the machine's. It opens no file, prints nothing, uses the standard map
+  and nothing else, and names nothing of who reads it. Its `spell` is the one spelling. It is included by path, once
+  each, by the shell and by the workshop's `sessionwalk`, `session` and `edit`.
+- **The four parsers are gone.** About 840 lines came out of `shell/playback.rs`, `workshop/sessionwalk.rs`,
+  `workshop/session.rs` and `workshop/edit.rs`. Each loader now refuses with the reader's own line, so a refusal
+  names the code and the offset: `SESSIONWALK-INVALID-SESSION: READER-NUMBER 3714`.
+- **`verify/savedform.py`, the Python reader.** Written apart, with no `json.load` or `json.loads` beneath it. The
+  sealer, the two session sealers and the envelope read through it and through nothing else.
+- **Writers check first.** The shell's saved session (inside `write_saved`), each journal record's payload, the
+  checkpoint's line, the workshop's three document writers, and `verify/envelope.py`'s write, which also holds that
+  every name is a string and that the bytes read back to the record. A refusal writes nothing.
+- **One spelling.** The workshop's three tools and the shell's saved-session writer spell every string through
+  `savedform::spell`. The workshop's own spelling of backspace and form feed is gone.
+- **The court command.** `shell form-verdict`, `form-court`, `form-splice` and `form-spell` ask the Rust reader
+  questions without a session, a record or a window. `python verify/savedform.py --splice` is the same splice court
+  for the Python reader. Each reads every mutant from its first byte.
 
-**Falsifier.** None yet. When built, `readercourt-language` goes red if either reader gives another verdict on a
-registered case; `readercourt-agree` if the two differ on any mutant or either panics; `readercourt-corpus` if a
-real file is refused or read to another value, or a boundary mutation gets another code or offset;
-`readercourt-writers` if a writer writes bytes outside the language; `readercourt-single` if a second reader or a
-`json.loads` remains; `readercourt-fence` if the shared file knows anything but the language.
+| Row | What it holds, and what it read on this gate |
+|---|---|
+| `readercourt-preregistered` | The entry is locked, and the gate's 45 cases, three documents, seven codes and depth are the registered ones, verdict for verdict. |
+| `readercourt-language` | Each reader gives the registered verdict on each of the 45 cases: 9 accepted to one typed value, 36 refused at the registered offset. Six levels and seven are accepted; the bracket at offset 11 is refused. |
+| `readercourt-agree` | Every single-byte substitution, deletion and insertion of D1, D2 and D3: 163,072 mutants, the same verdict from both readers on every one (21,202 accepted to the same typed value; refused: STRUCTURE 88,521, STRING 49,539, NUMBER 2,210, TRAILING 1,332, TRUNCATED 230, DEPTH 24, DUPLICATE 14). |
+| `readercourt-corpus` | 6 committed records and 128 things the gate makes (three saved sessions, their journals' payloads, a checkpoint's line, the workshop's three documents) are accepted by both readers to one typed value. The registered boundary mutations, placed by a lexer that is neither reader, 43,925 of them, each get from both readers the code and the offset their place gives. With the host's 33 records present: 181,376 mutants, two inputs over 65,536 bytes taking the first and the last place of each kind. |
+| `readercourt-writers` | Every registered writer's bytes are accepted: three layouts, one language. The shared spelling and Python's give the same bytes for every character below U+0080 and for raw multi-byte characters (139 texts). The envelope's write refuses an out-of-range integer, an eighth level, a fraction and a name that is not a string, writing nothing, and writes seven levels. A shell planted to save an out-of-range integer, an eighth level or a repeated name refuses the save and leaves only its journal. By source, each writer checks before it writes. |
+| `readercourt-commands` | A hostile document is refused by each real command, naming the same code and offset: a saved session with a fault inside and its seal recomputed, by `shell playback`, the shell's loader, `sessionwalk verify` and the sealer; documents with each of the seven codes by `shell playback`, `sessionwalk verify`, `session verify` and `edit check`; records by `envelope.read`. 55 refusals, none a panic. Each of the 19 inputs of 2026-10-03 has one verdict from both readers and from every command. |
+| `readercourt-single` | By source: `kernel/savedform.rs` is the only JSON reader under `shell/`, `workshop/` and `kernel/`, included by path once per program; no Python tool calls `json.load` or `json.loads` on a saved-form document (checked on the syntax tree, so a docstring is not a call); `verify/savedform.py` calls neither. |
+| `readercourt-fence` | The reader knows the language and nothing else; the renderer and bearing identities are what they were (`629ae5c7`, `2d1a2643`); `shell/admit.rs` is untouched; both readers are pinned; the old parser is gone; the LATENCY-0 prefix is intact; each of the eight records of sessions sealed before this rung, when present, is read to the typed value it had; and no earlier row's forgery was refused for its form. |
+
+The gate reads 226 rows, rowset `39e5874a7127cfa4`.
+
+**The watch.** The gate now watches every command it runs, and every read it makes itself, for a refusal by the
+saved form's reader. `readercourt-fence` goes red if any row before this rung's own provoked one. It is how the
+registered condition on earlier forgeries is held on every gate and not only on the day of the build.
+
+**Forgeries of earlier rows, rewritten inside the language (listed, as registered).** Each was written before with
+the json module's defaults: no final LF, and a `\u` escape for any character above U+007F. Each is now written by one
+helper, `write_form`, and is refused for its own row's reason.
+
+1. The tampered edit records (`tampered()`): `workshop-stale`, `workshop-projection`, `workshop-camera`, and the two
+   plants of `records-twins`.
+2. `workshop1-tamper`: the session with a changed entry.
+3. `sessionwalk-tamper`: the session-walk with a changed move.
+4. `shell-playback-order`: the reordered log.
+5. `shell-playback-tamper`: the tampered move and the truncated log.
+6. `shell-playback-sealed-input`: the artifact that is not a session. This row stayed green with the strict reader,
+   for the wrong reason; the watch found it, not a red row.
+
+**Pins moved on purpose (listed, as registered).** One.
+
+- `admit-fence` held the old JSON reader's text byte-identical in three files (`3b6ceb22`). That reader is removed.
+  The pin moved here with it: `readercourt-fence` pins both new readers (`kernel/savedform.rs` `a6c6fb66`,
+  `verify/savedform.py` `f33ee6fb`), and `admit-fence` now pins `shell/admit.rs` itself (`99366fea`). ADMIT-0's registered
+  entry is as it was: a historical pin is not the current implementation.
+
+No other pin moved. Where an earlier fence pins a call's text or a count in a file this rung edits, the edit was
+shaped to leave it standing: the save's check sits inside `write_saved` and not in `finish`, so LIVE-SESSION-0's
+fence still finds the save call it pins and still counts three refusals there.
+
+**What the build found.**
+
+- **The court caught its author first.** A fast path in the Python reader for small integers admitted `-0`. The
+  registered case *minus zero* and five mutants of the exhaustive court differed from the Rust reader at once. It
+  was fixed before any row existed. The fast paths (a plain string, an integer of at most 18 digits) took the
+  reader from about 1 MB/s to about 12 MB/s here; every refusal still comes from the exact path.
+- **Nine rows had forgeries outside the language.** Eight went red against the strict reader. The ninth did not.
+- **The mutation test (off the gate).** 55 planted defects: 25 in the Rust reader, 11 in the Python reader, 19 in
+  the writers, the loaders, the tools and the gate. Every one is caught, 54 by a row that exercises behaviour or
+  reads source, one (a forgery put back outside the form) by the watch. On the first run five showed as surviving
+  and none was a gap in a row: four were mutants written so that they changed nothing (a check wrapped in a pattern
+  that still fired, a copy that was never used), and one needed the earlier row run beside the fence. Rewritten so
+  that they do change the program, all are caught.
+
+**Off the gate, here (OBSERVED).** With the host's 33 records copied in, the gate passes with the same 226 rows.
+The eight sessions sealed on the host before this rung were replayed by `sessionwalk verify` built from this tree,
+and sealed again by the new sealer from the saved files: each record's data is the same as the one sealed on the
+host. The provenance differs in the Python version and the operating system, as it must. On the owner's host both
+are his to run.
+
+**Grade.** DECLARED: the registered conditions, and the owner's eight locks. ESTABLISHED (gate, here): the eight
+rows. OBSERVED (here, off the gate): the census, the depth count, the prototype's result, the mutation test, the
+gate with the host's records copied in, the eight sessions sealed again to the same data. NOT_MEASURED: the gate
+on the owner's host with this build, and how long the new rows take there.
+
+**does_not_show.** That the language is right: it is one author's grammar, and what stands against a shared mistake
+is the registered cases, offsets computed from the place of a mutation, and the writers' own output. Anything about
+bytes outside the three small documents and the registered mutations. That a writer's check runs, beyond the
+shell's save: for the journal, the checkpoint and the workshop's writers the check is held by source, which shows
+it is written before the write and not that it fires. Anything about a document's meaning: the loaders are as they
+were. Anything about the raws, the two logs, the registry or the frozen JSON under `oracle/`.
+
+**Falsifier.** `readercourt-language` goes red if either reader gives another verdict on a registered case;
+`readercourt-agree` if the two differ on any mutant or either leaves one without a verdict; `readercourt-corpus` if
+a real file is refused or read to another value, or a boundary mutation gets another code or offset;
+`readercourt-writers` if a writer writes bytes outside the language or writes before it checks;
+`readercourt-commands` if a command accepts a hostile document, names another code or offset, or panics;
+`readercourt-single` if a second reader or a `json.loads` remains; `readercourt-fence` if the shared file knows
+anything but the language, a reader's text changes, an identity moves, or an earlier row's forgery is refused for
+its form.
 
 **The next question, reserved.** Whether DESIGN-EVENT-0 remains the next rung, or a design representation, a design
 diff and constraints are promoted ahead of it. The owner: *I would not silently reorder that based on the 15-pivot
@@ -4599,7 +4684,7 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   status is a witness to recompute and not a field to trust; integers of the world and no floats; a panel and no
   score; preview only as a speculative worldline. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 - **READER-COURT-0 (the saved form's readers brought to one verdict — chosen in the owner's courts of 2026-10-04;
-  registered `f53017cd`, in its own section above; nothing built).** The rung after ADMIT-0. Read from the code
+  registered `f53017cd` and built, in its own section above).** The rung after ADMIT-0. Read from the code
   first: four Rust JSON parsers (one
   text in three files, and a different one in `workshop/edit.rs`), four Python readers using `json.load`, three
   writers with three layouts, and a corpus that sits inside a small language (no fraction or exponent in any of 39

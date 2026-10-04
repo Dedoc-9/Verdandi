@@ -99,7 +99,7 @@ session's seal is a hash. A second platform's window.
 running the gate.
 
 ```text
-  PROGRAM TIME    verify/verify.py: 218 rows, two passes byte-identical, or nothing landed
+  PROGRAM TIME    verify/verify.py: 226 rows, two passes byte-identical, or nothing landed
 
       oracle/   Urðr, frozen at two tags
          │      witnesses · corpus · the heading vocabulary
@@ -139,6 +139,7 @@ running the gate.
 | A frame at a free heading is the reference's | every such frame recomputed before the save, one in 64 during the run | `simtick-certify`, `mouselook-sample` |
 | A proposal has one reading | one recognizer, held against an independent one over every single-byte mutant of three proposals | `admit-reader`, `admit-single` |
 | A stale proposal is refused, never rebased | its parent head must be the session's | `admit-anchor` |
+| What is read back is one language | one Rust reader shared by path and an independent Python one give the same code and byte offset, or the same typed value; every writer checks its bytes first | `readercourt-agree`, `readercourt-corpus`, `readercourt-writers` |
 | No verdict is stored as data | one firewall, written in two languages | `records-firewall`, `records-twins` |
 | The method precedes the number | hash-locked entries, each with a failure condition | `records-preregistered` |
 
@@ -196,10 +197,9 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          reports, 1,761 looks, every free-heading frame the reference's
          │
     ADMISSION       ADMIT-0 a proposal in VRDNP1 recognized or refused, admitted as one ordinary edit; the
-         │          first admission sealed on the host, its head computed beforehand
-         │
-    registered      READER-COURT-0 the saved form as one bounded language, every reader one verdict
-         │          (`f53017cd`; nothing built)
+         │          first admission sealed on the host, its head computed beforehand · READER-COURT-0 the
+         │          saved form as one bounded language: one Rust reader, an independent Python reader, the
+         │          same code and byte offset from both on 163,072 mutants; built, the host's run next
          ⋮
     declared        DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors
@@ -280,6 +280,9 @@ Short forms of what the work taught. The long forms are in [`docs/DEVNOTES.md`](
   survived became new cases (ADMIT-0: a range fault with a trailing byte; an envelope on a move).
 - **Count the readers.** Reading the code for READER-COURT-0 found four JSON parsers where three were believed,
   and a count of nesting depth that was wrong by one. Both were found by counting again, not by a failing row.
+- **A court catches its author first.** The Python reader's fast path admitted `-0`; the registered case and the
+  exhaustive court caught it before a row existed. And one earlier row was passing for the wrong reason until the
+  gate began watching every refusal.
 
 ## Ghosts
 
@@ -293,6 +296,8 @@ What the gate does not prove is stated, graded and given the measurement that wo
 - A session's seal is a hash. It shows the file is whole, not who wrote it.
 - The shell replays the session with its own copy of the workshop's fold; the two are held together by rows and by
   the workshop verifying every saved file.
+- The two readers of the saved form have one author. Their agreement shows consistency; the verdicts written down
+  before either existed are what stand against a shared mistake.
 - No latency, frame-rate or feel claim is made for the live loop, and nothing is claimed about a model.
 
 ## Reading further
@@ -302,6 +307,6 @@ What the gate does not prove is stated, graded and given the measurement that wo
 | [`docs/PROGRAM.md`](docs/PROGRAM.md) | the program in depth: the charter, the four layers, the frozen oracle, the RECORD-0 envelope, preregistration, the two-court rule, how a frame flows, the live session, admission, and the saved form |
 | [`docs/GHOSTS.md`](docs/GHOSTS.md) | what the gate does *not* prove: every unproven assumption, caveat and soundness question, each graded and given the measurement that would settle it |
 | [`docs/DEVNOTES.md`](docs/DEVNOTES.md) | dev notes: the optimization campaign (`GAUNTLET-0` to the `GAUNTLET-2` lock), the present-path courts, and the live campaign (`LIVE-LOOP-0` to `ADMIT-0`) — what each court found, the process rhythm, the lessons |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | where the program stands and the sequenced, falsifiable route: the live loop (built), admission (ADMIT-0 built, READER-COURT-0 registered), the declared design-event stream, and the presentation work beside it |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | where the program stands and the sequenced, falsifiable route: the live loop (built), admission (ADMIT-0 and READER-COURT-0 built), the declared design-event stream, and the presentation work beside it |
 | [`verify/RUNGS.md`](verify/RUNGS.md) | the ledger: every seated rung, its rows, its grade, its limits, its falsifier |
 | [`EPISTEMIC-INVARIANCE.md`](EPISTEMIC-INVARIANCE.md) | the author's isolation theorem, and the honest limits of its own formalism |

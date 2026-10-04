@@ -71,12 +71,15 @@ mod vocab;
 #[path = "../kernel/bearing.rs"]
 mod bearing;
 
-use std::collections::BTreeMap;
 use std::env;
 use std::fs;
 use std::process::exit;
 
 use formats::{compose, facing_letter, level_bytes, parse_camera, parse_level, parse_tiles, tiles_bytes, Camera, Level, Tiles, ALPHABET};
+// READER-COURT-0: the saved form's one reader, shared by path with the shell and the workshop's other tools
+#[path = "../kernel/savedform.rs"]
+mod savedform;
+use savedform::Json;
 use mantle::{hex, parse_scene, picture, sha256, Refusal};
 
 const MAGIC: &[u8] = b"VRDNSW1";
@@ -90,57 +93,11 @@ fn read(path: &str) -> Vec<u8> {
     fs::read(path).unwrap_or_else(|e| refuse("CANNOT-READ", &format!("{}: {}", path, e)))
 }
 
-// ------------------------------------------------------------------ a small JSON value (self-contained I/O)
-#[derive(Clone, Debug)]
-enum Json {
-    Null,
-    Bool(bool),
-    Num(i64),
-    Str(String),
-    Arr(Vec<Json>),
-    Obj(BTreeMap<String, Json>),
-}
-
-impl Json {
-    fn get(&self, k: &str) -> &Json {
-        match self {
-            Json::Obj(m) => m.get(k).unwrap_or(&Json::Null),
-            _ => &Json::Null,
-        }
-    }
-    fn s(&self) -> &str {
-        match self {
-            Json::Str(s) => s,
-            _ => "",
-        }
-    }
-    fn arr(&self) -> &[Json] {
-        match self {
-            Json::Arr(a) => a,
-            _ => &[],
-        }
-    }
-}
-
+// ------------------------------------------------------------------ the saved form: values, and this tool's layout
+// The value type and its reader are kernel/savedform.rs's (READER-COURT-0). What stays here is how this tool lays a
+// document out; every string in it is spelled by the one spelling.
 fn obj(pairs: Vec<(&str, Json)>) -> Json {
     Json::Obj(pairs.into_iter().map(|(k, v)| (k.to_string(), v)).collect())
-}
-
-fn esc(s: &str) -> String {
-    let mut o = String::from("\"");
-    for c in s.chars() {
-        match c {
-            '"' => o.push_str("\\\""),
-            '\\' => o.push_str("\\\\"),
-            '\n' => o.push_str("\\n"),
-            '\r' => o.push_str("\\r"),
-            '\t' => o.push_str("\\t"),
-            c if (c as u32) < 0x20 => o.push_str(&format!("\\u{:04x}", c as u32)),
-            c => o.push(c),
-        }
-    }
-    o.push('"');
-    o
 }
 
 fn write_json(v: &Json, indent: usize, out: &mut String) {
@@ -149,7 +106,7 @@ fn write_json(v: &Json, indent: usize, out: &mut String) {
         Json::Null => out.push_str("null"),
         Json::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
         Json::Num(n) => out.push_str(&n.to_string()),
-        Json::Str(s) => out.push_str(&esc(s)),
+        Json::Str(s) => out.push_str(&savedform::spell(s)),
         Json::Arr(a) => {
             if a.is_empty() {
                 out.push_str("[]");
@@ -170,7 +127,7 @@ fn write_json(v: &Json, indent: usize, out: &mut String) {
             for (i, (k, x)) in m.iter().enumerate() {
                 out.push_str(&pad);
                 out.push(' ');
-                out.push_str(&esc(k));
+                out.push_str(&savedform::spell(k));
                 out.push_str(": ");
                 write_json(x, indent + 1, out);
                 out.push_str(if i + 1 < m.len() { ",\n" } else { "\n" });
@@ -179,157 +136,6 @@ fn write_json(v: &Json, indent: usize, out: &mut String) {
             out.push('}');
         }
     }
-}
-
-struct P<'a> {
-    b: &'a [u8],
-    i: usize,
-}
-
-impl<'a> P<'a> {
-    fn ws(&mut self) {
-        while self.i < self.b.len() && matches!(self.b[self.i], b' ' | b'\n' | b'\r' | b'\t') {
-            self.i += 1;
-        }
-    }
-    fn val(&mut self) -> Result<Json, String> {
-        self.ws();
-        if self.i >= self.b.len() {
-            return Err("unexpected end".into());
-        }
-        match self.b[self.i] {
-            b'{' => {
-                self.i += 1;
-                let mut m = BTreeMap::new();
-                self.ws();
-                if self.i < self.b.len() && self.b[self.i] == b'}' {
-                    self.i += 1;
-                    return Ok(Json::Obj(m));
-                }
-                loop {
-                    self.ws();
-                    let k = match self.val()? {
-                        Json::Str(s) => s,
-                        _ => return Err("key not a string".into()),
-                    };
-                    self.ws();
-                    if self.i >= self.b.len() || self.b[self.i] != b':' {
-                        return Err("expected ':'".into());
-                    }
-                    self.i += 1;
-                    let v = self.val()?;
-                    m.insert(k, v);
-                    self.ws();
-                    if self.i < self.b.len() && self.b[self.i] == b',' {
-                        self.i += 1;
-                        continue;
-                    }
-                    self.ws();
-                    if self.i >= self.b.len() || self.b[self.i] != b'}' {
-                        return Err("expected '}'".into());
-                    }
-                    self.i += 1;
-                    return Ok(Json::Obj(m));
-                }
-            }
-            b'[' => {
-                self.i += 1;
-                let mut a = Vec::new();
-                self.ws();
-                if self.i < self.b.len() && self.b[self.i] == b']' {
-                    self.i += 1;
-                    return Ok(Json::Arr(a));
-                }
-                loop {
-                    a.push(self.val()?);
-                    self.ws();
-                    if self.i < self.b.len() && self.b[self.i] == b',' {
-                        self.i += 1;
-                        continue;
-                    }
-                    self.ws();
-                    if self.i >= self.b.len() || self.b[self.i] != b']' {
-                        return Err("expected ']'".into());
-                    }
-                    self.i += 1;
-                    return Ok(Json::Arr(a));
-                }
-            }
-            b'"' => {
-                self.i += 1;
-                let mut s = String::new();
-                loop {
-                    if self.i >= self.b.len() {
-                        return Err("unterminated string".into());
-                    }
-                    let c = self.b[self.i];
-                    self.i += 1;
-                    match c {
-                        b'"' => return Ok(Json::Str(s)),
-                        b'\\' => {
-                            let e = self.b[self.i];
-                            self.i += 1;
-                            match e {
-                                b'"' => s.push('"'),
-                                b'\\' => s.push('\\'),
-                                b'/' => s.push('/'),
-                                b'n' => s.push('\n'),
-                                b'r' => s.push('\r'),
-                                b't' => s.push('\t'),
-                                b'u' => {
-                                    let h = std::str::from_utf8(&self.b[self.i..self.i + 4]).map_err(|_| "bad \\u")?;
-                                    let cp = u32::from_str_radix(h, 16).map_err(|_| "bad \\u")?;
-                                    s.push(char::from_u32(cp).unwrap_or('\u{fffd}'));
-                                    self.i += 4;
-                                }
-                                _ => return Err("bad escape".into()),
-                            }
-                        }
-                        _ => {
-                            let start = self.i - 1;
-                            let len = match c {
-                                0x00..=0x7f => 1,
-                                0xc0..=0xdf => 2,
-                                0xe0..=0xef => 3,
-                                _ => 4,
-                            };
-                            let end = (start + len).min(self.b.len());
-                            s.push_str(std::str::from_utf8(&self.b[start..end]).map_err(|_| "bad utf8")?);
-                            self.i = end;
-                        }
-                    }
-                }
-            }
-            b't' if self.b[self.i..].starts_with(b"true") => {
-                self.i += 4;
-                Ok(Json::Bool(true))
-            }
-            b'f' if self.b[self.i..].starts_with(b"false") => {
-                self.i += 5;
-                Ok(Json::Bool(false))
-            }
-            b'n' if self.b[self.i..].starts_with(b"null") => {
-                self.i += 4;
-                Ok(Json::Null)
-            }
-            b'-' | b'0'..=b'9' => {
-                let start = self.i;
-                self.i += 1;
-                while self.i < self.b.len() && self.b[self.i].is_ascii_digit() {
-                    self.i += 1;
-                }
-                std::str::from_utf8(&self.b[start..self.i]).unwrap().parse::<i64>().map(Json::Num).map_err(|_| "bad number".into())
-            }
-            c => Err(format!("unexpected byte {}", c)),
-        }
-    }
-}
-
-fn parse_json(b: &[u8]) -> Result<Json, String> {
-    let mut p = P { b, i: 0 };
-    let v = p.val()?;
-    p.ws();
-    Ok(v)
 }
 
 // ------------------------------------------------------------------ authority, edits, chain (as in WORKSHOP-1)
@@ -818,6 +624,10 @@ fn write_sessionwalk(path: &str, sw: &SessionWalk) {
     let mut out = String::new();
     write_json(&root, 0, &mut out);
     out.push('\n');
+    // READER-COURT-0: a writer gives its bytes to the reader first, and writes nothing the saved form does not hold
+    if let Err(r) = savedform::check_document(out.as_bytes()) {
+        refuse("FORM", &format!("the document is not in the saved form ({}): nothing is written", r.line()));
+    }
     fs::write(path, out.as_bytes()).unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", path, e)));
 }
 
@@ -835,7 +645,7 @@ fn is_null(j: &Json) -> bool {
 /// Returns the session, each event's stored (tag, witness), each event's stored camera token ("" for an edit) and the
 /// stored final camera.
 fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, Vec<String>, String) {
-    let root = parse_json(&read(path)).unwrap_or_else(|m| refuse("INVALID-SESSION", &m));
+    let root = savedform::read_document(&read(path)).unwrap_or_else(|r| refuse("INVALID-SESSION", &r.line()));
     if root.get("name").s() != "verdandi-session-walk" {
         refuse("INVALID-SESSION", "not a verdandi-session-walk");
     }

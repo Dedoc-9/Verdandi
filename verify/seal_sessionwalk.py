@@ -15,7 +15,6 @@ Python twin.
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import shutil
 import subprocess
@@ -25,6 +24,7 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "verify"))
 import envelope  # noqa: E402
+import savedform  # noqa: E402
 
 
 def build_input() -> tuple[str, str]:
@@ -78,8 +78,11 @@ def main() -> int:
             if cp.returncode != 0:
                 print("REFUSE: %s failed: %s" % (token, cp.stderr.strip()))
                 return 2
-        with open(sp, encoding="utf-8") as fh:
-            session = json.load(fh)
+        try:
+            session = savedform.read_file(sp)    # READER-COURT-0: the strict reader, never the json module
+        except savedform.Refused as r:
+            print("REFUSE: the session the workshop wrote is not in the saved form: %s" % r.line())
+            return 2
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

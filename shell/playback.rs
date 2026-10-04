@@ -27,7 +27,6 @@
 //     shell checkpoint --session S.json --at K --out CK # capture the full authority at event K
 //     shell resume     --session S.json --checkpoint CK # replay the suffix from the checkpoint
 
-use std::collections::BTreeMap;
 use std::fs;
 use std::process::exit;
 
@@ -47,188 +46,10 @@ fn read(path: &str) -> Vec<u8> {
     fs::read(path).unwrap_or_else(|e| refuse("CANNOT-READ", &format!("{}: {}", path, e)))
 }
 
-// ------------------------------------------------------------------ a small JSON reader (self-contained)
-#[derive(Clone, Debug)]
-enum Json {
-    Null,
-    Bool(bool),
-    Num(i64),
-    Str(String),
-    Arr(Vec<Json>),
-    Obj(BTreeMap<String, Json>),
-}
-
-impl Json {
-    fn get(&self, k: &str) -> &Json {
-        match self {
-            Json::Obj(m) => m.get(k).unwrap_or(&Json::Null),
-            _ => &Json::Null,
-        }
-    }
-    fn s(&self) -> &str {
-        match self {
-            Json::Str(s) => s,
-            _ => "",
-        }
-    }
-    fn arr(&self) -> &[Json] {
-        match self {
-            Json::Arr(a) => a,
-            _ => &[],
-        }
-    }
-}
-
-struct P<'a> {
-    b: &'a [u8],
-    i: usize,
-}
-
-impl<'a> P<'a> {
-    fn ws(&mut self) {
-        while self.i < self.b.len() && matches!(self.b[self.i], b' ' | b'\n' | b'\r' | b'\t') {
-            self.i += 1;
-        }
-    }
-    fn val(&mut self) -> Result<Json, String> {
-        self.ws();
-        if self.i >= self.b.len() {
-            return Err("unexpected end".into());
-        }
-        match self.b[self.i] {
-            b'{' => {
-                self.i += 1;
-                let mut m = BTreeMap::new();
-                self.ws();
-                if self.i < self.b.len() && self.b[self.i] == b'}' {
-                    self.i += 1;
-                    return Ok(Json::Obj(m));
-                }
-                loop {
-                    self.ws();
-                    let k = match self.val()? {
-                        Json::Str(s) => s,
-                        _ => return Err("key not a string".into()),
-                    };
-                    self.ws();
-                    if self.i >= self.b.len() || self.b[self.i] != b':' {
-                        return Err("expected ':'".into());
-                    }
-                    self.i += 1;
-                    let v = self.val()?;
-                    m.insert(k, v);
-                    self.ws();
-                    if self.i < self.b.len() && self.b[self.i] == b',' {
-                        self.i += 1;
-                        continue;
-                    }
-                    self.ws();
-                    if self.i >= self.b.len() || self.b[self.i] != b'}' {
-                        return Err("expected '}'".into());
-                    }
-                    self.i += 1;
-                    return Ok(Json::Obj(m));
-                }
-            }
-            b'[' => {
-                self.i += 1;
-                let mut a = Vec::new();
-                self.ws();
-                if self.i < self.b.len() && self.b[self.i] == b']' {
-                    self.i += 1;
-                    return Ok(Json::Arr(a));
-                }
-                loop {
-                    a.push(self.val()?);
-                    self.ws();
-                    if self.i < self.b.len() && self.b[self.i] == b',' {
-                        self.i += 1;
-                        continue;
-                    }
-                    self.ws();
-                    if self.i >= self.b.len() || self.b[self.i] != b']' {
-                        return Err("expected ']'".into());
-                    }
-                    self.i += 1;
-                    return Ok(Json::Arr(a));
-                }
-            }
-            b'"' => {
-                self.i += 1;
-                let mut s = String::new();
-                loop {
-                    if self.i >= self.b.len() {
-                        return Err("unterminated string".into());
-                    }
-                    let c = self.b[self.i];
-                    self.i += 1;
-                    match c {
-                        b'"' => return Ok(Json::Str(s)),
-                        b'\\' => {
-                            let e = self.b[self.i];
-                            self.i += 1;
-                            match e {
-                                b'"' => s.push('"'),
-                                b'\\' => s.push('\\'),
-                                b'/' => s.push('/'),
-                                b'n' => s.push('\n'),
-                                b'r' => s.push('\r'),
-                                b't' => s.push('\t'),
-                                b'u' => {
-                                    let h = std::str::from_utf8(&self.b[self.i..self.i + 4]).map_err(|_| "bad \\u")?;
-                                    let cp = u32::from_str_radix(h, 16).map_err(|_| "bad \\u")?;
-                                    s.push(char::from_u32(cp).unwrap_or('\u{fffd}'));
-                                    self.i += 4;
-                                }
-                                _ => return Err("bad escape".into()),
-                            }
-                        }
-                        _ => {
-                            let start = self.i - 1;
-                            let len = match c {
-                                0x00..=0x7f => 1,
-                                0xc0..=0xdf => 2,
-                                0xe0..=0xef => 3,
-                                _ => 4,
-                            };
-                            let end = (start + len).min(self.b.len());
-                            s.push_str(std::str::from_utf8(&self.b[start..end]).map_err(|_| "bad utf8")?);
-                            self.i = end;
-                        }
-                    }
-                }
-            }
-            b't' if self.b[self.i..].starts_with(b"true") => {
-                self.i += 4;
-                Ok(Json::Bool(true))
-            }
-            b'f' if self.b[self.i..].starts_with(b"false") => {
-                self.i += 5;
-                Ok(Json::Bool(false))
-            }
-            b'n' if self.b[self.i..].starts_with(b"null") => {
-                self.i += 4;
-                Ok(Json::Null)
-            }
-            b'-' | b'0'..=b'9' => {
-                let start = self.i;
-                self.i += 1;
-                while self.i < self.b.len() && self.b[self.i].is_ascii_digit() {
-                    self.i += 1;
-                }
-                std::str::from_utf8(&self.b[start..self.i]).unwrap().parse::<i64>().map(Json::Num).map_err(|_| "bad number".into())
-            }
-            c => Err(format!("unexpected byte {}", c)),
-        }
-    }
-}
-
-fn parse_json(b: &[u8]) -> Result<Json, String> {
-    let mut p = P { b, i: 0 };
-    let v = p.val()?;
-    p.ws();
-    Ok(v)
-}
+// ------------------------------------------------------------------ the saved form (READER-COURT-0)
+// The reader is kernel/savedform.rs, shared by path: one persisted language, one reader, many consumers. This file
+// holds no parser of its own.
+use crate::savedform::{self, Json};
 
 // ------------------------------------------------------------------ the chain (identical to workshop/sessionwalk.rs)
 fn content_hex(level_bytes: &[u8], tiles_bytes: &[u8]) -> String {
@@ -372,7 +193,7 @@ struct Sealed {
 }
 
 fn load_sealed(path: &str, root_prefix: &str) -> Sealed {
-    let root = parse_json(&read(path)).unwrap_or_else(|m| refuse("INVALID-SESSION", &m));
+    let root = savedform::read_document(&read(path)).unwrap_or_else(|r| refuse("INVALID-SESSION", &r.line()));
     if root.get("name").s() != "verdandi-session-walk" {
         refuse("INVALID-SESSION", "not a verdandi-session-walk (playback consumes the sealed artifact, not an ad-hoc stream)");
     }
@@ -519,16 +340,20 @@ pub fn checkpoint(session: &str, root_prefix: &str, at: usize, out: &str) {
         }
     }
     // the checkpoint captures level bytes + tiles bytes + camera + head — the FULL interleaved authority
+    let meta = format!("{{\"at\":{},\"camera\":\"{},{},{}\",\"head\":\"{}\"}}\n", at, cam.x, cam.z, facing_letter(cam.facing), head);
+    // READER-COURT-0: a writer gives its bytes to the reader first, and writes nothing the saved form does not hold
+    if let Err(r) = savedform::check_document(meta.as_bytes()) {
+        refuse("FORM", &format!("the checkpoint's line is not in the saved form ({}): nothing is written", r.line()));
+    }
     fs::write(format!("{}.lvl", out), &level).unwrap_or_else(|e| refuse("CANNOT-WRITE", &e.to_string()));
     fs::write(format!("{}.tiles", out), &tiles).unwrap_or_else(|e| refuse("CANNOT-WRITE", &e.to_string()));
-    let meta = format!("{{\"at\":{},\"camera\":\"{},{},{}\",\"head\":\"{}\"}}\n", at, cam.x, cam.z, facing_letter(cam.facing), head);
     fs::write(out, meta.as_bytes()).unwrap_or_else(|e| refuse("CANNOT-WRITE", &e.to_string()));
     println!("checkpoint at {} head {} camera {},{},{}", at, &head[..12], cam.x, cam.z, facing_letter(cam.facing));
 }
 
 pub fn resume(session: &str, root_prefix: &str, ck: &str) {
     let s = load_sealed(session, root_prefix);
-    let meta = parse_json(&read(ck)).unwrap_or_else(|m| refuse("INVALID-CHECKPOINT", &m));
+    let meta = savedform::read_document(&read(ck)).unwrap_or_else(|r| refuse("INVALID-CHECKPOINT", &r.line()));
     let at = match meta.get("at") {
         Json::Num(n) => *n as usize,
         _ => refuse("INVALID-CHECKPOINT", "no at"),
@@ -821,9 +646,14 @@ impl JsonView {
     }
 }
 
-/// Parse a saved session, or one journal record's payload, into a read-only view.
-pub fn parse_view(b: &[u8]) -> Result<JsonView, String> {
-    parse_json(b).map(JsonView)
+/// Read a saved session, a document of the saved form, into a read-only view; or say where it stops being one.
+pub fn view_document(b: &[u8]) -> Result<JsonView, String> {
+    savedform::read_document(b).map(JsonView).map_err(|r| r.line())
+}
+
+/// Read one journal record's payload into a read-only view; or say where it stops being one.
+pub fn view_payload(b: &[u8]) -> Result<JsonView, String> {
+    savedform::read_payload(b).map(JsonView).map_err(|r| r.line())
 }
 
 /// content(W, M) of raw level and tiles bytes, as the chain defines it.

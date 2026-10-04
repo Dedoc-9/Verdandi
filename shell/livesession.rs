@@ -56,9 +56,11 @@ use std::rc::Rc;
 use crate::formats::{facing_letter, parse_camera, Camera};
 use crate::liveinput::{Keys, ScriptedKeys};
 use crate::mantle::{hex, sha256};
-use crate::playback::{chain_heads, content_of, look_fold, parse_view, token, Admit, EventSink, JsonView, LiveEvent, LiveSession};
+use crate::playback::{chain_heads, content_of, look_fold, token, view_document, view_payload, Admit, EventSink, JsonView, LiveEvent, LiveSession};
 use crate::presentexact::ExactSurface;
-use crate::refusallog::{esc, V};
+use crate::refusallog::V;
+// READER-COURT-0: every string this file saves is spelled by the saved form's one spelling
+use crate::savedform::spell as esc;
 
 pub const LOG: &str = "LIVE-SESSION-0";
 pub const ENV: &str = "VERDANDI_SESSIONS";
@@ -276,6 +278,10 @@ impl Journal {
 
     /// Append one record and flush it; only then count it.
     fn put(&mut self, payload: &str) -> Result<(), String> {
+        // READER-COURT-0: a writer gives its bytes to the reader first, and writes nothing the saved form does not hold
+        if let Err(r) = crate::savedform::check_payload(payload.as_bytes()) {
+            return Err(format!("LIVESESSION-FORM: the record's payload is not in the saved form ({})", r.line()));
+        }
         let line = record_line(payload);
         self.file.write_all(line.as_bytes()).map_err(|e| e.to_string())?;
         self.file.sync_data().map_err(|e| e.to_string())?;
@@ -365,13 +371,13 @@ fn read_journal(bytes: &[u8]) -> Result<JournalRead, Refusal> {
     if payloads.is_empty() {
         return Err(corrupt(0, "is missing: the journal has no header"));
     }
-    let header = parse_view(payloads[0]).map_err(|m| corrupt(0, &m))?;
+    let header = view_payload(payloads[0]).map_err(|m| corrupt(0, &m))?;
     if header.get("journal").s() != JOURNAL_MAGIC {
         return Err(corrupt(0, "is not a LIVE-SESSION-0 journal header"));
     }
     let mut events = Vec::new();
     for (i, p) in payloads[1..].iter().enumerate() {
-        let v = parse_view(p).map_err(|m| corrupt(i + 1, &m))?;
+        let v = view_payload(p).map_err(|m| corrupt(i + 1, &m))?;
         if v.get("k").num() != Some(i as i64) {
             return Err(corrupt(i + 1, "is out of sequence"));
         }
@@ -458,6 +464,20 @@ fn saved_text(s: &LiveSession, base: &Base, live: &str) -> String {
     format!("{} \"seal\": \"{}\"\n}}\n", prefix, seal_of(prefix.as_bytes()))
 }
 
+/// READER-COURT-0: three planted faults (livesession-selftest only). The fault is put at the end of the data block
+/// and the file is sealed again, so the seal holds and only the writer's check stands between the fault and the disk.
+fn planted_form(text: String, plant: &str) -> String {
+    let fault = match plant {
+        "form-range" => ",\n  \"plant\": 9223372036854775808",
+        "form-depth" => ",\n  \"plant\": [[[[[[1]]]]]]",
+        "form-duplicate" => ",\n  \"head\": \"\"",
+        _ => return text,
+    };
+    let (Some(at), Some(seal)) = (text.find("\n },\n \"live\": "), text.rfind(SEAL_KEY)) else { return text };
+    let prefix = format!("{}{}{}", &text[..at], fault, &text[at..seal + 1]);
+    format!("{} \"seal\": \"{}\"\n}}\n", prefix, seal_of(prefix.as_bytes()))
+}
+
 #[cfg(target_os = "windows")]
 mod replace {
     #[link(name = "kernel32")]
@@ -488,6 +508,10 @@ mod replace {
 
 /// Write the saved session: the temporary file, flushed, then moved over the destination atomically.
 fn write_saved(dst: &str, text: &str, plant: &str) -> Result<(), String> {
+    // READER-COURT-0: a writer gives its bytes to the reader first, and writes nothing the saved form does not hold
+    if let Err(r) = crate::savedform::check_document(text.as_bytes()) {
+        return Err(format!("LIVESESSION-FORM: the session's bytes are not in the saved form ({}): nothing is written", r.line()));
+    }
     if plant == "seal-unwritable" {
         return Err("PLANT seal-unwritable: the file system refused the temporary file".to_string());
     }
@@ -576,7 +600,7 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
         (base, lv, tl, evs, last, None, h.get("renderer").s(), j.torn, Some(heads))
     } else {
         check_seal(&bytes)?;
-        let root = parse_view(&bytes).map_err(|m| refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: {}", m)))?;
+        let root = view_document(&bytes).map_err(|m| refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: {}", m)))?;
         let d = root.get("data");
         if root.get("name").s() != "verdandi-session-walk" || d.get("magic").s() != "VRDNSW1" {
             return Err(refusal("session.load", vec![], "LIVESESSION-CORRUPT: not a session-walk".to_string()));
@@ -615,7 +639,7 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
         }
     }
     if !is_journal {
-        let root = parse_view(&bytes).map_err(|m| refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: {}", m)))?;
+        let root = view_document(&bytes).map_err(|m| refusal("session.load", vec![], format!("LIVESESSION-CORRUPT: {}", m)))?;
         let l = root.get("live").get("lineage");
         if !l.is_null() {
             let n = l.get("parent_events").num().unwrap_or(-1);
@@ -1040,6 +1064,7 @@ fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {
     } else {
         saved_text(&session, &base, &live_json)
     };
+    let text = planted_form(text, &plant);
     let dst = std::path::Path::new(&dir).join(SESSION).to_string_lossy().to_string();
     if let Err(m) = write_saved(&dst, &text, &plant) {
         return refuse_run(refusal("session.seal", vec![("path", V::S(dst.clone()))], format!("LIVESESSION-SEAL-UNWRITTEN: {}", m)), surface);

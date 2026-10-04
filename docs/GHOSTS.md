@@ -376,7 +376,7 @@ session is recomputed, which makes the claim per-session and exact.
 
 ---
 
-## G19 — the saved form has many readers, and on hostile input they disagreed · OBSERVED (2026-10-03, outside the gate)
+## G19 — the saved form had many readers, and on hostile input they disagreed · ESTABLISHED (the remedy, on the gate); limits stated
 
 Everything the tree saves and reads back is JSON, and it is read by four Rust parsers (one text copied into three
 files, and a different one in `workshop/edit.rs`) and four Python tools that use `json.load`. Given 19 hostile
@@ -387,10 +387,16 @@ touches a file the tree has ever written: every committed record, the host's rec
 inside a small common language. It is a seam, and it sits directly under ADMIT-0, which reads the session through
 it.
 
-**Exorcism.** READER-COURT-0, registered (`f53017cd`) and not built: the saved form as one bounded language, one
-Rust reader shared by path, an independent Python reader with no `json.loads` beneath it, the same code and the
-same byte offset from every reader on anything outside the language, and every writer checking its bytes before it
-writes them. Until it is built this ghost stands exactly as observed.
+**Exorcism.** READER-COURT-0 (`f53017cd`), built: the saved form is one bounded language, one Rust reader shared by
+path replaces the four parsers, an independent Python reader with no `json.loads` beneath it replaces `json.load`
+in the four tools, and every writer checks its bytes before it writes them. On each of the 19 inputs both readers
+and every command now give one verdict, a code and a byte offset, and none panics.
+
+**What remains of it.** The court's reach, not the old disagreement. The two readers agree on every single-byte
+mutant of three small documents and on the registered boundary mutations of real files, and on nothing they were
+not shown. Both were written by one author from one grammar (G23). The raws a command writes, the two logs, the
+registry and the frozen JSON under `oracle/` are read as before and are not the saved form. And outside the shell's
+save, a writer's check is held by source: that shows it is written before the write, not that it fires.
 
 ---
 
@@ -445,7 +451,7 @@ ledger line. A recurrence would be a recorded event with counters beside it and 
 
 Several of the program's strongest checks are a pair held against each other: the envelope written in Python and in
 Rust, the fold in the workshop and in the gate's Python twin, the recognizer of VRDNP1 and the gate's independent
-one over 513,792 single-byte mutants, and by registration the two readers of the saved form. One author wrote both
+one over 513,792 single-byte mutants, and the two readers of the saved form over 163,072. One author wrote both
 halves of each from one description. Their agreement shows the two are consistent with each other. It cannot show
 that the description was right, and a misreading shared by both would pass every such row.
 
@@ -464,8 +470,8 @@ with sound remedies; G2 is an honest boundary of what the courts measured; G7 is
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
 and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a careful reader must carry, recorded so they are carried on
 purpose. Of the live editor's, G14, G15, G16, G18, G20 and G23 are limits of method, stated so no claim is read
-past them; G17 is a design tension the charter names and the rows hold in check; G19 is a seam with a registered
-remedy that is not built; G21 is a measurement not yet taken; G22 is two things that happened once and were never
+past them; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
+built, with the court's reach stated; G21 is a measurement not yet taken; G22 is two things that happened once and were never
 explained.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously

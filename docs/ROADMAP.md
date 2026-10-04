@@ -30,9 +30,12 @@ turns to any registered heading, on a renderer held byte for byte to a reference
 the first **admission** seam is built and measured: `ADMIT-0` recognizes a proposal in a line language or refuses
 it, and admits it as one ordinary edit.
 
-What is *not* yet done: the saved form's readers brought to one verdict (`READER-COURT-0`, registered, not built);
-the design-event stream and a model at the seam (declared, not registered); any measurement of the live loop's
-timing; richer edits than a cell and a tile class; and semantics the frozen oracle never certified.
+And everything the tree saves and reads back is now one bounded language with one verdict from every reader
+(`READER-COURT-0`, built; its host run is the owner's).
+
+What is *not* yet done: the design-event stream and a model at the seam (declared, not registered); any measurement
+of the live loop's timing; richer edits than a cell and a tile class; and semantics the frozen oracle never
+certified.
 
 ---
 
@@ -114,7 +117,7 @@ walking in a live, authorable world
 LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03), and by the owner's ruling what the route builds towards: the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
 ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by the owner's order next after MOUSE-LOOK-0: the admission seam. One strict recognizer for a line language whose accepted bytes are canonical (VRDNP1), an anchor refused when stale, a scope the admitter grants, an admitted proposal an ordinary session event. The gate certifies the machine; ADMIT admits the world's changes — registered (`bdd38593`), built, and measured on the host: the gate passes there and the first admission is sealed
       ↓
-READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — registered (`f53017cd`), nothing built
+READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — registered (`f53017cd`) and built: eight rows, 226 in the gate; the host's run is the owner's
       ↓
 DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered. Whether a design representation, a design diff or constraints are promoted ahead of DESIGN-EVENT-0 is a question the owner has reserved for its own ruling; until he rules, this order stands
       ↓
@@ -1242,11 +1245,11 @@ can be computed deterministically for anything beyond what the grid already says
 language. When a rung is seated from it, the rung registers its own hypothesis, failure condition and limits.
 
 
-### READER-COURT-0 — the saved form's readers brought to one verdict · **registered** (`f53017cd`, pushed); nothing built
+### READER-COURT-0 — the saved form's readers brought to one verdict · **built** (`f53017cd`): the gate passes here with its eight rows; the host's run is the owner's
 The rung after ADMIT-0, by the owner's order. ADMIT-0 made a new language with one reader. This rung hardens the old
 one: the JSON the tree saves and reads back. The disagreement it closes was observed on 2026-10-03 and is recorded in
 ADMIT-0's section above. This section records what was read from the code before the courts, the two courts, a
-review the owner asked for, and then the registration and the owner's review of it. Nothing is built.
+review the owner asked for, the registration and the owner's review of it, and then the build.
 
 **What was read from the code, before the courts.**
 
@@ -1372,6 +1375,18 @@ rules allow, and its hash is now `f53017cd`. *0110: LOCK / PUSH. No redesign.*
 the documents were applied, and the gate passed there: GATE PASSED, rowset `0b423b279a40c85c`, 218 rows, 0 fail, 0
 skipped, the same as here. Pushed, `f504829..25b5c17`. The entry is public; from here it changes only by an
 amendment with its own hash.
+
+**The build.** On the owner's word, *take the next*. One Rust reader, `kernel/savedform.rs`, replaces the four
+parsers (about 840 lines removed) and is included by path by the shell and the workshop's three tools. An
+independent Python reader, `verify/savedform.py`, replaces `json.load` in the four Python tools. Every writer gives
+its bytes to the reader before it writes them. Eight rows, 226 in the gate (rowset `39e5874a7127cfa4`): the 45
+registered cases; 163,072 single-byte mutants of the three registered documents with the same verdict from both
+readers on every one; 43,925 boundary mutations of the committed records and of what the gate makes (181,376 with
+the host's 33 records present), each with the code and offset its place gives; the writers; a hostile document
+refused by seven real commands with the same code and offset; one reader by source; and the fence. Nine earlier
+rows' forgeries were rewritten inside the language, and one pin moved, both listed in the ledger. 55 planted
+defects are each caught. The details, the limits and the falsifier are in
+[`verify/RUNGS.md`](../verify/RUNGS.md). What is not yet shown is the gate on the owner's host with this build.
 
 **The next question, reserved.** The owner asked whether DESIGN-EVENT-0 remains the next rung after this one, or
 whether a design representation, a design diff and constraints are promoted ahead of it, as the review of the

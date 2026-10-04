@@ -102,6 +102,11 @@ mod tickrun;
 mod mouselook;
 #[path = "admit.rs"]
 mod admit;
+// READER-COURT-0: the saved form's one reader, shared by path with the workshop, and its court command
+#[path = "../kernel/savedform.rs"]
+mod savedform;
+#[path = "readercourt.rs"]
+mod readercourt;
 
 #[cfg(all(target_os = "windows", shell_window))]
 #[path = "win32.rs"]
@@ -982,6 +987,14 @@ fn main() {
                 println!("simtick court OK");
             }
             exit(code)
+        }
+        "form-verdict" | "form-court" | "form-splice" | "form-spell" => {
+            // READER-COURT-0: the court command over the saved form's reader (kernel/savedform.rs). `form-verdict
+            // (--document | --payload) FILE` prints the verdict on a file; `form-court ... --out OUT` gives every
+            // single-byte mutant of it to the reader, in process; `form-splice --manifest M` gives it each file of M
+            // with one splice applied, per line of that file's script; `form-spell --in F --out OUT` spells each
+            // text of F. A verdict is data: the command ends 0 whatever the verdicts were.
+            exit(readercourt::run(&args))
         }
         "admit" | "admit-selftest" | "admit-anchor" => {
             // ADMIT-0: the admission seam, windowless. `admit --session S --proposal P [--allow open,close,paint]

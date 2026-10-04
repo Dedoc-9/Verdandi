@@ -13,7 +13,7 @@ The gate is the program's only judge, so its design is about what it may and may
 ```text
     verify.py     row(name, fn) in a fixed order ─► PASS, or Red with a reason ─► GATE PASSED | GATE FAILED
                   RECONCILE  rowset <sha256 of the row names>  <rows> / <fail> / <skipped>
-                  218 rows today, rowset 0b423b279a40c85c
+                  226 rows today, rowset 39e5874a7127cfa4
 
     a row         builds what it tests from source · runs it · compares bytes · then PLANTS a defect and
                   requires the refusal. A row with no plant that bites is not finished.
@@ -26,6 +26,7 @@ The gate is the program's only judge, so its design is about what it may and may
                        amendment entry with its own hash.
 
     envelope.py   RECORD-0: one writer, one firewall, for every record the tree mints
+    savedform.py  READER-COURT-0: the strict reader of everything read back; no json.load beneath it
     pins/         the goldens Verðandi mints itself (the HUD's, the blit's)
     the sealers   off the gate, on a named host: witnesses first, then the number, then the envelope
 ```
@@ -39,6 +40,8 @@ The gate is the program's only judge, so its design is about what it may and may
 | A method is locked before its number | every entry's hash recomputed; an entry with no failure condition is refused a seat | `records-preregistered`, each rung's `*-preregistered` |
 | A sealer cannot seal a malformed run | each sealer is given malformed raws and must refuse them | `*-sealer` rows |
 | A fence is read from the source | a row reads the program's text for what must and must not appear | `*-fence` rows |
+| A record on the disk is of the saved form | read through the strict reader; written only after it accepts the bytes | `readercourt-corpus`, `readercourt-writers` |
+| A forgery is refused for its own row's reason | every command and every read is watched for a refusal by the reader | `readercourt-fence` |
 
 Off-gate instruments (wall-clock on a named host) never print inside the gate; they write records beside the
 oracle with the witnesses checked first.
@@ -54,6 +57,12 @@ agree. `preregister.json` hash-locks each host-measuring rung's hypothesis and s
 conditions before its instrument runs (`records-preregistered`); a fork of the owner's
 `executable-epistemics`. `bench.py` writes the kernel's wall-clock as such a record, budgets as data, the
 comparison in the reading.
+
+`savedform.py` is READER-COURT-0's Python reader: the saved form's language implemented apart from the Rust reader
+in `../kernel/savedform.rs`, with no `json.load` or `json.loads` beneath it. `envelope.py`, `livesession.py`,
+`seal_sessionwalk.py` and `seal_session.py` read through it; `envelope.py`'s write gives it the bytes first. The json
+module is still used here to render, and by rows that inspect a raw the shell wrote: neither is a reading of the
+saved form.
 
 `RUNGS.md` is the ledger: one graded entry per rung, with what it measured, what it does not show, and the
 row that would redden if the claim were false.
@@ -87,6 +96,8 @@ row that would redden if the claim were false.
 - **Count again.** The gate reads what it is pointed at. Two facts recorded for READER-COURT-0 (the number of JSON
   parsers, the deepest nesting among the records) were each off by one until they were recounted. Neither was a
   row's to catch.
+- **A mutant can be a non-mutant.** In READER-COURT-0's mutation test four planted defects survived because they
+  were written so that they changed nothing. A survivor is first a question about the mutant.
 - **The dev harness is not the gate.** Running chosen rows alone can fail a row that depends on an earlier row's
   outputs (`records-twins` wants the workshop's records present). Only a full pass is a pass.
 
@@ -100,8 +111,10 @@ In full in [`../docs/GHOSTS.md`](../docs/GHOSTS.md). The ones that live in this 
   proposal, and by registration the two readers of the saved form) one author wrote both from one grammar. Their
   agreement shows consistency. The cases with verdicts written down beforehand are what stand against a shared
   mistake.
-- **G19.** These tools read saved-form documents with `json.load` today, which accepts more than the tree's writers
-  emit. READER-COURT-0 is registered to replace that with a strict reader and is not built.
+- **G19.** These tools read saved-form documents through the strict reader now. The gate's own rows still read the
+  raws a command writes with `json.load`, the registry too: those are not the saved form.
+- **A source fence shows where a check is written, not that it runs.** `readercourt-writers` plants a fault in the
+  shell's save and sees it refused. For the journal, the checkpoint and the workshop's writers it reads the source.
 - **A green pass is not proof by itself.** A stale build directory or a cached bytecode file can make a pass lie.
   The landing condition is two passes from clean trees, and a number that looks impossible is checked before it is
   believed.

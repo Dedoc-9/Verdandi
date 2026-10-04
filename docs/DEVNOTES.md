@@ -263,6 +263,13 @@ registered.
   seven levels, and the first count had missed them. The owner had already ruled that bounds come from the writers
   and not from the files, so the ruling stood and only the number changed.
 
+- **READER-COURT-0's first catch was its author.** A fast path written to make the Python reader usable on real
+  files admitted `-0`. The registered case and five mutants of the exhaustive court differed from the Rust reader
+  as soon as the two were first compared. Then the strict reader turned eight earlier rows red, because their
+  forgeries had been written with the json module's defaults; and a ninth row stayed green for the wrong reason,
+  which no red row could show. The gate now watches every refusal by the reader, and that row was found by the
+  watch.
+
 ## The process rhythm, as it runs now
 
     court ──► ratify ──► preregister, in its own commit, pushed first ──► build ──► mutation-test ──►
@@ -309,10 +316,13 @@ registered.
    exactly one byte form, so there is nothing for two readers to disagree about. The old saved form is being brought
    to the same standard afterwards, as its own rung.
 
-8. **Count twice.** Both corrections in READER-COURT-0's record came from counting again by a different method. A
+8. **A green row can be wrong about why.** A forgery refused for its form passes a row that only asks for a refusal.
+   Watching what refused it, on every gate, is cheaper than trusting that each forgery still reaches its own rule.
+
+9. **Count twice.** Both corrections in READER-COURT-0's record came from counting again by a different method. A
    count that feeds a registered bound deserves the same suspicion as a number that feeds a verdict.
 
-9. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+10. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
@@ -320,7 +330,7 @@ registered.
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
 - Between the readbacks and between the samples nothing is witnessed; the save is the exhaustive check (G15).
 - A seal is a hash (G16), and the shell replays the session with its own copy of the fold (G17).
-- The saved form's readers disagreed on hostile input; the remedy is registered and not built (G19).
+- The saved form's readers disagreed on hostile input; the remedy is built, and its reach is stated (G19).
 - An admission records a claimed proposer and a command line's grant, and nothing about a model (G20).
 - The live loop has no latency number (G21), and two host silences were never explained (G22).
 

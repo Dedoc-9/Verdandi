@@ -61,6 +61,10 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 
 use formats::{compose, facing_letter, level_bytes, parse_camera, parse_level, parse_tiles, tiles_bytes, Camera, Level, Tiles, ALPHABET};
+// READER-COURT-0: the saved form's one reader, shared by path with the shell and the workshop's other tools
+#[path = "../kernel/savedform.rs"]
+mod savedform;
+use savedform::Json;
 use mantle::{hex, parse_scene, picture, sha256, Picture, Refusal, Strip, H, W};
 
 // ------------------------------------------------------------------ typed refusal
@@ -77,74 +81,16 @@ fn write(path: &Path, bytes: &[u8]) {
     fs::write(path, bytes).unwrap_or_else(|e| refuse("CANNOT-WRITE", &format!("{}: {}", path.display(), e)))
 }
 
-// ------------------------------------------------------------------ a minimal JSON (enough for a record)
-#[derive(Clone, Debug, PartialEq)]
-enum Json {
-    Null,
-    Bool(bool),
-    Num(i64),
-    Str(String),
-    Arr(Vec<Json>),
-    Obj(BTreeMap<String, Json>),
-}
-
-impl Json {
-    fn get(&self, key: &str) -> &Json {
-        match self {
-            Json::Obj(m) => m.get(key).unwrap_or(&Json::Null),
-            _ => &Json::Null,
-        }
-    }
-    fn str(&self) -> &str {
-        match self {
-            Json::Str(s) => s,
-            _ => "",
-        }
-    }
-    fn num(&self) -> i64 {
-        match self {
-            Json::Num(n) => *n,
-            _ => -1,
-        }
-    }
-    fn boolean(&self) -> bool {
-        matches!(self, Json::Bool(true))
-    }
-    fn arr(&self) -> &[Json] {
-        match self {
-            Json::Arr(a) => a,
-            _ => &[],
-        }
-    }
-}
-
-fn json_escape(s: &str) -> String {
-    let mut out = String::with_capacity(s.len() + 2);
-    out.push('"');
-    for ch in s.chars() {
-        match ch {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            '\u{8}' => out.push_str("\\b"),
-            '\u{c}' => out.push_str("\\f"),
-            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-    out
-}
-
+// ------------------------------------------------------------------ the saved form: values, and a record's layout
+// The value type and its reader are kernel/savedform.rs's (READER-COURT-0). What stays here is how a record is
+// laid out and its canonical text; every string in either is spelled by the one spelling.
 fn json_write(v: &Json, indent: usize, out: &mut String) {
     let pad = " ".repeat(indent);
     match v {
         Json::Null => out.push_str("null"),
         Json::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
         Json::Num(n) => out.push_str(&n.to_string()),
-        Json::Str(s) => out.push_str(&json_escape(s)),
+        Json::Str(s) => out.push_str(&savedform::spell(s)),
         Json::Arr(a) => {
             out.push('[');
             for (i, x) in a.iter().enumerate() {
@@ -161,7 +107,7 @@ fn json_write(v: &Json, indent: usize, out: &mut String) {
             for (i, (k, x)) in m.iter().enumerate() {
                 out.push_str(&pad);
                 out.push(' ');
-                out.push_str(&json_escape(k));
+                out.push_str(&savedform::spell(k));
                 out.push_str(": ");
                 json_write(x, indent + 1, out);
                 out.push_str(if i + 1 < n { ",\n" } else { "\n" });
@@ -172,165 +118,6 @@ fn json_write(v: &Json, indent: usize, out: &mut String) {
     }
 }
 
-struct Parser<'a> {
-    s: &'a [u8],
-    p: usize,
-}
-
-impl<'a> Parser<'a> {
-    fn ws(&mut self) {
-        while self.p < self.s.len() && matches!(self.s[self.p], b' ' | b'\n' | b'\r' | b'\t') {
-            self.p += 1;
-        }
-    }
-    fn expect(&mut self, c: u8) -> Result<(), String> {
-        self.ws();
-        if self.p < self.s.len() && self.s[self.p] == c {
-            self.p += 1;
-            Ok(())
-        } else {
-            Err(format!("expected '{}' at byte {}", c as char, self.p))
-        }
-    }
-    fn value(&mut self) -> Result<Json, String> {
-        self.ws();
-        if self.p >= self.s.len() {
-            return Err("unexpected end".to_string());
-        }
-        match self.s[self.p] {
-            b'{' => {
-                self.p += 1;
-                let mut m = BTreeMap::new();
-                self.ws();
-                if self.p < self.s.len() && self.s[self.p] == b'}' {
-                    self.p += 1;
-                    return Ok(Json::Obj(m));
-                }
-                loop {
-                    self.ws();
-                    let k = match self.value()? {
-                        Json::Str(k) => k,
-                        _ => return Err("object key is not a string".to_string()),
-                    };
-                    self.expect(b':')?;
-                    let v = self.value()?;
-                    m.insert(k, v);
-                    self.ws();
-                    if self.p < self.s.len() && self.s[self.p] == b',' {
-                        self.p += 1;
-                        continue;
-                    }
-                    self.expect(b'}')?;
-                    return Ok(Json::Obj(m));
-                }
-            }
-            b'[' => {
-                self.p += 1;
-                let mut a = Vec::new();
-                self.ws();
-                if self.p < self.s.len() && self.s[self.p] == b']' {
-                    self.p += 1;
-                    return Ok(Json::Arr(a));
-                }
-                loop {
-                    a.push(self.value()?);
-                    self.ws();
-                    if self.p < self.s.len() && self.s[self.p] == b',' {
-                        self.p += 1;
-                        continue;
-                    }
-                    self.expect(b']')?;
-                    return Ok(Json::Arr(a));
-                }
-            }
-            b'"' => {
-                self.p += 1;
-                let mut out = String::new();
-                loop {
-                    if self.p >= self.s.len() {
-                        return Err("unterminated string".to_string());
-                    }
-                    let c = self.s[self.p];
-                    self.p += 1;
-                    match c {
-                        b'"' => return Ok(Json::Str(out)),
-                        b'\\' => {
-                            if self.p >= self.s.len() {
-                                return Err("bad escape".to_string());
-                            }
-                            let e = self.s[self.p];
-                            self.p += 1;
-                            match e {
-                                b'"' => out.push('"'),
-                                b'\\' => out.push('\\'),
-                                b'/' => out.push('/'),
-                                b'n' => out.push('\n'),
-                                b'r' => out.push('\r'),
-                                b't' => out.push('\t'),
-                                b'u' => {
-                                    if self.p + 4 > self.s.len() {
-                                        return Err("bad \\u escape".to_string());
-                                    }
-                                    let h = std::str::from_utf8(&self.s[self.p..self.p + 4]).map_err(|_| "bad \\u escape")?;
-                                    let cp = u32::from_str_radix(h, 16).map_err(|_| "bad \\u escape")?;
-                                    out.push(char::from_u32(cp).unwrap_or('\u{fffd}'));
-                                    self.p += 4;
-                                }
-                                _ => return Err("bad escape".to_string()),
-                            }
-                        }
-                        _ => {
-                            // copy one UTF-8 scalar
-                            let start = self.p - 1;
-                            let len = match c {
-                                0x00..=0x7f => 1,
-                                0xc0..=0xdf => 2,
-                                0xe0..=0xef => 3,
-                                _ => 4,
-                            };
-                            let end = (start + len).min(self.s.len());
-                            out.push_str(std::str::from_utf8(&self.s[start..end]).map_err(|_| "bad utf-8")?);
-                            self.p = end;
-                        }
-                    }
-                }
-            }
-            b't' if self.s[self.p..].starts_with(b"true") => {
-                self.p += 4;
-                Ok(Json::Bool(true))
-            }
-            b'f' if self.s[self.p..].starts_with(b"false") => {
-                self.p += 5;
-                Ok(Json::Bool(false))
-            }
-            b'n' if self.s[self.p..].starts_with(b"null") => {
-                self.p += 4;
-                Ok(Json::Null)
-            }
-            b'-' | b'0'..=b'9' => {
-                let start = self.p;
-                self.p += 1;
-                while self.p < self.s.len() && self.s[self.p].is_ascii_digit() {
-                    self.p += 1;
-                }
-                let t = std::str::from_utf8(&self.s[start..self.p]).map_err(|_| "bad number")?;
-                t.parse::<i64>().map(Json::Num).map_err(|_| format!("bad number {:?}", t))
-            }
-            c => Err(format!("unexpected byte '{}' at {}", c as char, self.p)),
-        }
-    }
-}
-
-fn json_parse(s: &[u8]) -> Result<Json, String> {
-    let mut p = Parser { s, p: 0 };
-    let v = p.value()?;
-    p.ws();
-    if p.p != s.len() {
-        return Err("trailing bytes after the document".to_string());
-    }
-    Ok(v)
-}
-
 /// Canonical JSON — the Rust twin of verify/envelope.py::canonical: keys by code point (BTreeMap's byte
 /// order is code-point order for UTF-8), no whitespace, integers only, the same escapes.
 fn json_canonical(v: &Json, out: &mut String) {
@@ -338,7 +125,7 @@ fn json_canonical(v: &Json, out: &mut String) {
         Json::Null => out.push_str("null"),
         Json::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
         Json::Num(n) => out.push_str(&n.to_string()),
-        Json::Str(s) => out.push_str(&json_escape(s)),
+        Json::Str(s) => out.push_str(&savedform::spell(s)),
         Json::Arr(a) => {
             out.push('[');
             for (i, x) in a.iter().enumerate() {
@@ -355,7 +142,7 @@ fn json_canonical(v: &Json, out: &mut String) {
                 if i > 0 {
                     out.push(',');
                 }
-                out.push_str(&json_escape(k));
+                out.push_str(&savedform::spell(k));
                 out.push(':');
                 json_canonical(x, out);
             }
@@ -907,6 +694,10 @@ fn cmd_record(args: &[String]) {
     let mut text = String::new();
     json_write(&record, 0, &mut text);
     text.push('\n');
+    // READER-COURT-0: a writer gives its bytes to the reader first, and writes nothing the saved form does not hold
+    if let Err(r) = savedform::check_document(text.as_bytes()) {
+        refuse("FORM", &format!("the document is not in the saved form ({}): nothing is written", r.line()));
+    }
     let rec_path = dir.join(format!("{}.record.json", name));
     write(&rec_path, text.as_bytes());
     println!("RECORD {}", rec_path.display());
@@ -928,7 +719,7 @@ fn cmd_check(args: &[String]) {
     }
     let record_path = PathBuf::from(record_path.unwrap_or_else(|| refuse("USAGE", "check needs --record")));
     let dir = record_path.parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."));
-    let rec = json_parse(&read(&record_path)).unwrap_or_else(|m| refuse("INVALID-RECORD", &m));
+    let rec = savedform::read_document(&read(&record_path)).unwrap_or_else(|r| refuse("INVALID-RECORD", &r.line()));
     // 0. the envelope: required fields, a claim class, a scope, forbidden readings, no verdict inside data,
     //    the chain hash over the required fields
     envelope_validate(&rec).unwrap_or_else(|m| refuse("ENVELOPE", &m));
@@ -1151,6 +942,10 @@ fn cmd_census(args: &[String]) {
     let mut text = String::new();
     json_write(&record, 0, &mut text);
     text.push('\n');
+    // READER-COURT-0: a writer gives its bytes to the reader first, and writes nothing the saved form does not hold
+    if let Err(r) = savedform::check_document(text.as_bytes()) {
+        refuse("FORM", &format!("the document is not in the saved form ({}): nothing is written", r.line()));
+    }
     write(Path::new(&out), text.as_bytes());
     println!("CENSUS {} tested {} skipped {} impossible {} unexplained {} geometry_outside_cone {}", out, tested, skipped, impossible, unexplained_total, geometry_outside_cone);
     for (k, v) in &counts {
