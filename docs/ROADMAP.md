@@ -104,7 +104,9 @@ walking in a live, authorable world
 LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03), and by the owner's ruling what the route builds towards: the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
 ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by the owner's order next after MOUSE-LOOK-0: the admission seam. One strict recognizer for a line language whose accepted bytes are canonical (VRDNP1), an anchor refused when stale, a scope the admitter grants, an admitted proposal an ordinary session event. The gate certifies the machine; ADMIT admits the world's changes — registered (`bdd38593`), built, and measured on the host: the gate passes there and the first admission is sealed
       ↓
-READER-COURT-0 → DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered
+READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — not registered, nothing built
+      ↓
+DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -1228,6 +1230,214 @@ a relation or a constraint can be defined over this world without new CORE seman
 can be computed deterministically for anything beyond what the grid already says; that a model can write in such a
 language. When a rung is seated from it, the rung registers its own hypothesis, failure condition and limits.
 
+
+### READER-COURT-0 — the saved form's readers brought to one verdict · **chosen** (the owner's courts, 2026-10-04); not registered, nothing built
+The rung after ADMIT-0, by the owner's order. ADMIT-0 made a new language with one reader. This rung hardens the old
+one: the JSON the tree saves and reads back. The disagreement it closes was observed on 2026-10-03 and is recorded in
+ADMIT-0's section above. This section records what was read from the code before the courts, the two courts, and a
+review the owner asked for. Nothing is registered and nothing is built.
+
+**What was read from the code, before the courts.**
+
+- **Four Rust parsers, not three.** One text is copied byte for byte into `shell/playback.rs`,
+  `workshop/sessionwalk.rs` and `workshop/session.rs`. `workshop/edit.rs` has a fourth parser, a different text,
+  for edit records.
+- **Four Python readers.** `verify/livesession.py` (the sealer), `verify/seal_sessionwalk.py`,
+  `verify/seal_session.py` and `verify/envelope.py`'s `read` each read saved-form documents with `json.load`.
+- **Three writers, three layouts.** The shell writes a saved session, a journal's record payloads and a checkpoint's
+  one line by format strings. The workshop writes an indented document from a parsed value. Python writes a sealed
+  record with `json.dump`, indented, not escaping non-ASCII, with one LF after it.
+- **The corpus is inside a small language.** The 24 session-walk files the Rust readers can meet (committed
+  records, the host's sealed records, the host's saved sessions) hold no escape, no fraction, no exponent and no
+  duplicate name; 14 hold raw UTF-8. Across all 39 record files of every kind there is no fraction or exponent, and
+  the only escapes are `\"` and `\\`. The deepest shape is 6 levels: a sealed WORKSHOP-1 session record (root,
+  data, log, item, edit, rgb).
+- **The writers disagree on two characters.** The shell and Python write backspace and form feed as `\b` and
+  `\f`. The workshop writes `\u0008` and `\u000c`. The Rust reader refuses `\b` and `\f`, which the shell's own
+  writer can emit. No file has ever held either character.
+- **The integer bound is the reader's.** The shell holds ticks and counts as unsigned 64-bit and writes them
+  unchecked. The reader takes signed 64-bit. Only the shell's read-back after a save enforces it.
+
+**The first court (2026-10-04).** Four rulings.
+
+1. **The writers' language. LOCK.** Strict RFC 8259 is rejected: it would make the reader's language larger than
+   the saved-form authority and force a float on a system whose rules are integers. Canonical bytes are rejected:
+   the three writers share a data language, not one serialization. The owner's refinement of the ruling:
+
+   > **The accepted language is the bounded saved-form language that the tree's registered writers are permitted
+   > to emit.**
+
+   - *Corpus establishes coverage; the writer contract establishes the language.* The 24 files show the existing
+     corpus lies inside it. The court tests its boundary: a writer-valid integer and a float, a writer-valid escape
+     and another, valid and invalid UTF-8, the deepest nesting and one deeper, the final LF and a byte after it, a
+     unique name and a repeated one.
+   - **Bounds come from the writers, not from the files.** Depth is not 6 because the files stop at 6: the writer is
+     asked what it can emit. If a writer has no explicit bound, that is the seam to close before the grammar is
+     locked. The same for 64 bits: a semantic invariant, or an artifact of one parser.
+   - *The saved-form reader is not a general JSON reader. It is a reader for Verðandi's own persisted language.*
+2. **One file, shared by path. LOCK.** The copies are evidence that extraction is safe, not a reason to keep
+   them. *One persisted language → one reader → many consumers.* The shared module owns saved-form parsing and
+   decoding only. It knows nothing of the shell, the workshop's editing, admission, the renderer, session
+   mutation, authority or any interface. The rung pins the language and the reader's behaviour, not that the files
+   compile.
+3. **The sealer gets its own strict reader, held by the court. LOCK.** Two implementations at the verification
+   boundary are wanted, not tolerated: a sealer that deferred to the Rust reader would turn the observed
+   disagreement into a dependency nobody can see. `json.loads` is rejected as an authority on either side: the
+   Python reader implements the locked language itself, with no `json.loads` underneath as a fallback. Neither
+   reader is right because the other agrees. *Agreement demonstrates consistency; it does not by itself prove
+   correctness.* The end state: *one production implementation, two independent implementations at the
+   verification boundary.*
+4. **A hostile file gets the same code and the same byte offset from every reader.**
+
+**The review the owner asked for, of ruling 3.** Agreed, with what it obliges.
+
+- **The Python reader is production for the sealer.** With no `json.loads` underneath, the sealer reads a saved
+  session with the strict reader. The sealer also runs the workshop's verify on the same file, so a file is sealed
+  only if both readers accept it.
+- **Agreement cannot catch a mistake in the specification.** Both readers are written by one author from one
+  grammar. What stands against that: boundary cases with their expected verdicts written into the registration, and
+  the writers as a third witness, every writer's output required to be accepted.
+- **"The same typed value" needs one rendering both compute.** A digest of a canonical dump: names in byte order,
+  no whitespace, one escape spelling.
+- **"The same byte offset" needs a definition neither implementation owns.** The first byte at which the input
+  stops being a prefix of any document of the language, or its length if it is cut short. For a repeated name that
+  is its closing quote; for an integer, the digit that takes it out of range. Both readers validate UTF-8 by hand, so
+  that they stop at the same byte.
+- **Exhaustive mutation of real files is not affordable in Python.** The host's 376 KB session has about 190
+  million single-byte mutants.
+- **The gate's older rows read saved files with `json.loads`.** That is test code inspecting what the shell wrote.
+  They are left as they are, and this rung's rows use the court reader only.
+
+**The second court (2026-10-04).** Four rulings on what the code had turned up.
+
+1. **Every reader of the saved form.** All four Rust parsers become the one shared reader, `workshop/edit.rs`
+   included. Every Python tool that reads a saved-form document reads it through the court reader.
+2. **One spelling.** The two-character escapes where they exist (`\"`, `\\`, `\b`, `\f`, `\n`, `\r`, `\t`) and
+   `\u00XX` in lower-case hex for the other control characters only. The workshop's writer is aligned to it. Every
+   string then has one byte form.
+3. **Signed 64-bit is the law, and writers refuse beyond it.** An integer lies in -2^63 to 2^63-1, with no leading
+   zero and no minus zero. A writer refuses to write a value outside it, so the bound is the format's and not one
+   parser's. The court tests both edges.
+4. **Exhaustive on small documents, boundary mutations on real files.** Every single-byte mutant of a few small
+   registered documents that between them use every construct of the language. On each real file: acceptance, the
+   same typed value in both readers, and the registered boundary mutations at every place they fit.
+
+**Grade.** DECLARED: the two courts' eight rulings. OBSERVED: what was read from the code and counted in the files,
+here, outside the gate. **does_not_show.** That a shared reader exists; that the two readers agree on anything; that
+the writers' contract has been derived writer by writer. The registration does that derivation and fixes the
+grammar and its bounds before a line is built.
+
+### The development environment — fifteen pivots · **declared** (the owner's, 2026-10-04); not registered, nothing built
+A review the owner brought on 2026-10-04 and asked to have recorded: Verðandi judged as a research-grade interactive
+development environment and not as a game editor. Like the texts above it is a reply to his own description, so its
+wording is quoted where it states a rule and summarized elsewhere. Its citations of the ACM literature are its own
+and were not opened here; they are attributed, not claimed. It seats nothing. Its verdict is its own too: a very
+high architectural score with fifteen product pivots. This repository keeps no scalar scorecard, and the verdict is
+recorded as the review's.
+
+**The risk it names.** *A beautifully rigorous engine with an underdeveloped development environment.* What it
+finds already strong is the path from intent to a typed bounded proposal, admission, session, authority and a
+deterministic projection, and the property that follows:
+
+> **The visual editor does not become the source of truth.**
+
+**The fifteen pivots.**
+
+1. **A design space as a first-class window.** A workspace over authority (world, scene, selection, tools,
+   constraints, layers, views, panels, bookmarks), several open at once, none a copy of the world.
+2. **A docking and window system, early.** Scene, viewport, inspector, and a bottom band for the timeline, the
+   session, diagnostics, a console and admissions. Every pane is *a projection of authority, never authority
+   itself*. Layouts are saved by role.
+3. **View modes, not only camera modes.** The same world as perspective, top, side, orthographic, wireframe,
+   collision, navigation, visibility, lighting, gameplay, network, streaming, performance. The geometry does not
+   change; the projection does.
+4. **Constraints as a visible subsystem.** A constraint with an id, a type, a subject, parameters, a status, a
+   witness and provenance, listed in the interface, a failure highlighting the geometry it is about. Verification as
+   design instrumentation and not a terminal event.
+5. **A design diff window.** What changed spatially, which semantic objects, which constraints, which performance
+   consequences, which provenance; then accept, reject, inspect, revert or branch.
+6. **A parameter rack.** An object's parameters as design intent: changing one generates a typed operation, so it
+   stays editable, undoable, replayable, provenance-bearing and addressable by a model.
+7. **Design recipes.** A parameterized design procedure and not a prefab. It produces a proposal and never mutates
+   authority. A model manipulates recipes instead of inventing geometry.
+8. **Preview unmistakably not the world.** The current world solid, the proposed one ghosted, with its counts and
+   its constraints, manipulable before it is admitted. Feedback at the design boundary and not everywhere.
+9. **A command palette over the whole architecture.** Every command resolves to a typed operation. It is another
+   frontend and not a second interface to the world.
+10. **Portable project bundles.** A manifest, the authority, sessions, the design representation, constraints,
+    provenance, assets, the renderer identity and compatibility metadata; opened on another machine by verifying,
+    reporting differences, then opening.
+11. **A compatibility inspector.** Each format and identity reported on opening, with open, open read-only, repair
+    and export as choices. *Never silently migrate authority.*
+12. **A capability and tool permission system.** ADMIT-0's grant grown into a platform primitive: a tool or a model
+    is given `world.query` and `world.propose` and not filesystem writes, process execution or authority mutation.
+13. **A plugin SDK around projections, not authority.** Read the model, analyze, propose, court, admit. A plugin
+    says "I propose these changes" and never "I modified the world".
+14. **Multi-representation editing.** The same object edited by dragging, by a number, by text and by a structured
+    form, all four compiling to the same design operation.
+15. **The design observatory.** A persistent window of the design's state: objects, constraints, violations and
+    unknowns; performance; gameplay; provenance; admission. Not another debugger. It answers *why does the system
+    believe this world is valid?*
+
+**Its order.** Five layers. A, the foundation: the shared reader and READER-COURT-0, then a design representation,
+the design diff, constraint objects. B, a real editor: docking windows, view modes, the parameter rack, the command
+palette. C, authoring: recipes, the proposal and preview workspace, multi-representation editing. D, the platform:
+capabilities, the plugin SDK, project bundles and the compatibility inspector. E, the differentiator: the
+observatory. If only three, it picks the design representation with constraints as first-class objects,
+multi-representation editing, and the observatory.
+
+**What it would not copy.** Not an existing engine's editor made deterministic, not a modelling tool for games, not
+an engine with a model attached. Its proposition:
+
+> **Verðandi is a design environment in which visual manipulation, text, AI proposals, procedural tools, simulation,
+> and verification are all different frontends to the same typed, provenance-bearing design authority.**
+
+**What already stands that it would rest on.**
+
+- **Two frontends already compile to one operation.** ADMIT-0's replay row holds that a proposal and a key give the
+  same event, the same witness and the same head. That is multi-representation editing for the two representations
+  the tree has.
+- **The grant is the first capability.** ADMIT-0 takes its scope from whoever runs it, and a proposal cannot widen
+  it.
+- **Opening a session already reports and never migrates.** The loader classifies a saved session as loading, as
+  loading under a different renderer, as tampered or as made by a different renderer, and refuses what it cannot
+  replay. The shared reader this rung is about gives the saved form a language that can be named.
+- **Some diagnostics already exist as text.** The refusal log and the run ledger, with their readers, are what an
+  admissions or diagnostics pane would show.
+- **A projection that never writes** is the existing separation of kernel, workshop and shell, and the invariants
+  below.
+
+**What does not exist.** Any window but one borderless picture and its overlay. A pane, a dock, a menu, a layout, a
+selection, a palette. A design space. A second view mode. A constraint, a recipe, a parameter of an object, or an
+object. A project bundle or a manifest. A plugin. Anything the observatory would count beyond events, refusals and
+runs.
+
+**Where it meets rules already in force.** Each wants the owner's ruling before a rung is seated.
+
+- **Floats, units and scores.** The examples use metres, fractions and a cover score of 0.71. The world's rules
+  are integers of the world, and a score is not kept: a panel of counts per status is.
+- **A constraint's status is a witness.** As recorded with the design language above: recomputed and compared,
+  never a saved field that a reader trusts.
+- **Numbers shown are measurements.** A frame time or a memory figure in an observatory is a claim, and a claim
+  here has a registered instrument behind it or is not made.
+- **Preview.** A proposed world that the user manipulates before admitting is state. Commit-only holds: it is a
+  speculative worldline, a typed log replayed from an anchored head, or it is a second authority in the shell.
+- **Recipes and batches.** A recipe yields many operations. VRDNP1 carries one, and ADMIT-0 registered that there
+  is no batch. A batch is a new language version with its own atomicity court.
+- **Plugins and the gate.** The gate certifies the program, and no path executes text. A plugin that runs inside
+  the program at content time is code the gate did not certify. A plugin that runs outside and hands over a
+  proposal is a proposer like any other.
+- **A window system.** The shell is hand-written Win32 with no dependency, and its presenter is held to showing the
+  certified picture exactly, read back from the screen. Docking, panes and menus are a large addition to that
+  surface, and every pane is a VIEW or an OBSERVER: with all of them open, replay stays byte-identical.
+- **The order.** The owner's locked order after READER-COURT-0 is `DESIGN-EVENT-0`, `LIVE-AI-EDIT-0`, then branch
+  and preview. This review's layer A puts a design representation, the design diff and constraint objects there
+  and does not name the other two. Which order stands was not ruled. READER-COURT-0 is first in both.
+
+**Grade.** DECLARED: all of it. Nothing here is established or measured. **does_not_show.** That any pane, view
+mode, constraint, recipe, bundle or plugin can be built under the rules above; that the fifteen are the right
+fifteen; anything about how a user would fare with them. Each rung seated from it registers its own hypothesis,
+failure condition and limits.
 
 ### GAME-0 — Urðr's game layer as frozen evidence · **landed**
 The seventeen discrete game-layer slices (`gamegen` … `cue`), their corpora, suites, briefs and the D24/D25 boundaries,

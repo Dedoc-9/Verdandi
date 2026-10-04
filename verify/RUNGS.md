@@ -4461,6 +4461,28 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   no units beyond cells. It meets rules in force: anything that decides W or M is earned in Urðr; a constraint's
   status is a witness to recompute and not a field to trust; integers of the world and no floats; a panel and no
   score; preview only as a speculative worldline. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+- **READER-COURT-0 (the saved form's readers brought to one verdict — chosen in the owner's courts of 2026-10-04;
+  not registered, nothing built).** The rung after ADMIT-0. Read from the code first: four Rust JSON parsers (one
+  text in three files, and a different one in `workshop/edit.rs`), four Python readers using `json.load`, three
+  writers with three layouts, and a corpus that sits inside a small language (no fraction or exponent in any of 39
+  record files; depth 6 at most). The rulings: the accepted language is the bounded language the tree's registered
+  writers are permitted to emit, its bounds derived from the writers and not from the files; one Rust reader in
+  one file shared by path, owning parsing and nothing else; an independent strict Python reader, with no
+  `json.loads` underneath, held against it by the court; the same code and the same byte offset on every hostile
+  file; every reader of the saved form covered; one escape spelling, the workshop's writer aligned; signed 64-bit
+  the format's law, writers refusing beyond it; exhaustive single-byte mutation on small registered documents and
+  boundary mutations on real files. In the owner's words: *corpus establishes coverage; the writer contract
+  establishes the language.* Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+- **The development environment: fifteen pivots (declared, the owner's, 2026-10-04; not registered, nothing
+  built).** A review of Verðandi as a research-grade interactive development environment: a design space as a
+  window, docking, view modes, constraints as a visible subsystem, a design diff, a parameter rack, recipes, a
+  preview unmistakably not the world, a command palette, portable project bundles, a compatibility inspector,
+  capabilities, a plugin SDK around projections, multi-representation editing, and a design observatory. *The
+  visual editor does not become the source of truth.* Its order puts READER-COURT-0 first, then a design
+  representation, the design diff and constraint objects; how that stands against the owner's locked order was not
+  ruled. It meets rules in force: no floats, units or scores; a constraint's status a witness; shown numbers are
+  measurements; preview only as a speculative worldline; a batch a new language version; a plugin inside the
+  program is code the gate did not certify. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 
 The seated order reaches everything the frozen oracle certifies: WORKSHOP-1 *authors* walls, ground and
 textures, INPUT-0 *moves the camera* through them (a VIEW mutation, never an edit), SESSION-WALK *fuses* the two
