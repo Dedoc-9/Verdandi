@@ -1,11 +1,17 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
 <!-- Copyright (C) 2026 Daniel J. Dillberg -->
 
-# Dev notes & review — the optimization campaign
+# Dev notes & review
 
-*Working notes and a retrospective on the run from `GAUNTLET-0` to the `GAUNTLET-2` LOCK: how the campaign was
-conducted, what each court found, the process that made the results durable, and the practices worth keeping. This
-is the narrative counterpart to the terse ledger in [`verify/RUNGS.md`](../verify/RUNGS.md).*
+*Working notes and retrospectives: how each campaign was conducted, what each court found, the process that made
+the results durable, and the practices worth keeping. This is the narrative counterpart to the terse ledger in
+[`verify/RUNGS.md`](../verify/RUNGS.md). **Part I** is the optimization campaign, from `GAUNTLET-0` to the
+`GAUNTLET-2` LOCK, with its epilogue on the present path. **Part II** is the live campaign, from `LIVE-LOOP-0` to
+`ADMIT-0`: the window made a place where the world is walked, turned and edited, and where a proposal is admitted.*
+
+---
+
+# Part I — the optimization campaign
 
 ---
 
@@ -184,3 +190,142 @@ narrower measurement, not an optimization.
 Six rungs, one frozen oracle, zero pixels traded for speed, every number graded to exactly what was measured, and
 every dead end kept as evidence. The campaign's real output is not the ~3.3× — it is a method that could produce the
 ~3.3× *and prove it honestly,* which is the harder and more transferable thing.
+
+---
+
+# Part II — the live campaign
+
+*From `LIVE-LOOP-0` to `ADMIT-0`. Part I made a renderer fast and proved it honest. Part II is the other half: the
+closed cycle of input, authority, render, present, observe and the next input, in a real window, with every
+accepted change one event in one sealed history.*
+
+## The arc
+
+| Rung | What it added | The law, proven with no window | What the host showed |
+|---|---|---|---|
+| LIVE-LOOP-0 | the first loop that renders every composition | the bytes are checked before every present | 246 compositions, 6 of 6 readbacks exact |
+| LIVE-INPUT-0 | a key press is a session event | the binding; the log replayed by the workshop to the same heads | three runs, every readback exact; the first received no key press |
+| LIVE-SESSION-0 | the journal, the seal, resume, recovery | save, resume, recover and classify against really changed shells | a saved walk and its continuation, both replayed on another machine |
+| LIVE-AUTHOR-0 | tile classes painted live | a tile edit moves M and leaves W; off-screen controls leave the pixels | 28 tile edits, saved, resumed with the painting intact |
+| HOLD-WALK-0 | held keys walk the grid | one admitted repeat a composition; a held walk saves what the pressed walk saves | 31 held repeats; judged not the free movement wanted |
+| BEARING-0 | the turning camera, carried from Urðr | the 104 witnesses; the anchor law | the gate passes there |
+| BEARING-FAST-0 | that camera made fast | every tread byte-identical at 1,972 cameras | worst-camera p99 3,716 µs against a 6,667 µs target; 622,440 of 622,440 frames equal |
+| SIM-TICK-0, 0a | the mouse-look rules as integer law | a 15,625 µs tick, one command a tick, the same head at any ticks, every free-heading frame recomputed at the save | the gate passes there |
+| MOUSE-LOOK-0, 0a | a real mouse on those rules | capture as shell state; the samples; the picture alone at a free heading | the first run had no mouse report; the second, 13,931 raw reports, 1,761 looks, 1,775 of 1,775 frames the reference's |
+| ADMIT-0 | the admission seam | one recognizer against an independent one over 513,792 mutants; the anchor; the grant; death at eight points | the first admission sealed, its head computed beforehand; the same bytes refused as stale |
+
+The staircase reads **a loop → input → durability → authoring → a camera that turns → the rules of turning → the
+device → a proposer that is not a hand**. Each step added one thing and was measured on the host before the next was
+registered.
+
+## What each court actually found
+
+- **LIVE-LOOP-0 was narrow on purpose.** No input, no camera, no clock: its court was the loop itself, walking a
+  session that was already sealed. Everything after it could assume a loop that renders, checks and presents in
+  that order, because a row reads the source for it.
+
+- **LIVE-INPUT-0's evidence was console text, and that decided the order.** The live session worked, and each walk
+  had to be replayed by hand from the printed events. The owner moved LIVE-SESSION-0 ahead of LIVE-AUTHOR-0 for that
+  reason. From then on a host walk is a saved file the workshop verifies.
+
+- **LIVE-SESSION-0's mutation pass found the comparison that mattered.** A mutant that skipped comparing the saved
+  file with the live session survived the first pass, because the saved file was sealed and self-consistent. The
+  plant that came of it — a sealed, self-consistent file that is not the live session — is now a case.
+
+- **LIVE-AUTHOR-0 was declared the last bespoke input case.** After it the rule is general: an accepted edit is a
+  typed session event, the event changes the authoritative W or M, the next frame is rendered from the result, and
+  the event is durable. Richer editing is vocabulary on the one live editor and not a new pathway.
+
+- **HOLD-WALK-0 measured the wrong thing well.** Held keys walked cell by cell, exactly as registered. Walking it,
+  the owner judged it was not the free movement he wanted. Nothing was patched: the next thing was earned from the
+  start, with the turning camera certified in Urðr first, because no frozen oracle existed to hold a renderer to
+  outside the four facings.
+
+- **The rules and the device were never built together.** SIM-TICK-0 put every mouse-look rule in integers with no
+  window, no clock and no mouse in the proof. Only then did MOUSE-LOOK-0 add the device. When the first host run
+  made no look, the rules were not in question; only the device's path was.
+
+- **MOUSE-LOOK-0a was written from a run that showed nothing.** The first `look-window` run received no mouse
+  report. The amendment, registered after it, corrected a limit's wording, recorded how a run ends, and made the
+  window count the raw input it receives before it reads it, so a second silent run would at least say where the
+  silence was. The second run looked. Nothing shows the changed read was what had failed, and the ledger says so.
+  The gate's own model was found to share a blind spot with the mock (the frames of the tick applied as a run ends)
+  and now counts them.
+
+- **ADMIT-0 chose a new language over a hardened old one.** Its courts had a strict JSON subset on the table. The
+  owner's ruling was a line language, VRDNP1, whose accepted bytes are canonical: eight lines, one byte sequence per typed
+  proposal. A recognizer for it is small enough to be held against an independent one over every single-byte
+  mutant. Its 39 planted mutations left two survivors, and both became cases: a range fault with a byte after the
+  last line feed, and an envelope forged onto a move.
+
+- **Reading the code for READER-COURT-0 corrected two counts.** There were four JSON parsers and not three. And the
+  deepest nesting among the records was seven and not six: sixteen of the host's sealed measurement records hold
+  seven levels, and the first count had missed them. The owner had already ruled that bounds come from the writers
+  and not from the files, so the ruling stood and only the number changed.
+
+## The process rhythm, as it runs now
+
+    court ──► ratify ──► preregister, in its own commit, pushed first ──► build ──► mutation-test ──►
+        gate TWICE byte-identical (a third pass with the host's records present) ──► deliver as a patch ──►
+        the owner applies, gates, runs, seals and pushes ──► document
+
+- **The court is questions with answers.** Each rung's design choices are put to the owner as questions before
+  anything is registered, and his answers are recorded in his words. A registration that surprised him would be a
+  failure of the court, not of the entry.
+- **A registration is pushed before its build exists.** Until its commit is pushed an entry can still be changed.
+  After that it is never edited: a correction is an amendment with its own hash (LATENCY-1a, SIM-TICK-0a,
+  MOUSE-LOOK-0a). READER-COURT-0's entry was changed once in that window, on the owner's review, and the ledger
+  keeps both hashes.
+- **Mutation testing sits between the build and the gate.** A row is trusted after planted defects in the program
+  each turn it red. The counts are in the ledger, with the survivors and what they became.
+- **The host is a second machine, not a formality.** The gate runs on Linux here and on the owner's Windows, and a
+  rung lands when both read the same rowset and both pass. The host has found what the container could not: a file
+  checked out with other line endings, and runs that received no input.
+- **Documentation is a patch too.** What the host did is written down from the host's own output, after the fact,
+  as its own commit. A claim about a host run is never written before the run.
+
+## Lessons worth keeping
+
+1. **Prove the law without the device.** A mock surface with a scripted mouse and a counted clock makes the loop's
+   rules a gate matter. The host run is then about the host.
+
+2. **Treat the first host run as an instrument.** Two first runs showed nothing where something was expected. Each
+   became an amendment or a recorded unknown. Neither became a quiet fix.
+
+3. **Make it durable before making it richer.** Saving came before painting. Every later claim about the live
+   editor is about a file another machine replays.
+
+4. **Earn semantics where they can be held to account.** The turning camera went through Urðr and came back frozen.
+   Building it here first would have been faster and would have had nothing to be compared with.
+
+5. **One pathway.** Input, a script, and a proposal all end as the same typed event in the same log. Each new
+   source was a new binding or a new recognizer in front of the session, never a second way into the world.
+
+6. **Buy evidence, not optimizations.** After BEARING-FAST-0 met its target the owner ruled that the next work is
+   chosen by what evidence is worth buying. Nothing has been optimized from a first host run, and the live loop's
+   timing is still unmeasured on purpose (G21).
+
+7. **At a trust boundary, prefer a language with one reading.** A proposal is not JSON. It is eight lines that have
+   exactly one byte form, so there is nothing for two readers to disagree about. The old saved form is being brought
+   to the same standard afterwards, as its own rung.
+
+8. **Count twice.** Both corrections in READER-COURT-0's record came from counting again by a different method. A
+   count that feeds a registered bound deserves the same suspicion as a number that feeds a verdict.
+
+9. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+   not measured. A single grade would add those up, and they do not add.
+
+## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
+
+- The live editor's laws are proven over a mock, and each host run is one run (G14).
+- Between the readbacks and between the samples nothing is witnessed; the save is the exhaustive check (G15).
+- A seal is a hash (G16), and the shell replays the session with its own copy of the fold (G17).
+- The saved form's readers disagreed on hostile input; the remedy is registered and not built (G19).
+- An admission records a claimed proposer and a command line's grant, and nothing about a model (G20).
+- The live loop has no latency number (G21), and two host silences were never explained (G22).
+
+## The one-line retrospective, again
+
+Ten steps, one history, and no second way into the world: every key, every mouse report and the first proposal
+became the same kind of event in the same sealed log, each on a rule that was locked before the host ran it. What
+Part II produced is not a mouse that turns a camera. It is a window whose every picture is the replay of a file.

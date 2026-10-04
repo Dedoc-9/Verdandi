@@ -16,7 +16,8 @@ theorem see [`EPISTEMIC-INVARIANCE.md`](../EPISTEMIC-INVARIANCE.md); for the hon
 
 `Verðandi` is a deterministic 1080p game-rendering studio built over a frozen renderer it does not own. It is the
 second of three norns. `Urðr` — *what has become* — is the certified renderer, frozen at the tag `urdr-oracle-1`
-(commit `4c8c2451…`); it is evidence, not a dependency. `Verðandi` — *what is becoming* — reproduces that renderer's
+(commit `4c8c2451…`) and, for the camera that turns, at `urdr-oracle-2` (commit `ad6d55fe…`); it is evidence, not a
+dependency. `Verðandi` — *what is becoming* — reproduces that renderer's
 pixels bit-for-bit in native std-only Rust, then turns an authored edit into a new authority and an exact
 consequence record. `Ursprung` — *the origin* — is the older studio arc, measured and retired, whose one settled
 lesson is carried in the shell's contract: *a shell that mirrors kernel logic is a second authority.*
@@ -35,7 +36,7 @@ The charter was ratified before the first commit and has not moved since:
     WORKSHOP   owns authored edits · validates before projection · can create new authority · records consequences
     SHELL      owns window / input / presentation · contains no kernel logic · contains no authority mirror
     UI         viewport + HUD = the kernel's framebuffer, digest-pinned; editor panes = shell chrome, off-gate
-    ORACLE     Urðr is frozen evidence (the tag urdr-oracle-1) · not a runtime dependency
+    ORACLE     Urðr is frozen evidence (the tags urdr-oracle-1 and urdr-oracle-2) · not a runtime dependency
 
 The dependencies flow one way, and the negation is enforced as hard as the assertion:
 
@@ -56,7 +57,9 @@ Every subsystem is classified before it is built, on a discipline inherited from
 
 - **CORE** — the only layer that may move committed state. In `Verðandi` the kernel is CORE-adjacent but *mints no
   authority*: it cannot change a cell, a tile, or the camera. The workshop is the true CORE — it alone creates a new
-  authority, and it records the consequence beside it.
+  authority, and it records the consequence beside it. In the live editor the committed state is the session's log:
+  it moves only by an appended event, and the workshop's `sessionwalk` is the replay every saved session is held to
+  (§11, and ghost G17 on where that log is kept while it runs).
 - **VIEW** — consumes CORE state and produces a rendering or a reading. It mints nothing. The kernel's per-frame work
   (a scene in, an index frame and a picture out) is VIEW; so is the HUD.
 - **ALLOCATOR** — hands out bounded, predictable working sets (`O(record)`), free of dynamic runtime scaling.
@@ -87,6 +90,13 @@ Every file is listed with its sha256 and its Urðr git blob id, and the gate run
 evidence the gate reads. No kernel, workshop or shell code depends on it. Since ORACLE-D0 the gate also asks Urðr's own
 `statecanon`, in place, to compose the oracle's third hash, `D_0`, from the oracle's view, and checks it against the
 frozen value — the studio checks it and still mints none of it.
+
+A second tag stands beside the first. `urdr-oracle-2` freezes the **bearing camera**: a heading is an integer id in
+[0, 360000) naming one primitive Pythagorean triple, and at the four cardinals it is the frame the first tag already
+fixes. `kernel/bearing.rs` is its reference, the tag's text with only visibility changed, reproducing all 104
+witnesses; `kernel/bearingfast.rs` is its fast sibling, held to it byte for byte. The pattern is the facing
+camera's, repeated: the turning camera was certified in Urðr first, because nothing here could have held a renderer
+to account outside the four facings.
 
 ---
 
@@ -159,6 +169,13 @@ proven byte-identical on the gate, and only *then* is its speed a separate quest
   proves the blit is an invertible carrier of the kernel's bytes (the blit-hash law).
 - `shell/win32.rs` — the only file that opens a window and reads DWM's composition clock; behind `--cfg
   shell_window`, off-gate.
+- `shell/heading.rs` — the only file of the shell that reaches the bearing kernels: the fast tread for the live
+  frame at a free heading, the reference to recompute it.
+- `shell/liveloop.rs`, `liveinput.rs`, `liveauthor.rs`, `holdwalk.rs`, `simtick.rs`, `tickrun.rs`, `mouselook.rs` —
+  the live editor: the loop, the bindings, the tick (§11).
+- `shell/playback.rs`, `shell/livesession.rs` — the session the loop renders, and its journal, seal and loader.
+- `shell/admit.rs` — the admission seam (§12).
+- `workshop/sessionwalk.rs` — the session-walk's definition and its verifier, rendering with the references only.
 - `verify/verify.py` — the gate: every claim above as a row that can redden; two runs byte-identical or nothing
   landed.
 
@@ -199,3 +216,105 @@ The boundary holds end to end: `SESSION-WALK` proves what is becoming, `SHELL-PL
 exactly that becoming, and `LATENCY-0`/`GAUNTLET` measure how fast it is produced and shown — and every performance
 step survives the same pixel-level oracle, so speed is never traded for correctness and a failed experiment stays
 permanently useful evidence.
+
+Since then the ledger has grown two more arcs, each described below: the **live editor** (`LIVE-LOOP-0` through
+`MOUSE-LOOK-0a`, §11) and **admission** (`ADMIT-0`, built; `READER-COURT-0`, registered; §12 and §13).
+
+---
+
+## 11. The live session — one log, and the window is its replay
+
+The live editor (`shell live-window`, `shell look-window`) closes the cycle the earlier rungs built in halves:
+input, authority, render, present, observe, the next input.
+
+    device ─► tick ─► typed action ─► an event appended ─► replay: W, M, camera, head ─► kernel ─► screen ─► readback
+                                            │
+                                            └─► journal.vsj (flushed before it counts) ─► on Esc: session.json, sealed,
+                                                read back, replayed, and only then counted as saved
+
+Five design decisions carry it.
+
+- **The loop holds no world.** A key, a mouse report or a script becomes a typed event (a move, a look, a cell
+  opened or closed, a tile class painted, a sensitivity change). The event is appended; W, M and the camera are what
+  the log replays to. There is no preview, no pending state and no second copy to drift.
+- **A tick is when; an event is what.** Mouse-look runs on a 64 Hz tick of exactly 15,625 µs: the reports of a tick
+  are summed into one look, then the tick's other inputs apply in arrival order, one command a tick. Ticks are
+  saved and checked for form and are never folded into the head, so the same commands at other ticks reach the
+  same head. All of it is integers; there is no float in a rule.
+- **The fast path renders; the reference certifies.** At one of the four facings a frame is the facing kernel's, as
+  always. At a free heading it is rendered once by the fast bearing tread, and recomputed by the reference: one
+  frame in 64 during the run, off the loop, and every such frame before the session is saved. A save that finds a
+  difference refuses and writes nothing.
+- **Capture is the shell's, not the session's.** Whether the window holds the mouse, has the focus or shows a
+  cursor never becomes an event. Input that arrives while the window is in the background is dropped and counted.
+- **Saved means verified.** The session is written in the workshop's own session-walk format, moved into place
+  atomically, read back from the disk and replayed to every witness before the run reports success. Resuming
+  continues into a new file whose lineage names its parent; the parent is never modified. A crashed run's journal
+  resumes the same way, dropping a torn final record.
+
+What is measured and what is not: the laws above are rows over a mock on every gate; on the owner's host a real
+mouse turned the camera through 1,761 looks with every free-heading frame the reference's. No latency, frame rate
+or feel is claimed (G21), and the screen is read back on a schedule, not at every composition (G15).
+
+---
+
+## 12. Admission — program time and content time
+
+Two different things can change, and they are certified differently.
+
+    program time    the machine changes ──► the gate runs: 218 rows, twice, byte-identical
+    content time    the world changes   ──► the artifact is checked and admitted; the gate does not run
+
+*The gate certifies the machine. ADMIT admits the world's changes.* `ADMIT-0` is the first seam built on that
+split. A proposal is a file in a line language, `VRDNP1`: exactly eight lines, each ended by one line feed, 327 to
+337 bytes — the language's name, the renderer's identity, the bearing kernel's, the parent head, the proposer's
+handle, an operation, a target, a value. Every typed proposal has exactly one byte form, so its digest is the
+sha256 of its bytes and there is nothing for two readers to disagree about.
+
+    bytes ─► size ─► recognize ─► identities ─► load the session ─► anchor ─► duplicate ─► grant ─► authority
+              │          │            │                │               │          │          │          │
+              └──────────┴────────────┴── each a typed refusal that leaves nothing ──────────┴──────────┘
+                                                                                                        │ admitted
+                                             one ordinary edit, appended by the session's own push ◄───┘
+                                             its envelope beside the event, never in the head
+
+Three properties are the design.
+
+- **One recognizer.** It is small, it is the only reader of the language in the program, and the gate holds it
+  against a recognizer written apart, over the corpus and every single-byte mutant of three proposals.
+- **Stale is refused, never rebased.** A proposal names the head it was written against. If the session has moved
+  on, the proposal is refused and nothing is merged or replayed onto the new head.
+- **An admitted proposal is an ordinary event.** The world cannot tell an admitted edit from a typed one: the head
+  folds the edit and nothing of the envelope. The envelope records how the edit arrived, for a reader; it is not
+  authority.
+
+The grant (which operations, which cells, which tile classes) comes from the admitting command line, not from the
+proposal. The process is killed at eight registered points in the gate, and after each the session is either the
+parent untouched or the child whole. What an admission does not record is G20; that nothing here involves a model
+is said there too.
+
+---
+
+## 13. The saved form — one language for everything read back (registered, not built)
+
+Every artifact the program saves and later reads (a session, a journal record's payload, a checkpoint's line, every
+sealed record) is JSON written by one of three writers and read by one of eight readers. On files the tree has
+written they all agree. On hostile bytes they were seen not to (G19). `READER-COURT-0` is registered (`f53017cd`) to
+close that, and its design is the same move ADMIT-0 made, applied to the old language instead of a new one.
+
+- **The language is the writers'.** Not general JSON and not canonical bytes: the bounded language the tree's own
+  writers are permitted to emit. One object and one final line feed; spaces and line feeds alone between tokens; no
+  name twice in an object; integers only, in signed 64 bits, with one spelling; strings in well-formed UTF-8 with
+  one spelling of every character; at most seven levels of objects and arrays, the root object counted as the
+  first.
+- **The verdict belongs to the language.** Bytes are accepted, with a typed value, or refused with one of seven
+  codes and a byte offset: the first byte at which the input stops being the beginning of any document. The offset
+  is defined by the language and the bytes, so no reader owns it and every reader must give the same one.
+- **One reader in production, two at the boundary.** One Rust reader, in one file shared by path, replaces the four
+  parsers. An independent Python reader, with no `json.loads` beneath it, is the sealer's. The court holds them to
+  each other over every single-byte mutant of three registered documents, and holds both to verdicts written into
+  the registration before either exists.
+- **Writers refuse beyond it.** Each writer gives its bytes to the reader before it writes them, so the language is
+  enforced where a file is made and not only where it is read.
+
+Nothing of it is built. Until it is, the saved form is read as it was, and G19 stands as observed.

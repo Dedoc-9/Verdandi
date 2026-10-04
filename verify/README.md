@@ -6,6 +6,40 @@ naming the rowset. A change is landed only when two consecutive runs are byte-id
 logs equal) and the gate reads PASSED. Rows that need `rustc` are SKIPPED without it, count-stable, so the
 rowset digest does not depend on the toolchain being present — only the verdict does.
 
+## Blueprint
+
+The gate is the program's only judge, so its design is about what it may and may not be made to say.
+
+```text
+    verify.py     row(name, fn) in a fixed order ─► PASS, or Red with a reason ─► GATE PASSED | GATE FAILED
+                  RECONCILE  rowset <sha256 of the row names>  <rows> / <fail> / <skipped>
+                  218 rows today, rowset 0b423b279a40c85c
+
+    a row         builds what it tests from source · runs it · compares bytes · then PLANTS a defect and
+                  requires the refusal. A row with no plant that bites is not finished.
+
+    landing       two consecutive passes, their logs byte-identical, GATE PASSED. A third pass with the host's
+                  records present, when a rung reads them.
+
+    preregister.json   38 entries: hypothesis · success · failure · limits · instrument · chain hash.
+                       Locked before the instrument runs. Never edited after it is pushed: a correction is an
+                       amendment entry with its own hash.
+
+    envelope.py   RECORD-0: one writer, one firewall, for every record the tree mints
+    pins/         the goldens Verðandi mints itself (the HUD's, the blit's)
+    the sealers   off the gate, on a named host: witnesses first, then the number, then the envelope
+```
+
+| Invariant | Mechanism | Row |
+|---|---|---|
+| The gate's output is a function of the tree | no clock, no host name and no wall-time inside a row; two passes compared byte for byte | the landing condition |
+| The rowset is what was run | its digest is over the row names in order; a skipped row still counts | the `RECONCILE` line |
+| No record hides a verdict | a recursive scan for verdict-shaped keys; a planted one is refused | `records-firewall` |
+| Two languages seal the same hash | Python recomputes every Rust-written chain hash | `records-twins` |
+| A method is locked before its number | every entry's hash recomputed; an entry with no failure condition is refused a seat | `records-preregistered`, each rung's `*-preregistered` |
+| A sealer cannot seal a malformed run | each sealer is given malformed raws and must refuse them | `*-sealer` rows |
+| A fence is read from the source | a row reads the program's text for what must and must not appear | `*-fence` rows |
+
 Off-gate instruments (wall-clock on a named host) never print inside the gate; they write records beside the
 oracle with the witnesses checked first.
 
@@ -23,3 +57,52 @@ comparison in the reading.
 
 `RUNGS.md` is the ledger: one graded entry per rung, with what it measured, what it does not show, and the
 row that would redden if the claim were false.
+
+## The instruments, off the gate
+
+| File | What it seals, or reads |
+|---|---|
+| `bench.py`, `gauntlet.py`, `gauntlet1b.py`, `gauntlet1c.py`, `rebreakdown1.py`, `locality0.py`, `gauntlet2.py` | the render campaign's host courts, into `kernel/attest/` |
+| `bearingfast.py`, `bearingsweep.py` | BEARING-FAST-0's speed court and its sweep, into `kernel/attest/` |
+| `seal_present.py`, `seal_latency.py`, `latency1.py`, `latency1r.py`, `framesplit.py`, `presentscale.py`, `presentstretch.py`, `allocreuse.py`, `allocreuse1.py`, `presentexact.py` | the present-path courts, into `shell/attest/`; `diagcommon.py` is their shared host flow |
+| `hoststate.py` | HOST-STATE-0 and HOST-STATE-1: the host's state recorded beside a court, read by no rule |
+| `drift.py` | DRIFT-0: the locked court repeated, each run sealed, a descriptive panel and no verdict |
+| `refusallog.py`, `runledger.py` | readers of the shell's two unsealed logs: they validate, count and join, and never write |
+| `liveloop.py` | LIVE-LOOP-0's live walk, counts only |
+| `livesession.py` | a saved live session made a committed record: the seal, the base files, the fold, the lineage, the renderer identity, the workshop's own `sessionwalk verify`, and (ADMIT-0) each admitted edit's envelope |
+| `seal_walk.py`, `seal_session.py`, `seal_sessionwalk.py` | the committed reference walk, session and session-walk under `workshop/attest/` |
+
+## Dev notes
+
+- **How a rung lands.** Court, ratify, preregister in its own commit, build, mutation-test, gate twice
+  byte-identical, deliver as a patch, run on the host, seal, document. The registration is pushed before the build
+  exists, so the method cannot be fitted to the result.
+- **Mutation testing is off the gate and decides whether a row is trusted.** Defects are planted in the program one
+  at a time and every one must turn some row red. The counts are in the ledger (ADMIT-0: 39). A mutant that
+  survives is a missing case, and the case is added before the rung is delivered.
+- **Rows assert the apparatus.** A row checks that the plant bites and the bytes agree. It never asserts a hoped
+  result, and no row reads a wall-clock number.
+- **A registration is text the gate hashes.** The entry's chain hash is recomputed on every pass, so a silent edit
+  to a locked method is a red row and not a judgement call.
+- **Count again.** The gate reads what it is pointed at. Two facts recorded for READER-COURT-0 (the number of JSON
+  parsers, the deepest nesting among the records) were each off by one until they were recounted. Neither was a
+  row's to catch.
+- **The dev harness is not the gate.** Running chosen rows alone can fail a row that depends on an earlier row's
+  outputs (`records-twins` wants the workshop's records present). Only a full pass is a pass.
+
+## Ghosts
+
+In full in [`../docs/GHOSTS.md`](../docs/GHOSTS.md). The ones that live in this folder:
+
+- **The gate and the program have one author.** A row can only catch what its writer thought to plant. Mutation
+  testing widens that and does not close it.
+- **G23.** Where two implementations are held against each other (the envelope's twins, the two recognizers of a
+  proposal, and by registration the two readers of the saved form) one author wrote both from one grammar. Their
+  agreement shows consistency. The cases with verdicts written down beforehand are what stand against a shared
+  mistake.
+- **G19.** These tools read saved-form documents with `json.load` today, which accepts more than the tree's writers
+  emit. READER-COURT-0 is registered to replace that with a strict reader and is not built.
+- **A green pass is not proof by itself.** A stale build directory or a cached bytecode file can make a pass lie.
+  The landing condition is two passes from clean trees, and a number that looks impossible is checked before it is
+  believed.
+- **G5, G10.** Every sealed number is one host; some tails are a handful of samples.

@@ -22,9 +22,17 @@ sealed chain; and `SHELL-PLAYBACK` proves the window shows *exactly* that sealed
 **game layer** — seventeen discrete vertical slices, from level generation through the input membrane, with their
 corpora and suites — sits in `oracle/game/` as frozen evidence from the same tag, passing its own 411 tests in place.
 
-What is *not* yet joined is the loop between them at interactive speed: editing the world **while** the window shows
-it, and seeing the consequence immediately, all through the same sealed representation — and doing it for semantics
-the frozen oracle never certified.
+The loop between the two halves is now joined (this paragraph read otherwise until 2026-10-04, and the route below
+is how it was closed). The **live editor** renders every composition from a session being written as it runs: a key
+or a mouse report becomes a typed event, the event is journaled, the world is the log's replay, and the session is
+saved, verified and resumable (`LIVE-LOOP-0` through `MOUSE-LOOK-0a`, each measured on the owner's host). The camera
+turns to any registered heading, on a renderer held byte for byte to a reference carried from `urdr-oracle-2`. And
+the first **admission** seam is built and measured: `ADMIT-0` recognizes a proposal in a line language or refuses
+it, and admits it as one ordinary edit.
+
+What is *not* yet done: the saved form's readers brought to one verdict (`READER-COURT-0`, registered, not built);
+the design-event stream and a model at the seam (declared, not registered); any measurement of the live loop's
+timing; richer edits than a cell and a tile class; and semantics the frozen oracle never certified.
 
 ---
 
@@ -52,8 +60,10 @@ semantics reaches the screen without passing through a gate.
    reproduce) (PRESENT-STRETCH-0). Reusing the frame's buffers instead of allocating them every frame took 1.6–1.8 ms
    off the envelope (ALLOC-REUSE-0, confirmed). In this loop most of each saving waits at the composition instead. *(G7 — measured; G8 —
    confirmed, NO SEAT; G11 — confirmed.)*
-2. **Can an author edit the live window?** The pieces exist headless (input → typed edit → SESSION-WALK); they are
-   not yet wired into the running present loop with live re-projection.
+2. **Can an author edit the live window?** Yes, since the live rungs: keys walk and edit, a mouse turns the
+   camera, tile classes are painted, and each is a typed event in one saved, verified session (`LIVE-INPUT-0`,
+   `LIVE-SESSION-0`, `LIVE-AUTHOR-0`, `MOUSE-LOOK-0`, each measured on the host). The vocabulary is small on
+   purpose: a cell opened or closed, a tile class painted. What it costs in time is not measured.
 3. **Can the world hold semantics the oracle never certified?** The skybox and filtered VIEW semantics live *beyond*
    the frozen oracle and need the new-semantics route. Physics is different: much of it is already in the tag (see
    below), so the question there is what to carry, not what to invent.
@@ -104,9 +114,9 @@ walking in a live, authorable world
 LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03), and by the owner's ruling what the route builds towards: the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
 ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by the owner's order next after MOUSE-LOOK-0: the admission seam. One strict recognizer for a line language whose accepted bytes are canonical (VRDNP1), an anchor refused when stale, a scope the admitter grants, an admitted proposal an ordinary session event. The gate certifies the machine; ADMIT admits the world's changes — registered (`bdd38593`), built, and measured on the host: the gate passes there and the first admission is sealed
       ↓
-READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — not registered, nothing built
+READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — registered (`f53017cd`), nothing built
       ↓
-DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered
+DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered. Whether a design representation, a design diff or constraints are promoted ahead of DESIGN-EVENT-0 is a question the owner has reserved for its own ruling; until he rules, this order stands
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -166,8 +176,9 @@ Each of these rungs is ratified, preregistered and built in turn; none is claime
 
 ## After BEARING-FAST-0: what evidence is worth buying (the owner's ruling, 2026-10-01)
 
-BEARING-FAST-0 is built and measured, and no live path uses it yet. The owner ruled that the next work is chosen by
-what evidence is worth buying, not by which optimization can be imagined next. The order:
+BEARING-FAST-0 is built and measured, and at the time of this ruling no live path used it; MOUSE-LOOK-0 has since
+wired it into the live editor. The owner ruled that the next work is chosen by what evidence is worth buying, not by
+which optimization can be imagined next. The order:
 
 | # | Work | Why | Where it stands |
 |---|---|---|---|
@@ -1231,11 +1242,11 @@ can be computed deterministically for anything beyond what the grid already says
 language. When a rung is seated from it, the rung registers its own hypothesis, failure condition and limits.
 
 
-### READER-COURT-0 — the saved form's readers brought to one verdict · **chosen** (the owner's courts, 2026-10-04); not registered, nothing built
+### READER-COURT-0 — the saved form's readers brought to one verdict · **registered** (`f53017cd`); nothing built
 The rung after ADMIT-0, by the owner's order. ADMIT-0 made a new language with one reader. This rung hardens the old
 one: the JSON the tree saves and reads back. The disagreement it closes was observed on 2026-10-03 and is recorded in
-ADMIT-0's section above. This section records what was read from the code before the courts, the two courts, and a
-review the owner asked for. Nothing is registered and nothing is built.
+ADMIT-0's section above. This section records what was read from the code before the courts, the two courts, a
+review the owner asked for, and then the registration and the owner's review of it. Nothing is built.
 
 **What was read from the code, before the courts.**
 
@@ -1250,8 +1261,11 @@ review the owner asked for. Nothing is registered and nothing is built.
 - **The corpus is inside a small language.** The 24 session-walk files the Rust readers can meet (committed
   records, the host's sealed records, the host's saved sessions) hold no escape, no fraction, no exponent and no
   duplicate name; 14 hold raw UTF-8. Across all 39 record files of every kind there is no fraction or exponent, and
-  the only escapes are `\"` and `\\`. The deepest shape is 6 levels: a sealed WORKSHOP-1 session record (root,
-  data, log, item, edit, rgb).
+  the only escapes are `\"` and `\\`. The deepest shape is 7 levels: sixteen of the host's sealed measurement
+  records (FRAME-SPLIT-0's is root, data, arms, production, split, phases_us, strips). *Corrected on 2026-10-04:
+  this line first said 6 levels, a sealed WORKSHOP-1 session record (root, data, log, item, edit, rgb). That is the
+  deepest among the session files; the count had missed the measurement records. The recount was made while the
+  registration was drafted, which is why the entry says seven.*
 - **The writers disagree on two characters.** The shell and Python write backspace and form feed as `\b` and
   `\f`. The workshop writes `\u0008` and `\u000c`. The Rust reader refuses `\b` and `\f`, which the shell's own
   writer can emit. No file has ever held either character.
@@ -1326,6 +1340,38 @@ review the owner asked for. Nothing is registered and nothing is built.
 here, outside the gate. **does_not_show.** That a shared reader exists; that the two readers agree on anything; that
 the writers' contract has been derived writer by writer. The registration does that derivation and fixes the
 grammar and its bounds before a line is built.
+
+**The registration (`f53017cd`).** The entry fixes the language, the verdict, the readers, the writers and the court
+before anything is built. Its terms are in [`verify/RUNGS.md`](../verify/RUNGS.md); in short:
+
+- **The language.** A document is one object and exactly one line feed. Between tokens, spaces and line feeds only.
+  No name twice in an object. Integers in signed 64 bits with no leading zero, no minus zero, no fraction and no
+  exponent. Strings in well-formed UTF-8 with one spelling. At most seven levels of objects and arrays, counting
+  those open at once with the root object as the first.
+- **The verdict.** Accepted with a typed value, or refused with one of seven codes and the offset of the first byte
+  at which the input stops being the beginning of any document. The offset belongs to the language, not to a reader.
+- **The court.** 45 boundary cases with their verdicts written into the entry; every single-byte substitution,
+  deletion and insertion of three small registered documents; the registered boundary mutations on every real file.
+- **The limits.** Both readers have one author; the exhaustive court covers three small documents; the raws, the
+  two logs, the registry and the frozen JSON under `oracle/` are not the saved form and are not covered.
+
+**The owner's review of the registration (2026-10-04), before it was pushed.** The entry was first drafted with hash
+`0ecbec22`, applied on the owner's host and gated there, and not pushed. His review locked it point by point: the
+depth of seven, provided the counting convention is explicit; the writers checking their own bytes, with the
+format's definition standing above both the reader and the writers; the reader in `kernel/` as a shared file that
+is no part of the renderer's identity; one string spelling; spaces and line feeds as the only whitespace; the first
+and the last place of each kind for large files; the raws, the logs and the registry left out; and ADMIT-0's pin of
+the old reader's text moving here (*historical pin ≠ current implementation*, and history is not rewritten). He
+asked that the prototype's result stay labelled a compatibility measurement taken outside the gate, and not be read
+as equivalence with Python. And he set one condition for the push: the depth convention explicit, and the court
+showing six levels accepted, seven accepted and eight refused at the exact offset. The convention and the seven and
+eight cases were in the draft. The six was not. The entry was amended while its commit was still unpushed, as the
+rules allow, and its hash is now `f53017cd`. *0110: LOCK / PUSH. No redesign.*
+
+**The next question, reserved.** The owner asked whether DESIGN-EVENT-0 remains the next rung after this one, or
+whether a design representation, a design diff and constraints are promoted ahead of it, as the review of the
+development environment below would have it. His words: *I would not silently reorder that based on the 15-pivot
+review. That deserves its own ruling.* Nothing is reordered here. The locked order stands until he rules.
 
 ### The development environment — fifteen pivots · **declared** (the owner's, 2026-10-04); not registered, nothing built
 A review the owner brought on 2026-10-04 and asked to have recorded: Verðandi judged as a research-grade interactive

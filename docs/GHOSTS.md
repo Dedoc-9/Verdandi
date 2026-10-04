@@ -10,7 +10,10 @@ specific measurement or change that would lay it to rest. Nothing here is a defe
 edges of what the gate is designed to prove. `integrity ≠ truth`, and this file is where that motto is paid for.*
 
 The grades borrow the claim ladder: **ESTABLISHED / MEASURED / UNDERDETERMINED / SPECULATIVE / NOT_MEASURED**, plus
-**SOUND?** for the one memory-model question.
+**SOUND?** for the one memory-model question and **OBSERVED** for something seen once, outside the gate.
+
+**Where they sit.** G1–G6 are the renderer's. G7–G13 are the present path's. G14–G23 came with the live editor and
+admission. Each folder's README names the ones that live in it.
 
 ---
 
@@ -259,6 +262,12 @@ on, so what that court can adopt is an entry contract: the renderer a future liv
 court will measure it. It will render through `LoopRenderer`, adopted by ALLOC-REUSE-1 LOCK. Until then, read "the
 shell's frame" in these courts as "the render-inclusive frame of the modelled loop".
 
+**Since the live rungs.** Half of this ghost is laid. A loop ships: from LIVE-LOOP-0 on, the live windows render
+every composition from the current state, through `LoopRenderer` at the four facings and through BEARING-FAST-0's
+tread at a free heading. The other half stands, and is now sharper: that shipped loop has never had its phases
+timed. The courts' numbers are still the modelled loop's, and nothing licenses carrying them to the live editor,
+which also drains input, closes ticks, journals events and reads the screen back (G21).
+
 ---
 
 ## G13 — the same court can run 40–60% slower on another run the same day, and the cause is unmeasured · MEASURED (the drift); UNDERDETERMINED (the cause)
@@ -290,13 +299,174 @@ then, read absolute milliseconds as belonging to their own run, and let within-r
 
 ---
 
+## G14 — the live editor's laws are proven over a mock, and the host runs are few · ESTABLISHED (the mock); MEASURED (each host run, n = 1)
+
+Every law of the live editor is a row over a mock surface: a scripted mouse, scripted keys, scripted focus, and a
+clock that is the composition count. Those rows run on every gate, and they prove the loop's logic: one command a
+tick, the capture rule, the byte check before every present, the save's recomputation. What they cannot prove is
+what Windows delivers. That is the host's, and the host's evidence is a handful of runs, each sealed as its own
+record and each one run: LIVE-LOOP-0 one walk, LIVE-INPUT-0 three, LIVE-SESSION-0 two saved walks, LIVE-AUTHOR-0
+four, HOLD-WALK-0 one held walk, MOUSE-LOOK-0 two, ADMIT-0 one admission and one stale refusal. Several host paths
+have never been exercised at all: recovery from a real crash, a refused edit, coalesced repeats.
+
+**Exorcism.** More runs, each sealed, and the unexercised paths walked on purpose (kill a live run and resume its
+journal; hold a key into a composition that already admitted one). A scripted host driver was considered and is
+recorded as not part of LIVE-SESSION-0; it would trade a real hand for repeatability and would be its own rung.
+
+---
+
+## G15 — between the checks nothing is witnessed · ESTABLISHED (as a limit)
+
+The live loop compares the bytes it hands the present call with a reference on every composition. Past that call
+it samples. The composed screen is read back on the first composition after a change and then at one composition
+in 75. A frame at a free heading is rendered by the fast tread and recomputed by the reference, off the loop, at
+one frame in 64; only the save recomputes every such frame, and it refuses the save if one differs. So a picture
+that was wrong on the glass for a few compositions between readbacks would not be seen, and a fast-path defect that
+struck only unsampled frames would be caught at the save and not while the run was live.
+
+**Exorcism.** The periods are registered constants and tightening either is a registered change with a measured
+cost. The stronger remedy for the screen is an independent witness (capture hardware, or a second reader of the
+composed surface), which the route names for PRESENT-1: the GDI readback cannot be assumed to survive a move off
+GDI.
+
+---
+
+## G16 — a seal is a hash, and durability is the file system's promise · ESTABLISHED (as a limit)
+
+A saved session's seal is the sha256 of its bytes before the seal. It shows the file is whole. It does not show who
+wrote it: anyone who can write the file can reseal it, and what catches a forgery is the replay (a forged event
+does not reproduce its witness) and the committed RECORD-0 copy, not the seal. A session's head is likewise a
+single-writer chain's integrity and not its authorship. And "journaled before it counts" means flushed: a disk that
+acknowledges a flush it did not perform is outside every claim here, and the crash courts end a process at
+registered points; they do not cut the power.
+
+**Exorcism.** A signature, and with it a key, an identity and a threat model, none of which the program has or
+claims. Until a rung registers one, read "sealed" as "whole", never as "authentic".
+
+---
+
+## G17 — the shell replays the session with its own copy of the workshop's fold · ESTABLISHED (read from the code)
+
+The charter says the shell contains no authority mirror. The live editor keeps the session in the shell's process
+(`playback::LiveSession`): the log, and by replaying it, W, M, the camera and the head. That replay is a second
+implementation of the rule `workshop/sessionwalk.rs` defines, with the fold's constants written twice. It was
+declared when SHELL-PLAYBACK landed and it is now load-bearing. What holds the two together is not shared text.
+It is that every saved session is replayed by the workshop's own tool before it is sealed as a record, that the
+gate replays each scripted session through both, and that the workshop renders with the reference kernels only, so
+the check shares neither the fold's text nor the renderer with the thing checked.
+
+**Exorcism.** Not a clear one. Sharing one text of the fold by path, as READER-COURT-0 is registered to do for the
+reader beneath it, would remove the second copy and with it the redundancy that makes the cross-check worth
+something. Which is wanted is the owner's to rule, and nothing on the route changes it.
+
+---
+
+## G18 — the fast bearing path beyond its court · ESTABLISHED (the court); DECLARED (the angle bound)
+
+BEARING-FAST-0 holds the fast tread to the reference byte for byte over a court set of 1,972 cameras, at every
+thread count in its threads set, and on the host over a sweep of 622,440 frames. Outside those sets agreement is
+not compared; it rests on the exact arithmetic the gate bounds and checks for overflow. The live editor then
+samples it (G15) and recomputes every saved frame, which is evidence about the sessions actually walked and
+nothing wider. The bound on how far a registered heading's angle lies from its nominal millidegree is declared, as
+it is in Urðr.
+
+**Exorcism.** The natural first theorem, named in the roadmap: for every admissible row, camera and scene, the
+exact walker produces the same pixel inputs as the reference. Until then, every free-heading frame of every saved
+session is recomputed, which makes the claim per-session and exact.
+
+---
+
+## G19 — the saved form has many readers, and on hostile input they disagreed · OBSERVED (2026-10-03, outside the gate)
+
+Everything the tree saves and reads back is JSON, and it is read by four Rust parsers (one text copied into three
+files, and a different one in `workshop/edit.rs`) and four Python tools that use `json.load`. Given 19 hostile
+inputs, the Rust reader and Python's differed on 12, and on three the Rust reader returned no verdict at all (two
+panics and one abort). The three writers also
+spell two control characters two ways, and the integer bound belongs to one reader and to no writer. None of this
+touches a file the tree has ever written: every committed record, the host's records and its saved sessions lie
+inside a small common language. It is a seam, and it sits directly under ADMIT-0, which reads the session through
+it.
+
+**Exorcism.** READER-COURT-0, registered (`f53017cd`) and not built: the saved form as one bounded language, one
+Rust reader shared by path, an independent Python reader with no `json.loads` beneath it, the same code and the
+same byte offset from every reader on anything outside the language, and every writer checking its bytes before it
+writes them. Until it is built this ghost stands exactly as observed.
+
+---
+
+## G20 — what an admission does not record · ESTABLISHED (as a limit)
+
+ADMIT-0 admits a proposal as one ordinary edit and writes an envelope beside it: the language, the proposer's
+handle, the proposal's digest, the two identities, the two heads, the grant. Four things it is not. The handle is
+64 hex digits the proposal claims; nothing authenticates it. The digest cannot be recomputed later, because the
+proposal's bytes are not kept. The grant is whatever the admitting command line said; it is recorded, not judged.
+And the envelope is the admitting shell's own record under a seal that is a hash (G16). Nothing here shows that a
+model can write a proposal worth admitting, or any safety property of a system that includes one: no model is in
+the tree, and the gate wrote every proposal the rows admit. The vocabulary is a cell opened or closed and a tile
+class painted, and no more.
+
+**Exorcism.** None of these is a patch; each would be registered as its own rung, and none is: a proposal's bytes
+kept, so that its digest can be recomputed; an authenticated proposer, which needs G16's signature; a model at the
+seam, which is LIVE-AI-EDIT-0, declared and not registered.
+
+---
+
+## G21 — the live loop has no latency, frame-rate or feel number · NOT_MEASURED
+
+By design an input is applied up to one tick and one composition after it is drained, and its tick is the tick it
+was drained in, not the moment the device moved. What that costs on the screen has not been measured. Nor has what
+a look costs phase by phase, how often the loop fell behind the tick schedule on the host, or why. For admission the
+run ledger's wall-clock stamps give two intervals, 44.2 s for the first admission and 16.3 s for the stale refusal,
+one run each; they are observations, no rule reads them, and what an admission costs is not measured. The
+present-path courts (G7–G13) measured a different,
+modelled loop and their numbers do not carry over (G12).
+
+**Exorcism.** The presentation and latency measurement the route places after mouse-look: input to photon in
+separate segments, each with its own instrument, registered before its number. Frame rate alone is no claim.
+
+---
+
+## G22 — two host observations have no explanation · UNDERDETERMINED
+
+In LIVE-INPUT-0's first host run no key press reached the window: 31,640 compositions, every readback exact, no
+event. In MOUSE-LOOK-0's first host run no mouse report reached the loop: the keys walked on the tick and no look
+was made. Each later run worked. For the mouse, the window's read of raw input was changed between the runs and
+counters were added, and nothing shows the old read was what failed, or that the mouse was moved in the first run
+at all. For the keys, keyboard focus is the leading candidate (the window is topmost, so it sits on top whether or
+not it holds the keyboard) and it stays a candidate, because that run recorded no focus state.
+
+**Exorcism.** These cannot be settled after the fact; the runs left consoles and counts. What exists now is the
+means to see a recurrence: the window counts the raw input it receives before it reads it, and every run leaves a
+ledger line. A recurrence would be a recorded event with counters beside it and not a recollection.
+
+---
+
+## G23 — two implementations by one author agree · ESTABLISHED (as a limit)
+
+Several of the program's strongest checks are a pair held against each other: the envelope written in Python and in
+Rust, the fold in the workshop and in the gate's Python twin, the recognizer of VRDNP1 and the gate's independent
+one over 513,792 single-byte mutants, and by registration the two readers of the saved form. One author wrote both
+halves of each from one description. Their agreement shows the two are consistent with each other. It cannot show
+that the description was right, and a misreading shared by both would pass every such row.
+
+**Exorcism.** What stands against a shared mistake is what neither implementation produced: cases whose verdicts
+are written into the registration before either reader exists, offsets computed from where a mutation was placed
+and not by a reader, the writers' own output as a positive witness, and the frozen oracle, which was computed by a
+different program at a different time. A second author or a mechanized grammar would close more of it and neither
+is on the route.
+
+---
+
 ## The disposition
 
 None of these ghosts is load-bearing for a claim the program actually makes. G1 and G3 are execution refinements
 with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured and reproduced (twice), and
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
 and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a careful reader must carry, recorded so they are carried on
-purpose.
+purpose. Of the live editor's, G14, G15, G16, G18, G20 and G23 are limits of method, stated so no claim is read
+past them; G17 is a design tension the charter names and the rows hold in check; G19 is a seam with a registered
+remedy that is not built; G21 is a measurement not yet taken; G22 is two things that happened once and were never
+explained.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously
 as a win, and a hypothesis is never dressed as a measurement.

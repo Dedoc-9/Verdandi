@@ -6,7 +6,9 @@ beside `Urðr`, what has become. It is a deterministic 1080p game-rendering stud
 low-latency presentation path — the target stated as what can be measured, never as a claim. Its native
 kernel reproduces the pixels of the certified renderer in [`Dedoc-9/Urdr`](https://github.com/Dedoc-9/Urdr)
 bit for bit; its workshop turns an authored edit into a new authority and an exact consequence record; its
-shell owns the window and nothing else.
+shell owns the window, the input and the presentation. Since the live rungs the shell also carries the session
+being authored: one append-only log whose replay is the world on the screen, journaled as it grows, saved on
+Esc, and verified by the workshop.
 
 **Author:** Daniel J. Dillberg · **Contact:** [bigdilly95@gmail.com](mailto:bigdilly95@gmail.com)
 **License:** [AGPL-3.0-only](LICENSE)
@@ -67,51 +69,143 @@ The decision rule fired: the studio's first row already existed. The old studio 
 was measured too, and what it settled is recorded in the shell's contract: a shell that mirrors kernel logic
 is a second authority.
 
+## The blueprint
+
+*The design on one page: the problem, what is and is not a goal, how the parts fit, and for each invariant the
+mechanism that holds it and the row that goes red when it fails. The long form is
+[`docs/PROGRAM.md`](docs/PROGRAM.md).*
+
+**The problem.** A picture certified in one repository has to become a place where a world is authored while it is
+shown, without the picture or the history ever resting on trust. Three things make that hard. A faster renderer is a
+different program from the certified one. A live window has state a file does not have: keys, a mouse, a clock,
+focus, a compositor. And whatever proposes a change (a hand today, a model one day) is outside the authority and has
+to stay there.
+
+**Goals.**
+
+| # | Goal | How it is held |
+|---|---|---|
+| 1 | The same picture | The kernel reproduces the oracle's witnesses bit for bit. Every faster path is a sibling held byte for byte to a frozen reference that is never edited for speed. |
+| 2 | One history | Every accepted change (a step, a look, an opened cell, a painted class, an admitted proposal) is one typed event in one append-only log. The world on the screen is that log's replay. |
+| 3 | A history that outlives the run | An event is journaled before it counts. A session is saved, read back and verified before it counts as saved, and it replays to the same head on another machine. |
+| 4 | Proposals admitted, never executed | A proposal is bytes in a line language with one recognizer. It is refused with a typed reason or it becomes one ordinary event. |
+| 5 | Claims that carry their limits | Every record states its grade, what it certifies and what it must not be read as. A method is hash-locked before its number. |
+
+**Not goals.** A general game engine. A latency, frame-rate or feel claim: timing is measured off the gate, on a
+named host, in separate segments, and input to photon is not claimed. Running what a proposer writes. A signature: a
+session's seal is a hash. A second platform's window.
+
+**The parts.** Two times, kept apart: the gate certifies the program, and admission changes the world without
+running the gate.
+
+```text
+  PROGRAM TIME    verify/verify.py: 218 rows, two passes byte-identical, or nothing landed
+
+      oracle/   Urðr, frozen at two tags
+         │      witnesses · corpus · the heading vocabulary
+         ▼
+      kernel/   the frozen references ──► their fast siblings, byte for byte
+         ▲                                     │ framebuffer
+         │ calls                               ▼
+      workshop/  edit · session ·           shell/  window · input · tick · present · readback
+                 sessionwalk verify ◄────────────── the live session · journal · seal · admit
+                                  the saved file
+
+  CONTENT TIME    a change to the world is admitted; the gate is not run for it
+
+      key · mouse · script · proposal (VRDNP1)
+         │      bound, or recognized, to a typed action
+         ▼
+      one append-only log ──────────────► journal.vsj   a record is flushed before it counts
+         │      replay: W, M, the camera, the head
+         ▼
+      kernel render ──► composite ──► SetDIBitsToDevice ──► the composed screen, read back
+         │      Esc
+         ▼
+      session.json   sealed; verified before it counts ──► sessionwalk verify · the sealer · a record
+```
+
+**The invariants.** Each is a property a part owes, the mechanism that holds it, and a row that goes red.
+
+| Invariant | Mechanism | Row |
+|---|---|---|
+| The kernel's pixels are the oracle's | both witnesses recomputed against the tags on every gate | `kernel-oracle`, `kernel-corpus`, `bearing-oracle` |
+| A fast path never moves a pixel | byte-identity to the frozen reference at every tread, partition and thread count | `gauntlet2-threaded-equiv`, `bearingfast-court` |
+| A read cannot edit the authority | the borrow checker: the planted edit does not compile | `membrane-wall` |
+| The bytes handed to the screen are the kernel's | the blit-hash law; the composed screen read back | `shell-blit-law`, `presentexact-court` |
+| Order is meaning, batching is not | one fold over the log; a checkpoint and a full replay reach one head | `sessionwalk-interleave`, `sessionwalk-batch-invariance` |
+| A live session is a file the workshop verifies | save, read back, replay, and only then count it saved | `livesession-save`, `livesession-recover` |
+| A tick is recorded and is never authority | the same commands at other ticks save the same events and head | `simtick-equivalence` |
+| A frame at a free heading is the reference's | every such frame recomputed before the save, one in 64 during the run | `simtick-certify`, `mouselook-sample` |
+| A proposal has one reading | one recognizer, held against an independent one over every single-byte mutant of three proposals | `admit-reader`, `admit-single` |
+| A stale proposal is refused, never rebased | its parent head must be the session's | `admit-anchor` |
+| No verdict is stored as data | one firewall, written in two languages | `records-firewall`, `records-twins` |
+| The method precedes the number | hash-locked entries, each with a failure condition | `records-preregistered` |
+
+What these rows do not reach is in [`docs/GHOSTS.md`](docs/GHOSTS.md), and it is part of the design.
+
 ## What each folder holds
+
+Each folder's README is its own blueprint: the contract, the parts, the invariants, dev notes, ghosts.
 
 | Folder | Contract |
 |---|---|
-| `oracle/` | frozen evidence from Urðr at `urdr-oracle-1`: the contract record, the corpus inputs the kernel is compared against, and (`oracle/game/`, GAME-0) Urðr's game layer with its own suites; and at `urdr-oracle-2` (BEARING-0) the bearing camera's record and its registered table of headings. Read-only by convention; a change here is a new oracle, named. |
-| `kernel/` | the deterministic per-frame work: a scene in, an index frame and a picture out, two witnesses. std-only. Since BEARING-0 also the reference bearing kernel (any registered heading), which no live path uses yet. |
-| `workshop/` | the design loop: an edit in, a new authority out, a consequence record beside it. Validates before it projects. |
-| `shell/` | the window: blit the kernel's framebuffer, pump input, time the present path. Owns no truth. |
-| `verify/` | the gate: every claim above as a row that can redden; two runs byte-identical or nothing landed. |
+| [`oracle/`](oracle/README.md) | frozen evidence from Urðr at `urdr-oracle-1`: the contract record, the corpus inputs the kernel is compared against, and (`oracle/game/`, GAME-0) Urðr's game layer with its own suites; and at `urdr-oracle-2` (BEARING-0) the bearing camera's record and its registered table of headings. Read-only by convention; a change here is a new oracle, named. |
+| [`kernel/`](kernel/README.md) | the deterministic per-frame work: a scene in, an index frame and a picture out, two witnesses. std-only. Since BEARING-0 also the reference bearing kernel (any registered heading), and since BEARING-FAST-0 its fast sibling, which the live editor renders through at a free heading (MOUSE-LOOK-0). |
+| [`workshop/`](workshop/README.md) | the design loop: an edit in, a new authority out, a consequence record beside it. Validates before it projects. Its `sessionwalk verify` is the replay every saved live session is held to. |
+| [`shell/`](shell/README.md) | the window: present the kernel's framebuffer, pump input, read the composed screen back. Since the live rungs also the loop, the tick, the live session's log with its journal and seal, and the admission seam. It renders nothing itself. |
+| [`verify/`](verify/README.md) | the gate: every claim above as a row that can redden; two runs byte-identical or nothing landed. Beside it the registry of methods and the off-gate sealers. |
 
-## The sequence (each rung stands on one already measurable)
+## The sequence, as built
 
-    CREATE REPO ── the charter (c3cda5a)
+Each rung stands on one already measurable. The ledger, [`verify/RUNGS.md`](verify/RUNGS.md), has every rung's
+rows, grade, limits and falsifier; this is the order and the state.
+
+    FOUNDATION      the charter (c3cda5a) · KERNEL-0 the placement reproduces the oracle · WORKSHOP-0/0b an
+         │          edit is a new authority, three witness grains · HUD-0 the overlay is a frame · RECORD-0
+         │          the envelope, the firewall, preregistration · SHELL-0/0a the blit-hash law, a real window ·
+         │          MEMBRANE-0 the one-way law as a compile error · TEXT-0 the level as text
          │
-    KERNEL-0 ──── the placement reproduces the oracle natively, against the tag
+    AUTHORING       WORKSHOP-1 the log is the history, undo is replay · INPUT-0 a walk replays headless ·
+         │          SESSION-WALK moving and editing in one sealed chain · SHELL-PLAYBACK the window shows
+         │          exactly that chain
          │
-    WORKSHOP-0 ── edit → new authority → witness diff (0/0b: three witness grains, a recorded signature)
+    RENDER SPEED    GAUNTLET-0 measure first (emit 695‰) · 1a/1b/1c the divide collapsed, then per row ·
+         │          RE-BREAKDOWN-1 re-measure · LOCALITY-0 the blocked floor layout, locked · GAUNTLET-2
+         │          partition invariance, then threads: T=8 locked, about 3.3× the baseline, every tread
+         │          byte-identical
          │
-    HUD-0 ─────── the overlay is a frame: reticle, band bar, facing plate, minimap — pinned, index-free
+    PRESENT PATH    LATENCY-0/1/1a/1R does the speed reach the glass (only out of phase) · FRAME-SPLIT-0 no
+         │          single dominant phase · PRESENT-SCALE-0, PRESENT-STRETCH-0, ALLOC-REUSE-0/1 diagnostics
+         │          and one adoption · PRESENTATION-CHOICE-0 the certified picture 1:1 · PRESENT-EXACT-0 the
+         │          composed screen read back exact, locked · HOST-STATE-0/1, REFUSAL-LOG-0, RUN-LEDGER-0,
+         │          REFUSAL-WHY-0/1 what a run leaves behind · DRIFT-0 sitting 1 of 3
          │
-    RECORD-0 ──── every record carries claim_class, scope, forbidden readings and a chain hash, read
-         │        through one firewall in two languages; rungs preregister a failure condition
-         │        (a fork of the owner's executable-epistemics)
-    SHELL-0 ───── a real window (hand-rolled Win32, zero crates), frame → composited timed;
-         │        the shell hashes what it blits; born under the envelope, preregistered
-         │        (0a: the blit-hash law, headless & gated here; the window runs on the host)
-    MEMBRANE-0 ── the one-way law as a compile-time wall (a row whose PASS is rustc refusing a plant) [landed]
+    EVIDENCE        GAME-0 Urðr's game layer carried, its 411 tests passing in place · ORACLE-D0 the third
+         │          hash recomputed by Urðr's own code
          │
-    TEXT-0 ────── the level as text, content split from provenance [landed]
+    THE LIVE LOOP   LIVE-LOOP-0 every composition rendered live · LIVE-INPUT-0 a key press is a session
+         │          event · LIVE-SESSION-0 the session saved, resumed, recovered · LIVE-AUTHOR-0 the thing
+         │          authored is what the next frame renders · HOLD-WALK-0 held keys walk the grid
+         │                                                            each measured on the owner's host
          │
-    WORKSHOP-1 ── the log is the history, undo is replay, the session is a hash-chained file [landed]
+    THE TURN        BEARING-0 the bearing camera of urdr-oracle-2 carried, its reference placed ·
+         │          BEARING-FAST-0 made fast, byte for byte (worst-camera p99 3,716 µs on the host; the
+         │          sweep 622,440 of 622,440 equal) · SIM-TICK-0/0a the mouse-look rules as integer law,
+         │          windowless · MOUSE-LOOK-0/0a a real mouse on those rules: on the host, 13,931 raw
+         │          reports, 1,761 looks, every free-heading frame the reference's
          │
-    INPUT-0 ───── shell input → typed command → new camera; the command log replays headless
+    ADMISSION       ADMIT-0 a proposal in VRDNP1 recognized or refused, admitted as one ordinary edit; the
+         │          first admission sealed on the host, its head computed beforehand
          │
-    LATENCY-0 ─── receipt → kernel → composited, two instruments (DWM timing beside PresentMon);
-         │        never input-to-photon
-    GAUNTLET-0 ── the strip cache: reuse strips + frame across frames with a still camera (proven safe)
-         │
-    GAUNTLET-1 ── the incremental floor cast: faster AND the same witnesses
-         │
-    GAUNTLET-2 ── columns in parallel, invariant under any column partition and thread count
-         │
-    GAME-0 ────── Urðr's game layer carried verbatim from the same tag; its own 411 tests pass in place
-         │
-    MATERIAL-0 ── a picture becomes a material under a gate
+    registered      READER-COURT-0 the saved form as one bounded language, every reader one verdict
+         │          (`f53017cd`; nothing built)
+         ⋮
+    declared        DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview (the owner's order; none registered);
+                    the presentation and latency measurement; PRESENT-1; a design language with many editors
+
+The order first ratified named a strip cache as GAUNTLET-0 and ended in MATERIAL-0, a picture becoming a material
+under a gate. GAUNTLET-0 became a measurement instead, and MATERIAL-0 is not seated.
 
 `D_0`, the third hash in the oracle, is Urðr's composed CORE identity (level, entity, RNG stream, action log)
 and is evidence, not the studio's: it is recomputed at gate time by Urðr's own `statecanon`, in place in the
@@ -142,6 +236,11 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/shell.exe show --level ... --camera 34,28,W                    # the certified picture 1:1, the screen read back; Esc closes
     verify/build/shell.exe show-playback --session workshop/attest/sessionwalk-demo.json   # a sealed session, 1:1, each frame read back
     verify/build/shell.exe look-window                          # MOUSE-LOOK-0: the live editor with the mouse — move it to turn, W/S walk, A/D strafe, PgUp/PgDn/Tab the sensitivity; captured while the window is in the foreground; Esc ends and saves
+    verify/build/shell.exe live-window                          # LIVE-AUTHOR-0: the live editor on keys alone — walk, Space opens or closes the faced cell, 1-5 paint a tile class; Esc ends and saves under build/sessions/
+    verify/build/shell.exe live-window --resume build/sessions/<run_id>/session.json   # LIVE-SESSION-0: continue a saved session (or a crashed run's journal.vsj) into a new file; the parent is never modified
+    rustc -O workshop/sessionwalk.rs -o verify/build/sessionwalk   # the workshop's session-walk tool
+    verify/build/sessionwalk verify --session build/sessions/<run_id>/session.json    # the workshop's own replay of a saved session: every witness and the head
+    python verify/livesession.py --host $env:COMPUTERNAME --session build/sessions/<run_id>/session.json   # off-gate: seal a saved session as a record under shell/attest/
     rustc -O workshop/edit.rs -o verify/build/edit           # the workshop
     verify/build/edit record --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles \
         --camera 34,28,W --edit cell:31,27,. --out-dir out --name cell
@@ -165,13 +264,44 @@ formalism proves. First applied by `LOCALITY-0`, whose court fired **Exit 1** (b
 floor layout, byte-identical and faster, was `LOCK`ed as the accepted single-thread `emit` and sealed as GAUNTLET-2's
 hard baseline, with the linear-fetch DDA retained verbatim as an immutable reference witness.
 
+## Dev notes
+
+Short forms of what the work taught. The long forms are in [`docs/DEVNOTES.md`](docs/DEVNOTES.md).
+
+- **Measure, then choose.** The most useful rungs committed no optimization: GAUNTLET-0 named the target,
+  RE-BREAKDOWN-1 named the next one, FRAME-SPLIT-0 named none and promoted nothing.
+- **Windowless first.** Every law of the live editor was proven with no window in the proof (a mock surface, a
+  scripted mouse, a counted clock) before a real window ran it. The host run then tests the host, not the law.
+- **The first host run is an instrument.** LIVE-INPUT-0's first run received no key press; MOUSE-LOOK-0's first run
+  received no mouse report. Each produced an amendment or a recorded unknown, never a patched claim.
+- **Durability before vocabulary.** The session was made a saved, verified file before authoring grew, so every
+  later host walk is an artifact another machine replays and not a transcript.
+- **Mutation-test the rows.** A row is trusted after planted defects in the program each turn it red. Mutants that
+  survived became new cases (ADMIT-0: a range fault with a trailing byte; an envelope on a move).
+- **Count the readers.** Reading the code for READER-COURT-0 found four JSON parsers where three were believed,
+  and a count of nesting depth that was wrong by one. Both were found by counting again, not by a failing row.
+
+## Ghosts
+
+What the gate does not prove is stated, graded and given the measurement that would settle it, in
+[`docs/GHOSTS.md`](docs/GHOSTS.md). The ones a reader should carry from this page:
+
+- Every wall-clock number is one host and one corpus.
+- The live window's laws are proven over a mock; the host runs are few, and each is one run.
+- The screen is read back at one composition in 75; a free-heading frame is checked during a run at one in 64, and
+  exhaustively only at the save.
+- A session's seal is a hash. It shows the file is whole, not who wrote it.
+- The shell replays the session with its own copy of the workshop's fold; the two are held together by rows and by
+  the workshop verifying every saved file.
+- No latency, frame-rate or feel claim is made for the live loop, and nothing is claimed about a model.
+
 ## Reading further
 
 | Document | What it holds |
 |---|---|
-| [`docs/PROGRAM.md`](docs/PROGRAM.md) | the program in depth — the charter, the four layers, the frozen oracle, the RECORD-0 envelope, preregistration, the two-court rule, and how a frame flows |
-| [`docs/GHOSTS.md`](docs/GHOSTS.md) | what the gate does *not* prove — every unproven assumption, caveat and soundness question, each graded and given the measurement that would settle it |
-| [`docs/DEVNOTES.md`](docs/DEVNOTES.md) | dev notes and the retrospective on the `GAUNTLET-1c → LOCALITY-0 → GAUNTLET-2` campaign — what each court found, the process rhythm, the lessons |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | the sequenced, falsifiable path toward a live, authorable world (`LATENCY-1`, `PRESENT-1`, interactive capture, `SEMANTIC-0`, `MERGE-0`, …) |
-| [`verify/RUNGS.md`](verify/RUNGS.md) | the terse ledger — every seated rung, its rows, its grade, its falsifier |
+| [`docs/PROGRAM.md`](docs/PROGRAM.md) | the program in depth: the charter, the four layers, the frozen oracle, the RECORD-0 envelope, preregistration, the two-court rule, how a frame flows, the live session, admission, and the saved form |
+| [`docs/GHOSTS.md`](docs/GHOSTS.md) | what the gate does *not* prove: every unproven assumption, caveat and soundness question, each graded and given the measurement that would settle it |
+| [`docs/DEVNOTES.md`](docs/DEVNOTES.md) | dev notes: the optimization campaign (`GAUNTLET-0` to the `GAUNTLET-2` lock), the present-path courts, and the live campaign (`LIVE-LOOP-0` to `ADMIT-0`) — what each court found, the process rhythm, the lessons |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | where the program stands and the sequenced, falsifiable route: the live loop (built), admission (ADMIT-0 built, READER-COURT-0 registered), the declared design-event stream, and the presentation work beside it |
+| [`verify/RUNGS.md`](verify/RUNGS.md) | the ledger: every seated rung, its rows, its grade, its limits, its falsifier |
 | [`EPISTEMIC-INVARIANCE.md`](EPISTEMIC-INVARIANCE.md) | the author's isolation theorem, and the honest limits of its own formalism |

@@ -4377,6 +4377,137 @@ admitted event's head is not the key-made edit's, if a forged envelope passes an
 continuation drops an envelope. `admit-fence` goes red if the seam reaches a process, a socket, the gate or the
 JSON reader's text.
 
+## READER-COURT-0 — preregistered: the saved form is one bounded language, and every reader gives one verdict (method locked `f53017cd`; nothing built)
+
+**Why.** ADMIT-0 made a new language with one reader. The old language, the JSON the tree saves and reads back, has
+four Rust parsers (one text copied into `shell/playback.rs`, `workshop/sessionwalk.rs` and `workshop/session.rs`,
+and a different one in `workshop/edit.rs`), four Python readers on `json.load`, and three writers with three
+layouts. On 2026-10-03 the Rust reader and Python's were given 19 hostile inputs and differed on 12; on three the
+Rust reader returned no verdict (ADMIT-0's section, and [`docs/ROADMAP.md`](../docs/ROADMAP.md)). ADMIT-0 reads the
+session through that reader. This rung is next by the owner's order, and its two courts (2026-10-04) are recorded in
+the roadmap.
+
+**The method (`f53017cd`), as registered.**
+
+- **The language** is what the tree's registered writers are permitted to emit, and nothing wider. A document is
+  one object followed by exactly one LF; a journal record's payload is one object and nothing else. Between tokens
+  there may be spaces and LFs only. No name occurs twice in an object. An integer is `0`, or an optional `-` and a
+  digit 1–9 followed by digits, within signed 64 bits: no leading zero, no minus zero, no fraction, no exponent. A
+  string is well-formed UTF-8 with one spelling: `\"` `\\` `\b` `\f` `\n` `\r` `\t`, and `\u00XX` in lower-case hex for
+  the other characters below U+0020 and for nothing else. Strict RFC 8259 and canonical bytes are both rejected.
+- **Depth.** Objects and arrays nest at most seven deep. The count is of the objects and arrays open at once, the
+  root object counted as the first; a string, an integer, `true`, `false` or `null` opens no level.
+- **The verdict** on any bytes is ACCEPTED with a typed value (compared as the sha256 of its RECORD-0 canonical
+  JSON), or REFUSED with a code and a byte offset. The codes: `READER-TRUNCATED`, `READER-TRAILING`, `READER-DEPTH`,
+  `READER-DUPLICATE`, `READER-STRING`, `READER-NUMBER`, `READER-STRUCTURE`. The offset is the first byte at which the
+  input stops being the beginning of any document of the language, or the input's length if it ended where one could
+  still continue. It is a property of the language and the bytes; no reader owns it.
+- **One Rust reader**, `kernel/savedform.rs`, beside `formats.rs`, included by path by the shell and by the
+  workshop's `sessionwalk`, `session` and `edit`. The four parsers are removed. The file owns reading the language
+  and its one string spelling and knows nothing of the shell, the workshop, a session, admission, a renderer, a file
+  or a process. It is not in either renderer identity.
+- **An independent Python reader**, `verify/savedform.py`, with no `json.loads` underneath, used by the sealer
+  (`verify/livesession.py`), `verify/seal_sessionwalk.py`, `verify/seal_session.py` and `verify/envelope.py`'s read.
+  Neither reader is right because the other agrees.
+- **Writers refuse beyond it.** Every writer of the saved form gives its bytes to the reader before it writes them.
+- **The court.** 45 boundary cases, each with its verdict written into the entry. Every single-byte substitution,
+  deletion and insertion of three registered documents (135, 101 and 81 bytes, which between them use every kind of
+  value and every escape), both readers giving the same verdict on every mutant. On every committed record, the
+  host's records when present, and the sessions, journals and checkpoints the gate makes: acceptance by both readers
+  to the same typed value, and the registered boundary mutations at every place they fit when the document is at
+  most 65,536 bytes, and at the first and the last place of each kind when it is larger, the expected code and
+  offset computed from the place and not by a reader. A hostile document given to each real command is refused
+  there with the same code and offset.
+- **Rows to come:** `readercourt-preregistered`, `-language`, `-agree`, `-corpus`, `-writers`, `-commands`,
+  `-single`, `-fence`. None exists yet.
+
+**The three depths are one number.** The owner's check before the push: the deepest a writer emits, the deepest the
+readers accept and the deepest the court tests must be the same, and the court must show the edge from both sides.
+
+| | |
+|---|---|
+| A, the deepest a registered writer emits | 7: sixteen of the host's sealed measurement records (FRAME-SPLIT-0's is root, data, arms, production, split, phases_us, strips). OBSERVED over the 49 records and sessions present on 2026-10-04; none is deeper. |
+| B, the deepest the readers accept | 7, by the registered language. |
+| C, the deepest the court tests | 7 accepted, with 6 accepted below it and 8 refused above it. |
+| six levels, `{"a":[[[[[1]]]]]}` and LF | accepted |
+| seven levels, `{"a":[[[[[[1]]]]]]}` and LF | accepted |
+| eight levels, `{"a":[[[[[[[1]]]]]]]}` and LF | `READER-DEPTH 11`: the bracket at offset 11 would open the eighth level |
+
+**A count corrected.** The record of 2026-10-04 said the deepest shape among the files was 6 levels. That was the
+deepest among the session files; the count had missed the measurement records, where it is 7. It was found by
+counting again while the entry was drafted. The owner's ruling it had prompted (bounds come from the writers, not
+from the files) is untouched by the number, and the entry registers seven as an observation of the records present
+and not as a proof about every input a writer could be given.
+
+**The registration's history, kept visible.** The entry was first drafted with hash `0ecbec22`. That draft was
+applied on the owner's host as patch 0110 and gated there: GATE PASSED, rowset `0b423b279a40c85c`, 218 rows, 0 fail,
+0 skipped (a registration adds no row). It was not pushed. The owner reviewed it and locked it, with one condition
+before the push: *make the depth convention explicit in the registered text if it isn't already*, and have the
+court show six, seven and eight. Checked against the draft: the convention was there ("the root object counted as
+the first"), and so were seven accepted and eight refused at offset 11. Six accepted was not. The entry was
+therefore changed while its commit was still unpushed, which the rules allow, and its hash is now `f53017cd`. After
+the push it changes only by an amendment with its own hash. What differs between the draft and the registration:
+
+1. A boundary case added: six levels, accepted. The court now holds 45 cases.
+2. The depth convention spelled out (what is counted, what opens no level), and the three depths named as one
+   number.
+3. `verify/envelope.py`'s write, handed seven levels, writes them (the draft already registered that it refuses
+   the eighth).
+4. A limit added: the JSON under `oracle/` that Urðr's tags fix is frozen evidence, read by Python alone, not the
+   saved form, never rewritten and not covered. All three of those files lie outside the language (one has no final
+   LF, two write a character above U+007F as a `\u` escape).
+5. A condition added: a forgery an earlier row makes that lay outside the language (a tampered record written
+   without its final LF is one) is written inside it, so it is still refused for its own row's reason and not for
+   this rung's; each one rewritten is listed. Its failure is registered too.
+6. A limit added: that seven is the deepest a writer emits is an observation, not a proof.
+
+Items 4 and 5 came from reading every JSON file two gate passes leave behind (323 files; 297 inside the language,
+the rest the frozen oracle files and earlier rows' forgeries) before the push. They narrow the claim and add an
+obligation to the build. They change no ruling.
+
+**The owner's review of the draft (2026-10-04).** Eight points, each locked.
+
+1. **Depth 7.** Lock, provided the counting convention is explicit.
+2. **Writers check their own bytes.** Lock. No circular authority: the format's definition stands above both, the
+   reader is independent of the writers, and a writer is checked against the reader.
+3. **`kernel/savedform.rs`.** Lock. A shared file beside the kernel's formats; not in the renderer's identity.
+4. **One string spelling.** Lock.
+5. **Whitespace is spaces and LF.** Lock.
+6. **Large files: the first and the last place of each kind.** Lock. Deterministic and documented.
+7. **The `--out` raws, the two logs and the registry are left out.** Lock.
+8. **ADMIT-0's pin of the old reader moves here.** Lock. *Historical pin ≠ current implementation.* History is not
+   rewritten: ADMIT-0's registered entry stays as it is, and this rung lists the pin it moves.
+
+One caveat on evidence: the prototype's result stays *outside the gate, a compatibility measurement*, and is not to
+be read as "therefore equivalent to Python". His ruling: ***0110: LOCK / PUSH. No redesign.***
+
+**Outside the gate (OBSERVED, a compatibility measurement).** A prototype of the reader, written before the
+registration, accepts all 52 documents then available (every committed record, the host's records and saved
+sessions, the registry) and 4,298 journal payloads, each to the typed value `json.loads` gives. That shows the
+tree's existing files lie inside the registered language. It does not show the reader is equivalent to Python's
+(it is registered to be stricter), and no gate row rests on it.
+
+**Grade.** DECLARED: the registered conditions, and the owner's eight locks. OBSERVED: the census, the depth count,
+the prototype's result, the scan of the gate's files. ESTABLISHED: nothing; no row of this rung exists. The gate
+with the entry reads 218 rows, rowset `0b423b279a40c85c`, unchanged, here (the registration alone, and with these
+documents, twice byte-identical).
+
+**does_not_show.** That a shared reader exists, that two readers agree on anything, or that any writer checks its
+bytes: nothing is built. That the language is right: it is one author's grammar, and what stands against a shared
+mistake is the registered cases, offsets computed from the place of a mutation, and the writers' own output.
+Anything about bytes outside the three small documents and the registered mutations. Anything about a document's
+meaning: the loaders are as they were.
+
+**Falsifier.** None yet. When built, `readercourt-language` goes red if either reader gives another verdict on a
+registered case; `readercourt-agree` if the two differ on any mutant or either panics; `readercourt-corpus` if a
+real file is refused or read to another value, or a boundary mutation gets another code or offset;
+`readercourt-writers` if a writer writes bytes outside the language; `readercourt-single` if a second reader or a
+`json.loads` remains; `readercourt-fence` if the shared file knows anything but the language.
+
+**The next question, reserved.** Whether DESIGN-EVENT-0 remains the next rung, or a design representation, a design
+diff and constraints are promoted ahead of it. The owner: *I would not silently reorder that based on the 15-pivot
+review. That deserves its own ruling.* The locked order stands until he rules.
+
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -4462,10 +4593,11 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   status is a witness to recompute and not a field to trust; integers of the world and no floats; a panel and no
   score; preview only as a speculative worldline. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 - **READER-COURT-0 (the saved form's readers brought to one verdict — chosen in the owner's courts of 2026-10-04;
-  not registered, nothing built).** The rung after ADMIT-0. Read from the code first: four Rust JSON parsers (one
+  registered `f53017cd`, in its own section above; nothing built).** The rung after ADMIT-0. Read from the code
+  first: four Rust JSON parsers (one
   text in three files, and a different one in `workshop/edit.rs`), four Python readers using `json.load`, three
   writers with three layouts, and a corpus that sits inside a small language (no fraction or exponent in any of 39
-  record files; depth 6 at most). The rulings: the accepted language is the bounded language the tree's registered
+  record files; depth 7 at most — this line first said 6, corrected in the section above). The rulings: the accepted language is the bounded language the tree's registered
   writers are permitted to emit, its bounds derived from the writers and not from the files; one Rust reader in
   one file shared by path, owning parsing and nothing else; an independent strict Python reader, with no
   `json.loads` underneath, held against it by the court; the same code and the same byte offset on every hostile
@@ -4535,7 +4667,8 @@ staircase and what remains:
 - **Interactive capture (parallel, not entangled with the performance chain).** The inverse of SHELL-PLAYBACK:
   raw window/device event → binding → typed action/edit → SESSION-WALK append → the SAME sealed representation
   headless authoring produces. A shell/input problem, not a new authority; measured against the existing session
-  machinery, never modifying it.
+  machinery, never modifying it. *Since built, under other names: LIVE-INPUT-0, LIVE-SESSION-0, LIVE-AUTHOR-0 and
+  MOUSE-LOOK-0, each in its own section above.*
 - **The named future slices** (courted, not seated): IMPOSSIBILITY-0 (measured negative results as level
   preconditions), SEMANTIC-0 (a float-free, geometry-bound semantic layer as a Verðandi-local new-semantics
   authority), MERGE-0 (deterministic commutative merge of non-conflicting edits, stripped of consensus/time).
