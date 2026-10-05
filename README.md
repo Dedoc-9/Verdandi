@@ -99,7 +99,7 @@ session's seal is a hash. A second platform's window.
 running the gate.
 
 ```text
-  PROGRAM TIME    verify/verify.py: 226 rows, two passes byte-identical, or nothing landed
+  PROGRAM TIME    verify/verify.py: 232 rows, two passes byte-identical, or nothing landed
 
       oracle/   Urðr, frozen at two tags
          │      witnesses · corpus · the heading vocabulary
@@ -202,12 +202,14 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          same code and byte offset from both on 163,072 mutants; built, and on the host 226 of
          │          226 rows (the first run read 225; the one red was found by the new watch and fixed)
          │
-    registered      REASON-COURT-0 every refusal the gate requires held to a registered reason: 145 refusal
+    REFUSALS        REASON-COURT-0 every refusal the gate requires held to a registered reason: 145 refusal
          │          checks censused, 103 with a code and 42 a registered REFUSE(any); a watch over every child
-         │          that does not end 0, reading only the code head (337ab021, pushed; not built; heard
-         │          on the host: 1,103 endings, 77 of 77 groups hold) · MINT-WATCH-0 every refusal raised
-         │          inside the gate's own process claimed by row, class, site and count: 164 raise sites
-         │          read from source, 142,082 mints measured in four configurations (cd1472ec; not built)
+         │          that does not end 0, reading only the code head; the sealers under one mutation and its
+         │          closure (337ab021; built, six rows, 232 in the gate; passes here; not yet run on the host)
+         │
+    registered      MINT-WATCH-0 every refusal raised inside the gate's own process claimed by row, class,
+         │          site and count: 164 raise sites read from source, 142,082 mints measured in four
+         │          configurations (cd1472ec; not built)
          ⋮
     declared        DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors

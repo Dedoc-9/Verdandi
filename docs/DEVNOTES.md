@@ -391,7 +391,19 @@ What stands against the tree, as reviewed:
    on the first refusal those six rows raised, or silently learned it. The entry now says which rows were
    measured and how a later row gets an entry.
 
-19. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+19. **A survivor is a result.** Thirty-seven defects were planted against REASON-COURT-0's build. Two that survived
+   the first run each showed a rule no plant exercised, and became plants. One that survives still shows a check
+   stated twice. None was argued away.
+
+20. **Where a rule says "filled by", find an assignment.** The listening instrument took the first endings that
+   fit a slot, and every group happened to hold. The gate seats every ending so that each slot holds exactly its
+   count: an order of arrival is not part of the registered rule.
+
+21. **A build answers the next watch's question while it is cheap.** MINT-WATCH-0 registered that the six rows of
+   this build raise no refusal, or are amended in. The rows were written to compare and not to read forged bytes,
+   and one pass of the instrument over the built gate heard none.
+
+22. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
@@ -402,9 +414,8 @@ What stands against the tree, as reviewed:
 - The saved form's readers disagreed on hostile input; the remedy is built, and its reach is stated (G19).
 - An admission records a claimed proposer and a command line's grant, and nothing about a model (G20).
 - The live loop has no latency number (G21), and two host silences were never explained (G22).
-- A refusal is registered to be held to its code, not its cause, and the court is not built (G24); 63 lines the
-  programs print about themselves are trusted and not opened (G25). The register has been heard in four
-  configurations, the host among them, each once.
+- A refusal is held to its code, not its cause (G24): the court is built and has not yet run on the host. 63
+  lines the programs print about themselves are trusted and not opened (G25).
 - The mint register's counts are a measurement, and 105 of its 164 sites were never reached (G26).
 
 ## The one-line retrospective, again

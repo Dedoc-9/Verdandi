@@ -219,8 +219,9 @@ permanently useful evidence.
 
 Since then the ledger has grown two more arcs, each described below: the **live editor** (`LIVE-LOOP-0` through
 `MOUSE-LOOK-0a`, §11) and **admission** (`ADMIT-0` and `READER-COURT-0`, built; §12 and §13). The rung after
-them, `REASON-COURT-0`, is registered and not built: it holds every refusal the gate requires to a registered
-reason (see [`ROADMAP.md`](ROADMAP.md) and ghost G24). Behind it `MINT-WATCH-0` is registered and not built: it
+them, `REASON-COURT-0`, is built: it holds every refusal the gate requires to a registered reason, by a register,
+a watch over every child that does not end 0, and a listener on the sealers (see [`ROADMAP.md`](ROADMAP.md) and
+ghost G24). Behind it `MINT-WATCH-0` is registered and not built: it
 holds every refusal raised inside the gate's own process to a registered row, class, site and count, and names no
 reason (ghost G26).
 
@@ -266,7 +267,7 @@ or feel is claimed (G21), and the screen is read back on a schedule, not at ever
 
 Two different things can change, and they are certified differently.
 
-    program time    the machine changes ──► the gate runs: 226 rows, twice, byte-identical
+    program time    the machine changes ──► the gate runs: 232 rows, twice, byte-identical
     content time    the world changes   ──► the artifact is checked and admitted; the gate does not run
 
 *The gate certifies the machine. ADMIT admits the world's changes.* `ADMIT-0` is the first seam built on that

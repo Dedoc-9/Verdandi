@@ -80,7 +80,11 @@ TAMPERED / DIFFERENT-RENDERER classification), readercourt (READER-COURT-0: ever
 one bounded language — one Rust reader shared by path and an independent Python reader give the same code and byte
 offset, or the same typed value, on the registered cases, on every single-byte mutant of three registered documents and
 on the boundary mutations of every real file; every writer checks its bytes first; and no earlier row's forgery is
-refused for its form), and — in the oracle stage —
+refused for its form), reasoncourt (REASON-COURT-0: every refusal the gate requires is held to a registered reason or to
+a registered REFUSE(any) — the register verify/reasons.json, the expected side, never filled from what a program
+prints; every registered requirement held in the gate's own text; every child that does not end 0 claimed by row,
+program and command, read only at its code head; the sealers under one registered mutation and its closure, heard
+through the interpreter's own events), and — in the oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
@@ -123,6 +127,69 @@ READER_REFUSALS: list[tuple[str, str]] = []   # (the row running, the refusal's 
 _SUBPROCESS_RUN = subprocess.run
 
 
+# REASON-COURT-0: the same watch also keeps every child that does not end 0 — the row that started it, the program,
+# the command, its exit status and the code heads of the lines it printed. The text after a code head is never kept,
+# and what the child returned is returned untouched. `reasoncourt-watch` lays these beside the register.
+ENDINGS: list[dict] = []
+ENDINGS_UNHEARD: list[str] = []   # an ending the watch could not keep is said, never dropped
+_CODE_TOKEN = re.compile(r"[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*")
+
+
+def code_head(line: str) -> list:
+    """The code head of a line: its leading run of code tokens. A token begins with a capital, is capitals, digits and
+    hyphens, and ends at a colon, a space or the end of the line. What follows the run is not read."""
+    out, i = [], 0
+    while True:
+        m = _CODE_TOKEN.match(line, i)
+        if not m:
+            break
+        j = m.end()
+        if j < len(line) and line[j] not in ": ":
+            break
+        out.append(m.group())
+        if j >= len(line):
+            break
+        i = j + 1
+        while i < len(line) and line[i] == " ":
+            i += 1
+    return out
+
+
+def _ending_program(argv) -> tuple:
+    """(program, command, kind) of a child, from the command line the gate gave it. The kind is `tree` for a file the
+    gate built from the tree, `python` for the gate's own Python (the program is then the file or the module it
+    runs), `compiler` for rustc, and `other` for anything else."""
+    p0 = str(argv[0])
+    base = os.path.basename(p0)
+    stem = base[:-4] if base.lower().endswith(".exe") else base
+    rest = [str(x) for x in argv[1:]]
+    full = os.path.normcase(os.path.abspath(p0))
+    if full == os.path.normcase(os.path.abspath(sys.executable)) or stem.lower().startswith("python"):
+        rest = [x for x in rest if x not in ("-B", "-u")]
+        if rest and rest[0] == "-m" and len(rest) > 1:
+            return "python -m " + rest[1], (rest[2] if len(rest) > 2 else ""), "python"
+        if rest:
+            return "python " + os.path.basename(rest[0]), (rest[1] if len(rest) > 1 else ""), "python"
+        return "python", "", "python"
+    kind = "tree" if full.startswith(os.path.normcase(BUILD)) else ("compiler" if stem.lower() == "rustc" else "other")
+    return stem, (rest[0] if rest else ""), kind
+
+
+def _ending(argv, cp) -> dict:
+    """What the watch keeps of a child that did not end 0."""
+    argv = list(argv) if isinstance(argv, (list, tuple)) else [str(argv)]
+    program, command, kind = _ending_program(argv)
+    heads = []
+    for s in (getattr(cp, "stderr", None), getattr(cp, "stdout", None)):
+        if s:
+            for ln in (s if isinstance(s, str) else s.decode("utf-8", "replace")).splitlines():
+                if ln.strip():
+                    h = code_head(ln)
+                    if h:
+                        heads.append(h)
+    return {"row": CURRENT_ROW[0], "program": program, "command": command, "kind": kind, "exit": cp.returncode, "heads": heads}
+
+
 def _watched_run(*a, **k):
     cp = _SUBPROCESS_RUN(*a, **k)
     for s in (getattr(cp, "stdout", None), getattr(cp, "stderr", None)):
@@ -130,10 +197,169 @@ def _watched_run(*a, **k):
             text = s if isinstance(s, str) else s.decode("utf-8", "replace")
             for m in re.finditer(r"READER-[A-Z]+ [0-9]+", text):
                 READER_REFUSALS.append((CURRENT_ROW[0], m.group()))
+    if cp.returncode != 0:
+        try:
+            ENDINGS.append(_ending(a[0] if a else k.get("args"), cp))
+        except Exception as e:   # the watch never changes what the gate sees
+            ENDINGS_UNHEARD.append("%s: %r" % (CURRENT_ROW[0], e))
     return cp
 
 
 subprocess.run = _watched_run
+
+
+# REASON-COURT-0: the sealers. A sealer under verify/ refuses in prose, by raising. While one of the registered rows
+# runs, the gate listens to every call it makes of a registered sealer function: the judged arguments as they were
+# given, and whether the call returned or was refused. It listens through the interpreter's own events
+# (sys.monitoring from Python 3.12, sys.settrace before). No function is wrapped, replaced or changed, and nothing a
+# sealer returns or raises is touched. `reasoncourt-sealers` lays what was heard beside the register.
+RSN_SEALERS = {
+    "latency1": ("seal_latency1", "inherit_baseline"), "latency1r": ("seal_latency1r",), "framesplit": ("seal_framesplit",),
+    "presentscale": ("seal_presentscale",), "presentstretch": ("seal_presentstretch",), "allocreuse": ("seal_allocreuse",),
+    "allocreuse1": ("seal_allocreuse1",), "presentexact": ("seal_presentexact",), "drift": ("seal_drift", "plan_next", "protocol"),
+    "liveloop": ("seal_liveloop",), "livesession": ("seal_livesession", "check_saved"),
+}
+# the judged arguments of a sealer function, by position, each with the name the register gives it; the rest of a
+# call (a registry, a host name, a provenance) is not the planted record
+RSN_JUDGED = {
+    "plan_next": ((0, "recs"), (1, "sitting"), (2, "now")),
+    "protocol": ((0, "sitting"), (1, "run"), (2, "overlay"), (3, "start"), (4, "end")),
+    "seal_drift": ((0, "record"), (5, "protocol")),
+}
+RSN_RECORD = ((0, "record"),)
+RSN_SEALER_ROWS = ("latency1-sealers", "framesplit-sealer", "presentscale-sealer", "presentstretch-sealer", "allocreuse-sealer",
+                   "allocreuse1-sealer", "presentexact-sealer", "drift-sealer", "liveloop-sealer", "livesession-sealer", "admit-replay")
+RSN_TOOL = 3   # the gate's id among sys.monitoring's tools
+SEALER_CALLS: list[dict] = []
+_SEAL = {"on": False, "codes": None, "stack": [], "armed": False, "broken": [], "tap": None}
+
+
+def _seal_plain(x):
+    """A judged argument as plain data: bytes become their text, and nothing of the tree's own types is kept."""
+    if isinstance(x, (bytes, bytearray)):
+        return {"__bytes__": bytes(x).decode("utf-8", "replace")}
+    if isinstance(x, dict):
+        return {str(k): _seal_plain(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_seal_plain(v) for v in x]
+    if isinstance(x, (str, int, float, bool)) or x is None:
+        return x
+    return {"__repr__": repr(x)[:200]}
+
+
+def _seal_codes() -> dict:
+    """The code objects of the registered sealer functions, each with its name and its module's refusal."""
+    if _SEAL["codes"] is None:
+        import importlib
+        codes = {}
+        for mod, fns in RSN_SEALERS.items():
+            m = importlib.import_module(mod)
+            for fn in fns:
+                codes[getattr(m, fn).__code__] = (fn, m.Refuse)
+        _SEAL["codes"] = codes
+    return _SEAL["codes"]
+
+
+def _seal_begin(code, frame) -> dict:
+    """One call of a sealer function, as it starts: its judged arguments, copied before the function can change them."""
+    import copy
+    fn = _SEAL["codes"][code][0]
+    names, given = code.co_varnames, []
+    loc = frame.f_locals
+    for i, _name in RSN_JUDGED.get(fn, RSN_RECORD):
+        if i < code.co_argcount and names[i] in loc:
+            given.append(_seal_plain(copy.deepcopy(loc[names[i]])))
+    rec = {"row": CURRENT_ROW[0], "fn": fn, "input": given, "outcome": "unfinished"}
+    SEALER_CALLS.append(rec)
+    return rec
+
+
+def _seal_end(code, exc) -> str:
+    return "accepted" if exc is None else ("refused" if isinstance(exc, _SEAL["codes"][code][1]) else "error:" + type(exc).__name__)
+
+
+def _seal_on_start(code, _offset):
+    try:
+        if _SEAL["on"] and code in _SEAL["codes"]:
+            _SEAL["stack"].append((code, _seal_begin(code, sys._getframe(1))))
+    except Exception as e:
+        _SEAL["broken"].append(repr(e))
+
+
+def _seal_on_return(code, _offset, _value):
+    try:
+        if _SEAL["on"] and _SEAL["stack"] and _SEAL["stack"][-1][0] is code:
+            _SEAL["stack"].pop()[1]["outcome"] = _seal_end(code, None)
+    except Exception as e:
+        _SEAL["broken"].append(repr(e))
+
+
+def _seal_on_unwind(code, _offset, exc):
+    try:
+        if _SEAL["on"] and _SEAL["stack"] and _SEAL["stack"][-1][0] is code:
+            _SEAL["stack"].pop()[1]["outcome"] = _seal_end(code, exc)
+    except Exception as e:
+        _SEAL["broken"].append(repr(e))
+
+
+def _seal_trace(frame, event, _arg):
+    """The same listening where the interpreter has no sys.monitoring: a trace function that follows only the frames
+    of the registered sealer functions. A frame that ends with an exception still in flight was refused; one whose
+    exception was handled inside it has run a line since."""
+    code = frame.f_code
+    if event != "call" or code not in _SEAL["codes"]:
+        return None
+    try:
+        rec = _seal_begin(code, frame)
+    except Exception as e:
+        _SEAL["broken"].append(repr(e))
+        return None
+    flying = [None]
+
+    def local(_frame, ev, arg):
+        if ev == "exception":
+            flying[0] = arg[1]
+        elif ev == "line":
+            flying[0] = None
+        elif ev == "return":
+            try:
+                rec["outcome"] = _seal_end(code, flying[0])
+            except Exception as e:
+                _SEAL["broken"].append(repr(e))
+            flying[0] = None
+        return local
+    return local
+
+
+def _seal_listen(on: bool) -> None:
+    """Start or stop listening to the registered sealer functions. A failure here is kept and said by
+    `reasoncourt-sealers`; it never reaches the row that is running."""
+    try:
+        codes = _seal_codes()
+        mon = getattr(sys, "monitoring", None)
+        if mon is not None:
+            ev = mon.events
+            if not _SEAL["armed"]:
+                if mon.get_tool(RSN_TOOL) is not None:
+                    raise RuntimeError("sys.monitoring tool %d is in use by %s" % (RSN_TOOL, mon.get_tool(RSN_TOOL)))
+                mon.use_tool_id(RSN_TOOL, "verdandi-gate")
+                mon.register_callback(RSN_TOOL, ev.PY_START, _seal_on_start)
+                mon.register_callback(RSN_TOOL, ev.PY_RETURN, _seal_on_return)
+                mon.register_callback(RSN_TOOL, ev.PY_UNWIND, _seal_on_unwind)
+                for code in codes:
+                    mon.set_local_events(RSN_TOOL, code, ev.PY_START | ev.PY_RETURN)
+                _SEAL["armed"], _SEAL["tap"] = True, "sys.monitoring"
+            mon.set_events(RSN_TOOL, ev.PY_UNWIND if on else 0)
+        else:
+            _SEAL["tap"] = "sys.settrace"
+            if on:
+                _SEAL["before"] = sys.gettrace()
+            sys.settrace(_seal_trace if on else _SEAL.get("before"))
+        _SEAL["on"] = on
+        if not on:
+            del _SEAL["stack"][:]
+    except Exception as e:
+        _SEAL["broken"].append(repr(e))
 
 
 class Skip(Exception):
@@ -147,6 +373,9 @@ class Red(Exception):
 def row(name, fn):
     CURRENT_ROW[0] = name
     refused_before = savedform.REFUSALS
+    listening = name in RSN_SEALER_ROWS
+    if listening:
+        _seal_listen(True)
     try:
         text = fn()
         ROWS.append(("PASS", name, text))
@@ -156,6 +385,8 @@ def row(name, fn):
         ROWS.append(("FAIL", name, str(e)))
     except Exception as e:  # a crash is a red row, never a missing one
         ROWS.append(("FAIL", name, f"{type(e).__name__}: {e}"))
+    if listening:
+        _seal_listen(False)
     if savedform.REFUSALS != refused_before:
         READER_REFUSALS.append((name, "in this process x%d" % (savedform.REFUSALS - refused_before)))
     st, _, text = ROWS[-1]
@@ -11683,6 +11914,948 @@ def readercourt_fence():
             % (RC_RENDERER_ID[:12], RC_BEARING_ID[:12], RC_RUST_READER_SHA256[:12], RC_PYTHON_READER_SHA256[:12], old))
 
 
+# ------------------------------------------------------------------ REASON-COURT-0: every refusal held to a registered reason
+REASONCOURT0_HASH = "337ab021dc83f564fae619e8f7827bbfaf8219b42aef694cf19118aaa4336729"
+RSN_REGISTER = os.path.join(ROOT, "verify", "reasons.json")
+RSN_REGISTER_BYTES = 199090
+RSN_REGISTER_SHA256 = "cf3f47e51f5a409bdd25c056b69b12e961c4da5205f117b88916c1eac99e1d6b"
+# the register's counts, as the entry states them
+RSN_COUNTS = {
+    "statements_held": 165, "refusal_checks": 145, "second_witnesses": 16, "planted_deaths": 4,
+    "refusal_checks_with_a_code": 103, "refusal_checks_refuse_any": 42,
+    "codes": 83, "codes_from_a_ledger_entry": 23, "codes_from_rungs_md": 15, "codes_first_registered_here": 45,
+    "endings": 1103, "ending_groups": 77, "endings_held_in_a_code_head": 1072, "endings_refuse_any": 23, "endings_unjudged": 2,
+    "endings_held_only_by_their_row": 6, "endings_with_one_code_in_prose": 3,
+    "sealer_statements": 21, "sealer_plants": 57, "sealer_plants_met": 41, "sealer_plants_not_met": 16,
+    "envelope_plants": 16, "envelope_plants_met": 14,
+    "outside_detection": 7, "outside_gate_self": 6, "outside_agreement": 1, "outside_program_courts": 63,
+}
+# The entry's own sentences for how the 1,103 endings divide. The row reads the numbers out of the entry through these
+# and holds the register's counts to them; it does not phrase the partition itself (the owner's ruling, 2026-10-05).
+RSN_PARTITION = (r"Of the (\d+) endings, (\d+) owe a code in a code head, (\d+) owe REFUSE\(any\), (\d+) are held only as their row "
+                 r"holds them and (\d+) are unjudged\.")
+RSN_EXCEPTIONS = (r"three statements hold a code that stands in prose — the compiler's error\[E0502\] \(A029, (\d+) ending\), the reader's "
+                  r"verdict in the Python sealer's command line \(A183, (\d+) endings\), and the reader's verdict in parentheses after "
+                  r"LIVESESSION-FORM \(A177, (\d+) endings, whose LIVESESSION-FORM is in the head\)\.")
+RSN_NINE = "the nine endings of the named exceptions are counted and their prose is not read"
+RSN_ROWSET_BEFORE = "39e5874a7127cfa4"   # the 226 rows before this rung, by name and order
+RSN_ROWS = ("reasoncourt-preregistered", "reasoncourt-register", "reasoncourt-source", "reasoncourt-watch", "reasoncourt-sealers",
+            "reasoncourt-fence")
+# every Rust source under kernel/, shell/ and workshop/, and every sealer under verify/, as this rung found them
+# (sha256, line endings as LF). The folders' READMEs are documents and their attest/ folders hold records: neither is here.
+RSN_SOURCES = {
+    "kernel/bearing.rs": "93fb9083a3034d8875f2040f89ba73cbaaf1bad888bc0fd446d6cb4ccf33e474",
+    "kernel/bearingfast.rs": "97ab3bf3a575954fdbaa0f1b4d3ed8bd511a6d8dffa01a3b99d864e393a2ee84",
+    "kernel/fast.rs": "5de110834ac015ad6ab0e5fae0bed8a49aa6fd19cbb77bd1cb63edbbd0362f77",
+    "kernel/formats.rs": "d948f8ce596400096271b6f9a63d257160540d424c06d0345dd8dc43ce3b0175",
+    "kernel/hud.rs": "553d3ef7264b2587e724f974be3cc5a73299526e2a95480da6740d181c96dba4",
+    "kernel/main.rs": "0f5112e3a250e9c9bafd3c6041917845aa2c9ee739e833a8ebf156c7dc4b6883",
+    "kernel/mantle.rs": "ab08361dc82d9fd8c040fc96386c5d81118c04851efee718c4dc9a72d273095c",
+    "kernel/savedform.rs": "a6c6fb66ca5d45393e97c6bf9f9f44e9a3fbcdf87f54ea65dcfd23d98acf8655",
+    "kernel/vocab.rs": "30b9199255b0e342c1a20b9b47043c567b54c756e178f4fd7b7d633708dc69c0",
+    "shell/admit.rs": "99366fea8540e3b4cebc8f973485e0915db042a7cb549d3b06706a476e48a3cd",
+    "shell/allocreuse.rs": "6fa31145ac7f8b41f80b9d07b14b4fc6097ed2be99931a65a1f1484a6dece869",
+    "shell/allocreuse1.rs": "feb782cdebb9427256baf17f0a9b3bbdc181de54edcbfaafa3116aa47db5672e",
+    "shell/framesplit.rs": "3640542830f6db976df2340586fa7ae6d360e1533137d685650efcbf3b4e3ea9",
+    "shell/heading.rs": "d11091c41d4f9dd91b246aaf2aa245a9fe23c2a04ef526c566ebb0698dc27f93",
+    "shell/holdwalk.rs": "207abb90e5403e34489251e5341babcc70194dc3f9ca0137370c4b483544e6a9",
+    "shell/latency1r.rs": "b10fa3ba6127ba7ca126cf9262a7580364e99db266f6bc0f3f2700a410bc1b30",
+    "shell/liveauthor.rs": "ea247540c1e652536f45095022e17f3408185b48908ee283bdb3bb852d1f1edb",
+    "shell/liveinput.rs": "272f7c77d6ad219a12d1c3d2ac738c25ae7fc3b1b141739543959a2e813f5012",
+    "shell/liveloop.rs": "7917203f8891120bd752354c7476a6b9fb0a0f5d29541842a57df8266c340ef1",
+    "shell/livesession.rs": "96860c485b4887114f1c39503469d3a0eccdcef5477bfd46ebb7ea8d71fe6073",
+    "shell/main.rs": "c6d2aaa29c81b48f6f21ce1d9093ce268cd27a766bca5d54c1ba97b9128ddeca",
+    "shell/mouselook.rs": "c6924c37aefac6247ae09fde101e67ea0108a1b9a2fce5b172f76a25f34d982c",
+    "shell/playback.rs": "4bb0525d95907cf3b8a0d4db13ccc35aa2d97e4e9a2e9aa0de90a5f3b894af89",
+    "shell/present.rs": "8834752cfe2f1bdac046ee0b6d8d5a791467fef8deea4d6516a382834a5b71a3",
+    "shell/presentexact.rs": "0e9265b994f103a44f9132663db720e0eece95db0b2c98f76639e3d5fab16ba6",
+    "shell/presentscale.rs": "c337523644430c0d5e9d939c5e9fe6de9948629eaa5ffd208f6d0ce07ab352aa",
+    "shell/presentstretch.rs": "d31541b68052a3643ff1f9b0083ac87542d1b5ad57ebab0951b3fb87760a4e78",
+    "shell/readercourt.rs": "6918525cbf086cbd42b65592f62c35d85b89228d1f62a7b993311de46fbf15cc",
+    "shell/refusallog.rs": "2ecd4e0ff102b9423afac0d4c95e0d8f6127df8b42bcca9cdce0e88c29f98f55",
+    "shell/runledger.rs": "5f1923403e5df97d293035d38d3bee8cebfb0e70a87e0649b6e9bd523517a3ba",
+    "shell/simtick.rs": "3122c541d2370f7dc5fe85140dc82470680c1babbaa33205dc000675dfd28ac3",
+    "shell/tickrun.rs": "d4fee8262d81f0e645686930a03e0e412d20f50006f13b5b23cae00c1ca5a19d",
+    "shell/win32.rs": "804d598c3075a60c4bbb2725ee18ccc877579907f31786a0f671334ccc6bda5e",
+    "workshop/edit.rs": "8b299708192a9cd976f10c30561625590af83cab82f7ed67c4137a6073ce46c6",
+    "workshop/input.rs": "405ef6c825c1f361a3489c6e03e444b67b217a81dc020c44e5afc61fcdf712cf",
+    "workshop/membrane.rs": "d1e652f46d3af8bc28562fb59fe3fac4524bf60cc74d421b1c073df57320b8ae",
+    "workshop/session.rs": "3abe96801c821148efc06c40868332b6a7f007a90886a942d9eabe94cf704006",
+    "workshop/sessionwalk.rs": "618d0d913467693172782359b82c4d9f3254086666ca448a6cefd2895ca2a5e3",
+    "workshop/text.rs": "93872a94e2eea2f2d1fb860938b7649f3548cb7f18b6e4799f7d1631ef749ce9",
+    "verify/allocreuse.py": "6e27c889359b8a03b7f6110526f1ecd317f732841c310adad03ae3163c898df5",
+    "verify/allocreuse1.py": "521c62a38c720dc65067d4524f04d997bd724e66bf1d820afbf71f40c7abe9c0",
+    "verify/diagcommon.py": "bbea5e59e3da83b83e2980b7b54dacd1f32e146bc639800a56ee6cbb48276397",
+    "verify/drift.py": "84697c2d3e1fad24d97155021f9d7add85c462d67db55c5d9b0ab1d0eee1f0d5",
+    "verify/framesplit.py": "7e120ecff7fcb4eed8ef502e96cfb01d67dc1b14c216834b637ebd813affc78a",
+    "verify/latency1.py": "da84619f1a75301ccd90862e21636f6a62d5f404b4c49a20252b8922ad1205f2",
+    "verify/latency1r.py": "e00d011d6618f9ec83755dc4fbc42c04e3cc6e6123be4b9181fd59b7d45ec3f7",
+    "verify/liveloop.py": "9e3c76d463f47670b69b9821b8c55a4b0817d6692bef0d842251e1097443afd3",
+    "verify/livesession.py": "2c42a94cefab4584d5b216da7e3d0669be9d1d1ae054cd6e363a35c867a9d2bb",
+    "verify/presentexact.py": "597699ce340e26c71874514df8ed31c83e6b63df6c7c0ea59d42d4a97a4349ba",
+    "verify/presentscale.py": "e62dfbcd3cf5814ede68d751fee9ecac5f27c99a379bcd2d5acd0628d6d40947",
+    "verify/presentstretch.py": "7ed90d10fe7bd01ef781fda879874c3100b582c1bb577283edac5762405762ab",
+    "verify/seal_latency.py": "2ee17f22dc848458503c808b01af49a02d91a155ee90ef67ecf937b06a7dd7cd",
+    "verify/seal_present.py": "9dfc0bb0375bdd77980a921f16213ba375b368b4fdeab559d7967d11c9b14f6a",
+    "verify/seal_session.py": "572088689b5883961fd4037038c6686d9dd8e9d1fd7994f34fa495e97f03b4b0",
+    "verify/seal_sessionwalk.py": "bb0360464138c4a8988b9ada3fcf13c6b76dea70a3a70f4ba6125af96c0ce375",
+    "verify/seal_walk.py": "fb85a02f726901620940dc0148858c662bc2f4d86539d78aad7829956f016808",
+}
+# a sealer function that a registered function calls itself: the row judges the outer call (livesession-sealer's five
+# planted records are refused by seal_livesession, through check_saved)
+RSN_INNER = (("livesession-sealer", "check_saved"),)
+RSN_SEALER_FILES = ("allocreuse.py", "allocreuse1.py", "diagcommon.py", "drift.py", "framesplit.py", "latency1.py", "latency1r.py", "liveloop.py",
+                    "livesession.py", "presentexact.py", "presentscale.py", "presentstretch.py", "seal_latency.py", "seal_present.py",
+                    "seal_session.py", "seal_sessionwalk.py", "seal_walk.py")
+_RSN = {}
+
+
+def _rsn_register() -> dict:
+    """The register, read through the saved form's reader, once."""
+    if "reg" not in _RSN:
+        _RSN["reg"] = savedform.read_file(RSN_REGISTER)
+    return _RSN["reg"]
+
+
+def _rsn_gate():
+    """The gate's own source, as text, as lines and as a syntax tree, once."""
+    if "gate" not in _RSN:
+        import ast
+        src = read(os.path.join(ROOT, "verify", "verify.py")).decode("utf-8").replace("\r\n", "\n")
+        tree = ast.parse(src)
+        tops = {}
+        for n in tree.body:
+            if isinstance(n, ast.FunctionDef):
+                tops[n.name] = n
+            elif isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name):
+                tops[n.targets[0].id] = n
+        _RSN["gate"] = (src, src.split("\n"), tree, tops)
+    return _RSN["gate"]
+
+
+def _rsn_norm(s: str) -> str:
+    return " ".join(s.split())
+
+
+def reasoncourt_preregistered():
+    """REASON-COURT-0's method is locked before the build, and the gate's constants are the registered ones: the
+    register's bytes, its counts, the six rows, the listened sealer rows."""
+    e = locked_entry("REASON-COURT-0", {
+        "what is locked": ("hyp", ("a semantic refusal code is a locked contract", "the text after it is not",
+                                   "an exception's type, a stack or a branch inside a program is never authority")),
+        "the edge": ("hyp", ("the court holds the 145 refusal checks, their 16 second witnesses", "the 4 planted deaths", "are outside it and are named",
+                             "does not become a general strengthening of assertions")),
+        "the register is the expected side": ("hyp", ("verify/reasons.json", "the expected side, and the authority", "it is never populated from what a program prints")),
+        "where a code comes from": ("hyp", ("a requirement that already exists may be registered, a new one may not be manufactured",
+                                            "a program's source and a program's output establish no code")),
+        "refuse(any) is a decision": ("hyp", ("refuse(any) is a registered decision and not a failure to specify",
+                                              "no statement is made exact because a code could be named for it")),
+        "a table and a watch": ("hyp", ("the rows stay as they are written", "every ending is claimed and none is missing")),
+        "the code head": ("hyp", ("the leading run of code tokens", "never the text after it", "observed, not registered, and not held",
+                                  "no word of a diagnostic becomes a reason")),
+        "named exceptions and unjudged": ("hyp", ("the grammar does not cover them and is not stretched to", "registered as unjudged, counted and not hidden")),
+        "the sealers": ("hyp", ("no sealer is changed", "the closure of one mutation, not a second mutation", "condition_status not_met",
+                                "condition_debt code | accepted_twin", "a finite and visible debt")),
+        "the ratchet": ("hyp", ("does not weaken without a decision", "until an amendment entry says why")),
+        "the five courts": ("succ", ("with no row of an earlier rung changed", "read through the saved form's reader", "every registered requirement stands in the gate",
+                                     "the endings of this run are the register's", "no ending falls outside a registered group and no registered group is empty",
+                                     "without changing a function or its result", "a twin changed in a second field is caught",
+                                     "the watch returns what the child returned and reads only code heads", "nothing in the gate fills the register from an ending",
+                                     "this rung adds six")),
+        "the plants of the watch": ("succ", ("an ending in no group", "a missing ending", "a code only in the text after the head", "another code in the head",
+                                             "the tail of the second token and not the first", "a longer code that begins with the registered one",
+                                             "a death that ends 2", "a refusal that ends 0", "a lower-case word is never read as a code")),
+        "what would falsify it": ("fail", ("an expected code taken from what a program prints or from a program's source", "a statement made exact because a code could be named",
+                                           "the watch reading a reason out of the text after a code head", "a non-zero ending left unclaimed, or a registered ending missing",
+                                           "a debt dropped, or a named exception added, without an amendment",
+                                           "not that the program's reasoning is correct")),
+        "what it does not show": ("lims", ("the watch holds a code, not a cause", "counted by row, program and command, not input by input",
+                                           "the tail rule holds the code and not the boundary's name", "registering a debt does not pay it",
+                                           "the source row holds the text, not the line")),
+    })
+    if e["chain_hash"] != REASONCOURT0_HASH:
+        raise Red("the registered entry is not the one this build was made against")
+    raw = read(RSN_REGISTER)
+    if len(raw) != RSN_REGISTER_BYTES or sha256(raw) != RSN_REGISTER_SHA256:
+        raise Red("verify/reasons.json is not the registered register (%d bytes, sha256 %s...)" % (len(raw), sha256(raw)[:12]))
+    if ("verify/reasons.json (%d bytes, sha256 %s)" % (RSN_REGISTER_BYTES, RSN_REGISTER_SHA256)) not in e["hypothesis"]:
+        raise Red("the entry does not name the register by the bytes and the hash the gate holds")
+    succ = e["success_condition"]
+    c = RSN_COUNTS
+    said = ("%d statements: %d refusal checks, %d second witnesses, %d planted deaths; %d refusal checks with a code and %d REFUSE(any); "
+            "%d codes, %d from a ledger entry, %d from RUNGS.md, %d first registered here; %d endings in %d groups; %d planted records, "
+            "%d met and %d not, and %d forged envelopes, %d met; outside it %d detections, %d gate-self checks, %d agreement court and "
+            "%d program-owned courts"
+            % (c["statements_held"], c["refusal_checks"], c["second_witnesses"], c["planted_deaths"], c["refusal_checks_with_a_code"],
+               c["refusal_checks_refuse_any"], c["codes"], c["codes_from_a_ledger_entry"], c["codes_from_rungs_md"], c["codes_first_registered_here"],
+               c["endings"], c["ending_groups"], c["sealer_plants"], c["sealer_plants_met"], c["sealer_plants_not_met"], c["envelope_plants"],
+               c["envelope_plants_met"], c["outside_detection"], c["outside_gate_self"], c["outside_agreement"], c["outside_program_courts"]))
+    if said not in succ:
+        raise Red("the gate's counts are not the ones the entry states")
+    if ("Rows " + ", ".join(RSN_ROWS[:-1]) + " and " + RSN_ROWS[-1]) not in succ:
+        raise Red("the gate's six rows are not the registered ones")
+    if not re.search(RSN_PARTITION, e["hypothesis"]) or not re.search(RSN_EXCEPTIONS, e["hypothesis"]) or RSN_NINE not in succ:
+        raise Red("the entry's sentences for how the endings divide are not the ones the gate reads them through")
+    return ("REASON-COURT-0 is preregistered (%s...): a code is the contract and the text after it is not; the edge; the register as the "
+            "expected side, never filled from what a program prints; codes only from a requirement that already exists; REFUSE(any) as a "
+            "decision; a table and a watch; the code head; the named exceptions and the unjudged; the sealers under one mutation and its "
+            "closure; the ratchet. The register is the registered %d bytes (%s...), and the gate's counts and its six rows are the entry's"
+            % (REASONCOURT0_HASH[:8], RSN_REGISTER_BYTES, RSN_REGISTER_SHA256[:12]))
+
+
+def _rsn_units(reg: dict) -> dict:
+    """Every registered ending, as a unit of a slot, under the one class the register gives it."""
+    units = {"code head": 0, "REFUSE(any)": 0, "row-held": 0, "unjudged": 0}
+    names = {"ANY": "REFUSE(any)", "ROW": "row-held", "UNJUDGED": "unjudged"}
+    for g in reg["endings"]:
+        for s in g["slots"]:
+            units[names.get(s["holds"], "code head")] += s["n"]
+    return units
+
+
+def _rsn_reading(reg: dict, total: int, parts: dict) -> str:
+    """Hold a reading of the register's counts as a partition of its endings: each named part is a count and the
+    class of slot it claims to count, or a statement whose endings it claims to count. '' when the parts are disjoint,
+    each is the size it says, and together they are every ending; otherwise what is wrong."""
+    units = _rsn_units(reg)
+    by_statement = lambda sid: sum(s["n"] for g in reg["endings"] for s in g["slots"] if sid in s["statements"])
+    claimed, seen = 0, set()
+    for name, (count, what) in parts.items():
+        if what.startswith("statement "):
+            sid = what.split(" ", 1)[1]
+            inside = [k for k in ("code head", "REFUSE(any)", "row-held", "unjudged")
+                      if any(sid in s["statements"] and {"ANY": "REFUSE(any)", "ROW": "row-held", "UNJUDGED": "unjudged"}.get(s["holds"], "code head") == k
+                             for g in reg["endings"] for s in g["slots"])]
+            if count != by_statement(sid):
+                return "%s is %d and the endings of %s number %d" % (name, count, sid, by_statement(sid))
+            if any(k in seen for k in inside):
+                return "%s counts %d endings a second time: they are already among the %s" % (name, count, " and the ".join(inside))
+        else:
+            if count != units[what]:
+                return "%s is %d and the register's %s endings number %d" % (name, count, what, units[what])
+            if what in seen:
+                return "%s counts the %s endings a second time" % (name, what)
+            seen.add(what)
+        claimed += count
+    if claimed != total:
+        return "the parts sum to %d and there are %d endings" % (claimed, total)
+    if seen != set(units):
+        return "the parts leave a class of ending out"
+    return ""
+
+
+def reasoncourt_register():
+    """(1) The register is the registered bytes, read through the saved form's reader, and it is whole: its counts are
+    the registered ones, counted from its own content; every statement expects exactly one thing; every code has its
+    source; every second witness names a refusal check; every slot names statements and the slots sum; and the counts
+    divide the 1,103 endings as the entry's own sentence says they do."""
+    raw = read(RSN_REGISTER)
+    if sha256(raw) != RSN_REGISTER_SHA256:
+        raise Red("verify/reasons.json is not the registered bytes")
+    reg = _rsn_register()
+    if reg["counts"] != RSN_COUNTS:
+        raise Red("the register's counts are not the registered ones")
+    st = {s["id"]: s for s in reg["statements"]}
+    if len(st) != len(reg["statements"]):
+        raise Red("a statement id occurs twice in the register")
+    kinds = {}
+    for s in reg["statements"]:
+        kinds[s["kind"]] = kinds.get(s["kind"], 0) + 1
+    checks = [s for s in reg["statements"] if s["kind"] in ("refusal", "refusal-as-data")]
+    codes = {c["code"]: c for c in reg["codes"]}
+    by_source = {}
+    for c in reg["codes"]:
+        by_source[c["source"]] = by_source.get(c["source"], 0) + 1
+    seal = [e for e in reg["sealers"] if e["statement"] != "A164"]
+    env = [e for e in reg["sealers"] if e["statement"] == "A164"]
+    out = reg["outside"]
+    counted = {
+        "statements_held": len(st), "refusal_checks": len(checks), "second_witnesses": kinds.get("second-witness", 0),
+        "planted_deaths": kinds.get("planted-death", 0),
+        "refusal_checks_with_a_code": sum(1 for s in checks if s["expects"] == "CODE"),
+        "refusal_checks_refuse_any": sum(1 for s in checks if s["expects"] == "REFUSE(any)"),
+        "codes": len(codes), "codes_from_a_ledger_entry": by_source.get("ledger", 0), "codes_from_rungs_md": by_source.get("RUNGS.md", 0),
+        "codes_first_registered_here": by_source.get("row", 0),
+        "endings": sum(g["n"] for g in reg["endings"]), "ending_groups": len(reg["endings"]),
+        "endings_held_in_a_code_head": _rsn_units(reg)["code head"], "endings_refuse_any": _rsn_units(reg)["REFUSE(any)"],
+        "endings_unjudged": _rsn_units(reg)["unjudged"], "endings_held_only_by_their_row": _rsn_units(reg)["row-held"],
+        "endings_with_one_code_in_prose": sum(s["n"] for g in reg["endings"] for s in g["slots"] if "A177" in s["statements"]),
+        "sealer_statements": len({e["statement"] for e in seal}), "sealer_plants": len(seal),
+        "sealer_plants_met": sum(1 for e in seal if e["status"] == "MET"), "sealer_plants_not_met": sum(1 for e in seal if e["status"] == "NOT_MET"),
+        "envelope_plants": len(env), "envelope_plants_met": sum(1 for e in env if e["status"] == "MET"),
+        "outside_detection": len(out["detection"]), "outside_gate_self": len(out["gate_self"]), "outside_agreement": len(out["agreement"]),
+        "outside_program_courts": len(out["program_courts"]),
+    }
+    wrong = sorted(k for k in RSN_COUNTS if counted[k] != RSN_COUNTS[k])
+    if wrong:
+        raise Red("the register's content does not count to its counts: " + ", ".join("%s is %d" % (k, counted[k]) for k in wrong))
+    # every statement expects exactly one of a code, REFUSE(any) with its reason, or a death
+    for s in reg["statements"]:
+        a_code = s["expects"] == "CODE" and bool(s["codes"]) and s["kind"] != "planted-death"
+        an_any = s["expects"] == "REFUSE(any)" and not s["codes"] and bool(s.get("why", "").strip()) and s["kind"] != "planted-death"
+        a_death = s["expects"] == "DEATH" and s["kind"] == "planted-death" and s["exit"] == "70" and len(s["codes"]) == 1
+        if [a_code, an_any, a_death].count(True) != 1:
+            raise Red("%s does not expect exactly one of a code, REFUSE(any) with its reason, or a death" % s["id"])
+        for c in s["codes"]:
+            if c not in codes or s["id"] not in codes[c]["statements"] or codes[c]["source"] not in ("ledger", "RUNGS.md", "row") or not codes[c]["cite"].strip():
+                raise Red("%s holds %s, which is not in the list of codes with its source and this statement" % (s["id"], c))
+        if set(w["code"] for w in s["witness"]) != set(s["codes"]):
+            raise Red("%s does not carry a witness for each code it holds" % s["id"])
+        if s["kind"] == "second-witness" and (s.get("of") not in st or st[s["of"]]["kind"] not in ("refusal", "refusal-as-data")):
+            raise Red("%s is a second witness of no refusal check of the register" % s["id"])
+        if s.get("owed") is not None and (s["expects"] != "REFUSE(any)" or s["owed"] != "CODE"):
+            raise Red("%s is marked as owed something other than a code" % s["id"])
+    for c in reg["codes"]:
+        if not c["statements"] or any(i not in st or c["code"] not in st[i]["codes"] for i in c["statements"]):
+            raise Red("the code %s is listed for a statement that does not hold it" % c["code"])
+    owed = sorted(s["id"] for s in reg["statements"] if s.get("owed"))
+    if owed != ["A031", "A032", "A033", "A091", "A109"]:
+        raise Red("the statements owed a code are not the five registered ones")
+    # every slot of an ending names statements of the register, and the slots of a group sum to its count
+    keys = set()
+    for g in reg["endings"]:
+        key = (g["row"], g["program"], g["command"])
+        if key in keys or sum(s["n"] for s in g["slots"]) != g["n"] or g["n"] < 1:
+            raise Red("the group %s / %s / %s occurs twice, or its slots do not sum to its count" % key)
+        keys.add(key)
+        for s in g["slots"]:
+            if s["exit"] not in ("2", "70", "non-zero") or s["n"] < 1:
+                raise Red("a slot of %s / %s / %s owes no registered exit status" % key)
+            if s["holds"] == "UNJUDGED":
+                if s["statements"] or not s.get("note", "").strip():
+                    raise Red("an unjudged slot of %s names a statement, or does not say why it is unjudged" % g["row"])
+                continue
+            if not s["statements"] or any(i not in st or st[i]["row"] != g["row"] for i in s["statements"]):
+                raise Red("a slot of %s / %s / %s names no statement of the register in its row" % key)
+            if s["holds"] not in ("ANY", "ROW"):
+                for c in s["holds"].split(" + "):
+                    if c not in codes or not any(c in st[i]["codes"] for i in s["statements"]):
+                        raise Red("a slot of %s / %s / %s owes %s, which none of its statements holds" % (key + (c,)))
+    # the sealers' entries name sealer statements of their row
+    for e in reg["sealers"]:
+        s = st.get(e["statement"])
+        if s is None or s["row"] != e["row"] or s["expects"] != "REFUSE(any)" or e["row"] not in RSN_SEALER_ROWS or e["status"] not in ("MET", "NOT_MET"):
+            raise Red("a planted record is registered under %s, which is not a REFUSE(any) statement of its row" % e["statement"])
+        if e["status"] == "MET" and sorted([e["primary"]] + e["closure"]) != sorted(e["differs"]):
+            raise Red("a planted record of %s is registered MET and differs somewhere besides its field and its closure" % e["row"])
+        if e["status"] == "NOT_MET" and e.get("debt") != "CODE | ACCEPTED_TWIN":
+            raise Red("a planted record of %s is registered NOT_MET without its debt" % e["row"])
+    if sorted({e["row"] for e in reg["sealers"]}) != sorted(RSN_SEALER_ROWS):
+        raise Red("the rows the gate listens to are not the rows of the register's planted records")
+    if any(i not in {o["id"] for o in reg["outside_statements"]} for k in ("detection", "gate_self", "agreement") for i in out[k]) or len(reg["outside_statements"]) != 14:
+        raise Red("the statements outside the court are not named one by one")
+    if set(st) & {o["id"] for o in reg["outside_statements"]}:
+        raise Red("a statement is both held and outside the court")
+    # the partition, by the entry's own sentence (the owner's ruling: hold the reading in the build, cite the entry)
+    e = locked_entry("REASON-COURT-0", {})
+    m, x = re.search(RSN_PARTITION, e["hypothesis"]), re.search(RSN_EXCEPTIONS, e["hypothesis"])
+    if not m or not x or RSN_NINE not in e["success_condition"]:
+        raise Red("the entry's sentences for how the endings divide are not there to be read")
+    total, head, any_, rowheld, unjudged = (int(v) for v in m.groups())
+    e0502, sealer_line, in_parentheses = (int(v) for v in x.groups())
+    c = reg["counts"]
+    entry_reading = {"endings_held_in_a_code_head": (head, "code head"), "endings_refuse_any": (any_, "REFUSE(any)"),
+                     "endings_held_only_by_their_row": (rowheld, "row-held"), "endings_unjudged": (unjudged, "unjudged")}
+    if (total, head, any_, rowheld, unjudged) != (c["endings"], c["endings_held_in_a_code_head"], c["endings_refuse_any"],
+                                                  c["endings_held_only_by_their_row"], c["endings_unjudged"]):
+        raise Red("the register's counts are not the numbers of the entry's sentence")
+    why = _rsn_reading(reg, total, entry_reading)
+    if why:
+        raise Red("the entry's partition does not hold over the register: " + why)
+    if (in_parentheses != c["endings_with_one_code_in_prose"] or e0502 + sealer_line != rowheld or rowheld + in_parentheses != 9
+            or sum(s["n"] for g in reg["endings"] for s in g["slots"] if s["holds"] == "ROW" and s["statements"] in (["A029"], ["A183"])) != rowheld):
+        raise Red("the endings in prose are not the entry's: 1 and 5 held only by their row, and 3 whose LIVESESSION-FORM is in the head, nine in all")
+    # PLANT: the flat misreading — the three as a fifth part beside the four — is refused, and so is a part left out
+    flat = dict(entry_reading)
+    flat["endings_with_one_code_in_prose"] = (c["endings_with_one_code_in_prose"], "statement A177")
+    refused = _rsn_reading(reg, total, flat)
+    if not refused or "a second time" not in refused:
+        raise Red("the flat misreading of the counts (five parts, 1,106) was not refused")
+    short = {k: v for k, v in entry_reading.items() if k != "endings_unjudged"}
+    if not _rsn_reading(reg, total, short) or not _rsn_reading(reg, total, dict(entry_reading, endings_refuse_any=(any_ + 1, "REFUSE(any)"))):
+        raise Red("a reading that leaves a part out, or miscounts one, was not refused")
+    return ("verify/reasons.json is the registered bytes, read through the saved form's reader; counted from its own content it holds %d "
+            "statements (%d refusal checks, %d with a code and %d REFUSE(any); %d second witnesses; %d planted deaths), %d codes (%d from a "
+            "ledger entry, %d from RUNGS.md, %d first registered here), %d endings in %d groups, %d planted records (%d met, %d owed) and %d "
+            "forged envelopes (%d met); every statement expects exactly one of a code, REFUSE(any) with its reason, or a death; every code "
+            "has its source; every second witness names a refusal check; every slot names statements of its row and the slots sum. The "
+            "partition is the entry's own sentence (REASON-COURT-0, hypothesis: \"Of the %d endings, %d owe a code in a code head, %d owe "
+            "REFUSE(any), %d are held only as their row holds them and %d are unjudged.\"): %d + %d + %d + %d = %d; the %d of A177 are "
+            "inside the %d (the entry's phrase: \"whose LIVESESSION-FORM is in the head\"), and %d + %d = 9 stand in prose; the flat "
+            "misreading, five parts, was planted and refused (%s)"
+            % (len(st), len(checks), counted["refusal_checks_with_a_code"], counted["refusal_checks_refuse_any"], counted["second_witnesses"],
+               counted["planted_deaths"], len(codes), by_source["ledger"], by_source["RUNGS.md"], by_source["row"], counted["endings"],
+               counted["ending_groups"], len(seal), counted["sealer_plants_met"], counted["sealer_plants_not_met"], len(env), counted["envelope_plants_met"],
+               total, head, any_, rowheld, unjudged, head, any_, rowheld, unjudged, total, in_parentheses, head, rowheld, in_parentheses, refused))
+
+
+def _rsn_consts(tree) -> list:
+    """Every string literal of the gate that is not the gate's own prose about a failure or a success: a literal
+    inside a `raise` or a `return` is never a witness."""
+    import ast
+    out = []
+
+    def walk(node, prose):
+        for ch in ast.iter_child_nodes(node):
+            p = prose or isinstance(ch, (ast.Raise, ast.Return))
+            if isinstance(ch, ast.Constant) and isinstance(ch.value, str) and not p:
+                out.append((ch.lineno, ch.end_lineno, ch.value))
+            walk(ch, p)
+    walk(tree, False)
+    return out
+
+
+def _rsn_source_check(reg: dict, src_lines: list, tree, tops: dict, ledger: dict, rungs_lines: list) -> list:
+    """Every registered requirement against the gate's source and the registered texts: what no longer stands."""
+    import ast
+    gone = []
+    seg = lambda n: _rsn_norm(" ".join(src_lines[n.lineno - 1:n.end_lineno]))
+    consts = _rsn_consts(tree)
+    for s in reg["statements"]:
+        fn = tops.get(s["function"])
+        if not isinstance(fn, ast.FunctionDef):
+            gone.append("%s: the function %s is gone" % (s["id"], s["function"]))
+            continue
+        if s["requirement"] not in seg(fn):
+            gone.append("%s: its judging statement no longer stands in %s" % (s["id"], s["function"]))
+        for w in s["witness"]:
+            m = re.match(r"the statement$|the helper (\w+), which the statement calls$|the same function \((\w+)\), before the statement$|the gate's (\w+)$", w["in"])
+            scope = fn if (m and w["in"] == "the statement") else (tops.get(m.group(1) or m.group(2) or m.group(3)) if m else None)
+            if scope is None:
+                gone.append("%s: the place of the witness for %s (%s) is gone" % (s["id"], w["code"], w["in"]))
+                continue
+            if w["in"] == "the statement" and w["text"] != s["requirement"]:
+                gone.append("%s: the witness for %s is said to be the statement and is not its text" % (s["id"], w["code"]))
+                continue
+            if w["text"] not in seg(scope):
+                gone.append("%s: the witness for %s no longer stands in %s" % (s["id"], w["code"], w["in"]))
+                continue
+            if not any(scope.lineno <= a <= scope.end_lineno and w["code"] in v and _rsn_norm(src_lines[a - 1]) in w["text"] for a, _b, v in consts):
+                gone.append("%s: the witness for %s holds no literal with the code" % (s["id"], w["code"]))
+    norm_rungs = [_rsn_norm(ln) for ln in rungs_lines]
+    for c in reg["codes"]:
+        if c["source"] == "ledger":
+            m = re.match(r"(.+?), (\w+): …(.*)…$", c["cite"])
+            v = ledger.get(m.group(1), {}).get(m.group(2), "") if m else ""
+            text = _rsn_norm(" ".join(v) if isinstance(v, list) else str(v))
+            if not m or m.group(3) not in text or not (c["code"] in m.group(3) or (c["code"].startswith("SHELL-") and c["code"][6:] in m.group(3))):
+                gone.append("%s: the sentence cited from the ledger no longer stands in its entry, or does not name the code" % c["code"])
+            elif not entry_hash_ok(m.group(1), ledger[m.group(1)]):
+                gone.append("%s: the entry it is cited from was edited after registration" % c["code"])
+        elif c["source"] == "RUNGS.md":
+            m = re.match(r"line (\d+): …(.*)…$", c["cite"])
+            if not m or c["code"] not in m.group(2) or not any(m.group(2) in ln for ln in norm_rungs):
+                gone.append("%s: the line cited from verify/RUNGS.md no longer stands there word for word" % c["code"])
+        elif c["source"] != "row" or not any(w["code"] == c["code"] for i in c["statements"] for s in reg["statements"] if s["id"] == i for w in s["witness"]):
+            gone.append("%s: first registered here, and no statement carries a witness for it" % c["code"])
+    return gone
+
+
+def reasoncourt_source():
+    """(2) Every registered requirement stands in the gate: each judging statement's text in the function the register
+    names, and each witness literal where the register says it is, holding its code; each sentence cited from the
+    ledger stands in its entry, and each line cited from RUNGS.md stands there word for word. The row holds the text,
+    not the line. PLANTS: a judging statement with its code taken out, a table with one code changed, a line of
+    RUNGS.md reworded, a sentence of the ledger reworded and a code that stands only in the gate's own failure text are
+    each found."""
+    import copy
+    reg = _rsn_register()
+    src, lines, tree, tops = _rsn_gate()
+    ledger = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    rungs = read(os.path.join(ROOT, "verify", "RUNGS.md")).decode("utf-8").replace("\r\n", "\n").split("\n")
+    gone = _rsn_source_check(reg, lines, tree, tops, ledger, rungs)
+    if gone:
+        raise Red("%d registered requirement(s) no longer stand: %s" % (len(gone), "; ".join(gone[:6])))
+    # PLANTS, given to the same check: the gate's text with one requirement weakened, and a registered text reworded
+    import ast
+
+    def planted(old: str, new: str):
+        if src.count(old) < 1:
+            raise Red("a plant of this row no longer finds its text in the gate (%s)" % old[:60])
+        s2 = src.replace(old, new)
+        t2 = ast.parse(s2)
+        tops2 = {}
+        for n in t2.body:
+            if isinstance(n, ast.FunctionDef):
+                tops2[n.name] = n
+            elif isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name):
+                tops2[n.targets[0].id] = n
+        return _rsn_source_check(reg, s2.split("\n"), t2, tops2, ledger, rungs)
+    plants = 0
+    # a code taken out of a judging statement (A007: workshop-stale's STALE-PROJECTION)
+    a007 = next(s for s in reg["statements"] if s["id"] == "A007")
+    if not any(g.startswith("A007:") for g in planted(a007["requirement"], a007["requirement"].replace(a007["codes"][0], "REFUSED"))):
+        raise Red("a judging statement with its code taken out was not found")
+    plants += 1
+    # a table's code changed (the reader's seven codes are held by the gate's RC_CODES)
+    if not planted('RC_CODES = ("READER-TRUNCATED", ', 'RC_CODES = ("READER-SHORT", '):
+        raise Red("a code changed in a table the statements loop over was not found")
+    plants += 1
+    # a registered text reworded: a line cited from RUNGS.md, and a sentence cited from the ledger
+    c_r = next(c for c in reg["codes"] if c["source"] == "RUNGS.md")
+    quote = re.match(r"line (\d+): …(.*)…$", c_r["cite"]).group(2)
+    reworded = [ln.replace(c_r["code"], c_r["code"].lower()) for ln in rungs]
+    if not any(g.startswith(c_r["code"] + ":") for g in _rsn_source_check(reg, lines, tree, tops, ledger, reworded)) or not quote:
+        raise Red("a reworded line of verify/RUNGS.md was not found")
+    plants += 1
+    c_l = next(c for c in reg["codes"] if c["source"] == "ledger")
+    rung = re.match(r"(.+?), (\w+): …", c_l["cite"]).group(1)
+    forged = copy.deepcopy(ledger)
+    for f in ("hypothesis", "success_condition", "failure_condition", "instrument"):
+        forged[rung][f] = forged[rung][f].replace(c_l["code"], "A-CODE")
+    forged[rung]["interpretation_limits"] = [x.replace(c_l["code"], "A-CODE") for x in forged[rung]["interpretation_limits"]]
+    if not any(g.startswith(c_l["code"] + ":") for g in _rsn_source_check(reg, lines, tree, tops, forged, rungs)):
+        raise Red("a reworded sentence of the ledger was not found")
+    plants += 1
+    # a code that stands only in the gate's own text about a failure or a success is not a witness
+    told = ast.parse('def f(err):\n    if "CODE-HELD" not in err:\n        raise Red("the program did not say CODE-TOLD")\n    return "it said CODE-SAID"\n')
+    if [v for _a, _b, v in _rsn_consts(told)] != ["CODE-HELD"]:
+        raise Red("a literal inside the gate's own text about a failure or a success was taken as a witness")
+    plants += 1
+    n_w = sum(len(s["witness"]) for s in reg["statements"])
+    return ("every registered requirement stands in the gate: the judging statements of all %d statements, each in the function the "
+            "register names, and all %d witness literals where the register says they are, each holding its code (a literal inside the "
+            "gate's own text about a failure or a success is never one, and a planted one was not taken); the sentences cited for the %d codes of the ledger stand in their "
+            "entries, hash-locked, and the lines cited for the %d codes of RUNGS.md stand there word for word. PLANTS: a judging statement "
+            "with its code taken out, a table with one code changed, a reworded line of RUNGS.md, a reworded sentence of the ledger "
+            "and a code that stands only in the gate's own failure text were each given to the same check, and each was found (%d of %d)"
+            % (len(reg["statements"]), n_w, sum(1 for c in reg["codes"] if c["source"] == "ledger"),
+               sum(1 for c in reg["codes"] if c["source"] == "RUNGS.md"), plants, plants))
+
+
+def _rsn_exit_ok(rule: str, rc: int) -> bool:
+    return rc == 2 if rule == "2" else rc == 70 if rule == "70" else rc != 0
+
+
+def _rsn_carries(ending: dict, code: str) -> bool:
+    """An ending carries a code when, on some line it printed, the code is one of the tokens of the code head or the
+    tail of the first of them after a hyphen."""
+    return any(code in h or h[0].endswith("-" + code) for h in ending["heads"])
+
+
+def _rsn_fits(slot: dict, ending: dict) -> bool:
+    if not _rsn_exit_ok(slot["exit"], ending["exit"]):
+        return False
+    return slot["holds"] in ("ANY", "ROW", "UNJUDGED") or all(_rsn_carries(ending, c) for c in slot["holds"].split(" + "))
+
+
+def _rsn_seat(slots: list, endings: list) -> list:
+    """Seat every ending of a group in a slot it fits, each slot holding exactly its count (an assignment, found by
+    augmenting paths). Returns the slots left short; [] when every slot is filled and no ending is left."""
+    held = [[] for _ in slots]
+
+    def place(e, seen):
+        for i, s in enumerate(slots):
+            if i in seen or not _rsn_fits(s, endings[e]):
+                continue
+            seen.add(i)
+            if len(held[i]) < s["n"]:
+                held[i].append(e)
+                return True
+            for k, other in enumerate(held[i]):
+                if place(other, seen):
+                    held[i][k] = e
+                    return True
+        return False
+    left = [e for e in range(len(endings)) if not place(e, set())]
+    short = [(s, len(held[i])) for i, s in enumerate(slots) if len(held[i]) != s["n"]]
+    if not left and not short:
+        return []
+    return short or [({"holds": "nothing", "exit": "-", "n": 0}, len(left))]
+
+
+def _rsn_watch_check(groups: list, endings: list, unheard: list) -> list:
+    """The endings of a run against the register's groups: what does not hold."""
+    wrong = ["the watch could not keep an ending (%s)" % u for u in unheard]
+    by_group = {}
+    for e in endings:
+        if e["kind"] == "other":
+            wrong.append("%s started %s %s, which ended %d and is no program of the tree, the gate's Python or the compiler"
+                         % (e["row"], e["program"], e["command"], e["exit"]))
+            continue
+        by_group.setdefault((e["row"], e["program"], e["command"]), []).append(e)
+    registered = set()
+    for g in groups:
+        key = (g["row"], g["program"], g["command"])
+        registered.add(key)
+        es = by_group.get(key, [])
+        if not es:
+            wrong.append("%s / %s / %s: no ending was heard, and %d are registered" % (key + (g["n"],)))
+            continue
+        if len(es) != g["n"]:
+            wrong.append("%s / %s / %s: %d endings were heard, and %d are registered" % (key + (len(es), g["n"])))
+            continue
+        short = _rsn_seat(g["slots"], es)
+        if short:
+            wrong.append("%s / %s / %s: %s" % (key + ("; ".join(
+                "%d of %d endings end %s and carry %s in a code head" % (n, s["n"], s["exit"], s["holds"]) if s["holds"] not in ("ANY", "ROW", "UNJUDGED", "nothing")
+                else "%d ending(s) fit no slot" % n if s["holds"] == "nothing" else "%d of %d endings are left to end %s" % (n, s["n"], s["exit"])
+                for s, n in short),)))
+    for key, es in by_group.items():
+        if key not in registered:
+            wrong.append("%s / %s / %s: %d ending(s) in no registered group" % (key + (len(es),)))
+    return wrong
+
+
+def reasoncourt_watch():
+    """(3) The endings of this run are the register's. Every child the gate started through subprocess.run that did not
+    end 0 is in a registered group; every group holds its registered number; each coded slot is filled by endings
+    that end as registered and carry its code in a code head, and what is left is exactly the group's REFUSE(any),
+    row-held and unjudged slots. The prose of the named exceptions is not read. PLANTS: nine synthetic endings, given
+    to the same check."""
+    need_rustc()
+    reg = _rsn_register()
+    groups = reg["endings"]
+    heard = [e for e in ENDINGS if not e["row"].startswith("reasoncourt-")]
+    wrong = _rsn_watch_check(groups, heard, ENDINGS_UNHEARD)
+    if wrong:
+        raise Red("%d finding(s): %s" % (len(wrong), "; ".join(wrong[:6])))
+    deaths = [s for g in groups for s in g["slots"] if s["exit"] == "70"]
+    died = [e for e in heard if e["exit"] == 70]
+    st = {s["id"]: s for s in reg["statements"]}
+    if (sum(s["n"] for s in deaths) != 11 or len(deaths) != 4 or any(st[i]["kind"] != "planted-death" for s in deaths for i in s["statements"])
+            or len({i for s in deaths for i in s["statements"]}) != 4 or len(died) != 11
+            or any(not any(_rsn_carries(e, s["holds"]) for s in deaths) for e in died)):
+        raise Red("the 11 endings of the 4 planted deaths do not each end 70 with their named line in a code head")
+    prose = sum(s["n"] for g in groups for s in g["slots"] if s["holds"] == "ROW") + sum(s["n"] for g in groups for s in g["slots"] if "A177" in s["statements"])
+    if prose != 9:
+        raise Red("the endings of the named exceptions do not number nine")
+    # PLANTS: synthetic endings, read by the same reader of a code head and given to the same check
+    one = lambda slots: [{"row": "a-row", "program": "shell", "command": "show", "n": sum(s["n"] for s in slots), "slots": slots}]
+    code = "PRESENTEXACT-READBACK"
+    coded = one([{"exit": "2", "holds": code, "n": 1, "statements": ["A000"]}])
+
+    def child(rc, *lines, row="a-row", program="shell", command="show", kind="tree"):
+        return [] if rc == 0 else [{"row": row, "program": program, "command": command, "kind": kind, "exit": rc,
+                                    "heads": [h for h in (code_head(ln) for ln in lines) if h]}]
+    if _rsn_watch_check(coded, child(2, code + ": the screen read back differs"), []) or _rsn_watch_check(coded, child(2, "SHELL-" + code + ": it differs"), []):
+        raise Red("a synthetic ending that carries its code in a code head, alone or as the tail of the first token, was refused")
+    death = one([{"exit": "70", "holds": "LIVESESSION-PLANT-CRASH", "n": 1, "statements": ["A000"]}])
+    plants = [
+        ("an ending in no group", coded, child(2, code + ": x") + child(2, code + ": x", row="another-row")),
+        ("a missing ending", coded, []),
+        ("a code only in the text after the head", coded, child(2, "the shell refused: " + code + " at frame 3")),
+        ("another code in the head", coded, child(2, "PRESENTEXACT-GEOMETRY: " + code.lower())),
+        ("a code that is the tail of the second token and not the first", coded, child(2, "SHELL: PLAYBACK-" + code + " at frame 3")),
+        ("a longer code that begins with the registered one", coded, child(2, code + "-STALE: the screen is stale")),
+        ("a death that ends 2", death, child(2, "LIVESESSION-PLANT-CRASH: died after the journal (x/journal.vsj)")),
+        ("a refusal that ends 0", coded, child(0, code + ": x")),
+        ("a code in lower case", coded, child(2, code.lower() + ": x")),
+        ("an ending of a program that is none of the registered kinds", coded, child(2, code + ": x") + child(1, "x", program="git", kind="other")),
+        ("an ending the watch could not keep", coded, child(2, code + ": x")),
+    ]
+    for what, groups_, endings_ in plants:
+        if not _rsn_watch_check(groups_, endings_, ["a-row: KeyError()"] if what == "an ending the watch could not keep" else []):
+            raise Red("PLANT not refused: " + what)
+    if code_head("refused: " + code) or code_head("the " + code) or code_head(code.lower()) or code_head(" " + code) != []:
+        raise Red("a lower-case word, or a line that does not begin with a code token, was read as a code head")
+    if (code_head("SESSIONWALK-CHAIN-BROKEN: the chain breaks at 3") != ["SESSIONWALK-CHAIN-BROKEN"]
+            or code_head("LIVESESSION-FORM: the journal (READER-NUMBER 12)") != ["LIVESESSION-FORM"] or code_head("A B: c D") != ["A", "B"]):
+        raise Red("the reader of a code head does not stop where the registered rule stops")
+    # and over the run itself: one heard ending taken away, and one moved to another row, are each refused
+    if heard and (not _rsn_watch_check(groups, heard[1:], []) or not _rsn_watch_check(groups, heard[:-1] + [dict(heard[-1], row="a-row")], [])):
+        raise Red("the run with one ending taken away, or with one moved to another row, was not refused")
+    exits = {}
+    for e in heard:
+        exits[e["exit"]] = exits.get(e["exit"], 0) + 1
+    units = _rsn_units(reg)
+    return ("%d children of the gate did not end 0 (%s), in %d groups by row, program and command: the register's %d endings in its %d "
+            "groups, each group its registered number; %d owe a code and carry it in a code head with the registered exit status, and what "
+            "is left of each group is exactly its REFUSE(any) (%d), row-held (%d) and unjudged (%d) slots; none is in no group and no group "
+            "is empty; the 11 endings of the 4 planted deaths end 70 with their named line; the nine endings of the named exceptions are "
+            "counted and their prose is not read. PLANTS: %d synthetic endings, the nine registered and two more, were given to the same check and each was refused (%s), and so was "
+            "the run with one ending taken away and with one moved to another row; a lower-case word is never read as a code"
+            % (len(heard), ", ".join("%d ended %d" % (n, rc) for rc, n in sorted(exits.items())), len({(e["row"], e["program"], e["command"]) for e in heard}),
+               sum(g["n"] for g in groups), len(groups), units["code head"], units["REFUSE(any)"], units["row-held"], units["unjudged"],
+               len(plants), "; ".join(p[0] for p in plants)))
+
+
+def _rsn_flat(x, p="") -> dict:
+    """A judged argument as its leaves, each under its path."""
+    out = {}
+    if isinstance(x, dict):
+        if not x:
+            out[p] = "{}"
+        for k, v in x.items():
+            out.update(_rsn_flat(v, p + "." + k if p else k))
+    elif isinstance(x, list):
+        if all(not isinstance(v, (dict, list)) for v in x):
+            out[p] = json.dumps(x)
+        else:
+            for i, v in enumerate(x):
+                out.update(_rsn_flat(v, "%s[%d]" % (p, i)))
+    else:
+        out[p] = json.dumps(x)
+    return out
+
+
+def _rsn_named(call: dict) -> dict:
+    """The judged arguments of one call, under the names the register gives them. A record given as bytes is compared
+    member by member; it is a planted record being compared here, not a document being read."""
+    d = {}
+    for (_i, name), a in zip(RSN_JUDGED.get(call["fn"], RSN_RECORD), call["input"]):
+        if isinstance(a, dict) and "__bytes__" in a:
+            try:
+                a = json.loads(a["__bytes__"])
+            except ValueError:
+                a = a["__bytes__"]
+        d[name] = a
+    return _rsn_flat(d)
+
+
+def _rsn_sealers_check(entries: list, calls: list, broken: list) -> list:
+    """What the gate heard of the sealers against the register's planted records: what does not hold."""
+    wrong = ["the listener failed (%s)" % b for b in broken]
+    pairs = {}
+    for e in entries:
+        pairs.setdefault((e["row"], e["function"]), []).append(e)
+    for c in calls:
+        if c["outcome"] != "accepted" and (c["row"], c["fn"]) not in pairs and (c["row"], c["fn"]) not in RSN_INNER:
+            wrong.append("%s: a call of %s was %s, and no planted record is registered for it" % (c["row"], c["fn"], c["outcome"]))
+    for (row, fn), es in pairs.items():
+        mine = [c for c in calls if c["row"] == row and c["fn"] == fn]
+        odd = sorted({c["outcome"] for c in mine if c["outcome"] not in ("accepted", "refused")})
+        if odd:
+            wrong.append("%s: a call of %s neither returned nor was refused (%s)" % (row, fn, ", ".join(odd)))
+            continue
+        acc = [_rsn_named(c) for c in mine if c["outcome"] == "accepted"]
+        ref = [_rsn_named(c) for c in mine if c["outcome"] == "refused"]
+        if len(ref) != len(es) or sorted(e["plant"] for e in es) != list(range(len(es))):
+            wrong.append("%s: %s refused %d planted record(s), and %d are registered" % (row, fn, len(ref), len(es)))
+            continue
+        for e in es:
+            plant = ref[e["plant"]]
+            if e["twin"] >= len(acc):
+                wrong.append("%s: %s accepted %d record(s), and the twin of plant %d is registered as number %d" % (row, fn, len(acc), e["plant"], e["twin"]))
+                continue
+            twin = acc[e["twin"]]
+            diff = sorted(p for p in set(twin) | set(plant) if twin.get(p) != plant.get(p))
+            if e["status"] == "MET":
+                if diff != sorted([e["primary"]] + e["closure"]):
+                    wrong.append("%s: plant %d of %s is registered as one mutation at %s%s, and differs from its twin at %s"
+                                 % (row, e["plant"], fn, e["primary"], " with its closure" if e["closure"] else "", ", ".join(diff[:5]) or "nothing"))
+            else:
+                shown = diff[:12] + (["… %d more" % (len(diff) - 12)] if len(diff) > 12 else [])
+                near = min([len([p for p in set(a) | set(plant) if a.get(p) != plant.get(p)]) for a in acc] or [99])
+                if shown != e["differs"] or near < 2:
+                    wrong.append("%s: plant %d of %s is registered as owed (NOT_MET), and %s"
+                                 % (row, e["plant"], fn, "an accepted record now stands one field from it: the debt has moved without an amendment" if near < 2
+                                    else "it no longer differs from its twin where the register says"))
+    return wrong
+
+
+def reasoncourt_sealers():
+    """(4) The sealers, under one registered mutation and its closure. The gate listened to every call the registered
+    rows made of the registered sealer functions, changing no function and no result: every registered planted record
+    was refused; each one registered MET has its twin accepted in the same row, and the two differ at the registered
+    field and its registered closure and nowhere else; each one registered NOT_MET was refused and is still owed.
+    PLANTS: a twin changed in a second field, a planted record that is accepted, a refusal that is not registered, a
+    debt that goes away, a listener that failed and a row not heard."""
+    import copy
+    need_rustc()
+    reg = _rsn_register()
+    entries = reg["sealers"]
+    calls = [c for c in SEALER_CALLS if c["row"] in RSN_SEALER_ROWS]
+    if not calls:
+        raise Red("the listener heard no call of a sealer: it is not listening%s" % (" (%s)" % "; ".join(_SEAL["broken"][:2]) if _SEAL["broken"] else ""))
+    wrong = _rsn_sealers_check(entries, calls, _SEAL["broken"])
+    if wrong:
+        raise Red("%d finding(s): %s" % (len(wrong), "; ".join(wrong[:5])))
+    pairs = sorted({(e["row"], e["function"]) for e in entries})
+    heard = [c for c in calls if (c["row"], c["fn"]) in pairs]
+
+    def changed(pick, change):
+        cs = copy.deepcopy(calls)
+        change(next(c for c in cs if pick(c)))
+        return _rsn_sealers_check(entries, cs, [])
+
+    def second_field(c):
+        a = c["input"][0]
+        if isinstance(a, dict) and "__bytes__" in a:
+            d = json.loads(a["__bytes__"])
+            d["a-second-field"] = 1
+            c["input"][0] = {"__bytes__": json.dumps(d)}
+        else:
+            a["a-second-field"] = 1
+    # PLANT: the twin of a record registered MET, changed in a second field (presentexact-sealer; and a session given as bytes)
+    for row, fn in (("presentexact-sealer", "seal_presentexact"), ("admit-replay", "check_saved")):
+        twin_no = next(e["twin"] for e in entries if (e["row"], e["function"]) == (row, fn) and e["status"] == "MET")
+        seen = [0]
+
+        def is_twin(c, row=row, fn=fn, twin_no=twin_no, seen=seen):
+            if (c["row"], c["fn"], c["outcome"]) != (row, fn, "accepted"):
+                return False
+            seen[0] += 1
+            return seen[0] - 1 == twin_no
+        if not changed(is_twin, second_field):
+            raise Red("PLANT not caught: the twin of a planted record of %s, changed in a second field" % row)
+    # PLANT: a planted record that is accepted, and an accepted record that is refused
+    if not changed(lambda c: (c["row"], c["fn"], c["outcome"]) == ("liveloop-sealer", "seal_liveloop", "refused"), lambda c: c.update(outcome="accepted")):
+        raise Red("PLANT not caught: a planted record that the sealer accepts")
+    if not changed(lambda c: (c["row"], c["fn"], c["outcome"]) == ("framesplit-sealer", "seal_framesplit", "accepted"), lambda c: c.update(outcome="refused")):
+        raise Red("PLANT not caught: a refusal that is not registered")
+    # PLANT: a debt that goes away — a record registered NOT_MET, made one field from an accepted record
+    owed = next(e for e in entries if e["status"] == "NOT_MET" and e["function"] == "seal_allocreuse")
+    acc_calls = [c for c in calls if (c["row"], c["fn"], c["outcome"]) == (owed["row"], owed["function"], "accepted")]
+    seen = [0]
+
+    def is_owed(c):
+        if (c["row"], c["fn"], c["outcome"]) != (owed["row"], owed["function"], "refused"):
+            return False
+        seen[0] += 1
+        return seen[0] - 1 == owed["plant"]
+
+    def pay(c):
+        c["input"] = copy.deepcopy(acc_calls[owed["twin"]]["input"])
+        c["input"][0]["a-second-field"] = 1
+    if not changed(is_owed, pay):
+        raise Red("PLANT not caught: a debt that went away without an amendment")
+    if not _rsn_sealers_check(entries, calls, ["KeyError()"]) or not _rsn_sealers_check(entries, [c for c in calls if c["row"] != "drift-sealer"], []):
+        raise Red("PLANT not caught: a listener that failed, or a registered row that was not heard")
+    # PLANT: one refusal more than is registered, after every registered one
+    last = [c for c in calls if (c["row"], c["fn"], c["outcome"]) == ("liveloop-sealer", "seal_liveloop", "refused")][-1]
+    if not _rsn_sealers_check(entries, calls + [copy.deepcopy(last)], []):
+        raise Red("PLANT not caught: one refusal more than is registered")
+    seal = [e for e in entries if e["statement"] != "A164"]
+    env = [e for e in entries if e["statement"] == "A164"]
+    n_met = lambda es, closed: sum(1 for e in es if e["status"] == "MET" and bool(e["closure"]) == closed)
+    return ("the gate listened (%s) to every call the %d registered rows made of the %d registered sealer functions, wrapping nothing: "
+            "%d calls, %d refused and %d accepted. All %d planted records of the sealers were refused: %d meet the condition, each with its "
+            "twin accepted in the same row and differing from it at the registered field and its registered closure and nowhere else (%d at "
+            "one field, %d with a closure); %d do not, differ from their twin where the register says, stand one field from no accepted "
+            "record, and are still owed (CODE | ACCEPTED_TWIN). The %d forged envelopes of admit-replay were refused: %d meet the condition "
+            "and %d are owed. PLANTS: a twin changed in a second field (a record, and a session given as bytes), a planted record that is "
+            "accepted, a refusal that is not registered, one refusal more than is registered, a debt that goes away, a listener that failed "
+            "and a row not heard were each caught"
+            % (_SEAL["tap"], len({e["row"] for e in entries}), len({e["function"] for e in entries}), len(heard),
+               sum(1 for c in heard if c["outcome"] == "refused"), sum(1 for c in heard if c["outcome"] == "accepted"), len(seal),
+               n_met(seal, False) + n_met(seal, True), n_met(seal, False), n_met(seal, True), sum(1 for e in seal if e["status"] == "NOT_MET"),
+               len(env), sum(1 for e in env if e["status"] == "MET"), sum(1 for e in env if e["status"] == "NOT_MET")))
+
+
+def reasoncourt_fence():
+    """(5) By source: the watch returns what the child returned and keeps only code heads; the listener wraps and
+    assigns nothing; nothing in the gate fills the register, and it is read through verify/savedform.py; no Rust
+    source under kernel/, shell/ or workshop/ and no sealer under verify/ differs from what it was; the 226 rows
+    before this rung keep their names and their order, and this rung adds six; the gate starts a child outside
+    subprocess.run in two places only, and both require it to end 0."""
+    import ast
+    src, lines, tree, tops = _rsn_gate()
+    seg = lambda n: "\n".join(lines[n.lineno - 1:n.end_lineno])
+    # the watch
+    w = tops.get("_watched_run")
+    if not isinstance(w, ast.FunctionDef):
+        raise Red("the watch is gone")
+    to_cp = [n for n in ast.walk(w) if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "cp" for t in n.targets)]
+    returns = [n for n in ast.walk(w) if isinstance(n, ast.Return)]
+    touched = [n for n in ast.walk(w) if isinstance(n, (ast.Attribute, ast.Subscript)) and isinstance(n.ctx, (ast.Store, ast.Del))]
+    inner = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "_SUBPROCESS_RUN"]
+    installs = [n for n in ast.walk(tree) if isinstance(n, ast.Assign) and any(ast.unparse(t) == "subprocess.run" for t in n.targets)]
+    if (len(to_cp) != 1 or ast.unparse(to_cp[0].value) != "_SUBPROCESS_RUN(*a, **k)" or len(returns) != 1 or ast.unparse(returns[0]) != "return cp"
+            or touched or "setattr" in seg(w) or len(inner) != 1 or len(installs) != 1 or ast.unparse(installs[0].value) != "_watched_run"
+            or subprocess.run is not _watched_run):
+        raise Red("the watch does not return, untouched, what the child returned")
+    en = tops.get("_ending")
+    dicts = [n for n in ast.walk(en) if isinstance(n, ast.Dict)] if isinstance(en, ast.FunctionDef) else []
+    if (len(dicts) != 1 or [k.value for k in dicts[0].keys] != ["row", "program", "command", "kind", "exit", "heads"]
+            or ast.unparse(dicts[0].values[5]) != "heads" or seg(en).count("heads.append(") != 1 or "heads.append(h)" not in seg(en)
+            or "h = code_head(ln)" not in seg(en) or "heads" in seg(w)):
+        raise Red("the watch keeps something of a child's output besides the code heads of its lines")
+    if ENDINGS and any(sorted(e) != ["command", "exit", "heads", "kind", "program", "row"] or any(not isinstance(t, str) or not _CODE_TOKEN.fullmatch(t) for h in e["heads"] for t in h)
+                       for e in ENDINGS):
+        raise Red("an ending the watch kept holds something that is not a code token")
+    # the listener on the sealers: the interpreter's events, and nothing wrapped or assigned
+    for name in ("_seal_listen", "_seal_begin", "_seal_end", "_seal_on_start", "_seal_on_return", "_seal_on_unwind", "_seal_trace", "_seal_codes", "_seal_plain"):
+        fn = tops.get(name)
+        if not isinstance(fn, ast.FunctionDef):
+            raise Red("the sealers' listener is not whole (%s)" % name)
+        body = seg(fn)
+        stores = [n for n in ast.walk(fn) if isinstance(n, ast.Attribute) and isinstance(n.ctx, (ast.Store, ast.Del))]
+        if stores or "setattr(" in body or "__code__ =" in body or "functools" in body or "__wrapped__" in body:
+            raise Red("%s assigns to an attribute: the listener changes no function, class or module" % name)
+        if name.startswith("_seal_on_") or name == "_seal_trace":
+            for r in (n for n in ast.walk(fn) if isinstance(n, ast.Return)):
+                if r.value is not None and ast.unparse(r.value) not in ("None", "local"):
+                    raise Red("%s returns something to the interpreter" % name)
+            if "raise" in body:
+                raise Red("%s raises" % name)
+    import importlib
+    for mod, fns in RSN_SEALERS.items():
+        m = importlib.import_module(mod)
+        for f in fns:
+            g = getattr(m, f)
+            if type(g).__name__ != "function" or g.__module__ != mod or g.__name__ != f or hasattr(g, "__wrapped__") or g.__code__ not in _seal_codes():
+                raise Red("%s.%s is not the function its module defines" % (mod, f))
+    if sorted(f for fns in RSN_SEALERS.values() for f in fns) != sorted({e["function"] for e in _rsn_register()["sealers"]}):
+        raise Red("the functions the gate listens to are not the register's")
+    # the register: read through the saved form's reader, written by nothing
+    uses = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and any(isinstance(a, ast.Name) and a.id == "RSN_REGISTER" for a in n.args)]
+    named = [n for n in ast.walk(tree) if isinstance(n, ast.Name) and n.id == "RSN_REGISTER"]
+    spelled = [n for n in ast.walk(tree) if isinstance(n, ast.Constant) and n.value == "reasons" + ".json"]
+    stores = sorted({f.name for f in tops.values() if isinstance(f, ast.FunctionDef) for n in ast.walk(f)
+                     if isinstance(n, ast.Subscript) and isinstance(n.ctx, ast.Store) and isinstance(n.value, ast.Name) and n.value.id == "_RSN"})
+    if (len(spelled) != 1 or len(named) != len(uses) + 1 or any(ast.unparse(n) not in ("savedform.read_file(RSN_REGISTER)", "read(RSN_REGISTER)") for n in uses)
+            or sum(1 for n in uses if ast.unparse(n) == "savedform.read_file(RSN_REGISTER)") != 1 or "json." in seg(tops["_rsn_register"])
+            or stores != ["_rsn_gate", "_rsn_register"]):
+        raise Red("the register is opened by something other than the saved form's reader, or is opened to be written, or is kept by another hand")
+    for name in ("_watched_run", "_ending", "_ending_program", "code_head"):
+        if "RSN_" in seg(tops[name]) or "_rsn_" in seg(tops[name]) or "reasons" in seg(tops[name]):
+            raise Red("the watch reaches the register: an ending never fills it")
+    # the programs and the sealers are what they were
+    import livesession as LS
+    if LS.renderer_id(ROOT) != RC_RENDERER_ID or LS.bearing_id(ROOT) != RC_BEARING_ID:
+        raise Red("the renderer or the bearing identity is not what it was before this rung")
+    if (sha256(read(os.path.join(KERNEL, "savedform.rs")).replace(b"\r\n", b"\n")) != RC_RUST_READER_SHA256
+            or sha256(read(os.path.join(ROOT, "verify", "savedform.py")).replace(b"\r\n", b"\n")) != RC_PYTHON_READER_SHA256):
+        raise Red("a reader's text changed: the reader's pins are READER-COURT-0's")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    there = sorted(d + "/" + f for d in ("kernel", "shell", "workshop") for f in os.listdir(os.path.join(ROOT, d)) if f.endswith(".rs"))
+    if sorted(k for k in RSN_SOURCES if k.startswith("verify/")) != sorted("verify/" + f for f in RSN_SEALER_FILES):
+        raise Red("the sealer files this rung holds are not the seventeen under verify/")
+    if there != sorted(k for k in RSN_SOURCES if not k.startswith("verify/")):
+        raise Red("the Rust sources under kernel/, shell/ and workshop/ are not the files they were: %s"
+                  % ", ".join(sorted(set(there) ^ {k for k in RSN_SOURCES if not k.startswith("verify/")})))
+    moved = sorted(rel for rel, h in RSN_SOURCES.items() if sha256(read(os.path.join(ROOT, *rel.split("/"))).replace(b"\r\n", b"\n")) != h)
+    if moved:
+        raise Red("changed since this rung found it: %s" % ", ".join(moved))
+    # the rows
+    order = [n.args[0].value for n in sorted((n for n in ast.walk(tops["main"]) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "row"
+                                              and n.args and isinstance(n.args[0], ast.Constant)), key=lambda n: (n.lineno, n.col_offset))]
+    if len(order) != len(set(order)) or sha256("\n".join(order[:226]).encode("utf-8"))[:16] != RSN_ROWSET_BEFORE or tuple(order[226:232]) != RSN_ROWS:
+        raise Red("the 226 rows before this rung do not keep their names and their order, or this rung's six do not follow them")
+    done = [name for _st, name, _t in ROWS]
+    if len(done) >= 226 and (sha256("\n".join(done[:226]).encode("utf-8"))[:16] != RSN_ROWSET_BEFORE or tuple(done[226:231]) != RSN_ROWS[:5]):
+        raise Red("the rows this gate ran are not the 226 and this rung's, in order")
+    # a child outside subprocess.run
+    outside = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and (
+        (isinstance(n.func, ast.Attribute) and isinstance(n.func.value, ast.Name) and (
+            (n.func.value.id == "subprocess" and n.func.attr != "run") or
+            (n.func.value.id == "os" and (n.func.attr in ("system", "popen", "startfile", "fork", "forkpty") or n.func.attr.startswith(("spawn", "exec", "posix_spawn"))))))
+        or (isinstance(n.func, ast.Name) and n.func.id == "Popen"))]
+    imported = {a.name.split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.Import) for a in n.names} | {
+        (n.module or "").split(".")[0] for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)}
+    if len(outside) != 2 or any(ast.unparse(n.func) != "subprocess.Popen" for n in outside) or imported & {"multiprocessing", "concurrent", "pty", "asyncio"}:
+        raise Red("the gate starts a child outside subprocess.run somewhere other than its two places")
+    for n in outside:
+        fn = next(f for f in tops.values() if isinstance(f, ast.FunctionDef) and f.lineno <= n.lineno <= f.end_lineno)
+        must = [i for i in ast.walk(fn) if isinstance(i, ast.If) and ast.unparse(i.test) == "pr.returncode != 0" and any(isinstance(b, ast.Raise) for b in i.body)]
+        if len(must) != 1:
+            raise Red("%s starts a child outside subprocess.run and does not require it to end 0" % fn.name)
+    return ("by source: the watch assigns what subprocess.run returned once and returns it, and keeps of a child only its row, its "
+            "program, its command, its exit status and the code heads of its lines (every token it kept this gate is a code token); the "
+            "sealers' listener takes the interpreter's events, assigns to no attribute, returns nothing to the interpreter and raises "
+            "nothing, and each of the %d sealer functions is the function its module defines, unwrapped; the register's value comes "
+            "through verify/savedform.py, its bytes are read besides only to be hashed, nothing opens it to write, and the watch does not reach it; the renderer identity (%s...), the bearing "
+            "identity (%s...), both readers' pins and the LATENCY-0 prefix are what they were; all %d Rust sources under kernel/, shell/ "
+            "and workshop/ and all %d sealer files under verify/ are byte for byte what this rung found; the 226 rows before this rung "
+            "keep their names and their order (%s) and this rung adds six; the gate starts a child outside subprocess.run in two places "
+            "only, and both require it to end 0"
+            % (sum(len(v) for v in RSN_SEALERS.values()), RC_RENDERER_ID[:12], RC_BEARING_ID[:12],
+               sum(1 for k in RSN_SOURCES if not k.startswith("verify/")), sum(1 for k in RSN_SOURCES if k.startswith("verify/")), RSN_ROWSET_BEFORE))
+
+
 def main() -> int:
     print("VERÐANDI GATE")
     # REFUSAL-LOG-0: every shell the gate runs logs its refusals to the gate's own scratch file, never the owner's log
@@ -11927,6 +13100,14 @@ def main() -> int:
     row("readercourt-commands", readercourt_commands)
     row("readercourt-single", readercourt_single)
     row("readercourt-fence", readercourt_fence)
+    # REASON-COURT-0: the register, the gate's own text held to it, the watch over every child that does not end 0,
+    # the sealers under one mutation and its closure, and a fence
+    row("reasoncourt-preregistered", reasoncourt_preregistered)
+    row("reasoncourt-register", reasoncourt_register)
+    row("reasoncourt-source", reasoncourt_source)
+    row("reasoncourt-watch", reasoncourt_watch)
+    row("reasoncourt-sealers", reasoncourt_sealers)
+    row("reasoncourt-fence", reasoncourt_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

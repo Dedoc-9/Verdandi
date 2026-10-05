@@ -462,11 +462,11 @@ and not by a reader, the writers' own output as a positive witness, and the froz
 different program at a different time. A second author or a mechanized grammar would close more of it and neither
 is on the route.
 
-## G24 — a refusal is held to its code, not to its cause, and the court that holds it is not built · DECLARED (the registration); OBSERVED (the census, and four listen-only passes)
+## G24 — a refusal is held to its code, not to its cause · ESTABLISHED (the court, on the gate here); limits stated
 
-Until REASON-COURT-0 is built, a row holds a refusal's reason only as that row was written: 73 of the 103 coded
-checks look for the code anywhere in the output, 22 hold only that the subject refused, and nothing holds a refusal
-to its code from outside the row. The registration closes part of that and says what it leaves:
+Before REASON-COURT-0 a row held a refusal's reason only as that row was written: 73 of the 103 coded checks look
+for the code anywhere in the output, 22 hold only that the subject refused, and nothing held a refusal to its code
+from outside the row. The court is built and passes here. What it leaves:
 
 - **A code is not a cause.** `INVALID-EDIT` answers six different edits and `DIVERGED` four forgeries. The text
   that tells them apart is, by ruling, not locked.
@@ -475,20 +475,25 @@ to its code from outside the row. The registration closes part of that and says 
 - **Debts.** 16 planted records of the sealers and 2 forged envelopes have no accepted twin one mutation away, so
   their refusal is not tied to the field the row names. Five statements judge a refusal for its reason and hold a
   word or an exit status where a code is owed. They are listed, not paid.
-- **The watch counts by group.** It will know how many endings of a row, program and command carry a code, not
-  which input drew it. Where a group holds coded and `REFUSE(any)` slots together, a changed code can hide.
+- **The watch counts by group.** It knows how many endings of a row, program and command carry a code, not which
+  input drew it. Where a group holds coded and open slots together and one more ending carries the code than is
+  owed, a changed code can hide: three groups today (`shell-blit-law`, `refusallog-bijection`, `bearing-refuse`).
+  The row's own statement judges those endings.
 - **Inside the gate's process the watch sees nothing.** 15 coded checks are judged there (an exception's key, a
   verdict line, a trace) and stay held by their row alone. Counted once, off the gate: 142,083 refusal-type
   exceptions are raised there in a run, 74 of them the sealers' and 32 the envelope's, and all but one are claimed
   by a registered statement or by the agreement court. Thirteen more statements judge a refusal that is neither a
   child's non-zero ending nor an exception there, and no tap hears those. A watch over the raises is registered
   as its own slice, MINT-WATCH-0, and is not built (G26).
-- **The register has been heard, not held.** In three configurations here and on the host (win32, Python 3.14)
-  every registered group held: 1,103 endings, 77 of 77 groups. Each is one run by an instrument outside the gate.
-  No row reads the register yet.
+- **The built gate has not run on the host.** Before the build the register was heard there once, by an
+  instrument outside the gate: 1,103 endings, 77 of 77 groups. The sealers' listener has been heard here on Python
+  3.11, 3.12, 3.13 and 3.14.0rc2; the host runs 3.14.5 on win32.
+- **The source row holds text, not meaning.** It shows that a judging statement still stands, word for word. It
+  does not show that the statement is reached, or that the row acts on it. A statement rewritten to say the same
+  thing in other words reddens it.
 
-**Exorcism.** Partial, and registered: the build. Paying a debt is a code in a sealer or an accepted twin in a row,
-each a decision of its own. Telling causes apart would mean locking text, which the owner ruled out. For the
+**Exorcism.** For the host, its gate. Paying a debt is a code in a sealer or an accepted twin in a row, each a
+decision of its own. Telling causes apart would mean locking text, which the owner ruled out. For the
 gate's own process two remedies are declared and not seated: an accounting of every refusal site, and the sealers'
 refusals turned from an exception into a datum. The first closes a missed check and not a missed kind; the second
 changes the sealers.
@@ -520,7 +525,8 @@ MINT-WATCH-0 is registered and not built. What it will hold, and what it will no
 - **Counts are by row and site, not by input.** Two plants of one row that exchanged the sites refusing them would
   leave every count as it was.
 - **The watch hears up to its own row.** A row that a later rung places after it is not heard by it until that
-  rung says how.
+  rung says how. REASON-COURT-0's six rows, which were not built when the register was measured, have since been
+  heard once by the instrument: they raise no refusal.
 - **The instrument that took the measurement is outside the repository.** Its four reports are named by hash and
   are not in the tree.
 
@@ -538,7 +544,7 @@ with sound remedies; G2 is an honest boundary of what the courts measured; G7 is
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
 and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a careful reader must carry, recorded so they are carried on
 purpose. Of the live editor's, G14, G15, G16, G18, G20, G23 and G25 are limits of method, stated so no claim is read
-past them; G24 is a gap with a registered and unbuilt remedy and a list of debts; G26 is the stated reach of a second registered and unbuilt watch; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
+past them; G24 is a built court with its reach and its debts stated; G26 is the stated reach of a second registered and unbuilt watch; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
 built, with the court's reach stated; G21 is a measurement not yet taken; G22 is two things that happened once and were never
 explained.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded

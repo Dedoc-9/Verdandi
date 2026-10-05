@@ -4624,7 +4624,7 @@ its form.
 diff and constraints are promoted ahead of it. The owner: *I would not silently reorder that based on the 15-pivot
 review. That deserves its own ruling.* The locked order stands until he rules.
 
-## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021` and pushed; nothing built; heard on the host before the build, and every registered group holds there)
+## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021`; heard on the host before the build; built: six rows, 232 in the gate; the gate passes here; not yet run on the host)
 
 ```
   a row's statement ───────────────►  the register  verify/reasons.json   ◄── the ledger entry pins its bytes
@@ -4897,6 +4897,114 @@ as it says it is. Two things are recorded as declared, each for a court of its o
 own, MINT-WATCH-0, registered in the next section and built after this rung. The vocabulary half stays deferred: no
 exception is required to carry a code. Nothing of this rung's entry, register or rule moved.
 
+**Built (2026-10-05), against `337ab021`, which is not edited.** One file changes: `verify/verify.py`. No program, no
+sealer, no record and neither register changes. `verify/mints.json` is not read by this build (the owner's ruling:
+the process-boundary result is established on its own, before the mint watch exists).
+
+```
+  subprocess.run ──► the watch ──► ENDINGS        row · program · command · exit · the code heads of its lines
+                                                  the text after a head is never kept; the child's result is untouched
+  a registered row runs ──► the listener ──► SEALER_CALLS   row · function · the judged arguments · accepted | refused
+                            the interpreter's own call and return events; no function wrapped or replaced
+
+  reasoncourt-preregistered · -register · -source · -watch · -sealers · -fence            rows 227 to 232
+```
+
+| row | what it holds | plants, on every gate |
+|---|---|---|
+| `reasoncourt-preregistered` | the entry by its hash and its phrases; the register's 199,090 bytes by their hash; the gate's counts and its six rows are the entry's | — |
+| `reasoncourt-register` | the register, read through the saved form's reader, is whole: its 27 counts recounted from its own content; every statement expects exactly one of a code, `REFUSE(any)` with its reason, or a death; every code has its source; every second witness names a refusal check; every slot names statements of its row, and the slots sum | the flat misreading of the counts; a part left out; a part miscounted |
+| `reasoncourt-source` | the 165 judging statements, each in the function the register names; the 215 witness literals, each where the register says and holding its code; the sentences cited for 23 codes in the ledger, hash-locked; the lines cited for 15 codes in this file, word for word | a statement with its code taken out; a table with one code changed; a reworded line of this file; a reworded sentence of the ledger; a code that stands only in the gate's own failure text |
+| `reasoncourt-watch` | every child that did not end 0, seated in a slot of its group: 1,103 in 77 groups, each group its number, each coded slot filled by endings that end as registered and carry the code in a code head, the rest exactly the open slots | eleven synthetic endings (the nine registered and two more); the run with one ending taken away, and with one moved to another row |
+| `reasoncourt-sealers` | every call the 11 registered rows make of the 15 sealer functions: 57 planted records and 16 forged envelopes refused; 55 of them one registered mutation and its closure from a twin accepted in the same row; 18 still owed | a twin changed in a second field (a record, and a session given as bytes); a planted record accepted; a refusal not registered; one refusal too many; a debt that goes away; a listener that failed; a row not heard |
+| `reasoncourt-fence` | by source: the watch, the listener, who reads the register, 39 Rust sources and 17 sealer files by hash, the 226 rows and the six, the two children started outside `subprocess.run` | — |
+
+**What the gate heard here.**
+
+| | |
+|---|---|
+| the gate | 232 rows / 0 fail / 0 skipped, rowset `5b48184218214583` |
+| children that did not end 0 | 1,103: 1,090 ended 2, 11 ended 70, 2 ended 1 |
+| groups | 77, each with its registered number; none empty, no ending outside one |
+| code heads kept | 1,104 in all; no ending kept more than two |
+| calls of sealer functions in the registered rows | 158 heard; 150 by a registered row and function: 73 refused, 77 accepted |
+| the listener | `sys.settrace` on Python 3.11; `sys.monitoring` on 3.12, 3.13 and 3.14.0rc2; the same 158 calls on each |
+
+**The listener.** The entry registers that the gate *listens to every call the registered rows make of the registered
+sealer functions, without changing a function or its result*. A wrapper around a sealer function had already
+reddened `hoststate-fence`, which reads a sealer's source. So the listener takes the interpreter's own events: where
+`sys.monitoring` exists, the start and the return of the fifteen functions' code objects and the unwinding of a
+frame; before it, a trace function that follows only those functions' frames. It is on only while one of the eleven
+registered rows runs. It copies the judged arguments as the call starts, notes whether the call returned or was
+refused, and touches nothing.
+
+**Readings the build made.** Each is the owner's to strike before the push.
+
+1. **Seating, not first fit.** The entry says each coded slot *is filled by* endings that carry its code, and what
+   is left *numbers exactly* the open slots. The row finds an assignment of every ending to a slot it fits, each
+   slot holding exactly its count. The listening instrument had taken the first endings that fit.
+2. **Every line's code head is kept.** The instrument kept the first 200 lines of a stream and 40 heads. More heads
+   can make a code present and never absent.
+3. **What "no file" is.** *No file under kernel/, shell/ or workshop/ differs* is held as every Rust source there
+   (39), by hash, and the set of them. The folders' READMEs are documents and their `attest/` folders hold records;
+   neither is pinned. *No sealer under verify/* is held as 17 files: the eleven sealer modules, `diagcommon.py`
+   and the five `seal_*.py`.
+4. **A planted session is compared, not read.** A forged session reaches a sealer as bytes. The row compares it
+   with its twin member by member through `json.loads`. The saved form's reader is not called on forged bytes, so
+   the row raises no refusal of its own.
+5. **One inner call is named.** `seal_livesession` calls `check_saved`, so `livesession-sealer`'s five planted
+   records are refused twice over. The row judges the outer call, and the inner pair is named in the gate. Any
+   other refusal with no registered record is a finding.
+6. **Two more kinds of finding.** A failing child that is no program of the tree, the gate's Python or the
+   compiler, and an ending the watch failed to keep. The registration counted none of either.
+7. **Without `rustc`** the watch's row and the sealers' row skip, as the rows they depend on do.
+8. **The counts are read as ruled.** `reasoncourt-register` takes the five numbers out of the entry's own sentence,
+   holds the register's counts to them, and cites the sentence and the phrase *whose LIVESESSION-FORM is in the
+   head* in its text. The flat reading, five parts, is planted and refused for counting three endings twice.
+
+**Mutation testing, off the gate.** 37 planted defects, one at a time, each in a scratch copy of the tree. The rows a
+defect touches were run live; the court's rows then judged, with one whole pass of the unchanged gate standing for
+the rows not rerun.
+
+| family | defects | caught | of those, with every earlier row still green |
+|---|---:|---:|---:|
+| a program or a row changes what ends (a code out of the head, a plant dropped, another exit status, another code, a longer code) | 5 | 5 | 3 |
+| a sealer or its row (a plant with a second field, a sealer that stops refusing, a twin moved, the listener off) | 4 | 4 | 2 |
+| the register, a judging statement, a cited text | 4 | 4 | — |
+| the watch, the listener, the rows, the sources (by the fence, and the watch kept empty) | 9 | 9 | — |
+| the court's own judging, weakened one rule at a time | 15 | 14 | — |
+| all | 37 | 36 | |
+
+- **The defects no earlier row saw.** A program that prints its code after a lower-case word, or lets the code
+  grow a suffix, leaves five rows green, because they look for the code anywhere in the output; the watch refuses
+  both. A row that stops giving one
+  of its six bad edits to the program stays green; the watch counts five endings for six, and the source row finds
+  the statement gone. A planted record changed in a second field is still refused by its sealer; the sealers' row
+  says where it now differs.
+- **One survivor, equivalent.** With the comparison of a group's number of endings removed, the seating still
+  refuses a missing or an extra ending, because every slot must hold exactly its count. The line that survived only
+  words the finding.
+- **Two survivors of the first run became plants.** A literal inside the gate's own failure text taken as a
+  witness, and a refusal beyond the registered ones ignored. Each survived, a plant was added to the row, and each
+  is caught now.
+
+**A registered limit, counted.** The entry says a coded ending that changed its code can be counted as its group's
+open slot *if another ending carries the code*. Today that is so in three groups: `shell-blit-law`,
+`refusallog-bijection` and `bearing-refuse` each have one more ending carrying the code than coded slots. In each,
+one ending could lose its code and the watch would still seat it. The row's own statement judges those endings.
+
+**The listening instrument over the built gate (off the gate, one run, Python 3.12).** The same instrument bytes
+(`fb593b18…d729`). The gate inside the pass ended 0 with 232 rows. 1,103 endings heard and registered, 77 of 77
+groups holding, no finding: the instrument and the gate's own row agree. 142,083 refusal-type exceptions at 59
+sites, row by row what `verify/mints.json` holds, and none in the six new rows. So the condition MINT-WATCH-0
+registered for these rows is met as observed: they mint no refusal, and its register needs no amendment for them.
+The gate's listener and the instrument's ran together, each on its own tool id (report sha256 `4c288a8f…`, kept
+outside the repository).
+
+**Not yet shown.** The gate with this build on the owner's host, which is win32 under Python 3.14.5. The whole gate
+ran here on 3.11 and, inside the instrument's pass, on 3.12. On 3.13 and on 3.14.0rc2 the eleven listened rows and
+the court's rows that need no child were run, not the whole gate.
+
 **Outside sources read for this (attributed; hypotheses about practice, not claims of this tree).**
 
 - Rice's theorem, as a recent paper restates it: every non-trivial property of what a program computes is
@@ -4932,20 +5040,22 @@ exception is required to carry a code. Nothing of this rung's entry, register or
 emission, each declared and not seated. OBSERVED (here, off the gate): the census, the derivation of the register
 from the gate's own statements and variables, three listen-only passes in which every registered group held, and
 the count of mints. OBSERVED (host, off the gate, one run): the fourth pass, in which the same 1,103 endings were
-heard and the same 77 groups held. ESTABLISHED (gate, here): the 226 rows as before, with the entry hash-locked;
-nothing of this rung is built. MEASURED (host): the gate, 226 of 226, with the entry and the register in the tree.
-NOT_MEASURED: whether a row holds its registered reason, on either machine; no row reads the register yet.
+heard and the same 77 groups held; and one pass of the instrument over the built gate. ESTABLISHED (gate, here):
+the six rows, 232 in the gate, on Python 3.11; the same six on 3.12 inside the instrument's pass. MEASURED (host):
+the gate before the build, 226 of 226, with the entry and the register in the tree. NOT_MEASURED: the built gate on
+the host.
 
-**does_not_show.** That any row holds its registered reason: nothing is built. That the census is complete: a check
+**does_not_show.** That the gate with this build passes on the host. That the census is complete: a check
 it missed inside a row is not held, and nothing that happens inside the gate's own process is seen by a watch
 (MINT-WATCH-0 is registered for the raises there, and is not built). That the host's pass makes the register true:
 it was heard there once, by an instrument outside the gate. That a registered reason is the right reason: the court
 will show that a refusal carries its registered code, not that the program's reasoning is correct. Anything about a
 cause, where one code answers several.
 
-**Falsifier.** A registered requirement that does not stand in `verify/verify.py` as patch 0116 left it. An
-expected value in the register that came from a program's output. A planted record registered as meeting the
-condition that differs from its twin somewhere else. An ending of the registered gate that is in no group.
+**Falsifier.** A red row among the six on the host. A registered requirement that does not stand in
+`verify/verify.py` as patch 0116 left it. An expected value in the register that came from a program's output. A
+planted record registered as meeting the condition that differs from its twin somewhere else. An ending of the
+registered gate that is in no group.
 
 ## MINT-WATCH-0 — every refusal raised inside the gate's own process, claimed by row, class, site and count (preregistered `cd1472ec`; nothing built; its build follows REASON-COURT-0's)
 
