@@ -204,7 +204,8 @@ rows, grade, limits and falsifier; this is the order and the state.
          │
     registered      REASON-COURT-0 every refusal the gate requires held to a registered reason: 145 refusal
          │          checks censused, 103 with a code and 42 a registered REFUSE(any); a watch over every child
-         │          that does not end 0, reading only the code head (337ab021; not built)
+         │          that does not end 0, reading only the code head (337ab021, pushed; not built; the
+         │          host is heard before the build)
          ⋮
     declared        DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors

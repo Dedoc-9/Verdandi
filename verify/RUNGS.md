@@ -4624,7 +4624,7 @@ its form.
 diff and constraints are promoted ahead of it. The owner: *I would not silently reorder that based on the 15-pivot
 review. That deserves its own ruling.* The locked order stands until he rules.
 
-## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021`; nothing built)
+## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021` and pushed; nothing built; the host is heard before the build)
 
 ```
   a row's statement ───────────────►  the register  verify/reasons.json   ◄── the ledger entry pins its bytes
@@ -4764,10 +4764,153 @@ own variable at the moment it started the child. The rows registered for the bui
   `bearing-refuse`'s eye on rock): the row judges the refusal for its reason and holds a word or an exit status
   only. The mark is the registration's own addition and is the owner's to strike.
 
-**Grade.** DECLARED: the registration and the six rulings. OBSERVED (here, off the gate): the census, the
-listening pass, the derivation of the register from the gate's own statements and variables. ESTABLISHED (gate,
-here): the 226 rows as before, with the entry hash-locked; nothing of this rung is built. NOT_MEASURED: anything on
-the host; whether the register's counts hold there.
+**On the host (DANIELDILLBERG, 2026-10-05): pushed.** 0117 and 0118 were applied and the gate read `GATE PASSED`,
+rowset `39e5874a7127cfa4`, 226 rows / 0 fail / 0 skipped. The owner pushed `b077eef..c057da2`. From that push the
+entry and the register are fixed: a correction is an amendment entry with its own hash.
+
+**A review of the register's counts, and the ruling.** A review the owner brought read the register's `counts`
+block against the entry and found a name that does not say what it counts: `endings_with_one_code_in_prose: 3`,
+beside an entry, a record and a list of corrections that all speak of nine endings in prose. The numbers are right
+and the name is loose. Read as a flat partition the counts give 1,072 + 23 + 2 + 6 + 3 = 1,106, which is not 1,103.
+
+| | |
+|---|---|
+| the partition, in the entry's own sentence | 1,072 in a code head + 23 `REFUSE(any)` + 6 held only by their row + 2 unjudged = 1,103 |
+| the three | `readercourt-writers`' endings (A177): `LIVESESSION-FORM` is in the head and the reader's code is in prose, so they are inside the 1,072 |
+| the nine in prose | the 6 held only by their row, and those 3 |
+
+The owner's ruling: **hold it in the build**, with no amendment. *The authority for the reading already exists in a
+registered artifact; the row would not be inventing an interpretation, it would be holding the entry's own words
+against the register's counts.* The build's `reasoncourt-register` row asserts the four-part sum, the three as a
+subset of the 1,072, and 6 + 3 = 9; it is planted with the flat misreading and must refuse it; and it cites the
+entry's sentence as its witness for the partition, *so the reading stands on registered text rather than on the
+row's phrasing of it.* An amendment that changes no number would restate what the entry says, and MOUSE-LOOK-0a's
+precedent is for a changed scope, not a clarified name.
+
+**Configurations, not runs.** The gate takes no input. For one tree, the children it starts and how they end are a
+function of the platform and of which records are present, and of nothing else; two passes read byte for byte the
+same for that reason. So what stands between the register and "it holds" is a short list of configurations and
+not an open set of runs: this container, this container with the host's records, and the host. A listen-only pass
+was made in the first two, off the gate, with one instrument kept outside the repository (sha256
+`fb593b18…d729`). It runs the gate once, keeps every child that does not end 0 with the code heads of its lines,
+and lays them beside the pushed register by the registered rule.
+
+| configuration | interpreter | records present | gate | endings heard / registered | groups that hold | findings |
+|---|---|---:|---|---:|---:|---|
+| the container | Python 3.11 | 0 | 226 / 0 fail | 1,103 / 1,103 | 77 of 77 | none |
+| the container | Python 3.12 | 0 | 226 / 0 fail | 1,103 / 1,103 | 77 of 77 | none |
+| the container, with the host's records | Python 3.12 | 31 + 2 | 226 / 0 fail | 1,103 / 1,103 | 77 of 77 | none |
+| the host | — | — | — | not yet heard | | |
+
+No ending fell outside the watch's scope and none was in no group. The owner's ruling: **the host is heard before
+the build**, with the same instrument byte for byte, so that the two sides differ only in platform. His reason:
+the six rows will rest on the 1,103 and the 77, so the first Windows run of the build is no longer a probe; a
+platform difference found before the build is the same amendment *settled in calm*. What a pass hears is OBSERVED,
+one run, and never the source of an expected value. A difference is a finding settled by amendment, never a
+tolerance.
+
+**Where the in-process gap is, and what was counted there (an experiment beside the register).** The watch's
+substrate is the process boundary: a return code and bytes on a pipe. A refusal that is raised, caught and compared
+inside the gate's own Python never crosses it. The owner's reading: the information is whole at the moment the
+exception is minted and is destroyed at the judging site, so the tap belongs upstream, where it is born. The same
+instrument therefore listens to the interpreter's own raise events (`sys.monitoring` from Python 3.12,
+`sys.settrace` before), counting each exception once, in the frame that raised it. It wraps nothing: no function,
+class or module of the tree is touched, and `hoststate-fence`, which a wrapping listener had reddened, stays green.
+
+| refusal types minted in the gate's process, one run | mints | where |
+|---|---:|---|
+| the sealers' `Refuse` (five classes) | 74 | the ten sealer rows and `admit-replay` |
+| `envelope.EnvelopeViolation` | 32 | `records-firewall` 2, `readercourt-writers` 4, `readercourt-commands` 26 |
+| `savedform.Refused` | 141,977 | `readercourt-agree` 141,870, `-commands` 68, `-language` 36, `-writers` 3 |
+| all refusal types | 142,083 | 16 rows, 59 raise sites |
+
+The three configurations gave the same counts, type by type and site by site, under both taps. What the census
+shows beside the register:
+
+- **Every mint but one is claimed.** The 74 are the 57 planted records and the 16 forged envelopes, and one more.
+  The 32 are the eight coded statements that judge the envelope. The reader's 141,870 in `readercourt-agree` are
+  the 163,072 mutants less the 21,202 accepted, which is the agreement court, outside this rung.
+- **The one more** is raised by the gate itself (`verify.py` line 1317): a planted failure that makes a sealer's
+  restore path run, and is tolerated, not required. It is the in-process twin of `shell-build`'s dropped ending.
+- **A mint is not every in-process refusal.** Thirteen statements judge a refusal that is neither a child's
+  non-zero ending nor an exception in the gate's process: a trace line, a returned list, an `unavailable` snapshot,
+  a digest of verdicts, a verdict line written by a worker. No tap on
+  raises hears them. They are already data.
+- **Worker processes are not heard.** The corpus court runs the Python reader in workers.
+
+**The owner's ruling on the gap: live with it, measure it, and seat nothing now.** The registration stays as narrow
+as it says it is. Two things are recorded as declared, each for a court of its own:
+
+1. **An accounting, not an extraction.** A text the owner brought proposed to derive the register from the gate's
+   syntax tree. The census's own syntax pass had found 76 of 190 statements, so the tree cannot classify: *what
+   distinguishes a refusal check from a detection or a gate-self check is the row's intention, not its shape.* What
+   survives is narrower and decidable: every comparison of an exit status and every handler of a refusal exception
+   must be a registered statement or a named non-refusal. *That is not classification; it is conservation.* Folding
+   it into this rung was rejected: the edge exists so that the rung is not a general strengthening of assertions,
+   *and an accounting is the most tempting possible widening because it looks like bookkeeping rather than scope.*
+   Its known hole, to be registered with it: a refusal judged by another shape, such as a word looked for in the
+   output with no exit status and no exception, is invisible to it.
+2. **A refusal as an emission and not an interruption, for the gate's own process.** The owner separated two
+   questions. Whether the machine can learn the classification: no, as above. Whether a refusal can be a datum
+   that flows through a channel and is claimed, as the children's are: yes, and the tree has done it three times
+   already — the readers return a verdict line, the children write records to a refusal log that a row holds in
+   bijection with what they print, and a planted death is a typed ending. It cannot happen in this rung: turning a
+   sealer's `raise` into a returned verdict changes every sealer's interface, which the fence forbids. It is a
+   later rung, with its census first, and the count above is that census.
+
+**What stands against the tree, on reading those two (a review, not a ruling).**
+
+- **Visibility and vocabulary are two gaps.** A tap on raise events gives the first with no change to any sealer:
+  every mint can be counted and claimed. It does not give the second. The sealers have no codes, and the one thing
+  a mint carries besides its type is its raise site, which is a branch inside a program; by the first court's
+  ruling a branch is never authority. A reason for an in-process refusal needs a code, and a code is a change to
+  the sealer.
+- **The sealers already emit at their own process boundary.** Run as a command, a sealer prints `REFUSE: …` and
+  ends 2, and `readercourt-commands` judges one that way. The gate calls them as functions because their commands
+  do the host's work.
+- **The text's other layers.** The witness literals it proposes to extract are already in the register, 215 of
+  them, and the registered `reasoncourt-source` row is what holds them. Its third layer would run the gate over
+  "its own mutation corpus"; the 163,072 mutants are inputs to the readers inside two rows, and the gate itself
+  has no input to vary. Its figure of 19 in-process refusals is not a number of this tree. Its formal-semantics
+  step is declared and not on the route.
+
+**Outside sources read for this (attributed; hypotheses about practice, not claims of this tree).**
+
+- Rice's theorem, as a recent paper restates it: every non-trivial property of what a program computes is
+  undecidable, and a decidable approximation must carry false positives
+  ([Baldan, Ranzato, Zhang, arXiv 2105.14579](https://arxiv.org/abs/2105.14579v1)). Read here as: a syntactic
+  pass can over-count candidates and be corrected by a list, and cannot decide which ones require a refusal.
+- Static and runtime verification are described as complements: a monitor sees the executions that happen and
+  cannot prove all of them, a static method can cover all and handles large interacting systems poorly
+  ([Chimento et al., Chalmers](https://research.chalmers.se/en/publication/248733)). The gate's case is the easy
+  end of that: it has no input, so its executions are enumerated by configuration.
+- Bazel's definition of a hermetic test: its result depends only on its declared inputs, which is what makes the
+  same test give the same result on every run
+  ([Bazel test encyclopedia](https://docs.bazel.build/versions/main/test-encyclopedia.html)).
+- A characterization test pins what software does, not that it is right
+  ([Wikipedia, after Feathers](https://en.wikipedia.org/wiki/Characterization_test)). The register differs in one
+  respect that matters: its expected side came from the gate's statements and registered text, not from recorded
+  output.
+- An executable semantics of Python exists for version 3.3 in the K framework and is incomplete by its own account
+  ([Guth, University of Illinois](https://ideals.illinois.edu/items/45257)); the gate is twelve thousand lines of
+  a later Python that starts processes.
+- On Windows a child's exit status is an unsigned 32-bit number and there are no negative signal codes
+  ([Python discussion](https://discuss.python.org/t/subprocess-returning-incorrect-exit-code-for-negative-exit-codes-in-windows-in-3-7/25917));
+  Rust's documentation says exit codes have no portable meaning beyond success and failure
+  ([std::process::ExitCode](https://doc.rust-lang.org/std/process/struct.ExitCode.html)). The register holds 2, 70
+  and non-zero, which the programs set themselves; a crash would end differently on the two platforms, and none is
+  registered.
+- Rust checks a `match` over an enum for exhaustiveness at compile time
+  ([rustc dev guide](https://rust.googlesource.com/rust-lang/rustc-dev-guide/+show/refs/heads/main/src/pat-exhaustive-checking.md)):
+  the model of a completeness that is decided and not observed, available only where the reasons are one closed
+  type.
+
+**Grade.** DECLARED: the registration and the rulings of four courts; the accounting and the refusal as an
+emission, each declared and not seated. OBSERVED (here, off the gate): the census, the derivation of the register
+from the gate's own statements and variables, three listen-only passes in which every registered group held, and
+the count of mints. ESTABLISHED (gate, here): the 226 rows as before, with the entry hash-locked; nothing of this
+rung is built. MEASURED (host): the gate, 226 of 226, with the entry and the register in the tree. NOT_MEASURED:
+whether the register's counts hold on the host.
 
 **does_not_show.** That any row holds its registered reason: nothing is built. That the census is complete: a
 check it missed inside a row is not held, and nothing that happens inside the gate's own process is seen by a

@@ -33,8 +33,8 @@ it, and admits it as one ordinary edit.
 And everything the tree saves and reads back is now one bounded language with one verdict from every reader
 (`READER-COURT-0`, built; the gate passes on the host, 226 rows, and is pushed).
 
-The next rung is registered and not built: `REASON-COURT-0` holds every refusal the gate requires to a registered
-reason (`337ab021`).
+The next rung is registered, pushed and not built: `REASON-COURT-0` holds every refusal the gate requires to a
+registered reason (`337ab021`). Before its build the owner hears the gate on the host with a listen-only pass.
 
 What is *not* yet done: the design-event stream and a model at the seam (declared, not registered); any measurement
 of the live loop's timing; richer edits than a cell and a tile class; and semantics the frozen oracle never
@@ -122,7 +122,7 @@ ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by 
       ↓
 READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — registered (`f53017cd`) and built: eight rows, 226 in the gate; on the host 225 of 226 on the first run, 226 of 226 with the fix, pushed
       ↓
-REASON-COURT-0   the owner's ruling (2026-10-04): next after READER-COURT-0 and before DESIGN-EVENT-0. Every refusal check in the gate is held to an expected reason, an exact code or a deliberately open REFUSE(any). Its census is taken (145 refusal checks in 78 rows; 103 hold a code), its courts are held, and its register is in the tree: codes only from a requirement that already exists, a watch over every child that does not end 0 reading only the code head, the sealers under one registered mutation — registered (`337ab021`); nothing built
+REASON-COURT-0   the owner's ruling (2026-10-04): next after READER-COURT-0 and before DESIGN-EVENT-0. Every refusal check in the gate is held to an expected reason, an exact code or a deliberately open REFUSE(any). Its census is taken (145 refusal checks in 78 rows; 103 hold a code), its courts are held, and its register is in the tree: codes only from a requirement that already exists, a watch over every child that does not end 0 reading only the code head, the sealers under one registered mutation — registered (`337ab021`) and pushed; in three configurations here every registered group held; the host is heard before the build; nothing built
       ↓
 DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered. Whether a design representation, a design diff or constraints are promoted ahead of DESIGN-EVENT-0 is a question the owner has reserved for its own ruling; until he rules, this order stands
       ↓
@@ -1519,7 +1519,7 @@ mode, constraint, recipe, bundle or plugin can be built under the rules above; t
 fifteen; anything about how a user would fare with them. Each rung seated from it registers its own hypothesis,
 failure condition and limits.
 
-### REASON-COURT-0 — every refusal held to its reason · **preregistered** (`337ab021`); nothing built
+### REASON-COURT-0 — every refusal held to its reason · **preregistered** (`337ab021`) and pushed; nothing built
 The rung after READER-COURT-0, by the owner's ruling. Its census is taken, three courts are held, and the method is
 registered with its register, `verify/reasons.json`. Nothing is built. The full record is in
 [`verify/RUNGS.md`](../verify/RUNGS.md); this section keeps the order of events.
@@ -1615,9 +1615,40 @@ the gate's own text that requires each, 1,103 endings in 77 groups, the planted 
 the statements outside the court. Four numbers moved between the court and the registration, each by the owner's
 own test, and are listed in `verify/RUNGS.md`. Six rows are registered for the build.
 
-**Grade.** DECLARED: the idea, the rulings and the registration. OBSERVED (here, off the gate): the census and the
-listening pass. **does_not_show.** That any row holds its registered reason: nothing is built, and no host run
-stands behind the register's counts.
+**Pushed (2026-10-05).** On the host the gate read `GATE PASSED`, 226 rows / 0 fail, with the entry and the
+register in the tree, and the owner pushed `b077eef..c057da2`. The entry and the register are fixed from there.
+
+**The fourth court (2026-10-05): three rulings, after a review and two texts the owner brought.**
+
+1. **A loose name in the register's counts is held in the build, not amended.** One count,
+   `endings_with_one_code_in_prose: 3`, reads as a fifth part of a partition that has four. The entry's own
+   sentence gives the four (1,072 + 23 + 6 + 2 = 1,103), and the three sit inside the 1,072. The build's register
+   row asserts that, is planted with the misreading, and cites the entry's sentence as its witness.
+2. **The host is heard before the build.** The gate takes no input, so its endings depend on the platform and the
+   records present: three configurations, not endless runs. Two were heard here with one instrument kept outside
+   the repository, on two interpreters; in all three passes the 1,103 endings were heard and all 77 groups held.
+   The third is the host, with the same instrument byte for byte. A difference is a finding settled by amendment.
+3. **The in-process gap is lived with and measured; nothing is seated.** The watch cannot see a refusal judged
+   inside the gate's own process. The same instrument counted them at the place they are raised, from the
+   interpreter's own events and touching nothing: 142,083 refusal-type exceptions in 16 rows (74 the sealers', 32
+   the envelope's, the rest the Python reader's), every one but one claimed by a registered statement or by the
+   agreement court.
+
+**Declared in that court, each for a court of its own; neither is on the ladder.**
+
+- **An accounting of refusal sites.** Every comparison of an exit status and every handler of a refusal exception
+  in the gate is a registered statement or a named non-refusal. Decidable, because it claims and does not classify.
+  It does not see a refusal judged by another shape.
+- **A refusal as an emission, for the gate's own process.** The sealers would return a verdict where they raise, as
+  the readers return a verdict line and the children write a refusal record. It changes the sealers' interface,
+  so it is a rung of its own; its census is the count above.
+
+A formal semantics of the watch, proposed in one of the texts, is recorded as declared and is not on the route.
+
+**Grade.** DECLARED: the idea, the rulings and the registration. OBSERVED (here, off the gate): the census, three
+listen-only passes, the count of mints. MEASURED (host): the gate with the entry in the tree, 226 of 226.
+**does_not_show.** That any row holds its registered reason: nothing is built. That the register's counts hold on
+the host: it has not been heard there.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

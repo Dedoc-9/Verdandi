@@ -365,7 +365,19 @@ What stands against the tree, as reviewed:
 12. **A commit's name is local.** The same patch has one hash here and another on the host. A registration pins a
    file's bytes and a patch number.
 
-13. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+13. **A gate that takes no input has configurations, not runs.** For one tree the gate's children and their
+   endings depend on the platform and on which records are present. Hearing each configuration once is the whole
+   of it; hearing one of them three times is three samples of one. The list for REASON-COURT-0's register was three
+   long, and the third was the host.
+
+14. **Listen where it is minted, and touch nothing.** The first listener wrapped the sealers' functions and
+   reddened a row that reads a sealer's source. The one that replaced it takes the interpreter's own raise events
+   and wraps nothing. An instrument that changes what it observes is a second program under test.
+
+15. **Name a count by the partition it belongs to.** A count that is a subset of another, set beside it in one
+   block, reads as one more part. The entry's sentence had the partition right; the field's name did not say it.
+
+16. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
@@ -377,7 +389,8 @@ What stands against the tree, as reviewed:
 - An admission records a claimed proposer and a command line's grant, and nothing about a model (G20).
 - The live loop has no latency number (G21), and two host silences were never explained (G22).
 - A refusal is registered to be held to its code, not its cause, and the court is not built (G24); 63 lines the
-  programs print about themselves are trusted and not opened (G25).
+  programs print about themselves are trusted and not opened (G25). The register has been heard in three
+  configurations here and not yet on the host.
 
 ## The one-line retrospective, again
 

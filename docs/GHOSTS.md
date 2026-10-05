@@ -477,10 +477,18 @@ to its code from outside the row. The registration closes part of that and says 
 - **The watch counts by group.** It will know how many endings of a row, program and command carry a code, not
   which input drew it. Where a group holds coded and `REFUSE(any)` slots together, a changed code can hide.
 - **Inside the gate's process the watch sees nothing.** 15 coded checks are judged there (an exception's key, a
-  verdict line, a trace) and stay held by their row alone.
+  verdict line, a trace) and stay held by their row alone. Counted once, off the gate: 142,083 refusal-type
+  exceptions are raised there in a run, 74 of them the sealers' and 32 the envelope's, and all but one are claimed
+  by a registered statement or by the agreement court. Thirteen more statements judge a refusal that is neither a
+  child's non-zero ending nor an exception there, and no tap hears those.
+- **The register has not been heard on the host.** In three configurations here every registered group held. The
+  owner hears the fourth before the build.
 
 **Exorcism.** Partial, and registered: the build. Paying a debt is a code in a sealer or an accepted twin in a row,
-each a decision of its own. Telling causes apart would mean locking text, which the owner ruled out.
+each a decision of its own. Telling causes apart would mean locking text, which the owner ruled out. For the
+gate's own process two remedies are declared and not seated: an accounting of every refusal site, and the sealers'
+refusals turned from an exception into a datum. The first closes a missed check and not a missed kind; the second
+changes the sealers.
 
 ## G25 — the gate trusts 63 lines that programs print about themselves · ESTABLISHED (counted in the census)
 

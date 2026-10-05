@@ -104,6 +104,9 @@ row that would redden if the claim were false.
 - **The register is the expected side.** `reasons.json` was written from the gate's own statements and variables
   and from registered text, never from what a program printed. Its line numbers are lines of the `verify.py` it
   names by hash; the build will move them and hold the text.
+- **Read the register's counts by the entry's sentence.** Four parts make the 1,103 endings: 1,072 in a code head,
+  23 `REFUSE(any)`, 6 held only by their row, 2 unjudged. `endings_with_one_code_in_prose` (3) is inside the first
+  part and is not a fifth. The build's row is to hold that and cite the entry for it.
 - **A mutant can be a non-mutant.** In READER-COURT-0's mutation test four planted defects survived because they
   were written so that they changed nothing. A survivor is first a question about the mutant.
 - **The dev harness is not the gate.** Running chosen rows alone can fail a row that depends on an earlier row's
