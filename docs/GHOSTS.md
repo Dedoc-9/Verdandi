@@ -13,7 +13,8 @@ The grades borrow the claim ladder: **ESTABLISHED / MEASURED / UNDERDETERMINED /
 **SOUND?** for the one memory-model question and **OBSERVED** for something seen once, outside the gate.
 
 **Where they sit.** G1–G6 are the renderer's. G7–G13 are the present path's. G14–G23 came with the live editor and
-admission. Each folder's README names the ones that live in it.
+admission. G24–G26 came with the courts over the gate's own refusals. Each folder's README names the ones that
+live in it.
 
 ---
 
@@ -461,7 +462,7 @@ and not by a reader, the writers' own output as a positive witness, and the froz
 different program at a different time. A second author or a mechanized grammar would close more of it and neither
 is on the route.
 
-## G24 — a refusal is held to its code, not to its cause, and the court that holds it is not built · DECLARED (the registration); OBSERVED (the census)
+## G24 — a refusal is held to its code, not to its cause, and the court that holds it is not built · DECLARED (the registration); OBSERVED (the census, and four listen-only passes)
 
 Until REASON-COURT-0 is built, a row holds a refusal's reason only as that row was written: 73 of the 103 coded
 checks look for the code anywhere in the output, 22 hold only that the subject refused, and nothing holds a refusal
@@ -480,9 +481,11 @@ to its code from outside the row. The registration closes part of that and says 
   verdict line, a trace) and stay held by their row alone. Counted once, off the gate: 142,083 refusal-type
   exceptions are raised there in a run, 74 of them the sealers' and 32 the envelope's, and all but one are claimed
   by a registered statement or by the agreement court. Thirteen more statements judge a refusal that is neither a
-  child's non-zero ending nor an exception there, and no tap hears those.
-- **The register has not been heard on the host.** In three configurations here every registered group held. The
-  owner hears the fourth before the build.
+  child's non-zero ending nor an exception there, and no tap hears those. A watch over the raises is registered
+  as its own slice, MINT-WATCH-0, and is not built (G26).
+- **The register has been heard, not held.** In three configurations here and on the host (win32, Python 3.14)
+  every registered group held: 1,103 endings, 77 of 77 groups. Each is one run by an instrument outside the gate.
+  No row reads the register yet.
 
 **Exorcism.** Partial, and registered: the build. Paying a debt is a code in a sealer or an accepted twin in a row,
 each a decision of its own. Telling causes apart would mean locking text, which the owner ruled out. For the
@@ -502,6 +505,30 @@ form's court compares every line the Rust reader writes with the Python reader's
 the shell's verdicts with the gate's own recognizer by digest. The others are a program vouching for itself, with
 the frozen oracle and the plants as the outside checks.
 
+## G26 — the mint register is a measurement, most of its sites were never reached, and a mint is not a judgment · DECLARED (the registration); OBSERVED (the measured layer)
+
+MINT-WATCH-0 is registered and not built. What it will hold, and what it will not:
+
+- **The counts were heard, not derived.** 142,082 mints in 70 entries are what four passes raised, one per
+  configuration. All four agree. That shows the gate's in-process refusals recur; it does not show one of them is
+  right. The entry says so in those terms, and the rule that an expected reason never comes from what a program
+  does is not bent by it.
+- **105 of 164 raise sites were never reached.** 90 of them are in the eleven sealer files. A sealer's host path
+  and its command line are not run by the gate, and the register says only that those sites were not reached.
+- **A mint is counted where it is raised.** What catches it, and whether anything judges it, is not seen. A
+  refusal raised and swallowed looks the same as one a statement requires. The gate's own plant is the known case.
+- **Counts are by row and site, not by input.** Two plants of one row that exchanged the sites refusing them would
+  leave every count as it was.
+- **The watch hears up to its own row.** A row that a later rung places after it is not heard by it until that
+  rung says how.
+- **The instrument that took the measurement is outside the repository.** Its four reports are named by hash and
+  are not in the tree.
+
+**Exorcism.** For the first: none wanted — a registered measurement is the design, and the remedy for drift is an
+amendment. For the sites never reached: none on the route; the register says only that they were not reached.
+For the third and fourth: a refusal that is a datum with its input beside it, which is the declared emission rung
+and changes the sealers.
+
 ---
 
 ## The disposition
@@ -511,7 +538,7 @@ with sound remedies; G2 is an honest boundary of what the courts measured; G7 is
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
 and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a careful reader must carry, recorded so they are carried on
 purpose. Of the live editor's, G14, G15, G16, G18, G20, G23 and G25 are limits of method, stated so no claim is read
-past them; G24 is a gap with a registered and unbuilt remedy and a list of debts; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
+past them; G24 is a gap with a registered and unbuilt remedy and a list of debts; G26 is the stated reach of a second registered and unbuilt watch; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
 built, with the court's reach stated; G21 is a measurement not yet taken; G22 is two things that happened once and were never
 explained.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded

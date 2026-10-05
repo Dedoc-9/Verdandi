@@ -21,7 +21,7 @@ The gate is the program's only judge, so its design is about what it may and may
     landing       two consecutive passes, their logs byte-identical, GATE PASSED. A third pass with the host's
                   records present, when a rung reads them.
 
-    preregister.json   39 entries: hypothesis · success · failure · limits · instrument · chain hash.
+    preregister.json   40 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
                        amendment entry with its own hash.
 
@@ -30,6 +30,8 @@ The gate is the program's only judge, so its design is about what it may and may
     reasons.json  REASON-COURT-0: the reason register — what every refusal the gate requires is expected to say,
                   and where that expectation comes from. Registered, pinned by its hash in the ledger; no row
                   reads it yet
+    mints.json    MINT-WATCH-0: the mint register — every raise site of a refusal class, read from source,
+                  and which row reaches which site how often, measured. Registered; no row reads it yet
     pins/         the goldens Verðandi mints itself (the HUD's, the blit's)
     the sealers   off the gate, on a named host: witnesses first, then the number, then the envelope
 ```

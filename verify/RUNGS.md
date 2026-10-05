@@ -4624,7 +4624,7 @@ its form.
 diff and constraints are promoted ahead of it. The owner: *I would not silently reorder that based on the 15-pivot
 review. That deserves its own ruling.* The locked order stands until he rules.
 
-## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021` and pushed; nothing built; the host is heard before the build)
+## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021` and pushed; nothing built; heard on the host before the build, and every registered group holds there)
 
 ```
   a row's statement ───────────────►  the register  verify/reasons.json   ◄── the ledger entry pins its bytes
@@ -4789,18 +4789,18 @@ precedent is for a changed scope, not a clarified name.
 
 **Configurations, not runs.** The gate takes no input. For one tree, the children it starts and how they end are a
 function of the platform and of which records are present, and of nothing else; two passes read byte for byte the
-same for that reason. So what stands between the register and "it holds" is a short list of configurations and
-not an open set of runs: this container, this container with the host's records, and the host. A listen-only pass
-was made in the first two, off the gate, with one instrument kept outside the repository (sha256
-`fb593b18…d729`). It runs the gate once, keeps every child that does not end 0 with the code heads of its lines,
-and lays them beside the pushed register by the registered rule.
+same for that reason. So what stands between the register and "it holds" is a short list of configurations and not
+an open set of runs: this container, this container with the host's records, and the host. A listen-only pass was
+made in the first two and then, by the owner, on the host, each off the gate, with one instrument kept outside the
+repository (sha256 `fb593b18…d729`). It runs the gate once, keeps every child that does not end 0 with the code
+heads of its lines, and lays them beside the pushed register by the registered rule.
 
 | configuration | interpreter | records present | gate | endings heard / registered | groups that hold | findings |
 |---|---|---:|---|---:|---:|---|
 | the container | Python 3.11 | 0 | 226 / 0 fail | 1,103 / 1,103 | 77 of 77 | none |
 | the container | Python 3.12 | 0 | 226 / 0 fail | 1,103 / 1,103 | 77 of 77 | none |
 | the container, with the host's records | Python 3.12 | 31 + 2 | 226 / 0 fail | 1,103 / 1,103 | 77 of 77 | none |
-| the host | — | — | — | not yet heard | | |
+| the host, DANIELDILLBERG (win32) | Python 3.14 | 31 + 9 | 226 / 0 fail | 1,103 / 1,103 | 77 of 77 | none |
 
 No ending fell outside the watch's scope and none was in no group. The owner's ruling: **the host is heard before
 the build**, with the same instrument byte for byte, so that the two sides differ only in platform. His reason:
@@ -4808,6 +4808,24 @@ the six rows will rest on the 1,103 and the 77, so the first Windows run of the 
 platform difference found before the build is the same amendment *settled in calm*. What a pass hears is OBSERVED,
 one run, and never the source of an expected value. A difference is a finding settled by amendment, never a
 tolerance.
+
+**Heard on the host (DANIELDILLBERG, 2026-10-05).** Patch 0119 was applied there and pushed (`c057da2..f145a8d`,
+as the host's own refs read). The owner then ran the instrument, the same bytes (`fb593b18…d729`), on win32 under
+Python 3.14.5 with 31 + 9 records present.
+
+| what the host's pass heard | |
+|---|---|
+| the gate inside the pass | exit 0, 226 rows, 0 failed, 0 skipped |
+| endings | 1,103 heard, 1,103 registered |
+| groups | 77 heard, 77 registered, 77 holding |
+| exit statuses | 2 in 1,090 endings, 70 in 11, 1 in 2 — the same three numbers as in each pass here |
+| outside the watch's scope | 0 |
+| findings | none |
+
+Group by group, the host's list is the container's. Its report (sha256 `65a23272…5bbf`) is kept beside the
+instrument, outside the repository. So the fourth configuration reads as the three here did, and the build's six
+rows will rest on counts heard on both platforms and under three interpreters. That is OBSERVED, one run in each
+configuration. It was never the source of an expected value, and it changed nothing in the register.
 
 **Where the in-process gap is, and what was counted there (an experiment beside the register).** The watch's
 substrate is the process boundary: a return code and bytes on a pipe. A refusal that is raised, caught and compared
@@ -4824,8 +4842,9 @@ class or module of the tree is touched, and `hoststate-fence`, which a wrapping 
 | `savedform.Refused` | 141,977 | `readercourt-agree` 141,870, `-commands` 68, `-language` 36, `-writers` 3 |
 | all refusal types | 142,083 | 16 rows, 59 raise sites |
 
-The three configurations gave the same counts, type by type and site by site, under both taps. What the census
-shows beside the register:
+The three configurations here gave the same counts, type by type and site by site, under both taps, and the
+host's pass gave them again under Python 3.14 (146,318 exceptions of every kind were raised in its gate process,
+142,083 of them of a refusal type, at 59 sites). What the census shows beside the register:
 
 - **Every mint but one is claimed.** The 74 are the 57 planted records and the 16 forged envelopes, and one more.
   The 32 are the eight coded statements that judge the envelope. The reader's 141,870 in `readercourt-agree` are
@@ -4874,6 +4893,10 @@ as it says it is. Two things are recorded as declared, each for a court of its o
   has no input to vary. Its figure of 19 in-process refusals is not a number of this tree. Its formal-semantics
   step is declared and not on the route.
 
+**What became of the gap (the fifth court, 2026-10-05).** The owner took the visibility half as a slice of its
+own, MINT-WATCH-0, registered in the next section and built after this rung. The vocabulary half stays deferred: no
+exception is required to carry a code. Nothing of this rung's entry, register or rule moved.
+
 **Outside sources read for this (attributed; hypotheses about practice, not claims of this tree).**
 
 - Rice's theorem, as a recent paper restates it: every non-trivial property of what a program computes is
@@ -4908,18 +4931,205 @@ as it says it is. Two things are recorded as declared, each for a court of its o
 **Grade.** DECLARED: the registration and the rulings of four courts; the accounting and the refusal as an
 emission, each declared and not seated. OBSERVED (here, off the gate): the census, the derivation of the register
 from the gate's own statements and variables, three listen-only passes in which every registered group held, and
-the count of mints. ESTABLISHED (gate, here): the 226 rows as before, with the entry hash-locked; nothing of this
-rung is built. MEASURED (host): the gate, 226 of 226, with the entry and the register in the tree. NOT_MEASURED:
-whether the register's counts hold on the host.
+the count of mints. OBSERVED (host, off the gate, one run): the fourth pass, in which the same 1,103 endings were
+heard and the same 77 groups held. ESTABLISHED (gate, here): the 226 rows as before, with the entry hash-locked;
+nothing of this rung is built. MEASURED (host): the gate, 226 of 226, with the entry and the register in the tree.
+NOT_MEASURED: whether a row holds its registered reason, on either machine; no row reads the register yet.
 
-**does_not_show.** That any row holds its registered reason: nothing is built. That the census is complete: a
-check it missed inside a row is not held, and nothing that happens inside the gate's own process is seen by a
-watch. That a registered reason is the right reason: the court will show that a refusal carries its registered
-code, not that the program's reasoning is correct. Anything about a cause, where one code answers several.
+**does_not_show.** That any row holds its registered reason: nothing is built. That the census is complete: a check
+it missed inside a row is not held, and nothing that happens inside the gate's own process is seen by a watch
+(MINT-WATCH-0 is registered for the raises there, and is not built). That the host's pass makes the register true:
+it was heard there once, by an instrument outside the gate. That a registered reason is the right reason: the court
+will show that a refusal carries its registered code, not that the program's reasoning is correct. Anything about a
+cause, where one code answers several.
 
 **Falsifier.** A registered requirement that does not stand in `verify/verify.py` as patch 0116 left it. An
 expected value in the register that came from a program's output. A planted record registered as meeting the
 condition that differs from its twin somewhere else. An ending of the registered gate that is in no group.
+
+## MINT-WATCH-0 — every refusal raised inside the gate's own process, claimed by row, class, site and count (preregistered `cd1472ec`; nothing built; its build follows REASON-COURT-0's)
+
+```
+  the files' syntax ───────► the inventory (static)        8 refusal classes · 164 raise sites · 15 files
+  no program is run          a site = file · function · the text of its raise statement   (line: a locator)
+                                   │
+  four listen-only passes ─► the measured layer            70 entries: row · site · count      142,082 mints
+  one per configuration      a baseline for drift, never the source of a reason     + 1 plant of the gate
+                                   │
+  the interpreter's raise ─► the watch ─► every refusal mint of a pass has an entry, every entry its count
+  event; nothing wrapped                  new row · new class · new site · a drifted count · unclaimed → red
+```
+
+**Where it came from.** REASON-COURT-0's watch stands at the process boundary. A refusal raised, caught and
+compared inside the gate's own Python never reaches it. The listening instrument counted those where they are
+made: 142,083 in a pass, the same in four configurations. The owner read the count and ruled.
+
+**The owner's ruling (2026-10-05).** *This is a real slice, and I would take it — but keep its claim narrower than
+"reason court."* It is registered as a separate slice, before any rung that would give a refusal a code or turn it
+into a datum, and is not put into REASON-COURT-0 retroactively.
+
+| | |
+|---|---|
+| LOCK | the listener on the interpreter's raise event, as an observational slice |
+| REGISTER | MINT-WATCH-0: every refusal-type raise attributable to a row, a class, a site and a count |
+| DEFER | requiring an exception to carry a semantic reason code |
+| REJECT | treating the class or the site that was observed as newly minted authority for a reason |
+
+**Three layers, kept apart.**
+
+| layer | says | whose |
+|---|---|---|
+| the ending watch | what ended | REASON-COURT-0, at the process boundary |
+| the mint watch | what raised | this rung, inside the gate's process |
+| the reason table | what reason | REASON-COURT-0's register |
+
+This rung adds visibility and completeness inside the process, and no vocabulary. It never says that a raise of a
+class at a site means a reason.
+
+**The fifth court: three answers.**
+
+1. **Sites from source, counts measured.** The register has two layers and each is named for what it is. The
+   owner locked that wording *rather than weaken REASON-COURT-0's rule*: an expected reason still never comes from
+   what a program does, and this register does not learn what is correct from execution.
+2. **A site is its text, with the line under a file pin.** The identity is the file, the function and the raise
+   statement's own text. The line is recorded as a locator and is not the identity.
+3. **Register now, build after.** This registration is a commit of its own; then REASON-COURT-0's build as
+   planned; then this rung's. The two builds are not combined, and this one does not go first.
+
+**The tap.** `sys.monitoring`'s RAISE event from Python 3.12, `sys.settrace`'s exception event before. A mint is
+that event in the frame that raises, the one where the exception's traceback has no deeper frame; an exception
+passing up through its callers is one mint. No function, class or module of the tree is wrapped or patched.
+
+**The register, `verify/mints.json`** (46,076 bytes, sha256 `af5de1b4…acb6`, a document of the saved form).
+
+*The static layer* is read from the files' syntax and from nothing else. A refusal class is an exception class a
+Python file under `verify/` defines, other than the gate's two verdicts, `Red` and `Skip`.
+
+| refusal class | raise sites | reached |
+|---|---:|---:|
+| `diagcommon.Refuse` (raised by seven sealers and by `diagcommon.py`) | 83 | 39 |
+| `latency1.Refuse` | 19 | 4 |
+| `presentscale.Refuse` | 16 | 3 |
+| `envelope.EnvelopeViolation` | 14 | 5 |
+| `framesplit.Refuse` | 14 | 2 |
+| `latency1r.Refuse` | 13 | 2 |
+| `savedform.Refused` | 4 | 4 |
+| `diagcommon.CourtRefused` | 1 | 0 |
+| all | 164 | 59 |
+
+| file | sites | reached | never |
+|---|---:|---:|---:|
+| `verify/livesession.py` | 18 | 13 | 5 |
+| `verify/latency1.py` | 18 | 3 | 15 |
+| `verify/presentscale.py` | 16 | 3 | 13 |
+| `verify/envelope.py` | 14 | 5 | 9 |
+| `verify/framesplit.py` | 14 | 2 | 12 |
+| `verify/latency1r.py` | 13 | 2 | 11 |
+| `verify/presentexact.py` | 13 | 4 | 9 |
+| `verify/allocreuse1.py` | 11 | 4 | 7 |
+| `verify/presentstretch.py` | 11 | 3 | 8 |
+| `verify/liveloop.py` | 9 | 6 | 3 |
+| `verify/allocreuse.py` | 8 | 2 | 6 |
+| `verify/drift.py` | 8 | 7 | 1 |
+| `verify/diagcommon.py` | 6 | 0 | 6 |
+| `verify/savedform.py` | 4 | 4 | 0 |
+| `verify/verify.py` | 1 | 1 | 0 |
+
+Fourteen of the files are pinned by their sha256: a change to one is a red pin and a decision. `verify/verify.py`
+changes with every rung, so its one site is found by its text. One function holds the same raise text twice
+(`savedform._read`); their order tells the two apart.
+
+*The measured layer* is which row reaches which site and how often.
+
+| row | entries | mints |
+|---|---:|---:|
+| `readercourt-agree` | 4 | 141,870 |
+| `readercourt-commands` | 5 | 94 |
+| `readercourt-language` | 4 | 36 |
+| `admit-replay` | 8 | 16 |
+| `liveloop-sealer` | 6 | 12 |
+| `drift-sealer` | 10 | 11 |
+| `presentexact-sealer` | 4 | 7 |
+| `readercourt-writers` | 3 | 7 |
+| `allocreuse1-sealer` | 4 | 6 |
+| `latency1-sealers` | 5 | 5 |
+| `livesession-sealer` | 5 | 5 |
+| `framesplit-sealer` | 2 | 3 |
+| `presentscale-sealer` | 3 | 3 |
+| `presentstretch-sealer` | 3 | 3 |
+| `allocreuse-sealer` | 2 | 2 |
+| `records-firewall` | 2 | 2 |
+| 16 rows | 70 | 142,082 |
+
+| configuration | interpreter | tap | records present | refusal mints |
+|---|---|---|---:|---:|
+| the container | Python 3.11.15 | `sys.settrace` | 0 | 142,083 |
+| the container | Python 3.12.3 | `sys.monitoring` | 0 | 142,083 |
+| the container, with the host's records | Python 3.12.3 | `sys.monitoring` | 33 | 142,083 |
+| the host, DANIELDILLBERG (win32) | Python 3.14.5 | `sys.monitoring` | 40 | 142,083 |
+
+All four agree entry by entry and count by count. The layer is a registered measurement and is named as one: a
+baseline for drift. It is not evidence that a refusal is right. A count is an expectation about an entry and not
+the identity of an event.
+
+**The plant.** One mint is the gate's own: `raise L1.Refuse("instrument failed")` in `overwrite_then_fail`, raised
+in `latency1-sealers` to make a sealer's restore path run. Its row tolerates it and no statement requires it. It is
+registered as a plant, the one exception to attribution, and is the one mint that makes 142,082 into 142,083.
+
+**Never reached.** 105 of the 164 sites were reached in no configuration. They are registered as never reached, so
+that a first mint at one is seen. Nothing is said about whether they should be reached. Many are a sealer's host
+path or its command line, which the gate does not run.
+
+**What the watch will refuse.**
+
+| a pass in which | is |
+|---|---|
+| a row with no entry mints a refusal | a new row |
+| a class of the tree that the register does not hold is minted | a new class |
+| a site outside the inventory, or not registered for its row, mints | a new site |
+| an entry is heard more or fewer times than its count | a drifted count |
+| an entry of a row that ran is not heard, or a mint has no entry | unclaimed |
+
+Each is planted on every gate as a made-up mint given to the same check. Through the tap itself the row also
+plants three live cases: a refusal raised several frames down and caught at the top is one mint, at the frame that
+raised it; an exception of a class that is not the tree's is not read as a refusal; a refusal raised and caught is
+heard although nothing judged it.
+
+**What the registration added to the rulings.** Each was written into the entry before the commit was pushed and
+was the owner's to strike. They came from asking what the rows not yet built would do to this watch.
+
+- **The rows measured are the 226 of rowset `39e5874a7127cfa4`.** REASON-COURT-0's six rows are not built and were
+  not heard. They are held to the rule of any row. So before this watch is gated, those rows mint no refusal, or
+  their entries are registered by an amendment with its own hash, heard the same way and named as measured. The
+  watch never takes an entry from its own run.
+- **This rung's own rows.** `mintwatch-watch` runs last of the four and judges what was minted before it began.
+  The three before it have no entry, so they mint no refusal. What the watch's row mints in its live checks is
+  judged there, against what it planted, and is not in the register.
+- **A row the gate skipped.** Its entries are not expected in that pass, and the row's text names them. No pass
+  named here skipped a row.
+
+**Scope.** In: refusal-class raises in the gate's own process. Out, by name: the endings of child processes, which
+are the other watch's; the thirteen statements of REASON-COURT-0's register that judge a refusal without a raise
+(A058, A063, A067, A071, A072, A088, A112, A113, A115, A139, A144, A148, A171), which are already data; exceptions
+raised in worker processes (the Python reader that `readercourt-corpus` runs through `verify/savedform.py
+--splice`); and the vocabulary of diagnostics.
+
+**Rows registered for the build:** `mintwatch-preregistered`, `mintwatch-inventory`, `mintwatch-fence`,
+`mintwatch-watch`.
+
+**Grade.** DECLARED: the registration and the fifth court's rulings. OBSERVED (off the gate, one run in each of
+four configurations, by an instrument outside the repository): the measured layer. ESTABLISHED (gate, here): the
+226 rows as before, with the entry hash-locked and the register's bytes pinned by it; nothing of this rung is
+built.
+
+**does_not_show.** That any refusal is right, or that a class at a site means a reason. That a fifth configuration
+would count the same. That a refusal which is raised is judged: a mint is counted where it is raised, and what
+catches it is not seen. Which input drew a mint: counts are by row and site. Anything about the 105 sites beyond
+that they were not reached. Anything about a row placed after the watch's: it is not heard by it.
+
+**Falsifier.** A raise statement of a refusal class in the tree that the inventory does not hold, or a site it
+holds that the tree does not. A gate pass, in a configuration named here, whose mints differ from the measured
+layer. An entry of the register that was taken from the watch's own run.
 
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 

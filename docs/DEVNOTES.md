@@ -368,7 +368,7 @@ What stands against the tree, as reviewed:
 13. **A gate that takes no input has configurations, not runs.** For one tree the gate's children and their
    endings depend on the platform and on which records are present. Hearing each configuration once is the whole
    of it; hearing one of them three times is three samples of one. The list for REASON-COURT-0's register was three
-   long, and the third was the host.
+   long, and the third was the host. It was heard there before the build, and read as the others had.
 
 14. **Listen where it is minted, and touch nothing.** The first listener wrapped the sealers' functions and
    reddened a row that reads a sealer's source. The one that replaced it takes the interpreter's own raise events
@@ -377,7 +377,21 @@ What stands against the tree, as reviewed:
 15. **Name a count by the partition it belongs to.** A count that is a subset of another, set beside it in one
    block, reads as one more part. The entry's sentence had the partition right; the field's name did not say it.
 
-16. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+16. **A measurement can be registered, if it is named one.** MINT-WATCH-0's register has a layer read from
+   source and a layer that was heard. The second is not smuggled in as an expectation derived from a requirement:
+   it is called a baseline for drift, in the entry and in the file, and the rule it could have bent is restated
+   beside it.
+
+17. **Identify a thing by what it says, not by where it stands.** A raise site is its file, its function and its
+   text. A line number moves when anything above it moves, and a watch keyed on it would redden on an added
+   comment and stay green on a rewritten refusal two lines down.
+
+18. **Before a watch is registered, ask what the rows not yet built do to it.** MINT-WATCH-0 is registered
+   between another rung's registration and that rung's build. Read as first drafted, its watch would have gone red
+   on the first refusal those six rows raised, or silently learned it. The entry now says which rows were
+   measured and how a later row gets an entry.
+
+19. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
@@ -389,8 +403,9 @@ What stands against the tree, as reviewed:
 - An admission records a claimed proposer and a command line's grant, and nothing about a model (G20).
 - The live loop has no latency number (G21), and two host silences were never explained (G22).
 - A refusal is registered to be held to its code, not its cause, and the court is not built (G24); 63 lines the
-  programs print about themselves are trusted and not opened (G25). The register has been heard in three
-  configurations here and not yet on the host.
+  programs print about themselves are trusted and not opened (G25). The register has been heard in four
+  configurations, the host among them, each once.
+- The mint register's counts are a measurement, and 105 of its 164 sites were never reached (G26).
 
 ## The one-line retrospective, again
 
