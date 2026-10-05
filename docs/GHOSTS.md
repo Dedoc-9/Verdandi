@@ -512,14 +512,15 @@ the frozen oracle and the plants as the outside checks.
 
 ## G26 — the mint register is a measurement, most of its sites were never reached, and a mint is not a judgment · DECLARED (the registration); OBSERVED (the measured layer)
 
-MINT-WATCH-0 is registered and not built. What it will hold, and what it will not:
+MINT-WATCH-0 is registered, pushed and not built. What it will hold, and what it will not:
 
 - **The counts were heard, not derived.** 142,082 mints in 70 entries are what four passes raised, one per
   configuration. All four agree. That shows the gate's in-process refusals recur; it does not show one of them is
   right. The entry says so in those terms, and the rule that an expected reason never comes from what a program
   does is not bent by it.
 - **105 of 164 raise sites were never reached.** 90 of them are in the eleven sealer files. A sealer's host path
-  and its command line are not run by the gate, and the register says only that those sites were not reached.
+  and its command line are not run by the gate, and the register says only that those sites were not reached. By
+  the owner's ruling they stay facts about reach, and are not expectations that a refusal be planted there.
 - **A mint is counted where it is raised.** What catches it, and whether anything judges it, is not seen. A
   refusal raised and swallowed looks the same as one a statement requires. The gate's own plant is the known case.
 - **Counts are by row and site, not by input.** Two plants of one row that exchanged the sites refusing them would

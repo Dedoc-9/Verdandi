@@ -5057,7 +5057,7 @@ cause, where one code answers several.
 planted record registered as meeting the condition that differs from its twin somewhere else. An ending of the
 registered gate that is in no group.
 
-## MINT-WATCH-0 — every refusal raised inside the gate's own process, claimed by row, class, site and count (preregistered `cd1472ec`; nothing built; its build follows REASON-COURT-0's)
+## MINT-WATCH-0 — every refusal raised inside the gate's own process, claimed by row, class, site and count (preregistered `cd1472ec` and pushed; nothing built; its build follows REASON-COURT-0's)
 
 ```
   the files' syntax ───────► the inventory (static)        8 refusal classes · 164 raise sites · 15 files
@@ -5227,10 +5227,34 @@ raised in worker processes (the Python reader that `readercourt-corpus` runs thr
 **Rows registered for the build:** `mintwatch-preregistered`, `mintwatch-inventory`, `mintwatch-fence`,
 `mintwatch-watch`.
 
-**Grade.** DECLARED: the registration and the fifth court's rulings. OBSERVED (off the gate, one run in each of
-four configurations, by an instrument outside the repository): the measured layer. ESTABLISHED (gate, here): the
-226 rows as before, with the entry hash-locked and the register's bytes pinned by it; nothing of this rung is
-built.
+**On the host (DANIELDILLBERG, 2026-10-05): pushed.** 0120 and 0121 were applied and the gate read `GATE PASSED`,
+rowset `39e5874a7127cfa4`, 226 rows / 0 fail / 0 skipped. The owner pushed `f145a8d..a02d82c`. From that push the
+entry and the register are fixed: a correction is an amendment entry with its own hash.
+
+**The owner's ruling with the push.** *I would not change the order or reopen the registration.*
+
+| | |
+|---|---|
+| the order | REASON-COURT-0's registration, its build, this registration, this build. The registration is frozen before its implementation exists |
+| what this rung is under | the registered vocabulary of REASON-COURT-0, and not its execution: REASON-COURT-0's build does not read `verify/mints.json` |
+| what the register is | *a frozen measurement register, with static site identity plus four-configuration observed counts* |
+| the 105 sites never reached | they *remain exactly that — reach-map facts, not planted refusal expectations* |
+| the scope | the 226 rows, the skipped-row exclusion, the watch's own row and the `latency1-sealers` plant stay *explicit rather than being silently generalized* |
+| up to its own row | correct as registered: *it prevents a watch from retrospectively claiming authority over later rungs* |
+| this rung's build | the tap is listen-only and judges the raises of a pass against the frozen register; *the expected values are not regenerated from that run*. If the 71 measurements recur, that confirms the registered measurement. If one drifts, the row is red, *even if the same refusal type still occurs elsewhere in the row* |
+
+**A provenance fact, and how it is held.** Patch 0121 wrote that 0119 was pushed as `c057da2..f145a8d`. That range
+was read from the host's refs, read-only, and not from the owner's own output. His ruling: it is *a Git provenance
+fact, not something REASON/MINT should infer from gate behavior*; the sentence stays if the range is the actual
+one, and is corrected before the next push if it is not. What his own output shows is consistent with it and is not
+a second witness of the range itself: the push of 0117 and 0118 ended at `c057da2`, and this push began at
+`f145a8d`.
+
+**Grade.** DECLARED: the registration, the fifth court's rulings and the ruling with the push. OBSERVED (off the
+gate, one run in each of four configurations, by an instrument outside the repository): the measured layer; and,
+since, one run over REASON-COURT-0's built gate, in which the six new rows raised no refusal. ESTABLISHED (gate,
+here): the entry hash-locked and the register's bytes pinned by it; nothing of this rung is built. MEASURED (host):
+the gate, 226 of 226, with the entry and the register in the tree.
 
 **does_not_show.** That any refusal is right, or that a class at a site means a reason. That a fifth configuration
 would count the same. That a refusal which is raised is judged: a mint is counted where it is raised, and what

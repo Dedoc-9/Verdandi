@@ -296,6 +296,10 @@ registered.
   other work running beside the second), against about 57 minutes one after another. The procedure is unchanged:
   the same three passes, the same comparison of their logs. (This paragraph went out in patch 0116 with its
   measured sentence missing and a `%s` in its place; the number was measured then and is written here.)
+- **A push is written down from Git's own words.** One patch recorded the range of a push that the owner had not
+  reported; it had been read from the host's refs, read-only, and the patch said so. He ruled that it is a
+  provenance fact and stays unless it is wrong, and that it is never to be inferred from what a gate did. A range
+  is quoted from a push's output when there is one.
 - **A message that arrives twice is checked against the tree.** During REASON-COURT-0's census one host message
   was delivered three times, word for word, a failing gate among its lines. It was not answered as a new failure.
   The host's file was read, read-only, and showed the fix was not yet applied; the answer was the two patches
