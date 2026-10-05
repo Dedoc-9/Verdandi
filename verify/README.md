@@ -21,12 +21,15 @@ The gate is the program's only judge, so its design is about what it may and may
     landing       two consecutive passes, their logs byte-identical, GATE PASSED. A third pass with the host's
                   records present, when a rung reads them.
 
-    preregister.json   38 entries: hypothesis · success · failure · limits · instrument · chain hash.
+    preregister.json   39 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
                        amendment entry with its own hash.
 
     envelope.py   RECORD-0: one writer, one firewall, for every record the tree mints
     savedform.py  READER-COURT-0: the strict reader of everything read back; no json.load beneath it
+    reasons.json  REASON-COURT-0: the reason register — what every refusal the gate requires is expected to say,
+                  and where that expectation comes from. Registered, pinned by its hash in the ledger; no row
+                  reads it yet
     pins/         the goldens Verðandi mints itself (the HUD's, the blit's)
     the sealers   off the gate, on a named host: witnesses first, then the number, then the envelope
 ```
@@ -98,6 +101,9 @@ row that would redden if the claim were false.
   row's to catch.
 - **A plant is bytes.** A file the gate plants for a command is written in binary mode or with a fixed line ending.
   One opened in text mode became CR LF on the owner's Windows host and was refused for its form; the watch said so.
+- **The register is the expected side.** `reasons.json` was written from the gate's own statements and variables
+  and from registered text, never from what a program printed. Its line numbers are lines of the `verify.py` it
+  names by hash; the build will move them and hold the text.
 - **A mutant can be a non-mutant.** In READER-COURT-0's mutation test four planted defects survived because they
   were written so that they changed nothing. A survivor is first a question about the mutant.
 - **The dev harness is not the gate.** Running chosen rows alone can fail a row that depends on an earlier row's

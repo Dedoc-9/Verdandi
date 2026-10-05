@@ -218,7 +218,9 @@ step survives the same pixel-level oracle, so speed is never traded for correctn
 permanently useful evidence.
 
 Since then the ledger has grown two more arcs, each described below: the **live editor** (`LIVE-LOOP-0` through
-`MOUSE-LOOK-0a`, §11) and **admission** (`ADMIT-0`, built; `READER-COURT-0`, registered; §12 and §13).
+`MOUSE-LOOK-0a`, §11) and **admission** (`ADMIT-0` and `READER-COURT-0`, built; §12 and §13). The rung after
+them, `REASON-COURT-0`, is registered and not built: it holds every refusal the gate requires to a registered
+reason (see [`ROADMAP.md`](ROADMAP.md) and ghost G24).
 
 ---
 

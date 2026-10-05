@@ -199,11 +199,12 @@ rows, grade, limits and falsifier; this is the order and the state.
     ADMISSION       ADMIT-0 a proposal in VRDNP1 recognized or refused, admitted as one ordinary edit; the
          │          first admission sealed on the host, its head computed beforehand · READER-COURT-0 the
          │          saved form as one bounded language: one Rust reader, an independent Python reader, the
-         │          same code and byte offset from both on 163,072 mutants; built, and on the host 225 of
-         │          226 rows on the first run, the one red found by the new watch and fixed
+         │          same code and byte offset from both on 163,072 mutants; built, and on the host 226 of
+         │          226 rows (the first run read 225; the one red was found by the new watch and fixed)
          │
-    chosen          REASON-COURT-0 every refusal check in the gate held to its reason, an exact code or a
-         │          deliberately open one; its census first (the owner's court; not registered)
+    registered      REASON-COURT-0 every refusal the gate requires held to a registered reason: 145 refusal
+         │          checks censused, 103 with a code and 42 a registered REFUSE(any); a watch over every child
+         │          that does not end 0, reading only the code head (337ab021; not built)
          ⋮
     declared        DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors

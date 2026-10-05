@@ -292,7 +292,14 @@ registered.
   as its own commit. A claim about a host run is never written before the run.
 - **The three passes run at once.** Until READER-COURT-0 the three gate passes of a landing ran one after another.
   They are independent (each has its own copy of the tree and writes only inside it), so they now run together.
-  %s The procedure is unchanged: the same three passes, the same comparison of their logs.
+  Measured on the build container's two cores: three passes together took 2,000 s once and 2,149 s once (with
+  other work running beside the second), against about 57 minutes one after another. The procedure is unchanged:
+  the same three passes, the same comparison of their logs. (This paragraph went out in patch 0116 with its
+  measured sentence missing and a `%s` in its place; the number was measured then and is written here.)
+- **A message that arrives twice is checked against the tree.** During REASON-COURT-0's census one host message
+  was delivered three times, word for word, a failing gate among its lines. It was not answered as a new failure.
+  The host's file was read, read-only, and showed the fix was not yet applied; the answer was the two patches
+  already delivered.
 
 **A text on the shape of a build turn (declared; the owner brought it, 2026-10-04).** It reads a long build turn as
 mostly sequential project management and proposes: run the three independent gate passes at once and let the shell
@@ -351,7 +358,14 @@ What stands against the tree, as reviewed:
 10. **Count twice.** Both corrections in READER-COURT-0's record came from counting again by a different method. A
    count that feeds a registered bound deserves the same suspicion as a number that feeds a verdict.
 
-11. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+11. **An expected value comes from the side that expects.** REASON-COURT-0's register was written from the gate's
+   own statements and variables and from registered text. What the programs print was listened to, once, only to
+   see that the register could hold. The owner's line: that a program prints X is not that a row requires X.
+
+12. **A commit's name is local.** The same patch has one hash here and another on the host. A registration pins a
+   file's bytes and a patch number.
+
+13. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
@@ -362,6 +376,8 @@ What stands against the tree, as reviewed:
 - The saved form's readers disagreed on hostile input; the remedy is built, and its reach is stated (G19).
 - An admission records a claimed proposer and a command line's grant, and nothing about a model (G20).
 - The live loop has no latency number (G21), and two host silences were never explained (G22).
+- A refusal is registered to be held to its code, not its cause, and the court is not built (G24); 63 lines the
+  programs print about themselves are trusted and not opened (G25).
 
 ## The one-line retrospective, again
 

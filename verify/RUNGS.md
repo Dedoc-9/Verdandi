@@ -4377,7 +4377,7 @@ admitted event's head is not the key-made edit's, if a forged envelope passes an
 continuation drops an envelope. `admit-fence` goes red if the seam reaches a process, a socket, the gate or the
 JSON reader's text.
 
-## READER-COURT-0 — the saved form is one bounded language, and every reader gives one verdict (preregistered `f53017cd` and built; the gate passes here; the first host run read 225 of 226, the one red a planted file written CR LF on Windows, fixed; the second host run is the owner's)
+## READER-COURT-0 — the saved form is one bounded language, and every reader gives one verdict (preregistered `f53017cd` and built; the gate passes here; the first host run read 225 of 226, the one red a planted file written CR LF on Windows, fixed; the second host run passes, 226 rows, and is pushed)
 
 **Why.** ADMIT-0 made a new language with one reader. The old language, the JSON the tree saves and reads back, has
 four Rust parsers (one text copied into `shell/playback.rs`, `workshop/sessionwalk.rs` and `workshop/session.rs`,
@@ -4593,11 +4593,16 @@ there, the corpus with the host's records among them.
   the real instance differed by a line ending only the host produces. Three green passes here were three samples
   of one platform.
 
+**On the host, the second run (2026-10-05).** The fix (0115) and its record (0116) were applied and the gate read
+`GATE PASSED`, rowset `39e5874a7127cfa4`, 226 rows / 0 fail / 0 skipped: `shell-playback-sealed-input` green and
+`readercourt-fence` green. The owner pushed `b847810..b077eef`. The eight sessions sealed on the host before this
+rung were not sealed again there, or it was not reported; that check stands as it was made here.
+
 **Grade.** DECLARED: the registered conditions, and the owner's eight locks. ESTABLISHED (gate, here): the eight
-rows. MEASURED (host, the first run): 225 of 226 rows pass, the new rows among them except the fence, whose red was
-a true finding. OBSERVED (here, off the gate): the census, the depth count, the prototype's result, the mutation
+rows. MEASURED (host): 225 of 226 rows on the first run, the fence's red a true finding; 226 of 226 on the second,
+with the fix. OBSERVED (here, off the gate): the census, the depth count, the prototype's result, the mutation
 test, the gate with the host's records copied in, the eight sessions sealed again to the same data. NOT_MEASURED:
-the gate on the owner's host with the fix, and how long the new rows take there.
+how long the new rows take on the host, and the eight sessions sealed again there.
 
 **does_not_show.** That the language is right: it is one author's grammar, and what stands against a shared mistake
 is the registered cases, offsets computed from the place of a mutation, and the writers' own output. Anything about
@@ -4618,6 +4623,160 @@ its form.
 **The next question, reserved.** Whether DESIGN-EVENT-0 remains the next rung, or a design representation, a design
 diff and constraints are promoted ahead of it. The owner: *I would not silently reorder that based on the 15-pivot
 review. That deserves its own ruling.* The locked order stands until he rules.
+
+## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021`; nothing built)
+
+```
+  a row's statement ───────────────►  the register  verify/reasons.json   ◄── the ledger entry pins its bytes
+  "exit 2 and CHAIN-BROKEN in err"    expected:  a code  ·  REFUSE(any) with its reason  ·  a death (70)
+                                      never filled from what a program prints
+                                            │
+  a child of the gate ends ≠ 0 ──► the watch ──► the code head of a line ──► a slot of its group
+                                                 SESSIONWALK-CHAIN-BROKEN: the head…   (row · program · command)
+                                                 └ framing ┘└── the code ──┘  text after the head is never read
+```
+
+**Where it came from.** READER-COURT-0's watch showed a row that had stayed green while its plant was refused for
+its form and not for the row's own reason. A row that asks only for a refusal passes whatever refused. The owner
+locked the idea and ruled it its own rung. The first court and its three rulings are in
+[`docs/ROADMAP.md`](../docs/ROADMAP.md).
+
+**The census (the rung's first operation; no row, program or document was changed to make it).** The gate as patch
+0116 left it — `verify/verify.py`, sha256 `f6dde802…c14b`, 11,939 lines, 226 rows — was counted twice and netted a
+third time:
+
+- a **reading** of every line, in twelve windows under one rubric;
+- an **extraction** from the syntax tree of every comparison of an exit status with a non-zero number and every
+  handler of a refusal exception: 76 sites, all of them in the reading or among eight that require success;
+- a **third net** over the gate's own failure texts that speak of accepting, refusing, a plant or a forgery: 59
+  near-candidates, read one by one, none a refusal check.
+
+| kind | statements | what it is | in the court |
+|---|---:|---|---|
+| refusal | 129 | a program must end non-zero, or a function must raise | held |
+| refusal as data | 16 | a refusal reported in a trace, a verdict line or a returned list | held |
+| second witness | 16 | a log record, a ledger line or the disk, for a refusal already judged | attached to its refusal |
+| planted death | 4 | exit 70 and a named line | held |
+| detection | 7 | a plant caught because a value moved; nothing refuses | outside |
+| gate-self | 6 | one of the gate's own checks held to a plant | outside |
+| agreement | 1 | two readers must agree; neither must refuse | outside |
+
+190 statements were recorded; 11 are helper definitions, counted through their calls. The **145 refusal checks**
+stand in 78 of the 226 rows. Beside them, 63 functions of the gate trust a line a program prints about its own
+court (`court OK`, `selfcheck OK`); those courts were not opened.
+
+**What the census showed (OBSERVED, of the gate as it stood).**
+
+| of the 145 refusal checks | |
+|---|---:|
+| hold a named code | 103 |
+| hold words of the diagnostic and no code | 8 |
+| hold other evidence (nothing written, one new record, a count) | 12 |
+| hold only that the subject refused | 22 |
+
+- **21 of the 22 are the sealers under `verify/`.** They refuse in prose. Of 148 `raise Refuse(...)` only
+  `drift.py`'s begin with a code, and the row that judges them does not read it.
+- **Where the codes are named.** A ledger entry names 23 of the 83 codes the court holds; `RUNGS.md` names 15 more;
+  45 were named nowhere but the program that prints them and the row that asks for them.
+- **How a code was held.** 73 of the 103 looked for it anywhere in the output. `PRESENTEXACT-READBACK` is also found
+  in `PRESENTEXACT-READBACK-STALE`; a verdict `CODE 12` is also found in `CODE 120`.
+- **One code, several causes.** `INVALID-EDIT` answers six edits, `DIVERGED` four forgeries, and `records-twins`
+  asks `ENVELOPE` of two different plants.
+- **Exit status.** 74 statements require exit 2; 23 require only a non-zero ending.
+
+**What each refusal says today (a listening pass, off the gate; OBSERVED, one run here).** The whole gate was run
+with a listener that kept every child that did not end 0 and every sealer refusal. The gate read the same with it
+on. It heard 1,103 endings (1,090 exit 2, 11 exit 70, 2 exit 1) and 74 sealer refusals, and no panic. Every refusal
+of this tree's programs carried a code. Every sealer refusal was for the cause its row names (57 of 57 planted
+records, by reading). Among what it could hear, no wrong-reason pass was found. It found one ending no statement
+judges: `shell-build` runs `shell run`, receives exit 2, and drops the result. By the owner's ruling none of this
+is where an expected value comes from.
+
+**The courts (2026-10-05), after the census.** Four rulings, then two tightenings.
+
+1. **The edge.** The court holds the 145 refusal checks, their 16 second witnesses and the 4 planted deaths. The
+   deaths belong because they answer the same question from the other side: *does the program end with the
+   registered reason rather than merely not pass?* Detections, gate-self checks, the agreement court and the
+   programs' own courts are registered as outside, *otherwise REASON-COURT-0 becomes a general
+   assertion-strengthening project rather than a reason court.*
+2. **Where a code comes from: register here, with a witness.** *REASON-COURT-0 can register an already-existing
+   requirement; it must not manufacture a new requirement.* Three sources: an earlier ledger entry; `RUNGS.md`, with
+   its state pinned; the row's own requirement, first registered here, each with the text of the gate that requires
+   it. *The implementation cannot be used to establish the expected code.* Amending some twenty earlier rungs was
+   rejected.
+3. **The sealers: `REFUSE(any)` with a condition, and no sealer changed.** The condition is that the plant is the
+   registered mutation of a record the same row requires accepted. A plant that does not meet it is not silently
+   downgraded.
+4. **A table and a watch.** The table is the authority and is never filled from observed output. The watch is the
+   completeness fence: *no non-zero ending may remain unclaimed.* The 145 statements are not rewritten.
+5. **The code head (a correction of "first token").** The watch reads the leading run of code tokens on a line and
+   never the text after it. The prefixes programs print (`SESSIONWALK-`, `SHELL-PLAYBACK-`) are *observed framing,
+   not the reason contract*, and are not registered. The cases where a code stands in prose are named exceptions,
+   held as their row holds them: *don't pretend the code-head grammar covers them.*
+6. **One registered mutation.** A plant meets the condition when all its differences from its accepted twin are
+   the registered primary mutation and the deterministic recomputation closure of that mutation. The others are
+   registered `condition_status = NOT_MET`, `condition_debt = CODE | ACCEPTED_TWIN`: *a visible, finite debt rather
+   than quietly weakening the court.*
+
+**What is registered.** Entry `337ab021dc83f564fae619e8f7827bbfaf8219b42aef694cf19118aaa4336729`, and the register
+it pins: `verify/reasons.json`, 199,090 bytes, sha256 `cf3f47e5…1d6b`, a document of the saved form.
+
+| the register holds | |
+|---|---|
+| codes | 83, each with its source: 23 a ledger entry, 15 `RUNGS.md` (line cited), 45 first registered here |
+| statements | 165 (145 + 16 + 4), each with what it expects and the gate's own text that requires it: 215 code requirements in 115 statements, every one with its literal and its lines |
+| refusal checks | 103 expect a code; 42 expect `REFUSE(any)`, each with its reason |
+| endings | 1,103 in 77 groups by row, program and command: 1,072 owe a code in a code head, 23 `REFUSE(any)`, 6 held only by their row, 2 unjudged |
+| named exceptions | three statements, nine endings: the compiler's `error[E0502]`; the reader's verdict in the Python sealer's command line; the reader's verdict in parentheses after `LIVESESSION-FORM` |
+| planted records | 57 behind the 21 sealer statements: 41 meet the condition (34 one field, 7 one field and its closure), 16 are debt; and 16 forged envelopes of `admit-replay`, 14 met and 2 debt |
+| outside | 7 detections, 6 gate-self checks, 1 agreement court, 63 program-owned courts, by name |
+
+The expected code of an ending is the gate's own: the literal of its judging statement, or the value of the gate's
+own variable at the moment it started the child. The rows registered for the build are `reasoncourt-preregistered`,
+`reasoncourt-register`, `reasoncourt-source`, `reasoncourt-watch`, `reasoncourt-sealers` and `reasoncourt-fence`.
+
+**Numbers that moved between the court and the registration, each by the owner's own test.**
+
+- **23 / 15 / 45 of 83 codes, not 24 / 16 / 45 of 85.** `chain_hash` is named in `RUNGS.md` as the envelope's
+  function and not as a refusal, so it is first registered here. `SHELL-ADMIT-PARSE` is `ADMIT-PARSE` as the shell
+  prints it: one code. `LIVEINPUT-SCREEN-DIFFERS` belongs to a detection, which is outside.
+- **63 program-owned courts, not 64.** One of the 64 was the gate's own `main`, a pointer and not a court.
+- **Nine endings in prose, not six.** The first check counted an ending as held if any one of its codes was in a
+  head. `readercourt-writers` requires two, and the reader's code stands in parentheses after `LIVESESSION-FORM`.
+- **A 22nd sealer statement.** `admit-replay`'s sealer check holds the word "envelope", so it was not among the 21
+  that hold nothing. Its sixteen forged envelopes are read by the same rule.
+
+**Dev notes.**
+
+- **A mechanical witness can pick the gate's own prose.** The first witness search took, for several codes, a
+  sentence the row returns on success or raises on failure, because the code's name occurs there too. A literal
+  inside a `raise` or a `return` is now never a witness, and every witness that is not in the judging statement
+  itself was read by eye. Five were corrected by hand and are marked.
+- **The gate's own variable, nearest first.** The expected code of an ending was read from the gate's variables at
+  the moment it started the child. Reading the row's frame before the helper's took a stale loop variable for 64
+  endings; the frame nearest the child is read first.
+- **A commit's name is local.** The census was taken at `0f80bb7` here; the same patch is `b077eef` on the host,
+  because `git am` writes a new commit. The registration pins the file's sha256 and the patch number, not a commit.
+- **A listener can redden a row.** Wrapping the sealers' functions to listen made `hoststate-fence` red, because
+  that row reads a sealer's source through the function object. The gate itself was untouched; the build's
+  listener has to leave the function's source readable.
+- **Five statements are marked as owed a code** (`text-refuse` twice, `workshop1-propose`, `liveinput-court`,
+  `bearing-refuse`'s eye on rock): the row judges the refusal for its reason and holds a word or an exit status
+  only. The mark is the registration's own addition and is the owner's to strike.
+
+**Grade.** DECLARED: the registration and the six rulings. OBSERVED (here, off the gate): the census, the
+listening pass, the derivation of the register from the gate's own statements and variables. ESTABLISHED (gate,
+here): the 226 rows as before, with the entry hash-locked; nothing of this rung is built. NOT_MEASURED: anything on
+the host; whether the register's counts hold there.
+
+**does_not_show.** That any row holds its registered reason: nothing is built. That the census is complete: a
+check it missed inside a row is not held, and nothing that happens inside the gate's own process is seen by a
+watch. That a registered reason is the right reason: the court will show that a refusal carries its registered
+code, not that the program's reasoning is correct. Anything about a cause, where one code answers several.
+
+**Falsifier.** A registered requirement that does not stand in `verify/verify.py` as patch 0116 left it. An
+expected value in the register that came from a program's output. A planted record registered as meeting the
+condition that differs from its twin somewhere else. An ending of the registered gate that is in no group.
 
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 
@@ -4726,20 +4885,8 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   ruled. It meets rules in force: no floats, units or scores; a constraint's status a witness; shown numbers are
   measurements; preview only as a speculative worldline; a batch a new language version; a plugin inside the
   program is code the gate did not certify. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
-- **REASON-COURT-0 (chosen in the owner's court of 2026-10-04; not registered, nothing built; its census is its
-  first operation).** A row that asks only for a refusal passes whatever refused. READER-COURT-0's watch showed it:
-  `shell-playback-sealed-input` stayed green while its plant was refused for its form. The owner locked the idea and
-  ruled it its own rung, after READER-COURT-0 and before DESIGN-EVENT-0, and READER-COURT-0 is not amended for it.
-  Its scope is every refusal check in the gate. Each is held to an expected reason that is either an exact code or
-  `REFUSE(any)`, and `REFUSE(any)` is a registered decision with its why, not a failure to specify. A semantic
-  refusal code is contract; diagnostic text is not; a byte offset is, where a rung already specified one; an
-  internal exception, a stack or a branch never is. A row's expected code comes from its rung's registered text or
-  ledger entry and never from what the program emits today. The census comes first and changes no row: it records
-  each check's row, evidence and strength (an exact code, a fragment of text, the exit status alone, other
-  evidence). Only then is what the court will strengthen registered. A first, crude count here found about fifty
-  refusal checks, about half naming a code, three matching a word of diagnostic text, and about ten resting on the
-  exit status beside other evidence; that count is not the census. Recorded in
-  [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+- **REASON-COURT-0 (preregistered `337ab021`; nothing built).** Its census is taken, its courts are held and its
+  register is in the tree. See its own section above, and [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 - **Self-optimizing code, and its correction to a layout court (declared: two texts the owner brought, 2026-10-04;
   considered at his word; not registered, nothing built).** The first text proposes a toolchain that mutates the
   kernel's memory layout, thread partitioning and instruction selection continuously, on live workloads, with byte

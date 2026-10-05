@@ -31,7 +31,10 @@ the first **admission** seam is built and measured: `ADMIT-0` recognizes a propo
 it, and admits it as one ordinary edit.
 
 And everything the tree saves and reads back is now one bounded language with one verdict from every reader
-(`READER-COURT-0`, built; its host run is the owner's).
+(`READER-COURT-0`, built; the gate passes on the host, 226 rows, and is pushed).
+
+The next rung is registered and not built: `REASON-COURT-0` holds every refusal the gate requires to a registered
+reason (`337ab021`).
 
 What is *not* yet done: the design-event stream and a model at the seam (declared, not registered); any measurement
 of the live loop's timing; richer edits than a cell and a tile class; and semantics the frozen oracle never
@@ -117,9 +120,9 @@ walking in a live, authorable world
 LLM-BUILDER-0    a declared goal beyond the route: a model proposes typed, anchored changes against the sealed session; only the verifier admits them — nothing built, and the route above is built in respect of it. Declared with it (2026-10-03), and by the owner's ruling what the route builds towards: the gate certifies the program and content is admitted, not gated; conversation edits the world through a stream of admitted design events
 ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by the owner's order next after MOUSE-LOOK-0: the admission seam. One strict recognizer for a line language whose accepted bytes are canonical (VRDNP1), an anchor refused when stale, a scope the admitter grants, an admitted proposal an ordinary session event. The gate certifies the machine; ADMIT admits the world's changes — registered (`bdd38593`), built, and measured on the host: the gate passes there and the first admission is sealed
       ↓
-READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — registered (`f53017cd`) and built: eight rows, 226 in the gate; the host's run is the owner's
+READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — registered (`f53017cd`) and built: eight rows, 226 in the gate; on the host 225 of 226 on the first run, 226 of 226 with the fix, pushed
       ↓
-REASON-COURT-0   the owner's ruling (2026-10-04): next after READER-COURT-0 and before DESIGN-EVENT-0. Every refusal check in the gate is held to an expected reason, an exact code or a deliberately open REFUSE(any). Its first operation is a census that changes no row — chosen in court; not registered, nothing built
+REASON-COURT-0   the owner's ruling (2026-10-04): next after READER-COURT-0 and before DESIGN-EVENT-0. Every refusal check in the gate is held to an expected reason, an exact code or a deliberately open REFUSE(any). Its census is taken (145 refusal checks in 78 rows; 103 hold a code), its courts are held, and its register is in the tree: codes only from a requirement that already exists, a watch over every child that does not end 0 reading only the code head, the sealers under one registered mutation — registered (`337ab021`); nothing built
       ↓
 DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered. Whether a design representation, a design diff or constraints are promoted ahead of DESIGN-EVENT-0 is a question the owner has reserved for its own ruling; until he rules, this order stands
       ↓
@@ -1247,7 +1250,7 @@ can be computed deterministically for anything beyond what the grid already says
 language. When a rung is seated from it, the rung registers its own hypothesis, failure condition and limits.
 
 
-### READER-COURT-0 — the saved form's readers brought to one verdict · **built** (`f53017cd`): the gate passes here; the first host run read 225 of 226 and the one red is fixed; the second host run is the owner's
+### READER-COURT-0 — the saved form's readers brought to one verdict · **built** (`f53017cd`): the gate passes here; the first host run read 225 of 226 and the one red is fixed; the second host run passes and is pushed
 The rung after ADMIT-0, by the owner's order. ADMIT-0 made a new language with one reader. This rung hardens the old
 one: the JSON the tree saves and reads back. The disagreement it closes was observed on 2026-10-03 and is recorded in
 ADMIT-0's section above. This section records what was read from the code before the courts, the two courts, a
@@ -1393,8 +1396,11 @@ defects are each caught. The details, the limits and the falsifier are in
 **The first host run.** 226 rows, one red: `readercourt-fence`, naming `shell-playback-sealed-input`. That row's
 planted file had been opened in text mode, so on Windows it ended in CR LF, which the language refuses before the
 row's own rule is reached. The row stayed green; the watch this rung added went red. The plant is now written as
-bytes. Every other row passed on the host, the corpus with the host's records among them. What is not yet shown is
-the gate on the host with that fix.
+bytes. Every other row passed on the host, the corpus with the host's records among them.
+
+**The second host run (2026-10-05).** With the fix and its record applied the gate read `GATE PASSED`, rowset
+`39e5874a7127cfa4`, 226 rows / 0 fail / 0 skipped, and the owner pushed `b847810..b077eef`. READER-COURT-0 is
+landed on both machines.
 
 **The next question, reserved.** The owner asked whether DESIGN-EVENT-0 remains the next rung after this one, or
 whether a design representation, a design diff and constraints are promoted ahead of it, as the review of the
@@ -1513,9 +1519,10 @@ mode, constraint, recipe, bundle or plugin can be built under the rules above; t
 fifteen; anything about how a user would fare with them. Each rung seated from it registers its own hypothesis,
 failure condition and limits.
 
-### REASON-COURT-0 — every refusal held to its reason · **chosen** (the owner's court, 2026-10-04); not registered, nothing built
-The rung after READER-COURT-0, by the owner's ruling. Nothing is registered and nothing is built. Its first
-operation is a census.
+### REASON-COURT-0 — every refusal held to its reason · **preregistered** (`337ab021`); nothing built
+The rung after READER-COURT-0, by the owner's ruling. Its census is taken, three courts are held, and the method is
+registered with its register, `verify/reasons.json`. Nothing is built. The full record is in
+[`verify/RUNGS.md`](../verify/RUNGS.md); this section keeps the order of events.
 
 **Where it came from.** READER-COURT-0 made the gate watch every refusal by the saved form's reader. The watch
 showed a row, `shell-playback-sealed-input`, that had stayed green while its planted file was refused for its form
@@ -1572,8 +1579,45 @@ figure is the population.
 to add it to READER-COURT-0 as a sub-court built with the reader. READER-COURT-0's entry was already pushed and
 its build delivered, so the second was no longer available as written; the court chose the first.
 
-**Grade.** DECLARED: the idea and the three rulings. OBSERVED: the crude count. **does_not_show.** How many refusal
-checks there are, how many have a registered reason, or that any row is wrong today: one was, and it is fixed.
+**The census (2026-10-05), which replaced the crude count.** The gate as patch 0116 left it was read line by line
+in twelve windows, extracted a second time from its syntax tree, and netted a third time over its own failure
+texts. It changed nothing. 190 statements; 145 refusal checks in 78 of the 226 rows; 16 second witnesses; 4 planted
+deaths; and, apart, 7 detections, 6 of the gate's own checks, 1 agreement court and 63 places that trust a
+program's own court. Of the 145: 103 hold a code, 8 hold words, 12 hold other evidence, 22 hold only that the
+subject refused, and 21 of those 22 are the sealers, which refuse in prose. Of the codes, a ledger entry named 23
+and `RUNGS.md` 15; 45 were named only by the program that prints them and the row that asks for them. The crude
+count had said about fifty checks; the population was three times that.
+
+**A listening pass, off the gate.** One run of the whole gate with a listener on: 1,103 children ended non-zero and
+74 sealer refusals were raised, with no panic, a code on every refusal of this tree's programs, and every sealer
+refusal for the cause its row names. No wrong-reason pass was found among what it could hear. It is evidence about
+one run and never the source of an expected value.
+
+**The second court (2026-10-05): four rulings.**
+
+1. **The edge: refusals and deaths.** The 145, their 16 second witnesses and the 4 planted deaths are held. The
+   detections, the gate-self checks, the agreement court and the programs' own courts are registered as outside.
+2. **Register the codes here, each with a witness.** A requirement that already exists may be registered; a new one
+   may not be manufactured; the implementation establishes no expected code. `RUNGS.md`'s state is pinned.
+3. **The sealers: `REFUSE(any)` with a condition.** No sealer is given a code and none is changed.
+4. **A table and a watch.** The table is the authority; the watch claims every child that does not end 0; the old
+   statements are not rewritten.
+
+**The third court (2026-10-05): two tightenings.** The two rulings met at one point: the watch was to read "the
+boundary prefix and the full code as the first token", and the prefix is in no row and no registered text. The
+owner corrected his own wording: the watch reads the **code head**, the leading run of code tokens on a line; the
+prefix is observed framing and is not registered; the few codes that stand in prose are named exceptions. And the
+sealer condition is **one registered mutation with its recomputation closure**: 41 of 57 planted records meet it,
+and the 16 that do not are registered as debt, `NOT_MET`, owed a code or an accepted twin.
+
+**Registered (2026-10-05).** Entry `337ab021`. The register holds 83 codes with their sources, 165 statements with
+the gate's own text that requires each, 1,103 endings in 77 groups, the planted records beside their twins, and
+the statements outside the court. Four numbers moved between the court and the registration, each by the owner's
+own test, and are listed in `verify/RUNGS.md`. Six rows are registered for the build.
+
+**Grade.** DECLARED: the idea, the rulings and the registration. OBSERVED (here, off the gate): the census and the
+listening pass. **does_not_show.** That any row holds its registered reason: nothing is built, and no host run
+stands behind the register's counts.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

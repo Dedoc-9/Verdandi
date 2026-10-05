@@ -461,6 +461,39 @@ and not by a reader, the writers' own output as a positive witness, and the froz
 different program at a different time. A second author or a mechanized grammar would close more of it and neither
 is on the route.
 
+## G24 — a refusal is held to its code, not to its cause, and the court that holds it is not built · DECLARED (the registration); OBSERVED (the census)
+
+Until REASON-COURT-0 is built, a row holds a refusal's reason only as that row was written: 73 of the 103 coded
+checks look for the code anywhere in the output, 22 hold only that the subject refused, and nothing holds a refusal
+to its code from outside the row. The registration closes part of that and says what it leaves:
+
+- **A code is not a cause.** `INVALID-EDIT` answers six different edits and `DIVERGED` four forgeries. The text
+  that tells them apart is, by ruling, not locked.
+- **42 refusal checks are `REFUSE(any)`.** Each is a registered decision with its reason. 21 are sealers, which
+  have no codes.
+- **Debts.** 16 planted records of the sealers and 2 forged envelopes have no accepted twin one mutation away, so
+  their refusal is not tied to the field the row names. Five statements judge a refusal for its reason and hold a
+  word or an exit status where a code is owed. They are listed, not paid.
+- **The watch counts by group.** It will know how many endings of a row, program and command carry a code, not
+  which input drew it. Where a group holds coded and `REFUSE(any)` slots together, a changed code can hide.
+- **Inside the gate's process the watch sees nothing.** 15 coded checks are judged there (an exception's key, a
+  verdict line, a trace) and stay held by their row alone.
+
+**Exorcism.** Partial, and registered: the build. Paying a debt is a code in a sealer or an accepted twin in a row,
+each a decision of its own. Telling causes apart would mean locking text, which the owner ruled out.
+
+## G25 — the gate trusts 63 lines that programs print about themselves · ESTABLISHED (counted in the census)
+
+63 functions of the gate run a program and require a line it prints about its own court: the kernel's `selfcheck
+OK` and its equality verdicts, the shell's `blit_roundtrip OK`, the mock courts' `court OK`, the admission
+self-test, Urðr's own suites. What the program checks before it prints that line is in the program. The gate holds
+the line; the census did not read the Rust behind it, and REASON-COURT-0 registers those courts as outside.
+
+**Exorcism.** None on the route. Where it matters most the gate already does more than trust the line: the saved
+form's court compares every line the Rust reader writes with the Python reader's, and the admission court compares
+the shell's verdicts with the gate's own recognizer by digest. The others are a program vouching for itself, with
+the frozen oracle and the plants as the outside checks.
+
 ---
 
 ## The disposition
@@ -469,8 +502,8 @@ None of these ghosts is load-bearing for a claim the program actually makes. G1 
 with sound remedies; G2 is an honest boundary of what the courts measured; G7 is now measured and reproduced (twice), and
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
 and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a careful reader must carry, recorded so they are carried on
-purpose. Of the live editor's, G14, G15, G16, G18, G20 and G23 are limits of method, stated so no claim is read
-past them; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
+purpose. Of the live editor's, G14, G15, G16, G18, G20, G23 and G25 are limits of method, stated so no claim is read
+past them; G24 is a gap with a registered and unbuilt remedy and a list of debts; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
 built, with the court's reach stated; G21 is a measurement not yet taken; G22 is two things that happened once and were never
 explained.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
