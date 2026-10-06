@@ -209,7 +209,7 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          · MINT-WATCH-0 every refusal raised inside the gate's own process claimed by row,
          │          class, site and count: 164 raise sites read from source, 142,082 mints measured in four
          │          configurations, heard by the interpreter's own raise event (cd1472ec; built, four rows,
-         │          236 in the gate; passes here; not yet run on the host)
+         │          236 in the gate; on the host 236 of 236)
          ⋮
     declared        DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors

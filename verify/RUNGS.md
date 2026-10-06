@@ -5068,7 +5068,7 @@ cause, where one code answers several.
 planted record registered as meeting the condition that differs from its twin somewhere else. An ending of the
 registered gate that is in no group.
 
-## MINT-WATCH-0 — every refusal raised inside the gate's own process, claimed by row, class, site and count (preregistered `cd1472ec` and pushed; built: four rows, 236 in the gate; the gate passes here; not yet run on the host)
+## MINT-WATCH-0 — every refusal raised inside the gate's own process, claimed by row, class, site and count (preregistered `cd1472ec` and pushed; built: four rows, 236 in the gate; the gate passes here and on the host)
 
 ```
   the files' syntax ───────► the inventory (static)        8 refusal classes · 164 raise sites · 15 files
@@ -5342,21 +5342,33 @@ gate stood for the rest.
 - **A defect in a pinned file that is not a sealer** is caught by the inventory and not by the fence, as reading 8
   says.
 
-**Not yet shown.** The gate with this build on the owner's host (win32, Python 3.14.5), which is one of the four
-configurations the measured layer was heard in. A whole pass here ran on Python 3.11 and on 3.14.0rc2.
+**Before the host ran it.** A whole pass here ran on Python 3.11 and on 3.14.0rc2.
+
+**On the host (DANIELDILLBERG, 2026-10-06): landed.** 0124 and 0125 were applied and the gate read `GATE PASSED`,
+rowset `cb2f68e75e338768`, 236 rows / 0 fail / 0 skipped, the four rows of this rung among them. The output the
+owner gave ends at the gate: no push is in it, and none is written here.
+
+| | |
+|---|---|
+| the watch | `mintwatch-watch` passed: the refusals raised in the host's own gate process were the register's, entry by entry. The fourth configuration, heard there by an instrument on 2026-10-05, is now held there by the gate |
+| the inventory | `mintwatch-inventory` passed: the host's files under `verify/` hold the registered classes and sites, and the fourteen pinned files their hashes |
+| the fence | `mintwatch-fence` passed: REASON-COURT-0's six rows are on the host the text they are here |
+| what was not printed | the run was the compact one. The rows' texts, which carry the counts and name the tap, are printed only under `--verbose` |
+
+None of the build's readings was struck. No finding, so no amendment.
 
 **Grade.** DECLARED: the registration, the fifth court's rulings and the ruling with the push. OBSERVED (off the
 gate, one run in each of four configurations, by an instrument outside the repository): the measured layer.
 ESTABLISHED (gate, here): the four rows, 236 in the gate, on Python 3.11; the same on 3.14.0rc2, one pass.
-MEASURED (host): the gate before this build. NOT_MEASURED: the built gate on the host.
+MEASURED (host): the built gate, 236 of 236, one run.
 
-**does_not_show.** That the gate with this build passes on the host. That any refusal is right, or that a class at
+**does_not_show.** That any refusal is right, or that a class at
 a site means a reason. That a fifth configuration would count the same. That a refusal which is raised is judged: a
 mint is counted where it is raised, and what catches it is not seen. Which input drew a mint: counts are by row and
 site. Anything about the 105 sites beyond that they were not reached. Anything about a row placed after the
 watch's: it is not heard by it.
 
-**Falsifier.** A red row among the four on the host. A raise statement of a refusal class in the tree that the
+**Falsifier.** A red row among the four on a later run of either machine with the tree unchanged. A raise statement of a refusal class in the tree that the
 inventory does not hold, or a site it holds that the tree does not. A gate pass, in a configuration named here,
 whose mints differ from the measured layer. An entry of the register that was taken from the watch's own run.
 

@@ -511,7 +511,7 @@ the frozen oracle and the plants as the outside checks.
 
 ## G26 — the mint register is a measurement, most of its sites were never reached, and a mint is not a judgment · ESTABLISHED (the watch, on the gate here); OBSERVED (the measured layer); limits stated
 
-MINT-WATCH-0 is built and passes here; it has not run on the host. What it holds, and what it does not:
+MINT-WATCH-0 is built and passes here and on the host. What it holds, and what it does not:
 
 - **The counts were heard, not derived.** 142,082 mints in 70 entries are what four passes raised, one per
   configuration. All four agree. That shows the gate's in-process refusals recur; it does not show one of them is
