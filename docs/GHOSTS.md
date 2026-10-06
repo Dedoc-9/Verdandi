@@ -567,7 +567,7 @@ what it shows.
 
 ---
 
-## G28 — the batch is built; what it leaves open · ESTABLISHED (the six rows, on the gate here); MEASURED (host: the gate, 242 of 242, one run); limits stated; its cost on the host NOT_MEASURED
+## G28 — the batch is built; what it leaves open · ESTABLISHED (the six rows, on the gate here); MEASURED (host: the gate, 242 of 242, two runs); limits stated; its cost on the host NOT_MEASURED
 
 DESIGN-EVENT-0 is built, and the gate passes with it here and on the host. A design is one batch, admitted whole or
 refused whole. What that does not give:
@@ -583,7 +583,8 @@ refused whole. What that does not give:
   journal-flush cost remains an explicit performance unknown.*
 - **The times are development measurements.** 0.10 s and 0.13 s are the build container's, one sitting. By the
   owner's word they are not made a row.
-- **The host's run is one run, and the compact one.** 242 of 242, once. The rows' counts were not printed there.
+- **The host's runs are two, and both compact.** 242 of 242 each time, the second on a tree that differs from the
+  first in documents only. What they printed reads the same. The rows' counts were printed by neither.
 - **No verifier rebuilds a proposal.** Deferred by the owner's ruling, outside this rung, in his words: *The
   verifier does not reconstruct VRDNP2 proposal bytes from admitted events or independently recompute the proposal
   digest. Doing so would introduce a second VRDNP2 writer into the verification path and is outside the present

@@ -5683,9 +5683,21 @@ and its record. The output he gave holds one run of the gate.
 
 None of the build's readings was struck. No finding, so no amendment.
 
+**On the host again (DANIELDILLBERG, 2026-10-06): a second run, and pushed.** 0133 was applied, a change to documents
+only, and the gate read `GATE PASSED`, rowset `aa94c886190510c7`, 242 rows / 0 fail / 0 skipped. The owner pushed.
+Git's own output: `7e1d997..eba1951  main -> main`.
+
+| | |
+|---|---|
+| what the host has now run | the built gate twice: on the tree of the build and its record, and on that tree with 0133's documents |
+| what was compared | the two outputs he gave, line by line, here: the same 242 rows passing in the same order, the same reconcile line. The compact log of the three passes here reads the same |
+| what that is | a comparison of what was printed. Both host runs were the compact one; the rows' texts, which carry the counts, were printed by neither |
+| what it is not | two passes on one tree. Between the two host runs the tree changed, in documents only |
+
 **The owner's word with the push.** *My word: push the build. Then don't immediately add another theorem. Let the
 full ×2 gate judge DESIGN-EVENT-0 as a complete engineering rung.* Here the gate ran three passes on the head, their
-logs identical. The host's output holds one. No rung is registered after this one and none is proposed here.
+logs identical. The host's output held one run then, and the second is the one recorded above. No rung is registered
+after this one and none is proposed here.
 
 He asked that the memo's account keep its whole chain, and drew it:
 
@@ -5739,12 +5751,13 @@ row admitted the 60 in its own root; the tool has not been shown doing it.
 (gate, here): the six rows, 242 in the gate, three passes identical, one of them with the host's records present;
 the same on Python 3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one
 run, off the gate): the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate,
-236 of 236, pushed; the built gate, 242 of 242, one run, pushed.
+236 of 236, pushed; the built gate, 242 of 242, two runs, the second on a tree differing from the first in
+documents only, both pushed.
 
 **does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
 builds of the shell agree. That the memo is right on a session the court does not replay: the workshop is the
 standing check, and it is run when a session is sealed, not when it is designed. What an admission costs on the
-host. That a second run of the host's gate would read the same: one is recorded. That a proposal's bytes can be
+host. That the two host runs agree beyond what the compact output prints. That a proposal's bytes can be
 rebuilt from its admitted events, or its digest recomputed by a verifier: none does either, by the ruling above.
 That a model can write a design worth admitting. Anything about a second editor.
 

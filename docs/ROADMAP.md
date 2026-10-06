@@ -137,7 +137,7 @@ MINT-WATCH-0     the owner's ruling (2026-10-05): a separate slice, registered n
       ↓
 the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen; a new gate only for a new engineering invariant; the work is the design environment. Built off the gate, content time: design/ — inspect, propose, preview, admit, undo over the certified seam, driven the same way by a person, a script or a model
       ↓
-DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242, pushed
+DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242, twice, pushed
       ↓
 DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered, and by his word with the build's push none is added at once. The design representation follows the event and is not promoted ahead of it: the question he had reserved is ruled
       ↓
@@ -1955,6 +1955,10 @@ read 242 of 242, rowset `aa94c886190510c7`, and he pushed (`b975fc5..7e1d997`). 
 *push the build. Then don't immediately add another theorem. Let the full ×2 gate judge DESIGN-EVENT-0 as a complete
 engineering rung.* So the rung stands as a whole and nothing is stacked on it yet.
 
+A second host run followed the same day. 0133 was applied, documents only; the gate read 242 of 242 again, and he
+pushed (`7e1d997..eba1951`). The two outputs read the same, row for row, and so does the compact log here. Both
+were the compact run, so what agrees is what was printed.
+
 Three things he fixed with it.
 
 The times stay what they are. *The one thing I would not do is turn the 0.10/0.13 s container timings into a row.
@@ -1977,7 +1981,7 @@ And one idea is deferred by name. It is not part of DESIGN-EVENT-0, and it is re
 That every editor speaks the same event: one consumer exists, the design tool.
 
 **Grade.** DECLARED: the lock, the court and the registration. ESTABLISHED (gate, the build container): the six
-rows. MEASURED (host): the registration's gate, 236 of 236, pushed; the built gate, 242 of 242, one run, pushed.
+rows. MEASURED (host): the registration's gate, 236 of 236, pushed; the built gate, 242 of 242, two runs, pushed.
 OBSERVED (the owner's host, one run, off the gate): the design tool's loop over ADMIT-0 and the two heads. OBSERVED
 (the build container): the times.
 **does_not_show.** What an admission costs on the host, that the design tool has sent a batch there, or that a
