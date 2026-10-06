@@ -18,6 +18,13 @@ proposal language. It takes the envelope as typed values of the saved form and c
 text members, the language's name, 64 lower-case hex where an id, a digest, an identity or a head goes, the grant's
 line, on an edit, naming the head before the event and the head after it, and no proposal id twice. The digest, the
 id, the identities and the grant are the admitting shell's record: nothing in a saved file can check them.
+
+DESIGN-EVENT-0: a batch admits N operations as N ordinary edits. Each carries the batch's envelope: ADMIT-0's eight
+members and two more, its place and the batch's count. This sealer does not read the batch language either. Every
+envelope still stands alone against the chain, as above; and a batch stands whole or the session is refused: its events
+one after another with nothing between them, place 1 to place count in order, agreeing in language, proposal id,
+digest, identities, grant and count. An envelope that is not exactly ten members naming the batch language is judged
+as ADMIT-0 judges any envelope.
 """
 from __future__ import annotations
 
@@ -45,6 +52,11 @@ MAGIC = b"VRDNSW1"
 # ADMIT-0: the envelope beside an admitted edit — its members, and the alphabets of their values
 ENVELOPE_KEYS = ("language", "proposal", "digest", "renderer", "bearing", "parent", "head", "grant")
 ENVELOPE_LANGUAGE = "VRDNP1"
+# DESIGN-EVENT-0: a batch's envelope — ADMIT-0's eight members and two more, its place and the batch's count
+BATCH_KEYS = ENVELOPE_KEYS + ("place", "count")
+BATCH_LANGUAGE = "VRDNP2"
+BATCH_SHARED = ("language", "proposal", "digest", "renderer", "bearing", "grant", "count")
+COUNT = re.compile(r"[1-9][0-9]{0,3}\Z")
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 GRANT_LINE = re.compile(r"[a-z0-9=,\- ]{1,96}\Z")
 
@@ -97,6 +109,45 @@ def heads(content: str, camera: str, log: list) -> list:
     return out
 
 
+def batch_place(a, k: int):
+    """DESIGN-EVENT-0: the place and count of a batch's envelope — exactly ten members naming the batch language — or
+    None for every other envelope, which is then judged as ADMIT-0 judges it."""
+    if not isinstance(a, dict) or len(a) != len(BATCH_KEYS) or a.get("language") != BATCH_LANGUAGE:
+        return None
+    if any(not isinstance(a.get(x), str) for x in BATCH_KEYS):
+        raise Refuse("event %d: a batch's envelope is not its ten text members" % k)
+    if not COUNT.match(a["place"]) or not COUNT.match(a["count"]) or not 1 <= int(a["place"]) <= int(a["count"]) <= 4096:
+        raise Refuse("event %d: a batch envelope's place and count are not decimals with 1 <= place <= count <= 4096" % k)
+    return int(a["place"]), int(a["count"])
+
+
+def check_batches(log: list) -> int:
+    """DESIGN-EVENT-0: a batch is whole or the session is refused — its events one after another with nothing between
+    them, place 1 to place count in order, agreeing in what the batch shares. Returns how many batches the log holds."""
+    batches, first, nxt = 0, None, 0
+    for k, item in enumerate(log):
+        a = item.get("admit")
+        place = batch_place(a, k) if a is not None else None
+        if first is None:
+            if place is None:
+                continue
+            if place[0] != 1:
+                raise Refuse("event %d: a batch's envelope does not begin at place 1" % k)
+            batches += 1
+            first, nxt = (a, 2) if place[1] > 1 else (None, 0)
+            continue
+        if place is None:
+            raise Refuse("event %d: a batch's envelope is missing: an event that is not of the batch stands inside it" % k)
+        if place[0] != nxt:
+            raise Refuse("event %d: a batch's envelope is out of place: its places are not in order" % k)
+        if any(a[x] != first[x] for x in BATCH_SHARED):
+            raise Refuse("event %d: a batch's envelope does not agree with the batch in what it shares" % k)
+        first, nxt = (first, nxt + 1) if nxt < place[1] else (None, 0)
+    if first is not None:
+        raise Refuse("event %d: a batch's envelope is missing: the log ends inside the batch" % len(log))
+    return batches
+
+
 def check_envelopes(log: list, hs: list) -> int:
     """ADMIT-0: every envelope in the log against the chain's heads; returns how many events were admitted."""
     seen = set()
@@ -104,9 +155,10 @@ def check_envelopes(log: list, hs: list) -> int:
         a = item.get("admit")
         if a is None:
             continue
-        if not isinstance(a, dict) or len(a) != len(ENVELOPE_KEYS) or any(not isinstance(a.get(x), str) for x in ENVELOPE_KEYS):
+        place = batch_place(a, k)   # DESIGN-EVENT-0: a batch's envelope has ten members and its own language
+        if place is None and (not isinstance(a, dict) or len(a) != len(ENVELOPE_KEYS) or any(not isinstance(a.get(x), str) for x in ENVELOPE_KEYS)):
             raise Refuse("event %d: an envelope is not its eight text members" % k)
-        if a["language"] != ENVELOPE_LANGUAGE:
+        if place is None and a["language"] != ENVELOPE_LANGUAGE:
             raise Refuse("event %d: an envelope's language is not VRDNP1" % k)
         if any(not HEX64.match(a[x]) for x in ("proposal", "digest", "renderer", "bearing", "parent", "head")):
             raise Refuse("event %d: an envelope's id, digest, identity or head is not 64 lower-case hex" % k)
@@ -118,9 +170,10 @@ def check_envelopes(log: list, hs: list) -> int:
             raise Refuse("event %d: its envelope's parent is not the head before the event" % k)
         if a["head"] != hs[k + 1]:
             raise Refuse("event %d: its envelope's head is not the head after the event" % k)
-        if a["proposal"] in seen:
+        if (place is None or place[0] == 1) and a["proposal"] in seen:
             raise Refuse("event %d: its envelope's proposal id was already admitted" % k)
         seen.add(a["proposal"])
+    check_batches(log)   # DESIGN-EVENT-0: after each envelope stands alone, the batches stand whole
     return len(seen)
 
 
@@ -194,6 +247,12 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
     # the chain by check_saved); a session with none reads, cites and seals exactly as before
     admitted = sum(1 for x in d["log"] if x.get("admit") is not None)
     by_admission = live.get("ended") == "admission"
+    # DESIGN-EVENT-0: the edits a batch admitted, counted from their ten-member envelopes, and the batches they make
+    # (already held whole by check_saved); a session with none reads, cites and seals exactly as before
+    batched = sum(1 for x in d["log"] if x.get("admit") is not None and len(x["admit"]) == len(BATCH_KEYS))
+    batches = sum(1 for x in d["log"] if x.get("admit") is not None and len(x["admit"]) == len(BATCH_KEYS) and x["admit"]["place"] == "1")
+    single = admitted - batched
+    by_batch = by_admission and batched > 0 and d["log"][-1].get("admit") is not None and len(d["log"][-1]["admit"]) == len(BATCH_KEYS)
     lin = live.get("lineage")
     resumed = "a new session from its base" if lin is None else (
         "a continuation of the session whose head is %s... (its first %d events, from its %s)" % (lin["parent_head"][:12], lin["parent_events"], lin["source"]))
@@ -203,8 +262,11 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
                "one it was made with." % (host, len(d["log"]), d["moves"], d["edits"],
                                          ("" if not looks else ", %d looks, %d frames at free headings recomputed by the reference before the save"
                                           % (looks, (live.get("certified") or {}).get("frames", 0)))
-                                         + ("" if not admitted else ", %d of the edits admitted through ADMIT-0's seam from a proposal in "
-                                            "VRDNP1, each envelope naming the chain's own heads around its event" % admitted),
+                                         + ("" if not single else ", %d of the edits admitted through ADMIT-0's seam from a proposal in "
+                                            "VRDNP1, each envelope naming the chain's own heads around its event" % single)
+                                         + ("" if not batched else ", %d of the edits admitted through DESIGN-EVENT-0's seam in %d batch%s, each "
+                                            "batch whole and in order, each envelope naming the chain's own heads around its event"
+                                            % (batched, batches, "" if batches == 1 else "es")),
                                          # MOUSE-LOOK-0a: said as what it was — a run under the tick source — and never
                                          # as having looked when the session holds no look
                                          live.get("ended") if mouse is None else "%s; run under MOUSE-LOOK-0's tick source at 64 Hz, %s (%s)" % (
@@ -213,7 +275,9 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
                                          resumed,
                                          "" if lin is None else " and lineage", d["head"][:12],
                                          "the same as" if same else "NOT the same as (replay, not identity, decides)"))
-    prov = {"tool": ("shell admit (shell/admit.rs: the recognizer and the checks; shell/livesession.rs: the journal and the seal) "
+    prov = {"tool": ("shell design (shell/designevent.rs: the recognizer and the checks; shell/livesession.rs: the journal and the seal) "
+                     "+ verify/livesession.py") if by_batch else
+                    ("shell admit (shell/admit.rs: the recognizer and the checks; shell/livesession.rs: the journal and the seal) "
                      "+ verify/livesession.py") if by_admission else
                     ("shell livesession-window (shell/livesession.rs; the LIVE-SESSION-0 section appended to shell/win32.rs) "
                      "+ verify/livesession.py") if mouse is None else
@@ -227,8 +291,10 @@ def seal_livesession(raw: bytes, reg: dict, host: str, workshop: str, root: str 
         prov["look"] = {"rung": "MOUSE-LOOK-0", "chain_hash": reg["MOUSE-LOOK-0"]["chain_hash"]}
         prov["ticks"] = {"rung": "SIM-TICK-0", "chain_hash": reg["SIM-TICK-0"]["chain_hash"]}
         prov["configuration"] = {"rung": "SIM-TICK-0a", "chain_hash": reg["SIM-TICK-0a"]["chain_hash"]}
-    if admitted:
+    if single:
         prov["admission"] = {"rung": "ADMIT-0", "chain_hash": reg["ADMIT-0"]["chain_hash"]}
+    if batched:
+        prov["batches"] = {"rung": "DESIGN-EVENT-0", "chain_hash": reg["DESIGN-EVENT-0"]["chain_hash"], "batches": batches, "events": batched}
     data = dict(d)
     data["live"] = live
     return envelope.seal(

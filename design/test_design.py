@@ -95,11 +95,11 @@ def main():
         assert rc == 0, out
         before = sessions(proj)
         rc, out = run(proj, "preview")
-        assert rc == 2 and "SHELL-ADMIT-AUTHORITY" in out and "NOT ADMISSIBLE" in out, out[-300:]
+        assert rc == 2 and "SHELL-ADMIT-AUTHORITY: line 7" in out and "NOT ADMISSIBLE" in out, out[-300:]
         rc, out = run(proj, "admit")
         assert rc == 2 and out.startswith("DESIGN-NOT-ADMISSIBLE") and sessions(proj) == before and status(proj)["head"] == head0, out
         run(proj, "reject")
-        return "with this tool's prediction off, the shell itself refuses an opened border (ADMIT-AUTHORITY); nothing is admitted"
+        return "with this tool's prediction off, the shell itself refuses an opened border (ADMIT-AUTHORITY, naming the line); nothing is admitted"
     check("the shell is the verifier, not this tool", t_seam_is_the_verifier)
 
     def t_grant():
@@ -123,10 +123,13 @@ def main():
         before = sessions(proj)
         rc, out = run(proj, "preview", "--json")
         d = json.loads(out)
-        assert rc == 0 and d["ok"] and d["admitted_in_scratch"] == d["operations"] == 11 and d["proposed_head"] != head0, out[:300]
+        assert rc == 0 and d["ok"] and d["operations"] == 11 and d["proposed_head"] != head0 and len(d["digest"]) == 64, out[:300]
         assert sessions(proj) == before and status(proj)["head"] == head0, "a preview changed the project's sessions or its head"
+        assert not os.path.exists(os.path.join(proj, "preview")), "a preview left a scratch root behind"
         assert d["readings"]["proposed"]["floor_cells"] == d["readings"]["current"]["floor_cells"] + 6 - 4, d["readings"]
-        return "a preview admits %d operations in a scratch root; the project's sessions and head are as they were" % d["operations"]
+        rc2, out2 = run(proj, "preview", "--json")
+        assert json.loads(out2)["proposed_head"] == d["proposed_head"] and sessions(proj) == before, "a second preview differs, or wrote a session"
+        return "a preview is the shell's dry run of the %d operations: it names the head they would give and writes no session" % d["operations"]
     check("a preview is state, not authority", t_preview_is_not_authority)
 
     def t_admit():
@@ -136,11 +139,16 @@ def main():
         assert rc == 0 and st["head"] == previewed != head0 and st["pending"] is None and st["steps_back_available"] == 1, out
         doc = design.savedform.read_file(st["session"])
         edits = [e for e in doc["data"]["log"] if e["kind"] == "edit"]
-        assert len(edits) == 11 and all("admit" in e and e["admit"]["language"] == "VRDNP1" for e in edits), "an admitted edit carries no envelope"
+        assert len(edits) == 11 and all("admit" in e and e["admit"]["language"] == "VRDNP2" for e in edits), "an admitted edit carries no envelope"
+        assert [e["admit"]["place"] for e in edits] == [str(k) for k in range(1, 12)] and {e["admit"]["count"] for e in edits} == {"11"}, "the places are not 1 to 11 of 11"
+        assert len({e["admit"]["proposal"] for e in edits}) == 1 and len({e["admit"]["digest"] for e in edits}) == 1, "the eleven edits are not one batch"
         assert edits[-1]["admit"]["head"] == previewed and "cells=20,20,30,29" in edits[0]["admit"]["grant"], edits[-1]["admit"]
+        assert len(sessions(proj)) == 2, "one design made more than one session"
+        kept = os.path.join(proj, "batches", previewed + ".vrdnp2")
+        assert design.sha256(open(kept, "rb").read()) == edits[0]["admit"]["digest"], "the kept batch is not the bytes the envelope names"
         w = design.World(st["session"])
         assert chr(w.at(24, 25)) == "." and chr(w.at(22, 21)) == "#" and w.tiles["floor"] == (60, 70, 90), "the admitted world is not the designed one"
-        return "the admitted head is the previewed head; 11 ordinary edits, each with its envelope and the grant it was admitted under"
+        return "one admission, one new session: 11 ordinary edits at places 1 to 11 of one batch; the admitted head is the previewed head"
     check("admit is the previewed proposal, byte for byte", t_admit)
 
     def t_stale_and_changed():
@@ -148,14 +156,14 @@ def main():
         rc, out = run(proj, "propose", "-", text=TEXT + "open 27,27\n")
         rc, out = run(proj, "preview")
         assert rc == 0, out
-        # the previewed bytes are changed on disk before the admit
+        # the previewed bytes are changed on disk before the admit: the shell, not this tool, refuses them
         prj = json.load(open(os.path.join(proj, "project.json")))
-        p = prj["pending"]["preview"]["steps"][0]["proposal"]
+        p = os.path.join(proj, "pending.vrdnp2")
         raw = open(p, "rb").read()
-        assert b"target=27,27" in raw
-        open(p, "wb").write(raw.replace(b"target=27,27", b"target=26,27"))
+        assert b"open 27,27\n" in raw
+        open(p, "wb").write(raw.replace(b"open 27,27\n", b"open 26,27\n"))
         rc, out = run(proj, "admit")
-        assert rc == 2 and out.startswith("DESIGN-CHANGED") and status(proj)["head"] == head1, out
+        assert rc == 2 and "SHELL-ADMIT-PREVIEW" in out and status(proj)["head"] == head1, out
         open(p, "wb").write(raw)
         # the project moves on (an undo) while the proposal waits: it is stale
         run(proj, "undo")
@@ -166,14 +174,14 @@ def main():
         rc, out = run(proj, "admit")
         assert rc == 2 and out.startswith("DESIGN-STALE"), out
         run(proj, "reject")
-        return "a proposal whose previewed bytes changed, and one made against a head the project has left, are each refused"
+        return "bytes that are not the previewed ones are refused by the shell (ADMIT-PREVIEW); a proposal against a head the project has left is refused"
     check("what is admitted is what was previewed, against the head it was made for", t_stale_and_changed)
 
     def t_undo():
         st = status(proj)
         assert st["head"] == head0 and st["steps_back_available"] == 0
         kept = [s for s in sessions(proj)]
-        assert len(kept) == 12, "the sessions the project stepped back from are gone (%d)" % len(kept)
+        assert len(kept) == 2, "the session the project stepped back from is gone (%d)" % len(kept)
         rc, out = run(proj, "undo")
         assert rc == 2 and out.startswith("DESIGN-NOTHING"), out
         rc, out = run(proj, "propose", "-", text=design_a)
@@ -186,11 +194,47 @@ def main():
     def t_net_difference():
         rc, out = run(proj, "propose", "-", text=TEXT + "open 27,27\nclose 27,27\n")
         assert rc == 0 and "0 operation(s)" in out and "changes nothing" in out, out
+        assert not os.path.exists(os.path.join(proj, "pending.vrdnp2")), "a design that changes nothing wrote a batch"
+        rc, out = run(proj, "preview")
+        assert rc == 2 and "not in the seam's language" in out, out[-200:]
         rc, out = run(proj, "propose", "-", text=TEXT + "close 21,28 23,28\nopen 21,28 23,28\nclose 22,28\n")
         assert rc == 0 and "1 operation(s)" in out, out
         run(proj, "reject")
-        return "statements that cancel compile to nothing, and three statements over one row to the single cell that differs"
+        return "statements that cancel compile to nothing and propose no batch; three statements over one row give the single cell that differs"
     check("the smallest operation set", t_net_difference)
+
+    def t_normal_form():
+        # overlapping rectangles, a repeat and a statement undone, in two different orders, are one change set and one byte sequence
+        a = TEXT + "open 21,22 25,24\nclose 23,22 27,23\nopen 26,23\nclose 26,23\npaint floor 1,2,3\npaint wall0 9,9,9\n"
+        b = TEXT + "paint wall0 9,9,9\nopen 21,22 22,24\nopen 23,24 25,24\nclose 23,22 27,23\npaint floor 1,2,3\npaint floor 1,2,3\n"
+        run(proj, "grant", "--cells", "20,20,30,29", "--classes", "wall0,floor")
+        raws = []
+        for text in (a, b):
+            rc, out = run(proj, "propose", "-", text=text)
+            assert rc == 0, out
+            raws.append(open(os.path.join(proj, "pending.vrdnp2"), "rb").read())
+        assert raws[0] == raws[1], "two texts with one net difference compiled to two byte sequences"
+        prj = json.load(open(os.path.join(proj, "project.json")))
+        ops = prj["pending"]["ops"]
+        again = design.batch_bytes(prj["identity"], prj["pending"]["base_head"], prj["pending"]["proposal"], ops[::-1])
+        assert again == raws[1] and design.canonical(design.canonical(ops)) == design.canonical(ops) == ops, "compiling a canonical set again changes it"
+        lines = raws[1].decode("ascii").split("\n")[6:-1]
+        assert len(lines) == len(ops) and lines[-2:] == ["paint wall0 592137", "paint floor 66051"], lines[-3:]
+        rc, out = run(proj, "preview", "--json")
+        assert rc == 0 and json.loads(out)["ok"], out[:300]   # the shell recognizes it: it is in the one order
+        run(proj, "reject")
+        return "two texts with one net difference compile to the same bytes; a canonical set compiled again is itself; the shell recognizes it"
+    check("the batch is a normal form", t_normal_form)
+
+    def t_many_statements():
+        text = TEXT + "".join("open %d,%d\n" % (21 + k % 8, 21 + k // 8) for k in range(64))
+        rc, out = run(proj, "propose", "-", text=text)
+        assert rc == 0 and "64 operation(s)" not in out and "operation(s)" in out, out
+        rc, out = run(proj, "propose", "-", text=text + "open 21,21\n")
+        assert rc == 2 and out.startswith("DESIGN-SIZE"), out[:120]
+        run(proj, "reject")
+        return "64 statements are taken and compile to one batch; a 65th is refused (DESIGN-SIZE)"
+    check("the bound on a design text", t_many_statements)
 
     shutil.rmtree(tmp, ignore_errors=True)
     bad = [r for r in RESULTS if r[0] != "PASS"]

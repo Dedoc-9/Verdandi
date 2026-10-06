@@ -6765,11 +6765,18 @@ def liveinput_fence():
     mv, ed = src_span(sect, "pub fn push_move(", "\n    }\n"), src_span(sect, "pub fn push_edit_cell(", "\n    }\n")
     # re-pinned on purpose with SIM-TICK-0: the move's witness is taken through shell/heading.rs, which is compose_frame's
     # digest at an anchor heading (simtick-fence judges heading.rs); the statements are otherwise replay_from's.
-    # And with MOUSE-LOOK-0: it is taken by the session's own Painter there (the same render, its picture kept)
+    # And with MOUSE-LOOK-0: it is taken by the session's own Painter there (the same render, its picture kept).
+    # And with DESIGN-EVENT-0, by its registration: the edit's content is no longer replay_from's own statement
+    # (content_hex over the level's and the tiles' bytes) but the memo — the digest of the level's bytes, recomputed here
+    # because a cell edit changes them, and the hash of that and the tiles' kept digest. That the two are equal is held by
+    # designevent-replay (against content_hex, edit by edit, and against the workshop, which keeps no memo), and that
+    # each digest is assigned where its bytes are edited and nowhere else by designevent-fence
     if not all(t in mv for t in ("let cam = step(&self.level, self.cam, cmd);", "self.painter.witness(&self.level, &self.tiles, cam, yaw)?", "fold(&self.head, b'M', &witness)")) \
             or not all(t in ed for t in ("if (x == 0 || z == 0 || x as usize == w - 1 || z as usize == rows - 1) && to != b'#' {",
-                                         "apply_spec(&mut self.level, &mut self.tiles, &spec)", "content_hex(&self.level, &self.tiles)", "fold(&self.head, b'E', &self.content)")):
-        raise Red("the live session's replay is not replay_from's statements (step, compose_frame's digest, apply_spec, content_hex, fold)")
+                                         "apply_spec(&mut self.level, &mut self.tiles, &spec)", "self.w_sha = sha256(&self.level);",
+                                         "self.content = memo_hex(&self.w_sha, &self.m_sha);", "fold(&self.head, b'E', &self.content)")):
+        raise Red("the live session's replay is not replay_from's statements with the edit's content by the memo (step, compose_frame's digest, apply_spec, "
+                  "the level's digest, the hash of the two digests, fold)")
     if any(t in sect for t in ("fs::", "File::", "write(")):
         raise Red("the live session touches a file")
     rs = read(os.path.join(SHELL, "liveinput.rs")).decode("utf-8")
@@ -7561,10 +7568,14 @@ def liveauthor_fence():
     # re-pinned on purpose with SIM-TICK-0: bounded at the next appended section (SIM-TICK-0's, which simtick-fence judges)
     sect = w32_section(pb, "// ================================================================== LIVE-AUTHOR-0 (appended)")
     pt = src_span(sect, "pub fn push_edit_tile(", "\n    }\n")
-    order = [pt.find(t) for t in ("apply_spec(&mut self.level, &mut self.tiles, &spec);", "self.content = content_hex(&self.level, &self.tiles);",
+    # re-pinned on purpose with DESIGN-EVENT-0, by its registration: the content is the memo's — the digest of the tiles'
+    # bytes, recomputed here because a tile edit changes them, and the hash of the level's kept digest and that. Its
+    # equality with content_hex is held by designevent-replay, and where the digests are assigned by designevent-fence
+    order = [pt.find(t) for t in ("apply_spec(&mut self.level, &mut self.tiles, &spec);", "self.m_sha = sha256(&self.tiles);",
+                                  "self.content = memo_hex(&self.w_sha, &self.m_sha);",
                                   "self.head = fold(&self.head, b'E', &self.content);", "self.log.push(", "self.handed();")]
     if -1 in order or order != sorted(order) or sect.count("&mut self") != 3 or any(t in sect for t in ("fs::", "File::")):
-        raise Red("the session's tile edit is not apply, content, fold, append, hand — the cell edit's own path")
+        raise Red("the session's tile edit is not apply, the tiles' digest, content, fold, append, hand — the cell edit's own path")
     ls = read(os.path.join(SHELL, "livesession.rs")).decode("utf-8")
     if ("go_with(s, p, crate::liveinput::bind, None).0" not in src_span(ls, "pub fn go<S: ExactSurface + Keys + Focus>(", "\n}\n")
             or "crate::liveinput::run_with(s, &mut session, surface, binding, hold)" not in ls or "s.push_edit_tile(class, rgb)" not in ls):
@@ -12046,6 +12057,8 @@ RSN_ROWS = ("reasoncourt-preregistered", "reasoncourt-register", "reasoncourt-so
             "reasoncourt-fence")
 # every Rust source under kernel/, shell/ and workshop/, and every sealer under verify/, as this rung found them
 # (sha256, line endings as LF). The folders' READMEs are documents and their attest/ folders hold records: neither is here.
+# REASON-COURT-0a (an amendment entry, registered with DESIGN-EVENT-0's build) moves five of these pins and adds one,
+# shell/designevent.rs: RSN_AMENDED names them, with the hash each had. No other pin has moved since this rung.
 RSN_SOURCES = {
     "kernel/bearing.rs": "93fb9083a3034d8875f2040f89ba73cbaaf1bad888bc0fd446d6cb4ccf33e474",
     "kernel/bearingfast.rs": "97ab3bf3a575954fdbaa0f1b4d3ed8bd511a6d8dffa01a3b99d864e393a2ee84",
@@ -12057,6 +12070,7 @@ RSN_SOURCES = {
     "kernel/savedform.rs": "a6c6fb66ca5d45393e97c6bf9f9f44e9a3fbcdf87f54ea65dcfd23d98acf8655",
     "kernel/vocab.rs": "30b9199255b0e342c1a20b9b47043c567b54c756e178f4fd7b7d633708dc69c0",
     "shell/admit.rs": "99366fea8540e3b4cebc8f973485e0915db042a7cb549d3b06706a476e48a3cd",
+    "shell/designevent.rs": "7d31063e8b87b4b59f90bb1375194ca956f16e15f3a3baf2b275e3881308ebf1",
     "shell/allocreuse.rs": "6fa31145ac7f8b41f80b9d07b14b4fc6097ed2be99931a65a1f1484a6dece869",
     "shell/allocreuse1.rs": "feb782cdebb9427256baf17f0a9b3bbdc181de54edcbfaafa3116aa47db5672e",
     "shell/framesplit.rs": "3640542830f6db976df2340586fa7ae6d360e1533137d685650efcbf3b4e3ea9",
@@ -12066,10 +12080,10 @@ RSN_SOURCES = {
     "shell/liveauthor.rs": "ea247540c1e652536f45095022e17f3408185b48908ee283bdb3bb852d1f1edb",
     "shell/liveinput.rs": "272f7c77d6ad219a12d1c3d2ac738c25ae7fc3b1b141739543959a2e813f5012",
     "shell/liveloop.rs": "7917203f8891120bd752354c7476a6b9fb0a0f5d29541842a57df8266c340ef1",
-    "shell/livesession.rs": "96860c485b4887114f1c39503469d3a0eccdcef5477bfd46ebb7ea8d71fe6073",
-    "shell/main.rs": "c6d2aaa29c81b48f6f21ce1d9093ce268cd27a766bca5d54c1ba97b9128ddeca",
+    "shell/livesession.rs": "9b9cab5935c432ee5487bfd2f9cc7181edc60e8d487722b73370abfe5bf5c0cc",
+    "shell/main.rs": "d5324e621ebbc25115d83f907e249143918043322d2c14fba5941c496f5824dd",
     "shell/mouselook.rs": "c6924c37aefac6247ae09fde101e67ea0108a1b9a2fce5b172f76a25f34d982c",
-    "shell/playback.rs": "4bb0525d95907cf3b8a0d4db13ccc35aa2d97e4e9a2e9aa0de90a5f3b894af89",
+    "shell/playback.rs": "ca3e3ba15d7a08966168422773794197bbf47eca3fe9abef9eee70078dc27ddd",
     "shell/present.rs": "8834752cfe2f1bdac046ee0b6d8d5a791467fef8deea4d6516a382834a5b71a3",
     "shell/presentexact.rs": "0e9265b994f103a44f9132663db720e0eece95db0b2c98f76639e3d5fab16ba6",
     "shell/presentscale.rs": "c337523644430c0d5e9d939c5e9fe6de9948629eaa5ffd208f6d0ce07ab352aa",
@@ -12084,7 +12098,7 @@ RSN_SOURCES = {
     "workshop/input.rs": "405ef6c825c1f361a3489c6e03e444b67b217a81dc020c44e5afc61fcdf712cf",
     "workshop/membrane.rs": "d1e652f46d3af8bc28562fb59fe3fac4524bf60cc74d421b1c073df57320b8ae",
     "workshop/session.rs": "3abe96801c821148efc06c40868332b6a7f007a90886a942d9eabe94cf704006",
-    "workshop/sessionwalk.rs": "618d0d913467693172782359b82c4d9f3254086666ca448a6cefd2895ca2a5e3",
+    "workshop/sessionwalk.rs": "ab35f6a05c519ba94f726fe0d3b7f4a6c93ae69c6917860ee8ae7c93fee5482b",
     "workshop/text.rs": "93872a94e2eea2f2d1fb860938b7649f3548cb7f18b6e4799f7d1631ef749ce9",
     "verify/allocreuse.py": "6e27c889359b8a03b7f6110526f1ecd317f732841c310adad03ae3163c898df5",
     "verify/allocreuse1.py": "521c62a38c720dc65067d4524f04d997bd724e66bf1d820afbf71f40c7abe9c0",
@@ -12094,7 +12108,7 @@ RSN_SOURCES = {
     "verify/latency1.py": "da84619f1a75301ccd90862e21636f6a62d5f404b4c49a20252b8922ad1205f2",
     "verify/latency1r.py": "e00d011d6618f9ec83755dc4fbc42c04e3cc6e6123be4b9181fd59b7d45ec3f7",
     "verify/liveloop.py": "9e3c76d463f47670b69b9821b8c55a4b0817d6692bef0d842251e1097443afd3",
-    "verify/livesession.py": "2c42a94cefab4584d5b216da7e3d0669be9d1d1ae054cd6e363a35c867a9d2bb",
+    "verify/livesession.py": "c18f65c173156a992e81decda2f91fff951a6f3a1aa410aba75a337906d7e4f3",
     "verify/presentexact.py": "597699ce340e26c71874514df8ed31c83e6b63df6c7c0ea59d42d4a97a4349ba",
     "verify/presentscale.py": "e62dfbcd3cf5814ede68d751fee9ecac5f27c99a379bcd2d5acd0628d6d40947",
     "verify/presentstretch.py": "7ed90d10fe7bd01ef781fda879874c3100b582c1bb577283edac5762405762ab",
@@ -13068,7 +13082,21 @@ def _mw_today() -> tuple:
         vdir = os.path.join(ROOT, "verify")
         raw = {f: read(os.path.join(vdir, f)).replace(b"\r\n", b"\n") for f in sorted(os.listdir(vdir)) if f.endswith(".py")}
         classes, sites = _mw_inventory({f: b.decode("utf-8") for f, b in raw.items()})
-        _MW["today"] = (classes, sites, {"verify/" + f: sha256(b) for f, b in raw.items()})
+        hashes = {"verify/" + f: sha256(b) for f, b in raw.items()}
+        # MINT-WATCH-0a (an amendment entry, registered with DESIGN-EVENT-0's build): a pinned file that is exactly the
+        # file the amendment names, holding every site the amendment adds, is read as the register's file — the added
+        # sites set aside, the register's pin standing for it. Any other bytes are a red pin, as before. A mint at a
+        # site set aside is then a mint at a site outside the inventory.
+        aside = []
+        for f, am in MW_AMENDED.items():
+            added = {(fn, text) for fn, text in am["sites"]}
+            here = [s for s in sites if s["file"] == f and (s["function"], s["text"]) in added]
+            if hashes.get(f) == am["is"] and len(here) == len(added) == len(am["sites"]) and all(s["nth"] == 0 for s in here):
+                sites = [s for s in sites if s not in here]
+                hashes[f] = am["was"]
+                aside += here
+        _MW["today"] = (classes, sites, hashes)
+        _MW["aside"] = aside
     return _MW["today"]
 
 
@@ -13551,6 +13579,1195 @@ def mintwatch_fence():
             "watch's last" % (sum(1 for k in RSN_SOURCES if not k.startswith("verify/")), sum(1 for k in RSN_SOURCES if k.startswith("verify/")), MW_ROWSET_BEFORE))
 
 
+# ================================================================== DESIGN-EVENT-0: a design admitted as one batch
+# A canonical batch of one to 4,096 typed operations is refused whole, leaving nothing, or admitted by one admission as
+# that many ordinary edit events, and then the world, the head, the replay and the saved events are those of the same
+# operations admitted one at a time through ADMIT-0. The language is VRDNP2 (shell/designevent.rs); `shell design` is
+# the seam, `--dry-run` its preview and `--previewed` the binding. These rows run after both refusal watches and are
+# heard by neither: every refusal they require names its code, and the last row judges their endings by code head.
+DESIGNEVENT0_HASH = "ae7cbb36c41335d8bd055f474285cffc430d1c1cd9fab9c828a34a5b115b47a8"
+DE_ROWS = ("designevent-preregistered", "designevent-language", "designevent-admit", "designevent-crash", "designevent-replay", "designevent-fence")
+DE_ROWSET_BEFORE = "cb2f68e75e338768"   # the 236 rows before this rung, by name and order
+DE_LANGUAGE, DE_MIN, DE_MAX, DE_MAX_OPS = "VRDNP2", 322, 74059, 4096
+DE_CAMERA = "28,28,N"
+# the design the owner ran on his host on 2026-10-06, as its statements; its 60 operations were admitted one at a time
+# through ADMIT-0 on both machines before this rung was registered, from DE_P0 to DE_H60
+DE_DESIGN = (("room", (6, 3, 16, 10)), ("open", (6, 6, 6, 6)), ("open", (11, 10, 11, 10)), ("open", (11, 11, 11, 11)), ("paint", ("floor", 60, 70, 90)))
+DE_P0 = "73571153c2fca1ae9412f82dff335fa134d3bc06fb785b0878a032cfa442391c"
+DE_H60 = "c18a71f6af8d269095c2789b9887f160344f15bed17a88782b47e24cd77c1036"
+DE_LATTICE = 48
+DE_LARGEST = (DE_LATTICE - 2) * (DE_LATTICE - 2) - 1 + 5   # every cell off the border but the camera's, and the five classes
+DE_DEATHS = ("die-received", "die-recognized", "die-verified", "die-opened", "die-torn-1", "die-torn-4", "die-torn-8",
+             "die-appended-1", "die-appended-4", "die-appended-8", "die-written", "die-replaced")
+# every code a child of this rung's rows may end with (exit 2), as the registration names them; and the planted death
+DE_CODES = ("SHELL-ADMIT-IO", "SHELL-ADMIT-SIZE", "SHELL-ADMIT-PARSE", "SHELL-ADMIT-RANGE", "SHELL-ADMIT-ORDER", "SHELL-ADMIT-PREVIEW",
+            "SHELL-ADMIT-PROGRAM", "SHELL-ADMIT-SESSION", "SHELL-ADMIT-ANCHOR", "SHELL-ADMIT-DUPLICATE", "SHELL-ADMIT-CAPABILITY",
+            "SHELL-ADMIT-AUTHORITY", "SHELL-LIVESESSION-ENVELOPE", "SHELL-LIVESESSION-TAMPERED", "SESSIONWALK-ENVELOPE", "SESSIONWALK-CHAIN-BROKEN")
+DE_DEATH_CODE = "SHELL-ADMIT-PLANT-DEATH"
+# The two amendment entries DESIGN-EVENT-0's registration names, registered with its build. REASON-COURT-0a: the pins
+# this rung moves (the hash each file had, and has) and the one file it adds. MINT-WATCH-0a: the one pinned file of the
+# mint register this rung changes, and the raise sites it adds there (function, text), which no row before the watch reaches.
+REASONCOURT0A_HASH = "591b8d0bc7fb25019c4862210868c9765693f192a98f1fdb7f5f9b9b09801771"
+MINTWATCH0A_HASH = "4ad67feb540f01a790b1d31143e5ad920d940dec5105090b89fc278d259c3195"
+RSN_AMENDED = {
+    "shell/livesession.rs": "96860c485b4887114f1c39503469d3a0eccdcef5477bfd46ebb7ea8d71fe6073",
+    "shell/main.rs": "c6d2aaa29c81b48f6f21ce1d9093ce268cd27a766bca5d54c1ba97b9128ddeca",
+    "shell/playback.rs": "4bb0525d95907cf3b8a0d4db13ccc35aa2d97e4e9a2e9aa0de90a5f3b894af89",
+    "verify/livesession.py": "2c42a94cefab4584d5b216da7e3d0669be9d1d1ae054cd6e363a35c867a9d2bb",
+    "workshop/sessionwalk.rs": "618d0d913467693172782359b82c4d9f3254086666ca448a6cefd2895ca2a5e3",
+}
+RSN_ADDED = ("shell/designevent.rs",)
+MW_AMENDED = {
+    "verify/livesession.py": {
+        "was": "2c42a94cefab4584d5b216da7e3d0669be9d1d1ae054cd6e363a35c867a9d2bb",
+        "is": "c18f65c173156a992e81decda2f91fff951a6f3a1aa410aba75a337906d7e4f3",
+        "sites": (
+            ("batch_place", "raise Refuse(\"event %d: a batch's envelope is not its ten text members\" % k)"),
+            ("batch_place", "raise Refuse(\"event %d: a batch envelope's place and count are not decimals with 1 <= place <= count <= 4096\" % k)"),
+            ("check_batches", "raise Refuse(\"event %d: a batch's envelope does not begin at place 1\" % k)"),
+            ("check_batches", "raise Refuse(\"event %d: a batch's envelope is missing: an event that is not of the batch stands inside it\" % k)"),
+            ("check_batches", "raise Refuse(\"event %d: a batch's envelope is out of place: its places are not in order\" % k)"),
+            ("check_batches", "raise Refuse(\"event %d: a batch's envelope does not agree with the batch in what it shares\" % k)"),
+            ("check_batches", "raise Refuse(\"event %d: a batch's envelope is missing: the log ends inside the batch\" % len(log))"),
+        )},
+}
+
+
+# ------------------------------------------------------------------ the gate's own recognizer and writer (a test oracle)
+_DE_HEXL = ((b"renderer=", 2), (b"bearing=", 3), (b"parent=", 4), (b"proposal=", 5))
+_DE_RX_HEX = re.compile(rb"[0-9a-f]{64}\Z")
+_DE_RX_N = re.compile(rb"operations=(0|[1-9][0-9]{0,3})\Z")
+_DE_RX_CELL = re.compile(rb"(open|close) (0|[1-9][0-9]{0,4}),(0|[1-9][0-9]{0,4})\Z")
+_DE_RX_PAINT = re.compile(rb"paint (wall0|wall1|wall2|wall3|floor) (0|[1-9][0-9]{0,7})\Z")
+
+
+def _de_rank(op):
+    return (1, op[1], 0) if op[0] == "paint" else (0, op[2], op[1])
+
+
+def _de_recognize(b: bytes):
+    """The gate's own recognizer of the batch language, written apart from the shell's (regular expressions over the
+    split lines): ("A", the four ids, the operations) or ("R", code, line). An operation is ("open" | "close", x, z) or
+    ("paint", class index, colour). A test oracle and nothing else."""
+    if len(b) > DE_MAX:
+        return ("R", "ADMIT-SIZE", 0)
+    lines, start = [], 0
+    for i, c in enumerate(b):
+        if c == 10:
+            lines.append(b[start:i])
+            start = i + 1
+    at = lambda k: lines[k - 1] if k <= len(lines) else None
+    if at(1) != DE_LANGUAGE.encode("ascii"):
+        return ("R", "ADMIT-PARSE", 1)
+    ids = []
+    for key, k in _DE_HEXL:
+        ln = at(k)
+        if ln is None or not ln.startswith(key) or not _DE_RX_HEX.match(ln[len(key):]):
+            return ("R", "ADMIT-PARSE", k)
+        ids.append(ln[len(key):].decode("ascii"))
+    ln = at(6)
+    m = _DE_RX_N.match(ln) if ln is not None else None
+    if not m:
+        return ("R", "ADMIT-PARSE", 6)
+    n = int(m.group(1))
+    ops, rng = [], (6 if not 1 <= n <= DE_MAX_OPS else None)
+    for k in range(7, 7 + n):
+        ln = at(k)
+        if ln is None:
+            return ("R", "ADMIT-PARSE", k)
+        m = _DE_RX_CELL.match(ln)
+        if m:
+            x, z = int(m.group(2)), int(m.group(3))
+            if (x > 65535 or z > 65535) and rng is None:
+                rng = k
+            ops.append((m.group(1).decode("ascii"), x, z))
+            continue
+        m = _DE_RX_PAINT.match(ln)
+        if not m:
+            return ("R", "ADMIT-PARSE", k)
+        v = int(m.group(2))
+        if v > 16777215 and rng is None:
+            rng = k
+        ops.append(("paint", ADMIT_CLASSES.index(m.group(1).decode("ascii")), v))
+    if len(lines) > 6 + n or start != len(b):
+        return ("R", "ADMIT-PARSE", 7 + n)
+    if rng is not None:
+        return ("R", "ADMIT-RANGE", rng)
+    for i in range(1, n):
+        if not _de_rank(ops[i - 1]) < _de_rank(ops[i]):
+            return ("R", "ADMIT-ORDER", 7 + i)
+    return ("A", tuple(ids), tuple(ops))
+
+
+def _de_op_line(op) -> str:
+    return "paint %s %d" % (ADMIT_CLASSES[op[1]], op[2]) if op[0] == "paint" else "%s %d,%d" % op
+
+
+def _de_emit(ids, ops, sort=True) -> bytes:
+    """The oracle's writer: the one byte sequence of a change set, whatever order its operations are handed over in."""
+    ops = sorted(ops, key=_de_rank) if sort else list(ops)
+    return ("VRDNP2\nrenderer=%s\nbearing=%s\nparent=%s\nproposal=%s\noperations=%d\n" % (tuple(ids) + (len(ops),))
+            + "".join(_de_op_line(o) + "\n" for o in ops)).encode("ascii")
+
+
+def _de_verdict(b: bytes) -> str:
+    """The oracle's verdict in the shell's own spelling: "R <code> <line>" or "A <the typed fields>"."""
+    v = _de_recognize(b)
+    return "R %s %d" % v[1:] if v[0] == "R" else "A %s %s %s %s %s" % (v[1] + (";".join(_de_op_line(o) for o in v[2]),))
+
+
+def _de_neighbourhood(base: bytes):
+    """Every single-byte substitution, deletion and insertion of `base`, in the shell's order; the oracle's counts and
+    the sha256 of its verdicts, one per line; and how many recognized mutants the oracle's writer does not give back."""
+    h = hashlib.sha256()
+    n = refused = respelled = 0
+    def take(m):
+        nonlocal n, refused, respelled
+        m = bytes(m)
+        v = _de_recognize(m)
+        n += 1
+        refused += v[0] == "R"
+        if v[0] == "A" and _de_emit(v[1], v[2], sort=False) != m:
+            respelled += 1
+        h.update(_de_verdict(m).encode("ascii") + b"\n")
+    m = bytearray(base)
+    for i in range(len(base)):
+        for v in range(256):
+            if v != base[i]:
+                m[i] = v
+                take(m)
+        m[i] = base[i]
+    for i in range(len(base)):
+        take(base[:i] + base[i + 1:])
+    for i in range(len(base) + 1):
+        d = bytearray(base[:i] + b"\x00" + base[i:])
+        for v in range(256):
+            d[i] = v
+            take(d)
+    return n, refused, n - refused, respelled, h.hexdigest()
+
+
+# ------------------------------------------------------------------ helpers
+def _de_batch(parent, ops, pid=None, renderer=None, bearing=None, sort=True) -> bytes:
+    import livesession as LS
+    pid = pid or sha256(("designevent-gate %s %s" % (parent, ";".join(_de_op_line(o) for o in ops))).encode("ascii"))
+    return _de_emit((renderer or LS.renderer_id(ROOT), bearing or LS.bearing_id(ROOT), parent, pid), ops, sort=sort)
+
+
+def _de_write(name, b: bytes) -> str:
+    p = os.path.join(BUILD, "designevent-%s.vrdnp2" % name)
+    with open(p, "wb") as fh:
+        fh.write(b)
+    return p
+
+
+def _de_root(name):
+    return _ad_root("designevent-" + name)
+
+
+def _de_parent(root, logs, keys="ESC", level=None, camera=DE_CAMERA):
+    """A parent session S from the live editor's mock. Returns (path, bytes, document)."""
+    args = ["--camera", camera, "--keys", keys] + (["--level", level] if level else [])
+    cp, path = _ad_shell("live-selftest", args, root, logs)
+    if cp.returncode != 0 or path is None:
+        raise Red("the parent session did not save: " + (cp.stderr.strip() or cp.stdout.strip())[-300:])
+    raw = read(path)
+    return path, raw, json.loads(raw.decode("utf-8"))
+
+
+def _de_run(session, batch: bytes, grant, root, logs, name, cmd="design", extra=None):
+    """One run of the batch seam. Returns (completed process, the child's path or None)."""
+    return _ad_shell(cmd, ["--session", session, "--proposal", _de_write(name, batch)] + grant + (extra or []), root, logs)
+
+
+def _de_admitted(session, batch, grant, root, logs, name, extra=None):
+    cp, path = _de_run(session, batch, grant, root, logs, name, extra=extra)
+    if cp.returncode != 0 or path is None or "[design] admitted VRDNP2 " not in cp.stdout:
+        raise Red("%s was not admitted: %s" % (name, (cp.stderr.strip() or cp.stdout.strip())[-300:]))
+    raw = read(path)
+    return path, raw, json.loads(raw.decode("utf-8"))
+
+
+def _de_refusal(what, cp, logs, seen, code, root, dirs, parent, line=None):
+    """A refused batch: exit 2 and the coded line (naming the line, when one is registered for it), never a panic or an
+    abort; exactly one new refusal record with that code; one line of the run ledger, ended 2; nothing new under the
+    sessions root; the parent's bytes as they were. Returns the refusal log's new length."""
+    recs = _ad_records(logs)
+    new = recs[seen:]
+    if cp.returncode != 2 or ("SHELL-%s: " % code) not in cp.stderr or "panicked" in cp.stderr or "[design] admitted" in cp.stdout \
+            or "[design] preview" in cp.stdout or "saved and verified" in cp.stdout:
+        raise Red("%s: expected the refusal %s, exit 2; got exit %d: %s" % (what, code, cp.returncode, (cp.stderr.strip() or cp.stdout.strip())[-240:]))
+    if line is not None and ("SHELL-%s: line %d: " % (code, line)) not in cp.stderr:
+        raise Red("%s: the refusal %s does not name line %d: %s" % (what, code, line, cp.stderr.strip()[-200:]))
+    if len(new) != 1 or new[0]["reason_code"] != code or new[0]["operation"] not in ("design", "livesession") \
+            or (line is not None and new[0]["context"].get("line") != line):
+        raise Red("%s: the refusal log does not hold exactly one %s record%s" % (what, code, "" if line is None else " naming line %d" % line))
+    with open(logs[1], encoding="utf-8") as fh:
+        last = json.loads(fh.read().strip().splitlines()[-1])
+    if (last["run_id"], last["operation"], last["exit_code"], last["refusals"]) != (new[0]["run_id"], "design", 2, 1):
+        raise Red("%s: the refused batch is not one line of the run ledger, ended 2 with one refusal" % what)
+    if sorted(os.listdir(root)) != dirs:
+        raise Red("%s: a refused batch left something under the sessions root" % what)
+    if parent is not None and read(parent[0]) != parent[1]:
+        raise Red("%s: the parent session's bytes changed" % what)
+    return len(recs)
+
+
+def _de_design_ops():
+    """The 60 operations of DE_DESIGN against the witness level: the statements applied to a copy of its cells, and the
+    net difference read off in row-major order, then the class. A fixture: the registered head is what checks it."""
+    import struct
+    raw = read(os.path.join(ROOT, "oracle", "levels", "witness.lvl"))
+    w, rows = struct.unpack("<II", raw[8:16])
+    before = raw[16:16 + w * rows]
+    cells = bytearray(before)
+    paints = []
+    for verb, a in DE_DESIGN:
+        if verb == "paint":
+            paints.append(("paint", ADMIT_CLASSES.index(a[0]), a[1] * 65536 + a[2] * 256 + a[3]))
+            continue
+        x0, z0, x1, z1 = a
+        for z in range(z0, z1 + 1):
+            for x in range(x0, x1 + 1):
+                rim = verb == "room" and (x in (x0, x1) or z in (z0, z1))
+                cells[z * w + x] = ord("#") if rim else ord(".")
+    ops = [("close" if cells[z * w + x] == ord("#") else "open", x, z) for z in range(rows) for x in range(w) if cells[z * w + x] != before[z * w + x]]
+    return ops + sorted(paints, key=_de_rank)
+
+
+def _de_events(doc):
+    return [(e["spec"], e["witness"]) for e in doc["data"]["log"] if e["kind"] == "edit"]
+
+
+def _de_one_at_a_time(spath, head, ops, root, logs, name):
+    """The same operations admitted one at a time through shell admit (ADMIT-0), in order. Returns the last child."""
+    path, doc = spath, None
+    for i, op in enumerate(ops):
+        target = ADMIT_CLASSES[op[1]] if op[0] == "paint" else "%d,%d" % (op[1], op[2])
+        value = op[2] if op[0] == "paint" else 0
+        path, _raw, doc = _ad_admitted(path, _ad_proposal(head, op[0], target, value, pid=sha256(("designevent-seq %s %d %s" % (name, i, head)).encode("ascii"))),
+                                       ADMIT_ALL, root, logs, "designevent-seq")
+        head = doc["data"]["head"]
+    return path, doc
+
+
+def designevent_preregistered():
+    """DESIGN-EVENT-0's method is locked before its build: the entry's hash, and the language's name and bounds, the
+    registered head and the row names as the shell and this gate hold them."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    e = reg.get("DESIGN-EVENT-0")
+    if e is None or e.get("chain_hash") != DESIGNEVENT0_HASH or not entry_hash_ok("DESIGN-EVENT-0", e):
+        raise Red("the DESIGN-EVENT-0 entry is missing, edited after registration, or not the registered one")
+    text = e["hypothesis"] + " " + e["success_condition"]
+    for needle in ("A batch is 322 to 74,059 bytes", "in 1..4096", DE_P0, DE_H60, "ADMIT-ORDER and ADMIT-PREVIEW are first registered here",
+                   "%s operations" % format(DE_LARGEST, ","), "a file of 74,060 bytes") + DE_ROWS:
+        if needle not in text:
+            raise Red("the entry does not say %r: the gate's constants are not the registered ones" % needle)
+    src = read(os.path.join(SHELL, "designevent.rs")).decode("utf-8")
+    for const in ('pub const LANGUAGE: &str = "VRDNP2";', "pub const MAX_OPERATIONS: usize = 4096;", "pub const MIN_BATCH_BYTES: usize = 322;",
+                  "pub const MAX_BATCH_BYTES: usize = 74_059;"):
+        if src.count(const) != 1:
+            raise Red("shell/designevent.rs does not hold %s" % const)
+    ids = ("0" * 64,) * 4
+    if (len(_de_emit(ids, [("open", 0, 0)])), len(_de_emit(ids, [("close", 65535, 10000 + k) for k in range(4091)] + [("paint", c, 16777215) for c in range(5)]))) != (DE_MIN, DE_MAX):
+        raise Red("the shortest and the longest batch are not the registered 322 and 74,059 bytes")
+    # the two amendment entries the registration names: each registered, unedited, citing the entry it amends and this one
+    rca, mwa = reg.get("REASON-COURT-0a"), reg.get("MINT-WATCH-0a")
+    if (rca is None or rca.get("chain_hash") != REASONCOURT0A_HASH or not entry_hash_ok("REASON-COURT-0a", rca)
+            or mwa is None or mwa.get("chain_hash") != MINTWATCH0A_HASH or not entry_hash_ok("MINT-WATCH-0a", mwa)):
+        raise Red("an amendment entry is missing, edited after registration, or not the registered one")
+    if (REASONCOURT0_HASH not in rca["hypothesis"] or DESIGNEVENT0_HASH not in rca["hypothesis"] or MINTWATCH0_HASH not in mwa["hypothesis"]
+            or DESIGNEVENT0_HASH not in mwa["hypothesis"] or reg["REASON-COURT-0"]["chain_hash"] != REASONCOURT0_HASH or reg["MINT-WATCH-0"]["chain_hash"] != MINTWATCH0_HASH
+            or not entry_hash_ok("REASON-COURT-0", reg["REASON-COURT-0"]) or not entry_hash_ok("MINT-WATCH-0", reg["MINT-WATCH-0"])):
+        raise Red("an amendment does not cite the entry it amends and this rung's, or an amended entry was edited")
+    now = lambda rel: sha256(read(os.path.join(ROOT, *rel.split("/"))).replace(b"\r\n", b"\n"))
+    # REASON-COURT-0a names every pin that moved, with the hash the file had and the hash it has, and the file added
+    if len(RSN_AMENDED) != 5 or RSN_ADDED != ("shell/designevent.rs",) or any(rel not in RSN_SOURCES for rel in list(RSN_AMENDED) + list(RSN_ADDED)):
+        raise Red("the pins the gate holds as moved are not five pins of REASON-COURT-0 and the one file added")
+    for rel, was in sorted(RSN_AMENDED.items()):
+        if was == RSN_SOURCES[rel] or now(rel) != RSN_SOURCES[rel] or ("%s (%s to %s)" % (rel, was, RSN_SOURCES[rel])) not in rca["hypothesis"]:
+            raise Red("%s: the pin REASON-COURT-0a moves is not the built file's, or the entry does not name it with both hashes" % rel)
+    for rel in RSN_ADDED:
+        if now(rel) != RSN_SOURCES[rel] or ("%s (%s)" % (rel, RSN_SOURCES[rel])) not in rca["hypothesis"]:
+            raise Red("%s: the file REASON-COURT-0a adds is not the built file, or the entry does not name it with its hash" % rel)
+    # MINT-WATCH-0a names the one pinned file of the mint register that changed, and every raise site added to it
+    mreg = _mw_register()
+    pinned = {f["file"]: f["sha256"] for f in mreg["files"]}
+    if sorted(MW_AMENDED) != ["verify/livesession.py"]:
+        raise Red("the files the gate holds as amended in the mint register are not the one MINT-WATCH-0a names")
+    for f, am in MW_AMENDED.items():
+        if (pinned.get(f) != am["was"] or am["was"] == am["is"] or now(f) != am["is"] or RSN_SOURCES.get(f) != am["is"] or RSN_AMENDED.get(f) != am["was"]
+                or ("%s (%s to %s)" % (f, am["was"], am["is"])) not in mwa["hypothesis"] or len(am["sites"]) != 7 or len(set(am["sites"])) != 7
+                or any(("in %s: %s" % (fn, text)) not in mwa["hypothesis"] for fn, text in am["sites"])):
+            raise Red("%s: the amended pin is not the built file's, or MINT-WATCH-0a does not name it and each of its seven added sites" % f)
+    classes, sites, _hashes = _mw_today()
+    aside = _MW["aside"]
+    if len(aside) != sum(len(am["sites"]) for am in MW_AMENDED.values()) or any(_mw_key(s) in {_mw_key(x) for x in mreg["sites"]} for s in aside):
+        raise Red("the sites MINT-WATCH-0a adds are not all in the file, or one of them is a site of the register")
+    # PLANT: a mint at a site the amendment set aside, in a row the watch hears, is refused by the watch's own check
+    site_of = {s["id"]: s for s in mreg["sites"]}
+    now_of = {_mw_key(s): s for s in sites}
+    def mint(row, sid):
+        s = now_of[_mw_key(site_of[sid])]
+        return (row, s["class"], os.path.join(ROOT, "verify", os.path.basename(s["file"])), s["line"], s["function"])
+    synthetic = {mint(m["row"], m["site"]): m["count"] for m in mreg["measured"] + mreg["plants"]}
+    extra = (mreg["measured"][0]["row"], aside[0]["class"], os.path.join(ROOT, "verify", os.path.basename(aside[0]["file"])), aside[0]["line"], aside[0]["function"])
+    if _mw_watch_check(mreg, classes, sites, synthetic, [], [])[0] or not _mw_watch_check(mreg, classes, sites, {**synthetic, extra: 1}, [], [])[0]:
+        raise Red("PLANT not refused: a mint, in a row the watch hears, at a site MINT-WATCH-0a set aside")
+    return ("DESIGN-EVENT-0's method is locked (hash %s) before the build: a canonical batch of one to 4,096 typed operations in "
+            "VRDNP2, 322 to 74,059 bytes, one byte sequence for each change set, refused whole or admitted by one admission as "
+            "that many ordinary edits; the registered head of the 60 operations admitted one at a time before the seam existed "
+            "(%s... from %s...); the two amendment entries the entry names are in the ledger, unedited, each citing the entry it "
+            "amends and this one: REASON-COURT-0a (%s) names the five pins this rung moves, each with the hash the file had and "
+            "the hash the built file has, and the one file it adds; MINT-WATCH-0a (%s) names the one pinned file of the mint "
+            "register that changed and the seven raise sites added to it, which the reading of today's inventory sets aside "
+            "only for exactly that file; PLANT: a mint at one of the seven, in a row the watch hears, is refused by the "
+            "watch's own check" % (DESIGNEVENT0_HASH[:8], DE_H60[:12], DE_P0[:12], REASONCOURT0A_HASH[:8], MINTWATCH0A_HASH[:8]))
+
+
+def _de_corpus(valid: bytes):
+    """The hostile corpus: (name, bytes, code, line). `valid` is a batch of three operations: two cells and a class."""
+    L = valid.split(b"\n")[:-1]
+    j = lambda lines: b"\n".join(lines) + b"\n"
+    swap = lambda lines, k, new: lines[:k - 1] + [new] + lines[k:]
+    head = L[:5]
+    with_ops = lambda ops: j(head + [b"operations=%d" % len(ops)] + ops)
+    c = [
+        ("the single-operation language's name above a batch's body", j(swap(L, 1, b"VRDNP1")), "ADMIT-PARSE", 1),
+        ("a language name no rung has registered", j(swap(L, 1, b"VRDNP3")), "ADMIT-PARSE", 1),
+        ("a repeated header line", j(L[:2] + [L[1]] + L[2:]), "ADMIT-PARSE", 3),
+        ("a missing header line", j(L[:2] + L[3:]), "ADMIT-PARSE", 3),
+        ("a missing operations line", j(L[:5] + L[6:]), "ADMIT-PARSE", 6),
+        ("a count with a leading zero", j(swap(L, 6, b"operations=03")), "ADMIT-PARSE", 6),
+        ("a count with a sign", j(swap(L, 6, b"operations=+3")), "ADMIT-PARSE", 6),
+        ("a count of five digits", j(swap(L, 6, b"operations=10000")), "ADMIT-PARSE", 6),
+        ("a count with a letter", j(swap(L, 6, b"operations=3a")), "ADMIT-PARSE", 6),
+        ("one operation line fewer than the count", j(L[:-1]), "ADMIT-PARSE", 9),
+        ("one operation line more than the count", j(L + [b"paint wall3 7"]), "ADMIT-PARSE", 10),
+        ("an unknown operation", j(swap(L, 7, b"erase 3,4")), "ADMIT-PARSE", 7),
+        ("an operation line in the single-operation language's form", j(swap(L, 7, b"op=open")), "ADMIT-PARSE", 7),
+        ("two spaces", j(swap(L, 7, L[6].replace(b" ", b"  "))), "ADMIT-PARSE", 7),
+        ("a tab", j(swap(L, 7, L[6].replace(b" ", b"\t"))), "ADMIT-PARSE", 7),
+        ("CR LF", valid.replace(b"\n", b"\r\n"), "ADMIT-PARSE", 1),
+        ("a NUL", j(swap(L, 2, L[1][:20] + b"\x00" + L[1][21:])), "ADMIT-PARSE", 2),
+        ("a byte of 0x80 or more", j(swap(L, 4, L[3][:30] + b"\xc3" + L[3][31:])), "ADMIT-PARSE", 4),
+        ("upper-case hex", j(swap(L, 2, b"renderer=" + L[1][9:].upper().replace(b"0", b"A"))), "ADMIT-PARSE", 2),
+        ("a coord with a leading zero", j(swap(L, 7, b"open 03,4")), "ADMIT-PARSE", 7),
+        ("a coord of six digits", j(swap(L, 7, b"open 100000,4")), "ADMIT-PARSE", 7),
+        ("an unknown class", j(swap(L, 9, b"paint wall4 7")), "ADMIT-PARSE", 9),
+        ("a colour as three numbers", j(swap(L, 9, b"paint floor 1,2,3")), "ADMIT-PARSE", 9),
+        ("a missing final LF", valid[:-1], "ADMIT-PARSE", 9),
+        ("a byte after the last LF", valid + b"x", "ADMIT-PARSE", 10),
+        ("a byte before the first line", b"x" + valid, "ADMIT-PARSE", 1),
+        ("a count of 0", with_ops([]), "ADMIT-RANGE", 6),
+        ("a count of 4097 above 4,097 lines", with_ops([b"open %d,%d" % (x, z) for z in range(1, 100) for x in range(1, 47)][:4097]), "ADMIT-RANGE", 6),
+        ("a coord of 65536", j(swap(L, 7, b"open 65536,4")), "ADMIT-RANGE", 7),
+        ("a colour of 16777216", j(swap(L, 9, b"paint floor 16777216")), "ADMIT-RANGE", 9),
+        ("a file of 74,060 bytes", valid + b"\n" * (DE_MAX + 1 - len(valid)), "ADMIT-SIZE", 0),
+        ("a file of a megabyte", valid * (1 + (1 << 20) // len(valid)), "ADMIT-SIZE", 0),
+        ("a cell twice with the same operation", with_ops([b"open 3,4", b"open 3,4"]), "ADMIT-ORDER", 8),
+        ("a cell opened and then closed", with_ops([b"open 3,4", b"close 3,4"]), "ADMIT-ORDER", 8),
+        ("two cells exchanged", with_ops([b"open 5,4", b"open 3,4"]), "ADMIT-ORDER", 8),
+        ("two cells exchanged across rows", with_ops([b"open 3,5", b"open 9,4"]), "ADMIT-ORDER", 8),
+        ("a cell after a paint", with_ops([b"paint floor 7", b"open 3,4"]), "ADMIT-ORDER", 8),
+        ("a class twice", with_ops([b"paint floor 7", b"paint floor 8"]), "ADMIT-ORDER", 8),
+        ("two classes exchanged", with_ops([b"paint floor 7", b"paint wall0 8"]), "ADMIT-ORDER", 8),
+        ("a parse fault after a range fault", with_ops([b"open 65536,4", b"open 03,5"]), "ADMIT-PARSE", 8),
+        ("a range fault after an order fault", with_ops([b"open 3,4", b"open 3,4", b"open 65536,9"]), "ADMIT-RANGE", 9),
+        ("an order fault and a byte after the last LF", with_ops([b"open 3,4", b"open 3,4"]) + b"x", "ADMIT-PARSE", 9),
+    ]
+    return c
+
+
+def designevent_language():
+    """(1) The language court. Each case of a hostile corpus given to shell design — every proper prefix of a valid
+    batch of three operations and the named cases — ends in its registered refusal at its line, exit 2, one record,
+    never a panic, and leaves nothing. In process, over every single-byte substitution, deletion and insertion of three
+    valid batches, each mutant is refused or is a batch whose emission is the mutant byte for byte. The gate's own
+    Python recognizer, a test oracle, gives the shell's verdict on every one of these inputs. The oracle's writer,
+    handed a batch's operations in another order, writes the batch's own bytes, and again from its own output."""
+    _ad_need()
+    logs = _ls_logs("designevent-language")
+    root = _de_root("language")
+    spath, sraw, sdoc = _de_parent(root, logs)
+    parent = (spath, sraw)
+    head = sdoc["data"]["head"]
+    dirs = sorted(os.listdir(root))
+    valid = _de_batch(head, [("open", 3, 4), ("close", 9, 4), ("paint", 4, 255)])
+    if _de_recognize(valid)[0] != "A":
+        raise Red("the oracle does not recognize the court's own batch")
+    seen = len(_ad_records(logs))
+    for n in range(len(valid)):
+        cp, _p = _de_run(spath, valid[:n], ADMIT_ALL, root, logs, "prefix")
+        want = _de_recognize(valid[:n])
+        if cp.returncode != 2 or ("SHELL-ADMIT-PARSE: line %d: " % want[2]) not in cp.stderr or want[:2] != ("R", "ADMIT-PARSE") or "panicked" in cp.stderr:
+            raise Red("the %d-byte prefix of a valid batch was not refused ADMIT-PARSE at the oracle's line: exit %d: %s" % (n, cp.returncode, cp.stderr.strip()[-200:]))
+    recs = _ad_records(logs)
+    if len(recs) - seen != len(valid) or any(r["reason_code"] != "ADMIT-PARSE" for r in recs[seen:]) or sorted(os.listdir(root)) != dirs or read(spath) != sraw:
+        raise Red("the prefixes did not each leave one ADMIT-PARSE record and nothing else")
+    seen = len(recs)
+    corpus = _de_corpus(valid)
+    for name, b, code, line in corpus:
+        if _de_recognize(b) != ("R", code, line):
+            raise Red("%s: the oracle's verdict is %r, and %s at line %d is registered" % (name, _de_recognize(b), code, line))
+        cp, _p = _de_run(spath, b, ADMIT_ALL, root, logs, "hostile")
+        seen = _de_refusal(name, cp, logs, seen, code, root, dirs, parent, line if code != "ADMIT-SIZE" else None)
+    cp, _p = _ad_shell("design", ["--session", spath, "--proposal", os.path.join(BUILD, "designevent-no-such-file.vrdnp2")] + ADMIT_ALL, root, logs)
+    seen = _de_refusal("an unreadable batch", cp, logs, seen, "ADMIT-IO", root, dirs, parent)
+    one = _de_batch(head, [("open", 3, 4)])
+    every = _de_batch(head, [("open", 1, 1), ("close", 65535, 65535), ("paint", 0, 0), ("paint", 1, 1), ("paint", 2, 16777215), ("paint", 3, 70000), ("paint", 4, 3946075)])
+    counts = []
+    for tag, b in (("one", one), ("several", valid), ("every", every)):
+        cp, _p = _ad_shell("design-selftest", ["--neighbourhood", _de_write("base-" + tag, b)], root, logs)
+        m = re.search(r"neighbourhood base recognized \((\d+) bytes\) mutants (\d+) refused (\d+) recognized (\d+) respelled (\d+) verdicts ([0-9a-f]{64})", cp.stdout)
+        if cp.returncode != 0 or m is None:
+            raise Red("the court did not run in process over the %s batch: %s" % (tag, (cp.stderr.strip() or cp.stdout.strip())[-200:]))
+        nb, mutants, refused, recognized, respelled = (int(m.group(i)) for i in range(1, 6))
+        if nb != len(b) or mutants != 255 * nb + nb + 256 * (nb + 1) or refused + recognized != mutants or respelled != 0 or recognized == 0:
+            raise Red("the %s batch's neighbourhood is not every single-byte mutant, or a mutant was recognized with a second spelling" % tag)
+        if (mutants, refused, recognized, 0, m.group(6)) != _de_neighbourhood(b):
+            raise Red("the shell and the oracle differ somewhere in the %s batch's neighbourhood (%d mutants): the verdicts' digests are not equal" % (tag, mutants))
+        counts.append((tag, mutants, refused, recognized))
+    # the writer is idempotent: any order in, the batch's own bytes out; and again from its own output
+    for b in (valid, every):
+        v = _de_recognize(b)
+        ops = list(v[2])
+        shuffled = [ops[(3 * k + 1) % len(ops)] for k in range(len(ops))] if len(ops) % 3 else ops[1:] + ops[:1]
+        for other in (ops[::-1], ops[1:] + ops[:1], shuffled):
+            if sorted(other, key=_de_rank) != ops or _de_emit(v[1], other) != b:
+                raise Red("the oracle's writer, handed a batch's operations in another order, does not write the batch's own bytes")
+        w = _de_recognize(_de_emit(v[1], ops))
+        if _de_emit(w[1], w[2]) != b:
+            raise Red("the oracle's writer is not idempotent")
+    if len(one) != DE_MIN + len("3,4") - len("0,0") or len(_de_batch(head, [("open", 0, 0)])) != DE_MIN:
+        raise Red("the shortest batch is not the registered 322 bytes")
+    return ("the language court: each of the %d proper prefixes of a valid batch of three operations, the empty file among "
+            "them, is refused ADMIT-PARSE at the line the oracle names; %d named cases (another language's name, a repeated "
+            "or missing header line, a count out of form, a line too few and one too many, an unknown operation, spaces, a "
+            "tab, CR LF, a NUL, a high byte, upper-case hex, coords out of form, an unknown class: ADMIT-PARSE; a count of 0 "
+            "and of 4097, a coord of 65536, a colour of 16777216: ADMIT-RANGE; 74,060 bytes and a megabyte: ADMIT-SIZE; a "
+            "cell twice, a cell opened and then closed, cells and classes exchanged, a cell after a paint: ADMIT-ORDER) each "
+            "end in their registered refusal at their registered line, exit 2, one record, no panic, and an unreadable batch "
+            "in ADMIT-IO; where one input holds two faults the registered order decides; nothing was left under the sessions "
+            "root and the parent's bytes are as they were; in process, of %s single-byte mutants of three valid batches every "
+            "one is refused or is a batch emitted byte for byte (%s recognized, none with a second spelling), and the gate's "
+            "own recognizer gives the same verdict on every one (equal counts and equal digests of the verdicts); the "
+            "oracle's writer, handed a batch's operations reversed, rotated and shuffled, writes the batch's own bytes, and "
+            "again from its own output" % (len(valid), len(corpus), format(sum(c[1] for c in counts), ","), format(sum(c[3] for c in counts), ",")))
+
+
+_DE_MADE = {}   # what the admit court made, for the replay court: name -> (path, bytes, document)
+DE_C0, DE_C1 = 0x203040, 0x3C465A   # the floor's colour in the eight's parent, and the colour the eight paints it
+
+
+def _de_eight(root, logs):
+    """The court's batch of eight and its parent S'. S' is the mock's session with the floor painted DE_C0 by one
+    ADMIT-0 admission. The eight are seven cells in one column, one in each of seven consecutive rows, opened where S'
+    has rock and closed where it has floor, then the floor painted DE_C1. The column is the first of the witness level
+    that has both rock and floor in such a run, away from the border, the camera and the stairs, with the column to its
+    right inside the level. Returns (S' path, bytes, document, the eight operations, the granted rectangle)."""
+    import struct
+    spath, _sraw, sdoc = _de_parent(root, logs)
+    raw = read(os.path.join(ROOT, "oracle", "levels", "witness.lvl"))
+    w, rows = struct.unpack("<II", raw[8:16])
+    cells = raw[16:16 + w * rows]
+    pick = None
+    for x in range(2, w - 2):
+        for z in range(2, rows - 8):
+            col = [cells[(z + k) * w + x] for k in range(7)]
+            if all(c in b"#." for c in col) and ord("#") in col and ord(".") in col and not (x == 28 and z <= 28 < z + 7):
+                pick = (x, z, col)
+                break
+        if pick:
+            break
+    if pick is None:
+        raise Red("the witness level has no column with rock and floor in seven consecutive rows")
+    x, z, col = pick
+    ops = [("open" if c == ord("#") else "close", x, z + k) for k, c in enumerate(col)] + [("paint", 4, DE_C1)]
+    p1, raw1, doc1 = _ad_admitted(spath, _ad_proposal(sdoc["data"]["head"], "paint", "floor", DE_C0), ADMIT_ALL, root, logs, "designevent-eight-parent")
+    return p1, raw1, doc1, ops, (x, z, x, z + 6)
+
+
+def _de_grant(rect, allow="open,close,paint", classes="floor"):
+    return ["--allow", allow, "--cells", "%d,%d,%d,%d" % rect, "--classes", classes]
+
+
+def designevent_admit():
+    """(2) The admission court. For three batches of one operation, the batch of eight and the design of 2026-10-06, the
+    child of the one admission is the last child of the same operations admitted one at a time through shell admit: the
+    same head, content, events (spec and witness); the design's 60 reach the registered head. At every place of the
+    eight an operation the grant does not allow is ADMIT-CAPABILITY and one that changes nothing is ADMIT-AUTHORITY,
+    each naming its line and leaving nothing. Anchor, program, session and duplicate are refused as registered. The
+    largest batch the lattice admits is admitted by one admission; 4,096 operations are refused. The dry run prints the
+    binding and writes nothing; an admission bound to it reaches its head, and one bound to another digest or head is
+    ADMIT-PREVIEW."""
+    import struct
+    import livesession as LS
+    _ad_need()
+    _DE_MADE.clear()
+    logs = _ls_logs("designevent-admit")
+    root = _de_root("admit")
+    spath, sraw, sdoc = _de_parent(root, logs)
+    head, n0 = sdoc["data"]["head"], len(sdoc["data"]["log"])
+    if head != DE_P0 or n0 != 0:
+        raise Red("the mock's session with no key pressed does not stand at the registered parent head")
+    design = _de_design_ops()
+    kinds = [sum(1 for o in design if o[0] == k) for k in ("open", "close", "paint")]
+    if (len(design), kinds) != (60, [56, 3, 1]) or sorted(design, key=_de_rank) != design:
+        raise Red("the design of 2026-10-06 is not the registered 60 operations (56 opened, 3 closed, 1 painted) in the one order")
+    all_grant = ADMIT_ALL
+
+    def equal(what, bdoc, sdoc_, parent_head, parent_events, count):
+        b, s = bdoc["data"], sdoc_["data"]
+        if (b["head"], b["final_content"], b["final_camera"], len(b["log"])) != (s["head"], s["final_content"], s["final_camera"], len(s["log"])) \
+                or _de_events(bdoc) != _de_events(sdoc_) or len(b["log"]) != parent_events + count:
+            raise Red("%s: the batch's child is not the child of the same operations admitted one at a time (head, content, events)" % what)
+        lin = bdoc["live"]["lineage"]
+        if (lin["parent_head"], lin["parent_events"], lin["source"]) != (parent_head, parent_events, "session"):
+            raise Red("%s: the child's lineage does not name the parent's head and its event count" % what)
+        tail = b["log"][parent_events:]
+        envs = [e.get("admit") for e in tail]
+        if any(a is None or len(a) != 10 or a["language"] != DE_LANGUAGE for a in envs) or [a["place"] for a in envs] != [str(k + 1) for k in range(count)] \
+                or {a["count"] for a in envs} != {str(count)} or len({a["proposal"] for a in envs}) != 1 or len({a["digest"] for a in envs}) != 1 \
+                or envs[0]["parent"] != parent_head or envs[-1]["head"] != b["head"] or any(envs[k]["head"] != envs[k + 1]["parent"] for k in range(count - 1)):
+            raise Red("%s: the batch's events do not each carry the batch's envelope with its place, the chain's own heads around it" % what)
+        if any("admit" not in e or len(e["admit"]) != 8 for e in s["log"][parent_events:]):
+            raise Red("%s: the one-at-a-time child's events are not ADMIT-0's" % what)
+
+    made = []
+    for tag, ops in (("one-close", [design[0]]), ("one-open", [design[2]]), ("one-paint", [design[-1]]), ("design", design)):
+        batch = _de_batch(head, ops)
+        bpath, braw, bdoc = _de_admitted(spath, batch, all_grant, root, logs, tag)
+        _spath, seq = _de_one_at_a_time(spath, head, ops, root, logs, tag)
+        equal(tag, bdoc, seq, head, n0, len(ops))
+        if bdoc["data"]["log"][n0]["admit"]["digest"] != sha256(batch):
+            raise Red("%s: the envelope's digest is not the sha256 of the batch's exact bytes" % tag)
+        _DE_MADE[tag] = (bpath, braw, bdoc)
+        made.append("%s %d" % (tag, len(ops)))
+        if read(spath) != sraw:
+            raise Red("%s: the parent session's bytes changed" % tag)
+    if _DE_MADE["design"][2]["data"]["head"] != DE_H60:
+        raise Red("the design's 60 operations as one batch reach %s..., and %s... is registered" % (_DE_MADE["design"][2]["data"]["head"][:12], DE_H60[:12]))
+    # the batch of eight, on S' (the floor already painted once)
+    p8, raw8, doc8, eight, rect = _de_eight(root, logs)
+    h8, n8 = doc8["data"]["head"], len(doc8["data"]["log"])
+    g8 = _de_grant(rect)
+    b8 = _de_batch(h8, eight)
+    c8, craw8, cdoc8 = _de_admitted(p8, b8, g8, root, logs, "eight")
+    _s8, seq8 = _de_one_at_a_time(p8, h8, eight, root, logs, "eight")
+    equal("the batch of eight", cdoc8, seq8, h8, n8, 8)
+    _DE_MADE["eight"] = (c8, craw8, cdoc8)
+    _DE_MADE["eight-parent"] = (p8, raw8, doc8)
+    _DE_MADE["eight-batch"] = (b8, g8, eight, rect)
+    if cdoc8["data"]["log"][n8]["admit"]["grant"] != "allow=open,close,paint cells=%d,%d,%d,%d classes=floor" % rect:
+        raise Red("the envelope does not record the grant the batch was admitted under")
+    parent = (p8, raw8)
+    dirs = sorted(os.listdir(root))
+    seen = len(_ad_records(logs))
+    both = [0]
+
+    def refused(what, session, batch, grant, code, par, line=None):
+        """A refusal of this court: given by the admission, and by the dry run of the same bytes with the same code, the
+        same line and the same words; each exit 2 with one record, leaving nothing. Returns the admission's process."""
+        nonlocal seen
+        cp, _p = _de_run(session, batch, grant, root, logs, "refused")
+        seen = _de_refusal(what, cp, logs, seen, code, root, dirs, par, line)
+        dry, _p = _de_run(session, batch, grant, root, logs, "refused", extra=["--dry-run"])
+        seen = _de_refusal("the dry run of " + what, dry, logs, seen, code, root, dirs, par, line)
+        coded = lambda c: [ln for ln in c.stderr.splitlines() if ln.startswith("SHELL-")]
+        if not coded(cp) or coded(cp) != coded(dry):
+            raise Red("%s: the dry run's refusal is not the admission's, word for word" % what)
+        both[0] += 1
+        return cp
+    # the grant, and the session's own validation, at every place
+    refused("no grant", p8, b8, [], "ADMIT-CAPABILITY", parent, 7)
+    for k in range(8):
+        op = eight[k]
+        outside = ("paint", 3, op[2]) if op[0] == "paint" else (op[0], op[1] + 1, op[2])      # a class not granted; the cell to the right of the rectangle
+        nothing = ("paint", 4, DE_C0) if op[0] == "paint" else ("close" if op[0] == "open" else "open", op[1], op[2])
+        for what, twin, code in (("an operation the grant does not allow", outside, "ADMIT-CAPABILITY"), ("an operation that changes nothing", nothing, "ADMIT-AUTHORITY")):
+            ops = eight[:k] + [twin] + eight[k + 1:]
+            b = _de_batch(h8, ops)
+            if _de_recognize(b)[0] != "A":
+                raise Red("the twin at place %d is not a canonical batch: the court's own construction is wrong" % (k + 1))
+            refused("%s at place %d" % (what, k + 1), p8, b, g8, code, parent, 7 + k)
+    refused("a border cell opened", p8, _de_batch(h8, [("open", 0, 5)]), all_grant, "ADMIT-AUTHORITY", parent, 7)
+    refused("a cell outside the level", p8, _de_batch(h8, [eight[0], ("open", 60, 30)]), all_grant, "ADMIT-AUTHORITY", parent, 8)
+    most = [("open", x, z) for z in range(100, 200) for x in range(1, 47)][:DE_MAX_OPS]
+    refused("a recognized batch of 4,096 operations", p8, _de_batch(h8, most), all_grant, "ADMIT-AUTHORITY", parent, 7)
+    # anchor, program, session, duplicate
+    flip = lambda h: ("0" if h[0] != "0" else "1") + h[1:]
+    cp = refused("a parent that is not the session's head", p8, _de_batch(flip(h8), eight), g8, "ADMIT-ANCHOR", parent)
+    if flip(h8) not in cp.stderr or h8 not in cp.stderr or "no rebase" not in cp.stderr:
+        raise Red("the stale anchor's refusal does not name both heads")
+    refused("a batch made for S offered to a child of S", c8, b8, g8, "ADMIT-ANCHOR", (c8, craw8))
+    other = sha256(b"another build")
+    refused("another renderer identity", p8, _de_batch(h8, eight, renderer=other), g8, "ADMIT-PROGRAM", parent)
+    refused("another bearing identity", p8, _de_batch(h8, eight, bearing=other), g8, "ADMIT-PROGRAM", parent)
+    journal = os.path.join(os.path.dirname(p8), "journal.vsj")
+    refused("a journal given as the session", journal, b8, g8, "ADMIT-SESSION", parent)
+    child_head = cdoc8["data"]["head"]
+    batch_id = cdoc8["data"]["log"][n8]["admit"]["proposal"]
+    again = [("close" if eight[0][0] == "open" else "open", eight[0][1], eight[0][2])]   # effective on the child: it undoes place 1
+    refused("a batch whose id is already a batch's in the session", c8, _de_batch(child_head, again, pid=batch_id), g8, "ADMIT-DUPLICATE", (c8, craw8))
+    single_id = doc8["data"]["log"][n8 - 1]["admit"]["proposal"]     # the id of the ADMIT-0 admission that made S'
+    refused("a batch whose id is already a single admission's in the session", p8, _de_batch(h8, eight, pid=single_id), g8, "ADMIT-DUPLICATE", parent)
+    c8b, _r, cdoc8b = _de_admitted(p8, b8, g8, root, logs, "eight")
+    if (cdoc8b["data"]["head"], cdoc8b["data"]["final_content"], cdoc8b["data"]["log"]) != (cdoc8["data"]["head"], cdoc8["data"]["final_content"], cdoc8["data"]["log"]) or c8b == c8:
+        raise Red("the same bytes admitted again to the untouched parent do not give a second child with the first child's head, content and items")
+    dirs = sorted(os.listdir(root))
+    # the preview: the dry run of the admission, and the binding
+    rx = re.compile(r"\[design\] preview VRDNP2 parent=([0-9a-f]{64}) digest=([0-9a-f]{64}) head=([0-9a-f]{64}) operations=(\d+)\n")
+    ledger = lambda: sum(1 for _ in open(logs[1], encoding="utf-8"))
+    runs = ledger()
+    cp1, out1 = _de_run(p8, b8, g8, root, logs, "eight", extra=["--dry-run"])
+    cp2, out2 = _de_run(p8, b8, g8, root, logs, "eight", extra=["--dry-run"])
+    m = rx.search(cp1.stdout)
+    if cp1.returncode != 0 or cp2.returncode != 0 or m is None or cp1.stdout != cp2.stdout or out1 is not None or "saved and verified" in cp1.stdout \
+            or m.groups() != (h8, sha256(b8), child_head, "8"):
+        raise Red("the dry run does not print the binding (the language, the parent, the digest, the head the batch would give, the count), twice the same")
+    if sorted(os.listdir(root)) != dirs or read(p8) != raw8 or ledger() != runs + 2:
+        raise Red("the dry run wrote something under the sessions root, changed the parent, or is not a run of the ledger")
+    # the recognizer's refusals come from the dry run as from the admission too: two of them, as the rest are the language court's
+    refused("a cell twice", p8, _de_batch(h8, [eight[0], eight[0]], sort=False), g8, "ADMIT-ORDER", parent, 8)
+    refused("a coord of 65536", p8, _de_batch(h8, [("open", 65536, 4)]), g8, "ADMIT-RANGE", parent, 7)
+    digest, reached = m.group(2), m.group(3)
+    cp, _p = _de_run(p8, b8, g8, root, logs, "eight", extra=["--previewed", "%s,%s" % (flip(digest), reached)])
+    seen = _de_refusal("an admission bound to another digest", cp, logs, seen, "ADMIT-PREVIEW", root, dirs, parent)
+    cp, _p = _de_run(p8, b8, g8, root, logs, "eight", extra=["--previewed", "%s,%s" % (digest, flip(reached))])
+    seen = _de_refusal("an admission bound to another head", cp, logs, seen, "ADMIT-PREVIEW", root, dirs, parent)
+    cp, _p = _de_run(c8, b8, g8, root, logs, "eight", extra=["--previewed", "%s,%s" % (digest, reached)])
+    seen = _de_refusal("a batch previewed against S and offered to another session", cp, logs, seen, "ADMIT-ANCHOR", root, dirs, (c8, craw8))
+    c8c, _r, cdoc8c = _de_admitted(p8, b8, g8, root, logs, "eight", extra=["--previewed", "%s,%s" % (digest, reached)])
+    if cdoc8c["data"]["head"] != reached or cdoc8c["data"]["log"] != cdoc8["data"]["log"]:
+        raise Red("the admission bound to the preview does not end at the previewed head")
+    # the largest batch the lattice admits: a 48 by 48 level of rock with only the camera's cell open
+    lvl = read(os.path.join(ROOT, "oracle", "levels", "witness.lvl"))
+    w, rows = struct.unpack("<II", lvl[8:16])
+    cells = bytearray(b"#" * (DE_LATTICE * DE_LATTICE))
+    cells[24 * DE_LATTICE + 24] = ord(".")
+    big_level = os.path.join(BUILD, "designevent-rock48.lvl")
+    with open(big_level, "wb") as fh:
+        fh.write(lvl[:8] + struct.pack("<II", DE_LATTICE, DE_LATTICE) + bytes(cells) + lvl[16 + w * rows:])
+    # the level is named as the tree names its own: relative to the root, with forward slashes
+    bpath, braw, bdoc = _de_parent(root, logs, level=os.path.relpath(big_level, ROOT).replace(os.sep, "/"), camera="24,24,N")
+    bh = bdoc["data"]["head"]
+    largest = [("open", x, z) for z in range(1, DE_LATTICE - 1) for x in range(1, DE_LATTICE - 1) if (x, z) != (24, 24)] + [("paint", c, 0x102030 + c) for c in range(5)]
+    if len(largest) != DE_LARGEST:
+        raise Red("the largest batch is not the registered %d operations" % DE_LARGEST)
+    # one operation more (the owner's word with his lock, 2026-10-06): the 2,121 the geometry allows in principle. On this
+    # level the one target left is the camera's cell, which is open already, so the batch is refused at that operation —
+    # the first that cannot be made — and nothing of the 1,081 before it exists
+    one_more = sorted(largest + [("open", 24, 24)], key=_de_rank)
+    at = one_more.index(("open", 24, 24))
+    dirs = sorted(os.listdir(root))
+    seen = len(_ad_records(logs))
+    cp = refused("the largest batch and one operation more", bpath, _de_batch(bh, one_more), all_grant, "ADMIT-AUTHORITY", (bpath, braw), 7 + at)
+    if len(one_more) != DE_LARGEST + 1 or at != 23 * (DE_LATTICE - 2) + 23 or "nothing to change" not in cp.stderr:
+        raise Red("the batch of %d operations was not refused at the camera's cell, the one operation that changes nothing" % (DE_LARGEST + 1))
+    lp, lraw, ldoc = _de_admitted(bpath, _de_batch(bh, largest), all_grant, root, logs, "largest")
+    if len(ldoc["data"]["log"]) != DE_LARGEST or ldoc["data"]["log"][-1]["admit"]["place"] != str(DE_LARGEST) or read(bpath) != braw:
+        raise Red("the largest batch was not admitted whole by one admission")
+    _DE_MADE["largest"] = (lp, lraw, ldoc)
+    _DE_MADE["largest-ops"] = (big_level, largest, bh)
+    return ("the admission court: three batches of one operation, the batch of eight and the design of 2026-10-06 (%s) each "
+            "give, by one admission, the child of the same operations admitted one at a time through shell admit — the same "
+            "head, content and events, spec and witness — with the batch's envelope and its place beside each event, the "
+            "chain's own heads around it, and the lineage naming the parent's head and event count; the design's 60 reach "
+            "the registered head %s... from %s...; with no grant, and at each of the eight places with an operation the grant "
+            "does not allow, the batch is refused ADMIT-CAPABILITY, and with an operation that changes nothing "
+            "ADMIT-AUTHORITY, each naming line 6 + k (16 twins); a border cell opened, a cell outside the level and a "
+            "recognized batch of 4,096 operations are ADMIT-AUTHORITY at their lines; a parent that is not the session's "
+            "head, and a batch offered to a child of its session, are ADMIT-ANCHOR with both heads named; another renderer "
+            "or bearing is ADMIT-PROGRAM; a journal is ADMIT-SESSION; an id already a batch's or a single admission's in the "
+            "session is ADMIT-DUPLICATE; every refusal is exit 2 with one record and leaves nothing under the sessions "
+            "root; the same bytes admitted again to the untouched parent give the first child's head, content and items; "
+            "the dry run prints the binding twice the same and writes nothing; each of the %d refusals of this court is "
+            "given by the dry run of the same bytes with the same code, the same line and the same words as by the "
+            "admission; an admission bound to another digest or another head is ADMIT-PREVIEW, one "
+            "offered to another session ADMIT-ANCHOR, and the one bound to the preview ends at the previewed head; the "
+            "largest batch the lattice admits, %s operations on a 48 by 48 level of rock, is admitted by one admission, "
+            "and with one operation more (%s, the camera's cell, open already) it is refused ADMIT-AUTHORITY at that "
+            "operation, line %s, with nothing left"
+            % (", ".join(made), DE_H60[:12], DE_P0[:12], both[0], format(DE_LARGEST, ","), format(DE_LARGEST + 1, ","), format(7 + 23 * (DE_LATTICE - 2) + 23, ",")))
+
+
+def designevent_crash():
+    """(3) The crash court: the admission of the batch of eight is ended (exit 70, nothing after it run) at each of
+    twelve points. After each the parent's bytes are unchanged; after the first three no run directory exists; after
+    the journal is opened and after a tear at place 1 what is left loads to exactly the parent's head; after a tear at
+    place 4 or 8 and after a flush at place 1 or 4 it holds part of a batch and the loader refuses it; after the flush
+    at place 8, the temporary file and the move it loads to exactly the child's head with all eight envelopes intact."""
+    import livesession as LS
+    _ad_need()
+    logs = _ls_logs("designevent-crash")
+    root = _de_root("crash")
+    p8, raw8, doc8, eight, rect = _de_eight(root, logs)
+    head, n = doc8["data"]["head"], len(doc8["data"]["log"])
+    g8 = _de_grant(rect)
+    b8 = _de_batch(head, eight)
+    c1, raw1, doc1 = _de_admitted(p8, b8, g8, root, logs, "crash-clean")
+    child, items = doc1["data"]["head"], doc1["data"]["log"][n:]
+    seen_runs = sum(1 for _ in open(logs[1], encoding="utf-8"))
+    report = []
+    for plant in DE_DEATHS:
+        r = _de_root("crash-" + plant)
+        cp, out = _de_run(p8, b8, g8, r, logs, "crash", cmd="design-selftest", extra=["--plant", plant])
+        if cp.returncode != 70 or (DE_DEATH_CODE + ": ") not in cp.stderr or out is not None or "saved and verified" in cp.stdout:
+            raise Red("%s: the run did not end at its death point with exit 70: exit %d: %s" % (plant, cp.returncode, cp.stderr.strip()[-200:]))
+        if read(p8) != raw8:
+            raise Red("%s: the parent session's bytes changed" % plant)
+        left = sorted(os.listdir(r))
+        if plant in ("die-received", "die-recognized", "die-verified"):
+            if left:
+                raise Red("%s: a run directory exists though nothing had been written" % plant)
+            report.append("%s: nothing" % plant)
+            continue
+        if len(left) != 1:
+            raise Red("%s: the run did not leave exactly one run directory" % plant)
+        d = os.path.join(r, left[0])
+        files = sorted(os.listdir(d))
+        jpath = os.path.join(d, "journal.vsj")
+        jrecs, torn = _ls_journal(jpath)
+        evs = jrecs[1:]
+        whole = {"die-opened": 0, "die-torn-1": 0, "die-torn-4": 3, "die-torn-8": 7, "die-appended-1": 1, "die-appended-4": 4}.get(plant, 8)
+        if len(evs) != n + whole or torn != plant.startswith("die-torn") or any(evs[n + k].get("admit") != items[k]["admit"] for k in range(whole)):
+            raise Red("%s: the journal does not hold the parent's %d events and %d whole records of the batch%s" % (plant, n, whole, ", then a torn one" if plant.startswith("die-torn") else ""))
+        if whole == 0:
+            if files != ["journal.vsj"]:
+                raise Red("%s: the run left something other than a journal" % plant)
+            lin = _ad_resumed(jpath, logs, "designevent-" + plant)["live"]["lineage"]
+            if (lin["parent_head"], lin["parent_events"], lin["source"], lin["torn"]) != (head, n, "journal", 1 if torn else 0):
+                raise Red("%s: what the run left does not load to exactly the parent's head" % plant)
+            report.append("%s: a journal -> the parent's head" % plant)
+            continue
+        if whole < 8:
+            if files != ["journal.vsj"]:
+                raise Red("%s: the run left something other than a journal" % plant)
+            rr = _ad_root("loader-designevent-" + plant)
+            cp, out = _ad_shell("livesession-selftest", ["--resume", jpath, "--keys", "ESC"], rr, logs)
+            if cp.returncode != 2 or "SHELL-LIVESESSION-ENVELOPE: " not in cp.stderr or "a batch is not whole" not in cp.stderr or out is not None or os.listdir(rr):
+                raise Red("%s: a journal holding %d of the batch's 8 events was not refused by the loader: exit %d: %s" % (plant, whole, cp.returncode, cp.stderr.strip()[-200:]))
+            report.append("%s: a journal holding %d of 8 -> refused" % (plant, whole))
+            continue
+        want = {"die-appended-8": ["journal.vsj"], "die-written": ["journal.vsj", "session.json.tmp"], "die-replaced": ["journal.vsj", "session.json"]}[plant]
+        if files != want or evs[-1]["head"] != child:
+            raise Red("%s: the run did not leave %s with all eight records" % (plant, " and ".join(want)))
+        for p_ in [jpath] + ([os.path.join(d, "session.json")] if plant == "die-replaced" else []):
+            cont = _ad_resumed(p_, logs, "designevent-" + plant)
+            lin = cont["live"]["lineage"]
+            if (lin["parent_head"], lin["parent_events"], lin["torn"]) != (child, n + 8, 0) or cont["data"]["log"][n:n + 8] != items:
+                raise Red("%s: %s does not load to exactly the child's head with all eight envelopes intact" % (plant, os.path.basename(p_)))
+        if plant == "die-replaced":
+            dd = LS.check_saved(read(os.path.join(d, "session.json")), ROOT)["data"]
+            if (dd["head"], dd["log"][n:]) != (child, items) or _st_data(os.path.join(d, "session.json")) != _st_data(c1):
+                raise Red("die-replaced: the saved file in place is not the child")
+        report.append("%s: %s -> the child's head, eight envelopes" % (plant, " and ".join(want)))
+    runs = [json.loads(ln) for ln in open(logs[1], encoding="utf-8") if ln.strip()][seen_runs:]
+    if any(r_.get("operation") == "design" for r_ in runs):
+        raise Red("a run that died is in the run ledger as ended")
+    return ("the crash court: the admission of the batch of eight, ended with exit 70 at each of twelve points, leaves the "
+            "parent's bytes unchanged; after the bytes are read, the batch recognized and every check passed with all eight "
+            "applied in memory, no run directory exists; after the journal is opened with the parent's %d events, and after "
+            "the record at place 1 is torn half-way, the journal loads to exactly the parent's head (%s...); after a tear at "
+            "place 4 or 8 and after a flush at place 1 or 4 the journal holds part of the batch and the loader refuses it "
+            "(LIVESESSION-ENVELOPE: a batch is not whole), writing nothing; after the flush at place 8, after the temporary "
+            "saved file is written, and after the saved file is moved into place, what is left loads to exactly the child's "
+            "head (%s...) with all eight envelopes as the clean admission wrote them; nothing loads to any other head; a dead "
+            "run has no line in the run ledger [%s]" % (n, head[:12], child[:12], "; ".join(report)))
+
+
+def _de_forge(text, edit):
+    """A saved file's text edited and resealed: a forger's step. `edit` takes the lines and the indexes of the log's items."""
+    lines = text.split("\n")
+    edit(lines, _ad_item_lines(text))
+    return _ls_reseal("\n".join(lines))
+
+
+def _de_three(what, bad, root, logs):
+    """A resealed file given to the three verifiers: the shell's loader, the workshop and the sealer each refuse it for
+    its envelope. Returns nothing; raises Red naming the one that did not."""
+    import livesession as LS
+    p = _ls_write("designevent-forged", bad)
+    cp, _o = _ad_shell("admit-anchor", ["--session", p], root, logs)
+    code, _out, werr = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", p])
+    try:
+        LS.check_saved(bad.encode("utf-8"), ROOT)
+        sealer = None
+    except LS.Refuse as e_:
+        sealer = str(e_)
+    if cp.returncode != 2 or "SHELL-LIVESESSION-ENVELOPE: " not in cp.stderr or code != 2 or "SESSIONWALK-ENVELOPE" not in werr or sealer is None or "envelope" not in sealer:
+        raise Red("%s: not refused for its envelope by the shell, the workshop and the sealer alike (shell %d %s; workshop %d %s; sealer %s)"
+                  % (what, cp.returncode, cp.stderr.strip()[-80:], code, werr.strip()[-80:], sealer))
+
+
+def designevent_replay():
+    """(4) The replay court. The workshop's sessionwalk verifies each child of the admission court without the shell,
+    by the ordinary computation, and counts its batches; the largest batch's head is the one this gate's own fold
+    reaches from the definition; the sealer checks each child, and its record cites this entry and counts the batches
+    and their events. A resealed file that differs from a child that verifies in one respect is refused by the shell's
+    loader, the workshop and the sealer. A child continued by keys keeps every envelope byte for byte, and a session
+    holding single admissions and two batches verifies in all three. The memo: every edit replayed with it and beside
+    it by the computation with no memo gives the same content; a shell planted with a wrong memo saves a file and reads
+    it back as verified, the comparison finds the difference, and the workshop and a shell without the plant refuse it."""
+    import struct
+    import livesession as LS
+    _ad_need()
+    if not all(k in _DE_MADE for k in ("one-close", "one-open", "one-paint", "design", "eight", "eight-parent", "eight-batch", "largest", "largest-ops")):
+        raise Red("the admission court did not leave its children: this court replays them")
+    logs = _ls_logs("designevent-replay")
+    root = _de_root("replay")
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    children = [("one-close", 1), ("one-open", 1), ("one-paint", 1), ("eight", 8), ("design", 60), ("largest", DE_LARGEST)]
+    for tag, count in children:
+        path, raw, doc = _DE_MADE[tag]
+        code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+        single = sum(1 for e in doc["data"]["log"] if e.get("admit") is not None and len(e["admit"]) == 8)
+        if code != 0 or "SESSIONWALK verify OK head %s" % doc["data"]["head"][:12] not in out or (" admitted %d batches 1 " % (count + single)) not in out:
+            raise Red("the workshop's sessionwalk does not verify the %s child and count its batch: %s" % (tag, (err or out).strip()[-200:]))
+        try:
+            LS.check_saved(raw, ROOT)
+            rec = LS.seal_livesession(raw, reg, "gate-mock", out.strip())
+        except LS.Refuse as e_:
+            raise Red("the sealer refused the %s child: %s" % (tag, e_))
+        envelope.validate(rec)
+        prov = rec["provenance"]
+        if prov.get("batches") != {"rung": "DESIGN-EVENT-0", "chain_hash": DESIGNEVENT0_HASH, "batches": 1, "events": count} \
+                or ("%d of the edits admitted through DESIGN-EVENT-0's seam in 1 batch," % count) not in rec["reading"] or "shell design (" not in prov["tool"] \
+                or (("admission" in prov) != (single > 0)):
+            raise Red("the sealed record of the %s child does not cite DESIGN-EVENT-0 and count its batch and its %d events" % (tag, count))
+    plain = LS.seal_livesession(read(_DE_MADE["eight-parent"][0]), reg, "gate-mock", "x")
+    if "batches" in plain["provenance"] or "DESIGN-EVENT-0" in plain["reading"] or "shell design (" in plain["provenance"]["tool"]:
+        raise Red("the sealer reads a session with no batch differently than before")
+    # the largest batch's head, by this gate's own fold from the definition: content = sha256(sha256(W) + sha256(M)) after each
+    # edit, head = sha256(head : E : content)
+    big_level, largest, bh = _DE_MADE["largest-ops"]
+    level = bytearray(read(big_level))
+    tiles = bytearray(read(os.path.join(ROOT, "oracle", "tiles", "identity.tiles")))
+    tile_bytes = (len(tiles) - 8) // 5
+    content = lambda: hashlib.sha256(hashlib.sha256(level).digest() + hashlib.sha256(tiles).digest()).hexdigest()
+    h = hashlib.sha256(LS.MAGIC + content().encode("ascii") + b"@24,24,N").hexdigest()
+    if h != bh:
+        raise Red("the gate's own genesis of the 48 by 48 level is not the session's")
+    for op in largest:
+        if op[0] == "paint":
+            tiles[8 + op[1] * tile_bytes:8 + (op[1] + 1) * tile_bytes] = bytes([(op[2] >> 16) & 255, (op[2] >> 8) & 255, op[2] & 255]) * (tile_bytes // 3)
+        else:
+            level[16 + op[2] * DE_LATTICE + op[1]] = ord(".") if op[0] == "open" else ord("#")
+        h = hashlib.sha256(("%s:E:%s" % (h, content())).encode("ascii")).hexdigest()
+    if h != _DE_MADE["largest"][2]["data"]["head"]:
+        raise Red("the largest batch's head is not the head this gate's own fold reaches from the definition")
+    # forged files: the child of the eight, changed in one respect and resealed
+    c8, craw8, cdoc8 = _DE_MADE["eight"]
+    text = craw8.decode("utf-8")
+    n = len(_DE_MADE["eight-parent"][2]["data"]["log"])
+    envs = [e["admit"] for e in cdoc8["data"]["log"][n:]]
+    single = cdoc8["data"]["log"][n - 1]["admit"]
+    def sub(k, a, b):
+        def edit(lines, items):
+            if lines[items[n + k]].count(a) != 1:
+                raise Red("the forgery's string is not where the saved file keeps it (%s)" % a)
+            lines[items[n + k]] = lines[items[n + k]].replace(a, b)
+        return edit
+    def strip(k):
+        def edit(lines, items):
+            ln = lines[items[n + k]]
+            i = ln.index(', "admit": {')
+            lines[items[n + k]] = ln[:i] + "}" + ("," if ln.endswith(",") else "")
+        return edit
+    def every(a, b):
+        def edit(lines, items):
+            for k in range(8):
+                lines[items[n + k]] = lines[items[n + k]].replace(a, b)
+        return edit
+    forged = [
+        ("the envelope taken off the first event of the batch", strip(0)),
+        ("the envelope taken off a middle event", strip(3)),
+        ("the envelope taken off the last event", strip(7)),
+        ("two places exchanged", lambda lines, items: (sub(2, '"place": "3"', '"place": "4"')(lines, items), sub(3, '"place": "4"', '"place": "3"')(lines, items))),
+        ("a place twice", sub(4, '"place": "5"', '"place": "4"')),
+        ("a count that is not the number of places", every('"count": "8"', '"count": "9"')),
+        ("a count that differs at one place", sub(5, '"count": "8"', '"count": "9"')),
+        ("a place of 0", sub(0, '"place": "1"', '"place": "0"')),
+        ("a place with a leading zero", sub(6, '"place": "7"', '"place": "07"')),
+        ("a place above its count", sub(7, '"place": "8"', '"place": "9"')),
+        ("the digest changed at one place", sub(2, '"digest": "%s"' % envs[2]["digest"], '"digest": "%s"' % sha256(b"another batch"))),
+        ("the proposal id changed at one place", sub(2, '"proposal": "%s"' % envs[2]["proposal"], '"proposal": "%s"' % sha256(b"another id"))),
+        ("the grant changed at one place", sub(2, '"grant": "%s"' % envs[2]["grant"], '"grant": "allow=open cells=- classes=-"')),
+        ("the renderer changed at one place", sub(2, '"renderer": "%s"' % envs[2]["renderer"], '"renderer": "%s"' % sha256(b"another build"))),
+        ("the batch's id in a single admission's envelope too", sub(-1, '"proposal": "%s"' % single["proposal"], '"proposal": "%s"' % envs[0]["proposal"])),
+        ("an eleventh member", sub(1, '"count": "8"}', '"count": "8", "note": "x"}')),
+        ("a missing member", sub(1, ', "count": "8"}', '}')),
+        ("a member that is not text", sub(1, '"count": "8"}', '"count": 8}')),
+    ]
+    for what, edit in forged:
+        _de_three(what, _de_forge(text, edit), root, logs)
+    # a language no rung has registered: on a single admission's envelope it is the one respect in which the file differs
+    p1 = _DE_MADE["eight-parent"]
+    _de_three("a language no rung has registered", _de_forge(p1[1].decode("utf-8"), lambda lines, items: lines.__setitem__(
+        items[n - 1], lines[items[n - 1]].replace('"language": "VRDNP1"', '"language": "VRDNP3"'))), root, logs)
+    # the log cut after each place below the count, its stored head, final content and counts made the cut chain's own
+    for k in range(1, 8):
+        doc = json.loads(text)
+        d = doc["data"]
+        keep = d["log"][:n + k]
+        cut_head, cut_content = keep[-1]["admit"]["head"], keep[-1]["witness"]
+        def edit(lines, items, k=k, d=d, cut_head=cut_head, cut_content=cut_content):
+            del lines[items[n + k]:items[n + 7] + 1]
+            lines[items[n + k - 1]] = lines[items[n + k - 1]].rstrip(",")
+            body = "\n".join(lines)
+            for a, b in (('"head": "%s"' % d["head"], '"head": "%s"' % cut_head), ('"final_content": "%s"' % d["final_content"], '"final_content": "%s"' % cut_content),
+                         ('"edits": %d' % d["edits"], '"edits": %d' % (d["edits"] - (8 - k)))):
+                if body.count(a) != 1:
+                    raise Red("the cut's string is not where the saved file keeps it (%s)" % a[:24])
+                body = body.replace(a, b)
+            lines[:] = body.split("\n")
+        _de_three("the log cut after place %d of 8" % k, _de_forge(text, edit), root, logs)
+    # the child continued by one key keeps the batch's items byte for byte
+    cp, kpath = _ad_shell("live-selftest", ["--resume", c8, "--keys", "3,ESC"], root, logs)
+    if cp.returncode != 0 or kpath is None:
+        raise Red("the batch's child did not continue by a key: %s" % (cp.stderr.strip() or cp.stdout.strip())[-200:])
+    ktext = read(kpath).decode("utf-8")
+    kdoc = json.loads(ktext)
+    klines, kitems = ktext.split("\n"), _ad_item_lines(ktext)
+    for k in range(8):
+        if klines[kitems[n + k]] != text.split("\n")[_ad_item_lines(text)[n + k]].rstrip(",") + ",":
+            raise Red("a continuation by keys did not keep the batch's saved items byte for byte")
+    if "admit" in kdoc["data"]["log"][n + 8] or len(kdoc["data"]["log"]) != n + 9:
+        raise Red("a continuation by keys enveloped its own edit")
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", kpath])
+    try:
+        LS.check_saved(read(kpath), ROOT)
+    except LS.Refuse as e_:
+        raise Red("the sealer refused the batch's child continued by a key: %s" % e_)
+    if code != 0 or " batches 1 " not in out:
+        raise Red("the workshop does not verify the batch's child continued by a key: %s" % (err or out).strip()[-200:])
+    # a session holding single admissions and two batches verifies in all three: a second batch on the child of the first
+    eight = _DE_MADE["eight-batch"][2]
+    g8 = _DE_MADE["eight-batch"][1]
+    back = [("close" if o[0] == "open" else "open", o[1], o[2]) for o in eight[:7]]
+    two, raw_two, doc_two = _de_admitted(c8, _de_batch(cdoc8["data"]["head"], back), g8, root, logs, "second")
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", two])
+    try:
+        LS.check_saved(raw_two, ROOT)
+        rec2 = LS.seal_livesession(raw_two, reg, "gate-mock", out.strip())
+    except LS.Refuse as e_:
+        raise Red("the sealer refused a session holding a single admission and two batches: %s" % e_)
+    cp, _o = _ad_shell("admit-anchor", ["--session", two], root, logs)
+    if cp.returncode != 0 or code != 0 or " admitted 16 batches 2 " not in out or rec2["provenance"].get("batches", {}).get("batches") != 2 \
+            or rec2["provenance"]["batches"]["events"] != 15 or rec2["provenance"].get("admission", {}).get("rung") != "ADMIT-0":
+        raise Red("a session holding a single admission and two batches does not verify in the shell's loader, the workshop and the sealer with its counts: %s"
+                  % (cp.stderr or err or out).strip()[-200:])
+    # a key's edit standing between two places. A session that verifies is made first: the eight's first four as one batch,
+    # one edit by a key, the eight's last four as a second batch. Its two batches are then relabelled as one batch of
+    # eight — the second given the first's id and digest, places 5 to 8, every count 8 — and the file resealed. The chain
+    # is untouched: the one thing wrong is that an edit which is not of the batch stands between place 4 and place 5.
+    p8_, _raw8, doc8_ = _DE_MADE["eight-parent"]
+    fa, _fr, fadoc = _de_admitted(p8_, _de_batch(doc8_["data"]["head"], eight[:4]), g8, root, logs, "first-four")
+    cp, fk = _ad_shell("live-selftest", ["--resume", fa, "--keys", "3,ESC"], root, logs)
+    if cp.returncode != 0 or fk is None:
+        raise Red("the first four's child did not continue by a key: %s" % (cp.stderr.strip() or cp.stdout.strip())[-200:])
+    fkdoc = json.loads(read(fk).decode("utf-8"))
+    fb, fbraw, fbdoc = _de_admitted(fk, _de_batch(fkdoc["data"]["head"], eight[4:]), g8, root, logs, "last-four")
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", fb])
+    ea, eb = fbdoc["data"]["log"][n]["admit"], fbdoc["data"]["log"][n + 5]["admit"]
+    if code != 0 or " batches 2 " not in out or "admit" in fbdoc["data"]["log"][n + 4] or len(fbdoc["data"]["log"]) != n + 9 or (ea["count"], eb["count"]) != ("4", "4"):
+        raise Red("the session of two batches of four with a key's edit between them does not verify: %s" % (err or out).strip()[-200:])
+    def as_one(lines, items):
+        for k in range(4):
+            a_, b_ = items[n + k], items[n + 5 + k]
+            if lines[a_].count('"count": "4"') != 1 or lines[b_].count('"place": "%d", "count": "4"' % (k + 1)) != 1 \
+                    or lines[b_].count('"proposal": "%s"' % eb["proposal"]) != 1 or lines[b_].count('"digest": "%s"' % eb["digest"]) != 1:
+                raise Red("the relabelling's strings are not where the saved file keeps them")
+            lines[a_] = lines[a_].replace('"count": "4"', '"count": "8"')
+            lines[b_] = lines[b_].replace('"place": "%d", "count": "4"' % (k + 1), '"place": "%d", "count": "8"' % (k + 5)) \
+                .replace('"proposal": "%s"' % eb["proposal"], '"proposal": "%s"' % ea["proposal"]).replace('"digest": "%s"' % eb["digest"], '"digest": "%s"' % ea["digest"])
+    _de_three("a key's edit standing between two places of a batch", _de_forge(fbraw.decode("utf-8"), as_one), root, logs)
+    # the same id in a second batch: the second batch's envelopes given the first batch's id
+    t2 = raw_two.decode("utf-8")
+    env2 = doc_two["data"]["log"][n + 8]["admit"]
+    def same_id(lines, items):
+        for k in range(7):
+            if lines[items[n + 8 + k]].count('"proposal": "%s"' % env2["proposal"]) != 1:
+                raise Red("the second batch's id is not where the saved file keeps it")
+            lines[items[n + 8 + k]] = lines[items[n + 8 + k]].replace('"proposal": "%s"' % env2["proposal"], '"proposal": "%s"' % envs[0]["proposal"])
+    _de_three("the same id in a second batch", _de_forge(t2, same_id), root, logs)
+    # the memo against the computation with no memo, over every edit of the court's children
+    edits = 0
+    for tag, _count in children + [("second", 0)]:
+        path = two if tag == "second" else _DE_MADE[tag][0]
+        cp, _o = _ad_shell("design-selftest", ["--memo", path], root, logs)
+        m = re.search(r"memo edits (\d+) differing (\d+)\n", cp.stdout)
+        if cp.returncode != 0 or m is None or int(m.group(2)) != 0 or int(m.group(1)) == 0:
+            raise Red("the memo and the computation with no memo differ, or were not compared, on the %s child: %s" % (tag, (cp.stderr.strip() or cp.stdout.strip())[-200:]))
+        edits += int(m.group(1))
+    # a wrong memo: a cell edit that reuses the tiles' digest from before a paint. The design's child ends in a paint, and
+    # no cell edit of its history follows one, so a shell carrying the plant replays that history as it was; one cell is
+    # then closed on it by that shell, and its content is wrong in the same way when the shell reads its own file back
+    dpath, _draw, ddoc = _DE_MADE["design"]
+    design = _de_design_ops()
+    again = [("close", design[2][1], design[2][2])]
+    if design[2][0] != "open" or ddoc["data"]["log"][-1]["spec"].split(":")[0] != "tile":
+        raise Red("the design's child is not cells and then a paint: the plant's parent is not what the court takes it for")
+    r2 = _de_root("replay-memo")
+    cp, wrong = _de_run(dpath, _de_batch(DE_H60, again), ADMIT_ALL, r2, logs, "memo", cmd="design-selftest", extra=["--plant", "memo"])
+    if cp.returncode != 0 or wrong is None or "saved and verified" not in cp.stdout:
+        raise Red("the shell carrying the wrong memo did not save its file and read it back as verified: %s" % (cp.stderr.strip() or cp.stdout.strip())[-200:])
+    honest_path, _hr, honest = _de_admitted(dpath, _de_batch(DE_H60, again), ADMIT_ALL, root, logs, "memo-honest")
+    wdoc = json.loads(read(wrong).decode("utf-8"))
+    if wdoc["data"]["head"] == honest["data"]["head"] or wdoc["data"]["log"][-1]["witness"] == honest["data"]["log"][-1]["witness"]:
+        raise Red("the wrong memo did not change the witness: the plant plants nothing")
+    cp, _o = _ad_shell("design-selftest", ["--memo", honest_path, "--plant", "memo"], root, logs)
+    m = re.search(r"memo edits (\d+) differing (\d+)\n", cp.stdout)
+    if cp.returncode != 0 or m is None or int(m.group(2)) == 0:
+        raise Red("the comparison did not find the wrong memo")
+    cp, _o = _ad_shell("admit-anchor", ["--session", wrong], root, logs)
+    code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", wrong])
+    if cp.returncode != 2 or "SHELL-LIVESESSION-TAMPERED: " not in cp.stderr or code != 2 or "SESSIONWALK-CHAIN-BROKEN" not in err:
+        raise Red("the file saved under the wrong memo was not refused by a shell without the plant and by the workshop (shell %d, workshop %d)" % (cp.returncode, code))
+    return ("the replay court: the workshop's sessionwalk verifies the six children of the admission court without the shell "
+            "and counts one batch in each (1, 1, 1, 8, 60 and %s events); the largest batch's head is the head this gate's own "
+            "fold reaches from the definition, edit by edit; the sealer checks each child, cites DESIGN-EVENT-0 (%s), counts "
+            "its batch and its events, and reads a session with no batch as before; %d resealed forgeries, each differing "
+            "from the child of the eight in one respect (an envelope taken off the first, a middle or the last event; places "
+            "exchanged, repeated, 0, with a leading zero or above the count; a count that is not the number of places; the "
+            "digest, the id, the grant or the renderer changed at one place; the batch's id in another envelope or a second "
+            "batch; a member added, missing or not text; an unregistered language; a key's edit standing between two places; the log cut after each of the seven "
+            "places below the count with its head, content and counts made the cut chain's own) are each refused for the "
+            "envelope by the shell's loader, the workshop and the sealer; the child continued by a key keeps the eight "
+            "items byte for byte; a session holding a single admission and two batches verifies in all three; over %s "
+            "edits of the court's children the memo and the computation with no memo give the same content; a shell planted "
+            "with a wrong memo saves a file and reads it back as verified, the comparison finds the difference, and the "
+            "workshop and a shell without the plant refuse the file"
+            % (format(DE_LARGEST, ","), DESIGNEVENT0_HASH[:8], len(forged) + 1 + 7 + 1 + 1, format(edits, ",")))
+
+
+def designevent_fence():
+    """(5) By source: a batch's bytes are read in one function of shell/designevent.rs and reach the recognizer and the
+    digest and nothing else; the workshop and the sealer hold no reader of the language; the seam spawns nothing and
+    reads nothing under verify/; an edit is made by the session's own two pushes and there is one fold; a batch's
+    envelope is set by the batch seam and the loader alone, the batch's seal is reached from the batch seam alone, and
+    shell design takes no plant; the memo's two digests are assigned where the bytes they are of are edited, and nowhere
+    else; the rows before this rung keep their names and their order. And by what was heard: every child this rung's
+    rows started that did not end 0 carries a registered code in a code head."""
+    code = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
+    shell = {fn: code(read(os.path.join(SHELL, fn)).decode("utf-8")) for fn in sorted(os.listdir(SHELL)) if fn.endswith(".rs")}
+    de = shell["designevent.rs"]
+    for tok in ("Command", "std::process", "process::", "std::net", "TcpStream", "UdpSocket", "verify", "unsafe", "thread::", "SystemTime", "Instant",
+                "std::env", "fs::write", "create_dir", "OpenOptions", "remove_file", "rename("):
+        if tok in de:
+            raise Red("shell/designevent.rs contains %r: the seam spawns nothing, connects to nothing, reads no clock, writes no file of its own and never reaches the gate" % tok)
+    runf = src_span(de, "pub fn run(session: &str, proposal: &str, grant: &Grant, mode: &Mode) -> i32 {", "\n}\n")
+    order = [runf.find(t) for t in ('crate::runledger::begin("design", "none");', "read_capped(proposal)", "sha256(&payload)", "recognize_batch(&payload)",
+                                    "*d != digest", "p.renderer != renderer || p.bearing != bearing", "crate::livesession::load(session)",
+                                    'l.lineage.source != "session"', "p.parent != head", "a.proposal == p.id", "grant.permits(*op)",
+                                    "l.session.batch_place_next(Admit {", "l.session.push_edit_cell(", "l.session.push_edit_tile(",
+                                    "l.session.content() == content", "*h != reached", 'crate::livesession::die(plant, "die-verified");',
+                                    "if mode.dry_run {", "crate::livesession::seal_batch(l, plant.to_string(), \"none\")")]
+    codes = re.findall(r'refuse\("(ADMIT-[A-Z]+)"', runf)
+    if (-1 in order or order != sorted(order) or codes != ["ADMIT-IO", "ADMIT-PREVIEW", "ADMIT-PROGRAM", "ADMIT-SESSION", "ADMIT-ANCHOR", "ADMIT-DUPLICATE",
+                                                           "ADMIT-CAPABILITY", "ADMIT-AUTHORITY", "ADMIT-AUTHORITY", "ADMIT-PREVIEW"]
+            or "return refuse(u.code," not in runf or runf.count("crate::livesession::load(") != 1 or runf.count("seal_batch(") != 1
+            or sorted(set(re.findall(r'code: "(ADMIT-[A-Z]+)"', de))) != ["ADMIT-ORDER", "ADMIT-PARSE", "ADMIT-RANGE", "ADMIT-SIZE"]):
+        raise Red("the batch's admission does not make its checks in the registered order, on one load of the session, before anything is written")
+    dry = runf[runf.find("if mode.dry_run {"):runf.find("crate::livesession::seal_batch(")]
+    if "return 0;" not in dry or "crate::runledger::end(0);" not in dry or any(t in dry for t in ("push_edit", "load(", "seal_batch", "fs::")):
+        raise Red("the dry run is not the admission's own run, ended after every check and before anything is written")
+    rec = src_span(de, "pub fn recognize_batch(b: &[u8]) -> Result<Batch, Unrecognized> {", "\n}\n")
+    if not 0 <= rec.find("if b.len() > MAX_BATCH_BYTES {") < rec.find("lines.push(") < rec.find("if let Some(r) = range {") < rec.find('code: "ADMIT-ORDER"') \
+            or not 0 <= rec.find('"nothing after the last operation\'s LF"') < rec.find("if let Some(r) = range {"):
+        raise Red("the batch's recognizer does not bound the size first, recognize the whole byte sequence before a range refusal, and judge the order last")
+    if ({fn: s.count("recognize_batch(") for fn, s in shell.items() if "recognize_batch(" in s} != {"designevent.rs": 3}
+            or runf.count("recognize_batch(&payload)") != 1 or src_span(de, "fn verdict(b: &[u8])", "\n}\n").count("recognize_batch(b)") != 1
+            or {fn for fn, s in shell.items() if '"VRDNP2"' in s} != {"designevent.rs"} or de.count('"VRDNP2"') != 1
+            or {fn for fn, s in shell.items() if "read_capped(" in s} != {"designevent.rs"} or de.count("read_capped(") != 2
+            or len(re.findall(r"\bpayload\b", re.sub(r'"(?:[^"\\]|\\.)*"', '""', runf))) != 4 or "payload.len()" not in runf):
+        raise Red("a batch's bytes are read by more than the one recognizer, or reach more than the recognizer and the digest")
+    ws = {fn: code(read(os.path.join(WORKSHOP, fn)).decode("utf-8")) for fn in sorted(os.listdir(WORKSHOP)) if fn.endswith(".rs")}
+    sealer = read(os.path.join(ROOT, "verify", "livesession.py")).decode("utf-8")
+    words = ('"renderer="', '"operations=', '"open ', '"close ', '"paint ', "fn recognize", "def recognize", "ADMIT-PARSE", "ADMIT-ORDER")
+    if ({fn: s.count('"VRDNP2"') for fn, s in ws.items() if "VRDNP2" in s} != {"sessionwalk.rs": 1} or sealer.count('"VRDNP2"') != 1
+            or 'BATCH_LANGUAGE = "VRDNP2"' not in sealer or any(w_ in s for s in list(ws.values()) + [sealer] for w_ in words)):
+        raise Red("the workshop or the sealer holds something of the batch language beyond its name in an envelope")
+    # the gate's own recognizer and writer are a test oracle: used by this rung's rows and their helpers, and by nothing else
+    me = read(os.path.join(ROOT, "verify", "verify.py")).decode("utf-8")
+    owner = None
+    for ln in me.splitlines():
+        m_ = re.match(r"def (\w+)\(", ln)
+        if m_:
+            owner = m_.group(1)
+        elif any(name in ln for name in ("_de_recognize(", "_de_verdict(", "_de_neighbourhood(", "_de_emit(", "_de_batch(")):
+            if owner is None or not (owner.startswith("designevent_") or owner.startswith("_de_")):
+                raise Red("the gate's own recognizer or writer of the batch language is used outside this rung's rows (in %s): it is a test oracle and nothing else" % owner)
+    main_src = code(read(os.path.join(SHELL, "main.rs")).decode("utf-8"))
+    arm = src_span(main_src, '"design" | "design-selftest" => {', '\n        "admit" | "admit-selftest" | "admit-anchor" => {')
+    pb = read(os.path.join(SHELL, "playback.rs")).decode("utf-8")
+    if ({fn: s.count("designevent::run(") for fn, s in shell.items() if "designevent::run(" in s} != {"main.rs": 1}
+            or {fn: s.count("seal_batch(") for fn, s in shell.items() if "seal_batch(" in s} != {"designevent.rs": 1, "livesession.rs": 1}
+            or {fn: s.count("batch_place_next(") for fn, s in shell.items() if "batch_place_next(" in s} != {"designevent.rs": 1, "livesession.rs": 1, "playback.rs": 1}
+            or '&["--session", "--proposal", "--allow", "--cells", "--classes", "--previewed"]' not in arm or arm.count('"--plant"') != 2
+            or {fn for fn, s in shell.items() if "MEMO_PLANT.store(" in s} != {"designevent.rs", "livesession.rs"}
+            or 'if plant == "memo" {' not in de or "if plant {" not in src_span(shell["livesession.rs"], "pub fn memo_check(", "\n}\n")):
+        raise Red("the batch's admission is reached by something other than shell design and design-selftest, shell design takes a plant, or a batch's envelope is set outside the seam and the loader")
+    ls = shell["livesession.rs"]
+    sb = src_span(ls, "pub fn seal_batch(l: Loaded, plant: String, surface: &'static str) -> i32 {", "\n}\n")
+    order = [sb.find(t) for t in ("let parent_events = l.lineage.parent_events;", "open(l.session, l.base, Some(l.lineage),", 'die(&plant, "die-opened");',
+                                  "put_batch(parent_events, &p.session.log()[parent_events..]);", 'finish(p, "admission",')]
+    pbt = src_span(ls, "fn put_batch(&mut self, first: usize, evs: &[LiveEvent]) {", "\n    }\n")
+    if -1 in order or order != sorted(order) or "self.put_event(first + i, ev);" not in pbt or any(t in pbt for t in ("write_all", "sync_", "File")):
+        raise Red("the batch's run does not open the journal with the parent's events and put the batch's records through the one path a record is written by")
+    # the session: two pushes, one fold; the memo's digests assigned where their bytes are edited and nowhere else
+    pbc = code(pb)
+    cell, tile = src_span(pb, "pub fn push_edit_cell(", "\n    }\n"), src_span(pb, "pub fn push_edit_tile(", "\n    }\n")
+    if (pbc.count("self.w_sha = ") != 1 or pbc.count("self.m_sha = ") != 2 or pbc.count("let (w_sha, m_sha) = (sha256(&level_bytes), sha256(&tiles_bytes));") != 1
+            or not 0 <= cell.find("apply_spec(&mut self.level, &mut self.tiles, &spec);") < cell.find("self.w_sha = sha256(&self.level);") < cell.find("self.content = memo_hex(&self.w_sha, &self.m_sha);")
+            < cell.find("self.head = fold(&self.head, b'E', &self.content);")
+            or not 0 <= tile.find("apply_spec(&mut self.level, &mut self.tiles, &spec);") < tile.find("self.m_sha = sha256(&self.tiles);") < tile.find("self.content = memo_hex(&self.w_sha, &self.m_sha);")
+            < tile.find("self.head = fold(&self.head, b'E', &self.content);")
+            or "MEMO_PLANT.load(" not in cell or "MEMO_PLANT" in tile or pbc.count("MEMO_PLANT.load(") != 1
+            or pbc.count("fn fold(") != 1 or pbc.count("apply_spec(&mut self.level, &mut self.tiles, &spec);") != 2
+            or pbc.count("self.batch_next") != 2 or pbc.count("batch_next: None") != 1 or pbc.count("batch: None") != 3 or pbc.count("self.placed(admit)") != 2):
+        raise Red("the session's edit is not apply, the digest of the bytes it changed, the hash of the two digests, fold; or a batch's place is set outside the two edit pushes")
+    memo_fn = src_span(pb, "fn memo_hex(w: &[u8; 32], m: &[u8; 32]) -> String {", "\n}\n")
+    plain_fn = src_span(pb, "fn content_hex(level_bytes: &[u8], tiles_bytes: &[u8]) -> String {", "\n}\n")
+    if not all(t in memo_fn for t in ("buf.extend_from_slice(w);", "buf.extend_from_slice(m);", "hex(&sha256(&buf))")) \
+            or not all(t in plain_fn for t in ("buf.extend_from_slice(&sha256(level_bytes));", "buf.extend_from_slice(&sha256(tiles_bytes));", "hex(&sha256(&buf))")):
+        raise Red("the memo's content is not the hash of the two digests, as the computation from the bytes is")
+    import livesession as LS
+    if LS.renderer_id(ROOT) != RC_RENDERER_ID or LS.bearing_id(ROOT) != RC_BEARING_ID:
+        raise Red("the renderer or the bearing identity is not READER-COURT-0's: this rung touches no renderer")
+    # the rows: the 236 before this rung keep their names and order, and this rung adds six
+    names = _mw_rows_by_source()
+    i = names.index(DE_ROWS[0]) if DE_ROWS[0] in names else -1
+    if i != 236 or tuple(names[i:]) != DE_ROWS or sha256("\n".join(names[:i]).encode("utf-8"))[:16] != DE_ROWSET_BEFORE:
+        raise Red("the rows before this rung are not the 236 they were, by name and order, or this rung's six are not the last")
+    # what was heard: every child of this rung's rows that did not end 0 carries a registered code in a code head
+    heard = [e for e in ENDINGS if e["row"] in DE_ROWS]
+    loose = []
+    for e in heard:
+        tokens = {t for h_ in e["heads"] for t in h_}
+        ok = (e["exit"] == 70 and DE_DEATH_CODE in tokens) or (e["exit"] == 2 and any(c in tokens for c in DE_CODES))
+        if not ok:
+            loose.append("%s / %s %s ended %d" % (e["row"], e["program"], e["command"], e["exit"]))
+    by_row = {r: sum(1 for e in heard if e["row"] == r) for r in DE_ROWS}
+    if loose or ENDINGS_UNHEARD or not heard or by_row["designevent-language"] == 0 or by_row["designevent-admit"] == 0 or by_row["designevent-crash"] != 12 + 4 \
+            or by_row["designevent-replay"] == 0:
+        raise Red("an ending of this rung's rows carries no registered code in a code head, or the watch did not hear them: %s" % "; ".join(loose[:4]))
+    return ("the batch seam is fenced: shell/designevent.rs spawns no process, opens no socket, reads no clock, writes no file "
+            "of its own and holds no path into verify/; its run makes the registered checks in the registered order on one "
+            "load of the session, appends each operation by the session's own push in memory, and only then opens a run; the "
+            "dry run is that same run, ended after every check and before anything is written; a batch's bytes are read in "
+            "one function and reach the recognizer and the digest and nothing else, and the workshop and the sealer hold "
+            "nothing of the language but its name; the gate's own recognizer and writer are used by this rung's rows alone; "
+            "the admission is reached by shell design and design-selftest alone, shell "
+            "design takes no plant, and a batch's envelope is set by the seam and the loader alone; the batch's records go "
+            "through the one path a journal record is written by; an edit is apply, the digest of the bytes it changed, the "
+            "hash of the two digests, fold, in both pushes, each digest assigned where its bytes are edited and nowhere "
+            "else, and there is one fold; the renderer and bearing identities are READER-COURT-0's; the 236 rows before this "
+            "rung keep their names and their order and this rung adds six; and of the %d children this rung's rows started that did not end 0, every one carries a registered code in "
+            "a code head (%s)" % (len(heard), ", ".join("%s %d" % (r.split("-", 1)[1], by_row[r]) for r in DE_ROWS if by_row[r])))
+
+
 def main() -> int:
     print("VERÐANDI GATE")
     # REFUSAL-LOG-0: every shell the gate runs logs its refusals to the gate's own scratch file, never the owner's log
@@ -13809,6 +15026,14 @@ def main() -> int:
     row("mintwatch-inventory", mintwatch_inventory)
     row("mintwatch-fence", mintwatch_fence)
     row("mintwatch-watch", mintwatch_watch)
+    # DESIGN-EVENT-0: a design admitted as one batch; after both refusal watches, and heard by neither: the last row
+    # judges this rung's own endings by code head
+    row("designevent-preregistered", designevent_preregistered)
+    row("designevent-language", designevent_language)
+    row("designevent-admit", designevent_admit)
+    row("designevent-crash", designevent_crash)
+    row("designevent-replay", designevent_replay)
+    row("designevent-fence", designevent_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

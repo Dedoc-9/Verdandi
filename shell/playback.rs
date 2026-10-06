@@ -59,6 +59,17 @@ fn content_hex(level_bytes: &[u8], tiles_bytes: &[u8]) -> String {
     hex(&sha256(&buf))
 }
 
+/// DESIGN-EVENT-0: PLANT (design-selftest only, off on every real run): a cell edit reuses the base tiles' digest.
+pub static MEMO_PLANT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// DESIGN-EVENT-0: the same content from the two digests the session keeps (the memo).
+fn memo_hex(w: &[u8; 32], m: &[u8; 32]) -> String {
+    let mut buf = Vec::with_capacity(64);
+    buf.extend_from_slice(w);
+    buf.extend_from_slice(m);
+    hex(&sha256(&buf))
+}
+
 fn genesis(base_content: &str, cam0: Camera) -> String {
     let token = format!("{},{},{}", cam0.x, cam0.z, facing_letter(cam0.facing));
     let mut buf = Vec::new();
@@ -433,6 +444,8 @@ pub struct LiveEvent {
     pub input: Option<(i64, i64, i64)>,
     /// ADMIT-0: the envelope of an admitted edit, recorded beside it and never folded (None for every other event).
     pub admit: Option<Admit>,
+    /// DESIGN-EVENT-0: the event's place in its batch and the batch's count (None unless a batch admitted it).
+    pub batch: Option<(u32, u32)>,
 }
 
 /// LIVE-INPUT-0's session: the replay of an in-memory log, appended to only by `push_move` and `push_edit_cell`.
@@ -462,6 +475,12 @@ pub struct LiveSession {
     painted: Option<(i64, i64, i64, String)>,
     // ADMIT-0: the envelope the next appended edit carries (set by the admission seam, or by the loader's replay)
     pending: Option<Admit>,
+    // DESIGN-EVENT-0: the batch envelope the next appended edit carries, with its place and the batch's count (set
+    // by the batch seam, or by the loader's replay); and the memo — the sha256 of the level's bytes and of the
+    // tiles' bytes as they stand, each recomputed only by the edit that changes its bytes
+    batch_next: Option<(Admit, u32, u32)>,
+    w_sha: [u8; 32],
+    m_sha: [u8; 32],
 }
 
 impl LiveSession {
@@ -472,13 +491,15 @@ impl LiveSession {
         if !traversable(&level_bytes, cam0.x, cam0.z) {
             return Err("the initial camera stands on rock or off the level".to_string());
         }
-        let base_content = content_hex(&level_bytes, &tiles_bytes);
+        let (w_sha, m_sha) = (sha256(&level_bytes), sha256(&tiles_bytes));
+        let base_content = memo_hex(&w_sha, &m_sha);
         let head = genesis(&base_content, cam0);
         let (base_level, base_tiles) = (level_bytes.clone(), tiles_bytes.clone());
         Ok(LiveSession { level: level_bytes, tiles: tiles_bytes, cam: cam0, content: base_content.clone(), head: head.clone(),
                          cam0, base_content, genesis: head, log: Vec::new(), sink: None,
                          yaw: cam0.facing as i64 * crate::simtick::QUARTER, tick: None, ticks: None, base_level, base_tiles,
-                         sens: crate::simtick::START, painter: crate::heading::Painter::new(), painted: None, pending: None })
+                         sens: crate::simtick::START, painter: crate::heading::Painter::new(), painted: None, pending: None,
+                         batch_next: None, w_sha, m_sha })
     }
 
     /// LIVE-SESSION-0: the same session, handing every event appended from now on to `sink`.
@@ -570,7 +591,7 @@ impl LiveSession {
         self.yaw = yaw;
         self.head = fold(&self.head, b'M', &witness);
         self.log.push(LiveEvent { tag: b'M', param: (cmd as char).to_string(), camera: cam, witness,
-                                  content: self.content.clone(), head: self.head.clone(), yaw, tick: self.tick, input: None, admit: None });
+                                  content: self.content.clone(), head: self.head.clone(), yaw, tick: self.tick, input: None, admit: None, batch: None });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -590,12 +611,20 @@ impl LiveSession {
         }
         let spec = format!("cell:{},{},{}", x, z, to as char);
         apply_spec(&mut self.level, &mut self.tiles, &spec);
-        self.content = content_hex(&self.level, &self.tiles);
+        // DESIGN-EVENT-0: a cell edit changes the level's bytes only: its digest is recomputed, the tiles' is the same
+        self.w_sha = sha256(&self.level);
+        if MEMO_PLANT.load(std::sync::atomic::Ordering::Relaxed) {
+            // PLANT (design-selftest only): the tiles' digest reused from before any paint — a digest of bytes that
+            // have since been edited
+            self.m_sha = sha256(&self.base_tiles);
+        }
+        self.content = memo_hex(&self.w_sha, &self.m_sha);
         let before = self.head.clone();
         self.head = fold(&self.head, b'E', &self.content);
         let admit = self.enveloped(before); // ADMIT-0: beside the event, after the fold, never in it
+        let (admit, batch) = self.placed(admit); // DESIGN-EVENT-0: a batch's envelope and the event's place in it
         self.log.push(LiveEvent { tag: b'E', param: spec, camera: self.cam, witness: self.content.clone(),
-                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None, admit });
+                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None, admit, batch });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -703,12 +732,15 @@ impl LiveSession {
         }
         let spec = format!("tile:{},{},{},{}", TILE_CLASSES[class as usize], rgb[0], rgb[1], rgb[2]);
         apply_spec(&mut self.level, &mut self.tiles, &spec);
-        self.content = content_hex(&self.level, &self.tiles);
+        // DESIGN-EVENT-0: a tile edit changes the tiles' bytes only: its digest is recomputed, the level's is the same
+        self.m_sha = sha256(&self.tiles);
+        self.content = memo_hex(&self.w_sha, &self.m_sha);
         let before = self.head.clone();
         self.head = fold(&self.head, b'E', &self.content);
         let admit = self.enveloped(before); // ADMIT-0: beside the event, after the fold, never in it
+        let (admit, batch) = self.placed(admit); // DESIGN-EVENT-0: a batch's envelope and the event's place in it
         self.log.push(LiveEvent { tag: b'E', param: spec, camera: self.cam, witness: self.content.clone(),
-                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None, admit });
+                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None, admit, batch });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -791,7 +823,7 @@ impl LiveSession {
         }
         self.sens = to;
         self.log.push(LiveEvent { tag: b'S', param: format!("{},{}", to.multiplier, to.step), camera: self.cam, witness: String::new(),
-                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None, admit: None });
+                                  content: self.content.clone(), head: self.head.clone(), yaw: self.yaw, tick: self.tick, input: None, admit: None, batch: None });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -810,7 +842,7 @@ impl LiveSession {
         self.yaw = yaw;
         self.head = fold(&self.head, b'K', &look_fold(&token(cam, yaw), &witness));
         self.log.push(LiveEvent { tag: b'K', param: delta.to_string(), camera: cam, witness, content: self.content.clone(),
-                                  head: self.head.clone(), yaw, tick: self.tick, input, admit: None });
+                                  head: self.head.clone(), yaw, tick: self.tick, input, admit: None, batch: None });
         self.handed();
         Ok(&self.log[self.log.len() - 1])
     }
@@ -886,6 +918,42 @@ impl LiveSession {
         }
         Some(crate::heading::FreeFrame { event: index, level: Arc::new(level), tiles: Arc::new(tiles), x: ev.camera.x, z: ev.camera.z, yaw: ev.yaw,
                                          witness: ev.witness.clone() })
+    }
+}
+
+// ================================================================== DESIGN-EVENT-0: a batch's place beside an admitted edit; the memo
+// A batch admits N operations as N ordinary edits. Each carries the batch's envelope and, beside it, its place and the
+// batch's count. The envelope's two heads are the session's own around that event, as for any envelope; they are read
+// here from the log and the head, after the fold, and nothing here folds. The memo keeps the digest of the level's
+// bytes and of the tiles' bytes; the two edit pushes above each recompute the one whose bytes they changed.
+impl LiveSession {
+    /// The next edit appended carries this batch envelope, this place and this count. Its parent and its resulting
+    /// head are overwritten with the session's own.
+    pub fn batch_place_next(&mut self, a: Admit, place: u32, count: u32) {
+        self.batch_next = Some((a, place, count));
+    }
+
+    /// The envelope and the place of the edit being appended: the batch's, if one is waiting, with the head before the
+    /// event (the last event's, or the genesis) and the head after it; otherwise the envelope it was handed.
+    fn placed(&mut self, admit: Option<Admit>) -> (Option<Admit>, Option<(u32, u32)>) {
+        match self.batch_next.take() {
+            Some((mut a, place, count)) => {
+                a.parent = self.log.last().map_or(self.genesis.clone(), |e| e.head.clone());
+                a.head = self.head.clone();
+                (Some(a), Some((place, count)))
+            }
+            None => (admit, None),
+        }
+    }
+
+    /// The content computed from the bytes themselves, with no memo (the selftest's comparison).
+    pub fn content_unmemoised(&self) -> String {
+        content_hex(&self.level, &self.tiles)
+    }
+
+    /// A fresh session over this one's base, with nothing replayed (the selftest's comparison).
+    pub fn rebased(&self) -> Result<LiveSession, String> {
+        LiveSession::new(self.base_level.clone(), self.base_tiles.clone(), self.cam0)
     }
 }
 

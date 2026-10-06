@@ -735,29 +735,72 @@ fn load_sessionwalk(path: &str) -> (SessionWalk, Vec<(char, String)>, Vec<String
 // it takes the envelope as typed values of the saved form and checks them against the chain it has replayed: eight
 // text members, the language's name, 64 lower-case hex where an id, a digest, an identity or a head goes, the grant's
 // line, on an edit, naming the head before the event and the head after it, and no proposal id twice.
+// DESIGN-EVENT-0: a batch admits N operations as N ordinary edits, each carrying the batch's envelope: the eight members
+// and two more, its place and the batch's count. Every envelope still stands alone against the chain; and a batch stands
+// whole or the session is refused: its events one after another with nothing between them, place 1 to place count in
+// order, agreeing in language, proposal id, digest, identities, grant and count. An envelope that is not exactly ten
+// members naming the batch language is judged as ADMIT-0 judges any envelope. The replay here keeps no memo: the content
+// after an edit is computed from the bytes, and so this replay is the independent check of the shell's.
 
 fn hex64(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
 }
 
-/// How many events carry an envelope, or why one of them does not stand.
-fn check_envelopes(sw: &SessionWalk, heads: &[String]) -> Result<usize, String> {
+/// DESIGN-EVENT-0: a place or a count as a batch's envelope writes it: a decimal with no leading zero, in 1..4096.
+fn count_text(s: &str) -> Option<u32> {
+    let d = s.as_bytes();
+    if d.is_empty() || d.len() > 4 || !d.iter().all(|c| c.is_ascii_digit()) || d[0] == b'0' {
+        return None;
+    }
+    let n = d.iter().fold(0u32, |v, c| v * 10 + (*c - b'0') as u32);
+    if n <= 4096 { Some(n) } else { None }
+}
+
+/// DESIGN-EVENT-0: the place and count of a batch's envelope: exactly ten text members naming the batch language.
+/// None for every other envelope, which is then judged as ADMIT-0 judges it.
+fn batch_place(a: &Json, members: usize, k: usize) -> Result<Option<(u32, u32)>, String> {
+    if members != 10 || !matches!(a.get("language"), Json::Str(_)) || a.get("language").s() != "VRDNP2" {
+        return Ok(None);
+    }
+    const KEYS: [&str; 10] = ["language", "proposal", "digest", "renderer", "bearing", "parent", "head", "grant", "place", "count"];
+    if KEYS.iter().any(|key| !matches!(a.get(key), Json::Str(_))) {
+        return Err(format!("event {}: a batch's envelope is not its ten text members", k));
+    }
+    match (count_text(a.get("place").s()), count_text(a.get("count").s())) {
+        (Some(p), Some(c)) if p <= c => Ok(Some((p, c))),
+        _ => Err(format!("event {}: a batch envelope's place and count are not decimals with 1 <= place <= count <= 4096", k)),
+    }
+}
+
+/// How many events carry an envelope and how many batches they make, or why one of them does not stand.
+fn check_envelopes(sw: &SessionWalk, heads: &[String]) -> Result<(usize, usize), String> {
     const KEYS: [&str; 8] = ["language", "proposal", "digest", "renderer", "bearing", "parent", "head", "grant"];
     let mut seen: Vec<&str> = Vec::new();
+    // DESIGN-EVENT-0: the event at place 1 of the batch that is open, and the place expected next
+    let mut open_batch: Option<(usize, u32)> = None;
+    let (mut enveloped, mut batches) = (0usize, 0usize);
     for (k, a) in sw.admits.iter().enumerate() {
         let a = match a {
             Some(a) => a,
-            None => continue,
+            None => {
+                if open_batch.is_some() {
+                    return Err(format!("event {}: a batch is not whole: an event that is not of it stands inside it", k));
+                }
+                continue;
+            }
         };
         let members = match a {
             Json::Obj(m) => m.len(),
             _ => 0,
         };
-        if members != KEYS.len() || KEYS.iter().any(|key| !matches!(a.get(key), Json::Str(_))) {
-            return Err(format!("event {}: an envelope is not its eight text members", k));
-        }
-        if a.get("language").s() != "VRDNP1" {
-            return Err(format!("event {}: an envelope's language is not VRDNP1", k));
+        let batch = batch_place(a, members, k)?;
+        if batch.is_none() {
+            if members != KEYS.len() || KEYS.iter().any(|key| !matches!(a.get(key), Json::Str(_))) {
+                return Err(format!("event {}: an envelope is not its eight text members", k));
+            }
+            if a.get("language").s() != "VRDNP1" {
+                return Err(format!("event {}: an envelope's language is not VRDNP1", k));
+            }
         }
         if ["proposal", "digest", "renderer", "bearing", "parent", "head"].iter().any(|key| !hex64(a.get(key).s())) {
             return Err(format!("event {}: an envelope's id, digest, identity or head is not 64 lower-case hex", k));
@@ -775,12 +818,46 @@ fn check_envelopes(sw: &SessionWalk, heads: &[String]) -> Result<usize, String> 
         if a.get("head").s() != heads[k + 1] {
             return Err(format!("event {}: its envelope's head is not the head after the event", k));
         }
-        if seen.contains(&a.get("proposal").s()) {
+        let begins = batch.map_or(true, |(place, _)| place == 1);
+        if begins && seen.contains(&a.get("proposal").s()) {
             return Err(format!("event {}: its envelope's proposal id was already admitted", k));
         }
-        seen.push(a.get("proposal").s());
+        if begins {
+            seen.push(a.get("proposal").s());
+        }
+        // DESIGN-EVENT-0: a batch is whole or the session is refused
+        match (open_batch, batch) {
+            (None, None) | (None, Some((1, _))) => {}
+            (None, Some(_)) => return Err(format!("event {}: a batch does not begin at place 1", k)),
+            (Some(_), None) => return Err(format!("event {}: a batch is not whole: an event that is not of it stands inside it", k)),
+            (Some((first, next)), Some((place, count))) => {
+                let f = match &sw.admits[first] {
+                    Some(f) => f,
+                    None => return Err(format!("event {}: a batch is not whole", k)),
+                };
+                if place != next {
+                    return Err(format!("event {}: a batch's places are not in order", k));
+                }
+                if count_text(f.get("count").s()) != Some(count)
+                    || ["language", "proposal", "digest", "renderer", "bearing", "grant"].iter().any(|key| a.get(key).s() != f.get(key).s()) {
+                    return Err(format!("event {}: a batch's events do not agree in what the batch shares", k));
+                }
+            }
+        }
+        if let Some((1, _)) = batch {
+            batches += 1;
+        }
+        open_batch = match (open_batch, batch) {
+            (None, Some((1, count))) if count > 1 => Some((k, 2)),
+            (Some((first, next)), Some((_, count))) if next < count => Some((first, next + 1)),
+            _ => None,
+        };
+        enveloped += 1;
     }
-    Ok(seen.len())
+    if open_batch.is_some() {
+        return Err(format!("event {}: a batch is not whole: the log ends inside it", sw.admits.len()));
+    }
+    Ok((enveloped, batches))
 }
 
 // ------------------------------------------------------------------ CLI
@@ -900,10 +977,12 @@ fn main() {
                 refuse("CHAIN-BROKEN", &format!("stored final camera {} != replay {}", final_cam, want_cam));
             }
             // ADMIT-0: an envelope is checked against the replayed chain; a session without one prints what it always did
-            let admitted = check_envelopes(&sw, &r.heads).unwrap_or_else(|m| refuse("ENVELOPE", &m));
-            println!("SESSIONWALK verify OK head {} — moves {} edits {}{}{} (final {})", &r.head[..12], r.moves, r.edits,
+            let (admitted, batches) = check_envelopes(&sw, &r.heads).unwrap_or_else(|m| refuse("ENVELOPE", &m));
+            // DESIGN-EVENT-0: a session holding a batch says how many; one holding none prints what it always did
+            println!("SESSIONWALK verify OK head {} — moves {} edits {}{}{}{} (final {})", &r.head[..12], r.moves, r.edits,
                      if r.looks > 0 { format!(" looks {}", r.looks) } else { String::new() },
-                     if admitted > 0 { format!(" admitted {}", admitted) } else { String::new() }, want_cam);
+                     if admitted > 0 { format!(" admitted {}", admitted) } else { String::new() },
+                     if batches > 0 { format!(" batches {}", batches) } else { String::new() }, want_cam);
         }
         other => refuse("USAGE", &format!("unknown command {}", other)),
     }

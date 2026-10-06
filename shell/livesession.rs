@@ -47,6 +47,13 @@
 // around that event and that its proposal id occurs once, before anything replays; a continuation writes it back as it
 // read it. A run can be opened from a session already loaded (`go_admitted`), so the seam checks its anchor against
 // the very bytes it continues. The seal is still `finish`.
+//
+// DESIGN-EVENT-0: a batch admits N operations as N ordinary edits; each carries the batch's envelope and, beside it, its
+// place and the batch's count (ten members in the saved item). The loader holds every envelope alone against the chain,
+// as before, and a batch whole: its events one after another with nothing between them, place 1 to place count in
+// order, agreeing in what the batch shares. A journal or a saved file holding part of a batch is refused. A batch's run
+// (`seal_batch`) opens the journal with the parent's events and puts the batch's records through the one path a record
+// is written by, each flushed. `memo_check` replays a session's edits beside the computation that keeps no memo.
 
 use std::cell::RefCell;
 use std::fs;
@@ -218,9 +225,15 @@ fn admit_json(ev: &LiveEvent, sp: &str) -> String {
         None => String::new(),
         Some(a) => {
             let m = |k: &str, v: &str| format!("\"{}\":{}{}", k, sp, esc(v));
-            format!(",{}\"admit\":{}{{{}}}", sp, sp, [m("language", &a.language), m("proposal", &a.proposal), m("digest", &a.digest),
-                    m("renderer", &a.renderer), m("bearing", &a.bearing), m("parent", &a.parent), m("head", &a.head),
-                    m("grant", &a.grant)].join(&format!(",{}", sp)))
+            let mut members = vec![m("language", &a.language), m("proposal", &a.proposal), m("digest", &a.digest),
+                                   m("renderer", &a.renderer), m("bearing", &a.bearing), m("parent", &a.parent), m("head", &a.head),
+                                   m("grant", &a.grant)];
+            // DESIGN-EVENT-0: an event a batch admitted says its place and the batch's count, after the eight
+            if let Some((place, count)) = ev.batch {
+                members.push(m("place", &place.to_string()));
+                members.push(m("count", &count.to_string()));
+            }
+            format!(",{}\"admit\":{}{{{}}}", sp, sp, members.join(&format!(",{}", sp)))
         }
     }
 }
@@ -267,13 +280,24 @@ pub struct Journal {
     surface: &'static str,
     // ADMIT-0: the death plants of an appended record (1 torn half-way, 2 after its flush); 0 on every real run
     die: u8,
+    // DESIGN-EVENT-0: the death plants of a batch's records: the place (0 on every real run) and which of ADMIT-0's
+    // two deaths happens there (1 torn half-way, 2 after its flush)
+    die_place: u32,
+    die_kind: u8,
 }
 
 impl Journal {
     fn open(path: &str, plant: &str, surface: &'static str) -> Result<Journal, String> {
         let file = fs::OpenOptions::new().create_new(true).append(true).open(path).map_err(|e| format!("{}: {}", path, e))?;
         let die = match plant { "die-torn" => 1, "die-appended" => 2, _ => 0 };
-        Ok(Journal { file, path: path.to_string(), records: 0, events: 0, broken: None, crash: plant == "crash", surface, die })
+        // DESIGN-EVENT-0: die-torn-K and die-appended-K name a place of a batch (design-selftest only)
+        let at = |prefix: &str| plant.strip_prefix(prefix).and_then(crate::designevent::count_text);
+        let (die_place, die_kind) = match (at("die-torn-"), at("die-appended-")) {
+            (Some(k), _) => (k, 1),
+            (_, Some(k)) => (k, 2),
+            _ => (0, 0),
+        };
+        Ok(Journal { file, path: path.to_string(), records: 0, events: 0, broken: None, crash: plant == "crash", surface, die, die_place, die_kind })
     }
 
     /// Append one record and flush it; only then count it.
@@ -324,6 +348,18 @@ impl Journal {
                     attribution: "session.journal", context: vec![("event", V::N(k as u64))] });
                 self.broken = Some(m);
             }
+        }
+    }
+
+    /// DESIGN-EVENT-0: the records of a batch's events, each put and flushed as any record is. A batch is in a journal
+    /// whole or the journal is not a session: the loader refuses one that holds part of it. The plant names a place:
+    /// at that place the record is ADMIT-0's torn record, or its flushed record, and the process dies there.
+    fn put_batch(&mut self, first: usize, evs: &[LiveEvent]) {
+        for (i, ev) in evs.iter().enumerate() {
+            if self.die_place == i as u32 + 1 {
+                self.die = self.die_kind;
+            }
+            self.put_event(first + i, ev);
         }
     }
 }
@@ -555,6 +591,8 @@ struct SavedEvent {
     input: Option<(i64, i64, i64)>,
     // ADMIT-0: the envelope saved beside an admitted edit
     admit: Option<Admit>,
+    // DESIGN-EVENT-0: its place in a batch and the batch's count
+    batch: Option<(u32, u32)>,
 }
 
 fn read_base(v: &JsonView, level: &str, tiles: &str) -> Result<(Base, Vec<u8>, Vec<u8>), Refusal> {
@@ -658,7 +696,7 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
                 Some("its parent is not the head before the event")
             } else if a.head != heads[k + 1] {
                 Some("its head is not the head after the event")
-            } else if admitted.contains(&a.proposal.as_str()) {
+            } else if e.batch.map_or(true, |(place, _)| place == 1) && admitted.contains(&a.proposal.as_str()) {
                 Some("its proposal id was already admitted")
             } else {
                 None
@@ -666,8 +704,45 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
             if let Some(why) = bad {
                 return Err(refusal("session.load", vec![("event", V::N(k as u64))], format!("LIVESESSION-ENVELOPE: event {}: {}", k, why)));
             }
-            admitted.push(&a.proposal);
+            if e.batch.map_or(true, |(place, _)| place == 1) {
+                admitted.push(&a.proposal);
+            }
         }
+    }
+    // DESIGN-EVENT-0: a batch is whole or the session is refused — its events one after another with nothing between
+    // them, place 1 to place count in order, agreeing in everything but their place and the heads around them
+    let mut open_batch: Option<(usize, u32)> = None; // the event at place 1, and the place expected next
+    for (k, e) in events.iter().enumerate() {
+        let why = match (open_batch, e.batch) {
+            (None, None) => None,
+            (None, Some((1, _))) => None,
+            (None, Some(_)) => Some("a batch does not begin at place 1"),
+            (Some(_), None) => Some("a batch is not whole: an event that is not of it stands inside it"),
+            (Some((first, next)), Some((place, count))) => {
+                let (f, a) = (&events[first], e.admit.as_ref());
+                let (fa, fc) = (f.admit.as_ref(), f.batch.map_or(0, |b| b.1));
+                if place != next {
+                    Some("a batch's places are not in order")
+                } else if count != fc || a.zip(fa).map_or(true, |(x, y)| x.language != y.language || x.proposal != y.proposal || x.digest != y.digest
+                                                              || x.renderer != y.renderer || x.bearing != y.bearing || x.grant != y.grant) {
+                    Some("a batch's events do not agree in what the batch shares")
+                } else {
+                    None
+                }
+            }
+        };
+        if let Some(why) = why {
+            return Err(refusal("session.load", vec![("event", V::N(k as u64))], format!("LIVESESSION-ENVELOPE: event {}: {}", k, why)));
+        }
+        open_batch = match (open_batch, e.batch) {
+            (None, Some((1, count))) if count > 1 => Some((k, 2)),
+            (Some((first, next)), Some((_, count))) if next < count => Some((first, next + 1)),
+            _ => None,
+        };
+    }
+    if open_batch.is_some() {
+        return Err(refusal("session.load", vec![("event", V::N(events.len() as u64))],
+                           "LIVESESSION-ENVELOPE: a batch is not whole: the log ends inside it".to_string()));
     }
     // 2. the renderer identity
     let same = parent_renderer == renderer_id();
@@ -699,7 +774,11 @@ pub fn load(path: &str) -> Result<Loaded, Refusal> {
         } else {
             // ADMIT-0: an admitted edit replays as any edit does, and takes its envelope back with it
             if let Some(a) = &e.admit {
-                s.admit_next(a.clone());
+                match e.batch {
+                    // DESIGN-EVENT-0: an edit a batch admitted takes its envelope and its place back
+                    Some((place, count)) => s.batch_place_next(a.clone(), place, count),
+                    None => s.admit_next(a.clone()),
+                }
             }
             match (cell_of(&e.param), tile_of(&e.param)) {
                 (Some((x, z, to)), _) => match s.push_edit_cell(x, z, to) {
@@ -778,6 +857,29 @@ fn saved_event(e: &JsonView) -> Result<SavedEvent, Refusal> {
     };
     // ADMIT-0: an envelope is exactly eight text members: the language, five 64-hex values around the grant's line
     let a = e.get("admit");
+    // DESIGN-EVENT-0: an envelope of exactly ten members that names the batch language is a batch's; every other
+    // envelope is judged below as ADMIT-0 judges it, unchanged
+    if !a.is_null() && a.members() == Some(10) && a.get("language").is_str() && a.get("language").s() == crate::designevent::LANGUAGE {
+        let bad = |m: &str| refusal("session.load", vec![], format!("LIVESESSION-ENVELOPE: {}", m));
+        const KEYS: [&str; 10] = ["language", "proposal", "digest", "renderer", "bearing", "parent", "head", "grant", "place", "count"];
+        if KEYS.iter().any(|k| !a.get(k).is_str()) {
+            return Err(bad("a batch's envelope is not its ten text members"));
+        }
+        let v = |k: &str| a.get(k).s();
+        if ["proposal", "digest", "renderer", "bearing", "parent", "head"].iter().any(|k| !hex64(&v(k))) {
+            return Err(bad("a batch envelope's id, digest, identity or head is not 64 lower-case hex"));
+        }
+        if !crate::admit::grant_text(&v("grant")) {
+            return Err(bad("a batch envelope's grant is not a grant's line"));
+        }
+        let place = match (crate::designevent::count_text(&v("place")), crate::designevent::count_text(&v("count"))) {
+            (Some(p), Some(c)) if p <= c => (p, c),
+            _ => return Err(bad("a batch envelope's place and count are not decimals with 1 <= place <= count <= 4096")),
+        };
+        let admit = Admit { language: v("language"), proposal: v("proposal"), digest: v("digest"), renderer: v("renderer"), bearing: v("bearing"),
+                            parent: v("parent"), head: v("head"), grant: v("grant") };
+        return Ok(SavedEvent { tag, param, camera: e.get("camera").s(), witness: e.get("witness").s(), tick, input, admit: Some(admit), batch: Some(place) });
+    }
     let admit = if a.is_null() {
         None
     } else {
@@ -799,7 +901,7 @@ fn saved_event(e: &JsonView) -> Result<SavedEvent, Refusal> {
         Some(Admit { language: v("language"), proposal: v("proposal"), digest: v("digest"), renderer: v("renderer"), bearing: v("bearing"),
                      parent: v("parent"), head: v("head"), grant: v("grant") })
     };
-    Ok(SavedEvent { tag, param, camera: e.get("camera").s(), witness: e.get("witness").s(), tick, input, admit })
+    Ok(SavedEvent { tag, param, camera: e.get("camera").s(), witness: e.get("witness").s(), tick, input, admit, batch: None })
 }
 
 fn tile_of(spec: &str) -> Option<(u8, [u8; 3])> {
@@ -936,6 +1038,50 @@ pub fn go_admitted(l: Loaded, plant: String, surface: &'static str) -> i32 {
         }
     }
     finish(p, "admission", "{\"source\":\"none\"}")
+}
+
+/// DESIGN-EVENT-0: the run of a batch's admission. `l` is the saved session as loaded, with the batch's N edits already
+/// appended to it in memory by the batch seam (the session's own validation and replay; nothing written). The journal
+/// opens with the parent's events, takes the batch's records together, and the shared seal follows.
+pub fn seal_batch(l: Loaded, plant: String, surface: &'static str) -> i32 {
+    let parent_events = l.lineage.parent_events;
+    let p = match open(l.session, l.base, Some(l.lineage), Some((l.classification, l.parent_renderer)), plant.clone(), surface, parent_events) {
+        Ok(p) => p,
+        Err(code) => return code,
+    };
+    die(&plant, "die-opened"); // PLANT: the journal holds the parent's events and nothing else
+    p.journal.borrow_mut().put_batch(parent_events, &p.session.log()[parent_events..]);
+    finish(p, "admission", "{\"source\":\"none\"}")
+}
+
+/// DESIGN-EVENT-0: every edit of a saved session replayed by the session's own push on a fresh session over its base,
+/// and beside each the content computed from the bytes themselves, with no memo. Returns the edits replayed and how
+/// many of them differ. `plant` turns the selftest's wrong memo on after the file has loaded.
+pub fn memo_check(path: &str, plant: bool) -> Result<(u64, u64), Refusal> {
+    let l = load(path)?;
+    let mut s = l.session.rebased().map_err(|m| refusal("session.load", vec![], format!("LIVESESSION-BASE: {}", m)))?;
+    if plant {
+        crate::playback::MEMO_PLANT.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+    let (mut edits, mut differ) = (0u64, 0u64);
+    for (k, e) in l.session.log().iter().enumerate() {
+        if e.tag != b'E' {
+            continue;
+        }
+        let ok = match (cell_of(&e.param), tile_of(&e.param)) {
+            (Some((x, z, to)), _) => s.push_edit_cell(x, z, to).is_ok(),
+            (None, Some((class, rgb))) => s.push_edit_tile(class, rgb).is_ok(),
+            (None, None) => false,
+        };
+        if !ok {
+            return Err(refusal("session.replay", vec![("event", V::N(k as u64))], format!("LIVESESSION-UNSUPPORTED: event {} does not replay as an edit", k)));
+        }
+        edits += 1;
+        if s.content() != s.content_unmemoised() {
+            differ += 1;
+        }
+    }
+    Ok((edits, differ))
 }
 
 /// The run: LIVE-INPUT-0's loop, then the seal, then the saved file's verification. Returns the exit code.
@@ -1079,7 +1225,7 @@ fn finish(p: Prepared, ended: &str, focus: &str) -> i32 {
         if l.session.head() != session.head() || l.session.token() != session.token() || l.session.content() != session.content()
             || a.len() != b2.len() || a.iter().zip(b2.iter()).any(|(x, y)| x.witness != y.witness || x.param != y.param)
             || l.session.ticks() != session.ticks() || a.iter().zip(b2.iter()).any(|(x, y)| x.yaw != y.yaw || x.tick != y.tick || x.input != y.input)
-            || a.iter().zip(b2.iter()).any(|(x, y)| x.admit != y.admit) {
+            || a.iter().zip(b2.iter()).any(|(x, y)| x.admit != y.admit || x.batch != y.batch) {
             return Err("the replay of the saved file does not reach the live session's state".to_string());
         }
         Ok(())

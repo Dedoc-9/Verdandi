@@ -4,29 +4,30 @@
   a person · a script · a model
               │  a few lines of design text
               ▼
-        design.py  propose      compiles the text to the net difference from the current world
-              │    preview      the shell admits it into a scratch root; CURRENT and PROPOSED are shown
-              │    admit        the same proposal bytes go to the shell again, for the project
+        design.py  propose      compiles the text to its net difference, written as ONE batch (VRDNP2)
+              │    preview      the shell's dry run of that batch: every check, the replay, nothing written
+              │    admit        the same bytes go to the shell, bound to the preview
               ▼
-        shell admit (ADMIT-0)   the certified seam: recognizes, checks the grant, admits one ordinary edit
+        shell design            the certified seam (DESIGN-EVENT-0): recognizes the batch, checks the grant
+              │                 at every operation, appends them as ordinary edits, or refuses the whole
               ▼
-        the session             the authority; a new sealed file each time, the old one never touched
+        the session             the authority; one new sealed file for one design, the old one never touched
               ▼
         the kernel              renders it:  shell live-window --resume <session.json>
 ```
 
 This folder is **content time**. Nothing here is a row of the gate, and no gate runs when it is used. The gate
 certified the shell, the session and the kernel; this tool only drives them. It holds no authority of its own:
-every change to a world is made by `shell admit`, and what the shell refuses stays refused.
+every change to a world is made by `shell design`, and what the shell refuses stays refused.
 
 ## The five verbs
 
 | verb | what it does | what it changes |
 |---|---|---|
 | `inspect` | the project's identities, the session's head, the world from above, the tile classes, the grant, what can be proposed | nothing |
-| `propose` | reads design text, compiles it against the current world, keeps it as the pending proposal | the pending proposal |
-| `preview` | admits the pending proposal into a scratch root, shows CURRENT against PROPOSED, the changes and the readings | a scratch folder |
-| `admit` | gives the previewed proposal bytes to the shell for the project's own sessions | the project's head moves to a new session |
+| `propose` | reads design text, compiles it against the current world, writes the batch | the pending batch |
+| `preview` | asks the shell for a dry run of the batch; shows CURRENT against PROPOSED, the changes and the readings | nothing but the note of what was previewed |
+| `admit` | gives the previewed bytes to the shell, bound to the preview | the project's head moves to one new session |
 | `undo` | the project stands at the session before | the project's pointer; no file is deleted |
 
 `new` or `open` starts a project, `grant` sets what may be admitted, `reject` drops a proposal, `status` says where
@@ -64,28 +65,31 @@ Statements apply in order to a working copy. What is proposed is the **net diffe
 operation per cell or class that ends up different. At most 64 statements and 4,096 operations. `x` runs across,
 `z` runs down, both from 0.
 
-This text is the tool's own. It is not a registered language of the tree. What reaches the shell is `VRDNP1`,
-ADMIT-0's proposal language, one operation per proposal, written by this tool and by nothing else here.
+This text is the tool's own. It is not a registered language of the tree. What reaches the shell is one batch in
+`VRDNP2`, DESIGN-EVENT-0's language: a net change set in one fixed order, cells in row-major order and then the
+classes, each target once. Two texts with the same net difference compile to the same operations, and compiling a
+set that is already in order gives it back unchanged. A design that changes nothing proposes no batch: the language
+has none of no operations. The shell rewrites nothing: it recognizes the batch or refuses it.
 
 ## What is authority and what is a view
 
 | | |
 |---|---|
 | authority | the session file the shell saved and verified. Its head is the world's identity |
-| the verifier | `shell admit`: the grant, the anchor, the session's own validation of the edit |
+| the verifier | `shell design`: the batch's form, the anchor, the grant and the session's own validation at every operation |
 | the grant | the admitter's, set with `grant` and passed on the shell's command line. A design text cannot carry or widen it. With no cells granted, every cell operation is refused |
 | a view | everything this tool computes itself: the top view, the counts, what is reachable from the camera. For a reader. Where it disagrees with the shell, the shell is right |
 | a prediction | the tool refuses an opened border, a changed stair and a closed camera cell before asking the shell. `propose --no-predict` sends them to the shell, which refuses them itself |
-| a preview | state in a scratch folder. Not authority: the project's sessions and its head are as they were |
+| a preview | the shell's dry run: the same checks and the same replay as the admission, with nothing written. It names the head the batch would give. Not authority: no session exists for it |
+| the binding | `admit` hands the shell the previewed digest and head. The shell refuses unless the bytes have that digest and reach that head |
 
 ## Limits
 
-- **One operation per run of the shell.** ADMIT-0 admits one operation per proposal and one proposal per run, and
-  verifies the whole session each time. A design of 60 cells took about 20 s to preview and 20 s to admit on the
-  build container, one run, and a single admission cost about fifteen times more on the 60-edit session than on the
-  empty one. A proposal that carries a bounded list of operations is a change to the certified program, and so a
-  rung with its own registration: DESIGN-EVENT-0, registered (`ae7cbb36`) and not built. When it is, a proposal
-  here becomes one batch, a preview a dry run of its admission, and an admit that same batch bound to the preview.
+- **An admission still replays the whole session.** One design is one run of the shell, and that run loads and
+  verifies the session it is admitted to, then verifies the file it wrote. The cost of an admission grows with the
+  session's history. Nothing skips replay.
+- **The compiler is not certified.** The shell holds the batch's form and admits what the grant and the session
+  allow. Whether the batch is the design you meant is this tool's arithmetic, and the preview is how you check it.
 - **Cells and classes, nothing above them.** A room here is a statement that expands to cells. Once admitted there
   is no room, only cells. There are no objects, relations or constraints in the world.
 - **Readings, not constraints.** "Reachable from the camera" is a flood over floor cells, computed by this tool.
@@ -94,5 +98,5 @@ ADMIT-0's proposal language, one operation per proposal, written by this tool an
 - **A starting session made by `new` comes from the live editor's mock** (`shell live-selftest`), with no key
   pressed. `open --session` starts from one saved in the window.
 - **`undo` moves the project's pointer.** The session stepped back from stays on disk, sealed and unchanged.
-- **Its checks are its own.** `python design/test_design.py` drives the tool against a real shell: ten checks, each
-  with its plant. It is not a row of the gate.
+- **Its checks are its own.** `python design/test_design.py` drives the tool against a real shell: twelve checks,
+  each with its plant. It is not a row of the gate.

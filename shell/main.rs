@@ -102,6 +102,9 @@ mod tickrun;
 mod mouselook;
 #[path = "admit.rs"]
 mod admit;
+// DESIGN-EVENT-0: a design admitted as one batch, its dry run and its binding
+#[path = "designevent.rs"]
+mod designevent;
 // READER-COURT-0: the saved form's one reader, shared by path with the workshop, and its court command
 #[path = "../kernel/savedform.rs"]
 mod savedform;
@@ -995,6 +998,59 @@ fn main() {
             // with one splice applied, per line of that file's script; `form-spell --in F --out OUT` spells each
             // text of F. A verdict is data: the command ends 0 whatever the verdicts were.
             exit(readercourt::run(&args))
+        }
+        "design" | "design-selftest" => {
+            // DESIGN-EVENT-0: a batch admitted by one admission, windowless. `design --session S --proposal P [--allow
+            // ...] [--cells ...] [--classes ...] [--dry-run] [--previewed DIGEST,HEAD]` recognizes P (the batch
+            // language) or refuses it, checks it against this shell, S and the grant, and admits its N operations as N
+            // ordinary edit events sealed into one new session; S is never modified. `--dry-run` runs the same checks
+            // and the same replay in memory, prints the binding and writes nothing; `--previewed` refuses unless the
+            // bytes have that digest and the batch reaches that head. `design-selftest` is the same run with a plant
+            // naming a death point (die-received, die-recognized, die-verified, die-opened, die-torn-K,
+            // die-appended-K, die-written, die-replaced) or `memo`; or the court in process over every single-byte
+            // mutant of a batch; or the memo against the computation with no memo, over a saved session.
+            let selftest = args[1] == "design-selftest";
+            let mut a: Vec<String> = args[2..].to_vec();
+            let dry_run = match a.iter().position(|x| x == "--dry-run") {
+                Some(i) => {
+                    a.remove(i);
+                    true
+                }
+                None => false,
+            };
+            let known: &[&str] = if selftest {
+                &["--session", "--proposal", "--allow", "--cells", "--classes", "--previewed", "--plant", "--neighbourhood", "--memo"]
+            } else {
+                &["--session", "--proposal", "--allow", "--cells", "--classes", "--previewed"]
+            };
+            if a.len() % 2 != 0 || a.chunks(2).any(|c| !known.contains(&c[0].as_str()))
+                || known.iter().any(|k| a.chunks(2).filter(|c| c[0] == *k).count() > 1) {
+                refuse("USAGE", &format!("{} takes each of {} at most once, each with a value, and --dry-run at most once", args[1], known.join(", ")));
+            }
+            let opt = |flag: &str| -> Option<String> { a.chunks(2).find(|c| c[0] == flag).map(|c| c[1].clone()) };
+            if let Some(p) = opt("--neighbourhood") {
+                println!("{}", designevent::neighbourhood(&read(&p)));
+                exit(0)
+            }
+            let plant = opt("--plant").unwrap_or_default();
+            if let Some(s) = opt("--memo") {
+                exit(designevent::memo(&s, plant == "memo"))
+            }
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            let proposal = opt("--proposal").unwrap_or_else(|| refuse("USAGE", "needs --proposal"));
+            let grant = admit::grant_of(opt("--allow").as_deref(), opt("--cells").as_deref(), opt("--classes").as_deref())
+                .unwrap_or_else(|m| refuse("USAGE", &m));
+            let previewed = opt("--previewed").map(|v| {
+                let mut it = v.split(',');
+                match (it.next(), it.next(), it.next()) {
+                    (Some(d), Some(h), None) if livesession::hex64(d) && livesession::hex64(h) => (d.to_string(), h.to_string()),
+                    _ => refuse("USAGE", "--previewed is DIGEST,HEAD: two values of 64 characters of 0-9a-f"),
+                }
+            });
+            if dry_run && previewed.is_some() {
+                refuse("USAGE", "--dry-run is the preview; --previewed belongs to the admission that follows it");
+            }
+            exit(designevent::run(&session, &proposal, &grant, &designevent::Mode { dry_run, previewed, plant }))
         }
         "admit" | "admit-selftest" | "admit-anchor" => {
             // ADMIT-0: the admission seam, windowless. `admit --session S --proposal P [--allow open,close,paint]
