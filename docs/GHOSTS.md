@@ -545,7 +545,7 @@ and changes the sealers.
 
 `design/` is content time. What it is not:
 
-- **Not on the gate.** Its ten checks are its own. They run it against a real shell and plant what they claim to
+- **Not on the gate.** Its twelve checks are its own. They run it against a real shell and plant what they claim to
   catch, and no row holds them. A defect in the tool can show a wrong top view or propose the wrong cells; it
   cannot admit what the shell refuses, because the tool has no way to change a session but the shell.
 - **Its view is a second reading of the world.** It replays a session's edits over the base level itself to draw
@@ -567,9 +567,10 @@ what it shows.
 
 ---
 
-## G28 — the batch is built; what it leaves open · ESTABLISHED (the six rows, on the gate here); limits stated; NOT_MEASURED on the host
+## G28 — the batch is built; what it leaves open · ESTABLISHED (the six rows, on the gate here); MEASURED (host: the gate, 242 of 242, one run); limits stated; its cost on the host NOT_MEASURED
 
-DESIGN-EVENT-0 is built. A design is one batch, admitted whole or refused whole. What that does not give:
+DESIGN-EVENT-0 is built, and the gate passes with it here and on the host. A design is one batch, admitted whole or
+refused whole. What that does not give:
 
 - **The compiler is not certified.** The seam holds the normal form: one byte sequence for each change set. What
   turns a design into that change set is content time. A compiler that nets wrongly produces a batch that means
@@ -578,7 +579,16 @@ DESIGN-EVENT-0 is built. A design is one batch, admitted whole or refused whole.
   the file it wrote. The memo removes a megabyte of hashing from each cell edit and nothing else. Verifying only
   the change is deferred by name: a seal is a hash, and no earlier verification is something a later run may rely on.
 - **A batch's records are flushed one by one.** An earlier fence holds the one path a journal record is written
-  by. The build went through it. What N flushes cost on the host is not measured.
+  by. The build went through it. What N flushes cost on the host is not measured. The owner's word: *The Windows
+  journal-flush cost remains an explicit performance unknown.*
+- **The times are development measurements.** 0.10 s and 0.13 s are the build container's, one sitting. By the
+  owner's word they are not made a row.
+- **The host's run is one run, and the compact one.** 242 of 242, once. The rows' counts were not printed there.
+- **No verifier rebuilds a proposal.** Deferred by the owner's ruling, outside this rung, in his words: *The
+  verifier does not reconstruct VRDNP2 proposal bytes from admitted events or independently recompute the proposal
+  digest. Doing so would introduce a second VRDNP2 writer into the verification path and is outside the present
+  admission boundary. Reopen only if durable independent provenance of the original proposal bytes becomes a
+  requirement.*
 - **The shell's read-back is not a check of the memo.** It replays the file it wrote with the same memo. A shell
   planted with a wrong one calls its own file verified, and the court shows it. The workshop, which keeps no memo,
   is the check, and the workshop runs when a session is sealed, not when it is designed.
@@ -608,8 +618,8 @@ DESIGN-EVENT-0 is built. A design is one batch, admitted whole or refused whole.
 
 **Exorcism.** For the compiler: use, and a design representation with its own court (DESIGN-IR/DIFF). For the cost:
 the host's own time for a design, which the owner's run will give, and, if replay ever has to be skipped, a rung
-that gives a session a trust root. For the memo outside the court: the workshop at sealing, as now. For the last: a
-second editor.
+that gives a session a trust root. For the memo outside the court: the workshop at sealing, as now. For the
+proposal's bytes: nothing, unless the requirement the ruling names arrives. For the last: a second editor.
 
 ---
 

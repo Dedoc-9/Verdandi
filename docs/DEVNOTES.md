@@ -470,7 +470,16 @@ What stands against the tree, as reviewed:
 36. **Let a script count.** A draft said nine sites were added to the sealer. The script that reads the file found
    seven and stopped.
 
-37. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+37. **Keep a plant's whole chain, not its verdict.** "The memo plant fails" was true and said little. The owner's
+   account has five steps: a wrong memo; the shell's own read-back fooled by it; the comparison with no memo
+   catching it; the workshop catching it; an honest shell catching it. The second step is why the third exists.
+   Write the step that shows a check is needed, not only the check.
+
+38. **A deferral is recorded in the words it was ruled in.** An idea the owner defers goes into the record as his
+   sentence, with the condition that reopens it, and under no rung. Paraphrase would make it a claim; putting it
+   under a rung would make it a debt.
+
+39. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
@@ -484,7 +493,10 @@ What stands against the tree, as reviewed:
 - A refusal is held to its code, not its cause (G24): the court is built and passes on both machines. 63
   lines the programs print about themselves are trusted and not opened (G25).
 - The mint register's counts are a measurement, and 105 of its 164 sites were never reached (G26).
-- The design surface is content time: uncertified by design, and slow until admission takes a list (G27).
+- The design surface is content time: uncertified by design. It sends one batch now, and its time on the host is
+  not measured (G27).
+- The batch is built and passes on both machines. What it leaves to the compiler, to the workshop and to the host,
+  and what no verifier rebuilds, is stated (G28).
 
 ## The one-line retrospective, again
 

@@ -35,15 +35,19 @@ And everything the tree saves and reads back is now one bounded language with on
 
 And every refusal the gate requires is now held to a registered reason (`REASON-COURT-0`, `337ab021`, built: six
 rows), and every refusal raised inside the gate's own process is claimed by a row, a class, a site and a count
-(`MINT-WATCH-0`, `cd1472ec`, built: four rows). The gate is 236 rows and passes here and on the host.
+(`MINT-WATCH-0`, `cd1472ec`, built: four rows). The gate was then 236 rows.
 
 With that the owner ruled the engineering seam frozen (2026-10-06): no further gate unless a real invariant is
 found, and the work is the design environment. Its first piece is built off the gate: `design/`, five verbs over
 the certified admission seam.
 
-What is *not* yet done: the design-event stream and a model at the seam (declared, not registered); any measurement
-of the live loop's timing; richer edits than a cell and a tile class; and semantics the frozen oracle never
-certified.
+One invariant was found there, by measuring, and it is built: a design is admitted as one batch or refused whole
+(`DESIGN-EVENT-0`, `ae7cbb36`, built: six rows). The gate is 242 rows and passes here and on the host. By the
+owner's word with that push, no theorem is added at once.
+
+What is *not* yet done: a design representation above operations and a model at the seam (declared, not
+registered); any measurement of the live loop's timing; richer edits than a cell and a tile class; and semantics
+the frozen oracle never certified.
 
 ---
 
@@ -133,9 +137,9 @@ MINT-WATCH-0     the owner's ruling (2026-10-05): a separate slice, registered n
       ↓
 the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen; a new gate only for a new engineering invariant; the work is the design environment. Built off the gate, content time: design/ — inspect, propose, preview, admit, undo over the certified seam, driven the same way by a person, a script or a model
       ↓
-DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; the gate passes here; not yet run on the host
+DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242, pushed
       ↓
-DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. The design representation follows the event and is not promoted ahead of it: the question he had reserved is ruled
+DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered, and by his word with the build's push none is added at once. The design representation follows the event and is not promoted ahead of it: the question he had reserved is ruled
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -1843,7 +1847,7 @@ the whole session each time, so a design costs more than in proportion to its si
 five verbs over the certified seam. OBSERVED (one run): the cost above. **does_not_show.** That a model writes
 useful designs in this text; that the loop is fast enough to design in; anything about the window.
 
-### DESIGN-EVENT-0 — a design as one transition · **built** (`ae7cbb36`): six rows, 242 in the gate; the gate passes here; not yet run on the host
+### DESIGN-EVENT-0 — a design as one transition · **built** (`ae7cbb36`): six rows, 242 in the gate; the gate passes here and on the host; pushed
 The adjustment above ended with one engineering invariant in sight, found by measuring: a design of 60 operations
 cost about 40 s through a seam that admits one operation per run. This section records what happened next: the
 host ran the tool, the owner locked the rung, a court settled its shape, and it was registered. The rung's own
@@ -1946,14 +1950,38 @@ plant depends on what it is planted into.
 The design tool now sends one batch for one design. The owner's 60 operations, observed on the build container:
 preview 0.10 s and admit 0.13 s, where each had taken about 20 s. That is one machine and no row holds it.
 
+**Landed and pushed (2026-10-06).** The owner applied the two amendments, the build and its record. The host's gate
+read 242 of 242, rowset `aa94c886190510c7`, and he pushed (`b975fc5..7e1d997`). The output holds one run. His word:
+*push the build. Then don't immediately add another theorem. Let the full ×2 gate judge DESIGN-EVENT-0 as a complete
+engineering rung.* So the rung stands as a whole and nothing is stacked on it yet.
+
+Three things he fixed with it.
+
+The times stay what they are. *The one thing I would not do is turn the 0.10/0.13 s container timings into a row.
+Keep them as development measurements. The Windows journal-flush cost remains an explicit performance unknown.*
+
+The memo's account keeps its whole chain, as he drew it: a wrong memo; the shell's read-back, which can be fooled;
+the independent comparison, which catches it; the workshop, which catches it; an honest shell, which catches it.
+*It establishes why the memo comparison exists at all.* The second step holds only on a parent whose history has no
+cell edit after a paint, and the court plants it there on purpose.
+
+And one idea is deferred by name. It is not part of DESIGN-EVENT-0, and it is recorded in his words alone:
+
+> **DEFER — batch-proposal independent reconstruction.**
+> The verifier does not reconstruct VRDNP2 proposal bytes from admitted events or independently recompute the
+> proposal digest. Doing so would introduce a second VRDNP2 writer into the verification path and is outside the
+> present admission boundary. Reopen only if durable independent provenance of the original proposal bytes becomes
+> a requirement.
+
 **What stays declared.** DESIGN-IR/DIFF, LIVE-AI-EDIT-0 and a graphical editor, in that order. The fifteen pivots.
 That every editor speaks the same event: one consumer exists, the design tool.
 
 **Grade.** DECLARED: the lock, the court and the registration. ESTABLISHED (gate, the build container): the six
-rows. MEASURED (host): the registration's gate, 236 of 236, pushed. OBSERVED (the owner's host, one run, off the
-gate): the design tool's loop over ADMIT-0 and the two heads. OBSERVED (the build container): the times.
-**does_not_show.** The build's gate on the host, what an admission costs there, or that a model writes a useful
-design.
+rows. MEASURED (host): the registration's gate, 236 of 236, pushed; the built gate, 242 of 242, one run, pushed.
+OBSERVED (the owner's host, one run, off the gate): the design tool's loop over ADMIT-0 and the two heads. OBSERVED
+(the build container): the times.
+**does_not_show.** What an admission costs on the host, that the design tool has sent a batch there, or that a
+model writes a useful design.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

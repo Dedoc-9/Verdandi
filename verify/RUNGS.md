@@ -5378,7 +5378,7 @@ watch's: it is not heard by it.
 inventory does not hold, or a site it holds that the tree does not. A gate pass, in a configuration named here,
 whose mints differ from the measured layer. An entry of the register that was taken from the watch's own run.
 
-## DESIGN-EVENT-0 — a canonical batch refused whole, or admitted by one admission as N ordinary edits equal to the same operations one at a time (preregistered `ae7cbb36` and pushed; built: six rows, 242 in the gate; the gate passes here; not yet run on the host)
+## DESIGN-EVENT-0 — a canonical batch refused whole, or admitted by one admission as N ordinary edits equal to the same operations one at a time (preregistered `ae7cbb36` and pushed; built: six rows, 242 in the gate; the gate passes here and on the host; pushed)
 
 ```
   a design: text · a mouse · a recipe · a model             content time, not certified
@@ -5667,18 +5667,86 @@ proposal left pending by it is refused as stale and proposed again.
 
 No time is a registered quantity and none is held by a row.
 
-**Not yet shown.** The gate with this build on the owner's host. The 60 operations admitted there as one batch. What
-an admission costs there: a batch's records are flushed one by one, and Windows flushes cost what they cost.
+**On the host (DANIELDILLBERG, 2026-10-06): landed and pushed.** 0130, 0131 and 0132 were applied and the gate read
+`GATE PASSED`, rowset `aa94c886190510c7`, 242 rows / 0 fail / 0 skipped, the six rows of this rung among them. The
+owner pushed. Git's own output: `b975fc5..7e1d997  main -> main`. That range carries the two amendments, the build
+and its record. The output he gave holds one run of the gate.
 
-**Grade.** DECLARED: the registration, the court's rulings, the two amendments. ESTABLISHED (gate, here): the six
-rows, 242 in the gate, three passes identical, one of them with the host's records present; the same on Python
-3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one run, off the gate):
-the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate, 236 of 236, pushed.
+| | |
+|---|---|
+| the amendments | the rows of REASON-COURT-0 and MINT-WATCH-0 passed under the amended pins: the host's files are the ones the two entries name by hash, and no row before the watches ended or minted otherwise than registered |
+| the registered head | `designevent-admit` passed: the host's own shell admitted the 60 operations as one batch, in the row's root, and reached `c18a71f6af8d…1036`, the head registered before the seam existed |
+| the deaths | `designevent-crash` passed: the twelve deaths, on win32 |
+| the memo | `designevent-replay` passed: the memo beside the computation that keeps none, and the wrong memo found, on the host's build |
+| the fence | `designevent-fence` passed: every child these rows started there that did not end 0 carried a registered code in a code head |
+| what was not printed | the run was the compact one. The rows' texts, which carry the counts, are printed only under `--verbose` |
+
+None of the build's readings was struck. No finding, so no amendment.
+
+**The owner's word with the push.** *My word: push the build. Then don't immediately add another theorem. Let the
+full ×2 gate judge DESIGN-EVENT-0 as a complete engineering rung.* Here the gate ran three passes on the head, their
+logs identical. The host's output holds one. No rung is registered after this one and none is proposed here.
+
+He asked that the memo's account keep its whole chain, and drew it:
+
+```
+  wrong memo
+     ↓
+  shell read-back can be fooled
+     ↓
+  independent comparison catches it
+     ↓
+  workshop catches it
+     ↓
+  honest shell catches it
+```
+
+*That is materially stronger than simply saying "the memo plant fails." It establishes why the memo comparison
+exists at all.* Each step is something `designevent-replay` does:
+
+| the step | in the row |
+|---|---|
+| a wrong memo | the plant: a cell edit reuses the tiles' digest from before a paint |
+| the shell's read-back can be fooled | the shell carrying the plant closes one cell on the design's child, saves the file and reads it back as verified. This is so only where the parent's own history has no cell edit after a paint. On the eight's child the planted shell's read-back refuses, and no row holds that case |
+| the independent comparison catches it | the honest child of the same operations, replayed under the plant beside the computation that keeps no memo, differs |
+| the workshop catches it | it keeps no memo and refuses the file: `SESSIONWALK-CHAIN-BROKEN` |
+| an honest shell catches it | a shell without the plant refuses the same file: `SHELL-LIVESESSION-TAMPERED` |
+
+Two more points of his, both about what is not claimed. On the times: *The one thing I would not do is turn the
+0.10/0.13 s container timings into a row. Keep them as development measurements. The Windows journal-flush cost
+remains an explicit performance unknown.* They stay as the table above gives them: OBSERVED, one machine, no row. On
+the amendments, their order confirmed: the build's changes first, then the exact files and hashes, then the two
+entries written, then their commit placed before the build's. *Otherwise the amendment would describe a source
+state that doesn't yet exist.*
+
+**Deferred by the owner's ruling (2026-10-06), and not part of DESIGN-EVENT-0.** Recorded in his words, with nothing
+added to them:
+
+> **DEFER — batch-proposal independent reconstruction.**
+> The verifier does not reconstruct VRDNP2 proposal bytes from admitted events or independently recompute the
+> proposal digest. Doing so would introduce a second VRDNP2 writer into the verification path and is outside the
+> present admission boundary. Reopen only if durable independent provenance of the original proposal bytes becomes
+> a requirement.
+
+His reason for recording it so: *That preserves the clean boundary and prevents this rung from quietly growing a
+second language implementation.* It is not registered, it is not a row, and it is not a debt of this rung.
+
+**Not yet shown.** What an admission costs on the host: a batch's records are flushed one by one, and what a flush
+costs on Windows is not measured. The design tool sending a batch on the host, to a session sealed there: the gate's
+row admitted the 60 in its own root; the tool has not been shown doing it.
+
+**Grade.** DECLARED: the registration, the court's rulings, the two amendments, the ruling that defers. ESTABLISHED
+(gate, here): the six rows, 242 in the gate, three passes identical, one of them with the host's records present;
+the same on Python 3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one
+run, off the gate): the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate,
+236 of 236, pushed; the built gate, 242 of 242, one run, pushed.
 
 **does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
 builds of the shell agree. That the memo is right on a session the court does not replay: the workshop is the
 standing check, and it is run when a session is sealed, not when it is designed. What an admission costs on the
-host. That a model can write a design worth admitting. Anything about a second editor.
+host. That a second run of the host's gate would read the same: one is recorded. That a proposal's bytes can be
+rebuilt from its admitted events, or its digest recomputed by a verifier: none does either, by the ruling above.
+That a model can write a design worth admitting. Anything about a second editor.
 
 **Falsifier.** A red row among the six on a later run of either machine with the tree unchanged. A batch whose child
 differs in head, content, spec or witness from the same operations admitted one at a time. A file that loads
