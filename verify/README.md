@@ -13,7 +13,7 @@ The gate is the program's only judge, so its design is about what it may and may
 ```text
     verify.py     row(name, fn) in a fixed order ─► PASS, or Red with a reason ─► GATE PASSED | GATE FAILED
                   RECONCILE  rowset <sha256 of the row names>  <rows> / <fail> / <skipped>
-                  236 rows today, rowset cb2f68e75e338768
+                  242 rows today, rowset aa94c886190510c7
 
     a row         builds what it tests from source · runs it · compares bytes · then PLANTS a defect and
                   requires the refusal. A row with no plant that bites is not finished.
@@ -21,7 +21,7 @@ The gate is the program's only judge, so its design is about what it may and may
     landing       two consecutive passes, their logs byte-identical, GATE PASSED. A third pass with the host's
                   records present, when a rung reads them.
 
-    preregister.json   41 entries: hypothesis · success · failure · limits · instrument · chain hash.
+    preregister.json   43 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
                        amendment entry with its own hash.
 
@@ -84,7 +84,7 @@ row that would redden if the claim were false.
 | `drift.py` | DRIFT-0: the locked court repeated, each run sealed, a descriptive panel and no verdict |
 | `refusallog.py`, `runledger.py` | readers of the shell's two unsealed logs: they validate, count and join, and never write |
 | `liveloop.py` | LIVE-LOOP-0's live walk, counts only |
-| `livesession.py` | a saved live session made a committed record: the seal, the base files, the fold, the lineage, the renderer identity, the workshop's own `sessionwalk verify`, and (ADMIT-0) each admitted edit's envelope |
+| `livesession.py` | a saved live session made a committed record: the seal, the base files, the fold, the lineage, the renderer identity, the workshop's own `sessionwalk verify`, (ADMIT-0) each admitted edit's envelope, and (DESIGN-EVENT-0) each batch whole, in order and agreeing, counted in the record |
 | `seal_walk.py`, `seal_session.py`, `seal_sessionwalk.py` | the committed reference walk, session and session-walk under `workshop/attest/` |
 
 ## Dev notes
@@ -93,7 +93,8 @@ row that would redden if the claim were false.
   byte-identical, deliver as a patch, run on the host, seal, document. The registration is pushed before the build
   exists, so the method cannot be fitted to the result.
 - **Mutation testing is off the gate and decides whether a row is trusted.** Defects are planted in the program one
-  at a time and every one must turn some row red. The counts are in the ledger (ADMIT-0: 39). A mutant that
+  at a time and every one must turn some row red. The counts are in the ledger (ADMIT-0: 39; DESIGN-EVENT-0: 49, one
+  of them equivalent). A mutant that
   survives is a missing case, and the case is added before the rung is delivered.
 - **Rows assert the apparatus.** A row checks that the plant bites and the bytes agree. It never asserts a hoped
   result, and no row reads a wall-clock number.

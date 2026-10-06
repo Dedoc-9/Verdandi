@@ -5378,7 +5378,7 @@ watch's: it is not heard by it.
 inventory does not hold, or a site it holds that the tree does not. A gate pass, in a configuration named here,
 whose mints differ from the measured layer. An entry of the register that was taken from the watch's own run.
 
-## DESIGN-EVENT-0 — a canonical batch refused whole, or admitted by one admission as N ordinary edits equal to the same operations one at a time (preregistered `ae7cbb36`; not built)
+## DESIGN-EVENT-0 — a canonical batch refused whole, or admitted by one admission as N ordinary edits equal to the same operations one at a time (preregistered `ae7cbb36` and pushed; built: six rows, 242 in the gate; the gate passes here; not yet run on the host)
 
 ```
   a design: text · a mouse · a recipe · a model             content time, not certified
@@ -5573,22 +5573,117 @@ of this rung requires a refusal without naming its code.
 design representation above operations, a design diff, constraints or readings in the shell (DESIGN-IR/DIFF, the
 rung after this one). A model, a live loop, a window.
 
-**Not built.** One file changed: `verify/preregister.json`, the ledger's 41st entry. The gate is the 236 rows it
-was. The build follows on the owner's word, after this registration is pushed.
+**The registration pushed from the host (DANIELDILLBERG, 2026-10-06).** 0128 and 0129 were applied, the gate read
+`GATE PASSED`, rowset `cb2f68e75e338768`, 236 rows / 0 fail / 0 skipped, and the owner pushed. Git's own output:
+`a1c0a65..b975fc5  main -> main`. That range carries MINT-WATCH-0's build, its landing, the design tool, and this
+rung's registration.
 
-**Grade.** DECLARED: the registration and the court's rulings. OBSERVED (one run, the build container, before the
-build): the times above, ADMIT-0's and the prototype's. OBSERVED (the owner's host, one run, off the gate): the
-design tool's loop over ADMIT-0, and the two heads.
+**The owner's lock with the push.** *LOCK / PUSH registration.* He named two things to hold in the build, neither
+changing the registered claim, and ruled on a third.
 
-**does_not_show.** Anything built: a prototype outside the tree is not a build, and no row holds any of it. That a
-compiler nets a design correctly: that is content time and is not certified. That two builds of the shell agree.
-What an admission will cost on the host: the prototype's times are one run on another machine, and the cost of an
-admission will still grow with the session. That a model can write a design worth admitting.
+| his point | what the build does with it |
+|---|---|
+| the 2,120 and the 2,121 are both true: 2,121 is the bound the geometry gives, 2,120 the largest batch the court's level admits. He asked that the tests show 2,120 admitted, 2,121 refused by the authority at the first operation that cannot be made, 4,096 recognized and refused by the authority, 4,097 refused for its range | all four are in the rows. The 2,121 was not in the registered court and is added at his word: the largest batch and one operation more, the camera's cell, which is open already. Refused `ADMIT-AUTHORITY` at that operation, line 1,088, nothing left |
+| the memo is the dangerous part: *memoized replay, saved file, memoized readback, "verified"* is a circle, and the court needs the memo and the computation with no memo side by side | `designevent-replay` holds exactly that, and the plant shows the circle: a shell carrying a wrong memo reads its own file back as verified |
+| the order of the build: the two amendments, the recognizer and writer, the admission with its dry run and binding, the memo and its comparison, the whole-batch rule in the loader and the workshop, the six rows, the gate, the gate twice more, the registered head | followed, with one thing said plainly: the amendments name the built files by hash, so their text was written last and their commit placed first |
 
-**Falsifier (once built).** A batch whose child differs in head, content, spec or witness from the same operations
-admitted one at a time. A file that loads standing inside a batch. A refused batch that leaves anything. A dry run
-that writes. An admission bound to a preview that reaches another head. The 60 operations as one batch reaching a
-head other than the registered one.
+**Built.** One new file in the shell and changes to four programs, the sealer, the gate and the design tool.
+
+| file | what it holds now |
+|---|---|
+| `shell/designevent.rs` (new) | the one reader of a batch's bytes; the writer; the run with its checks in the registered order; the dry run; the binding; the court in process |
+| `shell/playback.rs` | the place and count beside an admitted event; the memo: two kept digests, each recomputed by the edit that changes its bytes |
+| `shell/livesession.rs` | the envelope's two more members in the saved item; the loader's rule that a batch is whole; the batch's run; the memo's comparison |
+| `shell/main.rs` | `shell design` and `shell design-selftest` |
+| `workshop/sessionwalk.rs` | the same whole-batch rule, over a replay that keeps no memo |
+| `verify/livesession.py` | the same rule; the record cites this entry and counts batches and their events |
+| `verify/verify.py` | the gate's own recognizer and writer of the language; six rows; two fences re-pinned; the two amendments' pins |
+| `design/` | a proposal is one batch, a preview the dry run, an admit bound to it. Content time, not a row |
+
+**The six rows, as built.** 236 rows become 242; rowset `aa94c886190510c7`.
+
+| row | what it found |
+|---|---|
+| `designevent-preregistered` | the entry at its hash, the language's bounds, the registered head. The two amendment entries, unedited, each citing the entry it amends and this one, against the gate's pins. PLANT: a mint at an added site, in a row the watch hears, is refused by the watch's own check |
+| `designevent-language` | each of the 348 proper prefixes of a batch of three is `ADMIT-PARSE` at the line the gate's own recognizer names; 42 named cases end in their registered code at their line; of 562,432 single-byte mutants of three batches every one is refused or emitted byte for byte, and the gate's own recognizer agrees on every one; the oracle's writer gives a batch's own bytes from its operations reversed, rotated and shuffled |
+| `designevent-admit` | five batches (three of one operation, the eight, the 60) each give the child of the same operations admitted one at a time: head, content, events. The 60 reach `c18a71f6af8d…1036` from `73571153c2fc…391c`. Sixteen twins of the eight are refused at their places. 2,120 operations are admitted; 2,121 and 4,096 are refused. Each of the court's 30 refusals is given by the dry run of the same bytes with the same code, line and words. The binding holds |
+| `designevent-crash` | twelve deaths of the eight, as the table above: nothing; the parent's head; part of a batch, refused; the child's head with eight envelopes |
+| `designevent-replay` | the workshop and the sealer verify six children and count their batches; the largest batch's head is the one the gate's own fold reaches, edit by edit; 28 forged files, each wrong in one respect, are refused for the envelope by the shell's loader, the workshop and the sealer; over 2,208 edits the memo and the computation with no memo give the same content; the wrong memo is found |
+| `designevent-fence` | by source: one reader, no second fold, the dry run inside the run, the batch reached by `shell design` alone, each digest assigned where its bytes are edited. By what was heard: of 528 children these rows started that did not end 0, every one carries a registered code in a code head |
+
+**The two amendments, registered with the build.** `REASON-COURT-0a` (`591b8d0b`) names five pins moved and one
+file added. `MINT-WATCH-0a` (`4ad67feb`) names one pinned file of the mint register and seven raise sites added to
+it. Both were written after the build was finished, because they name its files by hash, and both say so. Their
+commit is the one before the build's.
+
+| | REASON-COURT-0a | MINT-WATCH-0a |
+|---|---|---|
+| what moved | `shell/livesession.rs`, `shell/main.rs`, `shell/playback.rs`, `workshop/sessionwalk.rs`, `verify/livesession.py`; `shell/designevent.rs` added | `verify/livesession.py` |
+| what is added | nothing to the register | seven sites, in `batch_place` and `check_batches`, registered as sites no row before the watch reaches |
+| what stands | `verify/reasons.json`, byte for byte; its 165 statements, 83 codes, 1,103 endings; the six rows' text | `verify/mints.json`, byte for byte; its 164 sites, 70 entries, 142,082 mints; the four rows' text |
+| how the gate holds it | the fence's pins carry the new hashes | the reading of today's inventory sets the seven aside only for exactly the amended file |
+| on this build | every row before the watch ends as registered | every row before the watch mints as registered; ADMIT-0's plant naming `VRDNP2` is refused at the site it was |
+
+**The two fences re-pinned.** `liveinput-fence` and `liveauthor-fence` now hold the memo's statements in the two
+edit pushes: apply, the digest of the bytes the edit changed, the hash of the two digests, fold. What they held
+before, that the content is the reference replay's own, is the comparison in `designevent-replay` and the
+workshop's replay. `designevent-fence` holds that each digest is assigned where its bytes are edited and nowhere
+else.
+
+**What the build found.**
+
+| found | what was done |
+|---|---|
+| the wrong memo makes the shell read its own file back as verified only where the parent's own history has no cell edit after a paint. Elsewhere the read-back replays that history under the same plant, reaches different witnesses, and refuses | the court plants it on the design's child, which is cells and then a paint. The registered sentence holds there. On the eight's child, whose parent begins with a paint, the planted shell's own read-back refuses its file: recorded, not held by a row |
+| the court as first written left out a registered case: a key's edit standing between two places of a batch. An unenveloped event inside a batch was being refused by its neighbours' places, never by its own rule. A mutant that removed that rule from the workshop passed every row | the case is built: a session of two batches of four with a key's edit between them, relabelled as one batch of eight and resealed, chain untouched. All three refuse it, and the mutant is caught |
+| the registered court asks that every refusal of the admission court come from the dry run with the same code and line. The first rows checked five | every one of the 30 goes through both |
+| the loader's check that a place is not above its count never decides: a batch that is whole and in order cannot hold such a place | kept, as the envelope's form. Its mutant is equivalent and is named below |
+| seven raise sites were added to the sealer, not nine: a miscount in a draft of the amendment, caught by the script that reads the file |  the amendment says seven and names each |
+
+**Mutation.** 49 changes to the built programs, each run against the five court rows.
+
+| | |
+|---|---|
+| caught | 48 |
+| equivalent | 1: the loader reads a place above its count. The whole-batch rule refuses the same files, by another sentence |
+| caught only after a case was added | 1 of the 48: the workshop taking an unenveloped event inside a batch. The missing case was the registered one above |
+| where they were planted | the recognizer (9), the admission (14), the session and its memo (5), the loader (10), the workshop (4), the sealer (6), the command line (1) |
+
+**The design tool, on the build.** `propose` writes one batch; `preview` asks the shell for a dry run and shows what
+it would give; `admit` hands the shell the previewed digest and head, and the shell refuses bytes that are not the
+previewed ones. Two texts with one net difference compile to the same bytes. The admitted bytes are kept in the
+project, named by the head they gave. Its twelve checks pass. A project made by the earlier tool opens as it is; a
+proposal left pending by it is refused as stale and proposed again.
+
+**Observed, the build container, one sitting, best of five.** The owner's design of 60 operations through the tool:
+
+| | through ADMIT-0 (0127) | through the batch |
+|---|---|---|
+| propose | — | 0.06 s |
+| preview | about 20 s | 0.10 s |
+| admit | about 20 s | 0.13 s |
+| a session of 60 edits, loaded and verified by the shell | 0.26 s | 0.04 s |
+| the same session verified by the workshop, which keeps no memo | 0.33 s | 0.35 s |
+
+No time is a registered quantity and none is held by a row.
+
+**Not yet shown.** The gate with this build on the owner's host. The 60 operations admitted there as one batch. What
+an admission costs there: a batch's records are flushed one by one, and Windows flushes cost what they cost.
+
+**Grade.** DECLARED: the registration, the court's rulings, the two amendments. ESTABLISHED (gate, here): the six
+rows, 242 in the gate, three passes identical, one of them with the host's records present; the same on Python
+3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one run, off the gate):
+the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate, 236 of 236, pushed.
+
+**does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
+builds of the shell agree. That the memo is right on a session the court does not replay: the workshop is the
+standing check, and it is run when a session is sealed, not when it is designed. What an admission costs on the
+host. That a model can write a design worth admitting. Anything about a second editor.
+
+**Falsifier.** A red row among the six on a later run of either machine with the tree unchanged. A batch whose child
+differs in head, content, spec or witness from the same operations admitted one at a time. A file that loads
+standing inside a batch. A refused batch that leaves anything. A dry run that writes. An admission bound to a
+preview that reaches another head. A session whose content under the memo differs from the computation with none.
 
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 

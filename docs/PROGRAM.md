@@ -267,7 +267,7 @@ or feel is claimed (G21), and the screen is read back on a schedule, not at ever
 
 Two different things can change, and they are certified differently.
 
-    program time    the machine changes ──► the gate runs: 236 rows, twice, byte-identical
+    program time    the machine changes ──► the gate runs: 242 rows, twice, byte-identical
     content time    the world changes   ──► the artifact is checked and admitted; the gate does not run
 
 *The gate certifies the machine. ADMIT admits the world's changes.* `ADMIT-0` is the first seam built on that
@@ -303,11 +303,24 @@ holds it and no gate runs when it is used. It reads a few lines of design text, 
 difference from the current world, admits that into a scratch root to show CURRENT against PROPOSED, and on
 acceptance gives the same proposal bytes to `shell admit` for the project. It can change a world in no other way,
 which is why it may stay uncertified: the worst it can do is propose badly. What it reads off the grid is a view.
-Its limits are ghost G27, and the first of them, one operation per run of the shell, is the next engineering
-invariant: DESIGN-EVENT-0, registered and not built. A design will reach the shell as one batch in VRDNP2, a net
-change set with one byte form. The shell refuses it whole or appends its operations as ordinary edits in one
-admission, so the head is the one the same edits give one at a time, and a preview is a dry run of that same
-admission. Until it is built the tool admits one operation per run.
+Its limits are ghost G27.
+
+**The batch.** The first of those limits, one operation per run of the shell, was an engineering invariant and
+became a rung: DESIGN-EVENT-0. A design reaches the shell as one batch in `VRDNP2`, a net change set with one byte
+form: cells in row-major order, then the classes, each target once. `shell design` refuses it whole, leaving
+nothing, or appends its operations as ordinary edits in one admission. There is no second fold and no new kind of
+event, so the head is the one the same edits give one at a time; the gate holds that against ADMIT-0's own
+admissions, and against a head registered before the seam existed. Each event carries the batch's envelope with
+its place and the batch's count, and the shell's loader, the workshop and the sealer each refuse a session in which
+a batch is not whole. A preview is `--dry-run`: the admission's own run, ended after every check and before
+anything is written. It prints the head the batch would give, and an admission handed that head and the bytes'
+digest refuses to reach any other.
+
+Replay keeps one memo. A session holds the digest of the level's bytes and of the tiles' bytes, and an edit
+recomputes the one whose bytes it changed. Every event is still replayed, and nothing verified in an earlier run is
+trusted. The memo is held by comparison with the computation that keeps none, and by the workshop, whose replay
+keeps none: a shell with a wrong memo reads its own file back as verified, so its own read-back is no check of it.
+What this leaves open is ghost G28.
 
 ---
 

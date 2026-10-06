@@ -62,9 +62,10 @@ writes a few lines of design text; the tool compiles them, shows the current wor
 on acceptance, gives the proposal to the shell to admit. No gate runs in that loop. By the owner's adjustment of
 2026-10-06 the engineering seam is frozen, and a new gate is added only for a new engineering invariant.
 
-Running that tool found one. A design of 60 operations is 60 runs of the shell, each verifying the whole session.
-The next rung, DESIGN-EVENT-0, is registered and not built: a design enters a session as one batch, refused whole
-or admitted by one admission, and equal to the same operations admitted one at a time.
+Running that tool found one. A design of 60 operations was 60 runs of the shell, each verifying the whole session.
+DESIGN-EVENT-0 is built for it: a design enters a session as one batch, refused whole or admitted by one
+admission, and equal to the same operations admitted one at a time. A preview is that admission stopped before
+anything is written.
 
 ## Why this repository exists (the measurement that preceded it)
 
@@ -108,7 +109,7 @@ session's seal is a hash. A second platform's window.
 running the gate.
 
 ```text
-  PROGRAM TIME    verify/verify.py: 236 rows, two passes byte-identical, or nothing landed
+  PROGRAM TIME    verify/verify.py: 242 rows, two passes byte-identical, or nothing landed
 
       oracle/   Urðr, frozen at two tags
          │      witnesses · corpus · the heading vocabulary
@@ -122,7 +123,7 @@ running the gate.
 
   CONTENT TIME    a change to the world is admitted; the gate is not run for it
 
-      key · mouse · script · proposal (VRDNP1) ◄── design/  inspect · propose · preview · admit · undo
+      key · mouse · script · proposal (VRDNP1) · batch (VRDNP2) ◄── design/  inspect · propose · preview · admit · undo
          │      bound, or recognized, to a typed action
          ▼
       one append-only log ──────────────► journal.vsj   a record is flushed before it counts
@@ -220,14 +221,16 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          configurations, heard by the interpreter's own raise event (cd1472ec; built, four rows,
          │          236 in the gate; on the host 236 of 236)
          │
-    CONTENT TIME    design/ the design surface, off the gate: design text compiled to proposals, previewed in a
-         │          scratch root and admitted by the certified shell; driven alike by a person, a script or a
-         │          model (built; its own ten checks; run on the host; slow until admission takes a list)
+    CONTENT TIME    design/ the design surface, off the gate: design text compiled to one batch, previewed by
+         │          the shell's dry run and admitted by the certified shell; driven alike by a person, a
+         │          script or a model (built; its own twelve checks; run on the host over ADMIT-0)
          │
     THE BATCH       DESIGN-EVENT-0 a canonical batch of 1 to 4,096 operations refused whole or admitted by
          │          one admission as that many ordinary edits, equal to the same operations one at a time;
-         │          VRDNP2, a net change set with one byte form; a dry run bound to its admission
-         │          (ae7cbb36; registered, not built)
+         │          VRDNP2, a net change set with one byte form; a dry run bound to its admission; replay
+         │          with an exact memo, the workshop with none (ae7cbb36; built, six rows, 242 in the gate;
+         │          60 operations admitted one at a time before the seam existed reach the same head as
+         │          one batch; not yet run on the host)
          ⋮
     declared        DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors

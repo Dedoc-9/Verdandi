@@ -453,7 +453,24 @@ What stands against the tree, as reviewed:
    digest leaves the content unchanged, and the seam refuses an edit that changes nothing. The plant was
    rewritten before the registration was committed, and the registration says a prototype came first.
 
-33. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+33. **A registered case left out is found by the mutant it was there for.** The registration named a key's edit
+   standing between two places of a batch. The first rows did not build it: taking the envelope off a middle
+   event looked like the same thing. It is not. A mutant that let the workshop take an unenveloped event inside a
+   batch passed every row, because such an event had only ever been refused by its neighbours' places. Read the
+   registered list against the rows, item by item, before trusting the rows.
+
+34. **A plant depends on what it is planted into.** The wrong memo was to make the shell read its own file back as
+   verified. On one parent it did. On another the read-back refused, because that parent's own history replays
+   differently under the same plant. The claim was true of one case and the court had to pick that case on
+   purpose and say why.
+
+35. **An amendment that names files by hash is written last and committed first.** It cannot be registered before
+   the files exist. Say so in the entry, and let the gate hold the entry against the files.
+
+36. **Let a script count.** A draft said nine sites were added to the sealer. The script that reads the file found
+   seven and stopped.
+
+37. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))

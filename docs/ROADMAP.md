@@ -133,7 +133,7 @@ MINT-WATCH-0     the owner's ruling (2026-10-05): a separate slice, registered n
       ↓
 the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen; a new gate only for a new engineering invariant; the work is the design environment. Built off the gate, content time: design/ — inspect, propose, preview, admit, undo over the certified seam, driven the same way by a person, a script or a model
       ↓
-DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`); not built
+DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; the gate passes here; not yet run on the host
       ↓
 DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. The design representation follows the event and is not promoted ahead of it: the question he had reserved is ruled
       ↓
@@ -1843,7 +1843,7 @@ the whole session each time, so a design costs more than in proportion to its si
 five verbs over the certified seam. OBSERVED (one run): the cost above. **does_not_show.** That a model writes
 useful designs in this text; that the loop is fast enough to design in; anything about the window.
 
-### DESIGN-EVENT-0 — a design as one transition · **registered** (`ae7cbb36`); not built
+### DESIGN-EVENT-0 — a design as one transition · **built** (`ae7cbb36`): six rows, 242 in the gate; the gate passes here; not yet run on the host
 The adjustment above ended with one engineering invariant in sight, found by measuring: a design of 60 operations
 cost about 40 s through a seam that admits one operation per run. This section records what happened next: the
 host ran the tool, the owner locked the rung, a court settled its shape, and it was registered. The rung's own
@@ -1926,13 +1926,34 @@ themselves. And two fences re-pinned on purpose, LIVE-INPUT-0's and LIVE-AUTHOR-
 text the statement the memo replaces; what they held there moves to a comparison of values in this rung's replay
 row. It is one rung with one court, as ruled.
 
-**What stays declared.** DESIGN-IR/DIFF, LIVE-AI-EDIT-0 and a graphical editor, in that order. The fifteen pivots.
-That every editor speaks the same event: one consumer will exist when this is built, the design tool.
+**Pushed, locked and built.** The owner applied the registration, the host's gate read 236 of 236, and he pushed
+(`a1c0a65..b975fc5`). His lock with it: *LOCK / PUSH registration*, and *Don't enlarge the rung. The build now has a
+very crisp job: prove the registered transition, especially the memo equality and whole-batch crash boundary.* The
+build did that and nothing more.
 
-**Grade.** DECLARED: the lock, the court and the registration. OBSERVED (the owner's host, one run, off the gate):
-the design tool's loop over ADMIT-0 and the two heads. OBSERVED (the build container, one run): the cost of that
-loop and of a load, and a prototype's times. **does_not_show.** Anything built, what the build will cost on the
-host, or that a model writes a useful design.
+| the claim | what holds it now |
+|---|---|
+| a batch is the same operations one at a time | five batches against ADMIT-0's own admissions; the 60 reach the head registered before the seam existed |
+| a batch is whole or nothing | twelve planted deaths; 28 forged files refused by the shell, the workshop and the sealer |
+| what was previewed is what is admitted | the dry run is the admission's own run, ended before anything is written; an admission bound to another digest or head is refused |
+| replay stays the authority | the memo beside the computation that keeps none, over 2,208 edits; a wrong memo, which the shell carrying it reads back as verified, found by the comparison and refused by the workshop |
+
+Two findings of the build are worth keeping. A registered case had been left out of the first rows, and a mutant
+showed it: an unenveloped event inside a batch was refused by its neighbours' places and never by its own rule.
+And the wrong memo fools the shell's read-back only where the parent's own history replays the same under it: a
+plant depends on what it is planted into.
+
+The design tool now sends one batch for one design. The owner's 60 operations, observed on the build container:
+preview 0.10 s and admit 0.13 s, where each had taken about 20 s. That is one machine and no row holds it.
+
+**What stays declared.** DESIGN-IR/DIFF, LIVE-AI-EDIT-0 and a graphical editor, in that order. The fifteen pivots.
+That every editor speaks the same event: one consumer exists, the design tool.
+
+**Grade.** DECLARED: the lock, the court and the registration. ESTABLISHED (gate, the build container): the six
+rows. MEASURED (host): the registration's gate, 236 of 236, pushed. OBSERVED (the owner's host, one run, off the
+gate): the design tool's loop over ADMIT-0 and the two heads. OBSERVED (the build container): the times.
+**does_not_show.** The build's gate on the host, what an admission costs there, or that a model writes a useful
+design.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the
