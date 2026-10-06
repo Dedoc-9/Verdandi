@@ -205,7 +205,7 @@ rows, grade, limits and falsifier; this is the order and the state.
     REFUSALS        REASON-COURT-0 every refusal the gate requires held to a registered reason: 145 refusal
          │          checks censused, 103 with a code and 42 a registered REFUSE(any); a watch over every child
          │          that does not end 0, reading only the code head; the sealers under one mutation and its
-         │          closure (337ab021; built, six rows, 232 in the gate; passes here; not yet run on the host)
+         │          closure (337ab021; built, six rows, 232 in the gate; on the host 232 of 232, pushed)
          │          · MINT-WATCH-0 every refusal raised inside the gate's own process claimed by row,
          │          class, site and count: 164 raise sites read from source, 142,082 mints measured in four
          │          configurations, heard by the interpreter's own raise event (cd1472ec; built, four rows,

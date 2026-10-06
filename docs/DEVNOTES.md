@@ -430,7 +430,7 @@ What stands against the tree, as reviewed:
 - The saved form's readers disagreed on hostile input; the remedy is built, and its reach is stated (G19).
 - An admission records a claimed proposer and a command line's grant, and nothing about a model (G20).
 - The live loop has no latency number (G21), and two host silences were never explained (G22).
-- A refusal is held to its code, not its cause (G24): the court is built and has not yet run on the host. 63
+- A refusal is held to its code, not its cause (G24): the court is built and passes on both machines. 63
   lines the programs print about themselves are trusted and not opened (G25).
 - The mint register's counts are a measurement, and 105 of its 164 sites were never reached (G26).
 

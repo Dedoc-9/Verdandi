@@ -462,11 +462,11 @@ and not by a reader, the writers' own output as a positive witness, and the froz
 different program at a different time. A second author or a mechanized grammar would close more of it and neither
 is on the route.
 
-## G24 — a refusal is held to its code, not to its cause · ESTABLISHED (the court, on the gate here); limits stated
+## G24 — a refusal is held to its code, not to its cause · ESTABLISHED (the court, on the gate here); MEASURED (the host's gate, one run); limits stated
 
 Before REASON-COURT-0 a row held a refusal's reason only as that row was written: 73 of the 103 coded checks look
 for the code anywhere in the output, 22 hold only that the subject refused, and nothing held a refusal to its code
-from outside the row. The court is built and passes here. What it leaves:
+from outside the row. The court is built and passes here and on the host. What it leaves:
 
 - **A code is not a cause.** `INVALID-EDIT` answers six different edits and `DIVERGED` four forgeries. The text
   that tells them apart is, by ruling, not locked.
@@ -485,14 +485,13 @@ from outside the row. The court is built and passes here. What it leaves:
   by a registered statement or by the agreement court. Thirteen more statements judge a refusal that is neither a
   child's non-zero ending nor an exception there, and no tap hears those. A watch over the raises is its own
   slice, MINT-WATCH-0, built since (G26).
-- **The built gate has not run on the host.** Before the build the register was heard there once, by an
-  instrument outside the gate: 1,103 endings, 77 of 77 groups. The sealers' listener has been heard here on Python
-  3.11, 3.12, 3.13 and 3.14.0rc2; the host runs 3.14.5 on win32.
+- **Each machine has run the built gate a few times at most.** The host ran it once: 232 of 232. Its rows' texts,
+  which carry the counts and name the listener's tap, were not printed, because the run was the compact one.
 - **The source row holds text, not meaning.** It shows that a judging statement still stands, word for word. It
   does not show that the statement is reached, or that the row acts on it. A statement rewritten to say the same
   thing in other words reddens it.
 
-**Exorcism.** For the host, its gate. Paying a debt is a code in a sealer or an accepted twin in a row, each a
+**Exorcism.** Paying a debt is a code in a sealer or an accepted twin in a row, each a
 decision of its own. Telling causes apart would mean locking text, which the owner ruled out. For the
 gate's own process two remedies are declared and not seated: an accounting of every refusal site, and the sealers'
 refusals turned from an exception into a datum. The first closes a missed check and not a missed kind; the second

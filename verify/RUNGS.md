@@ -4624,7 +4624,7 @@ its form.
 diff and constraints are promoted ahead of it. The owner: *I would not silently reorder that based on the 15-pivot
 review. That deserves its own ruling.* The locked order stands until he rules.
 
-## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021`; heard on the host before the build; built: six rows, 232 in the gate; the gate passes here; not yet run on the host)
+## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021`; heard on the host before the build; built: six rows, 232 in the gate; the gate passes here and on the host; pushed)
 
 ```
   a row's statement ───────────────►  the register  verify/reasons.json   ◄── the ledger entry pins its bytes
@@ -5001,9 +5001,21 @@ registered for these rows is met as observed: they mint no refusal, and its regi
 The gate's listener and the instrument's ran together, each on its own tool id (report sha256 `4c288a8f…`, kept
 outside the repository).
 
-**Not yet shown.** The gate with this build on the owner's host, which is win32 under Python 3.14.5. The whole gate
-ran here on 3.11 and, inside the instrument's pass, on 3.12. On 3.13 and on 3.14.0rc2 the eleven listened rows and
-the court's rows that need no child were run, not the whole gate.
+**Before the host ran it.** The whole gate ran here on 3.11 and, inside the instrument's pass, on 3.12. On 3.13 and
+on 3.14.0rc2 the eleven listened rows and the court's rows that need no child were run, not the whole gate.
+
+**On the host (DANIELDILLBERG, 2026-10-06): landed.** 0122 and 0123 were applied and the gate read `GATE PASSED`,
+rowset `5b48184218214583`, 232 rows / 0 fail / 0 skipped, the six rows of this rung among them. The owner pushed
+`a02d82c..a1c0a65`.
+
+| | |
+|---|---|
+| the watch | `reasoncourt-watch` passed: the host's own gate seated its endings in the 77 registered groups. The count it printed is in the row's text, which a gate prints only under `--verbose`; this run was the compact one |
+| the listener | `reasoncourt-sealers` passed: on the host's interpreter the listener heard the registered calls. Which tap it used is in the same unprinted text; the host's listen-only pass recorded Python 3.14.5, where it is `sys.monitoring` |
+| the fence | `reasoncourt-fence` passed: the 39 Rust sources and 17 sealer files have on the host the bytes they have here |
+
+So the register that was heard on the host by an instrument before the build is now held there by the gate itself.
+None of the build's readings was struck before the push.
 
 **Outside sources read for this (attributed; hypotheses about practice, not claims of this tree).**
 
@@ -5042,17 +5054,16 @@ from the gate's own statements and variables, three listen-only passes in which 
 the count of mints. OBSERVED (host, off the gate, one run): the fourth pass, in which the same 1,103 endings were
 heard and the same 77 groups held; and one pass of the instrument over the built gate. ESTABLISHED (gate, here):
 the six rows, 232 in the gate, on Python 3.11; the same six on 3.12 inside the instrument's pass. MEASURED (host):
-the gate before the build, 226 of 226, with the entry and the register in the tree. NOT_MEASURED: the built gate on
-the host.
+the built gate, 232 of 232, one run.
 
-**does_not_show.** That the gate with this build passes on the host. That the census is complete: a check
+**does_not_show.** That the census is complete: a check
 it missed inside a row is not held, and nothing that happens inside the gate's own process is seen by a watch
 (MINT-WATCH-0, built since, hears the raises there). That the host's pass makes the register true:
 it was heard there once, by an instrument outside the gate. That a registered reason is the right reason: the court
 will show that a refusal carries its registered code, not that the program's reasoning is correct. Anything about a
 cause, where one code answers several.
 
-**Falsifier.** A red row among the six on the host. A registered requirement that does not stand in
+**Falsifier.** A red row among the six on a later run of either machine with the tree unchanged. A registered requirement that does not stand in
 `verify/verify.py` as patch 0116 left it. An expected value in the register that came from a program's output. A
 planted record registered as meeting the condition that differs from its twin somewhere else. An ending of the
 registered gate that is in no group.

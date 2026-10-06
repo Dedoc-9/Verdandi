@@ -34,7 +34,7 @@ And everything the tree saves and reads back is now one bounded language with on
 (`READER-COURT-0`, built; the gate passes on the host, 226 rows, and is pushed).
 
 And every refusal the gate requires is now held to a registered reason (`REASON-COURT-0`, `337ab021`, built: six
-rows, 232 in the gate; it passes here and has not yet been run on the host). The owner heard the gate on the host
+rows, 232 in the gate; it passes here and on the host, and is pushed). The owner heard the gate on the host
 with a listen-only pass before the build: every registered group holds there. A second slice is built behind
 it, `MINT-WATCH-0` (`cd1472ec`, four rows, 236 in the gate; it passes here and has not yet been run on the host):
 every refusal raised inside the gate's own process is claimed by a row, a class, a site and a count.
@@ -125,7 +125,7 @@ ADMIT-0          the first rung towards it, chosen in court (2026-10-03) and by 
       ↓
 READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the saved form is the writers' language and nothing wider; one Rust reader shared by path; an independent Python reader held against it, the same code and byte offset on every hostile file — registered (`f53017cd`) and built: eight rows, 226 in the gate; on the host 225 of 226 on the first run, 226 of 226 with the fix, pushed
       ↓
-REASON-COURT-0   the owner's ruling (2026-10-04): next after READER-COURT-0 and before DESIGN-EVENT-0. Every refusal check in the gate is held to an expected reason, an exact code or a deliberately open REFUSE(any). Its census is taken (145 refusal checks in 78 rows; 103 hold a code), its courts are held, and its register is in the tree: codes only from a requirement that already exists, a watch over every child that does not end 0 reading only the code head, the sealers under one registered mutation — registered (`337ab021`) and pushed; in three configurations here and on the host every registered group held — built: six rows, 232 in the gate; the gate passes here; not yet run on the host
+REASON-COURT-0   the owner's ruling (2026-10-04): next after READER-COURT-0 and before DESIGN-EVENT-0. Every refusal check in the gate is held to an expected reason, an exact code or a deliberately open REFUSE(any). Its census is taken (145 refusal checks in 78 rows; 103 hold a code), its courts are held, and its register is in the tree: codes only from a requirement that already exists, a watch over every child that does not end 0 reading only the code head, the sealers under one registered mutation — registered (`337ab021`) and pushed; in three configurations here and on the host every registered group held — built: six rows, 232 in the gate; on the host 232 of 232, pushed
       ↓
 MINT-WATCH-0     the owner's ruling (2026-10-05): a separate slice, registered now and built after REASON-COURT-0's build, before any rung that gives a refusal a code or makes it a datum. Every refusal-class raise inside the gate's own process is attributable to a registered row, class, site and count, or is a registered plant of the gate. Sites from source (164 in 15 files), counts measured (142,082 mints, four configurations agreeing); a site is its file, its function and the text of its raise — registered (`cd1472ec`) and pushed — built: four rows, 236 in the gate; the gate passes here; not yet run on the host
       ↓
@@ -1524,7 +1524,7 @@ mode, constraint, recipe, bundle or plugin can be built under the rules above; t
 fifteen; anything about how a user would fare with them. Each rung seated from it registers its own hypothesis,
 failure condition and limits.
 
-### REASON-COURT-0 — every refusal held to its reason · **built** (`337ab021`): six rows, 232 in the gate; the gate passes here; not yet run on the host
+### REASON-COURT-0 — every refusal held to its reason · **built** (`337ab021`): six rows, 232 in the gate; the gate passes here and on the host; pushed
 The rung after READER-COURT-0, by the owner's ruling. Its census is taken, three courts are held, and the method is
 registered with its register, `verify/reasons.json`. Nothing is built. The full record is in
 [`verify/RUNGS.md`](../verify/RUNGS.md); this section keeps the order of events.
@@ -1674,12 +1674,17 @@ field. The
 listening instrument, run over the built gate, agrees with the gate's own row and hears no refusal raised by the six
 new rows, so MINT-WATCH-0's register needs no amendment for them.
 
+**On the host (2026-10-06): landed.** 0122 and 0123 were applied and the gate read `GATE PASSED`, rowset
+`5b48184218214583`, 232 rows / 0 fail / 0 skipped. The owner pushed `a02d82c..a1c0a65`. The register an instrument had
+heard there before the build is now held there by the gate's own rows, and the sealers' listener heard the
+registered calls on the host's interpreter.
+
 **Grade.** DECLARED: the idea, the rulings and the registration. OBSERVED (off the gate): the census, four
 listen-only passes before the build (three here, one on the host), one over the built gate, the count of mints, the
-mutation run. ESTABLISHED (gate, here): the six rows, 232 in the gate. MEASURED (host): the gate before the build,
-226 of 226.
-**does_not_show.** That the built gate passes on the host. That a registered reason is the right reason: the court
-holds a refusal to its code, not to its cause.
+mutation run. ESTABLISHED (gate, here): the six rows, 232 in the gate. MEASURED (host): the built gate, 232 of 232,
+one run.
+**does_not_show.** That a registered reason is the right reason: the court holds a refusal to its code, not to its
+cause.
 
 ### MINT-WATCH-0 — every refusal raised inside the gate's own process, claimed · **built** (`cd1472ec`): four rows, 236 in the gate; the gate passes here; not yet run on the host
 A separate slice by the owner's ruling. The full record is in [`verify/RUNGS.md`](../verify/RUNGS.md).
