@@ -13,7 +13,7 @@ The gate is the program's only judge, so its design is about what it may and may
 ```text
     verify.py     row(name, fn) in a fixed order ─► PASS, or Red with a reason ─► GATE PASSED | GATE FAILED
                   RECONCILE  rowset <sha256 of the row names>  <rows> / <fail> / <skipped>
-                  232 rows today, rowset 5b48184218214583
+                  236 rows today, rowset cb2f68e75e338768
 
     a row         builds what it tests from source · runs it · compares bytes · then PLANTS a defect and
                   requires the refusal. A row with no plant that bites is not finished.
@@ -31,7 +31,8 @@ The gate is the program's only judge, so its design is about what it may and may
                   and where that expectation comes from. Registered, pinned by its hash in the ledger; read
                   by the six reasoncourt rows, through savedform.py, and written by nothing
     mints.json    MINT-WATCH-0: the mint register — every raise site of a refusal class, read from source,
-                  and which row reaches which site how often, measured. Registered; no row reads it yet
+                  and which row reaches which site how often, measured. Registered; read by the four
+                  mintwatch rows, through savedform.py, and written by nothing
     pins/         the goldens Verðandi mints itself (the HUD's, the blit's)
     the sealers   off the gate, on a named host: witnesses first, then the number, then the envelope
 ```

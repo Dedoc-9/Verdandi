@@ -84,7 +84,10 @@ refused for its form), reasoncourt (REASON-COURT-0: every refusal the gate requi
 a registered REFUSE(any) — the register verify/reasons.json, the expected side, never filled from what a program
 prints; every registered requirement held in the gate's own text; every child that does not end 0 claimed by row,
 program and command, read only at its code head; the sealers under one registered mutation and its closure, heard
-through the interpreter's own events), and — in the oracle stage —
+through the interpreter's own events), mintwatch (MINT-WATCH-0: every refusal raised inside the gate's own process is
+heard where it is raised, through the interpreter's own raise event, and claimed by a registered row, class, site and
+count or by the gate's one registered plant — the register verify/mints.json, its sites read from the files' syntax
+and its counts a registered measurement; visibility and no vocabulary), and — in the oracle stage —
 oracle-d0 (Urðr's own statecanon recomputes the oracle's D_0 in place).
 """
 from __future__ import annotations
@@ -370,12 +373,112 @@ class Red(Exception):
     pass
 
 
+# MINT-WATCH-0: every refusal raised inside the gate's own process is heard where it is raised. The tap is the
+# interpreter's own event for a raise (sys.monitoring's RAISE from Python 3.12, sys.settrace's exception event
+# before). A mint is that event in the frame that raises: the one in which the exception's traceback has no deeper
+# frame. Of a mint the tap keeps the row, the class's name, the file, the line and the function, as text and a number.
+# It keeps no exception, no traceback and no frame; it wraps and assigns nothing; it says nothing about a reason.
+# `mintwatch-watch` lays what was heard beside the register.
+MINTS: dict = {}                 # (row, class, file, line, function) -> how many times
+MW_TOOLS = (4, 5, 2, 1, 0)       # the tool id the tap takes among sys.monitoring's: the first that is free
+_MINT = {"tap": None, "tool": None, "broken": [], "classes": {}, "cwd": os.getcwd()}   # cwd: where a relative file name is from
+
+
+def _mint_refusal(t) -> bool:
+    """Whether an exception class is one a Python file under verify/ defines, other than the gate's two verdicts."""
+    known = _MINT["classes"].get(t)
+    if known is None:
+        f = getattr(sys.modules.get(getattr(t, "__module__", "")), "__file__", None)
+        known = (bool(f) and os.path.normcase(os.path.dirname(os.path.normpath(os.path.join(_MINT["cwd"], f)))) == os.path.normcase(os.path.join(ROOT, "verify"))
+                 and t is not Red and t is not Skip)
+        _MINT["classes"][t] = known
+    return known
+
+
+def _mint_note(t, frame) -> None:
+    code = frame.f_code
+    key = (CURRENT_ROW[0], t.__module__ + "." + t.__qualname__, code.co_filename, frame.f_lineno, code.co_name)
+    MINTS[key] = MINTS.get(key, 0) + 1
+
+
+def _mint_on_raise(_code, _offset, exc):
+    try:
+        t = type(exc)
+        if _mint_refusal(t):
+            tb = exc.__traceback__
+            if tb is None or tb.tb_next is None:        # raised here, not passing through from a callee
+                _mint_note(t, sys._getframe(1))
+    except Exception as e:
+        _MINT["broken"].append(repr(e))
+
+
+def _mint_local(frame, event, arg):
+    if event == "exception":
+        try:
+            if _mint_refusal(arg[0]) and (arg[2] is None or arg[2].tb_next is None):
+                _mint_note(arg[0], frame)
+        except Exception as e:
+            _MINT["broken"].append(repr(e))
+    return _mint_local
+
+
+def _mint_trace(frame, event, arg):
+    """The tap where the interpreter has no sys.monitoring: the thread's one trace function. It follows every frame
+    for its exception events, and while REASON-COURT-0's listener is on it hands a sealer function's frame to that
+    listener as well, so that both hear."""
+    if _SEAL["on"]:
+        seal = _seal_trace(frame, event, arg)
+        if seal is not None:
+            def both(fr, ev, a):
+                if ev == "exception":
+                    _mint_local(fr, ev, a)
+                seal(fr, ev, a)
+                return both
+            return both
+    frame.f_trace_lines = False
+    return _mint_local
+
+
+def _mint_tap() -> None:
+    """Subscribe to the interpreter's raise event. A failure is kept and said by `mintwatch-watch`; it never reaches a row."""
+    try:
+        mon = getattr(sys, "monitoring", None)
+        if mon is not None:
+            free = [t for t in MW_TOOLS if mon.get_tool(t) is None]
+            if not free:
+                raise RuntimeError("no sys.monitoring tool id is free")
+            mon.use_tool_id(free[0], "verdandi-mint-watch")
+            mon.register_callback(free[0], mon.events.RAISE, _mint_on_raise)
+            mon.set_events(free[0], mon.events.RAISE)
+            _MINT["tap"], _MINT["tool"] = "sys.monitoring", free[0]
+        else:
+            import threading
+            threading.settrace(_mint_trace)
+            sys.settrace(_mint_trace)
+            _MINT["tap"] = "sys.settrace"
+    except Exception as e:
+        _MINT["broken"].append(repr(e))
+
+
+def _mint_over() -> None:
+    """Where there is one trace function per thread, the tap stays that one while REASON-COURT-0's listener is on."""
+    try:
+        if _MINT["tap"] == "sys.settrace":
+            sys.settrace(_mint_trace)
+    except Exception as e:
+        _MINT["broken"].append(repr(e))
+
+
+_mint_tap()
+
+
 def row(name, fn):
     CURRENT_ROW[0] = name
     refused_before = savedform.REFUSALS
     listening = name in RSN_SEALER_ROWS
     if listening:
         _seal_listen(True)
+        _mint_over()
     try:
         text = fn()
         ROWS.append(("PASS", name, text))
@@ -12856,6 +12959,598 @@ def reasoncourt_fence():
                sum(1 for k in RSN_SOURCES if not k.startswith("verify/")), sum(1 for k in RSN_SOURCES if k.startswith("verify/")), RSN_ROWSET_BEFORE))
 
 
+# ------------------------------------------------------------------ MINT-WATCH-0: every refusal raised in the gate's own process, claimed
+MINTWATCH0_HASH = "cd1472ec7aa16d028bf0ee18ea9a6d0cc30be31540717fd8061d7a920b5e87f1"
+MW_REGISTER = os.path.join(ROOT, "verify", "mints.json")
+MW_REGISTER_BYTES = 46076
+MW_REGISTER_SHA256 = "af5de1b41d08f7ba67ecca01a4c9cf9d59037b09066e675d1e069d9d193dacb6"
+# the register's counts, as the entry states them
+MW_COUNTS = {
+    "refusal_classes": 8, "files_with_a_site": 15, "sites_in_the_source": 164, "sites_reached": 59,
+    "sites_reached_by_a_plant_of_the_gate": 1, "sites_never_reached": 105, "measured_entries": 70, "plant_entries": 1,
+    "rows_with_a_mint": 16, "mints_measured": 142082, "mints_of_plants": 1, "mints_in_all": 142083, "configurations": 4,
+}
+MW_NOT_REFUSALS = ("verify.Red", "verify.Skip")   # the gate's own two verdicts
+MW_ROWSET_MEASURED = "39e5874a7127cfa4"           # the 226 rows the measured layer was heard over
+MW_ROWSET_BEFORE = "5b48184218214583"             # the 232 rows before this rung, by name and order
+MW_ROWS = ("mintwatch-preregistered", "mintwatch-inventory", "mintwatch-fence", "mintwatch-watch")   # the watch's row last
+# REASON-COURT-0's six rows, each by the sha256 of its text as this rung found it: this rung changes none of them
+MW_REASONCOURT_ROWS = {
+    "reasoncourt_preregistered": "61f24f3d999d46bb1e071a1cc5f87cbaa5156a9783a5d80d8133a9d4856eb499",
+    "reasoncourt_register": "80c55ddd9df6de389b430de8e940e4e3ee73676f1f7f6470351193afe2bc5ebd",
+    "reasoncourt_source": "3d5975f47664352301adef5013e0f8432feeddeab1e4d5877309e88c8fa4ea11",
+    "reasoncourt_watch": "ac4b8dca9a5c32e48c5b942d8f28605ed6901d4d74c664746a94337d6eb3c70e",
+    "reasoncourt_sealers": "f1bb563575523d7b0bdaea2c333f09ae335879f7d9c6d08caeb9835f1177eec9",
+    "reasoncourt_fence": "5b6e65f6fc3cd334ba574cac1cf83f484a8668826e780781839923ed4bc96890",
+}
+_MW = {}
+
+
+def _mw_register() -> dict:
+    """The mint register, read through the saved form's reader, once."""
+    if "reg" not in _MW:
+        _MW["reg"] = savedform.read_file(MW_REGISTER)
+    return _MW["reg"]
+
+
+def _mw_inventory(sources: dict) -> tuple:
+    """The static layer, from syntax and from nothing else. `sources` is each Python file under verify/ by its name.
+    Returns the exception classes the files define (as module.Class, with file and line) and every raise statement of
+    a refusal class (one of them that is not the gate's own Red or Skip): its file, its function, its class, its text,
+    its order among equal texts in that function, its line."""
+    import ast
+    trees = {f: ast.parse(t) for f, t in sources.items()}
+    classes, names, changed = {}, set(), True
+    while changed:
+        changed = False
+        for f in sorted(trees):
+            for n in trees[f].body:
+                if isinstance(n, ast.ClassDef) and (f[:-3], n.name) not in classes and any(
+                        (b.id if isinstance(b, ast.Name) else b.attr if isinstance(b, ast.Attribute) else None) in names | {"Exception", "BaseException"}
+                        for b in n.bases):
+                    classes[(f[:-3], n.name)] = n.lineno
+                    names.add(n.name)
+                    changed = True
+    sites = []
+    for f in sorted(trees):
+        mod = f[:-3]
+        own = {c: (m, c) for (m, c) in classes if m == mod}      # what a name means in this file
+        alias, parent = {}, {}
+        for n in ast.walk(trees[f]):
+            for ch in ast.iter_child_nodes(n):
+                parent[ch] = n
+            if isinstance(n, ast.ImportFrom) and n.module and (n.module + ".py") in sources:
+                for a in n.names:
+                    if (n.module, a.name) in classes:
+                        own[a.asname or a.name] = (n.module, a.name)
+            if isinstance(n, ast.Import):
+                for a in n.names:
+                    if (a.name + ".py") in sources:
+                        alias[a.asname or a.name] = a.name
+        for n in ast.walk(trees[f]):
+            if not isinstance(n, ast.Raise) or n.exc is None:
+                continue
+            e = n.exc.func if isinstance(n.exc, ast.Call) else n.exc
+            cls = None
+            if isinstance(e, ast.Name) and e.id in own:
+                cls = own[e.id]
+            elif isinstance(e, ast.Attribute) and isinstance(e.value, ast.Name) and e.value.id in alias and (alias[e.value.id], e.attr) in classes:
+                cls = (alias[e.value.id], e.attr)
+            if cls is None:
+                continue
+            fn, p = "<module>", n
+            while p in parent:
+                p = parent[p]
+                if isinstance(p, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    fn = p.name
+                    break
+            if cls[0] + "." + cls[1] in MW_NOT_REFUSALS:
+                continue
+            sites.append({"file": "verify/" + f, "function": fn, "class": cls[0] + "." + cls[1],
+                          "text": " ".join(ast.get_source_segment(sources[f], n).split()), "line": n.lineno, "end_line": n.end_lineno})
+    sites.sort(key=lambda s: (s["file"], s["line"]))
+    seen = {}
+    for s in sites:
+        k = (s["file"], s["function"], s["text"])
+        s["nth"] = seen.get(k, 0)
+        seen[k] = s["nth"] + 1
+    return {m + "." + c: ("verify/" + m + ".py", ln) for (m, c), ln in classes.items()}, sites
+
+
+def _mw_key(s: dict) -> tuple:
+    """What a site is: its file, its function, its class, the text of its raise, and its order among equal texts. Not its line."""
+    return (s["file"], s["function"], s["class"], s["text"], s["nth"])
+
+
+def _mw_today() -> tuple:
+    """The inventory of the tree as it stands, and the sha256 of each file read (line endings as LF), once."""
+    if "today" not in _MW:
+        vdir = os.path.join(ROOT, "verify")
+        raw = {f: read(os.path.join(vdir, f)).replace(b"\r\n", b"\n") for f in sorted(os.listdir(vdir)) if f.endswith(".py")}
+        classes, sites = _mw_inventory({f: b.decode("utf-8") for f, b in raw.items()})
+        _MW["today"] = (classes, sites, {"verify/" + f: sha256(b) for f, b in raw.items()})
+    return _MW["today"]
+
+
+def _mw_inventory_check(reg: dict, classes: dict, sites: list, hashes: dict) -> list:
+    """The register's static layer against an inventory read from source: what does not hold."""
+    wrong = []
+    refusal = {c: v for c, v in classes.items() if c not in MW_NOT_REFUSALS}
+    if sorted(c for c in classes if c in MW_NOT_REFUSALS) != sorted(MW_NOT_REFUSALS):
+        wrong.append("the gate's own two verdicts, Red and Skip, are not both exception classes of verify/verify.py")
+    held = {c["class"]: c["file"] for c in reg["classes"]}
+    for c in sorted(set(refusal) - set(held)):
+        wrong.append("the tree defines the exception class %s, which the register does not hold" % c)
+    for c in sorted(set(held) - set(refusal)):
+        wrong.append("the register holds the class %s, which the tree no longer defines" % c)
+    for c in sorted(set(held) & set(refusal)):
+        if held[c] != refusal[c][0]:
+            wrong.append("%s is defined in %s and registered in %s" % (c, refusal[c][0], held[c]))
+    reg_keys = {_mw_key(s): s for s in reg["sites"]}
+    now_keys = {_mw_key(s): s for s in sites}
+    if len(reg_keys) != len(reg["sites"]) or len({s["id"] for s in reg["sites"]}) != len(reg["sites"]):
+        wrong.append("two sites of the register are the same site, or share an id")
+    for k in sorted(set(now_keys) - set(reg_keys)):
+        wrong.append("a raise the register does not hold: %s, in %s: %s%s" % (k[0], k[1], k[3][:80], " (the %s such raise in that function)" % ("second" if k[4] == 1 else "next") if k[4] else ""))
+    for k in sorted(set(reg_keys) - set(now_keys)):
+        wrong.append("a registered site is gone from the source: %s (%s, in %s: %s)" % (reg_keys[k]["id"], k[0], k[1], k[3][:80]))
+    pinned = {f["file"]: f["sha256"] for f in reg["files"] if f["file"] != "verify/verify.py"}
+    with_a_site = sorted({s["file"] for s in sites} | {v[0] for v in refusal.values()})
+    if with_a_site != sorted(list(pinned) + ["verify/verify.py"]) or len(pinned) != 14:
+        wrong.append("the files that hold a site or define a refusal class are not the register's fifteen")
+    for f, h in sorted(pinned.items()):
+        if hashes.get(f) != h:
+            wrong.append("%s is not the file the register pins (sha256 %s...)" % (f, str(hashes.get(f))[:12]))
+    in_gate = [s for s in sites if s["file"] == "verify/verify.py"]
+    reg_gate = [s for s in reg["sites"] if s["file"] == "verify/verify.py"]
+    if len(reg_gate) != 1 or [_mw_key(s) for s in in_gate] != [_mw_key(s) for s in reg_gate]:
+        wrong.append("verify/verify.py does not hold exactly its one registered site, found by its text in its function")
+    return wrong
+
+
+def mintwatch_preregistered():
+    """MINT-WATCH-0's method is locked before the build, and the gate's constants are the registered ones: the
+    register's bytes, its counts, the four rows."""
+    e = locked_entry("MINT-WATCH-0", {
+        "a separate slice": ("hyp", ("reason-court-0 is not amended", "neither rung is the other's prerequisite")),
+        "three layers, kept apart": ("hyp", ("the ending watch says what ended", "this watch says what raised", "the reason table says what reason",
+                                             "adds visibility and completeness inside the process and no vocabulary",
+                                             "it never says that a raise of a class at a site means a reason")),
+        "the tap": ("hyp", ("sys.monitoring's raise on python 3.12 and later", "sys.settrace's exception event before",
+                            "the one in which the exception's traceback has no deeper frame", "the tap wraps and patches nothing")),
+        "a refusal class": ("hyp", ("an exception class that a python file under verify/ defines", "red and skip")),
+        "sites from source, counts measured": ("hyp", ("sites from source, counts measured", "an inventory read from the files' syntax and from nothing else",
+                                                       "no program is run to make it")),
+        "a site is its text": ("hyp", ("its file, its function and the text of its raise statement", "the line is a locator", "is not the identity",
+                                       "an insertion above a raise does not make a new site")),
+        "a registered measurement": ("hyp", ("it is a registered measurement and is named as one", "a baseline for drift",
+                                             "never evidence that a refusal is right, and never the source of a reason",
+                                             "a count is an expectation about an entry and not the identity of an event")),
+        "the plant and the sites never reached": ("hyp", ("registered as a plant and is the one exception to attribution", "registered as never reached",
+                                                          "nothing is said about whether they should be reached")),
+        "the rows measured": ("hyp", ("rowset 39e5874a7127cfa4", "reason-court-0's six rows are not built and were not heard",
+                                      "the watch never takes an entry from its own run")),
+        "this rung's own rows, and a skipped row": ("hyp", ("mintwatch-watch runs last of the four and judges what was minted before it began",
+                                                            "is judged there, against what it planted, and is not in the register",
+                                                            "its entries are not expected in that run")),
+        "scope": ("hyp", ("the endings of child processes, which are the other watch's", "the thirteen statements", "exceptions raised in worker processes",
+                          "requiring an exception to carry a semantic reason code", "newly minted authority for a reason")),
+        "the three courts": ("succ", ("the refusal classes are exactly the exception classes the files under verify/ define today",
+                                      "each by its file, its function, its text and its order among equal texts", "has its registered sha256",
+                                      "every measured entry is heard exactly its count", "the plant is heard once",
+                                      "no refusal mint is outside an entry or the plant", "assigns to no attribute of a module, a class or a function of the tree",
+                                      "keeps no reference to an exception, a traceback or a frame", "nothing in the gate fills the register from a run",
+                                      "nothing reads a reason out of a class or a site", "this rung adds four, the watch's last")),
+        "the plants": ("succ", ("a mint in a row with no entry", "a mint of a class the tree defines and the register does not hold",
+                                "a mint at a site that is not in the inventory", "a mint at an inventory site not registered for its row",
+                                "one mint more and one mint fewer than an entry's count", "an entry left unheard",
+                                "a refusal raised several frames down and caught at the top is one mint",
+                                "an exception of a class that is not the tree's is not read as a refusal",
+                                "a refusal raised and caught is heard although nothing judged it")),
+        "what would falsify it": ("fail", ("a reason inferred from a class or from a site", "a site identified by its line",
+                                           "a move of a raise passing because the same class appeared in the same row",
+                                           "the tap wrapping, patching or replacing a function, a class or a module of the tree",
+                                           "a refusal mint left unclaimed, or an entry left unheard, on a passing gate",
+                                           "an exception required to carry a code")),
+        "what it does not show": ("lims", ("it shows recurrence, not correctness", "a mint is counted where it is raised",
+                                           "counts are held by row and site, not by input", "the watch judges what was minted before its own row began")),
+    })
+    if e["chain_hash"] != MINTWATCH0_HASH:
+        raise Red("the registered entry is not the one this build was made against")
+    raw = read(MW_REGISTER)
+    if len(raw) != MW_REGISTER_BYTES or sha256(raw) != MW_REGISTER_SHA256:
+        raise Red("verify/mints.json is not the registered register (%d bytes, sha256 %s...)" % (len(raw), sha256(raw)[:12]))
+    if ("verify/mints.json (%d bytes, sha256 %s)" % (MW_REGISTER_BYTES, MW_REGISTER_SHA256)) not in e["hypothesis"]:
+        raise Red("the entry does not name the register by the bytes and the hash the gate holds")
+    c = MW_COUNTS
+    said = ("(%d sites reached, one of them by the gate's plant, and %d never; %d measured entries and %d plant; %s mints and %d; %d rows; four configurations)"
+            % (c["sites_reached"], c["sites_never_reached"], c["measured_entries"], c["plant_entries"], format(c["mints_measured"], ","), c["mints_of_plants"],
+               c["rows_with_a_mint"]))
+    if said not in e["success_condition"] or ("(%d in %d files)" % (c["sites_in_the_source"], c["files_with_a_site"])) not in e["success_condition"]:
+        raise Red("the gate's counts are not the ones the entry states")
+    if "Rows mintwatch-preregistered, mintwatch-inventory, mintwatch-watch and mintwatch-fence" not in e["success_condition"] or sorted(MW_ROWS) != sorted(
+            ("mintwatch-preregistered", "mintwatch-inventory", "mintwatch-watch", "mintwatch-fence")) or MW_ROWS[-1] != "mintwatch-watch":
+        raise Red("the gate's four rows are not the registered ones, the watch's last")
+    return ("MINT-WATCH-0 is preregistered (%s...): a separate slice that amends nothing of REASON-COURT-0; three layers kept apart; the tap "
+            "on the interpreter's raise event, a mint counted in the frame that raises; a refusal class; sites from source and counts "
+            "measured; a site by its text and not its line; the measured layer named as a measurement, never the source of a reason; the "
+            "plant and the sites never reached; the rows measured, this rung's own rows and a skipped row; the scope. The register is the "
+            "registered %d bytes (%s...), and the gate's counts and its four rows are the entry's"
+            % (MINTWATCH0_HASH[:8], MW_REGISTER_BYTES, MW_REGISTER_SHA256[:12]))
+
+
+def mintwatch_inventory():
+    """(1) The register is the registered bytes, read through the saved form's reader, and its static layer is the
+    tree's: the refusal classes are exactly the exception classes the files under verify/ define today, less Red and
+    Skip; the sites are exactly the raise statements of those classes the files' syntax holds today, each by its
+    file, its function, its text and its order among equal texts; the fourteen pinned files have their registered
+    hashes; the gate's one site is found by its text; and the layers count as registered. No program is run.
+    PLANTS: a small tree given to the same reader and the same comparison."""
+    raw = read(MW_REGISTER)
+    if sha256(raw) != MW_REGISTER_SHA256:
+        raise Red("verify/mints.json is not the registered bytes")
+    reg = _mw_register()
+    if reg["counts"] != MW_COUNTS or reg["not_refusal_classes"] != list(MW_NOT_REFUSALS):
+        raise Red("the register's counts are not the registered ones")
+    classes, sites, hashes = _mw_today()
+    wrong = _mw_inventory_check(reg, classes, sites, hashes)
+    if wrong:
+        raise Red("%d finding(s): %s" % (len(wrong), "; ".join(wrong[:5])))
+    # the layers, counted from the register's own content
+    ids = {s["id"] for s in reg["sites"]}
+    entries = reg["measured"] + reg["plants"]
+    if any(m["site"] not in ids or m["count"] < 1 for m in entries) or len({(m["row"], m["site"]) for m in entries}) != len(entries):
+        raise Red("an entry of the register names no site of the inventory, counts nothing, or occurs twice")
+    reached = {m["site"] for m in entries}
+    by_class = {}
+    cls_of = {s["id"]: s["class"] for s in reg["sites"]}
+    for m in entries:
+        by_class[cls_of[m["site"]]] = by_class.get(cls_of[m["site"]], 0) + m["count"]
+    counted = {
+        "refusal_classes": len(reg["classes"]), "files_with_a_site": len({s["file"] for s in reg["sites"]}), "sites_in_the_source": len(reg["sites"]),
+        "sites_reached": len(reached), "sites_reached_by_a_plant_of_the_gate": len({m["site"] for m in reg["plants"]}),
+        "sites_never_reached": len(ids - reached), "measured_entries": len(reg["measured"]), "plant_entries": len(reg["plants"]),
+        "rows_with_a_mint": len({m["row"] for m in entries}), "mints_measured": sum(m["count"] for m in reg["measured"]),
+        "mints_of_plants": sum(m["count"] for m in reg["plants"]), "mints_in_all": sum(m["count"] for m in entries),
+        "configurations": len(reg["configurations"]),
+    }
+    off = sorted(k for k in MW_COUNTS if counted[k] != MW_COUNTS[k])
+    if off:
+        raise Red("the register's content does not count to its counts: " + ", ".join("%s is %d" % (k, counted[k]) for k in off))
+    if sorted((c["class"], c["mints"]) for c in reg["mints_by_class"]) != sorted(by_class.items()):
+        raise Red("the register's mints by class are not the sums of its entries")
+    if any(c["refusal_mints"] != counted["mints_in_all"] or c["gate_failed"] != 0 or c["gate_rows"] != reg["rows_measured"]["rows"]
+           or c["instrument_sha256"] != reg["configurations"][0]["instrument_sha256"] for c in reg["configurations"]):
+        raise Red("the four configurations of the register do not each hold the same gate, the same instrument and the same mints")
+    # the rows measured are rows of the gate, and they are the 226 of the registered rowset
+    order = _mw_rows_by_source()
+    if (reg["rows_measured"]["rowset"] != MW_ROWSET_MEASURED or sha256("\n".join(order[:reg["rows_measured"]["rows"]]).encode("utf-8"))[:16] != MW_ROWSET_MEASURED
+            or any(m["row"] not in order[:reg["rows_measured"]["rows"]] for m in entries)):
+        raise Red("the rows of the measured layer are not rows of the 226 it was heard over")
+    plant = reg["plants"][0]
+    if [m["row"] for m in reg["plants"]] != ["latency1-sealers"] or next(s for s in reg["sites"] if s["id"] == plant["site"])["file"] != "verify/verify.py":
+        raise Red("the one plant of the gate is not the registered one")
+    # PLANTS: a small tree, read by the same reader and held by the same comparison
+    base = {"a.py": "class Refuse(Exception):\n    pass\n\n\ndef f(x):\n    if x:\n        raise Refuse('one')\n    raise Refuse('two')\n",
+            "b.py": "import a as A\nfrom a import Refuse\n\n\ndef g():\n    raise A.Refuse('three')\n\n\ndef h():\n    raise Refuse('four')\n\n\ndef k():\n    raise ValueError('not the tree\\'s')\n",
+            "verify.py": "class Skip(Exception):\n    pass\n\n\nclass Red(Exception):\n    pass\n\n\ndef row():\n    raise Red('a verdict, not a refusal')\n"}
+    c0, s0 = _mw_inventory(base)
+    k0 = sorted(_mw_key(s) for s in s0)
+    if sorted(c0) != ["a.Refuse", "verify.Red", "verify.Skip"] or [(k[0], k[1], k[2]) for k in k0] != [
+            ("verify/a.py", "f", "a.Refuse"), ("verify/a.py", "f", "a.Refuse"), ("verify/b.py", "g", "a.Refuse"), ("verify/b.py", "h", "a.Refuse")]:
+        raise Red("the reader of the inventory does not find a small tree's classes and its raises of a refusal class, through an alias and an import, "
+                  "or takes a raise of the gate's own verdict or of a class that is not the tree's for one")
+
+    def keys(change: dict) -> list:
+        return sorted(_mw_key(s) for s in _mw_inventory(dict(base, **change))[1])
+    lines = lambda change: sorted(s["line"] for s in _mw_inventory(dict(base, **change))[1])
+    above = {"a.py": "# a line above\n" + base["a.py"]}
+    if keys(above) != k0 or lines(above) == lines({}):
+        raise Red("PLANT: a line inserted above a raise made a new site, or moved no line")
+    plants = {
+        "a raise whose text changed": {"a.py": base["a.py"].replace("'two'", "'2'")},
+        "a second raise with the same text in one function": {"a.py": base["a.py"] + "    raise Refuse('two')\n"},
+        "a raise moved to another function": {"b.py": base["b.py"].replace("def h():\n    raise Refuse('four')\n", "def h():\n    pass\n\n\ndef h2():\n    raise Refuse('four')\n")},
+        "a raise taken out": {"b.py": base["b.py"].replace("    raise A.Refuse('three')\n", "    pass\n")},
+        "a raise of the class under another name": {"b.py": base["b.py"] + "\n\nfrom a import Refuse as No\n\n\ndef m():\n    raise No('five')\n"},
+    }
+    for what, change in plants.items():
+        if keys(change) == k0:
+            raise Red("PLANT not found: " + what)
+    if sorted(_mw_inventory(dict(base, **{"c.py": "class Refused(Exception):\n    pass\n"}))[0]) == sorted(c0):
+        raise Red("PLANT not found: a new exception class in the tree")
+    forged = dict(reg, sites=[dict(s, text=s["text"] + " ") if s["id"] == "S001" else s for s in reg["sites"]])
+    if not _mw_inventory_check(forged, classes, sites, hashes) or not _mw_inventory_check(reg, classes, sites, dict(hashes, **{"verify/drift.py": "0" * 64})):
+        raise Red("PLANT not found: a registered site that is not in the source, or a pinned file that changed")
+    # and one difference at a time, given to the comparison with the real inventory
+    one_more = sites + [dict(sites[0], text=sites[0]["text"] + " # another", line=sites[0]["line"] + 1, end_line=sites[0]["end_line"] + 1)]
+    if (not _mw_inventory_check(reg, classes, one_more, hashes) or not _mw_inventory_check(reg, classes, sites[1:], hashes)
+            or not _mw_inventory_check(reg, dict(classes, **{"drift.Declined": ("verify/drift.py", 1)}), sites, hashes)
+            or not _mw_inventory_check(reg, {c: v for c, v in classes.items() if c != "diagcommon.CourtRefused"}, sites, hashes)):
+        raise Red("PLANT not found: a raise the register does not hold, a registered site gone, a class the register does not hold, or a registered class gone")
+    never = len(ids - reached)
+    return ("verify/mints.json is the registered bytes, read through the saved form's reader; read from the syntax of the %d Python files "
+            "under verify/, with no program run, the tree defines %d refusal classes (its exception classes less Red and Skip) and holds %d "
+            "raise statements of them in %d files, and these are the register's classes and sites, each site by its file, its function, its "
+            "text and its order among equal texts; the %d pinned files have their registered sha256, and the gate's one site (%s) is found "
+            "by its text in %s; the layers count as registered: %d sites reached (one by the gate's plant) and %d never, %d measured "
+            "entries and %d plant, %s mints and %d, in %d rows of the 226 measured, four configurations agreeing. PLANTS, on a small tree "
+            "given to the same reader: a line inserted above a raise makes no new site; a changed text, a second raise with the same text, "
+            "a raise moved to another function, a raise taken out, a raise under another name and a new exception class were each found; "
+            "and against the real inventory, one raise more, one registered site gone, one class more, one registered class gone, a "
+            "site's text changed in the register and a changed pinned file were each found"
+            % (len(hashes), len(reg["classes"]), len(sites), len({s["file"] for s in sites}), len(reg["files"]) - 1, plant["site"],
+               next(s for s in reg["sites"] if s["id"] == plant["site"])["function"], len(reached), never, len(reg["measured"]), len(reg["plants"]),
+               format(counted["mints_measured"], ","), counted["mints_of_plants"], counted["rows_with_a_mint"]))
+
+
+def _mw_rows_by_source() -> list:
+    """The gate's rows, in order, as main() names them."""
+    import ast
+    _src, _lines, _tree, tops = _rsn_gate()
+    return [n.args[0].value for n in sorted((n for n in ast.walk(tops["main"]) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "row"
+                                             and n.args and isinstance(n.args[0], ast.Constant)), key=lambda n: (n.lineno, n.col_offset))]
+
+
+def _mw_watch_check(reg: dict, classes: dict, sites: list, mints: dict, skipped: list, broken: list) -> tuple:
+    """The refusal mints of a pass against the register: what does not hold, and the entries of skipped rows."""
+    wrong = ["the tap failed (%s)" % b for b in broken]
+    vdir = os.path.normcase(os.path.join(ROOT, "verify"))
+    at = {}
+    for s in sites:
+        for ln in range(s["line"], s["end_line"] + 1):
+            at[(s["file"], ln)] = s
+    ids = {_mw_key(s): s["id"] for s in reg["sites"]}
+    held = {c["class"] for c in reg["classes"]}
+    expected = {(m["row"], m["site"]): m["count"] for m in reg["measured"] + reg["plants"]}
+    rows_with = {r for r, _s in expected}
+    heard = {}
+    for (row, cls, filename, line, fn), n in sorted(mints.items()):
+        where = "%s line %d, in %s" % (os.path.basename(filename), line, fn)
+        if cls not in held:
+            wrong.append("%s: a refusal of the class %s, which the register does not hold, was raised at %s" % (row or "(no row)", cls, where))
+            continue
+        rel = "verify/" + os.path.basename(filename) if os.path.normcase(os.path.dirname(os.path.normpath(os.path.join(_MINT["cwd"], filename)))) == vdir else filename
+        s = at.get((rel, line))
+        if s is None or s["class"] != cls:
+            wrong.append("%s: %s was raised at %s, which is no site of the inventory" % (row or "(no row)", cls, where))
+            continue
+        sid = ids.get(_mw_key(s))
+        if sid is None:
+            wrong.append("%s: %s was raised at %s, a raise the register does not hold" % (row or "(no row)", cls, where))
+            continue
+        heard[(row, sid)] = heard.get((row, sid), 0) + n
+    not_expected = sorted(k for k in expected if k[0] in skipped)
+    for k in not_expected:
+        del expected[k]
+    for (row, sid), n in sorted(heard.items()):
+        if (row, sid) not in expected:
+            wrong.append("%s: %d mint(s) at %s, %s" % (row or "(no row)", n, sid, "and the row has no entry in the register" if row not in rows_with
+                                                       else "a site not registered for this row" if row not in skipped else "in a row the gate skipped"))
+        elif n != expected[(row, sid)]:
+            wrong.append("%s: %d mint(s) at %s, and %d are registered" % (row, n, sid, expected[(row, sid)]))
+    for (row, sid), n in sorted(expected.items()):
+        if (row, sid) not in heard:
+            wrong.append("%s: no mint was heard at %s, and %d are registered" % (row, sid, n))
+    return wrong, not_expected
+
+
+def mintwatch_watch():
+    """(2) The refusal mints of this run, before this row began, are the register's: every measured entry was heard
+    exactly its count, the gate's plant once, and nothing else of a refusal class was raised in the gate's process.
+    The entries of a row the gate skipped are named and not expected. PLANTS: made-up mints given to the same check,
+    and three live ones through the tap itself, judged against what this row planted."""
+    reg = _mw_register()
+    classes, sites, _hashes = _mw_today()
+    before = dict(MINTS)                     # what was minted before this row began
+    skipped = [name for st, name, _t in ROWS if st == "SKIP"]
+    wrong, not_expected = _mw_watch_check(reg, classes, sites, before, skipped, _MINT["broken"])
+    if _MINT["tap"] is None:
+        raise Red("the tap is not subscribed: nothing was heard%s" % (" (%s)" % "; ".join(_MINT["broken"][:2]) if _MINT["broken"] else ""))
+    if wrong:
+        raise Red("%d finding(s): %s" % (len(wrong), "; ".join(wrong[:6])))
+    # PLANTS: made-up mints, given to the same check
+    check = lambda m, sk=(): _mw_watch_check(reg, classes, sites, m, list(sk), [])[0]
+    site_of = {s["id"]: s for s in reg["sites"]}
+    now_of = {_mw_key(s): s for s in sites}
+
+    def mint(row, sid, cls=None, line=None, fn=None):
+        s = now_of[_mw_key(site_of[sid])]
+        return (row, cls or s["class"], os.path.join(ROOT, "verify", os.path.basename(s["file"])), s["line"] if line is None else line, fn or s["function"])
+    measured = reg["measured"]
+    one = next(m for m in measured if m["count"] == 1)
+    many = next(m for m in measured if m["count"] > 1)
+    elsewhere = next(m for m in measured if m["row"] != one["row"] and (one["row"], m["site"]) not in {(x["row"], x["site"]) for x in measured})
+    synthetic = {mint(m["row"], m["site"]): m["count"] for m in measured + reg["plants"]}
+    if check(synthetic):
+        raise Red("the register's own entries, given back as mints, were refused")
+    made = {
+        "a mint in a row with no entry": {**synthetic, mint("workshop-seed", one["site"]): 1},
+        "a mint of a class the tree defines and the register does not hold": {**synthetic, mint(one["row"], one["site"], cls="envelope.AnotherViolation"): 1},
+        "a mint at a site that is not in the inventory": {**synthetic, mint(one["row"], one["site"], line=1, fn="nowhere"): 1},
+        "a mint at an inventory site not registered for its row": {**synthetic, mint(one["row"], elsewhere["site"]): 1},
+        "one mint more than an entry's count": {**synthetic, mint(many["row"], many["site"]): many["count"] + 1},
+        "one mint fewer than an entry's count": {**synthetic, mint(many["row"], many["site"]): many["count"] - 1},
+        "an entry left unheard": {k: v for k, v in synthetic.items() if k != mint(one["row"], one["site"])},
+        "the gate's plant not raised": {k: v for k, v in synthetic.items() if k != mint(reg["plants"][0]["row"], reg["plants"][0]["site"])},
+        "a mint that moved to another site of its row, the class the same": {
+            (k if k != mint(many["row"], many["site"]) else mint(many["row"], next(s["id"] for s in reg["sites"] if s["class"] == site_of[many["site"]]["class"]
+                                                                                 and (many["row"], s["id"]) not in {(x["row"], x["site"]) for x in measured}))): v
+            for k, v in synthetic.items()},
+    }
+    for what, m in made.items():
+        if not check(m):
+            raise Red("PLANT not refused: " + what)
+    if not _mw_watch_check(reg, classes, sites, synthetic, [], ["KeyError()"])[0]:
+        raise Red("PLANT not refused: a tap that failed")
+    a_row = one["row"]
+    without = {k: v for k, v in synthetic.items() if k[0] != a_row}
+    gone, named = _mw_watch_check(reg, classes, sites, without, [a_row], [])
+    if gone or not named or not check(without) or not check(synthetic, [a_row]):
+        raise Red("PLANT: a skipped row's entries were expected, or were not named, or an unheard row was let pass, or a skipped row's mints were")
+    # LIVE, through the tap itself: each judged against what this row plants, and none of it in the register
+    def delta(act) -> dict:
+        was = dict(MINTS)
+        act()
+        return {k: MINTS[k] - was.get(k, 0) for k in MINTS if MINTS[k] != was.get(k, 0)}
+
+    def deep(what, depth=3):
+        return what() if depth == 0 else deep(what, depth - 1)
+
+    def caught(what):
+        try:
+            what()
+        except Exception:      # caught, and nothing looked at
+            pass
+
+    def not_the_trees():
+        raise ValueError("not a class of the tree")
+
+    def a_verdict():
+        raise Red("the gate's own verdict, not a refusal")
+    record = {k: "x" for k in envelope.REQUIRED}
+    missing = next(s for s in sites if s["file"] == "verify/envelope.py" and s["function"] == "validate" and "missing_or_empty" in s["text"])
+    claim = next(s for s in sites if s["file"] == "verify/envelope.py" and s["function"] == "validate" and "claim_class" in s["text"])
+    env = os.path.join(ROOT, "verify", "envelope.py")
+    me = CURRENT_ROW[0]
+    d1 = delta(lambda: caught(lambda: deep(lambda: envelope.validate({}))))
+    same = lambda d: {(k[0], k[1], os.path.normcase(os.path.normpath(os.path.join(_MINT["cwd"], k[2]))), k[3], k[4]): v for k, v in d.items()}
+    if same(d1) != {(me, "envelope.EnvelopeViolation", os.path.normcase(os.path.abspath(env)), missing["line"], "validate"): 1}:
+        raise Red("LIVE: a refusal raised several frames down and caught at the top was not heard as one mint, at the frame that raised it (%s)" % sorted(d1.items())[:3])
+    d2 = delta(lambda: (caught(lambda: deep(not_the_trees)), caught(lambda: deep(a_verdict))))
+    if d2:
+        raise Red("LIVE: an exception of a class that is not the tree's, or the gate's own verdict, was read as a refusal (%s)" % sorted(d2.items())[:3])
+    d3 = delta(lambda: caught(lambda: envelope.validate(record)))
+    if same(d3) != {(me, "envelope.EnvelopeViolation", os.path.normcase(os.path.abspath(env)), claim["line"], "validate"): 1}:
+        raise Red("LIVE: a refusal raised and caught, with nothing judging it, was not heard (%s)" % sorted(d3.items())[:3])
+    if dict(MINTS) == before or _MINT["broken"]:
+        raise Red("LIVE: the tap heard nothing of this row's own plants, or failed")
+    total = sum(before.values())
+    by_class = {}
+    for (_r, cls, _f, _l, _fn), n in before.items():
+        by_class[cls] = by_class.get(cls, 0) + n
+    return ("the tap (%s) heard %s refusal mints in the gate's own process before this row began, in %d rows at %d sites (%s): every one of the "
+            "%d measured entries exactly its count, the gate's plant once, and nothing else of a refusal class; %s. PLANTS: the register's "
+            "own entries given back as mints are accepted, and %d made-up changes are each refused (%s; a tap that failed; an unheard row "
+            "that the gate did not skip). LIVE, in this row and judged against what it planted: a refusal raised several frames down and "
+            "caught at the top is one mint, at the frame that raised it; a ValueError and the gate's own Red are not read as refusals; a "
+            "refusal raised and caught with nothing judging it is heard"
+            % (_MINT["tap"], format(total, ","), len({k[0] for k in before}), len({(k[2], k[3]) for k in before}),
+               "; ".join("%s %s" % (c, format(n, ",")) for c, n in sorted(by_class.items())), len(measured),
+               ("no row was skipped" if not skipped else "%d entries of %d skipped row(s) were not expected (%s)"
+                % (len(not_expected), len({r for r, _s in not_expected}), ", ".join(sorted({r for r, _s in not_expected})) or "none of them holds an entry")),
+               len(made), "; ".join(made)))
+
+
+def mintwatch_fence():
+    """(3) By source: the tap subscribes to the interpreter's events and assigns to no attribute of a module, a class
+    or a function; it keeps a row, a class's name, a file, a line and a function, and no exception, traceback or
+    frame; its errors never reach the gate; nothing fills the register from a run and nothing reads a reason out of a
+    class or a site; the register is read through verify/savedform.py; the thirteen statements out of scope are
+    statements of REASON-COURT-0's register that report a refusal as data; no source and no sealer differs from what it
+    was; the 232 rows before this rung keep their names and their order, and this rung adds four, the watch's last."""
+    import ast
+    src, lines, tree, tops = _rsn_gate()
+    seg = lambda n: "\n".join(lines[n.lineno - 1:n.end_lineno])
+    tap = ("_mint_refusal", "_mint_note", "_mint_on_raise", "_mint_local", "_mint_trace", "_mint_tap", "_mint_over")
+    for name in tap:
+        fn = tops.get(name)
+        if not isinstance(fn, ast.FunctionDef):
+            raise Red("the tap is not whole (%s)" % name)
+        body = seg(fn)
+        stored = [ast.unparse(n) for n in ast.walk(fn) if isinstance(n, ast.Attribute) and isinstance(n.ctx, (ast.Store, ast.Del))]
+        # the one attribute the tap sets is the interpreter's own switch on a frame it traces: no line events
+        if stored != (["frame.f_trace_lines"] if name == "_mint_trace" else []) or "setattr(" in body or "__wrapped__" in body or "functools" in body:
+            raise Red("%s assigns to an attribute: the tap changes no module, class or function" % name)
+        if any(isinstance(n, ast.Raise) for n in ast.walk(fn) if not (name == "_mint_tap" and isinstance(n, ast.Raise) and "tool id is free" in seg(n))):
+            raise Red("%s raises" % name)
+        for r in (n for n in ast.walk(fn) if isinstance(n, ast.Return)):
+            if r.value is not None and ast.unparse(r.value) not in ("known", "_mint_local", "both"):
+                raise Red("%s returns something besides the trace function the interpreter asks for" % name)
+    # what the tap keeps: text and a number, in one place
+    stores = [(f.name, ast.unparse(n)) for f in tops.values() if isinstance(f, ast.FunctionDef) for n in ast.walk(f)
+              if isinstance(n, ast.Subscript) and isinstance(n.ctx, ast.Store) and isinstance(n.value, ast.Name) and n.value.id == "MINTS"]
+    note = tops["_mint_note"]
+    keys = [ast.unparse(n.value) for n in ast.walk(note) if isinstance(n, ast.Assign) and ast.unparse(n.targets[0]) == "key"]
+    if (stores != [("_mint_note", "MINTS[key]")] or keys != ["(CURRENT_ROW[0], t.__module__ + '.' + t.__qualname__, code.co_filename, frame.f_lineno, code.co_name)"]
+            or "exc" in seg(note) or ".append(" in seg(note)):
+        raise Red("the tap keeps something besides a row, a class's name, a file, a line and a function")
+    for name in ("_mint_on_raise", "_mint_local", "_mint_trace"):
+        body = seg(tops[name])
+        if body.count(".append(") != body.count('_MINT["broken"].append(repr(e))') or "MINTS" in body or "global " in body:
+            raise Red("%s keeps a reference of its own" % name)
+        if name != "_mint_trace" and ("try:" not in body or "except Exception as e:" not in body):
+            raise Red("%s lets its own error reach the gate" % name)
+    if any(not (isinstance(k, tuple) and len(k) == 5 and [type(x) for x in k] == [str, str, str, int, str]) or type(v) is not int for k, v in MINTS.items()):
+        raise Red("a mint the tap kept holds something that is not text or a number")
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "_mint_tap"]
+    subscribed = [n for n in ast.walk(tops["_mint_tap"]) if isinstance(n, ast.Call) and ast.unparse(n.func) in (
+        "mon.use_tool_id", "mon.register_callback", "mon.set_events", "threading.settrace", "sys.settrace")]
+    if len(calls) != 1 or calls[0] not in [n.value for n in tree.body if isinstance(n, ast.Expr)] or len(subscribed) != 5:
+        raise Red("the tap is not subscribed once, as the gate is read, to the interpreter's own events")
+    # the register: read through the saved form's reader, written by nothing, and never a source of a reason
+    uses = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and any(isinstance(a, ast.Name) and a.id == "MW_REGISTER" for a in n.args)]
+    named = [n for n in ast.walk(tree) if isinstance(n, ast.Name) and n.id == "MW_REGISTER"]
+    spelled = [n for n in ast.walk(tree) if isinstance(n, ast.Constant) and n.value == "mints" + ".json"]
+    kept = sorted({f.name for f in tops.values() if isinstance(f, ast.FunctionDef) for n in ast.walk(f)
+                   if isinstance(n, ast.Subscript) and isinstance(n.ctx, ast.Store) and isinstance(n.value, ast.Name) and n.value.id == "_MW"})
+    if (len(spelled) != 1 or len(named) != len(uses) + 1 or any(ast.unparse(n) not in ("savedform.read_file(MW_REGISTER)", "read(MW_REGISTER)") for n in uses)
+            or sum(1 for n in uses if ast.unparse(n) == "savedform.read_file(MW_REGISTER)") != 1 or "json." in seg(tops["_mw_register"])
+            or kept != ["_mw_register", "_mw_today"]):
+        raise Red("the mint register is opened by something other than the saved form's reader, or to be written, or is kept by another hand")
+    ours = sorted(n for n in tops if n.startswith(("_mw_", "mintwatch_", "_mint_")))
+    theirs = sorted(n for n in tops if n.startswith(("_rsn_", "reasoncourt_", "_seal_")) or n in ("_watched_run", "_ending", "_ending_program", "code_head"))
+    for name in ours:
+        body = seg(tops[name])
+        if name != "mintwatch_fence" and ("_rsn_register" in body or "RSN_REGISTER" in body or "reasons" in body):
+            raise Red("%s reaches the reason register: a mint is never read for a reason" % name)
+        if name not in ("mintwatch_watch", "mintwatch_inventory") and re.search(r'\[\s*["\']measured["\']\s*\]\s*(=|\.append|\.extend)', body):
+            raise Red("%s fills the measured layer" % name)
+    for name in ("mintwatch_watch", "mintwatch_inventory", "_mw_watch_check", "_mw_inventory_check"):
+        body = seg(tops[name])
+        if re.search(r'reg\[[^\]]+\]\s*=[^=]', body) or "json.dump" in body or re.search(r'reg\[[^\]]+\]\.(append|extend|update|pop)\(', body):
+            raise Red("%s changes the register it judges by" % name)
+    for name in theirs:
+        if re.search(r"\bMINTS\b|_mw_|_MINT\b|_mint_|MW_", seg(tops[name])):
+            raise Red("%s, of REASON-COURT-0, reaches the mint watch: no reason is read out of a class or a site" % name)
+    # the thirteen statements out of scope are REASON-COURT-0's, and report a refusal as data
+    outside = _mw_register()["outside"]["refusals_judged_without_a_raise"]
+    kinds = {s["id"]: s["kind"] for s in _rsn_register()["statements"]}
+    if len(outside) != 13 or len(set(outside)) != 13 or any(kinds.get(i) != "refusal-as-data" for i in outside):
+        raise Red("the thirteen statements named as out of scope are not statements of REASON-COURT-0's register that report a refusal as data")
+    # REASON-COURT-0 is as it was: its entry, its register, its rows
+    their_rows = {name: sha256(seg(tops[name]).encode("utf-8")) for name in ("reasoncourt_preregistered", "reasoncourt_register", "reasoncourt_source",
+                                                                              "reasoncourt_watch", "reasoncourt_sealers", "reasoncourt_fence")}
+    if their_rows != MW_REASONCOURT_ROWS or sha256(read(RSN_REGISTER)) != RSN_REGISTER_SHA256 or locked_entry("REASON-COURT-0", {})["chain_hash"] != REASONCOURT0_HASH:
+        raise Red("a row, the register or the entry of REASON-COURT-0 is not what it was before this rung")
+    # the programs and the sealers are what they were
+    import livesession as LS
+    if LS.renderer_id(ROOT) != RC_RENDERER_ID or LS.bearing_id(ROOT) != RC_BEARING_ID:
+        raise Red("the renderer or the bearing identity is not what it was before this rung")
+    w32 = read(os.path.join(SHELL, "win32.rs"))
+    if sha256(w32[:LATENCY0_WIN32_LEN]) != LATENCY0_WIN32_SHA256:
+        raise Red("LATENCY-0's instrument is no longer a byte-exact prefix of shell/win32.rs")
+    there = sorted(d + "/" + f for d in ("kernel", "shell", "workshop") for f in os.listdir(os.path.join(ROOT, d)) if f.endswith(".rs"))
+    moved = sorted(rel for rel, h in RSN_SOURCES.items() if sha256(read(os.path.join(ROOT, *rel.split("/"))).replace(b"\r\n", b"\n")) != h)
+    if there != sorted(k for k in RSN_SOURCES if not k.startswith("verify/")) or moved:
+        raise Red("a Rust source under kernel/, shell/ or workshop/, or a sealer under verify/, differs from what it was: %s" % ", ".join(moved or ["the set of files"]))
+    # the rows
+    order = _mw_rows_by_source()
+    if len(order) != len(set(order)) or sha256("\n".join(order[:232]).encode("utf-8"))[:16] != MW_ROWSET_BEFORE or tuple(order[232:236]) != MW_ROWS:
+        raise Red("the 232 rows before this rung do not keep their names and their order, or this rung's four do not follow them, the watch's last")
+    return ("by source: the tap subscribes once, as the gate is read, to the interpreter's own events, assigns to no attribute of a module, "
+            "a class or a function (it sets one switch, a traced frame's line events, off), raises nothing into the gate and returns only "
+            "the trace function the older interpreter asks for; of a mint it keeps a row, a class's "
+            "name, a file, a line and a function (every key it kept this gate is text and a number), and no exception, traceback or frame; "
+            "its errors are kept and said, never raised; the mint register's value comes through verify/savedform.py, its bytes are read "
+            "besides only to be hashed, and nothing opens it to write; no function of this rung reaches the reason register, and none of "
+            "REASON-COURT-0's reaches a mint: no reason is read out of a class or a site; the thirteen statements out of scope are "
+            "REASON-COURT-0's and report a refusal as data; REASON-COURT-0's six rows are text for text what they were, with its register "
+            "and its entry; the identities and the LATENCY-0 prefix are what they were; all %d Rust sources and %d sealer files are byte "
+            "for byte what they were; the 232 rows before this rung keep their names and their order (%s) and this rung adds four, the "
+            "watch's last" % (sum(1 for k in RSN_SOURCES if not k.startswith("verify/")), sum(1 for k in RSN_SOURCES if k.startswith("verify/")), MW_ROWSET_BEFORE))
+
+
 def main() -> int:
     print("VERÐANDI GATE")
     # REFUSAL-LOG-0: every shell the gate runs logs its refusals to the gate's own scratch file, never the owner's log
@@ -13108,6 +13803,12 @@ def main() -> int:
     row("reasoncourt-watch", reasoncourt_watch)
     row("reasoncourt-sealers", reasoncourt_sealers)
     row("reasoncourt-fence", reasoncourt_fence)
+    # MINT-WATCH-0: the inventory of raise sites held to the files' syntax, a fence, and last the watch over every
+    # refusal raised in the gate's own process before it
+    row("mintwatch-preregistered", mintwatch_preregistered)
+    row("mintwatch-inventory", mintwatch_inventory)
+    row("mintwatch-fence", mintwatch_fence)
+    row("mintwatch-watch", mintwatch_watch)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

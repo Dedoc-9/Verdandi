@@ -407,7 +407,19 @@ What stands against the tree, as reviewed:
    this build raise no refusal, or are amended in. The rows were written to compare and not to read forged bytes,
    and one pass of the instrument over the built gate heard none.
 
-22. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+22. **Give a plant one difference.** MINT-WATCH-0's first inventory plant changed a site's text, which is a site
+   gone and a site new at once. Three weakened rules survived it, each covered by the other half. The plants now
+   differ in one thing each.
+
+23. **Two listeners, one interpreter.** Under `sys.monitoring` each takes a tool id and neither knows of the
+   other. Under `sys.settrace` there is one function per thread, so the later listener has to carry the earlier
+   one's frames to it. That was found by reading what the first would do to the second, before a pass was run.
+
+24. **A path is relative to somewhere.** The gate's own file is named relatively when the gate is run as the owner
+   runs it, and absolutely by every development harness. The tap keeps the directory it started in; a test that ran
+   the file by a relative name, and then moved the working directory, is what showed it mattered.
+
+25. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))

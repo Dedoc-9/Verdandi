@@ -483,8 +483,8 @@ from outside the row. The court is built and passes here. What it leaves:
   verdict line, a trace) and stay held by their row alone. Counted once, off the gate: 142,083 refusal-type
   exceptions are raised there in a run, 74 of them the sealers' and 32 the envelope's, and all but one are claimed
   by a registered statement or by the agreement court. Thirteen more statements judge a refusal that is neither a
-  child's non-zero ending nor an exception there, and no tap hears those. A watch over the raises is registered
-  as its own slice, MINT-WATCH-0, and is not built (G26).
+  child's non-zero ending nor an exception there, and no tap hears those. A watch over the raises is its own
+  slice, MINT-WATCH-0, built since (G26).
 - **The built gate has not run on the host.** Before the build the register was heard there once, by an
   instrument outside the gate: 1,103 endings, 77 of 77 groups. The sealers' listener has been heard here on Python
   3.11, 3.12, 3.13 and 3.14.0rc2; the host runs 3.14.5 on win32.
@@ -510,9 +510,9 @@ form's court compares every line the Rust reader writes with the Python reader's
 the shell's verdicts with the gate's own recognizer by digest. The others are a program vouching for itself, with
 the frozen oracle and the plants as the outside checks.
 
-## G26 — the mint register is a measurement, most of its sites were never reached, and a mint is not a judgment · DECLARED (the registration); OBSERVED (the measured layer)
+## G26 — the mint register is a measurement, most of its sites were never reached, and a mint is not a judgment · ESTABLISHED (the watch, on the gate here); OBSERVED (the measured layer); limits stated
 
-MINT-WATCH-0 is registered, pushed and not built. What it will hold, and what it will not:
+MINT-WATCH-0 is built and passes here; it has not run on the host. What it holds, and what it does not:
 
 - **The counts were heard, not derived.** 142,082 mints in 70 entries are what four passes raised, one per
   configuration. All four agree. That shows the gate's in-process refusals recur; it does not show one of them is
@@ -524,12 +524,17 @@ MINT-WATCH-0 is registered, pushed and not built. What it will hold, and what it
 - **A mint is counted where it is raised.** What catches it, and whether anything judges it, is not seen. A
   refusal raised and swallowed looks the same as one a statement requires. The gate's own plant is the known case.
 - **Counts are by row and site, not by input.** Two plants of one row that exchanged the sites refusing them would
-  leave every count as it was.
+  leave every count as it was. One plant that moves to another site moves two counts, and that is caught.
 - **The watch hears up to its own row.** A row that a later rung places after it is not heard by it until that
   rung says how. REASON-COURT-0's six rows, which were not built when the register was measured, have since been
   heard once by the instrument: they raise no refusal.
 - **The instrument that took the measurement is outside the repository.** Its four reports are named by hash and
-  are not in the tree.
+  are not in the tree. The gate's own tap follows the same rule for a mint, and on the three interpreters tried
+  here it heard the same counts.
+- **A skipped row has never happened.** Its entries are then not expected; no pass has skipped a row, and the rule
+  is held by plants alone.
+- **On an interpreter before 3.12 the tap is the thread's one trace function.** Anything else that sets a trace
+  function there, a debugger for one, takes the tap's place, and the watch says the entries were not heard.
 
 **Exorcism.** For the first: none wanted — a registered measurement is the design, and the remedy for drift is an
 amendment. For the sites never reached: none on the route; the register says only that they were not reached.
@@ -545,7 +550,7 @@ with sound remedies; G2 is an honest boundary of what the courts measured; G7 is
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
 and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a careful reader must carry, recorded so they are carried on
 purpose. Of the live editor's, G14, G15, G16, G18, G20, G23 and G25 are limits of method, stated so no claim is read
-past them; G24 is a built court with its reach and its debts stated; G26 is the stated reach of a second registered and unbuilt watch; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
+past them; G24 is a built court with its reach and its debts stated; G26 is the stated reach of a second built watch; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
 built, with the court's reach stated; G21 is a measurement not yet taken; G22 is two things that happened once and were never
 explained.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded

@@ -99,7 +99,7 @@ session's seal is a hash. A second platform's window.
 running the gate.
 
 ```text
-  PROGRAM TIME    verify/verify.py: 232 rows, two passes byte-identical, or nothing landed
+  PROGRAM TIME    verify/verify.py: 236 rows, two passes byte-identical, or nothing landed
 
       oracle/   Urðr, frozen at two tags
          │      witnesses · corpus · the heading vocabulary
@@ -206,10 +206,10 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          checks censused, 103 with a code and 42 a registered REFUSE(any); a watch over every child
          │          that does not end 0, reading only the code head; the sealers under one mutation and its
          │          closure (337ab021; built, six rows, 232 in the gate; passes here; not yet run on the host)
-         │
-    registered      MINT-WATCH-0 every refusal raised inside the gate's own process claimed by row, class,
-         │          site and count: 164 raise sites read from source, 142,082 mints measured in four
-         │          configurations (cd1472ec, pushed; not built)
+         │          · MINT-WATCH-0 every refusal raised inside the gate's own process claimed by row,
+         │          class, site and count: 164 raise sites read from source, 142,082 mints measured in four
+         │          configurations, heard by the interpreter's own raise event (cd1472ec; built, four rows,
+         │          236 in the gate; passes here; not yet run on the host)
          ⋮
     declared        DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors

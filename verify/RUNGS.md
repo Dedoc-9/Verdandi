@@ -5047,7 +5047,7 @@ the host.
 
 **does_not_show.** That the gate with this build passes on the host. That the census is complete: a check
 it missed inside a row is not held, and nothing that happens inside the gate's own process is seen by a watch
-(MINT-WATCH-0 is registered for the raises there, and is not built). That the host's pass makes the register true:
+(MINT-WATCH-0, built since, hears the raises there). That the host's pass makes the register true:
 it was heard there once, by an instrument outside the gate. That a registered reason is the right reason: the court
 will show that a refusal carries its registered code, not that the program's reasoning is correct. Anything about a
 cause, where one code answers several.
@@ -5057,7 +5057,7 @@ cause, where one code answers several.
 planted record registered as meeting the condition that differs from its twin somewhere else. An ending of the
 registered gate that is in no group.
 
-## MINT-WATCH-0 — every refusal raised inside the gate's own process, claimed by row, class, site and count (preregistered `cd1472ec` and pushed; nothing built; its build follows REASON-COURT-0's)
+## MINT-WATCH-0 — every refusal raised inside the gate's own process, claimed by row, class, site and count (preregistered `cd1472ec` and pushed; built: four rows, 236 in the gate; the gate passes here; not yet run on the host)
 
 ```
   the files' syntax ───────► the inventory (static)        8 refusal classes · 164 raise sites · 15 files
@@ -5250,20 +5250,104 @@ one, and is corrected before the next push if it is not. What his own output sho
 a second witness of the range itself: the push of 0117 and 0118 ended at `c057da2`, and this push began at
 `f145a8d`.
 
+**Built (2026-10-06), against `cd1472ec`, which is not edited.** One file changes: `verify/verify.py`. No program, no
+sealer, no record and neither register changes. Nothing of REASON-COURT-0 changes: its six rows are pinned here by
+the hash of their text.
+
+```
+  the gate's file is read ─► the tap subscribes ─► MINTS    row · class · file · line · function ─► a count
+                             to the interpreter's           text and a number; no exception, traceback or frame
+                             own raise event
+  mintwatch-preregistered · -inventory · -fence · -watch                              rows 233 to 236, the watch last
+```
+
+| row | what it holds | plants, on every gate |
+|---|---|---|
+| `mintwatch-preregistered` | the entry by its hash and its phrases; the register's 46,076 bytes by their hash; the gate's counts and four rows are the entry's | — |
+| `mintwatch-inventory` | the static layer against the tree, with no program run: the 8 refusal classes are the exception classes the 32 Python files under `verify/` define, less `Red` and `Skip`; the 164 sites are the raise statements of those classes, each by file, function, text and order among equal texts; 14 files by hash; the gate's one site by its text; the 13 counts recounted | on a small tree given to the same reader: a line inserted above a raise makes no new site; a changed text, a second raise with the same words, a raise moved to another function, a raise taken out, a raise under another name and a new class are found. Against the real inventory: one raise more, one site gone, one class more, one class gone, a changed pinned file |
+| `mintwatch-fence` | by source: the tap, what it keeps, who reads the register, that no function of this rung reaches the reason register and none of REASON-COURT-0's reaches a mint, the thirteen statements out of scope, REASON-COURT-0's rows text for text, the sources and sealers by hash, the 232 rows and the four | — |
+| `mintwatch-watch` | every refusal raised in the gate's process before this row began: each of the 70 measured entries exactly its count, the gate's plant once, nothing else | nine made-up changes to the mints, a failed tap, an unheard row that was not skipped and a skipped row that minted; and three live ones through the tap |
+
+**What the gate heard here.**
+
+| | |
+|---|---|
+| the gate | 236 rows / 0 fail / 0 skipped, rowset `cb2f68e75e338768` |
+| refusal mints before the watch's row | 142,083, in 16 rows at 59 sites: the 70 measured entries, each its count, and the gate's plant |
+| by class | `savedform.Refused` 141,977 · `diagcommon.Refuse` 62 · `envelope.EnvelopeViolation` 32 · `latency1.Refuse` 4 · `framesplit.Refuse` 3 · `presentscale.Refuse` 3 · `latency1r.Refuse` 2 |
+| in REASON-COURT-0's six rows and this rung's first three | none |
+| in the watch's own row | 2, both its live plants |
+| the tap | `sys.settrace` on Python 3.11; `sys.monitoring` on 3.12 and 3.14.0rc2; the same 71 keys and counts on each |
+
+**The live plants.** After it has judged, the watch's row raises through the tap itself. `envelope.validate({})`,
+called seven frames down and caught at the top, is one mint, at `validate` and at none of the frames it passed
+through. A `ValueError` and the gate's own `Red`, raised and caught the same way, are not mints. A second refusal
+of `envelope.validate`, caught with nothing looking at it, is heard. Both sites are ones no measured row reaches.
+These mints are in the watch's own row, judged there, and are not in the register, as registered.
+
+**Readings the build made.** Each is the owner's to strike before the push.
+
+1. **One line of the row harness, and nothing of REASON-COURT-0.** An interpreter before 3.12 has one trace
+   function per thread, and REASON-COURT-0's listener takes it while a sealer row runs. So on that interpreter the
+   tap stays the thread's one trace function and hands a sealer function's frame to that listener as well: `row()`
+   calls the tap once more after the listener starts. No function of REASON-COURT-0 is edited, and the fence pins
+   its six rows text for text. Both heard what they had heard apart: 158 calls and 142,083 mints.
+2. **When the tap subscribes.** As the gate's file is read, before any row, so that the first row is heard. Under
+   `sys.monitoring` it takes the first free tool id of 4, 5, 2, 1, 0; REASON-COURT-0's listener holds 3.
+3. **One switch on a traced frame.** Under `sys.settrace` the tap turns a frame's line events off. That is an
+   attribute of the interpreter's frame, not of a module, a class or a function; the instrument that took the
+   measurement set the same switch. The fence allows that one assignment and no other.
+4. **What "returns nothing" is.** The `sys.monitoring` callback returns nothing. A trace function must return
+   itself to stay subscribed, and returns nothing else.
+5. **The line is used as the locator it is registered as.** A mint arrives with a file and a line. The row finds
+   today's raise statement on that line, then knows the site by its file, function, class, text and order. The
+   frame's own function name is not compared.
+6. **A file name is read from where the gate was started.** The gate's own file can be named relatively, and a row
+   may leave the working directory elsewhere; the tap keeps the starting directory, as text.
+7. **A skipped row was never seen.** No pass skipped a row, so that rule is held by plants alone.
+8. **Two pinned files are not sealers.** `envelope.py` and `savedform.py` are held by the inventory's fourteen
+   hashes, and not by the fence's seventeen sealer files.
+
+**Mutation testing, off the gate.** 39 planted defects, one at a time, each in a scratch copy of the tree, and two
+runs with no defect, which must pass. The rows a defect touches were run live and one whole pass of the unchanged
+gate stood for the rest.
+
+| family | defects | caught | of those, with every earlier row still green |
+|---|---:|---:|---:|
+| a sealer or a row changes what is raised | 9 | 9 | 7 |
+| the register, the tap, the fence's subjects | 12 | 12 | — |
+| this rung's own judging, weakened one rule at a time | 18 | 18 | — |
+| all | 39 | 39 | |
+
+- **What only this watch sees.** A quiet row that raises a refusal and swallows it, and a second planted failure
+  in the gate's own file: each leaves every earlier row green, REASON-COURT-0's six among them (run against them to
+  see). REASON-COURT-0's listener hears fifteen sealer functions in eleven rows; 142,009 of the 142,083 mints are
+  raised outside those functions.
+- **What both see, differently.** A planted record that trips another check of its sealer: the row sees the same
+  refusal. REASON-COURT-0 says the record now differs from its twin in two fields. This watch says two counts moved,
+  one site a mint more and one a mint fewer, the class and the row the same.
+- **Three survivors of the first run became plants.** A class, a raise and a missing site, each let pass when it
+  was the only difference: the first plants had changed two things at once. Each is now given alone.
+- **A defect in a pinned file that is not a sealer** is caught by the inventory and not by the fence, as reading 8
+  says.
+
+**Not yet shown.** The gate with this build on the owner's host (win32, Python 3.14.5), which is one of the four
+configurations the measured layer was heard in. A whole pass here ran on Python 3.11 and on 3.14.0rc2.
+
 **Grade.** DECLARED: the registration, the fifth court's rulings and the ruling with the push. OBSERVED (off the
-gate, one run in each of four configurations, by an instrument outside the repository): the measured layer; and,
-since, one run over REASON-COURT-0's built gate, in which the six new rows raised no refusal. ESTABLISHED (gate,
-here): the entry hash-locked and the register's bytes pinned by it; nothing of this rung is built. MEASURED (host):
-the gate, 226 of 226, with the entry and the register in the tree.
+gate, one run in each of four configurations, by an instrument outside the repository): the measured layer.
+ESTABLISHED (gate, here): the four rows, 236 in the gate, on Python 3.11; the same on 3.14.0rc2, one pass.
+MEASURED (host): the gate before this build. NOT_MEASURED: the built gate on the host.
 
-**does_not_show.** That any refusal is right, or that a class at a site means a reason. That a fifth configuration
-would count the same. That a refusal which is raised is judged: a mint is counted where it is raised, and what
-catches it is not seen. Which input drew a mint: counts are by row and site. Anything about the 105 sites beyond
-that they were not reached. Anything about a row placed after the watch's: it is not heard by it.
+**does_not_show.** That the gate with this build passes on the host. That any refusal is right, or that a class at
+a site means a reason. That a fifth configuration would count the same. That a refusal which is raised is judged: a
+mint is counted where it is raised, and what catches it is not seen. Which input drew a mint: counts are by row and
+site. Anything about the 105 sites beyond that they were not reached. Anything about a row placed after the
+watch's: it is not heard by it.
 
-**Falsifier.** A raise statement of a refusal class in the tree that the inventory does not hold, or a site it
-holds that the tree does not. A gate pass, in a configuration named here, whose mints differ from the measured
-layer. An entry of the register that was taken from the watch's own run.
+**Falsifier.** A red row among the four on the host. A raise statement of a refusal class in the tree that the
+inventory does not hold, or a site it holds that the tree does not. A gate pass, in a configuration named here,
+whose mints differ from the measured layer. An entry of the register that was taken from the watch's own run.
 
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 
