@@ -16,3 +16,5 @@ __pycache__/
 *.ppm
 *.png
 *.bmp
+# the design tool's own project: sessions, previews, logs (content time; never committed)
+design/work/

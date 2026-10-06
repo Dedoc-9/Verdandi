@@ -298,6 +298,14 @@ proposal. The process is killed at eight registered points in the gate, and afte
 parent untouched or the child whole. What an admission does not record is G20; that nothing here involves a model
 is said there too.
 
+**The design surface.** The first tool built on the seam is `design/`, and it is content time: no row of the gate
+holds it and no gate runs when it is used. It reads a few lines of design text, compiles them to the net
+difference from the current world, admits that into a scratch root to show CURRENT against PROPOSED, and on
+acceptance gives the same proposal bytes to `shell admit` for the project. It can change a world in no other way,
+which is why it may stay uncertified: the worst it can do is propose badly. What it reads off the grid is a view.
+Its limits are ghost G27, and the first of them, one operation per run of the shell, is the next engineering
+invariant in sight.
+
 ---
 
 ## 13. The saved form — one language for everything read back

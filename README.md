@@ -57,6 +57,11 @@ becomes part of the ratified charter is the owner's to rule. The first rung towa
 admission is sealed on the host: ADMIT-0, the admission seam. In the owner's words, **the gate certifies the machine; ADMIT admits the
 world's changes.**
 
+The first tool on that seam is built, off the gate: [`design/`](design/README.md). A person, a script or a model
+writes a few lines of design text; the tool compiles them, shows the current world against the proposed one, and,
+on acceptance, gives the proposal to the shell to admit. No gate runs in that loop. By the owner's adjustment of
+2026-10-06 the engineering seam is frozen, and a new gate is added only for a new engineering invariant.
+
 ## Why this repository exists (the measurement that preceded it)
 
 Urðr grew to 1,612 files and a thirty-six-minute gate; the game/render kernel is one fortieth of that tree.
@@ -113,7 +118,7 @@ running the gate.
 
   CONTENT TIME    a change to the world is admitted; the gate is not run for it
 
-      key · mouse · script · proposal (VRDNP1)
+      key · mouse · script · proposal (VRDNP1) ◄── design/  inspect · propose · preview · admit · undo
          │      bound, or recognized, to a typed action
          ▼
       one append-only log ──────────────► journal.vsj   a record is flushed before it counts
@@ -210,6 +215,10 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          class, site and count: 164 raise sites read from source, 142,082 mints measured in four
          │          configurations, heard by the interpreter's own raise event (cd1472ec; built, four rows,
          │          236 in the gate; on the host 236 of 236)
+         │
+    CONTENT TIME    design/ the design surface, off the gate: design text compiled to proposals, previewed in a
+         │          scratch root and admitted by the certified shell; driven alike by a person, a script or a
+         │          model (built; its own ten checks; slow until admission takes a list)
          ⋮
     declared        DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors
@@ -319,4 +328,5 @@ What the gate does not prove is stated, graded and given the measurement that wo
 | [`docs/DEVNOTES.md`](docs/DEVNOTES.md) | dev notes: the optimization campaign (`GAUNTLET-0` to the `GAUNTLET-2` lock), the present-path courts, and the live campaign (`LIVE-LOOP-0` to `ADMIT-0`) — what each court found, the process rhythm, the lessons |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | where the program stands and the sequenced, falsifiable route: the live loop (built), admission (ADMIT-0 and READER-COURT-0 built), the declared design-event stream, and the presentation work beside it |
 | [`verify/RUNGS.md`](verify/RUNGS.md) | the ledger: every seated rung, its rows, its grade, its limits, its falsifier |
+| [`design/README.md`](design/README.md) | the design surface, content time: the five verbs, the design text, what is authority and what is a view, its limits |
 | [`EPISTEMIC-INVARIANCE.md`](EPISTEMIC-INVARIANCE.md) | the author's isolation theorem, and the honest limits of its own formalism |

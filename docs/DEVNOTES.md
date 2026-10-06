@@ -419,7 +419,19 @@ What stands against the tree, as reviewed:
    runs it, and absolutely by every development harness. The tap keeps the directory it started in; a test that ran
    the file by a relative name, and then moved the working directory, is what showed it mattered.
 
-25. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+25. **The gate is finished when it can stop being run.** Ten rows went on to hold the gate's own
+   refusals. The owner's adjustment after them: a new gate only for a new engineering invariant; a design operation
+   uses what is certified; a diagnostic is measured and never made authority; an experiment stays off the ladder.
+
+26. **Build the content-time piece first, and let it name the next rung.** The design tool was written over the
+   seam as it stands, with no change to the program. Running it once showed what no review had: a 60-cell design
+   costs 40 s, because the seam admits one operation per run. The next engineering invariant was measured, not
+   argued.
+
+27. **A tool that cannot be trusted should be unable to do harm.** The design tool has one way to change a world,
+   and it is the certified shell. So its own checks may stay off the gate: the worst it can do is propose badly.
+
+28. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
@@ -433,6 +445,7 @@ What stands against the tree, as reviewed:
 - A refusal is held to its code, not its cause (G24): the court is built and passes on both machines. 63
   lines the programs print about themselves are trusted and not opened (G25).
 - The mint register's counts are a measurement, and 105 of its 164 sites were never reached (G26).
+- The design surface is content time: uncertified by design, and slow until admission takes a list (G27).
 
 ## The one-line retrospective, again
 

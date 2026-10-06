@@ -5357,6 +5357,10 @@ owner gave ends at the gate: no push is in it, and none is written here.
 
 None of the build's readings was struck. No finding, so no amendment.
 
+**The seam is frozen (the owner's adjustment, 2026-10-06).** With this landing he ruled that the gate system stops
+growing unless a real engineering invariant is found, and that the work is now the design environment. The ruling
+and its decision rule are in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+
 **Grade.** DECLARED: the registration, the fifth court's rulings and the ruling with the push. OBSERVED (off the
 gate, one run in each of four configurations, by an instrument outside the repository): the measured layer.
 ESTABLISHED (gate, here): the four rows, 236 in the gate, on Python 3.11; the same on 3.14.0rc2, one pass.

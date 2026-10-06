@@ -13,8 +13,8 @@ The grades borrow the claim ladder: **ESTABLISHED / MEASURED / UNDERDETERMINED /
 **SOUND?** for the one memory-model question and **OBSERVED** for something seen once, outside the gate.
 
 **Where they sit.** G1–G6 are the renderer's. G7–G13 are the present path's. G14–G23 came with the live editor and
-admission. G24–G26 came with the courts over the gate's own refusals. Each folder's README names the ones that
-live in it.
+admission. G24–G26 came with the courts over the gate's own refusals. G27 is the design surface's. Each folder's
+README names the ones that live in it.
 
 ---
 
@@ -540,6 +540,29 @@ amendment. For the sites never reached: none on the route; the register says onl
 For the third and fourth: a refusal that is a datum with its input beside it, which is the declared emission rung
 and changes the sealers.
 
+## G27 — the design surface is not certified, and the loop it gives is slow · ESTABLISHED (its own checks, off the gate); OBSERVED (its cost, one run)
+
+`design/` is content time. What it is not:
+
+- **Not on the gate.** Its ten checks are its own. They run it against a real shell and plant what they claim to
+  catch, and no row holds them. A defect in the tool can show a wrong top view or propose the wrong cells; it
+  cannot admit what the shell refuses, because the tool has no way to change a session but the shell.
+- **Its view is a second reading of the world.** It replays a session's edits over the base level itself to draw
+  from above. The shell's replay is the authority. The tool checks the base files against the session's hashes and
+  takes the head from the shell; the cells in between are its own arithmetic.
+- **One operation per run of the shell.** A design of 60 cells took about 20 s to preview and 20 s to admit here,
+  and the cost of one admission grew about fifteenfold over those 60 edits. The remedy changes the certified
+  program.
+- **No objects, no constraints.** A room is a statement that expands to cells. "Reachable from the camera" is a
+  reading the tool computes and nothing holds.
+- **The project's pointer is not sealed.** Which session is current, and the history behind `undo`, are a file the
+  tool writes. Every session it points at is sealed; the pointer is not.
+- **A model has not used it.** The design text was written by hand in every check.
+
+**Exorcism.** For the cost: a proposal that carries a bounded list of operations, which is a rung and is not
+registered. For the view: the shell printing the world of a session, so that the tool draws what the verifier
+replayed. For the pointer and the model: use, and what it shows.
+
 ---
 
 ## The disposition
@@ -549,7 +572,7 @@ with sound remedies; G2 is an honest boundary of what the courts measured; G7 is
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
 and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a careful reader must carry, recorded so they are carried on
 purpose. Of the live editor's, G14, G15, G16, G18, G20, G23 and G25 are limits of method, stated so no claim is read
-past them; G24 is a built court with its reach and its debts stated; G26 is the stated reach of a second built watch; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
+past them; G24 is a built court with its reach and its debts stated; G26 is the stated reach of a second built watch; G27 is the first content-time tool, uncertified by design and slow by a named cause; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
 built, with the court's reach stated; G21 is a measurement not yet taken; G22 is two things that happened once and were never
 explained.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded

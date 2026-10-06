@@ -34,10 +34,12 @@ And everything the tree saves and reads back is now one bounded language with on
 (`READER-COURT-0`, built; the gate passes on the host, 226 rows, and is pushed).
 
 And every refusal the gate requires is now held to a registered reason (`REASON-COURT-0`, `337ab021`, built: six
-rows, 232 in the gate; it passes here and on the host, and is pushed). The owner heard the gate on the host
-with a listen-only pass before the build: every registered group holds there. A second slice is built behind
-it, `MINT-WATCH-0` (`cd1472ec`, four rows, 236 in the gate; it passes here and has not yet been run on the host):
-every refusal raised inside the gate's own process is claimed by a row, a class, a site and a count.
+rows), and every refusal raised inside the gate's own process is claimed by a row, a class, a site and a count
+(`MINT-WATCH-0`, `cd1472ec`, built: four rows). The gate is 236 rows and passes here and on the host.
+
+With that the owner ruled the engineering seam frozen (2026-10-06): no further gate unless a real invariant is
+found, and the work is the design environment. Its first piece is built off the gate: `design/`, five verbs over
+the certified admission seam.
 
 What is *not* yet done: the design-event stream and a model at the seam (declared, not registered); any measurement
 of the live loop's timing; richer edits than a cell and a tile class; and semantics the frozen oracle never
@@ -128,6 +130,8 @@ READER-COURT-0   next by the owner's order, its courts held (2026-10-04): the sa
 REASON-COURT-0   the owner's ruling (2026-10-04): next after READER-COURT-0 and before DESIGN-EVENT-0. Every refusal check in the gate is held to an expected reason, an exact code or a deliberately open REFUSE(any). Its census is taken (145 refusal checks in 78 rows; 103 hold a code), its courts are held, and its register is in the tree: codes only from a requirement that already exists, a watch over every child that does not end 0 reading only the code head, the sealers under one registered mutation — registered (`337ab021`) and pushed; in three configurations here and on the host every registered group held — built: six rows, 232 in the gate; on the host 232 of 232, pushed
       ↓
 MINT-WATCH-0     the owner's ruling (2026-10-05): a separate slice, registered now and built after REASON-COURT-0's build, before any rung that gives a refusal a code or makes it a datum. Every refusal-class raise inside the gate's own process is attributable to a registered row, class, site and count, or is a registered plant of the gate. Sites from source (164 in 15 files), counts measured (142,082 mints, four configurations agreeing); a site is its file, its function and the text of its raise — registered (`cd1472ec`) and pushed — built: four rows, 236 in the gate; on the host 236 of 236
+      ↓
+the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen; a new gate only for a new engineering invariant; the work is the design environment. Built off the gate, content time: design/ — inspect, propose, preview, admit, undo over the certified seam, driven the same way by a person, a script or a model
       ↓
 DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered. Whether a design representation, a design diff or constraints are promoted ahead of DESIGN-EVENT-0 is a question the owner has reserved for its own ruling; until he rules, this order stands
       ↓
@@ -1738,6 +1742,102 @@ now held there by the gate.
 configurations, by an instrument outside the repository. ESTABLISHED (gate, here): the four rows, 236 in the gate.
 MEASURED (host): the built gate, 236 of 236, one run. **does_not_show.** That any refusal is right; that a raise is
 judged by anything; which input drew a mint; anything about a fifth configuration.
+
+### The adjustment — the gates are finished; the design environment is the work · **declared** (the owner's, 2026-10-06); its first piece is built, off the gate
+With the host's 236 rows the owner brought two texts and the word *adjust*. Both speak to the assistant and not to
+the reader of this file, so their rules are quoted and the rest is summarized. They restate the two times already
+declared above (the gate certifies the program; content is admitted, not gated) and add an instruction: stop.
+
+**The rule.**
+
+> **The gate certifies the DESIGN PROGRAM. The user does NOT run engineering gates every time they design
+> content.**
+
+and its reason: *the purpose of finishing these gates is to earn the right to stop running them during design.*
+
+**Two phases, kept apart.** The first was to finish REASON-COURT-0 and MINT-WATCH-0 as registered, without widening
+either: no new cryptographic machinery, no general proof system, no reopened decision. That is done, on both
+machines. The second is to build the design environment, with the gate out of the creative loop.
+
+**The decision rule, for every gate proposed from here on.**
+
+| what it is | what happens to it |
+|---|---|
+| an engineering invariant | registered, built, gated, frozen |
+| a content or design operation | no full gate: it uses machinery already certified |
+| observability or a diagnostic | measured, and never made authority |
+| an experiment | kept off the ladder until recurrence justifies promotion |
+
+*Do not create gates merely to make the project look rigorous. The rigor is valuable because it allows the product
+to stop gating ordinary creative work.* The text asks that six words be kept apart: REGISTERED, MEASURED, BUILT,
+GATED, CERTIFIED, DEFERRED. A registration that is not built is not proved; a preview is not authority; a model's
+proposal is not truth.
+
+**The path, as the text draws it.** Human, model, script or interface; a design proposal; a typed design
+representation; a bounded verifier that admits; a session event; the world's authority; the renderer. *Language can
+propose. The verifier admits. The session records. The kernel renders.* A model never runs code, writes files,
+changes canonical state or bypasses the verifier. *Preview is state. Preview is NOT authority.*
+
+**The product test.** A person says: make this room larger and add two entrances. A model proposes a bounded
+design. It compiles to typed operations. The verifier checks bounds, capabilities and authority. The result is
+shown. The person accepts. The session records the admitted operations and the renderer shows the new world. *No
+full engineering gate runs here.*
+
+**The surfaces the text lists**, against what stands today.
+
+| surface | today |
+|---|---|
+| viewport, camera, mouse look | built: the live editor's window, on the host |
+| proposal and preview; current against proposed | built off the gate, as text from above: `design/`. Not in the window |
+| the same path for every editor | built: a key press and an admitted proposal make the same edit event (`admit-replay` holds it) |
+| capabilities | built: ADMIT-0's grant, on the admitter's command line |
+| command surface for a person or a model | built off the gate: `design/design.py`, five verbs |
+| undo | built off the gate: the project steps back to the session before; nothing is deleted |
+| inspector, parameter rack, design diff as objects | none: the world holds cells and five tile classes, and no objects |
+| constraints with witnesses | none. `design/` reports readings and says they are not constraints |
+| recipes | none beyond the design text's five statements |
+| view modes beyond the frame and the text top view | none |
+| portable project, compatibility inspector, plugins, observatory | none |
+
+**The second text: a skill as the first editor.** It proposes that the first consumer of the path be an assistant's
+skill, *a Verðandi editing operator, not a general coding skill*, with five capabilities: inspect, propose, preview,
+admit, undo or revise. Its rule: *Claude should never edit the world directly. Claude edits through Verðandi's
+design language*, so the skill need not be trusted as part of the kernel. It asks that the assistant query the
+environment instead of carrying the world in its context, and that the interface and the assistant be one editor:
+the same operations, the same admission. The owner's question with it: *maybe the move?*
+
+It is the move that was taken. `design/design.py` has those five verbs and nothing else of substance, and each of
+them rests on the certified shell. A skill is then a page of instructions for driving it, and a person at a
+terminal or a script drives it the same way. The skill is the owner's to keep in his own assistant: it is not a
+file of this tree.
+
+**What was measured in building it (off the gate, one run, the build container).** A design of 60 cell operations
+took about 20 s to preview and about 20 s to admit. One admission cost about 0.06 s on an empty session and about
+0.9 s on the session of 60 edits. ADMIT-0 admits one operation per proposal and one proposal per run, and verifies
+the whole session each time, so a design costs more than in proportion to its size. That is not interactive.
+
+**What stands against the tree, on reading the two texts (a review, not a ruling).**
+
+- **One engineering invariant is in sight, and it was found by measuring.** A proposal that carries a bounded list
+  of operations, admitted in one run as one design event or refused whole. It changes the certified program and
+  its language, so by the decision rule it is registered, built and gated. The ladder already names the place:
+  DESIGN-EVENT-0.
+- **A preview in the window is a program change too.** Showing the proposed world beside the current one in the
+  live editor, with accept and reject, is new code in the shell. It follows the batch, as LIVE-AI-EDIT-0 and the
+  branch were ordered.
+- **Objects and constraints are not there to be inspected.** The second text's example shows a room of 14 by 10
+  with one entrance and three ticked constraints. The world holds cells. By the rule already recorded, which kind
+  of object is authority and which is a view is ruled kind by kind, and a constraint's status is a witness and not
+  a stored field. Until then the tool says what it reads and calls it a reading.
+- **The first text's first part repeats work that was done.** It names the registration, the listen-only pass and
+  the two builds as still ahead. Its gate command is not this tree's: the gate is `python verify\verify.py`, and a
+  landing here is three passes with identical logs.
+- **Undo is a pointer.** A session is never modified, so stepping back means standing at the earlier file. The
+  later one stays on disk, sealed.
+
+**Grade.** DECLARED: the adjustment and both texts. ESTABLISHED (off the gate, by the tool's own ten checks): the
+five verbs over the certified seam. OBSERVED (one run): the cost above. **does_not_show.** That a model writes
+useful designs in this text; that the loop is fast enough to design in; anything about the window.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the
