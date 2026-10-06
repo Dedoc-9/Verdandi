@@ -304,7 +304,10 @@ difference from the current world, admits that into a scratch root to show CURRE
 acceptance gives the same proposal bytes to `shell admit` for the project. It can change a world in no other way,
 which is why it may stay uncertified: the worst it can do is propose badly. What it reads off the grid is a view.
 Its limits are ghost G27, and the first of them, one operation per run of the shell, is the next engineering
-invariant in sight.
+invariant: DESIGN-EVENT-0, registered and not built. A design will reach the shell as one batch in VRDNP2, a net
+change set with one byte form. The shell refuses it whole or appends its operations as ordinary edits in one
+admission, so the head is the one the same edits give one at a time, and a preview is a dry run of that same
+admission. Until it is built the tool admits one operation per run.
 
 ---
 

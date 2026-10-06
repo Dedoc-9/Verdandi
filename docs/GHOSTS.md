@@ -13,7 +13,8 @@ The grades borrow the claim ladder: **ESTABLISHED / MEASURED / UNDERDETERMINED /
 **SOUND?** for the one memory-model question and **OBSERVED** for something seen once, outside the gate.
 
 **Where they sit.** G1–G6 are the renderer's. G7–G13 are the present path's. G14–G23 came with the live editor and
-admission. G24–G26 came with the courts over the gate's own refusals. G27 is the design surface's. Each folder's
+admission. G24–G26 came with the courts over the gate's own refusals. G27 is the design surface's, and G28 the
+registered batch's. Each folder's
 README names the ones that live in it.
 
 ---
@@ -559,9 +560,48 @@ and changes the sealers.
   tool writes. Every session it points at is sealed; the pointer is not.
 - **A model has not used it.** The design text was written by hand in every check.
 
-**Exorcism.** For the cost: a proposal that carries a bounded list of operations, which is a rung and is not
-registered. For the view: the shell printing the world of a session, so that the tool draws what the verifier
-replayed. For the pointer and the model: use, and what it shows.
+**Exorcism.** For the cost: a proposal that carries a bounded list of operations, which is a rung, registered as
+DESIGN-EVENT-0 and not built (G28). For the view: the shell printing the world of a session, so that the tool
+draws what the verifier replayed. For the pointer and the model: use, and what it shows.
+
+---
+
+## G28 — a batch is registered, not built; and what it will not be · NOT_MEASURED (a registration: nothing of it runs); limits stated before the build
+
+DESIGN-EVENT-0 is a registration. Nothing of it runs. What it will leave open once it does:
+
+- **The compiler is not certified.** The seam holds the normal form: one byte sequence for each change set. What
+  turns a design into that change set is content time. A compiler that nets wrongly produces a batch that means
+  something else, and the seam admits what it is given if the grant and the session allow it.
+- **The cost of an admission still grows with the session.** Every admission replays the whole parent and verifies
+  the file it wrote. The memo removes a megabyte of hashing from each cell edit and nothing else. Verifying only
+  the change is deferred by name: a seal is a hash, and no earlier verification is something a later run may rely on.
+- **The bound is above the world.** The language allows 4,096 operations. The lattice is 48, so 2,121 is the most
+  that could ever be admitted, and 4,096 is held only as a refusal.
+- **Equivalence is shown where it can be run.** One at a time, 60 operations is the court's largest. For 2,120 the
+  reference is two independent replays, because that many admissions one at a time is not a thing a gate can run.
+- **A binding is not a look.** An admission bound to a preview has the previewed bytes and reaches the previewed
+  head. Whether anyone looked at the preview is not recorded, and an admission with no preview is legal.
+- **ADMIT-0's plant borrowed a name.** Its row forges an envelope naming `VRDNP2` as a language that is not VRDNP1.
+  The registration keeps that plant refused where and as it was. After the build the name is a registered language,
+  so the plant shows less than its label says, and an unknown language is planted again under a name no rung has
+  registered.
+- **This rung's rows are heard by neither watch.** They run after both. Their endings are judged by the rung's own
+  last row, and their in-process refusals by the statements that plant them.
+- **One consumer.** That every editor speaks the same event is declared. The design tool is the only editor there
+  is.
+- **The registration is not blind.** A prototype ran before it was committed. The registered head predates the
+  prototype. The deaths, the largest batch and the forged envelopes were seen to behave as drafted before they were
+  registered.
+- **Two pins on a text become a check on values.** `liveinput-fence` and `liveauthor-fence` held, by its text, that
+  an edit's content is computed by the reference replay's own statement. The memo replaces that statement. After
+  the build the property is held by comparing values over the sessions the court replays, and by the workshop.
+  A text pin held it for every session; a comparison holds it for the ones it runs.
+- **The shell's read-back is not a check of the memo.** It replays the file it wrote with the same memo. A shell
+  planted with a wrong one calls its own file verified. The workshop, which keeps no memo, is the check.
+
+**Exorcism.** For the first: use, and a design representation with its own court (DESIGN-IR/DIFF). For the second:
+a rung that gives a session a trust root, registered on its own. For the last: a second editor.
 
 ---
 
@@ -572,7 +612,7 @@ with sound remedies; G2 is an honest boundary of what the courts measured; G7 is
 G8 has turned from a hunch into a confirmed split with no single dominant phase; G11 is now measured and confirmed (costly here,
 and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a careful reader must carry, recorded so they are carried on
 purpose. Of the live editor's, G14, G15, G16, G18, G20, G23 and G25 are limits of method, stated so no claim is read
-past them; G24 is a built court with its reach and its debts stated; G26 is the stated reach of a second built watch; G27 is the first content-time tool, uncertified by design and slow by a named cause; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
+past them; G24 is a built court with its reach and its debts stated; G26 is the stated reach of a second built watch; G27 is the first content-time tool, uncertified by design and slow by a named cause; G28 is a registration's limits, stated before anything is built; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
 built, with the court's reach stated; G21 is a measurement not yet taken; G22 is two things that happened once and were never
 explained.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded

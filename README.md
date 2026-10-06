@@ -62,6 +62,10 @@ writes a few lines of design text; the tool compiles them, shows the current wor
 on acceptance, gives the proposal to the shell to admit. No gate runs in that loop. By the owner's adjustment of
 2026-10-06 the engineering seam is frozen, and a new gate is added only for a new engineering invariant.
 
+Running that tool found one. A design of 60 operations is 60 runs of the shell, each verifying the whole session.
+The next rung, DESIGN-EVENT-0, is registered and not built: a design enters a session as one batch, refused whole
+or admitted by one admission, and equal to the same operations admitted one at a time.
+
 ## Why this repository exists (the measurement that preceded it)
 
 Urðr grew to 1,612 files and a thirty-six-minute gate; the game/render kernel is one fortieth of that tree.
@@ -218,9 +222,14 @@ rows, grade, limits and falsifier; this is the order and the state.
          │
     CONTENT TIME    design/ the design surface, off the gate: design text compiled to proposals, previewed in a
          │          scratch root and admitted by the certified shell; driven alike by a person, a script or a
-         │          model (built; its own ten checks; slow until admission takes a list)
+         │          model (built; its own ten checks; run on the host; slow until admission takes a list)
+         │
+    THE BATCH       DESIGN-EVENT-0 a canonical batch of 1 to 4,096 operations refused whole or admitted by
+         │          one admission as that many ordinary edits, equal to the same operations one at a time;
+         │          VRDNP2, a net change set with one byte form; a dry run bound to its admission
+         │          (ae7cbb36; registered, not built)
          ⋮
-    declared        DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview (the owner's order; none registered);
+    declared        DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors
 
 The order first ratified named a strip cache as GAUNTLET-0 and ended in MATERIAL-0, a picture becoming a material

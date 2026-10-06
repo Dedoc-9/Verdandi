@@ -431,7 +431,29 @@ What stands against the tree, as reviewed:
 27. **A tool that cannot be trusted should be unable to do harm.** The design tool has one way to change a world,
    and it is the certified shell. So its own checks may stay off the gate: the worst it can do is propose badly.
 
-28. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+28. **One word, two objects.** The proposed invariant said *one ordinary session event* and *head identical to
+   sequential application*. A head is folded once per event, so one item folded once cannot have the head of N
+   edits. Read against `fold`, the sentence held two different things, and the court had to choose: one
+   admission, N items.
+
+29. **Find the cost before courting the remedy.** A load cost 4 ms an edit event. The cause was one line: every
+   edit hashed the tiles' 983,048 bytes, and a cell edit cannot change them. That turned *verify the delta* into
+   two things: an exact memo, which is an equality, and a checkpoint, which is a trust root the tree does not have.
+
+30. **A plant can borrow tomorrow's name.** ADMIT-0 forged a language that is not VRDNP1 and called it `VRDNP2`.
+   The next version of the language has that name. Found by searching the gate for the name before registering
+   it; the registration keeps the plant refused where it was and says what the plant no longer shows.
+
+31. **A watch names its own price.** Two rungs pin every source and sealer so that a change is a decision. The
+   first rung to change the shell after them pays in two amendment entries, and its registration says so before
+   the build finds out.
+
+32. **A plant has to be able to reach what it is said to catch.** The draft planted a memo kept stale by a tile
+   edit and said the workshop would refuse the saved file. A prototype showed no file is ever saved: the stale
+   digest leaves the content unchanged, and the seam refuses an edit that changes nothing. The plant was
+   rewritten before the registration was committed, and the registration says a prototype came first.
+
+33. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))

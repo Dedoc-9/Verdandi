@@ -133,7 +133,9 @@ MINT-WATCH-0     the owner's ruling (2026-10-05): a separate slice, registered n
       ↓
 the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen; a new gate only for a new engineering invariant; the work is the design environment. Built off the gate, content time: design/ — inspect, propose, preview, admit, undo over the certified seam, driven the same way by a person, a script or a model
       ↓
-DESIGN-EVENT-0 → LIVE-AI-EDIT-0 → branch and preview      the owner's order after it; each chosen in its own court; none registered. Whether a design representation, a design diff or constraints are promoted ahead of DESIGN-EVENT-0 is a question the owner has reserved for its own ruling; until he rules, this order stands
+DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`); not built
+      ↓
+DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. The design representation follows the event and is not promoted ahead of it: the question he had reserved is ruled
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -1416,6 +1418,8 @@ whether a design representation, a design diff and constraints are promoted ahea
 development environment below would have it. His words: *I would not silently reorder that based on the 15-pivot
 review. That deserves its own ruling.* Nothing is reordered here. The locked order stands until he rules.
 
+*Ruled on 2026-10-06: DESIGN-EVENT-0 stays next, and the design representation follows it. See DESIGN-EVENT-0 below.*
+
 ### The development environment — fifteen pivots · **declared** (the owner's, 2026-10-04); not registered, nothing built
 A review the owner brought on 2026-10-04 and asked to have recorded: Verðandi judged as a research-grade interactive
 development environment and not as a game editor. Like the texts above it is a reply to his own description, so its
@@ -1743,7 +1747,7 @@ configurations, by an instrument outside the repository. ESTABLISHED (gate, here
 MEASURED (host): the built gate, 236 of 236, one run. **does_not_show.** That any refusal is right; that a raise is
 judged by anything; which input drew a mint; anything about a fifth configuration.
 
-### The adjustment — the gates are finished; the design environment is the work · **declared** (the owner's, 2026-10-06); its first piece is built, off the gate
+### The adjustment — the gates are finished; the design environment is the work · **declared** (the owner's, 2026-10-06); its first piece is built, off the gate, and has run on the host
 With the host's 236 rows the owner brought two texts and the word *adjust*. Both speak to the assistant and not to
 the reader of this file, so their rules are quoted and the rest is summarized. They restate the two times already
 declared above (the gate certifies the program; content is admitted, not gated) and add an instruction: stop.
@@ -1838,6 +1842,97 @@ the whole session each time, so a design costs more than in proportion to its si
 **Grade.** DECLARED: the adjustment and both texts. ESTABLISHED (off the gate, by the tool's own ten checks): the
 five verbs over the certified seam. OBSERVED (one run): the cost above. **does_not_show.** That a model writes
 useful designs in this text; that the loop is fast enough to design in; anything about the window.
+
+### DESIGN-EVENT-0 — a design as one transition · **registered** (`ae7cbb36`); not built
+The adjustment above ended with one engineering invariant in sight, found by measuring: a design of 60 operations
+cost about 40 s through a seam that admits one operation per run. This section records what happened next: the
+host ran the tool, the owner locked the rung, a court settled its shape, and it was registered. The rung's own
+record, with the language, the checks and the rows, is in [`verify/RUNGS.md`](../verify/RUNGS.md).
+
+**The host ran the design tool (2026-10-06).** With 0126 and 0127 applied the owner ran `new`, `grant`, `propose`,
+`preview` and `admit` on a room with two entrances and a painted floor. The tool compiled 60 operations, the
+shell admitted all of them in the scratch root and then for the project, and the session went from head
+`73571153c2fc` to head `c18a71f6af8d`. Those are the heads the build container had reached from the same text. The
+loop is the certified seam's on win32 as it is here. The output gives no time, and no push.
+
+**The owner's text, and his lock.** It speaks to the assistant, so its rules are quoted and the rest is summarized.
+
+> **Batch the next rung—but don't batch seven unrelated courts into `DESIGN-EVENT-0`.**
+
+The seven properties it names are faces of one claim, in its words: *a design is an atomic, deterministic,
+replayable, previewable transition rather than a pile of shell mutations.*
+
+| | the property | the text's rule for it |
+|---|---|---|
+| 1 | one proposal, one admission | the whole proposal becomes one design event, or nothing does |
+| 2 | a batch means its operations in order | *batching without creating a second semantic engine* |
+| 3 | what is admitted is the net change set | redundant operations may exist in proposal space; admission records the canonical set |
+| 4 | what was previewed is what is admitted | *No recomputation against a silently changed world.* A stale anchor is refused |
+| 5 | incremental verification: *verify the delta, not the whole history* | *Do not weaken the canonical session semantics merely for speed. The fast path must be equivalent to replay.* |
+| 6 | a preview is not a second world | the same batch projects into scratch state without touching authority |
+| 7 | every editor speaks the same event | mouse, buttons, text, a recipe and a model all produce the same design event |
+
+Three more rules from it. *The performance result is not itself the correctness theorem. The correctness theorem
+is equivalence; the speedup is the consequence you measure.* On the tool as built: *Don't let Claude optimize the
+current `design.py` by merely issuing fewer shell calls. Make **the event batch itself** the architectural object.*
+And the order after: `DESIGN-EVENT-0 → DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI`, with the fifteen pivots of the
+development environment left DECLARED and none of them made a gate.
+
+> **My ruling: LOCK DESIGN-EVENT-0 as the next rung, and batch these seven properties into that court.** Don't add
+> a separate gate for each theorem.
+
+This also answers the question he had reserved: whether a design representation is promoted ahead of
+DESIGN-EVENT-0. It is not. The event comes first and the representation follows it.
+
+**What the tree said before the court.** Five facts shaped the questions. A head is folded once per event, so one
+log item folded once cannot have the head of N edits. All three verifiers refuse a repeated proposal id and any
+language but VRDNP1, so a batch changes them whatever its shape. Every edit re-hashes the tiles' 983,048 bytes, a
+cell edit included, and that is the 4 ms an edit event costs on load. The kernel's lattice is 48, so no batch above
+2,121 operations can be admitted. And the two refusal rungs pin the files a batch has to change.
+
+**The court.**
+
+| the question | locked | the owner's refinement |
+|---|---|---|
+| what a design event is in the log | N ordinary edits appended by one admission | *"one design event" should not mean "one hash fold."* The batch is the transaction boundary. The N edits are N log items, and the registration says so |
+| what batches the language accepts | canonical batches only | the compiler canonicalises, never the authority. The normal form must be idempotent. An inverse pair is refused because a batch is a net change set, not because an inverse edit is illegal |
+| what "verify the delta" means in this rung | full replay of the parent, with an exact memo | the delta claim is deferred. The memo is not a checkpoint and adds no trust root |
+| what a preview is at the seam | a dry run of the admission, writing nothing | the dry run returns what binds it to the admission: parent head, digest, proposed head, language |
+
+The third answer corrects the fifth property. His text had asked that a design operation not re-verify the whole
+growing session *if the existing architecture can establish a checkpoint/parent invariant*. It cannot yet: a
+session's seal is a hash, and nothing in the tree makes an earlier verification something a later run may rely on.
+His court wording, registered as given: *Every admitted batch is replayed against a verified parent; unchanged
+witnesses may reuse their exact prior digest, but no historical computation is trusted merely because it was
+previously verified.*
+
+**What is registered.** A canonical batch of one to 4,096 typed operations is refused whole or admitted by one
+admission as that many ordinary edit events, equal in world, head, replay and saved events to the same operations
+admitted one at a time through ADMIT-0. The language is VRDNP2, beside VRDNP1 and not in place of it. The preview
+is `shell design --dry-run`, and an admission can be bound to it. One head is registered before the seam exists:
+the 60 operations the owner admitted one at a time on his host have to reach `c18a71f6af8d…1036` as one batch.
+
+**A prototype, before the registration was committed.** The seam was prototyped against the draft, outside the
+tree. It reached the registered head, which had been fixed beforehand. It also found a plant in the draft that could
+never have caught anything: a memo kept stale by a tile edit leaves the content unchanged, and the seam refuses an
+edit that changes nothing, so no file would ever have reached the workshop. The plant was rewritten before the
+commit. Run against the gate as it stands, it passed 229 of 236 rows, and the seven it reddened are each
+accounted for in the registration. One run, OBSERVED: the 60 operations previewed in about 0.03 s and admitted in
+about 0.08 s. That is a prototype's time on the build container and not a measurement of the build.
+
+**What it costs the gate.** Six rows, 236 becoming 242 with the build. Two amendment entries, because
+REASON-COURT-0 and MINT-WATCH-0 pin files this rung changes: that is the price the two watches named for
+themselves. And two fences re-pinned on purpose, LIVE-INPUT-0's and LIVE-AUTHOR-0's, because each holds by its
+text the statement the memo replaces; what they held there moves to a comparison of values in this rung's replay
+row. It is one rung with one court, as ruled.
+
+**What stays declared.** DESIGN-IR/DIFF, LIVE-AI-EDIT-0 and a graphical editor, in that order. The fifteen pivots.
+That every editor speaks the same event: one consumer will exist when this is built, the design tool.
+
+**Grade.** DECLARED: the lock, the court and the registration. OBSERVED (the owner's host, one run, off the gate):
+the design tool's loop over ADMIT-0 and the two heads. OBSERVED (the build container, one run): the cost of that
+loop and of a load, and a prototype's times. **does_not_show.** Anything built, what the build will cost on the
+host, or that a model writes a useful design.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

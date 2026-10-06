@@ -21,7 +21,7 @@ The gate is the program's only judge, so its design is about what it may and may
     landing       two consecutive passes, their logs byte-identical, GATE PASSED. A third pass with the host's
                   records present, when a rung reads them.
 
-    preregister.json   40 entries: hypothesis · success · failure · limits · instrument · chain hash.
+    preregister.json   41 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
                        amendment entry with its own hash.
 

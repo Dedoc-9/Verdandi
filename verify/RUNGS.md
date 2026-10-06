@@ -4624,6 +4624,8 @@ its form.
 diff and constraints are promoted ahead of it. The owner: *I would not silently reorder that based on the 15-pivot
 review. That deserves its own ruling.* The locked order stands until he rules.
 
+*Ruled on 2026-10-06: DESIGN-EVENT-0 stays next and the design representation follows it. See DESIGN-EVENT-0 below.*
+
 ## REASON-COURT-0 — every refusal the gate requires, held to a registered reason (preregistered `337ab021`; heard on the host before the build; built: six rows, 232 in the gate; the gate passes here and on the host; pushed)
 
 ```
@@ -5375,6 +5377,218 @@ watch's: it is not heard by it.
 **Falsifier.** A red row among the four on a later run of either machine with the tree unchanged. A raise statement of a refusal class in the tree that the
 inventory does not hold, or a site it holds that the tree does not. A gate pass, in a configuration named here,
 whose mints differ from the measured layer. An entry of the register that was taken from the watch's own run.
+
+## DESIGN-EVENT-0 — a canonical batch refused whole, or admitted by one admission as N ordinary edits equal to the same operations one at a time (preregistered `ae7cbb36`; not built)
+
+```
+  a design: text · a mouse · a recipe · a model             content time, not certified
+        │  compiled to the net change set, in the one order
+        ▼
+  VRDNP2 batch            6 + N lines · 1 to 4,096 operations · one byte form
+        │
+        ├─ shell design --dry-run ──────► one line: language · parent · digest · head · N
+        │                                 nothing written                 │
+        │                                                                 ▼ the binding
+        └─ shell design --previewed DIGEST,HEAD ──► recognized · anchored · granted
+                                                    each operation: the session's own push
+                                                    all N in memory, or refused whole
+                                                               │
+                                                               ▼
+                             one journal, one sealed file: S's events, then N ordinary edits,
+                             each with the batch's envelope and its place k of N
+                                                               │
+                             shell loader · workshop · sealer: a batch is whole, or the session is refused
+```
+
+**Why there is a rung.** The design tool was built over ADMIT-0 as it stands, and running it measured the cost: a
+design of 60 operations took about 20 s to preview and about 20 s to admit on the build container. ADMIT-0 admits
+one operation per proposal and one proposal per run, and each run verifies the whole session. By the owner's
+adjustment a new gate needs a new engineering invariant. This is one: it changes the certified program and its
+language.
+
+**The host ran the tool first (DANIELDILLBERG, 2026-10-06).** 0126 and 0127 were applied, and the owner ran the tool
+on the design this section keeps coming back to.
+
+| | |
+|---|---|
+| `new` | a project under `design\work`, a session sealed by the host's own `verify\build\shell.exe`, head `73571153c2fc…391c` printed in full |
+| `grant` | `allow=open,close,paint cells=1,1,20,12 classes=floor` |
+| `propose` | the text `room 6,3 16,10` · `entrance 6,6` · `entrance 11,10` · `open 11,11` · `paint floor 60,70,90`: 60 operations, 56 cells opened, 3 closed, 1 class painted |
+| `preview` | CURRENT `73571153c2fc`, PROPOSED `c18a71f6af8d`; floor 332 to 385 cells, all reachable from the camera (a view); the shell admitted all 60 in the scratch root |
+| `admit` | ADMITTED, 60 operations, head `73571153c2fc -> c18a71f6af8d` |
+
+The build container had reached the same two heads from the same text. The proposal ids differ between the
+machines, since each carries a nonce, and the envelope is not in the head. The output gives no time, no gate run
+after 0126 and no push: none is written here. By the owner's word the public repository stood at `a1c0a65` when this
+rung was registered, so MINT-WATCH-0's build and what followed it were on the host and not yet pushed.
+
+**The lock (the owner, 2026-10-06).** *LOCK DESIGN-EVENT-0 as the next rung, and batch these seven properties into
+that court. Don't add a separate gate for each theorem.* The seven, and where the registration holds each:
+
+| the property | held by |
+|---|---|
+| one proposal, one admission | `designevent-admit` |
+| a batch means its operations in order | `designevent-admit` against ADMIT-0's own admissions one at a time; `designevent-replay` against two independent replays |
+| what is admitted is the net change set | `designevent-language` holds the normal form. The netting is a compiler's, and content time |
+| what was previewed is what is admitted | the binding, in `designevent-admit` |
+| replay stays the authority | `designevent-replay`, with the memo held against the unmemoised computation |
+| a preview is not a second world | the dry run writes nothing, in `designevent-admit` |
+| every editor speaks the same event | DECLARED for editors that do not exist. Held: one batch language, one recognizer, and the design tool changing a session through nothing else |
+
+Two more of his sentences are registered as rules. *The correctness theorem is equivalence; the speedup is the
+consequence you measure.* And: *Make the event batch itself the architectural object*, so the build may not be the
+design tool calling the shell less often.
+
+**What reading the tree found before the court.**
+
+| found | where | what it forced |
+|---|---|---|
+| a head is `sha256(head ‖ tag ‖ witness)`, once per event | `shell/playback.rs`, `fold` | one log item folded once cannot have the head of N edits |
+| all three verifiers refuse a proposal id that occurs twice, and any language but VRDNP1 | the shell's loader, `workshop/sessionwalk.rs`, `verify/livesession.py` | a batch changes all three, whatever its shape |
+| every edit re-hashes the level (18,708 bytes) and the tiles (983,048 bytes) | `content_hex`, called by both edit pushes | about 4 ms an edit event on load: 0.023 s with no events, 0.262 s with 60, linear. A cell edit cannot change the tiles |
+| the lattice is 48 | `kernel/mantle.rs` | a level has at most 2,304 cells, 2,116 off the border: no batch above 2,121 operations can be admitted |
+| ADMIT-0's row plants an envelope naming `VRDNP2` as a language that is not VRDNP1 | `admit_replay` | the new language's envelope has to be told apart from that plant, which must stay refused where it was |
+| the two refusal rungs pin every Rust source and sealer | `RSN_SOURCES`; `verify/mints.json` | the build needs an amendment entry for each |
+
+**The court (four questions, the owner's answers).**
+
+| the question | his answer | what he added |
+|---|---|---|
+| what a design event is in the log | N edits, one admission: **locked** | *"one design event" should not mean "one hash fold."* The N edits are N log items. The batch is the transaction boundary, not a replacement for the session's edit algebra. Contiguous, ordered k = 1..N, all or nothing. Undo's unit is the batch |
+| what batches the language accepts | canonical only: **locked** | canonicalising belongs to the design compiler, not to the authority. It must be idempotent, or it is not a normal form. An inverse pair is refused *only because VRDNP2 represents a net change set, not because inverse edits are intrinsically illegal* |
+| what "verify the delta" means here | full verification with an exact memo: **locked**. The delta claim: **deferred** | *Every admitted batch is replayed against a verified parent; unchanged witnesses may reuse their exact prior digest, but no historical computation is trusted merely because it was previously verified.* Not to be called a checkpoint. There is no new trust root |
+| what a preview is at the seam | a dry run in the shell: **locked** | the dry run returns the parent head, the proposal digest, the proposed head and the language version, *otherwise "preview then admit" is merely convention rather than a formally coupled operation* |
+
+**The claim, as registered.** A canonical batch of one to 4,096 typed operations is either refused whole, leaving
+nothing, or admitted by one admission as that many ordinary edit events of the session's log; and then the world,
+the head, the replay, the saved events and the session one steps back to are those of the same operations admitted
+one at a time through ADMIT-0, in the same order, from the same parent. His first wording said zero-to-N operations
+and one ordinary session event. The court settled both: a batch of no operations is not in the language, and one
+design event is one admission.
+
+**The language.**
+
+```
+VRDNP2
+renderer=<64 of 0-9a-f>
+bearing=<64 of 0-9a-f>
+parent=<64 of 0-9a-f>
+proposal=<64 of 0-9a-f>
+operations=<N>                 1..4096, no leading zero
+open <x>,<z>                   N operation lines, each one of these three
+close <x>,<z>
+paint <class> <colour>
+```
+
+Each line ends in one LF, with nothing before the first and nothing after the last. A coord, a class and a colour
+are VRDNP1's. A batch is 322 to 74,059 bytes. The cell operations come first in row-major order (z, then x,
+strictly ascending), then the paints in the order `wall0 wall1 wall2 wall3 floor`, strictly. So a target occurs
+once and each typed batch has one byte sequence. VRDNP1 and `shell admit` are as registered; the batch has its own
+command.
+
+**The checks, in order, the first that applies.** `ADMIT-IO` · `ADMIT-SIZE` · `ADMIT-PARSE` · `ADMIT-RANGE` ·
+`ADMIT-ORDER` (not strictly after the operation before) · `ADMIT-PREVIEW` (with `--previewed`: not the previewed
+bytes) · `ADMIT-PROGRAM` · the loader's own refusals · `ADMIT-SESSION` · `ADMIT-ANCHOR` · `ADMIT-DUPLICATE` (the id is
+in S's history under either language) · then each operation in order, `ADMIT-CAPABILITY` and `ADMIT-AUTHORITY`, the
+refusal naming the operation's line · and last `ADMIT-PREVIEW` again (not the previewed head). `ADMIT-ORDER` and
+`ADMIT-PREVIEW` are first registered here. The others name the reasons ADMIT-0 gave them. A refused batch leaves
+no run directory, no journal and no file, at whichever operation it was refused.
+
+**The envelope.** ADMIT-0's eight members and two more, `place` and `count`. Parent and head stay the chain's own
+heads around each event, as for any envelope. What the N events share is the batch's identity: language, proposal
+id, digest, identities, grant and count. A batch in a session is whole and contiguous, place 1 to place count in
+order, or the session is refused by the shell's loader, the workshop and the sealer alike. A proposal id names one
+admission.
+
+**What a death leaves.** A run of a batch of eight is ended at twelve points.
+
+| ended at | what is left |
+|---|---|
+| the bytes read · the batch recognized · every check passed and all eight applied in memory | no run directory |
+| the journal opened · a record torn at place 1 | loads to S's head |
+| a record torn at place 4 or 8 · a record flushed at place 1 or 4 | part of a batch: refused by the loader |
+| a record flushed at place 8 · the temporary file written · the saved file moved into place | loads to the child's head, all eight envelopes intact |
+
+S's bytes are unchanged after each. Nothing loads to any other head.
+
+**A head registered before the seam exists.** The design in the table above is 60 operations in row-major order and
+then the class, which is VRDNP2's order. Sixty ADMIT-0 admissions took the session on the build container from
+`73571153c2fca1ae9412f82dff335fa134d3bc06fb785b0878a032cfa442391c` to
+`c18a71f6af8d269095c2789b9887f160344f15bed17a88782b47e24cd77c1036`.
+The host printed the same parent in full and the same first twelve characters of the result. The one batch of those
+60 operations has to reach that head.
+
+**A prototype came first, and the registration says so.** Before the entry was committed the seam was prototyped
+against its draft, on the build container, in a tree that is not this one. Nothing of it is in the repository.
+
+| what the prototype showed | what was done with it |
+|---|---|
+| the 60 operations as one batch reached the registered head | nothing: the head was fixed beforehand, from the sixty admissions one at a time. No expected value was taken from the prototype |
+| the draft's memo plant, a tile edit that keeps the tiles' earlier digest, leaves the content as it was. The seam's own nothing-to-change check refuses it, so no file is ever saved and the workshop never sees one | the plant was rewritten before the commit: a cell edit that reuses the tiles' digest from before a paint |
+| a shell carrying that wrong memo saves a file and reads it back as verified, because the read-back uses the same memo | registered as what the court shows: the in-process comparison and the workshop are the checks of the memo, and the shell's own read-back is not |
+| ADMIT-0's fence counts names in the shell's source (`go_admitted(`, `admit_next(`, `self.pending`, the admit arm of the command line) | the batch seam has names of its own and a fence of its own; ADMIT-0's fence passes unchanged and says nothing about the batch |
+| the gate as it stands, run against the prototype: 229 of 236 rows passed. `liveinput-fence` and `liveauthor-fence` each hold, by its text, the statement that computes an edit's content from the bytes | registered: the memo re-pins those two rows on purpose, and what they held moves to a comparison of values in `designevent-replay` |
+| `readercourt-writers` holds the one path a journal record is written by; a batch's records written together and flushed once went round it | the prototype was changed, not the row: a batch's records go through that path one by one, each flushed. What N flushes cost on the host is not measured |
+| the other four red rows: `reasoncourt-fence`, `mintwatch-fence` and `mintwatch-inventory` on the files and raise sites this rung changes, and `reasoncourt-watch` on two endings left unheard behind the two fences | as registered: two amendment entries; the two endings are heard again once the fences are re-pinned |
+| the twelve deaths, the largest batch and eleven forged envelopes behaved as drafted | recorded as a limit: the registration is not blind in those |
+
+One run, OBSERVED, and a prototype is not the build: the 60 operations previewed in about 0.03 s and admitted in
+about 0.08 s, where ADMIT-0 took about 20 s for each; 2,120 operations admitted in about 1.1 s; a session of 60
+edits loaded in about 0.03 s, where it had taken 0.26 s.
+
+**The six rows, and what each is registered to hold.**
+
+| row | holds |
+|---|---|
+| `designevent-preregistered` | the entry's hash, and the constants of the build against it |
+| `designevent-language` | a hostile corpus through `shell design`, each case its registered code and line; every single-byte mutant of three batches refused or recognized with no second spelling; a Python oracle agreeing on every input; the oracle's writer idempotent |
+| `designevent-admit` | the child of one batch equal to the last child of the same operations one at a time (three batches of one, a batch of eight, the design's 60); capability and authority refused at every place of the eight; anchor, program, session, duplicate; the largest batch the lattice admits, 2,120 operations; a batch of 4,096 refused; the dry run and the binding |
+| `designevent-crash` | the twelve deaths |
+| `designevent-replay` | the workshop and the sealer on every child; the largest batch's head from the gate's own Python fold; forged files, each differing in one respect, refused by all three; the memo against the unmemoised computation; a wrong memo, which the shell that carries it reads back as verified, found by the comparison and refused by the workshop |
+| `designevent-fence` | one reader of the language; no second fold; a batch's envelope set by the batch seam and the loader alone, and `shell design` taking no plant; VRDNP1, `shell admit` and every earlier row as they were; the kernel and both identities unchanged; every ending of this rung's rows carrying its registered code |
+
+**What the registration adds to the rulings.** Each was the owner's to strike before the commit was pushed: the
+language's lines and its byte bounds; a separate command, `shell design`, so that `shell admit` stays as registered;
+the two new codes and the order of the checks; parent and head kept per event, with the batch's identity in the
+members its events share; the twelve deaths; the registered head; the lattice's bound, with 2,120 as the largest
+batch and 4,096 held only as a refusal; and what the rung owes the two refusal rungs.
+
+**What it changes in earlier rows.** Two, and they are named. LIVE-INPUT-0's fence and LIVE-AUTHOR-0's fence each
+hold the statement `self.content = content_hex(&self.level, &self.tiles)` by its text, as the reference replay's
+own. The memo replaces it with the hash of two kept digests. Both rows are re-pinned in the build, as SIM-TICK-0,
+MOUSE-LOOK-0 and HOLD-WALK-0 re-pinned them before. What they held there, that an edit's content is the content
+the reference replay computes, is held from then on by `designevent-replay`: against the unmemoised computation
+in process, and against the workshop, which keeps no memo. A pin on a text becomes a check on values. No other row
+of an earlier rung changes its text.
+
+**What it owes the two refusal rungs.** REASON-COURT-0 and MINT-WATCH-0 each hold that no Rust source and no sealer
+differs from what it was. This build changes some. So it carries two amendment entries, `REASON-COURT-0a` and
+`MINT-WATCH-0a`, each with its own hash, naming the moved pins and the raise sites added to
+`verify/livesession.py`. No earlier row may end or mint otherwise than registered. If holding that needs more than
+the two amendments say, the build stops and the owner rules. This rung's rows run after both watches and are heard
+by neither: its last row judges their endings by code head, with the reader REASON-COURT-0 fixed, and no statement
+of this rung requires a refusal without naming its code.
+
+**Deferred, by name.** Verifying only a delta. A checkpoint that lets replay be skipped. Any trust in a seal. A
+design representation above operations, a design diff, constraints or readings in the shell (DESIGN-IR/DIFF, the
+rung after this one). A model, a live loop, a window.
+
+**Not built.** One file changed: `verify/preregister.json`, the ledger's 41st entry. The gate is the 236 rows it
+was. The build follows on the owner's word, after this registration is pushed.
+
+**Grade.** DECLARED: the registration and the court's rulings. OBSERVED (one run, the build container, before the
+build): the times above, ADMIT-0's and the prototype's. OBSERVED (the owner's host, one run, off the gate): the
+design tool's loop over ADMIT-0, and the two heads.
+
+**does_not_show.** Anything built: a prototype outside the tree is not a build, and no row holds any of it. That a
+compiler nets a design correctly: that is content time and is not certified. That two builds of the shell agree.
+What an admission will cost on the host: the prototype's times are one run on another machine, and the cost of an
+admission will still grow with the session. That a model can write a design worth admitting.
+
+**Falsifier (once built).** A batch whose child differs in head, content, spec or witness from the same operations
+admitted one at a time. A file that loads standing inside a batch. A refused batch that leaves anything. A dry run
+that writes. An admission bound to a preview that reaches another head. The 60 operations as one batch reaching a
+head other than the registered one.
 
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 

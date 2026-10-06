@@ -84,7 +84,8 @@ ADMIT-0's proposal language, one operation per proposal, written by this tool an
   verifies the whole session each time. A design of 60 cells took about 20 s to preview and 20 s to admit on the
   build container, one run, and a single admission cost about fifteen times more on the 60-edit session than on the
   empty one. A proposal that carries a bounded list of operations is a change to the certified program, and so a
-  rung with its own registration; it is not built.
+  rung with its own registration: DESIGN-EVENT-0, registered (`ae7cbb36`) and not built. When it is, a proposal
+  here becomes one batch, a preview a dry run of its admission, and an admit that same batch bound to the preview.
 - **Cells and classes, nothing above them.** A room here is a statement that expands to cells. Once admitted there
   is no room, only cells. There are no objects, relations or constraints in the world.
 - **Readings, not constraints.** "Reachable from the camera" is a flood over floor cells, computed by this tool.
