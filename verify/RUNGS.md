@@ -5692,8 +5692,9 @@ says so and none is written.
 | 1 | the two amendments, the build and its record (0130, 0131, 0132) | 2026-10-06 | `b975fc5..7e1d997` |
 | 2 | that tree with 0133, documents only | 2026-10-06 | `7e1d997..eba1951` |
 | 3 | that tree with 0134, documents only | 2026-10-07 | `eba1951..5f8ab66` |
-| 4 | that tree with 0135, documents only. Git's id of it: `f9c5a8108ae33f17418b6a62a96bdec6c5429dcb` | 2026-10-07 | not in the output |
-| 5 | the same tree: the next command after run 4 | 2026-10-07 | not in the output |
+| 4 | that tree with 0135, documents only. Git's id of it: `f9c5a8108ae33f17418b6a62a96bdec6c5429dcb` | 2026-10-07 | not in its output; its commit went out with run 6's push |
+| 5 | the same tree: the next command after run 4 | 2026-10-07 | the same |
+| 6 | that tree with 0136, documents only | 2026-10-07 | `5f8ab66..83b0261`, which carries 0135 and 0136 |
 
 A later host run of this gate is a line of this table. The dates are the days the outputs were given; the outputs
 carry none of their own. Every host run was the compact one, so the rows' texts, which carry the counts, were
@@ -5744,6 +5745,7 @@ host run:
 | host, runs 1 and 2 | `!=`: 0133 was applied between them, by Git's own output | `==`, as printed: the two outputs he gave, compared here line by line, 242 rows and the reconcile line | FALSE: two agreeing runs |
 | host, runs 2 and 3 | `!=`: 0134 was applied between them, by Git's own output | `==`, as printed | FALSE: two agreeing runs |
 | host, runs 3 and 4 | `!=`: 0135 was applied between them, by Git's own output | `==`, as printed | FALSE: two agreeing runs |
+| host, runs 5 and 6 | `!=`: 0136 was applied between them, by Git's own output | `==`, as printed | FALSE: two agreeing runs |
 | host, runs 4 and 5 | `==`: Git gave the tree's id before run 4 and after run 5, `f9c5a8108ae3…9dcb` both times, and `git status --porcelain` printed nothing both times; run 5 was the next command after run 4 | `==`, as printed: the two outputs he gave, the same character for character | **TRUE** |
 | here, passes 1 and 2 on the head that carries this record | `==`: two exports of one commit, and a digest over each export's tracked files, taken before and after its pass, the same all four times | `==`: the two logs, byte for byte | TRUE |
 | here, pass 3 against pass 1 | `!=`: the same export with the host's 33 records added | `==`: the logs, byte for byte | FALSE: an agreeing run on another tree, which is what that pass is for |
@@ -5765,7 +5767,11 @@ What this leaves stated.
 
 **The judgement his word named.** *Let the full ×2 gate judge DESIGN-EVENT-0 as a complete engineering rung.* Under
 his own predicate the host's gate is FULL×2 on a tree that holds this build: 242 of 242, twice, one tree, one
-output. What he makes of that is his to say. No push is in the output he gave for those two runs.
+output. What he makes of that is his to say. No push was in the output he gave for those two runs; the commit
+they ran on went out with the sixth run's push.
+
+**His word after it (2026-10-07).** *take next.* By his order of 2026-10-06 the rung after this one is
+DESIGN-IR/DIFF. It is not registered, and nothing of it is written here.
 
 Earlier landings are not regraded. Their passes here were exports of one commit with no digest of the exports
 taken, and their host runs are recorded as what they were, one run or two.
@@ -5827,9 +5833,9 @@ row admitted the 60 in its own root; the tool has not been shown doing it.
 (gate, here): the six rows, 242 in the gate, three passes identical, one of them with the host's records present;
 the same on Python 3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one
 run, off the gate): the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate,
-236 of 236, pushed; the built gate, 242 of 242, five runs: the first three on three trees that differ in
-documents only, each pushed; the fourth and fifth on one tree, with no push in the output. By the owner's
-predicate: FULL×2 here, and FULL×2 on the host by its fourth and fifth runs.
+236 of 236, pushed; the built gate, 242 of 242, six runs on five trees that differ in documents only, all
+pushed; the fourth and fifth on one tree. By the owner's predicate: FULL×2 here, and FULL×2 on the host by its
+fourth and fifth runs.
 
 **does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
 builds of the shell agree. That the memo is right on a session the court does not replay: the workshop is the

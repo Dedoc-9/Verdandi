@@ -43,7 +43,8 @@ the certified admission seam.
 
 One invariant was found there, by measuring, and it is built: a design is admitted as one batch or refused whole
 (`DESIGN-EVENT-0`, `ae7cbb36`, built: six rows). The gate is 242 rows and passes here and on the host. By the
-owner's word with that push, no theorem is added at once.
+owner's word with that push no theorem was added at once. When the host's gate was FULL×2 by his own predicate, his
+word was *take next* (2026-10-07).
 
 What is *not* yet done: a design representation above operations and a model at the seam (declared, not
 registered); any measurement of the live loop's timing; richer edits than a cell and a tile class; and semantics
@@ -139,7 +140,7 @@ the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen
       ↓
 DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242 on every run and FULL×2 by the owner's predicate; pushed
       ↓
-DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered, and by his word with the build's push none is added at once. The design representation follows the event and is not promoted ahead of it: the question he had reserved is ruled
+DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. By his word with the build's push none was added at once; with the host's gate FULL×2 he said *take next* (2026-10-07). The design representation follows the event and is not promoted ahead of it: the question he had reserved is ruled
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -1970,7 +1971,10 @@ taken outside it.
 Then he ran the host's gate to the predicate (2026-10-07). With 0135 applied: Git's id of the tree and a status
 that lists nothing, the gate, the gate again, the same id and the same empty status. 242 of 242 both times, and the
 two outputs the same as printed. Same tree, same output: FULL×2 on the host. The identity is Git's, so the files
-Git ignores are outside it; the outputs were compared as he gave them. No push is in that output.
+Git ignores are outside it; the outputs were compared as he gave them. No push was in that output. It came with
+the next run, a sixth, on the tree with 0136: 242 of 242 again, pushed (`5f8ab66..83b0261`, carrying 0135 and 0136).
+
+His word after it: *take next.* By his order the rung after this one is DESIGN-IR/DIFF. It is not registered.
 
 Three things he fixed with it.
 
@@ -1995,7 +1999,7 @@ That every editor speaks the same event: one consumer exists, the design tool.
 
 **Grade.** DECLARED: the lock, the court and the registration. ESTABLISHED (gate, the build container): the six
 rows. MEASURED (host): the registration's gate, 236 of 236, pushed; the built gate, 242 of 242 on each of its
-five runs, the first three pushed, and FULL×2 by the owner's predicate on the last two.
+runs, pushed, and FULL×2 by the owner's predicate on the two that ran on one tree.
 OBSERVED (the owner's host, one run, off the gate): the design tool's loop over ADMIT-0 and the two heads. OBSERVED
 (the build container): the times.
 **does_not_show.** What an admission costs on the host, that the design tool has sent a batch there, or that a
