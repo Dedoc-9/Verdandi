@@ -2,8 +2,8 @@
 # `verify/` — the gate
 
 `python verify/verify.py` runs every row and prints `GATE PASSED` or `GATE FAILED`, then a reconcile line
-naming the rowset. A change is landed only when two consecutive runs are byte-identical (`sha256` of the two
-logs equal) and the gate reads PASSED. Rows that need `rustc` are SKIPPED without it, count-stable, so the
+naming the rowset. A change is landed only when two consecutive runs on one tree are byte-identical (`sha256` of
+the two logs equal) and the gate reads PASSED. Rows that need `rustc` are SKIPPED without it, count-stable, so the
 rowset digest does not depend on the toolchain being present — only the verdict does.
 
 ## Blueprint
@@ -20,6 +20,10 @@ The gate is the program's only judge, so its design is about what it may and may
 
     landing       two consecutive passes, their logs byte-identical, GATE PASSED. A third pass with the host's
                   records present, when a rung reads them.
+
+    FULL×2        the owner's predicate for it (2026-10-07):   TreeID₁ == TreeID₂  AND  GateOut₁ == GateOut₂
+                  == earns the claim · != defeats it · identity not established withholds it
+                  the reconcile line names the rowset, not the tree: a tree's identity is taken outside the gate
 
     preregister.json   43 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
@@ -39,7 +43,7 @@ The gate is the program's only judge, so its design is about what it may and may
 
 | Invariant | Mechanism | Row |
 |---|---|---|
-| The gate's output is a function of the tree | no clock, no host name and no wall-time inside a row; two passes compared byte for byte | the landing condition |
+| The gate's output is a function of the tree | no clock, no host name and no wall-time inside a row; two passes on one tree compared byte for byte | the landing condition (FULL×2) |
 | The rowset is what was run | its digest is over the row names in order; a skipped row still counts | the `RECONCILE` line |
 | No record hides a verdict | a recursive scan for verdict-shaped keys; a planted one is refused | `records-firewall` |
 | Two languages seal the same hash | Python recomputes every Rust-written chain hash | `records-twins` |

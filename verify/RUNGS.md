@@ -5683,20 +5683,82 @@ and its record. The output he gave holds one run of the gate.
 
 None of the build's readings was struck. No finding, so no amendment.
 
-**On the host again (DANIELDILLBERG, 2026-10-06): a second run, and pushed.** 0133 was applied, a change to documents
-only, and the gate read `GATE PASSED`, rowset `aa94c886190510c7`, 242 rows / 0 fail / 0 skipped. The owner pushed.
-Git's own output: `7e1d997..eba1951  main -> main`.
+**The built gate's host runs (DANIELDILLBERG), run by run.** Each read `GATE PASSED`, rowset `aa94c886190510c7`,
+242 rows / 0 fail / 0 skipped, and each was pushed by the owner. Each range is Git's own output.
 
-| | |
+| run | the tree it ran on | its output given | pushed |
+|---|---|---|---|
+| 1 | the two amendments, the build and its record (0130, 0131, 0132) | 2026-10-06 | `b975fc5..7e1d997` |
+| 2 | that tree with 0133, documents only | 2026-10-06 | `7e1d997..eba1951` |
+| 3 | that tree with 0134, documents only | 2026-10-07 | `eba1951..5f8ab66` |
+
+A later host run of this gate is a line of this table. The dates are the days the outputs were given; the outputs
+carry none of their own. Every host run was the compact one, so the rows' texts, which carry the counts, were
+printed by none.
+
+**FULL×2, as the owner defined it (2026-10-07).** His word with the build's push was that the full ×2 gate judge
+this rung. The record of the second run then said in prose what that run was and was not. He replaced the prose
+with a predicate over two runs, each with its tree `T` and its output `O`:
+
+> **FULL×2 iff `TreeID₁ == TreeID₂` AND `GateOut₁ == GateOut₂`.**
+
+Equality of outputs *means byte-identical canonical gate output, and both runs are required to execute against the
+same tree identity.* The identity is the tree's, *not merely the commit hash*: *a tree/object digest is the natural
+equality witness.* And identity has three values, because *`!=` is dangerous when identity was simply not measured*:
+
+```text
+  T1 == T2        → same-tree
+  T1 != T2        → different-tree
+  T1 ?= T2        → identity not established
+```
+
+> **`==` earns the claim; `!=` defeats it; unknown withholds it.**
+
+| the case | what it is |
 |---|---|
-| what the host has now run | the built gate twice: on the tree of the build and its record, and on that tree with 0133's documents |
-| what was compared | the two outputs he gave, line by line, here: the same 242 rows passing in the same order, the same reconcile line. The compact log of the three passes here reads the same |
-| what that is | a comparison of what was printed. Both host runs were the compact one; the rows' texts, which carry the counts, were printed by neither |
-| what it is not | two passes on one tree. Between the two host runs the tree changed, in documents only |
+| `Run₁(T) == Run₂(T)` | FULL×2 |
+| `Run₁(T) != Run₂(T)` | FAIL, not certified |
+| `Run₁(T₁) == Run₂(T₂)` with `T₁ != T₂` | two agreeing runs, but NOT FULL×2 |
+| `Run₁(T₁) != Run₂(T₂)` | not FULL×2 |
+
+*Anything else is not certified FULL×2, without necessarily being called a failure.* His own reading of the second
+host run:
+
+```text
+  T1 != T2
+  Run(T1) == Run(T2)
+
+  therefore:
+  two-run agreement = TRUE
+  same-tree condition = FALSE
+  FULL×2 = FALSE
+```
+
+**The runs under it.**
+
+| the pair | T | O | FULL×2 |
+|---|---|---|---|
+| host, runs 1 and 2 | `!=`: 0133 was applied between them, by Git's own output | `==`, as printed: the two outputs he gave, compared here line by line, 242 rows and the reconcile line | FALSE: two agreeing runs |
+| host, runs 2 and 3 | `!=`: 0134 was applied between them, by Git's own output | `==`, as printed | FALSE: two agreeing runs |
+| here, passes 1 and 2 on the head that carries this record | `==`: two exports of one commit, and a digest over each export's tracked files, taken before and after its pass, the same all four times | `==`: the two logs, byte for byte | TRUE |
+| here, pass 3 against pass 1 | `!=`: the same export with the host's 33 records added | `==`: the logs, byte for byte | FALSE: an agreeing run on another tree, which is what that pass is for |
+
+Three things this leaves stated.
+
+- **On the host this gate is not FULL×2.** No two of its runs there were on one tree. That is not a failure of any
+  run: each is 242 of 242.
+- **The gate does not print a tree's identity.** Its reconcile line names the rowset, a digest of the row names,
+  and nothing of the tree. So `T` is taken outside the gate: on the host from Git's output around the runs, here
+  from the commit the passes were exported from and a digest of the exports. Where neither is given, `T` is `?=`.
+- **`O` on the host is equality of what was printed.** The outputs were pasted and compared here. No digest of the
+  gate's output was taken on the host.
+
+Earlier landings are not regraded. Their passes here were exports of one commit with no digest of the exports
+taken, and their host runs are recorded as what they were, one run or two.
 
 **The owner's word with the push.** *My word: push the build. Then don't immediately add another theorem. Let the
 full ×2 gate judge DESIGN-EVENT-0 as a complete engineering rung.* Here the gate ran three passes on the head, their
-logs identical. The host's output held one run then, and the second is the one recorded above. No rung is registered
+logs identical. The host's output held one run then; its runs since are in the table above. No rung is registered
 after this one and none is proposed here.
 
 He asked that the memo's account keep its whole chain, and drew it:
@@ -5751,13 +5813,15 @@ row admitted the 60 in its own root; the tool has not been shown doing it.
 (gate, here): the six rows, 242 in the gate, three passes identical, one of them with the host's records present;
 the same on Python 3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one
 run, off the gate): the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate,
-236 of 236, pushed; the built gate, 242 of 242, two runs, the second on a tree differing from the first in
-documents only, both pushed.
+236 of 236, pushed; the built gate, 242 of 242, three runs, the second and third on trees differing from the
+first in documents only, each pushed. By the owner's predicate: FULL×2 here; on the host three agreeing runs on
+three trees, and not FULL×2.
 
 **does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
 builds of the shell agree. That the memo is right on a session the court does not replay: the workshop is the
 standing check, and it is run when a session is sealed, not when it is designed. What an admission costs on the
-host. That the two host runs agree beyond what the compact output prints. That a proposal's bytes can be
+host. That the gate is FULL×2 on the host: no two runs there were on one tree. That the host's runs agree beyond
+what the compact output prints. That a proposal's bytes can be
 rebuilt from its admitted events, or its digest recomputed by a verifier: none does either, by the ruling above.
 That a model can write a design worth admitting. Anything about a second editor.
 

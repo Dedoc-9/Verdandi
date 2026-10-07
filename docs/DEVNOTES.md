@@ -479,7 +479,12 @@ What stands against the tree, as reviewed:
    sentence, with the condition that reopens it, and under no rung. Paraphrase would make it a claim; putting it
    under a rung would make it a debt.
 
-39. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+39. **A predicate, not a phrase.** "Full ×2" was a phrase, and a second host run on a tree changed only by documents
+   fitted it loosely enough to argue about. As the owner's predicate it does not: the same tree and the same
+   output, with identity that was not measured as a third value. The same facts then grade themselves, and
+   nobody has to decide whether two runs count.
+
+40. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
