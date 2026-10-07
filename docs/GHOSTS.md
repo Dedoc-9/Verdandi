@@ -572,10 +572,9 @@ what it shows.
 DESIGN-EVENT-0 is built, and the gate passes with it here and on the host. A design is one batch, admitted whole or
 refused whole. What that does not give:
 
-- **The compiler is not certified.** The seam holds the normal form: one byte sequence for each change set. What
-  turns a design into that change set is content time. A compiler that nets wrongly produces a batch that means
-  something else, and the seam admits what it is given if the grant and the session allow it. DESIGN-IR/DIFF-0 is
-  registered for this (`2baa42f3`) and not built.
+- **The compiler was not certified, and now is.** The seam holds the normal form: one byte sequence for each
+  change set. What turned a design into that change set was content time. DESIGN-IR/DIFF-0 (`2baa42f3`) is built:
+  the compiler is the shell's, held to a reference and to the design's target. What that leaves open is G29.
 - **Two of the tool's rules are nobody else's.** The design tool refuses a design that closes the camera's cell or
   writes over a stair, and called both refusals it predicted of the seam. The seam makes neither: the admission
   admits a batch that closes the camera's cell, and one that opens a stair (seen with the shell as built,
@@ -632,11 +631,57 @@ refused whole. What that does not give:
 - **One consumer.** That every editor speaks the same event is declared. The design tool is the only editor there
   is.
 
-**Exorcism.** For the compiler: DESIGN-IR/DIFF-0, registered. For the two rules, as far as designs go: the same
+**Exorcism.** For the compiler: DESIGN-IR/DIFF-0, built. For the two rules, as far as designs go: the same
 rung. For the cost:
 the host's own time for a design, which the owner's run will give, and, if replay ever has to be skipped, a rung
 that gives a session a trust root. For the memo outside the court: the workshop at sealing, as now. For the
 proposal's bytes: nothing, unless the requirement the ruling names arrives. For the last: a second editor.
+
+## G29 — a predicate about the present, written into a row that outlives it · ESTABLISHED (three met and restated, on the gate here); one more known and not met; the compiler's own limits stated; NOT_MEASURED on the host
+
+DESIGN-IR/DIFF-0 is built. Its build met the same ghost three times, and the owner gave it one name: *history is
+immutable; state may evolve; transitions must preserve provenance.* A row that says *today* or *last* is true when
+it is written and false after the next legitimate change.
+
+- **Met: a pin held against today.** `designevent-preregistered` held each pin an amendment moved as the file as
+  built. The next amendment to move one of them broke it, and no pin could mend it, because an entry is never
+  edited. Restated as a chain: an amendment starts where the one before it ended.
+- **Met: rows held as the last.** `designevent-fence` held its six rows as the gate's last six. Restated as a
+  position: the six that follow the 236.
+- **Met: a corpus that could not grow.** A planted defect survived the three registered parents. Restated: the
+  registered corpus stands as history, and the current one names what was added and why.
+- **Known, not met.** MINT-WATCH-0a's pin on `verify/livesession.py` is still held against the file as built. That
+  file does not change with this rung. The first rung that changes it will meet this.
+- **This rung's own source reading will be met too.** `designir-fence` reads the command's arm and the compiler's
+  functions by their text. A later rung that changes either moves more than a pin, and the stop clause applies
+  again.
+- **The origin rests on a commit.** The 56 pins the first court found are registered as a digest computed with
+  this build and checked against the gate's table at the commit that built that court. That entry itself names no
+  hash.
+- **A pin names a file.** It shows the bytes and nothing of why they changed. Intent is held by rows that exercise
+  it. A byte changed where no row looks is caught by nothing but the pin's refusal to move without an entry.
+- **Equivalence is shown where the court compiles.** Sixteen designs on four parents, and the single-byte mutants
+  of three designs. Nothing is shown for every design.
+- **A shared misreading is caught by neither equality.** The compiler and the reference are two programs written
+  from one description by one hand, and the target is taken by the gate's own reading. HERMENEUTICS-0 is registered
+  for that, and is not built.
+- **The camera's and the stair's rules are still the language's.** A batch from any other editor is not held to
+  them. The owner's question on that is carried and not answered.
+- **Five checks decide only because another has not.** The printable check and the word split, the colour's digit
+  count and its bound, paint's word count on both sides. Each is equivalent alone. Each pair together is caught.
+- **Four defects were caught only by the broad court.** No named case reaches the border's first and last rows,
+  a level read one row short, or paint with a fourth word. The single-byte mutants do. A sample of them might not.
+- **One ending has no code.** A failed write to standard output ends 1. No row reaches it.
+- **Two usage refusals cannot be run.** That `design-compile` takes no plant, and that the selftest takes only a
+  registered one, are held by reading the arm. A usage refusal has no registered code, so no row may require it.
+- **The mutation campaign is one sitting.** Its mutants are the ones that were written. One of them was no mutant
+  at all and is named.
+- **The tool is a client by its own checks.** CLIENT-FENCE-0 is off the gate by the owner's locks. It holds the
+  tool as it stands and says nothing of a tool that is replaced.
+- **The host has not run it.** Every number here is the build container's.
+
+**Exorcism.** For the present tense: write a row about history, and let the stop clause catch the ones not yet
+found. For the shared misreading: HERMENEUTICS-0. For every design: nothing registered. For the host: its run.
 
 ---
 

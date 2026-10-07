@@ -109,7 +109,7 @@ session's seal is a hash. A second platform's window.
 running the gate.
 
 ```text
-  PROGRAM TIME    verify/verify.py: 242 rows, two passes byte-identical, or nothing landed
+  PROGRAM TIME    verify/verify.py: 247 rows, two passes byte-identical, or nothing landed
 
       oracle/   Urðr, frozen at two tags
          │      witnesses · corpus · the heading vocabulary
@@ -221,9 +221,10 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          configurations, heard by the interpreter's own raise event (cd1472ec; built, four rows,
          │          236 in the gate; on the host 236 of 236)
          │
-    CONTENT TIME    design/ the design surface, off the gate: design text compiled to one batch, previewed by
-         │          the shell's dry run and admitted by the certified shell; driven alike by a person, a
-         │          script or a model (built; its own twelve checks; run on the host over ADMIT-0)
+    CONTENT TIME    design/ the design surface, off the gate: design text handed to the shell's compiler,
+         │          its one batch previewed by the shell's dry run and admitted by the certified shell; driven
+         │          alike by a person, a script or a model (built; a client of the compiler since
+         │          DESIGN-IR/DIFF-0; its own seventeen checks; run on the host over ADMIT-0)
          │
     THE BATCH       DESIGN-EVENT-0 a canonical batch of 1 to 4,096 operations refused whole or admitted by
          │          one admission as that many ordinary edits, equal to the same operations one at a time;
@@ -236,12 +237,15 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          VRDNP2 change set against a parent world is one tree-owned function: in the certified
          │          shell, apart from the admission, held against an independent reference and against the
          │          statements applied by the gate itself; the proposal id is the SHA-256 of the design's
-         │          exact bytes (2baa42f3; its round named before the build, c414587d; pushed, not built)
+         │          exact bytes (2baa42f3; its round named before the build, c414587d; built, five rows,
+         │          247 in the gate: the registered design compiles to its registered bytes and reaches its
+         │          registered world; eleven planted compilers caught; not yet run on the host)
          │
     THE MEANING     HERMENEUTICS-0 what the design language means, apart from the two programs that compile
          │          it: one reading ratified by the owner (a statement is a constant write, a design is its
          │          statements later-wins), six cases locked, four laws as theorems, ten designs with literal
-         │          targets typed by hand (22d52d02; registered, not built; built after the compiler)
+         │          targets typed by hand (22d52d02; registered and pushed, not built; built after the
+         │          compiler is courted and FULL×2)
          ⋮
     declared        LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a vocabulary
                     audit; design objects and constraints, each a court of its own; the presentation and

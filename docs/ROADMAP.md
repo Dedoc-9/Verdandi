@@ -42,13 +42,13 @@ found, and the work is the design environment. Its first piece is built off the 
 the certified admission seam.
 
 One invariant was found there, by measuring, and it is built: a design is admitted as one batch or refused whole
-(`DESIGN-EVENT-0`, `ae7cbb36`, built: six rows). The gate is 242 rows and passes here and on the host. By the
+(`DESIGN-EVENT-0`, `ae7cbb36`, built: six rows). With it the gate was 242 rows and passed here and on the host. By the
 owner's word with that push no theorem was added at once. When the host's gate was FULL×2 by his own predicate, his
 word was *take next* (2026-10-07).
 
-Next is registered and not built: the step from a design to its change set, which is the one uncertified link
-between the design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`). Registered behind it, for after it is
-built: the meaning of the design language as the owner's own rulings, literal targets and laws, which neither
+That next rung is built: the step from a design to its change set, which was the one uncertified link between the
+design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`, five rows). The gate is 247 rows and passes here; the
+build has not yet run on the host. Registered behind it, for after it is built, courted and FULL×2: the meaning of the design language as the owner's own rulings, literal targets and laws, which neither
 program computes (`HERMENEUTICS-0`, `22d52d02`).
 
 What is *not* yet done: that compiler; design objects that outlive admission, constraints, and a model at the seam
@@ -145,9 +145,9 @@ the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen
       ↓
 DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242 on every run and FULL×2 by the owner's predicate; pushed
       ↓
-DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); read and locked by him the same day, and the round around it named before the build as subcourts and no new claim (`DESIGN-IR/DIFF-0a`, `c414587d`); both pushed (`83b0261..5c8ad19`); not built
+DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); read and locked by him the same day, and the round around it named before the build as subcourts and no new claim (`DESIGN-IR/DIFF-0a`, `c414587d`); both pushed (`83b0261..5c8ad19`); built (2026-10-07): the compiler in the shell, five rows, 247 in the gate, every registered value reproduced; two rows of DESIGN-EVENT-0 changed in their text by his ruling, the amendment chain named a law and its origin registered (`REASON-COURT-0b`, `d51b4d20`; `DESIGN-IR/DIFF-0b`, `42ac51f5`); the design tool a client of the compiler; not yet run on the host
       ↓
-HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`); not built; built after DIFF-0
+HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated
       ↓
@@ -2015,7 +2015,7 @@ OBSERVED (the owner's host, one run, off the gate): the design tool's loop over 
 **does_not_show.** What an admission costs on the host, that the design tool has sent a batch there, or that a
 model writes a useful design.
 
-### DESIGN-IR/DIFF-0 — the compiler, certified · **registered** (`2baa42f3`), its round named before the build (`c414587d`); not built
+### DESIGN-IR/DIFF-0 — the compiler, certified · **built** (`2baa42f3`; its round named before the build, `c414587d`; two amendments with the build, `d51b4d20` and `42ac51f5`): five rows, 247 in the gate; not yet run on the host
 DESIGN-EVENT-0 made a design one batch and left one link outside the gate: the program that turns a design into
 that batch. This section records the word that took the rung, the court that shaped it and what was registered.
 The rung's own record, with the language, the codes, the rows and the plants, is in
@@ -2085,10 +2085,38 @@ invariant, or deliberately remain a property of the design language?*
 **What stays declared.** LIVE-AI-EDIT-0 and a graphical editor, in that order. Design objects that outlive
 admission. Constraints. The fifteen pivots.
 
-**Grade.** DECLARED: the word, the court, the registration, his reading and the amendment. OBSERVED (the build
-container, before each entry): the reference's results. MEASURED (host): the gate with the registration applied
-and with the amendment applied, 242 of 242 each, one run each; pushed (`83b0261..5c8ad19`, carrying 0137 to 0141).
-**does_not_show.** Anything about a compiler that is not built.
+**The build (2026-10-07).** The compiler is in the shell, as a command apart from the admission, and the gate
+holds his predicate with it: the shell's bytes are an independent reference's, and the batch applied to the parent
+is the design's target. Every value registered before the compiler existed is reproduced by it. Five rows, 247 in
+the gate.
+
+Three things the registration did not foresee, each ruled by him the same day in three texts he brought.
+
+| what the build met | his ruling |
+|---|---|
+| a row that held an amendment's pins against the file as built: the first later amendment breaks it | the amendment chain, accepted as a law: an amendment starts where the one before it ended, and the last is the built file's. *Not an exception to the invariant. It is the invariant correctly stated* |
+| a row that held its six rows as the gate's last six | the anchor, accepted: the six that follow the 236. A historical position, not the ledger's end |
+| a planted defect that survived every row: no parent of the court stood on a stair | the corpus extended by that one parent, the defect and the reason recorded, and nothing beyond it |
+
+He rejected a semantic diff for this rung and any extra row, and gave one principle for all three: *history is
+immutable; state may evolve; transitions must preserve provenance.* Three layers stay apart: history, identity,
+behaviour. He asked whether the tree already held his relations. One it did not: that every pin is the first
+court's own or is reached from it by named links. The origin of the pins is now registered and held, with no row
+added.
+
+The design tool no longer computes a change set. It hands the design's bytes to the shell and keeps what the shell
+writes. A mutation campaign off the gate planted 97 defects: 85 of 94 first-order ones are caught by the rows that
+run the compiler, four only by a reading of the source, five are equivalent because another check covers them, and
+one was the hole the stair parent closed. The record, with the tables, is in
+[`verify/RUNGS.md`](../verify/RUNGS.md).
+
+**Grade.** DECLARED: the word, the court, the registration, his reading, the amendments, his three texts and
+rulings. ESTABLISHED (gate, the build container): the five rows, 247 in the gate. OBSERVED (the build container,
+one sitting): the mutation campaign, the tool's own checks, the times. MEASURED (host): the gate with the
+registration applied and with the first amendment applied, 242 of 242 each, one run each; pushed
+(`83b0261..5c8ad19`, carrying 0137 to 0141). The build has not run on the host.
+**does_not_show.** Equivalence for every design. That the reading the compiler and the reference share is what a
+designer means: HERMENEUTICS-0 is registered for that. Anything on the host.
 
 ### Hermeneutics and semiotics — what the design language means, apart from what compiles it · hermeneutics **registered** (`22d52d02`), semiotics **declared** (texts the owner brought, 2026-10-07); nothing built
 Two texts the owner brought with the push of DESIGN-IR/DIFF-0's amendment, the second after he broke off the first
@@ -2215,7 +2243,8 @@ that rung's registered values appear to catch all five. What the court adds is a
 the owner's.
 
 **Grade.** DECLARED: the texts, the court's rulings and the registration; semiotics, declared only. OBSERVED (the
-build container): the laws checked on the reference. Nothing is built or measured.
+build container): the laws checked on the reference. MEASURED (host): the gate with the registration applied (0143
+and 0144), 242 of 242, one run; pushed (`5c8ad19..11afebf`, which carries 0142 to 0144). Nothing of it is built.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

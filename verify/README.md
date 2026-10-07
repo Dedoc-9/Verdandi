@@ -13,7 +13,7 @@ The gate is the program's only judge, so its design is about what it may and may
 ```text
     verify.py     row(name, fn) in a fixed order ─► PASS, or Red with a reason ─► GATE PASSED | GATE FAILED
                   RECONCILE  rowset <sha256 of the row names>  <rows> / <fail> / <skipped>
-                  242 rows today, rowset aa94c886190510c7
+                  247 rows today, rowset 389da490e1cfb6aa
 
     a row         builds what it tests from source · runs it · compares bytes · then PLANTS a defect and
                   requires the refusal. A row with no plant that bites is not finished.
@@ -25,9 +25,13 @@ The gate is the program's only judge, so its design is about what it may and may
                   == earns the claim · != defeats it · identity not established withholds it
                   the reconcile line names the rowset, not the tree: a tree's identity is taken outside the gate
 
-    preregister.json   46 entries: hypothesis · success · failure · limits · instrument · chain hash.
+    preregister.json   48 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
                        amendment entry with its own hash.
+
+    the amendment chain   an amendment that moves a pin names (was, is). The next one starts where it ended; the
+                       last is the built file's; today's pins with every link undone are the 56 the first court
+                       found. History in the entries, identity in the pins, behaviour in the rows: three layers.
 
     envelope.py   RECORD-0: one writer, one firewall, for every record the tree mints
     savedform.py  READER-COURT-0: the strict reader of everything read back; no json.load beneath it
@@ -98,7 +102,8 @@ row that would redden if the claim were false.
   exists, so the method cannot be fitted to the result.
 - **Mutation testing is off the gate and decides whether a row is trusted.** Defects are planted in the program one
   at a time and every one must turn some row red. The counts are in the ledger (ADMIT-0: 39; DESIGN-EVENT-0: 49, one
-  of them equivalent). A mutant that
+  of them equivalent; DESIGN-IR/DIFF-0: 97, five of them equivalent because another check covers each, and one a
+  hole, closed). A count is not a score: the record is by class. A mutant that
   survives is a missing case, and the case is added before the rung is delivered.
 - **Rows assert the apparatus.** A row checks that the plant bites and the bytes agree. It never asserts a hoped
   result, and no row reads a wall-clock number.

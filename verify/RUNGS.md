@@ -5697,7 +5697,8 @@ says so and none is written.
 | 6 | that tree with 0136, documents only | 2026-10-07 | `5f8ab66..83b0261`, which carries 0135 and 0136 |
 | 7 | that tree with 0137, 0138 and 0139: documents, and one entry in the ledger (DESIGN-IR/DIFF-0's registration) | 2026-10-07 | not in its output; its commits went out with run 8's push |
 | 8 | that tree with 0140 and 0141: documents, and one more entry in the ledger (the amendment) | 2026-10-07 | `83b0261..5c8ad19`, which carries 0137 to 0141 |
-| 9 | that tree with 0142, documents only | 2026-10-07 | not in its output |
+| 9 | that tree with 0142, documents only | 2026-10-07 | not in its output; its commit went out with run 10's push |
+| 10 | that tree with 0143 and 0144: documents, and one more entry in the ledger (HERMENEUTICS-0's registration) | 2026-10-07 | `5c8ad19..11afebf`, which carries 0142 to 0144 |
 
 A later host run of this gate is a line of this table. The dates are the days the outputs were given; the outputs
 carry none of their own. Every host run was the compact one, so the rows' texts, which carry the counts, were
@@ -5836,9 +5837,9 @@ row admitted the 60 in its own root; the tool has not been shown doing it.
 (gate, here): the six rows, 242 in the gate, three passes identical, one of them with the host's records present;
 the same on Python 3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one
 run, off the gate): the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate,
-236 of 236, pushed; the built gate, 242 of 242, nine runs on eight trees. The first eight runs are pushed; the
-ninth's output holds no push. The trees differ in documents only, but for the sixth and the seventh, which each add
-one entry to the ledger. The fourth and fifth runs were on one tree. By the owner's predicate: FULL×2 here, and
+236 of 236, pushed; the built gate, 242 of 242, ten runs on nine trees, all pushed. After the tenth,
+`git log origin/main` on the host names its commit (`11afebf`) as the remote's head. The trees differ in documents
+only, but for the sixth, the seventh and the ninth, which each add one entry to the ledger. The fourth and fifth runs were on one tree. By the owner's predicate: FULL×2 here, and
 FULL×2 on the host by its fourth and fifth runs.
 
 **does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
@@ -5855,7 +5856,7 @@ differs in head, content, spec or witness from the same operations admitted one 
 standing inside a batch. A refused batch that leaves anything. A dry run that writes. An admission bound to a
 preview that reaches another head. A session whose content under the memo differs from the computation with none.
 
-## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; the round around it named before the build, `DESIGN-IR/DIFF-0a` `c414587d`; both pushed, `83b0261..5c8ad19`; not built)
+## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; the round around it named before the build, `DESIGN-IR/DIFF-0a` `c414587d`; both pushed, `83b0261..5c8ad19`; built: five rows, 247 in the gate, every registered value reproduced; the gate passes here; not yet run on the host)
 
 ```
   design/   a client: hands over the design's bytes, keeps them by id        content time, not certified
@@ -6146,13 +6147,13 @@ to a statement. A batch rebuilt from events. The camera's and the stair's rules 
 **What it owes the earlier rungs.** The build changes the shell's sources, so REASON-COURT-0's pins on them move:
 an amendment entry with its own hash, written after the build and committed before it, as before. The mint
 register's pins are not expected to move. No row of an earlier rung changes its text, and if holding one needs more
-than a pin moved, the build stops and the owner rules.
+than a pin moved, the build stops and the owner rules. (It did, in two rows: see the build, below.)
 
 **Grade.** DECLARED: the word, the court's four locks, the registration, his reading of it and the amendment.
 OBSERVED (the build container, one sitting, before each entry): the reference's results, the ten planted behaviours
 through the existing admission, and the amendment's added cases. MEASURED (host): the gate with the registration
-applied, 242 of 242, one run, and with the amendment applied, 242 of 242, one run; pushed. Nothing of the rung is
-ESTABLISHED: there is no compiler in the shell and no row.
+applied, 242 of 242, one run, and with the amendment applied, 242 of 242, one run; pushed. At registration nothing
+of the rung was ESTABLISHED: there was no compiler in the shell and no row. The build's grade is its own, below.
 
 **does_not_show.** Anything about a compiler that is not built. That the reference's reading of a room is what a
 designer means: the compiler and the reference are two programs written from one description by one hand. That a
@@ -6162,7 +6163,213 @@ model can write a design worth admitting.
 the built compiler does not reproduce. A plant that cannot reach what it is said to catch. A pin of an earlier rung
 that the build has to move without an amendment.
 
-## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02`; not built; built after DESIGN-IR/DIFF-0)
+### The build (2026-10-07): the compiler in the shell, five rows, 247 in the gate
+
+```text
+   D, S ─────► shell design-compile ─────► batch ─────► shell design ─────► child session
+     │                                      ║ bytes                           ║ content
+     ├──► the gate's reference (Python) ───► batch′       designir-compile    ║
+     └──► the statements applied by the gate to S's level and tiles bytes ───► target     designir-equivalence
+
+   history   was ─► is, in the entries       identity   a file's hash, in the pins       behaviour   a row passes
+             three layers, kept apart; none stands in for another
+```
+
+**What was built.** `shell/designcompile.rs`, new, and in `shell/main.rs` one module line and one arm: thirty
+lines. `shell design-compile --session S --design D` reads the design's bytes and the saved session, and writes the
+batch to standard output and nothing else, or refuses with a code and the design's line and writes nothing there.
+It reads the session through the loader's own verified load and writes the batch with DESIGN-EVENT-0's own writer.
+It admits nothing. `shell design-compile-selftest` is the same run with one of eleven plants, or the court in
+process over every single-byte mutant of a design.
+
+**The registered values, reproduced.** They were registered before the compiler existed. The compiler gave them on
+its first run.
+
+| registered | value | reproduced by |
+|---|---|---|
+| the design's id | `b08482b7…ebbd3dc`, the SHA-256 of its 93 bytes | the batch's proposal line |
+| its change set against the registered parent | 60 operations, 908 bytes, `a9f117c4…f0f5` | `shell design-compile`, and the gate's reference, byte for byte |
+| the target's content | `02e77707…e334` | the gate applying the statements to the parent's bytes; and the admitted child |
+| the child's head | `c18a71f6…1036` | `shell design` admitting the compiled batch |
+
+**The five rows.** 242 rows become 247. Rowset `389da490e1cfb6aa`.
+
+| row | what it holds | how much |
+|---|---|---|
+| `designir-preregistered` | the entry and DIFF-0a at their hashes; the bounds, the registered design and the eleven plants as the shell holds them; the two amendment entries the build carries; the amendment chain and its origin | four plants on the chain's own checks |
+| `designir-language` · BOUNDARY-0 | each refusal at its registered code and line, exit 2, nothing on standard output, one record, one ledger line, nothing left; what the language accepts compiles to the plain form's operations under an id of its own; in process, the shell's verdict on every single-byte mutant of three designs is the reference's | 70 refusals; 8 accepted forms; 114,432 mutants, 5,800 of them accepted |
+| `designir-compile` · ID-0 | the shell's bytes are the reference's, and a second run writes them again; the header is the session's head, the design's digest and this shell's two identities; one id on two parents; a byte's difference is another id | 16 designs on 4 parents; 8 designs that differ in a byte; every accepted mutant |
+| `designir-equivalence` · REPLAY-0 | each batch admitted; the child's content is the target's; the workshop and the sealer verify each child; every admitted event is an ordinary edit carrying the design's id; the registered design against its own child is `COMPILE-EMPTY`; the same bytes twice in one history are `ADMIT-DUPLICATE` | 16 children; 11 plants |
+| `designir-fence` | the compiler's source spawns, connects, times and writes nothing; one function reads the design; the checks stand in the registered order; reached from its two commands alone; nothing else holds the language; no file under `verify/` reads the design tool's folder; the reference is these rows' alone; every ending heard carries a registered code | 75 endings: 70 in the language court, 5 in the semantic one |
+
+**The plants.** Each on a design and a parent where it bites.
+
+| plant | where | the bytes | the world |
+|---|---|---|---|
+| `entrance-dropped`, `order-reversed`, `paint-next-class`, `first-wins` | the registered design, the registered parent | not the reference's | the child's content is not the target's |
+| `rect-short` | the second design, on the registered design's child. On the registered design it writes the honest bytes: the column it leaves out was rock already | not the reference's | not the target's |
+| `net-stale` | a parent that closed one cell; a design that opens it and closes another | not the reference's | not the target's |
+| `stair-skipped`, `border-clipped`, `camera-buried` | a design the reference refuses with its code, and so does the compiler without the plant | a batch is written, and the admission admits it | the language's boundary, not the authority's, is what refuses |
+| `id-stripped` | the second design, which holds a comment | not the reference's; the id is not the design's digest | the honest head and the target's content: the world cannot catch it |
+| `net-short` | the registered design; the gate's reference is given the same omission | the planted reference's, 59 of 60 operations: the bytes cannot catch it | not the target's |
+
+So each equality catches what the other cannot, as DIFF-0a required: `id-stripped` by the bytes alone, `net-short`
+by the content alone.
+
+**The stop clause, met twice.** The registration says: *if holding an earlier row needs more than a pin moved the
+build stops and the owner rules.* It needed more in two rows of DESIGN-EVENT-0, both written as if that rung were
+the last.
+
+| row | what it held | why it fails with this build | what it holds now |
+|---|---|---|---|
+| `designevent-preregistered` | each pin REASON-COURT-0a moved is the file as built, and that entry names the built file's hash | the command changes `shell/main.rs`, one of the five. The entry is never edited, so it names a hash the file no longer has. No pin moved can hold the row | REASON-COURT-0a against the hashes that entry names; the built file through the amendment chain |
+| `designevent-fence` | its six rows are the gate's last six | five rows follow them | its six rows are the six that follow the 236 before them |
+
+The owner was told of the first when it was found, and of the second before anything was cut. Nothing was cut
+until he ruled.
+
+**His three texts, and the rulings (2026-10-07).** Recorded as he brought them; where a text met the pushed
+registration, what was put to him is recorded too.
+
+- *The first* names the flaw: the row *binds an amendment to a timestamp ("today") instead of to a semantic
+  invariant ("what the amendment said")*, and *this is not a content problem — it's a binding semantics problem.*
+  It takes the chain, asks that it be named as a convention so that later amendments inherit it, considers binding
+  to what an amendment describes in place of binding to bytes and defers it, and proposes splitting the row in two.
+  It also asks whether host records are piling up as duplicate state, and whether a sample of the mutants would do.
+  Put to him in answer: a sixth or seventh row is against the registered 247 and against DIFF-0a's *no row added*;
+  the second of the two rows would check a described change, the binding the same text defers; the half that must
+  hold on every gate is already held by `reasoncourt-fence` and `mintwatch-fence`; and the mutant court is
+  registered as every single-byte mutant, so it cannot be sampled without breaking a pushed entry.
+- *The second* agrees to build with the chain, named, and says: *The fork stays deferred.* It asks that the
+  inheritance rule be written into the entry (*No additional ruling required for subsequent links*), that the
+  mutant court's cost be reported without sampling it, whether the hashes should be captured after the build in a
+  companion entry, and whether a row could declare earlier host records superseded (*declare supersession, don't
+  delete*). It then asks one question: does *intent verification*, as distinct from byte verification, change the
+  case against the fork? The answer given: the distinction is real, and the earlier answer's reason was wrong.
+  `reasoncourt-fence` holds identity and nothing of intent. Intent is held here by the rung's own rows: without
+  the arm, the command does not exist and every case of three rows fails. What no row catches is a byte changed
+  where nothing looks, and for `shell/main.rs` that is recorded as a fact about two committed files. The
+  inheritance rule went into REASON-COURT-0b, since REASON-COURT-0a is pushed and never edited. The companion entry
+  is not needed: an amendment is written after the build, by rule. The supersession row was not taken: it is a
+  sixth row, and each DRIFT-0 sitting is its own record by that rung's design.
+- *The third* sets the whole in a formal model and rules, in this order.
+
+| ruling | his word | the form he gave it |
+|---|---|---|
+| 1. the amendment chain | accept | `was₍ᵢ₊₁₎(f) = isᵢ(f)`; REASON-COURT-0a immutable. *A is not an exception to the invariant. It is the invariant correctly stated.* |
+| 2. the fence's anchor | accept | the six rows *immediately following* the 236. A block meant as fixed history is anchored to an immutable predecessor, not to the ledger's end. *This is not a weakening*: a suffix predicate becomes a historical-position predicate |
+| 3. the stair parent | accept | `C₁ = C₀ ∪ {p₄}`. Record the surviving planted mutant and the reason. *Do not expand beyond the demonstrated counterexample* |
+| 4. a semantic diff | reject, for this rung | it adds a trust boundary the existing obligations do not call for. The rung needs byte identity and exercised behaviour |
+| 5. permanent extra rows | reject | none of the three corrections needs one |
+
+His principle for all three: ***history is immutable; state may evolve; transitions must preserve provenance.***
+And his closing instruction: *Do not invent a fourth proof layer merely to resolve an ambiguity that the three
+existing layers already settle.*
+
+**The amendment chain, a law now, and its origin** (`REASON-COURT-0b`, `d51b4d20`).
+
+| link | `shell/main.rs` had | has |
+|---|---|---|
+| REASON-COURT-0a | `c6d2aaa2…` | `d5324e62…` |
+| REASON-COURT-0b | `d5324e62…` | `8db2d8ee…`, the built file |
+
+Each link starts where the one before it ended, and the last is the built file's. `shell/designcompile.rs` is
+added (`123c1584…`). The other 56 pins stand. A later link needs an entry of its own and no new ruling.
+
+He asked whether the tree already realized his relations, and for the smallest correction where it did not.
+Identity and behaviour were held as built, and history between named links once the row read the chain. **One
+relation was held by no row:** that every pin is REASON-COURT-0's own or is reached from it by named links. A pin
+changed together with its file, and named by no entry, passed every row. The correction is inside the history
+layer and adds no row: REASON-COURT-0b registers the digest of the 56 pins REASON-COURT-0 found (`99d0d92e…ae3e`),
+and `designir-preregistered` holds that today's 58 pins with every link undone are those 56. The digest was
+checked here against the gate's own table at the commit that built REASON-COURT-0: equal. Four plants on these
+checks are refused: a link that does not start where the one before it ended, a chain that stops before the built
+file, a pin moved that no link names, and a link left out of the table.
+
+One fact is local to the transition and is recorded in the entry, not made a row: the built `shell/main.rs`, less
+the three lines that declare the module and the twenty-seven of the arm, is byte for byte the file
+REASON-COURT-0a named. A row could hold that only until the next amendment moves the pin.
+
+**DESIGN-IR/MUTATION-0, off the gate.** One sitting in the build container, scripts outside the repository. One
+defect at a time in the built compiler and its arm; the rung's rows run against each. His instruction was to aim
+at the surviving class and not at the count, so the table is by class.
+
+| class | how many | which |
+|---|---|---|
+| caught by a row that runs the compiler | 85 of 94 | his twelve targets among them: an operation dropped; the order reversed; a rectangle's bound changed; a paint's class changed; the first write winning; a stale parent (two forms); a wrong id (two forms); a wrong count; each refusal skipped; a refusal clipped; an invalid camera, stair or border operation accepted; the batch's order altered |
+| caught only by the last row's reading of the source | 4 | the parser's own size check (the command's check covers it); the bound of 4,096 operations (registered as unreachable on a level the kernel takes); `design-compile` taking a plant, and the selftest taking any plant's name (no row can run a usage refusal: it has no registered code) |
+| survived, equivalent by reading | 5 | the printable-ASCII check and the word split, which cover each other; the colour's digit count, covered by its bound of 255; paint's word count, held on both of its sides |
+| survived, a hole | 1, closed | a compiler that takes only floor under the camera refuses every design made from a stair. No parent of the court stood on one. The fourth parent catches it, in two rows |
+| second order: a covered check and its cover, taken out together | 3 of 3 caught | the two size checks; the printable check and the split; the colour's bound and its digit count. Paint's two sides together were among the 85 |
+| not a mutant | 1 | a replacement of mine for *a stale parent* changed nothing reachable. It is named, withdrawn, and replaced by two that are caught |
+
+- **Four defects were caught by no named case.** The border's first row and its last row not held, the level read
+  one row short, and paint taking a fourth word were each caught only by the court of single-byte mutants. The
+  named corpus alone would have passed all four. That is the answer to sampling the court: what it catches is not
+  where a sample would look.
+- **One candidate case was taken out again.** A case for paint with a fourth word was written when that defect
+  looked likely to survive. The mutant court caught the defect without it, so the case went. The corpus grew by
+  the stair parent and nothing else.
+- **Not reached by any row:** a failed write to standard output ends 1 with no code.
+- **The control passes:** with nothing changed, all five rows.
+
+**The design tool, a client now (off the gate, no row).** `design.py` hands the design's bytes to
+`shell design-compile`, keeps the batch it writes, and keeps the text under its id in `designs/`. Its own parser,
+compiler and writer are gone, and `propose --no-predict` with them. A design's refusal is the shell's
+(`SHELL-COMPILE-*`). A design that changes nothing is now a refusal, `COMPILE-EMPTY`, where it was a note.
+`design/test_design.py` holds seventeen checks. One is CLIENT-FENCE-0, and four are its plants, each a changed
+copy of the tool:
+
+| a tool that… | caught by |
+|---|---|
+| computes its own difference (and, for the fence's design, writes the compiler's very bytes) | the stand-in compiler alone, and the source reading |
+| rewrites the compiler's result | its bytes are not the compiler's; the shell refuses the preview |
+| never calls the compiler | its bytes; the call that was not made; the stand-in; the source |
+| admits without the preview's binding | bytes changed after the preview were admitted |
+
+The first row of that table is why the stand-in is there, as DIFF-0a said it would be: on that design a tool that
+nets for itself is byte for byte an honest one. The tool's side of ROUNDTRIP-0: after an admission, `inspect`
+shows the room's rim, inside, entrance and colour as the design said them, typed by hand in the check.
+
+**What it costs, a development measurement.** The build container, two cores, one sitting, taken by a script
+outside the repository: the three rows that run the compiler take about 37, 17 and 16 seconds. No part of the
+claim, not a row, and nothing about the host.
+
+**Outside pages, found by search at the owner's word** (*websearch as you go for elegant/pioneering hardenings*).
+Paraphrased and attributed. One limit of REASON-COURT-0b names the first as prior art; nothing else in a row or
+an entry rests on any of them.
+
+- *Supply-chain attestation.* A page explaining the in-toto framework (docs.devguard.org) describes each step
+  recording the hashes of what it consumed and what it produced, a verifier matching one step's products to the
+  next step's materials, and the limit that this shows files passed unchanged and nothing about whether a change
+  was intended. That is the amendment chain and its limit. The law is carried here, not discovered here.
+- *Mutant subsumption.* Parsai and Demeyer, *Dynamic Mutant Subsumption Analysis using LittleDarwin* (arXiv
+  1809.02435), as fetched: a mutant that another always carries with it adds no information, and a score counted
+  over such mutants flatters a suite. So the campaign's table is by class and is not a score.
+- *Higher-order mutants.* Wong, Meinicke, Chen, Diniz, Kästner and Figueiredo, *Efficiently Finding Higher-Order
+  Mutants* (arXiv 2004.02000), as fetched: two changes together can behave unlike either alone. Here it runs the
+  other way: two checks each cover the other's removal, so each survivor is equivalent alone and the pair is not.
+  Each pair was taken out together and was caught.
+
+**Grade.** DECLARED: the three texts, the rulings, the law, the principle. ESTABLISHED (gate, the build container):
+the five rows, 247 in the gate, three passes identical, one of them with the host's records present. OBSERVED (the
+build container, one sitting): the mutation campaign; the tool's own seventeen checks; the times; the origin's
+digest against the earlier commit. NOT_MEASURED: anything on the host. The build has not run there.
+
+**does_not_show.** Equivalence for every design: it is shown on the court's sixteen and on the single-byte mutants
+of three. That the reference's reading of a statement is what a designer means: a misreading shared by the
+compiler and the reference is caught by neither equality, and HERMENEUTICS-0 is registered for that. That a batch
+from another editor obeys the camera's and the stair's rules: they are the source language's. That a hole no
+mutant was written for is absent. That the changed files are right: a pin names a file. That no other row holds a
+pin against today: MINT-WATCH-0a's pin on `verify/livesession.py` is still held that way, and is untouched because
+that file does not change. That two builds of the shell agree. What a compile costs on Windows.
+
+**Falsifier.** A design and a session that compile to two byte sequences. A batch the compiler writes whose child
+is not the statements applied to the parent's bytes. A planted compiler from the registered eleven that the two
+equalities pass. A pin that is the built file's and is neither the origin's nor reached from it by a named link.
+The host's gate not reading 247 rows with rowset `389da490e1cfb6aa`.
+
+## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; built after DESIGN-IR/DIFF-0 is built, courted and FULL×2)
 
 ```
   the owner's court ──► one reading, six rulings, four laws        ratified, 2026-10-07
@@ -6316,7 +6523,8 @@ of that build.
 
 **Grade.** DECLARED: the court's rulings, the reading, the laws and the registration. OBSERVED (the build
 container, before the entry): the laws on the reference, and the reference's outcomes for the designs the table
-marks. Nothing is ESTABLISHED: nothing is built.
+marks. MEASURED (host): the gate with the registration applied, 242 of 242, one run; pushed
+(`5c8ad19..11afebf`, carrying 0142 to 0144). Nothing is ESTABLISHED: nothing of it is built.
 
 **does_not_show.** That the reading is what a designer means. That either program implements it. That the language
 is complete. That the court was independent of the reference's author: five of six rulings are a ratified

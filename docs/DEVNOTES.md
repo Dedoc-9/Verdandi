@@ -513,6 +513,32 @@ What stands against the tree, as reviewed:
 45. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
+46. **Write a row about history, not about today.** Three predicates of this build were true when written and
+   false after the next legitimate change: a pin held as the file as built, six rows held as the last six, a
+   corpus that could not grow. Each was restated about history: a link that starts where the last one ended, a
+   position after a fixed predecessor, a registered corpus and what was added to it. The owner's sentence for it:
+   *history is immutable; state may evolve; transitions must preserve provenance.* Write the next row as if rows
+   will follow it.
+
+47. **A green first run is where the work starts.** Four of the five rows passed the first time they ran. The
+   mutation campaign then found a compiler that refused every design made from a stair, and every row passed it.
+   The rows were right about everything they looked at.
+
+48. **A check that another check covers is found by taking both out.** Five planted defects survived and were
+   equivalent, each because a second check decided first. Taken out alone, each proves nothing. Taken out with its
+   cover, each pair was caught. Run the pair before calling a survivor equivalent.
+
+49. **A replacement that changes nothing is not a mutant.** One planted defect survived because the replacement
+   never ran: its condition could not hold. A campaign needs a control that passes and a reason to believe each
+   mutant is reachable. A survivor is first a question about the mutant.
+
+50. **The broad court catches what no named case does.** Four defects were caught only by the single-byte mutants
+   of three small designs. Nobody would have written those cases by hand. That is the reason not to sample it.
+
+51. **Three layers, and no fourth.** History is in the entries, identity in the pins, behaviour in the rows. A pin
+   was nearly asked to show intent, and a second mechanism nearly built for it. Each layer already answered its
+   own question. The owner's instruction: do not invent a fourth to settle what the three already settle.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -528,6 +554,8 @@ What stands against the tree, as reviewed:
   not measured (G27).
 - The batch is built and passes on both machines. What it leaves to the compiler, to the workshop and to the host,
   and what no verifier rebuilds, is stated (G28).
+- The compiler is built and passes here. A row written about today breaks at the next change: three were met and
+  restated, one more is known. What the compiler's court does not reach is stated (G29).
 
 ## The one-line retrospective, again
 
