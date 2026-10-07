@@ -46,9 +46,12 @@ One invariant was found there, by measuring, and it is built: a design is admitt
 owner's word with that push no theorem was added at once. When the host's gate was FULL×2 by his own predicate, his
 word was *take next* (2026-10-07).
 
-What is *not* yet done: a design representation above operations and a model at the seam (declared, not
-registered); any measurement of the live loop's timing; richer edits than a cell and a tile class; and semantics
-the frozen oracle never certified.
+Next is registered and not built: the step from a design to its change set, which is the one uncertified link
+between the design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`).
+
+What is *not* yet done: that compiler; design objects that outlive admission, constraints, and a model at the seam
+(declared, not registered); any measurement of the live loop's timing; richer edits than a cell and a tile class;
+and semantics the frozen oracle never certified.
 
 ---
 
@@ -140,7 +143,9 @@ the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen
       ↓
 DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242 on every run and FULL×2 by the owner's predicate; pushed
       ↓
-DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. By his word with the build's push none was added at once; with the host's gate FULL×2 he said *take next* (2026-10-07). The design representation follows the event and is not promoted ahead of it: the question he had reserved is ruled
+DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); not built
+      ↓
+LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -1994,7 +1999,8 @@ And one idea is deferred by name. It is not part of DESIGN-EVENT-0, and it is re
 > present admission boundary. Reopen only if durable independent provenance of the original proposal bytes becomes
 > a requirement.
 
-**What stays declared.** DESIGN-IR/DIFF, LIVE-AI-EDIT-0 and a graphical editor, in that order. The fifteen pivots.
+**What stays declared.** LIVE-AI-EDIT-0 and a graphical editor, in that order. The fifteen pivots. (DESIGN-IR/DIFF-0
+was registered on 2026-10-07: the next section.)
 That every editor speaks the same event: one consumer exists, the design tool.
 
 **Grade.** DECLARED: the lock, the court and the registration. ESTABLISHED (gate, the build container): the six
@@ -2004,6 +2010,60 @@ OBSERVED (the owner's host, one run, off the gate): the design tool's loop over 
 (the build container): the times.
 **does_not_show.** What an admission costs on the host, that the design tool has sent a batch there, or that a
 model writes a useful design.
+
+### DESIGN-IR/DIFF-0 — the compiler, certified · **registered** (`2baa42f3`); not built
+DESIGN-EVENT-0 made a design one batch and left one link outside the gate: the program that turns a design into
+that batch. This section records the word that took the rung, the court that shaped it and what was registered.
+The rung's own record, with the language, the codes, the rows and the plants, is in
+[`verify/RUNGS.md`](../verify/RUNGS.md).
+
+**The word.** *take next* (the owner, 2026-10-07), when the host's gate was FULL×2 on DESIGN-EVENT-0 by his own
+predicate. By his order of 2026-10-06 the rung after the event is the design representation and its diff.
+
+**What the tree said before the court.** Six facts shaped the questions. The compiler is the uncertified part, and
+ghost G28 names it. A diff already has a registered language: a VRDNP2 batch is a net change set with one byte
+form. No design object exists: a room is a statement that expands to cells. Not every difference between two worlds
+is a batch, since the session accepts stair cells and VRDNP2 only opens and closes. His deferral of 2026-10-06
+bounds any diff: it may be computed to propose and never wired into verification. And the rules already recorded
+for a design representation hold: earn the authority, a status is a witness, a compiler in the tree is program.
+
+**The court.**
+
+| the question | locked | the owner's refinement |
+|---|---|---|
+| what is certified first | the compiler | not the diff alone, which VRDNP2 already is; not persistent objects, which are *an authority-model redesign, saved-form question, and identity/provenance question simultaneously* |
+| where it lives | the certified shell, with an independent reference in the gate | *design/ is a client of the certified shell compiler, not the authority and not the court* |
+| provenance | the proposal id is the digest of the exact design bytes | no saved-form field; a commitment, recoverable only while the bytes are kept; no per-operation attribution |
+| readings and constraints | out, by name | *"the compiler produces the right diff"* is one claim; adding that the world satisfies a constraint system is another |
+
+His closing: *I would LOCK all four and resist adding a fifth theorem to DESIGN-IR/DIFF.*
+
+**What is registered.** The current design text, `VERDANDI-DESIGN 0`, is the source language, pinned at the byte.
+`shell design-compile` reads a design and a saved session and writes the one canonical VRDNP2 batch for the net
+difference between the session's world and the world the statements describe, or refuses with a code and the
+design's line. It never approximates: a border cell opened, a stair written over, the camera's cell closed and an
+empty change set are refusals. The proposal id is the SHA-256 of the design's exact bytes, which the admission
+already seals beside every event. The gate holds the compiler three ways: against an independent reference, byte
+for byte; against the statements applied by the gate itself to the parent's bytes, by content, through the
+admission; and against ten planted compilers.
+
+**A reference, before the registration.** The reference was written first and run against the shell as built. It
+fixed the registered id, digest and content, and it found three things. A plant bites only on some designs and
+parents, so each is run where it bites. The admission admits a batch that closes the camera's cell and one that
+opens a stair: two of the tool's three "predicted" refusals were never the seam's, and are now the source
+language's by registration. And a design's bytes can be admitted once in a history, by the session's rule on a
+repeated id.
+
+**What it costs the gate.** Five rows, 242 becoming 247 with the build, and an amendment for REASON-COURT-0's pins
+on the shell's sources. One sentence of DESIGN-EVENT-0's entry is read more narrowly than it was written:
+canonicalising never belongs *to the shell* is taken as a statement about the admission, which still rewrites
+nothing. The registration says so, and it is the owner's to strike.
+
+**What stays declared.** LIVE-AI-EDIT-0 and a graphical editor, in that order. Design objects that outlive
+admission. Constraints. The fifteen pivots.
+
+**Grade.** DECLARED: the word, the court and the registration. OBSERVED (the build container, before the
+registration): the reference's results. **does_not_show.** Anything about a compiler that is not built.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

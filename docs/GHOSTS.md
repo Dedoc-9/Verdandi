@@ -574,7 +574,13 @@ refused whole. What that does not give:
 
 - **The compiler is not certified.** The seam holds the normal form: one byte sequence for each change set. What
   turns a design into that change set is content time. A compiler that nets wrongly produces a batch that means
-  something else, and the seam admits what it is given if the grant and the session allow it.
+  something else, and the seam admits what it is given if the grant and the session allow it. DESIGN-IR/DIFF-0 is
+  registered for this (`2baa42f3`) and not built.
+- **Two of the tool's rules are nobody else's.** The design tool refuses a design that closes the camera's cell or
+  writes over a stair, and called both refusals it predicted of the seam. The seam makes neither: the admission
+  admits a batch that closes the camera's cell, and one that opens a stair (seen with the shell as built,
+  2026-10-07). Until the compiler is built those rules are held by uncertified Python, and after it they are the
+  source language's and still not the authority's: a batch from any other editor is not held to them.
 - **The cost of an admission still grows with the session.** Every admission replays the whole parent and verifies
   the file it wrote. The memo removes a megabyte of hashing from each cell edit and nothing else. Verifying only
   the change is deferred by name: a seal is a hash, and no earlier verification is something a later run may rely on.
@@ -624,7 +630,8 @@ refused whole. What that does not give:
 - **One consumer.** That every editor speaks the same event is declared. The design tool is the only editor there
   is.
 
-**Exorcism.** For the compiler: use, and a design representation with its own court (DESIGN-IR/DIFF). For the cost:
+**Exorcism.** For the compiler: DESIGN-IR/DIFF-0, registered. For the two rules, as far as designs go: the same
+rung. For the cost:
 the host's own time for a design, which the owner's run will give, and, if replay ever has to be skipped, a rung
 that gives a session a trust root. For the memo outside the court: the workshop at sealing, as now. For the
 proposal's bytes: nothing, unless the requirement the ruling names arrives. For the last: a second editor.

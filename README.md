@@ -231,9 +231,16 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          with an exact memo, the workshop with none (ae7cbb36; built, six rows, 242 in the gate;
          │          60 operations admitted one at a time before the seam existed reach the same head as
          │          one batch; on the host 242 of 242 on every run and FULL×2; pushed)
+         │
+    THE COMPILER    DESIGN-IR/DIFF-0 the design text is the source language, and its compile to the canonical
+         │          VRDNP2 change set against a parent world is one tree-owned function: in the certified
+         │          shell, apart from the admission, held against an independent reference and against the
+         │          statements applied by the gate itself; the proposal id is the SHA-256 of the design's
+         │          exact bytes (2baa42f3; registered, not built)
          ⋮
-    declared        DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI (the owner's order; none registered);
-                    the presentation and latency measurement; PRESENT-1; a design language with many editors
+    declared        LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); design objects and
+                    constraints, each a court of its own; the presentation and latency measurement;
+                    PRESENT-1; a design language with many editors
 
 The order first ratified named a strip cache as GAUNTLET-0 and ended in MATERIAL-0, a picture becoming a material
 under a gate. GAUNTLET-0 became a measurement instead, and MATERIAL-0 is not seated.

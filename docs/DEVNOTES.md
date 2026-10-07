@@ -485,7 +485,17 @@ What stands against the tree, as reviewed:
    nobody has to decide whether two runs count. It also said what to run next: the tree's id, the gate twice, the
    tree's id.
 
-40. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+40. **A rule that looks like a mirror may be the only copy.** The design tool refused three things before it
+   proposed, and called them what the seam was known to refuse. A reference run through the admission showed the
+   seam refuses one of the three. A camera's cell closed and a stair opened are admitted. Before a rule is moved,
+   find out who else holds it.
+
+41. **Run the registered list through the reference before it is registered.** The corpus of DESIGN-IR/DIFF-0, 40
+   refusals and orders, and its ten plants were each run before the entry was committed. One plant gave the honest
+   bytes on the registered design and another was refused by the admission itself, so the entry says each plant is
+   run where it bites. That was found before the registration, where it costs a sentence.
+
+42. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))

@@ -5851,6 +5851,214 @@ differs in head, content, spec or witness from the same operations admitted one 
 standing inside a batch. A refused batch that leaves anything. A dry run that writes. An admission bound to a
 preview that reaches another head. A session whose content under the memo differs from the computation with none.
 
+## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; not built)
+
+```
+  design/   a client: hands over the design's bytes, keeps them by id        content time, not certified
+        │
+        ▼   the exact bytes of a design, VERDANDI-DESIGN 0, at most 16,384
+  shell design-compile --session S --design D          the certified shell, a command apart from the admission
+        │   read as the language, or refused with its line
+        │   statements in order over a copy of S's world ──► the design's TARGET
+        │   the net difference, in VRDNP2's one order, or refused: nothing is approximated
+        ▼
+  standard output: the batch's bytes and nothing else      proposal = SHA-256 of the design's exact bytes
+        │
+        ▼   DESIGN-EVENT-0, as registered: dry run · binding · N ordinary edits, each with the id beside it
+  shell design --proposal P
+
+  verify/   an independent reference in Python ◄─ byte for byte ─► the shell's compiler
+            the statements applied by the gate itself to the parent's bytes ◄─ content ─► the admitted child
+```
+
+**Why there is a rung.** DESIGN-EVENT-0 left one limit standing in its own entry: *what compiles a design into a batch
+is content time and is not certified; a compiler that nets wrongly produces a batch that means something else, and
+the seam admits what it is given.* Ghost G28 names it first. The compiler is `design/design.py`, a few hundred lines
+of Python that replay the session themselves and net the difference. This rung is that limit and nothing beside it.
+
+**The word, and the court (the owner, 2026-10-07).** With the host's gate FULL×2 by his own predicate, his word was
+*take next*. Four questions were put to him, and he locked all four: *That is a very tight rung. I would LOCK all
+four and resist adding a fifth theorem to DESIGN-IR/DIFF.*
+
+| the question | locked | the owner's refinement |
+|---|---|---|
+| what is certified first | the compiler | *DESIGN-IR/DIFF first certifies that one bounded design representation compiles deterministically to the canonical VRDNP2 net change set against a specified parent authority.* Not the diff alone: *You already have a canonical diff language: VRDNP2.* Not persistent objects: *That is a different rung* |
+| where the compiler lives | the certified shell, with an independent reference in the gate | *design/ is a client of the certified shell compiler, not the authority and not the court.* And: *admission does not become the compiler court.* Nothing under `verify/` reads `design/` |
+| how provenance is answered | the proposal id commits to the design | *proposal_id = H(exact design bytes).* No member is added to the saved form. *If the original design bytes are not retained somewhere in the project, the ID is a commitment, not independently recoverable provenance.* No operation is attributed to a statement: *a separate semantic requirement* |
+| readings and constraints | out, by name | *A reading is an observation of the current tool. A constraint is a claim with authority-bearing semantics.* Putting constraints in would make it two claims |
+
+His wording of the claim, registered as given: *The current Verðandi design text is registered as the source
+language, and its deterministic compilation to the canonical VRDNP2 net change set against a specified parent world
+is one tree-owned function held by the court. Source constructs have no authority identity after admission.*
+
+**His seven, and where the registration holds each.**
+
+| the court establishes | held by |
+|---|---|
+| one language: the design statements as implemented | `designir-language`: a corpus of refusals at their lines, and the shell's verdict on every single-byte mutant of three designs against the gate's reference |
+| one compiler: one tree-owned path produces the batch | `designir-fence`, by source |
+| determinism: the same parent and the same design bytes give the same VRDNP2 bytes | `designir-compile`: two runs, the reference's bytes, and a digest registered before the compiler exists |
+| semantic equivalence: the batch, admitted, is the world the design describes | `designir-equivalence`: the gate applies the statements itself to the parent's bytes, never through a change set, and compares content; six planted compilers that change the world, each caught twice |
+| a refusal boundary: what cannot be said is refused, never approximated | `designir-language` for the codes; three planted compilers that approximate, in `designir-equivalence` |
+| no object persistence | the child is ordinary edits with DESIGN-EVENT-0's envelope and nothing more; the workshop and the sealer verify it unchanged |
+| no verifier reconstruction | `designir-fence`: the loader, the workshop and the sealer read no design, call no compiler and write no batch. The deferral of 2026-10-06 stands |
+
+He named the fourth as the adversarial one: *Merely proving design text → VRDNP2 doesn't prove that the compiler
+produced the right VRDNP2. You need a planted compiler mutation that survives syntactic validity but changes the
+resulting world/diff, and the court must catch it.*
+
+**The source language, pinned at the byte.** `VERDANDI-DESIGN 0`: the statements the design tool implements today.
+
+| | |
+|---|---|
+| size | at most 16,384 bytes, at most 64 statements, at least one |
+| lines | the bytes between LFs. A CR directly before an LF is not part of the line. Bytes after the last LF are a last line |
+| line 1 | `VERDANDI-DESIGN 0`, with spaces and tabs at either end dropped |
+| a comment | from the first `#` of a later line to its end. It may hold any byte |
+| a statement | words separated by spaces or tabs, every byte of a word printable ASCII |
+| the statements | `open CELL` · `open CELL CELL` · `close CELL` · `close CELL CELL` · `room CELL CELL` · `entrance CELL` · `paint CLASS R,G,B` |
+| a cell | `X,Z`, decimals with no leading zero, inside the parent's level. Two cells are a rectangle's corners in either order |
+| a room | at least three cells each way: a rim and an inside |
+
+This is narrower than what the tool accepted by accident: it split on every blank Python knows and took a CR
+anywhere. The pin is deliberate, and the statements are the tool's.
+
+**What a design means.** The statements are applied in order to a copy of the parent's world. `open` writes floor to
+its rectangle, `close` rock, `room` rock to the rim and floor to the inside, `entrance` floor to its cell, `paint`
+one colour to a class. A later statement writes over an earlier one. What results is the design's **target**. The
+change set is the net difference between the parent's world and the target, in VRDNP2's own order: cells row-major,
+then the classes. A room is a statement. Once compiled there are operations, once admitted there are ordinary
+edits, and nothing in a batch, an envelope or a session names a room.
+
+**The refusal boundary.** Nine codes, first registered here, in the order the checks are made.
+
+| code | when | names a line |
+|---|---|---|
+| `COMPILE-IO` | the design cannot be read | no |
+| `COMPILE-SIZE` | more than 16,384 bytes | no |
+| the loader's own | the session does not load | |
+| `COMPILE-SESSION` | a journal, not a saved session | no |
+| `COMPILE-PARSE` | a line that is not the language; a design with no statement, at its last line | yes |
+| `COMPILE-RANGE` | a cell outside the level; a room under three cells each way | yes |
+| `COMPILE-SIZE` | a statement after the 64th | yes |
+| `COMPILE-BORDER` | a statement writes floor to a cell on the level's border | yes |
+| `COMPILE-STAIR` | a statement writes to a stair cell. VRDNP2 opens and closes and has no stair | yes |
+| `COMPILE-CAMERA` | the target leaves the camera's cell closed | no |
+| `COMPILE-SIZE` | a change set of more than 4,096 operations | no |
+| `COMPILE-EMPTY` | the change set is empty. A batch has at least one operation | no |
+
+Every line is read as the language before any statement is applied. The compiler never emits part of a design,
+never skips a statement it cannot honour and never clips a rectangle. There is one mode: the tool's `--no-predict`
+goes with the tool's own compiler.
+
+**The command.** `shell design-compile --session S --design D` writes the batch's bytes to standard output, and
+nothing else, ending 0; or refuses, ending 2, with nothing there. It writes no batch file, no journal and no
+session, makes no run directory, and leaves S as it was. As every command of the shell does, the run puts its line
+in the run ledger and a refusal its record in the refusal log, and the compiler writes nothing else. The batch is
+VRDNP2 as registered: the compiling shell's two
+identities, S's head as the parent, the design's id, the count and the operations. Nothing in it depends on a
+clock, a host, a path or a random value.
+
+**The id.** The lower-case hexadecimal SHA-256 of the design's bytes exactly as they were read. Nothing is
+normalised: a design saved with CR LF, another comment or one more space is another design with another id, though
+it may compile to the same operations. His chain:
+
+```
+  exact design bytes
+       ↓
+  design digest
+       ↓
+  proposal id
+       ↓
+  admission envelope
+       ↓
+  ordinary session events
+```
+
+DESIGN-EVENT-0 already puts the proposal id beside every event a batch admits and seals it with the session, so
+nothing is added to the saved form. *DESIGN-IR/DIFF-0 establishes what source produced this change, not why the
+world should contain it.* One consequence is the session's own rule and not a new one: a session refuses a proposal
+id already in its admitted history, so the same design bytes are admitted at most once in a history.
+
+**What this does to DESIGN-EVENT-0's words.** That entry says canonicalising belongs to whatever compiles a design
+*and never to the shell, which recognizes or refuses and rewrites nothing.* The registration reads the sentence as
+one about the admission, where it stands: `shell design` rewrites nothing. His ruling in that court was that
+canonicalising belongs in the design compiler and not in the authority or session layer. His ruling in this one
+puts the compiler in the shell's program as a command apart from the admission. It is handed no batch and
+reorders, nets and rewrites none. This is the one place where the two entries' words rub, and it is the owner's to
+strike.
+
+**The five rows, as registered.** 242 rows become 247 with the build.
+
+| row | what it must find |
+|---|---|
+| `designir-preregistered` | the entry at its hash, the three bounds and the registered values; each amendment entry the build carries, unedited |
+| `designir-language` | every case of the corpus ends in its code at its line with nothing on standard output; six accepted spellings compile to the plain form's operations under ids of their own; on every single-byte substitution, deletion and insertion of three designs the shell's verdict is the reference's, mutant by mutant |
+| `designir-compile` | the shell's bytes are the reference's, for each design against each parent, and a second run writes them again; the id is the SHA-256 of the design's bytes; the session is unchanged and nothing is written; the registered design gives the registered id, count and digest |
+| `designir-equivalence` | each batch, admitted by the admission as it stands, gives a child whose content is the content of the design's target; the workshop and the sealer verify it; the ten plants |
+| `designir-fence` | by source: one reader of the design's bytes, one compiler, reached from its two commands alone, writing no file; nothing of the source language in the admission, the session, the loader, the workshop or the sealer; nothing under `verify/` reading `design/`; the reference used in these rows alone. By what was heard: every child that did not end 0 carries a registered code |
+
+**The plants.** `shell design-compile-selftest --plant`, each on a design and a parent the court names because the
+plant bites there. `shell design-compile` takes none.
+
+| plant | what the planted compiler does | how it is caught |
+|---|---|---|
+| `entrance-dropped` | an entrance writes nothing | its bytes are not the reference's; its batch is admitted and the child's content is not the target's |
+| `order-reversed` | the statements applied last to first | the same two |
+| `rect-short` | a rectangle stops one column short | the same two |
+| `paint-next-class` | a paint lands on the class after its own | the same two |
+| `first-wins` | a cell once written is not written again | the same two |
+| `net-stale` | the net is taken against the base world, not the parent's | the same two |
+| `stair-skipped` | a write over a stair is left out | the reference refuses the design, `COMPILE-STAIR`; the planted batch is admitted |
+| `border-clipped` | a rectangle is clipped at the border | the reference refuses, `COMPILE-BORDER`; the planted batch is admitted |
+| `camera-buried` | the camera's rule is not applied | the reference refuses, `COMPILE-CAMERA`; the planted batch is admitted |
+| `id-stripped` | the id is taken from the design with its comments and blanks removed | its bytes are not the reference's and its id is not the design's digest. It reaches the honest head: the world cannot catch it, and the court says so |
+
+**Registered before the compiler exists.**
+
+| | |
+|---|---|
+| the design | 93 bytes: `VERDANDI-DESIGN 0` · `room 6,3 16,10` · `entrance 6,6` · `entrance 11,10` · `open 11,11` · `paint floor 60,70,90`, each line ended by one LF |
+| its id | `b08482b7f01d1209c0b0b97f27f7ab9d02cda97c05964dbfcd07a2e20ebbd3dc` |
+| against the parent of head `73571153c2fc…391c` | 60 operations, a batch of 908 bytes |
+| the batch's SHA-256 | `a9f117c423529a1022febbf54af47063f778954b38c33cd6c765706db1f6f0f5` |
+| the target's content | `02e77707372883396ed8ff5ba967dac01e3606926216d4ce5e1c9af01e89e334` |
+| the child's head | `c18a71f6af8d…1036`, DESIGN-EVENT-0's registered head |
+
+The design is the gate's spelling of the owner's design of 2026-10-06. It is not a record of his keystrokes.
+
+**Seen before the registration, and disclosed in it.** The shell's compiler does not exist. A reference compiler was
+written in Python from the description and run against the shell as built, through its admission.
+
+| seen | what it shapes |
+|---|---|
+| the registered design compiled to 60 operations and 908 bytes, and the existing dry run gave the registered head | the id, the digest and the content were computed by the reference; the head predates it. The registration is not blind in those |
+| the 40 refusals and orders of the registered corpus, and its six accepted spellings, run through the reference: none differed | the corpus was read against the reference before it was registered, not after |
+| a plant bites only on some designs and parents. The short rectangle gives the honest bytes on the registered design: the column it leaves out was rock already. On a parent with a history a net against the base restates the parent's own edits, and the admission refuses that itself, nothing to change, unless the design undoes the whole of that history | each plant is run where it bites, and the court does not claim otherwise |
+| the admission admits a batch that closes the camera's cell, and a batch that opens a stair | those two rules are the source language's alone. The tool had them as refusals it predicted of the seam; the seam does not make them |
+| the same design bytes offered a second time in one history are refused `ADMIT-DUPLICATE`; with one more comment line they are admitted | the id's one consequence, registered as the session's own rule |
+
+**Out, by name.** Readings: they stay the design tool's views. Constraints: their own court. Persistent objects, a
+relation, an identity that outlives admission: a later rung. A diff between two sessions. An operation attributed
+to a statement. A batch rebuilt from events.
+
+**What it owes the earlier rungs.** The build changes the shell's sources, so REASON-COURT-0's pins on them move:
+an amendment entry with its own hash, written after the build and committed before it, as before. The mint
+register's pins are not expected to move. No row of an earlier rung changes its text, and if holding one needs more
+than a pin moved, the build stops and the owner rules.
+
+**Grade.** DECLARED: the word, the court's four locks, the registration. OBSERVED (the build container, one sitting,
+before the registration): the reference's results and the ten planted behaviours through the existing admission.
+Nothing is ESTABLISHED: there is no compiler in the shell and no row.
+
+**does_not_show.** Anything about a compiler that is not built. That the reference's reading of a room is what a
+designer means: the compiler and the reference are two programs written from one description by one hand. That a
+model can write a design worth admitting.
+
+**Falsifier (of the registration).** A registered case the built reference decides otherwise. A registered value
+the built compiler does not reproduce. A plant that cannot reach what it is said to catch. A pin of an earlier rung
+that the build has to move without an amendment.
+
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:

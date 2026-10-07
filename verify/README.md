@@ -25,7 +25,7 @@ The gate is the program's only judge, so its design is about what it may and may
                   == earns the claim · != defeats it · identity not established withholds it
                   the reconcile line names the rowset, not the tree: a tree's identity is taken outside the gate
 
-    preregister.json   43 entries: hypothesis · success · failure · limits · instrument · chain hash.
+    preregister.json   44 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
                        amendment entry with its own hash.
 
