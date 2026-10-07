@@ -143,7 +143,7 @@ the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen
       ↓
 DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242 on every run and FULL×2 by the owner's predicate; pushed
       ↓
-DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); not built
+DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); read and locked by him the same day, and the round around it named before the build as subcourts and no new claim (`DESIGN-IR/DIFF-0a`, `c414587d`); applied on the host, 242 of 242; not built
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated
       ↓
@@ -2011,7 +2011,7 @@ OBSERVED (the owner's host, one run, off the gate): the design tool's loop over 
 **does_not_show.** What an admission costs on the host, that the design tool has sent a batch there, or that a
 model writes a useful design.
 
-### DESIGN-IR/DIFF-0 — the compiler, certified · **registered** (`2baa42f3`); not built
+### DESIGN-IR/DIFF-0 — the compiler, certified · **registered** (`2baa42f3`), its round named before the build (`c414587d`); not built
 DESIGN-EVENT-0 made a design one batch and left one link outside the gate: the program that turns a design into
 that batch. This section records the word that took the rung, the court that shaped it and what was registered.
 The rung's own record, with the language, the codes, the rows and the plants, is in
@@ -2059,11 +2059,31 @@ on the shell's sources. One sentence of DESIGN-EVENT-0's entry is read more narr
 canonicalising never belongs *to the shell* is taken as a statement about the admission, which still rewrites
 nothing. The registration says so, and it is the owner's to strike.
 
+**Applied on the host, read, locked and batched (2026-10-07).** The owner applied the registration and its record;
+the host's gate read 242 of 242, and the output holds no push. He read the entry and struck nothing: *I would push
+0138/0139*, with one caution, that the camera's and the stair's rules must not be promoted into authority law. The
+entry already says they are the source language's alone, and they stay so. He locked one predicate before the
+build: the shell's bytes are the reference's, and the batch applied to the parent is the design's target. The
+first is byte equality and the second is equality of the world's content, and the plants attack each side. The
+amendment adds one plant for the second side alone: the same omission in the compiler and in the reference, so
+that the bytes agree and only the content can catch it.
+
+His second text named the round. DIFF-0 is the principal rung. Around it are four subcourts and two supporting
+courts, *not seven new claims*: the refusal boundary, the batch's meaning, the id's commitment to exact bytes, and
+a fence that keeps the design tool from becoming a second compiler; then the round trip and a mutation campaign.
+They are registered as one amendment before the build (`DESIGN-IR/DIFF-0a`, `c414587d`), which adds cases to the
+corpus and no row. The client fence sits in the tool's own checks, off the gate, because his locks leave it no
+other place: nothing under `verify/` reads `design/`, and the tool is not certified.
+
+One question he carries forward and rules out of this rung: *Should camera/stair validity be an authority
+invariant, or deliberately remain a property of the design language?*
+
 **What stays declared.** LIVE-AI-EDIT-0 and a graphical editor, in that order. Design objects that outlive
 admission. Constraints. The fifteen pivots.
 
-**Grade.** DECLARED: the word, the court and the registration. OBSERVED (the build container, before the
-registration): the reference's results. **does_not_show.** Anything about a compiler that is not built.
+**Grade.** DECLARED: the word, the court, the registration, his reading and the amendment. OBSERVED (the build
+container, before each entry): the reference's results. MEASURED (host): the gate with the registration applied,
+242 of 242, one run. **does_not_show.** Anything about a compiler that is not built.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

@@ -236,7 +236,7 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          VRDNP2 change set against a parent world is one tree-owned function: in the certified
          │          shell, apart from the admission, held against an independent reference and against the
          │          statements applied by the gate itself; the proposal id is the SHA-256 of the design's
-         │          exact bytes (2baa42f3; registered, not built)
+         │          exact bytes (2baa42f3; its round named before the build, c414587d; not built)
          ⋮
     declared        LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); design objects and
                     constraints, each a court of its own; the presentation and latency measurement;

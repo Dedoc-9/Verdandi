@@ -495,7 +495,12 @@ What stands against the tree, as reviewed:
    bytes on the registered design and another was refused by the admission itself, so the entry says each plant is
    run where it bites. That was found before the registration, where it costs a sentence.
 
-42. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+42. **Name the parts of a court before adding courts.** Seven seams were proposed around the compiler. Read against
+   the registration, five were parts of rows it already had, one belonged to the tool's own checks and one was the
+   mutation campaign. Naming them cost one entry, a dozen cases and no row. The check to make first is whether a
+   proposed court is new or is a name for something registered.
+
+43. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))

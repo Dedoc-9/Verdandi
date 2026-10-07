@@ -5695,6 +5695,7 @@ says so and none is written.
 | 4 | that tree with 0135, documents only. Git's id of it: `f9c5a8108ae33f17418b6a62a96bdec6c5429dcb` | 2026-10-07 | not in its output; its commit went out with run 6's push |
 | 5 | the same tree: the next command after run 4 | 2026-10-07 | the same |
 | 6 | that tree with 0136, documents only | 2026-10-07 | `5f8ab66..83b0261`, which carries 0135 and 0136 |
+| 7 | that tree with 0137, 0138 and 0139: documents, and one entry in the ledger (DESIGN-IR/DIFF-0's registration) | 2026-10-07 | not in its output |
 
 A later host run of this gate is a line of this table. The dates are the days the outputs were given; the outputs
 carry none of their own. Every host run was the compact one, so the rows' texts, which carry the counts, were
@@ -5833,9 +5834,9 @@ row admitted the 60 in its own root; the tool has not been shown doing it.
 (gate, here): the six rows, 242 in the gate, three passes identical, one of them with the host's records present;
 the same on Python 3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one
 run, off the gate): the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate,
-236 of 236, pushed; the built gate, 242 of 242, six runs on five trees that differ in documents only, all
-pushed; the fourth and fifth on one tree. By the owner's predicate: FULL×2 here, and FULL×2 on the host by its
-fourth and fifth runs.
+236 of 236, pushed; the built gate, 242 of 242, seven runs on six trees. The first five trees differ in documents
+only and are pushed; the sixth adds one entry to the ledger, and its output holds no push. The fourth and fifth
+runs were on one tree. By the owner's predicate: FULL×2 here, and FULL×2 on the host by its fourth and fifth runs.
 
 **does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
 builds of the shell agree. That the memo is right on a session the court does not replay: the workshop is the
@@ -5851,7 +5852,7 @@ differs in head, content, spec or witness from the same operations admitted one 
 standing inside a batch. A refused batch that leaves anything. A dry run that writes. An admission bound to a
 preview that reaches another head. A session whose content under the memo differs from the computation with none.
 
-## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; not built)
+## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; the round around it named before the build, `DESIGN-IR/DIFF-0a` `c414587d`; applied on the host, 242 of 242; not built)
 
 ```
   design/   a client: hands over the design's bytes, keeps them by id        content time, not certified
@@ -6038,18 +6039,111 @@ written in Python from the description and run against the shell as built, throu
 | the admission admits a batch that closes the camera's cell, and a batch that opens a stair | those two rules are the source language's alone. The tool had them as refusals it predicted of the seam; the seam does not make them |
 | the same design bytes offered a second time in one history are refused `ADMIT-DUPLICATE`; with one more comment line they are admitted | the id's one consequence, registered as the session's own rule |
 
+**On the host (DANIELDILLBERG, output given 2026-10-07): applied.** 0137, 0138 and 0139 were applied and the gate
+read `GATE PASSED`, rowset `aa94c886190510c7`, 242 rows / 0 fail / 0 skipped. The registration is in the host's
+ledger and no row before it moved. The output ends at the gate: no push is in it, and none is written here.
+
+**The owner's reading of the registration (2026-10-07).** *I would push 0138/0139 with only one substantive strike:
+do not let the pre-registration accidentally promote the camera/stair rules into authority law. The entry currently
+does a good job saying they are source-language rules only. Keep that.* So nothing was struck. Part by part:
+
+| the part | his word | what he fixed with it |
+|---|---|---|
+| the command's boundary | LOCK | design bytes and a parent authority in, VRDNP2 bytes out: *No mutation, no admission, no persistence* |
+| the compiler and the reference | LOCK | *one production compiler in the certified shell; one independent court implementation in `verify/`.* The deferral of 2026-10-06 *was specifically about reconstructing proposal bytes from admitted session events, not about an independent oracle for this new rung* |
+| the equivalence | the theorem to watch in the build | three equalities, set apart: the same design and parent give the same bytes; the shell's output is the reference's; the design's meaning applied is the batch applied. *The third is the actual semantic theorem* |
+| the camera and the stair | DEFER, and not into the authority | *the source language is narrower than the underlying authority language.* That is not a contradiction. No authority court is added to this rung |
+| provenance | LOCK | the id says what source produced a change, which *prevents provenance from quietly becoming intent semantics*. Per-operation attribution *would be a fifth theorem in disguise* |
+| constraints and readings | out | otherwise the rung is compiler correctness, constraint semantics and constraint witnesses at once |
+
+The predicate he locked before the build, the first equality of bytes and the second of the world's content:
+
+```
+  Compile_shell(D,S) = Compile_ref(D,S)    AND    Apply(VRDNP2,S) = Target(D,S)
+```
+
+*Then the compiler mutation court attacks both sides independently.* And of the build: the decisive gate is not
+whether the compiler produced a plausible batch but *whether a valid-but-wrong compiler can survive the byte oracle
+or the direct semantic equivalence court.*
+
+His verdict: *PUSH 0138/0139.* *I would make no fifth theorem, no constraint court, no authority camera/stair
+amendment, no saved-form change, and no design-tool certification.* One question he carries forward, and rules is
+not to be answered in this rung: *Should camera/stair validity be an authority invariant, or deliberately remain a
+property of the design language?*
+
+**The round (his second text, the same day).** *This is a good round to batch the seams that are prerequisites for
+DESIGN-IR/DIFF-0, but I would keep the actual court count tight.* Its shape, as he drew it:
+
+```
+  DESIGN-IR/DIFF-0          ← main theorem
+          │
+          ├── BOUNDARY-0    ← refusal language
+          ├── REPLAY-0      ← semantic application
+          ├── ID-0          ← byte commitment
+          └── CLIENT-FENCE  ← architecture
+
+  supporting:
+          ROUNDTRIP-0
+          MUTATION-0
+```
+
+*I would register all six/seven together if the prereg can stay clean, but only make DIFF-0 the principal rung. The
+others should either be named subcourts/amendments or very small adjacent rows, not seven new claims.* They are
+registered as one amendment, `DESIGN-IR/DIFF-0a` (`c414587d`), before anything is built. It adds no claim and no
+row: each subcourt is a part of a row this rung already registered.
+
+| the subcourt | his predicate | where it is held | what the amendment adds |
+|---|---|---|---|
+| BOUNDARY-0 | `Compile(D,S) = REFUSE(code)`, and never a partial result. *The compiler's refusal boundary is part of the language, not merely error handling* | `designir-language`, and the three plants that approximate | two statements on one line; for five codes, the refused statement last and first among statements each admissible alone, with nothing on standard output either way |
+| REPLAY-0 | `Apply(Compile(D,S),S) = Target(D,S)`. *I would not build a second replay system* | `designir-equivalence`: the admission's own replay against the gate applying the statements | no-op writes; overlapping rectangles; a later statement over an earlier; a rectangle's corners in four orders; a class painted twice, and painted its own colour; every statement kind in one design; net-zero; and an eleventh plant, `net-short`, for this equality alone |
+| ID-0 | `ID(D₁) = ID(D₂)` iff `D₁ = D₂` byte for byte. *Same semantics ≠ same proposal ID* | `designir-compile` | the registered design on two parents carries one id; LF against CR LF, a blank, a comment added and changed, two statements exchanged, a final LF dropped, every accepted single-byte mutant |
+| CLIENT-FENCE-0 | `design.py → shell compiler → VRDNP2`, never `design.py → VRDNP2` | the design tool's own checks, off the gate | the tool's batch is the compiler's bytes; the tool proposes what a stand-in compiler writes; its source holds no writer and no netting; four plants made from the tool |
+| ROUNDTRIP-0, supporting | design, compile, batch, admit, world, inspect | REPLAY-0 on the gate; the tool's own check of `inspect` off it | nothing on the gate |
+| MUTATION-0, supporting | *does the test suite actually detect deliberately introduced faults?* | a campaign off the gate, as mutation testing has been here | his twelve targets; aimed at checks no row notices, not at a count |
+
+Five things the amendment says plainly.
+
+- **One plant is for the second equality alone.** He wrote that this seam is distinct from byte equality because *a
+  compiler can emit the same wrong batch as the reference compiler.* The ten registered plants do not show that: a
+  planted compiler disagrees with an unplanted reference, so the byte oracle catches each first. `net-short` leaves
+  the last operation out of the net, and for that one case the gate's reference is given the same omission. The
+  bytes agree, the batch is admitted, and the child's content is not the target's. So each equality is shown to
+  catch what the other cannot: `id-stripped` by the bytes alone, `net-short` by the content alone. Tried before the
+  entry as a batch of 59 of the registered design's 60 operations: admitted, another content.
+- **The client fence is not a row.** He wants the tool held from becoming a second compiler: *otherwise the nice
+  compiler court can exist while the actual content-time client silently becomes a second compiler.* Two of his
+  locks leave it one place. The registration forbids anything under `verify/` reading `design/`, and he ruled no
+  design-tool certification. So it is the tool's own checks, with plants made from the tool. Making it a row would
+  reverse a lock of the court, and that is his to rule.
+- **ID-0's iff, graded.** Equal bytes give an equal id on any parent: that is determinism, and it is shown. That
+  different bytes cannot share an id rests on SHA-256 and is shown only for the pairs the court holds.
+- **What the second equality is not independent of.** The target is taken by the gate's own reading of a statement.
+  A misreading shared by the compiler and the reference is caught by neither equality.
+- **The added cases were run through the reference first.** Each ended as the amendment says. No row has run them.
+
+His deferred list, registered with it: persistent object identity; constraints; the camera's and the stair's rules
+as authority invariants; statement-level provenance; independent VRDNP2 reconstruction, which is not to come back
+*as a "test"*; incremental or delta verification; a model; a random or property-generated corpus; a design history
+kept apart from the session's. His closing: *The strongest preparation before pushing is therefore not more theorem
+surface.* What matters is that the court kills a compiler that is *syntactically valid, produces a valid VRDNP2
+batch, agrees with its own digesting, but produces the wrong world.*
+
+The second text cites two outside pages, for differential testing and for mutation testing. They are its
+citations. They were not opened here, and nothing in the amendment rests on them.
+
 **Out, by name.** Readings: they stay the design tool's views. Constraints: their own court. Persistent objects, a
 relation, an identity that outlives admission: a later rung. A diff between two sessions. An operation attributed
-to a statement. A batch rebuilt from events.
+to a statement. A batch rebuilt from events. The camera's and the stair's rules as the authority's.
 
 **What it owes the earlier rungs.** The build changes the shell's sources, so REASON-COURT-0's pins on them move:
 an amendment entry with its own hash, written after the build and committed before it, as before. The mint
 register's pins are not expected to move. No row of an earlier rung changes its text, and if holding one needs more
 than a pin moved, the build stops and the owner rules.
 
-**Grade.** DECLARED: the word, the court's four locks, the registration. OBSERVED (the build container, one sitting,
-before the registration): the reference's results and the ten planted behaviours through the existing admission.
-Nothing is ESTABLISHED: there is no compiler in the shell and no row.
+**Grade.** DECLARED: the word, the court's four locks, the registration, his reading of it and the amendment.
+OBSERVED (the build container, one sitting, before each entry): the reference's results, the ten planted behaviours
+through the existing admission, and the amendment's added cases. MEASURED (host): the gate with the registration
+applied, 242 of 242, one run. Nothing of the rung is ESTABLISHED: there is no compiler in the shell and no row.
 
 **does_not_show.** Anything about a compiler that is not built. That the reference's reading of a room is what a
 designer means: the compiler and the reference are two programs written from one description by one hand. That a

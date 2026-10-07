@@ -580,7 +580,9 @@ refused whole. What that does not give:
   writes over a stair, and called both refusals it predicted of the seam. The seam makes neither: the admission
   admits a batch that closes the camera's cell, and one that opens a stair (seen with the shell as built,
   2026-10-07). Until the compiler is built those rules are held by uncertified Python, and after it they are the
-  source language's and still not the authority's: a batch from any other editor is not held to them.
+  source language's and still not the authority's: a batch from any other editor is not held to them. The owner
+  ruled that this stays so in DESIGN-IR/DIFF-0, and carries the question forward unanswered: *Should camera/stair
+  validity be an authority invariant, or deliberately remain a property of the design language?*
 - **The cost of an admission still grows with the session.** Every admission replays the whole parent and verifies
   the file it wrote. The memo removes a megabyte of hashing from each cell edit and nothing else. Verifying only
   the change is deferred by name: a seal is a hash, and no earlier verification is something a later run may rely on.
