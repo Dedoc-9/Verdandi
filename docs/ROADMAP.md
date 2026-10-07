@@ -143,7 +143,9 @@ the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen
       ↓
 DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242 on every run and FULL×2 by the owner's predicate; pushed
       ↓
-DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); read and locked by him the same day, and the round around it named before the build as subcourts and no new claim (`DESIGN-IR/DIFF-0a`, `c414587d`); applied on the host, 242 of 242; not built
+DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); read and locked by him the same day, and the round around it named before the build as subcourts and no new claim (`DESIGN-IR/DIFF-0a`, `c414587d`); both pushed (`83b0261..5c8ad19`); not built
+      ↓
+HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung — declared; not registered
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated
       ↓
@@ -2082,8 +2084,102 @@ invariant, or deliberately remain a property of the design language?*
 admission. Constraints. The fifteen pivots.
 
 **Grade.** DECLARED: the word, the court, the registration, his reading and the amendment. OBSERVED (the build
-container, before each entry): the reference's results. MEASURED (host): the gate with the registration applied,
-242 of 242, one run. **does_not_show.** Anything about a compiler that is not built.
+container, before each entry): the reference's results. MEASURED (host): the gate with the registration applied
+and with the amendment applied, 242 of 242 each, one run each; pushed (`83b0261..5c8ad19`, carrying 0137 to 0141).
+**does_not_show.** Anything about a compiler that is not built.
+
+### Hermeneutics and semiotics — what the design language means, apart from what compiles it · **declared** (two texts the owner brought, 2026-10-07); not registered, nothing built
+Two texts the owner brought with the push of DESIGN-IR/DIFF-0's amendment, the second after he broke off the first
+exchange. They speak to an assistant, so their rules are quoted and the rest is summarized. They seat nothing.
+
+**The seam they start from.** DESIGN-IR/DIFF-0a says of its own predicate that a misreading of a statement shared
+by the compiler and the reference is caught by neither equality. The first text: *a shell compiler and an
+independent reference can agree perfectly while both implement the same mistaken reading of the language.* The
+rung's direct target court *is itself another implementation of the registered description.*
+
+**HERMENEUTICS-0, the first text.** Its question: *What is the authoritative meaning of VERDANDI-DESIGN 0,
+independently of either compiler?* It sets two agreements apart:
+
+```
+  Compile_shell(D,S) = Compile_ref(D,S)        implementation agreement
+  ⟦D⟧_S = Target(D,S)                          language-meaning agreement
+```
+
+| | |
+|---|---|
+| what it is | *A registered adjudication of the denotation of the source language.* Not *what the designer probably meant*, which *would immediately make the rung mushy* |
+| the questions it would answer | whether a room is rim-closed and inside-open as registered; whether statements overwrite in order; whether a no-op paint is observable; whether a rectangle is the same set whatever the order of its corners; whether an entrance is merely a floor write; whether the camera's and the stair's rules are the language's or the authority's; whether the net change set is an encoding of the meaning or part of it |
+| the camera and the stair | two questions there, which *need not be identical*: what the design language says, and what the world's authority permits. Not *silently making the compiler responsible for authority* |
+| what he would register | a hypothesis, that the source language *has a determinate denotation for each admitted design and parent, independently adjudicated from the implementation of the production compiler and its reference*; and a court, *a semantic corpus written before looking at the compiler implementation*: for each construct a source, a parent, a semantic target, a rule and an ambiguity status |
+| its plants | the ones DIFF-0 cannot tell apart: the compiler and the reference both wrong about a room, about overwriting, about corner order, about an entrance, about a paint or a net-zero design |
+| its success | the court's meaning is the semantic target, and never *Meaning_court = Compile_shell*. *That independence is the entire point* |
+| the strike | no *English-language "interpretation panel"*, and no model asked what a design means: *That would turn the semantic authority into an unbounded subjective oracle.* The owner registers the rulings *before implementation evidence* |
+| a ruling's three values | *LOCK — meaning is fixed. DEFER — language is genuinely underspecified. REJECT — proposed interpretation is not supported.* Where a construct has two plausible meanings, *the correct result may be "underspecified", not a forced semantic answer* |
+
+Its order, and its ruling:
+
+```
+  0140 DIFF-0a  →  0141 docs  →  HERMENEUTICS-0, registered  →  build DIFF-0  →  its court  →  FULL×2  →  build HERMENEUTICS-0
+```
+
+> **LOCK: introduce the concept now. DEFER: its implementation/build until after DIFF-0. REJECT: folding it into
+> DIFF-0 or treating compiler/reference agreement as hermeneutic evidence.**
+
+*Do not make HERMENEUTICS-0 a dependency of the DIFF build.*
+
+**Semiotics, the second text.** *Semiotics is different enough that I would not fold it into HERMENEUTICS-0. It
+sits one level earlier and asks a different question.* Its layers:
+
+```
+  SEMIOTICS       what does this symbol or construct stand for?
+       ↓
+  HERMENEUTICS    what does this particular design text mean, read as a whole?
+       ↓
+  SEMANTICS       what exact world-state does that meaning specify?
+       ↓
+  COMPILER        how is that world-state encoded as VRDNP2?
+       ↓
+  ADMISSION       is that encoded change permitted?
+```
+
+Its question of a token: *Why does the token `room` designate that kind of design operation at all?* A control, a
+text, a model's proposal, a recipe, an icon and a sentence of intent are *different sign systems pointing toward
+the same design authority.* It would not be another compiler court but *a language-design provenance court*: signs,
+referents, conventions, overloaded terms, and the boundary between a sign and authority. And it is not to be
+registered at once: *I would not register it immediately as a new engineering rung unless you find an actual
+ambiguity that DIFF-0 cannot resolve.* Its summary, which also restates the first text's rung more cautiously:
+
+| the layer | what the second text makes of it |
+|---|---|
+| semiotics | a conceptual layer, a vocabulary audit |
+| hermeneutics | a registered interpretive court, if ambiguity appears |
+| semantics | the exact target-world court |
+| DIFF | compiler correctness |
+
+*That prevents a dangerous collapse where "what the word means," "what the author meant here," and "what cells the
+program changes" become one giant oracle.* And of a model at the seam: it *is fundamentally a semiotic translation
+layer*, and *should never get to silently redefine what those signs mean.*
+
+**What already stands that it would rest on.** The limit is registered: DESIGN-IR/DIFF-0's first limit and its
+amendment's both say that agreement of the two programs shows one reading held twice. The meaning of every
+statement is registered as prose, in that entry. One registered plant is of a defect the byte oracle cannot see
+when it is planted on both sides; it is caught only because the target there is right.
+
+**Where it meets rules already in force.** Each wants the owner's ruling before anything is seated.
+
+- **A registered entry is not edited.** DESIGN-IR/DIFF-0's readings are pinned by `2baa42f3`. A ruling that reads a
+  construct otherwise does not correct that entry; it makes a later language.
+- **A registration needs something that can redden.** The court named here is a corpus of rulings, and the corpus
+  is not written. Its targets have to come from the owner's rulings and from neither program.
+- **The reference already exists.** It was written before DESIGN-IR/DIFF-0 was registered, by the hand that will
+  write the compiler, and the registered cases were run through it. *Before looking at the compiler
+  implementation* can be kept for the shell's compiler. It cannot be kept for the reference.
+- **Language proposes, the verifier admits.** The strike of a panel and of a model as the semantic authority is
+  that rule, one layer up.
+- **The two texts differ on when.** The first would register the rung now, very small. The second would register
+  an interpretive court if an ambiguity appears. Nothing is registered by this record.
+
+**Grade.** DECLARED: both texts and the ruling. Nothing is registered, built or measured.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

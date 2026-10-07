@@ -5695,7 +5695,8 @@ says so and none is written.
 | 4 | that tree with 0135, documents only. Git's id of it: `f9c5a8108ae33f17418b6a62a96bdec6c5429dcb` | 2026-10-07 | not in its output; its commit went out with run 6's push |
 | 5 | the same tree: the next command after run 4 | 2026-10-07 | the same |
 | 6 | that tree with 0136, documents only | 2026-10-07 | `5f8ab66..83b0261`, which carries 0135 and 0136 |
-| 7 | that tree with 0137, 0138 and 0139: documents, and one entry in the ledger (DESIGN-IR/DIFF-0's registration) | 2026-10-07 | not in its output |
+| 7 | that tree with 0137, 0138 and 0139: documents, and one entry in the ledger (DESIGN-IR/DIFF-0's registration) | 2026-10-07 | not in its output; its commits went out with run 8's push |
+| 8 | that tree with 0140 and 0141: documents, and one more entry in the ledger (the amendment) | 2026-10-07 | `83b0261..5c8ad19`, which carries 0137 to 0141 |
 
 A later host run of this gate is a line of this table. The dates are the days the outputs were given; the outputs
 carry none of their own. Every host run was the compact one, so the rows' texts, which carry the counts, were
@@ -5834,9 +5835,9 @@ row admitted the 60 in its own root; the tool has not been shown doing it.
 (gate, here): the six rows, 242 in the gate, three passes identical, one of them with the host's records present;
 the same on Python 3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one
 run, off the gate): the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate,
-236 of 236, pushed; the built gate, 242 of 242, seven runs on six trees. The first five trees differ in documents
-only and are pushed; the sixth adds one entry to the ledger, and its output holds no push. The fourth and fifth
-runs were on one tree. By the owner's predicate: FULL×2 here, and FULL×2 on the host by its fourth and fifth runs.
+236 of 236, pushed; the built gate, 242 of 242, eight runs on seven trees, all pushed. The first five trees differ
+in documents only; the sixth and the seventh each add one entry to the ledger. The fourth and fifth runs were on
+one tree. By the owner's predicate: FULL×2 here, and FULL×2 on the host by its fourth and fifth runs.
 
 **does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
 builds of the shell agree. That the memo is right on a session the court does not replay: the workshop is the
@@ -5852,7 +5853,7 @@ differs in head, content, spec or witness from the same operations admitted one 
 standing inside a batch. A refused batch that leaves anything. A dry run that writes. An admission bound to a
 preview that reaches another head. A session whose content under the memo differs from the computation with none.
 
-## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; the round around it named before the build, `DESIGN-IR/DIFF-0a` `c414587d`; applied on the host, 242 of 242; not built)
+## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; the round around it named before the build, `DESIGN-IR/DIFF-0a` `c414587d`; both pushed, `83b0261..5c8ad19`; not built)
 
 ```
   design/   a client: hands over the design's bytes, keeps them by id        content time, not certified
@@ -6043,6 +6044,11 @@ written in Python from the description and run against the shell as built, throu
 read `GATE PASSED`, rowset `aa94c886190510c7`, 242 rows / 0 fail / 0 skipped. The registration is in the host's
 ledger and no row before it moved. The output ends at the gate: no push is in it, and none is written here.
 
+**Pushed (output given 2026-10-07).** 0140 and 0141 were applied, the gate read `GATE PASSED`, rowset
+`aa94c886190510c7`, 242 rows / 0 fail / 0 skipped, and the owner pushed. Git's own output:
+`83b0261..5c8ad19  main -> main`. That range carries 0137 to 0141: the registration, the amendment and their
+records. Both entries are public before anything of the rung is built.
+
 **The owner's reading of the registration (2026-10-07).** *I would push 0138/0139 with only one substantive strike:
 do not let the pre-registration accidentally promote the camera/stair rules into authority law. The entry currently
 does a good job saying they are source-language rules only. Keep that.* So nothing was struck. Part by part:
@@ -6143,7 +6149,8 @@ than a pin moved, the build stops and the owner rules.
 **Grade.** DECLARED: the word, the court's four locks, the registration, his reading of it and the amendment.
 OBSERVED (the build container, one sitting, before each entry): the reference's results, the ten planted behaviours
 through the existing admission, and the amendment's added cases. MEASURED (host): the gate with the registration
-applied, 242 of 242, one run. Nothing of the rung is ESTABLISHED: there is no compiler in the shell and no row.
+applied, 242 of 242, one run, and with the amendment applied, 242 of 242, one run; pushed. Nothing of the rung is
+ESTABLISHED: there is no compiler in the shell and no row.
 
 **does_not_show.** Anything about a compiler that is not built. That the reference's reading of a room is what a
 designer means: the compiler and the reference are two programs written from one description by one hand. That a
@@ -6250,6 +6257,16 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   the format's law, writers refusing beyond it; exhaustive single-byte mutation on small registered documents and
   boundary mutations on real files. In the owner's words: *corpus establishes coverage; the writer contract
   establishes the language.* Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
+- **Hermeneutics and semiotics (declared, two texts the owner brought, 2026-10-07; not registered, nothing built).**
+  DESIGN-IR/DIFF-0's amendment says that a misreading of a statement shared by the compiler and the reference is
+  caught by neither of its equalities. The owner named the layer that gap belongs to. `HERMENEUTICS-0`: *What is
+  the authoritative meaning of VERDANDI-DESIGN 0, independently of either compiler?*, defined as *a registered
+  adjudication of the denotation of the source language* and not as what a designer probably meant, held by a
+  semantic corpus of the owner's own rulings, each LOCK, DEFER or REJECT, and never by a panel or a model. His
+  ruling: *LOCK: introduce the concept now. DEFER: its implementation/build until after DIFF-0. REJECT: folding it
+  into DIFF-0 or treating compiler/reference agreement as hermeneutic evidence.* Semiotics, in his second text, is
+  one level earlier, what a sign stands for, and is a vocabulary audit and not a rung. Both are declared names and
+  are not seated. Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
 - **The development environment: fifteen pivots (declared, the owner's, 2026-10-04; not registered, nothing
   built).** A review of Verðandi as a research-grade interactive development environment: a design space as a
   window, docking, view modes, constraints as a visible subsystem, a design diff, a parameter rack, recipes, a
