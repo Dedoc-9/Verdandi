@@ -567,7 +567,7 @@ what it shows.
 
 ---
 
-## G28 — the batch is built; what it leaves open · ESTABLISHED (the six rows, on the gate here); MEASURED (host: the gate, 242 of 242 on each of its runs); limits stated; its cost on the host NOT_MEASURED
+## G28 — the batch is built; what it leaves open · ESTABLISHED (the six rows, on the gate here); MEASURED (host: the gate, 242 of 242 on each of its runs, FULL×2 on two of them); limits stated; its cost on the host NOT_MEASURED
 
 DESIGN-EVENT-0 is built, and the gate passes with it here and on the host. A design is one batch, admitted whole or
 refused whole. What that does not give:
@@ -586,9 +586,12 @@ refused whole. What that does not give:
 - **The host's runs are all compact.** 242 of 242 each time; after the first, each on a tree that differs from the
   one before in documents only. What they printed reads the same. The rows' counts were printed by none. The runs
   are listed in [`verify/RUNGS.md`](../verify/RUNGS.md).
-- **On the host the gate has agreeing runs, and not FULL×2.** The owner's predicate asks for the same tree and the
-  same output. Every host run followed a patch. And the gate prints nothing of the tree it ran on, so on either
-  machine a tree's identity is taken outside it; where it is not taken, it is not established.
+- **On the host the gate is FULL×2 as far as its witnesses reach.** The owner's predicate asks for the same tree and
+  the same output, and two host runs gave both. The tree's identity there is Git's id of the commit's tree with a
+  status that lists nothing, taken before the first run and after the second: files Git ignores are outside it, the
+  gate's build directory among them. The outputs were compared as printed, and no digest of them was taken there.
+  And the gate prints nothing of the tree it ran on, so on either machine a tree's identity is taken outside it;
+  where it is not taken, it is not established.
 - **No verifier rebuilds a proposal.** Deferred by the owner's ruling, outside this rung, in his words: *The
   verifier does not reconstruct VRDNP2 proposal bytes from admitted events or independently recompute the proposal
   digest. Doing so would introduce a second VRDNP2 writer into the verification path and is outside the present

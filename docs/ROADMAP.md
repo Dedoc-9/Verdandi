@@ -137,7 +137,7 @@ MINT-WATCH-0     the owner's ruling (2026-10-05): a separate slice, registered n
       ↓
 the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen; a new gate only for a new engineering invariant; the work is the design environment. Built off the gate, content time: design/ — inspect, propose, preview, admit, undo over the certified seam, driven the same way by a person, a script or a model
       ↓
-DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242 on every run, pushed
+DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242 on every run and FULL×2 by the owner's predicate; pushed
       ↓
 DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered, and by his word with the build's push none is added at once. The design representation follows the event and is not promoted ahead of it: the question he had reserved is ruled
       ↓
@@ -1963,8 +1963,14 @@ line each, in [`verify/RUNGS.md`](../verify/RUNGS.md).
 That is agreement, and the owner then said exactly what it is not (2026-10-07). He replaced the phrase "full ×2"
 with a predicate: **FULL×2 iff `TreeID₁ == TreeID₂` AND `GateOut₁ == GateOut₂`**, with identity in three values,
 same-tree, different-tree and not established. *`==` earns the claim; `!=` defeats it; unknown withholds it.* Each
-host run followed a patch, so no two were on one tree: three agreeing runs, and not FULL×2. Here two passes on one
-tree gave one log: FULL×2. The gate prints nothing of the tree, so a tree's identity is taken outside it.
+of the first three host runs followed a patch, so no two were on one tree: three agreeing runs, and not FULL×2.
+Here two passes on one tree gave one log: FULL×2. The gate prints nothing of the tree, so a tree's identity is
+taken outside it.
+
+Then he ran the host's gate to the predicate (2026-10-07). With 0135 applied: Git's id of the tree and a status
+that lists nothing, the gate, the gate again, the same id and the same empty status. 242 of 242 both times, and the
+two outputs the same as printed. Same tree, same output: FULL×2 on the host. The identity is Git's, so the files
+Git ignores are outside it; the outputs were compared as he gave them. No push is in that output.
 
 Three things he fixed with it.
 
@@ -1989,11 +1995,11 @@ That every editor speaks the same event: one consumer exists, the design tool.
 
 **Grade.** DECLARED: the lock, the court and the registration. ESTABLISHED (gate, the build container): the six
 rows. MEASURED (host): the registration's gate, 236 of 236, pushed; the built gate, 242 of 242 on each of its
-runs, pushed.
+five runs, the first three pushed, and FULL×2 by the owner's predicate on the last two.
 OBSERVED (the owner's host, one run, off the gate): the design tool's loop over ADMIT-0 and the two heads. OBSERVED
 (the build container): the times.
-**does_not_show.** FULL×2 on the host, what an admission costs there, that the design tool has sent a batch there,
-or that a model writes a useful design.
+**does_not_show.** What an admission costs on the host, that the design tool has sent a batch there, or that a
+model writes a useful design.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the

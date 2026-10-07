@@ -5684,13 +5684,16 @@ and its record. The output he gave holds one run of the gate.
 None of the build's readings was struck. No finding, so no amendment.
 
 **The built gate's host runs (DANIELDILLBERG), run by run.** Each read `GATE PASSED`, rowset `aa94c886190510c7`,
-242 rows / 0 fail / 0 skipped, and each was pushed by the owner. Each range is Git's own output.
+242 rows / 0 fail / 0 skipped. Each range is Git's own output; where the output he gave holds no push, the line
+says so and none is written.
 
 | run | the tree it ran on | its output given | pushed |
 |---|---|---|---|
 | 1 | the two amendments, the build and its record (0130, 0131, 0132) | 2026-10-06 | `b975fc5..7e1d997` |
 | 2 | that tree with 0133, documents only | 2026-10-06 | `7e1d997..eba1951` |
 | 3 | that tree with 0134, documents only | 2026-10-07 | `eba1951..5f8ab66` |
+| 4 | that tree with 0135, documents only. Git's id of it: `f9c5a8108ae33f17418b6a62a96bdec6c5429dcb` | 2026-10-07 | not in the output |
+| 5 | the same tree: the next command after run 4 | 2026-10-07 | not in the output |
 
 A later host run of this gate is a line of this table. The dates are the days the outputs were given; the outputs
 carry none of their own. Every host run was the compact one, so the rows' texts, which carry the counts, were
@@ -5740,18 +5743,29 @@ host run:
 |---|---|---|---|
 | host, runs 1 and 2 | `!=`: 0133 was applied between them, by Git's own output | `==`, as printed: the two outputs he gave, compared here line by line, 242 rows and the reconcile line | FALSE: two agreeing runs |
 | host, runs 2 and 3 | `!=`: 0134 was applied between them, by Git's own output | `==`, as printed | FALSE: two agreeing runs |
+| host, runs 3 and 4 | `!=`: 0135 was applied between them, by Git's own output | `==`, as printed | FALSE: two agreeing runs |
+| host, runs 4 and 5 | `==`: Git gave the tree's id before run 4 and after run 5, `f9c5a8108ae3…9dcb` both times, and `git status --porcelain` printed nothing both times; run 5 was the next command after run 4 | `==`, as printed: the two outputs he gave, the same character for character | **TRUE** |
 | here, passes 1 and 2 on the head that carries this record | `==`: two exports of one commit, and a digest over each export's tracked files, taken before and after its pass, the same all four times | `==`: the two logs, byte for byte | TRUE |
 | here, pass 3 against pass 1 | `!=`: the same export with the host's 33 records added | `==`: the logs, byte for byte | FALSE: an agreeing run on another tree, which is what that pass is for |
 
-Three things this leaves stated.
+What this leaves stated.
 
-- **On the host this gate is not FULL×2.** No two of its runs there were on one tree. That is not a failure of any
-  run: each is 242 of 242.
+- **On the host this gate is FULL×2, by its fourth and fifth runs.** The first three were each on a tree of its
+  own: agreeing runs, and none of them a failure. Then the owner ran it to the predicate: the tree's id, the gate,
+  the gate again, the tree's id. One tree, one output.
+- **What the host's `T` is.** Git's id of the tree of the commit checked out, with a status that lists nothing: the
+  tracked files are that commit's, and no file stands beside them that Git does not ignore. Files Git ignores are
+  outside it, the gate's build directory among them. It was taken before the first run and after the second, and
+  not between them.
 - **The gate does not print a tree's identity.** Its reconcile line names the rowset, a digest of the row names,
   and nothing of the tree. So `T` is taken outside the gate: on the host from Git's output around the runs, here
   from the commit the passes were exported from and a digest of the exports. Where neither is given, `T` is `?=`.
 - **`O` on the host is equality of what was printed.** The outputs were pasted and compared here. No digest of the
   gate's output was taken on the host.
+
+**The judgement his word named.** *Let the full ×2 gate judge DESIGN-EVENT-0 as a complete engineering rung.* Under
+his own predicate the host's gate is FULL×2 on a tree that holds this build: 242 of 242, twice, one tree, one
+output. What he makes of that is his to say. No push is in the output he gave for those two runs.
 
 Earlier landings are not regraded. Their passes here were exports of one commit with no digest of the exports
 taken, and their host runs are recorded as what they were, one run or two.
@@ -5813,15 +5827,16 @@ row admitted the 60 in its own root; the tool has not been shown doing it.
 (gate, here): the six rows, 242 in the gate, three passes identical, one of them with the host's records present;
 the same on Python 3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one
 run, off the gate): the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate,
-236 of 236, pushed; the built gate, 242 of 242, three runs, the second and third on trees differing from the
-first in documents only, each pushed. By the owner's predicate: FULL×2 here; on the host three agreeing runs on
-three trees, and not FULL×2.
+236 of 236, pushed; the built gate, 242 of 242, five runs: the first three on three trees that differ in
+documents only, each pushed; the fourth and fifth on one tree, with no push in the output. By the owner's
+predicate: FULL×2 here, and FULL×2 on the host by its fourth and fifth runs.
 
 **does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
 builds of the shell agree. That the memo is right on a session the court does not replay: the workshop is the
 standing check, and it is run when a session is sealed, not when it is designed. What an admission costs on the
-host. That the gate is FULL×2 on the host: no two runs there were on one tree. That the host's runs agree beyond
-what the compact output prints. That a proposal's bytes can be
+host. That the host's two runs on one tree agree in bytes: their outputs were compared as printed. That the files
+Git ignores were the same for both. That the host's runs agree beyond what the compact output prints. That a
+proposal's bytes can be
 rebuilt from its admitted events, or its digest recomputed by a verifier: none does either, by the ruling above.
 That a model can write a design worth admitting. Anything about a second editor.
 

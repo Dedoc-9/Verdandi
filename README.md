@@ -230,7 +230,7 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          VRDNP2, a net change set with one byte form; a dry run bound to its admission; replay
          │          with an exact memo, the workshop with none (ae7cbb36; built, six rows, 242 in the gate;
          │          60 operations admitted one at a time before the seam existed reach the same head as
-         │          one batch; on the host 242 of 242 on every run, pushed)
+         │          one batch; on the host 242 of 242 on every run and FULL×2; pushed)
          ⋮
     declared        DESIGN-IR/DIFF → LIVE-AI-EDIT-0 → GUI (the owner's order; none registered);
                     the presentation and latency measurement; PRESENT-1; a design language with many editors
