@@ -12058,7 +12058,9 @@ RSN_ROWS = ("reasoncourt-preregistered", "reasoncourt-register", "reasoncourt-so
 # every Rust source under kernel/, shell/ and workshop/, and every sealer under verify/, as this rung found them
 # (sha256, line endings as LF). The folders' READMEs are documents and their attest/ folders hold records: neither is here.
 # REASON-COURT-0a (an amendment entry, registered with DESIGN-EVENT-0's build) moves five of these pins and adds one,
-# shell/designevent.rs: RSN_AMENDED names them, with the hash each had. No other pin has moved since this rung.
+# shell/designevent.rs: RSN_AMENDED names them, with the hash each had. REASON-COURT-0b (registered with DESIGN-IR/DIFF-0's
+# build) moves one of them again, shell/main.rs, and adds shell/designcompile.rs: RSN_CHAIN names every link. No other
+# pin has moved since this rung.
 RSN_SOURCES = {
     "kernel/bearing.rs": "93fb9083a3034d8875f2040f89ba73cbaaf1bad888bc0fd446d6cb4ccf33e474",
     "kernel/bearingfast.rs": "97ab3bf3a575954fdbaa0f1b4d3ed8bd511a6d8dffa01a3b99d864e393a2ee84",
@@ -12071,6 +12073,7 @@ RSN_SOURCES = {
     "kernel/vocab.rs": "30b9199255b0e342c1a20b9b47043c567b54c756e178f4fd7b7d633708dc69c0",
     "shell/admit.rs": "99366fea8540e3b4cebc8f973485e0915db042a7cb549d3b06706a476e48a3cd",
     "shell/designevent.rs": "7d31063e8b87b4b59f90bb1375194ca956f16e15f3a3baf2b275e3881308ebf1",
+    "shell/designcompile.rs": "123c1584b048663ac78cd1c62642152346de2b471a384502bb4ce888cd4aba49",
     "shell/allocreuse.rs": "6fa31145ac7f8b41f80b9d07b14b4fc6097ed2be99931a65a1f1484a6dece869",
     "shell/allocreuse1.rs": "feb782cdebb9427256baf17f0a9b3bbdc181de54edcbfaafa3116aa47db5672e",
     "shell/framesplit.rs": "3640542830f6db976df2340586fa7ae6d360e1533137d685650efcbf3b4e3ea9",
@@ -12081,7 +12084,7 @@ RSN_SOURCES = {
     "shell/liveinput.rs": "272f7c77d6ad219a12d1c3d2ac738c25ae7fc3b1b141739543959a2e813f5012",
     "shell/liveloop.rs": "7917203f8891120bd752354c7476a6b9fb0a0f5d29541842a57df8266c340ef1",
     "shell/livesession.rs": "9b9cab5935c432ee5487bfd2f9cc7181edc60e8d487722b73370abfe5bf5c0cc",
-    "shell/main.rs": "d5324e621ebbc25115d83f907e249143918043322d2c14fba5941c496f5824dd",
+    "shell/main.rs": "8db2d8ee5752ad96343114821233b6f2e3d3fe3131ae7e92898667cfaa185dc4",
     "shell/mouselook.rs": "c6924c37aefac6247ae09fde101e67ea0108a1b9a2fce5b172f76a25f34d982c",
     "shell/playback.rs": "ca3e3ba15d7a08966168422773794197bbf47eca3fe9abef9eee70078dc27ddd",
     "shell/present.rs": "8834752cfe2f1bdac046ee0b6d8d5a791467fef8deea4d6516a382834a5b71a3",
@@ -13617,6 +13620,66 @@ RSN_AMENDED = {
     "workshop/sessionwalk.rs": "618d0d913467693172782359b82c4d9f3254086666ca448a6cefd2895ca2a5e3",
 }
 RSN_ADDED = ("shell/designevent.rs",)
+# THE AMENDMENT CHAIN (named by REASON-COURT-0b). An amendment entry names each pin it moves with the hash the file had
+# and the hash it has, and each file it adds with its hash. A later amendment that moves a pin again starts where the
+# one before it ended, and the last link's hash is the built file's, which RSN_SOURCES pins and reasoncourt-fence and
+# mintwatch-fence hold on every gate. A row that holds an amendment holds it against the hashes the amendment itself
+# names, and holds the built file through the chain: (entry, {file: (had, has)}, {file added: its hash}).
+RSN_CHAIN = (
+    ("REASON-COURT-0a", {
+        "shell/livesession.rs": ("96860c485b4887114f1c39503469d3a0eccdcef5477bfd46ebb7ea8d71fe6073", "9b9cab5935c432ee5487bfd2f9cc7181edc60e8d487722b73370abfe5bf5c0cc"),
+        "shell/main.rs": ("c6d2aaa29c81b48f6f21ce1d9093ce268cd27a766bca5d54c1ba97b9128ddeca", "d5324e621ebbc25115d83f907e249143918043322d2c14fba5941c496f5824dd"),
+        "shell/playback.rs": ("4bb0525d95907cf3b8a0d4db13ccc35aa2d97e4e9a2e9aa0de90a5f3b894af89", "ca3e3ba15d7a08966168422773794197bbf47eca3fe9abef9eee70078dc27ddd"),
+        "verify/livesession.py": ("2c42a94cefab4584d5b216da7e3d0669be9d1d1ae054cd6e363a35c867a9d2bb", "c18f65c173156a992e81decda2f91fff951a6f3a1aa410aba75a337906d7e4f3"),
+        "workshop/sessionwalk.rs": ("618d0d913467693172782359b82c4d9f3254086666ca448a6cefd2895ca2a5e3", "ab35f6a05c519ba94f726fe0d3b7f4a6c93ae69c6917860ee8ae7c93fee5482b"),
+    }, {"shell/designevent.rs": "7d31063e8b87b4b59f90bb1375194ca956f16e15f3a3baf2b275e3881308ebf1"}),
+    ("REASON-COURT-0b", {
+        "shell/main.rs": ("d5324e621ebbc25115d83f907e249143918043322d2c14fba5941c496f5824dd", "8db2d8ee5752ad96343114821233b6f2e3d3fe3131ae7e92898667cfaa185dc4"),
+    }, {"shell/designcompile.rs": "123c1584b048663ac78cd1c62642152346de2b471a384502bb4ce888cd4aba49"}),
+)
+
+
+def _rsn_chain(rel: str) -> list:
+    """A pin's links through the amendments, in order: (entry, the hash the file had, the hash it has). A file an
+    amendment added begins at (entry, None, its hash)."""
+    out = []
+    for name, moved, added in RSN_CHAIN:
+        if rel in added:
+            out.append((name, None, added[rel]))
+        if rel in moved:
+            out.append((name, moved[rel][0], moved[rel][1]))
+    return out
+
+
+def _rsn_links_ok(rel: str, links: list) -> bool:
+    """The chain holds for a file: there is a link; no link leaves the hash as it was; each link starts where the one
+    before it ended; and the last link's hash is the pin's and the built file's."""
+    built = sha256(read(os.path.join(ROOT, *rel.split("/"))).replace(b"\r\n", b"\n"))
+    return (bool(links) and all(had != has for _n, had, has in links) and all(links[k][2] == links[k + 1][1] for k in range(len(links) - 1))
+            and links[-1][2] == RSN_SOURCES.get(rel) == built)
+
+
+def _rsn_chain_ok(rel: str) -> bool:
+    return _rsn_links_ok(rel, _rsn_chain(rel))
+
+
+# THE ORIGIN (registered by REASON-COURT-0b): the 56 pins REASON-COURT-0 found, one to a line as "<file> <sha256>" in the
+# order of their names, digest to this. Today's pins with every link of the chain undone have to be those 56: a pin moved
+# with its file and named by no amendment changes the digest.
+RSN_ORIGIN = "99d0d92e68bf46f8a2c9d43b888856375e2612c17c824dc11439bc0f2bb7ae3e"
+
+
+def _rsn_origin(pins: dict, chain: tuple) -> str:
+    """The digest of a pin table with every link undone: each moved file at the hash its first link says it had, each
+    added file left out."""
+    first = {}
+    for _name, moved, added in chain:
+        for rel in added:
+            first.setdefault(rel, None)
+        for rel, (had, _has) in moved.items():
+            first.setdefault(rel, had)
+    table = {rel: first.get(rel, h) for rel, h in pins.items() if first.get(rel, h) is not None}
+    return sha256("".join("%s %s\n" % (rel, table[rel]) for rel in sorted(table)).encode("utf-8"))
 MW_AMENDED = {
     "verify/livesession.py": {
         "was": "2c42a94cefab4584d5b216da7e3d0669be9d1d1ae054cd6e363a35c867a9d2bb",
@@ -13884,12 +13947,18 @@ def designevent_preregistered():
     # REASON-COURT-0a names every pin that moved, with the hash the file had and the hash it has, and the file added
     if len(RSN_AMENDED) != 5 or RSN_ADDED != ("shell/designevent.rs",) or any(rel not in RSN_SOURCES for rel in list(RSN_AMENDED) + list(RSN_ADDED)):
         raise Red("the pins the gate holds as moved are not five pins of REASON-COURT-0 and the one file added")
+    # (changed with DESIGN-IR/DIFF-0's build, by REASON-COURT-0b and DESIGN-IR/DIFF-0b: this row held each pin against the
+    # file as built, which holds only until a later rung moves the pin again. It holds REASON-COURT-0a against the hashes
+    # that entry names, and the built file through the amendment chain.)
+    named, named_added = RSN_CHAIN[0][1], RSN_CHAIN[0][2]
+    if RSN_CHAIN[0][0] != "REASON-COURT-0a" or {rel: had for rel, (had, _has) in named.items()} != RSN_AMENDED or tuple(sorted(named_added)) != RSN_ADDED:
+        raise Red("the chain's first link is not REASON-COURT-0a's five pins and its one file")
     for rel, was in sorted(RSN_AMENDED.items()):
-        if was == RSN_SOURCES[rel] or now(rel) != RSN_SOURCES[rel] or ("%s (%s to %s)" % (rel, was, RSN_SOURCES[rel])) not in rca["hypothesis"]:
-            raise Red("%s: the pin REASON-COURT-0a moves is not the built file's, or the entry does not name it with both hashes" % rel)
+        if was == named[rel][1] or not _rsn_chain_ok(rel) or ("%s (%s to %s)" % (rel, was, named[rel][1])) not in rca["hypothesis"]:
+            raise Red("%s: the pin REASON-COURT-0a moves does not reach the built file's through the amendment chain, or the entry does not name it with both hashes" % rel)
     for rel in RSN_ADDED:
-        if now(rel) != RSN_SOURCES[rel] or ("%s (%s)" % (rel, RSN_SOURCES[rel])) not in rca["hypothesis"]:
-            raise Red("%s: the file REASON-COURT-0a adds is not the built file, or the entry does not name it with its hash" % rel)
+        if not _rsn_chain_ok(rel) or ("%s (%s)" % (rel, named_added[rel])) not in rca["hypothesis"]:
+            raise Red("%s: the file REASON-COURT-0a adds does not reach the built file through the amendment chain, or the entry does not name it with its hash" % rel)
     # MINT-WATCH-0a names the one pinned file of the mint register that changed, and every raise site added to it
     mreg = _mw_register()
     pinned = {f["file"]: f["sha256"] for f in mreg["files"]}
@@ -13919,7 +13988,7 @@ def designevent_preregistered():
             "that many ordinary edits; the registered head of the 60 operations admitted one at a time before the seam existed "
             "(%s... from %s...); the two amendment entries the entry names are in the ledger, unedited, each citing the entry it "
             "amends and this one: REASON-COURT-0a (%s) names the five pins this rung moves, each with the hash the file had and "
-            "the hash the built file has, and the one file it adds; MINT-WATCH-0a (%s) names the one pinned file of the mint "
+            "the hash it then had, and the one file it adds, and each reaches the built file through the amendment chain; MINT-WATCH-0a (%s) names the one pinned file of the mint "
             "register that changed and the seven raise sites added to it, which the reading of today's inventory sets aside "
             "only for exactly that file; PLANT: a mint at one of the seven, in a row the watch hears, is refused by the "
             "watch's own check" % (DESIGNEVENT0_HASH[:8], DE_H60[:12], DE_P0[:12], REASONCOURT0A_HASH[:8], MINTWATCH0A_HASH[:8]))
@@ -14739,8 +14808,9 @@ def designevent_fence():
     # the rows: the 236 before this rung keep their names and order, and this rung adds six
     names = _mw_rows_by_source()
     i = names.index(DE_ROWS[0]) if DE_ROWS[0] in names else -1
-    if i != 236 or tuple(names[i:]) != DE_ROWS or sha256("\n".join(names[:i]).encode("utf-8"))[:16] != DE_ROWSET_BEFORE:
-        raise Red("the rows before this rung are not the 236 they were, by name and order, or this rung's six are not the last")
+    # (changed with DESIGN-IR/DIFF-0's build, by DESIGN-IR/DIFF-0b: this row held its six as the gate's last rows)
+    if i != 236 or tuple(names[i:i + 6]) != DE_ROWS or sha256("\n".join(names[:i]).encode("utf-8"))[:16] != DE_ROWSET_BEFORE:
+        raise Red("the rows before this rung are not the 236 they were, by name and order, or this rung's six do not follow them")
     # what was heard: every child of this rung's rows that did not end 0 carries a registered code in a code head
     heard = [e for e in ENDINGS if e["row"] in DE_ROWS]
     loose = []
@@ -14766,6 +14836,1018 @@ def designevent_fence():
             "else, and there is one fold; the renderer and bearing identities are READER-COURT-0's; the 236 rows before this "
             "rung keep their names and their order and this rung adds six; and of the %d children this rung's rows started that did not end 0, every one carries a registered code in "
             "a code head (%s)" % (len(heard), ", ".join("%s %d" % (r.split("-", 1)[1], by_row[r]) for r in DE_ROWS if by_row[r])))
+
+
+# ================================================================== DESIGN-IR/DIFF-0: a design compiled to its change set
+# One bounded design representation compiles deterministically to the canonical VRDNP2 net change set against a
+# specified parent authority. The source language is VERDANDI-DESIGN 0; the one production compiler is the shell's
+# (shell/designcompile.rs, `shell design-compile`), and it admits nothing. This gate keeps an independent reference, in
+# Python, written from the registration's description, and holds the owner's predicate with it:
+#     Compile_shell(D,S) = Compile_ref(D,S)   (bytes: designir-compile)
+#     Apply(VRDNP2,S)    = Target(D,S)        (the world's content: designir-equivalence)
+# DESIGN-IR/DIFF-0a names the parts of the court (BOUNDARY-0, REPLAY-0, ID-0) and adds cases; none is a row. The design
+# tool is a client of the shell's compiler and no file under verify/ reads it. These rows run after both refusal
+# watches and are heard by neither: every refusal they require names its code, and the last row judges their endings.
+DESIGNIR0_HASH = "2baa42f3ea6e6f15de7fb71c5a8f02f7a742c0fe3b989cfa84c21ae503be368e"
+DESIGNIR0A_HASH = "c414587dd85ba2760945aaea0b60ee854fdee0a5928b5547118df0ae27ae42a6"
+# The two amendment entries this rung's build carries, written after the build and committed before it. REASON-COURT-0b:
+# the one pin the build moves and the one file it adds, and the amendment chain named (RSN_CHAIN). DESIGN-IR/DIFF-0b:
+# the owner's rulings on the two rows of DESIGN-EVENT-0 that had to change in their text, and the one case the mutation
+# campaign added to the corpus.
+REASONCOURT0B_HASH = "d51b4d20cc01f6e76eb648f5f32dbe77b92a75d372c1909ae3b9ecaa125f2339"
+DESIGNIR0B_HASH = "42ac51f55f1852ad487f5cd5a77511b912f9b4b9773c14b764fee5d9f83503dd"
+DIR_ROWS = ("designir-preregistered", "designir-language", "designir-compile", "designir-equivalence", "designir-fence")
+DIR_ROWSET_BEFORE = "aa94c886190510c7"   # the 242 rows before this rung, by name and order
+DIR_VERSION = b"VERDANDI-DESIGN 0"
+DIR_MAX_BYTES, DIR_MAX_STATEMENTS, DIR_MAX_OPS = 16384, 64, 4096
+DIR_CLASSES = (b"wall0", b"wall1", b"wall2", b"wall3", b"floor")
+# the registered design, its id, and what it compiles to against the registered parent (DE_P0): registered before the
+# shell's compiler existed
+DIR_D0 = b"VERDANDI-DESIGN 0\nroom 6,3 16,10\nentrance 6,6\nentrance 11,10\nopen 11,11\npaint floor 60,70,90\n"
+DIR_D0_ID = "b08482b7f01d1209c0b0b97f27f7ab9d02cda97c05964dbfcd07a2e20ebbd3dc"
+DIR_D0_OPS, DIR_D0_LEN = 60, 908
+DIR_D0_SHA = "a9f117c423529a1022febbf54af47063f778954b38c33cd6c765706db1f6f0f5"
+DIR_D0_CONTENT = "02e77707372883396ed8ff5ba967dac01e3606926216d4ce5e1c9af01e89e334"
+# the court's other designs: one for the registered design's child, one for a parent holding key edits and a paint
+# (its camera has moved to 28,27, so closing 28,28 is allowed there, and its wall2 is already the colour painted), and
+# one holding every statement kind with a comment
+DIR_D1 = b"VERDANDI-DESIGN 0\n# a pillar, a side room and a wall colour\nclose 9,5 10,6\nroom 20,14 26,20\nentrance 23,14\npaint wall0 10,20,30\n"
+DIR_DK = b"VERDANDI-DESIGN 0\n# on a parent with a history\nclose 28,28\nroom 30,22 36,26\nentrance 33,26\npaint wall2 96,80,64\npaint floor 1,2,3\n"
+DIR_EVERY = b"VERDANDI-DESIGN 0\n# all five\nopen 20,27\nclose 27,28\nroom 38,2 42,6\nentrance 40,6\npaint wall3 7,8,9\n"
+DIR_ONE = b"VERDANDI-DESIGN 0\nclose 27,28\n"
+DIR_K_KEYS = "SPACE,3,W,ESC"   # the mock's keys: a cell opened, wall2 painted, one step forward
+# The one case the mutation campaign added after the rows first ran (DESIGN-IR/MUTATION-0, recorded in
+# DESIGN-IR/DIFF-0b): a parent whose camera stands on a stair. A compiler that took only floor under the camera, and so
+# refused every design from a stair, passed every row: no parent of the court stood on one. The case closes that hole;
+# it was not chosen by how a row ended.
+DIR_T_CAMERA = "7,26,N"
+DIR_CODES = ("COMPILE-IO", "COMPILE-SIZE", "COMPILE-SESSION", "COMPILE-PARSE", "COMPILE-RANGE", "COMPILE-BORDER", "COMPILE-STAIR",
+             "COMPILE-CAMERA", "COMPILE-EMPTY")
+DIR_PLANTS = ("entrance-dropped", "order-reversed", "rect-short", "paint-next-class", "first-wins", "net-stale", "stair-skipped",
+              "border-clipped", "camera-buried", "id-stripped", "net-short")
+# every code a child of this rung's rows may end with (exit 2): the compiler's nine, and the session's own rule on a
+# repeated proposal id
+DIR_ENDINGS = tuple("SHELL-" + c for c in DIR_CODES) + ("SHELL-ADMIT-DUPLICATE",)
+_DIR_MADE = {}   # what the language court found accepted among the mutants, for ID-0: [(base's name, mutant, the shell's digest)]
+
+
+# ------------------------------------------------------------------ the gate's own reference compiler (a test oracle)
+_DIR_CELL = re.compile(rb"(0|[1-9][0-9]{0,4}),(0|[1-9][0-9]{0,4})\Z")
+_DIR_RGB = re.compile(rb"(0|[1-9][0-9]{0,2}),(0|[1-9][0-9]{0,2}),(0|[1-9][0-9]{0,2})\Z")
+_DIR_WORDS = re.compile(rb"[ \t]+")
+
+
+class _DirWorld:
+    """A parent's world as the reference reads it: the level's bytes and the tiles' bytes, the camera's cell, and from
+    them the cells and each class's one colour (None where a class does not wholly have one)."""
+
+    def __init__(self, level: bytes, tiles: bytes, cam):
+        import struct
+        self.level, self.tile_bytes, self.cam = bytes(level), bytes(tiles), cam
+        self.w, self.rows = struct.unpack("<II", self.level[8:16])
+        self.cells = self.level[16:16 + self.w * self.rows]
+        self.n = (len(self.tile_bytes) - 8) // 5
+        self.tiles = []
+        for c in range(5):
+            t = self.tile_bytes[8 + c * self.n:8 + (c + 1) * self.n]
+            self.tiles.append(tuple(t[:3]) if t == t[:3] * (self.n // 3) else None)
+
+
+def _dir_content(level: bytes, tiles: bytes) -> str:
+    """The content of a world as the session defines it: the hash of the two digests."""
+    return sha256(hashlib.sha256(level).digest() + hashlib.sha256(tiles).digest())
+
+
+def _dir_world(doc) -> _DirWorld:
+    """The world of a saved session, by the gate's own replay of its edits over its base files; held to the content the
+    session itself states."""
+    d = doc["data"]
+    level = bytearray(read(os.path.join(ROOT, *d["base"]["level"].split("/"))))
+    tiles = bytearray(read(os.path.join(ROOT, *d["base"]["tiles"].split("/"))))
+    import struct
+    w, _rows = struct.unpack("<II", bytes(level[8:16]))
+    n = (len(tiles) - 8) // 5
+    for e in d["log"]:
+        if e["kind"] != "edit":
+            continue
+        kind, rest = e["spec"].split(":", 1)
+        p = rest.split(",")
+        if kind == "cell":
+            level[16 + int(p[1]) * w + int(p[0])] = ord(p[2])
+        else:
+            c = DIR_CLASSES.index(p[0].encode("ascii"))
+            tiles[8 + c * n:8 + (c + 1) * n] = bytes((int(p[1]), int(p[2]), int(p[3]))) * (n // 3)
+    if _dir_content(bytes(level), bytes(tiles)) != d["final_content"]:
+        raise Red("the gate's own replay of a parent's edits does not reach the content the session states")
+    x, z = d["final_camera"].split(",")[:2]
+    return _DirWorld(bytes(level), bytes(tiles), (int(x), int(z)))
+
+
+def _dir_lines(design: bytes):
+    """The lines: the pieces between LFs, a CR directly before an LF dropped; bytes after the last LF are a last line."""
+    parts = design.split(b"\n")
+    last = parts.pop()
+    out = [p[:-1] if p.endswith(b"\r") else p for p in parts]
+    if last:
+        out.append(last)
+    return out
+
+
+def _dir_statements(design: bytes, w: int, rows: int):
+    """("ok", [(verb, argument, line)]) or ("R", code, line)."""
+    if len(design) > DIR_MAX_BYTES:
+        return ("R", "COMPILE-SIZE", 0)
+    lines = _dir_lines(design)
+    if not lines or lines[0].strip(b" \t") != DIR_VERSION:
+        return ("R", "COMPILE-PARSE", 1)
+    out = []
+    for n, raw in enumerate(lines[1:], start=2):
+        ln = raw.split(b"#", 1)[0].strip(b" \t")
+        if not ln:
+            continue
+        if any(not (c in (9, 32) or 33 <= c <= 126) for c in ln):
+            return ("R", "COMPILE-PARSE", n)
+        t = [x for x in _DIR_WORDS.split(ln) if x]
+        verb = t[0]
+        cells = []
+        if verb in (b"open", b"close", b"room", b"entrance"):
+            if (len(t) not in (2, 3)) or (verb == b"room" and len(t) != 3) or (verb == b"entrance" and len(t) != 2):
+                return ("R", "COMPILE-PARSE", n)
+            for tok in t[1:]:
+                m = _DIR_CELL.match(tok)
+                if not m:
+                    return ("R", "COMPILE-PARSE", n)
+                x, z = int(m.group(1)), int(m.group(2))
+                if x >= w or z >= rows:
+                    return ("R", "COMPILE-RANGE", n)
+                cells.append((x, z))
+            a, b = cells[0], cells[-1]
+            x0, x1, z0, z1 = min(a[0], b[0]), max(a[0], b[0]), min(a[1], b[1]), max(a[1], b[1])
+            if verb == b"room" and (x1 - x0 < 2 or z1 - z0 < 2):
+                return ("R", "COMPILE-RANGE", n)
+            out.append((verb.decode("ascii"), (x0, z0, x1, z1), n))
+        elif verb == b"paint":
+            m = _DIR_RGB.match(t[2]) if len(t) == 3 else None
+            if len(t) != 3 or t[1] not in DIR_CLASSES or not m or any(int(v) > 255 for v in m.groups()):
+                return ("R", "COMPILE-PARSE", n)
+            out.append(("paint", (DIR_CLASSES.index(t[1]), tuple(int(v) for v in m.groups())), n))
+        else:
+            return ("R", "COMPILE-PARSE", n)
+        if len(out) > DIR_MAX_STATEMENTS:
+            return ("R", "COMPILE-SIZE", n)
+    if not out:
+        return ("R", "COMPILE-PARSE", len(lines))
+    return ("ok", out)
+
+
+def _dir_target(stmts, world: _DirWorld):
+    """The world the statements describe, each applied in order to a copy of the parent's: ("ok", cells, colours) or
+    ("R", code, line). open and entrance write floor, close rock, room rock to its rim and floor to its inside."""
+    cells, tiles = bytearray(world.cells), list(world.tiles)
+    w, rows = world.w, world.rows
+    for verb, arg, n in stmts:
+        if verb == "paint":
+            tiles[arg[0]] = arg[1]
+            continue
+        x0, z0, x1, z1 = arg
+        for z in range(z0, z1 + 1):
+            for x in range(x0, x1 + 1):
+                rim = verb == "room" and (x in (x0, x1) or z in (z0, z1))
+                to = 35 if verb == "close" or rim else 46
+                if (x in (0, w - 1) or z in (0, rows - 1)) and to != 35:
+                    return ("R", "COMPILE-BORDER", n)
+                if cells[z * w + x] in b"<>":
+                    return ("R", "COMPILE-STAIR", n)
+                cells[z * w + x] = to
+    return ("ok", bytes(cells), tiles)
+
+
+def _dir_compile(design: bytes, world: _DirWorld, short=False):
+    """("ok", operations, cells, colours) — the operations ("open"|"close", x, z) and ("paint", class, colour) of the net
+    difference, cells row-major and then the classes — or ("R", code, line). `short` is the one plant this reference is
+    given (DESIGN-IR/DIFF-0a): the net leaves out its last operation, as the shell's net-short does."""
+    s = _dir_statements(design, world.w, world.rows)
+    if s[0] == "R":
+        return s
+    t = _dir_target(s[1], world)
+    if t[0] == "R":
+        return t
+    _ok, cells, tiles = t
+    ops = [("close" if cells[i] == 35 else "open", i % world.w, i // world.w) for i in range(world.w * world.rows) if cells[i] != world.cells[i]]
+    ops += [("paint", c, tiles[c][0] * 65536 + tiles[c][1] * 256 + tiles[c][2]) for c in range(5) if tiles[c] != world.tiles[c]]
+    if cells[world.cam[1] * world.w + world.cam[0]] not in b".<>":
+        return ("R", "COMPILE-CAMERA", 0)
+    if short:
+        ops = ops[:-1]
+    if len(ops) > DIR_MAX_OPS:
+        return ("R", "COMPILE-SIZE", 0)
+    if not ops:
+        return ("R", "COMPILE-EMPTY", 0)
+    return ("ok", ops, cells, tiles)
+
+
+def _dir_op_line(o) -> str:
+    return "paint %s %d" % (DIR_CLASSES[o[1]].decode("ascii"), o[2]) if o[0] == "paint" else "%s %d,%d" % (o[0], o[1], o[2])
+
+
+def _dir_reference(design: bytes, world: _DirWorld, head: str, short=False):
+    """The reference's answer for a design and a parent: ("B", the batch's bytes, operations, cells, colours) or
+    ("R", code, line). The batch is written here, from the design and the parent and from nothing else."""
+    import livesession as LS
+    c = _dir_compile(design, world, short=short)
+    if c[0] == "R":
+        return c
+    text = "%s\nrenderer=%s\nbearing=%s\nparent=%s\nproposal=%s\noperations=%d\n" % (DE_LANGUAGE, LS.renderer_id(ROOT), LS.bearing_id(ROOT), head, sha256(design), len(c[1]))
+    return ("B", (text + "".join(_dir_op_line(o) + "\n" for o in c[1])).encode("ascii"), c[1], c[2], c[3])
+
+
+def _dir_target_content(design: bytes, world: _DirWorld):
+    """The content of the design's target: the statements applied to the parent's level and tiles bytes, never through a
+    change set, and the content of those bytes as the session defines it. None where the design has no target."""
+    s = _dir_statements(design, world.w, world.rows)
+    if s[0] == "R":
+        return None
+    t = _dir_target(s[1], world)
+    if t[0] == "R":
+        return None
+    _ok, cells, tiles = t
+    level = world.level[:16] + cells + world.level[16 + world.w * world.rows:]
+    tb = bytearray(world.tile_bytes)
+    for c in range(5):
+        if tiles[c] is not None:
+            tb[8 + c * world.n:8 + (c + 1) * world.n] = bytes(tiles[c]) * (world.n // 3)
+    return _dir_content(level, bytes(tb))
+
+
+def _dir_verdict(design: bytes, world: _DirWorld, head: str) -> str:
+    r = _dir_reference(design, world, head)
+    return "R %s %d" % (r[1], r[2]) if r[0] == "R" else "B " + sha256(r[1])
+
+
+def _dir_mutants(base: bytes):
+    """Every single-byte mutant, in the shell's order: at each position the 256 insertions, the 255 substitutions, the
+    deletion."""
+    n = len(base)
+    for i in range(n + 1):
+        for b in range(256):
+            yield base[:i] + bytes((b,)) + base[i:]
+        if i < n:
+            for b in range(256):
+                if b != base[i]:
+                    yield base[:i] + bytes((b,)) + base[i + 1:]
+            yield base[:i] + base[i + 1:]
+
+
+# ------------------------------------------------------------------ helpers
+def _dir_write(name, b: bytes) -> str:
+    p = os.path.join(BUILD, "designir-%s.design" % name)
+    with open(p, "wb") as fh:
+        fh.write(b)
+    return p
+
+
+def _dir_run(session, design, root, logs, name, plant=None, path=None):
+    """One run of the compiler, its output taken as bytes. Returns (exit, standard output, standard error as text)."""
+    args = ["design-compile-selftest" if plant else "design-compile", "--session", session, "--design", path or _dir_write(name, design)]
+    env = dict(os.environ, **{REFUSALLOG_ENV: logs[0], RUNLEDGER_ENV: logs[1], LIVESESSION_ENV: root})
+    cp = subprocess.run([SHELL_EXE] + args + (["--plant", plant] if plant else []), capture_output=True, cwd=ROOT, env=env)
+    return cp.returncode, cp.stdout, cp.stderr.decode("utf-8", "replace")
+
+
+def _dir_compiled(what, session, design, root, logs, name, plant=None) -> bytes:
+    code, out, err = _dir_run(session, design, root, logs, name, plant=plant)
+    if code != 0 or not out or err.strip():
+        raise Red("%s did not compile: exit %d: %s" % (what, code, err.strip()[-240:]))
+    return out
+
+
+def _dir_refusal(what, got, logs, seen, code, root, dirs, parent, line=None):
+    """A refused design: exit 2 and the coded line (naming the design's line, where one is registered for the code),
+    never a panic or an abort; nothing on standard output; exactly one new refusal record with that code; one line of
+    the run ledger, ended 2; nothing new under the sessions root; the session's bytes as they were. Returns the refusal
+    log's new length."""
+    rc, out, err = got
+    recs = _ad_records(logs)
+    new = recs[seen:]
+    if rc != 2 or ("SHELL-%s: " % code) not in err or "panicked" in err or out != b"":
+        raise Red("%s: expected the refusal %s, exit 2, nothing on standard output; got exit %d, %d bytes: %s" % (what, code, rc, len(out), err.strip()[-240:]))
+    if line is not None and ("SHELL-%s: line %d: " % (code, line)) not in err:
+        raise Red("%s: the refusal %s does not name line %d: %s" % (what, code, line, err.strip()[-200:]))
+    if line is None and re.search(r"SHELL-%s: line \d" % re.escape(code), err):
+        raise Red("%s: the refusal %s names a line, and none is registered for it" % (what, code))
+    if len(new) != 1 or new[0]["reason_code"] != code or new[0]["operation"] != "design-compile" or (line is not None and new[0]["context"].get("line") != line):
+        raise Red("%s: the refusal log does not hold exactly one %s record%s" % (what, code, "" if line is None else " naming line %d" % line))
+    with open(logs[1], encoding="utf-8") as fh:
+        last = json.loads(fh.read().strip().splitlines()[-1])
+    if (last["run_id"], last["operation"], last["exit_code"], last["refusals"]) != (new[0]["run_id"], "design-compile", 2, 1):
+        raise Red("%s: the refused design is not one line of the run ledger, ended 2 with one refusal" % what)
+    if sorted(os.listdir(root)) != dirs:
+        raise Red("%s: a refused design left something under the sessions root" % what)
+    if parent is not None and read(parent[0]) != parent[1]:
+        raise Red("%s: the session's bytes changed" % what)
+    return len(recs)
+
+
+def _dir_head(batch: bytes):
+    """A batch's five header values and its operation lines, as text: (renderer, bearing, parent, proposal, count, lines)."""
+    L = batch.decode("ascii").split("\n")
+    if L[0] != DE_LANGUAGE or L[-1] != "" or not all(L[i].startswith(k) for i, k in ((1, "renderer="), (2, "bearing="), (3, "parent="), (4, "proposal="), (5, "operations="))):
+        raise Red("the compiler's output is not a batch: its header lines are not the batch language's")
+    return L[1][9:], L[2][8:], L[3][7:], L[4][9:], int(L[5][11:]), L[6:-1]
+
+
+def _dir_admit(what, session, batch: bytes, root, logs, name):
+    """The batch admitted by shell design, as DESIGN-EVENT-0 registered it. Returns (path, bytes, document)."""
+    cp, path = _ad_shell("design", ["--session", session, "--proposal", _dir_write(name + "-batch", batch)] + ADMIT_ALL, root, logs)
+    if cp.returncode != 0 or path is None or "[design] admitted %s " % DE_LANGUAGE not in cp.stdout:
+        raise Red("%s: the compiled batch was not admitted: %s" % (what, (cp.stderr.strip() or cp.stdout.strip())[-300:]))
+    raw = read(path)
+    return path, raw, json.loads(raw.decode("utf-8"))
+
+
+def _dir_parents(root, logs):
+    """The court's parents: P0, the registered parent; K, a parent holding key edits and a paint; T, a parent whose
+    camera stands on a stair (added by the mutation campaign: see DIR_T_CAMERA). Each (path, bytes, document, world)."""
+    out = {}
+    for key, keys, camera in (("P0", "ESC", DE_CAMERA), ("K", DIR_K_KEYS, DE_CAMERA), ("T", "ESC", DIR_T_CAMERA)):
+        path, raw, doc = _de_parent(root, logs, keys=keys, camera=camera)
+        out[key] = (path, raw, doc, _dir_world(doc))
+    t = out["T"][3]
+    if t.cam != (7, 26) or t.cells[26 * t.w + 7] != ord(">") or len(out["T"][2]["data"]["log"]) != 0:
+        raise Red("the parent whose camera stands on a stair is not the mock's session at 7,26 on the witness level's stair")
+    if out["P0"][2]["data"]["head"] != DE_P0 or len(out["P0"][2]["data"]["log"]) != 0:
+        raise Red("the mock's session with no key pressed does not stand at the registered parent head")
+    k = out["K"][2]["data"]
+    if [e["kind"] for e in k["log"]] != ["edit", "edit", "move"] or k["final_camera"] != "28,27,N" or out["K"][3].tiles[2] != (96, 80, 64):
+        raise Red("the parent of key edits is not a cell opened, wall2 painted and one step forward")
+    return out
+
+
+def _dir_child(what, parents, key, design, root, logs, name):
+    """A design compiled by the shell against a parent of the court and admitted: the child as a parent (path, bytes,
+    document, world)."""
+    batch = _dir_compiled(what, parents[key][0], design, root, logs, name)
+    path, raw, doc = _dir_admit(what, parents[key][0], batch, root, logs, name)
+    return path, raw, doc, _dir_world(doc)
+
+
+def _dir_court_designs(p0: _DirWorld):
+    """The designs the court compiles: (name, parent, design, the operations expected where they are stated by hand)."""
+    V = DIR_VERSION + b"\n"
+    own = b"paint floor %d,%d,%d\n" % tuple(p0.tiles[4])
+    square = [("open", x, z) for z in (22, 23) for x in range(20, 25)]
+    shut = [("close", 27, 28)]
+    return [
+        ("the registered design", "P0", DIR_D0, None),
+        ("a second design, on the registered design's child", "C0", DIR_D1, None),
+        ("a design on a parent holding key edits and a paint", "K", DIR_DK, None),
+        ("the registered design on that parent", "K", DIR_D0, None),
+        ("a design on a parent whose camera stands on a stair", "T", V + b"close 6,26\nclose 8,26\n", [("close", 6, 26), ("close", 8, 26)]),
+        ("a statement that writes what is there beside one that changes something", "P0", V + b"close 0,0 3,2\nclose 27,28\n", shut),
+        ("two rectangles that overlap", "P0", V + b"open 20,22 24,24\nclose 22,23 26,25\n", None),
+        ("a room, an entrance on its rim, and a close over an open", "P0", V + b"room 38,2 42,6\nentrance 40,6\nopen 30,3 33,3\nclose 31,3 32,3\n", None),
+        ("a rectangle by its corners, low to high", "P0", V + b"open 20,22 24,23\n", square),
+        ("a rectangle by its corners, high to low", "P0", V + b"open 24,23 20,22\n", square),
+        ("a rectangle by its other corners", "P0", V + b"open 20,23 24,22\n", square),
+        ("a rectangle by its other corners, exchanged", "P0", V + b"open 24,22 20,23\n", square),
+        ("a class painted twice", "P0", V + b"paint floor 1,2,3\npaint floor 4,5,6\n", [("paint", 4, 4 * 65536 + 5 * 256 + 6)]),
+        ("a class painted the colour it wholly has, beside a change", "P0", V + own + b"close 27,28\n", shut),
+        ("a design holding every statement kind", "P0", DIR_EVERY, None),
+        ("cells of rock opened and closed again, beside one change", "P0", V + b"open 40,29 42,29\nclose 40,29 42,29\nclose 27,28\n", shut),
+    ]
+
+
+def _dir_refusals():
+    """The refusal corpus: (name, design, code, line or None). Every code and every line here is typed from the
+    registration; none is taken from what a program prints."""
+    V = DIR_VERSION + b"\n"
+    P, R, Z, B, S, C, E = "COMPILE-PARSE", "COMPILE-RANGE", "COMPILE-SIZE", "COMPILE-BORDER", "COMPILE-STAIR", "COMPILE-CAMERA", "COMPILE-EMPTY"
+    long = V + b"#" + b"x" * (DIR_MAX_BYTES + 1 - len(V) - 2 - len(b"close 27,28\n")) + b"\n" + b"close 27,28\n"
+    cases = [
+        ("an empty design", b"", P, 1),
+        ("a first line that is not the version", b"VERDANDI-DESIGN 1\nclose 27,28\n", P, 1),
+        ("a design with no version line", b"close 27,28\n", P, 1),
+        ("the version with a comment after it", b"VERDANDI-DESIGN 0 # the version\nclose 27,28\n", P, 1),
+        ("an unknown verb", V + b"dig 27,28\n", P, 2),
+        ("an unknown verb on the fourth line", V + b"# one\nclose 27,28\ndig 1,1\n", P, 4),
+        ("a verb in upper case", V + b"CLOSE 27,28\n", P, 2),
+        ("open with no cell", V + b"open\n", P, 2),
+        ("open with three cells", V + b"open 3,3 4,4 5,5\n", P, 2),
+        ("room with one cell", V + b"room 20,14\n", P, 2),
+        ("entrance with two cells", V + b"entrance 23,14 24,14\n", P, 2),
+        ("a cell with a leading zero", V + b"close 027,28\n", P, 2),
+        ("a cell of six digits", V + b"close 100000,28\n", P, 2),
+        ("a cell with a sign", V + b"close +27,28\n", P, 2),
+        ("a cell below zero", V + b"close -1,28\n", P, 2),
+        ("a cell missing its second half", V + b"close 27,\n", P, 2),
+        ("a cell missing its first half", V + b"close ,28\n", P, 2),
+        ("a cell with no comma", V + b"close 27\n", P, 2),
+        ("a cell with a space inside it", V + b"close 27, 28\n", P, 2),
+        ("paint with an unknown class", V + b"paint wall4 1,2,3\n", P, 2),
+        ("paint with two channels", V + b"paint floor 1,2\n", P, 2),
+        ("paint with a channel of 256", V + b"paint floor 256,0,0\n", P, 2),
+        ("paint with a leading zero", V + b"paint floor 01,2,3\n", P, 2),
+        ("a byte of 0x80 or more outside a comment", V + b"close 27,28 \xc3\xb0\n", P, 2),
+        ("a NUL outside a comment", V + b"close 27,28\x00\n", P, 2),
+        ("a CR that is not before an LF", V + b"close\r27,28\n", P, 2),
+        ("a CR ending a last line that has no LF", V + b"close 27,28\r", P, 2),
+        ("a design of comments only", V + b"# nothing\n\n \t\n", P, 4),
+        ("two statements on one line", V + b"close 27,28 close 26,28\n", P, 2),
+        ("a cell one past the level's width", V + b"close 48,5\n", R, 2),
+        ("a cell one past the level's height", V + b"close 5,32\n", R, 2),
+        ("a room two cells wide", V + b"room 20,14 21,20\n", R, 2),
+        ("a room two cells high", V + b"room 20,14 26,15\n", R, 2),
+        ("a design of 16,385 bytes", long, Z, None),
+        ("a 65th statement", V + b"close 27,28\n" * 64 + b"close 26,28\n", Z, 66),
+        ("a statement that opens a border cell", V + b"close 27,28\nopen 0,27 3,27\n", B, 3),
+        ("an entrance on the border", V + b"entrance 47,13\n", B, 2),
+        ("a rectangle that holds a stair", V + b"close 6,26 8,26\n", S, 2),
+        ("an open on a stair", V + b"open 34,28\n", S, 2),
+        ("a design that closes the camera's cell", V + b"close 28,28\n", C, None),
+        ("a room whose rim is the camera's cell", V + b"room 28,26 30,28\n", C, None),
+        ("a design that describes the parent as it is", V + b"close 0,0 5,2\nopen 27,28\n", E, None),
+        ("cells of rock opened and closed again", V + b"open 40,29 42,29\nclose 40,29 42,29\n", E, None),
+        # where one design holds two faults, the registered order decides
+        ("16,385 bytes whose first line is not the version", b"x" * (DIR_MAX_BYTES + 1), Z, None),
+        ("a border write on line 2 and a line that is not the language on line 3", V + b"open 0,27\ndig 1,1\n", P, 3),
+        ("a cell out of range on line 2 and a line that is not the language on line 3", V + b"close 48,5\ndig 1,1\n", R, 2),
+        ("three cells, the first out of range", V + b"open 48,5 2,2 3,3\n", P, 2),
+        ("a first cell out of range and a second out of form", V + b"open 48,5 x\n", R, 2),
+        ("a first cell out of form and a second out of range", V + b"open x 48,5\n", P, 2),
+        ("a stair write on line 2 and a border write on line 3", V + b"close 7,26\nopen 0,27\n", S, 2),
+        ("a border write on line 2 and a stair write on line 3", V + b"open 0,27\nclose 7,26\n", B, 2),
+        ("one rectangle whose first cell written is on the border and which holds a stair", V + b"open 0,26 7,26\n", B, 2),
+        ("one rectangle whose first cell written is a stair and which reaches the border", V + b"open 7,26 47,26\n", S, 2),
+        ("the camera's cell closed on line 2 and a stair write on line 3", V + b"close 28,28\nclose 7,26\n", S, 3),
+        ("a border write and a 65th statement", V + b"open 0,27\n" + b"close 27,28\n" * 64, Z, 66),
+    ]
+    # DESIGN-IR/DIFF-0a: among statements each admissible alone, the refused one last and the refused one first
+    good = b"close 27,28\nclose 26,28\npaint wall0 1,2,3\n"
+    for code, bad in ((P, b"dig 1,1\n"), (R, b"close 48,5\n"), (B, b"open 0,27\n"), (S, b"close 7,26\n"), (C, b"close 28,28\n")):
+        cases.append(("%s last among statements each admissible alone" % code, V + good + bad, code, None if code == C else 5))
+        cases.append(("%s first among statements each admissible alone" % code, V + bad + good, code, None if code == C else 2))
+    return cases
+
+
+def _dir_accepted():
+    """What the language accepts beyond its plain form: (name, design). Each compiles to the plain form's operations
+    and to an id of its own."""
+    plain = DIR_VERSION + b"\nroom 20,14 26,20\nentrance 23,14\nclose 27,28\npaint wall1 9,8,7\n"
+    anybyte = bytes(b for b in range(256) if b != 10)
+    return plain, [
+        ("CR LF line ends", plain.replace(b"\n", b"\r\n")),
+        ("tabs between the words and blanks at either end", b" \tVERDANDI-DESIGN 0\t \n\troom\t20,14 \t 26,20 \n entrance\t\t23,14\n\t close 27,28\t\n paint\twall1\t9,8,7 \t\n"),
+        ("comments holding any byte", DIR_VERSION + b"\n#" + anybyte + b"\nroom 20,14 26,20 #" + anybyte + b"\nentrance 23,14#\x00\r\xff\n\n#\nclose 27,28\npaint wall1 9,8,7\n"),
+        ("a last line with no LF", plain[:-1]),
+        ("corners given in the other order", DIR_VERSION + b"\nroom 26,20 20,14\nentrance 23,14\nclose 27,28\npaint wall1 9,8,7\n"),
+        ("a statement written over by a later one", DIR_VERSION + b"\nclose 26,28\nopen 26,28\nopen 23,14\nroom 20,14 26,20\nentrance 23,14\nclose 27,28\npaint wall1 1,1,1\npaint wall1 9,8,7\n"),
+        ("exactly 16,384 bytes", plain + b"#" + b"x" * (DIR_MAX_BYTES - len(plain) - 2) + b"\n"),
+        ("exactly 64 statements", DIR_VERSION + b"\n" + b"close 27,28\n" * 60 + plain[len(DIR_VERSION) + 1:]),
+    ]
+
+
+def _dir_amendments(reg) -> str:
+    """The amendment entries this build carries: each registered, unedited, citing the entries it amends and this
+    rung's. REASON-COURT-0b's link is the chain's second, named in the entry with its hashes; every chain reaches its
+    built file; and today's pins with every link undone are the origin REASON-COURT-0b registers."""
+    rcb, dib = reg.get("REASON-COURT-0b"), reg.get("DESIGN-IR/DIFF-0b")
+    if rcb is None or rcb.get("chain_hash") != REASONCOURT0B_HASH or not entry_hash_ok("REASON-COURT-0b", rcb) \
+            or dib is None or dib.get("chain_hash") != DESIGNIR0B_HASH or not entry_hash_ok("DESIGN-IR/DIFF-0b", dib):
+        raise Red("an amendment entry this build carries is missing, edited after registration, or not the registered one")
+    if any(h not in rcb["hypothesis"] for h in (REASONCOURT0_HASH, REASONCOURT0A_HASH, DESIGNIR0_HASH)) or any(h not in dib["hypothesis"] for h in (DESIGNIR0_HASH, DESIGNEVENT0_HASH, REASONCOURT0B_HASH)) \
+            or reg["REASON-COURT-0"]["chain_hash"] != REASONCOURT0_HASH or not entry_hash_ok("REASON-COURT-0", reg["REASON-COURT-0"]) \
+            or reg["REASON-COURT-0a"]["chain_hash"] != REASONCOURT0A_HASH or not entry_hash_ok("REASON-COURT-0a", reg["REASON-COURT-0a"]):
+        raise Red("an amendment does not cite the entries it amends and this rung's, or an amended entry was edited")
+    # the chain's second link is this build's, whatever links follow it
+    name, moved, added = RSN_CHAIN[1]
+    if name != "REASON-COURT-0b" or sorted(moved) != ["shell/main.rs"] or sorted(added) != ["shell/designcompile.rs"]:
+        raise Red("the pins the gate holds as moved by REASON-COURT-0b are not the one pin and the one file added")
+    for rel, (had, has) in sorted(moved.items()):
+        if not _rsn_chain_ok(rel) or ("%s (%s to %s)" % (rel, had, has)) not in rcb["hypothesis"] or RSN_CHAIN[0][1][rel][1] != had:
+            raise Red("%s: the pin REASON-COURT-0b moves does not start where REASON-COURT-0a left it and reach the built file, or the entry does not name it with both hashes" % rel)
+    for rel, has in sorted(added.items()):
+        if not _rsn_chain_ok(rel) or ("%s (%s)" % (rel, has)) not in rcb["hypothesis"]:
+            raise Red("%s: the file REASON-COURT-0b adds does not reach the built file, or the entry does not name it with its hash" % rel)
+    # history, whole: every file an amendment names reaches its built file, and every pin is the origin's or is reached from it
+    named = sorted({rel for _n, mv, ad in RSN_CHAIN for rel in list(mv) + list(ad)})
+    if any(not _rsn_chain_ok(rel) for rel in named) or _rsn_origin(RSN_SOURCES, RSN_CHAIN) != RSN_ORIGIN or RSN_ORIGIN not in rcb["hypothesis"]:
+        raise Red("a chain does not reach its built file, or today's pins with every link undone are not the 56 REASON-COURT-0 found")
+    # PLANTS, on the same checks: a link that does not start where the one before it ended; a chain that stops before
+    # the built file; a pin moved that no link names
+    rel = "shell/main.rs"
+    links = _rsn_chain(rel)
+    broken = [links[0], (links[1][0], links[0][1], links[1][2])] + links[2:]
+    unnamed = dict(RSN_SOURCES, **{"kernel/main.rs": sha256(b"a pin moved that no amendment names")})
+    if not _rsn_links_ok(rel, links) or _rsn_links_ok(rel, broken) or _rsn_links_ok(rel, links[:-1]) or _rsn_origin(unnamed, RSN_CHAIN) == RSN_ORIGIN \
+            or _rsn_origin(RSN_SOURCES, RSN_CHAIN[:1]) == RSN_ORIGIN:
+        raise Red("PLANT not refused: a chain with a broken link, a chain that stops before the built file, or a pin moved that no link names")
+    return ("the two amendment entries the build carries are in the ledger, unedited, each citing the entries it amends and "
+            "this one: REASON-COURT-0b (%s) names the one pin this rung moves, shell/main.rs, with the hash the file had — the "
+            "hash REASON-COURT-0a named for it — and the hash the built file has, and the one file it adds, "
+            "shell/designcompile.rs; DESIGN-IR/DIFF-0b (%s) records the owner's rulings; the amendment chain holds for each "
+            "of the %d files an amendment names — each link starts where the one before it ended and the last is the built "
+            "file's — and today's %d pins with every link undone are the 56 REASON-COURT-0 found (%s...); PLANTS: a chain "
+            "with a broken link, a chain that stops before the built file, a pin moved that no link names, and a link left "
+            "out of the table are each refused by the same checks"
+            % (REASONCOURT0B_HASH[:8], DESIGNIR0B_HASH[:8], len(named), len(RSN_SOURCES), RSN_ORIGIN[:12]))
+
+
+# ------------------------------------------------------------------ the rows
+def designir_preregistered():
+    """(5) DESIGN-IR/DIFF-0's method is locked before its build: the entry and its amendment at their hashes, the
+    language's three bounds and the registered values as the shell and this gate hold them, and each amendment entry
+    the build carries, unedited, citing the entry it amends and this one."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    e, a = reg.get("DESIGN-IR/DIFF-0"), reg.get("DESIGN-IR/DIFF-0a")
+    if e is None or e.get("chain_hash") != DESIGNIR0_HASH or not entry_hash_ok("DESIGN-IR/DIFF-0", e):
+        raise Red("the DESIGN-IR/DIFF-0 entry is missing, edited after registration, or not the registered one")
+    if a is None or a.get("chain_hash") != DESIGNIR0A_HASH or not entry_hash_ok("DESIGN-IR/DIFF-0a", a) or DESIGNIR0_HASH not in a["hypothesis"]:
+        raise Red("the DESIGN-IR/DIFF-0a entry is missing, edited after registration, not the registered one, or does not cite the entry it amends")
+    text = e["hypothesis"] + " " + e["success_condition"] + " " + e["instrument"]
+    said = "VERDANDI-DESIGN 0; room 6,3 16,10; entrance 6,6; entrance 11,10; open 11,11; paint floor 60,70,90; each line ended by one LF"
+    for needle in ("A design is at most 16,384 bytes", "at least one statement and at most 64", "more than 4,096 operations is refused", "of 93 bytes", said,
+                   DIR_D0_ID, DE_P0, "60 operations and a batch of 908 bytes", DIR_D0_SHA, DIR_D0_CONTENT, DE_H60, "The nine codes are first registered here",
+                   "242 rows become 247") + DIR_ROWS + DIR_CODES + DIR_PLANTS[:10]:
+        if needle not in text:
+            raise Red("the entry does not say %r: the gate's constants are not the registered ones" % needle)
+    if "net-short" not in a["hypothesis"] or "Compile_shell(D,S) = Compile_ref(D,S) AND Apply(VRDNP2,S) = Target(D,S)" not in a["hypothesis"]:
+        raise Red("the amendment does not hold the owner's predicate and the eleventh plant")
+    lines = said.split("; each line")[0].split("; ")
+    if DIR_D0 != ("\n".join(lines) + "\n").encode("ascii") or len(DIR_D0) != 93 or sha256(DIR_D0) != DIR_D0_ID:
+        raise Red("the gate's registered design is not the entry's six lines, 93 bytes, with the registered id")
+    src = read(os.path.join(SHELL, "designcompile.rs")).decode("utf-8")
+    for const in ('pub const VERSION: &[u8] = b"VERDANDI-DESIGN 0";', "pub const MAX_DESIGN_BYTES: usize = 16_384;", "pub const MAX_STATEMENTS: usize = 64;"):
+        if src.count(const) != 1:
+            raise Red("shell/designcompile.rs does not hold %s" % const)
+    if "use crate::designevent::{emit_batch, Batch, MAX_OPERATIONS};" not in src or "ops.len() > MAX_OPERATIONS" not in src \
+            or (DIR_VERSION, DIR_MAX_BYTES, DIR_MAX_STATEMENTS, DIR_MAX_OPS) != (b"VERDANDI-DESIGN 0", 16384, 64, DE_MAX_OPS):
+        raise Red("the bound on a change set is not the batch language's own 4,096 operations")
+    shell_plants = re.search(r"pub const PLANTS: \[&str; 11\] = \[([^\]]*)\];", src)
+    if shell_plants is None or tuple(re.findall(r'"([a-z-]+)"', shell_plants.group(1))) != DIR_PLANTS:
+        raise Red("the shell's plants are not the registered eleven")
+    amendments = _dir_amendments(reg)
+    return ("DESIGN-IR/DIFF-0's method is locked (hash %s) before the build, and its amendment DESIGN-IR/DIFF-0a (%s) names the "
+            "owner's predicate, the parts of the court and the eleventh plant, citing it: VERDANDI-DESIGN 0, at most 16,384 "
+            "bytes, 64 statements and 4,096 operations; nine codes; the registered design of 93 bytes is the entry's six "
+            "lines and has the registered id %s...; against the registered parent it is registered to compile to 60 "
+            "operations in 908 bytes (%s...), to the content %s... and the head %s...; the shell holds the language's "
+            "version and bounds and the eleven plants; %s" % (DESIGNIR0_HASH[:8], DESIGNIR0A_HASH[:8], DIR_D0_ID[:12], DIR_D0_SHA[:12], DIR_D0_CONTENT[:12],
+                                                               DE_H60[:12], amendments))
+
+
+def designir_language():
+    """(1) The language court, with DESIGN-IR/BOUNDARY-0. Each case of the refusal corpus given to shell design-compile
+    ends in its registered code at its registered line, exit 2, nothing on standard output, one record, nothing new
+    under the sessions root; the reference gives the same verdict. What the language accepts beyond its plain form
+    compiles to the plain form's operations under an id of its own. In process, over every single-byte mutant of three
+    designs, the shell's verdict is the reference's, mutant by mutant."""
+    _ad_need()
+    _DIR_MADE.clear()
+    logs = _ls_logs("designir-language")
+    root = _ad_root("designir-language")
+    spath, sraw, sdoc = _de_parent(root, logs)
+    parent = (spath, sraw)
+    head = sdoc["data"]["head"]
+    world = _dir_world(sdoc)
+    if head != DE_P0 or (world.w, world.rows, world.cam) != (48, 32, (28, 28)) or [i for i, c in enumerate(world.cells) if c in b"<>"] != [26 * 48 + 7, 28 * 48 + 34]:
+        raise Red("the registered parent is not the 48 by 32 level with its camera at 28,28 and its stairs at 7,26 and 34,28")
+    dirs = sorted(os.listdir(root))
+    seen = len(_ad_records(logs))
+    corpus = _dir_refusals()
+    by_code = {}
+    for name, design, code, line in corpus:
+        want = ("R", code, line or 0)
+        if _dir_reference(design, world, head) != want:
+            raise Red("%s: the reference's verdict is %r, and %s%s is registered" % (name, _dir_reference(design, world, head)[:3], code, "" if line is None else " at line %d" % line))
+        seen = _dir_refusal(name, _dir_run(spath, design, root, logs, "refused"), logs, seen, code, root, dirs, parent, line)
+        by_code[code] = by_code.get(code, 0) + 1
+    # each of the statements the amendment's cases are built from is admissible alone
+    for good in (b"close 27,28\n", b"close 26,28\n", b"paint wall0 1,2,3\n"):
+        d = DIR_VERSION + b"\n" + good
+        if _dir_compiled("a statement admissible alone", spath, d, root, logs, "good") != _dir_reference(d, world, head)[1]:
+            raise Red("a statement the boundary cases are built from does not compile alone to the reference's bytes")
+    # an unreadable design; a journal given as the session; and the order where a run holds two of these
+    journal = os.path.join(os.path.dirname(spath), "journal.vsj")
+    nowhere = os.path.join(BUILD, "designir-no-such-file.design")
+    over = [d for nm, d, _c, _l in corpus if nm == "a design of 16,385 bytes"][0]
+    if not os.path.exists(journal) or os.path.exists(nowhere) or len(over) != DIR_MAX_BYTES + 1:
+        raise Red("the court's journal, its missing file or its design of 16,385 bytes is not what it is said to be")
+    for name, session, design, path, code, line in (
+            ("an unreadable design", spath, None, nowhere, "COMPILE-IO", None),
+            ("a journal given as the session", journal, DIR_ONE, None, "COMPILE-SESSION", None),
+            ("an unreadable design and a journal", journal, None, nowhere, "COMPILE-IO", None),
+            ("a design of 16,385 bytes and a journal", journal, over, None, "COMPILE-SIZE", None),
+            ("a journal and a line that is not the language", journal, DIR_VERSION + b"\ndig 1,1\n", None, "COMPILE-SESSION", None)):
+        seen = _dir_refusal(name, _dir_run(session, design, root, logs, "refused", path=path), logs, seen, code, root, dirs, parent, line)
+        by_code[code] = by_code.get(code, 0) + 1
+    # accepted: the plain form's operations, an id of its own
+    plain, accepted = _dir_accepted()
+    base = _dir_compiled("the plain form", spath, plain, root, logs, "plain")
+    if base != _dir_reference(plain, world, head)[1]:
+        raise Red("the plain form does not compile to the reference's bytes")
+    ids = {_dir_head(base)[3]}
+    for name, design in accepted:
+        out = _dir_compiled(name, spath, design, root, logs, "accepted")
+        h = _dir_head(out)
+        if out != _dir_reference(design, world, head)[1] or h[5] != _dir_head(base)[5] or h[3] != sha256(design) or h[3] in ids:
+            raise Red("%s: not the plain form's operations under an id of its own, or not the reference's bytes" % name)
+        ids.add(h[3])
+    if sorted(os.listdir(root)) != dirs or read(spath) != sraw:
+        raise Red("a compile left something under the sessions root, or changed the session")
+    # in process: every single-byte mutant of three designs, the shell's verdict beside the reference's
+    counts = []
+    for tag, design in (("the registered design", DIR_D0), ("a design of a single statement", DIR_ONE), ("a design holding every statement kind with a comment", DIR_EVERY)):
+        cp, _p = _ad_shell("design-compile-selftest", ["--session", spath, "--neighbourhood", _dir_write("base", design)], root, logs)
+        got = cp.stdout.split("\n")
+        n = len(design)
+        if cp.returncode != 0 or got[-1] != "" or len(got) - 1 != 512 * n + 256:
+            raise Red("the court did not run in process over every single-byte mutant of %s: %s" % (tag, (cp.stderr.strip() or "%d verdicts" % (len(got) - 1))[-200:]))
+        took = 0
+        for k, m in enumerate(_dir_mutants(design)):
+            want = _dir_verdict(m, world, head)
+            if got[k] != want:
+                raise Red("%s, mutant %d: the shell says %r and the reference %r" % (tag, k, got[k][:60], want[:60]))
+            if want[0] == "B":
+                took += 1
+                _DIR_MADE.setdefault("accepted", []).append((tag, m, want[2:]))
+        if took == 0 or _dir_verdict(design, world, head)[0] != "B":
+            raise Red("%s: no mutant of it is accepted, or the design itself is not" % tag)
+        counts.append((512 * n + 256, took))
+    if sorted(os.listdir(root)) != dirs or read(spath) != sraw:
+        raise Red("the court in process left something under the sessions root, or changed the session")
+    return ("the language court, with its boundary: %d cases given to shell design-compile each end in their registered code "
+            "at their registered line (%s), exit 2, with nothing on standard output, one record in the refusal log carrying "
+            "the console's code, one line of the run ledger and nothing new under the sessions root, and the gate's "
+            "reference gives the same verdict on each; among them two statements on one line, and for COMPILE-PARSE, -RANGE, "
+            "-BORDER, -STAIR and -CAMERA a design of statements each admissible alone with the refused one last, and the "
+            "same with it first; where one design holds two faults the registered order decides (the bytes before the "
+            "lines, every line before any statement, a statement's shape before its cells, its cells left to right, each "
+            "cell as it is written, a statement's refusal before the camera's); an unreadable design is COMPILE-IO and a "
+            "journal given as the session COMPILE-SESSION, in that order after the design's size; accepted, each compiling "
+            "to the operations of its plain form under an id of its own, the bytes the reference writes: %s; in process, of "
+            "%s single-byte mutants of three designs (%s) the shell's verdict — a refusal with its code and line, or the "
+            "digest of the batch it compiles to — is the reference's on every one, mutant by mutant (%s accepted); the "
+            "session's bytes are as they were"
+            % (len(corpus) + 5, ", ".join("%s %d" % (c, by_code[c]) for c in DIR_CODES if c in by_code), "; ".join(nm for nm, _d in accepted),
+               format(sum(c[0] for c in counts), ","), ", ".join(format(c[0], ",") for c in counts), format(sum(c[1] for c in counts), ",")))
+
+
+def designir_compile():
+    """(2) The byte court — the predicate's first equality — with DESIGN-IR/ID-0. For the court's designs, each against
+    its parent, the bytes shell design-compile writes are the bytes the gate's reference writes, and a second run writes
+    them again; the proposal line is the SHA-256 of the design's bytes, the parent line the session's head, the two
+    identity lines READER-COURT-0's; the sessions are unchanged and nothing is left. The registered design compiles to
+    its registered bytes. The id is a function of the design's bytes and of nothing else."""
+    _ad_need()
+    logs = _ls_logs("designir-compile")
+    root = _ad_root("designir-compile")
+    parents = _dir_parents(root, logs)
+    parents["C0"] = _dir_child("the registered design", parents, "P0", DIR_D0, root, logs, "c0")
+    if parents["C0"][2]["data"]["head"] != DE_H60:
+        raise Red("the registered design, compiled and admitted, does not reach the registered head")
+    dirs = sorted(os.listdir(root))
+    designs = _dir_court_designs(parents["P0"][3])
+    seen_ops = {}
+    for name, key, design, stated in designs:
+        spath, _sraw, sdoc, world = parents[key]
+        head = sdoc["data"]["head"]
+        ref = _dir_reference(design, world, head)
+        out = _dir_compiled(name, spath, design, root, logs, "court")
+        again = _dir_compiled(name, spath, design, root, logs, "court")
+        if ref[0] != "B" or out != ref[1]:
+            raise Red("%s: the bytes shell design-compile writes are not the bytes the reference writes" % name)
+        if again != out:
+            raise Red("%s: a second run of the compiler does not write the same bytes" % name)
+        h = _dir_head(out)
+        if h[:5] != (RC_RENDERER_ID, RC_BEARING_ID, head, sha256(design), len(ref[2])) or h[5] != [_dir_op_line(o) for o in ref[2]]:
+            raise Red("%s: the batch's header is not this shell's two identities, the session's head, the SHA-256 of the design's bytes and the count" % name)
+        if stated is not None and ref[2] != stated:
+            raise Red("%s: the change set is not the operations stated for it" % name)
+        seen_ops[name] = (h[3], h[2], tuple(h[5]))
+    reg = _dir_compiled("the registered design", parents["P0"][0], DIR_D0, root, logs, "court")
+    if (len(reg), sha256(reg), _dir_head(reg)[4], _dir_head(reg)[3]) != (DIR_D0_LEN, DIR_D0_SHA, DIR_D0_OPS, DIR_D0_ID):
+        raise Red("the registered design does not compile to its registered 60 operations in 908 bytes with the registered digest and id")
+    # ID-0: one id on two parents; and designs that differ in a byte differ in their id, though they compile to the same operations
+    a, b = seen_ops["the registered design"], seen_ops["the registered design on that parent"]
+    if a[0] != DIR_D0_ID or b[0] != DIR_D0_ID or a[1] == b[1]:
+        raise Red("the registered design compiled against two parents does not carry one id under two parent lines")
+    corners = {seen_ops[n] for n in seen_ops if n.startswith("a rectangle by its")}
+    if len(corners) != 4 or len({c[2] for c in corners}) != 1 or len({c[0] for c in corners}) != 4:
+        raise Red("the four corner orders do not compile to one change set under four ids")
+    V = DIR_VERSION + b"\n"
+    base = V + b"close 27,28\npaint wall0 1,2,3\n"
+    pairs = [("LF against CR LF", base.replace(b"\n", b"\r\n")), ("a blank added", V + b"close 27,28 \npaint wall0 1,2,3\n"), ("an empty line added", V + b"\nclose 27,28\npaint wall0 1,2,3\n"),
+             ("a comment added", V + b"close 27,28\n# why\npaint wall0 1,2,3\n"), ("the comment changed", V + b"close 27,28\n# how\npaint wall0 1,2,3\n"),
+             ("two statements exchanged", V + b"paint wall0 1,2,3\nclose 27,28\n"), ("the final LF dropped", base[:-1])]
+    spath, _sraw, sdoc, world = parents["P0"]
+    out0 = _dir_compiled("ID-0's base", spath, base, root, logs, "id")
+    ids = {_dir_head(out0)[3]: "the base"}
+    for name, design in pairs:
+        out = _dir_compiled(name, spath, design, root, logs, "id")
+        h = _dir_head(out)
+        if design == base or h[5] != _dir_head(out0)[5] or h[3] != sha256(design) or h[3] in ids or out != _dir_reference(design, world, sdoc["data"]["head"])[1]:
+            raise Red("%s: a design that differs in a byte does not compile to the same operations under another id, the SHA-256 of its own bytes" % name)
+        ids[h[3]] = name
+    # every mutant the language accepted in the language court: the shell's digest is that of a batch whose proposal
+    # line is the SHA-256 of the mutant's own bytes, and no two of them share an id
+    took = _DIR_MADE.get("accepted")
+    if not took:
+        raise Red("the language court did not leave the mutants it found accepted: this court holds their ids")
+    mids = {}
+    for tag, m, digest in took:
+        ref = _dir_reference(m, world, sdoc["data"]["head"])
+        if ref[0] != "B" or sha256(ref[1]) != digest or _dir_head(ref[1])[3] != sha256(m) or m in (DIR_D0, DIR_ONE, DIR_EVERY):
+            raise Red("an accepted mutant of %s does not carry the SHA-256 of its own bytes as its id" % tag)
+        if mids.setdefault(sha256(m), (tag, m)) != (tag, m) or sha256(m) in (sha256(DIR_D0), sha256(DIR_ONE), sha256(DIR_EVERY)):
+            raise Red("two accepted mutants that differ in a byte share an id")
+    for key in ("P0", "K", "T", "C0"):
+        if read(parents[key][0]) != parents[key][1]:
+            raise Red("a compile changed the bytes of a session it was given")
+    if sorted(os.listdir(root)) != dirs:
+        raise Red("a compile left something under the sessions root")
+    # PLANT (the bytes alone): the id taken from the design with its comments and blanks removed
+    spath, _sraw, sdoc, world = parents["C0"]
+    honest = _dir_compiled("the second design", spath, DIR_D1, root, logs, "plant")
+    planted = _dir_compiled("the second design, id-stripped", spath, DIR_D1, root, logs, "plant", plant="id-stripped")
+    hh, ph = _dir_head(honest), _dir_head(planted)
+    if planted == honest or planted == _dir_reference(DIR_D1, world, sdoc["data"]["head"])[1] or ph[3] == sha256(DIR_D1) or ph[5] != hh[5] or ph[:3] != hh[:3]:
+        raise Red("PLANT not caught: id-stripped writes the reference's bytes, or the digest of the design as its id, or other operations")
+    return ("the byte court, the predicate's first equality: for %d designs, each against its parent (the registered parent, "
+            "the registered design's child, a parent holding key edits and a paint whose camera has moved, and a parent "
+            "whose camera stands on a stair), the bytes "
+            "shell design-compile writes are the bytes the gate's reference writes, and a second run writes them again; the "
+            "proposal line is the SHA-256 of the design's bytes, the parent line the session's head, the two identity lines "
+            "READER-COURT-0's; the registered design compiles to its registered 60 operations in 908 bytes (%s...) under its "
+            "registered id; the sessions' bytes are unchanged and the sessions root holds nothing new. ID-0: the registered "
+            "design carries one id against two parents; a rectangle given by its corners in each of the four orders is one "
+            "change set under four ids; %d designs that differ from one another in a byte (%s) compile to the same "
+            "operations, each under the SHA-256 of its own bytes; and each of the %s mutants the language court found "
+            "accepted carries the SHA-256 of its own bytes, no two alike. PLANT: id-stripped writes the honest operations "
+            "under an id that is not the digest of the design, and its bytes are not the reference's"
+            % (len(designs), DIR_D0_SHA[:12], len(pairs) + 1, "; ".join(n for n, _d in pairs), format(len(took), ",")))
+
+
+def designir_equivalence():
+    """(3) The semantic court — the predicate's second equality — with DESIGN-IR/REPLAY-0. Each batch the compiler
+    writes for the court's designs, admitted by shell design, gives a child whose content is the content of the design's
+    target, which the gate takes by applying the statements to the parent's level and tiles bytes. The workshop and the
+    sealer verify each child, and every admitted event is an ordinary edit carrying the design's id. The plants: six that
+    change the world are caught twice; three that approximate are caught by the reference's refusal; id-stripped keeps
+    the world and is caught by the bytes alone; net-short, planted alike in the reference, by the content alone."""
+    import livesession as LS
+    _ad_need()
+    logs = _ls_logs("designir-equivalence")
+    root = _ad_root("designir-equivalence")
+    parents = _dir_parents(root, logs)
+    parents["C0"] = _dir_child("the registered design", parents, "P0", DIR_D0, root, logs, "c0")
+    V = DIR_VERSION + b"\n"
+
+    def child_of(what, key, batch, design, name):
+        """Admit a batch against a parent of the court and hold the child: verified by the workshop and the sealer, its
+        new events ordinary edits, each carrying the SHA-256 of `design` (None: any one id) in its envelope."""
+        ppath, praw, pdoc, _w = parents[key]
+        n0 = len(pdoc["data"]["log"])
+        path, raw, doc = _dir_admit(what, ppath, batch, root, logs, name)
+        code, out, err = _ls_verify(SESSIONWALK_EXE, ["verify", "--session", path])
+        if code != 0 or "SESSIONWALK verify OK head %s" % doc["data"]["head"][:12] not in out:
+            raise Red("%s: the workshop's sessionwalk does not verify the child: %s" % (what, (err or out).strip()[-200:]))
+        try:
+            LS.check_saved(raw, ROOT)
+        except LS.Refuse as e_:
+            raise Red("%s: the sealer refused the child: %s" % (what, e_))
+        lines = _dir_head(batch)[5]
+        tail = doc["data"]["log"][n0:]
+        spec = lambda ln: ("tile:%s,%d,%d,%d" % (ln.split(" ")[1], int(ln.split(" ")[2]) >> 16, (int(ln.split(" ")[2]) >> 8) & 255, int(ln.split(" ")[2]) & 255)
+                           if ln.startswith("paint ") else "cell:%s,%s" % (ln.split(" ")[1], "." if ln.startswith("open ") else "#"))
+        if [e["kind"] for e in tail] != ["edit"] * len(lines) or [e["spec"] for e in tail] != [spec(ln) for ln in lines] \
+                or {e.get("admit", {}).get("proposal") for e in tail} != {_dir_head(batch)[3]} or (design is not None and _dir_head(batch)[3] != sha256(design)) \
+                or any(sorted(e) != ["admit", "kind", "spec", "witness"] for e in tail) or read(ppath) != praw:
+            raise Red("%s: the admitted events are not the batch's operations as ordinary edits, each carrying the design's id in its envelope" % what)
+        return path, raw, doc
+
+    # each batch of the byte court's designs, admitted: the child's content is the target's
+    designs = _dir_court_designs(parents["P0"][3])
+    heads = {}
+    for name, key, design, _stated in designs:
+        spath, _sraw, sdoc, world = parents[key]
+        ref = _dir_reference(design, world, sdoc["data"]["head"])
+        batch = _dir_compiled(name, spath, design, root, logs, "court")
+        target = _dir_target_content(design, world)
+        if ref[0] != "B" or batch != ref[1] or target is None:
+            raise Red("%s: the bytes are not the reference's, or the design has no target" % name)
+        _p, _r, doc = child_of(name, key, batch, design, "court")
+        if doc["data"]["final_content"] != target:
+            raise Red("%s: the child's content is not the content of the design's target" % name)
+        heads[name] = (doc["data"]["head"], doc["data"]["final_content"])
+    c0 = parents["C0"][2]["data"]
+    if (c0["final_content"], c0["head"]) != (DIR_D0_CONTENT, DE_H60) or heads["the registered design"] != (DE_H60, DIR_D0_CONTENT) \
+            or _dir_target_content(DIR_D0, parents["P0"][3]) != DIR_D0_CONTENT:
+        raise Red("the registered design's child does not have the registered content and head")
+    if len({heads[n] for n in heads if n.startswith("a rectangle by its")}) != 1:
+        raise Red("the four corner orders do not reach one world")
+    # the registered design against its own child; the same design bytes twice in one history
+    logs2 = _ls_logs("designir-equivalence-refused")
+    dirs = sorted(os.listdir(root))
+    seen = _dir_refusal("the registered design compiled against its own child", _dir_run(parents["C0"][0], DIR_D0, root, logs2, "again"), logs2, 0, "COMPILE-EMPTY", root, dirs,
+                        (parents["C0"][0], parents["C0"][1]))
+    shut, reopen = V + b"close 27,28\n", V + b"open 27,28\n"
+    parents["A"] = _dir_child("a design that closes one cell", parents, "P0", shut, root, logs, "a")
+    parents["B"] = _dir_child("a design that opens it again", parents, "A", reopen, root, logs, "b")
+    if parents["B"][3].cells != parents["P0"][3].cells or parents["B"][2]["data"]["final_content"] != parents["P0"][2]["data"]["final_content"]:
+        raise Red("a cell closed and opened again does not give the parent's world back")
+    twice = _dir_compiled("the same design bytes, compiled a second time in one history", parents["B"][0], shut, root, logs, "twice")
+    dirs = sorted(os.listdir(root))
+    cp, _p = _ad_shell("design", ["--session", parents["B"][0], "--proposal", _dir_write("twice-batch", twice)] + ADMIT_ALL, root, logs)
+    if cp.returncode != 2 or "SHELL-ADMIT-DUPLICATE: " not in cp.stderr or "[design] admitted" in cp.stdout or sorted(os.listdir(root)) != dirs:
+        raise Red("the same design bytes offered a second time in one history were not refused ADMIT-DUPLICATE: exit %d: %s" % (cp.returncode, cp.stderr.strip()[-200:]))
+    more = shut + b"# again\n"
+    _p, _r, doc = child_of("the same statements with one more comment line", "B", _dir_compiled("one more comment line", parents["B"][0], more, root, logs, "more"), more, "more")
+    if doc["data"]["final_content"] != _dir_target_content(more, parents["B"][3]):
+        raise Red("the design with one more comment line does not reach its target")
+    # THE PLANTS. Six change the world: a recognized batch the unplanted admission admits, caught twice.
+    stale = V + b"open 27,28\nclose 26,28\n"
+    caught = []
+    for plant, key, design in (("entrance-dropped", "P0", DIR_D0), ("order-reversed", "P0", DIR_D0), ("rect-short", "C0", DIR_D1), ("paint-next-class", "P0", DIR_D0),
+                               ("first-wins", "P0", DIR_D0), ("net-stale", "A", stale)):
+        spath, _sraw, sdoc, world = parents[key]
+        ref = _dir_reference(design, world, sdoc["data"]["head"])
+        target = _dir_target_content(design, world)
+        honest = _dir_compiled("the unplanted compiler", spath, design, root, logs, "plant")
+        planted = _dir_compiled("the compiler planted " + plant, spath, design, root, logs, "plant", plant=plant)
+        _p, _r, hdoc = child_of("the honest batch beside " + plant, key, honest, design, "plant-honest")
+        _p, _r, pdoc = child_of("the batch of " + plant, key, planted, design, "plant")
+        if honest != ref[1] or hdoc["data"]["final_content"] != target:
+            raise Red("%s: without the plant the bytes are not the reference's or the child is not the target" % plant)
+        if planted == ref[1]:
+            raise Red("PLANT not caught by the bytes: %s writes the reference's bytes" % plant)
+        if pdoc["data"]["final_content"] == target:
+            raise Red("PLANT not caught by the world: the child of %s has the target's content" % plant)
+        caught.append(plant)
+    # Three approximate where the language refuses: the reference refuses with the registered code, and so does the
+    # compiler without the plant; planted, it writes a batch the admission admits.
+    seen = len(_ad_records(logs2))
+    for plant, design, code, line in (("stair-skipped", V + b"close 6,26 8,26\n", "COMPILE-STAIR", 2), ("border-clipped", V + b"open 0,27 3,27\n", "COMPILE-BORDER", 2),
+                                      ("camera-buried", V + b"close 28,28\n", "COMPILE-CAMERA", None)):
+        spath, sraw, sdoc, world = parents["P0"]
+        if _dir_reference(design, world, sdoc["data"]["head"]) != ("R", code, line or 0) or _dir_target_content(design, world) is not None and code != "COMPILE-CAMERA":
+            raise Red("%s: the reference does not refuse the design with %s" % (plant, code))
+        dirs = sorted(os.listdir(root))
+        seen = _dir_refusal("the design of %s, without the plant" % plant, _dir_run(spath, design, root, logs2, "approx"), logs2, seen, code, root, dirs, (spath, sraw), line)
+        planted = _dir_compiled("the compiler planted " + plant, spath, design, root, logs, "plant", plant=plant)
+        child_of("the batch of " + plant, "P0", planted, design, "plant")
+        caught.append(plant)
+    # id-stripped keeps the world: the honest operations under another id reach the honest head, and only the bytes say so
+    spath, _sraw, sdoc, world = parents["C0"]
+    honest = _dir_compiled("the second design", spath, DIR_D1, root, logs, "plant")
+    planted = _dir_compiled("the second design, id-stripped", spath, DIR_D1, root, logs, "plant", plant="id-stripped")
+    _p, _r, hdoc = child_of("the second design", "C0", honest, DIR_D1, "plant-honest")
+    _p, _r, pdoc = child_of("the batch of id-stripped", "C0", planted, None, "plant")
+    if planted == honest or _dir_head(planted)[3] == sha256(DIR_D1) or (pdoc["data"]["head"], pdoc["data"]["final_content"]) != (hdoc["data"]["head"], hdoc["data"]["final_content"]) \
+            or pdoc["data"]["final_content"] != _dir_target_content(DIR_D1, world):
+        raise Red("id-stripped does not write other bytes under another id and reach the honest head and the target's content")
+    # net-short, planted alike in the reference: the bytes agree, and the content does not
+    spath, _sraw, sdoc, world = parents["P0"]
+    short = _dir_reference(DIR_D0, world, sdoc["data"]["head"], short=True)
+    planted = _dir_compiled("the registered design, net-short", spath, DIR_D0, root, logs, "plant", plant="net-short")
+    _p, _r, pdoc = child_of("the batch of net-short", "P0", planted, DIR_D0, "plant")
+    if planted != short[1] or len(short[2]) != DIR_D0_OPS - 1 or planted == _dir_reference(DIR_D0, world, sdoc["data"]["head"])[1]:
+        raise Red("net-short: the shell's bytes are not the bytes of the reference planted alike, 59 of the 60 operations")
+    if pdoc["data"]["final_content"] == _dir_target_content(DIR_D0, world) or _dir_target_content(DIR_D0, world) != DIR_D0_CONTENT:
+        raise Red("PLANT not caught by the world: the child of net-short has the target's content")
+    return ("the semantic court, the predicate's second equality: each of the %d batches the compiler writes for the court's "
+            "designs, admitted by shell design, gives a child whose content is the content of the design's target — the "
+            "statements applied by the gate to the parent's level and tiles bytes, never through a change set; the workshop's "
+            "sessionwalk and the sealer verify each child, and every admitted event is an ordinary edit carrying the design's "
+            "id in its envelope; the registered design reaches the registered content %s... and head %s...; REPLAY-0's "
+            "cases hold (a write of what is there beside a change; overlapping rectangles; a later statement over an earlier "
+            "one; four corner orders reaching one world; a class painted twice and a class painted its own colour; every "
+            "statement kind; a net-zero beside one change); the registered design against its own child is COMPILE-EMPTY; the "
+            "same design bytes offered a second time in one history are refused ADMIT-DUPLICATE and with one more comment "
+            "line are admitted. PLANTS: %s each write a recognized batch the unplanted admission admits, and each is caught "
+            "twice — its bytes are not the reference's and its child's content is not the target's; %s each write an admitted "
+            "batch for a design the reference, and the compiler without the plant, refuse with the registered code; "
+            "id-stripped reaches the honest head and the target's content under another id, so the world cannot catch it and "
+            "the bytes do; net-short, planted alike in the reference, writes the planted reference's bytes (59 of 60 "
+            "operations), so the bytes cannot catch it, and its child's content is not the target's"
+            % (len(designs), DIR_D0_CONTENT[:12], DE_H60[:12], ", ".join(caught[:6]), ", ".join(caught[6:])))
+
+
+def designir_fence():
+    """(4) By source: the design's bytes are read by one function of one file of the shell and reach the digest and the
+    parser and nothing else; that file spawns nothing, connects to nothing, reads no clock and writes no file; the
+    compiler is reached from shell design-compile and its selftest alone, and shell design-compile takes no plant; the
+    admission, the session, the loader, the workshop and the sealer hold nothing of the source language; no file under
+    verify/ reads the design tool's folder; the reference is this rung's rows' alone; the rows before this rung keep
+    their names and their order. And by what was heard: every child these rows started that did not end 0 carries a
+    registered code in a code head."""
+    import ast
+    code = lambda t: "\n".join(ln.split("//", 1)[0] for ln in t.splitlines())
+    shell = {fn: code(read(os.path.join(SHELL, fn)).decode("utf-8")) for fn in sorted(os.listdir(SHELL)) if fn.endswith(".rs")}
+    dc = shell["designcompile.rs"]
+    for tok in ("Command", "std::process", "process::", "std::net", "TcpStream", "UdpSocket", "verify", "unsafe", "thread::", "SystemTime", "Instant",
+                "std::env", "fs::write", "File::create", "create_dir", "OpenOptions", "remove_file", "remove_dir", "rename(", "println!", "eprint"):
+        if tok in dc:
+            raise Red("shell/designcompile.rs contains %r: the compiler spawns nothing, connects to nothing, reads no clock, and creates, writes, renames and removes no file" % tok)
+    runf = src_span(dc, "pub fn run(session: &str, design: &str, plant: &str) -> i32 {", "\n}\n")
+    order = [runf.find(t) for t in ('crate::runledger::begin("design-compile", "none");', "read_design(design)", "text.len() > MAX_DESIGN_BYTES",
+                                    "crate::livesession::load(session)", 'l.lineage.source != "session"', "world_of(&l.session)", "compile(&text, &world,",
+                                    "batch_of(&text, l.session.head(), ops, plant)", "stdout.write_all(&out)")]
+    if (-1 in order or order != sorted(order) or re.findall(r'refuse\("(COMPILE-[A-Z]+)"', runf) != ["COMPILE-IO", "COMPILE-SIZE", "COMPILE-SESSION"]
+            or "refuse(r.code," not in runf or runf.count("crate::livesession::load(") != 1 or len(re.findall(r"\btext\b", runf)) != 4
+            or dc.count("std::io::stdout()") != 1 or dc.count("print!(") != 1 or "print!(" in runf):
+        raise Red("the compiler's run does not make its checks in the registered order on one load of the session, or the design's bytes reach more than their size, the compiler and the batch")
+    comp = src_span(dc, "fn compile(design: &[u8], world: &World, base: Option<&World>, plant: &str) -> Result<Vec<Op>, Refused> {", "\n}\n")
+    order = [comp.find(t) for t in ("statements(design, world.w, world.rows)?", "target(&stmts, world, plant)?", 'code: "COMPILE-CAMERA"', "ops.len() > MAX_OPERATIONS",
+                                    'code: "COMPILE-EMPTY"')]
+    stm = src_span(dc, "fn statements(design: &[u8], w: usize, rows: usize) -> Result<Vec<Statement>, Refused> {", "\n}\n")
+    tgt = src_span(dc, "fn target(stmts: &[Statement], world: &World, plant: &str) -> Result<(Vec<u8>, [Option<[u8; 3]>; 5]), Refused> {", "\n}\n")
+    if (-1 in order or order != sorted(order) or not 0 <= stm.find("design.len() > MAX_DESIGN_BYTES") < stm.find("trim(lines[0]) != VERSION") < stm.find("out.len() > MAX_STATEMENTS")
+            or not 0 <= tgt.find('code: "COMPILE-BORDER"') < tgt.find('code: "COMPILE-STAIR"') < tgt.find("cells[i] = to;")
+            or sorted(set(re.findall(r'"(COMPILE-[A-Z]+)"', dc))) != sorted(DIR_CODES)):
+        raise Red("the compiler does not read every line before a statement is applied, check each cell as it is written — the border, then the stair — then the camera, the operations and the empty change set; or its codes are not the registered nine")
+    idf = src_span(dc, "fn design_id(design: &[u8], plant: &str) -> String {", "\n}\n")
+    if (dc.count("fn read_design(") != 1 or dc.count("read_design(") != 3 or dc.count("File::open(") != 1 or "File::open(path)" not in src_span(dc, "fn read_design(path: &str)", "\n}\n")
+            or dc.count("design_id(") != 2 or "hex(&sha256(design))" not in idf or dc.count("statements(design,") != 1 or dc.count("emit_batch(") != 1
+            or "emit_batch(&Batch {" not in src_span(dc, "fn batch_of(design: &[u8], head: &str, ops: Vec<Op>, plant: &str) -> Vec<u8> {", "\n}\n")):
+        raise Red("the design's bytes are read by more than one function, or reach more than the digest and the parser")
+    # reached from shell design-compile and its selftest alone; shell design-compile takes no plant
+    main_src = shell["main.rs"]
+    arm = src_span(main_src, '"design-compile" | "design-compile-selftest" => {', '\n        "design" | "design-selftest" => {')
+    if ({fn: s.count("designcompile") for fn, s in shell.items() if "designcompile" in s and fn != "designcompile.rs"} != {"main.rs": 6}
+            or arm.count("designcompile::run(") != 1 or arm.count("designcompile::court(") != 1 or main_src.count("designcompile::") != 4
+            or 'if selftest { &["--session", "--design", "--plant", "--neighbourhood"] } else { &["--session", "--design"] }' not in arm
+            or "if selftest && !designcompile::PLANTS.contains(&plant.as_str())" not in arm):
+        raise Red("the compiler is reached by something other than shell design-compile and its selftest, or shell design-compile takes a plant")
+    # the admission, the session, the loader, the workshop and the sealer hold nothing of the source language
+    ws = {fn: code(read(os.path.join(WORKSHOP, fn)).decode("utf-8")) for fn in sorted(os.listdir(WORKSHOP)) if fn.endswith(".rs")}
+    kn = {fn: code(read(os.path.join(KERNEL, fn)).decode("utf-8")) for fn in sorted(os.listdir(KERNEL)) if fn.endswith(".rs")}
+    sealer = read(os.path.join(ROOT, "verify", "livesession.py")).decode("utf-8")
+    words = ("VERDANDI-DESIGN", "designcompile", "design-compile", '"COMPILE-', '"room"', '"entrance"', "fn statements", "read_design")
+    others = [("shell/" + fn, s) for fn, s in shell.items() if fn not in ("designcompile.rs", "main.rs")] + [("workshop/" + fn, s) for fn, s in ws.items()] \
+        + [("kernel/" + fn, s) for fn, s in kn.items()] + [("verify/livesession.py", sealer)]
+    for name, s in others:
+        for w_ in words:
+            if w_ in s:
+                raise Red("%s holds %r: the admission, the session, the loader, the workshop and the sealer hold nothing of the source language and call no compiler" % (name, w_))
+    design_arm = src_span(main_src, '"design" | "design-selftest" => {', '\n        "admit" | "admit-selftest" | "admit-anchor" => {')
+    if any(w_ in design_arm for w_ in ("designcompile", "--design\"", "VERDANDI-DESIGN")) or "VERDANDI-DESIGN" in main_src:
+        raise Red("shell design names the compiler or takes a design")
+    # no file under verify/ reads or imports anything of the design tool's folder
+    tool = "design"
+    path_rx = re.compile(r"(^|[/\\])%s[/\\]|%s\.py|test_%s" % (tool, tool, tool))
+    vdir = os.path.join(ROOT, "verify")
+    scanned = 0
+    for fn in sorted(os.listdir(vdir)):
+        if not fn.endswith(".py"):
+            continue
+        scanned += 1
+        tree = ast.parse(read(os.path.join(vdir, fn)).decode("utf-8"))
+        for n in ast.walk(tree):
+            mods = [al.name for al in n.names] if isinstance(n, ast.Import) else ([n.module or ""] if isinstance(n, ast.ImportFrom) else [])
+            if any(m == tool or m.startswith(tool + ".") or m == "test_" + tool for m in mods):
+                raise Red("verify/%s imports the design tool" % fn)
+            if isinstance(n, ast.Constant) and isinstance(n.value, str) and path_rx.search(n.value):
+                raise Red("verify/%s names a path of the design tool's folder (line %d)" % (fn, n.lineno))
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "join" and any(isinstance(x, ast.Constant) and x.value == tool for x in n.args):
+                raise Red("verify/%s joins a path into the design tool's folder (line %d)" % (fn, n.lineno))
+    # the gate's reference is a test oracle: used by this rung's rows and their helpers, and by nothing else
+    me = read(os.path.join(ROOT, "verify", "verify.py")).decode("utf-8")
+    owner = None
+    for ln in me.splitlines():
+        m_ = re.match(r"(?:def|class) (\w+)[(:]", ln)
+        if m_:
+            owner = m_.group(1)
+        elif re.search(r"\b_dir_\w+\(|\b_DirWorld\(", ln):
+            if owner is None or not (owner.startswith("designir_") or owner.startswith("_dir_") or owner == "_DirWorld"):
+                raise Red("the gate's reference compiler is used outside this rung's rows (in %s): it is a test oracle and nothing else" % owner)
+    import livesession as LS
+    if LS.renderer_id(ROOT) != RC_RENDERER_ID or LS.bearing_id(ROOT) != RC_BEARING_ID:
+        raise Red("the renderer or the bearing identity is not READER-COURT-0's: this rung touches no renderer")
+    # the rows: the 242 before this rung keep their names and order, and this rung adds five
+    names = _mw_rows_by_source()
+    if sha256("\n".join(names[:242]).encode("utf-8"))[:16] != DIR_ROWSET_BEFORE or tuple(names[242:247]) != DIR_ROWS or len(names) != len(set(names)):
+        raise Red("the rows before this rung are not the 242 they were, by name and order, or this rung's five do not follow them")
+    # what was heard: every child of this rung's rows that did not end 0 carries a registered code in a code head
+    heard = [e for e in ENDINGS if e["row"] in DIR_ROWS]
+    loose = ["%s / %s %s ended %d" % (e["row"], e["program"], e["command"], e["exit"]) for e in heard
+             if not (e["exit"] == 2 and any(c in {t for h_ in e["heads"] for t in h_} for c in DIR_ENDINGS))]
+    by_row = {r: sum(1 for e in heard if e["row"] == r) for r in DIR_ROWS}
+    if loose or ENDINGS_UNHEARD or by_row["designir-language"] == 0 or by_row["designir-equivalence"] == 0 or by_row["designir-preregistered"] or by_row["designir-compile"]:
+        raise Red("an ending of this rung's rows carries no registered code in a code head, or the watch did not hear them: %s" % "; ".join(loose[:4]))
+    return ("the compiler is fenced: shell/designcompile.rs spawns no process, opens no socket, reads no clock, and creates, "
+            "writes, renames and removes no file; the design's bytes are read by one function, at most one byte past the "
+            "bound, and reach their size, the compiler and the batch's id and nothing else; its run makes the registered "
+            "checks in the registered order on one load of the session, and writes the batch with DESIGN-EVENT-0's own "
+            "writer to standard output and nowhere else; every line is read before a statement is applied, each cell is "
+            "checked as it is written — the border, then the stair — and then the camera, the operations and the empty "
+            "change set; the codes are the registered nine; the compiler is reached from shell design-compile and its "
+            "selftest alone, and shell design-compile takes no plant; shell design takes no design; no other file of the "
+            "shell, none of the workshop or the kernel, and not the sealer holds anything of the source language; none of "
+            "the %d Python files under verify/ imports the design tool or names a path of its folder; the gate's reference "
+            "is used by this rung's rows alone; the renderer and bearing identities are READER-COURT-0's; the 242 rows "
+            "before this rung keep their names and their order and this rung adds five; and of the %d children this rung's "
+            "rows started that did not end 0, every one carries a registered code in a code head (%s)"
+            % (scanned, len(heard), ", ".join("%s %d" % (r.split("-", 1)[1], by_row[r]) for r in DIR_ROWS if by_row[r])))
 
 
 def main() -> int:
@@ -15034,6 +16116,13 @@ def main() -> int:
     row("designevent-crash", designevent_crash)
     row("designevent-replay", designevent_replay)
     row("designevent-fence", designevent_fence)
+    # DESIGN-IR/DIFF-0: a design compiled to its change set by the shell's one compiler, held to the gate's own
+    # reference byte for byte and to the design's target by content; after both refusal watches, heard by neither
+    row("designir-preregistered", designir_preregistered)
+    row("designir-language", designir_language)
+    row("designir-compile", designir_compile)
+    row("designir-equivalence", designir_equivalence)
+    row("designir-fence", designir_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

@@ -105,6 +105,9 @@ mod admit;
 // DESIGN-EVENT-0: a design admitted as one batch, its dry run and its binding
 #[path = "designevent.rs"]
 mod designevent;
+// DESIGN-IR/DIFF-0: a design compiled to its change set, against a saved session; it admits nothing
+#[path = "designcompile.rs"]
+mod designcompile;
 // READER-COURT-0: the saved form's one reader, shared by path with the workshop, and its court command
 #[path = "../kernel/savedform.rs"]
 mod savedform;
@@ -998,6 +1001,33 @@ fn main() {
             // with one splice applied, per line of that file's script; `form-spell --in F --out OUT` spells each
             // text of F. A verdict is data: the command ends 0 whatever the verdicts were.
             exit(readercourt::run(&args))
+        }
+        "design-compile" | "design-compile-selftest" => {
+            // DESIGN-IR/DIFF-0: the compiler of the design language, windowless. `design-compile --session S --design
+            // D` reads the design text D (VERDANDI-DESIGN 0) and the saved session S and writes to standard output the
+            // one canonical batch for the net difference between S's world and the world D describes, and nothing
+            // else; or it refuses, with a code and the design's line, and writes nothing there. It admits nothing and
+            // writes no batch file, journal or session: the batch goes to `design`, which takes a batch and never a
+            // design. `design-compile-selftest` is the same run with `--plant` naming one planted defect, or the court
+            // in process: `--neighbourhood D` gives every single-byte mutant of D to the compiler against S.
+            let selftest = args[1] == "design-compile-selftest";
+            let a = &args[2..];
+            let known: &[&str] = if selftest { &["--session", "--design", "--plant", "--neighbourhood"] } else { &["--session", "--design"] };
+            if a.len() % 2 != 0 || a.chunks(2).any(|c| !known.contains(&c[0].as_str()))
+                || known.iter().any(|k| a.chunks(2).filter(|c| c[0] == *k).count() > 1) {
+                refuse("USAGE", &format!("{} takes each of {} at most once, each with a value", args[1], known.join(", ")));
+            }
+            let opt = |flag: &str| -> Option<String> { a.chunks(2).find(|c| c[0] == flag).map(|c| c[1].clone()) };
+            let session = opt("--session").unwrap_or_else(|| refuse("USAGE", "needs --session"));
+            if let Some(d) = opt("--neighbourhood") {
+                exit(designcompile::court(&session, &d))
+            }
+            let design = opt("--design").unwrap_or_else(|| refuse("USAGE", "needs --design"));
+            let plant = opt("--plant").unwrap_or_default();
+            if selftest && !designcompile::PLANTS.contains(&plant.as_str()) {
+                refuse("USAGE", &format!("--plant is one of {}", designcompile::PLANTS.join(", ")));
+            }
+            exit(designcompile::run(&session, &design, &plant))
         }
         "design" | "design-selftest" => {
             // DESIGN-EVENT-0: a batch admitted by one admission, windowless. `design --session S --proposal P [--allow

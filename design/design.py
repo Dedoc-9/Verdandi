@@ -3,12 +3,13 @@
 # Copyright (C) 2026 Daniel J. Dillberg
 """design/design.py — the design surface: inspect, propose, preview, admit, undo.
 
-CONTENT TIME. This tool is not part of the gate and no gate runs when it is used. It holds no authority: every change
-it makes to a world is made by the certified batch seam, `shell design` (DESIGN-EVENT-0), one batch for one design,
-and what the seam refuses stays refused. A person, a script and a language model all use it the same way, by writing
-a few lines of design text.
+CONTENT TIME. This tool is not part of the gate and no gate runs when it is used. It holds no authority and it
+computes no change set. It is a client of two certified commands of the shell: `shell design-compile` (DESIGN-IR/DIFF-0),
+which turns a design text into the one batch for it against a session, and `shell design` (DESIGN-EVENT-0), which admits
+a batch or refuses it. What either refuses stays refused. A person, a script and a language model all use it the same
+way, by writing a few lines of design text.
 
-    language proposes  ->  this tool compiles  ->  the shell admits  ->  the session records  ->  the kernel renders
+    language proposes  ->  the shell compiles  ->  the shell admits  ->  the session records  ->  the kernel renders
 
     python design/design.py new      [--project DIR] [--level L] [--tiles T] [--camera x,z,F] [--shell EXE]
     python design/design.py open     --session S.json [--project DIR] [--shell EXE]
@@ -21,7 +22,7 @@ a few lines of design text.
     python design/design.py undo
     python design/design.py status   [--json]
 
-The design text (version 0; this tool's own, not a registered language of the tree):
+The design text (VERDANDI-DESIGN 0, the source language DESIGN-IR/DIFF-0 registered; the shell's compiler reads it):
 
     VERDANDI-DESIGN 0
     # a comment
@@ -31,11 +32,12 @@ The design text (version 0; this tool's own, not a registered language of the tr
     entrance x,z              one cell becomes floor
     paint  CLASS R,G,B        a tile class (wall0 wall1 wall2 wall3 floor) takes one colour
 
-Statements apply in order to a working copy; what is proposed is the net difference from the current world, one
-operation per cell or class that ends up different, written as ONE batch in the seam's language. A preview is the
-shell's dry run of that batch: the same checks and the same replay as the admission, and nothing written. `admit`
-gives the same bytes to the shell, bound to the preview: the shell refuses unless they are the bytes that were
-previewed and reach the head the preview reached.
+Statements apply in order; what is proposed is the net difference from the current world, one operation per cell or
+class that ends up different, written by the shell's compiler as ONE batch. `propose` hands the compiler the text's
+bytes exactly as they were given and keeps what it wrote; the batch's id is the SHA-256 of those bytes, and the text
+is kept under that id in the project. A preview is the shell's dry run of that batch: the same checks and the same
+replay as the admission, and nothing written. `admit` gives the same bytes to the shell, bound to the preview: the
+shell refuses unless they are the bytes that were previewed and reach the head the preview reached.
 
 What this tool computes itself (the top view, the counts, what is reachable) is a view for a reader. It is never
 authority, and where it disagrees with the shell the shell is right.
@@ -56,8 +58,8 @@ sys.path.insert(0, os.path.join(ROOT, "verify"))
 import savedform  # noqa: E402  the tree's one reader of what it saves
 
 TEXT_VERSION = "VERDANDI-DESIGN 0"
-MAX_STATEMENTS = 64          # a design text is small on purpose
-MAX_OPERATIONS = 4096        # and so is what it compiles to
+# the source language's bounds, as DESIGN-IR/DIFF-0 registered them. Stated here for a reader; the shell's compiler holds them
+LIMITS = {"bytes": 16384, "statements": 64, "operations": 4096}
 CLASSES = ("wall0", "wall1", "wall2", "wall3", "floor")
 OPEN_CELLS = b".<>"
 EXE = ".exe" if os.name == "nt" else ""
@@ -126,7 +128,7 @@ def shell(prj: dict, cmd: str, argv: list, root: str):
 
 
 def seam(prj: dict, argv: list):
-    """One run of the batch seam, `shell design`. A shell built before DESIGN-EVENT-0 has no such command: said plainly."""
+    """One run of the admission, `shell design`. A shell built before DESIGN-EVENT-0 has no such command: said plainly."""
     cp = shell(prj, "design", argv, os.path.join(prj["dir"], "sessions"))
     if cp.returncode != 0 and "unknown command design" in (cp.stderr or "") + (cp.stdout or ""):
         raise Refused("DESIGN-NO-SHELL", "the shell at %s was built before the batch seam (it has no `design` command): build it again "
@@ -254,94 +256,35 @@ def parse_region(text: str | None, w: World) -> tuple:
     return (x0, z0, x1, z1)
 
 
-# ------------------------------------------------------------------ the design text, and what it compiles to
-def parse_design(text: str, w: World) -> list:
-    """The statements of a design text, typed. Anything else is refused with its line."""
-    lines = text.replace("\r\n", "\n").split("\n")
-    if not lines or lines[0].strip() != TEXT_VERSION:
-        raise Refused("DESIGN-PARSE", "line 1: a design text begins with the line `%s`" % TEXT_VERSION)
-    out = []
-
-    def point(tok: str, n: int) -> tuple:
-        m = re.fullmatch(r"(0|[1-9][0-9]{0,4}),(0|[1-9][0-9]{0,4})", tok)
-        if not m:
-            raise Refused("DESIGN-PARSE", "line %d: `%s` is not a cell x,z" % (n, tok))
-        x, z = int(m.group(1)), int(m.group(2))
-        if x >= w.w or z >= w.rows:
-            raise Refused("DESIGN-RANGE", "line %d: the cell %d,%d is outside the %dx%d level" % (n, x, z, w.w, w.rows))
-        return x, z
-    for n, raw in enumerate(lines[1:], start=2):
-        ln = raw.split("#", 1)[0].strip()
-        if not ln:
-            continue
-        t = ln.split()
-        verb = t[0]
-        if verb in ("open", "close", "room"):
-            if len(t) not in (2, 3) or (verb == "room" and len(t) != 3):
-                raise Refused("DESIGN-PARSE", "line %d: `%s` takes %s" % (n, verb, "two corners" if verb == "room" else "a cell, or two corners"))
-            a = point(t[1], n)
-            b = point(t[2], n) if len(t) == 3 else a
-            x0, x1, z0, z1 = min(a[0], b[0]), max(a[0], b[0]), min(a[1], b[1]), max(a[1], b[1])
-            if verb == "room" and (x1 - x0 < 2 or z1 - z0 < 2):
-                raise Refused("DESIGN-RANGE", "line %d: a room needs a rim and an inside: at least 3 cells each way" % n)
-            out.append((verb, (x0, z0, x1, z1), n))
-        elif verb == "entrance":
-            if len(t) != 2:
-                raise Refused("DESIGN-PARSE", "line %d: `entrance` takes one cell" % n)
-            x, z = point(t[1], n)
-            out.append(("open", (x, z, x, z), n))
-        elif verb == "paint":
-            m = re.fullmatch(r"(0|[1-9][0-9]{0,2}),(0|[1-9][0-9]{0,2}),(0|[1-9][0-9]{0,2})", t[2]) if len(t) == 3 else None
-            if len(t) != 3 or t[1] not in CLASSES or not m or any(int(v) > 255 for v in m.groups()):
-                raise Refused("DESIGN-PARSE", "line %d: `paint` takes a class (%s) and R,G,B, each 0 to 255" % (n, " ".join(CLASSES)))
-            out.append(("paint", (t[1], tuple(int(v) for v in m.groups())), n))
-        else:
-            raise Refused("DESIGN-PARSE", "line %d: `%s` is not a statement (open, close, room, entrance, paint)" % (n, verb))
-        if len(out) > MAX_STATEMENTS:
-            raise Refused("DESIGN-SIZE", "a design text holds at most %d statements" % MAX_STATEMENTS)
-    if not out:
-        raise Refused("DESIGN-PARSE", "the design text holds no statement")
-    return out
+# ------------------------------------------------------------------ the compiler is the shell's
+def design_file(prj: dict) -> str:
+    return os.path.join(prj["dir"], "pending.design")
 
 
-def compile_design(stmts: list, w: World, predict: bool = True) -> tuple:
-    """The net difference the statements make to the current world, as the seam's operations, one per changed cell or
-    class. Returns (operations, the proposed cells, notes). With `predict`, what the seam is known to refuse is refused
-    here first, with the line; without it, the seam is left to say so."""
-    cells, tiles, notes = bytearray(w.cells), dict(w.tiles), []
-    for verb, arg, n in stmts:
-        if verb == "paint":
-            tiles[arg[0]] = arg[1]
-            continue
-        x0, z0, x1, z1 = arg
-        for z in range(z0, z1 + 1):
-            for x in range(x0, x1 + 1):
-                rim = verb == "room" and (x in (x0, x1) or z in (z0, z1))
-                to = ord("#") if verb == "close" or rim else ord(".")
-                border = x in (0, w.w - 1) or z in (0, w.rows - 1)
-                if predict and border and to != ord("#"):
-                    raise Refused("DESIGN-BORDER", "line %d: the cell %d,%d is on the level's border, which stays rock" % (n, x, z))
-                if predict and cells[z * w.w + x] in b"<>" and to != cells[z * w.w + x]:
-                    raise Refused("DESIGN-STAIR", "line %d: the cell %d,%d is a stair, which this language does not change" % (n, x, z))
-                cells[z * w.w + x] = to
-    ops = []
-    for z in range(w.rows):
-        for x in range(w.w):
-            a, b = w.cells[z * w.w + x], cells[z * w.w + x]
-            if a != b:
-                ops.append({"op": "close" if b == ord("#") else "open", "target": "%d,%d" % (x, z), "value": "0",
-                            "spec": "cell:%d,%d,%s" % (x, z, chr(b))})
-    for c in CLASSES:
-        if tiles[c] != w.tiles[c]:
-            r, g, b = tiles[c]
-            ops.append({"op": "paint", "target": c, "value": str(r * 65536 + g * 256 + b), "spec": "tile:%s,%d,%d,%d" % (c, r, g, b)})
-    if predict and cells[w.cam[1] * w.w + w.cam[0]] not in OPEN_CELLS:
-        raise Refused("DESIGN-CAMERA", "the design closes the cell the camera stands on (%d,%d)" % w.cam)
-    if len(ops) > MAX_OPERATIONS:
-        raise Refused("DESIGN-SIZE", "the design changes %d cells or classes; at most %d go in one proposal" % (len(ops), MAX_OPERATIONS))
-    if not ops:
-        notes.append("the design changes nothing: the world is already so")
-    return ops, cells, notes
+def compile_with_shell(prj: dict, session: str, data: bytes) -> tuple:
+    """Hand a design's bytes to the certified compiler, `shell design-compile`, against a session. Returns (the batch
+    it wrote, None) or (None, the shell's own refusal line). The bytes go to it exactly as they were given."""
+    with open(design_file(prj), "wb") as fh:
+        fh.write(data)
+    env = dict(os.environ, VERDANDI_SESSIONS=os.path.join(prj["dir"], "sessions"), VERDANDI_REFUSAL_LOG=os.path.join(prj["dir"], "refusals.log"),
+               VERDANDI_RUN_LEDGER=os.path.join(prj["dir"], "runs.log"))
+    cp = subprocess.run([prj["shell"], "design-compile", "--session", session, "--design", design_file(prj)], capture_output=True, cwd=ROOT, env=env)
+    err = cp.stderr.decode("utf-8", "replace")
+    if cp.returncode != 0 and "unknown command design-compile" in err:
+        raise Refused("DESIGN-NO-SHELL", "the shell at %s was built before the design compiler (it has no `design-compile` command): build it "
+                                         "again (a gate run does, or `rustc -O shell/main.rs`), or start the project with --shell" % prj["shell"])
+    if cp.returncode != 0 or not cp.stdout:
+        lines = [ln.strip() for ln in err.splitlines() if re.match(r"[A-Z][A-Z0-9-]*: ", ln)]
+        return None, (lines[0] if lines else (err.strip().splitlines() or ["(no output)"])[-1])
+    return cp.stdout, None
+
+
+def batch_said(raw: bytes) -> tuple:
+    """What a batch says, read to show it: (the values of its header lines by name, its operation lines). Reading only:
+    the batch is the compiler's, and this tool writes none."""
+    lines = raw.decode("ascii", "replace").split("\n")
+    said = dict(ln.split("=", 1) for ln in lines[1:6] if "=" in ln)
+    return said, [ln for ln in lines[6:] if ln]
 
 
 def readings(w: World, cells) -> dict:
@@ -352,32 +295,15 @@ def readings(w: World, cells) -> dict:
             "camera_on_floor": cells[w.cam[1] * w.w + w.cam[0]] in OPEN_CELLS}
 
 
-def canonical(ops: list) -> list:
-    """The one order of a change set: cells in row-major order (z, then x), then the classes in their order. The seam
-    accepts no other. Putting a set that is already in order through this gives it back unchanged."""
-    def rank(op):
-        if op["op"] == "paint":
-            return (1, CLASSES.index(op["target"]), 0)
-        x, z = (int(v) for v in op["target"].split(","))
-        return (0, z, x)
-    return sorted(ops, key=rank)
-
-
-def batch_bytes(identity: dict, parent: str, pid: str, ops: list) -> bytes:
-    """A batch in the seam's language (shell/designevent.rs): the one byte sequence of this change set against this
-    anchor. The shell recognizes exactly these bytes or refuses them; it rewrites nothing."""
-    lines = ["VRDNP2", "renderer=" + identity["renderer"], "bearing=" + identity["bearing"], "parent=" + parent, "proposal=" + pid,
-             "operations=%d" % len(ops)]
-    for op in canonical(ops):
-        lines.append("paint %s %s" % (op["target"], op["value"]) if op["op"] == "paint" else "%s %s" % (op["op"], op["target"]))
-    return ("\n".join(lines) + "\n").encode("ascii")
-
-
 BINDING = re.compile(r"\[design\] preview VRDNP2 parent=([0-9a-f]{64}) digest=([0-9a-f]{64}) head=([0-9a-f]{64}) operations=(\d+)")
 
 
 def batch_file(prj: dict) -> str:
     return os.path.join(prj["dir"], "pending.vrdnp2")
+
+
+def kinds_of(lines: list) -> dict:
+    return {k: sum(1 for ln in lines if ln.startswith(k + " ")) for k in ("open", "close", "paint")}
 
 
 # ------------------------------------------------------------------ the commands
@@ -429,15 +355,15 @@ def cmd_grant(args: dict) -> int:
 def describe(prj: dict, w: World) -> dict:
     cur = current(prj)
     return {"project": {"dir": prj["dir"], "renderer_identity": prj["identity"]["renderer"], "bearing_identity": prj["identity"]["bearing"],
-                        "design_text": TEXT_VERSION, "proposal_language": "VRDNP1"},
+                        "design_text": TEXT_VERSION, "compiler": "shell design-compile", "admission": "shell design"},
             "session": {"path": cur["session"], "head": w.head, "events": w.events, "edits": w.edits, "admitted_edits": w.admitted,
                         "steps_back_available": len(prj["history"]) - 1},
             "world": {"width": w.w, "rows": w.rows, "camera": w.camera, "border": "the outermost cells stay rock",
                       "tile_classes": {c: (list(w.tiles[c]) if w.tiles[c] else "textured") for c in CLASSES}},
             "readings": readings(w, w.cells),
             "capabilities": {"grant": prj["grant"], "statements": ["open", "close", "room", "entrance", "paint"],
-                             "limits": {"statements": MAX_STATEMENTS, "operations": MAX_OPERATIONS}},
-            "pending": None if not prj.get("pending") else {"operations": len(prj["pending"]["ops"]), "previewed": bool(prj["pending"].get("preview"))}}
+                             "limits": LIMITS},
+            "pending": None if not prj.get("pending") else {"operations": prj["pending"].get("operations"), "previewed": bool(prj["pending"].get("preview"))}}
 
 
 def cmd_inspect(args: dict) -> int:
@@ -469,31 +395,34 @@ def cmd_propose(args: dict) -> int:
     src = args.get("_", [None])[0]
     if src is None:
         raise Refused("DESIGN-USAGE", "propose takes a file of design text, or - for standard input")
-    text = sys.stdin.read() if src == "-" else open(src, encoding="utf-8").read()
+    data = sys.stdin.buffer.read() if src == "-" else open(src, "rb").read()
     cur = current(prj)
-    w = World(cur["session"])
-    stmts = parse_design(text, w)
-    ops, cells, notes = compile_design(stmts, w, predict="--no-predict" not in args)
-    nonce = os.environ.get("VERDANDI_DESIGN_NONCE") or os.urandom(16).hex()
-    ops = canonical(ops)
-    # the batch's id: the head it is made against, the change set itself and a nonce. Two texts with one net difference
-    # are one change set, and with one nonce they are one batch, byte for byte
-    change = sha256("\n".join("%s %s %s" % (o["op"], o["target"], o["value"]) for o in ops).encode("ascii"))
-    pid = sha256(("%s:%s:%s" % (w.head, change, nonce)).encode("ascii"))
-    digest = None
-    if ops:   # a batch of no operations is not in the seam's language: a design that changes nothing proposes nothing
-        raw = batch_bytes(prj["identity"], w.head, pid, ops)
-        with open(batch_file(prj), "wb") as fh:
-            fh.write(raw)
-        digest = sha256(raw)
-    prj["pending"] = {"base_session": cur["session"], "base_head": w.head, "text": text, "text_sha256": sha256(text.encode("utf-8")),
-                      "ops": ops, "proposal": pid, "digest": digest, "preview": None}
+    prj["pending"] = None
+    if os.path.exists(batch_file(prj)):
+        os.remove(batch_file(prj))
+    raw, refusal = compile_with_shell(prj, cur["session"], data)
+    if raw is None:
+        save_project(prj)
+        print("COMPILER  the shell refuses the design: %s" % refusal)
+        print("          nothing is proposed and nothing of the project changed. Revise the design and propose again")
+        return 2
+    said, lines = batch_said(raw)
+    did = sha256(data)
+    # this tool's own check on what it was handed: the batch names this design's digest and this session's head
+    if said.get("proposal") != did or said.get("parent") != cur["head"] or said.get("operations") != str(len(lines)):
+        raise Refused("DESIGN-COMPILER", "the compiler's batch does not name this design's digest, this session's head and its own count")
+    with open(batch_file(prj), "wb") as fh:
+        fh.write(raw)
+    # the design's bytes are kept under their id: the id is a commitment, and only the bytes say what was designed
+    os.makedirs(os.path.join(prj["dir"], "designs"), exist_ok=True)
+    with open(os.path.join(prj["dir"], "designs", did + ".design"), "wb") as fh:
+        fh.write(data)
+    prj["pending"] = {"base_session": cur["session"], "base_head": cur["head"], "design": did, "operations": len(lines), "digest": sha256(raw), "preview": None}
     save_project(prj)
-    kinds = {k: sum(1 for o in ops if o["op"] == k) for k in ("open", "close", "paint")}
+    kinds = kinds_of(lines)
     print("PROPOSED  against head %s: %d operation(s): %d cell(s) open, %d close, %d class(es) painted"
-          % (w.head[:12], len(ops), kinds["open"], kinds["close"], kinds["paint"]))
-    for nt in notes:
-        print("          " + nt)
+          % (cur["head"][:12], len(lines), kinds["open"], kinds["close"], kinds["paint"]))
+    print("          design %s, compiled by the shell (shell design-compile); its text is kept under that id" % did[:12])
     print("          nothing is changed. `preview` is the shell's dry run of this batch and shows the result; `reject` drops it")
     return 0
 
@@ -506,30 +435,33 @@ def cmd_preview(args: dict) -> int:
     cur = current(prj)
     if pend["base_head"] != cur["head"]:
         raise Refused("DESIGN-STALE", "the proposal was made against head %s and the project stands at %s: propose again" % (pend["base_head"][:12], cur["head"][:12]))
-    if "digest" not in pend:
-        raise Refused("DESIGN-STALE", "the pending proposal was made by an earlier version of this tool, one operation to a proposal: propose it again")
+    if "design" not in pend or not os.path.exists(batch_file(prj)):
+        raise Refused("DESIGN-STALE", "the pending proposal was made by an earlier version of this tool, which compiled it itself: propose it again")
     w = World(cur["session"])
     refusal, bound = None, None
-    if not pend["ops"]:
-        refusal = {"shell": "the design changes nothing, and a batch of no operations is not in the seam's language"}
+    raw = open(batch_file(prj), "rb").read()
+    if sha256(raw) != pend["digest"]:
+        raise Refused("DESIGN-STALE", "the pending batch is not the bytes the compiler wrote: propose again")
+    _said, lines = batch_said(raw)
+    # the preview IS the admission, stopped before anything is written: the same bytes, the same checks, the same replay
+    cp = seam(prj, ["--session", cur["session"], "--proposal", batch_file(prj), "--dry-run"] + grant_args(prj))
+    m = BINDING.search(cp.stdout or "")
+    if cp.returncode == 0 and m and m.group(1) == cur["head"] and m.group(2) == pend["digest"] and int(m.group(4)) == pend["operations"]:
+        bound = {"parent": m.group(1), "digest": m.group(2), "head": m.group(3)}
     else:
-        # the preview IS the admission, stopped before anything is written: the same bytes, the same checks, the same replay
-        cp = seam(prj, ["--session", cur["session"], "--proposal", batch_file(prj), "--dry-run"] + grant_args(prj))
-        m = BINDING.search(cp.stdout or "")
-        if cp.returncode == 0 and m and m.group(1) == cur["head"] and m.group(2) == pend["digest"] and int(m.group(4)) == len(pend["ops"]):
-            bound = {"parent": m.group(1), "digest": m.group(2), "head": m.group(3)}
-        else:
-            refusal = {"shell": refusal_line(cp)}
+        refusal = {"shell": refusal_line(cp)}
     ok = bound is not None
     pend["preview"] = {"ok": ok, "head": bound["head"] if ok else None, "digest": bound["digest"] if ok else None, "refusal": refusal}
     save_project(prj)
+    # the proposed grid, for a reader: the batch's own operations laid over the current one
     cells = bytearray(w.cells)
     marks = {}
-    for op in pend["ops"]:
-        if op["op"] != "paint":
-            x, z = (int(v) for v in op["target"].split(","))
-            cells[z * w.w + x] = ord("#") if op["op"] == "close" else ord(".")
-            marks[(x, z)] = "X" if op["op"] == "close" else "o"
+    for ln in lines:
+        verb, _sp, target = ln.partition(" ")
+        if verb in ("open", "close"):
+            x, z = (int(v) for v in target.split(","))
+            cells[z * w.w + x] = ord("#") if verb == "close" else ord(".")
+            marks[(x, z)] = "X" if verb == "close" else "o"
     before, after = readings(w, w.cells), readings(w, cells)
     xs = [x for x, _ in marks] or [w.cam[0]]
     zs = [z for _, z in marks] or [w.cam[1]]
@@ -537,7 +469,7 @@ def cmd_preview(args: dict) -> int:
     if "--region" in args:
         region = parse_region(args["--region"], w)
     if "--json" in args:
-        print(json.dumps({"ok": ok, "base_head": cur["head"], "proposed_head": pend["preview"]["head"], "operations": len(pend["ops"]),
+        print(json.dumps({"ok": ok, "base_head": cur["head"], "proposed_head": pend["preview"]["head"], "operations": pend["operations"], "design": pend["design"],
                           "digest": pend["preview"]["digest"], "refusal": refusal, "readings": {"current": before, "proposed": after},
                           "current": top_view(w, w.cells, region), "proposed": top_view(w, cells, region, marks)}, indent=1))
         return 0 if ok else 2
@@ -545,17 +477,18 @@ def cmd_preview(args: dict) -> int:
     print("\n".join(top_view(w, w.cells, region)))
     print("PROPOSED  %s   (o a cell that opens, X a cell that closes)" % (("head " + pend["preview"]["head"][:12]) if ok else "NOT ADMISSIBLE"))
     print("\n".join(top_view(w, cells, region, marks)))
-    kinds = {k: sum(1 for o in pend["ops"] if o["op"] == k) for k in ("open", "close", "paint")}
+    kinds = kinds_of(lines)
     print("CHANGES   %d cell(s) open, %d close, %d class(es) painted" % (kinds["open"], kinds["close"], kinds["paint"]))
-    for op in pend["ops"]:
-        if op["op"] == "paint":
-            print("          " + op["spec"])
+    for ln in lines:
+        if ln.startswith("paint "):
+            _v, cls, colour = ln.split(" ")
+            print("          %s takes the colour %d,%d,%d" % (cls, int(colour) >> 16, (int(colour) >> 8) & 255, int(colour) & 255))
     print("READINGS  floor %d -> %d cells; reachable from the camera %d -> %d; floor not reachable %d -> %d   (a view, not a constraint)"
           % (before["floor_cells"], after["floor_cells"], before["reachable_from_camera"], after["reachable_from_camera"],
              before["floor_not_reachable"], after["floor_not_reachable"]))
     if ok:
         print("SEAM      the shell's dry run passed every check for all %d operation(s) and wrote nothing (batch %s...)"
-              % (len(pend["ops"]), bound["digest"][:12]))
+              % (pend["operations"], bound["digest"][:12]))
         print("          `admit` gives the same bytes to the shell, bound to this preview; `reject` drops them")
         return 0
     print("SEAM      the shell refuses the batch: %s" % refusal["shell"])
@@ -573,9 +506,7 @@ def cmd_admit(args: dict) -> int:
         raise Refused("DESIGN-STALE", "the proposal was made against head %s and the project stands at %s" % (pend["base_head"][:12], cur["head"][:12]))
     if not pend["preview"]["ok"]:
         raise Refused("DESIGN-NOT-ADMISSIBLE", "the preview was refused by the shell: revise the design")
-    if not pend["ops"]:
-        raise Refused("DESIGN-NOTHING", "the proposal changes nothing")
-    if "digest" not in pend or not pend["preview"].get("digest"):
+    if "design" not in pend or not pend["preview"].get("digest"):
         raise Refused("DESIGN-STALE", "the pending proposal was made by an earlier version of this tool: propose and preview it again")
     # one admission: the previewed bytes, bound to the preview. The shell refuses (ADMIT-PREVIEW) unless they have the
     # previewed digest and reach the previewed head, and (ADMIT-ANCHOR) unless the session still stands at their parent
@@ -586,8 +517,8 @@ def cmd_admit(args: dict) -> int:
         print("          the project still stands at head %s; nothing was accepted" % cur["head"][:12])
         return 2
     session, head = saved(cp)
-    prj["history"].append({"session": session, "head": head, "note": "%d operation(s) in one batch, design text %s" % (len(pend["ops"]), pend["text_sha256"][:12])})
-    n = len(pend["ops"])
+    prj["history"].append({"session": session, "head": head, "design": pend["design"], "note": "%d operation(s) in one batch, design %s" % (pend["operations"], pend["design"][:12])})
+    n = pend["operations"]
     prj["pending"] = None
     save_project(prj)
     if os.path.exists(batch_file(prj)):
@@ -597,6 +528,7 @@ def cmd_admit(args: dict) -> int:
     print("ADMITTED  %d operation(s) as one batch: %d ordinary edits of the session, one admission" % (n, n))
     print("          head %s -> %s" % (cur["head"][:12], head[:12]))
     print("          session %s" % session)
+    print("          design  %s (designs/%s.design)" % (prj["history"][-1]["design"][:12], prj["history"][-1]["design"]))
     return 0
 
 
@@ -605,8 +537,9 @@ def cmd_reject(args: dict) -> int:
     had = bool(prj.get("pending"))
     prj["pending"] = None
     save_project(prj)
-    if os.path.exists(batch_file(prj)):
-        os.remove(batch_file(prj))
+    for f in (batch_file(prj), design_file(prj)):
+        if os.path.exists(f):
+            os.remove(f)
     print("REJECTED  the proposal is dropped; the project stands at head %s" % current(prj)["head"][:12] if had else "there was no proposal")
     return 0
 
@@ -629,7 +562,7 @@ def cmd_status(args: dict) -> int:
     cur = current(prj)
     pend = prj.get("pending")
     d = {"head": cur["head"], "session": cur["session"], "steps_back_available": len(prj["history"]) - 1, "grant": prj["grant"],
-         "pending": None if not pend else {"operations": len(pend["ops"]), "against": pend["base_head"], "stale": pend["base_head"] != cur["head"],
+         "pending": None if not pend else {"operations": pend.get("operations"), "design": pend.get("design"), "against": pend["base_head"], "stale": pend["base_head"] != cur["head"],
                                            "preview": None if not pend.get("preview") else {"ok": pend["preview"]["ok"], "head": pend["preview"]["head"]}}}
     if "--json" in args:
         print(json.dumps(d, indent=1))
@@ -640,7 +573,7 @@ def cmd_status(args: dict) -> int:
         print("PENDING   nothing proposed")
     else:
         pv = pend.get("preview")
-        print("PENDING   %d operation(s) against %s%s: %s" % (len(pend["ops"]), pend["base_head"][:12], " (STALE)" if d["pending"]["stale"] else "",
+        print("PENDING   %d operation(s) against %s%s: %s" % (pend.get("operations") or 0, pend["base_head"][:12], " (STALE)" if d["pending"]["stale"] else "",
                                                                "not previewed" if not pv else ("previewed, admissible, head " + pv["head"][:12]) if pv["ok"] else "previewed, REFUSED by the shell"))
     return 0
 
@@ -649,9 +582,9 @@ COMMANDS = {"new": cmd_new, "open": cmd_new, "grant": cmd_grant, "inspect": cmd_
             "admit": cmd_admit, "reject": cmd_reject, "undo": cmd_undo, "status": cmd_status}
 FLAGS = {"new": ("--project", "--level", "--tiles", "--camera", "--shell"), "open": ("--project", "--session", "--shell"),
          "grant": ("--project", "--allow", "--cells", "--classes"), "inspect": ("--project", "--region", "--json"),
-         "propose": ("--project", "--no-predict"), "preview": ("--project", "--region", "--json"), "admit": ("--project",),
+         "propose": ("--project",), "preview": ("--project", "--region", "--json"), "admit": ("--project",),
          "reject": ("--project",), "undo": ("--project",), "status": ("--project", "--json")}
-BARE = ("--json", "--no-predict")
+BARE = ("--json",)
 
 
 def main(argv: list) -> int:
