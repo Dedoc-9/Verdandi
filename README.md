@@ -237,11 +237,15 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          shell, apart from the admission, held against an independent reference and against the
          │          statements applied by the gate itself; the proposal id is the SHA-256 of the design's
          │          exact bytes (2baa42f3; its round named before the build, c414587d; pushed, not built)
+         │
+    THE MEANING     HERMENEUTICS-0 what the design language means, apart from the two programs that compile
+         │          it: one reading ratified by the owner (a statement is a constant write, a design is its
+         │          statements later-wins), six cases locked, four laws as theorems, ten designs with literal
+         │          targets typed by hand (22d52d02; registered, not built; built after the compiler)
          ⋮
-    declared        HERMENEUTICS-0, the meaning of the design language apart from what compiles it (the
-                    owner's name; its build after DIFF-0); LIVE-AI-EDIT-0 → GUI (the owner's order); none
-                    registered; design objects and constraints, each a court of its own; the presentation
-                    and latency measurement; PRESENT-1; a design language with many editors
+    declared        LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a vocabulary
+                    audit; design objects and constraints, each a court of its own; the presentation and
+                    latency measurement; PRESENT-1; a design language with many editors
 
 The order first ratified named a strip cache as GAUNTLET-0 and ended in MATERIAL-0, a picture becoming a material
 under a gate. GAUNTLET-0 became a measurement instead, and MATERIAL-0 is not seated.

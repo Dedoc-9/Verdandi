@@ -500,7 +500,17 @@ What stands against the tree, as reviewed:
    mutation campaign. Naming them cost one entry, a dozen cases and no row. The check to make first is whether a
    proposed court is new or is a name for something registered.
 
-43. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
+43. **Before claiming a court catches something alone, check what already catches it.** The draft of HERMENEUTICS-0
+   required a plant that only it could catch. Reading the five plants against DESIGN-IR/DIFF-0 showed each one
+   changes a value that rung had registered before any plant. The requirement was struck before the entry was
+   committed, and the entry says what the court adds instead.
+
+44. **A court records how it went, not how it was designed.** The rulings were to be the owner's, made before any
+   program's answer. He ruled one case, asked for a recommendation on the rest and ratified it, and four of ten
+   targets had been shown by the reference already. The entry says each of those things. Evidence is graded by
+   what happened.
+
+45. **No scalar.** The program's state is a panel: what is measured, what is established, what is declared, what is
    not measured. A single grade would add those up, and they do not add.
 
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))

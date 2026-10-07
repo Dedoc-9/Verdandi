@@ -5697,6 +5697,7 @@ says so and none is written.
 | 6 | that tree with 0136, documents only | 2026-10-07 | `5f8ab66..83b0261`, which carries 0135 and 0136 |
 | 7 | that tree with 0137, 0138 and 0139: documents, and one entry in the ledger (DESIGN-IR/DIFF-0's registration) | 2026-10-07 | not in its output; its commits went out with run 8's push |
 | 8 | that tree with 0140 and 0141: documents, and one more entry in the ledger (the amendment) | 2026-10-07 | `83b0261..5c8ad19`, which carries 0137 to 0141 |
+| 9 | that tree with 0142, documents only | 2026-10-07 | not in its output |
 
 A later host run of this gate is a line of this table. The dates are the days the outputs were given; the outputs
 carry none of their own. Every host run was the compact one, so the rows' texts, which carry the counts, were
@@ -5835,9 +5836,10 @@ row admitted the 60 in its own root; the tool has not been shown doing it.
 (gate, here): the six rows, 242 in the gate, three passes identical, one of them with the host's records present;
 the same on Python 3.14.0rc2, one pass. OBSERVED (the build container): the times. OBSERVED (the owner's host, one
 run, off the gate): the design tool's loop over ADMIT-0 and the two heads. MEASURED (host): the registration's gate,
-236 of 236, pushed; the built gate, 242 of 242, eight runs on seven trees, all pushed. The first five trees differ
-in documents only; the sixth and the seventh each add one entry to the ledger. The fourth and fifth runs were on
-one tree. By the owner's predicate: FULL×2 here, and FULL×2 on the host by its fourth and fifth runs.
+236 of 236, pushed; the built gate, 242 of 242, nine runs on eight trees. The first eight runs are pushed; the
+ninth's output holds no push. The trees differ in documents only, but for the sixth and the seventh, which each add
+one entry to the ledger. The fourth and fifth runs were on one tree. By the owner's predicate: FULL×2 here, and
+FULL×2 on the host by its fourth and fifth runs.
 
 **does_not_show.** That a compiler nets a design correctly: that is content time and is not certified. That two
 builds of the shell agree. That the memo is right on a session the court does not replay: the workshop is the
@@ -6160,6 +6162,169 @@ model can write a design worth admitting.
 the built compiler does not reproduce. A plant that cannot reach what it is said to catch. A pin of an earlier rung
 that the build has to move without an amendment.
 
+## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02`; not built; built after DESIGN-IR/DIFF-0)
+
+```
+  the owner's court ──► one reading, six rulings, four laws        ratified, 2026-10-07
+        │
+        ▼
+  literal targets, typed by hand        ten designs on the registered parent · the cells that change, or the refusal
+        │                               data in the entry · computed by no program
+        ├──────────────► the shell's compiler      held to them
+        └──────────────► the gate's reference      held to them
+
+  DESIGN-IR/DIFF-0:   Compile_shell = Compile_ref        the two programs agree
+  HERMENEUTICS-0:     Meaning_court = Target_owner       and never  Meaning_court = Compile_shell
+```
+
+**Why there is a rung.** DESIGN-IR/DIFF-0's amendment says of its own predicate that a misreading of a statement shared
+by the compiler and the reference is caught by neither equality: the target there is taken by the gate's own
+reading. The owner named the layer that belongs to (the declared section in
+[`docs/ROADMAP.md`](../docs/ROADMAP.md)), and his later text asked that it be registered as something that can
+redden: *an empty `HERMENEUTICS-0` registration would be weaker than registering a small semantic corpus.* *Not a
+third compiler. Not semiotics. Not a general interpreter.*
+
+**The trigger.** His second text had said: register an interpretive court only if an ambiguity appears that DIFF-0
+cannot resolve. Six readings had been decided by DESIGN-IR/DIFF-0 by inheriting them from the design tool, with no
+court. Those are the six cases.
+
+**The court (2026-10-07), as it went.** It is recorded as it went, because the rung's evidence is his ruling.
+
+| | what was put to him | his answer |
+|---|---|---|
+| Case 1 | where the three rules are judged: as registered; all on the target; all where a statement writes; underspecified. Each drawn as a grid | *As registered.* His own ruling |
+| Case 2 | `open` on a stair: refused; a no-op; the stair becomes floor; underspecified | he asked for a web search on each question *for the wisest path*, *elegant*, combining theorems and design styles |
+| Cases 3, 4 | `entrance`; `room` over floor on its rim | no preference |
+| then | one reading that covers all six, drawn from outside sources, with a recommendation for each remaining case, the four laws, and a corpus | ratified, all four parts: the reading; LOCK on all five; the laws as theorems; the six cases and three more |
+
+So one case is his own ruling and five are his ratification of a recommendation he asked for. The recommendation
+was written by the hand that wrote the gate's reference. The entry says that as its first limit.
+
+**The reading he ratified.**
+
+| | |
+|---|---|
+| a statement | a finite partial map from targets to values, the same on every parent. The targets are the level's cells and the five classes |
+| `open R` | floor to every cell of the rectangle R |
+| `close R` | rock to every cell of R |
+| `room R` | rock to the cells on R's rim, floor to the cells inside it |
+| `entrance C` | floor to the one cell C |
+| `paint K V` | the colour V to the class K |
+| a design | its statements' maps composed in line order, the later winning |
+| its target on a parent | the parent with that map laid over it. Everything the map does not name is the parent's, the stairs among it |
+| the change set | the targets whose value in the map is not the parent's. VRDNP2 encodes that. It is an encoding of a difference and not part of the meaning |
+| the static guard | no statement may give a frozen cell a value other than its own. The border is frozen at rock; a stair is frozen at itself, and the language has no value for a stair. Judged statement by statement |
+| the state guard | the target may not leave the camera's cell closed. Judged once, on the target |
+| the encoding's limit | a design whose change set is empty has a meaning, its target is its parent, and has no batch. `COMPILE-EMPTY` is the compiler saying it has nothing to write |
+
+It says in other words what DESIGN-IR/DIFF-0's entry says in prose. It is ratified as the same meaning and makes no
+successor language. If the two are ever found to differ, that entry is not edited: the owner rules the difference.
+
+**The six rulings.** Each is LOCK. No case was found underspecified, and none is deferred.
+
+| case | LOCK | not supported |
+|---|---|---|
+| 1. where the rules are judged | border and stair where a statement writes; the camera on the target | all three on the target; all three where a statement writes |
+| 2. `open` on a stair | refused: a stair is frozen | a no-op because a stair is walkable, which would make `open` the one statement whose meaning depends on what was there; the stair becoming floor, which lets a design destroy what no design can restore |
+| 3. `entrance` | one opened cell: `open` under another name | an entrance that must join floor. That is a relation between spaces, and belongs to a court of constraints |
+| 4. `room` | rim rock and inside floor, whatever was there: floor already on the rim is closed | a rim that keeps its openings, which would depend on what was there |
+| 5. `paint` | the whole class, one colour | a blend with what was there |
+| 6. a design that changes nothing | refused by the compiler, its meaning intact | an accepted compile that writes nothing |
+
+**The corpus.** Ten designs on the registered parent (head `73571153c2fc…391c`, the witness level, 48 by 32, the
+camera at 28,28). Each is the line `VERDANDI-DESIGN 0` and its statements, every line ended by one LF. The targets
+were typed by hand from the rulings and the parent's cells. Neither program produced them.
+
+| | the statements | the literal target | shown by the reference before the court |
+|---|---|---|---|
+| H1a | `close 28,28` · `open 28,28` · `close 27,28` | rock at 27,28; nothing else | run and read |
+| H1b | `open 0,27` · `close 0,27` · `close 27,28` | refused, `COMPILE-BORDER`, line 2 | run and read |
+| H2 | `open 7,26` · `close 27,28` | refused, `COMPILE-STAIR`, line 2 | run and read |
+| H2′ | `close 34,28` | refused, `COMPILE-STAIR`, line 2 | never run |
+| H3 | `entrance 40,29` | floor at 40,29; nothing else | run and read |
+| H3′ | `entrance 11,24` | floor at 11,24; nothing else | never run |
+| H4 | `room 20,24 26,28` | rock at fourteen cells: 21 to 25 of row 24; 20 and 26 of row 26; 20 to 26 of row 28. No cell becomes floor | passed through a check of the laws; no target read |
+| H4′ | `room 38,2 42,6` | floor at nine cells: 39 to 41 of rows 3, 4 and 5. No cell becomes rock | passed through a check of the laws; no target read |
+| H5 | `paint floor 60,70,90` | the class floor is 60,70,90 throughout; no cell changes | run in another design |
+| H6 | `open 40,29` · `close 40,29` | the parent itself; and so the compiler refuses, `COMPILE-EMPTY` | a design like it was run |
+
+H4, as he saw it in the court, the parent on the left and the target on the right (columns 19 to 27, rows 23 to
+29):
+
+```
+  #########     #########
+  ##.....##     #########
+  ##.....##     ##.....##
+  .........     .#.....#.
+  ##.....##     ##.....##
+  .........     .#######.
+  #########     #########
+```
+
+**The four laws.** Each is a theorem of the reading, ratified as a property of the language, with its condition.
+
+| the law | its condition |
+|---|---|
+| corner order | for `open`, `close` and `room`, a rectangle given by two opposite corners in any of the four ways denotes the same map |
+| fixed point | a design that is not refused on a parent and has the target T is not refused by a guard on T and has the target T. Its change set there is empty, so the compiler's answer there is `COMPILE-EMPTY`. *The denotation is unchanged*; recompiling is not an accepted no-op |
+| room | `room A B`, and `close A B` followed by `open` of the rectangle one cell inside, denote the same map: the same target on every parent, and a guard refuses one exactly when it refuses the other |
+| exchange | two adjacent statements whose maps agree on every target both name may be exchanged. Whether the design is refused does not change; the line named may. No law is claimed where they disagree: there the later wins |
+
+His conditions on these are kept: ratified only as *owner-ratified properties of the language*, and no *blanket
+commutativity law*. The instances the rows will run are named in the entry, and were checked on the reference
+before it was committed. All held, and a pair that disagrees on its overlap did not commute.
+
+**The plants, and what the registration found about them.** Five, by his list, each planted alike in the compiler
+and in the reference so that their bytes agree: a room whose rim keeps its openings; a first statement that wins;
+corners taken in one order only; an entrance that writes nothing; a paint of a class's own colour, or a net-zero
+design, written as operations. The draft said at least one would be caught by this court alone. Read against
+DESIGN-IR/DIFF-0 before the entry was committed, that could not be promised: that rung registered the values of one
+design, computed before any plant, and outcomes in words, and each of the five appears to change something
+registered there. So the entry does not claim a catch no other row makes. The build records which rows of either
+rung catch which plant. What this court adds is adjudication, and targets that are the owner's and not a program's.
+
+**The independence fence, and how far it holds.** His: semantic targets are fixed without consulting the compiler or
+its reference's output. The targets are data in the entry, and at the build the gate makes each target's bytes
+from those cells and the parent's bytes, calling neither program. How far it holds is in the corpus table's last
+column: the court was not blind to the reference in four of the ten designs.
+
+**What it does not establish (his list).** Compiler correctness. VRDNP2 correctness. Admission correctness. Authority
+legality. Designer intent. Completeness of the language.
+
+**Semiotics is not in it.** Declared, a vocabulary audit. The court leaves it three notes: `entrance` promises a
+relation its write does not check; `room` is a statement and not an object; `paint` replaces and does not tint.
+
+**The outside reading behind the recommendation, attributed and not claimed.** Opened on 2026-10-07. The lens laws
+of bidirectional programming, for writes that compose (GetPut: putting back what was read changes nothing; PutPut:
+the later put wins). SQL's immediate and deferred constraints, as PostgreSQL documents them, for the two levels of
+Case 1. Patch theory, as Pijul's manual states it, for when changes commute. RFC 9413, on what tolerating
+unexpected input does to a protocol, for refusing where a guess was possible. A dungeon generator's connectors
+(Nystrom, *Rooms and Mazes*), where a door is a tile that satisfies a relation, for keeping that relation out of
+`entrance`. Git's refusal of an empty commit, for Case 6. Nothing in the entry rests on them.
+
+**The four rows, as registered.** After DESIGN-IR/DIFF-0's five: 247 rows become 251.
+
+| row | what it must find |
+|---|---|
+| `hermeneutics-preregistered` | the entry at its hash, the ten designs, their literal targets and the laws' instances |
+| `hermeneutics-corpus` | the compiler and the reference each give the registered outcome for each design: a batch that, admitted, reaches the content of the literal target; or the code and line. The five plants are run here and in the next row |
+| `hermeneutics-laws` | each law on its named instances, for both programs; and the pair that disagrees gives two targets |
+| `hermeneutics-fence` | the corpus in the gate is the entry's, value for value; the function that builds a target calls neither program; the rows before keep their names and order |
+
+**When.** By his order: after DESIGN-IR/DIFF-0 is built, its court run and its gate FULL×2. It is not a dependency
+of that build.
+
+**Grade.** DECLARED: the court's rulings, the reading, the laws and the registration. OBSERVED (the build
+container, before the entry): the laws on the reference, and the reference's outcomes for the designs the table
+marks. Nothing is ESTABLISHED: nothing is built.
+
+**does_not_show.** That the reading is what a designer means. That either program implements it. That the language
+is complete. That the court was independent of the reference's author: five of six rulings are a ratified
+recommendation.
+
+**Falsifier (of the registration).** A literal target that the parent's cells and the ruling do not give. A law
+whose condition admits a counter-example under the reading. A row that takes a target from a program.
+
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 
 New semantics the studio did not inherit from Urðr, recorded so they are built on purpose and not by accident:
@@ -6257,7 +6422,8 @@ New semantics the studio did not inherit from Urðr, recorded so they are built 
   the format's law, writers refusing beyond it; exhaustive single-byte mutation on small registered documents and
   boundary mutations on real files. In the owner's words: *corpus establishes coverage; the writer contract
   establishes the language.* Recorded in [`docs/ROADMAP.md`](../docs/ROADMAP.md).
-- **Hermeneutics and semiotics (declared, two texts the owner brought, 2026-10-07; not registered, nothing built).**
+- **Hermeneutics and semiotics (two texts the owner brought, 2026-10-07; hermeneutics since registered as
+  `HERMENEUTICS-0`, `22d52d02`, in its own section above; semiotics declared; nothing built).**
   DESIGN-IR/DIFF-0's amendment says that a misreading of a statement shared by the compiler and the reference is
   caught by neither of its equalities. The owner named the layer that gap belongs to. `HERMENEUTICS-0`: *What is
   the authoritative meaning of VERDANDI-DESIGN 0, independently of either compiler?*, defined as *a registered

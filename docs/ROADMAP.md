@@ -47,7 +47,9 @@ owner's word with that push no theorem was added at once. When the host's gate w
 word was *take next* (2026-10-07).
 
 Next is registered and not built: the step from a design to its change set, which is the one uncertified link
-between the design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`).
+between the design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`). Registered behind it, for after it is
+built: the meaning of the design language as the owner's own rulings, literal targets and laws, which neither
+program computes (`HERMENEUTICS-0`, `22d52d02`).
 
 What is *not* yet done: that compiler; design objects that outlive admission, constraints, and a model at the seam
 (declared, not registered); any measurement of the live loop's timing; richer edits than a cell and a tile class;
@@ -145,7 +147,7 @@ DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven proper
       ↓
 DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); read and locked by him the same day, and the round around it named before the build as subcourts and no new claim (`DESIGN-IR/DIFF-0a`, `c414587d`); both pushed (`83b0261..5c8ad19`); not built
       ↓
-HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung — declared; not registered
+HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`); not built; built after DIFF-0
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated
       ↓
@@ -2088,7 +2090,7 @@ container, before each entry): the reference's results. MEASURED (host): the gat
 and with the amendment applied, 242 of 242 each, one run each; pushed (`83b0261..5c8ad19`, carrying 0137 to 0141).
 **does_not_show.** Anything about a compiler that is not built.
 
-### Hermeneutics and semiotics — what the design language means, apart from what compiles it · **declared** (two texts the owner brought, 2026-10-07); not registered, nothing built
+### Hermeneutics and semiotics — what the design language means, apart from what compiles it · hermeneutics **registered** (`22d52d02`), semiotics **declared** (texts the owner brought, 2026-10-07); nothing built
 Two texts the owner brought with the push of DESIGN-IR/DIFF-0's amendment, the second after he broke off the first
 exchange. They speak to an assistant, so their rules are quoted and the rest is summarized. They seat nothing.
 
@@ -2179,7 +2181,41 @@ when it is planted on both sides; it is caught only because the target there is 
 - **The two texts differ on when.** The first would register the rung now, very small. The second would register
   an interpretive court if an ambiguity appears. Nothing is registered by this record.
 
-**Grade.** DECLARED: both texts and the ruling. Nothing is registered, built or measured.
+**The third text, and the court (2026-10-07).** With 0142 applied on his host (the gate 242 of 242; no push in
+that output) he brought a third text. It agrees that the trigger is met and says what to register: *an empty
+`HERMENEUTICS-0` registration would be weaker than registering a small semantic corpus.* One registration, two
+layers: the six readings as a denotation corpus, and four semantic laws beside it, *SEMANTIC-LAW-0 inside
+HERMENEUTICS-0*, ratified only as *owner-ratified properties of the language*. Its fence: *the semantic target is
+supplied by you before looking at the compiler's answer.* Its strike: *I would not register all six as
+automatically LOCK.* And its measure of the thing: *You're trying to close one epistemic gap—independent
+meaning—not build a new verification bureaucracy.* Semiotics stays where it was put.
+
+The court was then held, and it did not go as designed. He ruled the first case himself, as registered. For the
+second he asked for a search of the literature *for the wisest path*, and on the third and fourth he expressed no
+preference. He was given one reading that covers all six, with a recommendation for each remaining case, and he
+ratified all of it.
+
+| what was ratified | |
+|---|---|
+| the reading | a statement is a constant partial map from targets to values; a design is those maps composed in line order, the later winning; the target is the parent with the map laid over it; the batch encodes the difference |
+| two guards | no statement gives a frozen cell another value, the border being frozen at rock and a stair at itself; the target may not leave the camera's cell closed |
+| six rulings | each LOCK, as DESIGN-IR/DIFF-0 registered them. None underspecified |
+| four laws | corner order; fixed point; room as close and then open; exchange of statements that agree where both write. Each a theorem of the reading |
+| the corpus | the six cases and three more: ten designs on the registered parent, each with a literal target typed by hand |
+
+The reading borrows its shape from several fields at once, each attributed in the rung's record: writes that
+compose as the lens laws describe, constraints checked immediately or at commit as a database does, changes that
+commute as patch theory says, and refusal where a protocol would otherwise entrench a guess. That is why one
+definition answers all six cases and yields the laws as consequences.
+
+**What the registration says against itself.** Three things, each in the entry. Five of the six rulings are his
+ratification of a recommendation written by the reference's author. The court was not blind to the reference in
+four of the ten designs. And no plant is claimed to be caught by this court alone: read against DESIGN-IR/DIFF-0,
+that rung's registered values appear to catch all five. What the court adds is adjudication and targets that are
+the owner's.
+
+**Grade.** DECLARED: the texts, the court's rulings and the registration; semiotics, declared only. OBSERVED (the
+build container): the laws checked on the reference. Nothing is built or measured.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the
