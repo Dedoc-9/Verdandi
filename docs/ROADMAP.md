@@ -150,7 +150,7 @@ DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host'
       ↓
 HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2
       ↓
-LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated
+LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -2269,6 +2269,97 @@ the owner's.
 **Grade.** DECLARED: the texts, the court's rulings and the registration; semiotics, declared only. OBSERVED (the
 build container): the laws checked on the reference. MEASURED (host): the gate with the registration applied (0143
 and 0144), 242 of 242, one run; pushed (`5c8ad19..11afebf`, which carries 0142 to 0144). Nothing of it is built.
+
+### A competitive arena — from a certified world to a map that matches are played on · **declared** (a text the owner brought, 2026-10-08); considered at his word; not registered, nothing built
+
+```text
+  the text's path     intent ─► canonical spatial state ─► derived world ─► executable constraints
+                             ─► adversarial tests ─► reproducible match
+
+  what stands today   design text ─► shell design-compile ─► batch ─► shell design ─► sealed session ─► picture
+                      cells of a 48 lattice · five tile classes · two stairs · one camera · an integer tick law
+                      no second actor · no shot · no height · no wire
+```
+
+One text, in three parts, and then the second part again by itself, as *the proposal*. His question: how does this
+become a map like *Terminal*, one that competitive matches are played on. A proposal. Then a correction of it, in
+another voice. Neither names its author. Nothing here is registered, nothing is built, and the order of the route
+is unchanged.
+
+**The proposal.** Its opening: a map like *Terminal* is made by visual iteration and playtesting, and this tree
+*would require mathematical proofs of competitive fairness before a map ships.* It keeps the three layers, history,
+identity and behaviour, and says of itself: *nothing new is invented — just extended to 3D space.* Its seven parts:
+
+| part | what it proposes |
+|---|---|
+| 1. geometry | a source language `VERDANDI-GEO 0`: `block`, `cut`, `void` (integer, axis-aligned volumes), `plane` (three integer points), `spawn TEAM`, `objective TYPE`. No float, no curve. The hash stays the SHA-256 of the exact bytes; statement order is volume order; amendments name the geometry files changed |
+| 2. fairness courts | four, each with a row: `sightline-balanced` (every spawn-to-objective path has equal average travel time), `spawn-safe` (no spawn sees an enemy spawn within two frames), `approach-diversity` (three distinct approaches to every objective), `raycast-consistent` (a ray is the same on every platform). Run by a ray server firing from a thousand or more sample points, with *exploit mutants*: a bot at every coordinate and a kill probability |
+| 3. the network | lockstep simulation in integers: fixed-point positions and velocities, box collision; the whole state hashed after every tick on Linux and on Windows, and a map rejected for competitive use if the hashes part |
+| 4. two phases | the gate's: the geometry text to a volume list and a collision mesh, with the fairness courts. Content time's: textures, light, the GPU mesh, unverified. A map changes its look without touching what is certified |
+| 5. a map's amendment chain | a small tweak is an amendment and the courts run again; a rebalance is a new version with a fresh chain; an exploit is a hotfix by amendment or a version bump. *Never edit an already-shipped map's geometry* |
+| 6. the map as an entry | an id, the geometry's hash, a digest of the courts' results, its amendments, a network version; a tournament licence embeds the digest, and a map whose hash does not match is disqualified |
+| 7. its roadmap | *immediately, in DIFF-0*: the new language, a geometry fence, a sightline court. Next: the integer lockstep engine and the cross-platform state hash. Later: a digest signed by an authority, and third-party maps certified by passing every court |
+
+What it says is lost: curved surfaces, floating-point movement, terrain destroyed in a match. What it says is
+gained: a *mathematical guarantee that the map cannot be "unbalanced" by geometry changes*, reproducibility across
+hardware, verifiable tournament integrity. Its contract lists four things verified (spawn-safe, sightline-balanced,
+raycast-consistent, network-lockstep) and three not (texture, light, sound).
+
+**The correction.** Its premise: *Verðandi should not try to mathematically prove that a map is "fair" in the
+absolute sense.* Quality in a competitive map comes from geometry, movement, weapons, visibility, spawn rules,
+objectives, timing and what people do with them. What the tree can do is make the map *a deterministic,
+inspectable competitive object whose measurable constraints are provable and whose human-play properties are
+experimentally falsifiable.* Its formulation: not *proves a map is fair*, but *makes the claims about a
+competitive map executable.*
+
+| the correction's point | in its words, or close |
+|---|---|
+| one source, many derived roles | a wall is at once a collision boundary, an occluder, a traversal boundary, cover and a landmark. Collision, visibility and navigation are *derived from the same canonical spatial source* and cannot drift apart |
+| topology before geometry | a competitive map is a graph of navigable regions and traversable connections embedded in space. Reachability and the number of distinct paths are questions about the graph |
+| sightlines as geometry | a visibility graph between regions, its edges annotated, in place of random rays |
+| constraints, not fairness | precise courts: spawn separation, objective access, approach diversity, lane separation, cover continuity, dead-end exposure |
+| three parts of quality | `CompetitiveMap = GeometricValidity ∧ ConstraintValidity ∧ EmpiricalFitness`, and *only the first two are theorem-like*. The third is match data and people, and *should never be falsely elevated into a mathematical theorem* |
+| the renderer comes later | *The renderer does not create the map. The renderer reveals a map that already exists as a deterministic spatial state.* What is drawn may be far richer than what is authoritative |
+| tactical compilation | a brief of intent (routes, layers, approaches, protected spawns, lane lengths), and the question whether a geometry satisfying it can be built |
+| mutation | plant geometric defects (a route removed, a spawn moved, a sightline opened) and require that a registered court catches each |
+| the network | derived from the same world. Not lockstep: a server that is the authority, deterministic collision and visibility, quantized state, a replayable simulation |
+| the certificate | evidence about one immutable map state: `MapHash → Certificate`, never the reverse |
+
+**Considered against the tree.** Each line is what the ledger or the code already says. None is a proposal.
+
+| the text asks for | what stands |
+|---|---|
+| a new source language, *immediately, in DIFF-0* (the proposal's roadmap) | DESIGN-IR/DIFF-0 is closed by the owner's own word (*stop adding architecture here*). A new statement kind is a new language and a new registration, and the meaning court registered behind the compiler (HERMENEUTICS-0) reads the language first |
+| spawns and objectives | identities that outlive admission. The world holds cells and five classes; once admitted, nothing names a room. Persistent objects are a court he deferred by name |
+| courts of constraints | constraints are a court he deferred by name. The design tool's *readings* (what is reachable from the camera) are views and are not certified. The text gives those two deferred courts their content |
+| boxes, planes and height | the picture's trust root is a frozen oracle for a lattice of cells. A new kind of geometry needs a reference to hold the kernel to, as the bearing camera needed its second tag |
+| integers only | the tree's already: the tick law, the bearing camera, the fold |
+| rays the same on every platform | one ray law exists and is held to the oracle on both machines by rows of the gate |
+| movement between cells | the world stays discrete. HOLD-WALK-0 records that this is not the free movement he wants |
+| a second player, a shot, a wire | none exists. A session has one camera |
+| lockstep, or an authoritative server | neither exists. What exists is one sealed, append-only log of typed events, replayed to a head; replay is the authority |
+| travel times, *two frames*, kill probability from samples | no time, no frame rate and no latency are claimed anywhere in the tree. A tick is the tree's unit |
+| a map's own amendment chain; never edit a shipped map | a session is never modified: an admission makes a child. Every admitted event carries the id of the design that made it |
+| a digest signed for a tournament | a seal here is a hash, not a signature (G16). The tree holds no key and no trust root |
+| geometric mutants against courts | the method stands: defects planted one at a time, survivors named by class, never a score |
+| human play as a separate measurement | the tree's grades already keep MEASURED apart from ESTABLISHED, and it adds no scalar |
+
+**Two outside pages, found by search.** Paraphrased and attributed; nothing rests on them.
+
+- *Visibility graph analysis.* The encyclopedia page on it: a way of analysing which parts of a plan's open space
+  see which, introduced by Turner and colleagues in 2001 out of space syntax; their paper's title says it starts
+  from the isovist. A visibility graph over open space is prior art. It would be carried here, not discovered.
+- *A level-design tutorial for Counter-Strike layouts* (worldofleveldesign.com): two or three main paths from the
+  attackers' spawn, each ending in a choke point; the time each team takes to reach a choke is measured and the
+  layout adjusted until the times are close, the defenders a little early; maps are judged by playing both sides.
+  So the practice the text wants to make executable already measures timings, by hand and by play.
+
+**What stays declared.** All of it. Whether this becomes a rung, and where it sits against LIVE-AI-EDIT-0, a
+graphical editor, objects and constraints, is the owner's to rule.
+
+**Grade.** DECLARED: the text. OBSERVED: nothing; no arena was drawn and nothing was computed.
+**does_not_show.** That any of it can be built over a frozen oracle of cells. That a constraint which passes makes
+a map good to play. That two machines would agree on a match.
 
 ### Self-optimizing code, and its correction to a layout court · **declared** (two texts the owner brought, 2026-10-04); considered at his word; not registered, nothing built
 Two texts, brought one after the other, and a review between them. Neither names its author, and both speak of the
