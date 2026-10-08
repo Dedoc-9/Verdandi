@@ -2523,8 +2523,11 @@ runs share the folder. Nor can the host's re-run: the host's folder holds no spa
 **What stays.** Accepted, and deferred. No row, no register, no entry. Whether it becomes a rung, and where, is his.
 
 **Grade.** DECLARED: his ruling. OBSERVED (the build container): one perturbed whole pass and its bisection.
-**does_not_show.** Any perturbed run on the host. A matrix: the pass changed seven things at once, and only the
-space was isolated. That a factor the pass did not change is harmless.
+**On the host (later the same day).** One factor, the space, in a clone under `Verdandi space probe`: the four
+rows named before the run failed, and no other (RUNGS, INPUT-0). The verdict vector is the container's.
+
+**does_not_show.** Any other factor on the host. A matrix: the container's pass changed seven things at once, and
+only the space was isolated. That a factor no pass changed is harmless.
 
 ### A competitive arena — from a certified world to a map that matches are played on · **declared** (a text the owner brought, 2026-10-08); considered at his word; not registered, nothing built
 

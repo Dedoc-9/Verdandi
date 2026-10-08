@@ -493,6 +493,34 @@ G31.
 
 **Grade.** OBSERVED (the build container): one whole pass and a bisection. NOT_MEASURED: the host.
 
+**On the host, the prediction tested (2026-10-08).** Before the run, the prediction was written down: in a clone
+under a folder whose name holds a space, `input-tamper`, `input-not-authority`, `input-demo` and `reasoncourt-watch`
+fail, and every other row passes. The owner cloned the pushed tree to
+`C:\Users\dillb_lzxy763\Desktop\Verdandi space probe` and ran the gate there: `GATE FAILED`, 247 rows / 4 fail,
+those four. Row for row, the verdicts are the build container's perturbed pass.
+
+The words differ. Cut at the space, the path became `C:\Users\dillb_lzxy763\Desktop\Verdandi`: the owner's own
+checkout, a folder that exists. Windows answered *Access is denied*, a folder read as a file. Here the cut path
+named nothing, and the answer was *No such file or directory*.
+
+| what the source says, and no run has shown | |
+|---|---|
+| a walk's line keeps its first words and drops the rest without refusing | `level`, `tiles`, `commands` and `head` keep one word; `camera` keeps three |
+| so a cut path is read if it names a file | the failure is loud only while the cut path names nothing readable. Not measured |
+
+**The class, read by syntax over the Rust sources.** Three readers split a line on whitespace.
+
+| reader | words it does not use | a path in it |
+|---|---|---|
+| `workshop/input.rs`, the walk | dropped | yes: G31 |
+| `workshop/text.rs`, a level as text: `depth`, `grid` | dropped | no |
+| `kernel/main.rs`, the camera list | refused: a line must hold five words | yes, and a path with a space is refused with the line |
+
+The camera list cannot hold a path with a space either, but says so. The Python readers were not read.
+
+**Grade.** MEASURED (host, one run in a clone): the four rows, as predicted. OBSERVED (the build container): the
+perturbed pass and the bisection. DECLARED: the reading of the source.
+
 ## SESSION-WALK — move while authoring, one interleaved sealed chain (seat 10)
 
 **What landed.** `workshop/sessionwalk.rs` (std-only): a session-walk is a base authority (W, M) + an initial
@@ -6677,6 +6705,15 @@ gate): the design tool's seventeen checks.
 verdicts are independent of the folder the tree sits in: both machines' folders hold no space, and one that does
 breaks three rows (G31).
 **Falsifier.** A later host run of this tree that is not 247 of 247, or whose output differs from the other's.
+
+**And 0156 and 0157, documents only (the host, 2026-10-08).** Applied on `d0064e4`. Two runs, each `GATE PASSED`,
+247 rows / 0 fail / 0 skipped, the two outputs line for line the same and the build container's log. Git's id of the
+tree was taken once, before the first run, `7de2557d9b420b0e7a9c24c7d410218a43517b33`, with a status that listed
+nothing; it was not taken after the second. The design tool's checks were not run. Pushed, `d0064e4..b1b2052`.
+
+| | TreeID₁ ? TreeID₂ | GateOut₁ ? GateOut₂ | FULL×2 |
+|---|---|---|---|
+| host, 0156 and 0157 | TreeID₂ not taken | `==`, as printed | **not witnessed**: half of his predicate was read. The tree's id is not inferred from the gate's behaviour |
 
 ## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; it waits for the owner's word)
 

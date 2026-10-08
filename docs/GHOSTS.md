@@ -735,7 +735,7 @@ log carries the clock. For a hundred seconds the clock's own digits held `4242`,
 **Exorcism.** Done for this row: `REFUSAL-WHY-1a`. For the two rows of the same form: the owner's ruling, if a
 source of chance for their words is ever found. For searches built another way: a wider reading.
 
-## G31 — the folder the tree is checked out in, read without meaning to · OBSERVED (one whole pass in a perturbed environment, in the build container, bisected); NOT_MEASURED on the host; not fixed: the owner's to rule
+## G31 — the folder the tree is checked out in, read without meaning to · OBSERVED (one whole pass in a perturbed environment, in the build container, bisected); MEASURED (host: one run in a clone under a folder with a space, the four rows predicted before it); not fixed: the owner's to rule
 
 - **What happened.** One whole pass of the gate, off the gate, with seven things about its surroundings changed at
   once. It read 243 PASS / 4 FAIL. `input-tamper`, `input-not-authority` and `input-demo` could not read a level:
@@ -752,13 +752,20 @@ source of chance for their words is ever found. For searches built another way: 
 - **What the pass did not find.** Nothing else failed: not a clock in 2041 whose every millisecond held `4242`, not
   a time zone fourteen hours ahead, a Turkish locale, umask 077, another home folder or another hash seed. Seven
   things were changed together, and only the space was isolated.
-- **On Windows, an inference.** A user folder with a space in its name is common there. A clone under one is
-  predicted to fail the same three rows. Not measured.
+- **On Windows, measured.** The four rows were named before the run. The owner cloned the tree under a folder
+  with a space in its name, and the gate failed exactly those four, the other 243 passing.
+- **The cut path named something real.** On the host it became the owner's own checkout folder, and Windows refused
+  to read a folder as a file. A walk's line keeps its first words and drops the rest without refusing, so a cut path
+  that named a readable file would be read. Not measured.
+- **The class, by syntax.** Of three Rust readers that split a line on whitespace, the walk and the level text drop
+  the words they do not use; the camera list refuses them. Only the walk and the camera list carry a path, and the
+  camera list refuses a path with a space with its line.
 - **It is not fixed.** The parser is a pinned source of INPUT-0, and the rows are INPUT-0's. Either change is an
   amendment.
 
-**Exorcism.** The owner's ruling: a walk that can name a path holding a space, or rows that write a path the walk
-can hold. Beyond this row, environmental independence, if he makes it a rung.
+**Exorcism.** The owner's ruling: a walk that can name a path holding a space and refuses words it does not use,
+or rows that write a path the walk can hold, or both. Beyond this row, environmental independence, if he makes it a
+rung.
 
 ---
 

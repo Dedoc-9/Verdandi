@@ -573,6 +573,14 @@ What stands against the tree, as reviewed:
    another text, the same day, had declared. It was read against the tree line by line before a word of it was
    written down: what stands, what does not, and the rung table it drew, set right.
 
+60. **Write the prediction before the host runs.** The four rows were named in writing, and then the clone was
+   made. The host failed those four and no other. A prediction written first turns a run into a test; one written
+   after is a description.
+
+61. **A tree id is taken, never inferred.** One pair of host runs printed the same 247 lines twice, and the tree's
+   id was taken only before them. The record says half the predicate was read, though nothing in those runs could
+   have changed a tracked file.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -595,7 +603,7 @@ What stands against the tree, as reviewed:
   ruled a defect of the gate and corrected; the gate was read for the class, and two rows of the same form are
   named and left (G30).
 - A checkout path with a space breaks three rows (a walk's path is one word), and the reason court's watch with
-  them. Found by a perturbed pass in the build container; not fixed; not measured on the host (G31).
+  them. Found by a perturbed pass in the build container, measured on the host as predicted; not fixed (G31).
 
 ## The one-line retrospective, again
 
