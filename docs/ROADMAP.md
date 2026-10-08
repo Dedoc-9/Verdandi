@@ -150,7 +150,7 @@ DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host'
       ↓
 HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2
       ↓
-LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order
+LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). Neither is placed in the order
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -2269,6 +2269,161 @@ the owner's.
 **Grade.** DECLARED: the texts, the court's rulings and the registration; semiotics, declared only. OBSERVED (the
 build container): the laws checked on the reference. MEASURED (host): the gate with the registration applied (0143
 and 0144), 242 of 242, one run; pushed (`5c8ad19..11afebf`, which carries 0142 to 0144). Nothing of it is built.
+
+### PERSPECTIVE-0 — what a system is, what it sees, what it models, what it may claim · **declared** (three texts the owner brought, 2026-10-08); considered at his word; not registered, nothing built
+
+```text
+  1P   execute       S ──T──► S′                          the transition
+  2P   observe       S ──O──► (Y, S)                      the state unchanged
+  3P   reconstruct   A ──R──► Ŝ ;  O(Ŝ) =? O(S)           another producer
+  M    claim         a verdict about an observation, one level up
+       the wall      no level holds a truth predicate for itself
+```
+
+**The three texts.**
+
+- *Four sources toward one boundary.* Ethan Kross's work on distanced self-talk, abstracted to the separation of
+  acting from observing; the Luenberger observer, which estimates a hidden state from outputs and is not the plant;
+  the state monad as the plumbing; Tarski's undefinability of truth as the wall. His rulings in it: Kross ACCEPT,
+  *provided the psychological claims aren't overstated*; Luenberger STRONGLY ACCEPT; the state monad ACCEPT; Tarski
+  ACCEPT, *as a design constraint rather than a literal implementation theorem*.
+- *The deeper version.* A perspectival machine `V = (S, F, Π, Ω, M, C)`: state, transition, perspectives,
+  observations, models, courts. *No perspective inherits authority merely by being able to describe another
+  perspective.* An observation with an error channel. Observational equivalence: two states that no permitted
+  observer tells apart. A reflection tower in which quoting climbs a level and no level holds its own truth. Six
+  laws: state authority, perspective non-collapse, observation purity, reconstruction agreement, reflection
+  stratification, no internal truth oracle. And a killer mutation: *change an observation into an
+  authority-bearing state transition while leaving its output unchanged.*
+- *Backreaction.* An observer inside the system can change it. A passive observer returns the state it was given; a
+  participating one does not, and must say so: *unmodeled backreaction = defect*, *declared backreaction = part of
+  the program*. A reaction profile for each observer. Three equivalences: of state, of observation, of future
+  behaviour. And a reflexive system, one whose representation of itself takes part in its own dynamics.
+
+His word on all of it: *I would not build it yet*. A declared research rung first, *not immediately into code*.
+
+**Considered against the tree.** Each line is what a row or a ruling already holds. None is a proposal.
+
+| the texts' law | what already holds it |
+|---|---|
+| observing does not move the authority | `hoststate-fence`: the same raw record, sealed with no probe and with two different host states, gives the same label and reading. `mouselook-capture`: the window leaving the foreground changes nothing saved, and a control shows the same inputs do change it in the foreground. The design tool's preview: a dry run writes no session |
+| an observer is not read back | `refusallog-fence`, `runledger-fence`: each log written by one primitive and read by nothing on the path, by source. `refusallog-bijection`: a log that cannot be written leaves a refusal's exit status and message as they were |
+| perspective as a type | `membrane-wall`: an edit through a live Reading must not borrow-check, rustc's refusal is the row's pass, and `membrane-build` is its control |
+| reconstruction agreement | `readercourt-agree`: two readers, one verdict on every single-byte mutant of three documents. `kernel-oracle`. `designir-equivalence`. The host's re-run of the whole gate |
+| an environment declared irrelevant | `livesession-classify`: a shell built from sources with CRLF line endings names the same renderer. `simtick-equivalence`: inputs moved within their tick save byte-identical data |
+| an observer's error is a result | each refusal carries a registered code; a host comparison where the chain fails is not interpreted (DIFF-0c) |
+| no internal oracle | the mutation campaigns and the host's reconstruction stay outside the rows; reconstruction is *a test, not a fifth invariant* (DIFF-0c); every entry forbids reading *that registering a condition earns it*; a seal is a hash, not a signature (G16) |
+| evidence is a declared projection | G30, in his backreaction text's words: *An observer must declare which projection of the world constitutes evidence* |
+
+So the tree has met these laws a row at a time. What the texts add is a name for the class, and the demand that a
+row say which perspective it holds.
+
+**Where a formula needs care.** A reading here, with the outside sources it rests on.
+
+- *The commutator.* `O;T ∼ T;O` cannot hold on what the observer reports: observing before a transition and after
+  it sees two states, which is what observing is for. Compared on the authority's projection `P` alone,
+  `P(T(O_S(s))) = P(T(s))`, it is his backreaction text's own condition of transparency. Asked of every transition,
+  it is the unwinding by which noninterference is shown step by step (Goguen and Meseguer; Rushby).
+- *Backreaction as a difference.* `Obs(T(S)) − Obs(T(O(S)))` needs observations that subtract. As the set of states
+  and transitions where the two disagree, it asks for that set to be empty. A pair of runs refutes it; no assertion
+  inside one run can.
+- *Observation purity as `O;O ∼ O`.* That is the state monad's get-get law. An observer that reads the state and
+  writes it straight back satisfies it as well (get-put), and so would the killer mutation.
+- *Tarski's reach.* Truth for a finite language can be defined by listing its true sentences; Tarski's paper of
+  1933 gives that definition among its examples. The wall stands against an evaluator of every claim a language can
+  express, itself among them. The sharper reason a gate cannot vouch for itself is Löb's: a system that proves *if
+  provable then true* of a sentence already proves the sentence. His qualifier, *a design constraint*, is what keeps
+  the analogy honest.
+- *Kripke.* A language can hold its own partial truth predicate when every claim is grounded. Read for a gate: a row
+  may read other rows' outputs if the chain ends in the world. A cycle is the defect, not reference to itself.
+- *Kross.* The studies (Kross and colleagues, 2014) set first-person pronouns against one's own name and
+  non-first-person pronouns, pooled; second and third person are not told apart. A preregistered meta-analysis
+  (Murdoch and colleagues, 2023; 25 experiments) finds a small benefit and calls it uncertain. The names 1P, 2P
+  and 3P are borrowed. What the engineering claims rests on rows.
+- *The host's re-run as the third person.* It is independent of the machine and its compiler, not of the checker:
+  the same gate runs on both. Wheeler's diverse double-compiling earns its independence from a second, trusted
+  compiler.
+
+**What stays declared.** All of it. Whether PERSPECTIVE-0 becomes a registered rung, and where it sits against
+HERMENEUTICS-0 and environmental independence, is his.
+
+**Grade.** DECLARED: the three texts and his rulings in them. ESTABLISHED (gate): the rows named above, as they
+stand. OBSERVED: nothing new was computed for this section.
+**does_not_show.** That the six laws hold of the tree as a class. That a perspective can be made a type of the
+design language's IR. Anything about the psychology of people.
+
+### Environmental independence — directed environment perturbation · **accepted as a future audit mechanism, deferred** (the owner's ruling, 2026-10-08); not registered, nothing built in the gate
+
+```text
+  FULL×2              V(E) = V(E)                       two runs, one environment, near enough
+  the host's re-run   V(E_host) = V(E_here)             another machine, the same gate
+  his proposition     ΔE ∩ Dependencies(r) = ∅  ⇒  V_r(E) = V_r(E + ΔE)
+```
+
+**His ruling.** On the clock reproduction and the path probe of G30: ACCEPT as a future audit mechanism; defer
+until after the host's result. *Do not add the directed court yet.* His names for it: *Directed Environment
+Perturbation*, or *Environmental Independence Court*. The proposition is claim-relative, not that a row passes
+under many environments: *A row may depend on its declared environment; it may not accidentally depend on an
+undeclared environment.*
+
+| his design point | in his words, or close |
+|---|---|
+| a matrix, not a list of literals | per row, the verdict at baseline and perturbed: clock in decimal, clock in hexadecimal, path, locale, timezone, separator, environment |
+| `—` in a cell | *not applicable by construction*, never *we forgot to test it* |
+| no aggregate | the output is the matrix, not a single pass. *That prevents the future court from becoming another opaque score* |
+| legitimate dependencies kept | a row may depend on paths, separators, locale, clock, architecture, line endings or executables, when it declares them |
+| a court of the class | perturbations generated from the audit's literals and dependencies, not one-off `4242` tests |
+| the estimate | superseded as evidence by the controlled reproduction; the future window a detail of reproduction, never part of an invariant |
+| a wider property | *Canonicalization must eliminate accidental environmental degrees of freedom*: a world must not depend on the folder it was compiled in |
+
+**His order.** Accept the eight patches; finish the head's passes and the host's evidence; reconcile the host's
+reconstruction against the chain precondition; only then decide whether this deserves a rung; if so, a court of the
+class, its perturbations generated from the audit, verdicts held only outside a row's declared dependencies. The
+first three are done (RUNGS, DESIGN-IR/DIFF-0: *The amendments on the host*). The fourth is his.
+
+**A reading in his text, set right.** He reads the path probe as showing that *the same class of environmental
+contamination exists beyond time*. It did not show that. Three rows were run in a checkout whose path spelled their
+words, and all three passed: it found nothing.
+
+**Observed since, off the gate (2026-10-08, the build container).** One whole pass of the gate on the head, every
+perturbation at once, and the failures then bisected. The instrument is outside the repository.
+
+| perturbed | how |
+|---|---|
+| the checkout path | `…/Urðr 4242 a private title the log must never hold focus pause capture blur foreground adopted/tree`: a space, a letter outside ASCII, the mock pid, the forbidden title, the five words about focus, the sealer's word |
+| the wall clock | moved to 2041, past 2³¹ seconds, where every millisecond value begins `224242` for the whole pass |
+| the time zone | `Pacific/Kiritimati`, fourteen hours ahead |
+| the locale | `tr_TR.UTF-8`, built for the pass; its decimal point is a comma |
+| the rest | umask 077; another home folder; Python's hash seed 4242 |
+
+The pass: 243 PASS / 4 FAIL, and the tree's tracked files the same after it as before. `input-tamper`,
+`input-not-authority`, `input-demo`: a walk's path is one word, and the path held a space (RUNGS, INPUT-0; G31).
+`reasoncourt-watch`: its four findings are the input program's refusals, endings no group of the register holds. One
+cause, four FAILs. Bisected with the rows run alone: a space, and nothing else, fails the three; `ð` alone passes.
+
+Everything else held, among it the corrected `refusalwhy1-log` with each of its seven records' clocks holding the
+pid's digits, and `mouselook-capture` and `presentexact-sealer` with their words in the path.
+
+So the reading of the path probe was wrong and its conclusion right: where the tree is checked out does reach a
+verdict. The probe that found nothing chose its rows by the hypothesis as well as its perturbation. The pass that
+found it chose the perturbation and watched every row. FULL×2 cannot see this, and is not broken by it: both of its
+runs share the folder. Nor can the host's re-run: the host's folder holds no space either.
+
+**Prior art, found by search.** Paraphrased; nothing rests on it.
+
+- Debian's `reprotest` builds a package twice with its surroundings varied — the time through faketime, the build
+  path, the order of files, the locale, the time zone, the umask, the home folder and more — and compares the two
+  builds. Debian's own continuous rebuild varies identity and environment between its two builds, no longer the
+  build path, and makes the second build without the package's tests. Both vary builds and compare what was built.
+  The verdict of a test is not what they compare.
+- Noninterference (Goguen and Meseguer, 1982): what one party does must not change what another observes. His
+  proposition has that shape, with the undeclared environment as the first party and a row's verdict as what is
+  observed. Such a property is refuted by a pair of runs; no single run can refute it.
+
+**What stays.** Accepted, and deferred. No row, no register, no entry. Whether it becomes a rung, and where, is his.
+
+**Grade.** DECLARED: his ruling. OBSERVED (the build container): one perturbed whole pass and its bisection.
+**does_not_show.** Any perturbed run on the host. A matrix: the pass changed seven things at once, and only the
+space was isolated. That a factor the pass did not change is harmless.
 
 ### A competitive arena — from a certified world to a map that matches are played on · **declared** (a text the owner brought, 2026-10-08); considered at his word; not registered, nothing built
 

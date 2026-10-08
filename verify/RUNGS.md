@@ -469,6 +469,30 @@ a wall ever moves the camera or the no-op is dropped from the chain; `input-tamp
 caught; `input-not-authority` if replaying a walk ever changes W or M; `input-demo` if the committed walk stops
 replaying to its sealed head.
 
+**A checkout path with a space (2026-10-08, the build container). Not fixed.** One whole pass of the gate was run
+off the gate in a perturbed environment (ROADMAP: environmental independence). `input-tamper`, `input-not-authority`
+and `input-demo` failed: `INPUT-CANNOT-READ: …/env/Urðr: No such file or directory`. The cause, read from the source:
+`parse_walk` splits each line on whitespace, and `level` and `tiles` take one word; the three rows write into the walk
+file the absolute paths of the oracle's level and tiles, joined from where the tree is checked out. That path held a
+space, and was cut at it.
+
+| the checkout path (rows run alone) | the three rows |
+|---|---|
+| holds a space, and nothing else unusual | fail, the same way |
+| holds `ð` and no space | pass |
+| every path on record, here and on the host | pass |
+
+So *a walk witnesses the geometry the camera sees, deterministically, on any host* holds on any host whose checkout
+path has no space. The host's has none. A clone under a folder with a space in its name is predicted to fail the same
+three rows there; not measured. The reason court's watch failed with them in the same pass: it heard the input
+program's three refusals, endings no group of the register holds. That is the watch doing its work.
+
+Whether the defect is the format's (a path is one word) or the rows' (they write a path the format cannot hold) is
+the owner's to rule. A change to either is an amendment: the parser is a pinned source, and the rows are this rung's.
+G31.
+
+**Grade.** OBSERVED (the build container): one whole pass and a bisection. NOT_MEASURED: the host.
+
 ## SESSION-WALK — move while authoring, one interleaved sealed chain (seat 10)
 
 **What landed.** `workshop/sessionwalk.rs` (std-only): a session-walk is a base authority (W, M) + an initial
@@ -2706,6 +2730,12 @@ the six planted defects; the clock moved; the reading for the class.
 counts, finds and matches. That a path a program prints cannot hold a forbidden word: no row controls where the
 tree is checked out. The rate as a measurement. Anything about the host's clock: the library moves the clock of a
 process that loads it, on the build container.
+
+**On the host (2026-10-08).** 0153 and 0154 were applied with the six patches around them. The corrected
+`refusalwhy1-log` passed in both of the host's runs, on one tree, FULL×2; pushed, `c8b6a1f..d0064e4` (DESIGN-IR/DIFF-0,
+*The amendments on the host*). In the build container, one whole pass of the gate with the clock moved so that every
+millisecond value began `224242` — each of the seven records' clocks held the pid's digits — passed this row too
+(ROADMAP: environmental independence).
 
 ## DRIFT-0 — what variation is present within a run and between runs of the same workload (observational; sitting 1 of 3 complete)
 
@@ -5977,7 +6007,7 @@ differs in head, content, spec or witness from the same operations admitted one 
 standing inside a batch. A refused batch that leaves anything. A dry run that writes. An admission bound to a
 preview that reaches another head. A session whose content under the memo differs from the computation with none.
 
-## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; the round around it named before the build, `DESIGN-IR/DIFF-0a` `c414587d`; both pushed, `83b0261..5c8ad19`; built: five rows, 247 in the gate, every registered value reproduced; the gate passes here and on the host, FULL×2 there on one tree; pushed, `11afebf..c8b6a1f`; the owner's rulings after it registered and built into two of its rows, `DESIGN-IR/DIFF-0c` `38b51bed`)
+## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; the round around it named before the build, `DESIGN-IR/DIFF-0a` `c414587d`; both pushed, `83b0261..5c8ad19`; built: five rows, 247 in the gate, every registered value reproduced; the gate passes here and on the host, FULL×2 there on one tree; pushed, `11afebf..c8b6a1f`; the owner's rulings after it registered and built into two of its rows, `DESIGN-IR/DIFF-0c` `38b51bed`; that and `REFUSAL-WHY-1a` on the host, FULL×2, pushed `c8b6a1f..d0064e4`)
 
 ```
   design/   a client: hands over the design's bytes, keeps them by id        content time, not certified
@@ -6605,6 +6635,48 @@ output carries no time.
 **Falsifier.** A file of the domain that differs from the origin and that no amendment names, with the fence
 passing. A host run in which a chain row fails and the machines are compared all the same. The host's gate, with
 DIFF-0c applied, not reading 247 rows with rowset `389da490e1cfb6aa`.
+
+### The amendments on the host (2026-10-08)
+
+**The host's runs (DANIELDILLBERG).** 0148 to 0155 were applied on the pushed head (`c8b6a1f`): DIFF-0c's entry and
+its two rows, three documents, REFUSAL-WHY-1a's entry and its row, one document. Each run read `GATE PASSED`, rowset
+`389da490e1cfb6aa`, 247 rows / 0 fail / 0 skipped. The range is Git's own output.
+
+| run | the tree it ran on | its output given | pushed |
+|---|---|---|---|
+| 1 | the pushed tree with 0148 to 0155. Git's id of it: `3b3a2c9b742653c4146b244bdd62e1981635297a`, with a status that listed nothing | 2026-10-08 | |
+| 2 | the same tree: the next command after run 1. The same id after it | 2026-10-08 | `c8b6a1f..d0064e4`, which carries 0148 to 0155 |
+
+**FULL×2 on the host, by his predicate.**
+
+| | TreeID₁ ? TreeID₂ | GateOut₁ ? GateOut₂ | FULL×2 |
+|---|---|---|---|
+| host, runs 1 and 2 | `==`: `3b3a2c9b…`, taken before the first run and after the second | `==`, as printed: 250 lines each, line for line | **yes** |
+
+**The reconstruction, read by the protocol.** The precondition first.
+
+| step | what was read | result |
+|---|---|---|
+| the chain on the host | `designir-preregistered`, `designevent-preregistered`, `reasoncourt-fence`, `mintwatch-fence` and `designir-fence`, in both runs | all pass: the chain is valid there, and the comparison is made |
+| the rows | 247 names in one order, rowset `389da490e1cfb6aa` | the same |
+| the logs | each of the host's outputs against the build container's log of the head, line by line; with line ends as LF, the SHA-256 `dc96d377…` | the same, as printed. It is the log every passing run of the 247-row gate has printed, here and there |
+| the registered values | literals in the rows, which pass on each machine | reproduced on each |
+
+**What ran there for the first time.** `designir-preregistered` as DIFF-0c changes it (the origin projection: 56
+files, the registered digest); `designir-fence` with the layout relation, against the host's own files; and
+`refusalwhy1-log` as REFUSAL-WHY-1a corrects it. All passed, twice. The design tool's seventeen checks passed
+between the second run and the push. So `DESIGN-IR/DIFF-0c` and `REFUSAL-WHY-1a` are pushed, and registered in the
+project's sense.
+
+The trees are not one tree: the host's holds its records. The container's head, without them, is `0676d75e…`.
+
+**Grade.** MEASURED (host): 247 of 247, two runs on one tree, FULL×2; pushed (`c8b6a1f..d0064e4`). OBSERVED (the
+build container): the host's printed output compared with the container's log. OBSERVED (the owner's host, off the
+gate): the design tool's seventeen checks.
+**does_not_show.** The rows' counts: the compact output prints a row's name and whether it passed. That the gate's
+verdicts are independent of the folder the tree sits in: both machines' folders hold no space, and one that does
+breaks three rows (G31).
+**Falsifier.** A later host run of this tree that is not 247 of 247, or whose output differs from the other's.
 
 ## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; it waits for the owner's word)
 

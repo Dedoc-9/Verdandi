@@ -114,7 +114,9 @@ row that would redden if the claim were false.
 - **Rows assert the apparatus.** A row checks that the plant bites and the bytes agree. It never asserts a hoped
   result, and no row reads a wall-clock number. (One was found to, without meaning to: it searched a log's text
   for four digits, and the log's clock held them. About one run in three hundred. Corrected: a row observes the
-  member a thing could be written to, never the whole text of a log. G30.)
+  member a thing could be written to, never the whole text of a log. G30.) Nor is a row meant to depend on where
+  the tree is checked out. Three were found to: a path with a space cuts the walk they write. Stated and not fixed:
+  G31.
 - **A registration is text the gate hashes.** The entry's chain hash is recomputed on every pass, so a silent edit
   to a locked method is a red row and not a judgement call.
 - **Count again.** The gate reads what it is pointed at. Two facts recorded for READER-COURT-0 (the number of JSON

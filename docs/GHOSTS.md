@@ -735,6 +735,31 @@ log carries the clock. For a hundred seconds the clock's own digits held `4242`,
 **Exorcism.** Done for this row: `REFUSAL-WHY-1a`. For the two rows of the same form: the owner's ruling, if a
 source of chance for their words is ever found. For searches built another way: a wider reading.
 
+## G31 — the folder the tree is checked out in, read without meaning to · OBSERVED (one whole pass in a perturbed environment, in the build container, bisected); NOT_MEASURED on the host; not fixed: the owner's to rule
+
+- **What happened.** One whole pass of the gate, off the gate, with seven things about its surroundings changed at
+  once. It read 243 PASS / 4 FAIL. `input-tamper`, `input-not-authority` and `input-demo` could not read a level:
+  the path they named had been cut at a space.
+- **The cause, read from the source.** A walk file's `level` and `tiles` lines take one word each. The rows write
+  into the walk the absolute path of the oracle's files, joined from wherever the tree is checked out.
+- **One cause, four FAILs.** The fourth was `reasoncourt-watch`. It heard the input program's three refusals,
+  endings no group of the register holds, and said so. That is the watch working, and a reason a count of red rows
+  is not a count of defects.
+- **Repetition cannot see it.** FULL×2 runs twice in one folder. The host's re-run is another folder on another
+  machine, and its path has no space either.
+- **Bisected.** With the rows run alone: a path with a space and nothing else fails the three; a path with `ð` and
+  no space passes them.
+- **What the pass did not find.** Nothing else failed: not a clock in 2041 whose every millisecond held `4242`, not
+  a time zone fourteen hours ahead, a Turkish locale, umask 077, another home folder or another hash seed. Seven
+  things were changed together, and only the space was isolated.
+- **On Windows, an inference.** A user folder with a space in its name is common there. A clone under one is
+  predicted to fail the same three rows. Not measured.
+- **It is not fixed.** The parser is a pinned source of INPUT-0, and the rows are INPUT-0's. Either change is an
+  amendment.
+
+**Exorcism.** The owner's ruling: a walk that can name a path holding a space, or rows that write a path the walk
+can hold. Beyond this row, environmental independence, if he makes it a rung.
+
 ---
 
 ## The disposition

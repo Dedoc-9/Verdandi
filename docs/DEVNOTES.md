@@ -562,6 +562,13 @@ What stands against the tree, as reviewed:
    would have been the same lesson learned twice. A flake with a known mechanism can be made to happen: the clock
    was moved, the old row failed on demand, and the correction was judged at that instant and not by waiting.
 
+57. **Direct the perturbation; watch every row.** A path that spelled three rows' words was tried on those three rows,
+   and nothing was found. The same kind of path under the whole gate broke three other rows. A hypothesis may choose
+   what to change. It should not choose what to look at.
+
+58. **A count of red rows is not a count of defects.** One space failed four rows: three that read the path, and the
+   court that heard their refusals. The fourth was the gate working.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -583,6 +590,8 @@ What stands against the tree, as reviewed:
 - One row could fail for the clock's reason, about one run in three hundred by estimate. Found by meeting it,
   ruled a defect of the gate and corrected; the gate was read for the class, and two rows of the same form are
   named and left (G30).
+- A checkout path with a space breaks three rows (a walk's path is one word), and the reason court's watch with
+  them. Found by a perturbed pass in the build container; not fixed; not measured on the host (G31).
 
 ## The one-line retrospective, again
 
