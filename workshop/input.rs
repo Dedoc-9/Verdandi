@@ -27,6 +27,7 @@
 //     ; verdandi camera walk — VWLK1
 //     level oracle/levels/witness.lvl
 //     tiles oracle/tiles/identity.tiles
+//     (a path is the rest of its line, spaces and all, trimmed at both ends — INPUT-0a, G31)
 //     camera 34 28 W
 //     commands LFFRF
 //     head <hex>            (written by `input write`; checked by `input verify`)
@@ -174,9 +175,12 @@ fn parse_walk(text: &str) -> Result<WalkFile, String> {
             continue;
         }
         let mut it = line.split_whitespace();
+        // INPUT-0a: `level` and `tiles` take the rest of the line after their word, so a path may hold a space (G31)
+        let rest = line[line.find(char::is_whitespace).unwrap_or(line.len())..].trim();
+        let path = |what: &str| if rest.is_empty() { Err(format!("{} needs a path", what)) } else { Ok(rest.to_string()) };
         match it.next() {
-            Some("level") => level = Some(it.next().ok_or("level needs a path")?.to_string()),
-            Some("tiles") => tiles = Some(it.next().ok_or("tiles needs a path")?.to_string()),
+            Some("level") => level = Some(path("level")?),
+            Some("tiles") => tiles = Some(path("tiles")?),
             Some("camera") => {
                 let x = it.next().ok_or("camera x")?;
                 let z = it.next().ok_or("camera z")?;

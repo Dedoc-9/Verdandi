@@ -2199,6 +2199,12 @@ def workshop1_demo():
 # ------------------------------------------------------------------ input (INPUT-0)
 INPUT_EXE = None
 WLK = os.path.join(BUILD, "wlk")
+# INPUT-0a (an amendment to INPUT-0, the owner's repair of G31): a walk's `level` and `tiles` take the rest of the line,
+# and input-tamper's walk names copies of the oracle's files in a folder whose name holds a space. REASON-COURT-0c is
+# the chain link that moves the pin of workshop/input.rs.
+INPUT0A_HASH = "2f0426d64412268c93663e856d497afc89208a460d7be8a93f52db40670ea84d"
+REASONCOURT0C_HASH = "94f3de682723ed1aa03a662931982ccc533038ae58ca4cc6aa497bcfdbd5d1fc"
+INPUT0A_FOLDER = "a folder with a space"
 _FWD = {0: (0, -1), 1: (1, 0), 2: (0, 1), 3: (-1, 0)}   # N E S W — matches the kernel's `direction`
 _LETTER = {0: "N", 1: "E", 2: "S", 3: "W"}
 
@@ -2327,13 +2333,25 @@ def input_blocked():
 
 def input_tamper():
     need_rustc()
+    # (changed by INPUT-0a: the walk names copies of the oracle's level and tiles in a folder whose name holds a space,
+    # so every gate holds that a walk's path is the rest of its line, wherever the tree is checked out — G31)
+    spaced = os.path.join(WLK, INPUT0A_FOLDER)
+    os.makedirs(spaced, exist_ok=True)
+    pairs = ((os.path.join(ORACLE, "levels", "witness.lvl"), os.path.join(spaced, "witness.lvl")),
+             (os.path.join(ORACLE, "tiles", "identity.tiles"), os.path.join(spaced, "identity.tiles")))
+    for src, dst in pairs:
+        shutil.copyfile(src, dst)
+    if " " not in INPUT0A_FOLDER or any(read(dst) != read(src) for src, dst in pairs):
+        raise Red("the walk's level and tiles are not the oracle's bytes in a folder whose name holds a space: the row would not hold G31's repair")
     wp = os.path.join(WLK, "tamper.walk")
     with open(wp, "w", encoding="utf-8", newline="\n") as fh:
-        fh.write("; a walk to tamper\nlevel %s\ntiles %s\ncamera 34 28 W\ncommands LFFRF\n"
-                 % (os.path.join(ORACLE, "levels", "witness.lvl"), os.path.join(ORACLE, "tiles", "identity.tiles")))
+        fh.write("; a walk to tamper\nlevel %s\ntiles %s\ncamera 34 28 W\ncommands LFFRF\n" % (pairs[0][1], pairs[1][1]))
     code, out, err = run(INPUT_EXE, ["write", "--walk", wp])
     if code != 0:
         raise Red("write: " + err.strip())
+    written = read(wp).decode("utf-8").splitlines()
+    if ("level " + pairs[0][1]) not in written or ("tiles " + pairs[1][1]) not in written:
+        raise Red("the walk the program wrote back does not name the level and tiles by their whole paths")
     code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
     if code != 0 or "verify OK" not in out:
         raise Red("the written walk did not verify: " + (out + err).strip())
@@ -2349,9 +2367,23 @@ def input_tamper():
     code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
     if code != 0:
         raise Red("the restored walk did not re-verify")
+    # INPUT-0a and its chain link, registered and unedited; the link moves the one pin, from where REASON-COURT-0 found it
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    a, c = reg.get("INPUT-0a"), reg.get("REASON-COURT-0c")
+    if a is None or a.get("chain_hash") != INPUT0A_HASH or not entry_hash_ok("INPUT-0a", a) or REASONCOURT0C_HASH not in a["hypothesis"] \
+            or c is None or c.get("chain_hash") != REASONCOURT0C_HASH or not entry_hash_ok("REASON-COURT-0c", c) \
+            or any(h not in c["hypothesis"] for h in (REASONCOURT0_HASH, REASONCOURT0B_HASH, RSN_ORIGIN)):
+        raise Red("the INPUT-0a or REASON-COURT-0c entry is missing, edited after registration, or does not cite what it amends")
+    rel = "workshop/input.rs"
+    name, moved, added = RSN_CHAIN[2]
+    if name != "REASON-COURT-0c" or sorted(moved) != [rel] or added or len(_rsn_chain(rel)) != 1 or not _rsn_chain_ok(rel) \
+            or ("%s (%s to %s)" % (rel, moved[rel][0], moved[rel][1])) not in c["hypothesis"]:
+        raise Red("the chain's third link is not REASON-COURT-0c's one pin, from where REASON-COURT-0 found it to the built file, named in the entry with both hashes")
     return ("`input write` seals a walk's head; changing one command (L→R) without recomputing it makes `input verify` replay and "
             "catch CHAIN-BROKEN (exit 2) — a different first turn takes a different trajectory, hence different frames, hence a "
-            "different head; restored to the original bytes, the walk re-verifies")
+            "different head; restored to the original bytes, the walk re-verifies. The walk names its level and tiles in a folder "
+            "whose name holds a space (%r), copies of the oracle's bytes, and the program writes them back whole (INPUT-0a %s; "
+            "the pin of workshop/input.rs moved by REASON-COURT-0c %s)" % (INPUT0A_FOLDER, INPUT0A_HASH[:8], REASONCOURT0C_HASH[:8]))
 
 
 def input_not_authority():
@@ -12109,8 +12141,8 @@ RSN_ROWS = ("reasoncourt-preregistered", "reasoncourt-register", "reasoncourt-so
 # (sha256, line endings as LF). The folders' READMEs are documents and their attest/ folders hold records: neither is here.
 # REASON-COURT-0a (an amendment entry, registered with DESIGN-EVENT-0's build) moves five of these pins and adds one,
 # shell/designevent.rs: RSN_AMENDED names them, with the hash each had. REASON-COURT-0b (registered with DESIGN-IR/DIFF-0's
-# build) moves one of them again, shell/main.rs, and adds shell/designcompile.rs: RSN_CHAIN names every link. No other
-# pin has moved since this rung.
+# build) moves one of them again, shell/main.rs, and adds shell/designcompile.rs. REASON-COURT-0c (registered with
+# INPUT-0a, the repair of G31) moves workshop/input.rs. RSN_CHAIN names every link. No other pin has moved since this rung.
 RSN_SOURCES = {
     "kernel/bearing.rs": "93fb9083a3034d8875f2040f89ba73cbaaf1bad888bc0fd446d6cb4ccf33e474",
     "kernel/bearingfast.rs": "97ab3bf3a575954fdbaa0f1b4d3ed8bd511a6d8dffa01a3b99d864e393a2ee84",
@@ -12148,7 +12180,7 @@ RSN_SOURCES = {
     "shell/tickrun.rs": "d4fee8262d81f0e645686930a03e0e412d20f50006f13b5b23cae00c1ca5a19d",
     "shell/win32.rs": "804d598c3075a60c4bbb2725ee18ccc877579907f31786a0f671334ccc6bda5e",
     "workshop/edit.rs": "8b299708192a9cd976f10c30561625590af83cab82f7ed67c4137a6073ce46c6",
-    "workshop/input.rs": "405ef6c825c1f361a3489c6e03e444b67b217a81dc020c44e5afc61fcdf712cf",
+    "workshop/input.rs": "f2edf4055da61056394d60655563b4ed562417b8c2322857d8c046f4b153648e",
     "workshop/membrane.rs": "d1e652f46d3af8bc28562fb59fe3fac4524bf60cc74d421b1c073df57320b8ae",
     "workshop/session.rs": "3abe96801c821148efc06c40868332b6a7f007a90886a942d9eabe94cf704006",
     "workshop/sessionwalk.rs": "ab35f6a05c519ba94f726fe0d3b7f4a6c93ae69c6917860ee8ae7c93fee5482b",
@@ -13686,6 +13718,9 @@ RSN_CHAIN = (
     ("REASON-COURT-0b", {
         "shell/main.rs": ("d5324e621ebbc25115d83f907e249143918043322d2c14fba5941c496f5824dd", "8db2d8ee5752ad96343114821233b6f2e3d3fe3131ae7e92898667cfaa185dc4"),
     }, {"shell/designcompile.rs": "123c1584b048663ac78cd1c62642152346de2b471a384502bb4ce888cd4aba49"}),
+    ("REASON-COURT-0c", {
+        "workshop/input.rs": ("405ef6c825c1f361a3489c6e03e444b67b217a81dc020c44e5afc61fcdf712cf", "f2edf4055da61056394d60655563b4ed562417b8c2322857d8c046f4b153648e"),
+    }, {}),
 )
 
 
