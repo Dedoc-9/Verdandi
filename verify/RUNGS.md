@@ -417,7 +417,7 @@ ever differs from replay; `workshop1-propose` if a propose writes or an invalid 
 `workshop1-tamper` if a changed entry is not caught; `workshop1-demo` if the committed session stops replaying
 to its head.
 
-## INPUT-0 — moving around is the projection's job, and a walk replays headless (seat 9)
+## INPUT-0 — moving around is the projection's job, and a walk replays headless (seat 9; amended `INPUT-0a` `2f0426d6`: a walk's path is the rest of its line)
 
 **What landed.** `workshop/input.rs` (std-only): a **walk** is an initial camera and an ordered log of typed
 movement commands, replayed against a FIXED level to reproduce the whole camera trajectory and the frame at
@@ -522,6 +522,59 @@ After the failing run, the clone's status listed nothing: the run left its track
 
 **Grade.** MEASURED (host, one run in a clone): the four rows, as predicted. OBSERVED (the build container): the
 perturbed pass and the bisection. DECLARED: the reading of the source.
+
+### INPUT-0a — a walk's path is the rest of its line (registered `2f0426d6`, with the chain's third link `REASON-COURT-0c` `94f3de68`; built; the container's prediction met; the host's predicted)
+
+```text
+  level /a/folder with a space/witness.lvl
+        └──────────── the rest of the line, trimmed ────────────┘      was: /a/folder
+```
+
+**His ruling (2026-10-08).** Take the small semantic fix first, keep the gate at 247 rows. `level` and `tiles` take
+the whole remainder of the line as the path. A path with a space goes into an existing row's execution path, where
+it fits that row's meaning. The pinned source moves by a link of the amendment chain. The strict reader stays a
+recorded, unregistered ghost (G32): *don't add a refusal and reason-register entry for a defect that hasn't been
+demonstrated*. The decisive mutation is first-word parsing restored. Two acceptance runs off the gate, each predicted
+before it is run; *if either fails, investigate rather than weaken the probe*.
+
+**What changed.**
+
+| where | the change |
+|---|---|
+| `workshop/input.rs` | `parse_walk`: the lines for `level` and `tiles` take the rest of the line after their word, trimmed at both ends. An empty rest is refused as before, in the same words. No refusal, code or other line changes. sha256 `f2edf405…` |
+| `input-tamper` | its walk names copies of the oracle's witness level and identity tiles in `build/wlk/a folder with a space/`. The row holds that the name holds a space, that the copies are the oracle's bytes, and that the walk the program writes back names both whole. Then, as before: verified, a command tampered and caught, restored and verified again. It also holds `INPUT-0a` and `REASON-COURT-0c` |
+| the pin | `REASON-COURT-0c` moves `workshop/input.rs` from the hash REASON-COURT-0 found (`405ef6c8…`) to the built file's. The origin projection is unchanged: 56 files, `99d0d92e…` |
+
+247 rows, the same names in the same order. No ending, refusal or reason changed.
+
+**Mutated, off the gate** (the build container; a script outside the repository). Each change run against
+`input-tamper`, `input-not-authority` and `input-demo`, in a checkout whose path holds no space.
+
+| the change | caught by |
+|---|---|
+| first-word parsing restored for `level` and `tiles` — *the decisive mutation* | `input-tamper`, *write: INPUT-CANNOT-READ*, the path cut at the space. The other two pass: in this checkout only `input-tamper` carries a space |
+| first word for `tiles` only; for `level` only | `input-tamper`, the same way |
+| the rest with its spaces taken out; the rest cut at its last space | `input-tamper` |
+| the rest not trimmed; the rest as the whole line, its word included | all three rows |
+| in the row: a folder whose name holds no space | the row's own check of the name |
+| in the row: the walk naming the oracle's own paths | the row's check of the walk the program writes back |
+| in the row: a copy that is not the oracle's bytes | the row's check of the copies |
+| nothing changed | all pass |
+
+**The predictions, as the entry wrote them before the runs.**
+
+| prediction | the run | result |
+|---|---|---|
+| the build container's perturbed whole pass, the same instrument and the same seven changes, on the built tree: 247 rows / 0 fail | the build commit, checked out under `…/Urðr 4242 a private title the log must never hold focus pause capture blur foreground adopted/tree`; the clock in 2041; a time zone fourteen hours ahead; a Turkish locale; umask 077; another home; another hash seed | **247 rows / 0 fail.** Met |
+| the owner's host, the gate in a clone under `C:\Users\dillb_lzxy763\Desktop\Verdandi space probe`: 247 rows / 0 fail | not yet run | — |
+
+**Grade.** ESTABLISHED (gate, the build container): the rows as built. OBSERVED (the build container): the mutants;
+the first prediction met. NOT_MEASURED: the second prediction.
+**does_not_show.** That a path beginning or ending with a space can be named: it cannot. That the other two input
+rows carry the space: they are repaired by the parser and write the checkout's own paths. Anything about the walk's
+other lines (G32).
+**Falsifier.** `input-tamper` passing with first-word parsing restored. The host's clone under a folder with a space
+not reading 247 of 247.
 
 ## SESSION-WALK — move while authoring, one interleaved sealed chain (seat 10)
 
@@ -6738,6 +6791,14 @@ checks passed. Pushed, `b1b2052..59edc01`.
 changed a tracked file and committed nothing would leave that id as it was. What shows the files is the status:
 when it lists nothing, the files are the commit's tree, and the id names them. So a witness is the pair, the status
 and the id, at each end. It always was in this record; the two runs above are where one half of it went missing.
+
+**From INPUT-0a on, the host's readings are collected by a script** (the owner's ruling, 2026-10-08), kept beside
+the patches and outside the repository: `verdandi-witness.py`. In order it reads the status and the tree id; runs the
+gate twice, each output kept byte for byte with its exit; reads the status and the tree id again; compares the two
+outputs byte for byte; runs the design tool's checks; and prints his predicate with every reading it rests on, a tree
+id read as the pair. It applies no patch, commits nothing, pushes nothing and repairs nothing; Git is asked not to take
+its optional locks. Its files are the evidence, each listed with its sha256, and the verdict is recomputable from
+them. In his words, *an evidence collector—not a new authority that gets to declare its own evidence trustworthy*.
 
 ## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; it waits for the owner's word)
 

@@ -242,6 +242,10 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          registered world; eleven planted compilers caught; on the host 247 of 247 twice on one
          │          tree, FULL×2; pushed)
          │
+    A REPAIR        INPUT-0a a walk's path is the rest of its line: G31, a checkout path with a space, found
+         │          by a perturbed pass and measured on the host, repaired before the next rung (2f0426d6;
+         │          built, 247 rows; the pass that found it, run again as predicted, 247 / 0)
+         │
     THE MEANING     HERMENEUTICS-0 what the design language means, apart from the two programs that compile
          │          it: one reading ratified by the owner (a statement is a constant write, a design is its
          │          statements later-wins), six cases locked, four laws as theorems, ten designs with literal

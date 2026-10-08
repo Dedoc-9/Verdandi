@@ -735,7 +735,7 @@ log carries the clock. For a hundred seconds the clock's own digits held `4242`,
 **Exorcism.** Done for this row: `REFUSAL-WHY-1a`. For the two rows of the same form: the owner's ruling, if a
 source of chance for their words is ever found. For searches built another way: a wider reading.
 
-## G31 — the folder the tree is checked out in, read without meaning to · OBSERVED (one whole pass in a perturbed environment, in the build container, bisected); MEASURED (host: one run in a clone under a folder with a space, the four rows predicted before it); not fixed: the owner's to rule
+## G31 — the folder the tree is checked out in, read without meaning to · OBSERVED (one whole pass in a perturbed environment, in the build container, bisected); MEASURED (host: one run in a clone under a folder with a space, the four rows predicted before it); repaired by INPUT-0a (built; the build container's prediction met; the host's not yet run)
 
 - **What happened.** One whole pass of the gate, off the gate, with seven things about its surroundings changed at
   once. It read 243 PASS / 4 FAIL. `input-tamper`, `input-not-authority` and `input-demo` could not read a level:
@@ -760,12 +760,42 @@ source of chance for their words is ever found. For searches built another way: 
 - **The class, by syntax.** Of three Rust readers that split a line on whitespace, the walk and the level text drop
   the words they do not use; the camera list refuses them. Only the walk and the camera list carry a path, and the
   camera list refuses a path with a space with its line.
-- **It is not fixed.** The parser is a pinned source of INPUT-0, and the rows are INPUT-0's. Either change is an
-  amendment.
+- **Repaired, by his ruling: INPUT-0a.** `level` and `tiles` take the rest of the line. `input-tamper` writes its
+  walk through a folder whose name holds a space, so every gate holds the repair wherever the tree is checked out.
+  With first-word parsing restored, that row fails. The perturbed whole pass that found the defect, run again on the
+  repaired tree as the entry predicted, read 247 rows / 0 fail.
+- **What is left.** The host's run in a clone under a folder with a space, predicted 247 / 0. And the walk's other
+  lines, which still drop words they do not use (G32).
 
-**Exorcism.** The owner's ruling: a walk that can name a path holding a space and refuses words it does not use,
-or rows that write a path the walk can hold, or both. Beyond this row, environmental independence, if he makes it a
-rung.
+**Exorcism.** Done here, by INPUT-0a. Measured there when the owner's clone reads 247 of 247.
+
+## G32 — a walk's other lines drop the words they do not use · DECLARED (read from the source); not demonstrated; recorded and not registered, by the owner's ruling
+
+- **What the source says.** After INPUT-0a, `level` and `tiles` take the rest of their line. `camera` keeps three
+  words, and `commands` and `head` keep one; anything after them is dropped without a refusal. A walk written
+  `commands LFF RFF` means `LFF`, and `input write` writes back `LFF`.
+- **Nothing has been shown to go wrong by it.** No run met it.
+- **Why it is not fixed.** A refusal would need a plant in a row, the plant an ending, and the ending a statement of
+  the reason register. The owner: *don't add a refusal and reason-register entry for a defect that hasn't been
+  demonstrated.*
+
+**Exorcism.** The owner's ruling, when a case shows it.
+
+## G33 — a row may rest on what an earlier row left · a hypothesis, deferred by the owner as a candidate; one instance seen
+
+- **The hypothesis.** The gate runs its rows in one order, and a row can use what an earlier row made: a built
+  program, a global it set, a file it left. If a row's verdict changes because an earlier row changed shared state,
+  the row's evidence is not its own.
+- **One instance, seen by an instrument outside the repository.** Run alone, without `kernel-build` before it,
+  `input-demo` raised a `TypeError`: its Python twin uses the kernel's path, which `kernel-build` sets. With
+  `kernel-build` first, it passed. That is a dependency on a build, of the kind the gate's order is made for; whether
+  it is the kind the hypothesis fears is the owner's to say.
+- **What is not done.** No search of every row. No mechanism to run rows apart. His word: *don't add a general
+  isolation mechanism before establishing the actual dependency.*
+
+**Exorcism.** A counterexample in which a row's verdict follows another row's state, or a mutation that shows it;
+then his ruling.
+
 
 ---
 

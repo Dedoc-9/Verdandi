@@ -25,7 +25,7 @@ The gate is the program's only judge, so its design is about what it may and may
                   == earns the claim · != defeats it · identity not established withholds it
                   the reconcile line names the rowset, not the tree: a tree's identity is taken outside the gate
 
-    preregister.json   50 entries: hypothesis · success · failure · limits · instrument · chain hash.
+    preregister.json   52 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
                        amendment entry with its own hash.
 
@@ -115,8 +115,8 @@ row that would redden if the claim were false.
   result, and no row reads a wall-clock number. (One was found to, without meaning to: it searched a log's text
   for four digits, and the log's clock held them. About one run in three hundred. Corrected: a row observes the
   member a thing could be written to, never the whole text of a log. G30.) Nor is a row meant to depend on where
-  the tree is checked out. Three were found to: a path with a space cuts the walk they write. Measured on the host
-  as predicted; stated and not fixed: G31.
+  the tree is checked out. Three were found to: a path with a space cut the walk they write. Measured on the host
+  as predicted, and repaired by INPUT-0a: a walk's path is the rest of its line, and one row carries a space. G31.
 - **A registration is text the gate hashes.** The entry's chain hash is recomputed on every pass, so a silent edit
   to a locked method is a red row and not a judgement call.
 - **Count again.** The gate reads what it is pointed at. Two facts recorded for READER-COURT-0 (the number of JSON

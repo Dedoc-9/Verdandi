@@ -585,6 +585,10 @@ What stands against the tree, as reviewed:
    tracked file does. It names what is in the folder only beside a status that lists nothing. Read both, at both
    ends: two host runs in a row each missed some of the four readings.
 
+63. **The experiment that found the defect certifies the repair.** The perturbed pass that broke three rows was run
+   again on the repaired tree, with its result written into the entry before the run. A probe kept as it was is a
+   test of the repair; a probe softened to pass is not.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -606,8 +610,10 @@ What stands against the tree, as reviewed:
 - One row could fail for the clock's reason, about one run in three hundred by estimate. Found by meeting it,
   ruled a defect of the gate and corrected; the gate was read for the class, and two rows of the same form are
   named and left (G30).
-- A checkout path with a space breaks three rows (a walk's path is one word), and the reason court's watch with
-  them. Found by a perturbed pass in the build container, measured on the host as predicted; not fixed (G31).
+- A checkout path with a space broke three rows (a walk's path was one word), and the reason court's watch with
+  them. Found by a perturbed pass, measured on the host as predicted, repaired by INPUT-0a; the host's run of the
+  repair is predicted and not yet taken (G31). The walk's other lines drop words they do not use (G32).
+- A row may rest on what an earlier row left: a hypothesis, one instance of a build seen, deferred (G33).
 
 ## The one-line retrospective, again
 
