@@ -581,6 +581,10 @@ What stands against the tree, as reviewed:
    id was taken only before them. The record says half the predicate was read, though nothing in those runs could
    have changed a tracked file.
 
+62. **The id names the commit; the status names the files.** `git rev-parse "HEAD^{tree}"` does not change when a
+   tracked file does. It names what is in the folder only beside a status that lists nothing. Read both, at both
+   ends: two host runs in a row each missed some of the four readings.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).

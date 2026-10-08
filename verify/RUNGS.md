@@ -518,6 +518,8 @@ named nothing, and the answer was *No such file or directory*.
 
 The camera list cannot hold a path with a space either, but says so. The Python readers were not read.
 
+After the failing run, the clone's status listed nothing: the run left its tracked files as they were.
+
 **Grade.** MEASURED (host, one run in a clone): the four rows, as predicted. OBSERVED (the build container): the
 perturbed pass and the bisection. DECLARED: the reading of the source.
 
@@ -6714,6 +6716,28 @@ nothing; it was not taken after the second. The design tool's checks were not ru
 | | TreeID₁ ? TreeID₂ | GateOut₁ ? GateOut₂ | FULL×2 |
 |---|---|---|---|
 | host, 0156 and 0157 | TreeID₂ not taken | `==`, as printed | **not witnessed**: half of his predicate was read. The tree's id is not inferred from the gate's behaviour |
+
+**The other half, taken late (the host, 2026-10-08).** Before 0158 was applied, in the same folder: a status that
+listed nothing, and Git's id `7de2557d…`. Since the second run, that folder had been pushed from and cloned from,
+and nothing else. So both ends are read for 0156 and 0157, the second end late.
+
+| | TreeID₁ ? TreeID₂ | GateOut₁ ? GateOut₂ | FULL×2 |
+|---|---|---|---|
+| host, 0156 and 0157, with the late reading | `==`: `7de2557d…` before the first run and after the second, a status listing nothing both times | `==` | **yes**, the second tree id taken late |
+
+**And 0158, documents only (the host, 2026-10-08).** Applied on `b1b2052`. Two runs, each 247 rows / 0 fail, the two
+outputs line for line the same and the build container's log. Nothing was read between the patch and the first run.
+After the second: Git's id `2030a515710ec1ec41ff8b98ba3718a3485fb13b`, and no status. The design tool's seventeen
+checks passed. Pushed, `b1b2052..59edc01`.
+
+| | TreeID₁ ? TreeID₂ | GateOut₁ ? GateOut₂ | FULL×2 |
+|---|---|---|---|
+| host, 0158 | TreeID₁ not taken; no status at either end | `==`, as printed | **not witnessed** |
+
+**What `git rev-parse "HEAD^{tree}"` reads.** The tree of the last commit, not the files in the folder. A run that
+changed a tracked file and committed nothing would leave that id as it was. What shows the files is the status:
+when it lists nothing, the files are the commit's tree, and the id names them. So a witness is the pair, the status
+and the id, at each end. It always was in this record; the two runs above are where one half of it went missing.
 
 ## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; it waits for the owner's word)
 
