@@ -25,13 +25,19 @@ The gate is the program's only judge, so its design is about what it may and may
                   == earns the claim · != defeats it · identity not established withholds it
                   the reconcile line names the rowset, not the tree: a tree's identity is taken outside the gate
 
-    preregister.json   48 entries: hypothesis · success · failure · limits · instrument · chain hash.
+    preregister.json   49 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
                        amendment entry with its own hash.
 
     the amendment chain   an amendment that moves a pin names (was, is). The next one starts where it ended; the
                        last is the built file's; today's pins with every link undone are the 56 the first court
                        found. History in the entries, identity in the pins, behaviour in the rows: three layers.
+                       And the layout: over the files the pins hold, what differs on disk from the origin is
+                       exactly what an amendment names. The origin's digest commits to pins, not to meaning.
+
+    two machines       read the chain's rows on the host first. If one fails, the chain is invalid there and
+                       nothing is compared. If they pass: the rows by name and order, the printed log, the
+                       registered values. A difference then is of reconstruction or platform, not of history.
 
     envelope.py   RECORD-0: one writer, one firewall, for every record the tree mints
     savedform.py  READER-COURT-0: the strict reader of everything read back; no json.load beneath it

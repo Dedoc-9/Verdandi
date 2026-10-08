@@ -47,8 +47,9 @@ owner's word with that push no theorem was added at once. When the host's gate w
 word was *take next* (2026-10-07).
 
 That next rung is built: the step from a design to its change set, which was the one uncertified link between the
-design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`, five rows). The gate is 247 rows and passes here; the
-build has not yet run on the host. Registered behind it, for after it is built, courted and FULL×2: the meaning of the design language as the owner's own rulings, literal targets and laws, which neither
+design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`, five rows). The gate is 247 rows and passes here and on
+the host, FULL×2 there by the owner's predicate, and is pushed. Registered behind it, and now free to be built at his
+word: the meaning of the design language as the owner's own rulings, literal targets and laws, which neither
 program computes (`HERMENEUTICS-0`, `22d52d02`).
 
 What is *not* yet done: that compiler; design objects that outlive admission, constraints, and a model at the seam
@@ -145,7 +146,7 @@ the adjustment   the owner's ruling (2026-10-06): the engineering seam is frozen
       ↓
 DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven properties in one court: a canonical batch of one to 4,096 typed operations is refused whole or admitted by one admission as that many ordinary edits, equal to the same operations admitted one at a time. N edits and one admission; VRDNP2, a net change set with one byte form; full replay with an exact memo; a dry run bound to its admission — registered (`ae7cbb36`), pushed, and built: six rows, 242 in the gate; the 60 operations admitted one at a time before the seam existed reach the same head as one batch; on the host 242 of 242 on every run and FULL×2 by the owner's predicate; pushed
       ↓
-DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); read and locked by him the same day, and the round around it named before the build as subcourts and no new claim (`DESIGN-IR/DIFF-0a`, `c414587d`); both pushed (`83b0261..5c8ad19`); built (2026-10-07): the compiler in the shell, five rows, 247 in the gate, every registered value reproduced; two rows of DESIGN-EVENT-0 changed in their text by his ruling, the amendment chain named a law and its origin registered (`REASON-COURT-0b`, `d51b4d20`; `DESIGN-IR/DIFF-0b`, `42ac51f5`); the design tool a client of the compiler; not yet run on the host
+DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); read and locked by him the same day, and the round around it named before the build as subcourts and no new claim (`DESIGN-IR/DIFF-0a`, `c414587d`); both pushed (`83b0261..5c8ad19`); built (2026-10-07): the compiler in the shell, five rows, 247 in the gate, every registered value reproduced; two rows of DESIGN-EVENT-0 changed in their text by his ruling, the amendment chain named a law and its origin registered (`REASON-COURT-0b`, `d51b4d20`; `DESIGN-IR/DIFF-0b`, `42ac51f5`); the design tool a client of the compiler; on the host 247 of 247 twice on one tree, FULL×2 by his predicate, pushed (`11afebf..c8b6a1f`); his rulings of 2026-10-08 registered and built into two existing rows (`DESIGN-IR/DIFF-0c`, `38b51bed`): the layout relation and the origin as a projection
       ↓
 HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2
       ↓
@@ -2015,7 +2016,7 @@ OBSERVED (the owner's host, one run, off the gate): the design tool's loop over 
 **does_not_show.** What an admission costs on the host, that the design tool has sent a batch there, or that a
 model writes a useful design.
 
-### DESIGN-IR/DIFF-0 — the compiler, certified · **built** (`2baa42f3`; its round named before the build, `c414587d`; two amendments with the build, `d51b4d20` and `42ac51f5`): five rows, 247 in the gate; not yet run on the host
+### DESIGN-IR/DIFF-0 — the compiler, certified · **built** (`2baa42f3`; its round named before the build, `c414587d`; two amendments with the build, `d51b4d20` and `42ac51f5`): five rows, 247 in the gate; on the host 247 of 247, FULL×2, pushed; a third amendment after it (`38b51bed`)
 DESIGN-EVENT-0 made a design one batch and left one link outside the gate: the program that turns a design into
 that batch. This section records the word that took the rung, the court that shaped it and what was registered.
 The rung's own record, with the language, the codes, the rows and the plants, is in
@@ -2114,9 +2115,32 @@ one was the hole the stair parent closed. The record, with the tables, is in
 rulings. ESTABLISHED (gate, the build container): the five rows, 247 in the gate. OBSERVED (the build container,
 one sitting): the mutation campaign, the tool's own checks, the times. MEASURED (host): the gate with the
 registration applied and with the first amendment applied, 242 of 242 each, one run each; pushed
-(`83b0261..5c8ad19`, carrying 0137 to 0141). The build has not run on the host.
+(`83b0261..5c8ad19`, carrying 0137 to 0141); the built gate, 247 of 247, two runs on one tree, FULL×2 by his
+predicate, pushed (`11afebf..c8b6a1f`, carrying 0145 to 0147).
 **does_not_show.** Equivalence for every design. That the reading the compiler and the reference share is what a
-designer means: HERMENEUTICS-0 is registered for that. Anything on the host.
+designer means: HERMENEUTICS-0 is registered for that. That the two machines hold one tree.
+
+**On the host, and his fourth text (2026-10-08).** He applied the three patches, took Git's id of the tree, ran the
+gate twice, took the id again, ran the design tool's own checks and pushed. The tree was one tree and the two
+outputs read the same, so the gate is FULL×2 there on a tree that holds the compiler. The host's printed output is
+the build container's log, line for line.
+
+With the output he brought a text that rules on what had been put to him in private. Its distinction: *DIFF-0
+should certify a state transition, not grow a general-purpose provenance system.*
+
+| | his ruling |
+|---|---|
+| a ledger head | defer |
+| validating every compile at content time | reject for this rung; a ghost (G29) |
+| the registration's instrument as a layout | accept, inside the existing fence |
+| the origin's digest, as a projection of 56 files | accept, inside the existing row |
+| reading the chain on the host before the machines are compared | accept, as a protocol and not a row |
+| a triple-write or meta-audit | defer |
+
+The two acceptances that are mechanical are built into rows that exist (`DESIGN-IR/DIFF-0c`, `38b51bed`): over the
+58 files the first reason court holds, what differs on disk from the origin is exactly what an amendment names.
+No row is added. His last word on the rung: *I would stop adding architecture here.* The next rung's condition is
+met, and it waits for his word.
 
 ### Hermeneutics and semiotics — what the design language means, apart from what compiles it · hermeneutics **registered** (`22d52d02`), semiotics **declared** (texts the owner brought, 2026-10-07); nothing built
 Two texts the owner brought with the push of DESIGN-IR/DIFF-0's amendment, the second after he broke off the first

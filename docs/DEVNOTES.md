@@ -539,6 +539,19 @@ What stands against the tree, as reviewed:
    was nearly asked to show intent, and a second mechanism nearly built for it. Each layer already answered its
    own question. The owner's instruction: do not invent a fourth to settle what the three already settle.
 
+52. **Read the chain before comparing two machines.** If the host's log differs from the build container's, there
+   are two different findings it could be: the history is broken there, or the platform differs. Reading the
+   chain's rows first tells them apart. The owner ruled it a protocol and not a row: it is an order of reading.
+
+53. **An accepted idea goes into a row that exists.** Three ideas were put to the owner in private. He deferred
+   one, kept one as a ghost, and accepted one with the words *no new row*. The accepted one became a few lines
+   in a fence that was already there. His measure: the rung certifies a transition; it does not grow a provenance
+   system.
+
+54. **Say when a new check is implied by old ones.** Over its domain the layout relation follows from three rows
+   that already pass. It was built anyway, against the files on disk and in both directions, and the entry says it
+   adds no evidence there. A reader should not have to find that out.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -554,8 +567,9 @@ What stands against the tree, as reviewed:
   not measured (G27).
 - The batch is built and passes on both machines. What it leaves to the compiler, to the workshop and to the host,
   and what no verifier rebuilds, is stated (G28).
-- The compiler is built and passes here. A row written about today breaks at the next change: three were met and
-  restated, one more is known. What the compiler's court does not reach is stated (G29).
+- The compiler is built and passes on both machines. A row written about today breaks at the next change: three
+  were met and restated, one more is known. What the compiler's court does not reach, and what was deferred, is
+  stated (G29).
 
 ## The one-line retrospective, again
 

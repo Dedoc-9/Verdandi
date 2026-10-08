@@ -637,7 +637,7 @@ the host's own time for a design, which the owner's run will give, and, if repla
 that gives a session a trust root. For the memo outside the court: the workshop at sealing, as now. For the
 proposal's bytes: nothing, unless the requirement the ruling names arrives. For the last: a second editor.
 
-## G29 — a predicate about the present, written into a row that outlives it · ESTABLISHED (three met and restated, on the gate here); one more known and not met; the compiler's own limits stated; NOT_MEASURED on the host
+## G29 — a predicate about the present, written into a row that outlives it · ESTABLISHED (three met and restated, on the gate here); MEASURED (host: the gate, 247 of 247 twice on one tree, FULL×2); one more known and not met; the compiler's own limits stated
 
 DESIGN-IR/DIFF-0 is built. Its build met the same ghost three times, and the owner gave it one name: *history is
 immutable; state may evolve; transitions must preserve provenance.* A row that says *today* or *last* is true when
@@ -678,10 +678,27 @@ it is written and false after the next legitimate change.
   at all and is named.
 - **The tool is a client by its own checks.** CLIENT-FENCE-0 is off the gate by the owner's locks. It holds the
   tool as it stands and says nothing of a tool that is replaced.
-- **The host has not run it.** Every number here is the build container's.
+- **The host has run the gate, and no time.** 247 of 247 twice on one tree, FULL×2, and the tool's own checks once.
+  The output carries no time: what a compile costs on Windows is not measured.
+- **No compile is checked as it is made.** The court holds the compiler on sixteen designs and the mutants of
+  three. The owner rejected a per-compile check for this rung and keeps it here, for a later rung: *validate every
+  actual compile against the statements applied to it, without making content-time validation part of DIFF-0.* It
+  would collapse the thing compiled and the court that judges it.
+- **The ledger has no head.** Each entry is locked by its own hash and held by a constant in the gate. Nothing
+  commits to the ledger as a whole, so that a later ledger is shown to extend an earlier one. Deferred by his
+  ruling: it answers a later question.
+- **The layout holds 58 files.** Outside them the gate keeps no origin: its own text, the ledger, the registers,
+  the design tool, the documents. There a transition is what Git's comparison of two commits says.
+- **A file moved back to its origin would be refused.** It would be named as changed and would not differ. The
+  relation as ruled refuses that tree, and the case would be his to rule.
+- **The origin's digest is a commitment, not a truth.** It anchors which pins the history began from. It says
+  nothing of whether those files are right.
+- **Two machines, two trees.** The host's tree holds its records and is not the container's. What was compared is
+  what the gate printed, and the registered values the rows hold.
 
 **Exorcism.** For the present tense: write a row about history, and let the stop clause catch the ones not yet
-found. For the shared misreading: HERMENEUTICS-0. For every design: nothing registered. For the host: its run.
+found. For the shared misreading: HERMENEUTICS-0. For every design: a later rung, by his ruling. For the ledger's
+head: deferred. For the cost on the host: a time taken there.
 
 ---
 

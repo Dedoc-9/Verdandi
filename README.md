@@ -239,7 +239,8 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          statements applied by the gate itself; the proposal id is the SHA-256 of the design's
          │          exact bytes (2baa42f3; its round named before the build, c414587d; built, five rows,
          │          247 in the gate: the registered design compiles to its registered bytes and reaches its
-         │          registered world; eleven planted compilers caught; not yet run on the host)
+         │          registered world; eleven planted compilers caught; on the host 247 of 247 twice on one
+         │          tree, FULL×2; pushed)
          │
     THE MEANING     HERMENEUTICS-0 what the design language means, apart from the two programs that compile
          │          it: one reading ratified by the owner (a statement is a constant write, a design is its

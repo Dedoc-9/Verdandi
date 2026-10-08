@@ -5856,7 +5856,7 @@ differs in head, content, spec or witness from the same operations admitted one 
 standing inside a batch. A refused batch that leaves anything. A dry run that writes. An admission bound to a
 preview that reaches another head. A session whose content under the memo differs from the computation with none.
 
-## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; the round around it named before the build, `DESIGN-IR/DIFF-0a` `c414587d`; both pushed, `83b0261..5c8ad19`; built: five rows, 247 in the gate, every registered value reproduced; the gate passes here; not yet run on the host)
+## DESIGN-IR/DIFF-0 — the design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function (preregistered `2baa42f3`; the round around it named before the build, `DESIGN-IR/DIFF-0a` `c414587d`; both pushed, `83b0261..5c8ad19`; built: five rows, 247 in the gate, every registered value reproduced; the gate passes here and on the host, FULL×2 there on one tree; pushed, `11afebf..c8b6a1f`; the owner's rulings after it registered and built into two of its rows, `DESIGN-IR/DIFF-0c` `38b51bed`)
 
 ```
   design/   a client: hands over the design's bytes, keeps them by id        content time, not certified
@@ -6354,7 +6354,8 @@ an entry rests on any of them.
 **Grade.** DECLARED: the three texts, the rulings, the law, the principle. ESTABLISHED (gate, the build container):
 the five rows, 247 in the gate, three passes identical, one of them with the host's records present. OBSERVED (the
 build container, one sitting): the mutation campaign; the tool's own seventeen checks; the times; the origin's
-digest against the earlier commit. NOT_MEASURED: anything on the host. The build has not run there.
+digest against the earlier commit. When this was written the build had not run on the host. It has since: see the
+next part.
 
 **does_not_show.** Equivalence for every design: it is shown on the court's sixteen and on the single-byte mutants
 of three. That the reference's reading of a statement is what a designer means: a misreading shared by the
@@ -6369,7 +6370,122 @@ is not the statements applied to the parent's bytes. A planted compiler from the
 equalities pass. A pin that is the built file's and is neither the origin's nor reached from it by a named link.
 The host's gate not reading 247 rows with rowset `389da490e1cfb6aa`.
 
-## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; built after DESIGN-IR/DIFF-0 is built, courted and FULL×2)
+### On the host, and the owner's fourth text (2026-10-08)
+
+```text
+   CHAIN on the host ── read first ──►  valid?  ── no ──►  the chain is invalid there. Nothing is compared.
+        │ yes
+        ▼
+   rows the same by name and order · the printed log the same · the registered values reproduced on each
+        │
+        ▼
+   a difference now is one of reconstruction or of platform, not of history
+```
+
+**The host's runs of the 247-row gate (DANIELDILLBERG).** Each read `GATE PASSED`, rowset `389da490e1cfb6aa`,
+247 rows / 0 fail / 0 skipped. The range is Git's own output.
+
+| run | the tree it ran on | its output given | pushed |
+|---|---|---|---|
+| 1 | the tree of the 242-row gate's tenth run with 0145, 0146 and 0147: the two amendment entries, the build, its record. Git's id of it: `247defb4088531a6c0116991ee792dba6635ff21`, with a status that lists nothing | 2026-10-08 | not in its output; with run 2's |
+| 2 | the same tree: the next command after run 1. The same id and the same empty status after it | 2026-10-08 | `11afebf..c8b6a1f`, which carries 0145 to 0147 |
+
+So REASON-COURT-0b and DESIGN-IR/DIFF-0b are pushed, and are registered in the project's sense. The design tool's
+own checks ran there too, between the second run and the push: `DESIGN TOOL PASSED  17 checks / 0 fail`, the
+client fence and its four plants among them. That is the first time the tool ran on the host as a client of the
+shell's compiler. It is content time and no row.
+
+**FULL×2 on the host, by his predicate.**
+
+| | TreeID₁ ? TreeID₂ | GateOut₁ ? GateOut₂ | FULL×2 |
+|---|---|---|---|
+| host, runs 1 and 2 | `==`: Git's id of the commit's tree, `247defb4…`, taken before the first run and after the second, with a status that lists nothing both times | `==`, as printed: the two outputs he gave, compared here line by line, 250 lines each | TRUE |
+
+**The host reconstruction, read by the protocol he ruled.** The precondition first, then the comparison.
+
+| step | what was read | result |
+|---|---|---|
+| the chain on the host | `designir-preregistered`, `designevent-preregistered`, `reasoncourt-fence` and `mintwatch-fence` in both of the host's runs: every link starts where the one before it ended, the last is the built file's there, and today's pins with every link undone are the origin's | valid. (The layout comparison in `designir-fence` is DIFF-0c's and was not yet in that tree) |
+| the rows | 247 names in one order on both machines, rowset `389da490e1cfb6aa` | the same |
+| the logs | the host's printed output against the build container's log, line by line; with line ends as LF the host's text has the container log's SHA-256, `dc96d377…` | the same, as printed |
+| the registered values | the design's id, its 908 bytes, the target's content and the child's head are literals in the rows, and the rows pass on each machine | reproduced on each |
+
+The trees are not the same tree: the host's holds its records, and Git's id of it is not the container's
+(`c8bac9d4…`). What is the same is what the gate printed and what the rows hold. The compact output prints a row's
+name and whether it passed; the rows' counts were printed by neither host run.
+
+**His fourth text.** It rules on three candidates that had been put to him in private, and on two suggestions. Its
+distinction: *DIFF-0 should certify a state transition, not grow a general-purpose provenance system.*
+
+| item | his ruling | where it rests |
+|---|---|---|
+| a ledger head: a commitment over the ledger's entries, so a later ledger can be shown to extend an earlier one | **DEFER** | nothing built. It answers a later question than this rung's |
+| validating every compile at content time against the statements applied to it | **REJECT** for this rung; kept as a ghost | G29. It would collapse the thing compiled and the court that judges the registered claims |
+| the registration's instrument as a layout | **ACCEPT**, no new row | `designir-fence` |
+| the origin's digest | **ACCEPT**, as a projection | `designir-preregistered` |
+| a chain-validity precondition before the machines are compared | **ACCEPT**, as a protocol and not a row | the table above; every later host run that is compared |
+| a triple-write or meta-audit, as his table names it | **DEFER** | nothing built; wait for a first independent host result |
+
+They are registered as `DESIGN-IR/DIFF-0c` (`38b51bed`), an amendment written with the host's output in view and
+blind in nothing. It adds no claim and no row.
+
+**The four relations, in his words no fifth.**
+
+| relation | his form | held by |
+|---|---|---|
+| historical continuity | `was₍ᵢ₊₁₎ = isᵢ` for every link | `designevent-preregistered`, `designir-preregistered` |
+| origin closure | `H(Canon(Orig(Pₜ))) = RSN_ORIGIN` and `|Orig(Pₜ)| = 56` | `designir-preregistered` |
+| behavioural realization | every registered row passes | the gate |
+| declared-transition completeness | `Δ_D(S₀,S₁) = N_Δ(A)` | `designir-fence` |
+
+An independent reconstruction on another machine is the test that the four are realized. It is not a fifth.
+
+**What DIFF-0c built, in rows that exist.**
+
+- *The layout.* The domain `D` is the files REASON-COURT-0 holds: 41 Rust sources under `kernel/`, `shell/` and
+  `workshop/` and 17 sealers under `verify/`. `S₀` is the origin projection, `S₁` the files on disk. The fence
+  holds both inclusions: no file of `D` differs from the origin that an amendment does not name as changed or
+  added, and no amendment names a file that does not differ. Today that is seven files. Three plants on the same
+  comparison are refused: a file changed that no amendment names, a file added that none adds, an amendment naming
+  a file that did not change. Tried against the disk here, outside the gate: a line added to a workshop source,
+  and a stray source under `shell/`, each turned the fence red with the file's name.
+- *The origin as a projection.* The formulation his text corrects was not the tree's: the tree already undid the
+  links before digesting. What the ruling adds is the count, held explicitly, and the name. Today's 58 pins,
+  every named link undone, are 56 files that digest to `99d0d92e…ae3e`.
+- *His qualification, a condition of the entry:* the origin's digest anchors identity and history and does not
+  establish meaning. It commits to a set of pins. What those files do is the courts' to show.
+
+Said plainly in the entry: over `D` the layout relation follows from the chain, the origin and the pins'
+identity where all three hold. The fence now holds it directly, against the files and not against the pin table.
+Outside `D` — the gate itself, the ledger, the registers, the design tool, the documents — the gate keeps no
+origin. There a transition is shown by Git's own comparison of two commits, a fact of that transition. For this
+rung's build that comparison lists seven files, and the registration's instrument names each of those places and
+no other.
+
+**The mutation campaign, in his reading.** He writes the campaign's classes as a partition, `M = M_C ⊎ M_F ⊎ M_E ⊎
+M_H`: caught by a row that runs the compiler, caught only by the fence, equivalent, a hole. `M_F` is not empty:
+four defects reached no behaviour and were caught only by the fence's reading of the source. So the fence is not
+redundant with the rows that run the compiler. And the four caught only by the single-byte court are, in his
+words, the strongest argument *against replacing the court with sampled named cases*.
+
+His last word on the rung: *I would stop adding architecture here.*
+
+**Grade.** DECLARED: the fourth text and its rulings; the protocol. ESTABLISHED (gate, the build container): the two
+rows as DIFF-0c changes them, 247 in the gate, three passes identical, one of them with the host's records
+present. MEASURED (host): the built gate, 247 of 247, two runs on one tree, FULL×2 by his predicate; pushed
+(`11afebf..c8b6a1f`). OBSERVED (the owner's host, one run, off the gate): the design tool's seventeen checks.
+OBSERVED (the build container): the host's printed output compared with the container's log.
+
+**does_not_show.** That the host and the build container hold the same tree: they do not, and the comparison is of
+what the gate printed. Anything about a file outside the layout's domain. That the pinned files are right. That
+DIFF-0c's two changed rows pass on the host: they have not run there. What a compile costs on Windows: the host's
+output carries no time.
+
+**Falsifier.** A file of the domain that differs from the origin and that no amendment names, with the fence
+passing. A host run in which a chain row fails and the machines are compared all the same. The host's gate, with
+DIFF-0c applied, not reading 247 rows with rowset `389da490e1cfb6aa`.
+
+## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; it waits for the owner's word)
 
 ```
   the owner's court ──► one reading, six rulings, four laws        ratified, 2026-10-07
