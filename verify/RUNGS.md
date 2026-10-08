@@ -6585,7 +6585,7 @@ blind in nothing. It adds no claim and no row.
 | relation | his form | held by |
 |---|---|---|
 | historical continuity | `was₍ᵢ₊₁₎ = isᵢ` for every link | `designevent-preregistered`, `designir-preregistered` |
-| origin closure | `H(Canon(Orig(Pₜ))) = RSN_ORIGIN` and `|Orig(Pₜ)| = 56` | `designir-preregistered` |
+| origin closure | `H(Canon(Orig(Pₜ))) = RSN_ORIGIN` and `\|Orig(Pₜ)\| = 56` | `designir-preregistered` |
 | behavioural realization | every registered row passes | the gate |
 | declared-transition completeness | `Δ_D(S₀,S₁) = N_Δ(A)` | `designir-fence` |
 

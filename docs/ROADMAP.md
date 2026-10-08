@@ -150,7 +150,7 @@ DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host'
       ↓
 HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2
       ↓
-LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). Neither is placed in the order
+LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
       ↓
 PRESENT-1 (its screen witness settled first), the live-loop re-breakdown, BANDWIDTH-0 / POOL-0; DRIFT-0 continues alongside
 ```
@@ -2269,6 +2269,107 @@ the owner's.
 **Grade.** DECLARED: the texts, the court's rulings and the registration; semiotics, declared only. OBSERVED (the
 build container): the laws checked on the reference. MEASURED (host): the gate with the registration applied (0143
 and 0144), 242 of 242, one run; pushed (`5c8ad19..11afebf`, which carries 0142 to 0144). Nothing of it is built.
+
+### REFLEX — a reflexive semantics: authority, perspective, effect, environment, observation, reconstruction, intervention and certification as relations · **declared** (two texts the owner brought, 2026-10-08, after a research report put to him in private); considered at his word; not registered, nothing built
+
+```text
+  knowledge flows up:      L0 world ─► L1 claims ─► L2 campaigns ─► L3 claims about campaigns
+  authority does not flow down, unless it becomes an explicit input at L0
+
+  observe freely ·  intervene explicitly ·  certify only from below          (his cardinal rule)
+```
+
+**The first text.** His judgement of what came before it: *still too conservative*. A per-row matrix of
+environmental dependencies is one projection of something larger. In it:
+
+| his element | in his words, or close |
+|---|---|
+| the object | `𝓡 = (A, E, O, P, D, L, τ, Γ)`: authority, environment, observer, the authoritative projection, declared dependencies, semantic level, a contract for failure and termination, an evidence graph. *A row is merely one executable instance of a claim*, and a claim's verdict is PASS, FAIL or UNDEFINED |
+| one theory, not four | the world changing, the environment changing a verdict, observation changing the world, claims about claims: *four manifestations of dependency* |
+| an effect footprint | `Eff(x) = (R, W, I, O, M)`: reads, writes, interventions, observations emitted, meta dependencies |
+| backreaction | the scalar dropped for the set of counterexamples `BR_P(O) = {(s,T) \| P(T(s)) ≠ P(T(O(s)))}`, and observers classed by their reaction footprint, from a pure projection to an *unbounded observer*, which is inadmissible |
+| lenses | an observer is `get` only; a participant is `get` with a lawful `put`; *illicit backreaction* is `get` with a hidden `put`. An observer has an effect signature, not only a return type |
+| correction | *Any correction crossing from observer state back into authority must become an explicit authoritative input* |
+| stratification | a finite truth table is possible; what matters is the level. A row may read another row's recorded result; it may not declare truth for claims that include itself |
+| grounding | a graph of which verdict depends on which; grounded recursion allowed, with `⊥` where a claim is not grounded: PASS / FAIL / UNDEFINED, a least fixed point |
+| the reflexive certificate | sound over a domain iff seven things hold: authority closure, environmental noninterference, observer transparency, observer fidelity, reconstruction (`Replay(Seal(A)) ∼_P A`), groundedness, and an endorsement path computed by an implementation independent of the path that produced the claim |
+| a certificate as a graph | who may observe whom, who may change whom, which environment may matter, which claims rest on which evidence, where the last endorsement comes from |
+| Kross | a naming system only: *rights decrease as perspective increases* |
+| a capability lattice | 1P read, write, commit; 2P read, propose; 3P read, observe, reconstruct; L2 inspect, mutate in a campaign, compare; L3 certify about L2. Nothing at L3 reaches the authority |
+| the Adversarial Projection Principle | his name for *direct the perturbation; watch every row*: a perturbation may be chosen by a hypothesis about one observation, and is judged against the whole verdict vector, *so the investigator does not select both the weapon and the target* |
+| a declarative perturbation | a claim declares what it reads and what it must not depend on; the compiler solves for the perturbations — a clock whose decimal or hexadecimal spells a literal, a path that holds it — and runs the whole-vector comparison |
+| the matrix compiled | static, dynamic, directed, mutation, grounding and independence obligations derived from each row's declaration, *not documentation* but *executable semantics* |
+| the identity | *Verðandi compiles not only a world, but the permitted perspectives on that world* |
+| the arena | the same calculus would certify a map: whether rendering, a spectator or the folder can perturb what is authoritative in play |
+
+His ladder, *a sequence of increasingly strong theorems*, and *I would not immediately build all of this*:
+
+```text
+  REFLEX-0  perspective types          authority, observer, reconstructor, intervener, court, meta; no behaviour changes
+  REFLEX-1  effect footprints          declared against actual
+  REFLEX-2  environmental independence the whole verdict vector under E → E′
+  REFLEX-3  oracle-directed perturbation  a literal of an oracle solved into the environment
+  REFLEX-4  observer transparency      observers off against on, the same authority inputs
+  REFLEX-5  reconstruction             replay of the seal, equivalent over future traces
+  REFLEX-6  grounded meta-claims       the claim graph built, ungrounded cycles refused
+  REFLEX-7  an independent court       a checker that is not another run of the same checker
+  REFLEX-8  the reflexive certificate  machine-readable: authority, effects, dependencies, perturbations,
+                                       observations, reconstruction, grounding, independent endorsement
+```
+
+His ruling: the report's idea of a per-row matrix is good, and *the actual breakthrough is one level above it*: a
+reflexive semantics of which the matrix is one projection.
+
+**The second text.** Said to be *the operational mapping of this reflexive architecture*. It restates the first text
+as four parts — dependency as one axis, observers verified by effect type, the boundary of correction and levels,
+the graph of grounding — and closes with a table that gives each level of the tree a rung.
+
+**Considered against the tree.** Each line is what stands. None is a proposal.
+
+| the first text asks for | what stands |
+|---|---|
+| a correction becomes an explicit input | holds where an edit is made: *language proposes, the shell admits, the session records*. The design tool proposes and only the shell's admission writes; a host's state is attached after a label is fixed (`hoststate-fence`) |
+| the capability lattice's 2P, read and propose | the design tool: it reads a session and proposes a batch; only the shell's admission writes |
+| reconstruction, `Replay(Seal(A)) ∼_P A` | replay is the authority: sessions replay to their heads in rows (`sessionwalk-replay`, `livesession-resume`, `admit-replay`) |
+| an endorsement path independent of the producing one | holds per row in many rows: the compiler against the gate's own reference (`designir-compile`), a Python twin of the movement rules (`input-replay`), two readers (`readercourt-agree`), the frozen oracle (`kernel-oracle`). For the gate itself, no: the host runs the same gate |
+| a grounding graph | not declared. The rows run in one fixed order, and what a row takes from the rows before it is not written down |
+| effect signatures for observers | none in the design language or the gate. `membrane-wall` refuses one path of writing, in memory, through a Reading |
+| levels L2 and L3 | outside the rows, as his rulings keep them: the mutation campaigns, the class reading of G30, the host's reconstruction, the perturbed pass |
+
+**Where the texts need care.**
+
+- *Lenses.* The laws are Foster, Greenwald, Moore, Pierce and Schmitt's (2007): GetPut, putting back what was just
+  got changes nothing; PutGet, getting what was just put gives it back; PutPut, a second put overrides the first.
+  An observer that reads and writes back what it read satisfies GetPut. So no comparison of states or outputs can
+  tell it from one that never writes; what tells them apart is the effect signature, as the first text says.
+- *Grounding.* The first text gives an ungrounded claim `⊥` and keeps grounded recursion. The second makes the graph
+  a DAG and a cycle red. They are two rules; which one is his.
+- *The second text describes as done what the first declares.* Its words against the tree:
+
+| the second text | what stands |
+|---|---|
+| *an unyielding, self-certifying machine* | the first text's rule is the opposite: *certify only from below*. Nothing in the tree certifies itself, by his own rulings |
+| the write-back mutant *completely neutralized*; *rejected at compile-time* | nothing is built. No observer has an effect signature. A Rust shared reference forbids writing only for types without interior mutability, and files, the environment and statics are outside it |
+| purity by construction, *completely removing the need* for runtime checks | the first text keeps dynamic testing as *the second line of defense* |
+| a correction as an *explicit, authenticated input* | nothing is authenticated: a seal is a hash, not a signature (G16). The first text says *explicit authoritative input* |
+| a row at L(n+1) *structurally blocked* from reaching down | held by rulings and by the rows' own design, not by a structure: nothing prevents a row from reading anything |
+| a cycle caught, the gate red, *refuses to emit the binary* | no such check exists, and the gate emits no binary |
+| L0 BEARING-FAST-0 and SIM-TICK-0, *the integer-locked, float-free physical substrate* | a rung is not a level: each rung puts programs at L0 and rows at L1. The tick law and the bearing camera are integer; there is no physics |
+| L1 ADMIT-0 and DESIGN-IR/DIFF-0 | their programs, the admission and the compiler, are on the path of the authority, L0; their rows are L1 |
+| L2 READER-COURT-0 and REASON-COURT-0, *dual-runtime cross-language parsing courts* | rows, L1. READER-COURT-0 holds two readers of one language to one verdict; REASON-COURT-0 holds refusals to registered reasons, and is not a parser |
+| L3 MINT-WATCH-0 and the G30 audit, *absolute exception tracking* | MINT-WATCH-0 is rows, L1, and states its reach: 105 of 164 raise sites never reached, a mint not a judgment, the watch hearing up to its own row (G26). The class reading of G30 was outside the gate, L2 |
+| *the standing layout of the active rungs transitions into its definitive configuration* | no rung changed. The ladder stands as before, and HERMENEUTICS-0 waits for his word |
+
+**What stays declared.** All of it. REFLEX gathers what was declared before it: REFLEX-2 is the environmental
+independence he accepted and deferred, REFLEX-0 and REFLEX-1 are PERSPECTIVE-0's laws as types and effects,
+REFLEX-3 is the clock of G30 made general. Whether any becomes a registered rung, in what order, and against
+HERMENEUTICS-0, is his.
+
+**Grade.** DECLARED: the two texts and his ruling. ESTABLISHED (gate): the rows named above, as they stand.
+OBSERVED: nothing was computed for this section.
+**does_not_show.** That the seven conditions of the certificate can be held of this tree. That an effect signature
+can be given to an observer in Python or in the design language. That a compiled matrix would stay small enough
+to read.
 
 ### PERSPECTIVE-0 — what a system is, what it sees, what it models, what it may claim · **declared** (three texts the owner brought, 2026-10-08); considered at his word; not registered, nothing built
 

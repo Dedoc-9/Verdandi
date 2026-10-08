@@ -252,8 +252,9 @@ rows, grade, limits and falsifier; this is the order and the state.
                     audit; design objects and constraints, each a court of its own; a competitive arena,
                     whose claims would be executable constraints and not a proof of fairness; environmental
                     independence, accepted as an audit and deferred; PERSPECTIVE-0, observation stratified from
-                    action and claim; the presentation and latency measurement; PRESENT-1; a design language
-                    with many editors
+                    action and claim; REFLEX, nine steps toward a certificate of who may observe and who may
+                    change; the presentation and latency measurement; PRESENT-1; a design language with many
+                    editors
 
 The order first ratified named a strip cache as GAUNTLET-0 and ended in MATERIAL-0, a picture becoming a material
 under a gate. GAUNTLET-0 became a measurement instead, and MATERIAL-0 is not seated.

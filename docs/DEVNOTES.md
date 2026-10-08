@@ -569,6 +569,10 @@ What stands against the tree, as reviewed:
 58. **A count of red rows is not a count of defects.** One space failed four rows: three that read the path, and the
    court that heard their refusals. The fourth was the gate working.
 
+59. **A fluent summary is a claim like any other.** A text arrived describing as built, compiled and absolute what
+   another text, the same day, had declared. It was read against the tree line by line before a word of it was
+   written down: what stands, what does not, and the rung table it drew, set right.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
