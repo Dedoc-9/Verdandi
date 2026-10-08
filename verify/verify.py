@@ -13669,17 +13669,34 @@ def _rsn_chain_ok(rel: str) -> bool:
 RSN_ORIGIN = "99d0d92e68bf46f8a2c9d43b888856375e2612c17c824dc11439bc0f2bb7ae3e"
 
 
-def _rsn_origin(pins: dict, chain: tuple) -> str:
-    """The digest of a pin table with every link undone: each moved file at the hash its first link says it had, each
-    added file left out."""
+def _rsn_origin_table(pins: dict, chain: tuple) -> dict:
+    """The origin projection of a pin table (DESIGN-IR/DIFF-0c): every link undone — each moved file at the hash its
+    first link says it had, each added file left out."""
     first = {}
     for _name, moved, added in chain:
         for rel in added:
             first.setdefault(rel, None)
         for rel, (had, _has) in moved.items():
             first.setdefault(rel, had)
-    table = {rel: first.get(rel, h) for rel, h in pins.items() if first.get(rel, h) is not None}
+    return {rel: first.get(rel, h) for rel, h in pins.items() if first.get(rel, h) is not None}
+
+
+def _rsn_origin(pins: dict, chain: tuple) -> str:
+    """The digest of a pin table's origin projection: one file to a line, its name, a space and its hash, in the order
+    of the names. It commits to a set of pins; it says nothing of what those files do."""
+    table = _rsn_origin_table(pins, chain)
     return sha256("".join("%s %s\n" % (rel, table[rel]) for rel in sorted(table)).encode("utf-8"))
+
+
+def _rsn_layout(origin: dict, built: dict, chain: tuple) -> tuple:
+    """The declared transition against the repository's, over the files given (DESIGN-IR/DIFF-0c): (the files that
+    differ between the origin and the built state and that no amendment names as changed or added; the files an
+    amendment names as changed or added that do not differ). Both empty: the amendments account for the transition."""
+    delta = {f for f in set(origin) | set(built) if origin.get(f) != built.get(f)}
+    named = {f for _n, moved, added in chain for f in list(added) + [r for r, (had, has) in moved.items() if had != has]}
+    return sorted(delta - named), sorted(named - delta)
+
+
 MW_AMENDED = {
     "verify/livesession.py": {
         "was": "2c42a94cefab4584d5b216da7e3d0669be9d1d1ae054cd6e363a35c867a9d2bb",
@@ -14856,6 +14873,11 @@ DESIGNIR0A_HASH = "c414587dd85ba2760945aaea0b60ee854fdee0a5928b5547118df0ae27ae4
 # campaign added to the corpus.
 REASONCOURT0B_HASH = "d51b4d20cc01f6e76eb648f5f32dbe77b92a75d372c1909ae3b9ecaa125f2339"
 DESIGNIR0B_HASH = "42ac51f55f1852ad487f5cd5a77511b912f9b4b9773c14b764fee5d9f83503dd"
+# DESIGN-IR/DIFF-0c, registered after the rung was built, run on the host and pushed: the owner's rulings of 2026-10-08.
+# Two of them are held here, in rows that exist: the origin as a projection of 56 files (designir-preregistered), and
+# the layout relation — over the files REASON-COURT-0 holds, what differs from the origin is exactly what an amendment
+# names (designir-fence). No row is added.
+DESIGNIR0C_HASH = "38b51bed2f27825dd82b72d6345794e5dbd6d44928fcba25303ca1980c6432db"
 DIR_ROWS = ("designir-preregistered", "designir-language", "designir-compile", "designir-equivalence", "designir-fence")
 DIR_ROWSET_BEFORE = "aa94c886190510c7"   # the 242 rows before this rung, by name and order
 DIR_VERSION = b"VERDANDI-DESIGN 0"
@@ -15310,7 +15332,10 @@ def _dir_amendments(reg) -> str:
     """The amendment entries this build carries: each registered, unedited, citing the entries it amends and this
     rung's. REASON-COURT-0b's link is the chain's second, named in the entry with its hashes; every chain reaches its
     built file; and today's pins with every link undone are the origin REASON-COURT-0b registers."""
-    rcb, dib = reg.get("REASON-COURT-0b"), reg.get("DESIGN-IR/DIFF-0b")
+    rcb, dib, dic = reg.get("REASON-COURT-0b"), reg.get("DESIGN-IR/DIFF-0b"), reg.get("DESIGN-IR/DIFF-0c")
+    if dic is None or dic.get("chain_hash") != DESIGNIR0C_HASH or not entry_hash_ok("DESIGN-IR/DIFF-0c", dic) \
+            or any(h not in dic["hypothesis"] for h in (DESIGNIR0_HASH, DESIGNIR0B_HASH, REASONCOURT0B_HASH, RSN_ORIGIN)):
+        raise Red("the DESIGN-IR/DIFF-0c entry is missing, edited after registration, not the registered one, or does not cite the entries it follows and the origin")
     if rcb is None or rcb.get("chain_hash") != REASONCOURT0B_HASH or not entry_hash_ok("REASON-COURT-0b", rcb) \
             or dib is None or dib.get("chain_hash") != DESIGNIR0B_HASH or not entry_hash_ok("DESIGN-IR/DIFF-0b", dib):
         raise Red("an amendment entry this build carries is missing, edited after registration, or not the registered one")
@@ -15330,7 +15355,8 @@ def _dir_amendments(reg) -> str:
             raise Red("%s: the file REASON-COURT-0b adds does not reach the built file, or the entry does not name it with its hash" % rel)
     # history, whole: every file an amendment names reaches its built file, and every pin is the origin's or is reached from it
     named = sorted({rel for _n, mv, ad in RSN_CHAIN for rel in list(mv) + list(ad)})
-    if any(not _rsn_chain_ok(rel) for rel in named) or _rsn_origin(RSN_SOURCES, RSN_CHAIN) != RSN_ORIGIN or RSN_ORIGIN not in rcb["hypothesis"]:
+    if any(not _rsn_chain_ok(rel) for rel in named) or _rsn_origin(RSN_SOURCES, RSN_CHAIN) != RSN_ORIGIN or RSN_ORIGIN not in rcb["hypothesis"] \
+            or len(_rsn_origin_table(RSN_SOURCES, RSN_CHAIN)) != 56:
         raise Red("a chain does not reach its built file, or today's pins with every link undone are not the 56 REASON-COURT-0 found")
     # PLANTS, on the same checks: a link that does not start where the one before it ended; a chain that stops before
     # the built file; a pin moved that no link names
@@ -15344,12 +15370,14 @@ def _dir_amendments(reg) -> str:
     return ("the two amendment entries the build carries are in the ledger, unedited, each citing the entries it amends and "
             "this one: REASON-COURT-0b (%s) names the one pin this rung moves, shell/main.rs, with the hash the file had — the "
             "hash REASON-COURT-0a named for it — and the hash the built file has, and the one file it adds, "
-            "shell/designcompile.rs; DESIGN-IR/DIFF-0b (%s) records the owner's rulings; the amendment chain holds for each "
+            "shell/designcompile.rs; DESIGN-IR/DIFF-0b (%s) records the owner's rulings, and DESIGN-IR/DIFF-0c (%s) his later "
+            "ones; the amendment chain holds for each "
             "of the %d files an amendment names — each link starts where the one before it ended and the last is the built "
-            "file's — and today's %d pins with every link undone are the 56 REASON-COURT-0 found (%s...); PLANTS: a chain "
+            "file's — and the origin projection of today's %d pins, every link undone, is 56 files that digest to the origin "
+            "REASON-COURT-0b registered (%s...); PLANTS: a chain "
             "with a broken link, a chain that stops before the built file, a pin moved that no link names, and a link left "
             "out of the table are each refused by the same checks"
-            % (REASONCOURT0B_HASH[:8], DESIGNIR0B_HASH[:8], len(named), len(RSN_SOURCES), RSN_ORIGIN[:12]))
+            % (REASONCOURT0B_HASH[:8], DESIGNIR0B_HASH[:8], DESIGNIR0C_HASH[:8], len(named), len(RSN_SOURCES), RSN_ORIGIN[:12]))
 
 
 # ------------------------------------------------------------------ the rows
@@ -15823,6 +15851,27 @@ def designir_fence():
     import livesession as LS
     if LS.renderer_id(ROOT) != RC_RENDERER_ID or LS.bearing_id(ROOT) != RC_BEARING_ID:
         raise Red("the renderer or the bearing identity is not READER-COURT-0's: this rung touches no renderer")
+    # the layout (DESIGN-IR/DIFF-0c): over the files REASON-COURT-0 holds — every Rust source under kernel/, shell/ and
+    # workshop/ and every sealer under verify/ — the files whose bytes on disk differ from the origin are exactly the
+    # files an amendment names as changed or added. Nothing undeclared changed; nothing declared failed to change.
+    domain = sorted(d + "/" + f for d in ("kernel", "shell", "workshop") for f in os.listdir(os.path.join(ROOT, d)) if f.endswith(".rs")) \
+        + sorted("verify/" + f for f in RSN_SEALER_FILES)
+    built = {rel: sha256(read(os.path.join(ROOT, *rel.split("/"))).replace(b"\r\n", b"\n")) for rel in domain}
+    origin = _rsn_origin_table(RSN_SOURCES, RSN_CHAIN)
+    undeclared, unchanged = _rsn_layout(origin, built, RSN_CHAIN)
+    if undeclared or unchanged or len(origin) != 56 or _rsn_origin(RSN_SOURCES, RSN_CHAIN) != RSN_ORIGIN:
+        raise Red("the amendments do not account for the transition from the origin: changed and named by none: %s; named and not changed: %s"
+                  % (", ".join(undeclared) or "none", ", ".join(unchanged) or "none"))
+    named = sorted(set(built) - {f for f in origin if origin[f] == built.get(f)})
+    # PLANTS, on the same comparison: a file changed that no amendment names; a file added that no amendment adds; an
+    # amendment naming a file that does not differ from the origin
+    quiet = "kernel/main.rs"
+    other = sha256(b"designir-fence: changed, and named by no amendment")
+    planted = (_rsn_layout(origin, dict(built, **{quiet: other}), RSN_CHAIN),
+               _rsn_layout(origin, dict(built, **{"shell/unnamed.rs": other}), RSN_CHAIN),
+               _rsn_layout(origin, built, RSN_CHAIN + (("a planted amendment", {quiet: (origin[quiet], other)}, {}),)))
+    if quiet in named or planted != (([quiet], []), (["shell/unnamed.rs"], []), ([], [quiet])):
+        raise Red("PLANT not refused: a file changed or added that no amendment names, or an amendment naming a file that did not change")
     # the rows: the 242 before this rung keep their names and order, and this rung adds five
     names = _mw_rows_by_source()
     if sha256("\n".join(names[:242]).encode("utf-8"))[:16] != DIR_ROWSET_BEFORE or tuple(names[242:247]) != DIR_ROWS or len(names) != len(set(names)):
@@ -15844,10 +15893,14 @@ def designir_fence():
             "selftest alone, and shell design-compile takes no plant; shell design takes no design; no other file of the "
             "shell, none of the workshop or the kernel, and not the sealer holds anything of the source language; none of "
             "the %d Python files under verify/ imports the design tool or names a path of its folder; the gate's reference "
-            "is used by this rung's rows alone; the renderer and bearing identities are READER-COURT-0's; the 242 rows "
+            "is used by this rung's rows alone; the renderer and bearing identities are READER-COURT-0's; the layout "
+            "(DESIGN-IR/DIFF-0c): over the %d files REASON-COURT-0 holds, read from disk, the files that differ from the "
+            "origin's 56 are exactly the %d an amendment names as changed or added (%s) — nothing undeclared changed and "
+            "nothing declared failed to change; PLANTS: a file changed that no amendment names, a file added that none "
+            "adds, and an amendment naming a file that did not change are each refused by the same comparison; the 242 rows "
             "before this rung keep their names and their order and this rung adds five; and of the %d children this rung's "
             "rows started that did not end 0, every one carries a registered code in a code head (%s)"
-            % (scanned, len(heard), ", ".join("%s %d" % (r.split("-", 1)[1], by_row[r]) for r in DIR_ROWS if by_row[r])))
+            % (scanned, len(domain), len(named), ", ".join(named), len(heard), ", ".join("%s %d" % (r.split("-", 1)[1], by_row[r]) for r in DIR_ROWS if by_row[r])))
 
 
 def main() -> int:
