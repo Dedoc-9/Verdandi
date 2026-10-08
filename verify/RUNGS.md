@@ -2543,7 +2543,7 @@ disagree with the run, a usage error appends a line, the ledger is rewritten, or
 `runledger-fence` goes red if a presenter exit is not preceded by its end, a readback is counted anywhere else, or the
 two files write into each other.
 
-## REFUSAL-WHY-1 — the covering windows written into the refusal log (an apparatus; landed)
+## REFUSAL-WHY-1 — the covering windows written into the refusal log (an apparatus; landed; amended `REFUSAL-WHY-1a` `0b35ec93`: one row's way of observing corrected)
 
 **Why.** REFUSAL-WHY-0 names the windows above ours over a differing box on the console, once. The refusal log keeps
 refusals but not what covered the screen. So "the same overlay, in six runs" still meant reading transcripts.
@@ -2586,7 +2586,8 @@ together.
 carries them before its own context, a non-readback refusal carries them, or the reader keys on the rectangle.
 `refusalwhy1-fence` goes red if the fields read a title or a pid, a surface walks twice, or the probe writes to the log.
 
-**A pass that failed for the clock's reason (2026-10-08, the build container). Not fixed.** A gate pass on the
+**A pass that failed for the clock's reason (2026-10-08, the build container).** As first written, before the
+owner ruled; the ruling and the correction follow it. A gate pass on the
 commit that holds only DESIGN-IR/DIFF-0c's entry read `[FAIL] refusalwhy1-log  a title or a pid reached the refusal
 log`. Nothing had reached it.
 
@@ -2616,6 +2617,95 @@ process, or a digest. The reason register does not hold this statement, so nothi
 OBSERVED: the rate, an estimate. NOT_MEASURED: any such failure on the host.
 **does_not_show.** That no other row reads a clock's digits this way. One use of this test was looked for and one
 was found; a search of every row that tests a log's whole text is owed.
+
+**Ruled a defect of the gate, and corrected (`REFUSAL-WHY-1a`, `0b35ec93`, 2026-10-08).** The owner's ruling, on
+reading the finding: *a real gate defect, not a tree defect.* The row *is trying to establish a semantic refusal
+property, but its observation function is accidentally broader than the property.*
+
+| | the row's test |
+|---|---|
+| as it was | the four digits are somewhere in the text of the log |
+| as he rules it | some record holds them in its context or in a named member |
+
+His conditions, each kept:
+
+- *Don't solve this by adding another exclusion such as "ignore `unix_ms`". That would merely move the accidental
+  dependence.* The row names what it reads: a record's context, key by key and value by value, and `operation`,
+  `surface`, `reason_code` and `attribution`. It keeps no list of members to skip.
+- No reason is registered: *an implementation correction to an existing registered statement, not a new semantic
+  claim.* The reason register is the registered bytes.
+- The gate is read for the class and not for the digits: *semantic assertion implemented as whole-log substring
+  search.*
+- The distinction is shown, and attacked.
+
+His text states the registered proposition as the log *containing* a reason and a context. The clause this row
+holds runs the other way: a title and a pid must not be there. The ruling is the same in either direction and is
+applied to the clause as registered: *anywhere in the log* is read as *in any member a program writes about a
+refusal or a window*.
+
+**The same commit, run again whole.** The tree was not touched: `GATE PASSED`, rowset `389da490e1cfb6aa`, 247 rows
+/ 0 fail / 0 skipped. So one commit gave a pass that failed and a pass that passed, with the clock the only
+difference. In his words that makes it *a gate-observability defect, not a design/compiler defect.*
+
+**The row, as corrected.** Six plants on the same check.
+
+| planted | ends |
+|---|---|
+| a record of the log itself, its clock set to `1791424258960` and its ids to match | clean. It holds the four digits; the earlier test refused it |
+| a pid in a context value | found |
+| a title in a context value | found |
+| a context key that names a pid | found |
+| a context key that names a title | found |
+| a pid in a named member | found |
+
+**Attacked off the gate** (one sitting here, a script outside the repository): six real defects planted in the
+shell's field builder, the row run against each.
+
+| the defect | caught by |
+|---|---|
+| the pid written into the program field; the pid as the class; the title as the class; the pid as the covering count | the row's exact comparison of the registered fields, before the changed test is reached; and the fence, by source |
+| one more field holding the pid; one more field holding the title | the changed test, with its own sentence; and the fence, by source |
+| nothing changed | passes |
+
+So the changed test is what stands between the log and a leak that leaves the registered fields as they were.
+
+**The clock, moved** (one sitting here, off the gate). A small preloaded library outside the repository shifts the
+wall clock of the shell that loads it. The row was run alone, on the tree as it stood before the correction and on
+the corrected tree.
+
+| the shell's clock | the row as it was | the row as corrected |
+|---|---|---|
+| as it is | passes | passes |
+| moved into the hundred seconds whose milliseconds begin `17914242` | fails: *a title or a pid reached the refusal log* | passes |
+| moved into sixty-five seconds whose milliseconds, in hexadecimal, begin `1a14242` (2026-10-16, from 01:09:44 UTC). No record's clock in decimal holds the digits there; the ids the logger mints from the clock do | fails, the same sentence | passes |
+
+So the failure is no longer one sighting and an estimate. It is made to happen, by the two routes the estimate
+counted, and the correction is shown at the same instants. The second window lies ahead: a gate without the
+correction fails if this row runs inside it.
+
+**The gate read for the class.** By syntax over the 32 Python files under `verify/`, then by hand. An instrument
+outside the repository.
+
+| | |
+|---|---|
+| tests of whether a literal is in something | 895 |
+| calls that count, find or match a literal | 407 |
+| tests that raise when the literal *is* found | 312 |
+| of those, over text made at run time (not a source file, an entry or a container) | 42 |
+| rows that search a whole serialized log or record for a word that stands for a member | 3: `refusalwhy1-log` (the title, the pid), `mouselook-capture` (five words about focus, in a saved session's data), `presentexact-sealer` (one word, in a record's data) |
+| literals among those that a clock, an id or a digest can spell | 1: the pid |
+
+Every other forbidden literal over run-time text holds a letter outside the hexadecimal digits, or is a phrase.
+One defect of the class was found, this one. The two other rows are of the class in form and have no source of
+chance. They are named and not changed.
+
+**Grade.** DECLARED: the ruling and the reading of the registered words. ESTABLISHED (gate, the build container):
+the row as corrected. OBSERVED (the build container): the pass that failed and the pass that passed on one commit;
+the six planted defects; the clock moved; the reading for the class.
+**does_not_show.** That a search built another way has no such defect: the reading is of membership tests,
+counts, finds and matches. That a path a program prints cannot hold a forbidden word: no row controls where the
+tree is checked out. The rate as a measurement. Anything about the host's clock: the library moves the clock of a
+process that loads it, on the build container.
 
 ## DRIFT-0 — what variation is present within a run and between runs of the same workload (observational; sitting 1 of 3 complete)
 

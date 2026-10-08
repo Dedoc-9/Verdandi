@@ -2354,6 +2354,13 @@ competitive map executable.*
   layout adjusted until the times are close, the defenders a little early; maps are judged by playing both sides.
   So the practice the text wants to make executable already measures timings, by hand and by play.
 
+**Where he places it (a later text, the same day).** Not in this rung: *I would not let the arena material
+contaminate this rung.* The order he draws: the compiler's rung; then *harden observation semantics*, which is the
+correction of a row that read the clock (G30); then independent reconstruction on the host; then a spatial
+representation; collision, visibility and navigation derived from geometry; courts of competitive constraints; a
+playable arena. His reason for the order: *before Verðandi starts certifying spatial claims, the court machinery
+itself has to be trustworthy about what it observes.*
+
 **What stays declared.** All of it. Whether this becomes a rung, and where it sits against LIVE-AI-EDIT-0, a
 graphical editor, objects and constraints, is the owner's to rule.
 

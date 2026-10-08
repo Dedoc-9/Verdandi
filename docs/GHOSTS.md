@@ -700,7 +700,7 @@ it is written and false after the next legitimate change.
 found. For the shared misreading: HERMENEUTICS-0. For every design: a later rung, by his ruling. For the ledger's
 head: deferred. For the cost on the host: a time taken there.
 
-## G30 — a row that read the clock without meaning to · OBSERVED (one failed pass in the build container, its cause read from the log it left); its rate an estimate; not fixed
+## G30 — a row that read the clock without meaning to · OBSERVED (one failed pass in the build container, its cause read from the log it left); its rate an estimate; ruled a defect of the gate and corrected (`REFUSAL-WHY-1a`); two rows of the same form named and left
 
 The gate failed once on a tree that was right. `refusalwhy1-log` holds that a mock overlay's pid never reaches the
 refusal log, and tests it by looking for the four digits `4242` anywhere in the log's text. Every record in that
@@ -715,12 +715,25 @@ log carries the clock. For a hundred seconds the clock's own digits held `4242`,
 - **FULL×2 does not protect against it, and is not broken by it.** Two runs on one tree with one output is still
   the claim. A run that fails for the clock's reason is a run that did not pass: it is said, and the tree is run
   again. It is never dropped silently.
-- **Other rows may do the same.** A short string looked for in a whole log, where the log holds a clock, an id or a
-  digest, can be met by chance. This one was found by meeting it. The others have not been looked for.
-- **It is not fixed.** The row belongs to an earlier rung. The correction is small and is the owner's to rule.
+- **It is corrected, by the owner's ruling.** *A real gate defect, not a tree defect.* The row reads each record's
+  context and named members. It keeps no list of things to skip: his word was that one more exclusion would only
+  move the accidental dependence. No reason was registered for it.
+- **One commit, two verdicts.** The same commit, untouched, passed whole when run again. The clock was the only
+  difference.
+- **It can be made to happen.** With the shell's clock moved into the colliding seconds, the row as it was fails
+  every time and the corrected row passes. A second route, through the ids minted from the clock in hexadecimal,
+  fails the same way; its next window is 2026-10-16, 01:09:44 UTC, for sixty-five seconds.
+- **The class was read, and holds two more rows in form.** `mouselook-capture` searches a saved session's whole
+  data for five words about focus. `presentexact-sealer` searches a record's whole data for one word. Neither word
+  can be spelled by a clock, an id or a digest, so neither has a source of chance. They are not changed.
+- **The reading has an edge.** It is by syntax: membership tests, counts, finds, matches. A search built another
+  way is outside it. And a path that a program prints can hold any word.
+- **The real leaks were mostly caught elsewhere.** Of six defects planted in the shell, four were caught by the
+  row's exact comparison of its fields before the corrected test ran. The corrected test is what catches a leak
+  into a field that was not there before.
 
-**Exorcism.** An amendment to REFUSAL-WHY-1 that tests the members a title or a pid could be written to. And a
-reading of every row that searches a log's whole text for a short string.
+**Exorcism.** Done for this row: `REFUSAL-WHY-1a`. For the two rows of the same form: the owner's ruling, if a
+source of chance for their words is ever found. For searches built another way: a wider reading.
 
 ---
 

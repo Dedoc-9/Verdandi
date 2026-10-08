@@ -556,6 +556,12 @@ What stands against the tree, as reviewed:
    carry the time in milliseconds, and one afternoon the time held those digits. Search the member a thing could
    be written to, never the whole text. And read a red row's evidence before believing its sentence.
 
+56. **Fix the observation, not the collision.** The quick repair was to skip the clock. The owner refused it: an
+   exclusion moves the accident to the next field that holds digits. The row now names what it reads. Then the
+   gate was read for the class of the defect, not for the four digits that showed it: one more defect of the kind
+   would have been the same lesson learned twice. A flake with a known mechanism can be made to happen: the clock
+   was moved, the old row failed on demand, and the correction was judged at that instant and not by waiting.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -574,8 +580,9 @@ What stands against the tree, as reviewed:
 - The compiler is built and passes on both machines. A row written about today breaks at the next change: three
   were met and restated, one more is known. What the compiler's court does not reach, and what was deferred, is
   stated (G29).
-- One row can fail for the clock's reason, about one run in three hundred by estimate. Found by meeting it; not
-  fixed; others like it have not been looked for (G30).
+- One row could fail for the clock's reason, about one run in three hundred by estimate. Found by meeting it,
+  ruled a defect of the gate and corrected; the gate was read for the class, and two rows of the same form are
+  named and left (G30).
 
 ## The one-line retrospective, again
 
