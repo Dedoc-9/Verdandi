@@ -2586,6 +2586,37 @@ together.
 carries them before its own context, a non-readback refusal carries them, or the reader keys on the rectangle.
 `refusalwhy1-fence` goes red if the fields read a title or a pid, a surface walks twice, or the probe writes to the log.
 
+**A pass that failed for the clock's reason (2026-10-08, the build container). Not fixed.** A gate pass on the
+commit that holds only DESIGN-IR/DIFF-0c's entry read `[FAIL] refusalwhy1-log  a title or a pid reached the refusal
+log`. Nothing had reached it.
+
+```text
+   the row's test      the mock overlay's pid, the four digits 4242, are nowhere in this row's refusal log,
+                       taken as a substring of the whole text
+   every record has    "unix_ms": the clock, in milliseconds
+   that pass           "unix_ms":1791424258960  …  1791424263953      seven records, each holding 4242
+```
+
+For one hundred seconds every clock value began `17914242`. The pass ran inside them.
+
+| | |
+|---|---|
+| what failed | the row, on a tree whose programs and rows were unchanged from one that passes: that commit changes only the ledger |
+| what it read | the clock's digits, as text. The tree's own rule is that no row reads a wall-clock number. This one did, without meaning to |
+| how often | about one gate run in three hundred, by an estimate taken here: 200,000 start times sampled over thirty days, with this pass's seven records at their own spacing and a random process id; a run counted as failing if any record's clock in decimal, or its run id in hexadecimal, held the four digits. 0.34 per cent. A development estimate, not a measurement of the gate |
+| what it means for the runs on record | nothing is withdrawn. A pass that passed, passed. The host's runs never met it, which at one in three hundred says little |
+| the pass itself | it was stopped at its 161st row when the failure was read. Its log and the row's refusal log are kept outside the repository |
+
+**The smallest correction, stated and not made.** The row is REFUSAL-WHY-1's, and a change to an earlier rung's
+row is an amendment the owner rules. The test should look where a title or a pid could have been written: a
+record's `context` and its named members, and not the clock, the ids the logger mints from the clock and its own
+process, or a digest. The reason register does not hold this statement, so nothing registered there would move.
+
+**Grade.** OBSERVED (the build container, one pass): the failure and its cause, read from the log it left.
+OBSERVED: the rate, an estimate. NOT_MEASURED: any such failure on the host.
+**does_not_show.** That no other row reads a clock's digits this way. One use of this test was looked for and one
+was found; a search of every row that tests a log's whole text is owed.
+
 ## DRIFT-0 — what variation is present within a run and between runs of the same workload (observational; sitting 1 of 3 complete)
 
 **Why.** Twice a preregistered second run has been 40–60% slower than its first (G13), and no court has yet measured

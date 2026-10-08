@@ -112,7 +112,8 @@ row that would redden if the claim were false.
   hole, closed). A count is not a score: the record is by class. A mutant that
   survives is a missing case, and the case is added before the rung is delivered.
 - **Rows assert the apparatus.** A row checks that the plant bites and the bytes agree. It never asserts a hoped
-  result, and no row reads a wall-clock number.
+  result, and no row reads a wall-clock number. (One was found to, without meaning to: it searched a log's text
+  for four digits, and the log's clock held them. About one run in three hundred. Stated and not yet fixed: G30.)
 - **A registration is text the gate hashes.** The entry's chain hash is recomputed on every pass, so a silent edit
   to a locked method is a red row and not a judgement call.
 - **Count again.** The gate reads what it is pointed at. Two facts recorded for READER-COURT-0 (the number of JSON

@@ -700,6 +700,28 @@ it is written and false after the next legitimate change.
 found. For the shared misreading: HERMENEUTICS-0. For every design: a later rung, by his ruling. For the ledger's
 head: deferred. For the cost on the host: a time taken there.
 
+## G30 — a row that read the clock without meaning to · OBSERVED (one failed pass in the build container, its cause read from the log it left); its rate an estimate; not fixed
+
+The gate failed once on a tree that was right. `refusalwhy1-log` holds that a mock overlay's pid never reaches the
+refusal log, and tests it by looking for the four digits `4242` anywhere in the log's text. Every record in that
+log carries the clock. For a hundred seconds the clock's own digits held `4242`, and the pass ran inside them.
+
+- **A row's outcome depended on the time of day.** The rule that no row reads a wall-clock number was written about
+  numbers a row compares. This row compared no number. It searched text that had a number in it.
+- **About one run in three hundred.** An estimate from sampled start times, not a measurement. Rare enough that
+  dozens of runs on two machines never met it, common enough to meet in a long life.
+- **A failure of this kind looks like a finding.** The line it prints says a pid reached the log. It takes reading
+  the log to see that nothing did.
+- **FULL×2 does not protect against it, and is not broken by it.** Two runs on one tree with one output is still
+  the claim. A run that fails for the clock's reason is a run that did not pass: it is said, and the tree is run
+  again. It is never dropped silently.
+- **Other rows may do the same.** A short string looked for in a whole log, where the log holds a clock, an id or a
+  digest, can be met by chance. This one was found by meeting it. The others have not been looked for.
+- **It is not fixed.** The row belongs to an earlier rung. The correction is small and is the owner's to rule.
+
+**Exorcism.** An amendment to REFUSAL-WHY-1 that tests the members a title or a pid could be written to. And a
+reading of every row that searches a log's whole text for a short string.
+
 ---
 
 ## The disposition
