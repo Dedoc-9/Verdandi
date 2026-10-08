@@ -5952,6 +5952,26 @@ def runledger_reader():
 REFUSALWHY1_OVERLAY = {"window_1_program": "mockoverlay.exe", "window_1_class": "MockOverlayClass",
                        "window_1_flags": "topmost+layered+click-through", "window_1_rect": "0,0,1920,40"}
 REFUSALWHY1_TITLE, REFUSALWHY1_PID = "a private title the log must never hold", "4242"
+# REFUSAL-WHY-1a (an amendment, the owner's ruling of 2026-10-08): a title or a pid is looked for where a program
+# could have written one — a record's context, key and value, and its named text members — and not in the log's whole
+# text. That text holds a clock, and a gate pass failed once because the clock's digits held the mock's pid.
+REFUSALWHY1A_HASH = "0b35ec9343737b4c1cd9e3c09bc172de89710637e6e9eb7e6b3e87fe97ae9381"
+REFUSALWHY1_NAMED = ("operation", "surface", "reason_code", "attribution")
+
+
+def _rw1_held(records) -> list:
+    """Where a title or a pid stands in refusal records: (the record's place, the member). The members read are the
+    ones a program writes about a refusal or a window: the context, key by key and value by value, and the named text
+    members. A pid is a whole number, or a context key that names one."""
+    pid = re.compile(r"(?<![0-9])%s(?![0-9])" % re.escape(REFUSALWHY1_PID))
+    out = []
+    for i, r in enumerate(records):
+        members = [(k, "", r.get(k)) for k in REFUSALWHY1_NAMED] + [("context." + str(k), str(k).lower(), v) for k, v in (r.get("context") or {}).items()]
+        for name, key, v in members:
+            text = v if isinstance(v, str) else json.dumps(v)
+            if "title" in key or "pid" in key.split("_") or REFUSALWHY1_TITLE in text or "private title" in text or pid.search(text):
+                out.append((i, name))
+    return out
 
 
 def refusalwhy1_preregistered():
@@ -6014,9 +6034,37 @@ def refusalwhy1_log():
             or (ctx.get("covering_layer"), ctx.get("covering_count")) != ("windows", 1)
             or {k: ctx.get(k) for k in REFUSALWHY1_OVERLAY} != REFUSALWHY1_OVERLAY):
         raise Red("the overlay's record does not carry its window's program, class, flags and rectangle")
-    text = read(log).decode("utf-8")
-    if REFUSALWHY1_TITLE in text or "private title" in text or REFUSALWHY1_PID in text:
+    # (changed by REFUSAL-WHY-1a: this row searched the log's whole text for the pid's four digits, and the log's clock
+    # can hold them. It reads each record's context and named members; a line that is not a record is read for the
+    # title's text and the console's own form of a pid.)
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    am = reg.get("REFUSAL-WHY-1a")
+    if am is None or am.get("chain_hash") != REFUSALWHY1A_HASH or not entry_hash_ok("REFUSAL-WHY-1a", am) or reg["REFUSAL-WHY-1"]["chain_hash"] not in am["hypothesis"]:
+        raise Red("the REFUSAL-WHY-1a entry is missing, edited after registration, or does not cite the entry it amends")
+    logged, unread = RL.read(log)
+    lines = read(log).decode("utf-8").splitlines()
+    loose = [lines[n - 1] for n, _why in unread]
+    if _rw1_held(logged) or any(REFUSALWHY1_TITLE in ln or "private title" in ln or ("pid " + REFUSALWHY1_PID) in ln for ln in loose):
         raise Red("a title or a pid reached the refusal log")
+    # PLANTS, on the same check. A record of this log whose clock and ids hold the pid's digits is clean: the earlier
+    # test, a search of the whole text, refused it. And each way a title or a pid could be written is found.
+    import copy
+    base = copy.deepcopy(logged[-1])
+    clock = dict(base, unix_ms=1791424258960, run_id="1a1%s308-%s" % (REFUSALWHY1_PID, REFUSALWHY1_PID), refusal_id="1a1%s308-%s/0" % (REFUSALWHY1_PID, REFUSALWHY1_PID))
+    def with_context(k, v):
+        r = copy.deepcopy(base)
+        r["context"][k] = v
+        return r
+    planted = (("a pid in a context value", with_context("window_1_program", "mockoverlay.exe (pid %s)" % REFUSALWHY1_PID)),
+               ("a title in a context value", with_context("window_1_class", REFUSALWHY1_TITLE)),
+               ("a context key that names a pid", with_context("window_1_pid", 7)),
+               ("a context key that names a title", with_context("window_1_title", "x")),
+               ("a pid in a named member", dict(base, attribution="present.readback %s" % REFUSALWHY1_PID)))
+    if _rw1_held([clock]) or REFUSALWHY1_PID not in json.dumps(clock) or _rw1_held([base]):
+        raise Red("PLANT: a record whose clock and ids hold the pid's digits, and whose members do not, is not clean")
+    for what, r in planted:
+        if len(_rw1_held([base, r])) != 1 or _rw1_held([base, r])[0][0] != 1:
+            raise Red("PLANT not found: %s" % what)
     for plant in ("witness", "geometry", "close"):
         if any(k.startswith(("covering_", "window_")) for k in got[plant][0]["context"]):
             raise Red("PLANT %s: a refusal that is not a screen readback carries covering fields" % plant)
@@ -6027,7 +6075,9 @@ def refusalwhy1_log():
         raise Red("the reader did not count the covering windows by layer and by program, class and flags")
     return ("on the mock court: the changed byte, the call that writes nothing and the clear that writes nothing carry the "
             "layer and the count after their own context, the refusal unchanged; the overlay plant names its window's "
-            "program, pid, class, title and flags on the console, and its record carries program, class, flags and "
+            "program, pid, class, title and flags on the console (REFUSAL-WHY-1a: the title and the pid are looked for in "
+            "each record's context and named members, not in the log's whole text; a record whose clock holds the pid's "
+            "digits is clean, and five planted ways of writing one are each found), and its record carries program, class, flags and "
             "rectangle while neither the title nor the pid is anywhere in the log; the other refusals carry no covering "
             "fields; the reader counts the overlay by program, class and flags and the layers by run")
 
