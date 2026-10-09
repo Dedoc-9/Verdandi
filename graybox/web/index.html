@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verðandi graybox</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #a3b5c7; overflow: hidden; font: 12px/1.4 ui-monospace, Consolas, monospace; }
+  #view { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  #hud { position: fixed; left: 10px; top: 8px; color: #fff; white-space: pre; text-shadow: 0 1px 2px #000, 0 0 3px #000; pointer-events: none; }
+  #help { position: fixed; left: 10px; bottom: 8px; color: #fff; text-shadow: 0 1px 2px #000; pointer-events: none; }
+  #cross { position: fixed; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; pointer-events: none; }
+  #cross::before, #cross::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 2px #000; }
+  #cross::before { left: 8px; top: 2px; width: 2px; height: 14px; }
+  #cross::after { top: 8px; left: 2px; height: 2px; width: 14px; }
+  #hit { position: fixed; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; opacity: 0; pointer-events: none;
+         border: 2px solid #ff4040; border-radius: 50%; transition: opacity 0.05s; }
+  #minimap { position: fixed; right: 10px; top: 10px; image-rendering: pixelated; border: 1px solid rgba(0,0,0,0.6); opacity: 0.9; }
+  #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px;
+             background: rgba(20,24,30,0.45); text-shadow: 0 1px 3px #000; cursor: pointer; text-align: center; white-space: pre-line; }
+  #results { display: none; position: fixed; inset: 0; padding: 16px; background: #14181e; color: #dfe6ee; white-space: pre-wrap; overflow: auto; }
+  body.selftest #results { display: block; }
+  body.selftest #overlay, body.selftest #hud, body.selftest #help, body.selftest #cross, body.selftest #minimap { display: none; }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="hud"></div>
+<div id="cross"></div>
+<div id="hit"></div>
+<canvas id="minimap"></canvas>
+<div id="help">WASD move · mouse look · Space jump · left click fire · R back to spawn · 1 / 2 spawn A / B · M map · Esc release the mouse</div>
+<div id="overlay">Click to play
+(the mouse is captured; Esc releases it)</div>
+<pre id="results">running the self-test…</pre>
+<script src="sim.js"></script>
+<script src="render.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

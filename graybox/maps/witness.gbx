@@ -1,0 +1,24 @@
+GRAYBOX 0
+# FPS-GRAYBOX-0: the oracle's witness level, the studio's default world, as it stands. Its walls and floor are the
+# level file's own bytes, pinned by their sha256; the stairs are floor. Spawn A is the session's camera cell.
+name witness
+level oracle/levels/witness.lvl 1b84db41a5fb3a397be81842db5df587111ac11c3ce91f8c5b560ef80c40bbec
+cell 2
+wall 4
+
+spawn A 28,28 90
+spawn B 44,14 270
+
+target 33,27
+target 24,25
+target 8,24
+target 41,14
+
+probe wall 28,29
+probe wall 28,27
+probe open 27,28
+probe open 5,10
+
+route east 28,28 43,26 43,16 44,14
+route west 28,28 8,26 7,23
+route north 28,28 5,12 4,4

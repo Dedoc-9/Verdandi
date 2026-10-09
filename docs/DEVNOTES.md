@@ -619,6 +619,11 @@ What stands against the tree, as reviewed:
    function that runs nothing and shown both ways on outcomes made up for it. The one mutant that survived is a
    check that only matters when a twin is wrong, and a wrong twin shows it.
 
+71. **Say beside the language what it cannot say.** The design language has rock, floor and five colours. A game
+   needs height, collision and spawns. Teaching the tile grammar those would have made the slice wait on a language
+   change; an overlay that may touch floor cells only, read by one converter and checked against the layout, let
+   the compiler keep the walls and floor and the game have the rest.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -643,6 +648,8 @@ What stands against the tree, as reviewed:
 - A checkout path with a space broke three rows (a walk's path was one word), and the reason court's watch with
   them. Found by a perturbed pass, measured on the host as predicted, repaired by INPUT-0a, both predictions met
   (G31). The walk's other lines drop words they do not use (G32).
+- A playable first-person graybox runs beside the certified tree (FPS-GRAYBOX-0, `graybox/`), checked by its own map
+  checks and self-test and not by the gate. It has not run on the owner's machine yet.
 - Two defects of the gate are recorded for later repair: a citation's line read and not checked (G34), a record with
   no registration skipped (G35). The witness's empty status is not proof of a clean checkout (G36).
 - The design language's meaning is held as the owner's literal targets at ten designs and four laws' instances, and

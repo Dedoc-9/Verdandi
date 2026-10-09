@@ -1,0 +1,38 @@
+VERDANDI-DESIGN 0
+# FPS-GRAYBOX-0 tactical layout, on the witness level (48 x 32). Three routes between two bases:
+# the north lane, the central plaza on the mid lane, the south lane; flanks join the plaza to the
+# side lanes. Cell = 2 m in the graybox runtime. The stairs at 7,26 and 34,28 are not written (the
+# language cannot), and the camera's cell 28,28 stays floor. Height, cover, spawns and targets are
+# not in this language: they are the overlay, tactical.gbx.
+#
+# clear the interior to rock, around the two stairs and the camera
+close 1,1 46,25
+close 1,26 6,26
+close 8,26 46,26
+close 1,27 46,27
+close 1,28 27,28
+close 29,28 33,28
+close 35,28 46,28
+close 1,29 46,30
+# the two bases
+open 2,9 8,22
+open 39,9 45,22
+# north lane and its connectors to the bases
+open 5,3 42,6
+open 5,7 7,8
+open 40,7 42,8
+# mid lane and the central plaza
+open 9,14 38,17
+open 19,10 28,21
+# flanks between the plaza and the side lanes
+open 23,7 24,9
+open 23,22 24,24
+# south lane, written around the stairs, and its connectors
+open 5,25 42,25
+open 5,26 6,26
+open 8,26 42,26
+open 5,27 42,27
+open 5,28 33,28
+open 35,28 42,28
+open 5,23 7,24
+open 40,23 42,24

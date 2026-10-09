@@ -18,3 +18,5 @@ __pycache__/
 *.bmp
 # the design tool's own project: sessions, previews, logs (content time; never committed)
 design/work/
+# FPS-GRAYBOX-0: each map's manifest, written by graybox/check.py (rebuilt on every run; never committed)
+graybox/build/

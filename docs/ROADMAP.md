@@ -156,7 +156,7 @@ INPUT-0b         G33 for the walk's rung (2026-10-09), by the owner's instructio
       ↓
 HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2; PROCEED, his word (2026-10-09); read for the build, two rules of DESIGN-IR/DIFF-0's rows stood in the way of its registered instrument, and he ruled (A): HERMENEUTICS-0a widens each by the least — the eleven plants first, the three the shell lacks after them, `first-wins` and `entrance-dropped` given twins in the reference; the reference's users DIFF-0's rows and these four — with REASON-COURT-0d for the moved pin; BUILT (2026-10-09) under HERMENEUTICS-0a and REASON-COURT-0d: four rows, 251 in the gate; both programs give each registered outcome on the registered parent, the four laws hold on their instances, and the five plants, planted alike so that a comparison of the programs is blind, are each caught by a case or a law — and by DIFF-0's own registered values, all five, as the entry expected; on the host FULL×2 by the witness, pushed (`b386b85..3dc15ec`); then frozen
       ↓
-FPS-GRAYBOX-0    the owner's sprint (2026-10-09): stop expanding the gate; a playable first-person graybox on the canonical level — a tactical layout with three routes, cover, spawns and an objective; mouse look, WASD, jump, collision, a weapon placeholder; one weapon, hits, target feedback, reset. The design compiler keeps the layout; the smallest runtime layer carries height, collision and play. His amendment: the conversion certified, not the mesh — a canonical world from which collision and the render mesh are derived, a manifest, independent conformance checks and defect-directed mutations, a smoke suite, replay determinism on one platform; boundaries in docs/BOUNDARIES.md. The full gate at release checkpoints only
+FPS-GRAYBOX-0    the owner's sprint (2026-10-09): stop expanding the gate; a playable first-person graybox on the canonical level — a tactical layout with three routes, cover, spawns and an objective; mouse look, WASD, jump, collision, a weapon placeholder; one weapon, hits, target feedback, reset. The design compiler keeps the layout; the smallest runtime layer carries height, collision and play. His amendment: the conversion certified, not the mesh — a canonical world from which collision and the render mesh are derived, a manifest, independent conformance checks and defect-directed mutations, a smoke suite, replay determinism on one platform; boundaries in docs/BOUNDARIES.md. The full gate at release checkpoints only; BUILT the same day, beside the certified tree: `python graybox/serve.py` — the tactical map's walls and floor admitted through the design tool, an overlay for the rest, three routes walked by a bot through the real movement, seven planted conversion defects refused
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -2282,7 +2282,7 @@ the owner's.
 build container): the laws checked on the reference. MEASURED (host): the gate with the registration applied (0143
 and 0144), 242 of 242, one run; pushed (`5c8ad19..11afebf`, which carries 0142 to 0144). Nothing of it is built.
 
-### FPS-GRAYBOX-0 — the playable slice · **the sprint** (the owner's ruling, 2026-10-09); the gate stops growing
+### FPS-GRAYBOX-0 — the playable slice · **the sprint** (the owner's ruling, 2026-10-09); the gate stops growing · **built**: the slice runs (`graybox/`)
 
 **His ruling.** *Stop expanding the gate.* More verification architecture had come to compete with the product he
 wants: a design tool that compiles a reachable top-down grid is map data, and not yet a playable 3D FPS. The next
@@ -2345,6 +2345,63 @@ stay separate claims until their contracts and measurement protocols exist. *Do 
 framework beyond the concrete properties needed to establish the first playable vertical slice.*
 
 **Grade.** DECLARED: his rulings and his amendment.
+
+**Built (2026-10-09): the slice runs.** `python graybox/serve.py` opens a first-person graybox in the browser; the
+folder's README says how to play and test it.
+
+```text
+  tactical.design ──design tool──► shell design-compile ──► shell design ──► tactical.layout    walls and floor
+  tactical.gbx (height, cover, spawns, objective, targets, probes, routes) ──────────┤
+                                                                                     ▼
+                         level.py:  D ──► W canonical world ──► C collision world ──► sim.js (moves against C)
+                                             └──────────────────────────────────────► render.js (draws W)
+```
+
+| his acceptance criterion | what stands |
+|---|---|
+| launches into a 3D first-person scene | WebGL in the browser, served by a standard-library Python script on 127.0.0.1 |
+| mouse look and WASD | pointer lock; a fixed tick of 1/120 s, input taken as one record a tick |
+| collision prevents passage through solid geometry | the player, a circle of 0.35 m, against each cell's solid top; a step of at most 0.55 m; the standing targets solid |
+| a complete route through the graybox | the tactical map's three routes, base A to base B, each walked end to end by a bot through the real movement |
+| the level from explicit source data | the walls and floor are the layout the design tool admitted (head `c862f3b1…`), read back with its heads; the overlay is a text file; nothing is drawn that the converter did not produce |
+| launch and controls documented | `graybox/README.md` |
+| a smoke test | `python graybox/check.py` for map content, and `python graybox/serve.py tactical --selftest` for the runtime |
+
+**The exact limitation that made a separate layer.** VERDANDI-DESIGN 0 says, of a 2D grid, which cells are rock and
+which floor, and the colour of five classes. It has no height, no volume, no collision rule and no gameplay mark. So,
+by his caveat, the language is not stretched: the design tool keeps the tactical map's walls and floor (an
+admitted design of 25 statements, 610 operations, every one of its 736 floor cells reachable), and a separate overlay
+says the rest, on floor cells only. The witness level plays too, read from its pinned bytes.
+
+**Why a browser.** No package could be fetched where it was built (the egress policy refuses the package index), and
+the owner's machine has Python and a browser. So the runtime needs Python's standard library and WebGL and nothing
+else. The simulation, `sim.js`, holds no DOM and runs under node as well; the renderer is one file behind one call,
+and can be replaced without touching the simulation or the maps.
+
+**His amendment, where it stands.** The canonical world W owns gameplay truth; the collision world C is derived from
+it and is all the simulation moves against; the renderer draws W and is never asked whether a wall is there. Each
+map's manifest names its source, the converter's hash, and W's and C's hashes, and every cell of W names the source
+lines that made it. `check.py` is the independent verifier: it reads the source again with its own reader and holds
+W and C to it with its own search — walls and floor, collision, provenance, spawns, probes, routes, the bases and the
+objective connected, the routes distinct — and refuses seven planted defects: an opening collapsed by the converter,
+the same in the source, a spawn moved into a wall, an invisible blocker on a route, a wall made passable in
+collision, provenance stripped, and a spawn written into a wall in the map file (refused by the converter). The
+runtime's own self-test: load, both spawns, every probe walked at, the three routes walked, gravity and the jump, a 1 m
+block refused on foot and mounted with a jump, a hit in the open, a miss behind a wall, the target back up, reset, a
+recorded route replayed twice with the state hashed at every tick, one frame drawn. The boundaries are in
+[`docs/BOUNDARIES.md`](BOUNDARIES.md). The HUD shows the page's own software timings, each segment apart, and says
+they are not input-to-photon.
+
+**What is not there.** Other players and damage, an objective that scores, ammunition, sound, ramps, ceilings and
+overhangs, interpolation between ticks. Nothing is claimed across browsers or machines, and no frame rate.
+
+**Run here.** In the build container: the map checks, every check and mutation passing on both maps, and the tactical
+layout compiled and admitted again through the design tool to the same head; the runtime's self-test 20 / 20 on the
+tactical map and 17 / 17 on the witness level, in headless Chromium (SwiftShader WebGL) through `serve.py --selftest`,
+which ended 0; walking with the keyboard, aiming and firing, captured in screenshots. Not yet on the owner's machine.
+
+**Grade.** OBSERVED (the build container): everything above. NOT_MEASURED: the slice on the owner's host, its frame
+rate, and anything of feel. It is not a rung of the gate and adds no row.
 
 ### EVIDENCE-LINK-0 — a claim about a recorded event, traced to its source · **accepted as the next slice** (the owner's ruling, 2026-10-09); declared; not registered, nothing built
 

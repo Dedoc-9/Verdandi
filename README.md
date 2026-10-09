@@ -133,6 +133,12 @@ running the gate.
          │      Esc
          ▼
       session.json   sealed; verified before it counts ──► sessionwalk verify · the sealer · a record
+
+  PLAY TIME       graybox/: a playable slice beside the certified tree; the gate is not run for it
+
+      a layout the design tool admitted · a pinned level ──► level.py ──► W canonical ──► C collision
+                                                                            │                │
+                                                         render.js draws W ◄┘   sim.js moves against C ◄── WASD · mouse · fire
 ```
 
 **The invariants.** Each is a property a part owes, the mechanism that holds it, and a row that goes red.
@@ -256,6 +262,11 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          targets typed by hand (22d52d02; built under the owner's amendment 7e012752, four rows,
          │          251 in the gate: both programs reach every literal and keep the four laws; five
          │          misreadings planted alike in both, each caught; FULL×2 on the host; pushed; frozen)
+         │
+    THE GAME        FPS-GRAYBOX-0 the playable slice, by the owner's sprint ruling (2026-10-09): the gate stops
+         │          growing; a first-person graybox on the canonical level — walls and floor admitted through
+         │          the design tool, height, cover and play in an overlay beside them — walked, jumped and shot
+         │          in the browser: `python graybox/serve.py` (built; not a rung; not yet run on the host)
          ⋮
     declared        EVIDENCE-LINK-0, each copied claim about a recorded event traced to its source (accepted as
                     the next slice); LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a
