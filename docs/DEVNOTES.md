@@ -670,9 +670,9 @@ What stands against the tree, as reviewed:
 - A playable first-person graybox runs beside the certified tree (FPS-GRAYBOX-0, `graybox/`), checked by its own map
   checks and self-test and not by the gate. On the owner's machine both pass.
 - The graybox is lit and dressed (FPS-VISUAL-0), with the first renderer kept beside it. The self-test holds the
-  drawn solids to the collision world and keeps decoration out of play. On the owner's GPU both renderers are within
-  a 1 ms clock's step of each other. The mouse capture failed on his machine and is repaired (0178), and not yet seen
-  there.
+  drawn solids to the collision world and keeps decoration out of play. On the owner's GPU the lit renderer takes
+  1.4 to 1.5 times the first renderer's time, under 2 ms a draw and readback at 1280 × 720 (one run). The mouse
+  capture failed on his machine and was repaired (0178). He has played it since.
 - Two defects of the gate are recorded for later repair: a citation's line read and not checked (G34), a record with
   no registration skipped (G35). The witness's empty status is not proof of a clean checkout (G36).
 - The design language's meaning is held as the owner's literal targets at ten designs and four laws' instances, and

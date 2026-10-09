@@ -2552,6 +2552,34 @@ origins, which gives the page a finer clock in a browser that rounds it.
 720. Their difference is not resolved by that clock. OBSERVED (the build container): the repair's seven checks. NOT
 MEASURED: a frame rate; the capture on the host after the repair; feel. Not pushed yet.
 
+**After the repair, on the host (2026-10-09).** 0178 and 0179 applied. The tree was `1275b4f4…`, as predicted
+beforehand from the pushed history (lesson 74, met). On his machine:
+
+- the self-test, 23 / 23 on the tactical map and, for the first time there, 20 / 20 on the witness level, each line as
+  in the container;
+- the bench, with the page now isolated, so its clock stepped by 0.02 ms. Each sample was the mean of ten draws, each
+  read back; 20 samples a pose, at 1280 × 720, in Firefox 157 on the Radeon R9 200-series GPU.
+
+| pose | first renderer p50 / p95 ms | lit renderer p50 / p95 ms |
+|---|---|---|
+| spawn A | 1.172 / 1.310 | 1.753 / 2.036 |
+| spawn B | 1.177 / 1.354 | 1.670 / 1.780 |
+| route mid | 1.229 / 1.654 | 1.666 / 2.240 |
+| route north | 1.179 / 1.294 | 1.677 / 1.834 |
+| route south | 1.210 / 1.270 | 1.855 / 2.026 |
+| firing | 1.220 / 1.376 | 1.821 / 1.998 |
+
+The lit renderer took 1.36 to 1.53 times the first renderer's median: 0.44 to 0.65 ms more for each draw and
+readback. No sample of either passed 2.34 ms. The 17- to 22-fold seen in SwiftShader said nothing of this GPU, as the
+build had said it would not.
+
+Then he played, and reported: *the play felt really crisp for a first play.* The capture is taken as working from
+that report; no instrument saw it. Pushed, `3dc15ec..222f856`.
+
+**Grade.** MEASURED (the host, one run, a 0.02 ms clock): the table, a draw and its readback, which is not a frame
+rate and not input-to-photon. OBSERVED (the host): the tree, the two self-tests. DECLARED: his report of the play.
+NOT_MEASURED: a frame rate; input-to-photon; any other browser or machine.
+
 ### EVIDENCE-LINK-0 — a claim about a recorded event, traced to its source · **accepted as the next slice** (the owner's ruling, 2026-10-09); declared; not registered, nothing built
 
 ```text

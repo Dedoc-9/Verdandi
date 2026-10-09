@@ -268,13 +268,13 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          growing; a first-person graybox on the canonical level — walls and floor admitted through
          │          the design tool, height, cover and play in an overlay beside them — walked, jumped and shot
          │          in the browser: `python graybox/serve.py` (built; not a rung; on the host the map checks and
-         │          the self-test pass, and a mouse that was not captured was repaired)
+         │          both self-tests pass; a mouse that was not captured was repaired, and the owner has played it)
          │
     THE LOOK        FPS-VISUAL-0, by the owner's ruling (2026-10-09), outside the gate: a sky and a traced sun,
          │          floor modules, panelled walls and dressed cover, a weapon model apart from the shot; the first
          │          renderer kept beside it (`--renderer flat`); the drawn solids held to the collision world face
-         │          by face, decoration kept out of play (built; on the host's GPU both renderers within a 1 ms
-         │          clock's step)
+         │          by face, decoration kept out of play (built; on the host's GPU the lit renderer 1.4 to 1.5
+         │          times the first, under 2 ms a draw and readback at 1280 × 720; pushed, 3dc15ec..222f856)
          ⋮
     declared        EVIDENCE-LINK-0, each copied claim about a recorded event traced to its source (accepted as
                     the next slice); LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a
