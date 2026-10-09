@@ -782,7 +782,7 @@ source of chance for their words is ever found. For searches built another way: 
 
 **Exorcism.** The owner's ruling, when a case shows it.
 
-## G33 — a row rests on what an earlier row left · OBSERVED (seven cases on one row, in the build container); repaired for the walk's rung by INPUT-0b (Lazy Setup; the build container's predictions met; the host's witness predicted); the class beyond it recorded
+## G33 — a row rests on what an earlier row left · OBSERVED (seven cases on one row, in the build container); repaired for the walk's rung by INPUT-0b (Lazy Setup; its six predictions met, the sixth on the host, FULL×2 by the witness; pushed); the class beyond it recorded
 
 - **The hypothesis.** The gate runs its rows in one order, and a row can use what an earlier row made: a built
   program, a global it set, a file it left. If a row's verdict changes because an earlier row changed shared state,
@@ -805,7 +805,8 @@ source of chance for their words is ever found. For searches built another way: 
 
 - **Repaired for the walk's rung: INPUT-0b.** The walk's rows ask for the kernel and the walk program where they use
   them, made on first request and kept. Each of the five passes run alone; a kernel that cannot be built is refused in
-  words that name it; a bare read given back fails `input-demo` on the gate.
+  words that name it; a bare read given back fails `input-demo` on the gate. On the host, by the witness: FULL×2, 247 /
+  0 twice, `f644947d…` at every reading; pushed, `89d082e..b386b85`.
 - **What is left.** The other rungs' readers of a build global (the census): untouched, by his word.
 
 **Exorcism.** Done for the walk's rung. For the rest: his ruling, if a reader of another rung is shown to need it.

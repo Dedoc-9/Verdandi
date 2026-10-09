@@ -620,7 +620,7 @@ is missing, and whether the reach is `input-demo`, the walk's rows, or every rea
 any of them: remove the prerequisite and require the row to fail clearly, not with an unrelated `TypeError`.
 (Answered for the walk's rung by INPUT-0b, below.)
 
-### INPUT-0b — the walk's rows ask for what they need (registered `a167c308`; built; the build container's predictions met; the host's witness predicted)
+### INPUT-0b — the walk's rows ask for what they need (registered `a167c308`; built; its six predictions met, the sixth on the host by the witness; pushed, `89d082e..b386b85`)
 
 ```text
   before   kernel-build ──sets KERNEL_EXE──►  …  ──►  input-demo reads KERNEL_EXE      (fails alone: a brittle)
@@ -658,22 +658,42 @@ row brittle, failing in better words. This way the row passes or fails on the tr
 
 | | prediction | result |
 |---|---|---|
-| (1) | three passes on the head: 247 / 0, the output the reference log | run on the head of the series this is cut with; reported with its delivery |
+| (1) | three passes on the head: 247 / 0, the output the reference log | **met**: three passes on the head the series was cut from (`de820cab…`), 247 / 0, the three logs byte for byte the same and the reference log; the tracked files the same after each pass as before |
 | (2) | G33's seven cases: `input-demo` passes in every one | **met**: alone; without `kernel-build`; with the kernel's file removed; with the global cleared; with the file from an earlier process; with the kernel handed in; in the gate's order |
 | (3) | each of the walk's five reading rows, run alone: passes | **met**, all five |
 | (4) | the kernel's source made not to compile, `input-demo` alone: refused in words naming the kernel's build | **met**: *the kernel, which this row needs, could not be built: rustc failed: …* |
 | (5) | a bare read given back: `input-demo`'s check fails on the gate, naming it | **met**, for `_walk_frame`, `input-not-authority` and `_replay` |
-| (6) | the host's witness: FULL×2, 247 / 0, the checkout at the end as at the start | not yet run |
+| (6) | the host's witness: FULL×2, 247 / 0, the checkout at the end as at the start | **met**, on the owner's host (below) |
 
 **Mutants of the two functions**, in the gate's order: the file check removed; the folder not made; never compiling;
 the failure's words changed. `input-demo` fails on the gate for each, naming the fault. Run alone, the first three
 also crash. That is what the stand-in check exists to catch before isolation does.
 
+**(6) on the host, by the witness (2026-10-09).** `verdandi-witness 2` (sha256 `7ebd926d…`), on the owner's checkout
+with 0164 to 0167 applied on `89d082e`. Recomputed here from its files, apart from its summary, every file against the
+sha256 it recorded:
+
+| reading | before | after the two gate runs | after the design checks |
+|---|---|---|---|
+| status | lists nothing | lists nothing | lists nothing |
+| tree id | `f644947d…` | `f644947d…` | `f644947d…` |
+| commit | `b386b853…` | the same | the same |
+
+The two gate runs: exit 0, 247 rows / 0 fail, stdout byte for byte the same (sha256 `e15e8127…`), stderr empty, as text
+the build container's log. The design tool's checks: 17 / 0. **FULL×2: yes**, by his predicate; and the checkout at the
+end as at the start, the design checks bracketed. Pushed, `89d082e..b386b85`.
+
+Read from the witness's own timestamps: at the start it takes the tree id first, to name its evidence folder, and the
+status after it; at the two later moments the status comes first. Nothing here turns on it: the commit read at each
+moment is the same, and the tree id read at the later two is the one read first. Recorded, not changed: the witness
+is his.
+
 **What is left.** G33's class beyond this rung: the census's other readers, the kernel's most of all. Recorded and
 not touched, as he asked for the smallest useful slice.
 
-**Grade.** DECLARED: the path, under his instruction. ESTABLISHED (gate, the build container): the rows. OBSERVED (the
-build container): predictions (2) to (5) and the mutants. NOT_MEASURED: (6).
+**Grade.** DECLARED: the path, under his instruction. ESTABLISHED (gate, the build container): the rows; prediction
+(1). OBSERVED (the build container): predictions (2) to (5) and the mutants. OBSERVED (the owner's host, by the witness,
+recomputed here from its files): prediction (6).
 **does_not_show.** That a row of another rung is free of what an earlier row left. That a call reaching a global by
 another name is found: the source check reads names.
 **Falsifier.** A walk row that fails run alone; a bare read with `input-demo` passing; a missing kernel refused with a
