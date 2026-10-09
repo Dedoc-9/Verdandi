@@ -12257,7 +12257,8 @@ RSN_ROWS = ("reasoncourt-preregistered", "reasoncourt-register", "reasoncourt-so
 # REASON-COURT-0a (an amendment entry, registered with DESIGN-EVENT-0's build) moves five of these pins and adds one,
 # shell/designevent.rs: RSN_AMENDED names them, with the hash each had. REASON-COURT-0b (registered with DESIGN-IR/DIFF-0's
 # build) moves one of them again, shell/main.rs, and adds shell/designcompile.rs. REASON-COURT-0c (registered with
-# INPUT-0a, the repair of G31) moves workshop/input.rs. RSN_CHAIN names every link. No other pin has moved since this rung.
+# INPUT-0a, the repair of G31) moves workshop/input.rs. REASON-COURT-0d (registered with HERMENEUTICS-0's build) moves
+# shell/designcompile.rs. RSN_CHAIN names every link. No other pin has moved since this rung.
 RSN_SOURCES = {
     "kernel/bearing.rs": "93fb9083a3034d8875f2040f89ba73cbaaf1bad888bc0fd446d6cb4ccf33e474",
     "kernel/bearingfast.rs": "97ab3bf3a575954fdbaa0f1b4d3ed8bd511a6d8dffa01a3b99d864e393a2ee84",
@@ -12270,7 +12271,7 @@ RSN_SOURCES = {
     "kernel/vocab.rs": "30b9199255b0e342c1a20b9b47043c567b54c756e178f4fd7b7d633708dc69c0",
     "shell/admit.rs": "99366fea8540e3b4cebc8f973485e0915db042a7cb549d3b06706a476e48a3cd",
     "shell/designevent.rs": "7d31063e8b87b4b59f90bb1375194ca956f16e15f3a3baf2b275e3881308ebf1",
-    "shell/designcompile.rs": "123c1584b048663ac78cd1c62642152346de2b471a384502bb4ce888cd4aba49",
+    "shell/designcompile.rs": "9a37164c963d5cf27fb48f8b62807eb9a8abe21bc94d9609c713ef3f03bc510c",
     "shell/allocreuse.rs": "6fa31145ac7f8b41f80b9d07b14b4fc6097ed2be99931a65a1f1484a6dece869",
     "shell/allocreuse1.rs": "feb782cdebb9427256baf17f0a9b3bbdc181de54edcbfaafa3116aa47db5672e",
     "shell/framesplit.rs": "3640542830f6db976df2340586fa7ae6d360e1533137d685650efcbf3b4e3ea9",
@@ -13836,6 +13837,9 @@ RSN_CHAIN = (
     ("REASON-COURT-0c", {
         "workshop/input.rs": ("405ef6c825c1f361a3489c6e03e444b67b217a81dc020c44e5afc61fcdf712cf", "f2edf4055da61056394d60655563b4ed562417b8c2322857d8c046f4b153648e"),
     }, {}),
+    ("REASON-COURT-0d", {
+        "shell/designcompile.rs": ("123c1584b048663ac78cd1c62642152346de2b471a384502bb4ce888cd4aba49", "9a37164c963d5cf27fb48f8b62807eb9a8abe21bc94d9609c713ef3f03bc510c"),
+    }, {}),
 )
 
 
@@ -15175,8 +15179,8 @@ def _dir_lines(design: bytes):
     return out
 
 
-def _dir_statements(design: bytes, w: int, rows: int):
-    """("ok", [(verb, argument, line)]) or ("R", code, line)."""
+def _dir_statements(design: bytes, w: int, rows: int, *, plant=""):
+    """("ok", [(verb, argument, line)]) or ("R", code, line). `plant` names a twin of a shell plant, HERMENEUTICS-0's."""
     if len(design) > DIR_MAX_BYTES:
         return ("R", "COMPILE-SIZE", 0)
     lines = _dir_lines(design)
@@ -15207,7 +15211,12 @@ def _dir_statements(design: bytes, w: int, rows: int):
             x0, x1, z0, z1 = min(a[0], b[0]), max(a[0], b[0]), min(a[1], b[1]), max(a[1], b[1])
             if verb == b"room" and (x1 - x0 < 2 or z1 - z0 < 2):
                 return ("R", "COMPILE-RANGE", n)
-            out.append((verb.decode("ascii"), (x0, z0, x1, z1), n))
+            if plant == "corners-one-order" and not (a[0] <= b[0] and a[1] <= b[1]):
+                # TWIN (HERMENEUTICS-0) of the shell's corners-one-order: the rectangle read from its first corner to its
+                # second, so that one written with a high corner first names no cell
+                out.append((verb.decode("ascii"), (a[0], a[1], b[0], b[1]), n))
+            else:
+                out.append((verb.decode("ascii"), (x0, z0, x1, z1), n))
         elif verb == b"paint":
             m = _DIR_RGB.match(t[2]) if len(t) == 3 else None
             if len(t) != 3 or t[1] not in DIR_CLASSES or not m or any(int(v) > 255 for v in m.groups()):
@@ -15222,41 +15231,55 @@ def _dir_statements(design: bytes, w: int, rows: int):
     return ("ok", out)
 
 
-def _dir_target(stmts, world: _DirWorld):
+def _dir_target(stmts, world: _DirWorld, *, plant=""):
     """The world the statements describe, each applied in order to a copy of the parent's: ("ok", cells, colours) or
-    ("R", code, line). open and entrance write floor, close rock, room rock to its rim and floor to its inside."""
+    ("R", code, line). open and entrance write floor, close rock, room rock to its rim and floor to its inside. `plant`
+    names a twin of a shell plant, HERMENEUTICS-0's."""
     cells, tiles = bytearray(world.cells), list(world.tiles)
     w, rows = world.w, world.rows
+    written = set()
     for verb, arg, n in stmts:
         if verb == "paint":
             tiles[arg[0]] = arg[1]
             continue
+        if plant == "entrance-dropped" and verb == "entrance":
+            continue   # TWIN (HERMENEUTICS-0) of the shell's entrance-dropped: an entrance writes nothing
         x0, z0, x1, z1 = arg
         for z in range(z0, z1 + 1):
             for x in range(x0, x1 + 1):
                 rim = verb == "room" and (x in (x0, x1) or z in (z0, z1))
-                to = 35 if verb == "close" or rim else 46
+                keep = plant == "rim-keeps-openings" and rim and cells[z * w + x] == 46   # TWIN (HERMENEUTICS-0): a rim cell of floor stays floor
+                to = 35 if verb == "close" or (rim and not keep) else 46
                 if (x in (0, w - 1) or z in (0, rows - 1)) and to != 35:
                     return ("R", "COMPILE-BORDER", n)
                 if cells[z * w + x] in b"<>":
                     return ("R", "COMPILE-STAIR", n)
+                if plant == "first-wins" and z * w + x in written:
+                    continue   # TWIN (HERMENEUTICS-0) of the shell's first-wins: a cell written once keeps that write
+                written.add(z * w + x)
                 cells[z * w + x] = to
     return ("ok", bytes(cells), tiles)
 
 
-def _dir_compile(design: bytes, world: _DirWorld, short=False):
+def _dir_compile(design: bytes, world: _DirWorld, short=False, *, plant=""):
     """("ok", operations, cells, colours) — the operations ("open"|"close", x, z) and ("paint", class, colour) of the net
     difference, cells row-major and then the classes — or ("R", code, line). `short` is the one plant this reference is
-    given (DESIGN-IR/DIFF-0a): the net leaves out its last operation, as the shell's net-short does."""
-    s = _dir_statements(design, world.w, world.rows)
+    given (DESIGN-IR/DIFF-0a): the net leaves out its last operation, as the shell's net-short does. `plant` names a twin
+    of a shell plant, HERMENEUTICS-0's."""
+    s = _dir_statements(design, world.w, world.rows, plant=plant)
     if s[0] == "R":
         return s
-    t = _dir_target(s[1], world)
+    t = _dir_target(s[1], world, plant=plant)
     if t[0] == "R":
         return t
     _ok, cells, tiles = t
-    ops = [("close" if cells[i] == 35 else "open", i % world.w, i // world.w) for i in range(world.w * world.rows) if cells[i] != world.cells[i]]
-    ops += [("paint", c, tiles[c][0] * 65536 + tiles[c][1] * 256 + tiles[c][2]) for c in range(5) if tiles[c] != world.tiles[c]]
+    # TWIN (HERMENEUTICS-0) of the shell's writes-as-operations: every cell a statement names and every class painted is
+    # written as an operation, whether it changes or not
+    writes = plant == "writes-as-operations"
+    named = lambda i: any(v != "paint" and a[0] <= i % world.w <= a[2] and a[1] <= i // world.w <= a[3] for v, a, _n in s[1])
+    ops = [("close" if cells[i] == 35 else "open", i % world.w, i // world.w) for i in range(world.w * world.rows) if cells[i] != world.cells[i] or (writes and named(i))]
+    ops += [("paint", c, tiles[c][0] * 65536 + tiles[c][1] * 256 + tiles[c][2]) for c in range(5)
+            if tiles[c] != world.tiles[c] or (writes and any(v == "paint" and a[0] == c for v, a, _n in s[1]))]
     if cells[world.cam[1] * world.w + world.cam[0]] not in b".<>":
         return ("R", "COMPILE-CAMERA", 0)
     if short:
@@ -15272,24 +15295,25 @@ def _dir_op_line(o) -> str:
     return "paint %s %d" % (DIR_CLASSES[o[1]].decode("ascii"), o[2]) if o[0] == "paint" else "%s %d,%d" % (o[0], o[1], o[2])
 
 
-def _dir_reference(design: bytes, world: _DirWorld, head: str, short=False):
+def _dir_reference(design: bytes, world: _DirWorld, head: str, short=False, *, plant=""):
     """The reference's answer for a design and a parent: ("B", the batch's bytes, operations, cells, colours) or
     ("R", code, line). The batch is written here, from the design and the parent and from nothing else."""
     import livesession as LS
-    c = _dir_compile(design, world, short=short)
+    c = _dir_compile(design, world, short=short, plant=plant)
     if c[0] == "R":
         return c
     text = "%s\nrenderer=%s\nbearing=%s\nparent=%s\nproposal=%s\noperations=%d\n" % (DE_LANGUAGE, LS.renderer_id(ROOT), LS.bearing_id(ROOT), head, sha256(design), len(c[1]))
     return ("B", (text + "".join(_dir_op_line(o) + "\n" for o in c[1])).encode("ascii"), c[1], c[2], c[3])
 
 
-def _dir_target_content(design: bytes, world: _DirWorld):
+def _dir_target_content(design: bytes, world: _DirWorld, *, plant=""):
     """The content of the design's target: the statements applied to the parent's level and tiles bytes, never through a
-    change set, and the content of those bytes as the session defines it. None where the design has no target."""
-    s = _dir_statements(design, world.w, world.rows)
+    change set, and the content of those bytes as the session defines it. None where the design has no target. `plant`
+    names a twin of a shell plant, HERMENEUTICS-0's."""
+    s = _dir_statements(design, world.w, world.rows, plant=plant)
     if s[0] == "R":
         return None
-    t = _dir_target(s[1], world)
+    t = _dir_target(s[1], world, plant=plant)
     if t[0] == "R":
         return None
     _ok, cells, tiles = t
@@ -15610,16 +15634,19 @@ def designir_preregistered():
     if "use crate::designevent::{emit_batch, Batch, MAX_OPERATIONS};" not in src or "ops.len() > MAX_OPERATIONS" not in src \
             or (DIR_VERSION, DIR_MAX_BYTES, DIR_MAX_STATEMENTS, DIR_MAX_OPS) != (b"VERDANDI-DESIGN 0", 16384, 64, DE_MAX_OPS):
         raise Red("the bound on a change set is not the batch language's own 4,096 operations")
-    shell_plants = re.search(r"pub const PLANTS: \[&str; 11\] = \[([^\]]*)\];", src)
-    if shell_plants is None or tuple(re.findall(r'"([a-z-]+)"', shell_plants.group(1))) != DIR_PLANTS:
-        raise Red("the shell's plants are not the registered eleven")
+    # (changed with HERMENEUTICS-0's build, by HERMENEUTICS-0a: the shell's plants are the registered eleven, in their
+    # order, and then HERMENEUTICS-0's three, exactly; this check held the eleven alone)
+    shell_plants = re.search(r"pub const PLANTS: \[&str; 14\] = \[([^\]]*)\];", src)
+    if shell_plants is None or tuple(re.findall(r'"([a-z-]+)"', shell_plants.group(1))) != DIR_PLANTS + HERM_SHELL_PLANTS:
+        raise Red("the shell's plants are not the registered eleven, in their order, followed by HERMENEUTICS-0's three")
     amendments = _dir_amendments(reg)
+    # (changed with HERMENEUTICS-0's build, by HERMENEUTICS-0a: "the eleven plants" is followed by HERMENEUTICS-0's three)
     return ("DESIGN-IR/DIFF-0's method is locked (hash %s) before the build, and its amendment DESIGN-IR/DIFF-0a (%s) names the "
             "owner's predicate, the parts of the court and the eleventh plant, citing it: VERDANDI-DESIGN 0, at most 16,384 "
             "bytes, 64 statements and 4,096 operations; nine codes; the registered design of 93 bytes is the entry's six "
             "lines and has the registered id %s...; against the registered parent it is registered to compile to 60 "
             "operations in 908 bytes (%s...), to the content %s... and the head %s...; the shell holds the language's "
-            "version and bounds and the eleven plants; %s" % (DESIGNIR0_HASH[:8], DESIGNIR0A_HASH[:8], DIR_D0_ID[:12], DIR_D0_SHA[:12], DIR_D0_CONTENT[:12],
+            "version and bounds and the eleven plants, and then HERMENEUTICS-0's three; %s" % (DESIGNIR0_HASH[:8], DESIGNIR0A_HASH[:8], DIR_D0_ID[:12], DIR_D0_SHA[:12], DIR_D0_CONTENT[:12],
                                                                DE_H60[:12], amendments))
 
 
@@ -16046,8 +16073,11 @@ def designir_fence():
         if m_:
             owner = m_.group(1)
         elif re.search(r"\b_dir_\w+\(|\b_DirWorld\(", ln):
-            if owner is None or not (owner.startswith("designir_") or owner.startswith("_dir_") or owner == "_DirWorld"):
-                raise Red("the gate's reference compiler is used outside this rung's rows (in %s): it is a test oracle and nothing else" % owner)
+            # (changed with HERMENEUTICS-0's build, by HERMENEUTICS-0a: HERMENEUTICS-0's four rows, and their helpers named
+            # _herm_, hold the reference to the owner's literal targets; this check allowed this rung's rows alone)
+            if owner is None or not (owner.startswith("designir_") or owner.startswith("_dir_") or owner == "_DirWorld"
+                                     or owner in HERM_ROW_FUNCS or owner.startswith("_herm_")):
+                raise Red("the gate's reference compiler is used outside this rung's rows and HERMENEUTICS-0's (in %s): it is a test oracle and nothing else" % owner)
     import livesession as LS
     if LS.renderer_id(ROOT) != RC_RENDERER_ID or LS.bearing_id(ROOT) != RC_BEARING_ID:
         raise Red("the renderer or the bearing identity is not READER-COURT-0's: this rung touches no renderer")
@@ -16083,6 +16113,7 @@ def designir_fence():
     by_row = {r: sum(1 for e in heard if e["row"] == r) for r in DIR_ROWS}
     if loose or ENDINGS_UNHEARD or by_row["designir-language"] == 0 or by_row["designir-equivalence"] == 0 or by_row["designir-preregistered"] or by_row["designir-compile"]:
         raise Red("an ending of this rung's rows carries no registered code in a code head, or the watch did not hear them: %s" % "; ".join(loose[:4]))
+    # (changed with HERMENEUTICS-0's build, by HERMENEUTICS-0a: the reference "is used by this rung's rows" and HERMENEUTICS-0's)
     return ("the compiler is fenced: shell/designcompile.rs spawns no process, opens no socket, reads no clock, and creates, "
             "writes, renames and removes no file; the design's bytes are read by one function, at most one byte past the "
             "bound, and reach their size, the compiler and the batch's id and nothing else; its run makes the registered "
@@ -16093,7 +16124,7 @@ def designir_fence():
             "selftest alone, and shell design-compile takes no plant; shell design takes no design; no other file of the "
             "shell, none of the workshop or the kernel, and not the sealer holds anything of the source language; none of "
             "the %d Python files under verify/ imports the design tool or names a path of its folder; the gate's reference "
-            "is used by this rung's rows alone; the renderer and bearing identities are READER-COURT-0's; the layout "
+            "is used by this rung's rows and HERMENEUTICS-0's four alone; the renderer and bearing identities are READER-COURT-0's; the layout "
             "(DESIGN-IR/DIFF-0c): over the %d files REASON-COURT-0 holds, read from disk, the files that differ from the "
             "origin's 56 are exactly the %d an amendment names as changed or added (%s) — nothing undeclared changed and "
             "nothing declared failed to change; PLANTS: a file changed that no amendment names, a file added that none "
@@ -16101,6 +16132,606 @@ def designir_fence():
             "before this rung keep their names and their order and this rung adds five; and of the %d children this rung's "
             "rows started that did not end 0, every one carries a registered code in a code head (%s)"
             % (scanned, len(domain), len(named), ", ".join(named), len(heard), ", ".join("%s %d" % (r.split("-", 1)[1], by_row[r]) for r in DIR_ROWS if by_row[r])))
+
+# ================================================================== HERMENEUTICS-0: what the design language means, held as data
+# The meaning of VERDANDI-DESIGN 0, fixed apart from the two programs that compile it: ten designs on the registered
+# parent, each with a literal target the entry writes in words, typed by hand from the owner's rulings and the parent's
+# cells, and four laws, theorems of the reading he ratified. The central predicate is Meaning_court(D,S) =
+# Target_owner(D,S), and never Meaning_court(D,S) = Compile_shell(D,S): each target's content is made here from the
+# entry's cells and the parent's bytes by a function that calls neither program, and both programs are held to it.
+# HERMENEUTICS-0a records the owner's ruling (A): two rules of DESIGN-IR/DIFF-0's rows are widened by the least — the
+# shell's plants are DIFF-0's eleven and then this rung's three, and the gate's reference is used by DIFF-0's rows and
+# these four (with their helpers, named _herm_) — each changed line marked in its row. REASON-COURT-0d is the
+# amendment chain's fourth link, for the moved pin of shell/designcompile.rs.
+HERMENEUTICS0_HASH = "22d52d02495c59a23926b8fce83fd9fdae5a0bebd263e2ae5351ab9dc22d1adf"
+HERMENEUTICS0A_HASH = "7e012752dbfe8d77519deef84c6f4f92ad7db3aaaa605f46f05bbc47dcbb28ee"
+REASONCOURT0D_HASH = "fcbc20700f79b6f700f8360f222079dc18be44ef80827a29f7d43f688c14f765"
+HERM_ROWS = ("hermeneutics-preregistered", "hermeneutics-corpus", "hermeneutics-laws", "hermeneutics-fence")
+HERM_ROW_FUNCS = tuple(r.replace("-", "_") for r in HERM_ROWS)
+HERM_ROWSET_BEFORE = "389da490e1cfb6aa"   # the 247 rows before this rung, by name and order
+HERM_MARK = "(changed with HERMENEUTICS-0's build, by HERMENEUTICS-0a"
+# The five plants, in the entry's order, each label beside the entry's own words (HERMENEUTICS-0a). Two are the shell's
+# already, DESIGN-IR/DIFF-0's, and are given their twins in the gate's reference; three are added to the shell.
+HERM_PLANTS = (("rim-keeps-openings", "a room whose rim keeps its openings"),
+               ("first-wins", "a first statement that wins over a later one"),
+               ("corners-one-order", "a rectangle whose corners are taken in one order only"),
+               ("entrance-dropped", "an entrance that writes nothing"),
+               ("writes-as-operations", "a paint of a class's own colour, or a net-zero design, written as operations"))
+HERM_SHELL_PLANTS = ("rim-keeps-openings", "corners-one-order", "writes-as-operations")
+# THE CORPUS, as the entry writes it: (name, statements, the literal outcome in the entry's words). The registered
+# parent is DE_P0: the witness level of 48 by 32 cells, the camera at 28,28.
+HERM_VERSION = b"VERDANDI-DESIGN 0"
+HERM_CORPUS = (
+    ("H1a", ("close 28,28", "open 28,28", "close 27,28"), "TARGET: rock at 27,28; no other cell and no class changes"),
+    ("H1b", ("open 0,27", "close 0,27", "close 27,28"), "REFUSED: COMPILE-BORDER at line 2"),
+    ("H2", ("open 7,26", "close 27,28"), "REFUSED: COMPILE-STAIR at line 2"),
+    ("H2'", ("close 34,28",), "REFUSED: COMPILE-STAIR at line 2"),
+    ("H3", ("entrance 40,29",), "TARGET: floor at 40,29; nothing else changes"),
+    ("H3'", ("entrance 11,24",), "TARGET: floor at 11,24; nothing else changes"),
+    ("H4", ("room 20,24 26,28",), "TARGET: rock at 21,24 22,24 23,24 24,24 25,24 20,26 26,26 20,28 21,28 22,28 23,28 24,28 25,28 26,28 "
+                                  "(fourteen cells); no cell becomes floor; nothing else changes"),
+    ("H4'", ("room 38,2 42,6",), "TARGET: floor at 39,3 40,3 41,3 39,4 40,4 41,4 39,5 40,5 41,5 (nine cells); no cell becomes rock; "
+                                 "nothing else changes"),
+    ("H5", ("paint floor 60,70,90",), "TARGET: the class floor is the colour 60,70,90 throughout; no cell changes"),
+    ("H6", ("open 40,29", "close 40,29"), "TARGET: the parent itself, nothing changes; and so the compiler's answer is REFUSED: COMPILE-EMPTY"),
+)
+# THE LAWS' INSTANCES, as the entry writes them
+HERM_RECTS = ((6, 3, 16, 10), (20, 24, 26, 28), (38, 2, 42, 6), (13, 12, 17, 15), (40, 17, 45, 21))
+HERM_ROOM_MORE = ((26, 26, 30, 30), (4, 24, 10, 28), (0, 0, 47, 31), (27, 27, 29, 29))
+HERM_EXCHANGE = ((("close 13,28 16,28", "open 20,29 22,29"), "one"), (("room 38,2 42,6", "paint floor 1,2,3"), "one"),
+                 (("paint wall0 1,2,3", "paint floor 1,2,3"), "one"), (("close 13,28 16,28", "close 15,28 18,28"), "one"),
+                 (("open 0,27", "close 27,28"), "refused"), (("close 13,28 16,28", "open 15,28 18,28"), "two"))
+HERM_GUARDS = ("COMPILE-BORDER", "COMPILE-STAIR", "COMPILE-CAMERA")
+HERM_LAWS = ("corner order", "fixed point", "room", "exchange")
+# DESIGN-IR/DIFF-0's checks against values it registered before any plant, which the plants row records beside this
+# court's own catches
+HERM_DIR_CHECKS = ("the registered design's bytes", "the registered design's world", "the registered design against its own child",
+                   "the refusal corpus", "the stated change sets")
+# every code a child of this rung's rows may end with: the compiler's, the session's rule on a repeated proposal, and the
+# admission's refusal of an operation that changes nothing (a planted batch written as operations meets it)
+HERM_ENDINGS = DIR_ENDINGS + ("SHELL-ADMIT-AUTHORITY",)
+_HERM_CAUGHT = {}   # what the corpus row found each plant caught by: {label: [case names]}, for the laws row
+
+
+# ------------------------------------------------------------------ the literal side: no program is called here
+def _herm_design(stmts) -> bytes:
+    """A design of the corpus: the version line and its statements, every line ended by one LF."""
+    return HERM_VERSION + b"\n" + b"".join(s.encode("ascii") + b"\n" for s in stmts)
+
+
+def _herm_target(outcome: str):
+    """A literal outcome, read from the entry's words: ("T", {(x, z): b"#" or b"."}, {class: (r, g, b)}), ("R", code,
+    line), or ("P",), the parent itself, whose compile is COMPILE-EMPTY. It reads words; it computes nothing of a world."""
+    m = re.fullmatch(r"REFUSED: (COMPILE-[A-Z]+) at line ([1-9][0-9]*)", outcome)
+    if m:
+        return ("R", m.group(1), int(m.group(2)))
+    if outcome == "TARGET: the parent itself, nothing changes; and so the compiler's answer is REFUSED: COMPILE-EMPTY":
+        return ("P",)
+    m = re.fullmatch(r"TARGET: (rock|floor) at ((?:[0-9]+,[0-9]+ ?)+?)(?: \((one|nine|fourteen) cells\))?; (.+)", outcome)
+    if m:
+        cells = [(int(a), int(b)) for a, b in re.findall(r"([0-9]+),([0-9]+)", m.group(2))]
+        said = {"one": 1, "nine": 9, "fourteen": 14}.get(m.group(3) or "", len(cells))
+        rest = ("no other cell and no class changes", "nothing else changes", "no cell becomes %s; nothing else changes" % ("floor" if m.group(1) == "rock" else "rock"))
+        if said != len(cells) or len(set(cells)) != len(cells) or m.group(4) not in rest:
+            raise Red("a literal target of the corpus is not in the entry's form: %r" % outcome)
+        return ("T", {c: b"#" if m.group(1) == "rock" else b"." for c in cells}, {})
+    m = re.fullmatch(r"TARGET: the class (wall0|wall1|wall2|wall3|floor) is the colour ([0-9]+),([0-9]+),([0-9]+) throughout; no cell changes", outcome)
+    if m and all(int(v) <= 255 for v in m.groups()[1:]):
+        return ("T", {}, {("wall0", "wall1", "wall2", "wall3", "floor").index(m.group(1)): tuple(int(v) for v in m.groups()[1:])})
+    raise Red("a literal outcome of the corpus is not in the entry's form: %r" % outcome)
+
+
+def _herm_parent_bytes(doc):
+    """The registered parent's level and tiles bytes, read from the files its session names. Its log is empty, so they
+    are its world; they are held to the content the session states, computed here as the session defines it."""
+    d = doc["data"]
+    if d["log"] or d["head"] != DE_P0:
+        raise Red("the parent is not the registered one, with no edit in its log")
+    level = read(os.path.join(ROOT, *d["base"]["level"].split("/")))
+    tiles = read(os.path.join(ROOT, *d["base"]["tiles"].split("/")))
+    if hashlib.sha256(hashlib.sha256(level).digest() + hashlib.sha256(tiles).digest()).hexdigest() != d["final_content"]:
+        raise Red("the parent's level and tiles bytes are not the content its session states")
+    return level, tiles
+
+
+def _herm_literal(level: bytes, tiles: bytes, target) -> str:
+    """The content of a literal target: the parent's level and tiles bytes with the target's cells and classes written
+    into them, and the content of those bytes as the session defines it (the hash of the two digests). It reads its
+    arguments and nothing else, and calls neither the compiler nor the reference."""
+    import struct
+    lv, tb = bytearray(level), bytearray(tiles)
+    w, rows = struct.unpack("<II", level[8:16])
+    n = (len(tiles) - 8) // 5
+    if target[0] == "T":
+        for (x, z), ch in sorted(target[1].items()):
+            if not (0 <= x < w and 0 <= z < rows):
+                raise Red("a literal cell lies outside the level")
+            lv[16 + z * w + x] = ch[0]
+        for c, rgb in sorted(target[2].items()):
+            tb[8 + c * n:8 + (c + 1) * n] = bytes(rgb) * (n // 3)
+    elif target[0] != "P":
+        raise Red("a refusal has no target")
+    return hashlib.sha256(hashlib.sha256(bytes(lv)).digest() + hashlib.sha256(bytes(tb)).digest()).hexdigest()
+
+
+def _herm_changes(level: bytes, tiles: bytes, target) -> bool:
+    """Every target a literal names differs, in the parent, from the value the literal gives it: a literal names only
+    what changes."""
+    import struct
+    w = struct.unpack("<II", level[8:16])[0]
+    n = (len(tiles) - 8) // 5
+    return all(level[16 + z * w + x] != ch[0] for (x, z), ch in target[1].items()) \
+        and all(tiles[8 + c * n:8 + (c + 1) * n] != bytes(rgb) * (n // 3) for c, rgb in target[2].items())
+
+
+# ------------------------------------------------------------------ the programs' side
+def _herm_shell(session, design, root, logs, plant=None):
+    """The shell's compiler on a design: ("B", the batch's bytes) or ("R", code, line), never a crash."""
+    rc, out, err = _dir_run(session, design, root, logs, "herm", plant=plant)
+    if rc == 0 and out and not err.strip():
+        return ("B", out)
+    m = re.search(r"SHELL-(COMPILE-[A-Z]+): (?:line ([0-9]+): )?", err)
+    if rc != 2 or m is None or out or "panicked" in err:
+        raise Red("the shell's compiler%s ended %d without a batch or a coded refusal: %s" % (" planted " + plant if plant else "", rc, err.strip()[-200:]))
+    return ("R", m.group(1), int(m.group(2) or 0))
+
+
+def _herm_reference(design, world, head, plant=""):
+    """The gate's reference on a design, planted alike where a plant is named: ("B", the batch's bytes) or ("R", code,
+    line)."""
+    r = _dir_reference(design, world, head, plant=plant)
+    return ("B", r[1]) if r[0] == "B" else ("R", r[1], r[2])
+
+
+def _herm_child(session, batch, root, logs, cache):
+    """A batch admitted by shell design against a session: the child's content, or None where the admission refuses it
+    with a coded line. Each distinct batch is admitted once."""
+    if batch not in cache:
+        cp, path = _ad_shell("design", ["--session", session, "--proposal", _dir_write("herm-batch", batch)] + ADMIT_ALL, root, logs)
+        if cp.returncode == 0 and path is not None and "[design] admitted %s " % DE_LANGUAGE in cp.stdout:
+            cache[batch] = json.loads(read(path).decode("utf-8"))["data"]["final_content"]
+        elif cp.returncode == 2 and re.search(r"SHELL-ADMIT-[A-Z]+: ", cp.stderr) and "panicked" not in cp.stderr:
+            cache[batch] = None
+        else:
+            raise Red("shell design ended %d on a compiled batch without a child or a coded refusal: %s" % (cp.returncode, cp.stderr.strip()[-200:]))
+    return cache[batch]
+
+
+def _herm_meets(outcome, want, child, literal) -> bool:
+    """A program's outcome on a case of the corpus is the registered one: the refusal at its code and line; for the
+    parent itself, COMPILE-EMPTY; for a target, a batch whose admitted child has the literal's content."""
+    if want[0] == "R":
+        return outcome == want
+    if want[0] == "P":
+        return outcome == ("R", "COMPILE-EMPTY", 0)
+    return outcome[0] == "B" and child is not None and child == literal
+
+
+def _herm_ops(outcome):
+    """An outcome as a law compares it: a batch by its operation lines (its id is the design's and differs by design),
+    a refusal by its code and line."""
+    return ("B",) + tuple(_dir_head(outcome[1])[5]) if outcome[0] == "B" else outcome
+
+
+def _herm_dir_checks(plant, parents, cache, root, logs):
+    """Which of DESIGN-IR/DIFF-0's checks against values it registered before any plant catch the shell planted with
+    `plant`: the registered design's bytes and the world its admitted child reaches; the registered design against its
+    own child; the refusal corpus, every code and line typed from that rung's registration; and the change sets that
+    rung states by hand. Returns the names of those that catch it."""
+    caught = []
+    p0, c0 = parents["P0"], parents["C0"]
+    out = _herm_shell(p0[0], DIR_D0, root, logs, plant=plant)
+    if out[0] != "B" or sha256(out[1]) != DIR_D0_SHA:
+        caught.append(HERM_DIR_CHECKS[0])
+    if out[0] != "B" or _herm_child(p0[0], out[1], root, logs, cache) != DIR_D0_CONTENT:
+        caught.append(HERM_DIR_CHECKS[1])
+    if _herm_shell(c0[0], DIR_D0, root, logs, plant=plant) != ("R", "COMPILE-EMPTY", 0):
+        caught.append(HERM_DIR_CHECKS[2])
+    if any(_herm_shell(p0[0], design, root, logs, plant=plant) != ("R", code, line or 0) for _n, design, code, line in _dir_refusals()):
+        caught.append(HERM_DIR_CHECKS[3])
+    for _name, key, design, stated in _dir_court_designs(p0[3]):
+        if stated is None or key not in parents:
+            continue
+        got = _herm_shell(parents[key][0], design, root, logs, plant=plant)
+        if got[0] != "B" or _dir_head(got[1])[5] != [_dir_op_line(o) for o in stated]:
+            caught.append(HERM_DIR_CHECKS[4])
+            break
+    return caught
+
+
+def _herm_judge(law, outs, want=None) -> bool:
+    """Whether a law holds on one instance, from outcomes alone; it runs nothing. Each outcome is a program's: a batch as
+    ("B", its operation lines..., and for the reference its target's content) or a refusal ("R", code, line).
+    corner order: `outs` the four orders' (shell, reference) pairs — one outcome each. fixed point: (shell, reference,
+    the reference's target, the child's content) — both COMPILE-EMPTY and the target the child. room: the two spellings'
+    pairs — one target, or both refused by a guard. exchange: the two orders' pairs and `want` — one target, refused
+    both ways by a guard, or two targets."""
+    empty = ("R", "COMPILE-EMPTY", 0)
+    if law == "corner order":
+        return len(outs) == 4 and len({o[0] for o in outs}) == 1 and len({o[1] for o in outs}) == 1
+    if law == "fixed point":
+        sh, rf, target, child = outs
+        return sh == empty and rf == empty and target is not None and target == child
+    a, b = outs
+    if law == "room":
+        return all(p == q if p[0] == "B" else (q[0] == "R" and (p[1] in HERM_GUARDS and q[1] in HERM_GUARDS or p[1] == q[1] == "COMPILE-EMPTY"))
+                   for p, q in ((a[0], b[0]), (a[1], b[1])))
+    if law == "exchange" and want == "one":
+        return all(p[0] == "B" and p == q for p, q in ((a[0], b[0]), (a[1], b[1])))
+    if law == "exchange" and want == "refused":
+        return all(p[0] == q[0] == "R" and p[1] in HERM_GUARDS and q[1] in HERM_GUARDS for p, q in ((a[0], b[0]), (a[1], b[1])))
+    if law == "exchange" and want == "two":
+        return all(p[0] == q[0] == "B" and p != q for p, q in ((a[0], b[0]), (a[1], b[1]))) and a[1][-1] != b[1][-1]
+    raise Red("no such law, or no such instance of the exchange law: %r %r" % (law, want))
+
+
+def _herm_judge_bites() -> list:
+    """The judge on outcomes made up to hold and to fail, each law both ways: the names of the made-up instances it
+    misjudges. It runs nothing."""
+    B1, B2 = ("B", "open 1,1"), ("B", "open 2,2")
+    R1, R2 = ("B", "open 1,1", "t1"), ("B", "open 2,2", "t2")
+    E, G, G2 = ("R", "COMPILE-EMPTY", 0), ("R", "COMPILE-BORDER", 2), ("R", "COMPILE-STAIR", 3)
+    cases = [("corner order", [(B1, R1)] * 4, None, True), ("corner order", [(B1, R1)] * 3 + [(B2, R1)], None, False),
+             ("corner order", [(B1, R1)] * 3 + [(B1, R2)], None, False), ("corner order", [(B1, R1)] * 3, None, False),
+             ("fixed point", (E, E, "c", "c"), None, True), ("fixed point", (B1, E, "c", "c"), None, False),
+             ("fixed point", (E, R1, "c", "c"), None, False), ("fixed point", (E, E, "c", "d"), None, False),
+             ("room", ((B1, R1), (B1, R1)), None, True), ("room", ((B1, R1), (B2, R1)), None, False), ("room", ((B1, R1), (B1, R2)), None, False),
+             ("room", ((G, G), (G2, G2)), None, True), ("room", ((G, G), (B1, G)), None, False), ("room", ((E, E), (E, E)), None, True),
+             ("room", ((E, E), (G, E)), None, False),
+             ("exchange", ((B1, R1), (B1, R1)), "one", True), ("exchange", ((B1, R1), (B2, R1)), "one", False),
+             ("exchange", ((B1, R1), (B1, R2)), "one", False), ("exchange", ((G, G), (G, G)), "one", False),
+             ("exchange", ((G, G), (G2, G2)), "refused", True), ("exchange", ((G, G), (B1, G)), "refused", False),
+             ("exchange", ((E, G), (G, G)), "refused", False),
+             ("exchange", ((B1, R1), (B2, R2)), "two", True), ("exchange", ((B1, R1), (B1, R2)), "two", False),
+             ("exchange", ((B1, R1), (B2, ("B", "open 2,2", "t1"))), "two", False)]
+    return ["%s %d" % (law, k) for k, (law, outs, want, holds) in enumerate(cases) if _herm_judge(law, outs, want) != holds]
+
+
+def _herm_meets_bites(level: bytes, tiles: bytes) -> list:
+    """The corpus's own judge on outcomes made up to miss each case: a refusal for a target, a batch whose child is not
+    the literal, a batch admitted nowhere, another code, another line, a batch for the parent itself. The names of the
+    cases it lets pass."""
+    missed = []
+    for name, _stmts, outcome in HERM_CORPUS:
+        want = _herm_target(outcome)
+        literal = None if want[0] == "R" else _herm_literal(level, tiles, want)
+        wrong = {"T": [(("R", "COMPILE-EMPTY", 0), None), (("B", b"x"), "0" * 64), (("B", b"x"), None)],
+                 "R": [(("R", "COMPILE-PARSE", want[2] if want[0] == "R" else 0), None), (("R", want[1] if want[0] == "R" else "", 9), None), (("B", b"x"), None)],
+                 "P": [(("B", b"x"), literal), (("R", "COMPILE-CAMERA", 0), None)]}[want[0]]
+        right = {"T": (("B", b"x"), literal), "R": (want, None), "P": (("R", "COMPILE-EMPTY", 0), None)}[want[0]]
+        if any(_herm_meets(o, want, c, literal) for o, c in wrong) or not _herm_meets(right[0], want, right[1], literal):
+            missed.append(name)
+    return missed
+
+
+def _herm_laws(spath, world, head, children, root, logs, plant=None):
+    """Each law on its registered instances, for both programs, the shell planted with `plant` and the reference
+    planted alike where one is named. Returns {law: [the instances where it fails]}. Where a plant is named, the two
+    programs' bytes, or their refusals, are held equal on every instance first: planted alike."""
+    V = HERM_VERSION + b"\n"
+    fails = {law: [] for law in HERM_LAWS}
+
+    def run(design, sess=None, wld=None, hd=None):
+        sh = _herm_shell(sess or spath, design, root, logs, plant=plant)
+        rf = _herm_reference(design, wld or world, hd or head, plant=plant or "")
+        if plant and sh != rf:
+            raise Red("PLANT %s is not planted alike: the shell and the reference differ on %r" % (plant, design[len(V):]))
+        target = _dir_target_content(design, wld or world, plant=plant or "")
+        return _herm_ops(sh), _herm_ops(rf) + ((target,) if rf[0] == "B" else ())
+
+    # corner order: each verb over each rectangle, its four corner orders, one outcome for each program
+    for verb in ("open", "close", "room"):
+        for x0, z0, x1, z1 in HERM_RECTS:
+            outs = [run(V + ("%s %d,%d %d,%d\n" % (verb, a[0], a[1], b[0], b[1])).encode("ascii"))
+                    for a, b in (((x0, z0), (x1, z1)), ((x1, z1), (x0, z0)), ((x0, z1), (x1, z0)), ((x1, z0), (x0, z1)))]
+            if not _herm_judge("corner order", outs):
+                fails["corner order"].append("%s %d,%d %d,%d" % (verb, x0, z0, x1, z1))
+    # fixed point: each design of DESIGN-IR/DIFF-0's corpus that compiles on the registered parent, against its own child
+    for name, design, cpath, chead, cworld, ccontent in children:
+        sh, rf = run(design, cpath, cworld, chead)
+        if not _herm_judge("fixed point", (sh, rf, _dir_target_content(design, cworld, plant=plant or ""), ccontent)):
+            fails["fixed point"].append(name)
+    # room: room A B and its two-statement spelling, one target or both refused by a guard
+    for x0, z0, x1, z1 in HERM_RECTS + HERM_ROOM_MORE:
+        a = run(V + b"room %d,%d %d,%d\n" % (x0, z0, x1, z1))
+        b = run(V + b"close %d,%d %d,%d\nopen %d,%d %d,%d\n" % (x0, z0, x1, z1, x0 + 1, z0 + 1, x1 - 1, z1 - 1))
+        if not _herm_judge("room", (a, b)):
+            fails["room"].append("%d,%d %d,%d" % (x0, z0, x1, z1))
+    # exchange: two adjacent statements whose maps agree, either order; a disagreeing pair gives two targets
+    for (s1, s2), want in HERM_EXCHANGE:
+        a = run(V + ("%s\n%s\n" % (s1, s2)).encode("ascii"))
+        b = run(V + ("%s\n%s\n" % (s2, s1)).encode("ascii"))
+        if not _herm_judge("exchange", (a, b), want):
+            fails["exchange"].append("%s / %s" % (s1, s2))
+    return fails
+
+
+# ------------------------------------------------------------------ the rows
+def hermeneutics_preregistered():
+    """(5) HERMENEUTICS-0's method is locked: the entry at its hash; its ten designs and their literal targets, the laws'
+    instances and the five plants, as the gate holds them, the entry's own words; HERMENEUTICS-0a, the owner's ruling,
+    and REASON-COURT-0d, the chain's fourth link, each registered and unedited and citing what it amends."""
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    e, a, d = reg.get("HERMENEUTICS-0"), reg.get("HERMENEUTICS-0a"), reg.get("REASON-COURT-0d")
+    if e is None or e.get("chain_hash") != HERMENEUTICS0_HASH or not entry_hash_ok("HERMENEUTICS-0", e):
+        raise Red("the HERMENEUTICS-0 entry is missing, edited after registration, or not the registered one")
+    if a is None or a.get("chain_hash") != HERMENEUTICS0A_HASH or not entry_hash_ok("HERMENEUTICS-0a", a) \
+            or any(h not in a["hypothesis"] for h in (HERMENEUTICS0_HASH, DESIGNIR0_HASH, DESIGNIR0B_HASH, REASONCOURT0D_HASH)):
+        raise Red("the HERMENEUTICS-0a entry is missing, edited after registration, or does not cite the entries it amends and follows")
+    if d is None or d.get("chain_hash") != REASONCOURT0D_HASH or not entry_hash_ok("REASON-COURT-0d", d) \
+            or any(h not in d["hypothesis"] for h in (REASONCOURT0_HASH, REASONCOURT0B_HASH, REASONCOURT0C_HASH, RSN_ORIGIN)):
+        raise Red("the REASON-COURT-0d entry is missing, edited after registration, or does not cite the chain it extends")
+    hyp, cond = e["hypothesis"], e["success_condition"]
+    # the corpus, value for value and in the entry's order
+    at = -1
+    for name, stmts, outcome in HERM_CORPUS:
+        said = "%s — %s — %s" % (name, " / ".join(stmts), outcome)
+        k = max(hyp.find(said + ";"), hyp.find(said + "."))
+        if k < 0 or k < at or hyp.count(said) != 1:
+            raise Red("%s: the gate's design or literal target is not the entry's, word for word and in its order" % name)
+        at = k
+        _herm_target(outcome)
+    if len(HERM_CORPUS) != 10 or len({c[0] for c in HERM_CORPUS}) != 10 or "Ten designs on one parent" not in hyp or DE_P0 not in hyp \
+            or "the witness level of 48 by 32 cells, the camera at 28,28" not in hyp:
+        raise Red("the corpus is not ten designs on the registered parent, as the entry says")
+    # the laws' instances
+    rect = lambda r: "%d,%d %d,%d" % r
+    pairs = [p for p, w in HERM_EXCHANGE]
+    for needle in ("open, close and room over the rectangles %s, each in its four corner orders, give one outcome" % "; ".join(rect(r) for r in HERM_RECTS),
+                   "each design of DESIGN-IR/DIFF-0's corpus that compiles on the registered parent, compiled against its own admitted child, is COMPILE-EMPTY",
+                   "over those five rectangles and %s, room and its two-statement spelling give one target, or are both refused by a guard" % "; ".join(rect(r) for r in HERM_ROOM_MORE),
+                   "the pairs %s give one target in either order" % ", ".join("(%s and %s)" % p for p, w in HERM_EXCHANGE if w == "one"),
+                   "the pair (%s and %s) is refused in either order" % pairs[4],
+                   "the pair (%s and %s), which disagrees on two cells, gives two different targets" % pairs[5]):
+        if needle not in cond:
+            raise Red("the laws' instances are not the entry's: %r" % needle[:80])
+    # the five plants, in the entry's order and its words; each label set beside them in HERMENEUTICS-0a
+    words = [w for _l, w in HERM_PLANTS]
+    if "Five, by his list: %s; and %s." % ("; ".join(words[:4]), words[4]) not in hyp \
+            or any("%s (%s)" % (lab, w) not in a["hypothesis"] for lab, w in HERM_PLANTS) \
+            or tuple(lab for lab, _w in HERM_PLANTS if lab not in DIR_PLANTS) != HERM_SHELL_PLANTS \
+            or [lab for lab, _w in HERM_PLANTS if lab in DIR_PLANTS] != ["first-wins", "entrance-dropped"]:
+        raise Red("the five plants are not the entry's, in its words and order, labelled in HERMENEUTICS-0a, two of them DIFF-0's")
+    if any(r not in cond for r in HERM_ROWS) or "247 rows become 251" not in cond:
+        raise Red("the entry does not name this rung's four rows and the gate's count")
+    # the shell's plants, as HERMENEUTICS-0a rules them
+    src = read(os.path.join(SHELL, "designcompile.rs")).decode("utf-8")
+    m = re.search(r"pub const PLANTS: \[&str; 14\] = \[([^\]]*)\];", src)
+    if m is None or tuple(re.findall(r'"([a-z-]+)"', m.group(1))) != DIR_PLANTS + HERM_SHELL_PLANTS:
+        raise Red("the shell's plants are not DIFF-0's eleven, in their order, and then this rung's three")
+    # the chain's fourth link: REASON-COURT-0d moves the one pin, from where REASON-COURT-0b added it to the built file
+    rel = "shell/designcompile.rs"
+    name, moved, added = RSN_CHAIN[3]
+    if name != "REASON-COURT-0d" or sorted(moved) != [rel] or added or not _rsn_chain_ok(rel) or moved[rel][0] != RSN_CHAIN[1][2][rel] \
+            or ("%s (%s to %s)" % (rel, moved[rel][0], moved[rel][1])) not in d["hypothesis"] or len(RSN_CHAIN) != 4:
+        raise Red("the chain's fourth link is not REASON-COURT-0d's one pin, from where REASON-COURT-0b added it to the built file, named with both hashes")
+    return ("HERMENEUTICS-0's method is locked (hash %s): its ten designs on the registered parent, each with its literal "
+            "target or refusal, are the gate's word for word and in the entry's order; the laws' instances are the entry's; "
+            "the five plants are its words, in its order, and HERMENEUTICS-0a (%s) — the owner's ruling (A), citing the entry, "
+            "DESIGN-IR/DIFF-0 and its second amendment — sets each label beside them: two the shell's already, three added "
+            "after DIFF-0's eleven; REASON-COURT-0d (%s) is the chain's fourth link, shell/designcompile.rs from the hash "
+            "REASON-COURT-0b added it at to the built file's, named with both"
+            % (HERMENEUTICS0_HASH[:8], HERMENEUTICS0A_HASH[:8], REASONCOURT0D_HASH[:8]))
+
+
+def hermeneutics_corpus():
+    """(1) The corpus: for each of the ten designs, on the registered parent, the shell's compiler and the gate's reference
+    each give the registered outcome — a batch that, admitted, reaches the content of the literal target, which this row
+    makes from the entry's cells and the parent's bytes; or the code at the line; or, for H6, COMPILE-EMPTY with the
+    parent as the reference's target. And (3), the plants: each of the five planted alike in both programs, their bytes
+    equal on every case; the cases each is caught by, and which of DESIGN-IR/DIFF-0's checks catch it too."""
+    _ad_need()
+    _HERM_CAUGHT.clear()
+    logs = _ls_logs("hermeneutics-corpus")
+    root = _ad_root("hermeneutics-corpus")
+    spath, sraw, sdoc = _de_parent(root, logs)
+    head = sdoc["data"]["head"]
+    level, tiles = _herm_parent_bytes(sdoc)
+    world = _dir_world(sdoc)
+    if (world.w, world.rows, world.cam) != (48, 32, (28, 28)):
+        raise Red("the registered parent is not the 48 by 32 level with its camera at 28,28")
+    parent = _herm_literal(level, tiles, ("P",))
+    cases = []
+    for name, stmts, outcome in HERM_CORPUS:
+        want = _herm_target(outcome)
+        if want[0] == "T" and not _herm_changes(level, tiles, want):
+            raise Red("%s: the literal target names a cell or a class that does not change on the registered parent" % name)
+        cases.append((name, _herm_design(stmts), want, None if want[0] == "R" else _herm_literal(level, tiles, want)))
+    missed = _herm_meets_bites(level, tiles)
+    if missed:
+        raise Red("the corpus's judge lets a made-up wrong outcome pass, or refuses the right one, on %s" % ", ".join(missed))
+    if _herm_changes(level, tiles, ("T", {(0, 0): b"#"}, {})) or _herm_changes(level, tiles, ("T", {}, {4: tuple(tiles[8 + 4 * ((len(tiles) - 8) // 5):][:3])})):
+        raise Red("the check that a literal names only what changes passes a made-up literal naming a border cell as rock, or the floor as its own colour")
+    cache = {}
+    by = {"T": 0, "R": 0, "P": 0}
+    for name, design, want, literal in cases:
+        # the shell's compiler, and for a target the child of its batch admitted by shell design
+        if want[0] == "T":
+            out = _herm_shell(spath, design, root, logs)
+            if out[0] != "B" or _herm_child(spath, out[1], root, logs, cache) != literal:
+                raise Red("%s: the shell's compiler does not give a batch whose admitted child has the literal target's content: %r" % (name, out[:3] if out[0] == "R" else "a batch"))
+        else:
+            code, line = (want[1], want[2]) if want[0] == "R" else ("COMPILE-EMPTY", None)
+            seen, dirs = len(_ad_records(logs)), sorted(os.listdir(root))
+            _dir_refusal(name, _dir_run(spath, design, root, logs, "herm"), logs, seen, code, root, dirs, (spath, sraw), line)
+        # the gate's reference, and its own target
+        ref = _herm_reference(design, world, head)
+        own = _dir_target_content(design, world)
+        if (want[0] == "T" and (ref[0] != "B" or own != literal)) or (want[0] == "R" and ref != want) \
+                or (want[0] == "P" and (ref != ("R", "COMPILE-EMPTY", 0) or own != parent)):
+            raise Red("%s: the gate's reference does not give the registered outcome, or its own target is not the literal" % name)
+        by[want[0]] += 1
+    if read(spath) != sraw:
+        raise Red("a compile or an admission changed the registered parent's bytes")
+    # THE PLANTS, each alike in both programs
+    parents = {"P0": (spath, sraw, sdoc, world)}
+    parents["C0"] = _dir_child("the registered design", parents, "P0", DIR_D0, root, logs, "herm-c0")
+    tpath, traw, tdoc = _de_parent(root, logs, camera=DIR_T_CAMERA)
+    parents["T"] = (tpath, traw, tdoc, _dir_world(tdoc))
+    record = []
+    for label, _words in HERM_PLANTS:
+        caught = []
+        for name, design, want, literal in cases:
+            sh = _herm_shell(spath, design, root, logs, plant=label)
+            tw = _herm_reference(design, world, head, plant=label)
+            if sh != tw:
+                raise Red("PLANT %s is not planted alike: on %s the shell's bytes, or its refusal, are not the reference's" % (label, name))
+            child = _herm_child(spath, sh[1], root, logs, cache) if sh[0] == "B" and want[0] == "T" else None
+            if not _herm_meets(sh, want, child, literal):
+                caught.append(name)
+        _HERM_CAUGHT[label] = caught
+        record.append((label, caught, _herm_dir_checks(label, parents, cache, root, logs)))
+    if read(spath) != sraw:
+        raise Red("a planted compile or an admission changed the registered parent's bytes")
+    every = all(d for _l, _c, d in record)
+    return ("the corpus, on the registered parent: %d designs whose literal is a target each compile, in the shell, to a "
+            "batch that shell design admits to a child with the literal's content — made here from the entry's cells and "
+            "the parent's bytes, by neither program — and the reference's own target is the literal; %d refusals each come "
+            "from both at the registered code and line; H6 is COMPILE-EMPTY from both, the reference's target the parent "
+            "itself; each literal names only what changes; the corpus's judge refuses a made-up wrong outcome on every case. "
+            "PLANTS, each planted alike, the two programs' bytes or refusals equal on all ten cases: %s%s"
+            % (by["T"], by["R"], "; ".join("%s caught by %s, and of DESIGN-IR/DIFF-0's checks by %s" % (lab, ", ".join(c) or "no case of the corpus", ", ".join(d) or "none")
+                                         for lab, c, d in record),
+               ". DESIGN-IR/DIFF-0's checks against the values it registered before any plant catch all five: a finding about "
+               "how much those values already fix, and not a failure of this court" if every else ""))
+
+
+def hermeneutics_laws():
+    """(2) The laws: each on its registered instances, for both programs — corner order, fixed point, room, exchange —
+    and the pair that disagrees gives two targets. And (3), the plants against the laws: each planted alike, the laws
+    each one breaks; every plant is caught by a named case of the corpus (the corpus row's record) or a named law."""
+    _ad_need()
+    logs = _ls_logs("hermeneutics-laws")
+    root = _ad_root("hermeneutics-laws")
+    spath, sraw, sdoc = _de_parent(root, logs)
+    head = sdoc["data"]["head"]
+    world = _dir_world(sdoc)
+    if head != DE_P0 or (world.w, world.rows, world.cam) != (48, 32, (28, 28)):
+        raise Red("the registered parent is not the 48 by 32 level with its camera at 28,28")
+    parents = {"P0": (spath, sraw, sdoc, world)}
+    children = []
+    for name, key, design, _stated in _dir_court_designs(world):
+        if key != "P0":
+            continue
+        cpath, _craw, cdoc, cworld = _dir_child(name, parents, "P0", design, root, logs, "herm-fixed")
+        children.append((name, design, cpath, cdoc["data"]["head"], cworld, cdoc["data"]["final_content"]))
+    if len(children) < 2:
+        raise Red("DESIGN-IR/DIFF-0's corpus gives fewer than two designs that compile on the registered parent")
+    misjudged = _herm_judge_bites()
+    if misjudged:
+        raise Red("the laws' judge misjudges outcomes made up to hold and to fail: %s" % ", ".join(misjudged))
+    fails = _herm_laws(spath, world, head, children, root, logs)
+    if any(fails.values()):
+        raise Red("a law fails on its registered instances: %s" % "; ".join("%s at %s" % (law, ", ".join(f[:3])) for law, f in fails.items() if f))
+    if not _HERM_CAUGHT or sorted(_HERM_CAUGHT) != sorted(lab for lab, _w in HERM_PLANTS):
+        raise Red("the corpus row did not leave its record of the plants: this row holds every plant caught by a case or a law")
+    record = []
+    for label, _words in HERM_PLANTS:
+        broken = [law for law, f in _herm_laws(spath, world, head, children, root, logs, plant=label).items() if f]
+        if not broken and not _HERM_CAUGHT[label]:
+            raise Red("PLANT %s is caught by no named case of the corpus and no named law" % label)
+        record.append((label, broken))
+    if read(spath) != sraw:
+        raise Red("a compile or an admission changed the registered parent's bytes")
+    return ("the laws hold for both programs on their registered instances: corner order, each of open, close and room over "
+            "%d rectangles in its four corner orders, one outcome; fixed point, each of the %d designs of DESIGN-IR/DIFF-0's "
+            "corpus that compile on the registered parent COMPILE-EMPTY against its own admitted child, the reference's target "
+            "that child; room, over %d rectangles, room and its two-statement spelling one target or both refused by a guard; "
+            "exchange, %d pairs that agree one target either way, the border pair refused either way, and the pair that "
+            "disagrees two targets; the laws' judge holds and fails outcomes made up both ways, each law. PLANTS against "
+            "the laws: %s; every plant is caught by a named case or a named law"
+            % (len(HERM_RECTS), len(children), len(HERM_RECTS) + len(HERM_ROOM_MORE), sum(1 for _p, w in HERM_EXCHANGE if w == "one"),
+               "; ".join("%s breaks %s" % (lab, ", ".join(b) or "no law") for lab, b in record)))
+
+
+def hermeneutics_fence():
+    """(4) By source: the corpus in the gate is the entry's; the functions that make a target from the entry's words and
+    the parent's bytes call neither program; the reference's twins are reached from this rung alone; DIFF-0's two
+    changed lines are marked; nothing under verify/ reads the design tool; the rows before these keep their names and
+    order and this rung adds four. And by what was heard: every child these rows started that did not end 0 carries a
+    registered code in a code head."""
+    import ast
+    # the corpus in the gate is the entry's, value for value
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    hyp = reg["HERMENEUTICS-0"]["hypothesis"] if entry_hash_ok("HERMENEUTICS-0", reg["HERMENEUTICS-0"]) else ""
+    if len(HERM_CORPUS) != 10 or any(hyp.count("%s — %s — %s" % (nm, " / ".join(st), oc)) != 1 for nm, st, oc in HERM_CORPUS):
+        raise Red("the corpus in the gate is not the entry's, value for value")
+    me = read(os.path.join(ROOT, "verify", "verify.py")).decode("utf-8")
+    tree = ast.parse(me)
+    defs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    literal_side = ("_herm_design", "_herm_target", "_herm_parent_bytes", "_herm_literal", "_herm_changes", "_herm_meets", "_herm_meets_bites",
+                    "_herm_judge", "_herm_judge_bites")
+    for fn in literal_side:
+        called = {n.func.id if isinstance(n.func, ast.Name) else n.func.attr for n in ast.walk(defs[fn]) if isinstance(n, ast.Call)
+                  and isinstance(n.func, (ast.Name, ast.Attribute))}
+        names = {n.id for n in ast.walk(defs[fn]) if isinstance(n, ast.Name)}
+        if any(c.startswith(("_dir_", "_de_", "_ad_", "_ls_")) or (c.startswith("_herm_") and c not in literal_side) for c in called) \
+                or called & {"run", "Popen", "check_output", "system", "compile_rs"} \
+                or names & {"SHELL_EXE", "SESSIONWALK_EXE", "subprocess", "_DirWorld"}:
+            raise Red("%s reaches a program or the reference: the literal side calls neither" % fn)
+    # the reference's twins: a plant handed to the reference only from this rung's rows and helpers, or passed on inside it
+    owner = None
+    for ln in me.splitlines():
+        m_ = re.match(r"(?:def|class) (\w+)[(:]", ln)
+        if m_:
+            owner = m_.group(1)
+        elif re.search(r"\b_dir_(reference|compile|target|target_content|statements)\([^)]*\bplant=", ln):
+            if not (owner in HERM_ROW_FUNCS or owner.startswith("_herm_") or owner.startswith("_dir_")):
+                raise Red("a plant is handed to the gate's reference outside this rung (in %s): its twins are HERMENEUTICS-0's" % owner)
+    # this rung's helpers are called from this rung alone
+    owner = None
+    for ln in me.splitlines():
+        m_ = re.match(r"(?:def|class) (\w+)[(:]", ln)
+        if m_:
+            owner = m_.group(1)
+        elif re.search(r"\b_herm_\w+\(", ln) and not (owner in HERM_ROW_FUNCS or owner.startswith("_herm_")):
+            raise Red("a helper of HERMENEUTICS-0 is called outside its rows (in %s)" % owner)
+    # the widening, exactly as HERMENEUTICS-0a rules it: DIFF-0's plants then this rung's three; the reference's users
+    # DIFF-0's rows and helpers and this rung's four rows and _herm_ helpers, and no one else
+    pre, fen = ast.get_source_segment(me, defs["designir_preregistered"]), ast.get_source_segment(me, defs["designir_fence"])
+    if 'tuple(re.findall(r\'"([a-z-]+)"\', shell_plants.group(1))) != DIR_PLANTS + HERM_SHELL_PLANTS:' not in pre \
+            or re.sub(r"\s+", " ", 'if owner is None or not (owner.startswith("designir_") or owner.startswith("_dir_") or owner == "_DirWorld" '
+                      'or owner in HERM_ROW_FUNCS or owner.startswith("_herm_")):') not in re.sub(r"\s+", " ", fen):
+        raise Red("DESIGN-IR/DIFF-0's two rules are not widened exactly as HERMENEUTICS-0a rules it")
+    # DIFF-0's changed lines, marked in their two rows — the check and the words that report it, in each — and nowhere else
+    marked = [fn for fn in ("designir_preregistered", "designir_fence") if ast.get_source_segment(me, defs[fn]).count(HERM_MARK) == 2]
+    if marked != ["designir_preregistered", "designir_fence"] or me.count(HERM_MARK) != 5:
+        raise Red("the lines HERMENEUTICS-0a changes in DESIGN-IR/DIFF-0's rows are not each marked in their row, and only there")
+    # no file under verify/ reads or imports anything of the design tool's folder
+    tool = "design"
+    path_rx = re.compile(r"(^|[/\\])%s[/\\]|%s\.py|test_%s" % (tool, tool, tool))
+    vdir = os.path.join(ROOT, "verify")
+    scanned = 0
+    for fn in sorted(os.listdir(vdir)):
+        if not fn.endswith(".py"):
+            continue
+        scanned += 1
+        for n in ast.walk(ast.parse(read(os.path.join(vdir, fn)).decode("utf-8"))):
+            mods = [al.name for al in n.names] if isinstance(n, ast.Import) else ([n.module or ""] if isinstance(n, ast.ImportFrom) else [])
+            if any(m == tool or m.startswith(tool + ".") for m in mods) or (isinstance(n, ast.Constant) and isinstance(n.value, str) and path_rx.search(n.value)):
+                raise Red("verify/%s reads the design tool" % fn)
+    import livesession as LS
+    if LS.renderer_id(ROOT) != RC_RENDERER_ID or LS.bearing_id(ROOT) != RC_BEARING_ID:
+        raise Red("the renderer or the bearing identity is not READER-COURT-0's: this rung touches no renderer")
+    # the rows: the 247 before this rung keep their names and order, and this rung adds four
+    names = _mw_rows_by_source()
+    if sha256("\n".join(names[:247]).encode("utf-8"))[:16] != HERM_ROWSET_BEFORE or tuple(names[247:251]) != HERM_ROWS or len(names) != len(set(names)):
+        raise Red("the rows before this rung are not the 247 they were, by name and order, or this rung's four do not follow them")
+    # what was heard
+    heard = [e for e in ENDINGS if e["row"] in HERM_ROWS]
+    loose = ["%s / %s %s ended %d" % (e["row"], e["program"], e["command"], e["exit"]) for e in heard
+             if not (e["exit"] == 2 and any(c in {t for h_ in e["heads"] for t in h_} for c in HERM_ENDINGS))]
+    by_row = {r: sum(1 for e in heard if e["row"] == r) for r in HERM_ROWS}
+    if loose or ENDINGS_UNHEARD or by_row["hermeneutics-corpus"] == 0 or by_row["hermeneutics-laws"] == 0 or by_row["hermeneutics-preregistered"]:
+        raise Red("an ending of this rung's rows carries no registered code in a code head, or the watch did not hear them: %s" % "; ".join(loose[:4]))
+    return ("the court is fenced: the functions that make a literal target from the entry's words and the parent's bytes, "
+            "and the two judges (%s), call neither the compiler nor the reference and start no program; a plant reaches the gate's reference "
+            "from this rung's rows and helpers alone, and this rung's helpers are called from its rows alone; the two lines "
+            "HERMENEUTICS-0a changes in DESIGN-IR/DIFF-0's rows are each marked in their row; none of the %d Python files "
+            "under verify/ reads the design tool; the renderer and bearing identities are READER-COURT-0's; the 247 rows "
+            "before this rung keep their names and their order and this rung adds four; and of the %d children these rows "
+            "started that did not end 0, every one carries a registered code in a code head (%s)"
+            % (", ".join(literal_side), scanned, len(heard), ", ".join("%s %d" % (r.split("-", 1)[1], by_row[r]) for r in HERM_ROWS if by_row[r])))
 
 
 def main() -> int:
@@ -16376,6 +17007,12 @@ def main() -> int:
     row("designir-compile", designir_compile)
     row("designir-equivalence", designir_equivalence)
     row("designir-fence", designir_fence)
+    # HERMENEUTICS-0: the design language's meaning held as the owner's literal targets and laws, and both programs held
+    # to them; after DESIGN-IR/DIFF-0's rows
+    row("hermeneutics-preregistered", hermeneutics_preregistered)
+    row("hermeneutics-corpus", hermeneutics_corpus)
+    row("hermeneutics-laws", hermeneutics_laws)
+    row("hermeneutics-fence", hermeneutics_fence)
     fails = sum(1 for st, _, _ in ROWS if st == "FAIL")
     skips = sum(1 for st, _, _ in ROWS if st == "SKIP")
     rowset = sha256("\n".join(name for _, name, _ in ROWS).encode("utf-8"))[:16]

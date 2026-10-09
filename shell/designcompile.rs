@@ -34,7 +34,10 @@
 //                         skipped and a rectangle is never clipped.
 //   the id                the lower-case hexadecimal SHA-256 of the design's bytes exactly as they were read.
 //   the selftest          `design-compile-selftest` is the same run with one planted defect, or the court in process:
-//                         the verdict on every single-byte substitution, deletion and insertion of a design.
+//                         the verdict on every single-byte substitution, deletion and insertion of a design. The first
+//                         eleven plants are DESIGN-IR/DIFF-0's; the three after them are HERMENEUTICS-0's (named in
+//                         HERMENEUTICS-0a), each planted alike in the gate's reference, so that a byte comparison of
+//                         the two programs cannot see it.
 
 use std::io::{Read, Write};
 
@@ -49,9 +52,11 @@ pub const VERSION: &[u8] = b"VERDANDI-DESIGN 0";
 pub const MAX_DESIGN_BYTES: usize = 16_384;
 pub const MAX_STATEMENTS: usize = 64;
 
-/// The plants `design-compile-selftest` takes. `design-compile` takes none.
-pub const PLANTS: [&str; 11] = ["entrance-dropped", "order-reversed", "rect-short", "paint-next-class", "first-wins", "net-stale",
-                                "stair-skipped", "border-clipped", "camera-buried", "id-stripped", "net-short"];
+/// The plants `design-compile-selftest` takes. `design-compile` takes none. DESIGN-IR/DIFF-0's eleven, then
+/// HERMENEUTICS-0's three (HERMENEUTICS-0a).
+pub const PLANTS: [&str; 14] = ["entrance-dropped", "order-reversed", "rect-short", "paint-next-class", "first-wins", "net-stale",
+                                "stair-skipped", "border-clipped", "camera-buried", "id-stripped", "net-short",
+                                "rim-keeps-openings", "corners-one-order", "writes-as-operations"];
 
 #[derive(Clone, Copy, PartialEq)]
 enum Verb {
@@ -62,7 +67,8 @@ enum Verb {
 }
 
 enum Statement {
-    Cells { verb: Verb, x0: usize, z0: usize, x1: usize, z1: usize, line: usize },
+    // `low_first`: the rectangle's first corner, as written, is its low corner on both axes
+    Cells { verb: Verb, x0: usize, z0: usize, x1: usize, z1: usize, line: usize, low_first: bool },
     Paint { class: usize, rgb: [u8; 3] },
 }
 
@@ -208,7 +214,7 @@ fn statements(design: &[u8], w: usize, rows: usize) -> Result<Vec<Statement>, Re
                     return Err(parse);
                 }
                 let (x, z) = point(t[1])?;
-                out.push(Statement::Cells { verb: Verb::Entrance, x0: x, z0: z, x1: x, z1: z, line: n });
+                out.push(Statement::Cells { verb: Verb::Entrance, x0: x, z0: z, x1: x, z1: z, line: n, low_first: true });
             }
             Some(v) => {
                 if !(t.len() == 2 || t.len() == 3) || (v == Verb::Room && t.len() != 3) {
@@ -220,7 +226,7 @@ fn statements(design: &[u8], w: usize, rows: usize) -> Result<Vec<Statement>, Re
                 if v == Verb::Room && (x1 - x0 < 2 || z1 - z0 < 2) {
                     return Err(Refused { code: "COMPILE-RANGE", line: n });
                 }
-                out.push(Statement::Cells { verb: v, x0, z0, x1, z1, line: n });
+                out.push(Statement::Cells { verb: v, x0, z0, x1, z1, line: n, low_first: a.0 <= b.0 && a.1 <= b.1 });
             }
             None if t[0] == b"paint" => {
                 let class = if t.len() == 3 { TILE_CLASSES.iter().position(|c| c.as_bytes() == t[1]) } else { None };
@@ -256,22 +262,29 @@ fn target(stmts: &[Statement], world: &World, plant: &str) -> Result<(Vec<u8>, [
                 let c = if plant == "paint-next-class" { (class + 1) % 5 } else { class };
                 tiles[c] = Some(rgb);
             }
-            Statement::Cells { verb, x0, z0, x1, z1, line } => {
+            Statement::Cells { verb, x0, z0, x1, z1, line, low_first } => {
                 if plant == "entrance-dropped" && verb == Verb::Entrance {
+                    continue;
+                }
+                // PLANT corners-one-order: a rectangle read from its first corner to its second, so that one written
+                // with a high corner first names no cell
+                if plant == "corners-one-order" && !low_first {
                     continue;
                 }
                 let xe = if plant == "rect-short" && x1 > x0 { x1 - 1 } else { x1 };
                 for z in z0..=z1 {
                     for x in x0..=xe {
+                        let i = z * w + x;
                         let rim = verb == Verb::Room && (x == x0 || x == x1 || z == z0 || z == z1);
-                        let to = if verb == Verb::Close || rim { b'#' } else { b'.' };
+                        // PLANT rim-keeps-openings: a rim cell that is floor stays floor
+                        let keep = plant == "rim-keeps-openings" && rim && cells[i] == b'.';
+                        let to = if verb == Verb::Close || (rim && !keep) { b'#' } else { b'.' };
                         if (x == 0 || z == 0 || x == w - 1 || z == rows - 1) && to != b'#' {
                             if plant == "border-clipped" {
                                 continue;
                             }
                             return Err(Refused { code: "COMPILE-BORDER", line });
                         }
-                        let i = z * w + x;
                         if cells[i] == b'<' || cells[i] == b'>' {
                             if plant == "stair-skipped" {
                                 continue;
@@ -300,15 +313,26 @@ fn compile(design: &[u8], world: &World, base: Option<&World>, plant: &str) -> R
         Some(b) if plant == "net-stale" => b,
         _ => world,
     };
+    // PLANT writes-as-operations: every cell a statement names and every class painted is written as an operation,
+    // whether it changes or not
+    let writes = plant == "writes-as-operations";
+    let named = |i: usize| -> bool {
+        let (x, z) = (i % world.w, i / world.w);
+        stmts.iter().any(|s| match *s {
+            Statement::Cells { x0, z0, x1, z1, .. } => x0 <= x && x <= x1 && z0 <= z && z <= z1,
+            Statement::Paint { .. } => false,
+        })
+    };
+    let painted = |c: usize| -> bool { stmts.iter().any(|s| matches!(*s, Statement::Paint { class, .. } if class == c)) };
     let mut ops = Vec::new();
     for (i, &c) in cells.iter().enumerate() {
-        if c != against.cells[i] {
+        if c != against.cells[i] || (writes && named(i)) {
             let (x, z) = ((i % world.w) as u32, (i / world.w) as u32);
             ops.push(if c == b'#' { Op::Close(x, z) } else { Op::Open(x, z) });
         }
     }
     for c in 0..5 {
-        if tiles[c] != against.tiles[c] {
+        if tiles[c] != against.tiles[c] || (writes && painted(c)) {
             if let Some(rgb) = tiles[c] {
                 ops.push(Op::Paint(c as u8, rgb[0] as u32 * 65536 + rgb[1] as u32 * 256 + rgb[2] as u32));
             }
