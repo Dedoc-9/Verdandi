@@ -417,7 +417,7 @@ ever differs from replay; `workshop1-propose` if a propose writes or an invalid 
 `workshop1-tamper` if a changed entry is not caught; `workshop1-demo` if the committed session stops replaying
 to its head.
 
-## INPUT-0 — moving around is the projection's job, and a walk replays headless (seat 9; amended `INPUT-0a` `2f0426d6`: a walk's path is the rest of its line)
+## INPUT-0 — moving around is the projection's job, and a walk replays headless (seat 9; amended `INPUT-0a` `2f0426d6`: a walk's path is the rest of its line; `INPUT-0b` `a167c308`: the walk's rows ask for what they need)
 
 **What landed.** `workshop/input.rs` (std-only): a **walk** is an initial camera and an ordered log of typed
 movement commands, replayed against a FIXED level to reproduce the whole camera trajectory and the frame at
@@ -618,6 +618,66 @@ later row red, and cannot turn one green: no row was found testing a build globa
 **For his ruling.** Not written yet, by his order: whether the intended prerequisite is declared, how a row says it
 is missing, and whether the reach is `input-demo`, the walk's rows, or every reader above. His texts set the test of
 any of them: remove the prerequisite and require the row to fail clearly, not with an unrelated `TypeError`.
+(Answered for the walk's rung by INPUT-0b, below.)
+
+### INPUT-0b — the walk's rows ask for what they need (registered `a167c308`; built; the build container's predictions met; the host's witness predicted)
+
+```text
+  before   kernel-build ──sets KERNEL_EXE──►  …  ──►  input-demo reads KERNEL_EXE      (fails alone: a brittle)
+  after    input-demo ──need_kernel()──► the kernel kernel-build made, or one made now and kept
+```
+
+**How the path was chosen.** The owner's instruction (2026-10-09): find the best and most elegant path, by observation
+and search, and carry it through; within his rulings on G33 — investigate first, register only the demonstrated
+contract, no broad isolation mechanism yet, and a removed prerequisite must fail clearly.
+
+Two outside sources name the case and its remedy. Paraphrased; nothing rests on them.
+
+- *iFixFlakies* (Shi, Lam, Oei, Xie and Marinov, ESEC/FSE 2019) sorts order-dependent tests. A **brittle** fails
+  run alone and passes after a **state-setter**. Their tool fixes a brittle by taking the state-setter's statements,
+  cutting them down to the fewest that still make the brittle pass, and calling them at the brittle's start.
+  `input-demo` is a brittle, and `kernel-build` its state-setter.
+- *Lazy Setup*, in Meszaros's *xUnit Test Patterns* (2007): a shared fixture built by lazy initialization, in the
+  first test that needs it.
+
+So the repair is the brittle's fix, made deliberate. The state-setter's one needed statement — compile the kernel —
+goes where the kernel is used, behind a function that keeps what it made. A clear refusal alone would have left the
+row brittle, failing in better words. This way the row passes or fails on the tree, whatever ran before it.
+
+**What changed** (`verify/verify.py` only).
+
+| | |
+|---|---|
+| `need_kernel`, `need_input` | the executable an earlier row made, or, when none was made in this process or its file is gone, compiled and kept; `need_input` also makes the walk's folder. A failed build is refused in words that name it: *the kernel, which this row needs, could not be built: …* |
+| the walk's rows and helpers | `_walk_frame`, `_replay`, `input-tamper`, `input-not-authority`, `input-demo` ask through them and read neither global bare. The build rows are unchanged; in the gate's order nothing is compiled twice |
+| `input-demo` | by source: no bare read in the walk's rows or what they call, two planted bare reads found. The two functions checked with a stand-in compiler, nothing compiled: made once, kept, the folder made, a failure refused in its words. INPUT-0b at its hash |
+
+247 rows, the same names in the same order; the gate's output as before. No program, refusal, reason or pin changes.
+
+**The predictions, as the entry wrote them before the runs** (the build container; each case a fresh export).
+
+| | prediction | result |
+|---|---|---|
+| (1) | three passes on the head: 247 / 0, the output the reference log | run on the head of the series this is cut with; reported with its delivery |
+| (2) | G33's seven cases: `input-demo` passes in every one | **met**: alone; without `kernel-build`; with the kernel's file removed; with the global cleared; with the file from an earlier process; with the kernel handed in; in the gate's order |
+| (3) | each of the walk's five reading rows, run alone: passes | **met**, all five |
+| (4) | the kernel's source made not to compile, `input-demo` alone: refused in words naming the kernel's build | **met**: *the kernel, which this row needs, could not be built: rustc failed: …* |
+| (5) | a bare read given back: `input-demo`'s check fails on the gate, naming it | **met**, for `_walk_frame`, `input-not-authority` and `_replay` |
+| (6) | the host's witness: FULL×2, 247 / 0, the checkout at the end as at the start | not yet run |
+
+**Mutants of the two functions**, in the gate's order: the file check removed; the folder not made; never compiling;
+the failure's words changed. `input-demo` fails on the gate for each, naming the fault. Run alone, the first three
+also crash. That is what the stand-in check exists to catch before isolation does.
+
+**What is left.** G33's class beyond this rung: the census's other readers, the kernel's most of all. Recorded and
+not touched, as he asked for the smallest useful slice.
+
+**Grade.** DECLARED: the path, under his instruction. ESTABLISHED (gate, the build container): the rows. OBSERVED (the
+build container): predictions (2) to (5) and the mutants. NOT_MEASURED: (6).
+**does_not_show.** That a row of another rung is free of what an earlier row left. That a call reaching a global by
+another name is found: the source check reads names.
+**Falsifier.** A walk row that fails run alone; a bare read with `input-demo` passing; a missing kernel refused with a
+`TypeError`.
 
 ## SESSION-WALK — move while authoring, one interleaved sealed chain (seat 10)
 

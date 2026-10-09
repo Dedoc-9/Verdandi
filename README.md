@@ -246,6 +246,8 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          by a perturbed pass and measured on the host, repaired before the next rung (2f0426d6;
          │          built, 247 rows; the pass that found it, run again as predicted, 247 / 0; on the host the
          │          clone with a space, 247 / 0 twice, FULL×2; pushed)
+         │          INPUT-0b the walk's rows ask for the kernel and the walk program where they use them, and
+         │          pass run alone (a167c308; built, 247 rows)
          │
     THE MEANING     HERMENEUTICS-0 what the design language means, apart from the two programs that compile
          │          it: one reading ratified by the owner (a statement is a constant write, a design is its

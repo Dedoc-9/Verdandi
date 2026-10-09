@@ -597,6 +597,10 @@ What stands against the tree, as reviewed:
    kernel reaches the row as a global, that the file alone does not, and that the row means to depend on it. The
    contract that follows is about a declared input and a clear refusal, not about the order of the rows.
 
+66. **Fix the brittle, not its message.** A clear refusal would have made `input-demo` fail in better words and left it
+   failing run alone. Asking for the kernel where it is used, and keeping what was made, ends the dependence on the
+   rows before it and keeps the clear refusal for the one case left: a kernel that cannot be built.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -621,8 +625,8 @@ What stands against the tree, as reviewed:
 - A checkout path with a space broke three rows (a walk's path was one word), and the reason court's watch with
   them. Found by a perturbed pass, measured on the host as predicted, repaired by INPUT-0a, both predictions met
   (G31). The walk's other lines drop words they do not use (G32).
-- `input-demo` rests on the kernel that another rung's build row hands it, intended and undeclared, and fails as a
-  crash without it; many rows read a build global without testing it (G33). The contract is the owner's to rule.
+- A row could rest on what an earlier row left (G33). For the walk's rung, repaired by INPUT-0b: its rows ask for what
+  they need and pass run alone. The other rungs' readers of a build global are recorded and untouched.
 
 ## The one-line retrospective, again
 
