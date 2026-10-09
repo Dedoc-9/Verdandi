@@ -150,9 +150,11 @@ DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host'
       ↓
 INPUT-0a         the owner's ruling (2026-10-08): the small semantic fix first, before the next rung. G31 repaired — a walk's path is the rest of its line, one existing row carries a space, the pin moved by the chain's third link (`REASON-COURT-0c`, `94f3de68`) — registered (`2f0426d6`) and built, 247 rows; the perturbed pass that found it, run again as predicted, 247 / 0; the host's clone with a space, 247 / 0 twice, FULL×2; pushed (`59edc01..a16d663`). G33 investigated after it: the contract the owner's to rule
       ↓
-INPUT-0b         G33 for the walk's rung (2026-10-09), by the owner's instruction to find the most elegant path and carry it through: the rows ask for the kernel and the walk program where they use them (Lazy Setup; a brittle's fix, after iFixFlakies), held by `input-demo` — registered (`a167c308`) and built, 247 rows; each walk row passes run alone; FULL×2 on the host by the witness, pushed (`89d082e..b386b85`)
+INPUT-0b         G33 for the walk's rung (2026-10-09), by the owner's instruction to find the most elegant path and carry it through: the rows ask for the kernel and the walk program where they use them (Lazy Setup; a brittle's fix, after iFixFlakies), held by `input-demo` — registered (`a167c308`) and built, 247 rows; each walk row passes run alone; FULL×2 on the host by the witness, pushed (`89d082e..b386b85`); CLOSED by his ruling (2026-10-09), the witness's read order deferred
       ↓
-HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2
+HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2; PROCEED, his word (2026-10-09); read for the build, two rules of DESIGN-IR/DIFF-0's rows stand in the way of its registered instrument, put to him
+      ↓
+EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
       ↓
@@ -2273,6 +2275,60 @@ the owner's.
 **Grade.** DECLARED: the texts, the court's rulings and the registration; semiotics, declared only. OBSERVED (the
 build container): the laws checked on the reference. MEASURED (host): the gate with the registration applied (0143
 and 0144), 242 of 242, one run; pushed (`5c8ad19..11afebf`, which carries 0142 to 0144). Nothing of it is built.
+
+### EVIDENCE-LINK-0 — a claim about a recorded event, traced to its source · **accepted as the next slice** (the owner's ruling, 2026-10-09); declared; not registered, nothing built
+
+```text
+  build evidence ──► recorded result ──► copied claim ──► published documentation
+       checked            checked          unchecked
+```
+
+**Why.** The first stages are checked: the gate checks the tree, the witness the host, the recomputation the witness.
+Copying a result into a commit message or a document is not. Six commit messages here named a wrong tree id when
+first written (0150 to 0152, 0159, 0164 and 0165). Each was caught by hand, reading the message against Git's own
+output, and corrected by a new commit before its patch was cut. None is in the pushed history; the reading that
+caught them is not a check. His words: *the missing property is not another build check. It is provenance
+preservation across the act of reporting.*
+
+**His scope.** Mechanically checkable claims only.
+
+| claim class | source of truth | check |
+|---|---|---|
+| commit and tree ids | Git's output for the named revision | exact equality |
+| push range | the recorded output of the push | the endpoints agree |
+| row counts and failures | the raw gate log | the parsed values agree |
+| evidence hashes | the recomputed file bytes | SHA-256 agrees |
+| prediction outcomes | the registered prediction and the retained run evidence | the result follows from the recorded criterion |
+| documentation references | registered source records | every named value resolves to the intended source |
+
+**The design choice he names.** Each claim's source is explicit. *A checker that merely compares one copied string
+against another copied string can certify a consistently repeated mistake*: a message and a document carrying the
+same wrong tree id agree with each other, and both must be held to Git's result for the named revision.
+
+**His three adversarial tests, and the positive cases.**
+
+| | the corruption | the checker must |
+|---|---|---|
+| wrong value | a documented tree id replaced by another valid-looking one | fail |
+| wrong source | a claim pointed at another commit, whose tree id is valid and irrelevant to the run | fail |
+| missing provenance | a row count or push range kept, its source record removed | refuse to certify it, never skip it |
+| positive | one unmodified record for every supported class | pass |
+
+**Its form.** An instrument outside the repository, as proposed: it reads evidence and reports discrepancies; it edits
+no document and makes no commit. For each claim it names the claim, the value expected, the value observed, the
+source record and the verdict. *Do not register a broad documentation linter unless these concrete cases
+demonstrate the need.*
+
+**Its boundary.** Not bundled into HERMENEUTICS-0: that rung is what registered material means; this is whether claims
+about recorded events match their authoritative sources. Defined and registered after the current rung is
+advanced: its scope, its mutation cases and its acceptance criterion written down first, then its predictions, then
+the run.
+
+**Acceptance (his).** Each supported class corrupted deliberately and caught; the unmodified records passing.
+
+**Grade.** DECLARED: the ruling and the scope. The six messages are a count taken from the build notes kept outside
+the repository; nothing is built. **does_not_show.** That a claim the checker cannot parse is true: it checks the
+structured facts the project repeatedly copies, not every sentence.
 
 ### LiDAR — a sensor that observes the authoritative world · **declared** (the owner's ruling, 2026-10-09): the first slice recorded; not registered, nothing built
 

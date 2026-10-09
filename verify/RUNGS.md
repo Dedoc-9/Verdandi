@@ -620,7 +620,7 @@ is missing, and whether the reach is `input-demo`, the walk's rows, or every rea
 any of them: remove the prerequisite and require the row to fail clearly, not with an unrelated `TypeError`.
 (Answered for the walk's rung by INPUT-0b, below.)
 
-### INPUT-0b — the walk's rows ask for what they need (registered `a167c308`; built; its six predictions met, the sixth on the host by the witness; pushed, `89d082e..b386b85`)
+### INPUT-0b — the walk's rows ask for what they need (registered `a167c308`; built; its six predictions met, the sixth on the host by the witness; pushed, `89d082e..b386b85`; closed by the owner, 2026-10-09)
 
 ```text
   before   kernel-build ──sets KERNEL_EXE──►  …  ──►  input-demo reads KERNEL_EXE      (fails alone: a brittle)
@@ -687,6 +687,17 @@ Read from the witness's own timestamps: at the start it takes the tree id first,
 status after it; at the two later moments the status comes first. Nothing here turns on it: the commit read at each
 moment is the same, and the tree id read at the later two is the one read first. Recorded, not changed: the witness
 is his.
+
+**His ruling (2026-10-09).** *INPUT-0b: CLOSED.* He set apart what the witness gives from what closes the claim:
+the witness supplies evidence; the recomputation here tests whether its claims follow from it. What the evidence
+closes is his predicate, FULL×2. *It does not prove that the checkout was continuously unchanged between
+observations*, and the predicate does not ask that. The push and the held docs patch are two facts: the first is
+pushed; the second, 0168, is committed here and waits for the next registered change.
+
+The witness's read order: *DEFER the edit.* A uniform order is procedural regularity. It does not make several Git
+commands one atomic snapshot, and the predicate rests on the values recorded, not the order they were read in. The
+difference stays documented, here; it is revisited if the witness is revised for a substantive reason, and a closed
+rung is not reopened for symmetry.
 
 **What is left.** G33's class beyond this rung: the census's other readers, the kernel's most of all. Recorded and
 not touched, as he asked for the smallest useful slice.
@@ -6963,7 +6974,7 @@ The two gate runs: exit 0, 247 rows / 0 fail, stdout byte for byte the same, std
 container's log. The design tool's checks: 17 / 0. **FULL×2: yes**, by his predicate; and the checkout at the end as at
 the start, the design checks bracketed. Pushed, `a16d663..89d082e`.
 
-## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; it waits for the owner's word)
+## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; PROCEED, the owner's word, 2026-10-09; read for the build, two rules of DESIGN-IR/DIFF-0's rows stand in the way of its instrument, for his ruling)
 
 ```
   the owner's court ──► one reading, six rulings, four laws        ratified, 2026-10-07
@@ -7126,6 +7137,50 @@ recommendation.
 
 **Falsifier (of the registration).** A literal target that the parent's cells and the ruling do not give. A law
 whose condition admits a counter-example under the reading. A row that takes a target from a program.
+
+**His word, and what reading for the build found (2026-10-09).** His word: *HERMENEUTICS-0: PROCEED*, assuming its
+registered scope and prerequisites remain unchanged, and without EVIDENCE-LINK-0 bundled into it. This rung asks what
+the registered material means; that one asks whether claims about recorded events match their sources.
+
+*Run off the gate first.* Before any build, the corpus and the laws were given to both programs on the registered
+parent, by an instrument outside the repository. Each literal target was built from the parent's level and tiles
+bytes and the entry's cells, by neither program.
+
+| | the shell's compiler | the gate's reference |
+|---|---|---|
+| the ten designs | the registered outcome for each: six batches whose admitted child has the literal target's content; three refusals at the registered code and line; H6 `COMPILE-EMPTY` | the same outcomes; its own target is the literal, and for H6 the parent |
+| corner order | one outcome in the four orders, for each of the fifteen pairs of a verb and a rectangle (60 compiles) | the same |
+| fixed point | each of the twelve court designs of DESIGN-IR/DIFF-0 that compile on the registered parent: `COMPILE-EMPTY` against its own admitted child | the same, its target the child |
+| room | the two spellings give one outcome over the nine rectangles; two of them are refused `COMPILE-STAIR` both ways | the same |
+| exchange | the four pairs that agree give one change set in either order; the border pair is refused both ways, at line 2 and line 3; the pair that disagrees gives two | the same |
+
+No literal is in dispute. Two corner-order groups are refused `COMPILE-EMPTY` in all four orders, because the
+parent is already so: `open` over 13,12 17,15 and `close` over 38,2 42,6. They hold the law and cannot tell a
+rectangle read in one order from one read in all four; the other thirteen can.
+
+*What stands in the way.* The registered instrument cannot be built under two rules of DESIGN-IR/DIFF-0's rows:
+
+| DIFF-0's row | what its rule holds | what HERMENEUTICS-0's instrument needs |
+|---|---|---|
+| `designir-preregistered` | the shell's plants are exactly the registered eleven (`PLANTS: [&str; 11]`); and the selftest refuses any other plant name (`shell/main.rs`, held by `designir-fence`) | plants of the selftest beyond those eleven, each with a twin in the reference |
+| `designir-fence` | the gate's reference is used by DIFF-0's rows and their helpers alone: a test oracle, and nothing else | the reference held to the literal targets and the laws in this rung's rows |
+
+The entry builds *after DESIGN-IR/DIFF-0's rows and with none of them changed*, and counts a changed row or rule of an
+earlier rung among its failures. Read against DIFF-0 before it was committed, this was missed, by the author of both.
+And two of his five plants are in the shell already, under DIFF-0's names and planted there alone: `first-wins`, and
+`entrance-dropped`, an entrance that writes nothing.
+
+*Put to him.* (A) An amendment entry with his ruling, written with the build and committed before it, as
+DESIGN-IR/DIFF-0b was for DESIGN-EVENT-0's rows. Each rule is widened by the least: the shell's first eleven plants
+are still the registered ones in their order, and the rest are this rung's, exactly; the reference's users are DIFF-0's
+rows and this rung's four, and nothing else. Each changed line is marked in its row; no check is removed and no row
+renamed or moved. (B) An amendment that narrows this rung instead: the shell's compiler alone held to the literal
+targets and the laws, no reference and no plants, DIFF-0's rows untouched. That drops the case the rung was
+registered for, a misreading the two programs share. Not offered: naming this rung's helpers so that the fence's
+syntax passes. Its sentence would then be false.
+
+**Grade.** OBSERVED (the build container, off the gate, before any build): the ten designs and the laws on both
+programs. DECLARED: the two rules, read from the source. Nothing of the rung is built.
 
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 

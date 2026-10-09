@@ -601,6 +601,15 @@ What stands against the tree, as reviewed:
    failing run alone. Asking for the kernel where it is used, and keeping what was made, ends the dependence on the
    rows before it and keeps the clear refusal for the one case left: a kernel that cannot be built.
 
+67. **The last step is a copy.** His lesson (2026-10-09): verification can fail after the code is correct, when a
+   valid result is copied into a claim with the wrong provenance. Six messages here named a wrong tree id, each
+   caught by hand before its patch was cut. Two copies that agree can carry the same mistake; a check has to trace
+   the claim to its source (EVIDENCE-LINK-0, declared).
+68. **Read the earlier rung's rows before writing the later rung's instrument.** HERMENEUTICS-0's entry asked for
+   new plants and for the reference in its own rows, and also that DIFF-0's rows not change. Two of those rows
+   hold the plants to eleven and the reference to DIFF-0 alone. One author wrote all three and did not see it until
+   the build was read.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -625,8 +634,9 @@ What stands against the tree, as reviewed:
 - A checkout path with a space broke three rows (a walk's path was one word), and the reason court's watch with
   them. Found by a perturbed pass, measured on the host as predicted, repaired by INPUT-0a, both predictions met
   (G31). The walk's other lines drop words they do not use (G32).
-- A row could rest on what an earlier row left (G33). For the walk's rung, repaired by INPUT-0b: its rows ask for what
-  they need and pass run alone. The other rungs' readers of a build global are recorded and untouched.
+- A row could rest on what an earlier row left (G33). For the walk's rung, repaired by INPUT-0b, which the owner has
+  closed: its rows ask for what they need and pass run alone. The other rungs' readers of a build global are
+  recorded and untouched.
 
 ## The one-line retrospective, again
 

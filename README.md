@@ -247,21 +247,24 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          built, 247 rows; the pass that found it, run again as predicted, 247 / 0; on the host the
          │          clone with a space, 247 / 0 twice, FULL×2; pushed)
          │          INPUT-0b the walk's rows ask for the kernel and the walk program where they use them, and
-         │          pass run alone (a167c308; built, 247 rows; FULL×2 on the host by the witness; pushed)
+         │          pass run alone (a167c308; built, 247 rows; FULL×2 on the host by the witness; pushed;
+         │          closed)
          │
     THE MEANING     HERMENEUTICS-0 what the design language means, apart from the two programs that compile
          │          it: one reading ratified by the owner (a statement is a constant write, a design is its
          │          statements later-wins), six cases locked, four laws as theorems, ten designs with literal
-         │          targets typed by hand (22d52d02; registered and pushed, not built; built after the
-         │          compiler is courted and FULL×2)
+         │          targets typed by hand (22d52d02; registered and pushed, not built; the owner's word to
+         │          proceed, 2026-10-09; two rules of the compiler's rows stand in the way of its
+         │          instrument, put to him)
          ⋮
-    declared        LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a vocabulary
-                    audit; design objects and constraints, each a court of its own; a competitive arena,
-                    whose claims would be executable constraints and not a proof of fairness; environmental
-                    independence, accepted as an audit and deferred; PERSPECTIVE-0, observation stratified from
-                    action and claim; REFLEX, nine steps toward a certificate of who may observe and who may
-                    change; the presentation and latency measurement; PRESENT-1; a design language with many
-                    editors
+    declared        EVIDENCE-LINK-0, each copied claim about a recorded event traced to its source (accepted as
+                    the next slice); LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a
+                    vocabulary audit; design objects and constraints, each a court of its own; a competitive
+                    arena, whose claims would be executable constraints and not a proof of fairness;
+                    environmental independence, accepted as an audit and deferred; PERSPECTIVE-0, observation
+                    stratified from action and claim; REFLEX, nine steps toward a certificate of who may observe
+                    and who may change; the presentation and latency measurement; PRESENT-1; a design language
+                    with many editors
 
 The order first ratified named a strip cache as GAUNTLET-0 and ended in MATERIAL-0, a picture becoming a material
 under a gate. GAUNTLET-0 became a measurement instead, and MATERIAL-0 is not seated.
