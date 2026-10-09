@@ -152,9 +152,9 @@ INPUT-0a         the owner's ruling (2026-10-08): the small semantic fix first, 
       ↓
 INPUT-0b         G33 for the walk's rung (2026-10-09), by the owner's instruction to find the most elegant path and carry it through: the rows ask for the kernel and the walk program where they use them (Lazy Setup; a brittle's fix, after iFixFlakies), held by `input-demo` — registered (`a167c308`) and built, 247 rows; each walk row passes run alone; FULL×2 on the host by the witness, pushed (`89d082e..b386b85`); CLOSED by his ruling (2026-10-09), the witness's read order deferred
       ↓
-HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2; PROCEED, his word (2026-10-09); read for the build, two rules of DESIGN-IR/DIFF-0's rows stand in the way of its registered instrument, put to him
+HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2; PROCEED, his word (2026-10-09); read for the build, two rules of DESIGN-IR/DIFF-0's rows stood in the way of its registered instrument, and he ruled (A): HERMENEUTICS-0a widens each by the least — the eleven plants first, the three the shell lacks after them, `first-wins` and `entrance-dropped` given twins in the reference; the reference's users DIFF-0's rows and these four — with REASON-COURT-0d for the moved pin
       ↓
-EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it
+EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
       ↓
@@ -2329,6 +2329,83 @@ the run.
 **Grade.** DECLARED: the ruling and the scope. The six messages are a count taken from the build notes kept outside
 the repository; nothing is built. **does_not_show.** That a claim the checker cannot parse is true: it checks the
 structured facts the project repeatedly copies, not every sentence.
+
+### Beyond the rung — eight ideas on composition, history, debt, attestation, hashing, compression, zero knowledge and proof strength · **ruled** (a text the owner brought, and his rulings on it, 2026-10-09); nothing built
+
+**The text.** It asks what happens when proofs are composed — whether ⊢R1 and ⊢R2 give ⊢R1∘R2, so that one theorem
+could certify the whole ladder — and offers seven more ideas: amendment chains that fork and merge; proof debt as a
+weighted score with a budget; hardware-signed witness chains; semantic hashes beside byte hashes; a Merkle tree over
+row results; zero-knowledge proofs that a row ran; proof strength scaled by a row's criticality and age. It
+recommends starting with proof debt and semantic hashing.
+
+**His rulings.**
+
+| the idea | his ruling | his reason, close to his words |
+|---|---|---|
+| proof composition | accept the question, reject the shortcut; DEFER as a rung | ⊢R1 ∧ ⊢R2 ⇒ ⊢(R1∘R2) is not valid without conditions: interfaces, assumptions, environments and evidence identities have to line up. A matching reconstruction in a second container establishes neither independence of the environment nor of the checkers. First, certificates with stable interfaces, explicit assumptions and exported obligations; EVIDENCE-LINK-0 is a sensible prerequisite |
+| branching amendment chains | accept the model (a DAG, not a tree), DEFER | a merge names both parents and the decision; two branches that pass do not make a merge that passes, which is a new artifact. No defect in the linear chain demands it |
+| proof debt | ACCEPT a qualitative proof-obligation ledger as a practice; defer any score | multiplying severity, likelihood and cost invents precision; a budget may bound accepted residual risk and must never make an unproved critical invariant acceptable by its total. G29, G31 and G33 are not interchangeable debts |
+| hardware-signed witnesses | DEFER | an attestation binds which process claims to have made an artifact; it does not show the compiler correct, the machine uncompromised, the tests sufficient or the output free of hidden dependencies. First, witness records bound to recomputable source evidence |
+| semantic hashing | ACCEPT two identities, defer the build | H_byte identifies the artifact; H_sem identifies its canonical form under a stated equivalence and inherits the canonicalizer's soundness. Only when a consumer needs semantic equality; never added because it is easy |
+| proof compression | DEFER | a Merkle root shows a leaf belongs to a committed set; not that the row ran, that its verdict is true or that the set is complete. No storage or cost problem at this scale |
+| zero-knowledge execution | REJECT for now; a research direction if confidentiality is ever required | a proof that a circuit's constraints hold is not a proof that the circuit is the gate or that its inputs came from the registered tree |
+| adaptive proof strength | ACCEPT prioritization; defer automation | criticality sets where extra adversarial evidence goes, never a weaker baseline for a registered requirement; a row's age is a record of repeated behaviour, not of correctness |
+
+**His conditions for composition**, should it come: the downstream assumptions are discharged by upstream guarantees
+or kept as assumptions; the artifacts' identities and interfaces match exactly; the evidence is bound to the
+registered source and its execution context; an independence claim has perturbation evidence and is not inferred
+from a matching reconstruction; and the composed certificate keeps every unresolved obligation. The rule he writes
+under them — C₁ ⊨ G₁ and C₂ ⊨ (G₁ ⇒ G₂) give C₁∘C₂ ⊨ G₂ — he marks as schematic and not a theorem of this gate.
+Sequential validation, compositional verification, proof compression and environmental independence are four
+obligations; composition can save repeated work after evidence exists, and cannot make evidence.
+
+**His order.** HERMENEUTICS-0 through HERMENEUTICS-0a; EVIDENCE-LINK-0, narrow, external and read-only; a qualitative
+proof-obligation ledger; semantic hashing registered only for a concrete comparison, byte identity kept regardless;
+certificate composition after the evidence interfaces are explicit; branching history, Merkle packaging, hardware
+attestation, adaptive campaigns and zero knowledge left until a real use justifies them. In his words: *a passing
+result cannot inherit a guarantee that its inputs never established.*
+
+**Grade.** DECLARED: the text and his rulings. Nothing was computed for this section.
+
+### Toward the final gate — a PASS that means one precise thing · **declared** (a text the owner brought, 2026-10-09); his final ruling kept; nothing built
+
+**The text.** Move from proving checks to proving the relations between checks, their inputs, their evidence and
+the verdict. Six bridges between fields: relational databases and provenance; causal intervention and metamorphic
+testing; assume–guarantee contracts; mutation testing as falsification; build provenance and event sourcing;
+information flow. A certificate is sketched as a constrained join of six relations — registered claims, sources,
+executions, verdicts, evidence and documentation claims — with anti-joins for claims nothing supports and two-sided
+set equality for change closure; a row's verdict should not move when an input it does not declare is changed; and
+a candidate name, RELATIONAL-CERT-0, is offered and not registered. Its pivots in order: EVIDENCE-LINK-0; a reach map
+for registrations, computed before an entry is committed; dependency-directed environmental independence;
+composable certificates. And a final PowerShell run in five phases: freeze the candidate's identity; run the
+existing checks without changing what they mean; bind the evidence to the candidate; enforce the registered laws;
+emit a certificate, not a green line. *I would not write a replacement gate command from memory.*
+
+**His final ruling.**
+
+| | |
+|---|---|
+| next registered work | HERMENEUTICS-0 through HERMENEUTICS-0a |
+| next verification pivot | EVIDENCE-LINK-0 |
+| next research theorem candidate | dependency-directed environmental independence |
+| longer term | relational certificates with assume–guarantee composition |
+| the final operational goal | a PowerShell run that proves the registered predicate from retained, independently checkable evidence — not a script that prints PASS |
+
+*Every final claim must be traceable to its authority, every comparison must state what relation it checks, and
+every guarantee must stop at the boundary of the evidence that supports it.*
+
+**Set against the tree.** The witness already keeps PowerShell out of the evidence: it launches Git and the gate from
+Python with raw bytes, reads the status, the tree id and the commit at three moments, runs the gate twice and the
+design checks once as a separate condition, and holds FULL×2 as registered — stdout only — with stderr and the
+commit recorded beside it and not in the predicate, as the text asks. Its warning on `$LASTEXITCODE` is right by
+Microsoft's documentation: a native program's nonzero exit sets it and does not stop a script. Several of the operators it names have counterparts in rows that exist:
+the two-sided layout relation in `designir-fence`, entries at their hashes, the watches' heard-against-registered
+counts. The documentation relation is the one with none, which is EVIDENCE-LINK-0. Of its sources, two are cited for
+claims they do not make: arXiv 2202.10766 is *Revisiting Semiring Provenance for Datalog* (Bourgaux, Bourhis,
+Peterfreund and Thomazo, KR 2022), not a study of explanations; the Wiley STVR paper is Schuler and Zeller's
+*Covering and Uncovering Equivalent Mutants* (2013), on equivalent mutants and not on subsumption.
+
+**Grade.** DECLARED: the text and his ruling. The sources were looked up; nothing was built or run for this section.
 
 ### LiDAR — a sensor that observes the authoritative world · **declared** (the owner's ruling, 2026-10-09): the first slice recorded; not registered, nothing built
 

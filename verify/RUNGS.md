@@ -6974,7 +6974,7 @@ The two gate runs: exit 0, 247 rows / 0 fail, stdout byte for byte the same, std
 container's log. The design tool's checks: 17 / 0. **FULL×2: yes**, by his predicate; and the checkout at the end as at
 the start, the design checks bracketed. Pushed, `a16d663..89d082e`.
 
-## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; PROCEED, the owner's word, 2026-10-09; read for the build, two rules of DESIGN-IR/DIFF-0's rows stand in the way of its instrument, for his ruling)
+## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; PROCEED, the owner's word, 2026-10-09; two rules of DESIGN-IR/DIFF-0's rows stood in the way of its instrument, and he ruled an amendment, HERMENEUTICS-0a, that widens each by the least)
 
 ```
   the owner's court ──► one reading, six rulings, four laws        ratified, 2026-10-07
@@ -7181,6 +7181,29 @@ syntax passes. Its sentence would then be false.
 
 **Grade.** OBSERVED (the build container, off the gate, before any build): the ten designs and the laws on both
 programs. DECLARED: the two rules, read from the source. Nothing of the rung is built.
+
+**His ruling (2026-10-09, later).** *HERMENEUTICS-0: blocked pending amendment.* He ruled (A), with the plant reading
+put to him: the eleven registered plants kept in their exact order, names and behaviour; the three plants the shell
+lacks appended after them; `first-wins` and `entrance-dropped`, which the shell has, given their twins in the
+reference. So the coverage is the eleven and HERMENEUTICS-0's five, and no shell plant is written twice. His reason
+is not economy: *plant names are registered test identities, but the important coverage obligation is the defect
+being exercised*, and a duplicate implementation is not independent evidence.
+
+| what the amendment must do (his) | |
+|---|---|
+| the plants | the first eleven names, order and behaviour unchanged; HERMENEUTICS-0's five appended in the registered order, the two the shell has linked to their reference twins |
+| the reference | its users widened to DIFF-0's rows and HERMENEUTICS-0's four, and nothing else |
+| the rows | no check removed; no row renamed or moved; each changed line marked in its row |
+| the record | the ruling written in HERMENEUTICS-0a |
+| the pin | the chain's fourth link, REASON-COURT-0d, for the moved `shell/designcompile.rs`, committed before the four rows are built |
+
+His qualification: *the five plant identities and their ordering must come from the registered entry*, not from a
+summary of it. The entry names the five by what they do and in an order; it gives them no labels. So
+HERMENEUTICS-0a will set each label beside the entry's own words, and the labels are what it adds.
+
+(B) rejected: it removes the comparison with an independent reference that the rung exists for, *two
+implementations can agree because they share the same misreading*. Renaming helpers so the fence's text passes,
+rejected: it keeps the check's text and breaks its meaning.
 
 ## The open clause, now with named rungs (skybox, physics, the proposal machine)
 

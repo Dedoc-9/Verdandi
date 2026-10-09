@@ -610,6 +610,10 @@ What stands against the tree, as reviewed:
    hold the plants to eleven and the reference to DIFF-0 alone. One author wrote all three and did not see it until
    the build was read.
 
+69. **A guarantee stops where its evidence stops.** His words, on eight ideas that would each let the ladder certify
+   more for less: *a passing result cannot inherit a guarantee that its inputs never established.* Composition,
+   compression and attestation can carry evidence further; none of them makes any.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).

@@ -254,8 +254,8 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          it: one reading ratified by the owner (a statement is a constant write, a design is its
          │          statements later-wins), six cases locked, four laws as theorems, ten designs with literal
          │          targets typed by hand (22d52d02; registered and pushed, not built; the owner's word to
-         │          proceed, 2026-10-09; two rules of the compiler's rows stand in the way of its
-         │          instrument, put to him)
+         │          proceed, 2026-10-09; two rules of the compiler's rows stood in its way, and he ruled the
+         │          amendment that widens each by the least, HERMENEUTICS-0a)
          ⋮
     declared        EVIDENCE-LINK-0, each copied claim about a recorded event traced to its source (accepted as
                     the next slice); LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a
