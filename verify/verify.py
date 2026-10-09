@@ -2205,6 +2205,99 @@ WLK = os.path.join(BUILD, "wlk")
 INPUT0A_HASH = "2f0426d64412268c93663e856d497afc89208a460d7be8a93f52db40670ea84d"
 REASONCOURT0C_HASH = "94f3de682723ed1aa03a662931982ccc533038ae58ca4cc6aa497bcfdbd5d1fc"
 INPUT0A_FOLDER = "a folder with a space"
+# INPUT-0b (the second amendment to INPUT-0, G33's contract for this rung): the walk's rows ask for the kernel and the
+# walk program where they use them, by Lazy Setup, and do not inherit the globals the build rows set. input-demo holds it.
+INPUT0B_HASH = "a167c308002200f14aa88f77214cfa7ba4da8b2cadb42e4cc7362eda9a058506"
+INPUT0B_ROWS = ("input_replay", "input_blocked", "input_tamper", "input_not_authority", "input_demo")
+
+
+def need_kernel() -> str:
+    """INPUT-0b, Lazy Setup: the kernel's executable for a row that needs it — the one kernel-build made, or, when no row
+    has made it in this process or its file is gone, compiled here and kept. A row asks here and does not read the global
+    another row sets, so it passes or fails on the tree, not on the rows that ran before it."""
+    global KERNEL_EXE
+    if KERNEL_EXE is None or not os.path.exists(KERNEL_EXE):
+        try:
+            KERNEL_EXE = compile_rs(KERNEL, "main.rs", "kernel")
+        except Red as e:
+            raise Red("the kernel, which this row needs, could not be built: %s" % e)
+    return KERNEL_EXE
+
+
+def need_input() -> str:
+    """INPUT-0b, Lazy Setup: the walk program's executable, and the folder its walks are written in, made the first time
+    a row asks for them when input-build has not, and kept."""
+    global INPUT_EXE
+    if INPUT_EXE is None or not os.path.exists(INPUT_EXE):
+        try:
+            INPUT_EXE = compile_rs(WORKSHOP, "input.rs", "input")
+        except Red as e:
+            raise Red("the walk program, which this row needs, could not be built: %s" % e)
+    os.makedirs(WLK, exist_ok=True)
+    return INPUT_EXE
+
+
+def _input0b_lazy() -> list:
+    """INPUT-0b: the two functions themselves, with a stand-in for the compiler, so nothing is compiled: asked with nothing
+    made, or with the file gone, each makes it once; asked again, it keeps it; need_input makes the walk's folder; a build
+    that fails is refused in words that name it. Every global it touches is put back. The faults found, as text."""
+    g = globals()
+    saved = {k: g[k] for k in ("KERNEL_EXE", "INPUT_EXE", "WLK", "compile_rs")}
+    have = {"kernel": saved["KERNEL_EXE"], "input": saved["INPUT_EXE"]}
+    calls, fail, faults = [], [False], []
+    def stand_in(src_dir, main, out, source_override=None):
+        calls.append(out)
+        if fail[0]:
+            raise Red("rustc failed: a planted failure")
+        return have[out]
+    scratch = os.path.join(BUILD, "input0b-lazy")
+    try:
+        if os.path.isdir(scratch):
+            shutil.rmtree(scratch)
+        g["compile_rs"] = stand_in
+        for start, label in ((None, "nothing made"), (os.path.join(scratch, "gone"), "its file gone")):
+            g["KERNEL_EXE"], calls[:] = start, []
+            if need_kernel() != have["kernel"] or calls != ["kernel"]:
+                faults.append("need_kernel, %s, did not make the kernel once" % label)
+        calls[:] = []
+        if need_kernel() != have["kernel"] or calls:
+            faults.append("need_kernel, asked again, did not keep what it made")
+        g["INPUT_EXE"], g["WLK"], calls[:] = None, os.path.join(scratch, "wlk"), []
+        if need_input() != have["input"] or calls != ["input"] or not os.path.isdir(g["WLK"]):
+            faults.append("need_input, with nothing made, did not make the walk program once and its folder")
+        fail[0] = True
+        for fn, start, words in ((need_kernel, "KERNEL_EXE", "the kernel, which this row needs, could not be built"),
+                                 (need_input, "INPUT_EXE", "the walk program, which this row needs, could not be built")):
+            g[start] = None
+            try:
+                fn()
+                faults.append("%s: a build that failed was not refused" % fn.__name__)
+            except Red as e:
+                if not str(e).startswith(words):
+                    faults.append("%s: a failed build was refused in other words: %s" % (fn.__name__, e))
+            except Exception as e:  # noqa: BLE001
+                faults.append("%s: a failed build ended as %s" % (fn.__name__, type(e).__name__))
+    finally:
+        g.update(saved)
+        shutil.rmtree(scratch, ignore_errors=True)
+    return faults
+
+
+def _input_bare_reads(src: str) -> list:
+    """INPUT-0b, by source: every read of KERNEL_EXE or INPUT_EXE in the walk's five reading rows and in the functions they
+    call by name in this file, transitively, outside need_kernel and need_input. (function, global), sorted."""
+    import ast
+    tree = ast.parse(src)
+    funcs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    seen, todo = set(), list(INPUT0B_ROWS)
+    while todo:
+        f = todo.pop()
+        if f in seen or f not in funcs or f in ("need_kernel", "need_input"):
+            continue
+        seen.add(f)
+        todo += [c.func.id for c in ast.walk(funcs[f]) if isinstance(c, ast.Call) and isinstance(c.func, ast.Name)]
+    return sorted({(f, n.id) for f in seen for n in ast.walk(funcs[f])
+                   if isinstance(n, ast.Name) and n.id in ("KERNEL_EXE", "INPUT_EXE") and isinstance(n.ctx, ast.Load)})
 _FWD = {0: (0, -1), 1: (1, 0), 2: (0, 1), 3: (-1, 0)}   # N E S W — matches the kernel's `direction`
 _LETTER = {0: "N", 1: "E", 2: "S", 3: "W"}
 
@@ -2258,7 +2351,7 @@ def _walk_cams(level_bytes, cam0, commands):
 def _walk_frame(cam):
     """the kernel executable's URDRFB1 frame digest for a camera over the witness/identity authority."""
     x, z, f = cam
-    return witnesses(KERNEL_EXE, "witness", "identity", "%d,%d,%s" % (x, z, _LETTER[f]))[0]
+    return witnesses(need_kernel(), "witness", "identity", "%d,%d,%s" % (x, z, _LETTER[f]))[0]
 
 
 def _walk_head(cams):
@@ -2273,7 +2366,7 @@ def _walk_head(cams):
 def _replay(camera, commands):
     lvl = os.path.join(ORACLE, "levels", "witness.lvl")
     tls = os.path.join(ORACLE, "tiles", "identity.tiles")
-    code, out, err = run(INPUT_EXE, ["replay", "--level", lvl, "--tiles", tls, "--camera", camera, "--commands", commands])
+    code, out, err = run(need_input(), ["replay", "--level", lvl, "--tiles", tls, "--camera", camera, "--commands", commands])
     if code != 0:
         raise Red("replay %s: %s" % (commands, err.strip()))
     d = {}
@@ -2333,6 +2426,7 @@ def input_blocked():
 
 def input_tamper():
     need_rustc()
+    exe = need_input()
     # (changed by INPUT-0a: the walk names copies of the oracle's level and tiles in a folder whose name holds a space,
     # so every gate holds that a walk's path is the rest of its line, wherever the tree is checked out — G31)
     spaced = os.path.join(WLK, INPUT0A_FOLDER)
@@ -2346,25 +2440,25 @@ def input_tamper():
     wp = os.path.join(WLK, "tamper.walk")
     with open(wp, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("; a walk to tamper\nlevel %s\ntiles %s\ncamera 34 28 W\ncommands LFFRF\n" % (pairs[0][1], pairs[1][1]))
-    code, out, err = run(INPUT_EXE, ["write", "--walk", wp])
+    code, out, err = run(exe, ["write", "--walk", wp])
     if code != 0:
         raise Red("write: " + err.strip())
     written = read(wp).decode("utf-8").splitlines()
     if ("level " + pairs[0][1]) not in written or ("tiles " + pairs[1][1]) not in written:
         raise Red("the walk the program wrote back does not name the level and tiles by their whole paths")
-    code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
+    code, out, err = run(exe, ["verify", "--walk", wp])
     if code != 0 or "verify OK" not in out:
         raise Red("the written walk did not verify: " + (out + err).strip())
     original = read(wp)
     # tamper: change one command (L -> R) without recomputing the stored head
     with open(wp, "wb") as fh:
         fh.write(original.replace(b"commands LFFRF", b"commands RFFRF"))
-    code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
+    code, out, err = run(exe, ["verify", "--walk", wp])
     if code != 2 or "CHAIN-BROKEN" not in err:
         raise Red("a tampered command was not caught: %d %s" % (code, (out + err).strip()[:60]))
     with open(wp, "wb") as fh:
         fh.write(original)
-    code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
+    code, out, err = run(exe, ["verify", "--walk", wp])
     if code != 0:
         raise Red("the restored walk did not re-verify")
     # INPUT-0a and its chain link, registered and unedited; the link moves the one pin, from where REASON-COURT-0 found it
@@ -2388,6 +2482,7 @@ def input_tamper():
 
 def input_not_authority():
     need_rustc()
+    exe = need_input()
     c = corpus()
     lvl = os.path.join(ORACLE, "levels", "witness.lvl")
     tls = os.path.join(ORACLE, "tiles", "identity.tiles")
@@ -2398,7 +2493,7 @@ def input_not_authority():
     with open(wp, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("level %s\ntiles %s\ncamera 34 28 W\ncommands LFFRF\n" % (lvl, tls))
     for verb in ("write", "verify"):
-        code, _o, err = run(INPUT_EXE, [verb, "--walk", wp])
+        code, _o, err = run(exe, [verb, "--walk", wp])
         if code != 0:
             raise Red("%s: %s" % (verb, err.strip()))
     rep = _replay("34,28,W", "LFFRF")
@@ -2413,6 +2508,7 @@ def input_not_authority():
 
 def input_demo():
     need_rustc()
+    exe = need_input()
     rec = envelope.read(os.path.join(ROOT, "workshop", "attest", "walk-demo.json"))  # sealed under RECORD-0
     if rec["name"] != "verdandi-walk" or rec["claim_class"] != "established":
         raise Red("the demo is not an established verdandi-walk")
@@ -2429,7 +2525,7 @@ def input_demo():
     with open(wp, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("level %s\ntiles %s\ncamera %s\ncommands %s\nhead %s\n"
                  % (lvl, tls, d["camera"].replace(",", " "), d["commands"], d["head"]))
-    code, out, err = run(INPUT_EXE, ["verify", "--walk", wp])
+    code, out, err = run(exe, ["verify", "--walk", wp])
     if code != 0 or ("head " + d["head"][:12]) not in out:
         raise Red("the sealed walk did not verify to its head: " + (out + err).strip())
     cam0 = tuple(int(v) for v in d["camera"].split(",")[:2]) + ({"N": 0, "E": 1, "S": 2, "W": 3}[d["camera"].split(",")[2]],)
@@ -2440,10 +2536,29 @@ def input_demo():
         raise Red("the Python twin head %s != the sealed head %s" % (twin_head[:12], d["head"][:12]))
     if (len(cams) - 1, blocked, "%d,%d,%s" % (fc[0], fc[1], _LETTER[fc[2]])) != (d["steps"], d["blocked"], d["final"]):
         raise Red("the twin's trajectory disagrees with the sealed final/steps/blocked")
+    # INPUT-0b: the walk's rows, and what they call, ask for the kernel and the walk program and read neither global
+    # bare; read by source over this file, with two planted bare reads found by the same reader
+    src = read(os.path.join(ROOT, "verify", "verify.py")).decode("utf-8")
+    bare = _input_bare_reads(src)
+    planted = (_input_bare_reads(src.replace("def _walk_frame(cam):\n", "def _walk_frame(cam):\n    KERNEL_EXE\n", 1)),
+               _input_bare_reads(src.replace("        code, _o, err = run(exe, [verb", "        code, _o, err = run(INPUT_EXE, [verb", 1)))
+    if bare or planted != ([("_walk_frame", "KERNEL_EXE")], [("input_not_authority", "INPUT_EXE")]):
+        raise Red("a walk row, or a function it calls, reads the kernel's or the walk program's global bare and does not ask "
+                  "for it (INPUT-0b): %s" % (", ".join("%s reads %s" % fg for fg in bare) or "the planted reads were not found"))
+    lazy = _input0b_lazy()
+    if lazy:
+        raise Red("the walk's two prerequisites are not made as asked (INPUT-0b): %s" % "; ".join(lazy))
+    reg = json.load(open(os.path.join(ROOT, "verify", "preregister.json"), encoding="utf-8"))["entries"]
+    b = reg.get("INPUT-0b")
+    if b is None or b.get("chain_hash") != INPUT0B_HASH or not entry_hash_ok("INPUT-0b", b) or INPUT0A_HASH not in b["hypothesis"]:
+        raise Red("the INPUT-0b entry is missing, edited after registration, or does not cite INPUT-0a")
     return ("the committed demo (workshop/attest/walk-demo.json, sealed under RECORD-0) is a reference walk (commands %s, all six "
             "letters) that `input verify` replays to its sealed head %s over %d steps (%d blocked), and a Python twin re-derives "
-            "that head on the frozen witness base — a walk is a hash-chained file, established (host-independent), not measured"
-            % (d["commands"], d["head"][:12], d["steps"], d["blocked"]))
+            "that head on the frozen witness base — a walk is a hash-chained file, established (host-independent), not measured. "
+            "The walk's rows ask for the kernel and the walk program where they use them and read neither global bare, by source "
+            "over the rows and what they call, two planted bare reads found; the two functions made, kept and refused as "
+            "asked, with a stand-in compiler (INPUT-0b %s)"
+            % (d["commands"], d["head"][:12], d["steps"], d["blocked"], INPUT0B_HASH[:8]))
 
 
 # ------------------------------------------------------------------ sessionwalk (SESSION-WALK)
