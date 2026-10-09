@@ -244,7 +244,8 @@ rows, grade, limits and falsifier; this is the order and the state.
          │
     A REPAIR        INPUT-0a a walk's path is the rest of its line: G31, a checkout path with a space, found
          │          by a perturbed pass and measured on the host, repaired before the next rung (2f0426d6;
-         │          built, 247 rows; the pass that found it, run again as predicted, 247 / 0)
+         │          built, 247 rows; the pass that found it, run again as predicted, 247 / 0; on the host the
+         │          clone with a space, 247 / 0 twice, FULL×2; pushed)
          │
     THE MEANING     HERMENEUTICS-0 what the design language means, apart from the two programs that compile
          │          it: one reading ratified by the owner (a statement is a constant write, a design is its

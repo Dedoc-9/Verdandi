@@ -116,7 +116,8 @@ row that would redden if the claim were false.
   for four digits, and the log's clock held them. About one run in three hundred. Corrected: a row observes the
   member a thing could be written to, never the whole text of a log. G30.) Nor is a row meant to depend on where
   the tree is checked out. Three were found to: a path with a space cut the walk they write. Measured on the host
-  as predicted, and repaired by INPUT-0a: a walk's path is the rest of its line, and one row carries a space. G31.
+  as predicted, and repaired by INPUT-0a: a walk's path is the rest of its line, and one row carries a space; the
+  pass that found it and the owner's clone both read 247 / 0 after the repair. G31.
 - **A registration is text the gate hashes.** The entry's chain hash is recomputed on every pass, so a silent edit
   to a locked method is a red row and not a judgement call.
 - **Count again.** The gate reads what it is pointed at. Two facts recorded for READER-COURT-0 (the number of JSON

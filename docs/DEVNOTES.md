@@ -589,6 +589,14 @@ What stands against the tree, as reviewed:
    again on the repaired tree, with its result written into the entry before the run. A probe kept as it was is a
    test of the repair; a probe softened to pass is not.
 
+64. **A witness brackets everything it runs.** The first witness took its last readings before the design checks it
+   ran. The owner found it by reading the code, not by a failure. The evidence collector is held to the same rule as
+   the gate: what it does not bracket, it does not witness.
+
+65. **Find the carrier before writing the contract.** G33 looked like a row needing a file. Seven cases showed the
+   kernel reaches the row as a global, that the file alone does not, and that the row means to depend on it. The
+   contract that follows is about a declared input and a clear refusal, not about the order of the rows.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -611,9 +619,10 @@ What stands against the tree, as reviewed:
   ruled a defect of the gate and corrected; the gate was read for the class, and two rows of the same form are
   named and left (G30).
 - A checkout path with a space broke three rows (a walk's path was one word), and the reason court's watch with
-  them. Found by a perturbed pass, measured on the host as predicted, repaired by INPUT-0a; the host's run of the
-  repair is predicted and not yet taken (G31). The walk's other lines drop words they do not use (G32).
-- A row may rest on what an earlier row left: a hypothesis, one instance of a build seen, deferred (G33).
+  them. Found by a perturbed pass, measured on the host as predicted, repaired by INPUT-0a, both predictions met
+  (G31). The walk's other lines drop words they do not use (G32).
+- `input-demo` rests on the kernel that another rung's build row hands it, intended and undeclared, and fails as a
+  crash without it; many rows read a build global without testing it (G33). The contract is the owner's to rule.
 
 ## The one-line retrospective, again
 

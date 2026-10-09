@@ -148,7 +148,7 @@ DESIGN-EVENT-0   locked as the next rung by the owner (2026-10-06), seven proper
       ↓
 DESIGN-IR/DIFF-0 the owner's word *take next* (2026-10-07), given when the host's gate was FULL×2 on DESIGN-EVENT-0; his court the same day, four answers locked: the compiler first, in the certified shell with an independent reference in the gate, the proposal id the SHA-256 of the exact design bytes, readings and constraints out by name. The current design text is the source language, and its compile to the canonical VRDNP2 change set against a parent world is one tree-owned function — registered (`2baa42f3`); read and locked by him the same day, and the round around it named before the build as subcourts and no new claim (`DESIGN-IR/DIFF-0a`, `c414587d`); both pushed (`83b0261..5c8ad19`); built (2026-10-07): the compiler in the shell, five rows, 247 in the gate, every registered value reproduced; two rows of DESIGN-EVENT-0 changed in their text by his ruling, the amendment chain named a law and its origin registered (`REASON-COURT-0b`, `d51b4d20`; `DESIGN-IR/DIFF-0b`, `42ac51f5`); the design tool a client of the compiler; on the host 247 of 247 twice on one tree, FULL×2 by his predicate, pushed (`11afebf..c8b6a1f`); his rulings of 2026-10-08 registered and built into two existing rows (`DESIGN-IR/DIFF-0c`, `38b51bed`): the layout relation and the origin as a projection
       ↓
-INPUT-0a         the owner's ruling (2026-10-08): the small semantic fix first, before the next rung. G31 repaired — a walk's path is the rest of its line, one existing row carries a space, the pin moved by the chain's third link (`REASON-COURT-0c`, `94f3de68`) — registered (`2f0426d6`) and built, 247 rows; the perturbed pass that found it, run again as predicted, 247 / 0; the host's run predicted
+INPUT-0a         the owner's ruling (2026-10-08): the small semantic fix first, before the next rung. G31 repaired — a walk's path is the rest of its line, one existing row carries a space, the pin moved by the chain's third link (`REASON-COURT-0c`, `94f3de68`) — registered (`2f0426d6`) and built, 247 rows; the perturbed pass that found it, run again as predicted, 247 / 0; the host's clone with a space, 247 / 0 twice, FULL×2; pushed (`59edc01..a16d663`). G33 investigated after it: the contract the owner's to rule
       ↓
 HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2
       ↓
@@ -2272,6 +2272,75 @@ the owner's.
 build container): the laws checked on the reference. MEASURED (host): the gate with the registration applied (0143
 and 0144), 242 of 242, one run; pushed (`5c8ad19..11afebf`, which carries 0142 to 0144). Nothing of it is built.
 
+### LiDAR — a sensor that observes the authoritative world · **declared** (the owner's ruling, 2026-10-09): the first slice recorded; not registered, nothing built
+
+```text
+  World + Sensor State + Scan Input ──► Canonical Returns + Evidence       (his sensor contract, eventually)
+  the renderer may draw the returns; it does not become their source of truth
+```
+
+**His ruling.** Keep LiDAR work focused on making the sensor's relationship to the authoritative world measurable,
+deterministic and falsifiable, *not merely improving point-cloud appearance*. Defer it until INPUT-0a and G33 are
+closed. *Don't build a generalized sensor framework until one concrete LiDAR defect demonstrates the need.*
+
+| slice | what | his placing |
+|---|---|---|
+| ray-to-world consistency | each ray a canonical origin, direction, range interval and hit or miss, held against the authoritative geometry; any discrepancy with a defined cause | first |
+| deterministic returns | frames, units, precision, scan order, range quantization, tie-breaking between equally near surfaces | first |
+| occlusion and visibility | nearer opaque geometry hides farther, at shared edges, thin barriers, corners and grazing angles; adversarial cases, not inspection | first |
+| observer noninterference | the world before and after a scan; an active sensor's effect an explicit input | first |
+| environmental independence | irrelevant surroundings perturbed, the canonical scan compared; legitimate dependencies declared | with the court he deferred |
+| reconstruction | what a scan establishes apart from what a reconstruction infers: a missing return does not prove empty space | later |
+| sensor realism | | later |
+
+**Considered against the tree.** One ray law exists: the kernel's walk of a ray through the cell lattice, held to the
+frozen oracle on both machines (`kernel-oracle`, `gauntlet1c-dda`, the bearing camera's rows). It is integer, it takes
+the first cell hit, and what it witnesses today is a frame's digest, not a range per ray. A LiDAR here would read that
+law as data; whether it needs a second law is what the first slice would find.
+
+**Grade.** DECLARED: the ruling. **does_not_show.** That any return the kernel computes is a range a sensor would
+report.
+
+### A claim and its evidence — four layers · **declared** (two texts the owner brought, 2026-10-09); his rulings in the first are kept; nothing built
+
+**The first text.** *Verðandi should not confuse a declared contract with a demonstrated property, or a recorded verdict
+with trustworthy evidence.* Four layers, not to be conflated: the **contract** (what is claimed, from which inputs,
+prerequisites and surroundings); **validation** (are the declarations well formed: prerequisites present, the graph
+acyclic); **adversarial evidence** (does the claim survive mutation, isolation, order, perturbation, another machine);
+the **certificate** (which observations support the verdict, and can another reader rebuild it). And what each layer
+does not give: *a valid dependency graph does not prove dependency completeness*; a passing row is not shown to be
+independent of the rows before it; matching outputs are not shown correct; a clean status at two ends does not show
+that nothing changed between them. His rule:
+
+```text
+  declare the contract  ──►  validate its structure  ──►  attack its completeness  ──►  preserve the evidence
+```
+
+| his ruling | in his words, or close |
+|---|---|
+| the witness | ACCEPT the design, REVISE the evidence boundary, keep the predicate unchanged. Status and tree id are complementary evidence, not substitutes. A manifest of the files hashed one after another is not an atomic snapshot: describe the guarantee as matching observations at the boundaries |
+| G33 | INVESTIGATE FIRST: an intended prerequisite, an accidental dependence on state an earlier row left, or a defect of the row itself. Register only the demonstrated contract; *if it is accidental, do not institutionalize it as a prerequisite*. A validator can show the declared graph well formed; it cannot show that every real dependency is in it |
+| normalization | DEFER as a replacement for FULL×2. Byte identity and an equivalence `∼` are two predicates; a semantic one only for a demonstrated variance, naming the field, with mutations that show meaningful differences still fail |
+| what comes after | the general dependency-completeness court deferred; G33 to find the smallest useful next slice |
+
+**The second text.** It reads the first beside a proposal for a GPU backend, which was not brought here, and ranks
+them in two tiers: the witness, G33 and byte identity first; the GPU work later, under the same courts. It proposes one
+evidence format for every layer, a discovery of dependencies by running each row with each other row, and courts for
+a GPU backend (shader against the CPU reference, pixel-exact frames, two platforms, two drivers).
+
+**Set against his rulings and the tree.**
+
+| the second text | what stands |
+|---|---|
+| discovery by running every row with every other, a prerequisite registered after three counterexamples | the broad isolation mechanism his rulings defer (*do not add a broad row-isolation framework yet*); and a count of counterexamples does not decide between an intended prerequisite and an accidental one, which is what he asks first. G33 was settled by seven cases on one row |
+| *Fixed-point Q32.32 logic* as the tree's counterpart to fixed-point shaders | the tree's Rust holds no Q32.32. Its laws are integer: the tick law, the bearing camera. Fixed point appears only in the frozen oracle's game tools |
+| *RHI Firewall* | no counterpart in the tree. The nearest is the shell, which presents and holds no authority |
+| *PRESENT-EXACT-0* readback, READER-COURT-0 as two languages | they exist: a presented frame read back and compared exactly; two readers of one saved form |
+| a unified evidence format | the witness's files and their manifest are one, for the host's runs; the rows keep their own |
+
+**Grade.** DECLARED: both texts; his rulings in the first. Nothing was computed for this section beyond what G33's
+investigation records (RUNGS, INPUT-0).
+
 ### REFLEX — a reflexive semantics: authority, perspective, effect, environment, observation, reconstruction, intervention and certification as relations · **declared** (two texts the owner brought, 2026-10-08, after a research report put to him in private); considered at his word; not registered, nothing built
 
 ```text
@@ -2530,7 +2599,8 @@ rows named before the run failed, and no other (RUNGS, INPUT-0). The verdict vec
 
 **After the repair (INPUT-0a).** His ruling keeps the court deferred: *the G31 fix plus the two predicted perturbation
 passes give you a useful, targeted end-to-end test of the method without prematurely building the court.* The
-container's pass, run again on the repaired tree as predicted: 247 rows / 0 fail. The host's: predicted, not yet run.
+container's pass, run again on the repaired tree as predicted: 247 rows / 0 fail. The host's clone with a space, run
+twice by the witness: 247 rows / 0 fail, FULL×2.
 
 **does_not_show.** Any other factor on the host. A matrix: the container's pass changed seven things at once, and
 only the space was isolated. That a factor no pass changed is harmless.

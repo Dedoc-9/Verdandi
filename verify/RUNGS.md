@@ -523,7 +523,7 @@ After the failing run, the clone's status listed nothing: the run left its track
 **Grade.** MEASURED (host, one run in a clone): the four rows, as predicted. OBSERVED (the build container): the
 perturbed pass and the bisection. DECLARED: the reading of the source.
 
-### INPUT-0a — a walk's path is the rest of its line (registered `2f0426d6`, with the chain's third link `REASON-COURT-0c` `94f3de68`; built; the container's prediction met; the host's predicted)
+### INPUT-0a — a walk's path is the rest of its line (registered `2f0426d6`, with the chain's third link `REASON-COURT-0c` `94f3de68`; built; both predictions met; FULL×2 on the host by the witness; pushed `59edc01..a16d663`)
 
 ```text
   level /a/folder with a space/witness.lvl
@@ -566,15 +566,58 @@ before it is run; *if either fails, investigate rather than weaken the probe*.
 | prediction | the run | result |
 |---|---|---|
 | the build container's perturbed whole pass, the same instrument and the same seven changes, on the built tree: 247 rows / 0 fail | the build commit, checked out under `…/Urðr 4242 a private title the log must never hold focus pause capture blur foreground adopted/tree`; the clock in 2041; a time zone fourteen hours ahead; a Turkish locale; umask 077; another home; another hash seed | **247 rows / 0 fail.** Met |
-| the owner's host, the gate in a clone under `C:\Users\dillb_lzxy763\Desktop\Verdandi space probe`: 247 rows / 0 fail | not yet run | — |
+| the owner's host, the gate in a clone under `C:\Users\dillb_lzxy763\Desktop\Verdandi space probe`: 247 rows / 0 fail | the owner's clone, brought to the series by a fast-forward, run twice by the witness (2026-10-09) | **247 rows / 0 fail, twice, FULL×2.** Met |
 
 **Grade.** ESTABLISHED (gate, the build container): the rows as built. OBSERVED (the build container): the mutants;
-the first prediction met. NOT_MEASURED: the second prediction.
+the first prediction met. MEASURED (host): the second prediction met, and FULL×2 on the owner's checkout.
 **does_not_show.** That a path beginning or ending with a space can be named: it cannot. That the other two input
 rows carry the space: they are repaired by the parser and write the checkout's own paths. Anything about the walk's
 other lines (G32).
 **Falsifier.** `input-tamper` passing with first-word parsing restored. The host's clone under a folder with a space
 not reading 247 of 247.
+
+**G33, investigated (2026-10-09, the build container; a script outside the repository).** By the owner's ruling:
+promoted from a hypothesis to a demonstrated order dependence, and the dependency found before any contract is
+written. Each case in a fresh export of the head, in its own process.
+
+| case | what ran | `input-demo` |
+|---|---|---|
+| E1 | a clean export: `input-build`, then `input-demo` | **fails**: `TypeError … not NoneType` |
+| E1b | a clean export: `input-demo` alone | **fails**: `FileNotFoundError` — the walk's folder is made by `input-build` |
+| E2 | `kernel-build`, `input-build`, `input-demo`: the gate's order | passes |
+| E3a | as E2, with the kernel's executable removed after `kernel-build` | **fails**: `FileNotFoundError` |
+| E3b | as E2, with the global `KERNEL_EXE` cleared and the executable left on disk | **fails**: `TypeError` |
+| E4 | no `kernel-build`: the kernel compiled outside any row and handed in as `KERNEL_EXE` | passes |
+| E5 | the kernel on disk from an earlier process; no `kernel-build` in this one | **fails**: `TypeError` |
+
+**What it rests on.** The kernel's executable, delivered as a Python global that another rung's build row sets. The
+file alone does not reach the row (E5), the global alone does not (E3a), and the two handed in without the row are
+enough (E4). It reaches `input-demo` through its Python twin, which asks a separate kernel process for each step's
+frame digest: the twin's independence is the row's design. So it is a prerequisite the row intends, and does not
+declare. It rests on its own rung's build row the same way: the walk program and the folder it writes into.
+
+**How it fails.** As a crash, which the gate counts as a red row (*a crash is a red row, never a missing one*), with
+words that name a `NoneType` and not the missing build. In the gate's fixed order a missing prerequisite can turn a
+later row red, and cannot turn one green: no row was found testing a build global for truth to skip a check.
+
+**The gate's own convention, applied unevenly.** Some rows refuse in words when a build is missing:
+`if SHELL_EXE is None: raise Red("the shell was not built")`. Read by syntax over the rows and the helpers they call
+(a reading that over-counts):
+
+| build global | set by | rows that read it and do not set it | of those, testing it for `None` |
+|---|---|---|---|
+| `SHELL_EXE` | `shell-build` | 76 | 67 |
+| `SESSIONWALK_EXE` | `sessionwalk-build` | 49 | 40 |
+| `KERNEL_EXE` | `kernel-build` | 45 | 13 |
+| `EDIT_EXE` | `workshop-build` | 21 | 5 |
+| `SESSION_EXE` | `workshop1-build` | 10 | 5 |
+| `INPUT_EXE` | `input-build` | 5 | 0 |
+| `TEXT_EXE` | `text-build` | 4 | 0 |
+| `MEMBRANE_EXE` | `membrane-build` | 2 | 0 |
+
+**For his ruling.** Not written yet, by his order: whether the intended prerequisite is declared, how a row says it
+is missing, and whether the reach is `input-demo`, the walk's rows, or every reader above. His texts set the test of
+any of them: remove the prerequisite and require the row to fail clearly, not with an unrelated `TypeError`.
 
 ## SESSION-WALK — move while authoring, one interleaved sealed chain (seat 10)
 
@@ -6799,6 +6842,32 @@ outputs byte for byte; runs the design tool's checks; and prints his predicate w
 id read as the pair. It applies no patch, commits nothing, pushes nothing and repairs nothing; Git is asked not to take
 its optional locks. Its files are the evidence, each listed with its sha256, and the verdict is recomputable from
 them. In his words, *an evidence collector—not a new authority that gets to declare its own evidence trustworthy*.
+
+**And 0159 to 0162, by the witness (the host, 2026-10-09).** The first runs of `verdandi-witness.py`. 0159 to 0162 were
+applied on `59edc01`, and the witness was run twice: on the owner's checkout, and on the clone under
+`C:\Users\dillb_lzxy763\Desktop\Verdandi space probe`, brought to the same commit by a fast-forward. Its files were read
+here and the readings recomputed from them, apart from the witness's own summary.
+
+| | the checkout | the clone with a space |
+|---|---|---|
+| status before; tree id before | lists nothing; `388dc45f…` | lists nothing; `388dc45f…` |
+| the two gate runs | exit 0 twice, 247 rows / 0 fail, stdout byte for byte the same, stderr empty | the same |
+| status after; tree id after | lists nothing; `388dc45f…` | lists nothing; `388dc45f…` |
+| the gate's output, as text with LF | the build container's log, line for line | the same |
+| the design tool's checks | 17 / 0 | 17 / 0 |
+| every file against the sha256 the witness recorded | the same | the same |
+| **FULL×2** | **yes** | **yes** |
+
+Recorded with the runs: Python 3.14.5 on the host, with `PYTHONUTF8=1` and `PYTHONHASHSEED=0` set in its environment;
+the witness's own sha256 `a438977c…`; the commit `a16d6632…` before and after.
+
+**What the first witness did not bracket.** The owner, reading its code: it took its last status and tree id before
+the design checks, so a design check that changed a tracked file would not be seen. The late reading closes it for
+these runs: before the push, in the checkout, a status that listed nothing and `388dc45f…`. Pushed,
+`59edc01..a16d663`. The witness is corrected (`verdandi-witness 2`): a third pair of readings after the design
+checks, reported apart from his predicate, which is unchanged. The commit and the gate's stderr are recorded beside
+the predicate and are not part of it. Tried here on a stand-in checkout whose design check appends to a tracked file:
+FULL×2 yes, as his predicate reads it, and the checkout at the end not as at the start.
 
 ## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; it waits for the owner's word)
 

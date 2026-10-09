@@ -735,7 +735,7 @@ log carries the clock. For a hundred seconds the clock's own digits held `4242`,
 **Exorcism.** Done for this row: `REFUSAL-WHY-1a`. For the two rows of the same form: the owner's ruling, if a
 source of chance for their words is ever found. For searches built another way: a wider reading.
 
-## G31 — the folder the tree is checked out in, read without meaning to · OBSERVED (one whole pass in a perturbed environment, in the build container, bisected); MEASURED (host: one run in a clone under a folder with a space, the four rows predicted before it); repaired by INPUT-0a (built; the build container's prediction met; the host's not yet run)
+## G31 — the folder the tree is checked out in, read without meaning to · OBSERVED (one whole pass in a perturbed environment, in the build container, bisected); MEASURED (host: one run in a clone under a folder with a space, the four rows predicted before it); repaired by INPUT-0a (built; both predictions met; FULL×2 on the host; pushed)
 
 - **What happened.** One whole pass of the gate, off the gate, with seven things about its surroundings changed at
   once. It read 243 PASS / 4 FAIL. `input-tamper`, `input-not-authority` and `input-demo` could not read a level:
@@ -764,10 +764,11 @@ source of chance for their words is ever found. For searches built another way: 
   walk through a folder whose name holds a space, so every gate holds the repair wherever the tree is checked out.
   With first-word parsing restored, that row fails. The perturbed whole pass that found the defect, run again on the
   repaired tree as the entry predicted, read 247 rows / 0 fail.
-- **What is left.** The host's run in a clone under a folder with a space, predicted 247 / 0. And the walk's other
-  lines, which still drop words they do not use (G32).
+- **And on the host.** The owner's clone under a folder with a space, run twice by the witness: 247 rows / 0 fail,
+  FULL×2, as the entry predicted. Pushed, `59edc01..a16d663`.
+- **What is left.** The walk's other lines, which still drop words they do not use (G32).
 
-**Exorcism.** Done here, by INPUT-0a. Measured there when the owner's clone reads 247 of 247.
+**Exorcism.** Done, by INPUT-0a, on both machines.
 
 ## G32 — a walk's other lines drop the words they do not use · DECLARED (read from the source); not demonstrated; recorded and not registered, by the owner's ruling
 
@@ -781,7 +782,7 @@ source of chance for their words is ever found. For searches built another way: 
 
 **Exorcism.** The owner's ruling, when a case shows it.
 
-## G33 — a row may rest on what an earlier row left · a hypothesis, deferred by the owner as a candidate; one instance seen
+## G33 — a row rests on what an earlier row left · OBSERVED (seven cases on one row, in the build container); an intended prerequisite, undeclared, failing as a crash; the class read by syntax; the contract the owner's to rule
 
 - **The hypothesis.** The gate runs its rows in one order, and a row can use what an earlier row made: a built
   program, a global it set, a file it left. If a row's verdict changes because an earlier row changed shared state,
@@ -793,8 +794,17 @@ source of chance for their words is ever found. For searches built another way: 
 - **What is not done.** No search of every row. No mechanism to run rows apart. His word: *don't add a general
   isolation mechanism before establishing the actual dependency.*
 
-**Exorcism.** A counterexample in which a row's verdict follows another row's state, or a mutation that shows it;
-then his ruling.
+- **Investigated, by his ruling (RUNGS, INPUT-0).** `input-demo` rests on the kernel's executable, handed to it as a
+  Python global by `kernel-build`, a row of another rung: without the row it fails, with the file alone it fails,
+  with the global and the file handed in by hand it passes. The twin's separate kernel process is the row's design,
+  so the prerequisite is intended. It is not declared, and it fails as a crash whose words name a `NoneType`.
+- **The class.** Rows that read a build global they do not set, and do not test it for `None`, are many: by syntax,
+  32 of 45 for the kernel, 9 of 76 for the shell, all 5 for the walk program.
+- **Red, never green.** In the gate's order a missing build turns later rows red. The risk is in the words, which
+  name the wrong thing, not in the verdict.
+
+**Exorcism.** His ruling on the contract: how a row declares an intended prerequisite and says it is missing, and how
+far that reaches. Then the test he set: remove the prerequisite, and the row fails clearly.
 
 
 ---
