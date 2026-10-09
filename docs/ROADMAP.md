@@ -2400,7 +2400,9 @@ overhangs, interpolation between ticks. Nothing is claimed across browsers or ma
 **Run here.** In the build container: the map checks, every check and mutation passing on both maps, and the tactical
 layout compiled and admitted again through the design tool to the same head; the runtime's self-test 20 / 20 on the
 tactical map and 17 / 17 on the witness level, in headless Chromium (SwiftShader WebGL) through `serve.py --selftest`,
-which ended 0; walking with the keyboard, aiming and firing, captured in screenshots. Not yet on the owner's machine.
+which ended 0; walking with the keyboard, aiming and firing, captured in screenshots. On the owner's machine (with
+FPS-VISUAL-0, below): the map checks and the self-test pass, and the mouse was not captured. The overlay took the
+click; repaired by 0178.
 
 **Grade.** OBSERVED (the build container): everything above. NOT_MEASURED: the slice on the owner's host, its frame
 rate, and anything of feel. It is not a rung of the gate and adds no row.
@@ -2495,6 +2497,60 @@ the screenshots.
 **Grade.** OBSERVED (the build container): the self-test, the plants, the screenshots. MEASURED, in SwiftShader only:
 the bench above. NOT_MEASURED: the lit renderer's cost on the owner's GPU, and so any frame rate; feel. No
 performance improvement is claimed. It is not a rung of the gate, and adds no row.
+
+**On the host (2026-10-09).** 0174 to 0177 applied on `3dc15ec`, after a direct check of the Git state:
+
+- no `status.showUntrackedFiles` setting;
+- an empty status with every untracked file shown;
+- no file flagged assume-unchanged or skip-worktree;
+- `HEAD` and its upstream both `3dc15ece…`.
+
+The tree after was `c1a8b5f6…`. The tree given to the owner beforehand, `63bfc87b…`, was the build container's, and
+it was wrong for his checkout. His history holds 40 host records he committed himself (`kernel/attest/` and
+`shell/attest/`, each `-DANIELDILLBERG`), which the container never had. The same four patch files applied to the
+pushed `3dc15ec`, cloned from GitHub, give `c1a8b5f6…` exactly. The two trees differ by those 40 added files and by
+nothing else. The container now works on the pushed history.
+
+On his machine:
+
+- the map checks with `--compile`: every check and mutation passing on both maps, and the tactical layout compiled
+  and admitted again to head `c862f3b1aee2`;
+- the self-test, 23 / 23 on the tactical map, each line as in the container, down to the replay's last hash
+  `91350c39A` and the read-only check's `9613beecA`;
+- the bench, run twice, in Firefox 157 on Windows, through ANGLE on Direct3D 11 to a Radeon R9 200-series GPU (the
+  browser's own words, which it marks as approximate). It ran at 1280 × 720 with 20 samples of one draw each.
+
+The first renderer's medians were 1.0 to 1.5 ms a pose. The lit renderer's were 1.0 to 2.0 ms. Every timing was a
+whole millisecond, and no sample passed 4 ms. The page's clock in that browser advanced a millisecond at a time, so
+the difference between the two renderers is within the clock's step. The column headed p95 was in fact the maximum,
+an error of rank in `serve.py` at 20 samples.
+
+The witness level's self-test was not run there. Then he played, and **the mouse was not captured**.
+
+**The cause.** Until the mouse is captured, an overlay covers the view and asks for a click. The click landed on the
+overlay. Only the view listened for it, so the lock was never asked for. It had been so since 0175, and nothing here
+met it: the container's runs hid the overlay by script, and a headless browser plays no one's click.
+
+**The repair (0178).** A click on the overlay or the view asks for the lock. A refusal is shown on the overlay, and a
+second click asks again. It is checked off the repository, in headless Chromium, with the browser's lock replaced by
+a recorder, so that no emulated cursor enters. Seven checks pass:
+
+- a click where the player clicks asks for the lock;
+- the overlay goes;
+- 100 px of movement turns the view by 0.22 rad;
+- released, the overlay returns;
+- released, movement turns nothing;
+- a refusal is shown;
+- a second click captures.
+
+The 0177 page fails the first three. The bench's sample is now the mean of a batch of draws, each read back. The
+page's clock step is printed, and p95 is the nearest rank. `serve.py` asks the browser to isolate the page from other
+origins, which gives the page a finer clock in a browser that rounds it.
+
+**Grade.** OBSERVED (the host): the Git state, the tree, the map checks, the self-test, the capture failure. MEASURED
+(the host, a 1 ms clock): both renderers about one to two milliseconds a draw and readback at the median, at 1280 ×
+720. Their difference is not resolved by that clock. OBSERVED (the build container): the repair's seven checks. NOT
+MEASURED: a frame rate; the capture on the host after the repair; feel. Not pushed yet.
 
 ### EVIDENCE-LINK-0 — a claim about a recorded event, traced to its source · **accepted as the next slice** (the owner's ruling, 2026-10-09); declared; not registered, nothing built
 

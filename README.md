@@ -267,12 +267,14 @@ rows, grade, limits and falsifier; this is the order and the state.
     THE GAME        FPS-GRAYBOX-0 the playable slice, by the owner's sprint ruling (2026-10-09): the gate stops
          │          growing; a first-person graybox on the canonical level — walls and floor admitted through
          │          the design tool, height, cover and play in an overlay beside them — walked, jumped and shot
-         │          in the browser: `python graybox/serve.py` (built; not a rung; not yet run on the host)
+         │          in the browser: `python graybox/serve.py` (built; not a rung; on the host the map checks and
+         │          the self-test pass, and a mouse that was not captured was repaired)
          │
     THE LOOK        FPS-VISUAL-0, by the owner's ruling (2026-10-09), outside the gate: a sky and a traced sun,
          │          floor modules, panelled walls and dressed cover, a weapon model apart from the shot; the first
          │          renderer kept beside it (`--renderer flat`); the drawn solids held to the collision world face
-         │          by face, decoration kept out of play (built; timed in SwiftShader only)
+         │          by face, decoration kept out of play (built; on the host's GPU both renderers within a 1 ms
+         │          clock's step)
          ⋮
     declared        EVIDENCE-LINK-0, each copied claim about a recorded event traced to its source (accepted as
                     the next slice); LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a
