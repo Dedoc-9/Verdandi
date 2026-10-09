@@ -255,7 +255,7 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          statements later-wins), six cases locked, four laws as theorems, ten designs with literal
          │          targets typed by hand (22d52d02; built under the owner's amendment 7e012752, four rows,
          │          251 in the gate: both programs reach every literal and keep the four laws; five
-         │          misreadings planted alike in both, each caught)
+         │          misreadings planted alike in both, each caught; FULL×2 on the host; pushed; frozen)
          ⋮
     declared        EVIDENCE-LINK-0, each copied claim about a recorded event traced to its source (accepted as
                     the next slice); LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a

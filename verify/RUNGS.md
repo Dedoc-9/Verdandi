@@ -6974,7 +6974,7 @@ The two gate runs: exit 0, 247 rows / 0 fail, stdout byte for byte the same, std
 container's log. The design tool's checks: 17 / 0. **FULL×2: yes**, by his predicate; and the checkout at the end as at
 the start, the design checks bracketed. Pushed, `a16d663..89d082e`.
 
-## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; PROCEED, the owner's word, 2026-10-09; two rules of DESIGN-IR/DIFF-0's rows stood in the way of its instrument, and he ruled an amendment, HERMENEUTICS-0a, that widens each by the least; built with it and REASON-COURT-0d: four rows, 251 in the gate)
+## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; PROCEED, the owner's word, 2026-10-09; two rules of DESIGN-IR/DIFF-0's rows stood in the way of its instrument, and he ruled an amendment, HERMENEUTICS-0a, that widens each by the least; built with it and REASON-COURT-0d: four rows, 251 in the gate; FULL×2 on the host by the witness; pushed, `b386b85..3dc15ec`; frozen by the owner's sprint ruling)
 
 ```
   the owner's court ──► one reading, six rulings, four laws        ratified, 2026-10-07
@@ -7195,7 +7195,14 @@ reference from DIFF-0's rows; a helper of this rung called from there; the refer
 edited; the parent's tiles read from the wrong file; the fixed point read on the parent; DIFF-0's rule widened to
 every row; and each of the shell's three plants made unlike its twin.
 
-**The gate.** One whole pass here before the commits, on the built tree: 251 rows / 0 fail, rowset `74db4c8d78625af5`. The entries' commit gated alone, and three passes on the head of the series this is cut with, are reported with its delivery. The host's gate is to come.
+**The gate.** One whole pass here before the commits, on the built tree: 251 rows / 0 fail, rowset `74db4c8d78625af5`. The entries' commit gated alone, and three passes on the head of the series this is cut with, are reported with its delivery: the entries' commit 247 / 0; the three passes 251 / 0, their logs byte for byte the same.
+
+**On the host (2026-10-09), by the witness.** 0168 to 0173 applied on `b386b85`. Recomputed here from its files, every
+file against the sha256 it recorded: the status empty and the tree `51ebd25d…` before, after the two gate runs and
+after the design checks; the commit `3dc15ece…` throughout; the two gate runs 251 rows / 0 fail, byte for byte the
+same (sha256 `7639fb48…`) and, as text, the build container's log; the design checks 17 / 0. **FULL×2: yes.** Pushed,
+`b386b85..3dc15ec`. The witness's empty status has the limits G36 records; the direct check of the Git state the owner
+asked for at this push was given to him to run after it.
 
 **Grade.** DECLARED: the reading, the rulings, the literal targets, the laws. ESTABLISHED (gate, the build container):
 the four rows, 251 in the gate; that each program gives each registered outcome on the registered parent, that the

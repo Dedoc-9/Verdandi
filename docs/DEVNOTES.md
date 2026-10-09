@@ -643,6 +643,8 @@ What stands against the tree, as reviewed:
 - A checkout path with a space broke three rows (a walk's path was one word), and the reason court's watch with
   them. Found by a perturbed pass, measured on the host as predicted, repaired by INPUT-0a, both predictions met
   (G31). The walk's other lines drop words they do not use (G32).
+- Two defects of the gate are recorded for later repair: a citation's line read and not checked (G34), a record with
+  no registration skipped (G35). The witness's empty status is not proof of a clean checkout (G36).
 - The design language's meaning is held as the owner's literal targets at ten designs and four laws' instances, and
   both programs are held to it (HERMENEUTICS-0). Anywhere else a misreading the two programs share is caught by
   neither of DIFF-0's equalities (G29).

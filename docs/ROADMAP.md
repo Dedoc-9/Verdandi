@@ -50,7 +50,9 @@ That next rung is built: the step from a design to its change set, which was the
 design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`, five rows). Behind it, built at his word: the meaning
 of the design language as the owner's own rulings, literal targets and laws, which neither program computes, and to
 which both are held (`HERMENEUTICS-0`, `22d52d02`, four rows, under his amendment `HERMENEUTICS-0a`). The gate is 251
-rows and passes here; the host's run of it is to come.
+rows and passes here and on the host, FULL×2 there by the witness, and is pushed. Then, by his ruling of 2026-10-09,
+the gate stops growing: it is a release instrument, and the daily objective is a playable first-person graybox
+(`FPS-GRAYBOX-0`, below).
 
 What is *not* yet done: that compiler; design objects that outlive admission, constraints, and a model at the seam
 (declared, not registered); any measurement of the live loop's timing; richer edits than a cell and a tile class;
@@ -152,7 +154,9 @@ INPUT-0a         the owner's ruling (2026-10-08): the small semantic fix first, 
       ↓
 INPUT-0b         G33 for the walk's rung (2026-10-09), by the owner's instruction to find the most elegant path and carry it through: the rows ask for the kernel and the walk program where they use them (Lazy Setup; a brittle's fix, after iFixFlakies), held by `input-demo` — registered (`a167c308`) and built, 247 rows; each walk row passes run alone; FULL×2 on the host by the witness, pushed (`89d082e..b386b85`); CLOSED by his ruling (2026-10-09), the witness's read order deferred
       ↓
-HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2; PROCEED, his word (2026-10-09); read for the build, two rules of DESIGN-IR/DIFF-0's rows stood in the way of its registered instrument, and he ruled (A): HERMENEUTICS-0a widens each by the least — the eleven plants first, the three the shell lacks after them, `first-wins` and `entrance-dropped` given twins in the reference; the reference's users DIFF-0's rows and these four — with REASON-COURT-0d for the moved pin; BUILT (2026-10-09) under HERMENEUTICS-0a and REASON-COURT-0d: four rows, 251 in the gate; both programs give each registered outcome on the registered parent, the four laws hold on their instances, and the five plants, planted alike so that a comparison of the programs is blind, are each caught by a case or a law — and by DIFF-0's own registered values, all five, as the entry expected
+HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2; PROCEED, his word (2026-10-09); read for the build, two rules of DESIGN-IR/DIFF-0's rows stood in the way of its registered instrument, and he ruled (A): HERMENEUTICS-0a widens each by the least — the eleven plants first, the three the shell lacks after them, `first-wins` and `entrance-dropped` given twins in the reference; the reference's users DIFF-0's rows and these four — with REASON-COURT-0d for the moved pin; BUILT (2026-10-09) under HERMENEUTICS-0a and REASON-COURT-0d: four rows, 251 in the gate; both programs give each registered outcome on the registered parent, the four laws hold on their instances, and the five plants, planted alike so that a comparison of the programs is blind, are each caught by a case or a law — and by DIFF-0's own registered values, all five, as the entry expected; on the host FULL×2 by the witness, pushed (`b386b85..3dc15ec`); then frozen
+      ↓
+FPS-GRAYBOX-0    the owner's sprint (2026-10-09): stop expanding the gate; a playable first-person graybox on the canonical level — a tactical layout with three routes, cover, spawns and an objective; mouse look, WASD, jump, collision, a weapon placeholder; one weapon, hits, target feedback, reset. The design compiler keeps the layout; the smallest runtime layer carries height, collision and play. His amendment: the conversion certified, not the mesh — a canonical world from which collision and the render mesh are derived, a manifest, independent conformance checks and defect-directed mutations, a smoke suite, replay determinism on one platform; boundaries in docs/BOUNDARIES.md. The full gate at release checkpoints only
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -607,7 +611,9 @@ runs beside it as history. No verdict, no threshold, association never cause. It
 basis for G13's drift.
 
 ### PRESENT-1 — decouple present from refresh (LATENCY-1R measured the coupling absorbing the render headroom in phase)
-`LATENCY-0` *established* only that the composed-GDI present costs at least one refresh interval. `PRESENT-1`'s
+`LATENCY-0` *established* only that the composed-GDI present is coupled to the refresh: frame-ready to composited
+waits for the next DWM composition, a wait bounded by the refresh period (p50 5,921 µs against a 13,298 µs refresh on
+the host). An earlier wording here read that bound as a floor; corrected by the owner's ruling (2026-10-09). `PRESENT-1`'s
 falsifiable hypothesis — to be measured, never assumed — is that a **flip-model / waitable-swapchain** present can
 decouple present latency from refresh. The prior art is well documented: the DXGI flip model shares frames directly
 with the compositor with minimal copies, a frame-latency waitable object reaches ~1 frame of latency in Independent
@@ -2148,7 +2154,7 @@ The two acceptances that are mechanical are built into rows that exist (`DESIGN-
 No row is added. His last word on the rung: *I would stop adding architecture here.* The next rung's condition is
 met, and it waits for his word.
 
-### Hermeneutics and semiotics — what the design language means, apart from what compiles it · hermeneutics **built** (`22d52d02`, under its amendment `7e012752`; four rows, 251 in the gate), semiotics **declared** (texts the owner brought, 2026-10-07); nothing built
+### Hermeneutics and semiotics — what the design language means, apart from what compiles it · hermeneutics **built** (`22d52d02`, under its amendment `7e012752`; four rows, 251 in the gate; FULL×2 on the host; pushed), semiotics **declared** (texts the owner brought, 2026-10-07); nothing built
 Two texts the owner brought with the push of DESIGN-IR/DIFF-0's amendment, the second after he broke off the first
 exchange. They speak to an assistant, so their rules are quoted and the rest is summarized. They seat nothing.
 
@@ -2275,6 +2281,70 @@ the owner's.
 **Grade.** DECLARED: the texts, the court's rulings and the registration; semiotics, declared only. OBSERVED (the
 build container): the laws checked on the reference. MEASURED (host): the gate with the registration applied (0143
 and 0144), 242 of 242, one run; pushed (`5c8ad19..11afebf`, which carries 0142 to 0144). Nothing of it is built.
+
+### FPS-GRAYBOX-0 — the playable slice · **the sprint** (the owner's ruling, 2026-10-09); the gate stops growing
+
+**His ruling.** *Stop expanding the gate.* More verification architecture had come to compete with the product he
+wants: a design tool that compiles a reachable top-down grid is map data, and not yet a playable 3D FPS. The next
+milestone crosses that boundary. HERMENEUTICS-0 is closed once on the host and then frozen; no newly found hardening
+becomes a prerequisite for gameplay. The reach map is worth keeping and is not built now.
+
+**The four findings**, recorded for later repair and not claimed fixed:
+
+| finding | his ruling |
+|---|---|
+| `reasoncourt-source` reads a citation's line number and does not check it | a real source-validation defect; repair deferred (G34) |
+| `records-preregistered` skips a record that cites no registration | a real registration-coverage defect; repair deferred (G35) |
+| this roadmap misstated LATENCY-0's bound | corrected in the next documentation batch (this one; PRESENT-1, above) |
+| the witness misses changes hidden by Git's flags and settings | a real witness limitation; its empty status alone is not proof of a clean checkout (G36) |
+
+**When to run what**, his rule from now on:
+
+| what changed | what runs |
+|---|---|
+| the compiler, or authoritative semantics | the relevant engineering checks |
+| map content only | compile the level; light geometry and connectivity checks |
+| renderer or gameplay code | the relevant runtime tests |
+| a registered release checkpoint, or a change that threatens the certified contract | the full gate |
+
+Not after every room or corridor edit.
+
+**The milestone.** Three parts: a tactical graybox — three connected routes, distinct central and side engagements,
+cover, spawn regions, objective locations, simple geometry before art; playable first person — mouse look, WASD,
+jump, collision, a camera, a visible weapon placeholder, a player who actually traverses the level; a combat loop —
+one weapon, firing, hit detection, target feedback, a respawn or reset. His caveat: if the design tool cannot express
+height, collision volumes or traversal, do not force them into its tile grammar; the design compiler keeps the map's
+canonical layout and the smallest separate runtime representation carries the rest.
+
+**His stop rule**, in brief: one short inspection pass, then the first running scene; load the level from an explicit,
+deterministic representation; real 3D walls, floors, openings and cover; collision and gravity; a documented launch
+command; a smoke test. Not D3D12, upscaling, networking, anti-cheat, elaborate art, a general rendering abstraction,
+proof composition or a new gate framework. No registered law changed to make gameplay work, and no new rung unless a
+concrete defect blocks the slice. *Deliver a playable graybox, not another roadmap.* After it: map geometry, combat,
+performance measured with valid boundaries, 720p / 1080p / 1440p, networking.
+
+**His amendment: boundary integrity and runtime conformance.** He accepted five proposals in narrowed form:
+
+| proposal | his ruling |
+|---|---|
+| conversion-layer provenance | accept, strengthened: bind the built level to its source and converter, and check the gameplay geometry independently. *A hash alone proves identity, not correctness* |
+| cross-platform physics determinism | accept the principle, narrow the claim: replay determinism on one platform first; across platforms only if the numeric and physics contracts promise it |
+| unsafe-code boundaries | accept: declare the trusted core, the runtime shell and the interface; review when a boundary changes |
+| automated smoke tests | accept, staged: load, spawn, collision, clean exit now; performance thresholds when a stable renderer and test machine exist |
+| input-latency instrumentation on day one | accept the instrumentation, defer any absolute claim: each segment recorded apart, and summed software timings never called input-to-photon |
+
+Its core: *certify the conversion, not the mesh.* A verified design passes through several representations, so
+declare which one owns gameplay truth — a canonical spatial representation from which the collision world and the
+render mesh are each derived, the renderer never the authority for collision. Each built level gets a manifest (its
+source, its converter, the canonical and collision representations' hashes, semantic identifiers back to the source)
+and independent conformance checks (spawns valid and traversable, openings open, walls blocking at named probes, no
+undeclared obstruction on a required route, provenance kept), shown to bite by defect-directed mutations: an opening
+collapsed, a spawn moved into a wall, an invisible blocker. *Unsafe code is not automatically a contract violation;
+unbounded authority across the boundary is.* Cross-platform bit-exact determinism and absolute input-to-photon latency
+stay separate claims until their contracts and measurement protocols exist. *Do not expand the certification
+framework beyond the concrete properties needed to establish the first playable vertical slice.*
+
+**Grade.** DECLARED: his rulings and his amendment.
 
 ### EVIDENCE-LINK-0 — a claim about a recorded event, traced to its source · **accepted as the next slice** (the owner's ruling, 2026-10-09); declared; not registered, nothing built
 

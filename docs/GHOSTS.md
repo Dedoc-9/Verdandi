@@ -816,6 +816,35 @@ source of chance for their words is ever found. For searches built another way: 
 **Exorcism.** Done for the walk's rung. For the rest: his ruling, if a reader of another rung is shown to need it.
 
 
+## G34 — a citation's line number is read and not checked · OBSERVED (read from the source); a real defect of the gate, by the owner's ruling; its repair deferred
+
+`reasoncourt-source` holds each code cited from `verify/RUNGS.md` to the line it quotes. It parses the line number
+the citation gives and then asks only whether the quoted text stands on some line. A citation with the wrong line
+passes. The refusal's own words say the line *no longer stands there word for word*.
+
+**Exorcism.** Deferred by his ruling (2026-10-09): recorded as a source-validation defect, repaired later. Whether a
+citation binds the line or only the text is part of that repair.
+
+## G35 — a record that cites no registration is skipped · OBSERVED (read from the source); a real defect of the gate, by the owner's ruling; its repair deferred
+
+`records-preregistered` joins each sealed record to the ledger entry it cites. A record whose provenance names no
+entry is passed over, not refused: an inner join where the rule wants every record of a preregistered rung to cite
+its entry.
+
+**Exorcism.** Deferred by his ruling (2026-10-09): recorded as a registration-coverage defect, repaired later. It
+changes a registered row, so the repair is an amendment.
+
+## G36 — the witness's empty status is not proof of a clean checkout · OBSERVED (tested with Git 2.43 off the host, not on it); a real limit of the witness, by the owner's ruling
+
+The witness reads `git status --porcelain`. Two things make that print nothing while the checkout differs from what
+it shows. A `status.showUntrackedFiles=no` setting hides untracked files. A tracked file flagged `assume-unchanged`
+or `skip-worktree` and then edited leaves the status empty and the tree id unchanged, while the gate runs on other
+bytes. Both were shown with a local Git, not on the owner's host.
+
+**Exorcism.** Not the witness's, by his ruling: its empty status alone is not to be taken as proof of a clean
+checkout. A direct check of the Git state stands beside it at a push.
+
+
 ---
 
 ## The disposition
@@ -827,7 +856,8 @@ and not a faithful scaling); G4, G5, G6, G9, G10, G12 and G13 are caveats a care
 purpose. Of the live editor's, G14, G15, G16, G18, G20, G23 and G25 are limits of method, stated so no claim is read
 past them; G24 is a built court with its reach and its debts stated; G26 is the stated reach of a second built watch; G27 is the first content-time tool, uncertified by design; G28 is the built batch's reach, with what it leaves to the compiler, to the workshop and to the host stated; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
 built, with the court's reach stated; G21 is a measurement not yet taken; G22 is two things that happened once and were never
-explained.
+explained. G34 and G35 are defects of the gate and G36 a limit of the host's witness, each recorded by the owner's
+ruling for repair later.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously
 as a win, and a hypothesis is never dressed as a measurement.
