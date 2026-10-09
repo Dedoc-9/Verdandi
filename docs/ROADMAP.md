@@ -158,6 +158,8 @@ HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's 
       ↓
 FPS-GRAYBOX-0    the owner's sprint (2026-10-09): stop expanding the gate; a playable first-person graybox on the canonical level — a tactical layout with three routes, cover, spawns and an objective; mouse look, WASD, jump, collision, a weapon placeholder; one weapon, hits, target feedback, reset. The design compiler keeps the layout; the smallest runtime layer carries height, collision and play. His amendment: the conversion certified, not the mesh — a canonical world from which collision and the render mesh are derived, a manifest, independent conformance checks and defect-directed mutations, a smoke suite, replay determinism on one platform; boundaries in docs/BOUNDARIES.md. The full gate at release checkpoints only; BUILT the same day, beside the certified tree: `python graybox/serve.py` — the tactical map's walls and floor admitted through the design tool, an overlay for the rest, three routes walked by a bot through the real movement, seven planted conversion defects refused
       ↓
+FPS-VISUAL-0     the owner's visual pass (2026-10-09), outside the gate: a sky and a sun, floor materials (the 1 m grid a hidden debug mode), wall panels and trim, varied cover, one weapon model whose transform stays apart from the shot; movement, collision, source hashes and replay kept; screenshots and timings before and after, and no improvement claimed unmeasured. His rule: the canonical world says what the map means, the collision world what blocks, the render world how it looks, and the render world decides nothing that blocks
+      ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
@@ -2402,6 +2404,32 @@ which ended 0; walking with the keyboard, aiming and firing, captured in screens
 
 **Grade.** OBSERVED (the build container): everything above. NOT_MEASURED: the slice on the owner's host, its frame
 rate, and anything of feel. It is not a rung of the gate and adds no row.
+
+### FPS-VISUAL-0 — the visual pass · **the owner's ruling** (2026-10-09); outside the certified gate
+
+**His ruling.** The graybox plays; the next pass makes it look like a place, and the certified gate stays out of it.
+His finite milestone:
+
+1. A sky gradient and more convincing directional lighting.
+2. Modular floor materials in place of the one-metre floor grid; the grid kept as a hidden debug mode.
+3. Wall paneling, corner trim, and visually varied cover.
+4. One real 3D viewmodel in place of the weapon block: receiver, barrel, sights, magazine, material contrast, subtle
+   recoil. Its visual transform is kept apart from the hitscan's origin and from the authoritative aim.
+5. The movement, the collision, the source hashes and the replay self-test preserved.
+6. Screenshots and performance compared before and after, and no performance improvement claimed without measuring
+   it.
+
+His advice beside the list: depth comes from the environment (overhead beams, recesses, windows, distant structures,
+controlled shadowing). Improve the WebGL 1 renderer first. Change the technology (WebGL 2; Three.js or Babylon.js;
+Godot or Unreal) only if it is needed later.
+
+**His rule: three worlds.** The canonical world says what the map means. The collision world says what blocks
+movement and shots. The render world says how it looks. In his words: *"The renderer can add bolts, trim, decals,
+surface detail, particles, lighting, and decorative meshes. It must not silently decide where walls, cover, or
+player-blocking objects exist. If visual decoration is intended to affect gameplay, that change must be represented in
+the authoritative world and checked."*
+
+**Grade.** DECLARED: his ruling. It is not a rung, and it adds no row.
 
 ### EVIDENCE-LINK-0 — a claim about a recorded event, traced to its source · **accepted as the next slice** (the owner's ruling, 2026-10-09); declared; not registered, nothing built
 
