@@ -6974,7 +6974,7 @@ The two gate runs: exit 0, 247 rows / 0 fail, stdout byte for byte the same, std
 container's log. The design tool's checks: 17 / 0. **FULL×2: yes**, by his predicate; and the checkout at the end as at
 the start, the design checks bracketed. Pushed, `a16d663..89d082e`.
 
-## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; PROCEED, the owner's word, 2026-10-09; two rules of DESIGN-IR/DIFF-0's rows stood in the way of its instrument, and he ruled an amendment, HERMENEUTICS-0a, that widens each by the least)
+## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; PROCEED, the owner's word, 2026-10-09; two rules of DESIGN-IR/DIFF-0's rows stood in the way of its instrument, and he ruled an amendment, HERMENEUTICS-0a, that widens each by the least; built with it and REASON-COURT-0d: four rows, 251 in the gate)
 
 ```
   the owner's court ──► one reading, six rulings, four laws        ratified, 2026-10-07
@@ -7125,6 +7125,89 @@ unexpected input does to a protocol, for refusing where a guess was possible. A 
 
 **When.** By his order: after DESIGN-IR/DIFF-0 is built, its court run and its gate FULL×2. It is not a dependency
 of that build.
+
+### Built (2026-10-09), under HERMENEUTICS-0a (`7e012752`) and REASON-COURT-0d (`fcbc2070`)
+
+```text
+  the entry's words ──► _herm_target ──► the literal ──► _herm_literal(parent's bytes) ──► Target_owner
+                                                                                              │
+  the shell's compiler ──► batch ──► shell design ──► child's content ─────────── = ──────────┤
+  the gate's reference ──► its own target's content ───────────────────────────── = ──────────┘
+```
+
+**The order of the commits.** The two amendment entries were written after the change to the shell and its hash, and
+committed alone before the build, as REASON-COURT-0c was for INPUT-0a: the link names a file that exists. Then the
+build.
+
+**What changed.**
+
+| | |
+|---|---|
+| `shell/designcompile.rs` | three plants appended to the eleven: `rim-keeps-openings`, `corners-one-order`, `writes-as-operations`; a field on a rectangle saying whether its first corner, as written, is its low corner. Each branch is taken only when its plant is named. The pin moved by REASON-COURT-0d, `123c1584…` to `9a37164c…` |
+| the gate's reference | the twin of each of the five, behind a keyword, `plant`, that only this rung's rows and helpers pass. With no plant named it is what it was: DESIGN-IR/DIFF-0's five rows pass unchanged in what they find |
+| DESIGN-IR/DIFF-0's two rules | widened by the least, as ruled; each changed line marked in its row with *changed with HERMENEUTICS-0's build, by HERMENEUTICS-0a*, four marks in all |
+| this rung | ten designs and their literal outcomes, the laws' instances and the five plants as constants in the entry's words; a reader of the entry's words, a builder of a literal's content from the parent's bytes, and two judges, none of which runs a program; four rows after DIFF-0's: 247 rows become 251 |
+
+**The corpus.** On the registered parent: the six designs whose literal is a target each compile in the shell to a
+batch that `shell design` admits to a child with the literal's content, and the reference's own target is the
+literal; the three refusals come from both programs at the registered code and line; H6 is `COMPILE-EMPTY` from both,
+and the reference's target is the parent. Every literal names only what changes on the parent. No literal was in
+dispute.
+
+**The laws**, for both programs, on their registered instances: corner order, fifteen groups of four orders, one
+outcome each; fixed point, the twelve designs of DIFF-0's corpus that compile on the registered parent, each
+`COMPILE-EMPTY` against its own admitted child; room, nine rectangles, two of them refused `COMPILE-STAIR` in both
+spellings; exchange, the four agreeing pairs one target either way, the border pair refused either way, the pair that
+disagrees two targets.
+
+**The plants**, each planted alike: on all ten cases and every law instance the two programs' bytes, or their
+refusals, are equal. So a comparison of the two programs sees none of them.
+
+| plant | the entry's words | cases of the corpus that catch it | laws it breaks | DIFF-0's checks against its registered values that catch it too |
+|---|---|---|---|---|
+| `rim-keeps-openings` | a room whose rim keeps its openings | H4 | room | the registered design's bytes and world; the refusal corpus |
+| `first-wins` | a first statement that wins over a later one | H1a, H6 | fixed point, room | all five |
+| `corners-one-order` | a rectangle whose corners are taken in one order only | none | corner order | the stated change sets |
+| `entrance-dropped` | an entrance that writes nothing | H3, H3′ | fixed point | the registered design's bytes and world; against its own child; the refusal corpus |
+| `writes-as-operations` | a paint of a class's own colour, or a net-zero design, written as operations | H1a, H4, H4′, H6 | fixed point | all five |
+
+Every plant is caught by a named case or a named law. `writes-as-operations` is caught at H1a, H4 and H4′ by the
+admission and not by the compiler: an operation that changes nothing is refused there (`ADMIT-AUTHORITY`,
+DESIGN-EVENT-0's), so its batch reaches no child.
+
+**The finding the entry asked to be said.** DESIGN-IR/DIFF-0's checks against the values it registered before any
+plant catch all five. The registration expected it. What this court adds is not a catch no other row makes: the six
+readings are adjudicated, their targets are the owner's and not a program's, and the four laws are held.
+
+**The judges are planted too.** A catch made by either of two rows can hide a judge that always says yes behind the
+other's catch. So each judge is shown both ways on outcomes made up for it, and runs nothing: the corpus's judge
+refuses a wrong outcome on each of the ten cases and takes the right one; the laws' judge holds and fails 25 made-up
+instances, each law both ways; the check that a literal names only what changes refuses a border cell named as rock.
+
+**Mutants**, each in a fresh copy of the built tree, the four rows run: 24, of which 21 change the gate's text and
+three the shell's plants. 23 are caught on the rows, each naming its fault. One is equivalent: with the laws' check
+that the two programs are planted alike removed, no verdict changes while every twin is alike. A twin that differs
+only on the laws' instances (the reference's `corners-one-order` removed) is caught by that check alone, which is
+what it is for. The mutants, by what each changes: the literal side calling the reference; x and z swapped in the
+literal; a literal cell dropped; each judge made to say yes; a twin removed or made wrong; a plant handed to the
+reference from DIFF-0's rows; a helper of this rung called from there; the reference used by another rung's row
+(`designir-fence` catches it); a mark removed; the rows reordered; the fourth link started elsewhere; the amendment
+edited; the parent's tiles read from the wrong file; the fixed point read on the parent; DIFF-0's rule widened to
+every row; and each of the shell's three plants made unlike its twin.
+
+**The gate.** One whole pass here before the commits, on the built tree: 251 rows / 0 fail, rowset `74db4c8d78625af5`. The entries' commit gated alone, and three passes on the head of the series this is cut with, are reported with its delivery. The host's gate is to come.
+
+**Grade.** DECLARED: the reading, the rulings, the literal targets, the laws. ESTABLISHED (gate, the build container):
+the four rows, 251 in the gate; that each program gives each registered outcome on the registered parent, that the
+laws hold on their instances, and that each plant, planted alike, is caught. OBSERVED (the build container): the
+mutants. NOT_MEASURED: the host's gate on this build.
+**does_not_show.** Compiler correctness; VRDNP2 correctness; admission correctness; designer intent; the language's
+completeness (his list). That a program satisfies a law beyond its registered instances. That a misreading neither
+planted nor reached by these ten designs and the laws' instances would be caught: there a shared misreading is still
+caught by neither of DIFF-0's equalities.
+**Falsifier.** A literal target a program does not reach, or a refusal it does not give; a law broken on its
+instances; a plant planted alike that no case and no law catches; a literal built through either program; a twin
+reachable from another rung.
 
 **Grade.** DECLARED: the court's rulings, the reading, the laws and the registration. OBSERVED (the build
 container, before the entry): the laws on the reference, and the reference's outcomes for the designs the table

@@ -13,7 +13,7 @@ The gate is the program's only judge, so its design is about what it may and may
 ```text
     verify.py     row(name, fn) in a fixed order ─► PASS, or Red with a reason ─► GATE PASSED | GATE FAILED
                   RECONCILE  rowset <sha256 of the row names>  <rows> / <fail> / <skipped>
-                  247 rows today, rowset 389da490e1cfb6aa
+                  251 rows today, rowset 74db4c8d78625af5
 
     a row         builds what it tests from source · runs it · compares bytes · then PLANTS a defect and
                   requires the refusal. A row with no plant that bites is not finished.
@@ -25,7 +25,7 @@ The gate is the program's only judge, so its design is about what it may and may
                   == earns the claim · != defeats it · identity not established withholds it
                   the reconcile line names the rowset, not the tree: a tree's identity is taken outside the gate
 
-    preregister.json   53 entries: hypothesis · success · failure · limits · instrument · chain hash.
+    preregister.json   55 entries: hypothesis · success · failure · limits · instrument · chain hash.
                        Locked before the instrument runs. Never edited after it is pushed: a correction is an
                        amendment entry with its own hash.
 

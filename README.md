@@ -109,7 +109,7 @@ session's seal is a hash. A second platform's window.
 running the gate.
 
 ```text
-  PROGRAM TIME    verify/verify.py: 247 rows, two passes byte-identical, or nothing landed
+  PROGRAM TIME    verify/verify.py: 251 rows, two passes byte-identical, or nothing landed
 
       oracle/   Urðr, frozen at two tags
          │      witnesses · corpus · the heading vocabulary
@@ -253,9 +253,9 @@ rows, grade, limits and falsifier; this is the order and the state.
     THE MEANING     HERMENEUTICS-0 what the design language means, apart from the two programs that compile
          │          it: one reading ratified by the owner (a statement is a constant write, a design is its
          │          statements later-wins), six cases locked, four laws as theorems, ten designs with literal
-         │          targets typed by hand (22d52d02; registered and pushed, not built; the owner's word to
-         │          proceed, 2026-10-09; two rules of the compiler's rows stood in its way, and he ruled the
-         │          amendment that widens each by the least, HERMENEUTICS-0a)
+         │          targets typed by hand (22d52d02; built under the owner's amendment 7e012752, four rows,
+         │          251 in the gate: both programs reach every literal and keep the four laws; five
+         │          misreadings planted alike in both, each caught)
          ⋮
     declared        EVIDENCE-LINK-0, each copied claim about a recorded event traced to its source (accepted as
                     the next slice); LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a

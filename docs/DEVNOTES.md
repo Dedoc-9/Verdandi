@@ -614,6 +614,11 @@ What stands against the tree, as reviewed:
    more for less: *a passing result cannot inherit a guarantee that its inputs never established.* Composition,
    compression and attestation can carry evidence further; none of them makes any.
 
+70. **Plant the judge, too.** HERMENEUTICS-0 counts a plant caught if a case of one row or a law of another catches
+   it. A judge that always says yes would hide behind the other row's catch, and pass. So each judge was made a
+   function that runs nothing and shown both ways on outcomes made up for it. The one mutant that survived is a
+   check that only matters when a twin is wrong, and a wrong twin shows it.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -638,6 +643,9 @@ What stands against the tree, as reviewed:
 - A checkout path with a space broke three rows (a walk's path was one word), and the reason court's watch with
   them. Found by a perturbed pass, measured on the host as predicted, repaired by INPUT-0a, both predictions met
   (G31). The walk's other lines drop words they do not use (G32).
+- The design language's meaning is held as the owner's literal targets at ten designs and four laws' instances, and
+  both programs are held to it (HERMENEUTICS-0). Anywhere else a misreading the two programs share is caught by
+  neither of DIFF-0's equalities (G29).
 - A row could rest on what an earlier row left (G33). For the walk's rung, repaired by INPUT-0b, which the owner has
   closed: its rows ask for what they need and pass run alone. The other rungs' readers of a build global are
   recorded and untouched.

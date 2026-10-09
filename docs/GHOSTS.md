@@ -654,7 +654,9 @@ it is written and false after the next legitimate change.
   file does not change with this rung. The first rung that changes it will meet this.
 - **This rung's own source reading will be met too.** `designir-fence` reads the command's arm and the compiler's
   functions by their text. A later rung that changes either moves more than a pin, and the stop clause applies
-  again.
+  again. *Met by HERMENEUTICS-0:* two of this rung's rows held the plants to eleven and the reference to this rung
+  alone, and that rung's instrument needed both widened. The owner ruled the least widening (HERMENEUTICS-0a); each
+  changed line is marked in its row.
 - **The origin rests on a commit.** The 56 pins the first court found are registered as a digest computed with
   this build and checked against the gate's table at the commit that built that court. That entry itself names no
   hash.
@@ -663,8 +665,10 @@ it is written and false after the next legitimate change.
 - **Equivalence is shown where the court compiles.** Sixteen designs on four parents, and the single-byte mutants
   of three designs. Nothing is shown for every design.
 - **A shared misreading is caught by neither equality.** The compiler and the reference are two programs written
-  from one description by one hand, and the target is taken by the gate's own reading. HERMENEUTICS-0 is registered
-  for that, and is not built.
+  from one description by one hand, and the target is taken by the gate's own reading. HERMENEUTICS-0 is built for
+  that: both programs are held to the owner's literal targets at ten designs and to four laws at their instances, and
+  five shared misreadings, planted alike, are caught. Anywhere else a shared misreading is still caught by
+  neither.
 - **The camera's and the stair's rules are still the language's.** A batch from any other editor is not held to
   them. The owner's question on that is carried and not answered.
 - **Five checks decide only because another has not.** The printable check and the word split, the colour's digit

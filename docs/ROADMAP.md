@@ -47,10 +47,10 @@ owner's word with that push no theorem was added at once. When the host's gate w
 word was *take next* (2026-10-07).
 
 That next rung is built: the step from a design to its change set, which was the one uncertified link between the
-design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`, five rows). The gate is 247 rows and passes here and on
-the host, FULL×2 there by the owner's predicate, and is pushed. Registered behind it, and now free to be built at his
-word: the meaning of the design language as the owner's own rulings, literal targets and laws, which neither
-program computes (`HERMENEUTICS-0`, `22d52d02`).
+design tool and the admission (`DESIGN-IR/DIFF-0`, `2baa42f3`, five rows). Behind it, built at his word: the meaning
+of the design language as the owner's own rulings, literal targets and laws, which neither program computes, and to
+which both are held (`HERMENEUTICS-0`, `22d52d02`, four rows, under his amendment `HERMENEUTICS-0a`). The gate is 251
+rows and passes here; the host's run of it is to come.
 
 What is *not* yet done: that compiler; design objects that outlive admission, constraints, and a model at the seam
 (declared, not registered); any measurement of the live loop's timing; richer edits than a cell and a tile class;
@@ -152,7 +152,7 @@ INPUT-0a         the owner's ruling (2026-10-08): the small semantic fix first, 
       ↓
 INPUT-0b         G33 for the walk's rung (2026-10-09), by the owner's instruction to find the most elegant path and carry it through: the rows ask for the kernel and the walk program where they use them (Lazy Setup; a brittle's fix, after iFixFlakies), held by `input-demo` — registered (`a167c308`) and built, 247 rows; each walk row passes run alone; FULL×2 on the host by the witness, pushed (`89d082e..b386b85`); CLOSED by his ruling (2026-10-09), the witness's read order deferred
       ↓
-HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2; PROCEED, his word (2026-10-09); read for the build, two rules of DESIGN-IR/DIFF-0's rows stood in the way of its registered instrument, and he ruled (A): HERMENEUTICS-0a widens each by the least — the eleven plants first, the three the shell lacks after them, `first-wins` and `entrance-dropped` given twins in the reference; the reference's users DIFF-0's rows and these four — with REASON-COURT-0d for the moved pin
+HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's own amendment states: the meaning of the design language, apart from either program that compiles it. The concept locked, its build deferred until after DIFF-0, folding it into DIFF-0 rejected. Semiotics, one level earlier, is a vocabulary audit and not a rung, declared. His court the same day: one reading ratified, six cases locked, four laws ratified as theorems, a corpus of ten designs with literal targets — registered (`22d52d02`) and pushed (`5c8ad19..11afebf`); not built; built after DIFF-0 is built, courted and FULL×2; PROCEED, his word (2026-10-09); read for the build, two rules of DESIGN-IR/DIFF-0's rows stood in the way of its registered instrument, and he ruled (A): HERMENEUTICS-0a widens each by the least — the eleven plants first, the three the shell lacks after them, `first-wins` and `entrance-dropped` given twins in the reference; the reference's users DIFF-0's rows and these four — with REASON-COURT-0d for the moved pin; BUILT (2026-10-09) under HERMENEUTICS-0a and REASON-COURT-0d: four rows, 251 in the gate; both programs give each registered outcome on the registered parent, the four laws hold on their instances, and the five plants, planted alike so that a comparison of the programs is blind, are each caught by a case or a law — and by DIFF-0's own registered values, all five, as the entry expected
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -2148,7 +2148,7 @@ The two acceptances that are mechanical are built into rows that exist (`DESIGN-
 No row is added. His last word on the rung: *I would stop adding architecture here.* The next rung's condition is
 met, and it waits for his word.
 
-### Hermeneutics and semiotics — what the design language means, apart from what compiles it · hermeneutics **registered** (`22d52d02`), semiotics **declared** (texts the owner brought, 2026-10-07); nothing built
+### Hermeneutics and semiotics — what the design language means, apart from what compiles it · hermeneutics **built** (`22d52d02`, under its amendment `7e012752`; four rows, 251 in the gate), semiotics **declared** (texts the owner brought, 2026-10-07); nothing built
 Two texts the owner brought with the push of DESIGN-IR/DIFF-0's amendment, the second after he broke off the first
 exchange. They speak to an assistant, so their rules are quoted and the rest is summarized. They seat nothing.
 
