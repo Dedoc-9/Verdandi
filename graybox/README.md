@@ -27,9 +27,9 @@ It converts the map, serves the game on `127.0.0.1` and opens it in your default
 witness` plays the oracle's witness level as it stands. Add `--no-browser` to print the address only, `--port N` to
 choose the port, `--renderer flat` to play with the graybox's first renderer. Ctrl+C in the terminal stops it.
 
-**Controls.** Click the view to capture the mouse. WASD (or the arrows) move, the mouse looks, Space jumps, the
-left button fires, R returns you to your spawn, 1 and 2 respawn at base A or base B, M shows or hides the map, G shows
-or hides the 1 m grid, Esc releases the mouse.
+**Controls.** Click anywhere on the page to capture the mouse. WASD (or the arrows) move, the mouse looks, Space
+jumps, the left button fires, R returns you to your spawn, 1 and 2 respawn at base A or base B, M shows or hides the
+map, G shows or hides the 1 m grid, Esc releases the mouse.
 
 ## Test it
 
@@ -37,7 +37,7 @@ or hides the 1 m grid, Esc releases the mouse.
 |---|---|
 | map content (`maps/`) | `python graybox/check.py` — the conversion's conformance and its mutations; add `--compile` to compile and admit the tactical layout again through the design tool (needs a built shell, as the design tool does) |
 | the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check and ends 0 if all passed |
-| the renderer's cost | `python graybox/serve.py tactical --bench` — both renderers draw the same poses in your browser, alternating; the timings print, and they and a screenshot of each pose by each renderer are written to `graybox/build/bench/tactical/` (not committed). Add `--samples N` (default 20) |
+| the renderer's cost | `python graybox/serve.py tactical --bench` — both renderers draw the same poses in your browser, alternating; the timings print, and they and a screenshot of each pose by each renderer are written to `graybox/build/bench/tactical/` (not committed). A sample is the mean of a batch of draws, each followed by a one-pixel readback; the page's clock step is printed, since some browsers round it (to 1 ms). Add `--samples N` (default 20), `--batch K` (default 10) |
 | the certified tree | the gate, at a release checkpoint |
 
 `check.py` reads the source again with its own reader and holds the canonical world W and the collision world C to

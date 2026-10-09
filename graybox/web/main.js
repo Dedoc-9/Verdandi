@@ -133,9 +133,11 @@
   }
 
   // ---------------------------------------------------------------- the bench: both renderers, the same poses
-  // Each pose is drawn by both renderers at the same size, alternating, and each sample is one draw followed by a
-  // one-pixel readback, which waits for the frame's work: the browser's own time on this machine, not a frame rate
-  // and not input-to-photon. A screenshot of every pose by each renderer goes back with the timings.
+  // Each pose is drawn by both renderers at the same size, alternating. A sample is the mean of a batch of draws, each
+  // followed by a one-pixel readback, which waits for the frame's work: the browser's own time on this machine, not a
+  // frame rate and not input-to-photon. A browser may round its clock (to 1 ms, in some): the batch divides that
+  // rounding, and the clock's step as the page sees it is reported. A screenshot of every pose by each renderer goes
+  // back with the timings.
   function benchPoses(world, map) {
     const W = map.canonical, c = W.cell, out = [];
     const at = function (label, x, z, yaw, pitch, fire) {
@@ -158,11 +160,15 @@
     document.body.classList.add("selftest");
     const world = new Sim.World(map), poses = benchPoses(world, map);
     const n = Math.max(3, Math.min(200, parseInt(q.get("samples") || "20", 10) || 20));
+    const K = Math.max(1, Math.min(100, parseInt(q.get("batch") || "10", 10) || 10));
+    let step = Infinity, seen = 0;
+    for (let a = performance.now(), t0 = a; seen < 20 && a - t0 < 200;) { const b = performance.now(); if (b > a) { step = Math.min(step, b - a); seen++; a = b; } }
     const rs = {};
     for (const k of ["flat", "lit"]) rs[k] = new RENDERERS[k].Renderer(canvasFor("bench-" + k), map, Sim);
     const gl = rs.lit.gl, dbg = gl.getExtension("WEBGL_debug_renderer_info");
-    const out = { map: name, samples: n, ua: navigator.userAgent, gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
-                  poses: [], shots: {}, size: null, note: "draw + one-pixel readback, this browser on this machine; not a frame rate, not input-to-photon" };
+    const out = { map: name, samples: n, batch: K, clock: step, isolated: !!self.crossOriginIsolated, ua: navigator.userAgent,
+                  gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER), poses: [], shots: {}, size: null,
+                  note: "the mean of " + K + " draws, each followed by a one-pixel readback; this browser on this machine; not a frame rate, not input-to-photon" };
     const px = new Uint8Array(4);
     let p = 0;
     $("results").textContent = "bench: " + poses.length + " poses, " + n + " samples each, two renderers…";
@@ -180,8 +186,8 @@
         const order = i % 2 ? ["flat", "lit"] : ["lit", "flat"];
         for (const k of order) {
           const r = rs[k], t0 = performance.now();
-          r.draw(pose.s, {}); r.gl.readPixels(0, 0, 1, 1, r.gl.RGBA, r.gl.UNSIGNED_BYTE, px);
-          row.ms[k].push(performance.now() - t0);
+          for (let b = 0; b < K; b++) { r.draw(pose.s, {}); r.gl.readPixels(0, 0, 1, 1, r.gl.RGBA, r.gl.UNSIGNED_BYTE, px); }
+          row.ms[k].push((performance.now() - t0) / K);
         }
       }
       for (const k of ["flat", "lit"]) { rs[k].draw(pose.s, {}); out.shots[k + "/" + pose.label.replace(/[^a-z0-9]+/gi, "-")] = rs[k].canvas.toDataURL("image/png"); }
@@ -205,8 +211,23 @@
     const evTimes = [];
     const SENS = 0.0022;
     const locked = function () { return document.pointerLockElement === canvas; };
-    canvas.addEventListener("click", function () { if (!locked()) canvas.requestPointerLock(); });
-    document.addEventListener("pointerlockchange", function () { $("overlay").style.display = locked() ? "none" : "flex"; });
+    // The overlay covers the view until the mouse is captured, so it is the overlay that takes the first click: both
+    // ask for the lock. A refusal is shown, not swallowed (a browser may refuse a request made just after Esc).
+    const overlay = $("overlay"), prompt = overlay.textContent;
+    const refused = function (why) {
+      if (!why && overlay.textContent.indexOf("The browser did not capture") === 0) return;   // keep a reason already shown
+      overlay.textContent = "The browser did not capture the mouse" + (why ? ": " + why : "") + ".\nClick to try again.";
+    };
+    const lock = function () {
+      if (locked()) return;
+      let p;
+      try { p = canvas.requestPointerLock(); } catch (e) { refused(String(e && e.message || e)); return; }
+      if (p && typeof p.catch === "function") p.catch(function (e) { refused(String(e && e.message || e)); });
+    };
+    overlay.addEventListener("click", lock);
+    canvas.addEventListener("click", lock);
+    document.addEventListener("pointerlockchange", function () { overlay.style.display = locked() ? "none" : "flex"; if (locked()) overlay.textContent = prompt; });
+    document.addEventListener("pointerlockerror", function () { refused(""); });
     document.addEventListener("mousemove", function (e) { if (locked()) { mdx += e.movementX; mdy += e.movementY; evTimes.push(e.timeStamp); } });
     document.addEventListener("mousedown", function (e) { if (locked() && e.button === 0) { fire = true; evTimes.push(e.timeStamp); } });
     document.addEventListener("mouseup", function (e) { if (e.button === 0) fire = false; });

@@ -3,8 +3,8 @@
 #
 # graybox/serve.py — launch FPS-GRAYBOX-0 on this machine.
 #
-#   python graybox/serve.py [MAP] [--port N] [--no-browser] [--renderer flat] [--selftest | --bench [--samples N]]
-#                           [--timeout SECONDS]
+#   python graybox/serve.py [MAP] [--port N] [--no-browser] [--renderer flat]
+#                           [--selftest | --bench [--samples N] [--batch K]] [--timeout SECONDS]
 #
 # Converts the map (maps/MAP.gbx, default `tactical`) with level.py, serves the runtime in graybox/web/ and the
 # converted map on 127.0.0.1, and opens it in the default browser. --renderer flat plays with the graybox's first
@@ -12,11 +12,14 @@
 # game and sends the results back here; this prints them and ends 0 if every one passed, 1 if one failed, 2 if none
 # came back in time. With --bench the page draws the same poses with both renderers, times them in that browser and
 # sends back the timings and a screenshot of each; this writes them to graybox/build/bench/MAP/ and prints the
-# timings. Standard library only; nothing is written to disk but by --bench, and only there.
+# timings. Every response asks the browser to isolate the page from other origins (it loads nothing from any), which
+# also lets a browser give the page its finer clock. Standard library only; nothing is written to disk but by --bench,
+# and only there.
 
 import base64
 import http.server
 import json
+import math
 import os
 import statistics
 import sys
@@ -34,7 +37,7 @@ TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=u
 def main(argv) -> int:
     args = [a for a in argv if not a.startswith("--")]
     opt = lambda k, d=None: argv[argv.index(k) + 1] if k in argv and argv.index(k) + 1 < len(argv) else d
-    name = args[0] if args and args[0] not in (opt("--port"), opt("--timeout"), opt("--renderer"), opt("--samples")) else "tactical"
+    name = args[0] if args and args[0] not in (opt("--port"), opt("--timeout"), opt("--renderer"), opt("--samples"), opt("--batch")) else "tactical"
     port = int(opt("--port", "0"))
     selftest = "--selftest" in argv
     bench = "--bench" in argv and not selftest
@@ -59,6 +62,8 @@ def main(argv) -> int:
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
+            self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+            self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
             self.end_headers()
             self.wfile.write(body)
 
@@ -66,7 +71,7 @@ def main(argv) -> int:
             path = self.path.split("?", 1)[0]
             if path == "/":
                 self.send_response(302)
-                mode = "&selftest=1" if selftest else "&bench=1&samples=%d" % int(opt("--samples", "20")) if bench else "&renderer=flat" if flat else ""
+                mode = "&selftest=1" if selftest else "&bench=1&samples=%d&batch=%d" % (int(opt("--samples", "20")), int(opt("--batch", "10"))) if bench else "&renderer=flat" if flat else ""
                 self.send_header("Location", "/index.html?map=%s%s" % (name, mode))
                 self.end_headers()
                 return
@@ -129,13 +134,14 @@ def report_bench(r) -> int:
         kind, pose = key.split("/", 1)
         with open(os.path.join(out, "%s-%s.png" % (pose, kind)), "wb") as fh:
             fh.write(base64.b64decode(url.split(",", 1)[1]))
-    q = lambda xs, p: sorted(xs)[min(len(xs) - 1, int(p * len(xs)))]
+    q = lambda xs, p: sorted(xs)[max(0, math.ceil(p * len(xs)) - 1)]   # the nearest rank
     lines = ["FPS-VISUAL-0 bench  map %s  %d x %d px  %d samples a pose and renderer" % (r["map"], r["size"][0], r["size"][1], r["samples"]),
              "browser %s" % r["ua"], "WebGL renderer %s" % r["gpu"],
-             "each sample: %s" % r["note"], "",
+             "each sample: %s" % r["note"],
+             "the page's clock steps by %.4f ms; cross-origin isolated: %s" % (r["clock"], "yes" if r["isolated"] else "no"), "",
              "%-14s %26s %26s" % ("pose", "flat p50 / p95 / max ms", "lit p50 / p95 / max ms")]
     for row in r["poses"]:
-        cell = lambda xs: "%7.2f /%7.2f /%7.2f" % (statistics.median(xs), q(xs, 0.95), max(xs))
+        cell = lambda xs: "%7.3f /%7.3f /%7.3f" % (statistics.median(xs), q(xs, 0.95), max(xs))
         lines.append("%-14s %26s %26s" % (row["label"], cell(row["ms"]["flat"]), cell(row["ms"]["lit"])))
     lines.append("")
     lines.append("screenshots and timings: %s" % out)
