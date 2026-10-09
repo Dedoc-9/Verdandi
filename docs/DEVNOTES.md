@@ -624,6 +624,16 @@ What stands against the tree, as reviewed:
    change; an overlay that may touch floor cells only, read by one converter and checked against the layout, let
    the compiler keep the walls and floor and the game have the rest.
 
+72. **Hash a whole number, not an interpolated one.** Each face of the lit graybox carries a seed that picks its
+   window, its panel tone, its crate. A value handed to every vertex of a triangle arrives at each pixel as an
+   interpolation of equal values, and is not always exactly that value. A hash of it scattered one window into
+   noise. The seeds now travel as whole numbers and are rounded in the shader.
+
+73. **Let decoration show where it stands.** The owner's rule lets the renderer decorate and not decide. The check
+   that holds it computes its own ceiling, the highest eye a player can reach, from the movement's numbers, and asks
+   each decoration to stand above it or outside the map. A line between two points below a ceiling stays below it,
+   so nothing decorative can come between an eye and what it shoots.
+
 ## What to watch (pointers into [`GHOSTS.md`](GHOSTS.md))
 
 - The live editor's laws are proven over a mock, and each host run is one run (G14).
@@ -650,6 +660,8 @@ What stands against the tree, as reviewed:
   (G31). The walk's other lines drop words they do not use (G32).
 - A playable first-person graybox runs beside the certified tree (FPS-GRAYBOX-0, `graybox/`), checked by its own map
   checks and self-test and not by the gate. It has not run on the owner's machine yet.
+- The graybox is lit and dressed (FPS-VISUAL-0), with the first renderer kept beside it. The self-test holds the
+  drawn solids to the collision world and keeps decoration out of play. Its cost on the owner's GPU is not measured.
 - Two defects of the gate are recorded for later repair: a citation's line read and not checked (G34), a record with
   no registration skipped (G35). The witness's empty status is not proof of a clean checkout (G36).
 - The design language's meaning is held as the owner's literal targets at ten designs and four laws' instances, and

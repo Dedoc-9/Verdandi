@@ -158,7 +158,7 @@ HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's 
       ↓
 FPS-GRAYBOX-0    the owner's sprint (2026-10-09): stop expanding the gate; a playable first-person graybox on the canonical level — a tactical layout with three routes, cover, spawns and an objective; mouse look, WASD, jump, collision, a weapon placeholder; one weapon, hits, target feedback, reset. The design compiler keeps the layout; the smallest runtime layer carries height, collision and play. His amendment: the conversion certified, not the mesh — a canonical world from which collision and the render mesh are derived, a manifest, independent conformance checks and defect-directed mutations, a smoke suite, replay determinism on one platform; boundaries in docs/BOUNDARIES.md. The full gate at release checkpoints only; BUILT the same day, beside the certified tree: `python graybox/serve.py` — the tactical map's walls and floor admitted through the design tool, an overlay for the rest, three routes walked by a bot through the real movement, seven planted conversion defects refused
       ↓
-FPS-VISUAL-0     the owner's visual pass (2026-10-09), outside the gate: a sky and a sun, floor materials (the 1 m grid a hidden debug mode), wall panels and trim, varied cover, one weapon model whose transform stays apart from the shot; movement, collision, source hashes and replay kept; screenshots and timings before and after, and no improvement claimed unmeasured. His rule: the canonical world says what the map means, the collision world what blocks, the render world how it looks, and the render world decides nothing that blocks
+FPS-VISUAL-0     the owner's visual pass (2026-10-09), outside the gate: a sky and a sun, floor materials (the 1 m grid a hidden debug mode), wall panels and trim, varied cover, one weapon model whose transform stays apart from the shot; movement, collision, source hashes and replay kept; screenshots and timings before and after, and no improvement claimed unmeasured. His rule: the canonical world says what the map means, the collision world what blocks, the render world how it looks, and the render world decides nothing that blocks; BUILT the same day: a sky and a traced sun, floor modules, panelled walls, dressed cover, a 22-part weapon apart from the shot; the first renderer kept beside it; a self-test that holds the drawn solids to the collision world face by face and keeps decoration out of play, seven planted renderer defects refused; timed in SwiftShader only
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -2405,7 +2405,7 @@ which ended 0; walking with the keyboard, aiming and firing, captured in screens
 **Grade.** OBSERVED (the build container): everything above. NOT_MEASURED: the slice on the owner's host, its frame
 rate, and anything of feel. It is not a rung of the gate and adds no row.
 
-### FPS-VISUAL-0 — the visual pass · **the owner's ruling** (2026-10-09); outside the certified gate
+### FPS-VISUAL-0 — the visual pass · **the owner's ruling** (2026-10-09); outside the certified gate · **built**: the graybox lit and dressed, the first renderer kept beside it
 
 **His ruling.** The graybox plays; the next pass makes it look like a place, and the certified gate stays out of it.
 His finite milestone:
@@ -2430,6 +2430,71 @@ player-blocking objects exist. If visual decoration is intended to affect gamepl
 the authoritative world and checked."*
 
 **Grade.** DECLARED: his ruling. It is not a rung, and it adds no row.
+
+**Built (2026-10-09), beside the certified tree.** `python graybox/serve.py` now draws with a new
+`graybox/web/render.js`, still WebGL 1. The first renderer is kept as `render_flat.js`, unchanged but for its name
+(`--renderer flat`, or `?renderer=flat` in the address), so the two can be compared and the change undone.
+
+| his item | what stands |
+|---|---|
+| 1. sky and light | a sky gradient with a sun disc and thin cloud, per pixel; one sun, 40° up, whose shadow is traced through the canonical world's heights (a texel a cell, each cell a column), with a soft outer edge; light from the sky above and from the ground below; darkening at the foot of walls and in inside corners, from the same heights; distance haze in the sky's colour; a filmic tone curve |
+| 2. floors | a module a cell: poured concrete slabs, each sawn once across; steel tread plate at the bases, with the base's border and a spawn pad in the team's colour; a painted steel deck on the platform, welded every metre, striped where it drops; a painted border where the layout has stairs; the objective painted on the deck as a ring. The 1 m grid is an overlay: G, or `?grid=1` |
+| 3. walls and cover | formed concrete panels with joints and tie holes, a dark baseboard, a steel cap; windows painted on about one panel in five; steel guards on outside corners; a thin team band near the bases. Low cover is dressed as a wooden crate, an olive container or a concrete barrier, tall cover as a concrete column or stacked containers, chosen once for each group of cells; the platform's risers striped. Each is the column's own box: no dressing is larger or smaller than what blocks |
+| 4. the weapon | 22 parts: receiver, rail, handguard, barrel, gas block, muzzle device, front and rear sights, magazine well and a magazine raked forward, grip, trigger and guard, buffer tube, stock and pad, charging handle, ejection port. They are in gunmetal, black polymer, tan polymer and steel. A kick read from the weapon's cooldown, a sway from the look, a bob from the distance walked; a muzzle flash that lights the scene; a streak to where the shot ended. The weapon has its own projection and is drawn over the world. The shot stays the simulation's: from the eye along `Sim.aim`. The weapon's transform enters nothing |
+| 5. preserved | `sim.js` byte for byte (sha256 `86c7e5fe…`); `level.py`, `check.py` and the maps untouched, so the canonical and collision hashes are the same; every earlier check of the runtime's self-test passes; `render.js` calls one function of the simulation, `Sim.aim`, and reads its constants |
+| 6. compared | `serve.py --bench` draws the same poses (each spawn, the middle of each route, a shot) with both renderers at the same size, alternating, and writes a screenshot of each pose by each, with the timings, to `graybox/build/bench/MAP/` |
+
+**Depth.** Beams rest on the wall tops across short runs of open cells, on every fourth row and column. A skyline of
+44 blocks stands outside the map. Windows and recesses are painted, not cut: a recess cut into a wall would be the
+render world deciding where the wall is.
+
+**His rule, as the self-test holds it.** Three checks were added, beside `render-flat`, which builds and draws the
+first renderer. `render-readonly`: the whole state, and its hash, are the same before and after six frames drawn by
+both renderers mid-shot. `render-conforms`, against the collision world:
+
+- every top the lit renderer draws is at its cell's height in C, one to a cell;
+- every upright face runs from the lower neighbour's height to its cell's;
+- every step of C has its face, and there is no other solid in the world mesh;
+- each decoration block is outside the map, or above the play ceiling;
+- the target is drawn inside its hit box.
+
+The play ceiling is the highest eye a player can reach. The check finds it with its own search from the spawns, on
+the movement's numbers (a rise of at most a jump's height and a step): 3.845 m on the tactical map, 2.845 m on the
+witness level. The beams sit at 4 m and above, and a line between two points below the ceiling stays below it. So no
+decoration stands between an eye and anything it can shoot.
+
+Seven defects were planted in the renderer, each refused by its check:
+
+- a cover top drawn 0.3 m above what blocks;
+- a step's face left out;
+- the beams lowered into play;
+- a block of decoration on a route;
+- the target drawn past its hit box;
+- the renderer writing the state;
+- the renderer turning the view.
+
+A first form of the sixth wrote a value the state already held at that moment (the shot had hit, so the hit marker
+was above it). It changed nothing, and was replaced by a write that does change something.
+
+**What it does not do.** A shot aimed at a beam passes through it, and a player can see that. The targets' shadows
+are soft blobs, not traced; nothing casts a shadow but the heightfield's columns. There are no textures and no normal
+maps: every surface is computed in the shader. The anti-aliasing is what the browser gives.
+
+**Run here.** In the build container, in headless Chromium (SwiftShader, a CPU rasterizer):
+
+- the runtime's self-test, 23 / 23 on the tactical map and 20 / 20 on the witness level, through `serve.py
+  --selftest`, which ended 0;
+- the seven plants;
+- the bench, ten samples a pose and renderer at 1280 × 720. The tactical map: the first renderer about 58 ms, the lit
+  one about 1.15 s (the medians of all samples), about 17 to 21 times as long, pose by pose. The witness level: about
+  77 ms and about 1.52 s, about 17 to 22 times.
+
+On a CPU rasterizer that is the cost of the arithmetic per pixel. It says nothing of a GPU. Before and after are in
+the screenshots.
+
+**Grade.** OBSERVED (the build container): the self-test, the plants, the screenshots. MEASURED, in SwiftShader only:
+the bench above. NOT_MEASURED: the lit renderer's cost on the owner's GPU, and so any frame rate; feel. No
+performance improvement is claimed. It is not a rung of the gate, and adds no row.
 
 ### EVIDENCE-LINK-0 — a claim about a recorded event, traced to its source · **accepted as the next slice** (the owner's ruling, 2026-10-09); declared; not registered, nothing built
 

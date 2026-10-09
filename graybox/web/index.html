@@ -21,6 +21,7 @@
   #results { display: none; position: fixed; inset: 0; padding: 16px; background: #14181e; color: #dfe6ee; white-space: pre-wrap; overflow: auto; }
   body.selftest #results { display: block; }
   body.selftest #overlay, body.selftest #hud, body.selftest #help, body.selftest #cross, body.selftest #minimap { display: none; }
+  canvas.aux { position: fixed; left: 0; top: 0; width: 1280px; height: 720px; visibility: hidden; }
 </style>
 </head>
 <body>
@@ -29,11 +30,12 @@
 <div id="cross"></div>
 <div id="hit"></div>
 <canvas id="minimap"></canvas>
-<div id="help">WASD move · mouse look · Space jump · left click fire · R back to spawn · 1 / 2 spawn A / B · M map · Esc release the mouse</div>
+<div id="help">WASD move · mouse look · Space jump · left click fire · R back to spawn · 1 / 2 spawn A / B · M map · G 1 m grid · Esc release the mouse</div>
 <div id="overlay">Click to play
 (the mouse is captured; Esc releases it)</div>
 <pre id="results">running the self-test…</pre>
 <script src="sim.js"></script>
+<script src="render_flat.js"></script>
 <script src="render.js"></script>
 <script src="main.js"></script>
 </body>

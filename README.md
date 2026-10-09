@@ -139,6 +139,7 @@ running the gate.
       a layout the design tool admitted · a pinned level ──► level.py ──► W canonical ──► C collision
                                                                             │                │
                                                          render.js draws W ◄┘   sim.js moves against C ◄── WASD · mouse · fire
+                                                         (lit and dressed; it decides nothing that blocks)
 ```
 
 **The invariants.** Each is a property a part owes, the mechanism that holds it, and a row that goes red.
@@ -267,6 +268,11 @@ rows, grade, limits and falsifier; this is the order and the state.
          │          growing; a first-person graybox on the canonical level — walls and floor admitted through
          │          the design tool, height, cover and play in an overlay beside them — walked, jumped and shot
          │          in the browser: `python graybox/serve.py` (built; not a rung; not yet run on the host)
+         │
+    THE LOOK        FPS-VISUAL-0, by the owner's ruling (2026-10-09), outside the gate: a sky and a traced sun,
+         │          floor modules, panelled walls and dressed cover, a weapon model apart from the shot; the first
+         │          renderer kept beside it (`--renderer flat`); the drawn solids held to the collision world face
+         │          by face, decoration kept out of play (built; timed in SwiftShader only)
          ⋮
     declared        EVIDENCE-LINK-0, each copied claim about a recorded event traced to its source (accepted as
                     the next slice); LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a
