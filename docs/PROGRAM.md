@@ -30,7 +30,8 @@ in the tree exists to keep those distinctions visible, so that a claim can be gr
 
 ## 2. The charter, and the dependency rule
 
-The charter was ratified before the first commit and has not moved since:
+The charter was ratified before the first commit. It has moved once since: BEARING-0 (2026-10-01) added the second
+oracle tag. In summary (the ratified text is the README's):
 
     KERNEL     deterministic · std-only · no shell dependency · no UI toolkit · no presentation API
     WORKSHOP   owns authored edits · validates before projection · can create new authority · records consequences
@@ -48,6 +49,8 @@ The dependencies flow one way, and the negation is enforced as hard as the asser
 
 `MEMBRANE-0` made the one-way law a compile-time wall: a gate row passes precisely when `rustc` *refuses* to compile
 a planted violation. The wall is not a comment; it is the type system declining to let the shell touch the truth.
+It is shown on the membrane's own demonstration types (`workshop/membrane.rs`); the live session keeps its authority
+by module privacy, not by those types.
 
 ---
 
@@ -175,9 +178,12 @@ proven byte-identical on the gate, and only *then* is its speed a separate quest
   the live editor: the loop, the bindings, the tick (§11).
 - `shell/playback.rs`, `shell/livesession.rs` — the session the loop renders, and its journal, seal and loader.
 - `shell/admit.rs` — the admission seam (§12).
+- `shell/designevent.rs`, `shell/designcompile.rs` — the batch (`VRDNP2`) and the design compiler (§12).
+- `kernel/savedform.rs`, `shell/readercourt.rs` — the saved form's reader and its court command (§13).
 - `workshop/sessionwalk.rs` — the session-walk's definition and its verifier, rendering with the references only.
 - `verify/verify.py` — the gate: every claim above as a row that can redden; two runs byte-identical or nothing
   landed.
+- `design/`, `graybox/` — content time and the playable slice, outside the gate ([`CORE.md`](CORE.md)).
 
 ---
 
@@ -223,7 +229,9 @@ them, `REASON-COURT-0`, is built: it holds every refusal the gate requires to a 
 a watch over every child that does not end 0, and a listener on the sealers (see [`ROADMAP.md`](ROADMAP.md) and
 ghost G24). Behind it `MINT-WATCH-0` is built: it hears every refusal raised inside the gate's own process,
 through the interpreter's own raise event, and holds it to a registered row, class, site and count. It names no
-reason (ghost G26).
+reason (ghost G26). After them came DESIGN-EVENT-0, DESIGN-IR/DIFF-0, INPUT-0a and 0b, and HERMENEUTICS-0, and then,
+by the owner's ruling of 2026-10-09, the gate stopped growing. The playable graybox (FPS-GRAYBOX-0, FPS-VISUAL-0)
+stands beside it ([`ROADMAP.md`](ROADMAP.md), [`CORE.md`](CORE.md)).
 
 ---
 
@@ -267,7 +275,7 @@ or feel is claimed (G21), and the screen is read back on a schedule, not at ever
 
 Two different things can change, and they are certified differently.
 
-    program time    the machine changes ──► the gate runs: 242 rows, twice, byte-identical
+    program time    the machine changes ──► the gate runs: 251 rows, twice, byte-identical
     content time    the world changes   ──► the artifact is checked and admitted; the gate does not run
 
 *The gate certifies the machine. ADMIT admits the world's changes.* `ADMIT-0` is the first seam built on that
@@ -299,9 +307,10 @@ parent untouched or the child whole. What an admission does not record is G20; t
 is said there too.
 
 **The design surface.** The first tool built on the seam is `design/`, and it is content time: no row of the gate
-holds it and no gate runs when it is used. It reads a few lines of design text, compiles them to the net
-difference from the current world, admits that into a scratch root to show CURRENT against PROPOSED, and on
-acceptance gives the same proposal bytes to `shell admit` for the project. It can change a world in no other way,
+holds it and no gate runs when it is used. It reads a few lines of design text and has the shell's compiler
+(`shell design-compile`, DESIGN-IR/DIFF-0) turn them into one batch, the net difference from the current world.
+`shell design --dry-run` previews that batch, CURRENT against PROPOSED, and on acceptance `shell design --previewed`
+admits the same bytes, bound to the preview. It can change a world in no other way,
 which is why it may stay uncertified: the worst it can do is propose badly. What it reads off the grid is a view.
 Its limits are ghost G27.
 

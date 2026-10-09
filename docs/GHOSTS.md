@@ -6,15 +6,18 @@
 *The honest catalog. A "ghost" is a thing that is true-enough to ship but not yet nailed down: an unproven
 assumption, a caveat the numbers carry, a soundness question the compiler cannot answer, a claim graded below the
 confidence its headline might suggest. Each ghost is stated plainly, graded, and given an **exorcism** — the
-specific measurement or change that would lay it to rest. Nothing here is a defect the gate missed; these are the
-edges of what the gate is designed to prove. `integrity ≠ truth`, and this file is where that motto is paid for.*
+specific measurement or change that would lay it to rest. Most of these are the edges of what the gate is
+designed to prove; four are defects the gate missed, ruled so by the owner (G30 and G31, repaired; G34 and G35,
+deferred). `integrity ≠ truth`, and this file is where that motto is paid for.*
 
 The grades borrow the claim ladder: **ESTABLISHED / MEASURED / UNDERDETERMINED / SPECULATIVE / NOT_MEASURED**, plus
 **SOUND?** for the one memory-model question and **OBSERVED** for something seen once, outside the gate.
 
 **Where they sit.** G1–G6 are the renderer's. G7–G13 are the present path's. G14–G23 came with the live editor and
 admission. G24–G26 came with the courts over the gate's own refusals. G27 is the design surface's, and G28 the
-batch's. Each folder's
+batch's. G29 is the compiler's, and the rows' written about the present. G30–G33 are the gate's environment and order:
+the clock, the folder, a walk's words, what an earlier row left. G34–G36 are the gate's two deferred defects and the
+witness's limit. Each folder's
 README names the ones that live in it.
 
 ---
@@ -290,7 +293,7 @@ HOST-STATE-1 now provides the two missing witnesses: the clock as the OS compute
 the nominal frequency, uncapped, so boost shows) and the system's paging rates. Both are recorded, never read by a rule,
 and only by a court whose own entry asks for them. They can make a drift explainable. They cannot explain it. Their
 first look already separates two things G13's association had merged: 94% memory load came with 1 hard fault per
-second, so a high memory load does not by itself mean paging (one second, one look). DRIFT-0 (preregistered) is the
+second, so a high memory load does not by itself mean paging (one second, one look). DRIFT-0 (preregistered; its first sitting of four runs sealed on the host) is the
 designed measurement of this ghost: the same locked court, 3 sittings of 4 runs, host state beside each, and a
 descriptive panel of within-run and between-run variation, with no verdict.
 
@@ -545,7 +548,8 @@ and changes the sealers.
 
 `design/` is content time. What it is not:
 
-- **Not on the gate.** Its twelve checks are its own. They run it against a real shell and plant what they claim to
+- **Not on the gate.** Its twelve checks are its own (seventeen since DESIGN-IR/DIFF-0: twelve that drive it as a
+  program, one that holds it as a client of the shell's compiler, and four plants). They run it against a real shell and plant what they claim to
   catch, and no row holds them. A defect in the tool can show a wrong top view or propose the wrong cells; it
   cannot admit what the shell refuses, because the tool has no way to change a session but the shell.
 - **Its view is a second reading of the world.** It replays a session's edits over the base level itself to draw
@@ -578,8 +582,8 @@ refused whole. What that does not give:
 - **Two of the tool's rules are nobody else's.** The design tool refuses a design that closes the camera's cell or
   writes over a stair, and called both refusals it predicted of the seam. The seam makes neither: the admission
   admits a batch that closes the camera's cell, and one that opens a stair (seen with the shell as built,
-  2026-10-07). Until the compiler is built those rules are held by uncertified Python, and after it they are the
-  source language's and still not the authority's: a batch from any other editor is not held to them. The owner
+  2026-10-07). Until the compiler was built those rules were held by uncertified Python. Since DESIGN-IR/DIFF-0 they are
+  the source language's and still not the authority's: a batch from any other editor is not held to them. The owner
   ruled that this stays so in DESIGN-IR/DIFF-0, and carries the question forward unanswered: *Should camera/stair
   validity be an authority invariant, or deliberately remain a property of the design language?*
 - **The cost of an admission still grows with the session.** Every admission replays the whole parent and verifies
@@ -842,7 +846,10 @@ or `skip-worktree` and then edited leaves the status empty and the tree id uncha
 bytes. Both were shown with a local Git, not on the owner's host.
 
 **Exorcism.** Not the witness's, by his ruling: its empty status alone is not to be taken as proof of a clean
-checkout. A direct check of the Git state stands beside it at a push.
+checkout. A direct check of the Git state stands beside it at a push. The first was made before 0174–0177 were
+applied on the host (2026-10-09): no `status.showUntrackedFiles` setting, an empty status with every untracked file
+shown, no flagged file, `HEAD` at its upstream. Before the push of `222f856` the status and the flags were checked
+again. Before the push of `4247a61` none is recorded.
 
 
 ---
@@ -857,7 +864,8 @@ purpose. Of the live editor's, G14, G15, G16, G18, G20, G23 and G25 are limits o
 past them; G24 is a built court with its reach and its debts stated; G26 is the stated reach of a second built watch; G27 is the first content-time tool, uncertified by design; G28 is the built batch's reach, with what it leaves to the compiler, to the workshop and to the host stated; G17 is a design tension the charter names and the rows hold in check; G19 is a seam whose remedy is
 built, with the court's reach stated; G21 is a measurement not yet taken; G22 is two things that happened once and were never
 explained. G34 and G35 are defects of the gate and G36 a limit of the host's witness, each recorded by the owner's
-ruling for repair later.
+ruling for repair later. G29 is the compiler's stated reach; G30 and G31 are defects found and repaired; G32 is
+declared and not demonstrated; G33 is repaired for the walk's rung, and its class is recorded.
 The program's value is that it *knows* these are ghosts and *says so* — a result the gate could not prove is graded
 exactly that far and no further. That is the whole point of the discipline: a dead end is documented as rigorously
 as a win, and a hypothesis is never dressed as a measurement.

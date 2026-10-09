@@ -7,7 +7,8 @@
 the results durable, and the practices worth keeping. This is the narrative counterpart to the terse ledger in
 [`verify/RUNGS.md`](../verify/RUNGS.md). **Part I** is the optimization campaign, from `GAUNTLET-0` to the
 `GAUNTLET-2` LOCK, with its epilogue on the present path. **Part II** is the live campaign, from `LIVE-LOOP-0` to
-`ADMIT-0`: the window made a place where the world is walked, turned and edited, and where a proposal is admitted.*
+`ADMIT-0`: the window made a place where the world is walked, turned and edited, and where a proposal is admitted.
+Its lessons and its watch list run on past ADMIT-0: the compiler, the design language's meaning and the graybox.*
 
 ---
 
@@ -126,12 +127,13 @@ Every rung ran the same loop, and the loop is the product as much as the code:
   and FRAME-SPLIT-0 found, twice, no single dominant phase (blit 427–434‰, emit ~270‰, frame ~255‰, bgr ~137‰): no
   target is promoted (G8). The narrower diagnostic of the largest component, PRESENT-SCALE-0, found the blit's 2:1
   reduction material on this host (the 1:1 blit ~5.3–5.6 ms cheaper at p50, confirmed; G11). Choosing the shell's
-  presentation geometry is still a separate court. Two narrower diagnostics have each run twice on the host.
+  presentation geometry was a separate court, decided since (PRESENTATION-CHOICE-0, below). Two narrower diagnostics have each run twice on the host.
   PRESENT-STRETCH-0 found `COLORONCOLOR`'s blit materially cheaper than the default `BLACKONWHITE`'s in both runs;
   `HALFTONE` read material once and then CONFOUNDED, so it is unresolved. ALLOC-REUSE-0 read ALLOCATION MATERIAL
   twice: reusing the frame's buffers was 1.6–1.8 ms cheaper at the envelope p50. Neither adopts anything.
-- The render-loop courts time a modelled loop: the shipped shell renders once (`run`) or pre-renders (`playback-window`)
-  and has no per-frame render loop (G12). ALLOC-REUSE-1 therefore adopts only an entry contract for a future live
+- The render-loop courts time a modelled loop: when they ran, the shipped shell rendered once (`run`) or pre-rendered
+  (`playback-window`) and had no per-frame render loop (G12). LIVE-LOOP-0 has built one since; its phases are
+  untimed (G21). ALLOC-REUSE-1 therefore adopts only an entry contract for a future live
   loop. Both of its runs passed (reuse's p99 at 886‰ and 929‰ of fresh's), so it reads ADOPT, and ALLOC-REUSE-1 LOCK
   makes `LoopRenderer` the production entry for in-loop rendering, with every fresh render call site pinned.
 - The same court can run 40–60% slower on another run the same day (G13). HOST-STATE-0 put memory pressure beside one
@@ -271,6 +273,9 @@ registered.
   watch.
 
 ## The process rhythm, as it runs now
+
+*For a rung of the gate. Since the owner's ruling of 2026-10-09 the full gate runs at release checkpoints, and other
+work runs the checks his table names ([`ROADMAP.md`](ROADMAP.md), FPS-GRAYBOX-0).*
 
     court ──► ratify ──► preregister, in its own commit, pushed first ──► build ──► mutation-test ──►
         gate TWICE byte-identical (a third pass with the host's records present) ──► deliver as a patch ──►
@@ -670,11 +675,15 @@ What stands against the tree, as reviewed:
 - A playable first-person graybox runs beside the certified tree (FPS-GRAYBOX-0, `graybox/`), checked by its own map
   checks and self-test and not by the gate. On the owner's machine both pass.
 - The graybox is lit and dressed (FPS-VISUAL-0), with the first renderer kept beside it. The self-test holds the
-  drawn solids to the collision world and keeps decoration out of play. On the owner's GPU the lit renderer takes
-  1.4 to 1.5 times the first renderer's time, under 2 ms a draw and readback at 1280 × 720 (one run). The mouse
-  capture failed on his machine and was repaired (0178). He has played it since.
+  drawn solids to the collision world and keeps decoration out of play. On the owner's AMD GPU (the browser names
+  only a family) a draw and its readback took 1.4 to 1.5 times as long at the median, the lit renderer's medians
+  under 2 ms at 1280 × 720 (one run). The mouse capture failed on his machine and was repaired (0178). He has
+  played it since.
 - Two defects of the gate are recorded for later repair: a citation's line read and not checked (G34), a record with
   no registration skipped (G35). The witness's empty status is not proof of a clean checkout (G36).
+- The documents were audited against the code on 2026-10-09 ([`REPOSITORY-TRUTH.md`](REPOSITORY-TRUTH.md)). What
+  was stale is corrected or listed, with what the audit observed of the gate itself: the registration ledger's hash
+  is unkeyed, and the verdict reads PASSED whatever the number skipped.
 - The design language's meaning is held as the owner's literal targets at ten designs and four laws' instances, and
   both programs are held to it (HERMENEUTICS-0). Anywhere else a misreading the two programs share is caught by
   neither of DIFF-0's equalities (G29).

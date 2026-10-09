@@ -35,7 +35,7 @@ computes no change set: the batch is written by `shell design-compile`, every ch
 | `undo` | the project stands at the session before | the project's pointer; no file is deleted |
 
 `new` or `open` starts a project, `grant` sets what may be admitted, `reject` drops a proposal, `status` says where
-things stand. Every command takes `--project DIR`; without it the project is `design/work/`.
+things stand. Every command takes `--project DIR`; without it the project is `$VERDANDI_DESIGN`, or else `design/work/`.
 
 ```
 python design/design.py new
@@ -61,7 +61,7 @@ paint floor 60,70,90
 |---|---|
 | `open x0,z0 x1,z1` | every cell of the rectangle becomes floor (one corner alone is one cell) |
 | `close x0,z0 x1,z1` | every cell of the rectangle becomes rock |
-| `room x0,z0 x1,z1` | the rectangle's rim becomes rock and its inside floor |
+| `room x0,z0 x1,z1` | the rectangle's rim becomes rock and its inside floor (at least three cells each way) |
 | `entrance x,z` | one cell becomes floor |
 | `paint CLASS R,G,B` | a tile class (`wall0` `wall1` `wall2` `wall3` `floor`) takes one colour |
 
@@ -70,8 +70,8 @@ from the current world: one operation per cell or class that ends up different. 
 and 4,096 operations. `x` runs across, `z` runs down, both from 0.
 
 The text is `VERDANDI-DESIGN 0`, the source language DESIGN-IR/DIFF-0 registered, pinned at the byte: lines end in
-LF (a CR directly before it is dropped), words are separated by spaces or tabs, and a comment runs from `#` to the
-end of its line. Three things it will not say, each refused by the compiler with the line: floor written to a cell
+LF (a CR directly before it is dropped), words are separated by spaces or tabs, and from the second line on a comment runs from `#`
+to the end of its line (the first line is the version, and takes none). Three things it will not say, each refused by the compiler with the line: floor written to a cell
 on the level's border (`COMPILE-BORDER`), anything written to a stair (`COMPILE-STAIR`), and a design that leaves
 the camera's cell closed (`COMPILE-CAMERA`). A design that changes nothing is refused too (`COMPILE-EMPTY`): a
 batch says at least one operation.
@@ -117,7 +117,7 @@ again differs in a byte; a comment is enough.
   pressed. `open --session` starts from one saved in the window.
 - **`undo` moves the project's pointer.** The session stepped back from stays on disk, sealed and unchanged.
 - **Its checks are its own.** `python design/test_design.py` drives the tool against a real shell: seventeen
-  checks. Thirteen drive it as a program. One holds it as a client of the shell's compiler (DESIGN-IR/CLIENT-FENCE-0:
+  checks. Twelve drive it as a program. One holds it as a client of the shell's compiler (DESIGN-IR/CLIENT-FENCE-0:
   the pending batch is byte for byte what the compiler writes; with a stand-in compiler the tool proposes what the
   stand-in wrote; an admit is bound to its preview; the source holds no line of the batch language to write), and
   four are plants — changed copies of the tool that compute their own difference, rewrite the compiler's result,

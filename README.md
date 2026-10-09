@@ -1,14 +1,15 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
 # Verðandi — a windowed design workshop over a frozen oracle
 
-`Verðandi` (Verdandi in ASCII, for the repository and the crate names) is the second norn: what is becoming,
+`Verðandi` (Verdandi in ASCII, wherever ASCII is wanted) is the second norn: what is becoming,
 beside `Urðr`, what has become. It is a deterministic 1080p game-rendering studio with a measurable
 low-latency presentation path — the target stated as what can be measured, never as a claim. Its native
 kernel reproduces the pixels of the certified renderer in [`Dedoc-9/Urdr`](https://github.com/Dedoc-9/Urdr)
 bit for bit; its workshop turns an authored edit into a new authority and an exact consequence record; its
 shell owns the window, the input and the presentation. Since the live rungs the shell also carries the session
 being authored: one append-only log whose replay is the world on the screen, journaled as it grows, saved on
-Esc, and verified by the workshop.
+Esc, and read back and replayed before it counts as saved. The workshop's own replay, which shares no renderer with
+the shell, verifies a saved session when the gate's rows or the sealer run it.
 
 **Author:** Daniel J. Dillberg · **Contact:** [bigdilly95@gmail.com](mailto:bigdilly95@gmail.com)
 **License:** [AGPL-3.0-only](LICENSE)
@@ -58,8 +59,8 @@ admission is sealed on the host: ADMIT-0, the admission seam. In the owner's wor
 world's changes.**
 
 The first tool on that seam is built, off the gate: [`design/`](design/README.md). A person, a script or a model
-writes a few lines of design text; the tool compiles them, shows the current world against the proposed one, and,
-on acceptance, gives the proposal to the shell to admit. No gate runs in that loop. By the owner's adjustment of
+writes a few lines of design text; the shell's compiler turns them into one batch, the tool shows the current
+world against the proposed one, and, on acceptance, gives the batch to the shell to admit. No gate runs in that loop. By the owner's adjustment of
 2026-10-06 the engineering seam is frozen, and a new gate is added only for a new engineering invariant.
 
 Running that tool found one. A design of 60 operations was 60 runs of the shell, each verifying the whole session.
@@ -98,7 +99,7 @@ to stay there.
 | 1 | The same picture | The kernel reproduces the oracle's witnesses bit for bit. Every faster path is a sibling held byte for byte to a frozen reference that is never edited for speed. |
 | 2 | One history | Every accepted change (a step, a look, an opened cell, a painted class, an admitted proposal) is one typed event in one append-only log. The world on the screen is that log's replay. |
 | 3 | A history that outlives the run | An event is journaled before it counts. A session is saved, read back and verified before it counts as saved, and it replays to the same head on another machine. |
-| 4 | Proposals admitted, never executed | A proposal is bytes in a line language with one recognizer. It is refused with a typed reason or it becomes one ordinary event. |
+| 4 | Proposals admitted, never executed | A proposal is bytes in a line language with one recognizer. It is refused with a typed reason or it becomes one ordinary event; a batch becomes N ordinary events under one admission. |
 | 5 | Claims that carry their limits | Every record states its grade, what it certifies and what it must not be read as. A method is hash-locked before its number. |
 
 **Not goals.** A general game engine. A latency, frame-rate or feel claim: timing is measured off the gate, on a
@@ -148,7 +149,7 @@ running the gate.
 |---|---|---|
 | The kernel's pixels are the oracle's | both witnesses recomputed against the tags on every gate | `kernel-oracle`, `kernel-corpus`, `bearing-oracle` |
 | A fast path never moves a pixel | byte-identity to the frozen reference at every tread, partition and thread count | `gauntlet2-threaded-equiv`, `bearingfast-court` |
-| A read cannot edit the authority | the borrow checker: the planted edit does not compile | `membrane-wall` |
+| A read cannot edit the authority | the borrow checker: the planted edit does not compile. Shown on the membrane's demonstration types; the live session keeps its authority by module privacy | `membrane-wall` |
 | The bytes handed to the screen are the kernel's | the blit-hash law; the composed screen read back | `shell-blit-law`, `presentexact-court` |
 | Order is meaning, batching is not | one fold over the log; a checkpoint and a full replay reach one head | `sessionwalk-interleave`, `sessionwalk-batch-invariance` |
 | A live session is a file the workshop verifies | save, read back, replay, and only then count it saved | `livesession-save`, `livesession-recover` |
@@ -173,6 +174,9 @@ Each folder's README is its own blueprint: the contract, the parts, the invarian
 | [`workshop/`](workshop/README.md) | the design loop: an edit in, a new authority out, a consequence record beside it. Validates before it projects. Its `sessionwalk verify` is the replay every saved live session is held to. |
 | [`shell/`](shell/README.md) | the window: present the kernel's framebuffer, pump input, read the composed screen back. Since the live rungs also the loop, the tick, the live session's log with its journal and seal, and the admission seam. It renders nothing itself. |
 | [`verify/`](verify/README.md) | the gate: every claim above as a row that can redden; two runs byte-identical or nothing landed. Beside it the registry of methods and the off-gate sealers. |
+| [`design/`](design/README.md) | content time: the design tool, a client of the shell's compiler and admission. It holds no authority and computes no change set; no row holds it. |
+| [`graybox/`](graybox/README.md) | the playable first-person slice (FPS-GRAYBOX-0, FPS-VISUAL-0), beside the certified tree: a converter, map checks, a local server and a browser runtime, each with its own checks; no row reads it. |
+| [`docs/`](docs/CORE.md) | the program, the roadmap, the ghosts, the dev notes, the boundaries, and since the audit of 2026-10-09 the core map, the formats, the audit itself and its research. |
 
 ## The sequence, as built
 
@@ -273,8 +277,8 @@ rows, grade, limits and falsifier; this is the order and the state.
     THE LOOK        FPS-VISUAL-0, by the owner's ruling (2026-10-09), outside the gate: a sky and a traced sun,
          │          floor modules, panelled walls and dressed cover, a weapon model apart from the shot; the first
          │          renderer kept beside it (`--renderer flat`); the drawn solids held to the collision world face
-         │          by face, decoration kept out of play (built; on the host's GPU the lit renderer 1.4 to 1.5
-         │          times the first, under 2 ms a draw and readback at 1280 × 720; pushed, 3dc15ec..222f856)
+         │          by face, decoration kept out of play (built; on the host's AMD GPU the lit renderer's median
+         │          draw and readback 1.4 to 1.5 times the first's, under 2 ms at 1280 × 720; pushed, 3dc15ec..222f856)
          ⋮
     declared        EVIDENCE-LINK-0, each copied claim about a recorded event traced to its source (accepted as
                     the next slice); LIVE-AI-EDIT-0 → GUI (the owner's order; none registered); semiotics, a
@@ -297,7 +301,7 @@ one route only. Which, is decided when such a rung is seated.
 
 ## Running
 
-    python verify/verify.py                                  # the gate; needs rustc for the kernel rows
+    python verify/verify.py                                  # the gate; most rows need rustc and SKIP without it (read the skip count); -v prints each row's text
     rustc -O kernel/main.rs -o verify/build/kernel           # the kernel alone
     verify/build/kernel --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
     verify/build/kernel ... --bench 200 --warm 20            # off-gate: renderer time on this host
@@ -312,7 +316,7 @@ one route only. Which, is decided when such a rung is seated.
     python verify/bearingsweep.py --host $env:COMPUTERNAME    # off-gate: BEARING-FAST-0's sweep (about an hour), sealed
     python verify/bench.py --host $env:COMPUTERNAME           # off-gate: the kernel's frame time, sealed under the envelope
     verify/build/shell witness --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles --camera 34,28,W
-    rustc -O --cfg shell_window shell/main.rs -o verify/build/shell.exe   # Windows: build WITH the window
+    rustc -O --cfg shell_window shell/main.rs -o verify/build/shell.exe   # Windows: build WITH the window (a gate run rebuilds this path without it)
     verify/build/shell.exe run --level ... --camera 34,28,W --measure 200 --host $env:COMPUTERNAME   # the window + present timing
     verify/build/shell.exe show --level ... --camera 34,28,W                    # the certified picture 1:1, the screen read back; Esc closes
     verify/build/shell.exe show-playback --session workshop/attest/sessionwalk-demo.json   # a sealed session, 1:1, each frame read back
@@ -326,9 +330,15 @@ one route only. Which, is decided when such a rung is seated.
     verify/build/edit record --level oracle/levels/witness.lvl --tiles oracle/tiles/identity.tiles \
         --camera 34,28,W --edit cell:31,27,. --out-dir out --name cell
     verify/build/edit check --record out/cell.record.json
+    python design/design.py inspect                          # the design tool (content time): new, open, grant, inspect, propose, preview, admit, reject, undo, status
+    python design/test_design.py                             # the design tool's seventeen checks, against a real shell; no row
+    python graybox/check.py --compile                        # FPS-GRAYBOX-0: the maps' conversion held to their source; the tactical layout compiled again
+    python graybox/serve.py tactical --selftest              # the graybox runtime's self-test in your browser (23 checks; the witness level, 20)
+    python graybox/serve.py                                  # play it; --renderer flat for the first renderer, --bench to time both
 
-Landing condition: two consecutive gate runs byte-identical and `GATE PASSED`. The ledger is
-[`verify/RUNGS.md`](verify/RUNGS.md).
+Landing condition, for a rung of the gate: two consecutive gate runs byte-identical and `GATE PASSED`. Since the
+owner's ruling of 2026-10-09 the full gate runs at release checkpoints, and other work runs its own checks
+([`docs/ROADMAP.md`](docs/ROADMAP.md), FPS-GRAYBOX-0). The ledger is [`verify/RUNGS.md`](verify/RUNGS.md).
 
 ## Discipline
 
@@ -376,7 +386,8 @@ What the gate does not prove is stated, graded and given the measurement that wo
   exhaustively only at the save.
 - A session's seal is a hash. It shows the file is whole, not who wrote it.
 - The shell replays the session with its own copy of the workshop's fold; the two are held together by rows and by
-  the workshop verifying every saved file.
+  the workshop's replay, which the gate's rows and the sealer run on saved sessions (the shell does not run it when
+  it saves).
 - The two readers of the saved form have one author. Their agreement shows consistency; the verdicts written down
   before either existed are what stand against a shared mistake.
 - No latency, frame-rate or feel claim is made for the live loop, and nothing is claimed about a model.
@@ -387,8 +398,15 @@ What the gate does not prove is stated, graded and given the measurement that wo
 |---|---|
 | [`docs/PROGRAM.md`](docs/PROGRAM.md) | the program in depth: the charter, the four layers, the frozen oracle, the RECORD-0 envelope, preregistration, the two-court rule, how a frame flows, the live session, admission, and the saved form |
 | [`docs/GHOSTS.md`](docs/GHOSTS.md) | what the gate does *not* prove: every unproven assumption, caveat and soundness question, each graded and given the measurement that would settle it |
-| [`docs/DEVNOTES.md`](docs/DEVNOTES.md) | dev notes: the optimization campaign (`GAUNTLET-0` to the `GAUNTLET-2` lock), the present-path courts, and the live campaign (`LIVE-LOOP-0` to `ADMIT-0`) — what each court found, the process rhythm, the lessons |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | where the program stands and the sequenced, falsifiable route: the live loop (built), admission (ADMIT-0 and READER-COURT-0 built), the declared design-event stream, and the presentation work beside it |
+| [`docs/DEVNOTES.md`](docs/DEVNOTES.md) | dev notes: the optimization campaign (`GAUNTLET-0` to the `GAUNTLET-2` lock), the present-path courts, and the live campaign (`LIVE-LOOP-0` to `ADMIT-0`, its lessons and watch list running on to the graybox) — what each court found, the process rhythm, the lessons |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | where the program stands and the sequenced, falsifiable route: the live loop, admission, the batch, the compiler and the language's meaning (built), the playable graybox (built, beside the gate), and what is declared |
+| [`docs/CORE.md`](docs/CORE.md) | the implementation map: modules, builds, data flow, authority, the restrictions as enforced, what the evidence supports, what a change touches |
+| [`docs/BINARY-SDK.md`](docs/BINARY-SDK.md) | every byte format, from its writers and readers; the trust vocabulary; what an SDK would need decided (there is none) |
+| [`docs/BOUNDARIES.md`](docs/BOUNDARIES.md) | who may read and write what, where the certified tree ends, and the three worlds of the graybox |
+| [`docs/REPOSITORY-TRUTH.md`](docs/REPOSITORY-TRUTH.md) | the audit of 2026-10-09: what the documents said against what the code does, each finding's disposition |
+| [`docs/RESEARCH-FINDINGS.md`](docs/RESEARCH-FINDINGS.md) | outside sources set against the repository: what they establish, what they do not, experiments |
+| [`graybox/README.md`](graybox/README.md) | the playable slice: how to run it, test it and time it; its map format; what runs and what does not |
+| [`AGENTS.md`](AGENTS.md) | the brief for a coding agent: the rules a change must keep, the checks to run, where things are |
 | [`verify/RUNGS.md`](verify/RUNGS.md) | the ledger: every seated rung, its rows, its grade, its limits, its falsifier |
 | [`design/README.md`](design/README.md) | the design surface, content time: the five verbs, the design text, what is authority and what is a view, its limits |
 | [`EPISTEMIC-INVARIANCE.md`](EPISTEMIC-INVARIANCE.md) | the author's isolation theorem, and the honest limits of its own formalism |

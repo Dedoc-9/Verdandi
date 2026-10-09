@@ -4,7 +4,9 @@
 `python verify/verify.py` runs every row and prints `GATE PASSED` or `GATE FAILED`, then a reconcile line
 naming the rowset. A change is landed only when two consecutive runs on one tree are byte-identical (`sha256` of
 the two logs equal) and the gate reads PASSED. Rows that need `rustc` are SKIPPED without it, count-stable, so the
-rowset digest does not depend on the toolchain being present — only the verdict does.
+rowset digest does not depend on the toolchain being present — only the skip count does. The verdict reads PASSED
+whenever no row fails, so a pass without `rustc` is read with its skip count. `-v` prints each row's text. Since the
+owner's ruling of 2026-10-09 the full gate runs at release checkpoints.
 
 ## Blueprint
 
@@ -119,7 +121,10 @@ row that would redden if the claim were false.
   as predicted, and repaired by INPUT-0a: a walk's path is the rest of its line, and one row carries a space; the
   pass that found it and the owner's clone both read 247 / 0 after the repair. G31.
 - **A registration is text the gate hashes.** The entry's chain hash is recomputed on every pass, so a silent edit
-  to a locked method is a red row and not a judgement call.
+  to a locked method is a red row and not a judgement call. An edit made together with a recomputed hash is not: the
+  hash is unkeyed. What holds such an entry is a full hash constant in a rung's rows, a committed record that cites
+  it, or the Git history; nine entries have neither of the first two ([`../docs/REPOSITORY-TRUTH.md`](../docs/REPOSITORY-TRUTH.md),
+  T-12).
 - **Count again.** The gate reads what it is pointed at. Two facts recorded for READER-COURT-0 (the number of JSON
   parsers, the deepest nesting among the records) were each off by one until they were recounted. Neither was a
   row's to catch.
@@ -127,10 +132,11 @@ row that would redden if the claim were false.
   One opened in text mode became CR LF on the owner's Windows host and was refused for its form; the watch said so.
 - **The register is the expected side.** `reasons.json` was written from the gate's own statements and variables
   and from registered text, never from what a program printed. Its line numbers are lines of the `verify.py` it
-  names by hash; the build will move them and hold the text.
+  names by hash; the build moves them and holds the text. G34 records that a cited line number is read and not
+  checked.
 - **Read the register's counts by the entry's sentence.** Four parts make the 1,103 endings: 1,072 in a code head,
   23 `REFUSE(any)`, 6 held only by their row, 2 unjudged. `endings_with_one_code_in_prose` (3) is inside the first
-  part and is not a fifth. The build's row is to hold that and cite the entry for it.
+  part and is not a fifth. `reasoncourt-register` holds that and cites the entry for it.
 - **A mutant can be a non-mutant.** In READER-COURT-0's mutation test four planted defects survived because they
   were written so that they changed nothing. A survivor is first a question about the mutant.
 - **The dev harness is not the gate.** Running chosen rows alone can fail a row that depends on an earlier row's

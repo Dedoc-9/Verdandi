@@ -5,7 +5,7 @@
 
 *Where the program stands, what "a live authorable world" means for it, and the sequenced, falsifiable path to get
 there. This roadmap names rungs that are already public in [`verify/RUNGS.md`](../verify/RUNGS.md), and — since the
-owner published it — the route to walking in a live, authorable world, whose rungs are named but not yet built. The
+owner published it — the route to walking in a live, authorable world, whose rungs were named before they were built (most are built now). The
 general techniques it points at are cited prior art, not commitments. Other candidate rungs are under private
 consideration pending the owner's consensus and are not enumerated here.*
 
@@ -30,8 +30,9 @@ turns to any registered heading, on a renderer held byte for byte to a reference
 the first **admission** seam is built and measured: `ADMIT-0` recognizes a proposal in a line language or refuses
 it, and admits it as one ordinary edit.
 
-And everything the tree saves and reads back is now one bounded language with one verdict from every reader
-(`READER-COURT-0`, built; the gate passes on the host, 226 rows, and is pushed).
+And everything the tree's registered writers save and read back is now one bounded language with one verdict from
+every reader (`READER-COURT-0`, built; the gate passes on the host, 226 rows, and is pushed). The refusal log, the run
+ledger and the files of `design/` and `graybox/` are plain JSON outside it.
 
 And every refusal the gate requires is now held to a registered reason (`REASON-COURT-0`, `337ab021`, built: six
 rows), and every refusal raised inside the gate's own process is claimed by a row, a class, a site and a count
@@ -54,7 +55,7 @@ rows and passes here and on the host, FULL×2 there by the witness, and is pushe
 the gate stops growing: it is a release instrument, and the daily objective is a playable first-person graybox
 (`FPS-GRAYBOX-0`, below).
 
-What is *not* yet done: that compiler; design objects that outlive admission, constraints, and a model at the seam
+What is *not* yet done: design objects that outlive admission, constraints, and a model at the seam
 (declared, not registered); any measurement of the live loop's timing; richer edits than a cell and a tile class;
 and semantics the frozen oracle never certified.
 
@@ -158,7 +159,7 @@ HERMENEUTICS-0   named by the owner (2026-10-07) for the gap DESIGN-IR/DIFF-0's 
       ↓
 FPS-GRAYBOX-0    the owner's sprint (2026-10-09): stop expanding the gate; a playable first-person graybox on the canonical level — a tactical layout with three routes, cover, spawns and an objective; mouse look, WASD, jump, collision, a weapon placeholder; one weapon, hits, target feedback, reset. The design compiler keeps the layout; the smallest runtime layer carries height, collision and play. His amendment: the conversion certified, not the mesh — a canonical world from which collision and the render mesh are derived, a manifest, independent conformance checks and defect-directed mutations, a smoke suite, replay determinism on one platform; boundaries in docs/BOUNDARIES.md. The full gate at release checkpoints only; BUILT the same day, beside the certified tree: `python graybox/serve.py` — the tactical map's walls and floor admitted through the design tool, an overlay for the rest, three routes walked by a bot through the real movement, seven planted conversion defects refused
       ↓
-FPS-VISUAL-0     the owner's visual pass (2026-10-09), outside the gate: a sky and a sun, floor materials (the 1 m grid a hidden debug mode), wall panels and trim, varied cover, one weapon model whose transform stays apart from the shot; movement, collision, source hashes and replay kept; screenshots and timings before and after, and no improvement claimed unmeasured. His rule: the canonical world says what the map means, the collision world what blocks, the render world how it looks, and the render world decides nothing that blocks; BUILT the same day: a sky and a traced sun, floor modules, panelled walls, dressed cover, a 22-part weapon apart from the shot; the first renderer kept beside it; a self-test that holds the drawn solids to the collision world face by face and keeps decoration out of play, seven planted renderer defects refused; timed in SwiftShader only
+FPS-VISUAL-0     the owner's visual pass (2026-10-09), outside the gate: a sky and a sun, floor materials (the 1 m grid a hidden debug mode), wall panels and trim, varied cover, one weapon model whose transform stays apart from the shot; movement, collision, source hashes and replay kept; screenshots and timings before and after, and no improvement claimed unmeasured. His rule: the canonical world says what the map means, the collision world what blocks, the render world how it looks, and the render world decides nothing that blocks; BUILT the same day: a sky and a traced sun, floor modules, panelled walls, dressed cover, a 22-part weapon apart from the shot; the first renderer kept beside it; a self-test that holds the drawn solids to the collision world face by face and keeps decoration out of play, seven planted renderer defects refused; timed in SwiftShader, then on the host (0179: the lit renderer's median draw and readback 1.36–1.53 times the first's)
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -379,7 +380,7 @@ styles, or "below the window layer" when none does. It is appended after the ver
 acts, and it cannot change a verdict. The first host refusal needed a separate probe run and the owner's knowledge to
 be traced to an overlay. The next one names its candidates itself. A candidate is not a cause.
 
-### HOST-STATE-1 — the reported clock and paging · **landed** (`b992d9dd`); first host look taken; no court records it yet
+### HOST-STATE-1 — the reported clock and paging · **landed** (`b992d9dd`); first host look taken; recorded beside each run of DRIFT-0's sitting 1
 Version 2 of the host snapshot: HOST-STATE-0's fields unchanged, then the clock the OS computes (% Processor Performance
 and % Processor Utility, uncapped, with the nominal × performance estimate) and the system's paging rates, each over a
 1000 ms window. Version 1 stays the default, so no existing court's records change. It fills the two gaps G13 left: a
@@ -1201,7 +1202,7 @@ the research found". Nothing about the seam itself is ESTABLISHED or MEASURED. *
 recognizer exists; that any of the courts holds; that a model can write a proposal worth admitting; any safety
 property of a system that includes a model. The state is registered, build pending.
 
-### The design language — one design authority, many editors · **declared** (the owner's, 2026-10-03); not registered, nothing built
+### The design language — one design authority, many editors · **declared** (the owner's, 2026-10-03); its objects and constraints not registered and not built; a cell-level design text and its certified compiler built since (DESIGN-IR/DIFF-0)
 A design text the owner brought on 2026-10-03, after the registration, and asked to have recorded. Like the two
 texts above it is a reply to his own description of what he is after, so its wording is quoted where it states the
 rule and summarized elsewhere. It extends the design-event stream and seats nothing.
@@ -2156,7 +2157,7 @@ The two acceptances that are mechanical are built into rows that exist (`DESIGN-
 No row is added. His last word on the rung: *I would stop adding architecture here.* The next rung's condition is
 met, and it waits for his word.
 
-### Hermeneutics and semiotics — what the design language means, apart from what compiles it · hermeneutics **built** (`22d52d02`, under its amendment `7e012752`; four rows, 251 in the gate; FULL×2 on the host; pushed), semiotics **declared** (texts the owner brought, 2026-10-07); nothing built
+### Hermeneutics and semiotics — what the design language means, apart from what compiles it · hermeneutics **built** (`22d52d02`, under its amendment `7e012752`; four rows, 251 in the gate; FULL×2 on the host; pushed), semiotics **declared** (texts the owner brought, 2026-10-07), not built
 Two texts the owner brought with the push of DESIGN-IR/DIFF-0's amendment, the second after he broke off the first
 exchange. They speak to an assistant, so their rules are quoted and the rest is summarized. They seat nothing.
 
@@ -2517,8 +2518,10 @@ On his machine:
   and admitted again to head `c862f3b1aee2`;
 - the self-test, 23 / 23 on the tactical map, each line as in the container, down to the replay's last hash
   `91350c39A` and the read-only check's `9613beecA`;
-- the bench, run twice, in Firefox 157 on Windows, through ANGLE on Direct3D 11 to a Radeon R9 200-series GPU (the
-  browser's own words, which it marks as approximate). It ran at 1280 × 720 with 20 samples of one draw each.
+- the bench, run twice, in Firefox 157 on Windows, through ANGLE on Direct3D 11 to an AMD GPU. It ran at 1280 × 720
+  with 20 samples of one draw each. *(Corrected 2026-10-09, after the record was written: it said "a Radeon R9 200-series GPU". The browser
+reported "ANGLE (AMD, Radeon R9 200 Series Direct3D11 vs_5_0 ps_5_0), or similar", the name Firefox gives a
+whole family of AMD GPUs; the model is not established. [`RESEARCH-FINDINGS.md`](RESEARCH-FINDINGS.md), R-8.)*
 
 The first renderer's medians were 1.0 to 1.5 ms a pose. The lit renderer's were 1.0 to 2.0 ms. Every timing was a
 whole millisecond, and no sample passed 4 ms. The page's clock in that browser advanced a millisecond at a time, so
@@ -2558,7 +2561,7 @@ beforehand from the pushed history (lesson 74, met). On his machine:
 - the self-test, 23 / 23 on the tactical map and, for the first time there, 20 / 20 on the witness level, each line as
   in the container;
 - the bench, with the page now isolated, so its clock stepped by 0.02 ms. Each sample was the mean of ten draws, each
-  read back; 20 samples a pose, at 1280 × 720, in Firefox 157 on the Radeon R9 200-series GPU.
+  read back; 20 samples a pose, at 1280 × 720, in Firefox 157 on the same AMD GPU (its model not established; see the correction above).
 
 | pose | first renderer p50 / p95 ms | lit renderer p50 / p95 ms |
 |---|---|---|
@@ -3272,7 +3275,9 @@ form of authored semantics, and a natural companion to `SEMANTIC-0`.
 
 ## The invariants that carry forward
 
-Everything above obeys the same discipline that carried the render campaign:
+Everything above obeys the same discipline that carried the render campaign. *(These are the certified tree's
+invariants. By the owner's rulings of 2026-10-09 the graybox runtime stands beside that tree with its own checks —
+its floats, its WebGL renderers and its maps are not held by them — and the full gate runs at release checkpoints.)*
 
 - **Earn the authority.** CORE semantics come only from Urðr: carried verbatim from the tag already cited (as
   `GAME-0` carries the game layer), or earned there and re-frozen under a new name. New VIEW semantics may be

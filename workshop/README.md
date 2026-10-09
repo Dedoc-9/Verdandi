@@ -103,7 +103,7 @@ moved; one material moves M and the pixels and leaves the frame digest where it 
 In full in [`../docs/GHOSTS.md`](../docs/GHOSTS.md). The ones that live in this folder:
 
 - **G17.** The shell replays a session with its own copy of this folder's fold. The two are held together by rows
-  and by this folder verifying every saved file, not by sharing one text.
+  and by this folder's replay, which the gate's rows and the sealer run on saved sessions, not by sharing one text.
 - **G19.** The saved form had four Rust parsers and four Python readers, and on hostile input they disagreed. It
   has one reader in the programs now and an independent one in the sealers. The check each writer here makes
   before it writes is held by source: that shows it is written before the write, not that it fires.
