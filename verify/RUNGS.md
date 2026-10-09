@@ -6869,6 +6869,20 @@ checks, reported apart from his predicate, which is unchanged. The commit and th
 the predicate and are not part of it. Tried here on a stand-in checkout whose design check appends to a tracked file:
 FULL×2 yes, as his predicate reads it, and the checkout at the end not as at the start.
 
+**And 0163, by the second witness (the host, 2026-10-09).** The first run of `verdandi-witness 2` (sha256
+`7ebd926d…`), on the owner's checkout with 0163 applied on `a16d663`. Recomputed here from its files, apart from its
+summary, every file against the sha256 it recorded:
+
+| reading | before | after the two gate runs | after the design checks |
+|---|---|---|---|
+| status | lists nothing | lists nothing | lists nothing |
+| tree id | `96311ce3…` | `96311ce3…` | `96311ce3…` |
+| commit | `89d082e1…` | the same | the same |
+
+The two gate runs: exit 0, 247 rows / 0 fail, stdout byte for byte the same, stderr empty, as text the build
+container's log. The design tool's checks: 17 / 0. **FULL×2: yes**, by his predicate; and the checkout at the end as at
+the start, the design checks bracketed. Pushed, `a16d663..89d082e`.
+
 ## HERMENEUTICS-0 — the meaning of the design language, fixed apart from the two programs that compile it (preregistered `22d52d02` and pushed, `5c8ad19..11afebf`; not built; its condition is met: DESIGN-IR/DIFF-0 is built, courted and FULL×2 on the host; it waits for the owner's word)
 
 ```
