@@ -2439,6 +2439,12 @@ tactical map and 24 on the witness level.
 **Run here.** Headless Chromium: 27 / 27 three times and 24 / 24, line for line the same. Under node: the simulation's
 22 and 19.
 
+**On the owner's machine (2026-10-10).** 0187 applied as tree `ba6360f7…`, as predicted. The self-test passed 27 / 27
+and 24 / 24 in the browser `serve.py` opened, every check's line as in the container, and the art checks passed. Pushed
+`ef1e6ec..00b7645`. Four of the eight MEASURED lines differed from the container's. Every check matched, so the two
+engines' `Math` returned different bits somewhere in these runs and rounding absorbed the difference
+([`RESEARCH-FINDINGS.md`](RESEARCH-FINDINGS.md), R-6). OBSERVED, once.
+
 ### FPS-VISUAL-0 — the visual pass · **the owner's ruling** (2026-10-09); outside the certified gate · **built**: the graybox lit and dressed, the first renderer kept beside it
 
 **His ruling.** The graybox plays; the next pass makes it look like a place, and the certified gate stays out of it.

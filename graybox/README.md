@@ -96,7 +96,9 @@ far apart the player ends, and whether any cell, footing or hit differs. In the 
 again under node, the tactical walk's bits parted at tick 1172 of 1787 and ended 2.8 × 10⁻¹⁴ m apart, with no cell,
 footing or hit different and the fight unchanged. A last-bit change in a small step is mostly absorbed when it is
 added to a position near 50 m, but once one rounding goes the other way the bits stay apart, and the final hash
-differs. (A real engine differs on some inputs, not on every call; this model is the harsher one.)
+differs. (A real engine differs on some inputs, not on every call; this model is the harsher one.) On the owner's machine
+every check matched the container's but four of the eight lines did not, so the two engines' `Math` differed
+somewhere in these runs and rounding absorbed it (R-6 in [`docs/RESEARCH-FINDINGS.md`](../docs/RESEARCH-FINDINGS.md)).
 
 ## The files
 

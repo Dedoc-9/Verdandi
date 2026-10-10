@@ -143,6 +143,30 @@ and their outputs are given.
   on one such rounding. That argues for the gap's remedy, exact arithmetic in movement, over a looser comparison: a
   difference that persists can later meet a threshold (a cell edge, a collision's halving), which these runs did not
   show and do not exclude.
+- **On the owner's machine (2026-10-10).** The self-test ran in the browser `serve.py` opened there; the output does
+  not name it. It passed 27 / 27 and 24 / 24, and every check's line matched the container's, down to the replays'
+  last hashes `91350c39A` and `ce819a52A`. Four of the eight MEASURED lines differed:
+
+  | map | counterfactual | build container (Chromium) | the owner's machine |
+  |---|---|---|---|
+  | tactical | `Math.cos` | parted at tick 1174, 2.8 × 10⁻¹⁴ m | parted at tick 1077, 7.1 × 10⁻¹⁵ m |
+  | tactical | all three | parted at tick 1172, 2.8 × 10⁻¹⁴ m | never parted |
+  | witness | `Math.sin` | never parted | parted at tick 377, 1.4 × 10⁻¹⁴ m |
+  | witness | all three | parted at tick 377, 1.4 × 10⁻¹⁴ m | never parted |
+
+  The other four lines were the same on both. What follows, from the code:
+  - Each line's ticks are a function of two things only. One is the bits the engine's `Math` returns at the arguments
+    the run passes. The other is operations whose results the language fixes exactly: +, −, ×, ÷, `%`, comparisons,
+    `Math.floor`, `Math.min`, `Math.max`, `Math.abs` and the DataView bit flip.
+  - If the two engines' `sin`, `cos`, `hypot` and `atan2` had returned the same bits at every one of those arguments,
+    all eight lines would be the same. (The walk's recorded inputs come from a bot that calls `atan2` and `hypot`.)
+  - They are not the same. So on at least one argument, one of these functions returned different bits on the two
+    machines. Which one is not established.
+  - Yet the unperturbed replays ended with equal hashes.
+
+  So an equal final hash across two browsers is weaker evidence than it looked. A difference in `Math` was present,
+  and rounding absorbed it, in these runs. OBSERVED once, on two maps; the inference rests on the step calling no
+  other function whose result the language leaves to the engine.
 
 ## R-7 · A browser's clock
 
