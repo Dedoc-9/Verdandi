@@ -40,7 +40,7 @@ Esc releases the mouse.
 | what changed | run |
 |---|---|
 | map content (`maps/`) | `python graybox/check.py` — the conversion's conformance and its mutations; add `--compile` to compile and admit the tactical layout again through the design tool (needs a built shell, or `rustc` to build one, as the design tool does) |
-| the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check and ends 0 if all passed |
+| the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (27 on the tactical map, 24 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
 | the renderer's cost | `python graybox/serve.py tactical --bench` — both renderers draw the same poses in your browser, alternating; the timings print, and they and a screenshot of each pose by each renderer are written to `graybox/build/bench/tactical/` (not committed). A sample is the mean of a batch of draws, each followed by a one-pixel readback; the page's clock step is printed, since some browsers round it (to 1 ms). Add `--samples N` (default 20), `--batch K` (default 10) |
 | the certified tree | the gate, at a release checkpoint |
 
@@ -62,6 +62,42 @@ the highest eye a player can reach (found by its own search, on the movement's n
 hit box. On the witness level, which has no 1 m cover, the cover check reports itself not applicable and counts as
 passed.
 
+The replay compares hashes, so four checks say what an equal hash is worth. Each runs on two runs made by playing
+(the first route's recorded walk, and a fight: shots, a jump, a walk, the targets standing again, a change of side),
+and each has a planted defect it must refuse:
+
+- **`hash-coverage`.** The state's leaves are found by walking it, not listed by hand. Every leaf must be seen by the
+  hash at its last bit, or be one the world declares (a target's name and place) that equals the world's value and
+  that no tick writes. The last bit is one byte of the hash's input, and FNV-1a always tells apart two inputs that
+  differ in one byte (each of its steps is a bijection), so a pass is not luck. Plants: a hash blind to the vertical
+  velocity `vy`, one blind to the targets' `downFor`, an unhashed leaf written every tick, and an unhashed leaf the
+  world does not declare.
+- **`fx-noninterference`.** The view's feedback (`s.fx`: the hit marker, the flashes, the last shot) never reaches
+  the authoritative state, which is why the hash may leave it out. At reachable states a twin with the feedback
+  swapped is stepped beside the original, and the two must stay the same bit for bit at every following tick. Plant:
+  a tick that reads the flashes.
+- **`snapshot-resume`.** The authoritative state is everything a tick reads. Snapshots (every number written as its
+  IEEE 754 bits) are read back exactly and resumed in fresh instances of the simulation, which share no variable with
+  the one that took them, and every later tick must match. The rules (`P`) are frozen. Plant: a tick count kept
+  outside the state.
+- **`resume-realm`**, in the page. The walk is resumed in a worker (`web/sim_worker.js`), a JavaScript realm with its
+  own globals and its own copy of `sim.js`, and every later tick must be this page's state bit for bit. A snapshot
+  with one bit changed must come apart at the first tick, so the comparison is shown able to fail.
+
+Together: the hash sees the whole authoritative state, what it leaves out cannot change that state, and that state
+is all the next tick reads, in this instance, a fresh one or another realm. So equal replay hashes mean an equal game,
+up to a 32-bit hash's collisions between states that differ in more than one byte. All of this is in one browser.
+
+After the checks, the page prints lines marked `MEASURED`, which are measurements, not checks: nothing passes or
+fails on them and they are not counted. Each run is played again in a worker whose `Math.sin`, `Math.cos` or
+`Math.hypot` (the functions a tick calls whose results the language does not fix to the last bit) is off by its last
+bit at every call: a counterfactual engine. The lines say from which tick the state's bits part from the page's, how
+far apart the player ends, and whether any cell, footing or hit differs. In the build container, in Chromium and
+again under node, the tactical walk's bits parted at tick 1172 of 1787 and ended 2.8 × 10⁻¹⁴ m apart, with no cell,
+footing or hit different and the fight unchanged. A last-bit change in a small step is mostly absorbed when it is
+added to a position near 50 m, but once one rounding goes the other way the bits stay apart, and the final hash
+differs. (A real engine differs on some inputs, not on every call; this model is the harsher one.)
+
 ## The files
 
 | | |
@@ -73,7 +109,8 @@ passed.
 | `level.py` | the converter: D to W and C, and the manifest |
 | `check.py` | the map checks, for map content |
 | `serve.py` | the launcher, and the driver of the self-test and the bench |
-| `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the self-test. No DOM; runs under node too |
+| `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the state's snapshots, the self-test. No DOM; runs in a worker and under node too |
+| `web/sim_worker.js` | the simulation in a realm of its own, for the self-test only: resumes a snapshot, or plays a run in a counterfactual engine |
 | `web/render.js` | the renderer (FPS-VISUAL-0): WebGL 1; a sky, a sun whose shadow is traced through the heights, floor modules, panelled walls, dressed cover, beams on the wall tops, a skyline outside the map, the weapon in the hand; the 1 m grid on G |
 | `web/render_flat.js` | the graybox's first renderer, kept unchanged but for its name: one shader, flat colours, the 1 m grid (`--renderer flat`) |
 | `web/main.js`, `web/index.html` | input, the fixed-tick loop, the HUD, the map, self-test mode |
@@ -118,7 +155,8 @@ step by at most 0.55 m), ceilings, overhangs and anything not a column standing 
 ticks. A shot aimed at an overhead beam passes through it: the beams are decoration. The timings are software
 timestamps inside the page: they end inside the page's own callbacks (the draw time is its submission, not the
 GPU's completion), before anything is composited, and are not input-to-photon. Determinism is claimed for one build in one browser: the replay check compares two runs
-in the same page. Nothing is claimed across browsers or machines.
+in the same page, and the state checks above say what its equal hashes cover. Nothing is claimed across browsers or
+machines; the counterfactual lines measure how a last-bit difference would carry, in the browser they run in.
 
 ## Boundaries
 

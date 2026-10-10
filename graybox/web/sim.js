@@ -6,11 +6,14 @@
 // It reads the collision world C (each cell's solid top, in metres) for movement and the canonical world's gameplay
 // marks (spawns, targets, the objective, probes, routes) and nothing of the render mesh. Fixed tick, 120 per second;
 // inputs are given per tick, so a recorded input sequence replays to the same states on the same build. The renderer
-// reads the state and writes none of it. No DOM here: the same file runs in the page and under node.
+// reads the state and writes none of it. No DOM here: the same file runs in the page, in a worker and under node.
 
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory();
-  else root.GrayboxSim = factory();
+  // make() builds one instance of the simulation; its fresh() builds another that shares no variable with the first.
+  // The self-test resumes snapshots in fresh instances, to show that the state holds everything a tick reads.
+  const make = function () { const m = factory(); m.fresh = make; return m; };
+  if (typeof module === "object" && module.exports) module.exports = make();
+  else root.GrayboxSim = make();
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
@@ -19,6 +22,9 @@
     radius: 0.35, eye: 1.62, step: 0.55, speed: 6.0, gravity: 20.0, jump: 7.0,
     fireCooldown: 0.12, targetRadius: 0.4, targetHeight: 1.9, targetDown: 2.5, range: 200,
   };
+  // The rules, frozen, so that no tick and no page can change them in the middle of a run. (Frozen here rather than
+  // in the declaration: art/check.py reads the player's numbers from the declaration's text.)
+  Object.freeze(P);
 
   // ---------------------------------------------------------------- the world
   function World(map) {
@@ -219,6 +225,73 @@
     return ("00000000" + h.toString(16)).slice(-8) + s.side;
   }
 
+  // ---------------------------------------------------------------- the authoritative state, bit for bit
+  // The authoritative state is the whole of s but s.fx, the view's feedback. A snapshot writes it with every number as
+  // the 16 hex digits of its IEEE 754 bits, so the last bit, -0 and a NaN's payload survive, and every string marked
+  // as one; restore reads it back into a new state with an empty fx. A snapshot is the state's identity for the checks
+  // below; the hash above is the cheap one the replay compares, and the checks hold it to the snapshot.
+  const DV = new DataView(new ArrayBuffer(8));
+  function bitsOf(v) {
+    DV.setFloat64(0, v, false);
+    let h = "";
+    for (let k = 0; k < 8; k++) h += ("0" + DV.getUint8(k).toString(16)).slice(-2);
+    return h;
+  }
+  function ofBits(h) {
+    for (let k = 0; k < 8; k++) DV.setUint8(k, parseInt(h.substr(2 * k, 2), 16));
+    return DV.getFloat64(0, false);
+  }
+  function snapshot(s) {
+    const enc = function (v, top) {
+      if (typeof v === "number") return "f" + bitsOf(v);
+      if (typeof v === "string") return "s" + v;
+      if (v === null || typeof v === "boolean") return v;
+      if (Array.isArray(v)) return v.map(function (x) { return enc(x, false); });
+      if (typeof v !== "object") throw new Error("the state holds a " + typeof v);
+      const o = {};
+      for (const k of Object.keys(v).sort()) if (!(top && k === "fx")) o[k] = enc(v[k], false);
+      return o;
+    };
+    return JSON.stringify(enc(s, true));
+  }
+  function restore(text) {
+    const dec = function (v) {
+      if (typeof v === "string") return v[0] === "f" ? ofBits(v.slice(1)) : v.slice(1);
+      if (v === null || typeof v === "boolean") return v;
+      if (Array.isArray(v)) return v.map(dec);
+      const o = {};
+      for (const k of Object.keys(v)) o[k] = dec(v[k]);
+      return o;
+    };
+    const s = dec(JSON.parse(text));
+    s.fx = { hitMarker: 0, flash: {}, lastShot: null };
+    return s;
+  }
+
+  // every leaf of the authoritative state (a number, a boolean, a string or null), as its path of keys
+  function leaves(s) {
+    const out = [];
+    const walk = function (v, path) {
+      if (v === null || typeof v !== "object") { out.push(path); return; }
+      const keys = Array.isArray(v) ? v.map(function (_, i) { return i; }) : Object.keys(v).sort();
+      for (const k of keys) if (!(path.length === 0 && k === "fx")) walk(v[k], path.concat([k]));
+    };
+    walk(s, []);
+    return out;
+  }
+  function getAt(o, p) { for (const k of p) { if (o === null || typeof o !== "object") return undefined; o = o[k]; } return o; }
+  function setAt(o, p, v) { for (let i = 0; i < p.length - 1; i++) o = o[p[i]]; o[p[p.length - 1]] = v; }
+  function leafKind(p) { return p.map(function (k, i) { return typeof k === "number" ? "[]" : (i ? "." : "") + k; }).join(""); }
+  function leafBits(v) { return typeof v === "number" ? "f" + bitsOf(v) : JSON.stringify(v); }
+  // the smallest change to a leaf: a number's last significand bit, which is one byte of the hash's input; a boolean
+  // flipped; the other side; any other string with a mark added
+  function nudge(v) {
+    if (typeof v === "number") { DV.setFloat64(0, v, true); DV.setUint8(0, DV.getUint8(0) ^ 1); return DV.getFloat64(0, true); }
+    if (typeof v === "boolean") return !v;
+    if (typeof v === "string") return v === "A" ? "B" : v === "B" ? "A" : v + "'";
+    return v === null ? 0 : v;
+  }
+
   // ---------------------------------------------------------------- the runtime's conformance checks
   // Run against the runtime's own collision and movement, not a copy of them: probes, spawns, routes walked by a bot,
   // gravity, mounting cover, the weapon, occlusion, reset, and replay of recorded inputs, every tick hashed.
@@ -269,7 +342,8 @@
     return hit;
   }
 
-  function selftest(map) {
+  // ctx, if given, receives the runs the state checks use (ctx.runs), for the page's own checks after these
+  function selftest(map, ctx) {
     const out = [];
     const check = function (name, ok, detail) { out.push({ name: name, ok: !!ok, detail: detail || "" }); };
     let world;
@@ -363,6 +437,7 @@
       }
     }
     // the weapon: a hit in the open, a miss behind a wall, the target back up
+    let shotSpot = null;
     {
       let shot = null, hidden = null;
       const s0 = newState(world, "A");
@@ -378,6 +453,7 @@
         }
         if (shot && hidden) break;
       }
+      shotSpot = shot;
       const fireAt = function (spot) {
         const s = newState(world, "A");
         s.x = spot.x; s.z = spot.z; s.feet = 0;
@@ -422,9 +498,167 @@
       for (let k = 0; same && k < h1.length; k++) if (h1[k] !== h2[k]) same = false;
       check("replay", same && h1.length > 0, h1.length + " ticks, every tick's state hash the same in both runs (last " + h1[h1.length - 1] + ")");
     }
+
+    // ---- the state checks. The replay above compares hashes; these say what an equal hash is worth. Each runs on
+    // two runs made by playing (the first route's recorded walk, and a fight), and each has a planted defect it must
+    // refuse, so that a check that cannot fail does not pass for one.
+    const runs = [];
+    if (recorded) {
+      const s = newState(world, "A");
+      s.x = (recorded.start[0] + 0.5) * c; s.z = (recorded.start[1] + 0.5) * c; s.feet = groundAt(world, s.x, s.z);
+      runs.push({ name: "the walk", start: snapshot(s), inputs: recorded.inputs, every: 30, resumeEvery: 120 });
+    }
+    if (shotSpot) {
+      const s = newState(world, "A");
+      s.x = shotSpot.x; s.z = shotSpot.z; s.feet = groundAt(world, s.x, s.z);
+      const tgt = s.targets.find(function (q) { return q.id === shotSpot.t.id; });
+      const dx = tgt.x - s.x, dz = tgt.z - s.z;
+      s.yaw = wrap(Math.atan2(dx, -dz)); s.pitch = Math.atan2(tgt.y + 1.2 - (s.feet + P.eye), Math.hypot(dx, dz));
+      const inputs = [];
+      const add = function (n, inp) { for (let k = 0; k < n; k++) inputs.push(typeof inp === "function" ? inp(k) : inp); };
+      add(1, { fire: true }); add(20, {}); add(1, { fire: true }); add(1, { jump: true }); add(8, {});
+      add(1, { fire: true, dyaw: 0.02 });
+      add(60, function (k) { return { f: true, dyaw: 0.01, dpitch: -0.002, fire: k % 25 === 0 }; });
+      add(Math.ceil(P.targetDown / TICK) + 10, {});
+      add(1, { side: "B" }); add(30, { f: true, r: true }); add(1, { fire: true }); add(1, { reset: true }); add(1, { side: "A" });
+      add(40, function (k) { return { b: true, l: true, jump: k % 15 === 0 }; });
+      runs.push({ name: "the fight", start: snapshot(s), inputs: inputs, every: 5, resumeEvery: 40 });
+    }
+    if (ctx) ctx.runs = runs;
+    const kinds = function (ps) { return Array.from(new Set(ps.map(leafKind))).join(", "); };
+
+    // hash-coverage: every leaf of the authoritative state is seen by the hash at its last bit, or is one the world
+    // declares (a target's name and place, which the map's own digest covers), equal to the world's value and of a
+    // kind no tick of the runs writes. Without it an equal hash would say nothing about the leaves it does not read.
+    // The leaves are found by walking the state, not listed by hand, so a leaf added later is checked without anyone
+    // remembering to; one the world does not declare must be hashed. The state it is tried on is taken mid-fight: a
+    // target down, the weapon cooling, the player in the air.
+    const WORLD_LEAVES = ["targets[].id", "targets[].x", "targets[].y", "targets[].z"];
+    const coverage = function (hashFn, stepFn, prep) {
+      const written = new Set();   // kinds of leaf, so that one target's write counts for all of them
+      let base = null, lastSnap = null;
+      for (const run of runs) {
+        const s = restore(run.start);
+        if (prep) prep(s);
+        let last = new Map(leaves(s).map(function (p) { return [p.join("/"), leafBits(getAt(s, p))]; }));
+        for (const inp of run.inputs) {
+          stepFn(world, s, inp);
+          const now = new Map(leaves(s).map(function (p) { return [p.join("/"), leafBits(getAt(s, p))]; }));
+          for (const [k, v] of now) if (last.get(k) !== v) written.add(leafKind(k.split("/").map(function (x) { return /^[0-9]+$/.test(x) ? +x : x; })));
+          last = now;
+          if (!base && s.score >= 1 && !s.onGround && s.cooldown > 0 && s.targets.some(function (t) { return !t.up; })) base = snapshot(s);
+          lastSnap = snapshot(s);
+        }
+      }
+      const b = restore(base || lastSnap), h0 = hashFn(b), fresh = newState(world, b.side);
+      if (prep) prep(fresh);
+      const res = { hashed: [], fixed: [], open: [] };
+      for (const p of leaves(b)) {
+        const t = restore(snapshot(b));
+        setAt(t, p, nudge(getAt(t, p)));
+        const k = leafKind(p);
+        if (hashFn(t) !== h0) res.hashed.push(p);
+        else if (WORLD_LEAVES.indexOf(k) >= 0 && !written.has(k) && leafBits(getAt(fresh, p)) === leafBits(getAt(b, p))) res.fixed.push(p);
+        else res.open.push(p);
+      }
+      return res;
+    };
+    if (!runs.length) check("hash-coverage", false, "no run to take a state from");
+    else {
+      const real = coverage(hash, step);
+      const caught = function (r, name) { return r.open.some(function (p) { return leafKind(p) === name; }); };
+      const plants = [
+        ["a hash blind to vy", caught(coverage(function (s) { const t = restore(snapshot(s)); t.vy = 0; return hash(t); }, step), "vy")],
+        ["a hash blind to the targets' downFor", caught(coverage(function (s) { const t = restore(snapshot(s)); for (const q of t.targets) q.downFor = 0; return hash(t); }, step), "targets[].downFor")],
+        ["an unhashed leaf written every tick", caught(coverage(hash, function (w, s, inp) { step(w, s, inp); s.stamina = (s.stamina || 0) + TICK; }), "stamina")],
+        ["an unhashed leaf no tick writes, not the world's", caught(coverage(hash, step, function (s) { s.mode = "solo"; }), "mode")],
+      ];
+      const refused = plants.every(function (p) { return p[1]; });
+      check("hash-coverage", real.open.length === 0 && real.hashed.length > 0 && refused,
+        (real.open.length ? "NOT SEEN by the hash: " + kinds(real.open) + "; " : "")
+        + (real.hashed.length + real.fixed.length + real.open.length) + " leaves of the authoritative state, found by walking it: " + real.hashed.length
+        + " seen by the hash at their last bit, " + real.fixed.length + " the world's, unchanged by every tick (" + kinds(real.fixed) + "); "
+        + plants.length + " plants " + (refused ? "refused" : "NOT all refused: " + plants.filter(function (p) { return !p[1]; }).map(function (p) { return p[0]; }).join(", ")));
+    }
+
+    // fx-noninterference: the view's feedback never reaches the authoritative state, which is why the hash may leave
+    // it out. At reachable states a twin with the feedback swapped (the hit marker, the flashes, the last shot) is
+    // stepped beside the original, and the two must stay the same bit for bit at every tick that follows: the lockstep
+    // form of noninterference, tested from states the game reaches rather than from made-up ones.
+    const swapFx = function (fx, ids) {
+      const flash = {};
+      if (!Object.keys(fx.flash).length) { for (const id of ids) flash[id] = 0.25; flash.zz = 1; }
+      return { hitMarker: fx.hitMarker > 0 ? 0 : 0.2, flash: flash,
+               lastShot: fx.lastShot ? null : { o: [0, 0, 0], h: [1, 1, 1], hit: ids.length ? ids[0] : null, age: 3 } };
+    };
+    const quiet = function (stepFn) {
+      let pairs = 0, ticks = 0, bad = null;
+      for (const run of runs) {
+        const s = restore(run.start);
+        for (let n = 0; n < run.inputs.length && !bad; n++) {
+          stepFn(world, s, run.inputs[n]);
+          if (n % run.every) continue;
+          const a = restore(snapshot(s)), b = restore(snapshot(s));
+          a.fx = JSON.parse(JSON.stringify(s.fx));
+          b.fx = swapFx(s.fx, s.targets.map(function (t) { return t.id; }));
+          pairs++;
+          for (let m = n + 1; m < Math.min(run.inputs.length, n + 121); m++) {
+            stepFn(world, a, run.inputs[m]); stepFn(world, b, run.inputs[m]); ticks++;
+            if (snapshot(a) !== snapshot(b)) { bad = run.name + ", swapped at tick " + (n + 1) + ", apart at tick " + (m + 1); break; }
+          }
+        }
+      }
+      return { pairs: pairs, ticks: ticks, bad: bad };
+    };
+    if (runs.length) {
+      const real = quiet(step);
+      const peek = quiet(function (w, s, inp) { step(w, s, inp); s.x += Object.keys(s.fx.flash).length * 1e-9; });
+      check("fx-noninterference", !real.bad && real.pairs > 0 && !!peek.bad,
+        (real.bad ? "the authoritative state DIVERGED (" + real.bad + "); " : "")
+        + "the view's feedback (hit marker, flashes, last shot) swapped at " + real.pairs + " reachable states: the authoritative state the same bit for bit at each of the "
+        + real.ticks + " ticks that followed; plant: a tick that reads the flashes " + (peek.bad ? "refused (" + peek.bad + ")" : "NOT refused"));
+    }
+
+    // snapshot-resume: the authoritative state is everything a tick reads. Snapshots taken along each run are read back
+    // exactly and resumed in fresh instances of the simulation, which share no variable with the one that took them,
+    // and every later tick must reach the same state bit for bit (Factorio's "heavy mode" saves and loads every tick
+    // for the same reason). A fresh instance is still this realm: the page also resumes one in a worker (resume-realm).
+    const resume = function (make) {
+      let resumed = 0, ticks = 0, bad = null;
+      for (const run of runs) {
+        if (bad) break;
+        const A = make(), wA = new A.World(map), s = A.restore(run.start), trail = [];
+        for (const inp of run.inputs) { A.step(wA, s, inp); trail.push(A.snapshot(s)); }
+        for (let k = 7; k < run.inputs.length - 1 && !bad; k += run.resumeEvery) {
+          const B = make(), wB = new B.World(map), t = B.restore(trail[k]);
+          if (B.snapshot(t) !== trail[k]) { bad = "the snapshot at tick " + (k + 1) + " of " + run.name + " did not read back exactly"; break; }
+          resumed++;
+          for (let m = k + 1; m < run.inputs.length; m++) {
+            B.step(wB, t, run.inputs[m]); ticks++;
+            if (B.snapshot(t) !== trail[m]) { bad = run.name + ", resumed after tick " + (k + 1) + ", apart at tick " + (m + 1); break; }
+          }
+        }
+      }
+      return { resumed: resumed, ticks: ticks, bad: bad };
+    };
+    if (runs.length) {
+      const real = resume(function () { return api.fresh(); });
+      const hidden = resume(function () {
+        let n = 0;   // a count kept outside the state: a resumed instance starts it again from 0
+        return { World: World, restore: restore, snapshot: snapshot,
+                 step: function (w, s, inp) { n++; step(w, s, inp); if (n % 100 === 0) s.x += 1e-9; } };
+      });
+      const frozen = Object.isFrozen(P);
+      check("snapshot-resume", !real.bad && real.resumed > 0 && !!hidden.bad && frozen,
+        (real.bad ? "DIVERGED (" + real.bad + "); " : "") + (frozen ? "" : "the rules are NOT frozen; ")
+        + real.resumed + " snapshots of the authoritative state read back bit for bit and resumed in fresh instances: the same state at each of the "
+        + real.ticks + " later ticks; the rules frozen; plant: a tick count kept outside the state " + (hidden.bad ? "refused (" + hidden.bad + ")" : "NOT refused"));
+    }
     return out;
   }
 
-  return { TICK: TICK, P: P, World: World, newState: newState, step: step, spawn: spawn, fire: fire, aim: aim,
-           rayWorld: rayWorld, blocked: blocked, groundAt: groundAt, hash: hash, selftest: selftest };
+  const api = { TICK: TICK, P: P, World: World, newState: newState, step: step, spawn: spawn, fire: fire, aim: aim,
+                rayWorld: rayWorld, blocked: blocked, groundAt: groundAt, hash: hash, snapshot: snapshot, restore: restore,
+                nudge: nudge, selftest: selftest };
+  return api;
 });

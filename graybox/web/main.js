@@ -23,16 +23,88 @@
 
   function selftestMode(map) {
     document.body.classList.add("selftest");
-    const t0 = performance.now();
+    const t0 = performance.now(), ctx = {}, measurements = [];
     let results;
-    try { results = Sim.selftest(map); } catch (e) { results = [{ name: "selftest", ok: false, detail: String(e && e.stack || e) }]; }
+    try { results = Sim.selftest(map, ctx); } catch (e) { results = [{ name: "selftest", ok: false, detail: String(e && e.stack || e) }]; }
     renderChecks(map, results);
-    const ok = results.every(function (r) { return r.ok; });
-    const ms = Math.round(performance.now() - t0);
-    $("results").textContent = results.map(function (r) { return (r.ok ? "PASS " : "FAIL ") + r.name + " — " + r.detail; }).join("\n")
-      + "\n\n" + (ok ? "GRAYBOX SELFTEST PASSED" : "GRAYBOX SELFTEST FAILED") + "  " + results.filter(function (r) { return r.ok; }).length + " / " + results.length + "  (" + ms + " ms)";
-    window.GRAYBOX_SELFTEST = { map: name, ok: ok, results: results, manifest: map.manifest };
-    post("/selftest", window.GRAYBOX_SELFTEST);
+    $("results").textContent = "running the self-test in a second realm…";
+    realmChecks(map, ctx, results, measurements).catch(function (e) {
+      results.push({ name: "resume-realm", ok: false, detail: String(e && e.stack || e) });
+    }).then(function () {
+      const ok = results.every(function (r) { return r.ok; });
+      const ms = Math.round(performance.now() - t0);
+      $("results").textContent = results.map(function (r) { return (r.ok ? "PASS " : "FAIL ") + r.name + " — " + r.detail; }).join("\n")
+        + (measurements.length ? "\n\n" + measurements.map(function (m) { return "MEASURED " + m.name + " — " + m.detail; }).join("\n") : "")
+        + "\n\n" + (ok ? "GRAYBOX SELFTEST PASSED" : "GRAYBOX SELFTEST FAILED") + "  " + results.filter(function (r) { return r.ok; }).length + " / " + results.length + "  (" + ms + " ms)";
+      window.GRAYBOX_SELFTEST = { map: name, ok: ok, results: results, measurements: measurements, manifest: map.manifest };
+      post("/selftest", window.GRAYBOX_SELFTEST);
+    });
+  }
+
+  // ---------------------------------------------------------------- a second realm
+  // The simulation again, in a worker: a JavaScript realm with its own globals, its own Math and its own copy of
+  // sim.js. resume-realm resumes the walk there from a snapshot and requires every later tick's state to be this page's
+  // bit for bit; a snapshot with one bit changed must come apart at once, so the comparison is shown able to fail.
+  // Then the measurements: each run again in counterfactual engines whose Math.sin, Math.cos or Math.hypot (the ones a
+  // tick calls whose results the language does not fix to the last bit) is off by its last bit at every call. They
+  // show, in this browser, how far a last-bit difference between two engines' Math would carry a run. They are
+  // measurements, not checks: nothing passes or fails on them, and a real engine differs on some inputs, not on all.
+  function inWorker(msg) {
+    return new Promise(function (resolve) {
+      let w;
+      try { w = new Worker("sim_worker.js"); } catch (e) { resolve({ error: "no worker: " + String(e && e.message || e) }); return; }
+      const timer = setTimeout(function () { w.terminate(); resolve({ error: "the worker did not answer in 60 s" }); }, 60000);
+      w.onmessage = function (ev) { clearTimeout(timer); w.terminate(); resolve(ev.data); };
+      w.onerror = function (ev) { clearTimeout(timer); w.terminate(); if (ev.preventDefault) ev.preventDefault(); resolve({ error: "the worker failed: " + (ev.message || "an error") }); };
+      w.postMessage(msg);
+    });
+  }
+  function realmChecks(map, ctx, results, measurements) {
+    const runs = ctx.runs || [];
+    if (!runs.length) { results.push({ name: "resume-realm", ok: false, detail: "no run to resume" }); return Promise.resolve(); }
+    const world = new Sim.World(map), c = map.collision.cell;
+    const trails = runs.map(function (run) {
+      const s = Sim.restore(run.start), trail = [];
+      for (const inp of run.inputs) { Sim.step(world, s, inp); trail.push(Sim.snapshot(s)); }
+      return trail;
+    });
+    const run = runs[0], trail = trails[0], k = Math.floor(run.inputs.length / 3), rest = run.inputs.slice(k + 1);
+    const apart = function (snaps, tr, from) { for (let m = 0; m < snaps.length; m++) if (snaps[m] !== tr[from + m]) return m; return snaps.length === tr.length - from ? -1 : snaps.length; };
+    const flipped = (function () { const t = Sim.restore(trail[k]); t.shots = Sim.nudge(t.shots); return Sim.snapshot(t); })();
+    return inWorker({ map: map, snap: trail[k], inputs: rest }).then(function (a) {
+      return inWorker({ map: map, snap: flipped, inputs: rest }).then(function (b) {
+        if (a.error || b.error) { results.push({ name: "resume-realm", ok: false, detail: a.error || b.error }); return; }
+        const pa = apart(a.snaps, trail, k + 1), pb = apart(b.snaps, trail, k + 1);
+        results.push({ name: "resume-realm", ok: pa < 0 && pb === 0,
+          detail: run.name + " resumed in a worker, a realm of its own, after tick " + (k + 1) + ": "
+            + (pa < 0 ? "the same state as this page's at each of the " + rest.length + " later ticks" : "APART at tick " + (k + 2 + pa))
+            + "; a snapshot with one bit changed " + (pb === 0 ? "apart at the first tick" : "NOT told apart") });
+      });
+    }).then(function () {
+      const sets = [["sin"], ["cos"], ["hypot"], ["sin", "cos", "hypot"]];
+      let chain = Promise.resolve();
+      for (const set of sets) chain = chain.then(function () {
+        return Promise.all(runs.map(function (r) { return inWorker({ map: map, snap: r.start, inputs: r.inputs, offByOne: set }); })).then(function (outs) {
+          const parts = outs.map(function (o, i) {
+            if (o.error) return runs[i].name + ": " + o.error;
+            const tr = trails[i], first = apart(o.snaps, tr, 0);
+            if (first < 0) return runs[i].name + ": the same state at every one of its " + tr.length + " ticks";
+            let gap = 0, end = 0, changed = 0;
+            for (let m = 0; m < tr.length; m++) {
+              const x = Sim.restore(tr[m]), y = Sim.restore(o.snaps[m]);
+              const g = Math.hypot(x.x - y.x, x.z - y.z, x.feet - y.feet);
+              gap = Math.max(gap, g); end = g;
+              if (Math.floor(x.x / c) !== Math.floor(y.x / c) || Math.floor(x.z / c) !== Math.floor(y.z / c) || x.onGround !== y.onGround
+                  || x.score !== y.score || x.shots !== y.shots || x.targets.some(function (t, j) { return t.up !== y.targets[j].up; })) changed++;
+            }
+            return runs[i].name + ": the state apart from tick " + (first + 1) + " of " + tr.length + "; the player at most " + gap.toExponential(1)
+              + " m from this page's, " + end.toExponential(1) + " m at the end; " + (changed ? changed + " ticks with a different cell, footing or hit" : "the same cell, footing and hits at every tick");
+          });
+          measurements.push({ name: "counterfactual Math." + set.join(", Math."), detail: "off by its last bit at every call, in a worker: " + parts.join("; ") + " (this browser, this machine)" });
+        });
+      });
+      return chain;
+    });
   }
 
   // ---------------------------------------------------------------- the renderers, checked

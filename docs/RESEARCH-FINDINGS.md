@@ -38,6 +38,13 @@ and their outputs are given.
   - FULL×2 (two gate runs).
 
   The graybox's `render-readonly` is weaker. It compares one state before and after frames are drawn: a single run.
+
+  Since 2026-10-10, at the owner's request, the graybox has two-run checks of its simulation's own state.
+  `fx-noninterference` steps a twin with the view's feedback swapped beside the original, from states the game
+  reaches, and compares every following tick. That is the lockstep form tested from reachable states, after
+  Hriţcu et al., "Testing Noninterference, Quickly" (ICFP 2013; [arXiv:1409.0393](https://arxiv.org/abs/1409.0393)).
+  `snapshot-resume` and `resume-realm` compare a run with its own resumption. The renderer's paired replay below is
+  still open.
 - **Gap.** Documentation, plus one possible check. The two-run framing explains why a one-run test cannot witness
   these properties. A stronger graybox check would replay the recorded route twice, once drawing between ticks and
   once not, and compare the hash of every tick.
@@ -112,12 +119,30 @@ and their outputs are given.
 - **Here.** The certified tree's rules are integers (only `simtick.rs` is fenced for floats). `graybox/web/sim.js`
   uses JS doubles and `Math.sin`, `Math.cos`, `Math.hypot` and `Math.atan2`, and its docs claim replay in one build
   in one page only, which these sources support. The same final replay hash was seen once in Chromium, node and the
-  host's Firefox. That is consistent with determinism and does not establish it.
+  host's Firefox. That is consistent with determinism and does not establish it. What an equal hash covers within
+  one page is now checked: the self-test's `hash-coverage`, `fx-noninterference`, `snapshot-resume` and
+  `resume-realm` (`graybox/README.md`).
 - **Gap.** None in the claims. Implementation, if lockstep play is ever wanted: integer or fixed-point movement, as
   the declared arena text proposes.
 - **Experiment.** Run the self-test's replay under several engines and CPUs and compare every tick's hash, not only
   the last.
-- **A decision?** Yes, before any networked play.
+- **A first measurement, with one engine (2026-10-10).** Two more sources:
+  - Factorio's "heavy mode" saves and loads the game every tick to find state that is not saved
+    ([Factorio wiki, Desynchronization](https://wiki.factorio.com/Desynchronization)).
+  - An open JavaScript physics engine reports `Math.sin` and `Math.cos` hashing differently between two V8 versions
+    (node 20 and Chrome 149) and a simulation diverging between them. Its proposed fix is sin and cos built from exactly
+    specified operations ([perplexdotgg/bounce#8](https://codeberg.org/perplexdotgg/bounce/issues/8), 2026-08-03).
+
+  The self-test now plays each run in a worker whose `Math.sin`, `Math.cos` or `Math.hypot` is off by its last bit
+  at every call: a counterfactual engine, made without a second browser. In the build container, in Chromium and again
+  under node, the tactical walk's state parted from the page's at tick 1172 of 1787. It ended 2.8 × 10⁻¹⁴ m away, with
+  the final hash different and no cell, footing or hit changed; the fight did not part at all. MEASURED, this engine,
+  these runs. The step's displacement changed in its last bit on about a third of the ticks (590 of 1787, under node).
+  Added to a position near 50 m it was almost always rounded away, but once a rounding went the other way the bits
+  stayed apart. So the game's behaviour held while its bits did not, and a bitwise replay across engines would fail
+  on one such rounding. That argues for the gap's remedy, exact arithmetic in movement, over a looser comparison: a
+  difference that persists can later meet a threshold (a cell edge, a collision's halving), which these runs did not
+  show and do not exclude.
 
 ## R-7 · A browser's clock
 

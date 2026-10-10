@@ -10,7 +10,8 @@
 # converted map on 127.0.0.1, and opens it in the default browser. --renderer flat plays with the graybox's first
 # renderer instead of FPS-VISUAL-0's. With --selftest the page runs the runtime's conformance checks instead of the
 # game and sends the results back here; this prints them and ends 0 if every one passed, 1 if one failed, 2 if none
-# came back in time. With --bench the page draws the same poses with both renderers, times them in that browser and
+# came back in time. The page's measurements come back too and are printed as MEASURED lines, never counted as
+# checks. With --bench the page draws the same poses with both renderers, times them in that browser and
 # sends back the timings and a screenshot of each; this writes them to graybox/build/bench/MAP/ and prints the
 # timings. Every response asks the browser to isolate the page from other origins (it loads nothing from any), which
 # also lets a browser give the page its finer clock. Standard library only; nothing is written to disk but by --bench,
@@ -119,6 +120,8 @@ def main(argv) -> int:
         return report_bench(r)
     for x in r.get("results", []):
         print("%s %s — %s" % ("PASS" if x["ok"] else "FAIL", x["name"], x["detail"]))
+    for x in r.get("measurements", []):   # measurements, not checks: printed, never counted
+        print("MEASURED %s — %s" % (x["name"], x["detail"]))
     print("GRAYBOX SELFTEST %s  %d / %d  (map %s)" % ("PASSED" if r.get("ok") else "FAILED", sum(1 for x in r.get("results", []) if x["ok"]),
                                                        len(r.get("results", [])), r.get("map")))
     return 0 if r.get("ok") else 1

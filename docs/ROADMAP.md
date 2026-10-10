@@ -2412,6 +2412,33 @@ click; repaired by 0178.
 **Grade.** OBSERVED (the build container): everything above. NOT_MEASURED: the slice on the owner's host, its frame
 rate, and anything of feel. It is not a rung of the gate and adds no row.
 
+**What an equal hash is worth (2026-10-10), at the owner's request.** He asked for it to be built, *"creative/pioneering"*,
+*"consider mixing theorems"*. The replay compared hashes, and nothing showed that the hash read the whole state, or
+that the state was all a tick reads. Four checks now say so, each with a plant it refuses:
+
+- **`hash-coverage`.** The state's leaves are found by walking it. Each must be seen by the hash at its last bit,
+  or be a leaf the world declares, equal to the world's value and of a kind no tick writes. FNV-1a always separates
+  inputs that differ in one byte, and the last bit is one byte.
+- **`fx-noninterference`.** The view's feedback, which the hash leaves out, never reaches the authoritative state.
+  Twins are stepped in lockstep from reachable states.
+- **`snapshot-resume`.** Bit-exact snapshots are resumed in fresh instances of the simulation, with the rules frozen.
+- **`resume-realm`.** A snapshot is resumed in a worker, another realm, and a one-bit change must be told apart.
+
+Together, equal replay hashes now mean an equal game in one browser, up to 32-bit collisions between states that
+differ in more than one byte. The laws mixed are Reproducible Realization, Art/Gameplay Separation (the view's
+feedback is the view's) and Creative Noninterference, each a property of pairs of runs (R-2). Seven defects were
+planted by hand in a copy of `sim.js`, and each was refused by the check it targets. They were: the hash leaving out
+`cooldown`, the targets' `downFor` or the side; a tick reading the hit marker; a count kept at module level; the
+rules left unfrozen; and a new unhashed leaf.
+
+With them comes a measurement, printed and never counted. Each run is played in counterfactual engines whose
+`Math.sin`, `Math.cos` or `Math.hypot` is off by its last bit at every call. The state's bits parted, but no cell,
+footing or hit changed ([`RESEARCH-FINDINGS.md`](RESEARCH-FINDINGS.md), R-6). The self-test is now 27 checks on the
+tactical map and 24 on the witness level.
+
+**Run here.** Headless Chromium: 27 / 27 three times and 24 / 24, line for line the same. Under node: the simulation's
+22 and 19.
+
 ### FPS-VISUAL-0 — the visual pass · **the owner's ruling** (2026-10-09); outside the certified gate · **built**: the graybox lit and dressed, the first renderer kept beside it
 
 **His ruling.** The graybox plays; the next pass makes it look like a place, and the certified gate stays out of it.

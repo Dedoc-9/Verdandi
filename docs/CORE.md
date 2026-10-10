@@ -26,7 +26,7 @@ Two times are kept apart, and a third runtime stands beside them.
 | `shell/` | Rust | 12,641 | presentation, playback, the live loop and its durable session, the tick rules, admission, the batch, the design compiler | `shell-*` and every live, admission and compiler rung |
 | `verify/` | Python | 22,643 (`verify.py` 17,025) | the gate, the envelope, the saved-form reader, the registers, the sealers | is the gate |
 | `design/` | Python | 1,084 | the design tool, a client of the shell | its own 17 checks; no row |
-| `graybox/` | Python, JS, HTML | 2,530 | the FPS slice: converter, map checks, server, simulation, two renderers | its own checks; no row |
+| `graybox/` | Python, JS, HTML | 2,868 | the FPS slice: converter, map checks, server, simulation and its state checks, two renderers | its own checks; no row |
 | `art/` | Python, Rust | 4,324 | prompted art: the art file's reader and exporter to one engine scene, its checks, the Unreal 5.8 importer; DIRECTOR-0 (the canonical form, the scope protocol, the ledger, a second implementation in Rust) | `art/check.py`, `art/director.py selftest`, `art/director/conform.rs`; no row |
 
 Line counts are of tracked `.rs`, `.py`, `.js` and `.html` files.
@@ -186,7 +186,7 @@ The walls, with their real reach:
 | container and host print the same gate | 247 and 251 rows, compared as text | on trees that differ by the host's 40 committed records |
 | host sessions replay in the container | sessions `aa850e78…`, `5290c848…`, `b28e42be…` (`verify/RUNGS.md`) | those sessions |
 | saved session bytes | **not reproducible**: each file embeds a `run_id` from the clock and the process id | heads are |
-| graybox replay | the self-test replays a recorded route twice in one page, every tick hashed | one build, one page. The same final hash was seen in Chromium, node and the host's Firefox once; **not claimed** across browsers |
+| graybox replay | the self-test replays a recorded route twice in one page, every tick hashed; `hash-coverage`, `fx-noninterference`, `snapshot-resume` and `resume-realm` say what an equal hash covers (the whole authoritative state, all the next tick reads), each with a plant it refuses | one build, one page. The same final hash was seen in Chromium, node and the host's Firefox once; **not claimed** across browsers. The counterfactual-engine lines are MEASURED, not checked |
 | cross-platform determinism in general | — | **not established** |
 
 ## 7. Timing instruments, and what each measures
