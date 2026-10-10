@@ -40,6 +40,7 @@ When two sources disagree, trust them in this order:
 | `verify/` | the gate, the envelope, the registers, the sealers | is the gate |
 | `design/` | the design tool: a client of the shell, no authority | `design/test_design.py`; no row |
 | `graybox/` | the FPS slice: converter, map checks, server, browser runtime | its own checks; no row |
+| `art/` | prompted art: the art file, the exporter to an engine scene, the Unreal importer | `art/check.py`; no row |
 | `docs/` | the documents above | — |
 
 ## 3. Never, without the owner's word
@@ -60,9 +61,9 @@ When two sources disagree, trust them in this order:
   concrete defect blocks the work. Never change a row to make something pass.
 - **Change a world by hand.** A world changes through `design/design.py` (propose, preview, then admit only after the
   owner accepts that preview), never by editing a session file, `project.json` or anything under `design/work/`.
-- **Let the graybox renderer decide.** It may decorate; it must not decide where walls, cover or anything that
-  blocks exist. Decoration that should affect play goes into the canonical world and is checked (the owner's rule,
-  `docs/BOUNDARIES.md`).
+- **Let the graybox renderer or the art decide.** They may decorate; they must not decide where walls, cover or
+  anything that blocks exist. Decoration that should affect play goes into the canonical world and is checked (the
+  owner's rule, `docs/BOUNDARIES.md`). In `art/` the scene's collision is C and nothing else (`art/README.md`).
 - **Claim** a latency, a frame rate, input-to-photon, feel, or determinism across platforms or browsers. Software
   timings are software timings and are labelled so.
 - **Commit or push.** The owner applies patches, runs the checks on his host, and pushes.
@@ -77,6 +78,7 @@ container.
 | the compiler or authoritative semantics | the relevant engineering checks, and the gate at the checkpoint | `GATE PASSED`, then `RECONCILE  rowset 74db4c8d78625af5  251 rows / 0 fail / 0 skipped` while no row is added |
 | map content (`graybox/maps/`) | `python graybox/check.py --compile` | every check and mutation PASS; `GRAYBOX MAP CHECKS PASSED` |
 | graybox runtime or renderer (`graybox/web/`) | `python graybox/serve.py tactical --selftest`, then `witness` | `23 / 23` and `20 / 20`, exit 0 (a browser opens) |
+| an art file, the exporter or the art's checks (`art/`) | `python art/check.py` | every check and plant PASS; `ART CHECKS PASSED` (a SKIPPED line means no shell compiled the layout revision) |
 | a cost claim about the graybox | `python graybox/serve.py tactical --bench` | timings with the clock's step printed; a draw and readback, never a frame rate |
 | the design tool | `python design/test_design.py` | 17 checks, 0 failed |
 | a registered release checkpoint, or a threat to the certified contract | `python verify/verify.py`, twice, on one clean tree | the two compact outputs byte-identical |

@@ -15,6 +15,7 @@ Two times are kept apart, and a third runtime stands beside them.
   CONTENT TIME   design/ (a client) ──► shell design-compile ──► shell design (admit) ──► a sealed session
                  no gate runs; the shell's compiler and admission, which the gate holds, do the work
   BESIDE         graybox/: a browser runtime on the canonical level; its own checks; no row reads it
+                 art/: an art file over the graybox's W and C ──► one engine scene ──► Unreal 5.8; its own checks
 ```
 
 | folder | language | source lines | job | held by |
@@ -26,6 +27,7 @@ Two times are kept apart, and a third runtime stands beside them.
 | `verify/` | Python | 22,643 (`verify.py` 17,025) | the gate, the envelope, the saved-form reader, the registers, the sealers | is the gate |
 | `design/` | Python | 1,084 | the design tool, a client of the shell | its own 17 checks; no row |
 | `graybox/` | Python, JS, HTML | 2,530 | the FPS slice: converter, map checks, server, simulation, two renderers | its own checks; no row |
+| `art/` | Python | 1,531 | prompted art: the art file's reader and exporter to one engine scene, its checks, the Unreal 5.8 importer | `art/check.py`; no row |
 
 Line counts are of tracked `.rs`, `.py`, `.js` and `.html` files.
 
@@ -126,6 +128,18 @@ Each stage, its input and output, and what it keeps:
 `check.py` holds W and C to the source with its own reader. The page's self-test holds the movement, the routes, the
 replay and the renderers (§6). The manifests' hashes are not pinned anywhere in the tree.
 
+**The art (ART-GENERATION-0).** `art/dress.py` reads an art file (`VERDANDI-ART 0`) and the graybox map it names
+through `graybox/level.py`, and writes one scene: C's tops as boxes merged inside 8 × 8 chunks, the look's dressing
+and lights, the spawns and critique views, and a lineage binding the art file, the layout's heads, W, C, the
+exporter and the scene by sha256. Every dressing choice is a hash of its statement and cell. `art/check.py` holds the
+scene to C and to the player with its own arithmetic (`art/README.md`). `art/unreal/verdandi_import.py` runs inside
+the Unreal editor and keeps every actor whose item did not change.
+
+| stage | in → out | keeps | loses |
+|---|---|---|---|
+| dress | W, C and the art file → the scene | C exactly (as play geometry); the lineage | nothing of C; the art's statements become items keyed by statement hash and cell |
+| import | the scene → the open Unreal level | each actor's scene id and item hash, as tags | determinism: the engine's pixels are not hashed or claimed |
+
 ## 4. Authority and its walls
 
 | role | who | how it is held |
@@ -138,6 +152,7 @@ replay and the renderers (§6). The manifests' hashes are not pinned anywhere in
 | client | `design/design.py` | `design/test_design.py` (17 checks, off the gate) |
 | judge | `verify/verify.py` | writes only `verify/build/` and its scratch |
 | a separate runtime | `graybox/` (`sim.js` writes the game state; the renderers read it) | its self-test and `check.py`; no row |
+| the art | `art/` (writes a scene from W and C; never writes W or C) | `art/check.py`; the importer's in-engine self-check; no row |
 
 The walls, with their real reach:
 
@@ -145,7 +160,7 @@ The walls, with their real reach:
   `Authority` and `Reading` types. The shell keeps its authority with private fields, not with that typestate.
 - **The platform wall.** `win32.rs` is included only under `cfg(all(target_os = "windows", shell_window))`. The gate
   reads its text through fences, including LATENCY-0's byte-exact prefix, and never compiles it.
-- **Program time against content time.** The gate never runs `design/` or `graybox/`. The design tool never runs the
+- **Program time against content time.** The gate never runs `design/`, `graybox/` or `art/`. The design tool never runs the
   gate. `designir-fence` and `hermeneutics-fence` check by syntax tree that nothing under `verify/` reads `design/`.
 
 ## 5. Restrictions, as the code enforces them
@@ -238,6 +253,7 @@ Status key: **G** in the gate · **G-mock** in the gate over a mock, host number
 | envelope, registrations, registers | `verify/envelope.py`, `preregister.json`, `reasons.json`, `mints.json` | `records-*`, `reasoncourt-*`, `mintwatch-*` | G | G34, G35; the ledger has no head |
 | design tool | `design/design.py` | `design/test_design.py` | O | not certified (G27) |
 | graybox conversion, simulation, renderers, bench | `graybox/` | `check.py`; the page's self-test; host runs | O | float simulation; one-page replay; hashes unpinned |
+| the art: collision is C, dressing out of play, revisions local | `art/` | `art/check.py` | O | the Unreal import not yet run on an engine; visual quality judged by a person, not checked |
 | input to photon; a latency claim; a model at the seam; the competitive arena | — | `docs/ROADMAP.md` | D | — |
 
 ## 10. What a change touches
@@ -256,3 +272,4 @@ This is derived from the pins, the fences and the reads of each row. Treat the r
 | `oracle/` | a new oracle, named; `oracle-frozen` |
 | `design/` | `design/test_design.py`; no row |
 | `graybox/` | `graybox/check.py` (map content); `serve.py --selftest` for both maps (runtime); `--bench` for a cost claim; no row |
+| `art/` | `art/check.py` (the art against C and the player, plants, a look and a layout revision); the importer's in-engine self-check and its report on the host; no row |

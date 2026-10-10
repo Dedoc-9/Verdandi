@@ -1,0 +1,85 @@
+VERDANDI-ART 0
+# ART-GENERATION-0, the first brief: "a rain-soaked brutalist coastal plaza at night", dressed on the tactical
+# graybox. The art direction is the model's; nothing here moves a wall, a floor, a cover block or a spawn — those are
+# the admitted layout's and the graybox map's. Colours are R,G,B 0-255 (sRGB), lengths metres, light in lux or
+# candelas. The direction, in one breath: monumental raw concrete under a low sea fog, everything wet; warm sodium on
+# the lanes, cold moonlight from the sea to the south-west; the plaza ringed by stepped towers and a cantilevered
+# slab; team colours in the neon — amber at base A in the west, cyan at base B in the east, magenta where they meet.
+
+map tactical
+title Rain-soaked brutalist coastal plaza at night
+seed tidewater
+
+time night
+moon 215 24 0.35 168,186,255
+fog 0.045 38,54,74 volumetric
+exposure 1.5
+bloom 0.9
+rain 0.8
+
+# every mesh names where it came from and under what licence
+asset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)
+
+# the palette: raw and wet concrete, black-water puddles, dark steel housings, three neons
+material concrete       112,110,104 0.86 0.0
+material concrete_dark   66,67,70   0.92 0.0
+material concrete_wet    74,74,76   0.30 0.0
+material floor_wet       46,47,50   0.16 0.0
+material plaza_stone     92,90,86   0.22 0.0
+material puddle          14,16,20   0.02 0.0
+material housing         36,36,38   0.45 0.8
+material neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 40
+material neon_cyan        0,225,255 0.40 0.0 emissive 0,225,255 40
+material neon_magenta   255,40,190  0.40 0.0 emissive 255,40,190 45
+
+# the play geometry: what C holds, in the look's materials
+surface ground floor_wet
+surface floor  floor_wet
+surface stair  floor_wet
+surface raised plaza_stone
+surface cover  concrete_wet
+surface wall   concrete
+
+# regions: names for the places the look talks about (cells, x across and z down)
+region base-a      2,9  8,22
+region base-b     39,9 45,22
+region north-lane  5,3 42,6
+region south-lane  5,25 42,28
+region mid-lane    9,14 38,17
+region plaza      19,10 28,21
+region north-flank 23,7 24,9
+region south-flank 23,22 24,24
+
+# massing: the city beyond the walls, and the towers that make the plaza a room
+skyline concrete_dark 8 26
+tower plaza concrete 12 20
+tower base-a concrete 6 10
+tower base-b concrete 6 10
+# a cantilevered slab over the plaza's north edge, and its twin over the south edge
+canopy plaza concrete 5.2 19,10 28,11
+canopy plaza concrete 5.2 19,20 28,21
+
+# light: the team colours at the bases, magenta in the plaza, sodium on the lanes, cold white in the flanks
+neon base-a neon_amber 2.9 3
+neon base-b neon_cyan 2.9 3
+neon plaza neon_magenta 3.1 2
+neon mid-lane neon_magenta 2.6 5
+lamp north-lane 255,170,90 600 4
+lamp south-lane 255,170,90 600 4
+lamp north-flank 210,225,255 450 2
+lamp south-flank 210,225,255 450 2
+lamp plaza 225,235,255 500 3
+
+# water: black puddles that hold the neon
+puddle plaza puddle 35
+puddle mid-lane puddle 25
+puddle north-lane puddle 20
+puddle south-lane puddle 20
+
+# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)
+view base-a-exit    8,15  90  0
+view north-flank   23,8  180  4
+view plaza-centre  24,15  90  2
+view plaza-corner  20,21  40  6
+view south-lane    12,26  90  0
+view mid-west      13,16  90  0

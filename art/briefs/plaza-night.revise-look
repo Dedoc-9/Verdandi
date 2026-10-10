@@ -1,0 +1,7 @@
+VERDANDI-ART-REVISION 0
+# A look revision, in the words of the owner's text of 2026-10-10: "make the wet surfaces less reflective". The wet
+# materials' roughness rises; the puddles stay black mirrors. Each line replaces the brief's one statement with the
+# same verb and name; nothing else in the brief moves.
+material floor_wet     46,47,50 0.34 0.0
+material concrete_wet  74,74,76 0.48 0.0
+material plaza_stone   92,90,86 0.40 0.0

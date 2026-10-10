@@ -20,3 +20,6 @@ __pycache__/
 design/work/
 # FPS-GRAYBOX-0: each map's manifest, written by graybox/check.py (rebuilt on every run; never committed)
 graybox/build/
+# ART-GENERATION-0: the scenes art/dress.py writes (rebuilt from their inputs; never committed), and the Unreal project made in art/unreal/
+art/build/
+art/unreal/*/

@@ -161,6 +161,8 @@ FPS-GRAYBOX-0    the owner's sprint (2026-10-09): stop expanding the gate; a pla
       ↓
 FPS-VISUAL-0     the owner's visual pass (2026-10-09), outside the gate: a sky and a sun, floor materials (the 1 m grid a hidden debug mode), wall panels and trim, varied cover, one weapon model whose transform stays apart from the shot; movement, collision, source hashes and replay kept; screenshots and timings before and after, and no improvement claimed unmeasured. His rule: the canonical world says what the map means, the collision world what blocks, the render world how it looks, and the render world decides nothing that blocks; BUILT the same day: a sky and a traced sun, floor modules, panelled walls, dressed cover, a 22-part weapon apart from the shot; the first renderer kept beside it; a self-test that holds the drawn solids to the collision world face by face and keeps decoration out of play, seven planted renderer defects refused; timed in SwiftShader, then on the host (0179: the lit renderer's median draw and readback 1.36–1.53 times the first's)
       ↓
+ART-GENERATION-0 the owner's pivot (2026-10-10), ahead of EVIDENCE-LINK-0: verification serves the art; prompt to playable art at AAA ambition, Unreal 5.8 to render it, Verðandi keeping layout, collision and lineage. Its first slice built beside the certified tree (`art/`): one brief dressed onto the tactical graybox, its checks, a look and a layout revision; the Unreal import written, not yet run on an engine
+      ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
@@ -2582,6 +2584,72 @@ that report; no instrument saw it. Pushed, `3dc15ec..222f856`.
 **Grade.** MEASURED (the host, one run, a 0.02 ms clock): the table, a draw and its readback, which is not a frame
 rate and not input-to-photon. OBSERVED (the host): the tree, the two self-tests. DECLARED: his report of the play.
 NOT_MEASURED: a frame rate; input-to-photon; any other browser or machine.
+
+### ART-GENERATION-0 — prompted art over a playable world · **the owner's pivot** (2026-10-10); outside the certified gate · **built** (its first slice, `art/`); the Unreal import not yet run on an engine
+
+**His words.** *"the verification should exist only to guarantee the purity of the art. we want to move from
+verification to enabling the user to prompt art through llm and i mean at the quality of aaa games"*. With them came a
+text he brought. It names the slice and its loop: intent, art direction, world, play, critique and revision. It keeps
+a small set of guarantees (provenance from source to scene, geometry integrity, edit locality, reproducibility,
+performance budgets, playability), each in proportion to the harm it prevents. It holds that visual quality is
+judged from rendered views and by people, not certified by tests, and that the repository should be read before
+choosing between extending the renderer, connecting an engine or a hybrid.
+
+**The reading of the repository** (2026-10-10, in the session). The certified kernel is an integer raycaster over a
+grid of at most 48 × 48 cells. No growth of it reaches the target, and it is the truth about layout. The design tool
+and the graybox are already the stage studios call blockout: a layout a model can propose and the owner admits, a
+collision world derived from it, routes walked and planted defects refused. So the path is hybrid. Verðandi keeps
+layout, collision and lineage; an engine renders; the model directs the art in between.
+
+**His decision, answering the session's three questions.** *"Finite decision: Unreal; curated modular assets + CC0 +
+selective AI props; separate `graybox/` project. Keep verification subordinate to artistic intent and gameplay
+integrity."* His qualification: *"prove the smallest end-to-end scene works on your actual hardware before committing
+to its full toolchain"*, and Godot is the fallback if Unreal proves too heavy. His first milestone: *"one rain-soaked
+brutalist coastal plaza at night that you can actually enter in first person, critique in plain language and revise.
+Make one layout change and one visual change. Verify that collision and routes survive both, that unrelated regions
+remain untouched, and that the scene loads. Judge visual quality from actual rendered viewpoints—not from a passing
+gate."*
+
+**Grade.** DECLARED: his ruling. It is not a rung and adds no row. It goes ahead of EVIDENCE-LINK-0, which stays
+declared as written.
+
+**Built (2026-10-10), beside the certified tree: `art/`** ([`art/README.md`](../art/README.md)). The project is named
+`art/` because `graybox/` is the slice it dresses.
+
+- **An art file** in its own small language (`VERDANDI-ART 0`). It sets materials, massing (skyline, towers),
+  canopies, neon, lamps, puddles, air and critique views. Every mesh it uses names its source and licence.
+- **An exporter**, `art/dress.py`. It turns the art file, plus the W and C of the graybox map it names, into one
+  engine scene. The scene's collision is C exactly, merged inside 8 × 8 chunks. Every dressing choice is a hash of
+  its statement and cell, so an edit cannot reshuffle the art elsewhere. A lineage binds the art file, the layout's
+  heads, W, C, the exporter and the scene.
+- **The art's checks**, `art/check.py`. They cover the export's determinism and the graybox map's own checks. The
+  collision boxes must lay back onto C cell for cell. No dressing may stand where a player can be: every piece must
+  be inside rock, inside or flat on a solid top, flush on a rock face, or above a reach ceiling recomputed from C and
+  the player, whose constants are read from `graybox/web/sim.js` itself. No piece may have collision. Every mesh must have a source and licence, and the lineage must hold.
+- **Eighteen planted defects**, each refused by the check that should catch it. Five are statements the exporter
+  itself must refuse.
+- **The two revisions of his milestone.** The look revision, "make the wet surfaces less reflective", changes the
+  three materials it names and nothing else. The layout revision, "make this alley narrower", closes one column of
+  the north flank through the design tool's own preview and admission. Play still holds after it: three cells
+  changed, all in its region, and nine pieces of the scene changed, all beside them.
+- **The Unreal 5.8 importer**, `art/unreal/verdandi_import.py`, run inside the editor. It works in one undoable
+  transaction. It keeps every actor whose item did not change, checks the level's collision against C, reports the
+  template character's movement against the player the checks assume, and writes a report beside the scene.
+
+**What it does not show.** The importer has run only against a stand-in for Unreal's Python module, outside the
+repository. Its first run on an engine is the host's, and its report is the evidence. The first scene uses the
+engine's cube alone: it is the hardware test, not the look. There is no kit yet, no textures, no rain particles and
+no AI props. Visual quality is NOT_MEASURED: no check measures it, and none is claimed.
+
+**Next, by his milestone.** On the host:
+
+1. Install Unreal 5.8.
+2. Create a First Person project in `art/unreal/VerdandiArt`.
+3. Import the scene, enter it, and critique it from the views.
+4. Re-import after each revision.
+
+Then the kit: a curated modular set, CC0 materials and selected AI props, each declared with its source and licence
+and placed under the same rule.
 
 ### EVIDENCE-LINK-0 — a claim about a recorded event, traced to its source · **accepted as the next slice** (the owner's ruling, 2026-10-09); declared; not registered, nothing built
 
