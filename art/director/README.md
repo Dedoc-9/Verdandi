@@ -172,6 +172,9 @@ rustc -O art/director/conform.rs -o art/build/conform && art/build/conform art/d
 
 On Windows, name the program `art\build\conform.exe`. `art/build/` exists once `art/dress.py` has run.
 
+The self-test's fixture is the round's `base/`: the files at the head its candidates were written against. It checks
+that its scratch copy starts at that head, so it does not depend on what has since been admitted to the live brief.
+
 ## 6. What it proves, and what it does not
 
 | claim | shown by | does not show |

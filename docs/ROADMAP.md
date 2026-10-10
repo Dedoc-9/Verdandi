@@ -2661,6 +2661,43 @@ it, so it rests on the commit that holds it.
 **Next, by his ruling.** The owner chooses from the round (`python art/director.py admit plaza-night <seq>`, or in the
 session). Then the plaza is made in Unreal.
 
+**The round admitted (2026-10-10).** His choice: *"Choose A, B and C — admit all three, sequentially, through the
+ledger."* A first, to *"establish the vertical silhouette"*; B, to *"reshape the approach"*; C last, to *"add overhead
+framing after the first two changes have been re-evaluated against the current head"*. His condition was to inspect
+the result after each admission before the next, and to stop and revise the art direction if a change made the
+composition worse, *"rather than admitting changes just because their scope checks pass"*. In his words, *"CLEAN means
+the candidate satisfies the scope rule; it does not mean the scene is artistically better."*
+
+- **The ledger.** A was admitted at #9. B was re-evaluated at #10 (CLEAN, HEAD-MOVED) and admitted at #11, its layout
+  through the design tool. C was re-evaluated at #12 (CLEAN, HEAD-MOVED) and admitted at #13. The head moved from
+  `88c5151740aa` to `c53d87349709`. D, E and F stand evaluated, neither admitted nor refused.
+- **The checks after each admission.** The ledger verified and `art/check.py` passed. After B, the graybox's map checks
+  passed (the tactical layout compiled again through the design tool, head `1c80227de403`), and so did its runtime
+  self-test (23 / 23). These were run here, in the build container.
+- **The judgement, from the provisional preview's stills** (OBSERVED, in a software renderer; a sketch, not the
+  Unreal look).
+  - **After A**, from eye level the towers change little. From 30 m, the plaza's crown stands above the skyline. The
+    towers, one prism per cell, read as a comb of spikes rather than one brutalist mass: a note for the kit, not a
+    reason to stop.
+  - **After B**, from the slot the plaza is framed in a narrow lit opening, the compression B intended. From the
+    north-flank view the new wall fills half the frame, and a lamp over every cell washes it flat and pale: a note for
+    the lighting.
+  - **After C**, inside the plaza at eye level the slabs at 7 m mostly leave the frame. The west bridge reads as a
+    lintel over the approaches from base A and the mid-west lane, so the plaza is entered as through a gate. Looking
+    up, the sky is framed. The heavier slabs will need light on their undersides to read at night.
+
+  No admission made the composition worse, so all three were admitted.
+- **Two defects it found, both tests whose fixture was the live state.**
+  - The director's self-test copied the live brief. Once A was admitted for real, A's `+ material` no longer applied,
+    and the self-test failed. Its fixture is now the round's `base/`: the files at the head its candidates were
+    written against. The self-test checks that its scratch copy starts at that head, and a planted change to the
+    fixture is refused.
+  - The art check's layout revision closed the same three cells of the north flank that B admitted. After B it had
+    nothing to test and said SKIPPED. It now narrows the south flank, and it and its plant run again.
+
+**Next.** The plaza is made in Unreal: brutalist massing in place of the per-cell prisms, wet concrete, controlled
+neon, rain, fog and light. The certified layout and collision stay authoritative.
+
 ### ART-GENERATION-0 — prompted art over a playable world · **the owner's pivot** (2026-10-10); outside the certified gate · **built** (its first slice, `art/`); the Unreal import not yet run on an engine
 
 **His words.** *"the verification should exist only to guarantee the purity of the art. we want to move from

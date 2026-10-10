@@ -36,3 +36,5 @@ open 5,28 33,28
 open 35,28 42,28
 open 5,23 7,24
 open 40,23 42,24
+# DIRECTOR-0 intent c6d1ba67fdc8: make the plaza more imposing (candidate B)
+close 24,7 24,9

@@ -628,6 +628,13 @@ def cmd_selftest():
             shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
         ws = Workspace("plaza-night", tmp)
         rnd = os.path.join(tmp, "art", "rounds", "plaza-imposing")
+        # The fixture is the head the round was written against, kept in the round's base/, never the live brief:
+        # once a candidate is admitted for real the live brief has moved on, and A's '+ material' no longer applies.
+        for f, to in (("plaza-night.art", "art/briefs"), ("tactical.design", "graybox/maps"), ("tactical.layout", "graybox/maps")):
+            shutil.copy(os.path.join(rnd, "base", f), os.path.join(tmp, to, f))
+        want = canon.head(canon.load_intent(open(os.path.join(rnd, "A.intent"), "rb").read())["base"])
+        got0 = canon.head(current_parts(ws))
+        results.append(("the scratch copy starts at the head the round was written against (%s)" % want[:12], got0 == want, got0[:12]))
         files = sorted(os.path.join(rnd, f) for f in os.listdir(rnd) if f.endswith(".intent"))
         cmd_genesis_quiet(ws)
         rows = cmd_evaluate(ws, files, quiet=True)

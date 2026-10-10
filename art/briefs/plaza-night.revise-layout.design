@@ -1,6 +1,8 @@
 VERDANDI-DESIGN 0
-# A layout revision, in the words of the owner's text of 2026-10-10: "make this alley narrower". The north flank,
-# the two-cell alley from the north lane down into the plaza, becomes one cell wide: its east column closes. The
-# probe at 23,8 stays open. Admitted through the design tool after the tactical layout's own design.
-# region 23,7 24,9
-close 24,7 24,9
+# A layout revision, in the words of the owner's text of 2026-10-10: "make this alley narrower". The south flank,
+# the two-cell alley from the plaza down into the south lane, becomes one cell wide: its west column closes. The
+# probe at 24,23 stays open. Admitted through the design tool after the tactical layout's own design. Until
+# 2026-10-10 this revision narrowed the north flank; candidate B of the first round then made that change for real,
+# and the check had nothing left to test there.
+# region 23,22 24,24
+close 23,22 23,24

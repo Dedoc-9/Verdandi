@@ -19,3 +19,11 @@ to 8), not this page's.
 
 A, B and C can all be admitted, in any order. After the first, the others meet a moved head and are re-evaluated
 before admission (`python art/director.py reevaluate`).
+
+`base/` holds the brief, the design and the layout at the head the candidates were written against (`88c5151740aa`).
+The director's self-test starts from these files, never from the live brief, which moves on as candidates are
+admitted.
+
+**What the owner chose (2026-10-10).** He chose A, B and C, admitted in that order, each judged from rendered stills
+before the next. A was admitted at #9. B was re-evaluated at #10 and admitted at #11. C was re-evaluated at #12 and
+admitted at #13. The head is now `c53d87349709`. D, E and F were not admitted.

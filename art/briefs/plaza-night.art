@@ -54,12 +54,12 @@ region south-flank 23,22 24,24
 
 # massing: the city beyond the walls, and the towers that make the plaza a room
 skyline concrete_dark 8 26
-tower plaza concrete 12 20
+tower plaza concrete_monument 16 30
 tower base-a concrete 6 10
 tower base-b concrete 6 10
 # a cantilevered slab over the plaza's north edge, and its twin over the south edge
-canopy plaza concrete 5.2 19,10 28,11
-canopy plaza concrete 5.2 19,20 28,21
+canopy plaza concrete_slab 7.0 19,10 28,11
+canopy plaza concrete_slab 7.0 19,20 28,21
 
 # light: the team colours at the bases, magenta in the plaza, sodium on the lanes, cold white in the flanks
 neon base-a neon_amber 2.9 3
@@ -69,7 +69,7 @@ neon mid-west neon_magenta 2.6 5
 neon mid-east neon_magenta 2.6 5
 lamp north-lane 255,170,90 600 4
 lamp south-lane 255,170,90 600 4
-lamp north-flank 210,225,255 450 2
+lamp north-flank 210,225,255 700 1
 lamp south-flank 210,225,255 450 2
 lamp plaza 225,235,255 500 3
 
@@ -87,3 +87,6 @@ view plaza-centre  24,15  90  2
 view plaza-corner  20,21  40  6
 view south-lane    12,26  90  0
 view mid-west      13,16  90  0
+material concrete_monument 84,84,88 0.88 0.0
+material concrete_slab 58,58,62 0.90 0.0
+canopy plaza concrete_slab 7.6 19,12 20,19

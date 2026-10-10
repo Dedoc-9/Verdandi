@@ -126,7 +126,9 @@ Then it makes the two revisions:
 - **The layout revision** is compiled and admitted through the design tool. Play must still hold, and every piece of the scene that changed must stand within a cell of a changed cell. A collision box may change anywhere in an 8 × 8 chunk holding a changed cell.
 
 The layout revision needs the shell (`rustc` or a built `verify/build/shell`). Without it the line says SKIPPED, and
-the verdict says so too.
+the verdict says so too. It also says SKIPPED when the admitted layout already holds the revision. That happened when
+candidate B of the first round was admitted (2026-10-10), because B closed the same three cells of the north flank.
+The revision now narrows the south flank instead, so the check has a change to test again.
 
 ## DIRECTOR-0: prompts answered by candidates, admitted by a person
 
@@ -199,7 +201,7 @@ block a player is cover, and goes into the graybox map.
 | `preview.py` | the provisional first-person preview (PROVISIONAL_PREVIEW): a standalone WebGL 2 page of the scene |
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |
 | `briefs/plaza-night.revise-look` | its look revision: the wet surfaces less reflective |
-| `briefs/plaza-night.revise-layout.design` | its layout revision: the north flank one cell narrower |
+| `briefs/plaza-night.revise-layout.design` | its layout revision: the south flank one cell narrower (the north flank until B was admitted) |
 | `unreal/verdandi_import.py` | the Unreal 5.8 importer, run inside the editor |
 | `director.py`, `director/` | DIRECTOR-0: the canonical form, the scope protocol, the ledger, the conformance vectors, the second implementation |
 | `rounds/plaza-imposing/` | the first round's candidate intents |
