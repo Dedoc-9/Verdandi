@@ -91,7 +91,13 @@ the design tool after the layout's own design. Its `# region` line says where it
 ```
 python art/dress.py plaza-night          # art/build/plaza-night/: scene.json, lineage.json, plan.svg (a top view, not a render)
 python art/check.py                      # every brief: ends ART CHECKS PASSED
+python art/preview.py plaza-night        # art/build/plaza-night/preview.html: a first-person sketch to open in a browser
 ```
+
+**The preview is PROVISIONAL_PREVIEW.** It shows the scene's boxes in their materials' colours, the moon, every lamp
+and neon as a point light, and fog, from the brief's views (keys 1–9) or walking. It is a sketch for judging
+composition and height between admissions, before Unreal is installed. It is not the Unreal look, it decides nothing,
+and nothing hashes its pixels.
 
 `art/check.py` exports each brief twice (the bytes must agree), then holds the scene to the world it dresses:
 
@@ -190,6 +196,7 @@ block a player is cover, and goes into the graybox map.
 |---|---|
 | `dress.py` | the exporter: the art file and the graybox world to one scene, its lineage and a plan view |
 | `check.py` | the art's checks, plants and revisions |
+| `preview.py` | the provisional first-person preview (PROVISIONAL_PREVIEW): a standalone WebGL 2 page of the scene |
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |
 | `briefs/plaza-night.revise-look` | its look revision: the wet surfaces less reflective |
 | `briefs/plaza-night.revise-layout.design` | its layout revision: the north flank one cell narrower |

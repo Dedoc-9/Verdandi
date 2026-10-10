@@ -289,6 +289,8 @@ def cmd_reevaluate(ws, seq):
                                              "verdict": verdict, "after": after, "observed": {"at": now(), "ms": timings}})
     print("candidate %s re-evaluated at the current head: %s %s (ledger #%s; it was %s at #%s)" % (
         it["candidate"], verdict["verdict"], ",".join(verdict["codes"]) or "-", new["seq"], ev["verdict"]["verdict"], seq))
+    if out0 is not None:
+        print("contact sheet: %s" % os.path.relpath(contact_sheet(ws, [(it, verdict, out0, out1, new["seq"], timings)]), ws.root))
     return new
 
 
