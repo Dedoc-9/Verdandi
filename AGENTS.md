@@ -40,7 +40,7 @@ When two sources disagree, trust them in this order:
 | `verify/` | the gate, the envelope, the registers, the sealers | is the gate |
 | `design/` | the design tool: a client of the shell, no authority | `design/test_design.py`; no row |
 | `graybox/` | the FPS slice: converter, map checks, server, browser runtime | its own checks; no row |
-| `art/` | prompted art: the art file, the exporter to an engine scene, the Unreal importer | `art/check.py`; no row |
+| `art/` | prompted art: the art file, the exporter, the Unreal importer, DIRECTOR-0 (scope, ledger, vectors) | `art/check.py`, `art/director.py selftest`, `conform.rs`; no row |
 | `docs/` | the documents above | — |
 
 ## 3. Never, without the owner's word
@@ -78,7 +78,8 @@ container.
 | the compiler or authoritative semantics | the relevant engineering checks, and the gate at the checkpoint | `GATE PASSED`, then `RECONCILE  rowset 74db4c8d78625af5  251 rows / 0 fail / 0 skipped` while no row is added |
 | map content (`graybox/maps/`) | `python graybox/check.py --compile` | every check and mutation PASS; `GRAYBOX MAP CHECKS PASSED` |
 | graybox runtime or renderer (`graybox/web/`) | `python graybox/serve.py tactical --selftest`, then `witness` | `23 / 23` and `20 / 20`, exit 0 (a browser opens) |
-| an art file, the exporter or the art's checks (`art/`) | `python art/check.py` | every check and plant PASS; `ART CHECKS PASSED` (a SKIPPED line means no shell compiled the layout revision) |
+| an art file, the exporter or the art's checks (`art/`) | `python art/check.py` | every check and plant PASS; `ART CHECKS PASSED` (a SKIPPED line says why it skipped) |
+| the director: the canonical form, scope, the ledger (`art/director*`) | `python art/director.py selftest`, then `rustc -O art/director/conform.rs -o art/build/conform` and `art/build/conform art/director/vectors.json` | `DIRECTOR SELFTEST PASSED`; `CONFORMANCE 62 / 62`. A change to an expected output in `vectors.json` is a new protocol version, never a fix |
 | a cost claim about the graybox | `python graybox/serve.py tactical --bench` | timings with the clock's step printed; a draw and readback, never a frame rate |
 | the design tool | `python design/test_design.py` | 17 checks, 0 failed |
 | a registered release checkpoint, or a threat to the certified contract | `python verify/verify.py`, twice, on one clean tree | the two compact outputs byte-identical |

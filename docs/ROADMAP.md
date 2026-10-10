@@ -163,6 +163,8 @@ FPS-VISUAL-0     the owner's visual pass (2026-10-09), outside the gate: a sky a
       ↓
 ART-GENERATION-0 the owner's pivot (2026-10-10), ahead of EVIDENCE-LINK-0: verification serves the art; prompt to playable art at AAA ambition, Unreal 5.8 to render it, Verðandi keeping layout, collision and lineage. Its first slice built beside the certified tree (`art/`): one brief dressed onto the tactical graybox, its checks, a look and a layout revision; the Unreal import written, not yet run on an engine
       ↓
+DIRECTOR-0       the owner's ruling (2026-10-10): the operator loop for prompted art — candidates checked against the head they meet, admitted or refused by a person, every step in an append-only ledger; a canonical form and conformance vectors a second implementation reproduces (built beside the tree: art/director.py, art/director/; a std-only Rust second implementation reproduces all 62 vectors)
+      ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
@@ -2584,6 +2586,80 @@ that report; no instrument saw it. Pushed, `3dc15ec..222f856`.
 **Grade.** MEASURED (the host, one run, a 0.02 ms clock): the table, a draw and its readback, which is not a frame
 rate and not input-to-photon. OBSERVED (the host): the tree, the two self-tests. DECLARED: his report of the play.
 NOT_MEASURED: a frame rate; input-to-photon; any other browser or machine.
+
+### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
+
+**His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
+verification campaign."* He accepted the first-slice scope the research supported. It has five parts: a canonical
+intent; a reference graph with early cutoff; a pure `check_scope` with shared conformance vectors; a structural diff;
+and visual anchors as provenance only. Futures, playtesting, signing, replay certificates and memory are deferred. He
+locked three boundaries:
+
+- canonicalization *"must be a defined contract, not 'sorted JSON'"*;
+- early cutoff *"must depend on content identity"*;
+- *"A scope verdict must name the head it checked."*
+
+**His five further boundaries, with the word "Go":**
+
+1. The vectors are the new end-to-end path, *"consumable by a second implementation without importing or executing
+   the Python reference implementation"*, comparing verdicts and canonical outputs, *"not just whether both
+   implementations return PASS"*.
+2. The protocol is pure and versioned, with no claim of RFC 8785 compatibility it does not have.
+3. Scope decisions are head-specific, with no stale-verdict override.
+4. The ledger is append-only in behaviour: a re-evaluation is a new event, and the old verdict is kept.
+5. The plaza's candidates exercise the protocol, not only its happy path: a valid change of the look, a layout
+   change, a stale candidate, an out-of-scope change that must be refused, and malformed or unknown-version input.
+
+His last word on it: *"Then stop expanding protocol machinery and use it to make the plaza. The protocol exists to
+protect the creator's intent—not to become the product."*
+
+**Grade.** DECLARED: his ruling. It is not a rung, it adds no row, and the gate does not read `art/`.
+
+**Built (2026-10-10).**
+
+- **The canonical form** (VERDANDI-CANON 0, `art/director/intent.py`): a restricted JSON defined rule by rule. Values
+  are strings, booleans, arrays and objects only, integers are strings, keys are ASCII, escapes are exact, output is
+  ASCII only, and a document is admitted only in its own byte form. It says plainly that it is not RFC 8785.
+- **The intent** (version 0): an unknown version is refused, never translated.
+- **The scope protocol** (`art/director/scope.py`): one pure function. It works over stable addresses, a
+  piece-to-material graph with early cutoff and a cycle check, patterns with namespaces granted only by name,
+  `layout/` and `surface/` grants, and a play scope that can never be granted. Its verdicts are CLEAN, LEAKAGE or
+  REFUSED, each naming the head written against and the head checked.
+- **The ledger** (`art/director/ledger.py`): one canonical document a line, hash-chained. Its events are genesis,
+  evaluate, refuse_input, admit, refuse, rebase and approve, and `verify` replays it to the files.
+- **The conformance vectors** (`art/director/vectors.json`, 62): the canonical form, its refusals, intents, heads,
+  material digests, patterns and fifteen scope cases, all with exact expected bytes.
+  - The Python reference reproduces them, and so does a second implementation, `art/director/conform.rs`: std-only
+    Rust with its own JSON reader, which never runs the Python.
+  - Tampered expectations are caught by both.
+  - Of four rule defects planted in the Rust copy, three were caught. The fourth (DEL left unescaped by one branch)
+    was equivalent, since the next branch escapes it; planted as a real defect, it was caught.
+- **The first round**, "make the plaza more imposing" (`art/rounds/plaza-imposing/`), evaluated in 3.5 s:
+  - **A** (monumental towers): CLEAN.
+  - **B** (a layout change closing the north flank to a slot, through the design tool): CLEAN.
+  - **C** (heavier cantilevers): CLEAN.
+  - **D** ("for the plaza", but through shared materials): LEAKAGE, reaching the bases' towers, every wall and the mid
+    lanes' neon.
+  - **E** (sealing the south flank under a plaza-only grant): REFUSED.
+  - **F** (a slab at 3.6 m over the platform): REFUSED.
+  - An unknown version and a malformed input were refused on input.
+- **The self-test** (`python art/director.py selftest`) runs the lifecycle in a scratch copy:
+  - it admits A;
+  - it refuses to admit C at the moved head, re-evaluates C as a new event naming the old one, and admits it;
+  - it refuses D on a person's word, then re-evaluates and admits B (whose layout is admitted through the design tool);
+  - it verifies the ledger, refuses two planted defects (an unlogged hand edit, a changed ledger line), and accepts a
+    hand edit recorded with rebase.
+- **The one-place rule**, which a piece's identity rests on, is part of this slice. It found two puddles in one place
+  in the first brief, and the brief's mid lane became two regions.
+- **Choices are keyed by a statement's name, not its text**, so a revision of a statement's numbers no longer
+  reshuffles its other choices.
+
+**What it does not show.** That the art is good: no check here measures it. That either implementation is right: one
+author wrote both, and the vectors are the contract. That the ledger's last line is protected: nothing after it names
+it, so it rests on the commit that holds it.
+
+**Next, by his ruling.** The owner chooses from the round (`python art/director.py admit plaza-night <seq>`, or in the
+session). Then the plaza is made in Unreal.
 
 ### ART-GENERATION-0 — prompted art over a playable world · **the owner's pivot** (2026-10-10); outside the certified gate · **built** (its first slice, `art/`); the Unreal import not yet run on an engine
 

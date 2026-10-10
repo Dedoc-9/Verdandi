@@ -318,7 +318,8 @@ def compile_revision(base_design: bytes, revision: bytes):
             for step in (("propose", "-"), ("preview",), ("admit",)):
                 rc, o, e = run(*step, inp=text if step[0] == "propose" else None)
                 if rc != 0:
-                    return None, "design.py %s: %s" % (step[0], (e or o).strip()[-160:])
+                    code = "SHELL-COMPILE-EMPTY: " if "SHELL-COMPILE-EMPTY" in (e + o) else ""
+                    return None, "design.py %s: %s%s" % (step[0], code, (e or o).strip()[-160:])
         rc, o, e = run("inspect", "--json")
         d = json.loads(o)
         grid = [ln[5:] for ln in d["top_view"][2:]]
@@ -404,19 +405,18 @@ def plants(out, art_path):
     S2["materials"][m0] = dict(S2["materials"][m0], roughness=0.5 if S2["materials"][m0]["roughness"] != 0.5 else 0.6)
     tampered = (json.dumps(S2, indent=1, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
     judged("the scene changed after export, its lineage not (%s)" % m0, S2, "the lineage binds every input", scene_bytes=tampered)
-    # through the exporter itself: statements it must refuse
-    text = open(art_path, encoding="utf-8").read()
-    for label, old, new in (
-            ("neon of a material that does not emit", "neon plaza neon_magenta", "neon plaza concrete"),
-            ("a canopy whose corners leave its region", "canopy plaza concrete 5.2 19,10 28,11", "canopy plaza concrete 5.2 17,10 28,11"),
-            ("a tower in a region never declared", "tower plaza concrete", "tower harbour concrete"),
-            ("a mesh from an unnamed source", "asset cube /Engine/BasicShapes/Cube.Cube engine", "asset cube /Engine/BasicShapes/Cube.Cube somewhere"),
-            ("a view where no player can stand", "view north-flank   23,8", "view north-flank   23,2")):
-        if old not in text:
-            res.append(("the exporter refuses " + label, False, "the plant's statement is not in the brief"))
-            continue
+    # through the exporter itself: statements it must refuse, appended to the brief as it stands (a plant must not
+    # depend on the brief's own lines, which revisions change)
+    text = open(art_path, encoding="utf-8").read().rstrip("\n") + "\nregion plant-r 19,10 28,21\n"
+    for label, add in (
+            ("neon of a material that does not emit", "neon plant-r concrete 3.1 2"),
+            ("a canopy whose corners leave its region", "canopy plant-r concrete 5.2 17,10 28,11"),
+            ("a tower in a region never declared", "tower harbour concrete 12 20"),
+            ("a mesh from an unnamed source", "asset plant-mesh /Engine/BasicShapes/Cube.Cube somewhere unknown"),
+            ("a view where no player can stand", "view plant-view 23,2 180 4"),
+            ("two pieces of dressing in one place", "puddle plant-r puddle 100")):
         try:
-            A = dress.parse(text.replace(old, new, 1), os.path.basename(art_path))
+            A = dress.parse(text + add + "\n", os.path.basename(art_path))
             A["name"], A["sha256"] = "plant", "-"
             dress.export(A)
             res.append(("the exporter refuses " + label, False, "the exporter took it"))
@@ -485,7 +485,11 @@ def check_brief(name):
                         region = [int(v) for v in ln[len("# region "):].replace(",", " ").split()[:4]]
                 base = open(os.path.join(level.MAPS, src["layout"].rsplit(".", 1)[0] + ".design"), "rb").read().replace(b"\r\n", b"\n")
                 rows, head = compile_revision(base, rtext)
-                if rows is None:
+                if rows is None and "SHELL-COMPILE-EMPTY" in head:
+                    # the layout already holds the revision (an admitted intent made the same change): nothing to test
+                    print("SKIPPED the layout revision (%s): the admitted layout already holds it" % os.path.basename(dpath))
+                    skipped += 1
+                elif rows is None:
                     print("FAIL the layout revision could not be admitted: %s" % head)
                     failed += 1
                 else:

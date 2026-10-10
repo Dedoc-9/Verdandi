@@ -98,6 +98,23 @@ def _cell(tok, w, h, where):
     return x, z
 
 
+RESERVED = ("play", "surface", "material", "env", "asset", "view", "layout", "city")
+SINGLE = ("map", "title", "seed", "time", "fog", "exposure", "bloom", "rain", "skyline")
+
+
+def statement_key(code) -> str:
+    """The name a revision uses for a statement: one per brief. The verb alone for a statement that may appear once;
+    the verb and its first word for the named ones; a canopy adds its corners, since a region may hold several."""
+    verb, args = code[0], code[1:]
+    if verb in SINGLE:
+        return verb
+    if verb in ("moon", "sun"):
+        return "light"
+    if verb == "canopy" and len(args) == 5:
+        return "canopy %s %s %s" % (args[0], args[3], args[4])
+    return "%s %s" % (verb, args[0] if args else "")
+
+
 def parse(text: str, fname: str) -> dict:
     """The art file's statements, read and checked for form. The world is not consulted yet."""
     stmts = []
@@ -114,7 +131,10 @@ def parse(text: str, fname: str) -> dict:
         where = "%s line %d" % (fname, n)
         verb, args = code[0], code[1:]
         norm = " ".join(code)
-        A["statements"].append({"line": n, "text": norm, "hash": sha256(norm.encode("utf-8"))[:12]})
+        skey = statement_key(code)
+        if any(st["key"] == skey for st in A["statements"]):
+            raise ArtError("%s: a second statement %r: a brief names each statement once" % (where, skey))
+        A["statements"].append({"line": n, "text": norm, "hash": sha256(norm.encode("utf-8"))[:12], "key": skey})
         if verb == "map":
             if len(args) != 1 or A["map"]:
                 raise ArtError("%s: map takes one name, once" % where)
@@ -171,6 +191,8 @@ def parse(text: str, fname: str) -> dict:
                 raise ArtError("%s: region takes a name and two corners" % where)
             if args[0] in A["regions"]:
                 raise ArtError("%s: the region %s is declared twice" % (where, args[0]))
+            if args[0] in RESERVED:
+                raise ArtError("%s: %s is a word the addresses reserve, not a region's name" % (where, args[0]))
             A["regions"][args[0]] = {"corners": args[1:], "where": where}
         elif verb == "view":
             if len(args) != 4:
@@ -180,7 +202,7 @@ def parse(text: str, fname: str) -> dict:
             A["views"].append({"name": args[0], "cell": args[1], "yaw": _num(args[2], where, 0, 360, "yaw"),
                                "pitch": _num(args[3], where, -89, 89, "pitch"), "where": where})
         elif verb in ("skyline", "tower", "canopy", "neon", "lamp", "puddle"):
-            A["dressing"].append({"verb": verb, "args": args, "where": where, "hash": A["statements"][-1]["hash"]})
+            A["dressing"].append({"verb": verb, "args": args, "where": where, "hash": A["statements"][-1]["hash"], "skey": A["statements"][-1]["key"]})
         else:
             raise ArtError("%s: %r is not a statement of %s" % (where, verb, FORMAT))
     if not A["map"]:
@@ -316,8 +338,10 @@ def export(A: dict, maps_dir=None) -> dict:
         return [r4(x0), r4(y0), r4(z0), r4(x1), r4(y1), r4(z1)]
 
     for d in A["dressing"]:
-        verb, args, where, sh = d["verb"], d["args"], d["where"], d["hash"]
-        key = lambda *parts: "|".join([seed, sh] + [str(p) for p in parts])
+        verb, args, where, sh, skey = d["verb"], d["args"], d["where"], d["hash"], d["skey"]
+        # a choice is keyed by the statement's name and the cell, not by its text: a revision of a statement's
+        # numbers changes what the numbers say and keeps every other choice it made
+        key = lambda *parts: "|".join([seed, skey] + [str(p) for p in parts])
         if verb == "skyline":
             if len(args) != 3:
                 raise ArtError("%s: skyline takes a material and a lowest and highest height" % where)
@@ -333,7 +357,7 @@ def export(A: dict, maps_dir=None) -> dict:
                         continue
                     steps = int(hi - lo)
                     top = lo + (pick(key(x, z)) % (steps + 1) if steps > 0 else 0)
-                    visuals.append({"id": "skyline:%s:%d,%d" % (sh, x, z), "by": sh, "region": "*", "asset": "cube", "material": mat,
+                    visuals.append({"id": "skyline:%d,%d" % (x, z), "by": sh, "region": "*", "asset": "cube", "material": mat,
                                     "box": box(x * cell, wall, z * cell, (x + 2) * cell, top, (z + 2) * cell)})
         elif verb == "tower":
             if len(args) != 4:
@@ -352,7 +376,7 @@ def export(A: dict, maps_dir=None) -> dict:
                     done.add((x, z))
                     steps = int(hi - lo)
                     top = lo + (pick(key(x, z)) % (steps + 1) if steps > 0 else 0)
-                    visuals.append({"id": "tower:%s:%d,%d" % (sh, x, z), "by": sh, "region": args[0], "asset": "cube", "material": mat,
+                    visuals.append({"id": "tower:%d,%d" % (x, z), "by": sh, "region": args[0], "asset": "cube", "material": mat,
                                     "box": box(x * cell, wall, z * cell, (x + 1) * cell, top, (z + 1) * cell)})
         elif verb == "canopy":
             if len(args) not in (3, 5):
@@ -366,7 +390,7 @@ def export(A: dict, maps_dir=None) -> dict:
                 x0, z0, x1, z1 = sx0, sz0, sx1, sz1
             mat = material(args[1], where)
             y = _num(args[2], where, 0.5, 200, "height")
-            visuals.append({"id": "canopy:%s:%d,%d-%d,%d" % (sh, x0, z0, x1, z1), "by": sh, "region": args[0], "asset": "cube", "material": mat,
+            visuals.append({"id": "canopy:%d,%d-%d,%d" % (x0, z0, x1, z1), "by": sh, "region": args[0], "asset": "cube", "material": mat,
                             "box": box(x0 * cell, y, z0 * cell, (x1 + 1) * cell, y + 0.4, (z1 + 1) * cell)})
         elif verb == "neon":
             if len(args) != 4:
@@ -399,7 +423,7 @@ def export(A: dict, maps_dir=None) -> dict:
                             bx, nrm = box(cx0 + 0.3, y, cz0, cx1 - 0.3, y + 0.12, cz0 + t), [0, 0, 1]
                         else:
                             bx, nrm = box(cx0 + 0.3, y, cz1 - t, cx1 - 0.3, y + 0.12, cz1), [0, 0, -1]
-                        vid = "neon:%s:%d,%d:%s" % (sh, x, z, face)
+                        vid = "neon:%d,%d:%s" % (x, z, face)
                         visuals.append({"id": vid, "by": sh, "region": args[0], "asset": "cube", "material": mat, "box": bx})
                         px = r4((bx[0] + bx[3]) / 2 + nrm[0] * 0.08)
                         pz = r4((bx[2] + bx[5]) / 2 + nrm[2] * 0.08)
@@ -422,7 +446,7 @@ def export(A: dict, maps_dir=None) -> dict:
                         continue
                     y = max(reach[z * w + x] + 0.1, 3.4)
                     cx, cz = (x + 0.5) * cell, (z + 0.5) * cell
-                    vid = "lamp:%s:%d,%d" % (sh, x, z)
+                    vid = "lamp:%d,%d" % (x, z)
                     visuals.append({"id": vid, "by": sh, "region": args[0], "asset": "cube", "material": "housing",
                                     "box": box(cx - 0.25, y, cz - 0.25, cx + 0.25, y + 0.12, cz + 0.25)})
                     lights.append({"id": vid, "by": sh, "region": args[0], "type": "point", "pos": [r4(cx), r4(y - 0.05), r4(cz)],
@@ -443,8 +467,19 @@ def export(A: dict, maps_dir=None) -> dict:
                         continue
                     ix, iz = 0.15 + (hv >> 8) % 40 / 100.0, 0.15 + (hv >> 16) % 40 / 100.0
                     ex, ez = 0.15 + (hv >> 20) % 40 / 100.0, 0.15 + (hv >> 26) % 40 / 100.0
-                    visuals.append({"id": "puddle:%s:%d,%d" % (sh, x, z), "by": sh, "region": args[0], "asset": "cube", "material": mat,
+                    visuals.append({"id": "puddle:%d,%d" % (x, z), "by": sh, "region": args[0], "asset": "cube", "material": mat,
                                     "box": box(x * cell + ix, 0.001, z * cell + iz, (x + 1) * cell - ex, 0.008, (z + 1) * cell - ez)})
+    # one fixture to a place: a place is the kind and the cell (and face) a piece of dressing stands on, whatever
+    # region or statement made it. Two pieces in one place are coplanar copies that flicker in an engine, and an
+    # address that names two things names neither (DIRECTOR-0's addresses rest on this).
+    line_of = {s["hash"]: s["line"] for s in A["statements"]}
+    placed = {}
+    for v in visuals:
+        kind, place = v["id"].split(":", 1)
+        if (kind, place) in placed:
+            raise ArtError("%s: two pieces of dressing in one place, %s at %s: from line %d and line %d" % (
+                A["file"], kind, place, line_of.get(placed[(kind, place)], 0), line_of.get(v["by"], 0)))
+        placed[(kind, place)] = v["by"]
     collision = _collision(W, C, A["surfaces"])
     used = {v["asset"] for v in visuals} | {"cube"}
     spawns = {k: {"x": r4((sp["x"] + 0.5) * cell), "z": r4((sp["z"] + 0.5) * cell), "y": r4(tops[sp["z"] * w + sp["x"]]), "yaw": r4(sp["yaw"])}
@@ -463,6 +498,7 @@ def export(A: dict, maps_dir=None) -> dict:
         "tops": tops, "reach": reach,
         "player": dict(PLAYER, body=BODY, margin=MARGIN, flat=FLAT, flush=FLUSH),
         "spawns": spawns, "views": views,
+        "regions": {k: list(_region(A, k, w, h, A["file"])) for k in sorted(A["regions"])},
         "environment": {"time": A["time"], "light": A["light"], "fog": A["fog"], "exposure": A["exposure"], "bloom": A["bloom"], "rain": A["rain"]},
         "materials": A["materials"],
         "assets": {k: v for k, v in sorted(A["assets"].items()) if k in used},

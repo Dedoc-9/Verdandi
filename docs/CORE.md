@@ -27,7 +27,7 @@ Two times are kept apart, and a third runtime stands beside them.
 | `verify/` | Python | 22,643 (`verify.py` 17,025) | the gate, the envelope, the saved-form reader, the registers, the sealers | is the gate |
 | `design/` | Python | 1,084 | the design tool, a client of the shell | its own 17 checks; no row |
 | `graybox/` | Python, JS, HTML | 2,530 | the FPS slice: converter, map checks, server, simulation, two renderers | its own checks; no row |
-| `art/` | Python | 1,531 | prompted art: the art file's reader and exporter to one engine scene, its checks, the Unreal 5.8 importer | `art/check.py`; no row |
+| `art/` | Python, Rust | 4,154 | prompted art: the art file's reader and exporter to one engine scene, its checks, the Unreal 5.8 importer; DIRECTOR-0 (the canonical form, the scope protocol, the ledger, a second implementation in Rust) | `art/check.py`, `art/director.py selftest`, `art/director/conform.rs`; no row |
 
 Line counts are of tracked `.rs`, `.py`, `.js` and `.html` files.
 

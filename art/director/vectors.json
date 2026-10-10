@@ -1,0 +1,9957 @@
+{
+ "dumps": [
+  {
+   "expect": {
+    "hex": "7b2261223a2231222c226130223a2234222c22615f62223a2233222c2262223a2232227d",
+    "ok": true,
+    "sha256": "777b4647c9a9b37e1c64d1fd1ac93eb0998a3491c92c3b8d778c0b50914555de"
+   },
+   "name": "members in ascending byte order of their keys",
+   "value": {
+    "a": "1",
+    "a0": "4",
+    "a_b": "3",
+    "b": "2"
+   }
+  },
+  {
+   "expect": {
+    "hex": "7b226b223a5b747275652c66616c73652c7b2279223a7b7d2c227a223a5b5d7d2c22222c2278225d7d",
+    "ok": true,
+    "sha256": "22ae2b330da8702359a7d008ffb82e5aef0a92802c0f6c236587507dc07b0e28"
+   },
+   "name": "nested arrays, objects and booleans",
+   "value": {
+    "k": [
+     true,
+     false,
+     {
+      "y": {},
+      "z": []
+     },
+     "",
+     "x"
+    ]
+   }
+  },
+  {
+   "expect": {
+    "hex": "7b2273223a225c225c5c5c625c745c6e5c665c725c75303030315c75303031665c75303037662f227d",
+    "ok": true,
+    "sha256": "cc492f46cbe52dee6fe8a52e5e18ff0a027e629abb6aee36827bcdf87640a0e2"
+   },
+   "name": "escapes: quote, backslash, the five short forms, other controls, DEL; '/' as it is",
+   "value": {
+    "s": "\"\\\b\t\n\f\r\u0001\u001f/"
+   }
+  },
+  {
+   "expect": {
+    "hex": "7b2273223a225665725c7530306630616e6469205c7530306539205c7532313932205c75643833645c7564653030227d",
+    "ok": true,
+    "sha256": "c5f43ddc13d9997ea1f06b5ddfbcbe315ff4462a8bf4b3268c2598d628d030de"
+   },
+   "name": "non-ASCII as \\u, lowercase; above U+FFFF as a surrogate pair",
+   "value": {
+    "s": "Verðandi é → 😀"
+   }
+  },
+  {
+   "expect": {
+    "hex": "7b7d",
+    "ok": true,
+    "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+   },
+   "name": "an empty object",
+   "value": {}
+  },
+  {
+   "expect": {
+    "code": "INTENT-TYPE",
+    "ok": false
+   },
+   "name": "a number is not a value of this form",
+   "value": {
+    "n": 1
+   }
+  },
+  {
+   "expect": {
+    "code": "INTENT-NULL",
+    "ok": false
+   },
+   "name": "null is not a value of this form",
+   "value": {
+    "n": null
+   }
+  },
+  {
+   "expect": {
+    "code": "INTENT-KEY",
+    "ok": false
+   },
+   "name": "a key outside [a-z][a-z0-9_]*",
+   "value": {
+    "Key": "1"
+   }
+  }
+ ],
+ "format": "VERDANDI-DIRECTOR-VECTORS",
+ "heads": [
+  {
+   "expect": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+   "parts": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   }
+  },
+  {
+   "expect": "0830c5ffdb49cfb5e8edddf249c9a653299a3e333ee336a3cc78450f0d6ee342",
+   "parts": {
+    "art_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   }
+  }
+ ],
+ "intents": [
+  {
+   "expect": {
+    "ok": true,
+    "sha256": "6e89784a59ec2d32ef6f18aa1b656593251633f034e2e54aa8c8aeb528ad0769"
+   },
+   "hex": "7b2262617365223a7b226172745f736861323536223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c226578706f727465725f736861323536223a2263636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363222c22776f726c645f736861323536223a2262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d2c226272696566223a22766563746f72222c2263616e646964617465223a2241222c22666f726d6174223a2256455244414e44492d494e54454e54222c226c61796f7574223a5b5d2c2270726f6d7074223a226d616b65207468652079617264206d6f726520696d706f73696e67222c22726174696f6e616c65223a226120766563746f72222c227265766973696f6e223a5b223d20746f77657220796172642073746f6e652034203132225d2c2273636f7065223a5b22796172642f746f7765722f2a225d2c2276657273696f6e223a2230227d",
+   "name": "a valid intent"
+  },
+  {
+   "expect": {
+    "code": "INTENT-VERSION",
+    "ok": false
+   },
+   "hex": "7b2262617365223a7b226172745f736861323536223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c226578706f727465725f736861323536223a2263636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363222c22776f726c645f736861323536223a2262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d2c226272696566223a22766563746f72222c2263616e646964617465223a2241222c22666f726d6174223a2256455244414e44492d494e54454e54222c226c61796f7574223a5b5d2c2270726f6d7074223a226d616b65207468652079617264206d6f726520696d706f73696e67222c22726174696f6e616c65223a226120766563746f72222c227265766973696f6e223a5b223d20746f77657220796172642073746f6e652034203132225d2c2273636f7065223a5b22796172642f746f7765722f2a225d2c2276657273696f6e223a2231227d",
+   "name": "an unknown version is refused, never translated"
+  },
+  {
+   "expect": {
+    "code": "INTENT-FIELD",
+    "ok": false
+   },
+   "hex": "7b2262617365223a7b226172745f736861323536223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c226578706f727465725f736861323536223a2263636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363222c22776f726c645f736861323536223a2262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d2c226272696566223a22766563746f72222c2263616e646964617465223a2241222c22666f726d6174223a2256455244414e44492d494e54454e54222c226c61796f7574223a5b5d2c2270726f6d7074223a226d616b65207468652079617264206d6f726520696d706f73696e67222c227265766973696f6e223a5b223d20746f77657220796172642073746f6e652034203132225d2c2273636f7065223a5b22796172642f746f7765722f2a225d2c2276657273696f6e223a2230227d",
+   "name": "a missing field"
+  },
+  {
+   "expect": {
+    "code": "INTENT-FIELD",
+    "ok": false
+   },
+   "hex": "7b2262617365223a7b226172745f736861323536223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c226578706f727465725f736861323536223a2263636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363222c22776f726c645f736861323536223a2262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d2c226272696566223a22766563746f72222c2263616e646964617465223a2241222c226578747261223a2278222c22666f726d6174223a2256455244414e44492d494e54454e54222c226c61796f7574223a5b5d2c2270726f6d7074223a226d616b65207468652079617264206d6f726520696d706f73696e67222c22726174696f6e616c65223a226120766563746f72222c227265766973696f6e223a5b223d20746f77657220796172642073746f6e652034203132225d2c2273636f7065223a5b22796172642f746f7765722f2a225d2c2276657273696f6e223a2230227d",
+   "name": "an unknown field"
+  },
+  {
+   "expect": {
+    "code": "INTENT-REVISION",
+    "ok": false
+   },
+   "hex": "7b2262617365223a7b226172745f736861323536223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c226578706f727465725f736861323536223a2263636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363222c22776f726c645f736861323536223a2262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d2c226272696566223a22766563746f72222c2263616e646964617465223a2241222c22666f726d6174223a2256455244414e44492d494e54454e54222c226c61796f7574223a5b5d2c2270726f6d7074223a226d616b65207468652079617264206d6f726520696d706f73696e67222c22726174696f6e616c65223a226120766563746f72222c227265766973696f6e223a5b22746f77657220796172642073746f6e652034203132225d2c2273636f7065223a5b22796172642f746f7765722f2a225d2c2276657273696f6e223a2230227d",
+   "name": "a revision line without '=', '+' or '-'"
+  },
+  {
+   "expect": {
+    "code": "INTENT-FIELD",
+    "ok": false
+   },
+   "hex": "7b2262617365223a7b226172745f736861323536223a2241414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141222c226578706f727465725f736861323536223a2263636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363222c22776f726c645f736861323536223a2262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d2c226272696566223a22766563746f72222c2263616e646964617465223a2241222c22666f726d6174223a2256455244414e44492d494e54454e54222c226c61796f7574223a5b5d2c2270726f6d7074223a226d616b65207468652079617264206d6f726520696d706f73696e67222c22726174696f6e616c65223a226120766563746f72222c227265766973696f6e223a5b223d20746f77657220796172642073746f6e652034203132225d2c2273636f7065223a5b22796172642f746f7765722f2a225d2c2276657273696f6e223a2230227d",
+   "name": "a base hash in capitals"
+  },
+  {
+   "expect": {
+    "code": "INTENT-LAYOUT",
+    "ok": false
+   },
+   "hex": "7b2262617365223a7b226172745f736861323536223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c226578706f727465725f736861323536223a2263636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363222c22776f726c645f736861323536223a2262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262227d2c226272696566223a22766563746f72222c2263616e646964617465223a2241222c22666f726d6174223a2256455244414e44492d494e54454e54222c226c61796f7574223a5b22776964656e207468652079617264225d2c2270726f6d7074223a226d616b65207468652079617264206d6f726520696d706f73696e67222c22726174696f6e616c65223a226120766563746f72222c227265766973696f6e223a5b223d20746f77657220796172642073746f6e652034203132225d2c2273636f7065223a5b22796172642f746f7765722f2a225d2c2276657273696f6e223a2230227d",
+   "name": "a layout line that is not a design statement"
+  }
+ ],
+ "loads": [
+  {
+   "expect": {
+    "ok": true,
+    "value": {
+     "a": "1",
+     "b": [
+      true,
+      false
+     ]
+    }
+   },
+   "hex": "7b2261223a2231222c2262223a5b747275652c66616c73655d7d",
+   "name": "canonical bytes"
+  },
+  {
+   "expect": {
+    "code": "INTENT-NONCANONICAL",
+    "ok": false
+   },
+   "hex": "7b2261223a202231227d",
+   "name": "whitespace outside strings"
+  },
+  {
+   "expect": {
+    "code": "INTENT-NONCANONICAL",
+    "ok": false
+   },
+   "hex": "7b2262223a2231222c2261223a2232227d",
+   "name": "members out of order"
+  },
+  {
+   "expect": {
+    "code": "INTENT-DUPLICATE-KEY",
+    "ok": false
+   },
+   "hex": "7b2261223a2231222c2261223a2232227d",
+   "name": "a key twice"
+  },
+  {
+   "expect": {
+    "code": "INTENT-NUMBER",
+    "ok": false
+   },
+   "hex": "7b2261223a317d",
+   "name": "an integer"
+  },
+  {
+   "expect": {
+    "code": "INTENT-NUMBER",
+    "ok": false
+   },
+   "hex": "7b2261223a312e357d",
+   "name": "a fraction"
+  },
+  {
+   "expect": {
+    "code": "INTENT-NULL",
+    "ok": false
+   },
+   "hex": "7b2261223a6e756c6c7d",
+   "name": "null"
+  },
+  {
+   "expect": {
+    "code": "INTENT-KEY",
+    "ok": false
+   },
+   "hex": "7b224b6579223a2231227d",
+   "name": "a key with a capital"
+  },
+  {
+   "expect": {
+    "code": "INTENT-BYTES",
+    "ok": false
+   },
+   "hex": "7b2261223a22c3b0227d",
+   "name": "a byte above 0x7f"
+  },
+  {
+   "expect": {
+    "code": "INTENT-NONCANONICAL",
+    "ok": false
+   },
+   "hex": "7b2261223a225c7530304539227d",
+   "name": "an escape in capitals"
+  },
+  {
+   "expect": {
+    "code": "INTENT-NONCANONICAL",
+    "ok": false
+   },
+   "hex": "7b2261223a225c2f227d",
+   "name": "an escaped solidus"
+  },
+  {
+   "expect": {
+    "code": "INTENT-STRING",
+    "ok": false
+   },
+   "hex": "7b2261223a225c7564383030227d",
+   "name": "a lone surrogate"
+  },
+  {
+   "expect": {
+    "code": "INTENT-NOT-JSON",
+    "ok": false
+   },
+   "hex": "7b2261223a2231227d7b7d",
+   "name": "not JSON: a second value"
+  },
+  {
+   "expect": {
+    "code": "INTENT-NOT-JSON",
+    "ok": false
+   },
+   "hex": "7b2261223a7965737d",
+   "name": "not JSON: a bare word"
+  }
+ ],
+ "materials": [
+  {
+   "expect": {
+    "digest": "039046056c4f217957b15fdcacffe38bfeb1879b1243afc6a5c7dd4285e23384",
+    "record_hex": "7b2262617365223a223131322c3131302c313034222c22656d697373697665223a22302c302c30222c22656d6973736976655f737472656e677468223a22302e30303030222c226d6574616c6c6963223a22302e30303030222c22726f7567686e657373223a22302e38363030227d"
+   },
+   "material": {
+    "base": [
+     112,
+     110,
+     104
+    ],
+    "emissive": [
+     0,
+     0,
+     0
+    ],
+    "emissive_strength": 0.0,
+    "metallic": 0.0,
+    "roughness": 0.86
+   }
+  },
+  {
+   "expect": {
+    "digest": "c77ccdfaef7c23f54fdaef00e83703f5712d2682422353229fdfa323012c506e",
+    "record_hex": "7b2262617365223a223235352c34302c313930222c22656d697373697665223a223235352c34302c313930222c22656d6973736976655f737472656e677468223a2234352e30303030222c226d6574616c6c6963223a22302e30303030222c22726f7567686e657373223a22302e34303030227d"
+   },
+   "material": {
+    "base": [
+     255,
+     40,
+     190
+    ],
+    "emissive": [
+     255,
+     40,
+     190
+    ],
+    "emissive_strength": 45.0,
+    "metallic": 0.0,
+    "roughness": 0.4
+   }
+  },
+  {
+   "expect": {
+    "digest": "0012d75719304bf75d1209a311fef1a1999b5fbb447bf846891fe74a12ad472d",
+    "record_hex": "7b2262617365223a22312c322c33222c22656d697373697665223a22302c302c30222c22656d6973736976655f737472656e677468223a22302e30303030222c226d6574616c6c6963223a22312e30303030222c22706172656e74223a2273746f6e65222c22726f7567686e657373223a22302e33333333227d"
+   },
+   "material": {
+    "base": [
+     1,
+     2,
+     3
+    ],
+    "emissive": [
+     0,
+     0,
+     0
+    ],
+    "emissive_strength": 0.0,
+    "metallic": 1.0,
+    "parent": "stone",
+    "roughness": 0.33335
+   }
+  }
+ ],
+ "note": "Inputs and the exact expected outputs of DIRECTOR-0 version 0. Byte strings are hex. A second implementation reads this file and reproduces every expected output; it does not run the Python reference.",
+ "patterns": [
+  {
+   "address": "yard/tower/0,1",
+   "expect": true,
+   "pattern": "yard/tower/*"
+  },
+  {
+   "address": "yard/neon/1,1:n",
+   "expect": false,
+   "pattern": "yard/tower/*"
+  },
+  {
+   "address": "yard/neon/1,1:n",
+   "expect": true,
+   "pattern": "yard/**"
+  },
+  {
+   "address": "yard/tower/0,1",
+   "expect": true,
+   "pattern": "**"
+  },
+  {
+   "address": "material/stone",
+   "expect": false,
+   "pattern": "**"
+  },
+  {
+   "address": "env/fog",
+   "expect": false,
+   "pattern": "*/tower/*"
+  },
+  {
+   "address": "play/wall/c:0,0-5,0",
+   "expect": false,
+   "pattern": "**"
+  },
+  {
+   "address": "material/stone",
+   "expect": true,
+   "pattern": "material/*"
+  },
+  {
+   "address": "yard/tower/0,1",
+   "expect": true,
+   "pattern": "yard/**/0,1"
+  },
+  {
+   "address": "yard",
+   "expect": true,
+   "pattern": "yard/**"
+  },
+  {
+   "address": "gate/tower/5,1",
+   "expect": true,
+   "pattern": "*/tower/*"
+  },
+  {
+   "address": "city/skyline/0,2",
+   "expect": true,
+   "pattern": "city/skyline/*"
+  },
+  {
+   "address": "yard/tower/0,1",
+   "expect": false,
+   "pattern": "yard/tower"
+  }
+ ],
+ "protocol": "DIRECTOR-0",
+ "scope": [
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "basalt": {
+      "base": [
+       60,
+       60,
+       64
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.9
+     },
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "basalt",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b5d2c226465636c61726564223a5b226d6174657269616c2f626173616c74222c22796172642f746f7765722f2a225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2233326337366663326130656239656235356532393139626138646135323336386466653363343634316665336265373032623535363733623335313830306538222c226d6174657269616c735f6368616e676564223a5b22626173616c74225d2c227068616e746f6d223a5b5d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b226d6174657269616c2f626173616c74222c22796172642f746f7765722f302c31225d2c22756e636c61696d6564223a5b5d2c2276657264696374223a22434c45414e222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "5c4e5e652b26a3f627d59d2dcad9a107afdffe1931b587fbc4db8c0886bdbb3d",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [],
+     "declared": [
+      "material/basalt",
+      "yard/tower/*"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "32c76fc2a0eb9eb55e2919ba8da52368dfe3c4641fe3be702b55673b351800e8",
+     "materials_changed": [
+      "basalt"
+     ],
+     "phantom": [],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "material/basalt",
+      "yard/tower/0,1"
+     ],
+     "unclaimed": [],
+     "verdict": "CLEAN",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "yard/tower/*",
+     "material/basalt"
+    ],
+    "version": "0"
+   },
+   "name": "a new material retargets one tower: clean"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       92,
+       92,
+       98
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b22636974792f736b796c696e652f302c32222c22676174652f746f7765722f352c31222c22706c61792f636f7665722f633a322c322d322c32222c22706c61792f77616c6c2f633a302c302d352c30222c22796172642f746f7765722f302c31225d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b2253434f50452d4c45414b225d2c226465636c61726564223a5b226d6174657269616c2f73746f6e65222c22796172642f2a2a225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2261633737306636366564616136386232616539393630356134373761613432326639613562623534326231313732663262353038616534643739303564636335222c226d6174657269616c735f6368616e676564223a5b2273746f6e65225d2c227068616e746f6d223a5b5d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b226d6174657269616c2f73746f6e65225d2c22756e636c61696d6564223a5b22636974792f736b796c696e652f302c32222c22676174652f746f7765722f352c31222c22706c61792f636f7665722f633a322c322d322c32222c22706c61792f77616c6c2f633a302c302d352c30225d2c2276657264696374223a224c45414b414745222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "7d0784d35bf74f1f762203240c4135d73c03bcfe0899a7dda5345eda40578395",
+    "verdict": {
+     "affected": [
+      "city/skyline/0,2",
+      "gate/tower/5,1",
+      "play/cover/c:2,2-2,2",
+      "play/wall/c:0,0-5,0",
+      "yard/tower/0,1"
+     ],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [
+      "SCOPE-LEAK"
+     ],
+     "declared": [
+      "material/stone",
+      "yard/**"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "ac770f66edaa68b2ae99605a477aa422f9a5bb542b1172f2b508ae4d7905dcc5",
+     "materials_changed": [
+      "stone"
+     ],
+     "phantom": [],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "material/stone"
+     ],
+     "unclaimed": [
+      "city/skyline/0,2",
+      "gate/tower/5,1",
+      "play/cover/c:2,2-2,2",
+      "play/wall/c:0,0-5,0"
+     ],
+     "verdict": "LEAKAGE",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "yard/**",
+     "material/stone"
+    ],
+    "version": "0"
+   },
+   "name": "a shared material changed: what else uses it leaks"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86000001
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b5d2c226465636c61726564223a5b226d6174657269616c2f73746f6e65225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2234373738363733316465383463636536363231626464373364643638303431343233363435313535343131376265663962623966383566343662643033366134222c226d6174657269616c735f6368616e676564223a5b5d2c227068616e746f6d223a5b226d6174657269616c2f73746f6e65225d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b5d2c22756e636c61696d6564223a5b5d2c2276657264696374223a22434c45414e222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "1c9ffc3ef4b3acc60c9a68ed49428785be56d15d3c83dd49560a78944366cc13",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [],
+     "declared": [
+      "material/stone"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "47786731de84cce6621bdd73dd680414236451554117bef9bb9f85f46bd036a4",
+     "materials_changed": [],
+     "phantom": [
+      "material/stone"
+     ],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [],
+     "unclaimed": [],
+     "verdict": "CLEAN",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "material/stone"
+    ],
+    "version": "0"
+   },
+   "name": "the same content, written again: early cutoff, nothing realized"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b2253434f50452d52455345525645442d4752414e54225d2c226465636c61726564223a5b22706c61792f2a2a225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2237376136313137313761663438333330323937303938326664623464646539363732623933323332373533656163633831656163643436306434383533303665222c226d6174657269616c735f6368616e676564223a5b5d2c227068616e746f6d223a5b22706c61792f2a2a225d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b5d2c22756e636c61696d6564223a5b5d2c2276657264696374223a2252454655534544222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "cb6cfd2beb1fb95c2a67d6a19b37efa44e8eb968d12c11025daa24f95551bb62",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [
+      "SCOPE-RESERVED-GRANT"
+     ],
+     "declared": [
+      "play/**"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "77a611717af483302970982fdb4dde9672b93232753eacc81eacd460d485306e",
+     "materials_changed": [],
+     "phantom": [
+      "play/**"
+     ],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [],
+     "unclaimed": [],
+     "verdict": "REFUSED",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "play/**"
+    ],
+    "version": "0"
+   },
+   "name": "a grant of play/ is refused"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     },
+     {
+      "box": [
+       8.0,
+       0.0,
+       2.0,
+       10.0,
+       4.0,
+       4.0
+      ],
+      "cells": [
+       4,
+       1,
+       4,
+       1
+      ],
+      "id": "c:4,1-4,1",
+      "kind": "wall",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b22342c31225d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b5d2c226465636c61726564223a5b22676174652f2a2a222c226c61796f75742f67617465225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2233313065303733366363333937333230376664323162313965636662396334663733366561363138313134313935336331323338376161383366306137313234222c226d6174657269616c735f6368616e676564223a5b5d2c227068616e746f6d223a5b22676174652f2a2a225d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b22706c61792f77616c6c2f633a342c312d342c31225d2c22756e636c61696d6564223a5b5d2c2276657264696374223a22434c45414e222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "da4c626f01d48e770dc06326c499ceb91c0afaf8d60b877841c878bfdf5b4874",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [
+      "4,1"
+     ],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [],
+     "declared": [
+      "gate/**",
+      "layout/gate"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "310e0736cc3973207fd21b19ecfb9c4f736ea6181141953c12387aa83f0a7124",
+     "materials_changed": [],
+     "phantom": [
+      "gate/**"
+     ],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "play/wall/c:4,1-4,1"
+     ],
+     "unclaimed": [],
+     "verdict": "CLEAN",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [
+     "close 4,1 4,1"
+    ],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [],
+    "scope": [
+     "layout/gate",
+     "gate/**"
+    ],
+    "version": "0"
+   },
+   "name": "the layout closes a cell inside its grant: clean"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     },
+     {
+      "box": [
+       8.0,
+       0.0,
+       2.0,
+       10.0,
+       4.0,
+       4.0
+      ],
+      "cells": [
+       4,
+       1,
+       4,
+       1
+      ],
+      "id": "c:4,1-4,1",
+      "kind": "wall",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b22342c31225d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b2253434f50452d4c41594f5554222c2253434f50452d4c45414b225d2c226465636c61726564223a5b22676174652f2a2a222c226c61796f75742f79617264225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2235633666376334643962336231386664663966343063356130343234643066306434343864376264663561376239353434376535653466376162353630613734222c226d6174657269616c735f6368616e676564223a5b5d2c227068616e746f6d223a5b22676174652f2a2a222c226c61796f75742f79617264225d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b22706c61792f77616c6c2f633a342c312d342c31225d2c22756e636c61696d6564223a5b22706c61792f77616c6c2f633a342c312d342c31225d2c2276657264696374223a2252454655534544222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "b61082a9d6724baa1507201f317e74716ac5394208a2a870ed087306a5a64af5",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [
+      "4,1"
+     ],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [
+      "SCOPE-LAYOUT",
+      "SCOPE-LEAK"
+     ],
+     "declared": [
+      "gate/**",
+      "layout/yard"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "5c6f7c4d9b3b18fdf9f40c5a0424d0f0d448d7bdf5a7b95447e5e4f7ab560a74",
+     "materials_changed": [],
+     "phantom": [
+      "gate/**",
+      "layout/yard"
+     ],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "play/wall/c:4,1-4,1"
+     ],
+     "unclaimed": [
+      "play/wall/c:4,1-4,1"
+     ],
+     "verdict": "REFUSED",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [
+     "close 4,1 4,1"
+    ],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [],
+    "scope": [
+     "layout/yard",
+     "gate/**"
+    ],
+    "version": "0"
+   },
+   "name": "the layout closes a cell outside its grant: refused"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "granite"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "granite": {
+      "base": [
+       80,
+       80,
+       80
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.7
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b5d2c226465636c61726564223a5b226d6174657269616c2f6772616e697465222c22737572666163652f77616c6c225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2234393139346163373766376438373265396436623739366534616330386562306430636163343833303134353136643731623664303133366564383563656662222c226d6174657269616c735f6368616e676564223a5b226772616e697465225d2c227068616e746f6d223a5b5d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b226d6174657269616c2f6772616e697465222c22706c61792f77616c6c2f633a302c302d352c30225d2c22756e636c61696d6564223a5b5d2c2276657264696374223a22434c45414e222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "57e88cb76038aaf43f2e4680ed34b6e4794900a220aaa5c795a5fab769e45e7b",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [],
+     "declared": [
+      "material/granite",
+      "surface/wall"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "49194ac77f7d872e9d6b796e4ac08eb0d0cac483014516d71b6d0136ed85cefb",
+     "materials_changed": [
+      "granite"
+     ],
+     "phantom": [],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "material/granite",
+      "play/wall/c:0,0-5,0"
+     ],
+     "unclaimed": [],
+     "verdict": "CLEAN",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "surface/wall",
+     "material/granite"
+    ],
+    "version": "0"
+   },
+   "name": "a surface grant covers the walls' new material"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.08,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b2253434f50452d4c45414b225d2c226465636c61726564223a5b222a2a225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2239303137636437313333386537313862663234353061383931306137613139393864303963333461656466313837646465343766383835636264353232363763222c226d6174657269616c735f6368616e676564223a5b5d2c227068616e746f6d223a5b222a2a225d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b22656e762f666f67225d2c22756e636c61696d6564223a5b22656e762f666f67225d2c2276657264696374223a224c45414b414745222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "d5eb2f7ef11d64cab8e3dd0e63fa0a420fa7bd28250a90dd8d2b1538764347e9",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [
+      "SCOPE-LEAK"
+     ],
+     "declared": [
+      "**"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "9017cd71338e718bf2450a8910a7a1998d09c34aedf187dde47f885cbd52267c",
+     "materials_changed": [],
+     "phantom": [
+      "**"
+     ],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "env/fog"
+     ],
+     "unclaimed": [
+      "env/fog"
+     ],
+     "verdict": "LEAKAGE",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "**"
+    ],
+    "version": "0"
+   },
+   "name": "'**' does not reach env/: the fog leaks"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.08,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b5d2c226465636c61726564223a5b22656e762f666f67225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2235303734323939313963656139356563343066613633353038633264323631646435336236353932376532346463333965383564653262373963633937356238222c226d6174657269616c735f6368616e676564223a5b5d2c227068616e746f6d223a5b5d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b22656e762f666f67225d2c22756e636c61696d6564223a5b5d2c2276657264696374223a22434c45414e222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "6159655fce5f4b0bc0ab9eb4b4889d314ef6b967e05139ea18c04adaa8177ba9",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [],
+     "declared": [
+      "env/fog"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "507429919cea95ec40fa63508c2d261dd53b65927e24dc39e85de2b79cc975b8",
+     "materials_changed": [],
+     "phantom": [],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "env/fog"
+     ],
+     "unclaimed": [],
+     "verdict": "CLEAN",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "env/fog"
+    ],
+    "version": "0"
+   },
+   "name": "env/fog granted by name: clean"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "basalt": {
+      "base": [
+       60,
+       60,
+       64
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.9
+     },
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "basalt",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2230383330633566666462343963666235653865646464663234396339613635333239396133653333336565333336613363633738343530663064366565333432222c22636f646573223a5b22484541442d4d4f564544225d2c226465636c61726564223a5b226d6174657269616c2f626173616c74222c22796172642f746f7765722f2a225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2233326337366663326130656239656235356532393139626138646135323336386466653363343634316665336265373032623535363733623335313830306538222c226d6174657269616c735f6368616e676564223a5b22626173616c74225d2c227068616e746f6d223a5b5d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a747275652c227265616c697a6564223a5b226d6174657269616c2f626173616c74222c22796172642f746f7765722f302c31225d2c22756e636c61696d6564223a5b5d2c2276657264696374223a22434c45414e222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "6ad6e041fb08c0764e769e29115da44f7ce219e982642811480c99cdca0b58cf",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "0830c5ffdb49cfb5e8edddf249c9a653299a3e333ee336a3cc78450f0d6ee342",
+     "codes": [
+      "HEAD-MOVED"
+     ],
+     "declared": [
+      "material/basalt",
+      "yard/tower/*"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "32c76fc2a0eb9eb55e2919ba8da52368dfe3c4641fe3be702b55673b351800e8",
+     "materials_changed": [
+      "basalt"
+     ],
+     "phantom": [],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": true,
+     "realized": [
+      "material/basalt",
+      "yard/tower/0,1"
+     ],
+     "unclaimed": [],
+     "verdict": "CLEAN",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "yard/tower/*",
+     "material/basalt"
+    ],
+    "version": "0"
+   },
+   "name": "written against one head, checked against another: re-evaluated"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "basalt": {
+      "base": [
+       60,
+       60,
+       64
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.9
+     },
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "basalt",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    },
+    {
+     "name": "no dressing where a player can be",
+     "ok": false
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b22434845434b2d4641494c4544225d2c226465636c61726564223a5b226d6174657269616c2f626173616c74222c22796172642f746f7765722f2a225d2c226661696c65645f636865636b73223a5b226e6f206472657373696e67207768657265206120706c617965722063616e206265225d2c22696e74656e745f736861323536223a2233326337366663326130656239656235356532393139626138646135323336386466653363343634316665336265373032623535363733623335313830306538222c226d6174657269616c735f6368616e676564223a5b22626173616c74225d2c227068616e746f6d223a5b5d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b226d6174657269616c2f626173616c74222c22796172642f746f7765722f302c31225d2c22756e636c61696d6564223a5b5d2c2276657264696374223a2252454655534544222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "b14b235118a28b6f1d7c20b0976b0fd52b70816e1634e743dcb3a765b20c3678",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [
+      "CHECK-FAILED"
+     ],
+     "declared": [
+      "material/basalt",
+      "yard/tower/*"
+     ],
+     "failed_checks": [
+      "no dressing where a player can be"
+     ],
+     "intent_sha256": "32c76fc2a0eb9eb55e2919ba8da52368dfe3c4641fe3be702b55673b351800e8",
+     "materials_changed": [
+      "basalt"
+     ],
+     "phantom": [],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "material/basalt",
+      "yard/tower/0,1"
+     ],
+     "unclaimed": [],
+     "verdict": "REFUSED",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "yard/tower/*",
+     "material/basalt"
+    ],
+    "version": "0"
+   },
+   "name": "a failed check refuses"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "parent": "stone",
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "parent": "glow",
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b22636974792f736b796c696e652f302c32222c22676174652f746f7765722f352c31222c22706c61792f636f7665722f633a322c322d322c32222c22706c61792f77616c6c2f633a302c302d352c30222c22796172642f6e656f6e2f312c313a6e222c22796172642f746f7765722f302c31225d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b2247524150482d4359434c45222c2253434f50452d4c45414b225d2c226465636c61726564223a5b222a2a222c226d6174657269616c2f676c6f77222c226d6174657269616c2f73746f6e65225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2239646533353562663533326364313333346335346164333863306637336333643062373161316232623639333934313664333066636163626135323938363436222c226d6174657269616c735f6368616e676564223a5b22676c6f77222c2273746f6e65225d2c227068616e746f6d223a5b5d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b226d6174657269616c2f676c6f77222c226d6174657269616c2f73746f6e65225d2c22756e636c61696d6564223a5b22706c61792f636f7665722f633a322c322d322c32222c22706c61792f77616c6c2f633a302c302d352c30225d2c2276657264696374223a2252454655534544222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "afa8a04f46bbc7f102afed95873149248483749e5716d7d536a8675910c82fdc",
+    "verdict": {
+     "affected": [
+      "city/skyline/0,2",
+      "gate/tower/5,1",
+      "play/cover/c:2,2-2,2",
+      "play/wall/c:0,0-5,0",
+      "yard/neon/1,1:n",
+      "yard/tower/0,1"
+     ],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [
+      "GRAPH-CYCLE",
+      "SCOPE-LEAK"
+     ],
+     "declared": [
+      "**",
+      "material/glow",
+      "material/stone"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "9de355bf532cd1334c54ad38c0f73c3d0b71a1b2b6939416d30fcacba5298646",
+     "materials_changed": [
+      "glow",
+      "stone"
+     ],
+     "phantom": [],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "material/glow",
+      "material/stone"
+     ],
+     "unclaimed": [
+      "play/cover/c:2,2-2,2",
+      "play/wall/c:0,0-5,0"
+     ],
+     "verdict": "REFUSED",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "**",
+     "material/stone",
+     "material/glow"
+    ],
+    "version": "0"
+   },
+   "name": "materials in a cycle of parents: refused"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 70.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 70.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b22796172642f6e656f6e2f312c313a6e225d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b2253434f50452d4c45414b225d2c226465636c61726564223a5b226d6174657269616c2f676c6f77225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2230383066646536666530366662323638346135343739353166383639636331636363386132623038373833646561366331383337613864323839616433656539222c226d6174657269616c735f6368616e676564223a5b22676c6f77225d2c227068616e746f6d223a5b5d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b226d6174657269616c2f676c6f77225d2c22756e636c61696d6564223a5b22796172642f6e656f6e2f312c313a6e225d2c2276657264696374223a224c45414b414745222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "6d3c648fb6b99746c37e7e9ba11aef8b257d465b4d92cff0646c45103125d4f5",
+    "verdict": {
+     "affected": [
+      "yard/neon/1,1:n"
+     ],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [
+      "SCOPE-LEAK"
+     ],
+     "declared": [
+      "material/glow"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "080fde6fe06fb2684a547951f869cc1ccc8a2b08783dea6c1837a8d289ad3ee9",
+     "materials_changed": [
+      "glow"
+     ],
+     "phantom": [],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "material/glow"
+     ],
+     "unclaimed": [
+      "yard/neon/1,1:n"
+     ],
+     "verdict": "LEAKAGE",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "material/glow"
+    ],
+    "version": "0"
+   },
+   "name": "a neon's light follows its material: affected, and unclaimed"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 5.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b2253434f50452d504c4159225d2c226465636c61726564223a5b222a2a225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2239303137636437313333386537313862663234353061383931306137613139393864303963333461656466313837646465343766383835636264353232363763222c226d6174657269616c735f6368616e676564223a5b5d2c227068616e746f6d223a5b222a2a225d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b5d2c22756e636c61696d6564223a5b5d2c2276657264696374223a2252454655534544222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "9a753b7655aced8c0661d90200768297d9fdfd204c15410ff073f18c52bfc915",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [
+      "SCOPE-PLAY"
+     ],
+     "declared": [
+      "**"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "9017cd71338e718bf2450a8910a7a1998d09c34aedf187dde47f885cbd52267c",
+     "materials_changed": [],
+     "phantom": [
+      "**"
+     ],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [],
+     "unclaimed": [],
+     "verdict": "REFUSED",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "**"
+    ],
+    "version": "0"
+   },
+   "name": "a spawn moved: refused"
+  },
+  {
+   "base": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       10.0,
+       4.0,
+       2.0,
+       12.0,
+       9.0,
+       4.0
+      ],
+      "by": "s2",
+      "id": "tower:5,1",
+      "material": "stone",
+      "region": "gate"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "candidate": {
+    "assets": {
+     "cube": {
+      "licence": "Unreal Engine EULA",
+      "path": "/Engine/BasicShapes/Cube.Cube",
+      "source": "engine"
+     }
+    },
+    "collision": [
+     {
+      "box": [
+       0.0,
+       -0.5,
+       0.0,
+       12.0,
+       0.0,
+       8.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       3
+      ],
+      "id": "ground",
+      "kind": "ground",
+      "material": "floor"
+     },
+     {
+      "box": [
+       0.0,
+       0.0,
+       0.0,
+       12.0,
+       4.0,
+       2.0
+      ],
+      "cells": [
+       0,
+       0,
+       5,
+       0
+      ],
+      "id": "c:0,0-5,0",
+      "kind": "wall",
+      "material": "stone"
+     },
+     {
+      "box": [
+       4.0,
+       0.0,
+       4.0,
+       6.0,
+       1.0,
+       6.0
+      ],
+      "cells": [
+       2,
+       2,
+       2,
+       2
+      ],
+      "id": "c:2,2-2,2",
+      "kind": "cover",
+      "material": "stone"
+     }
+    ],
+    "environment": {
+     "exposure": 1.5,
+     "fog": {
+      "color": [
+       38,
+       54,
+       74
+      ],
+      "density": 0.045,
+      "volumetric": true
+     },
+     "time": "night"
+    },
+    "grid": {
+     "cell": 2.0,
+     "h": 4,
+     "w": 6,
+     "wall": 4.0
+    },
+    "lights": [
+     {
+      "by": "s3",
+      "candela": 45.0,
+      "color": [
+       255,
+       40,
+       190
+      ],
+      "dir": [
+       0,
+       0,
+       1
+      ],
+      "height": 0.12,
+      "id": "neon:1,1:n",
+      "pos": [
+       3.0,
+       3.06,
+       2.13
+      ],
+      "radius": 8.0,
+      "region": "yard",
+      "type": "rect",
+      "width": 1.4
+     }
+    ],
+    "materials": {
+     "floor": {
+      "base": [
+       46,
+       47,
+       50
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.16
+     },
+     "glow": {
+      "base": [
+       255,
+       40,
+       190
+      ],
+      "emissive": [
+       255,
+       40,
+       190
+      ],
+      "emissive_strength": 45.0,
+      "metallic": 0.0,
+      "roughness": 0.4
+     },
+     "stone": {
+      "base": [
+       112,
+       110,
+       104
+      ],
+      "emissive": [
+       0,
+       0,
+       0
+      ],
+      "emissive_strength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.86
+     }
+    },
+    "regions": {
+     "gate": [
+      4,
+      1,
+      4,
+      2
+     ],
+     "yard": [
+      1,
+      1,
+      3,
+      2
+     ]
+    },
+    "spawns": {
+     "A": {
+      "x": 3.0,
+      "y": 0.0,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "title": "vector world",
+    "tops": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     0.0,
+     1.0,
+     0.0,
+     0.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "views": {
+     "yard": {
+      "pitch": 0.0,
+      "x": 3.0,
+      "y": 1.62,
+      "yaw": 90.0,
+      "z": 3.0
+     }
+    },
+    "visuals": [
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       2.0,
+       2.0,
+       12.0,
+       4.0
+      ],
+      "by": "s1",
+      "id": "tower:0,1",
+      "material": "stone",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       2.3,
+       3.0,
+       2.0,
+       3.7,
+       3.12,
+       2.05
+      ],
+      "by": "s3",
+      "id": "neon:1,1:n",
+      "material": "glow",
+      "region": "yard"
+     },
+     {
+      "asset": "cube",
+      "box": [
+       0.0,
+       4.0,
+       4.0,
+       4.0,
+       20.0,
+       8.0
+      ],
+      "by": "s4",
+      "id": "skyline:0,2",
+      "material": "stone",
+      "region": "*"
+     }
+    ]
+   },
+   "checks": [
+    {
+     "name": "play holds",
+     "ok": true
+    }
+   ],
+   "current": {
+    "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "expect": {
+    "hex": "7b226166666563746564223a5b5d2c2263656c6c735f6368616e676564223a5b5d2c22636865636b65645f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365222c22636f646573223a5b5d2c226465636c61726564223a5b22676174652f746f7765722f2a222c22796172642f6e656f6e2f2a225d2c226661696c65645f636865636b73223a5b5d2c22696e74656e745f736861323536223a2236316232343263303530633432353136653937386264316334376466666432376434333930396135646234383230346363373635396632626662323336393863222c226d6174657269616c735f6368616e676564223a5b5d2c227068616e746f6d223a5b22796172642f6e656f6e2f2a225d2c2270726f746f636f6c223a224449524543544f522d30222c2272655f6576616c7561746564223a66616c73652c227265616c697a6564223a5b22676174652f746f7765722f352c31225d2c22756e636c61696d6564223a5b5d2c2276657264696374223a22434c45414e222c2276657273696f6e223a2230222c227772697474656e5f616761696e7374223a2232316666363930383865386363376264636635626464343663336131303861393666333466613463616663386264313130633330643135393635326662346365227d",
+    "sha256": "f5d92d5a6c2b540dad643d77365b7f775e80c9897a4a9d79b1ca1c10b9f3eaa8",
+    "verdict": {
+     "affected": [],
+     "cells_changed": [],
+     "checked_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce",
+     "codes": [],
+     "declared": [
+      "gate/tower/*",
+      "yard/neon/*"
+     ],
+     "failed_checks": [],
+     "intent_sha256": "61b242c050c42516e978bd1c47dffd27d43909a5db48204cc7659f2bfb23698c",
+     "materials_changed": [],
+     "phantom": [
+      "yard/neon/*"
+     ],
+     "protocol": "DIRECTOR-0",
+     "re_evaluated": false,
+     "realized": [
+      "gate/tower/5,1"
+     ],
+     "unclaimed": [],
+     "verdict": "CLEAN",
+     "version": "0",
+     "written_against": "21ff69088e8cc7bdcf5bdd46c3a108a96f34fa4cafc8bd110c30d159652fb4ce"
+    }
+   },
+   "intent": {
+    "base": {
+     "art_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "exporter_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+     "world_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "brief": "vector",
+    "candidate": "A",
+    "format": "VERDANDI-INTENT",
+    "layout": [],
+    "prompt": "make the yard more imposing",
+    "rationale": "a vector",
+    "revision": [
+     "= tower yard stone 4 12"
+    ],
+    "scope": [
+     "gate/tower/*",
+     "yard/neon/*"
+    ],
+    "version": "0"
+   },
+   "name": "a piece removed; a pattern that touched nothing"
+  }
+ ],
+ "version": "0"
+}

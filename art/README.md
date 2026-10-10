@@ -53,6 +53,11 @@ play is not art: it goes into the graybox map as cover and is checked there (the
 Each dressing choice is a hash of its statement and its cell, never a running random sequence. An edit in one place
 cannot reshuffle the art anywhere else.
 
+**One fixture to a place.** A place is a kind of dressing and the cell (and face) it stands on. Two pieces in one
+place, from overlapping regions or two statements, are coplanar copies that flicker in an engine, and the exporter
+refuses them. The first brief had two puddles in one place where its mid lane crossed the plaza; the mid lane is now
+two regions, west and east.
+
 ## The art file: `VERDANDI-ART 0`
 
 One statement to a line; `#` starts a comment. Colours are R,G,B 0–255 (sRGB), lengths metres, cells `x,z` (x across,
@@ -107,7 +112,7 @@ It then plants defects and requires the right check to refuse each one:
 - a falsified ceiling, a player who jumps lower than `graybox/web/sim.js` says, or a spawn moved from W's;
 - a mesh with no licence;
 - a scene changed after export;
-- five statements the exporter must refuse.
+- six statements the exporter must refuse, among them two pieces of dressing in one place.
 
 Then it makes the two revisions:
 
@@ -116,6 +121,28 @@ Then it makes the two revisions:
 
 The layout revision needs the shell (`rustc` or a built `verify/build/shell`). Without it the line says SKIPPED, and
 the verdict says so too.
+
+## DIRECTOR-0: prompts answered by candidates, admitted by a person
+
+[`director/README.md`](director/README.md) is the protocol. A prompt is answered by candidate intents: each declares
+what it will touch, and changes the look (art lines), the layout (design lines, through the design tool) or both.
+
+```
+python art/director.py lens plaza-night plaza            # what a proposer reads: the region, its pieces, what shares their materials
+python art/director.py evaluate plaza-night art/rounds/plaza-imposing/*.intent   # verdicts and a contact sheet
+python art/director.py admit plaza-night SEQ            # a person's choice, by ledger number
+python art/director.py verify plaza-night                # the ledger replayed to the files
+python art/director.py selftest                          # the vectors and the whole lifecycle, in a scratch copy
+```
+
+- **Each candidate is checked against the head it meets.** It gets one of three verdicts: CLEAN; LEAKAGE (it touches
+  more than it declared, including everything that shares a material it changed); or REFUSED (a reserved or
+  ungranted change, a failed art check, a malformed or unknown intent).
+- **The contact sheet** (`art/build/<brief>/director/index.html`) draws each candidate's plan, with what changed,
+  what was affected and what leaked.
+- **The ledger** (`art/ledger/<brief>.ledger`) keeps every evaluation, re-evaluation, admission and refusal, and is
+  never rewritten.
+- **The first round** is `art/rounds/plaza-imposing/`.
 
 ## In Unreal Engine 5.8, on the host
 
@@ -167,4 +194,7 @@ block a player is cover, and goes into the graybox map.
 | `briefs/plaza-night.revise-look` | its look revision: the wet surfaces less reflective |
 | `briefs/plaza-night.revise-layout.design` | its layout revision: the north flank one cell narrower |
 | `unreal/verdandi_import.py` | the Unreal 5.8 importer, run inside the editor |
+| `director.py`, `director/` | DIRECTOR-0: the canonical form, the scope protocol, the ledger, the conformance vectors, the second implementation |
+| `rounds/plaza-imposing/` | the first round's candidate intents |
+| `ledger/plaza-night.ledger` | the brief's intent ledger |
 | `build/` | what `dress.py` writes; never committed |

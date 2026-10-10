@@ -183,7 +183,7 @@ Each folder's README is its own blueprint: the contract, the parts, the invarian
 | [`verify/`](verify/README.md) | the gate: every claim above as a row that can redden; two runs byte-identical or nothing landed. Beside it the registry of methods and the off-gate sealers. |
 | [`design/`](design/README.md) | content time: the design tool, a client of the shell's compiler and admission. It holds no authority and computes no change set; no row holds it. |
 | [`graybox/`](graybox/README.md) | the playable first-person slice (FPS-GRAYBOX-0, FPS-VISUAL-0), beside the certified tree: a converter, map checks, a local server and a browser runtime, each with its own checks; no row reads it. |
-| [`art/`](art/README.md) | prompted art over the playable world (ART-GENERATION-0), beside the certified tree: an art file in its own small language, an exporter to one engine scene whose collision is the graybox's, checks that keep the art from deciding play, and an Unreal 5.8 importer; no row reads it. |
+| [`art/`](art/README.md) | prompted art over the playable world (ART-GENERATION-0), beside the certified tree: an art file in its own small language, an exporter to one engine scene whose collision is the graybox's, checks that keep the art from deciding play, an Unreal 5.8 importer, and DIRECTOR-0: candidates checked against the head they meet, admitted by a person, kept in an append-only ledger; no row reads it. |
 | [`docs/`](docs/CORE.md) | the program, the roadmap, the ghosts, the dev notes, the boundaries, and since the audit of 2026-10-09 the core map, the formats, the audit itself and its research. |
 
 ## The sequence, as built
@@ -351,6 +351,7 @@ one route only. Which, is decided when such a rung is seated.
     python graybox/serve.py                                  # play it; --renderer flat for the first renderer, --bench to time both
     python art/check.py                                      # ART-GENERATION-0: the art held to the playable world, planted defects refused, two revisions
     python art/dress.py plaza-night                          # the scene for Unreal: art/build/plaza-night/scene.json (the import: art/README.md)
+    python art/director.py selftest                          # DIRECTOR-0: the conformance vectors and the whole candidate lifecycle, in a scratch copy
 
 Landing condition, for a rung of the gate: two consecutive gate runs byte-identical and `GATE PASSED`. Since the
 owner's ruling of 2026-10-09 the full gate runs at release checkpoints, and other work runs its own checks
