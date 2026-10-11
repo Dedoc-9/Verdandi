@@ -237,7 +237,9 @@ input and a digest. A reader refuses the whole file on any malformed or mismatch
 beside a browser's trace, tick by tick and field by field; `trace.py run --inputs BOT.json` has a browser play it.
 Measured in the build container, on the tactical map: the walk made three times, the same bytes (here, and in two
 fresh processes under other hash seeds); its start and 1,787 inputs the same bytes as the walk Chromium 141's own
-bot records; Chromium 141 and node 22 playing it, every snapshot the same bytes as the Python tick's. Its self-test
+bot records; Chromium 141 and node 22 playing it, every snapshot the same bytes as the Python tick's. On the owner's
+machine: the same file made twice; the same start, inputs and states as his Firefox 157's own bot's walk; Firefox 157
+and Edge 155 playing it, every snapshot the Python tick's. Its self-test
 plants six defects in the policy, one changed byte of an input, two changes to the map's identity, ten faults of
 form, a tick's result one bit off, and walks that break each property a walk is held to, and each is found. Five
 more plants are reported, not required: four leave this walk byte for byte the same (±x searched in the other order,
@@ -248,8 +250,8 @@ the machine's C library (the platform's atan2). The witness level waits until th
 the owner's Firefox 157 passed `rules-arithmetic` (its results on all 20,000 arguments as CPython's) and gave the same
 digest of every tick's state as Chromium 141 and node 22 on the tactical map's three runs; on his machine, Firefox 157
 and Edge 155 then played the same recorded inputs, and every rules-1 snapshot was the same bytes at every tick of
-those three runs (MEASURED once, 2026-10-11; the owner's ruling had kept it NOT ESTABLISHED until that comparison, and
-its grade now is his). Not the witness level, not JavaScriptCore, not every build.
+those three runs (MEASURED once, 2026-10-11; by the owner's ruling of that day, cross-browser equivalence on the tactical map
+advanced from NOT ESTABLISHED to MEASURED once). Not the witness level, not JavaScriptCore, not every build.
 That an engine has no bug in those operations. That a future change to `sim.js` keeps to the contract, beyond what
 the checks, the plants and the second implementation catch. Anything about a server's security or a network.
 

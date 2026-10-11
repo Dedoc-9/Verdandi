@@ -247,6 +247,9 @@ and their outputs are given.
     alone. Rules 1 removed every such difference on these runs.
   - What it does not show. The witness level, another machine's Firefox, JavaScriptCore, or other builds of either
     engine; that either engine has no defect in the operations rules 1 use.
+- **The Python walk in both, the same machine (2026-10-11).** Firefox 157 and Edge 155 played the walk `bot_ref.py`
+  made (1,787 ticks). Under rules 0 `Math.cos` differed on 1 of 678 common arguments and `Math.hypot` on 255 of 677, and
+  every state was still the same; under rules 1 every state was the same, and the Python tick's. OBSERVED once.
 
 ## R-7 · A browser's clock
 

@@ -167,11 +167,13 @@ DIRECTOR-0       the owner's ruling (2026-10-10): the operator loop for prompted
       ↓
 NATIVE-PLAZA-0   the owner's rulings (2026-10-10, 2026-10-11): Verðandi-native the primary architecture, Unreal 5.8 a secondary path; the plaza played in the browser through an art-owned launcher (art/play.py) and a WebGL 2 renderer, the graybox's simulation moving against C; two rounds evaluated, not yet chosen; live edits (2026-10-11): an edit to the brief or to a candidate intent drawn in the running page, the game untouched, a refused edit leaving the scene before it
       ↓
-DET-MATH-0       the owner's ruling (2026-10-11), outside the gate: the simulation's rules made portable. Every function whose last bits the language leaves to the engine and that reached the authoritative state (sin, cos, hypot, atan2) replaced by fdlibm's algorithms and exact square roots, built from operations ECMA-262 fixes; the rules versioned (1), rules 0 kept as the baseline; held by rules-arithmetic and math-fence in the self-test and by graybox/rules_ref.py; the same bits measured in two V8 engines and CPython; ACCEPTED by the owner (2026-10-11), cross-browser equivalence NOT ESTABLISHED until Firefox and Chromium are compared on one machine; compared on his machine the same day: Firefox 157 and Edge 155 on the same recorded inputs, every rules-1 snapshot the same at every tick of the tactical map's three runs (MEASURED once; whether that moves the row is his to rule)
+DET-MATH-0       the owner's ruling (2026-10-11), outside the gate: the simulation's rules made portable. Every function whose last bits the language leaves to the engine and that reached the authoritative state (sin, cos, hypot, atan2) replaced by fdlibm's algorithms and exact square roots, built from operations ECMA-262 fixes; the rules versioned (1), rules 0 kept as the baseline; held by rules-arithmetic and math-fence in the self-test and by graybox/rules_ref.py; the same bits measured in two V8 engines and CPython; ACCEPTED by the owner (2026-10-11), cross-browser equivalence NOT ESTABLISHED until Firefox and Chromium are compared on one machine; compared on his machine the same day: Firefox 157 and Edge 155 on the same recorded inputs, every rules-1 snapshot the same at every tick of the tactical map's three runs; by his ruling of the same day, cross-browser equivalence on the tactical map advanced from NOT ESTABLISHED to MEASURED once
       ↓
-TICK-REF-0       the owner's ruling (2026-10-11), "NEXT": a second, independent implementation of the full tick, in Python, from a written specification (graybox/RULES-1.md), verifying a browser's trace tick by tick and naming the first differing field; the same bytes as Chromium 141 and node 22 at every tick of both maps' runs, and as Firefox 157 on his machine (the tactical map); accepted provisionally by the owner (2026-10-11); outside the gate
+TICK-REF-0       the owner's ruling (2026-10-11), "NEXT": a second, independent implementation of the full tick, in Python, from a written specification (graybox/RULES-1.md), verifying a browser's trace tick by tick and naming the first differing field; the same bytes as Chromium 141 and node 22 at every tick of both maps' runs, and as Firefox 157's and Edge 155's on his machine (the tactical map, each verified directly); accepted provisionally by the owner (2026-10-11); outside the gate
       ↓
-BOT-REF-0        the owner's ruling (2026-10-11), "the next vertical slice": the walk made in Python from the map alone, by a policy written down (graybox/WALK-1.md, walk-1) and advanced by tick_ref.py (graybox/bot_ref.py), so that no browser originates the reference walk; on the tactical map its start and 1,787 inputs the same bytes as the browsers' own bot's, and Chromium 141 and node 22 playing them reach the Python tick's state at every tick; Firefox and Edge on his machine next, then the witness level; outside the gate
+BOT-REF-0        the owner's ruling (2026-10-11), "the next vertical slice": the walk made in Python from the map alone, by a policy written down (graybox/WALK-1.md, walk-1) and advanced by tick_ref.py (graybox/bot_ref.py), so that no browser originates the reference walk; on the tactical map its start and 1,787 inputs the same bytes as the browsers' own bot's, and Chromium 141, node 22, and on his machine Firefox 157 and Edge 155, playing them reach the Python tick's state at every tick; ACCEPTED provisionally by the owner (2026-10-11); the witness level next; outside the gate
+      ↓
+STUDIO-0         the owner's direction (2026-10-11), declared, not built: "make the next milestone a summonable live director, not another verification rung" — in the running plaza, a selection, a prompt, three candidates previewed live, admit, reject and undo; "the LLM edits design intent; Verðandi compiles that intent into a live world; the designer remains in control"; by his ruling of the same day, after INPUT-CONTRACT-0
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -2920,6 +2922,12 @@ only:
   Edge 155 on his machine: `6faecae7…`) and in both Firefox runs (`99015929…`): in these runs, rules 0's states were
   a property of the engine family, not of the machine.
 
+**His ruling (2026-10-11, after that run).** *"DET-MATH-0 advances from NOT ESTABLISHED to MEASURED once for
+cross-browser equivalence on the tactical map."* *"This is not a universal cross-engine proof, but it satisfies the
+specific comparison previously missing."* *"The rules-0 stress divergence is a useful control showing that the
+experiment can expose a real difference."* And one result he asked to keep: *"input equality, initial-state equality,
+per-tick state equality, and individual arithmetic tests catch different defects. None subsumes the others."*
+
 ### TICK-REF-0 — the tick a second time, in Python · **the owner's ruling** (2026-10-11): "Full Python simulation tick — NEXT"; outside the certified gate · **built** (`graybox/RULES-1.md`, `graybox/tick_ref.py`)
 
 **His ruling.** *"Browser JavaScript records the input sequence. Python independently advances the authoritative
@@ -2975,6 +2983,14 @@ above), so they are the Python tick's too by that comparison; the direct run is 
 
 **His ruling.** *"I'd accept 0196/0197 provisionally from the reported results, then build this as the next vertical
 slice"*: the Python bot that records the walk (BOT-REF-0).
+
+**The direct run (2026-10-11).** `tick_ref.py verify` on Edge 155's own trace of the given runs: every snapshot of the
+walk, the fight and the stress run the same bytes as Edge's, and the stress run's inputs and start made again the
+same: `TICK REFERENCE VERIFIED`, 5,863 ticks. Then on his machine, after BOT-REF-0, `tick_ref.py verify` on Firefox
+157's and Edge 155's plays of the Python walk: each 1,787 ticks, VERIFIED. His ruling, made before the direct run was
+reported: *"TICK-REF-0 — ACCEPT provisionally"*, *"Edge's trace still has not been directly passed through
+`tick_ref.py verify`; the matching Firefox snapshots support the inference, but I would keep that direct check
+outstanding."* It is no longer outstanding: run, and VERIFIED.
 
 ### BOT-REF-0 — the walk made in Python from the map alone · **the owner's ruling** (2026-10-11): "the next vertical slice"; outside the certified gate · **built** (`graybox/WALK-1.md`, `graybox/bot_ref.py`)
 
@@ -3072,6 +3088,59 @@ independent evidence that the reference model agrees with the actual engine."*
 route is for, nothing more. That Firefox and Edge agree with the Python walk: his run. The witness level, by his order
 after the tactical walk passes. A server, a protocol, inputs from a malicious client. Nothing here enters the
 certified gate.
+
+**On the owner's machine (2026-10-11).** 0198 and 0199 applied as trees `72856a08…` and `936c5054…`, as predicted.
+`bot_ref.py make tactical`, twice: the same file (`fc /b`: no differences), digest `a75baf13…`, sha256 `0ff71da1…`, the
+same as in the container. `check`: `BOT TRACE CHECKED`. `compare` against his Firefox 157's own trace, whose walk its
+own bot recorded: the start, every input and every state the same, field by field, 1,787 ticks. Then Firefox 157 and
+Edge 155 played the Python walk (`trace.py run --inputs graybox/build/bot/tactical-walk.json --browser firefox` and
+`--browser msedge`, each accepted as its family): `compare` against each, the start, every input and every snapshot
+the same as the Python tick's; `tick_ref.py verify` on each, VERIFIED; `trace.py compare` of the two, cross-engine,
+under rules 1 every state the same at every tick, and under rules 0 `Math.cos` different on 1 of 678 common
+arguments and `Math.hypot` on 255 of 677, with every state still the same. The self-test on his Firefox's trace:
+`BOT-REF SELFTEST PASSED`, every row as in the container, and the note on the platform's atan2 again found at tick 519
+(his Windows C library, as the container's Linux one). The gate 251 rows / 0 fail; pushed `514a45e..4f0ab5c`.
+
+So, in his acceptance table: the bot deterministic, MEASURED here and on his machine; the reference tick right for
+the Python walk, MEASURED in four engines (Chromium 141 and node 22 in the container, Firefox 157 and Edge 155 on his
+machine); the browsers' agreement with Python on Python-originated inputs, MEASURED in those four; the bot's intended
+behaviour, held by its invariants and plants, with four choices this walk does not exercise.
+
+**His ruling.** *"ACCEPT BOT-REF-0 provisionally."* *"The four untested policy choices matter: they remain
+unspecified by evidence, even if this particular walk is stable."* And of the gate: *"These additions are outside the
+certified gate, so this does not establish that the gate itself covers their behavior."*
+
+### STUDIO-0 — the summonable live director · **the owner's direction** (2026-10-11); declared, not built
+
+**His words.** *"The way to streamline this is to make Verðandi feel less like a collection of procedural-generation
+scripts and more like a UE5-style world studio where the designer can summon an AI collaborator directly into a
+running world."* *"The designer should not have to think about patches, JSON, procedural parameters, or verification
+commands."* *"The key design principle: the LLM edits design intent; Verðandi compiles that intent into a live world;
+the designer remains in control."* The workflow: load and inhabit a world; select or summon (*"Without a selection,
+the prompt applies to the whole world"*); describe the result; *"Summon live alternatives"*, two or three candidates in
+the actual world, switched between from one place or walked through; admit, reject or refine, *"Every change has
+undo, provenance, and a clear record of what changed. The live world stays playable throughout."* The pipeline:
+*"The LLM should not directly rewrite the live scene or produce arbitrary engine code for every request. Give it a
+constrained, structured editing interface"*; designer intent, an AI design proposal (*"Target, desired effect,
+constraints, scope, candidate edits"*), the scene compiler, a preview in the running world, the designer's admission.
+The behaviours: keep playing while generating; preview transactionally; preserve session state; control edit scope;
+prevent stale results; undo at the intent level; keep the interaction direct; *"The exact latency target should be
+measured against real candidate complexity rather than promised universally."* What to build first, in his order:
+the live viewport and the summon; multi-candidate comparison; selection, hierarchy and property overrides; revision
+history and scope-preserving edits; visual-quality feedback. *"My recommendation: make the next milestone a
+summonable live director, not another verification rung. Start with the current plaza, object selection, a prompt
+panel, three candidates, live preview, and admit/reject/undo."* *"The test of success is simple: can a designer make
+a meaningful, high-quality change to a running world faster by describing it than by manually constructing it?"*
+
+**Its place in the order.** His ruling of the same day puts INPUT-CONTRACT-0 first: *"After that, return to the art
+loop"*, *"The plaza candidates should not remain indefinitely blocked behind verification work."*
+
+**What exists for it already** (NATIVE-PLAZA-0, DIRECTOR-0): the plaza played in the browser with the graybox's
+simulation; an edit to an intent compiled in a fresh process and swapped into the running page only when it compiles
+(the game, its position and inputs kept; a refused edit leaving the scene as it was); candidates checked against the
+head they meet and admitted or refused by a person, every step in an append-only ledger. **What does not:** a
+selection in the page, a prompt panel, a model that writes a structured proposal, candidates made from one prompt and
+compared in place, and admit, reject and undo from the page.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
