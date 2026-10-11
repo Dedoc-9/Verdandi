@@ -23,6 +23,7 @@
 import hashlib
 import json
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -110,9 +111,13 @@ def statement_key(code) -> str:
         return verb
     if verb in ("moon", "sun"):
         return "light"
-    if verb == "canopy" and len(args) == 5:
+    if verb == "canopy" and len(args) >= 5 and is_cell(args[3]) and is_cell(args[4]):
         return "canopy %s %s %s" % (args[0], args[3], args[4])
     return "%s %s" % (verb, args[0] if args else "")
+
+
+def is_cell(tok) -> bool:
+    return re.fullmatch(r"[0-9]+,[0-9]+", tok) is not None
 
 
 def parse(text: str, fname: str) -> dict:
@@ -309,6 +314,68 @@ def _region(A, name, w, h, where):
     return min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1])
 
 
+def _options(toks, where, arity):
+    """Named options after a statement's fixed words: each a name and its values, each name once."""
+    out, i = {}, 0
+    while i < len(toks):
+        name = toks[i]
+        if name not in arity:
+            raise ArtError("%s: %r is not an option here (the options are %s)" % (where, name, ", ".join(sorted(arity))))
+        if name in out:
+            raise ArtError("%s: the option %s is given twice" % (where, name))
+        vals = toks[i + 1:i + 1 + arity[name]]
+        if len(vals) != arity[name]:
+            raise ArtError("%s: the option %s takes %d value(s)" % (where, name, arity[name]))
+        out[name] = vals
+        i += 1 + arity[name]
+    return out
+
+
+def _masses(cells, cx, cz, lo, hi):
+    """Rock cells joined into masses: rows of cells, rows of equal span stacked, each mass cut into at most five
+    segments along its length, and each segment's height stepped by 2 m from the highest at the middle of its side of
+    the region to the lowest at the ends. A massing that reads as a few large forms, highest at the centre of each
+    side, where the per-cell prisms read as a comb. ([x0, z0, x1, z1], top) in a fixed order."""
+    have = set(cells)
+    rows = []
+    for z in sorted({c[1] for c in cells}):
+        xs = sorted(x for x, zz in cells if zz == z)
+        i = 0
+        while i < len(xs):
+            j = i
+            while j + 1 < len(xs) and xs[j + 1] == xs[j] + 1:
+                j += 1
+            rows.append([xs[i], z, xs[j], z])
+            i = j + 1
+    rects = []
+    for r in rows:
+        for q in rects:
+            if q[0] == r[0] and q[2] == r[2] and q[3] == r[1] - 1:
+                q[3] = r[1]
+                break
+        else:
+            rects.append(list(r))
+    segs = []
+    for x0, z0, x1, z1 in rects:
+        along_x = (x1 - x0) >= (z1 - z0)
+        n0, n1 = (x0, x1) if along_x else (z0, z1)
+        length = n1 - n0 + 1
+        k = max(1, min(5, round(length / 3)))
+        centre = cx if along_x else cz
+        for s in range(k):
+            a = n0 + length * s // k
+            b = n0 + length * (s + 1) // k - 1
+            segs.append(([a, z0, b, z1] if along_x else [x0, a, x1, b], abs((a + b + 1) / 2.0 - centre)))
+    # the segment nearest the middle of its side is the highest, the farthest the lowest
+    dmin, dmax = min(d for _r, d in segs), max(d for _r, d in segs)
+    out = []
+    for rect, d in segs:
+        t = (d - dmin) / (dmax - dmin) if dmax > dmin else 0.0
+        out.append((rect, r4(lo + 2 * int(((hi - lo) * (1 - t)) // 2))))
+    assert all((x, z) in have for (x0, z0, x1, z1), _t in out for x in range(x0, x1 + 1) for z in range(z0, z1 + 1))
+    return out
+
+
 def export(A: dict, maps_dir=None) -> dict:
     """The scene and its lineage for a parsed art file."""
     conv = world(A["map"], maps_dir)
@@ -360,38 +427,79 @@ def export(A: dict, maps_dir=None) -> dict:
                     visuals.append({"id": "skyline:%d,%d" % (x, z), "by": sh, "region": "*", "asset": "cube", "material": mat,
                                     "box": box(x * cell, wall, z * cell, (x + 2) * cell, top, (z + 2) * cell)})
         elif verb == "tower":
-            if len(args) != 4:
-                raise ArtError("%s: tower takes a region, a material and a lowest and highest height" % where)
+            if len(args) not in (4, 5) or (len(args) == 5 and args[4] != "mass"):
+                raise ArtError("%s: tower takes a region, a material, a lowest and highest height, and optionally 'mass'" % where)
             x0, z0, x1, z1 = _region(A, args[0], w, h, where)
             mat = material(args[1], where)
             lo, hi = _num(args[2], where, wall, 400, "height"), _num(args[3], where, wall, 400, "height")
-            done = set()
+            cells = []
             for z in range(max(0, z0 - 1), min(h, z1 + 2)):
                 for x in range(max(0, x0 - 1), min(w, x1 + 2)):
-                    if not rock(x, z) or (x, z) in done:
-                        continue
                     # a rock cell that borders the region's floor
-                    if not any(x0 <= a <= x1 and z0 <= b <= z1 and walk(a, b) for a in (x - 1, x, x + 1) for b in (z - 1, z, z + 1)):
-                        continue
-                    done.add((x, z))
+                    if rock(x, z) and any(x0 <= a <= x1 and z0 <= b <= z1 and walk(a, b) for a in (x - 1, x, x + 1) for b in (z - 1, z, z + 1)):
+                        cells.append((x, z))
+            if len(args) == 4:
+                # one prism a cell, each its own height: the first massing, which reads as a comb
+                for x, z in cells:
                     steps = int(hi - lo)
                     top = lo + (pick(key(x, z)) % (steps + 1) if steps > 0 else 0)
                     visuals.append({"id": "tower:%d,%d" % (x, z), "by": sh, "region": args[0], "asset": "cube", "material": mat,
                                     "box": box(x * cell, wall, z * cell, (x + 1) * cell, top, (z + 1) * cell)})
+            else:
+                for (rx0, rz0, rx1, rz1), top in _masses(cells, (x0 + x1 + 1) / 2.0, (z0 + z1 + 1) / 2.0, lo, hi):
+                    rid = "tower:%d,%d-%d,%d" % (rx0, rz0, rx1, rz1)
+                    bx0, bz0, bx1, bz1 = rx0 * cell, rz0 * cell, (rx1 + 1) * cell, (rz1 + 1) * cell
+                    visuals.append({"id": rid, "by": sh, "region": args[0], "asset": "cube", "material": mat,
+                                    "box": box(bx0, wall, bz0, bx1, top, bz1)})
+                    if top - wall >= 8:
+                        # a cornice: the mass's last metre thrown out by 0.6 m, high above every head
+                        visuals.append({"id": rid + ":cap", "by": sh, "region": args[0], "asset": "cube", "material": mat,
+                                        "box": box(bx0 - 0.6, top - 1.0, bz0 - 0.6, bx1 + 0.6, top + 0.4, bz1 + 0.6)})
         elif verb == "canopy":
-            if len(args) not in (3, 5):
-                raise ArtError("%s: canopy takes a region, a material, a height and optionally two corners inside it" % where)
+            if len(args) < 3:
+                raise ArtError("%s: canopy takes a region, a material, a height, optionally two corners inside it, and options" % where)
             x0, z0, x1, z1 = _region(A, args[0], w, h, where)
-            if len(args) == 5:
-                a, b = _cell(args[3], w, h, where), _cell(args[4], w, h, where)
+            rest = args[3:]
+            if len(rest) >= 2 and is_cell(rest[0]) and is_cell(rest[1]):
+                a, b = _cell(rest[0], w, h, where), _cell(rest[1], w, h, where)
                 sx0, sz0, sx1, sz1 = min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1])
                 if not (x0 <= sx0 and sx1 <= x1 and z0 <= sz0 and sz1 <= z1):
                     raise ArtError("%s: the canopy's corners leave its region %s" % (where, args[0]))
                 x0, z0, x1, z1 = sx0, sz0, sx1, sz1
+                rest = rest[2:]
             mat = material(args[1], where)
             y = _num(args[2], where, 0.5, 200, "height")
-            visuals.append({"id": "canopy:%d,%d-%d,%d" % (x0, z0, x1, z1), "by": sh, "region": args[0], "asset": "cube", "material": mat,
-                            "box": box(x0 * cell, y, z0 * cell, (x1 + 1) * cell, y + 0.4, (z1 + 1) * cell)})
+            opts = _options(rest, where, {"deep": 1, "ribs": 1, "lit": 2})
+            deep = _num(opts["deep"][0], where, 0.2, 4.0, "depth") if "deep" in opts else 0.4
+            cid = "canopy:%d,%d-%d,%d" % (x0, z0, x1, z1)
+            visuals.append({"id": cid, "by": sh, "region": args[0], "asset": "cube", "material": mat,
+                            "box": box(x0 * cell, y, z0 * cell, (x1 + 1) * cell, y + deep, (z1 + 1) * cell)})
+            # the slab's long axis; ribs cross it and downlights run along its middle
+            along_x = (x1 - x0) >= (z1 - z0)
+            n0, n1 = (x0, x1) if along_x else (z0, z1)
+            if "ribs" in opts:
+                every = int(_num(opts["ribs"][0], where, 1, 12, "rib spacing"))
+                for k in range(n0, n1 + 2, every):
+                    c = k * cell
+                    rb = box(max(c - 0.25, x0 * cell), y - 0.8, z0 * cell, min(c + 0.25, (x1 + 1) * cell), y, (z1 + 1) * cell) if along_x else \
+                        box(x0 * cell, y - 0.8, max(c - 0.25, z0 * cell), (x1 + 1) * cell, y, min(c + 0.25, (z1 + 1) * cell))
+                    visuals.append({"id": "%s:rib%d" % (cid, k), "by": sh, "region": args[0], "asset": "cube", "material": mat, "box": rb})
+            if "lit" in opts:
+                col = _rgb(opts["lit"][0], where)
+                cd = _num(opts["lit"][1], where, 0, 100000, "candelas")
+                if "housing" not in A["materials"]:
+                    raise ArtError("%s: a downlight sits in a housing: declare the material 'housing'" % where)
+                mid = ((z0 + z1 + 1) / 2.0 if along_x else (x0 + x1 + 1) / 2.0) * cell
+                for k in range(n0, n1 + 1):
+                    if (k - n0) % 2:
+                        continue
+                    c = (k + 0.5) * cell
+                    px, pz = (c, mid) if along_x else (mid, c)
+                    vid = "%s:light%d" % (cid, k)
+                    visuals.append({"id": vid, "by": sh, "region": args[0], "asset": "cube", "material": "housing",
+                                    "box": box(px - 0.3, y - 0.1, pz - 0.3, px + 0.3, y, pz + 0.3)})
+                    lights.append({"id": vid, "by": sh, "region": args[0], "type": "point", "pos": [r4(px), r4(y - 0.15), r4(pz)],
+                                   "dir": [0, -1, 0], "color": col, "candela": r4(cd), "radius": r4(cell * 7)})
         elif verb == "neon":
             if len(args) != 4:
                 raise ArtError("%s: neon takes a region, an emissive material, a height and 'every N' faces" % where)

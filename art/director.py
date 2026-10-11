@@ -632,9 +632,13 @@ def cmd_selftest():
         # once a candidate is admitted for real the live brief has moved on, and A's '+ material' no longer applies.
         for f, to in (("plaza-night.art", "art/briefs"), ("tactical.design", "graybox/maps"), ("tactical.layout", "graybox/maps")):
             shutil.copy(os.path.join(rnd, "base", f), os.path.join(tmp, to, f))
-        want = canon.head(canon.load_intent(open(os.path.join(rnd, "A.intent"), "rb").read())["base"])
-        got0 = canon.head(current_parts(ws))
-        results.append(("the scratch copy starts at the head the round was written against (%s)" % want[:12], got0 == want, got0[:12]))
+        # The files are the round's; the exporter is today's (it is the program under test, and a new one moves every
+        # head), so the fixture is held to the art and the world the round was written against, not to the exporter.
+        base = canon.load_intent(open(os.path.join(rnd, "A.intent"), "rb").read())["base"]
+        now = current_parts(ws)
+        same = now["art_sha256"] == base["art_sha256"] and now["world_sha256"] == base["world_sha256"]
+        results.append(("the scratch copy holds the art and the world the round was written against (%s, %s)" % (base["art_sha256"][:12], base["world_sha256"][:12]),
+                        same, "art %s, world %s" % (now["art_sha256"][:12], now["world_sha256"][:12])))
         files = sorted(os.path.join(rnd, f) for f in os.listdir(rnd) if f.endswith(".intent"))
         cmd_genesis_quiet(ws)
         rows = cmd_evaluate(ws, files, quiet=True)
@@ -659,11 +663,12 @@ def cmd_selftest():
             results.append(("a candidate checked at the old head is not admitted at the new one", False, "it was admitted"))
         except SystemExit as e:
             results.append(("a candidate checked at the old head is not admitted at the new one", "HEAD-MOVED" in str(e), str(e)[:80]))
+        before = canon.dumps(led.read(ws.ledger)[0][int(seqs["C"])])
         rc = cmd_reevaluate_quiet(ws, seqs["C"])
         results.append(("C, re-evaluated at the new head, is a new event naming the old (CLEAN, HEAD-MOVED)",
                         rc["verdict"]["verdict"] == "CLEAN" and "HEAD-MOVED" in rc["verdict"]["codes"] and rc["re_evaluation_of"] == seqs["C"], ",".join(rc["verdict"]["codes"])))
         events, _l, _h = led.read(ws.ledger)
-        results.append(("the earlier evaluation of C is kept as it was", events[int(seqs["C"])]["verdict"]["re_evaluated"] is False, ""))
+        results.append(("the earlier evaluation of C is kept as it was, byte for byte", canon.dumps(events[int(seqs["C"])]) == before, ""))
         cmd_admit_quiet(ws, rc["seq"], chooser="selftest")
         cmd_refuse_quiet(ws, seqs["D"], chooser="selftest", note="it reaches the bases and every wall")
         rb = cmd_reevaluate_quiet(ws, seqs["B"])

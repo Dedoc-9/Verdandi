@@ -15,7 +15,7 @@ Two times are kept apart, and a third runtime stands beside them.
   CONTENT TIME   design/ (a client) ──► shell design-compile ──► shell design (admit) ──► a sealed session
                  no gate runs; the shell's compiler and admission, which the gate holds, do the work
   BESIDE         graybox/: a browser runtime on the canonical level; its own checks; no row reads it
-                 art/: an art file over the graybox's W and C ──► one engine scene ──► Unreal 5.8; its own checks
+                 art/: an art file over the graybox's W and C ──► one scene ──► the native plaza (WebGL 2); Unreal optional
 ```
 
 | folder | language | source lines | job | held by |
@@ -27,7 +27,7 @@ Two times are kept apart, and a third runtime stands beside them.
 | `verify/` | Python | 22,643 (`verify.py` 17,025) | the gate, the envelope, the saved-form reader, the registers, the sealers | is the gate |
 | `design/` | Python | 1,084 | the design tool, a client of the shell | its own 17 checks; no row |
 | `graybox/` | Python, JS, HTML | 3,393 | the FPS slice: converter, map checks, server, simulation and its state checks, two renderers, the trace experiment | its own checks; no row |
-| `art/` | Python, Rust | 4,324 | prompted art: the art file's reader and exporter to one engine scene, its checks, the Unreal 5.8 importer; DIRECTOR-0 (the canonical form, the scope protocol, the ledger, a second implementation in Rust) | `art/check.py`, `art/director.py selftest`, `art/director/conform.rs`; no row |
+| `art/` | Python, Rust, JS, HTML | 5,427 | prompted art: the art file's reader and exporter to one engine scene, its checks, the native plaza (`play.py`, a WebGL 2 renderer), the Unreal 5.8 importer (an optional path); DIRECTOR-0 (the canonical form, the scope protocol, the ledger, a second implementation in Rust) | `art/check.py`, `art/director.py selftest`, `art/director/conform.rs`; no row |
 
 Line counts are of tracked `.rs`, `.py`, `.js` and `.html` files.
 
@@ -153,6 +153,7 @@ the Unreal editor and keeps every actor whose item did not change.
 | judge | `verify/verify.py` | writes only `verify/build/` and its scratch |
 | a separate runtime | `graybox/` (`sim.js` writes the game state; the renderers read it) | its self-test and `check.py`; no row |
 | the art | `art/` (writes a scene from W and C; never writes W or C) | `art/check.py`; the importer's in-engine self-check; no row |
+| the native plaza | `art/play.py` (serves a checked scene beside the graybox's `sim.js`, which moves against C; the renderer writes no state) | `art/check.py` before serving; no row |
 
 The walls, with their real reach:
 

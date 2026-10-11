@@ -165,6 +165,8 @@ ART-GENERATION-0 the owner's pivot (2026-10-10), ahead of EVIDENCE-LINK-0: verif
       ↓
 DIRECTOR-0       the owner's ruling (2026-10-10): the operator loop for prompted art — candidates checked against the head they meet, admitted or refused by a person, every step in an append-only ledger; a canonical form and conformance vectors a second implementation reproduces (built beside the tree: art/director.py, art/director/; a std-only Rust second implementation reproduces all 62 vectors)
       ↓
+NATIVE-PLAZA-0   the owner's rulings (2026-10-10, 2026-10-11): Verðandi-native the primary architecture, Unreal 5.8 a secondary path; the plaza played in the browser through an art-owned launcher (art/play.py) and a WebGL 2 renderer, the graybox's simulation moving against C; two rounds evaluated, not yet chosen
+      ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
@@ -2634,6 +2636,68 @@ that report; no instrument saw it. Pushed, `3dc15ec..222f856`.
 **Grade.** MEASURED (the host, one run, a 0.02 ms clock): the table, a draw and its readback, which is not a frame
 rate and not input-to-photon. OBSERVED (the host): the tree, the two self-tests. DECLARED: his report of the play.
 NOT_MEASURED: a frame rate; input-to-photon; any other browser or machine.
+
+### NATIVE-PLAZA-0 — the plaza played without Unreal · **the owner's rulings** (2026-10-10, 2026-10-11); outside the certified gate · **built** (`art/play.py`, `art/web/`); its two rounds evaluated, not yet chosen
+
+**His rulings.** On 2026-10-10: *"Make Verðandi-native the primary architecture. Keep UE5.8 as a secondary
+interoperability path. Do not make Unreal a prerequisite for authoring, compilation, or the eventual playable
+product."* His success criterion: *"the same canonical art and layout sources can produce a playable native scene
+without launching Unreal Editor."*
+
+On 2026-10-11, answering the session's two questions: *"Choose the art-owned launcher (`art/play.py`) and WebGL2 in the
+browser. Keep `serve.py` and the existing `graybox/` boundary unchanged."* He asked that the scene be served *"as a
+generated artifact"*, with the name validated and *"the launcher's allowed reads explicit"*, and set a narrow first
+slice:
+
+1. compile the admitted scene;
+2. launch it through `art/play.py` with WebGL 2;
+3. preserve movement and collision;
+4. *"Demonstrate one natural-language visual edit, such as making the cantilevers more imposing, without
+   unintentionally changing the playable layout"*;
+5. compare the registered views and inspect the result in motion.
+
+**Built (2026-10-11).**
+
+- **`art/play.py`.** It compiles the brief, holds the scene to the art checks (a scene that fails one is not served),
+  and serves six named paths on 127.0.0.1. It writes nothing. `graybox/serve.py` is unchanged.
+- **The page.** The graybox's `sim.js`, served unchanged, moves the player against C. Keys 1–9 move a camera to the
+  brief's views, not the player.
+- **`art/web/scene_render.js`, WebGL 2.**
+  - The moon's shadow.
+  - Every lamp, neon and downlight, each seen only from the cells it can see across the grid, so no light leaks
+    through a wall.
+  - Surfaces patterned by what they are: board-formed concrete with tie holes and drips, stone setts, black water,
+    steel.
+  - Light thrown up from the lit floor onto undersides, and the sky dimmed by the masses around and above.
+  - Height fog and each lamp's glow in it, the wet floor and the puddles as mirrors, rain and its rings, bloom.
+- **The exporter's new options**, recorded in the ledger by a rebase (#14): `tower … mass` (stepped masses with
+  cornices) and the canopy's `deep`, `ribs` and `lit`. No statement of the brief used them, so the scene's bytes were
+  unchanged. A new plant in `art/check.py` refuses ribs that hang below the reach ceiling under a slab that clears it.
+- **The director's self-test** now holds its fixture to the art and the world the round was written against, not
+  to the exporter, which is the program under test.
+
+**The edit, through the loop.** Two rounds, written by the model at head `cac46b5c8e28` and evaluated:
+
+- **"make the towers read as one monumental mass, not a comb"** (`art/rounds/plaza-mass/`, #15 to #17): A, B and C,
+  all CLEAN.
+- **"make the cantilevers more imposing"** (`art/rounds/plaza-cantilevers/`, #18 to #20): A, B and C, all CLEAN.
+  Every candidate changes the canopies and nothing else; the play boxes are the same 87.
+
+Nothing is admitted until he chooses.
+
+**Judged from the native renderer's stills** (OBSERVED, in a software renderer in the build container):
+
+- Massing: from above, the head reads as a comb. A, B and C read as stepped blocks with cornices, and C's crown is the
+  strongest.
+- Cantilevers: A's ribs are lost in the dark. B's downlights make the soffits read. C, the ribs and the light
+  together, reads as a structure.
+- The washed wall of the north flank, a lamp over every cell, shows as the earlier note said.
+
+Walk-throughs of the recorded walk, as frame sequences, were made for the head and for mass A with cantilevers C.
+
+**What it does not show.** That the picture is good: a person judges it. That it runs at any frame rate on any
+machine: nothing was timed. That the look is AAA: it is the first native renderer, boxes with procedural surfaces, no
+global illumination, no textures, and no shadows from the point lights.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

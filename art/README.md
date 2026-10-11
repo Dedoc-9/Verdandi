@@ -74,8 +74,8 @@ z down). [`briefs/plaza-night.art`](briefs/plaza-night.art) is the first.
 | `surface CLASS MATERIAL` | the play geometry's look: `ground`, `floor`, `stair`, `raised`, `cover`, `wall` |
 | `region NAME x0,z0 x1,z1` | a named place the look talks about |
 | `skyline MATERIAL MIN MAX` | 2 × 2-cell blocks of rock that border no floor, raised to MIN–MAX m |
-| `tower REGION MATERIAL MIN MAX` | the rock cells bordering a region's floor, raised to MIN–MAX m |
-| `canopy REGION MATERIAL HEIGHT [x0,z0 x1,z1]` | an overhead slab, which must clear the reach ceiling |
+| `tower REGION MATERIAL MIN MAX [mass]` | the rock cells bordering a region's floor, raised to MIN–MAX m: one prism a cell, or with `mass` a few masses (each run of cells one block, cut into at most five segments stepped 2 m from MAX at the middle of each side to MIN at the ends, each with a cornice above every head) |
+| `canopy REGION MATERIAL HEIGHT [x0,z0 x1,z1] [deep D] [ribs N] [lit R,G,B CANDELAS]` | an overhead slab, which must clear the reach ceiling: D m deep (0.4 if not given), with downstand ribs 0.8 m deep every N cells across it, and downlights set into its underside every other cell along it. The ribs and the lights must clear the reach ceiling too |
 | `neon REGION MATERIAL HEIGHT EVERY` | a flush strip and a rect light on one in EVERY of the region's rock faces |
 | `lamp REGION R,G,B CANDELAS SPACING` | a point light and its housing over floor cells on an absolute lattice |
 | `puddle REGION MATERIAL PERCENT` | flat black-water planes on that share of the region's floor cells |
@@ -150,9 +150,38 @@ python art/director.py selftest                          # the vectors and the w
   what was affected and what leaked.
 - **The ledger** (`art/ledger/<brief>.ledger`) keeps every evaluation, re-evaluation, admission and refusal, and is
   never rewritten.
-- **The first round** is `art/rounds/plaza-imposing/`.
+- **The first round** is `art/rounds/plaza-imposing/`. Two more wait on the owner's choice: `art/rounds/plaza-mass/`
+  ("make the towers read as one monumental mass, not a comb") and `art/rounds/plaza-cantilevers/` ("make the
+  cantilevers more imposing"), both evaluated at the head after the exporter's rebase (ledger #14).
 
-## In Unreal Engine 5.8, on the host
+## The native plaza: `art/play.py`
+
+By the owner's ruling (2026-10-10): *"Make Verðandi-native the primary architecture. Keep UE5.8 as a secondary
+interoperability path."* And (2026-10-11): *"Choose the art-owned launcher (`art/play.py`) and WebGL2 in the browser.
+Keep `serve.py` and the existing `graybox/` boundary unchanged."*
+
+```
+python art/play.py plaza-night           # compiles the scene, holds it to the art checks, serves it; a browser opens
+```
+
+- **The launch.** It compiles the brief through `dress.py` and runs the art checks on the scene. A scene that fails
+  one is not served. It serves, on 127.0.0.1 only, these paths and no other: the page and the renderer
+  (`art/web/`), the graybox's `sim.js` (read and served unchanged), the scene from memory, and the map converted by
+  `graybox/level.py`. The browser gets no other path into `art/` or `graybox/`, and nothing is written to disk.
+- **Who decides what.** The simulation moves the player against the map's C and nothing else. The renderer
+  (`art/web/scene_render.js`, WebGL 2) draws the scene and writes no state.
+- **What it draws.** The moon's shadow; every lamp, neon and downlight, each seen only from the cells it can see
+  across the grid; surfaces patterned by what they are; light thrown up from the lit floor onto undersides; the sky
+  dimmed by the masses around; height fog and each lamp's glow in it; the wet floor and the puddles as mirrors; rain
+  and its rings; bloom.
+- **In the page.** Click to play (W A S D, the mouse, Space, R). Keys 1–9 move a camera to the brief's views and Tab
+  goes back to play. `--art PATH` plays another art file for the same brief (a candidate's text).
+- **The limits.** Nothing hashes its pixels; a person judges what it draws. It is the first native renderer, not AAA:
+  boxes with procedural surfaces, no global illumination, no textures, and no shadows from the point lights.
+
+## In Unreal Engine 5.8, on the host (an optional path)
+
+Since the owner's ruling of 2026-10-10, Unreal is a secondary interoperability path, not the critical one.
 
 First, the smallest end-to-end scene on the machine you will build on, before any kit or toolchain is bought:
 
@@ -199,11 +228,15 @@ block a player is cover, and goes into the graybox map.
 | `dress.py` | the exporter: the art file and the graybox world to one scene, its lineage and a plan view |
 | `check.py` | the art's checks, plants and revisions |
 | `preview.py` | the provisional first-person preview (PROVISIONAL_PREVIEW): a standalone WebGL 2 page of the scene |
+| `play.py` | the native plaza's launcher: the scene compiled, checked and served beside the graybox's simulation |
+| `web/play.html`, `web/play.js` | the native plaza's page: input, the fixed tick on `sim.js`, the views |
+| `web/scene_render.js` | the native renderer (WebGL 2) |
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |
 | `briefs/plaza-night.revise-look` | its look revision: the wet surfaces less reflective |
 | `briefs/plaza-night.revise-layout.design` | its layout revision: the south flank one cell narrower (the north flank until B was admitted) |
 | `unreal/verdandi_import.py` | the Unreal 5.8 importer, run inside the editor |
 | `director.py`, `director/` | DIRECTOR-0: the canonical form, the scope protocol, the ledger, the conformance vectors, the second implementation |
+| `rounds/plaza-mass/`, `rounds/plaza-cantilevers/` | the second and third rounds, evaluated, not yet chosen |
 | `rounds/plaza-imposing/` | the first round's candidate intents |
 | `ledger/plaza-night.ledger` | the brief's intent ledger |
 | `build/` | what `dress.py` writes; never committed |

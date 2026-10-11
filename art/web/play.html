@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verðandi — the native plaza</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #05070a; overflow: hidden; font: 12px/1.45 ui-monospace, Consolas, monospace; }
+  #view { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  #hud { position: fixed; left: 10px; top: 8px; color: #d6dde4; white-space: pre; text-shadow: 0 1px 2px #000; pointer-events: none; }
+  #cross { position: fixed; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; background: #fff; border-radius: 50%; opacity: 0.7; pointer-events: none; }
+  #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 17px; text-align: center;
+             background: rgba(10, 12, 16, 0.45); white-space: pre-line; cursor: pointer; }
+  body.still #hud, body.still #cross, body.still #overlay { display: none; }
+</style>
+</head>
+<body data-brief="%BRIEF%" data-sha="%SHA%">
+<canvas id="view"></canvas>
+<div id="hud"></div>
+<div id="cross"></div>
+<div id="overlay">Click to play
+(the mouse is captured; Esc releases it · 1–9 the registered views)</div>
+<script src="sim.js"></script>
+<script src="scene_render.js"></script>
+<script src="play.js"></script>
+</body>
+</html>
