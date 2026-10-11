@@ -4,7 +4,7 @@
 # graybox/trace.py — the trace experiment: where two JavaScript engines part, and why. A diagnostic, outside the
 # self-test and outside the gate; nothing passes or fails on what it finds.
 #
-#   python graybox/trace.py run [MAP] [--inputs TRACE.json] [--browser NAME] [--expect FAMILY] [--name LABEL] [--port N]
+#   python graybox/trace.py run [MAP] [--inputs TRACE.json | --inputs BOT.json] [--browser NAME] [--expect FAMILY] [--name LABEL] [--port N]
 #                               [--no-browser] [--timeout SECONDS]
 #   python graybox/trace.py compare A.json B.json
 #   python graybox/trace.py selftest A.json
@@ -16,10 +16,11 @@
 # tick's input and every tick's snapshot of the authoritative state, with the browser's own description of itself.
 # Without --inputs the worker records the runs itself (the walk is a bot's, which under rules 0 calls the engine's
 # functions); with --inputs TRACE.json it plays that trace's runs, the same start and the same inputs, so that two
-# browsers play exactly the same sequence. --browser NAME opens the page in that browser (msedge, chrome, firefox, …)
-# rather than the default one, and expects a trace from its engine; --expect FAMILY (firefox, chromium, safari) says
-# the same without opening anything. A trace from another engine than the one expected is refused and not written:
-# a file's name never says less than the truth about which engine made it. The trace is written to
+# browsers play exactly the same sequence; with --inputs BOT.json, a walk graybox/bot_ref.py made from the map alone
+# (read and refused as bot_ref.py reads it), it plays that walk only. --browser NAME opens the page in that browser
+# (msedge, chrome, firefox, …) rather than the default one, and expects a trace from its engine; --expect FAMILY
+# (firefox, chromium, safari) says the same without opening anything. A trace from another engine than the one
+# expected is refused and not written: a file's name never says less than the truth about which engine made it. The trace is written to
 # graybox/build/trace/MAP/ as ENGINE.json (named by the engine the page reported, -given added with --inputs), as
 # FAMILY.json (firefox, chromium or safari, -given likewise), as LABEL.json with --name (a label that names a family
 # must be the trace's), and again as latest.json. It reads nothing outside graybox/ (and the trace --inputs names) and serves only the
@@ -284,6 +285,24 @@ def print_rules(A, B, r, k):
 
 
 # ------------------------------------------------------------------------------------------------ the file
+def bot_walk(path):
+    """Whether the file is a walk graybox/bot_ref.py made (VERDANDI-BOT-TRACE), not a browser's trace."""
+    try:
+        with open(path, "rb") as fh:
+            return json.loads(fh.read().decode("utf-8")).get("format") == "VERDANDI-BOT-TRACE"
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
+def bot_module():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("trace_bot_ref", os.path.join(HERE, "bot_ref.py"))
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["trace_bot_ref"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def load(path):
     with open(path, encoding="utf-8") as fh:
         T = json.load(fh)
@@ -350,7 +369,19 @@ def cmd_run(argv):
         print("GRAYBOX-MAP: %s" % e, file=sys.stderr)
         return 2
     given = None
-    if opt("--inputs"):
+    if opt("--inputs") and bot_walk(opt("--inputs")):
+        bot = bot_module()
+        try:
+            with open(opt("--inputs"), "rb") as fh:
+                G, _conv = bot.read(fh.read())
+        except bot.BotTraceError as e:
+            print("TRACE: %s is refused as a walk: %s" % (opt("--inputs"), e), file=sys.stderr)
+            return 2
+        if G["map"] != name:
+            print("TRACE: %s is a walk of the map %s, not %s" % (opt("--inputs"), G["map"], name), file=sys.stderr)
+            return 2
+        given = {"from": {"engine": bot.GIVEN, "inputs": bot.given_digest(G)}, "runs": bot.given_runs(G)}
+    elif opt("--inputs"):
         G = load(opt("--inputs"))
         if G.get("map") != name:
             print("TRACE: %s is a trace of the map %s, not %s" % (opt("--inputs"), G.get("map"), name), file=sys.stderr)

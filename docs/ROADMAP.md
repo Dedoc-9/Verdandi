@@ -171,6 +171,8 @@ DET-MATH-0       the owner's ruling (2026-10-11), outside the gate: the simulati
       ↓
 TICK-REF-0       the owner's ruling (2026-10-11), "NEXT": a second, independent implementation of the full tick, in Python, from a written specification (graybox/RULES-1.md), verifying a browser's trace tick by tick and naming the first differing field; the same bytes as Chromium 141 and node 22 at every tick of both maps' runs, and as Firefox 157 on his machine (the tactical map); accepted provisionally by the owner (2026-10-11); outside the gate
       ↓
+BOT-REF-0        the owner's ruling (2026-10-11), "the next vertical slice": the walk made in Python from the map alone, by a policy written down (graybox/WALK-1.md, walk-1) and advanced by tick_ref.py (graybox/bot_ref.py), so that no browser originates the reference walk; on the tactical map its start and 1,787 inputs the same bytes as the browsers' own bot's, and Chromium 141 and node 22 playing them reach the Python tick's state at every tick; Firefox and Edge on his machine next, then the witness level; outside the gate
+      ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
@@ -2973,6 +2975,103 @@ above), so they are the Python tick's too by that comparison; the direct run is 
 
 **His ruling.** *"I'd accept 0196/0197 provisionally from the reported results, then build this as the next vertical
 slice"*: the Python bot that records the walk (BOT-REF-0).
+
+### BOT-REF-0 — the walk made in Python from the map alone · **the owner's ruling** (2026-10-11): "the next vertical slice"; outside the certified gate · **built** (`graybox/WALK-1.md`, `graybox/bot_ref.py`)
+
+**His ruling.** *"Next piece: the Python bot that records the walk"*: *"It closes the gap between replaying a
+browser-produced trace and independently generating a reference run from the map."* The bot *"should produce inputs
+without consulting `sim.js`, browser state, or an existing browser trace."* Its contract, in six parts: independent
+input generation (*"Do not port the JavaScript bot line-for-line if that merely duplicates hidden assumptions"*); a
+deterministic policy; *"Separate policy from simulation. The bot chooses inputs; `tick_ref.py` alone advances
+authoritative state. The bot must not read the resulting future state or use the browser's decisions"*; a canonical
+trace, with *"map identity, initial-state bytes, rules version, bot-policy version, tick count, and the exact input
+bytes per tick. Reject malformed or mismatched metadata"*; field-by-field verification against the existing browser
+traces; and adversarial tests: *"Plant a defect in bot input generation, alter one input byte, change the map
+identity, and perturb a tick result."* Two properties are kept apart: *"Reference reproducibility"* and
+*"Cross-engine agreement"*. *"The first does not establish the second. And because the bot policy itself can be
+wrong, matching Python output alone does not prove that the walk represents the intended behavior. Keep the existing
+recorded browser traces as independent comparison evidence."* The individual math tests stay. *"Keep the scope
+narrow: one tactical-map walk first"*, the witness level *"only after the tactical walk passes"*, and the gate not
+expanded. The milestone: *"a browser is no longer needed to originate the reference walk, while browser runs remain
+independent evidence that the reference model agrees with the actual engine."*
+
+**Built.**
+
+- **`graybox/WALK-1.md`**, the policy written down from what `sim.js`'s bot did, with the choices it had left unsaid:
+  the route taken by name order (UTF-16 code units, as JavaScript sorts); the targets' cells closed to the plan,
+  standing or not; the plan's climb read from cell top to cell top, not the rules' collision; the turn taken whole
+  and the short way, forward only; a cell reached within 0.3 m, at the cost of a decision and no tick; progress
+  measured before the tick, and the stall rule. The policy is versioned (`walk-1`) apart from the rules (`1`).
+- **`graybox/bot_ref.py`**, written from it. The plan is a breadth-first search a layer at a time (`sim.js` keeps
+  one queue). A decision is a pure function of the path, the bot's own memory and an observation, `(x, z, yaw)`,
+  which the driver makes from the present state before each tick. The function is given nothing else, so it cannot
+  read a later state. The tick is `tick_ref.py`'s. The bot's atan2 and hypot are the rules', from `rules_ref.py`.
+  `make` writes the walk (`VERDANDI-BOT-TRACE 1`); `check` reads it and holds it; `compare` sets it beside a
+  browser's trace; `selftest` plants defects. The reader refuses the whole file, with a code for each fault:
+  `BOT-REF-BYTES`, `-KEYS`, `-FORMAT`, `-DIGEST`, `-RULES`, `-POLICY`, `-MAP`, `-ROUTE`, `-RUN`, `-TICKS`, `-INPUT`,
+  `-START`.
+- **`trace.py run --inputs BOT.json`**: a browser plays the walk, read as `bot_ref.py` reads it and refused whole
+  otherwise. The trace records the runs as given by `bot-ref-walk-1` with the walk's digest, and `bot_ref.py compare`
+  says when a browser played this walk's inputs rather than its own bot's.
+
+**Measured in the build container (2026-10-11), the tactical map.**
+
+- *Reference reproducibility.* The walk was made three times, here and in two fresh processes under `PYTHONHASHSEED`
+  0 and 4242: the same bytes each time (the file's sha256 `0ff71da1…`, its digest `a75baf13…`), in 0.17 s. MEASURED.
+- *The policy written down is the browsers' bot's.* The route `mid` (a path of 47 cells), 1,787 ticks: the start and
+  every input the same bytes as the walk Chromium 141's own bot recorded. By the digest of all the inputs
+  (`38f78768…`), it is also the walk his Firefox 157 recorded (field by field, his run next). MEASURED for Chromium,
+  OBSERVED at a digest for Firefox.
+- *Cross-engine agreement on inputs Python originated.* Chromium 141 (`--expect chromium`, its trace accepted as
+  Chromium's) and node 22 (a harness in the container, not committed) played the walk. Every snapshot was the same
+  bytes as the Python tick's, all 1,787 ticks, and `tick_ref.py verify` passed both. MEASURED, these two V8s.
+- *The self-test* (`BOT-REF SELFTEST PASSED`). Its rows: the file's form read apart from the writer; the three
+  makes; the walk read and held; the walk against the trace. The plants, each found: six defects in the policy
+  (0.35 m for 0.3; the neighbours z before x; the turn not the short way; the routes in reverse order; a climb of
+  1.0 m planned; the start facing north); one byte of an input changed (`BOT-REF-DIGEST`; resealed, made again
+  otherwise at tick 300, and the browser's walk differs there); the map's digest and the map's name changed
+  (`BOT-REF-MAP`); ten faults of form, each refused with its code; the Python tick's `x` one bit off at tick 1,000
+  (named there, in `x`); walks that break what a walk is held to (a turn of 3.5 rad, a shot, the last 5 ticks cut,
+  the `north` route's walk named `mid`, a path planned through walls and over any height); and a start wrong only in
+  a field the first tick writes over.
+- *Mutants of `bot_ref.py`'s own checks*: 23, of which 18 were refused by the self-test. The five that survived are
+  each equivalent on this map. On the tactical map no open cell beside a wall is higher than 1.0 m, so the climb check
+  refuses any path into a wall before the wall check can. No distance is exactly 0.3. The route names are ASCII,
+  where JavaScript's order and Python's agree. Spawn A stands on the route's first waypoint, so leaving the start's
+  feet as spawn A's changes nothing. The stall rule never fires, because each cell is reached within 40 ticks. Three
+  of the eighteen were caught only after plants were added for them (the walk's end and its waypoints held apart;
+  the start against the browser's); one, the file's keys unsorted, needed the form read apart from the writer.
+
+**Findings.**
+
+- **Four plants in the policy leave this walk byte for byte the same**: ±x searched in the other order, the targets'
+  cells left open, a stall after 18 ticks, and the distance by the plain root of the sum (`sqrt(dx·dx + dz·dz)`).
+  This walk is no evidence for those choices either way. The self-test reports them, with a fifth that depends on
+  the machine (the platform's atan2, below), and does not require them. Another map, or the witness level, may
+  exercise them.
+- **The bot's arithmetic.** The plain root of the sum for the bot's distance is absorbed by this walk. CPython's own
+  `math.atan2` (this machine's C library) parts from the rules' at tick 519, by 8.9 × 10⁻¹⁶ rad. A defect in the
+  arithmetic can be absorbed by one run and shown by another, which is why the rules' arithmetic is held result by
+  result, as his ruling keeps it.
+- **Each comparison holds something the others cannot.** An input changed in its last bit (tick 300, `dyaw` 0 to
+  5 × 10⁻³²⁴) leaves every state the same: the inputs show it, the states cannot. A start wrong only in a field the
+  first tick writes over (`onObjective`) leaves every state the same: only the start's bytes show it. A Python tick's
+  `x` one bit off at tick 1,000 is named at that tick; a walk made with that tick parts from the browser's inputs only
+  at tick 1,016, because the bot's decisions carry a state's error into the inputs after a delay.
+
+**His acceptance table, where it stands.**
+
+| Claim | Required evidence | Where it stands |
+|---|---|---|
+| Python bot is deterministic | repeated clean runs produce byte-identical input traces | MEASURED in the container (three makes, two hash seeds); on his machine, two makes compared: next |
+| Python reference tick is correct for those traces | every saved state matches, tick by tick and field by field | MEASURED: Chromium 141 and node 22 playing the Python walk, every snapshot the Python tick's |
+| Browser engines agree with Python | same map, initial state and inputs; engine identity verified; every snapshot compared | Chromium 141 (identity checked by `--expect`) and node 22, MEASURED; Firefox and Edge on his machine, NOT MEASURED until his run |
+| Bot matches intended gameplay behavior | explicit policy invariants and adversarial cases | the inputs, the path and the walk held, each with plants refused; six policy defects found; four choices not exercised by this walk. Not the walk a player would make |
+
+**What it does not show.** That `walk-1` is the walk a player would make: the checks hold a walk to what a walk of a
+route is for, nothing more. That Firefox and Edge agree with the Python walk: his run. The witness level, by his order
+after the tactical walk passes. A server, a protocol, inputs from a malicious client. Nothing here enters the
+certified gate.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

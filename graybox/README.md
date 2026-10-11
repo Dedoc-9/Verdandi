@@ -43,6 +43,7 @@ Esc releases the mouse.
 | the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (29 on the tactical map, 26 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
 | the rules' arithmetic (`web/sim.js`, rules 1) | `python graybox/rules_ref.py` — the same algorithms in Python: the digests and constants `sim.js` holds, the special values, the square root and hypot checked exactly, the source naming no engine function, three plants; and the accuracy, measured. Ends with `RULES REFERENCE PASSED` |
 | the tick's second implementation (`tick_ref.py`, `RULES-1.md`) | `python graybox/tick_ref.py verify TRACE.json` — plays a browser's trace again in Python, from the specification, and compares every tick's snapshot byte for byte; `python graybox/tick_ref.py selftest TRACE.json` — two plants in the trace and six in the Python tick, each found. Ends with `TICK REFERENCE VERIFIED` and `TICK-REF SELFTEST PASSED` |
+| the bot's walk (`bot_ref.py`, `WALK-1.md`) | `python graybox/bot_ref.py make tactical` — the walk made in Python from the map alone, written to `graybox/build/bot/tactical-walk.json` (not committed); `python graybox/bot_ref.py check FILE` — read whole or refused, made again the same, held to what a walk is for; `python graybox/bot_ref.py compare FILE TRACE.json` — beside a browser's walk, the start, each input and each state; `python graybox/bot_ref.py selftest TRACE.json` — made three times, and the plants. Ends with `BOT TRACE CHECKED`, `BOT TRACE AGREES WITH THE BROWSER'S WALK` and `BOT-REF SELFTEST PASSED`. `python graybox/trace.py run tactical --inputs graybox/build/bot/tactical-walk.json --browser msedge` has a browser play it |
 | where two engines part (a diagnostic) | `python graybox/trace.py run tactical` — plays the self-test's three runs (the walk, the fight, the stress run) under rules 0 and under rules 1 in a worker, logging every call of `Math.sin`, `Math.cos`, `Math.hypot`, `Math.atan2` and `Math.sqrt` with its arguments' and result's bits, every tick's input and snapshot, and the browser's description of itself; writes `graybox/build/trace/tactical/ENGINE.json` and `latest.json` (not committed). `--inputs A.json` plays A's runs instead of recording its own, so that two browsers play the same inputs; `--browser msedge` (or `chrome`, `firefox`) opens the page in that browser and refuses a trace from any other engine family, so a file named `chromium-given.json` is a Chromium engine's; `--name LABEL` adds a file. Then `python graybox/trace.py compare A.json B.json` for two such traces, rules by rules, and `python graybox/trace.py selftest A.json` for the comparator's own planted differences |
 | the renderer's cost | `python graybox/serve.py tactical --bench` — both renderers draw the same poses in your browser, alternating; the timings print, and they and a screenshot of each pose by each renderer are written to `graybox/build/bench/tactical/` (not committed). A sample is the mean of a batch of draws, each followed by a one-pixel readback; the page's clock step is printed, since some browsers round it (to 1 ms). Add `--samples N` (default 20), `--batch K` (default 10) |
 | the certified tree | the gate, at a release checkpoint |
@@ -222,6 +223,27 @@ the centre), each found. A defect of one place in the last bit can be absorbed b
 for hypot parts from the browser on the tactical walk at tick 1172 and never on the witness level's runs. So the
 tick is held here and the arithmetic, result by result, in `rules_ref.py`.
 
+**The walk made in Python** (`bot_ref.py`, written from [`WALK-1.md`](WALK-1.md)). By the owner's ruling of 2026-10-11
+(BOT-REF-0): the map, the bot's policy (`walk-1`) and rules 1 make the walk's inputs in Python, and `tick_ref.py`
+advances them, so that no browser is needed to originate the reference walk. The bot is a policy apart from the
+rules. Before each input it is given an observation of the present state (`x`, `z` and `yaw`) and nothing else; it
+never sees a later state or a browser's decision, and the tick is `tick_ref.py`'s. `WALK-1.md` writes down the policy
+`sim.js`'s bot had followed, with the choices it had left unsaid: the route taken by name order, the targets' cells
+closed to the plan, the plan's climb read from cell top to cell top, the turn taken whole and the short way, a cell
+reached within 0.3 m at the cost of a decision and no tick, and the stall rule. The walk is written as
+`VERDANDI-BOT-TRACE 1`: the map's identity, the start's bytes, the rules, the policy, the number of ticks, each tick's
+input and a digest. A reader refuses the whole file on any malformed or mismatched part, with a code for each.
+`check` makes the walk again and holds it to what a walk is for (its inputs, its path, its replay); `compare` sets it
+beside a browser's trace, tick by tick and field by field; `trace.py run --inputs BOT.json` has a browser play it.
+Measured in the build container, on the tactical map: the walk made three times, the same bytes (here, and in two
+fresh processes under other hash seeds); its start and 1,787 inputs the same bytes as the walk Chromium 141's own
+bot records; Chromium 141 and node 22 playing it, every snapshot the same bytes as the Python tick's. Its self-test
+plants six defects in the policy, one changed byte of an input, two changes to the map's identity, ten faults of
+form, a tick's result one bit off, and walks that break each property a walk is held to, and each is found. Five
+more plants are reported, not required: four leave this walk byte for byte the same (±x searched in the other order,
+the targets' cells left open, a stall after 18 ticks, the plain root of the sum for the distance), and one depends on
+the machine's C library (the platform's atan2). The witness level waits until the tactical walk has passed on the owner's machine.
+
 **What is not shown.** That every engine gives the same bits: ECMA-262 requires it of the operations rules 1 use, and
 the owner's Firefox 157 passed `rules-arithmetic` (its results on all 20,000 arguments as CPython's) and gave the same
 digest of every tick's state as Chromium 141 and node 22 on the tactical map's three runs; on his machine, Firefox 157
@@ -256,10 +278,12 @@ are in R-6.
 | `level.py` | the converter: D to W and C, and the manifest |
 | `check.py` | the map checks, for map content |
 | `serve.py` | the launcher, and the driver of the self-test and the bench |
-| `trace.py` | the trace experiment: its own small launcher (four files and the map, and the runs of another trace with `--inputs`), and the comparison of two traces, rules by rules |
+| `trace.py` | the trace experiment: its own small launcher (four files and the map, and with `--inputs` the runs of another trace or a walk `bot_ref.py` made), and the comparison of two traces, rules by rules |
 | `rules_ref.py` | the reference for the rules' arithmetic: the same algorithms in Python, and what holds `sim.js` to them |
 | `RULES-1.md` | the tick as arithmetic: the specification `sim.js` and `tick_ref.py` are both written to |
 | `tick_ref.py` | the tick's second implementation, in Python, and the verifier of a browser's trace |
+| `WALK-1.md` | the bot's policy, `walk-1`: the walk as inputs chosen from the map and an observation of the present state; the specification `sim.js`'s bot and `bot_ref.py` are both written to, and the walk's file |
+| `bot_ref.py` | the walk made in Python from the map alone, its checks, and its comparison with a browser's trace |
 | `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the state's snapshots, the rules' arithmetic (rules 1; rules 0 kept for comparison), the self-test. No DOM; runs in a worker and under node too |
 | `web/sim_worker.js` | the simulation in a realm of its own, for the self-test and the trace: resumes a snapshot, plays a run in a counterfactual engine, or plays the three runs under both rules with Math logged |
 | `web/trace.html`, `web/trace.js` | the trace experiment's page |
