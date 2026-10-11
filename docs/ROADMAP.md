@@ -2462,6 +2462,13 @@ kept outside the certified gate.
 Node 22 and Chromium 141 differ by one ulp in `Math.sin` and `Math.cos` on a few arguments, and every tick of both
 runs still matches (R-6). The self-test is unchanged, line for line.
 
+**On the owner's machine (2026-10-11).** 0189 and 0190 applied as tree `aa7ddc63…`, as predicted; the director's ledger
+verified at 21 events, the files at head `cac46b5c8e28`, the director's self-test and the art checks passed, the graybox self-test
+27 / 27; `art\play.py plaza-night` launched; pushed `3eeab82..1b5e8f6`. His Firefox 157 trace against the container's
+Chromium 141: `Math.hypot` different on 943 of 3,523 common arguments, `Math.sin` on 1 of 745, `Math.cos` and
+`Math.atan2` the same, each difference one ulp; the first differing call the 2,386th, a result of `hypot`; every input
+and state the same at every tick. OBSERVED once (R-6, with what it does not show and a remedy left to the owner).
+
 ### FPS-VISUAL-0 — the visual pass · **the owner's ruling** (2026-10-09); outside the certified gate · **built**: the graybox lit and dressed, the first renderer kept beside it
 
 **His ruling.** The graybox plays; the next pass makes it look like a place, and the certified gate stays out of it.
@@ -2698,6 +2705,10 @@ Walk-throughs of the recorded walk, as frame sequences, were made for the head a
 **What it does not show.** That the picture is good: a person judges it. That it runs at any frame rate on any
 machine: nothing was timed. That the look is AAA: it is the first native renderer, boxes with procedural surfaces, no
 global illumination, no textures, and no shadows from the point lights.
+
+**The host run (2026-10-11).** 0189 and 0190 applied as tree `aa7ddc63…`, as predicted; the ledger verified at 21
+events, the director's self-test and the art checks passed, the graybox self-test 27 / 27, and `art\play.py
+plaza-night` launched on his machine. Pushed `3eeab82..1b5e8f6`.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

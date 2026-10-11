@@ -110,7 +110,10 @@ differs and the first tick whose state differs, with the leaves that differ ther
 complete as the snapshot, which the self-test's `hash-coverage` and `snapshot-resume` hold to the whole of it. In the
 build container, node 22 (V8 12.4) and Chromium 141 (V8 14.1) gave different results, one ulp apart, for `Math.sin`
 on 5 of 745 arguments and `Math.cos` on 2 of 745 on the tactical map. `hypot` and `atan2` were the same. Every input
-and every tick's state of both runs was the same.
+and every tick's state of both runs was the same. The owner's Firefox 157 against that Chromium (2026-10-11): `hypot`
+different on 943 of 3,523 arguments and `sin` on 1 of 745, `cos` and `atan2` the same, each by one ulp, and again
+every input and state the same at every tick. Observed once; what it does not show, and a remedy left to the owner,
+are in R-6.
 
 ## The files
 

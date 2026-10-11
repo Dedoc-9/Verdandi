@@ -182,6 +182,29 @@ and their outputs are given.
   was being recorded, and rounding absorbed every difference before it reached an input or a state. This is the same
   kind of difference the owner's run implied, now with its function and argument named. The same trace from the
   owner's browser, compared with the container's, would name the function behind his four lines.
+- **The trace from the owner's machine (2026-10-11).** Firefox 157 on his machine, against the container's Chromium 141,
+  on the tactical map, compared by `trace.py compare`:
+
+  | function | arguments both runs passed | results that differ |
+  |---|---|---|
+  | `Math.hypot` | 3,523 | 943, each by one ulp (for one: 1.0 in Firefox, 1.0000000000000002 in Chromium) |
+  | `Math.sin` | 745 | 1, by one ulp, at 2.8529933382462254 (bits `4006d2ee2bdbc988`) |
+  | `Math.cos` | 745 | none |
+  | `Math.atan2` | all | none |
+
+  The first differing call was the 2,386th, while the walk was being recorded, and it was a result, not an argument:
+  `hypot(0.14834045293008993, -0.9889363528683207)`, 1.0 in Firefox and 0.9999999999999999 in Chromium. Every input
+  and every state was the same at every tick of both runs. OBSERVED once, one run in each engine, these two engines.
+  - What it shows. Between these two engines `hypot` differs at about a quarter of the arguments these runs pass,
+    where V8 against V8 showed none, and `sin` at one; every difference is one ulp, and rounding absorbed all of them
+    before they reached an input or a state.
+  - What it does not show. Why four of his MEASURED lines differed on 2026-10-10. Those ran in the browser `serve.py`
+    opened, which the output did not name; that this trace explains them is an inference, and R-6's cross-machine
+    finding stays what it was: observed once.
+  - A remedy, for the owner to decide (not done). `Math.sqrt` and the four operations are exactly specified, so
+    `Math.sqrt(a * a + b * b)` in place of `Math.hypot(a, b)` would make those calls the same bits in every engine at
+    the magnitudes the game uses; `sin`, `cos` and `atan2` would need forms built from exactly specified operations
+    (as perplexdotgg/bounce#8 proposes). Either changes the simulation's numbers, and so the recorded replays' hashes.
 
 ## R-7 · A browser's clock
 
