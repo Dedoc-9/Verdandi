@@ -42,7 +42,7 @@ Esc releases the mouse.
 | map content (`maps/`) | `python graybox/check.py` — the conversion's conformance and its mutations; add `--compile` to compile and admit the tactical layout again through the design tool (needs a built shell, or `rustc` to build one, as the design tool does) |
 | the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (29 on the tactical map, 26 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
 | the rules' arithmetic (`web/sim.js`, rules 1) | `python graybox/rules_ref.py` — the same algorithms in Python: the digests and constants `sim.js` holds, the special values, the square root and hypot checked exactly, the source naming no engine function, three plants; and the accuracy, measured. Ends with `RULES REFERENCE PASSED` |
-| where two engines part (a diagnostic) | `python graybox/trace.py run tactical` — plays the self-test's three runs (the walk, the fight, the stress run) under rules 0 and under rules 1 in a worker, logging every call of `Math.sin`, `Math.cos`, `Math.hypot`, `Math.atan2` and `Math.sqrt` with its arguments' and result's bits, every tick's input and snapshot, and the browser's description of itself; writes `graybox/build/trace/tactical/ENGINE.json` and `latest.json` (not committed). `--inputs A.json` plays A's runs instead of recording its own, so that two browsers play the same inputs; `--name LABEL` names the file. Then `python graybox/trace.py compare A.json B.json` for two such traces, rules by rules, and `python graybox/trace.py selftest A.json` for the comparator's own planted differences |
+| where two engines part (a diagnostic) | `python graybox/trace.py run tactical` — plays the self-test's three runs (the walk, the fight, the stress run) under rules 0 and under rules 1 in a worker, logging every call of `Math.sin`, `Math.cos`, `Math.hypot`, `Math.atan2` and `Math.sqrt` with its arguments' and result's bits, every tick's input and snapshot, and the browser's description of itself; writes `graybox/build/trace/tactical/ENGINE.json` and `latest.json` (not committed). `--inputs A.json` plays A's runs instead of recording its own, so that two browsers play the same inputs; `--browser msedge` (or `chrome`, `firefox`) opens the page in that browser and refuses a trace from any other engine family, so a file named `chromium-given.json` is a Chromium engine's; `--name LABEL` adds a file. Then `python graybox/trace.py compare A.json B.json` for two such traces, rules by rules, and `python graybox/trace.py selftest A.json` for the comparator's own planted differences |
 | the renderer's cost | `python graybox/serve.py tactical --bench` — both renderers draw the same poses in your browser, alternating; the timings print, and they and a screenshot of each pose by each renderer are written to `graybox/build/bench/tactical/` (not committed). A sample is the mean of a batch of draws, each followed by a one-pixel readback; the page's clock step is printed, since some browsers round it (to 1 ms). Add `--samples N` (default 20), `--batch K` (default 10) |
 | the certified tree | the gate, at a release checkpoint |
 
@@ -206,10 +206,12 @@ old baseline against. Nothing plays it but the measurements and the trace.
 - A tick costs about 4.2–4.6 µs under rules 1 and 1.4 µs under rules 0, under node (BigInt's exact hypot, called once a
   moving tick); at 120 ticks a second, about half a millisecond a second.
 
-**What is not shown.** That another engine (SpiderMonkey in Firefox, JavaScriptCore in Safari) gives the same bits:
-by ECMA-262 it must, since rules 1 use only operations it fixes, but that is an argument from the specification, not a
-measurement, until a trace from such a browser is compared. That an engine has no bug in those operations. That a
-future change to `sim.js` keeps to the contract, beyond what the two checks and the plants catch.
+**What is not shown.** That every engine gives the same bits: ECMA-262 requires it of the operations rules 1 use, and
+the owner's Firefox 157 passed `rules-arithmetic` (its results on all 20,000 arguments as CPython's) and gave the same
+digest of every tick's state as Chromium 141 and node 22 on the tactical map's three runs, but the field-level comparison of Firefox
+and Chromium on one machine, on the same inputs, is still to run (the owner's ruling: NOT ESTABLISHED until it does).
+That an engine has no bug in those operations. That a future change to `sim.js` keeps to the contract, beyond what
+the checks and the plants catch.
 
 The trace experiment (`trace.py`) is where cross-engine differences are pinned down. It is a diagnostic beside the self-test, not part of it,
 and nothing passes or fails on what it finds. Its comparison takes each function's results only on the arguments

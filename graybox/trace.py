@@ -4,7 +4,8 @@
 # graybox/trace.py — the trace experiment: where two JavaScript engines part, and why. A diagnostic, outside the
 # self-test and outside the gate; nothing passes or fails on what it finds.
 #
-#   python graybox/trace.py run [MAP] [--inputs TRACE.json] [--name LABEL] [--port N] [--no-browser] [--timeout SECONDS]
+#   python graybox/trace.py run [MAP] [--inputs TRACE.json] [--browser NAME] [--expect FAMILY] [--name LABEL] [--port N]
+#                               [--no-browser] [--timeout SECONDS]
 #   python graybox/trace.py compare A.json B.json
 #   python graybox/trace.py selftest A.json
 #
@@ -15,8 +16,13 @@
 # tick's input and every tick's snapshot of the authoritative state, with the browser's own description of itself.
 # Without --inputs the worker records the runs itself (the walk is a bot's, which under rules 0 calls the engine's
 # functions); with --inputs TRACE.json it plays that trace's runs, the same start and the same inputs, so that two
-# browsers play exactly the same sequence. The trace is written to graybox/build/trace/MAP/, named by the engine (or
-# LABEL.json with --name, lower-case letters, digits and -), and again as latest.json there. It reads nothing outside graybox/ (and the trace --inputs names) and serves only the
+# browsers play exactly the same sequence. --browser NAME opens the page in that browser (msedge, chrome, firefox, …)
+# rather than the default one, and expects a trace from its engine; --expect FAMILY (firefox, chromium, safari) says
+# the same without opening anything. A trace from another engine than the one expected is refused and not written:
+# a file's name never says less than the truth about which engine made it. The trace is written to
+# graybox/build/trace/MAP/ as ENGINE.json (named by the engine the page reported, -given added with --inputs), as
+# FAMILY.json (firefox, chromium or safari, -given likewise), as LABEL.json with --name (a label that names a family
+# must be the trace's), and again as latest.json. It reads nothing outside graybox/ (and the trace --inputs names) and serves only the
 # files it names.
 #
 # `compare` sets two traces side by side, rules by rules. For each function: its results on the arguments both runs
@@ -31,6 +37,7 @@
 
 import hashlib
 import http.server
+import subprocess
 import json
 import os
 import re
@@ -52,6 +59,51 @@ FNS = ("sin", "cos", "hypot", "atan2", "sqrt")
 
 def sha(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+BROWSERS = {"firefox": "firefox", "msedge": "chromium", "edge": "chromium", "chrome": "chromium", "chromium": "chromium",
+            "brave": "chromium", "safari": "safari"}
+FAMILIES = ("firefox", "chromium", "safari")
+
+
+def engine_family(rt):
+    """The engine family the page's own description names: firefox (SpiderMonkey), chromium (V8: Chrome, Edge,
+    Chromium) or safari (JavaScriptCore); other for anything else (node, say)."""
+    ua = (rt or {}).get("userAgent", "")
+    if re.search(r"Firefox/\d", ua):
+        return "firefox"
+    if re.search(r"(HeadlessChrome|Chrome|Chromium|Edg)/\d", ua):
+        return "chromium"
+    if re.search(r"Version/\d[^ ]* .*Safari/", ua):
+        return "safari"
+    return "other"
+
+
+def engines(A, B):
+    """What a comparison of A and B can show about engines: (kind, line)."""
+    ta, tb = engine_tag(A.get("runtime")), engine_tag(B.get("runtime"))
+    ua, ub = (A.get("runtime") or {}).get("userAgent"), (B.get("runtime") or {}).get("userAgent")
+    fa, fb = engine_family(A.get("runtime")), engine_family(B.get("runtime"))
+    if ua == ub:
+        return "same", "NOT A CROSS-ENGINE COMPARISON: both traces come from %s (the same description of itself)" % ta
+    if fa == fb:
+        return "builds", "two builds of one engine family (%s): %s and %s" % (fa, ta, tb)
+    return "cross", "cross-engine: %s (%s) against %s (%s)" % (fa, ta, fb, tb)
+
+
+def open_in(browser, url):
+    """Open url in the named browser, not the default one."""
+    if sys.platform.startswith("win"):
+        subprocess.Popen(["cmd", "/c", "start", "", browser, url])   # start finds msedge, chrome, firefox by their App Paths
+    elif sys.platform == "darwin":
+        app = {"msedge": "Microsoft Edge", "edge": "Microsoft Edge", "chrome": "Google Chrome", "chromium": "Chromium",
+               "firefox": "Firefox", "safari": "Safari", "brave": "Brave Browser"}.get(browser, browser)
+        subprocess.Popen(["open", "-a", app, url])
+    else:
+        try:
+            webbrowser.get(browser).open(url)
+        except webbrowser.Error:
+            subprocess.Popen([browser, url])
 
 
 def engine_tag(rt):
@@ -172,9 +224,12 @@ def print_compare(A, B, rr):
                                 "  (the runs of %s)" % T["inputs_from"]["engine"] if T.get("inputs_from") else ""))
     if A.get("inputs_from") and B.get("inputs_from") and A["inputs_from"] == B["inputs_from"]:
         print("both played the same given runs (%s, inputs %s)" % (A["inputs_from"]["engine"], A["inputs_from"]["inputs"][:16]))
+    kind, line = engines(A, B)
+    print(line)
     for k, r in rr.items():
         print("---- rules %s%s" % (k, " (the engine's Math)" if k == "0" else " (no engine Math: the contract)"))
         print_rules(A["rules"][k], B["rules"][k], r, k)
+    print("ENGINES  " + line)
 
 
 def print_rules(A, B, r, k):
@@ -271,8 +326,18 @@ def summary(T, path):
 def cmd_run(argv):
     args = [a for a in argv if not a.startswith("--")]
     opt = lambda k, d=None: argv[argv.index(k) + 1] if k in argv and argv.index(k) + 1 < len(argv) else d
-    name = args[0] if args and args[0] not in (opt("--port"), opt("--timeout"), opt("--inputs"), opt("--name")) else "tactical"
-    label = opt("--name")
+    name = args[0] if args and args[0] not in (opt("--port"), opt("--timeout"), opt("--inputs"), opt("--name"), opt("--browser"), opt("--expect")) else "tactical"
+    label, browser = opt("--name"), opt("--browser")
+    if browser is not None and not re.fullmatch(r"[A-Za-z0-9._-]+", browser):
+        print("TRACE: a browser is named by letters, digits, ., _ and - (msedge, chrome, firefox)", file=sys.stderr)
+        return 2
+    expect = opt("--expect") or (BROWSERS.get(browser.lower()) if browser else None)
+    if expect is not None and expect not in FAMILIES:
+        print("TRACE: --expect is one of %s" % ", ".join(FAMILIES), file=sys.stderr)
+        return 2
+    if label and label.split("-")[0] in FAMILIES and expect and label.split("-")[0] != expect:
+        print("TRACE: the name %s says %s, and the trace is expected from %s" % (label, label.split("-")[0], expect), file=sys.stderr)
+        return 2
     if label is not None and not re.fullmatch(r"[a-z0-9][a-z0-9-]*", label):
         print("TRACE: a trace's name is lower-case letters, digits and -", file=sys.stderr)
         return 2
@@ -336,8 +401,16 @@ def cmd_run(argv):
     url = "http://127.0.0.1:%d/" % srv.server_address[1]
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     print("TRACE  map %s  open %s%s" % (name, url, "  (playing the runs of %s)" % given["from"]["engine"] if given else ""))
-    if "--no-browser" not in argv:
+    if browser:
+        print("TRACE  opening it in %s; a trace from %s is expected" % (browser, expect or "any engine"))
+        try:
+            open_in(browser, url)
+        except OSError as e:
+            print("TRACE: %s could not be opened (%s); open the address in it by hand" % (browser, e), file=sys.stderr)
+    elif "--no-browser" not in argv:
         webbrowser.open(url)
+    elif expect:
+        print("TRACE  open it in a %s browser; a trace from another engine will be refused" % expect)
     ok = done.wait(float(opt("--timeout", "180")))
     srv.shutdown()
     if not ok:
@@ -347,14 +420,27 @@ def cmd_run(argv):
     if T.get("error"):
         print("TRACE: the page failed: %s" % T["error"], file=sys.stderr)
         return 1
+    fam = engine_family(T.get("runtime"))
+    if expect and fam != expect:
+        print("TRACE: REFUSED, not written: the trace came from %s (%s), not from a %s engine" % (
+            engine_tag(T.get("runtime")), (T.get("runtime") or {}).get("userAgent"), expect), file=sys.stderr)
+        return 1
+    if label and label.split("-")[0] in FAMILIES and label.split("-")[0] != fam:
+        print("TRACE: REFUSED, not written: the name %s says %s, and the trace came from %s" % (label, label.split("-")[0], engine_tag(T.get("runtime"))), file=sys.stderr)
+        return 1
     outdir = os.path.join(HERE, "build", "trace", name)
     os.makedirs(outdir, exist_ok=True)
-    path = os.path.join(outdir, (label or engine_tag(T["runtime"]) + ("-given" if given else "")) + ".json")
-    for p in (path, os.path.join(outdir, "latest.json")):   # latest.json: the last trace of this map, whatever the engine
+    suffix = "-given" if given else ""
+    path = os.path.join(outdir, engine_tag(T["runtime"]) + suffix + ".json")
+    names = [path] + ([os.path.join(outdir, fam + suffix + ".json")] if fam in FAMILIES else []) + \
+        ([os.path.join(outdir, label + ".json")] if label else []) + [os.path.join(outdir, "latest.json")]
+    for p in names:   # latest.json: the last trace of this map, whatever the engine
         with open(p, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(T, fh, separators=(",", ":"), sort_keys=True)
             fh.write("\n")
     summary(T, path)
+    for p in names[1:]:
+        print("written %s" % os.path.relpath(p))
     return 0
 
 
@@ -376,6 +462,16 @@ def cmd_selftest(path):
     clean = all(x["order"] is None and not any(f["diff"] for f in x["functions"].values())
                 and all(not y["input"] and not y["state"] for y in x["runs"].values()) for x in r.values())
     found("a trace against itself: nothing found", clean, "rules " + ", ".join(sorted(r)))
+    found("a trace against itself: named not a cross-engine comparison", engines(full, full)[0] == "same", engines(full, full)[1])
+    uas = {"firefox": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0",
+           "chromium": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0",
+           "safari": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+           "other": "node v22.22.2 (V8 12.4.254.21-node.39)"}
+    got = {k: engine_family({"userAgent": v}) for k, v in uas.items()}
+    found("the engine families named from the browsers' descriptions", all(k == v for k, v in got.items()), ", ".join("%s -> %s" % kv for kv in got.items()))
+    X = copy.deepcopy(full)
+    X["runtime"] = {"userAgent": uas["chromium" if engine_family(full.get("runtime")) == "firefox" else "firefox"]}
+    found("a trace against one from another engine: named cross-engine", engines(full, X)[0] == "cross", engines(full, X)[1])
     A = full["rules"]["0"]   # the plants: in the rules-0 section, which calls the engine's Math
     play = [i for i, c in enumerate(A["calls"]) if c[0].startswith("play") and c[2] == "cos"]
     if not play:

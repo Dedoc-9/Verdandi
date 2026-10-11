@@ -167,7 +167,7 @@ DIRECTOR-0       the owner's ruling (2026-10-10): the operator loop for prompted
       ↓
 NATIVE-PLAZA-0   the owner's rulings (2026-10-10, 2026-10-11): Verðandi-native the primary architecture, Unreal 5.8 a secondary path; the plaza played in the browser through an art-owned launcher (art/play.py) and a WebGL 2 renderer, the graybox's simulation moving against C; two rounds evaluated, not yet chosen; live edits (2026-10-11): an edit to the brief or to a candidate intent drawn in the running page, the game untouched, a refused edit leaving the scene before it
       ↓
-DET-MATH-0       the owner's ruling (2026-10-11), outside the gate: the simulation's rules made portable. Every function whose last bits the language leaves to the engine and that reached the authoritative state (sin, cos, hypot, atan2) replaced by fdlibm's algorithms and exact square roots, built from operations ECMA-262 fixes; the rules versioned (1), rules 0 kept as the baseline; held by rules-arithmetic and math-fence in the self-test and by graybox/rules_ref.py; the same bits measured in two V8 engines and CPython; Firefox's run is the owner's
+DET-MATH-0       the owner's ruling (2026-10-11), outside the gate: the simulation's rules made portable. Every function whose last bits the language leaves to the engine and that reached the authoritative state (sin, cos, hypot, atan2) replaced by fdlibm's algorithms and exact square roots, built from operations ECMA-262 fixes; the rules versioned (1), rules 0 kept as the baseline; held by rules-arithmetic and math-fence in the self-test and by graybox/rules_ref.py; the same bits measured in two V8 engines and CPython; ACCEPTED by the owner (2026-10-11), cross-browser equivalence NOT ESTABLISHED until Firefox and Chromium are compared on one machine
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -2860,6 +2860,33 @@ hypot, once a moving tick. A development measurement, not a row.
 **What it does not show.** That SpiderMonkey or JavaScriptCore give the same bits (until a trace from them is
 compared). That an engine has no defect in the operations rules 1 rely on. That the movement's own numbers are
 robust: rules 1 make the same bits everywhere, not better physics. Nothing here enters the certified gate.
+
+**On the owner's machine (2026-10-11).** 0194 and 0195 applied as tree `12a540fc…`, as predicted; `rules_ref.py`
+passed; the self-test in Firefox 157, 29 / 29 and 26 / 26, `rules-arithmetic` and `math-fence` among them (so
+SpiderMonkey's results for the five functions on all 20,000 arguments are CPython's); its own `Math` against the
+rules': `sin` different on 70, `cos` on 62, `hypot` on 693, `atan2` and `sqrt` on none, of 4,000 each; rules 0's
+baselines reproduced; the gate 251 rows / 0 fail; pushed `30d2527..0430b6c`. His Firefox trace's digests of every
+tick's state under rules 1 (the walk `207902cee453d357`, the fight `33e990dd20b743f8`, the stress `5b068df47e0b2e1a`)
+are the build container's Chromium 141's and node 22's, on the same inputs (`38f78768…`, `ee469f56…`, `7374b8c6…`);
+under rules 0 the stress run's differ (`99015929…` in Firefox, `6faecae7…` in V8). OBSERVED once, across two
+machines, at the level of a digest over every snapshot.
+
+**His ruling.** *"ACCEPT DET-MATH-0 as the right architectural direction, with one remaining measurement gap: Firefox
+has not yet been compared against an independently identified Chromium run on the same recorded inputs."* The run
+meant as Chromium's identified itself as Firefox 157: *"That comparison is Firefox against a second playback of the
+Firefox trace—not Firefox against Chromium."* So: versioned deterministic math ACCEPT; the Python arithmetic reference
+ACCEPT, within its coverage; rules 1's cross-browser equivalence NOT ESTABLISHED until the two-browser comparison; the
+full Python tick NEXT; a Rust port deferred until the tick and its contract are stable. *"Continue the art loop in
+parallel."*
+
+**The correction, in `trace.py`.** The `--no-browser` address had been opened in the default browser, and `--name
+chromium` wrote what came back under that name. Now `--browser msedge` (or `chrome`, `firefox`) opens the page in
+the browser named and expects a trace from its engine family; `--expect FAMILY` says the same without opening one; a
+trace from another family is refused and not written; and a trace is written under the engine it reports and its
+family (`chromium-given.json` is a Chromium engine's), a `--name` that names a family only if it is the trace's.
+`compare` now says what kind of comparison it is: `NOT A CROSS-ENGINE COMPARISON` when both traces describe the same
+browser, two builds of one family, or cross-engine. Its self-test holds the engine families of five browsers'
+descriptions and both verdicts.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

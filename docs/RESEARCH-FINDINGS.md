@@ -217,6 +217,13 @@ and their outputs are given.
   same bits under node 22, in Chromium 141 and in CPython over 20,000 arguments each; on the same inputs, node and
   Chromium reach the same state at every tick of three runs under rules 1, and call no engine function. Under rules 0
   they still differ in `sin` and `cos`. Firefox: NOT MEASURED until the owner's run (ROADMAP, DET-MATH-0).
+- **Firefox 157, on the owner's machine (2026-10-11).** Its self-test passed `rules-arithmetic`: SpiderMonkey's
+  results for the rules' five functions on 20,000 arguments are CPython's, bit for bit. Its own `Math` against the
+  rules' on those arguments: `sin` different on 70 of 4,000, `cos` 62, `hypot` 693, `atan2` and `sqrt` none (V8 14.1's,
+  in the container: 123, 108, 1,023, 0, 0). Its trace's digests of every tick's state under rules 1 equal the
+  container's Chromium 141 and node 22 on the same inputs; under rules 0 the stress run's do not. OBSERVED once, across
+  two machines, at the level of a digest. The owner's ruling keeps cross-browser equivalence NOT ESTABLISHED until a
+  field-level comparison of Firefox and Chromium on one machine; the run meant for it played Firefox twice.
 
 ## R-7 · A browser's clock
 
