@@ -207,8 +207,10 @@ def refused(it, current, code, detail):
     return v
 
 
-def evaluate_doc(ws, it, re_of=""):
-    """One intent at the current head: its verdict, the head after it, and the stage timings."""
+def evaluate_doc(ws, it, re_of="", on_candidate=None):
+    """One intent at the current head: its verdict, the head after it, and the stage timings. on_candidate(out1, maps),
+    if given, is called with the candidate's export and the maps folder it was made over, while that folder exists
+    (art/play.py converts the candidate's map there to play it)."""
     t0 = time.perf_counter()
     timings = {}
     t = time.perf_counter()
@@ -239,6 +241,8 @@ def evaluate_doc(ws, it, re_of=""):
         except (dress.ArtError, level.MapError) as e:
             return refused(it, cur, "ART-REFUSED", str(e)[:300]), after, timings, None, out0, None
         timings["candidate_export_and_checks"] = ms(t)
+        if on_candidate is not None:
+            on_candidate(out1, maps or ws.maps)
         t = time.perf_counter()
         verdict = scopemod.check_scope(it, out0["scene"], out1["scene"], cur, checks)
         timings["scope"] = ms(t)

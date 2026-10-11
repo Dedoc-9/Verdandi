@@ -18,7 +18,8 @@
 //     makes in the fog along the line of sight;
 //   - rain, as streaks;
 //   - bloom, and a tone curve.
-// Nothing hashes its pixels: a person judges what it draws.
+// Nothing hashes its pixels: a person judges what it draws. load(S) changes the scene it draws in place (a live edit);
+// dispose() frees the renderer, so that a newer copy of this file can take the canvas over.
 
 (function (root) {
   "use strict";
@@ -411,13 +412,16 @@ void main() {
   }
 
   // ---------------------------------------------------------------- the renderer
+  // The context, the programs, the targets' boxes and the rain are the renderer's own; everything drawn from the scene
+  // (its triangles, lights, line-of-sight grid, heightfield, roof, environment and the moon's shadow) is made by load(S),
+  // which a live edit calls again with the new scene: the old scene's objects are freed and nothing else is touched.
   function Renderer(canvas, S, opts) {
     opts = opts || {};
     const gl = canvas.getContext("webgl2", { antialias: false, preserveDrawingBuffer: true, alpha: false });
     if (!gl) throw new Error("WebGL 2 is not available in this browser");
     if (!gl.getExtension("EXT_color_buffer_float")) throw new Error("this browser cannot render to floating-point targets (EXT_color_buffer_float)");
     gl.getExtension("OES_texture_float_linear");
-    this.gl = gl; this.canvas = canvas; this.S = S;
+    this.gl = gl; this.canvas = canvas; this.opts = opts;
     this.progScene = compile(gl, VS_SCENE, FS_SCENE);
     this.progDepth = compile(gl, VS_DEPTH, FS_DEPTH);
     this.progSky = compile(gl, VS_FULL, FS_SKY);
@@ -425,20 +429,13 @@ void main() {
     this.progBlur = compile(gl, VS_FULL, FS_BLUR);
     this.progFinal = compile(gl, VS_FULL, FS_FINAL);
     this.progRain = compile(gl, VS_RAIN, FS_RAIN);
-    // static geometry
-    const G = geometry(S);
-    this.count = G.count; this.triangles = G.count / 3;
-    this.vao = gl.createVertexArray(); gl.bindVertexArray(this.vao);
-    [[G.P, 3], [G.N, 3], [G.A, 4], [G.E, 4], [G.K, 1]].forEach(function (a, i) {
-      const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, a[0], gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, a[1], gl.FLOAT, false, 0, 0);
-    });
+    this.own = [];   // [kind, object]: what dispose() frees besides the scene's and the targets'
     // dynamic boxes (the targets), drawn with the same program
     this.dynVao = gl.createVertexArray(); this.dynBufs = [];
     gl.bindVertexArray(this.dynVao);
     for (let i = 0; i < 5; i++) { const b = gl.createBuffer(); this.dynBufs.push(b); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, [3, 3, 4, 4, 1][i], gl.FLOAT, false, 0, 0); }
     // rain
-    const NR = opts.rainDrops || 7000, seeds = new Float32Array(NR * 4), quad = [];
+    const NR = opts.rainDrops || 7000, seeds = new Float32Array(NR * 4);
     let st = 12345;
     const rnd = function () { st = (st * 1103515245 + 12345) & 0x7fffffff; return st / 0x7fffffff; };
     for (let i = 0; i < NR * 4; i++) seeds[i] = rnd();
@@ -451,6 +448,37 @@ void main() {
     gl.enableVertexAttribArray(sa); gl.vertexAttribPointer(sa, 4, gl.FLOAT, false, 0, 0); gl.vertexAttribDivisor(sa, 1);
     this.nRain = NR;
     this.emptyVao = gl.createVertexArray();
+    gl.bindVertexArray(null);
+    this.own.push(["vao", this.dynVao], ["vao", this.rainVao], ["vao", this.emptyVao], ["buf", qb], ["buf", sb]);
+    this.dynBufs.forEach(function (b) { this.own.push(["buf", b]); }, this);
+    this.shadowSize = Math.min(4096, gl.getParameter(gl.MAX_TEXTURE_SIZE));
+    this.sceneObjs = []; this.targetObjs = [];
+    this.targets = null; this.size = [0, 0]; this.nDyn = 0;
+    this.load(S);
+  }
+  // free a list of [kind, object]
+  Renderer.prototype.free = function (list) {
+    const gl = this.gl;
+    for (const [k, o] of list) {
+      if (k === "buf") gl.deleteBuffer(o); else if (k === "vao") gl.deleteVertexArray(o); else if (k === "tex") gl.deleteTexture(o);
+      else if (k === "fb") gl.deleteFramebuffer(o); else if (k === "rb") gl.deleteRenderbuffer(o); else if (k === "prog") gl.deleteProgram(o);
+    }
+    list.length = 0;
+  };
+  // draw this scene from now on: everything made from the previous scene is freed first
+  Renderer.prototype.load = function (S) {
+    const gl = this.gl, own = this.sceneObjs, opts = this.opts;
+    this.free(own);
+    this.S = S;
+    // static geometry
+    const G = geometry(S);
+    this.count = G.count; this.triangles = G.count / 3;
+    this.vao = gl.createVertexArray(); gl.bindVertexArray(this.vao); own.push(["vao", this.vao]);
+    [[G.P, 3], [G.N, 3], [G.A, 4], [G.E, 4], [G.K, 1]].forEach(function (a, i) {
+      const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, a[0], gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, a[1], gl.FLOAT, false, 0, 0);
+      own.push(["buf", b]);
+    });
     gl.bindVertexArray(null);
     // the lights, as a texture: (position, radius) and (colour times intensity, downlight)
     const lights = S.lights.slice(0, 160);
@@ -480,6 +508,7 @@ void main() {
     }
     this.texHeight = this.tex2D(gl.R32F, g.w, g.h, gl.RED, gl.FLOAT, height, gl.NEAREST);
     this.texRoof = this.tex2D(gl.R32F, g.w, g.h, gl.RED, gl.FLOAT, roof, gl.NEAREST);
+    own.push(["tex", this.texLights], ["tex", this.texVis], ["tex", this.texHeight], ["tex", this.texRoof]);
     // the environment
     const env = S.environment || {}, L = env.light, fog = env.fog;
     const az = (L ? L.azimuth : 215) * Math.PI / 180, el = (L ? L.elevation : 25) * Math.PI / 180;
@@ -496,10 +525,14 @@ void main() {
     this.bloom = env.bloom === undefined ? 0.6 : env.bloom;
     this.lightScale = opts.lightScale || 0.05;
     this.glow = opts.glow === undefined ? 0.008 : opts.glow;
-    this.shadowSize = Math.min(4096, gl.getParameter(gl.MAX_TEXTURE_SIZE));
     this.buildShadow();
-    this.targets = null; this.size = [0, 0];
-  }
+  };
+  // free everything this renderer made; it draws nothing after
+  Renderer.prototype.dispose = function () {
+    this.free(this.sceneObjs); this.free(this.targetObjs); this.free(this.own);
+    for (const k of ["progScene", "progDepth", "progSky", "progBright", "progBlur", "progFinal", "progRain"]) this.gl.deleteProgram(this[k].p);
+    this.size = [0, 0];
+  };
   Renderer.prototype.tex2D = function (ifmt, w, h, fmt, type, data, filter) {
     const gl = this.gl, t = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, t);
@@ -518,6 +551,7 @@ void main() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    this.targetObjs.push(["tex", t], ["fb", f]);
     return { tex: t, fb: f, w: w, h: h };
   };
   Renderer.prototype.buildShadow = function () {
@@ -539,24 +573,26 @@ void main() {
     gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES, 0, this.count);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     this.texShadow = t;
+    this.sceneObjs.push(["tex", t], ["fb", f]);
   };
   Renderer.prototype.resize = function (w, h) {
     if (this.size[0] === w && this.size[1] === h) return;
-    const gl = this.gl;
+    const gl = this.gl, own = this.targetObjs;
+    this.free(own);
     this.size = [w, h];
     // the scene: multisampled, in half floats, then resolved
-    this.msFb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, this.msFb);
+    this.msFb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, this.msFb); own.push(["fb", this.msFb]);
     const samples = Math.min(4, gl.getParameter(gl.MAX_SAMPLES));
-    const rc = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rc); gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.RGBA16F, w, h);
+    const rc = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rc); gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.RGBA16F, w, h); own.push(["rb", rc]);
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, rc);
-    const rd = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rd); gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.DEPTH_COMPONENT24, w, h);
+    const rd = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rd); gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.DEPTH_COMPONENT24, w, h); own.push(["rb", rd]);
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rd);
     this.color = this.target(w, h, false);
     // the mirror, at half size, with depth, and mipmapped for the rougher surfaces
     const rw = Math.max(2, w >> 1), rh = Math.max(2, h >> 1);
     this.refl = this.target(rw, rh, true);
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.refl.fb);
-    const rdd = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rdd); gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, rw, rh);
+    const rdd = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rdd); gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, rw, rh); own.push(["rb", rdd]);
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rdd);
     // bloom at a quarter and an eighth
     this.b1 = this.target(Math.max(2, w >> 2), Math.max(2, h >> 2), false); this.b1b = this.target(this.b1.w, this.b1.h, false);

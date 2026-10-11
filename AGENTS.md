@@ -80,7 +80,7 @@ container.
 | graybox runtime or renderer (`graybox/web/`) | `python graybox/serve.py tactical --selftest`, then `witness` | `27 / 27` and `24 / 24`, exit 0 (a browser opens). The `MEASURED` lines are measurements, not checks |
 | an art file, the exporter or the art's checks (`art/`) | `python art/check.py` | every check and plant PASS; `ART CHECKS PASSED` (a SKIPPED line says why it skipped) |
 | the director: the canonical form, scope, the ledger (`art/director*`) | `python art/director.py selftest`, then `rustc -O art/director/conform.rs -o art/build/conform` and `art/build/conform art/director/vectors.json` | `DIRECTOR SELFTEST PASSED`; `CONFORMANCE 62 / 62`. A change to an expected output in `vectors.json` is a new protocol version, never a fix |
-| the native plaza (`art/play.py`, `art/web/`) | `python art/check.py`, then `python art/play.py plaza-night` | `ART CHECKS PASSED`; the page opens and plays. A person judges the picture; nothing hashes it |
+| the native plaza (`art/play.py`, `art/web/`) | `python art/check.py`, `python art/play.py --selftest`, then `python art/play.py plaza-night` | `ART CHECKS PASSED`; `LIVE SELFTEST 13/13`; the page opens and plays, and an edit to the brief or an `--intent` file is drawn without a restart. A person judges the picture; nothing hashes it |
 | a cost claim about the graybox | `python graybox/serve.py tactical --bench` | timings with the clock's step printed; a draw and readback, never a frame rate |
 | the design tool | `python design/test_design.py` | 17 checks, 0 failed |
 | a registered release checkpoint, or a threat to the certified contract | `python verify/verify.py`, twice, on one clean tree | the two compact outputs byte-identical |

@@ -165,7 +165,7 @@ ART-GENERATION-0 the owner's pivot (2026-10-10), ahead of EVIDENCE-LINK-0: verif
       ↓
 DIRECTOR-0       the owner's ruling (2026-10-10): the operator loop for prompted art — candidates checked against the head they meet, admitted or refused by a person, every step in an append-only ledger; a canonical form and conformance vectors a second implementation reproduces (built beside the tree: art/director.py, art/director/; a std-only Rust second implementation reproduces all 62 vectors)
       ↓
-NATIVE-PLAZA-0   the owner's rulings (2026-10-10, 2026-10-11): Verðandi-native the primary architecture, Unreal 5.8 a secondary path; the plaza played in the browser through an art-owned launcher (art/play.py) and a WebGL 2 renderer, the graybox's simulation moving against C; two rounds evaluated, not yet chosen
+NATIVE-PLAZA-0   the owner's rulings (2026-10-10, 2026-10-11): Verðandi-native the primary architecture, Unreal 5.8 a secondary path; the plaza played in the browser through an art-owned launcher (art/play.py) and a WebGL 2 renderer, the graybox's simulation moving against C; two rounds evaluated, not yet chosen; live edits (2026-10-11): an edit to the brief or to a candidate intent drawn in the running page, the game untouched, a refused edit leaving the scene before it
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -2644,7 +2644,7 @@ that report; no instrument saw it. Pushed, `3dc15ec..222f856`.
 rate and not input-to-photon. OBSERVED (the host): the tree, the two self-tests. DECLARED: his report of the play.
 NOT_MEASURED: a frame rate; input-to-photon; any other browser or machine.
 
-### NATIVE-PLAZA-0 — the plaza played without Unreal · **the owner's rulings** (2026-10-10, 2026-10-11); outside the certified gate · **built** (`art/play.py`, `art/web/`); its two rounds evaluated, not yet chosen
+### NATIVE-PLAZA-0 — the plaza played without Unreal · **the owner's rulings** (2026-10-10, 2026-10-11); outside the certified gate · **built** (`art/play.py`, `art/web/`); its two rounds evaluated, not yet chosen; live edits built
 
 **His rulings.** On 2026-10-10: *"Make Verðandi-native the primary architecture. Keep UE5.8 as a secondary
 interoperability path. Do not make Unreal a prerequisite for authoring, compilation, or the eventual playable
@@ -2709,6 +2709,43 @@ global illumination, no textures, and no shadows from the point lights.
 **The host run (2026-10-11).** 0189 and 0190 applied as tree `aa7ddc63…`, as predicted; the ledger verified at 21
 events, the director's self-test and the art checks passed, the graybox self-test 27 / 27, and `art\play.py
 plaza-night` launched on his machine. Pushed `3eeab82..1b5e8f6`.
+
+**Live edits (2026-10-11), at his request.** He asked to *"load the edit into the live world without closing the
+program"* when a model writes a change. Read first: Ursprung's `weltwerk` (commit `dcdad67`). Its rule, in
+`sim/world_edit.py`, is that an edit is *"NEW authority, not mutate existing truth"*: a rejected edit leaves the old
+world standing, and the player's own state is carried through untouched. Its `apply_edit` gates an edit with the
+authoring layer's parse, pre-play validation and consequence diff; the tests pass here (the seven authoring suites,
+and `sim/test_world_edit.py` 9 / 9). Its prototype page (`fps_demo/weltwerk_fps_prototype.html`, F8) has a live
+editor: text typed into the page rebuilds the world in place, the player's state kept. That editor is a JavaScript
+mirror of `apply_edit` that refuses only empty text, not the Python gate, and nothing reaches it from a file a model
+writes. Verðandi takes the rule, not the code: the checks stay with the authority (the art checks and the director),
+and the file a model writes is what the running page shows, or refuses.
+
+- **`art/play.py`.** Sources: the brief (or `--art`), and each `--intent FILE`, the brief with the intent applied as
+  `director.py` evaluates it (a REFUSED candidate is not served; nothing is written to the ledger). A thread watches
+  the files each source is made from; when their bytes change, the sources that depend on them are compiled again in
+  a fresh Python process, so that an edit to the exporter is used too, and held to the same checks. What passes is
+  served; what does not leaves the scene before it served, with the reason. `/live` says what is served.
+- **The page.** It asks `/live` twice a second. A new scene on the same map is fetched, held to its digest and drawn
+  in place (`Renderer.load`, the old scene's GL objects freed). The game is not touched: the renderer writes no
+  state. A new map is a new collision world and so a new game at the spawn, nothing of the old one carried into it.
+  A new renderer file takes the canvas over, or, if it does not start, the old one goes on drawing. A new `play.js`
+  or `sim.js` is announced, for a reload. `[` and `]` step through the sources.
+- **`python art/play.py --selftest`**, without a browser, 13 / 13: the paths served and no others; an edit served, and
+  equal to compiling that text in place; a touch that changes no byte compiles nothing; an edit to the intent compiles
+  that source alone; five refusals (a canopy where a player can be, a statement the exporter cannot read, an intent
+  naming no statement, an intent whose candidate fails a check, the compiler stopping), each leaving the scene before
+  it served. Seven mutants of `play.py`, each refused by at least one check.
+- **In a browser, in the build container** (Chromium with a software renderer; the harness is not committed), 11 / 11:
+  an intent rewritten from C to A was drawn 0.9 s after the write, with no reload, the state object, the world and the
+  snapshot the same, and the game went on (tick 62 to 95); a refusal was shown and the scene kept; an art edit
+  drawn; the renderer's file swapped, and a planted one that does not start refused; a change to `play.js`
+  announced; a layout candidate (the south flank closed to a slot, CLEAN) started a new game at the spawn; no page
+  errors. OBSERVED, these runs.
+- **What it does not show.** A frame rate, or the swap's cost on a GPU: nothing was timed on the host. That the GPU's
+  memory is returned: `dispose` deletes every object the renderer made, which was not measured. An editor that
+  writes a file in pieces is met by waiting for the file to hold still and, if a piece is read, by a refusal; not by
+  an atomic write.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

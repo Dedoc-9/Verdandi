@@ -162,6 +162,9 @@ Keep `serve.py` and the existing `graybox/` boundary unchanged."*
 
 ```
 python art/play.py plaza-night           # compiles the scene, holds it to the art checks, serves it; a browser opens
+python art/play.py plaza-night --intent art/rounds/plaza-cantilevers/B.intent --intent art/rounds/plaza-cantilevers/C.intent
+                                         # the brief, and each candidate as the director evaluates it; [ and ] step through them
+python art/play.py --selftest            # the live loop without a browser: LIVE SELFTEST 13/13
 ```
 
 - **The launch.** It compiles the brief through `dress.py` and runs the art checks on the scene. A scene that fails
@@ -175,7 +178,20 @@ python art/play.py plaza-night           # compiles the scene, holds it to the a
   dimmed by the masses around; height fog and each lamp's glow in it; the wet floor and the puddles as mirrors; rain
   and its rings; bloom.
 - **In the page.** Click to play (W A S D, the mouse, Space, R). Keys 1–9 move a camera to the brief's views and Tab
-  goes back to play. `--art PATH` plays another art file for the same brief (a candidate's text).
+  goes back to play. `--art PATH` plays another art file for the same brief (a candidate's text). `--intent FILE`
+  (any number) adds a source: the brief with that intent applied, as `director.py` evaluates it at the current head
+  (its verdict is shown; a REFUSED candidate is not served; nothing is written to the ledger). `[` and `]` step
+  through the sources without leaving the game.
+- **Live edits.** Unless `--no-watch`, play.py watches every file the sources are made from (the art file, the
+  intents, the graybox's maps, and the code under `art/` and `graybox/` that compiles them). When one's bytes change,
+  it compiles the sources that depend on it again, in a fresh Python process (so an edit to `dress.py` is used too),
+  holds them to the same checks, and serves what passes; what does not pass leaves the scene before it served, and
+  the page says why. The page asks `/live` twice a second. A new scene on the same map is drawn in place, its bytes
+  held to the digest `/live` gave, and the game is not touched: the same state, the same world, the same snapshot. A
+  new map is a new collision world, so a new game at the spawn: the edit is new authority, nothing of the old game is
+  carried into it. A new `scene_render.js` takes the canvas over from the old one, or, if it does not start, the old
+  one goes on drawing; a new `play.js` or `sim.js` is announced, and the page's reload loads it. This is the loop for
+  an edit a model writes: it writes the intent (or the art file), and the running world shows it, or says why not.
 - **The limits.** Nothing hashes its pixels; a person judges what it draws. It is the first native renderer, not AAA:
   boxes with procedural surfaces, no global illumination, no textures, and no shadows from the point lights.
 
@@ -228,9 +244,9 @@ block a player is cover, and goes into the graybox map.
 | `dress.py` | the exporter: the art file and the graybox world to one scene, its lineage and a plan view |
 | `check.py` | the art's checks, plants and revisions |
 | `preview.py` | the provisional first-person preview (PROVISIONAL_PREVIEW): a standalone WebGL 2 page of the scene |
-| `play.py` | the native plaza's launcher: the scene compiled, checked and served beside the graybox's simulation |
-| `web/play.html`, `web/play.js` | the native plaza's page: input, the fixed tick on `sim.js`, the views |
-| `web/scene_render.js` | the native renderer (WebGL 2) |
+| `play.py` | the native plaza's launcher: the sources (the brief, candidate intents) compiled, checked and served beside the graybox's simulation, and compiled again when their files change; its own self-test |
+| `web/play.html`, `web/play.js` | the native plaza's page: input, the fixed tick on `sim.js`, the views, the live swap |
+| `web/scene_render.js` | the native renderer (WebGL 2); `load(S)` draws another scene in place, `dispose()` frees it |
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |
 | `briefs/plaza-night.revise-look` | its look revision: the wet surfaces less reflective |
 | `briefs/plaza-night.revise-layout.design` | its layout revision: the south flank one cell narrower (the north flank until B was admitted) |
