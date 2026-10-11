@@ -167,6 +167,21 @@ and their outputs are given.
   So an equal final hash across two browsers is weaker evidence than it looked. A difference in `Math` was present,
   and rounding absorbed it, in these runs. OBSERVED once, on two maps; the inference rests on the step calling no
   other function whose result the language leaves to the engine.
+- **A trace, in the build container (2026-10-11).** By the owner's ruling, a small experiment apart from the self-test
+  (`graybox/trace.py`). It logs every call of the four functions with its arguments' and result's bits, every tick's
+  input and every tick's snapshot, and compares two traces argument by argument. Node 22.22 (V8 12.4) against Chromium
+  141 (V8 14.1). The node trace ran the same worker file under node, in a harness of the build container's that is not
+  committed:
+
+  | map | `Math.sin` | `Math.cos` | `hypot`, `atan2` | inputs and states |
+  |---|---|---|---|---|
+  | tactical | different on 5 of 745 arguments | different on 2 of 745 | the same on every common argument | the same at every tick of both runs |
+  | witness | different on 3 of 670 | different on 7 of 670 | the same on every common argument | the same at every tick of both runs |
+
+  Every difference was one ulp. MEASURED, these two engines, these runs. The first differing call came while the walk
+  was being recorded, and rounding absorbed every difference before it reached an input or a state. This is the same
+  kind of difference the owner's run implied, now with its function and argument named. The same trace from the
+  owner's browser, compared with the container's, would name the function behind his four lines.
 
 ## R-7 · A browser's clock
 

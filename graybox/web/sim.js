@@ -336,6 +336,80 @@
     return { ok: false, inputs: inputs, ticks: limitTicks, at: path[k] };
   }
 
+  // a route's waypoints joined by the walk graph into one path of cells, or the waypoint no path reaches
+  function routePath(graph, pts) {
+    let path = [pts[0]], broken = null;
+    for (let k = 1; k < pts.length && !broken; k++) {
+      const seg = graph(pts[k - 1], pts[k]);
+      if (!seg) broken = pts[k]; else path = path.concat(seg.slice(1));
+    }
+    return { path: path, broken: broken };
+  }
+
+  // the first open line to a target (from 4 to 30 m) and the first that a wall stops, searching floor cells in order
+  function lines(world) {
+    const c = world.cell;
+    let shot = null, hidden = null;
+    const s0 = newState(world, "A");
+    for (const t of s0.targets) {
+      for (let j = 0; j < world.h; j++) for (let i = 0; i < world.w; i++) {
+        if (world.top(i, j) !== 0) continue;
+        const x = (i + 0.5) * c, z = (j + 0.5) * c, dist = Math.hypot(t.x - x, t.z - z);
+        if (dist < 4 || dist > 30) continue;
+        const oy = P.eye, ty = t.y + 1.2, dx = t.x - x, dz = t.z - z, dy = ty - oy, L = Math.hypot(dx, dy, dz);
+        const w = rayWorld(world, x, oy, z, dx / L, dy / L, dz / L, P.range);
+        if (!shot && w.t > L) shot = { t: t, x: x, z: z };
+        if (!hidden && w.t < L - 1 && w.what === "side") hidden = { t: t, x: x, z: z };
+      }
+      if (shot && hidden) break;
+    }
+    return { shot: shot, hidden: hidden };
+  }
+
+  // The two runs the state checks use, made by playing: the first route (in name order) the bot walked end to end,
+  // as recorded, and a fight from the first open line to a target (shots, a jump, a walk, the targets standing again,
+  // a change of side). Each starts from a snapshot.
+  function makeRuns(world, recorded, shotSpot) {
+    const c = world.cell, runs = [];
+    if (recorded) {
+      const s = newState(world, "A");
+      s.x = (recorded.start[0] + 0.5) * c; s.z = (recorded.start[1] + 0.5) * c; s.feet = groundAt(world, s.x, s.z);
+      runs.push({ name: "the walk", start: snapshot(s), inputs: recorded.inputs, every: 30, resumeEvery: 120 });
+    }
+    if (shotSpot) {
+      const s = newState(world, "A");
+      s.x = shotSpot.x; s.z = shotSpot.z; s.feet = groundAt(world, s.x, s.z);
+      const tgt = s.targets.find(function (q) { return q.id === shotSpot.t.id; });
+      const dx = tgt.x - s.x, dz = tgt.z - s.z;
+      s.yaw = wrap(Math.atan2(dx, -dz)); s.pitch = Math.atan2(tgt.y + 1.2 - (s.feet + P.eye), Math.hypot(dx, dz));
+      const inputs = [];
+      const add = function (n, inp) { for (let k = 0; k < n; k++) inputs.push(typeof inp === "function" ? inp(k) : inp); };
+      add(1, { fire: true }); add(20, {}); add(1, { fire: true }); add(1, { jump: true }); add(8, {});
+      add(1, { fire: true, dyaw: 0.02 });
+      add(60, function (k) { return { f: true, dyaw: 0.01, dpitch: -0.002, fire: k % 25 === 0 }; });
+      add(Math.ceil(P.targetDown / TICK) + 10, {});
+      add(1, { side: "B" }); add(30, { f: true, r: true }); add(1, { fire: true }); add(1, { reset: true }); add(1, { side: "A" });
+      add(40, function (k) { return { b: true, l: true, jump: k % 15 === 0 }; });
+      runs.push({ name: "the fight", start: snapshot(s), inputs: inputs, every: 5, resumeEvery: 40 });
+    }
+    return runs;
+  }
+
+  // the same two runs without the self-test around them, for the trace experiment (graybox/trace.py)
+  function record(map) {
+    const world = new World(map), c = world.cell, graph = walkGraph(world);
+    let recorded = null;
+    for (const name of Object.keys(world.routes).sort()) {
+      const pts = world.routes[name].cells, rp = routePath(graph, pts);
+      if (rp.broken) continue;
+      const s = newState(world, "A");
+      s.x = (pts[0][0] + 0.5) * c; s.z = (pts[0][1] + 0.5) * c; s.feet = groundAt(world, s.x, s.z);
+      const r = walk(world, s, rp.path, rp.path.length * 120 + 600);
+      if (r.ok) { recorded = { start: pts[0], inputs: r.inputs }; break; }
+    }
+    return makeRuns(world, recorded, lines(world).shot);
+  }
+
   function overlaps(world, x, z, i, j) {
     let hit = false;
     touching(world, x, z, P.radius, function (a, b) { if (a === i && b === j) hit = true; });
@@ -392,11 +466,7 @@
     let recorded = null;
     for (const name of Object.keys(world.routes).sort()) {
       const pts = world.routes[name].cells;
-      let path = [pts[0]], broken = null;
-      for (let k = 1; k < pts.length && !broken; k++) {
-        const seg = graph(pts[k - 1], pts[k]);
-        if (!seg) broken = pts[k]; else path = path.concat(seg.slice(1));
-      }
+      const { path, broken } = routePath(graph, pts);
       if (broken) { check("route " + name, false, "no path to " + broken); continue; }
       const s = newState(world, "A");
       s.x = (pts[0][0] + 0.5) * c; s.z = (pts[0][1] + 0.5) * c; s.feet = groundAt(world, s.x, s.z);
@@ -439,20 +509,7 @@
     // the weapon: a hit in the open, a miss behind a wall, the target back up
     let shotSpot = null;
     {
-      let shot = null, hidden = null;
-      const s0 = newState(world, "A");
-      for (const t of s0.targets) {
-        for (let j = 0; j < world.h; j++) for (let i = 0; i < world.w; i++) {
-          if (world.top(i, j) !== 0) continue;
-          const x = (i + 0.5) * c, z = (j + 0.5) * c, dist = Math.hypot(t.x - x, t.z - z);
-          if (dist < 4 || dist > 30) continue;
-          const oy = P.eye, ty = t.y + 1.2, dx = t.x - x, dz = t.z - z, dy = ty - oy, L = Math.hypot(dx, dy, dz);
-          const w = rayWorld(world, x, oy, z, dx / L, dy / L, dz / L, P.range);
-          if (!shot && w.t > L) shot = { t: t, x: x, z: z };
-          if (!hidden && w.t < L - 1 && w.what === "side") hidden = { t: t, x: x, z: z };
-        }
-        if (shot && hidden) break;
-      }
+      const { shot, hidden } = lines(world);
       shotSpot = shot;
       const fireAt = function (spot) {
         const s = newState(world, "A");
@@ -502,28 +559,7 @@
     // ---- the state checks. The replay above compares hashes; these say what an equal hash is worth. Each runs on
     // two runs made by playing (the first route's recorded walk, and a fight), and each has a planted defect it must
     // refuse, so that a check that cannot fail does not pass for one.
-    const runs = [];
-    if (recorded) {
-      const s = newState(world, "A");
-      s.x = (recorded.start[0] + 0.5) * c; s.z = (recorded.start[1] + 0.5) * c; s.feet = groundAt(world, s.x, s.z);
-      runs.push({ name: "the walk", start: snapshot(s), inputs: recorded.inputs, every: 30, resumeEvery: 120 });
-    }
-    if (shotSpot) {
-      const s = newState(world, "A");
-      s.x = shotSpot.x; s.z = shotSpot.z; s.feet = groundAt(world, s.x, s.z);
-      const tgt = s.targets.find(function (q) { return q.id === shotSpot.t.id; });
-      const dx = tgt.x - s.x, dz = tgt.z - s.z;
-      s.yaw = wrap(Math.atan2(dx, -dz)); s.pitch = Math.atan2(tgt.y + 1.2 - (s.feet + P.eye), Math.hypot(dx, dz));
-      const inputs = [];
-      const add = function (n, inp) { for (let k = 0; k < n; k++) inputs.push(typeof inp === "function" ? inp(k) : inp); };
-      add(1, { fire: true }); add(20, {}); add(1, { fire: true }); add(1, { jump: true }); add(8, {});
-      add(1, { fire: true, dyaw: 0.02 });
-      add(60, function (k) { return { f: true, dyaw: 0.01, dpitch: -0.002, fire: k % 25 === 0 }; });
-      add(Math.ceil(P.targetDown / TICK) + 10, {});
-      add(1, { side: "B" }); add(30, { f: true, r: true }); add(1, { fire: true }); add(1, { reset: true }); add(1, { side: "A" });
-      add(40, function (k) { return { b: true, l: true, jump: k % 15 === 0 }; });
-      runs.push({ name: "the fight", start: snapshot(s), inputs: inputs, every: 5, resumeEvery: 40 });
-    }
+    const runs = makeRuns(world, recorded, shotSpot);
     if (ctx) ctx.runs = runs;
     const kinds = function (ps) { return Array.from(new Set(ps.map(leafKind))).join(", "); };
 
@@ -659,6 +695,6 @@
 
   const api = { TICK: TICK, P: P, World: World, newState: newState, step: step, spawn: spawn, fire: fire, aim: aim,
                 rayWorld: rayWorld, blocked: blocked, groundAt: groundAt, hash: hash, snapshot: snapshot, restore: restore,
-                nudge: nudge, selftest: selftest };
+                nudge: nudge, bits: bitsOf, record: record, selftest: selftest };
   return api;
 });

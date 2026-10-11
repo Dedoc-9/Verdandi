@@ -41,6 +41,7 @@ Esc releases the mouse.
 |---|---|
 | map content (`maps/`) | `python graybox/check.py` — the conversion's conformance and its mutations; add `--compile` to compile and admit the tactical layout again through the design tool (needs a built shell, or `rustc` to build one, as the design tool does) |
 | the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (27 on the tactical map, 24 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
+| where two engines part (a diagnostic) | `python graybox/trace.py run tactical` — records and plays the self-test's walk and fight in a worker, logging every call of `Math.sin`, `Math.cos`, `Math.hypot` and `Math.atan2` with its arguments' and result's bits, every tick's input and snapshot, and the browser's description of itself; writes `graybox/build/trace/tactical/ENGINE.json` and `latest.json` (not committed). Then `python graybox/trace.py compare A.json B.json` for two such traces, and `python graybox/trace.py selftest A.json` for the comparator's own planted differences |
 | the renderer's cost | `python graybox/serve.py tactical --bench` — both renderers draw the same poses in your browser, alternating; the timings print, and they and a screenshot of each pose by each renderer are written to `graybox/build/bench/tactical/` (not committed). A sample is the mean of a batch of draws, each followed by a one-pixel readback; the page's clock step is printed, since some browsers round it (to 1 ms). Add `--samples N` (default 20), `--batch K` (default 10) |
 | the certified tree | the gate, at a release checkpoint |
 
@@ -100,6 +101,17 @@ differs. (A real engine differs on some inputs, not on every call; this model is
 every check matched the container's but four of the eight lines did not, so the two engines' `Math` differed
 somewhere in these runs and rounding absorbed it (R-6 in [`docs/RESEARCH-FINDINGS.md`](../docs/RESEARCH-FINDINGS.md)).
 
+The trace experiment (`trace.py`) is where that is pinned down. It is a diagnostic beside the self-test, not part of it,
+and nothing passes or fails on what it finds. Its comparison takes each function's results only on the arguments
+both runs passed, so that runs which have already parted, and so call a function with different arguments, are not
+mistaken for a function that differs. In call order, it says whether the first difference is in an argument (the runs
+had parted before that call) or in a result (the functions differ). For each run, it gives the first tick whose input
+differs and the first tick whose state differs, with the leaves that differ there. A state that matches is only as
+complete as the snapshot, which the self-test's `hash-coverage` and `snapshot-resume` hold to the whole of it. In the
+build container, node 22 (V8 12.4) and Chromium 141 (V8 14.1) gave different results, one ulp apart, for `Math.sin`
+on 5 of 745 arguments and `Math.cos` on 2 of 745 on the tactical map. `hypot` and `atan2` were the same. Every input
+and every tick's state of both runs was the same.
+
 ## The files
 
 | | |
@@ -111,8 +123,10 @@ somewhere in these runs and rounding absorbed it (R-6 in [`docs/RESEARCH-FINDING
 | `level.py` | the converter: D to W and C, and the manifest |
 | `check.py` | the map checks, for map content |
 | `serve.py` | the launcher, and the driver of the self-test and the bench |
+| `trace.py` | the trace experiment: its own small launcher (four files and the map), and the comparison of two traces |
 | `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the state's snapshots, the self-test. No DOM; runs in a worker and under node too |
-| `web/sim_worker.js` | the simulation in a realm of its own, for the self-test only: resumes a snapshot, or plays a run in a counterfactual engine |
+| `web/sim_worker.js` | the simulation in a realm of its own, for the self-test and the trace: resumes a snapshot, plays a run in a counterfactual engine, or records and plays the two runs with Math logged |
+| `web/trace.html`, `web/trace.js` | the trace experiment's page |
 | `web/render.js` | the renderer (FPS-VISUAL-0): WebGL 1; a sky, a sun whose shadow is traced through the heights, floor modules, panelled walls, dressed cover, beams on the wall tops, a skyline outside the map, the weapon in the hand; the 1 m grid on G |
 | `web/render_flat.js` | the graybox's first renderer, kept unchanged but for its name: one shader, flat colours, the 1 m grid (`--renderer flat`) |
 | `web/main.js`, `web/index.html` | input, the fixed-tick loop, the HUD, the map, self-test mode |

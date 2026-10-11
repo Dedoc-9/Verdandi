@@ -2445,6 +2445,21 @@ and 24 / 24 in the browser `serve.py` opened, every check's line as in the conta
 engines' `Math` returned different bits somewhere in these runs and rounding absorbed the difference
 ([`RESEARCH-FINDINGS.md`](RESEARCH-FINDINGS.md), R-6). OBSERVED, once.
 
+**The trace experiment (2026-10-11), by the owner's ruling.** *"Investigate the cross-engine divergence, but do not
+let that investigation become a prerequisite for the native plaza slice."* He asked for *"the runtime fingerprint,
+actual transcendental input/output fingerprints, and first-divergence reporting in a small, separate experiment"*,
+kept outside the certified gate.
+
+- **What it is.** `graybox/trace.py` serves its own page and writes a trace: every call of `Math.sin`, `Math.cos`,
+  `Math.hypot` and `Math.atan2` with its arguments' and result's bits, in call order, every tick's input and
+  snapshot, and the browser's description of itself.
+- **The comparison.** Each function's results are compared on common arguments, and the first differing call is
+  classed as an argument or a result. The first differing input and state are reported, with the leaves.
+- **Its own plants.** Five, each found where it was planted.
+
+Node 22 and Chromium 141 differ by one ulp in `Math.sin` and `Math.cos` on a few arguments, and every tick of both
+runs still matches (R-6). The self-test is unchanged, line for line.
+
 ### FPS-VISUAL-0 — the visual pass · **the owner's ruling** (2026-10-09); outside the certified gate · **built**: the graybox lit and dressed, the first renderer kept beside it
 
 **His ruling.** The graybox plays; the next pass makes it look like a place, and the certified gate stays out of it.
