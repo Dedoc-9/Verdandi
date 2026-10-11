@@ -177,7 +177,7 @@ INPUT-CONTRACT-0 the owner's ruling (2026-10-11): the tick's input admitted or r
       ↓
 STUDIO-0         the owner's direction and ruling (2026-10-11): a director summoned into the running plaza — E selects, Enter summons, a prompt answered by at most three candidates drawn in place with the game untouched, admit, reject and undo through the director's ledger; "the model proposes changes—it never directly mutates the live world"; a gateway (art/studio.py) between the page and a provider command (a scripted provider; Claude through the Anthropic Messages API), its contract in art/STUDIO.md; his acceptance test met in Chromium 141 in the build container; on his machine (Windows) its self-test 29 / 29, and the scripted provider tried from the page; outside the gate
       ↓
-STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); outside the gate
+STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); the CLI provider built, and a real model reached through it in the build container (its probe SHOWN); outside the gate
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -3382,7 +3382,7 @@ and cost per accepted edit"*; *"the best director is not the model that generate
 the one that helps the designer reach a good, accepted world edit with the least friction."* On the references: STUDIO-1,
 below.
 
-### STUDIO-1 — references: tags, pins, geometry and relations · **the owner's ruling** (2026-10-11); outside the certified gate · **declared**
+### STUDIO-1 — two model paths, and references: tags, pins, geometry and relations · **the owner's rulings** (2026-10-11); outside the certified gate · **the providers built; the references declared**
 
 **His ruling.** *"Choose “Tags + pins + geometry” for this slice. Keep the reference system and art-language vocabulary
 separate so you can establish reliable object grounding before expanding what the compiler can build."* What it
@@ -3413,6 +3413,63 @@ and proposes edits the existing compiler can express—without silently changing
 **The reading behind it** (`docs/RESEARCH-FINDINGS.md`, R-14): giving every object a short identifier a model and a
 person both use (Chat-Scene), and turning spatial relations into explicit, checked constraints (SceneCraft,
 ScanEdit). Nothing of it is claimed as new here.
+
+**Built, the providers (2026-10-11), by his ruling on the model (STUDIO-0, above): "CLI first, API second, shared
+schema and gateway throughout".**
+
+- `art/providers/claude_code.py` and `claude_code.json`: Claude through Claude Code's CLI, `claude -p`, on the login
+  it has. Run from an empty temporary folder, never through a shell: a fixed instruction as its argument, the request
+  on its standard input, its own system text from a file, the gateway's schema (`--json-schema`), `--tools ""`,
+  `--disallowedTools "mcp__*"`, `--strict-mcp-config`, `--safe-mode`, `--no-session-persistence`, `--permission-mode
+  dontAsk`, `--output-format stream-json`. The session's first event is read before its answer: if it offers any tool
+  but `StructuredOutput`, claude is stopped and nothing it said is used. Its answer goes to the gateway, which reads it
+  whole as it reads every provider's. On Windows only `claude.exe` is run: a `.cmd` or `.ps1` shim needs a shell and
+  is refused, with what to set instead.
+- `art/providers/director_prompt.py`: the system text and the request rendered as text, which both model providers
+  give their models, so that they are compared on the same question.
+- A response may say its usage (`provider.usage`: tokens in and out, a cost or null, and where the cost comes from),
+  read strictly. Every call's log line now holds what he asked for: the provider and model the response names, the
+  exit status, whether the response was valid, the provider's time, the usage. play.py prints one line a request.
+- A cancelled or superseded provider is killed with everything it started (its process group on POSIX, `taskkill /T`
+  on Windows), and play.py, stopping, kills a request running: a model's own command line cannot outlive the request.
+- `python art/studio.py probe CONFIG.json`, his smoke test: two different prompts about one canopy, through the
+  gateway, nothing admitted; SHOWN only if the provider reported a model and tokens for both and the two were answered
+  with different revision lines. `python art/studio.py report`: by provider, the requests answered, invalid outputs,
+  timeouts, provider errors, the provider's time, the verdicts, the admitted edits, the tokens and the reported cost
+  per admitted edit.
+
+**Measured (2026-10-11, the build container).**
+
+- **His check on `--tools ""`**, run before the provider was written (Claude Code 2.1.296): with `--tools ""` and
+  `--safe-mode`, the session still offered 22 tools of an MCP server the container connects (its source "dynamic");
+  `--strict-mcp-config` did not remove the server; with `--disallowedTools "mcp__*"` it offered `StructuredOutput`
+  alone. So the provider passes all three and refuses any session that offers more. With its own system prompt and
+  the MCP tools gone, a trivial call's input fell from 15,545 tokens to 3,672.
+- `python art/studio.py selftest` 38 / 38: the 29 rows before, and a provider's usage that is not counts refused; a
+  cancelled provider's own child killed with it (it would have written a mark 2 s later); every call's exit status,
+  validity, time and usage in the log, and no key in it; and Claude Code's CLI through a stand-in for `claude`: the
+  flags, the schema, the system text, the prompt on standard input and nowhere in the arguments, an empty folder, the
+  model and usage it reported recorded, a line printed; a session offering `Bash` and an MCP tool stopped before it
+  could answer; a fifth field in its structured output refused by the gateway itself; out of structured-output
+  retries; not logged in; a `.cmd` shim refused with nothing run.
+- 14 mutants of the gateway and the provider, 14 refused (among them: only the provider killed, not its group; a
+  session's extra tools accepted; no `--disallowedTools`; the prompt in claude's arguments; claude run from the
+  repository; a superset of a candidate's fields accepted; the exit status, the usage or the validity not recorded).
+- **The probe against the real CLI** (`claude_code.json`, Claude Code's default model, reported as
+  `claude-sonnet-5-5`), on the north canopy (`canopy:19,10-28,11`): SHOWN. *"make it read as one heavy, monolithic
+  slab that fills more of the sky"*: 16.7 s, 7,780 tokens in, 1,968 out, ~$0.051 by Claude Code's own estimate, three
+  CLEAN candidates (the slabs thickened; one slab over the whole plaza in place of three; a heavier material at one
+  height). *"make it lighter and thinner, with a warm glow along its edge"*: 15.1 s, 7,783 in, 1,789 out, ~$0.038,
+  two LEAKAGE (a material changed without declaring it) and one CLEAN. The scripted provider's probe: NOT SHOWN (no
+  tokens; the same lines for both prompts), as it must be.
+- **What the probe shows before the references.** One canopy was selected and the prompts said *it*; four of the six
+  candidates changed the other two canopies as well (all three of the first prompt's, the third of the second's),
+  each within a scope it declared, so the director passed them. The director holds a candidate to what it declares,
+  not to what the designer meant: naming the intended pieces is the references' work.
+
+**What it does not show.** The live Anthropic API (no Console key in the build container). Claude Code's CLI on
+Windows. Whether a model's candidates are good. A model's latency or cost elsewhere: two calls, one machine, one
+model.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

@@ -5,6 +5,10 @@
 #
 #   python art/studio.py selftest
 #   python art/studio.py schema           the response schema a provider answers with (JSON Schema, for an adapter)
+#   python art/studio.py probe CONFIG.json [--brief B] [--piece ID]
+#                                         the smoke test: that the provider's model is asked and its answers follow the prompt
+#   python art/studio.py report [--brief B]
+#                                         every recorded request, by provider: failures, latency, tokens, cost per admitted edit
 #
 # By the owner's direction and ruling of 2026-10-11: "the LLM edits design intent; Verðandi compiles that intent into a
 # live world; the designer remains in control"; "a pluggable model adapter", behind "a local director gateway that
@@ -31,7 +35,8 @@
 #      a refusal; undo admits the last admission's exact inverse as an intent of its own.
 # A timeout, a provider that cannot start or exits with an error, a response too long or malformed, a cancellation:
 # each leaves the world as it was and says why. API keys are the provider's affair, in its environment; nothing here
-# reads one, and nothing of a provider's reaches the browser but the candidates' text and verdicts.
+# reads one, and nothing of a provider's reaches the browser but the candidates' text and verdicts, and the name, model
+# and usage its response gives.
 #
 # Standard library only. It writes the request records under art/build/studio/ (not committed) and, on the
 # designer's admission or rejection, the brief and its ledger, as art/director.py does.
@@ -41,6 +46,7 @@ import hashlib
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import threading
@@ -56,6 +62,7 @@ LIMITS = {"prompt": 2000, "title": 80, "rationale": 1200, "revision": 16, "line"
           "preserve": 12, "item": 200, "candidates": 3}
 PATTERN = re.compile(r"[A-Za-z0-9*_.,:-]+(/[A-Za-z0-9*_.,:-]+)*\Z")
 CONFIG_KEYS = {"provider", "argv", "model", "timeout_s", "max_output_bytes"}
+USAGE_KEYS = {"input_tokens", "output_tokens", "cost_usd", "cost_basis"}
 
 # The response a provider writes: what an adapter constrains a model's output to, where the provider supports it.
 SCHEMA = {
@@ -144,13 +151,38 @@ def load_config(path):
 
 
 # ------------------------------------------------------------------------------------------------ the provider
-def run_provider(cfg, request_bytes, cancel):
-    """The provider's standard output for the request, or a StudioError: it cannot start, it is cancelled, it runs past
-    its time, it prints more than its limit, it exits with an error. Its standard error is kept for the message."""
+def kill_tree(p):
+    """The provider and every process it started (a provider may run a model's own command line, which must not outlive
+    a cancellation): its process group on POSIX, `taskkill /T` on Windows."""
+    if os.name == "nt":
+        try:
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(p.pid)], capture_output=True, timeout=15)
+        except (OSError, subprocess.SubprocessError):
+            pass
+    else:
+        try:
+            os.killpg(p.pid, signal.SIGKILL)
+        except OSError:
+            pass
     try:
-        p = subprocess.Popen(cfg["argv"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=REPO, shell=False)
+        p.kill()
+    except OSError:
+        pass
+    p.wait()
+
+
+def run_provider(cfg, request_bytes, cancel, holder=None):
+    """(standard output, milliseconds, exit status) of the provider for the request, or a StudioError: it cannot start,
+    it is cancelled, it runs past its time, it prints more than its limit, it exits with an error (the error's `exit`
+    is the status). Its standard error is kept for the message. It runs in a process group of its own, so that what it
+    starts is killed with it; `holder["proc"]` is the process while it runs."""
+    kw = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
+    try:
+        p = subprocess.Popen(cfg["argv"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=REPO, shell=False, **kw)
     except OSError as e:
         raise StudioError("STUDIO-PROVIDER-START", "the provider cannot be started: %s" % e)
+    if holder is not None:
+        holder["proc"] = p
     out, err, too_long = bytearray(), bytearray(), threading.Event()
     limit = cfg["max_output_bytes"]
 
@@ -184,18 +216,21 @@ def run_provider(cfg, request_bytes, cancel):
         t.start()
     t0 = time.monotonic()
     why = None
-    while p.poll() is None:
-        if cancel.is_set():
-            why = StudioError("STUDIO-CANCELLED", "cancelled while the provider ran")
-        elif too_long.is_set():
-            why = StudioError("STUDIO-RESPONSE-SIZE", "the provider printed more than %d bytes" % limit)
-        elif time.monotonic() - t0 > cfg["timeout_s"]:
-            why = StudioError("STUDIO-TIMEOUT", "the provider ran past %d s" % cfg["timeout_s"])
-        if why:
-            p.kill()
-            p.wait()
-            raise why
-        time.sleep(0.02)
+    try:
+        while p.poll() is None:
+            if cancel.is_set():
+                why = StudioError("STUDIO-CANCELLED", "cancelled while the provider ran")
+            elif too_long.is_set():
+                why = StudioError("STUDIO-RESPONSE-SIZE", "the provider printed more than %d bytes" % limit)
+            elif time.monotonic() - t0 > cfg["timeout_s"]:
+                why = StudioError("STUDIO-TIMEOUT", "the provider ran past %d s" % cfg["timeout_s"])
+            if why:
+                kill_tree(p)
+                raise why
+            time.sleep(0.02)
+    finally:
+        if holder is not None:
+            holder.pop("proc", None)
     for t in threads[:2]:
         t.join(5)
     if cancel.is_set():
@@ -204,8 +239,10 @@ def run_provider(cfg, request_bytes, cancel):
         raise StudioError("STUDIO-RESPONSE-SIZE", "the provider printed more than %d bytes" % limit)
     if p.returncode != 0:
         tail = bytes(err).decode("utf-8", "replace").strip().splitlines()[-1:] or ["(nothing on standard error)"]
-        raise StudioError("STUDIO-PROVIDER-EXIT", "the provider exited %d: %s" % (p.returncode, tail[0][:300]))
-    return bytes(out), int((time.monotonic() - t0) * 1000)
+        e = StudioError("STUDIO-PROVIDER-EXIT", "the provider exited %d: %s" % (p.returncode, tail[0][:300]))
+        e.exit = p.returncode
+        raise e
+    return bytes(out), int((time.monotonic() - t0) * 1000), p.returncode
 
 
 # ------------------------------------------------------------------------------------------------ the response
@@ -223,8 +260,16 @@ def read_response(raw, rid):
     if doc.get("id") != rid:
         raise StudioError("STUDIO-RESPONSE-ID", "the response answers %r, not this request (%s)" % (doc.get("id"), rid))
     prov = doc.get("provider")
-    if not isinstance(prov, dict) or not all(isinstance(prov.get(k), str) and prov.get(k) for k in ("name", "model")) or set(prov) != {"name", "model"}:
-        raise StudioError("STUDIO-RESPONSE-FIELD", "provider is {name, model}, each a non-empty string")
+    if not isinstance(prov, dict) or not all(isinstance(prov.get(k), str) and prov.get(k) for k in ("name", "model")) or \
+            set(prov) - {"usage"} != {"name", "model"}:
+        raise StudioError("STUDIO-RESPONSE-FIELD", "provider is {name, model}, each a non-empty string, and optionally usage")
+    if "usage" in prov:
+        u = prov["usage"]
+        nat = lambda v: type(v) is int and 0 <= v < 10 ** 9
+        if not isinstance(u, dict) or set(u) != USAGE_KEYS or not nat(u["input_tokens"]) or not nat(u["output_tokens"]) or \
+                not (u["cost_usd"] is None or type(u["cost_usd"]) in (int, float) and 0 <= u["cost_usd"] < 10 ** 4) or \
+                not isinstance(u["cost_basis"], str) or len(u["cost_basis"]) > 120:
+            raise StudioError("STUDIO-RESPONSE-FIELD", "provider.usage is {input_tokens, output_tokens, cost_usd (or null), cost_basis}")
     cands = doc.get("candidates")
     if not isinstance(cands, list) or len(cands) > LIMITS["candidates"]:
         raise StudioError("STUDIO-RESPONSE-CANDIDATES", "candidates is a list of at most %d" % LIMITS["candidates"])
@@ -269,8 +314,8 @@ class Gateway:
     module), workspace() (the brief's Workspace), candidate_slot(ws, intent_dict, label) (a candidate evaluated at the
     current head: a play.py source, served or refused), and publish(slots) (the candidates the page can switch to)."""
 
-    def __init__(self, play, brief, cfg=None, root=REPO, say=print):
-        self.play, self.brief, self.cfg, self.root, self.say = play, brief, cfg, root, say
+    def __init__(self, play, brief, cfg=None, root=REPO, say=print, origin="page"):
+        self.play, self.brief, self.cfg, self.root, self.say, self.origin = play, brief, cfg, root, say, origin
         self.lock = threading.Lock()
         self.req = None          # the latest request: dict, see state()
         self.cancel = None       # its cancellation event
@@ -278,6 +323,16 @@ class Gateway:
         self.last = {}           # the last admission, rejection or undo, for the page
         self.records = os.path.join(root, "art", "build", "studio", brief)
         self.error = ""          # why there is no provider, when a configuration was refused
+        self.running = {}        # the provider's process while it runs (run_provider's holder)
+
+    def shutdown(self):
+        """Cancel the request running, and kill its provider and what it started (play.py, stopping)."""
+        with self.lock:
+            if self.cancel is not None:
+                self.cancel.set()
+        p = self.running.get("proc")
+        if p is not None and p.poll() is None:
+            kill_tree(p)
 
     # ------------------------------------------------------------------ what the page reads
     def state(self):
@@ -337,7 +392,7 @@ class Gateway:
                 self.req["state"], self.req["code"], self.req["message"] = "superseded", "STUDIO-SUPERSEDED", "a newer request was asked"
                 self.req["ended"] = time.monotonic()
             self.n += 1
-            rid = "%s-%d" % (datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S"), self.n)
+            rid = "%s-%s%d" % (datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S"), "" if self.origin == "page" else self.origin + "-", self.n)
             base = {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}
             request = {"format": REQUEST, "version": VERSION, "id": rid, "brief": self.brief, "head": head, "base": base,
                        "prompt": prompt.strip(), "selection": sel, "camera": cam, "statements": stmts,
@@ -389,17 +444,28 @@ class Gateway:
         entry = {"id": rid, "at": now(), "brief": self.brief, "head": req["head"], "prompt": req["prompt"],
                  "selection": (req["selection"] or {}).get("address"), "config": self.cfg["path"], "model": self.cfg["model"],
                  "request_sha256": sha256(rb)}
+        if self.origin != "page":
+            entry["origin"] = self.origin
+        # what the owner asked to be recorded of every call (2026-10-11): the provider, the model, the exit status, whether
+        # the response was valid, the latency; and the tokens and cost the provider reports. No credential is in any of it.
         try:
-            raw, ms = run_provider(self.cfg, rb, cancel)
+            raw, ms, rc = run_provider(self.cfg, rb, cancel, self.running)
             self._record(rid, "response.raw", raw)
-            entry.update({"response_sha256": sha256(raw), "provider_ms": ms})
+            entry.update({"response_sha256": sha256(raw), "provider_ms": ms, "exit": rc})
             provider, cands = read_response(raw, rid)
-            entry["provider"] = provider
+            entry.update({"provider": provider, "valid": True})
+            if "usage" in provider:
+                entry["usage"] = provider["usage"]
         except StudioError as e:
             entry.update({"outcome": e.code, "detail": str(e)[:300]})
+            if hasattr(e, "exit"):
+                entry["exit"] = e.exit
+            if e.code.startswith("STUDIO-RESPONSE-"):
+                entry["valid"] = False
             if e.code != "STUDIO-CANCELLED":
                 self._finish(req, "failed", e.code, e.detail)
             self._log(entry)
+            self.say("STUDIO  %s  %s: %s" % (rid, e.code, e.detail[:200]))
             return
         with self.lock:
             if req["state"] != "running":
@@ -445,6 +511,11 @@ class Gateway:
         self._finish(req, "done", "", "%d candidate%s, %d drawn" % (len(made), "" if len(made) == 1 else "s", n_ok) if made else "the director proposed nothing")
         entry["outcome"] = "DONE"
         self._log(entry)
+        u = entry.get("usage")
+        self.say("STUDIO  %s  %s (%s)  %.1f s%s  %s" % (
+            rid, provider["name"], provider["model"], entry["provider_ms"] / 1000.0,
+            "  %d tokens in, %d out%s" % (u["input_tokens"], u["output_tokens"], ", ~$%.3f (%s)" % (u["cost_usd"], u["cost_basis"]) if u["cost_usd"] is not None else "") if u else "",
+            "; ".join("%s %s" % (i["letter"], i["verdict"] + ("" if i["verdict"] == "CLEAN" else " " + ",".join(i["codes"]))) for i, _s in made) or "no candidates"))
 
     # ------------------------------------------------------------------ the designer's decisions
     def _candidate(self, rid, letter):
@@ -547,6 +618,129 @@ def quiet(fn, *a, **k):
         raise StudioError("STUDIO-DIRECTOR-REFUSED", " ".join(str(e).split())[:300])
 
 
+# ------------------------------------------------------------------------------------------------ the probe and the report
+PROBE_PIECE = "canopy:19,10-28,11"
+PROBE_PROMPTS = ("make it read as one heavy, monolithic slab that fills more of the sky",
+                 "make it lighter and thinner, with a warm glow along its edge")
+
+
+def probe(config, brief="plaza-night", piece=PROBE_PIECE, prompts=PROBE_PROMPTS, root=None, say=print):
+    """The owner's smoke test (2026-10-11): that the configured provider's model "was actually invoked—not just that a
+    provider configuration was loaded". The same piece is asked about with two different prompts, through the gateway
+    as the page asks, at the head as the files stand; nothing is admitted and the brief is not written (the requests
+    are recorded, marked as the probe's). Shown when the provider reports a model and tokens for every request, and the
+    two answers differ. Returns (shown, the results)."""
+    sys.path.insert(0, HERE)
+    import play
+    if root:
+        play.ROOT = os.path.abspath(root)
+    cfg = load_config(config)
+    live = play.Live(brief, os.path.join(play.ROOT, "art", "briefs", brief + ".art") if root else None, [])
+    g = Gateway(play.Host(live), brief, cfg, play.ROOT, say=lambda s: None, origin="probe")
+    say("PROBE  %s  (%s)  brief %s, piece %s" % (os.path.relpath(cfg["path"], REPO), cfg["model"], brief, piece))
+    out = []
+    for n, prompt in enumerate(prompts, 1):
+        rid = g.ask(prompt, piece, None)
+        t = time.monotonic()
+        while time.monotonic() - t < cfg["timeout_s"] + 60:
+            r = g.state()["request"]
+            if r["id"] == rid and r["state"] != "running":
+                break
+            time.sleep(0.1)
+        log = [json.loads(ln) for ln in open(os.path.join(g.records, "requests.jsonl"), "rb").read().splitlines()]
+        e = [x for x in log if x.get("id") == rid and "outcome" in x]
+        e = e[-1] if e else {}
+        cands = []
+        if r["state"] == "done":
+            for c in r["candidates"]:
+                f = os.path.join(g.records, rid, c["letter"] + ".intent")
+                rev = json.loads(open(f, "rb").read())["revision"] if os.path.isfile(f) else []
+                cands.append({"letter": c["letter"], "title": c["title"], "verdict": c["verdict"], "codes": c["codes"], "revision": rev})
+        u = e.get("usage")
+        say("[%d] %r" % (n, prompt))
+        say("    %s  exit %s  %s  %.2f s  %s%s" % (
+            e.get("outcome", r["state"]), e.get("exit", "-"), {True: "valid", False: "INVALID"}.get(e.get("valid"), "not read"),
+            e.get("provider_ms", 0) / 1000.0, ("%s (%s)" % (e["provider"]["name"], e["provider"]["model"])) if e.get("provider") else "-",
+            ("  %d tokens in, %d out%s" % (u["input_tokens"], u["output_tokens"], ", ~$%.3f (%s)" % (u["cost_usd"], u["cost_basis"]) if u["cost_usd"] is not None else "")) if u else "  (no usage reported)"))
+        if e.get("detail"):
+            say("    " + e["detail"][:300])
+        for c in cands:
+            say("    %s %s  %s%s" % (c["letter"], c["title"], c["verdict"], "" if c["verdict"] == "CLEAN" else " " + ",".join(c["codes"])))
+            for ln in c["revision"]:
+                say("        " + ln)
+        out.append({"prompt": prompt, "id": rid, "entry": e, "candidates": cands})
+    invoked = all(x["entry"].get("provider") and x["entry"].get("usage") and x["entry"]["usage"]["input_tokens"] > 0
+                  and x["entry"]["usage"]["output_tokens"] > 0 for x in out)
+    lines = [set(ln for c in x["candidates"] for ln in c["revision"]) for x in out]
+    answered = all(x["entry"].get("outcome") == "DONE" and x["candidates"] for x in out)
+    differ = answered and len(out) > 1 and all(a != b for i, a in enumerate(lines) for b in lines[i + 1:])
+    say("invoked: %s" % ("yes: the provider reported its model and its tokens for every request (%d in, %d out in all)" % (
+        sum(x["entry"]["usage"]["input_tokens"] for x in out), sum(x["entry"]["usage"]["output_tokens"] for x in out)) if invoked
+        else "NOT SHOWN: a request failed, or the provider reported no tokens"))
+    say("the answers depend on the prompt: %s" % ("yes: no two prompts were answered with the same revision lines" if differ else
+        "NOT SHOWN: a prompt was not answered" if not answered else "NO: two prompts were answered with the same revision lines"))
+    shown = invoked and differ
+    say("PROBE %s" % ("SHOWN" if shown else "NOT SHOWN"))
+    live.stopping = True
+    return shown, out
+
+
+def report(brief="plaza-night", root=None, say=print):
+    """Every recorded request of a brief, by provider configuration: the owner's comparison (2026-10-11), "invalid-output
+    and timeout rates; latency and cost per accepted edit", from art/build/studio/BRIEF/requests.jsonl."""
+    path = os.path.join(os.path.abspath(root) if root else REPO, "art", "build", "studio", brief, "requests.jsonl")
+    try:
+        log = [json.loads(ln) for ln in open(path, "rb").read().splitlines() if ln.strip()]
+    except OSError:
+        say("REPORT  no requests recorded for %s (%s)" % (brief, path))
+        return 0
+    by, of = {}, {}
+    for e in log:
+        if "outcome" not in e:
+            continue
+        k = os.path.basename(e.get("config", "?"))
+        of[e["id"]] = k
+        b = by.setdefault(k, {"requests": 0, "probe": 0, "done": 0, "codes": {}, "ms": [], "models": set(), "verdicts": {}, "admitted": 0,
+                              "tin": 0, "tout": 0, "cost": 0.0, "costed": 0})
+        b["requests"] += 1
+        b["probe"] += 1 if e.get("origin") == "probe" else 0
+        if e["outcome"] == "DONE":
+            b["done"] += 1
+        else:
+            b["codes"][e["outcome"]] = b["codes"].get(e["outcome"], 0) + 1
+        if "provider_ms" in e:
+            b["ms"].append(e["provider_ms"])
+        if e.get("provider"):
+            b["models"].add(e["provider"]["model"])
+        for c in e.get("candidates", []):
+            b["verdicts"][c["verdict"]] = b["verdicts"].get(c["verdict"], 0) + 1
+        u = e.get("usage")
+        if u:
+            b["tin"] += u["input_tokens"]
+            b["tout"] += u["output_tokens"]
+            if u["cost_usd"] is not None:
+                b["cost"] += u["cost_usd"]
+                b["costed"] += 1
+    for e in log:
+        if e.get("decision") == "admit" and e.get("id") in of:
+            by[of[e["id"]]]["admitted"] += 1
+    say("REPORT  %s  (%s)" % (brief, path))
+    for k in sorted(by):
+        b = by[k]
+        ms = sorted(b["ms"])
+        med = (ms[(len(ms) - 1) // 2] + ms[len(ms) // 2]) / 2000.0 if ms else 0.0
+        invalid = sum(v for c, v in b["codes"].items() if c.startswith("STUDIO-RESPONSE-"))
+        say("%s  models %s" % (k, ", ".join(sorted(b["models"])) or "-"))
+        say("    %d requests (%d by the probe), %d answered; invalid output %d, timeouts %d, provider errors %d, cancelled or superseded %d" % (
+            b["requests"], b["probe"], b["done"], invalid, b["codes"].get("STUDIO-TIMEOUT", 0), b["codes"].get("STUDIO-PROVIDER-EXIT", 0) + b["codes"].get("STUDIO-PROVIDER-START", 0),
+            b["codes"].get("STUDIO-CANCELLED", 0) + b["codes"].get("STUDIO-SUPERSEDED", 0)))
+        say("    the provider's time: median %.2f s, longest %.2f s" % (med, ms[-1] / 1000.0 if ms else 0.0))
+        say("    candidates: %s; admitted from the page: %d" % (", ".join("%s %d" % kv for kv in sorted(b["verdicts"].items())) or "none", b["admitted"]))
+        say("    tokens: %d in, %d out%s" % (b["tin"], b["tout"], "; reported cost ~$%.3f over %d requests%s" % (
+            b["cost"], b["costed"], ", ~$%.3f an admitted edit" % (b["cost"] / b["admitted"]) if b["admitted"] else ", no admitted edit") if b["costed"] else ""))
+    return 0
+
+
 # ------------------------------------------------------------------------------------------------ commands
 def main(argv):
     if argv == ["schema"]:
@@ -556,7 +750,17 @@ def main(argv):
         sys.path.insert(0, HERE)
         import play   # noqa: E402  (the gateway is tested through the launcher that hosts it)
         return play.studio_selftest()
-    print("usage: python art/studio.py selftest | schema", file=sys.stderr)
+    opt = lambda k: argv[argv.index(k) + 1] if k in argv and argv.index(k) + 1 < len(argv) else None
+    if argv[:1] == ["probe"] and len(argv) >= 2:
+        try:
+            shown, _out = probe(argv[1], opt("--brief") or "plaza-night", opt("--piece") or PROBE_PIECE, root=opt("--root"))
+        except StudioError as e:
+            print("PROBE  %s" % e, file=sys.stderr)
+            return 2
+        return 0 if shown else 1
+    if argv[:1] == ["report"]:
+        return report(opt("--brief") or "plaza-night", opt("--root"))
+    print("usage: python art/studio.py selftest | schema | probe CONFIG.json [--brief B] [--piece ID] | report [--brief B]", file=sys.stderr)
     return 2
 
 

@@ -534,7 +534,7 @@ def start_studio(live, config, say=print):
     own = os.path.abspath(os.path.join(ROOT, "art", "briefs", live.brief + ".art"))
     if live.art_path and os.path.abspath(live.art_path) != own:
         cfg, err = None, "the studio edits %s; --art plays another file" % os.path.relpath(own, REPO)
-    live.studio = studio.Gateway(Host(live), live.brief, cfg, ROOT)
+    live.studio = studio.Gateway(Host(live), live.brief, cfg, ROOT, say=say)
     live.studio.error = err
     if config or err:
         say("studio: %s" % (err or "the director %s (%s); Enter in the page summons it, E selects" % (cfg["model"], os.path.relpath(cfg["path"], REPO))))
@@ -590,6 +590,8 @@ def main(argv):
     except KeyboardInterrupt:
         pass
     live.stopping = True
+    if live.studio:
+        live.studio.shutdown()
     srv.shutdown()
     return 0
 
@@ -745,6 +747,29 @@ TEST_PROVIDERS = {
     "slow.py": "import sys, time, os; sys.stdin.read(); time.sleep(20); open(os.environ.get('STUDIO_TEST_MARK', os.devnull), 'w').write('ran to the end')",
     "crash.py": "import sys; sys.stdin.read(); sys.stderr.write('the model is unavailable: 503\\n'); sys.exit(3)",
     "huge.py": "import sys; sys.stdin.read(); sys.stdout.write('x' * 200000)",
+    "bad_usage.py": "import sys, json; r = json.load(sys.stdin); print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't', 'usage': {'input_tokens': -5, 'output_tokens': 1, 'cost_usd': None, 'cost_basis': ''}}, 'candidates': []}))",
+    "spawner.py": ("import sys, subprocess, time, os; sys.stdin.read()\n"
+                   "subprocess.Popen([sys.executable, '-c', 'import time, os, sys; time.sleep(2); open(sys.argv[1], \"w\").write(\"outlived\")', os.environ['STUDIO_TEST_CHILD']])\n"
+                   "time.sleep(30)"),
+    # a stand-in for Claude Code's CLI (art/providers/claude_code.py runs it through VERDANDI_CLAUDE): it records what it was
+    # given, and answers as `claude -p --output-format stream-json` does, in the way FAKE_CLAUDE names
+    "fake_claude.py": ("import sys, json, os, time\n"
+                       "a = sys.argv[1:]; text = sys.stdin.read(); mode = os.environ.get('FAKE_CLAUDE', 'ok')\n"
+                       "opt = lambda k: a[a.index(k) + 1] if k in a else None\n"
+                       "sp = opt('--system-prompt-file'); system = open(sp, encoding='utf-8').read() if sp else None\n"
+                       "json.dump({'argv': a, 'stdin': text, 'system': system, 'cwd': os.getcwd(), 'cwd_files': sorted(os.listdir('.'))}, open(os.environ['FAKE_CLAUDE_SEEN'], 'w'))\n"
+                       "emit = lambda e: (sys.stdout.write(json.dumps(e) + '\\n'), sys.stdout.flush())\n"
+                       "tools = ['StructuredOutput', 'Bash', 'mcp__browser__navigate'] if mode == 'tools' else ['StructuredOutput']\n"
+                       "emit({'type': 'system', 'subtype': 'init', 'model': 'fake-sonnet', 'tools': tools, 'mcp_servers': []})\n"
+                       "if mode == 'tools':\n"
+                       "    time.sleep(3); open(os.environ['STUDIO_TEST_CHILD'], 'w').write('answered'); sys.exit(0)\n"
+                       "stmt = [ln.split(': ', 1)[1].split(' ; key')[0] for ln in text.splitlines() if ln.startswith('61: ')][0]\n"
+                       "cand = {'title': 'Heavier section', 'rationale': 'deeper', 'revision': ['= ' + stmt + ' deep 2.4'], 'scope': ['plaza/canopy/*'], 'preserve': ['the route']}\n"
+                       "if mode == 'extra': cand['note'] = 'a field the schema does not have'\n"
+                       "usage = {'input_tokens': 3, 'cache_creation_input_tokens': 4000, 'cache_read_input_tokens': 100, 'output_tokens': 250}\n"
+                       "if mode == 'retries': emit({'type': 'result', 'subtype': 'error_max_structured_output_retries', 'is_error': True, 'result': ''}); sys.exit(1)\n"
+                       "if mode == 'auth': emit({'type': 'result', 'subtype': 'error_during_execution', 'is_error': True, 'result': 'Not logged in. Please run /login'}); sys.exit(1)\n"
+                       "emit({'type': 'result', 'subtype': 'success', 'is_error': False, 'result': '', 'structured_output': {'candidates': [cand]}, 'usage': usage, 'total_cost_usd': 0.0123})\n"),
     "four.py": ("import sys, json; r = json.load(sys.stdin); st = r['selection']['statement']['text']\n"
                 "c = lambda d: {'title': 'Deep ' + d, 'rationale': 'deeper', 'revision': ['= ' + st + ' deep ' + d], 'scope': ['plaza/canopy/*'], 'preserve': []}\n"
                 "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, 'candidates': [c(d) for d in ('1.0', '1.5', '2.0', '2.5')]}))"),
@@ -916,6 +941,8 @@ def studio_selftest():
         row("a provider that writes no JSON: refused whole, the world as it was", ok and len(live.state()["slots"]) == 1, r["code"] + ": " + r["message"][:70])
         ok, r = failing("wrong id", "wrong_id", [py, os.path.join(tmp, "wrong_id.py")], "STUDIO-RESPONSE-ID")
         row("a response to another request: refused", ok, r["message"][:90])
+        ok, r = failing("bad usage", "bad_usage", [py, os.path.join(tmp, "bad_usage.py")], "STUDIO-RESPONSE-FIELD")
+        row("a provider's usage that is not counts: refused whole", ok, r["message"][:90])
         ok, r = failing("four", "four", [py, os.path.join(tmp, "four.py")], "STUDIO-RESPONSE-CANDIDATES")
         row("a response of four candidates: refused whole, not cut to three", ok and not r["candidates"], r["message"][:90])
         g = start_studio(live, cfg("one_bad", [py, os.path.join(tmp, "one_bad.py")]), say=lambda s: None)
@@ -968,6 +995,7 @@ def studio_selftest():
                     text = body["messages"][0]["content"]
                     stmt = [ln.split(": ", 1)[1].split(" ; key")[0] for ln in text.splitlines() if ln.startswith("61: ")][0]
                     out = {"id": "msg_test", "type": "message", "role": "assistant", "model": "mock-" + body["model"], "stop_reason": "tool_use",
+                           "usage": {"input_tokens": 1234, "output_tokens": 56},
                            "content": [{"type": "tool_use", "id": "toolu_test", "name": "propose_candidates",
                                         "input": {"candidates": [{"title": "Heavier section", "rationale": "deeper", "revision": ["= " + stmt + " deep 2.4"],
                                                                   "scope": ["plaza/canopy/*"], "preserve": ["the route"]}]}}]}
@@ -1011,6 +1039,87 @@ def studio_selftest():
                     os.environ.pop(k, None)
                 else:
                     os.environ[k] = v
+        # a provider's own children die with it: the process group (POSIX) or taskkill /T (Windows)
+        child_mark = os.path.join(tmp, "child.ran")
+        os.environ["STUDIO_TEST_CHILD"] = child_mark
+        ok, r = failing("child", "spawner", [py, os.path.join(tmp, "spawner.py")], "STUDIO-CANCELLED", cancel_after=0.6)
+        time.sleep(3.0)
+        row("a cancelled provider's own children killed with it", ok and not os.path.exists(child_mark),
+            "the provider started a command that would write a mark after 2 s; cancelled at 0.6 s, no mark at 3.6 s" if not os.path.exists(child_mark) else "the child outlived the cancellation")
+
+        # what is recorded of every call: the exit status, whether the response was valid, the time, the usage
+        log = [json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()]
+        done = [e for e in log if e.get("outcome") == "DONE" and e.get("model") == "scripted-1"]
+        bad = [e for e in log if e.get("outcome") == "STUDIO-RESPONSE-JSON"]
+        crashed = [e for e in log if e.get("outcome") == "STUDIO-PROVIDER-EXIT" and "503" in e.get("detail", "")]
+        api = [e for e in log if e.get("outcome") == "DONE" and (e.get("provider") or {}).get("name") == "anthropic-messages"]
+        row("each call recorded with its exit status, validity, time and usage", done and all(e.get("exit") == 0 and e.get("valid") is True and e.get("provider_ms", -1) >= 0 for e in done)
+            and bad and bad[-1].get("exit") == 0 and bad[-1].get("valid") is False and crashed and crashed[-1].get("exit") == 3 and "valid" not in crashed[-1]
+            and api and api[-1].get("usage") == {"input_tokens": 1234 + 0, "output_tokens": 56, "cost_usd": None, "cost_basis": "not computed here: token counts as the API reported them"}
+            and not any("test-key-not-a-real-one" in ln for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), encoding="utf-8")),
+            "scripted: exit 0, valid; not JSON: exit 0, not valid; 503: exit 3; the API's tokens as it counted them; no key in the log")
+
+        # Claude Code's CLI, through art/providers/claude_code.py, with a stand-in for claude
+        seen_path = os.path.join(tmp, "fake_claude.seen")
+        saved_env = {k: os.environ.get(k) for k in ("VERDANDI_CLAUDE", "FAKE_CLAUDE", "FAKE_CLAUDE_SEEN", "VERDANDI_DIRECTOR_MODEL")}
+        said = []
+        try:
+            os.environ.update(VERDANDI_CLAUDE=os.path.join(tmp, "fake_claude.py"), FAKE_CLAUDE="ok", FAKE_CLAUDE_SEEN=seen_path, VERDANDI_DIRECTOR_MODEL="sonnet")
+            os.environ.pop("STUDIO_TEST_CHILD", None)
+            os.environ["STUDIO_TEST_CHILD"] = os.path.join(tmp, "claude.answered")
+            g = start_studio(live, os.path.join(REPO, "art", "providers", "claude_code.json"), say=said.append)
+            rid = g.ask("heavier, a deeper section", piece, cam)
+            r = wait(g, rid)
+            seen = json.loads(open(seen_path, encoding="utf-8").read())
+            a = seen["argv"]
+            opt_ = lambda k: a[a.index(k) + 1] if k in a else None
+            sys.path.insert(0, os.path.join(REPO, "art", "providers"))
+            import director_prompt
+            flags = (opt_("--tools") == "" and opt_("--disallowedTools") == "mcp__*" and "--strict-mcp-config" in a and "--safe-mode" in a
+                     and "--no-session-persistence" in a and opt_("--permission-mode") == "dontAsk" and opt_("--output-format") == "stream-json"
+                     and json.loads(opt_("--json-schema")) == studio.SCHEMA and opt_("--model") == "sonnet" and seen["system"] == director_prompt.SYSTEM
+                     and "heavier, a deeper section" in seen["stdin"] and "heavier" not in " ".join(a) and seen["cwd_files"] == ["system.txt"]
+                     and os.path.realpath(seen["cwd"]) != os.path.realpath(REPO))
+            e = [x for x in (json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()) if x.get("id") == rid][-1]
+            row("Claude Code's CLI: tools off, no session, the schema and the request given; its structured output read back",
+                flags and r["state"] == "done" and len(r["candidates"]) == 1 and r["candidates"][0]["verdict"] == "CLEAN" and r["provider"]["model"] == "fake-sonnet"
+                and e.get("usage") == {"input_tokens": 4103, "output_tokens": 250, "cost_usd": 0.0123, "cost_basis": "Claude Code's own client-side estimate"}
+                and any(ln.startswith("STUDIO  " + rid + "  claude-code (fake-sonnet)") and "A CLEAN" in ln for ln in said),
+                "--tools \"\" --disallowedTools mcp__* --strict-mcp-config --safe-mode --no-session-persistence --permission-mode dontAsk, the gateway's schema, "
+                "director_prompt's system text, the prompt on stdin only, an empty folder; the model and usage it reported recorded")
+            os.environ["FAKE_CLAUDE"] = "tools"
+            rid = g.ask("heavier", piece, cam)
+            r = wait(g, rid, 90)
+            time.sleep(3.5)
+            row("Claude Code offering a tool beyond its structured output: stopped, its answer never used",
+                r["code"] == "STUDIO-PROVIDER-EXIT" and "Bash" in r["message"] and not os.path.exists(os.environ["STUDIO_TEST_CHILD"]) and live.slot(0)["sha"] == s0,
+                r["message"][:120])
+            os.environ["FAKE_CLAUDE"] = "extra"
+            rid = g.ask("heavier", piece, cam)
+            r = wait(g, rid)
+            row("its schema enforcement not relied on: a fifth field refused by the gateway itself", r["code"] == "STUDIO-RESPONSE-FIELD", r["message"][:100])
+            os.environ["FAKE_CLAUDE"] = "retries"
+            rid = g.ask("heavier", piece, cam)
+            r = wait(g, rid)
+            row("Claude Code out of structured-output retries: said, the world as it was", r["code"] == "STUDIO-PROVIDER-EXIT" and "error_max_structured_output_retries" in r["message"], r["message"][:100])
+            os.environ["FAKE_CLAUDE"] = "auth"
+            rid = g.ask("heavier", piece, cam)
+            r = wait(g, rid)
+            row("Claude Code not logged in: said", r["code"] == "STUDIO-PROVIDER-EXIT" and "Not logged in" in r["message"], r["message"][:100])
+            shim = os.path.join(tmp, "claude.cmd")
+            open(shim, "w").write("@echo off\n")
+            os.environ["VERDANDI_CLAUDE"] = shim
+            os.remove(seen_path)
+            rid = g.ask("heavier", piece, cam)
+            r = wait(g, rid)
+            row("a claude that only a shell can run (.cmd): refused, nothing run", r["code"] == "STUDIO-PROVIDER-EXIT" and "claude.exe" in r["message"] and not os.path.exists(seen_path), r["message"][:110])
+        finally:
+            for k, v in saved_env.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+            os.environ.pop("STUDIO_TEST_CHILD", None)
         st0 = live.state()["slots"][0]
         row("the brief served throughout", st0["ok"] and live.slot(0)["sha"] == s0, "scene %s%s" % (s0[:12], "" if st0["ok"] else "; " + st0["message"][:200]))
     finally:

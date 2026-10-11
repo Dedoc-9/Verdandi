@@ -1,0 +1,1 @@
+{"provider": "cli", "argv": ["{python}", "art/providers/claude_code.py"], "model": "Claude, through Claude Code's CLI (claude -p; VERDANDI_DIRECTOR_MODEL or its default)", "timeout_s": 240, "max_output_bytes": 262144}

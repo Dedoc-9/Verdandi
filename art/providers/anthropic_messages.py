@@ -12,10 +12,11 @@
 #   VERDANDI_DIRECTOR_API     the endpoint, https://api.anthropic.com/v1/messages if not set
 #
 # It reads a VERDANDI-STUDIO-REQUEST 0 on standard input and writes a VERDANDI-STUDIO-RESPONSE 0 on standard output
-# (art/STUDIO.md). The model is given the request (the prompt, the selection and its statement, the camera, the brief's
-# statements, the language's reference and the revision syntax) and a single tool whose input schema is the response
-# schema the request carries; it is made to call that tool, so that its answer has the schema's shape rather than
-# being prose read for JSON. What it proposes is then the gateway's to refuse and the director's to judge: nothing it
+# (art/STUDIO.md). The model is given the request as director_prompt.py renders it for every provider (the prompt, the
+# selection and its statement, the camera, the brief's statements, the language's reference and the revision syntax),
+# and a single tool whose input schema is the response schema the request carries; it is made to call that tool, so
+# that its answer has the schema's shape rather than being prose read for JSON. The response names the model the API
+# says answered and the tokens it counted (no cost: prices are not this file's to know). What it proposes is then the gateway's to refuse and the director's to judge: nothing it
 # says reaches the world but through them. An error (no key, an HTTP failure, an answer without the tool's call) is
 # written to standard error and the exit status is not 0, which the gateway shows; the world is untouched.
 #
@@ -28,24 +29,10 @@ import sys
 import urllib.error
 import urllib.request
 
+import director_prompt   # beside this file: the system text and the request as the model reads it, shared by the providers
+
 ENDPOINT = "https://api.anthropic.com/v1/messages"
 TOOL = "propose_candidates"
-SYSTEM = """You are the art director's assistant inside Verðandi, a studio where a designer changes a running game world
-by describing what they want. You do not edit the world. You propose at most three candidate revisions of the world's
-art file (its brief), each a short list of revision lines, and the studio checks, compiles and previews them; the
-designer admits one or none.
-
-Rules for every candidate:
-- Change the look only: the statements of the art file. Walls, floors, cover, spawns and the player's route belong to
-  the map and cannot be changed here.
-- Write each revision line exactly as the request's revision syntax says: '= <statement>' replaces the statement with
-  the same key, '+ <statement>' adds one whose key is new, '- <key>' removes one. Keep every word of a statement you
-  do not mean to change.
-- Declare in scope every address the candidate changes (region/kind/* for the pieces a statement makes, material/NAME
-  for a material); anything outside the scope must stay exactly as it is, or the candidate is refused.
-- Anything overhead must clear the reach ceiling; a change that puts dressing where a player can be is refused.
-- Make the candidates genuinely different answers to the prompt, and say in each rationale what it does and why.
-- If the prompt cannot be answered within these rules, propose no candidates."""
 
 
 def fail(msg, code=2):
@@ -59,25 +46,11 @@ def ask(req):
         raise RuntimeError("ANTHROPIC_API_KEY is not set in the environment play.py was started from")
     if not model:
         raise RuntimeError("VERDANDI_DIRECTOR_MODEL is not set: name the model to ask")
-    sel = req.get("selection")
-    lines = ["The designer's prompt: " + req["prompt"], ""]
-    if sel:
-        st = sel.get("statement") or {}
-        lines += ["The designer selected %s (material %s), made by line %s of the brief: %s" % (sel["address"], sel.get("material") or "-", st.get("line"), st.get("text")),
-                  "Its address patterns: " + ", ".join(sel["patterns"]), ""]
-    else:
-        lines += ["Nothing is selected: the prompt is for the whole world.", ""]
-    if req.get("camera"):
-        c = req["camera"]
-        lines += ["The designer stands at x %.1f, z %.1f (metres; a cell is 2 m), eye height %.1f m, facing %.0f degrees (0 north, 90 east), looking %.0f degrees up." % (
-            c["x"], c["z"], c["y"], c["yaw_deg"], c["pitch_deg"]), ""]
-    lines += ["The brief's statements (line: text; key):"] + ["%d: %s ; key %s" % (s["line"], s["text"], s["key"]) for s in req["statements"]]
-    lines += ["", "The revision syntax: " + req["revision_syntax"], "", req.get("language", "")]
-    body = {"model": model, "max_tokens": 4096, "system": SYSTEM,
+    body = {"model": model, "max_tokens": 4096, "system": director_prompt.SYSTEM,
             "tools": [{"name": TOOL, "description": "Propose at most %d candidate revisions of the brief." % req["respond"]["max_candidates"],
                        "input_schema": req["respond"]["schema"]}],
             "tool_choice": {"type": "tool", "name": TOOL},
-            "messages": [{"role": "user", "content": "\n".join(lines)}]}
+            "messages": [{"role": "user", "content": director_prompt.user_text(req)}]}
     http = urllib.request.Request(os.environ.get("VERDANDI_DIRECTOR_API", ENDPOINT), data=json.dumps(body).encode("utf-8"), method="POST",
                                   headers={"content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01"})
     try:
@@ -91,16 +64,20 @@ def ask(req):
     calls = [b for b in ans.get("content", []) if b.get("type") == "tool_use" and b.get("name") == TOOL]
     if not calls or not isinstance(calls[0].get("input"), dict):
         raise RuntimeError("the answer holds no call of %s (stop reason %s)" % (TOOL, ans.get("stop_reason")))
-    return ans.get("model") or model, calls[0]["input"].get("candidates", [])
+    u = ans.get("usage") or {}
+    tin = sum(u.get(k) or 0 for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens") if isinstance(u.get(k), int))
+    usage = {"input_tokens": tin, "output_tokens": u.get("output_tokens") if isinstance(u.get("output_tokens"), int) else 0,
+             "cost_usd": None, "cost_basis": "not computed here: token counts as the API reported them"}
+    return ans.get("model") or model, calls[0]["input"].get("candidates", []), usage
 
 
 def main():
     try:
         req = json.loads(sys.stdin.buffer.read().decode("utf-8"))
-        model, cands = ask(req)
+        model, cands, usage = ask(req)
     except (RuntimeError, ValueError, KeyError, TypeError) as e:
         return fail(str(e))
-    out = {"format": "VERDANDI-STUDIO-RESPONSE", "version": "0", "id": req["id"], "provider": {"name": "anthropic-messages", "model": model}, "candidates": cands}
+    out = {"format": "VERDANDI-STUDIO-RESPONSE", "version": "0", "id": req["id"], "provider": {"name": "anthropic-messages", "model": model, "usage": usage}, "candidates": cands}
     sys.stdout.buffer.write(json.dumps(out, sort_keys=True).encode("utf-8"))
     return 0
 
