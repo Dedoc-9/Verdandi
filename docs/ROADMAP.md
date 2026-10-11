@@ -167,9 +167,9 @@ DIRECTOR-0       the owner's ruling (2026-10-10): the operator loop for prompted
       ↓
 NATIVE-PLAZA-0   the owner's rulings (2026-10-10, 2026-10-11): Verðandi-native the primary architecture, Unreal 5.8 a secondary path; the plaza played in the browser through an art-owned launcher (art/play.py) and a WebGL 2 renderer, the graybox's simulation moving against C; two rounds evaluated, not yet chosen; live edits (2026-10-11): an edit to the brief or to a candidate intent drawn in the running page, the game untouched, a refused edit leaving the scene before it
       ↓
-DET-MATH-0       the owner's ruling (2026-10-11), outside the gate: the simulation's rules made portable. Every function whose last bits the language leaves to the engine and that reached the authoritative state (sin, cos, hypot, atan2) replaced by fdlibm's algorithms and exact square roots, built from operations ECMA-262 fixes; the rules versioned (1), rules 0 kept as the baseline; held by rules-arithmetic and math-fence in the self-test and by graybox/rules_ref.py; the same bits measured in two V8 engines and CPython; ACCEPTED by the owner (2026-10-11), cross-browser equivalence NOT ESTABLISHED until Firefox and Chromium are compared on one machine
+DET-MATH-0       the owner's ruling (2026-10-11), outside the gate: the simulation's rules made portable. Every function whose last bits the language leaves to the engine and that reached the authoritative state (sin, cos, hypot, atan2) replaced by fdlibm's algorithms and exact square roots, built from operations ECMA-262 fixes; the rules versioned (1), rules 0 kept as the baseline; held by rules-arithmetic and math-fence in the self-test and by graybox/rules_ref.py; the same bits measured in two V8 engines and CPython; ACCEPTED by the owner (2026-10-11), cross-browser equivalence NOT ESTABLISHED until Firefox and Chromium are compared on one machine; compared on his machine the same day: Firefox 157 and Edge 155 on the same recorded inputs, every rules-1 snapshot the same at every tick of the tactical map's three runs (MEASURED once; whether that moves the row is his to rule)
       ↓
-TICK-REF-0       the owner's ruling (2026-10-11), "NEXT": a second, independent implementation of the full tick, in Python, from a written specification (graybox/RULES-1.md), verifying a browser's trace tick by tick and naming the first differing field; the same bytes as Chromium 141 and node 22 at every tick of both maps' runs; outside the gate
+TICK-REF-0       the owner's ruling (2026-10-11), "NEXT": a second, independent implementation of the full tick, in Python, from a written specification (graybox/RULES-1.md), verifying a browser's trace tick by tick and naming the first differing field; the same bytes as Chromium 141 and node 22 at every tick of both maps' runs, and as Firefox 157 on his machine (the tactical map); accepted provisionally by the owner (2026-10-11); outside the gate
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -2890,6 +2890,34 @@ family (`chromium-given.json` is a Chromium engine's), a `--name` that names a f
 browser, two builds of one family, or cross-engine. Its self-test holds the engine families of five browsers'
 descriptions and both verdicts.
 
+**The two browsers on one machine (2026-10-11).** 0196 and 0197 applied as trees `b0b5f0ff…` and `e5f313ef…`, as
+predicted. With `trace.py run tactical --inputs graybox/build/trace/tactical/firefox.json`, Edge 155 (`--browser
+msedge`; it described itself as `Chrome/155` and `Edg/155`, a Chromium engine, and the trace was accepted as one) and
+Firefox 157 (`--browser firefox`) played the runs his Firefox had recorded (given-runs digest `c97d5035…`), and
+`compare` called the pair cross-engine, Firefox against Chromium. Under rules 1: no call of the engine's `Math` in
+either, and every snapshot the same bytes at every tick of the walk (1,787 ticks), the fight (476) and the stress run
+(3,600). Under rules 0, the same machine and the same inputs: `Math.sin` different on 103 of 4,307 common arguments,
+`Math.cos` on 98 of 4,307, `Math.hypot` on 1,414 of 4,084, each difference shown one ulp; the first differing call the
+1,424th, at the walk's tick 475, in a result (`hypot(0.14834045293008993, -0.9889363528683207)`: 1.0 in Firefox,
+0.9999999999999999 in Edge); the walk's and the fight's states still the same at every tick, and the stress run's
+parted at tick 490, in `x`, by one ulp. The gate 251 rows / 0 fail; pushed `0430b6c..514a45e`.
+
+So the comparison his ruling named has been made once: on one machine, on one map's three runs, field by field,
+rules 1's states are the same in SpiderMonkey and in V8, and rules 0's are not. MEASURED once. Not the witness level,
+not another machine's Firefox, not JavaScriptCore, not other builds. Whether it moves rules 1's cross-browser
+equivalence from NOT ESTABLISHED is his to rule. Three things the same run shows besides, each OBSERVED in these runs
+only:
+
+- Rules 1's digests of every tick's state on these inputs (the walk `207902ce…`, the fight `33e990dd…`, the stress
+  `5b068df4…`) are those Chromium 141 and node 22 gave in the build container: three V8s on two machines,
+  SpiderMonkey, and (through `tick_ref.py`, below) CPython.
+- The runs his Firefox recorded itself under rules 1 are, byte for byte, the runs Chromium 141 recorded in the
+  container (the same given-runs digest, `c97d5035…`): the bot's walk, which calls atan2 and hypot at every tick, and
+  the fight's start came out the same in both engines.
+- Under rules 0, the stress run's digest is the same in every V8 measured (node 22 and Chromium 141 in the container,
+  Edge 155 on his machine: `6faecae7…`) and in both Firefox runs (`99015929…`): in these runs, rules 0's states were
+  a property of the engine family, not of the machine.
+
 ### TICK-REF-0 — the tick a second time, in Python · **the owner's ruling** (2026-10-11): "Full Python simulation tick — NEXT"; outside the certified gate · **built** (`graybox/RULES-1.md`, `graybox/tick_ref.py`)
 
 **His ruling.** *"Browser JavaScript records the input sequence. Python independently advances the authoritative
@@ -2931,6 +2959,20 @@ things.
 **What it does not show.** The owner's limits: not a server's security, a protocol, or resistance to malicious inputs.
 Nor that the bot's input generation is the same in Python (it is not implemented here; the stress run's inputs are).
 Firefox's and Chromium's traces on his machine are the next measurement for it, as for DET-MATH-0.
+
+**On the owner's machine (2026-10-11).** `tick_ref.py verify` on his Firefox 157's own trace: the map converted there
+with the trace's digests (canonical `9e179490cafe`, collision `467b52595504`), every snapshot of the walk (1,787 ticks),
+the fight (476) and the stress run (3,600) the same bytes as Firefox's, and the stress run's inputs and start made
+again the same: `TICK REFERENCE VERIFIED`, 5,863 ticks. Its self-test on Firefox's given-runs trace passed: the trace
+verifies, the constants are `sim.js`'s, both plants in the trace found at their ticks (1,000, in `x`; 300), and the six
+plants in the reference each found exactly where the container's self-test finds them (the fight at tick 23, the
+stress run at 679, the fight at 1, the fight at 300, the walk at 475, the walk at 961). So the Python tick gives the
+same bytes as SpiderMonkey, as well as V8, on the tactical map's three runs: MEASURED once. Edge's own trace was not
+given to `verify` (the command was in the list and not run). Its snapshots are Firefox's byte for byte (`compare`,
+above), so they are the Python tick's too by that comparison; the direct run is among the next commands.
+
+**His ruling.** *"I'd accept 0196/0197 provisionally from the reported results, then build this as the next vertical
+slice"*: the Python bot that records the walk (BOT-REF-0).
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

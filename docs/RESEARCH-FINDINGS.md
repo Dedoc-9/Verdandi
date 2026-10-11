@@ -224,6 +224,29 @@ and their outputs are given.
   container's Chromium 141 and node 22 on the same inputs; under rules 0 the stress run's do not. OBSERVED once, across
   two machines, at the level of a digest. The owner's ruling keeps cross-browser equivalence NOT ESTABLISHED until a
   field-level comparison of Firefox and Chromium on one machine; the run meant for it played Firefox twice.
+- **Firefox 157 against Edge 155, on one machine (2026-10-11).** The owner's machine, the tactical map, both browsers
+  playing the runs his Firefox had recorded, each trace accepted from the engine family `--browser` named:
+
+  | function, rules 0 | arguments both runs passed | results that differ |
+  |---|---|---|
+  | `Math.sin` | 4,307 | 103 |
+  | `Math.cos` | 4,307 | 98 |
+  | `Math.hypot` | 4,084 | 1,414 |
+  | `Math.atan2`, `Math.sqrt` | not called (the runs were given, so no bot ran) | |
+
+  Each difference shown was one ulp. The first differing call was the 1,424th, at the walk's tick 475, in a result:
+  `hypot(0.14834045293008993, -0.9889363528683207)`, 1.0 in Firefox and 0.9999999999999999 in Edge, the argument
+  and the split the container's Chromium 141 had shown. Under rules 0 the walk's and the fight's states were still the
+  same at every tick, and the stress run's parted at tick 490, in `x`, by one ulp. Under rules 1 neither engine called
+  its `Math`, and every snapshot of the three runs was the same bytes at every tick. MEASURED once, one machine, these
+  two engines.
+  - What it shows. The machine is the same, so the rules-0 differences are the engines'. A third of `hypot`'s results
+    differ between these two, and still rounding absorbed every difference on the walk and the fight; only the stress
+    run, which slides along walls, kept one. So an equal state on most runs is weak evidence that two engines agree,
+    which is why the rules' arithmetic is held result by result (`rules-arithmetic`, `rules_ref.py`) and not by runs
+    alone. Rules 1 removed every such difference on these runs.
+  - What it does not show. The witness level, another machine's Firefox, JavaScriptCore, or other builds of either
+    engine; that either engine has no defect in the operations rules 1 use.
 
 ## R-7 · A browser's clock
 

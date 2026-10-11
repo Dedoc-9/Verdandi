@@ -215,7 +215,7 @@ object), world, collision and ray walks, snapshot writer and reader, and its own
 integer square root). It reads a trace, converts the map the trace names and holds it to the trace's manifest,
 makes the stress run's inputs and start again from integers, and plays every rules-1 run from its start. Measured in
 the build container: Chromium 141's traces and node 22's, on both maps, 5,863 and 5,247 ticks, every snapshot the
-same bytes as the browser's. Its self-test plants a field one bit off and an input changed (each found at its tick)
+same bytes as the browser's; and on the owner's machine, Firefox 157's own trace of the tactical map (5,863 ticks). Its self-test plants a field one bit off and an input changed (each found at its tick)
 and six defects in the Python tick (the height's updates in the wrong order, five halvings for six, the shot's
 direction with the wrong sign, a target standing again at 0, the sine's polynomial cut short, the cells scanned from
 the centre), each found. A defect of one place in the last bit can be absorbed by a run: the plain root of the sum
@@ -224,8 +224,10 @@ tick is held here and the arithmetic, result by result, in `rules_ref.py`.
 
 **What is not shown.** That every engine gives the same bits: ECMA-262 requires it of the operations rules 1 use, and
 the owner's Firefox 157 passed `rules-arithmetic` (its results on all 20,000 arguments as CPython's) and gave the same
-digest of every tick's state as Chromium 141 and node 22 on the tactical map's three runs, but the field-level comparison of Firefox
-and Chromium on one machine, on the same inputs, is still to run (the owner's ruling: NOT ESTABLISHED until it does).
+digest of every tick's state as Chromium 141 and node 22 on the tactical map's three runs; on his machine, Firefox 157
+and Edge 155 then played the same recorded inputs, and every rules-1 snapshot was the same bytes at every tick of
+those three runs (MEASURED once, 2026-10-11; the owner's ruling had kept it NOT ESTABLISHED until that comparison, and
+its grade now is his). Not the witness level, not JavaScriptCore, not every build.
 That an engine has no bug in those operations. That a future change to `sim.js` keeps to the contract, beyond what
 the checks, the plants and the second implementation catch. Anything about a server's security or a network.
 
