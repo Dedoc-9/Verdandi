@@ -22,8 +22,8 @@ are evaluated left to right as written (`a × b × c` is `(a × b) × c`); nothi
 | `sin`, `cos`, `atan2`, `hypot`, `sqrt` | the rules' own (`xsin`, … in `sim.js`, the same algorithms in `rules_ref.py`); never an engine's | fdlibm 5.3's sine, cosine and atan2; correctly rounded square root and hypot |
 | `π` | the double nearest π (`0x400921FB54442D18`) | |
 | `TICK` | `1 ÷ 120` | |
-| an input's flag | true when the input holds the field with a JavaScript-truthy value (true, a non-zero number, a non-empty string) | |
-| an input's number `dyaw`, `dpitch` | the field's value, or `+0` when it is absent, `0`, `−0` or NaN (JavaScript's `x || 0`) | |
+| an input's flag | the field's value, true or false; false when it is absent | an admitted input holds no other value (*The input*, below) |
+| an input's number `dyaw`, `dpitch` | the field's value, or `+0` when it is absent, `0` or `−0` (JavaScript's `x || 0`) | an admitted input holds no NaN or infinity (*The input*) |
 
 ## The constants
 
@@ -60,9 +60,52 @@ A new state for a side: every number 0 but as below, `onGround` true, `onObjecti
 `spawn(side)`: with the side's spawn `(sx, sz, yawDegrees)`: `side`; `x = (sx + 0.5)·cell`; `z = (sz + 0.5)·cell`;
 `feet = groundAt(x, z)`; `vy = 0`; `onGround` true; `yaw = yawDegrees·π ÷ 180`; `pitch = 0`.
 
+## The input (contract 1)
+
+Before a tick, its input is admitted or refused, whole. A refused input changes nothing: not the state, not its count
+of ticks. The tick runs only on an admitted input, and on every admitted input it is the tick below, bit for bit. The
+contract has its own version, 1, apart from the rules'; INPUT-CONTRACT-0 (the owner's ruling of 2026-10-11) wrote it.
+
+An input is admitted when it is a **record** (in JavaScript a plain object: its prototype null or an
+`Object.prototype`, of any realm; in Python a `dict`) and each of its own fields, taken in the order of their names by UTF-16 code units, is one
+of these:
+
+| field | admitted values | when it is absent |
+|---|---|---|
+| `f`, `b`, `l`, `r`, `jump`, `fire`, `reset` | `true` or `false` | false |
+| `side` | `"A"` or `"B"` | the side is not changed |
+| `dyaw`, `dpitch` | a finite number: a binary64 double (in Python a `float`) that is not NaN, `+∞` or `−∞` | `+0` |
+
+No field is required: an empty record is a tick with nothing pressed, as the recorded runs have always had. A finite
+number of any magnitude is admitted: the yaw is reduced by `fmod`, exact for every finite double, and the pitch is held
+to ±1.45, so a turn of the largest double is a defined tick (`web/input_cases.json` holds both implementations to it).
+`−0` is taken as `+0`.
+
+Otherwise the input is refused, with the category of its first fault: first whether it is a record at all, then its
+fields in the order of their names, and in each field the first rule of the table it breaks:
+
+| category | the fault |
+|---|---|
+| `INPUT-NOT-RECORD` | the input is not a record: null, a number, a string, a boolean, a list, an object of another kind |
+| `INPUT-UNKNOWN-FIELD` | a field with another name (`crouch`, `F`, `__proto__`, the empty name, …) |
+| `INPUT-FLAG` | a flag that is not `true` or `false` (`0`, `1`, `"true"`, null, a list, …) |
+| `INPUT-SIDE` | a side that is not `"A"` or `"B"` |
+| `INPUT-NUMBER` | `dyaw` or `dpitch` that is not a number |
+| `INPUT-NOT-FINITE` | `dyaw` or `dpitch` that is NaN, `+∞` or `−∞` |
+
+Two implementations agree on an input when both admit it and reach the same next state, or both refuse it with the
+same category and leave the state as it was. The words of an error and the kind of exception are not part of the
+contract. Non-finite numbers are refused rather than carried: a NaN that reaches the state stays in it, and ECMA-262
+lets each engine choose the bits it writes for a NaN, so a state that holds one has no single snapshot; an infinite
+turn makes the yaw NaN. The pitch's infinities, which its limit would hold, are refused too, so that every number in
+an input has one rule. The record is read once: the tick reads the values the check admitted, not the record again.
+
+The cases both implementations are held to, and the category each refusal must have, are in
+[`web/input_cases.json`](web/input_cases.json).
+
 ## One tick
 
-In this order:
+On an admitted input (*The input*, above), in this order:
 
 1. `tick = tick + 1`.
 2. If the input names a `side`: `spawn(side)`; else if `reset`: `spawn(the state's side)`.

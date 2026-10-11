@@ -11,7 +11,9 @@
 // runs under rules 0 and under rules 1 — the runs it records itself, or the runs the message gives, so that two
 // browsers play the same inputs — logging, in call order, every call of Math.sin, Math.cos, Math.hypot, Math.atan2 and
 // Math.sqrt with its arguments' and its result's bits (under rules 1 there should be none), and every tick's input and
-// snapshot. The wrappers return what the engine returns; the page's realm is never touched.
+// snapshot. The wrappers return what the engine returns; the page's realm is never touched. With `kind: "cases"`
+// (trace.py run --cases), it plays the input contract's table under rules 1 and sends back each step's outcome and
+// state.
 
 importScripts("sim.js");
 
@@ -22,8 +24,11 @@ function encodeInput(Sim, inp) {
   return JSON.stringify(Object.keys(inp).sort().map(function (k) { return [k, typeof inp[k] === "number" ? "f" + Sim.bits(inp[k]) : inp[k]]; }));
 }
 function decodeInput(Sim, text) {
-  const o = {};
-  for (const [k, v] of JSON.parse(text)) o[k] = typeof v === "string" && v.length === 17 && v[0] === "f" ? Sim.fromBits(v.slice(1)) : v;
+  const o = {};   // each field an own property, "__proto__" too (an assignment would set the prototype and lose the field)
+  for (const [k, v] of JSON.parse(text)) {
+    Object.defineProperty(o, k, { value: typeof v === "string" && v.length === 17 && v[0] === "f" ? Sim.fromBits(v.slice(1)) : v,
+                                  enumerable: true, writable: true, configurable: true });
+  }
   return o;
 }
 
@@ -64,6 +69,10 @@ function trace(Sim, map, given) {
 self.onmessage = function (e) {
   const d = e.data, Sim = d.rules === 0 ? self.GrayboxSim.withRules(0) : self.GrayboxSim, saved = {};
   try {
+    if (d.kind === "cases") {   // the input contract's table (web/input_cases.json), under rules 1
+      self.postMessage({ id: d.id, cases: { contract: self.GrayboxSim.INPUT, results: self.GrayboxSim.inputCases(d.map, d.table) } });
+      return;
+    }
     if (d.kind === "trace") {
       self.postMessage({ id: d.id, trace: { rules: { "0": trace(self.GrayboxSim.withRules(0), d.map, d.runs), "1": trace(self.GrayboxSim, d.map, d.runs) } } });
       return;

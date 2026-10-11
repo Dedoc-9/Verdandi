@@ -6,6 +6,7 @@
 #
 #   python graybox/tick_ref.py verify TRACE.json
 #   python graybox/tick_ref.py selftest TRACE.json
+#   python graybox/tick_ref.py cases [RESULTS.json]
 #
 # By the owner's ruling of 2026-10-11: "implement a second, independent version of the full simulation tick in
 # Python", where "Browser JavaScript records the input sequence", "Python independently advances the authoritative
@@ -25,6 +26,12 @@
 # browser's. It trusts nothing the browser computed but the inputs (and the starts of the runs a bot made, which it
 # reads back exactly). `selftest` plants defects in a copy of the trace and in this implementation, and requires each
 # to be found where it was planted.
+#
+# The input contract (RULES-1.md, *The input*; INPUT-CONTRACT-0, the owner's ruling of 2026-10-11): `tick` admits its
+# input or refuses it, whole, before anything of the state is touched. `cases` plays the shared table of hostile inputs
+# (web/input_cases.json) here and holds it to each step's required outcome, with four plants that must break it; given
+# the results a browser sent (graybox/trace.py run --cases), it holds them to the table and to Python, step by step,
+# the outcome and the state.
 #
 # What it does not show: that a server built on it is secure, that inputs from a malicious client are bounded, or
 # anything about a network. Standard library only; it writes nothing.
@@ -416,10 +423,64 @@ PHASES = ("turn", "walk", "fall", "weapon", "stand_again", "objective")
 
 
 def tick(world, s, inp):
-    """One tick of rules 1 (RULES-1.md, *One tick*), on s in place: its phases in their order."""
+    """One tick of rules 1 (RULES-1.md, *One tick*), on s in place: its phases in their order, on the input as the
+    contract admits it (*The input*). A refused input raises InputRefused before anything of s is touched."""
+    a = admit(inp)
+    if isinstance(a, str):
+        raise InputRefused(a)
+    advance(world, s, a)
+
+
+def advance(world, s, a):
+    """The tick itself, on an admitted input."""
     s.tick = s.tick + 1.0
     for name in PHASES:
-        globals()[name](world, s, inp)
+        globals()[name](world, s, a)
+
+
+# ------------------------------------------------------------------------------------------------ the input (contract 1)
+INPUT = 1
+FLAGS = ("b", "f", "fire", "jump", "l", "r", "reset")
+TURNS = ("dpitch", "dyaw")
+
+
+class InputRefused(Exception):
+    def __init__(self, category):
+        super().__init__(category)
+        self.category = category
+
+
+def utf16(name):
+    return name.encode("utf-16-be")
+
+
+def admit(inp, lax=()):
+    """RULES-1.md, *The input*: a copy of the record if the contract admits it, else the category of its first fault
+    (the record, then its fields in the order of their names by UTF-16 code units). `lax` is for the plants alone."""
+    if type(inp) is not dict:
+        return "INPUT-NOT-RECORD"
+    if not all(type(k) is str for k in inp):
+        return "INPUT-UNKNOWN-FIELD"
+    a = {}
+    for k in sorted(inp, key=utf16):
+        v = inp[k]
+        if k in FLAGS:
+            if type(v) is not bool:
+                return "INPUT-FLAG"
+        elif k == "side":
+            if type(v) is not str or v not in ("A", "B"):
+                return "INPUT-SIDE"
+        elif k in TURNS:
+            if type(v) is not float:
+                return "INPUT-NUMBER"
+            if not math.isfinite(v) and not ("nan" in lax and v != v):
+                return "INPUT-NOT-FINITE"
+        elif "unknown" in lax:
+            continue
+        else:
+            return "INPUT-UNKNOWN-FIELD"
+        a[k] = v
+    return a
 
 
 # ------------------------------------------------------------------------------------------------ inputs
@@ -568,6 +629,163 @@ def cmd_verify(path):
         print("%s %s — %s" % ("PASS" if ok else "FAIL", name, detail))
     ok = all(r[1] for r in rows)
     print("TICK REFERENCE %s  %d ticks of %d runs played here and compared" % ("VERIFIED" if ok else "FAILED", total, len(T["rules"]["1"]["runs"])))
+    return 0 if ok else 1
+
+
+# ------------------------------------------------------------------------------------------------ the input contract's cases
+CASES = os.path.join(HERE, "web", "input_cases.json")
+
+
+def load_cases():
+    with open(CASES, encoding="utf-8") as fh:
+        table = json.load(fh)
+    if table.get("format") != "VERDANDI-INPUT-CASES" or table.get("version") != "1" or table.get("contract") != str(INPUT):
+        raise SystemExit("TICK-REF: %s is not a VERDANDI-INPUT-CASES 1 table of contract %d" % (CASES, INPUT))
+    return table
+
+
+def case_value(v):
+    """A value as the table writes it: true, false, null; "f" and a number's bits; "s" and a string; a list; a record."""
+    if v is None or isinstance(v, bool):
+        return v
+    if isinstance(v, str):
+        if len(v) == 17 and v[:1] == "f":
+            return struct.unpack(">d", bytes.fromhex(v[1:]))[0]
+        if v[:1] == "s":
+            return v[1:]
+    if isinstance(v, dict) and set(v) == {"list"}:
+        return [case_value(x) for x in v["list"]]
+    if isinstance(v, dict) and set(v) == {"record"}:
+        return {k: case_value(x) for k, x in v["record"]}
+    raise ValueError("not a value of the table: %r" % (v,))
+
+
+def ticked(world, s, inp):
+    """The contract's outcome of one step: None when the tick ran, else the category."""
+    try:
+        tick(world, s, inp)
+    except InputRefused as e:
+        return e.category
+    return None
+
+
+def run_cases(world, table, step=ticked):
+    out = []
+    for c in table["cases"]:
+        s = State.new(world, "A")
+        start, steps = write_snapshot(s), []
+        for st in c["steps"]:
+            try:
+                r = step(world, s, case_value(st["input"]))
+                got = "tick" if r is None else str(r)
+            except Exception as e:   # noqa: BLE001 (a plant, or a defect: recorded, never carried on)
+                got = "THREW %s" % type(e).__name__
+            steps.append({"got": got, "snap": write_snapshot(s)})
+        out.append({"name": c["name"], "start": start, "steps": steps})
+    return out
+
+
+def case_faults(table, results):
+    """What the table requires: each step's outcome, a refused step's state as before it, same_as."""
+    if len(results) != len(table["cases"]):
+        return ["the results hold %d cases, the table %d" % (len(results), len(table["cases"]))]
+    faults, last = [], {}
+    for c, r in zip(table["cases"], results):
+        if r.get("name") != c["name"] or len(r.get("steps", [])) != len(c["steps"]):
+            faults.append("%s: not the table's case" % c["name"])
+            continue
+        for k, (st, got) in enumerate(zip(c["steps"], r["steps"])):
+            before = r["steps"][k - 1]["snap"] if k else r["start"]
+            if got["got"] != st["expect"]:
+                faults.append("%s, step %d: %s, not %s" % (c["name"], k + 1, got["got"], st["expect"]))
+            elif st["expect"] != "tick" and got["snap"] != before:
+                faults.append("%s, step %d: refused, and the state changed" % (c["name"], k + 1))
+        last[c["name"]] = r["steps"][-1]["snap"]
+    for c in table["cases"]:
+        if c.get("same_as") and last.get(c["name"]) != last.get(c["same_as"]):
+            faults.append("%s: does not end where %s ends" % (c["name"], c["same_as"]))
+    return faults
+
+
+def _after_begun(world, s, inp):
+    s.tick = s.tick + 1.0
+    a = admit(inp)
+    if isinstance(a, str):
+        return a
+    s.tick = s.tick - 1.0
+    advance(world, s, a)
+
+
+def _lax(*how):
+    def step(world, s, inp):
+        a = admit(inp, how)
+        if isinstance(a, str):
+            return a
+        advance(world, s, a)
+    return step
+
+
+def _side_first(world, s, inp):
+    if type(inp) is dict and inp.get("side") in ("A", "B"):
+        spawn(world, s, inp["side"])
+    return ticked(world, s, inp)
+
+
+CASE_PLANTS = [
+    ("the check made after the tick has begun", _after_begun),
+    ("NaN admitted", _lax("nan")),
+    ("an unknown field ignored", _lax("unknown")),
+    ("a side applied before the rest is checked", _side_first),
+]
+
+
+def cmd_cases(path=None):
+    table = load_cases()
+    world = World(level.convert(table["map"]))
+    rows = []
+    mine = run_cases(world, table)
+    faults = case_faults(table, mine)
+    n_steps = sum(len(c["steps"]) for c in table["cases"])
+    rows.append(("Python against the table", not faults, ("FAULTS: " + "; ".join(faults[:3])) if faults else
+                 "%d cases, %d steps: every admitted step ticked, every refused one refused with its category and the state as it was; "
+                 "the runs with refusals among them end where the runs without them end" % (len(table["cases"]), n_steps)))
+    for label, plant in CASE_PLANTS:
+        f = case_faults(table, run_cases(world, table, plant))
+        rows.append(("plant: " + label, bool(f), ("refused, %d faults, the first: %s" % (len(f), f[0])) if f else "NOT refused"))
+    engine_line = None
+    if path:
+        with open(path, encoding="utf-8") as fh:
+            R = json.load(fh)
+        if R.get("format") != "VERDANDI-INPUT-RESULTS" or R.get("version") != "1" or R.get("error"):
+            raise SystemExit("TICK-REF: %s is not a VERDANDI-INPUT-RESULTS 1 file%s" % (path, (": " + R["error"]) if R.get("error") else ""))
+        engine_line = (R.get("runtime") or {}).get("userAgent", "?")
+        conv = level.convert(table["map"])
+        same_map = R.get("map") == table["map"] and all((R.get("manifest") or {}).get(k) == conv["manifest"][k] for k in ("canonical_sha256", "collision_sha256"))
+        rows.append(("the browser's map", same_map, "%s, its digests as converted here" % R.get("map") if same_map else "NOT the table's map as converted here"))
+        rows.append(("the browser's contract", R.get("contract") == str(INPUT) and R.get("table") == str(INPUT), "contract %s, the table's %s" % (R.get("contract"), R.get("table"))))
+        theirs = case_faults(table, R.get("results", []))
+        rows.append(("the browser against the table", not theirs, ("FAULTS: " + "; ".join(theirs[:3])) if theirs else "every step as the table requires"))
+        first = None
+        for c, a, b in zip(table["cases"], mine, R.get("results", [])):
+            if a["start"] != b.get("start"):
+                first = "%s: the start differs" % c["name"]
+                break
+            for k, (x, y) in enumerate(zip(a["steps"], b.get("steps", []))):
+                if x["got"] != y.get("got"):
+                    first = "%s, step %d: here %s, the browser %s" % (c["name"], k + 1, x["got"], y.get("got"))
+                elif x["snap"] != y.get("snap"):
+                    fa, fb = fields_of(x["snap"]), fields_of(y["snap"])
+                    first = "%s, step %d: the state, in %s" % (c["name"], k + 1, ", ".join(f for f in sorted(set(fa) | set(fb)) if fa.get(f) != fb.get(f))[:80])
+                if first:
+                    break
+            if first:
+                break
+        rows.append(("the browser against Python", first is None, "every outcome and every state the same, %d steps" % n_steps if first is None else "FIRST DIFFERENT: " + first))
+    print("TICK-REF CASES  %s  contract %d  map %s%s" % (os.path.basename(CASES), INPUT, table["map"], ("  (" + engine_line + ")") if engine_line else ""))
+    for name, ok, detail in rows:
+        print("%s %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+    ok = all(r[1] for r in rows)
+    print("INPUT CONTRACT %s%s" % ("HELD" if ok else "NOT HELD", " BY PYTHON AND THE BROWSER" if path and ok else ""))
     return 0 if ok else 1
 
 
@@ -725,7 +943,9 @@ def main(argv):
         return cmd_verify(argv[1])
     if len(argv) == 2 and argv[0] == "selftest":
         return cmd_selftest(argv[1])
-    print("usage: python graybox/tick_ref.py verify TRACE.json | selftest TRACE.json", file=sys.stderr)
+    if len(argv) in (1, 2) and argv[0] == "cases":
+        return cmd_cases(argv[1] if len(argv) == 2 else None)
+    print("usage: python graybox/tick_ref.py verify TRACE.json | selftest TRACE.json | cases [RESULTS.json]", file=sys.stderr)
     return 2
 
 

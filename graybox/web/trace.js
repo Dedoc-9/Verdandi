@@ -8,7 +8,8 @@
 // Math.cos, Math.hypot, Math.atan2 and Math.sqrt logged call by call, and sends the log and every tick's state back with
 // this browser's own description of itself. The runs are the ones the worker records, or, when trace.py was given a
 // trace to take them from (`run --inputs`), that trace's: then every browser plays the same inputs. trace.py writes it
-// to graybox/build/trace/ and compares two such traces, from two engines or two machines.
+// to graybox/build/trace/ and compares two such traces, from two engines or two machines. With ?cases=1 it plays the
+// input contract's table instead (web/input_cases.json), and sends back each step's outcome and state.
 
 (function () {
   "use strict";
@@ -22,7 +23,30 @@
     return { userAgent: n.userAgent, brands: d ? d.brands.map(function (b) { return b.brand + " " + b.version; }) : null,
              platform: d ? d.platform : null, crossOriginIsolated: !!self.crossOriginIsolated };
   };
-  const given = q.get("inputs") === "1";
+  const given = q.get("inputs") === "1", cases = q.get("cases") === "1";
+  if (cases) {   // the input contract's table (web/input_cases.json), played in a worker under rules 1
+    Promise.all([
+      fetch("/map/" + encodeURIComponent(name) + ".json").then(function (r) { if (!r.ok) throw new Error("the map " + name + " could not be loaded: " + r.status); return r.json(); }),
+      fetch("/input_cases.json").then(function (r) { if (!r.ok) throw new Error("the table of cases could not be loaded: " + r.status); return r.json(); }),
+    ]).then(function (got) {
+      return new Promise(function (resolve, reject) {
+        const w = new Worker("sim_worker.js");
+        w.onmessage = function (e) { w.terminate(); if (e.data.error) reject(new Error(e.data.error)); else resolve({ map: got[0], table: got[1], cases: e.data.cases }); };
+        w.onerror = function (e) { w.terminate(); reject(new Error(e.message || "the worker failed")); };
+        w.postMessage({ kind: "cases", map: got[0], table: got[1] });
+      });
+    }).then(function (r) {
+      out.textContent = "played " + r.cases.results.length + " cases of the input contract; sending them to trace.py…";
+      return post({ format: "VERDANDI-INPUT-RESULTS", version: "1", map: name, manifest: r.map.manifest, runtime: runtime(),
+                    contract: String(r.cases.contract), table: r.table.contract, results: r.cases.results });
+    }).then(function () {
+      out.textContent += "\ndone";
+    }).catch(function (e) {
+      out.textContent = String(e && e.stack || e);
+      post({ format: "VERDANDI-INPUT-RESULTS", version: "1", map: name, error: String(e && e.stack || e) });
+    });
+    return;
+  }
   Promise.all([
     fetch("/map/" + encodeURIComponent(name) + ".json").then(function (r) { if (!r.ok) throw new Error("the map " + name + " could not be loaded: " + r.status); return r.json(); }),
     given ? fetch("/inputs.json").then(function (r) { if (!r.ok) throw new Error("the given runs could not be loaded: " + r.status); return r.json(); }) : Promise.resolve(null),

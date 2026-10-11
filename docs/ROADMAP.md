@@ -173,6 +173,8 @@ TICK-REF-0       the owner's ruling (2026-10-11), "NEXT": a second, independent 
       ↓
 BOT-REF-0        the owner's ruling (2026-10-11), "the next vertical slice": the walk made in Python from the map alone, by a policy written down (graybox/WALK-1.md, walk-1) and advanced by tick_ref.py (graybox/bot_ref.py), so that no browser originates the reference walk; on the tactical map its start and 1,787 inputs the same bytes as the browsers' own bot's, and Chromium 141, node 22, and on his machine Firefox 157 and Edge 155, playing them reach the Python tick's state at every tick; ACCEPTED provisionally by the owner (2026-10-11); the witness level next; outside the gate
       ↓
+INPUT-CONTRACT-0 the owner's ruling (2026-10-11): the tick's input admitted or refused, whole, before anything is touched — a written domain (RULES-1.md, The input), one category for each fault, a shared table of 70 hostile and admitted cases (graybox/web/input_cases.json); sim.js and tick_ref.py agree on every step, outcome and state, in node 22 and Chromium 141; nothing admitted changed; outside the gate
+      ↓
 STUDIO-0         the owner's direction (2026-10-11), declared, not built: "make the next milestone a summonable live director, not another verification rung" — in the running plaza, a selection, a prompt, three candidates previewed live, admit, reject and undo; "the LLM edits design intent; Verðandi compiles that intent into a live world; the designer remains in control"; by his ruling of the same day, after INPUT-CONTRACT-0
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
@@ -3109,6 +3111,99 @@ behaviour, held by its invariants and plants, with four choices this walk does n
 **His ruling.** *"ACCEPT BOT-REF-0 provisionally."* *"The four untested policy choices matter: they remain
 unspecified by evidence, even if this particular walk is stable."* And of the gate: *"These additions are outside the
 certified gate, so this does not establish that the gate itself covers their behavior."*
+
+### INPUT-CONTRACT-0 — the tick's input admitted or refused, whole · **the owner's ruling** (2026-10-11); outside the certified gate · **built** (`graybox/RULES-1.md` *The input*, `graybox/web/input_cases.json`, `admit` in `graybox/web/sim.js` and `graybox/tick_ref.py`)
+
+**His ruling.** *"I agree with the proposed hostile-input slice, with one adjustment: make it a shared input-domain
+contract, not an attempt to force every invalid input through the same error mechanism accidentally."* First the
+domain, in `RULES-1.md`: the fields and their types, finiteness, bounds, the pitch's non-finite values, booleans,
+missing and unknown fields, *"validation timing: validate the complete tick input before mutating authoritative
+state"*, *"one canonical rejection category for each invalid-input class"*. *"For accepted inputs, rules 1 should
+preserve bit-identical tick semantics. For rejected inputs, require equivalent contractual outcomes—same rejection
+category and no state mutation—not identical exception text or stack traces across Python and JavaScript."* On the
+non-finite turn: *"My recommendation is to reject non-finite turn inputs before the tick starts. This keeps NaN out of
+authoritative state, where cross-engine bit identity is not a sound contract. Do not broaden this into a ban on every
+large finite number unless the intended input policy requires it."* A matrix of cases, *"Test both implementations
+against the same table. Include mutants that validate after mutation, accept NaN, and silently ignore an unknown
+field."* *"Do not fold network security, packet framing, rate limiting, or server authority into this slice."* His
+acceptance criterion: *"every input class has a written disposition; JavaScript and Python agree on acceptance or
+rejection; rejected inputs cannot partially mutate state; valid inputs continue to match the rules-1 reference tick."*
+
+**Before it, measured on the code as it stood.** The table's 61 steps that must now be refused, played through the
+old `sim.js` (node 22) and the old `tick_ref.py`: JavaScript ran 54 of them and threw on 7, Python raised on 20, and
+every one changed the state in both, at least its count of ticks, even where it threw (a side `"C"` failed in the
+spawn after the count had moved). On 13 one implementation ran where the other raised; on 7 more both ran and ended in
+different states. An infinite turn made JavaScript's yaw NaN (its bits `fff8000000000000`) for the rest of the run
+and Python raise a `ValueError`; a turn written as the string `"0.5"` was joined to the yaw as text in JavaScript (NaN
+after the wrap) and taken as 0 in Python.
+
+**The dispositions** (`RULES-1.md`, *The input*): a record (a plain object, a `dict`) whose own fields, in the order
+of their names by UTF-16 code units, are flags `true` or `false`, a side `"A"` or `"B"`, or a finite turn; anything
+else refused with the category of its first fault (`INPUT-NOT-RECORD`, `INPUT-UNKNOWN-FIELD`, `INPUT-FLAG`,
+`INPUT-SIDE`, `INPUT-NUMBER`, `INPUT-NOT-FINITE`), the state untouched; the tick reads the admitted copy, not the
+record again. His matrix, row by row:
+
+| his case | disposition |
+|---|---|
+| `dyaw` `+∞` or `−∞` | refused, `INPUT-NOT-FINITE`, the state unchanged |
+| NaN in every numeric field | refused, `INPUT-NOT-FINITE`: three NaN encodings (quiet, the sign set, a payload), in both fields |
+| `dpitch` `±∞` | refused, `INPUT-NOT-FINITE`, not clamped: one rule for every number in an input |
+| very large finite turns | admitted, no bound: the yaw reduced by `fmod`, exact for every finite double, the pitch held at ±1.45; the largest double either way, 3 × 10⁶, 2²¹, the smallest subnormal, each ticked to the same state in both implementations |
+| a missing required field | no field is required: an absent flag is false, an absent turn `+0`, an absent side leaves the side. Every recorded run relies on that (the fight's idle ticks are `{}`), so the class is empty by design |
+| an unknown field | refused, `INPUT-UNKNOWN-FIELD`: `crouch`, `F`, `__proto__`, `constructor`, `toString`, the empty name, `"dyaw "`, `"0"` |
+| `true` or `false` in a flag | admitted |
+| `0`, `1`, strings or null in a flag | refused, `INPUT-FLAG` (lists and records too) |
+| a repeated invalid tick | the same category each time, the state unchanged each time |
+| a valid input just after a refusal | the run goes on from the state before the refusal: a run with six refusals among twenty ticks ends where the run without them ends |
+
+And the rest: an input that is not a record, `INPUT-NOT-RECORD`; a side other than `"A"` or `"B"`, `INPUT-SIDE`; a turn
+that is not a number, `INPUT-NUMBER`; several faults in one record, the first in the order of names.
+
+**Built.**
+
+- **`graybox/RULES-1.md`**, *The input (contract 1)*: the domain, the categories and their order; the contract
+  versioned (1) apart from the rules. The arithmetic table's rows for a flag and a turn now say what an admitted input
+  can hold.
+- **`graybox/web/input_cases.json`**: 70 cases, 121 steps, each step's required outcome, written in a notation that can
+  hold what JSON cannot (a NaN's bits, `−0`, an infinity, a field named `__proto__`, an input that is not a record).
+- **`sim.js`**: `admit` before the tick, which reads the record once and passes its copy on; `step` returns `null`
+  or the category; `inputCases` and `inputFaults` play and judge the table; the self-test's new check `input-contract`
+  plays it, with four records only JavaScript can make (a flag left `undefined`, a `Date`, a record without a
+  prototype, a getter, read once) and the four plants. The self-test is 30 / 30 on the tactical map, 27 / 27 on the
+  witness level.
+- **`sim_worker.js`**: a `cases` mode; and its decoder of a trace's inputs now makes each field an own property. An
+  assignment of `__proto__` sets the prototype and loses the field, so a trace input naming it would have been played
+  without it in a browser and read with it in Python.
+- **`trace.py run --cases`** plays the table in a browser and writes each step's outcome and state;
+  **`tick_ref.py cases [RESULTS.json]`** plays it in Python, with the four plants, and holds a browser's results to the
+  table and to Python, step by step.
+- **`graybox/web/main.js`, `art/web/play.js`**: the live loops build records the contract admits. A key never pressed
+  had given `undefined` in a flag, and the graybox sent `side: null` on every tick; now every flag is `true` or
+  `false` and the side is sent only when asked for. A refusal is shown once in the console.
+
+**Measured in the build container (2026-10-11).**
+
+- Python: every step as the table requires. The plants: the check made after the tick has begun (63 faults), NaN
+  admitted (9), an unknown field ignored (13), a side applied before the rest of the record is checked (2). The same
+  four in the page's self-test give the same counts.
+- node 22 and Chromium 141 (`trace.py run tactical --cases --expect chromium`): every step as the table requires, and
+  against Python every outcome and every state the same, all 121 steps. MEASURED, these two V8s.
+- Nothing admitted changed: re-recorded in Chromium 141 after the change, both maps' three runs under both rules,
+  every start, input and snapshot the same bytes as before it; `tick_ref.py verify` on both maps; the self-tests of
+  `bot_ref.py`, `trace.py`, `tick_ref.py` and `rules_ref.py`; the page's self-test 30 / 30 and 27 / 27; the plaza's
+  live tests 13 / 13, and 11 / 11 in the browser; the graybox page played (walking, reset, side B) with no refusal.
+- Mutants: ten of `sim.js` and eight of `tick_ref.py`, 15 refused. Three are equivalent and so classified:
+  JavaScript's flags tested by `typeof` (the same values pass); Python's names sorted by code point (the orders
+  differ only above U+FFFF, and every name with a category of its own is ASCII); Python's tick reading the record
+  rather than its copy (a `dict` has no getters; in JavaScript the same mutant is refused by the getter's one read).
+  One of the fifteen is refused only across the implementations: JavaScript's admitted copy left empty. Every tick
+  then does nothing, alike, so the table alone (outcomes, unchanged states, runs ending together) holds, while
+  Python's states part at the first admitted step, and the rest of the self-test fails.
+
+**What it does not show.** His limits: not network security, packet framing, rate limiting or server authority. Not
+a hostile caller in the same process (a Proxy, a getter that throws): the contract is on data records. Not
+JavaScriptCore; Firefox and Edge are his to run. Not that the table holds every input: it holds the classes he named
+and their edges.
 
 ### STUDIO-0 — the summonable live director · **the owner's direction** (2026-10-11); declared, not built
 

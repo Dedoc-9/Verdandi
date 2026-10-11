@@ -40,9 +40,10 @@ Esc releases the mouse.
 | what changed | run |
 |---|---|
 | map content (`maps/`) | `python graybox/check.py` — the conversion's conformance and its mutations; add `--compile` to compile and admit the tactical layout again through the design tool (needs a built shell, or `rustc` to build one, as the design tool does) |
-| the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (29 on the tactical map, 26 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
+| the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (30 on the tactical map, 27 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
 | the rules' arithmetic (`web/sim.js`, rules 1) | `python graybox/rules_ref.py` — the same algorithms in Python: the digests and constants `sim.js` holds, the special values, the square root and hypot checked exactly, the source naming no engine function, three plants; and the accuracy, measured. Ends with `RULES REFERENCE PASSED` |
 | the tick's second implementation (`tick_ref.py`, `RULES-1.md`) | `python graybox/tick_ref.py verify TRACE.json` — plays a browser's trace again in Python, from the specification, and compares every tick's snapshot byte for byte; `python graybox/tick_ref.py selftest TRACE.json` — two plants in the trace and six in the Python tick, each found. Ends with `TICK REFERENCE VERIFIED` and `TICK-REF SELFTEST PASSED` |
+| the input contract (`RULES-1.md`, *The input*; `web/input_cases.json`) | `python graybox/tick_ref.py cases` — the shared table of hostile inputs played in Python, each step held to its required outcome (a tick, or a refusal with its category and the state unchanged), with four plants that must break it; `python graybox/trace.py run tactical --cases --browser msedge` (or `firefox`) — the same table played in a browser, written to `graybox/build/trace/tactical/cases/` (not committed); then `python graybox/tick_ref.py cases graybox/build/trace/tactical/cases/chromium.json` — the browser's results held to the table and to Python, step by step. Ends with `INPUT CONTRACT HELD BY PYTHON AND THE BROWSER`. The page's self-test plays the table too (`input-contract`) |
 | the bot's walk (`bot_ref.py`, `WALK-1.md`) | `python graybox/bot_ref.py make tactical` — the walk made in Python from the map alone, written to `graybox/build/bot/tactical-walk.json` (not committed); `python graybox/bot_ref.py check FILE` — read whole or refused, made again the same, held to what a walk is for; `python graybox/bot_ref.py compare FILE TRACE.json` — beside a browser's walk, the start, each input and each state; `python graybox/bot_ref.py selftest TRACE.json` — made three times, and the plants. Ends with `BOT TRACE CHECKED`, `BOT TRACE AGREES WITH THE BROWSER'S WALK` and `BOT-REF SELFTEST PASSED`. `python graybox/trace.py run tactical --inputs graybox/build/bot/tactical-walk.json --browser msedge` has a browser play it |
 | where two engines part (a diagnostic) | `python graybox/trace.py run tactical` — plays the self-test's three runs (the walk, the fight, the stress run) under rules 0 and under rules 1 in a worker, logging every call of `Math.sin`, `Math.cos`, `Math.hypot`, `Math.atan2` and `Math.sqrt` with its arguments' and result's bits, every tick's input and snapshot, and the browser's description of itself; writes `graybox/build/trace/tactical/ENGINE.json` and `latest.json` (not committed). `--inputs A.json` plays A's runs instead of recording its own, so that two browsers play the same inputs; `--browser msedge` (or `chrome`, `firefox`) opens the page in that browser and refuses a trace from any other engine family, so a file named `chromium-given.json` is a Chromium engine's; `--name LABEL` adds a file. Then `python graybox/trace.py compare A.json B.json` for two such traces, rules by rules, and `python graybox/trace.py selftest A.json` for the comparator's own planted differences |
 | the renderer's cost | `python graybox/serve.py tactical --bench` — both renderers draw the same poses in your browser, alternating; the timings print, and they and a screenshot of each pose by each renderer are written to `graybox/build/bench/tactical/` (not committed). A sample is the mean of a batch of draws, each followed by a one-pixel readback; the page's clock step is printed, since some browsers round it (to 1 ms). Add `--samples N` (default 20), `--batch K` (default 10) |
@@ -121,10 +122,13 @@ transitions and serialized state—not just a handful of function outputs."*
 **What must be the same, bit for bit, in every conforming JavaScript engine** (rules 1):
 
 1. the world, `new World(map)`, from the map's canonical bytes;
-2. the transition: `step(world, state, input)` gives the same next state, as its snapshot's bytes;
+2. the transition: `step(world, state, input)` gives the same next state, as its snapshot's bytes, on every input the
+   input contract admits, and refuses every other input with the same category, the state unchanged
+   ([`RULES-1.md`](RULES-1.md), *The input*; INPUT-CONTRACT-0);
 3. the serialized state: `snapshot` and `restore` (every number as the 16 hex digits of its bits), and `hash`
    (FNV-1a over each number's bytes, little-endian, now written so whatever the platform's order). A NaN's bits are
-   not fixed by the language, so a NaN in the state would break this; no tick makes one;
+   not fixed by the language, so a NaN in the state would break this. Before the input contract an infinite turn made
+   one (the yaw NaN from then on); since it, no admitted input does, and NaN and the infinities are refused;
 4. the inputs a run is made of: the bot's walk (`walk`), the fight's start (`makeRuns`), the stress run, each a
    function of the map alone;
 5. the rules' arithmetic: `xsin`, `xcos`, `xatan2`, `xhypot` and `xsqrt` (`Sim.math`).
@@ -284,6 +288,7 @@ are in R-6.
 | `rules_ref.py` | the reference for the rules' arithmetic: the same algorithms in Python, and what holds `sim.js` to them |
 | `RULES-1.md` | the tick as arithmetic: the specification `sim.js` and `tick_ref.py` are both written to |
 | `tick_ref.py` | the tick's second implementation, in Python, and the verifier of a browser's trace |
+| `web/input_cases.json` | the input contract's table: 70 cases of hostile and admitted inputs, each step's required outcome, held to by `sim.js` (the self-test's `input-contract`, `trace.py run --cases`) and `tick_ref.py cases` |
 | `WALK-1.md` | the bot's policy, `walk-1`: the walk as inputs chosen from the map and an observation of the present state; the specification `sim.js`'s bot and `bot_ref.py` are both written to, and the walk's file |
 | `bot_ref.py` | the walk made in Python from the map alone, its checks, and its comparison with a browser's trace |
 | `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the state's snapshots, the rules' arithmetic (rules 1; rules 0 kept for comparison), the self-test. No DOM; runs in a worker and under node too |

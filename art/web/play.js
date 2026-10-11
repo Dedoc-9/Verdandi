@@ -174,7 +174,7 @@
     setInterval(poll, 500);
 
     // play: the fixed tick, as the graybox runs it
-    const keys = {}, pending = { reset: false, jump: false };
+    const keys = {}, pending = { reset: false, jump: false }, refusals = {};
     let mdx = 0, mdy = 0, fire = false, acc = 0, last = performance.now(), t0 = last;
     const SENS = 0.0022;
     const locked = function () { return document.pointerLockElement === canvas; };
@@ -207,8 +207,11 @@
         acc += dt;
         let first = true;
         while (acc >= Sim.TICK) {
-          Sim.step(world, s, { f: keys.KeyW || keys.ArrowUp, b: keys.KeyS || keys.ArrowDown, l: keys.KeyA || keys.ArrowLeft, r: keys.KeyD || keys.ArrowRight,
-                               jump: keys.Space || pending.jump, fire: fire, reset: pending.reset, dyaw: first ? mdx * SENS : 0, dpitch: first ? -mdy * SENS : 0 });
+          // a record the input contract admits: every flag true or false (graybox/RULES-1.md, The input)
+          const refused = Sim.step(world, s, { f: !!(keys.KeyW || keys.ArrowUp), b: !!(keys.KeyS || keys.ArrowDown), l: !!(keys.KeyA || keys.ArrowLeft),
+                               r: !!(keys.KeyD || keys.ArrowRight), jump: !!(keys.Space || pending.jump), fire: !!fire, reset: !!pending.reset,
+                               dyaw: first ? mdx * SENS : 0, dpitch: first ? -mdy * SENS : 0 });
+          if (refused && !refusals[refused]) { refusals[refused] = true; console.warn("plaza: an input was refused (" + refused + "); the state is unchanged"); }
           if (first) { mdx = 0; mdy = 0; }
           pending.reset = false; pending.jump = false; first = false; acc -= Sim.TICK;
         }

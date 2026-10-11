@@ -342,10 +342,43 @@
   function wrap(a) { const t = 2 * Math.PI; return ((a % t) + t) % t; }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
+  // ---------------------------------------------------------------- the input (contract 1, graybox/RULES-1.md)
+  // Before a tick its input is admitted or refused, whole: a record whose own fields, in the order of their names, are
+  // flags (true or false), a side ("A" or "B") or a finite turn (dyaw, dpitch); every field optional. A refused input
+  // changes nothing, and step returns its category; an admitted one is copied, read once, and the tick reads the copy.
+  // `lax` exists for the self-test's plants alone (a validator that lets NaN through, or ignores an unknown field).
+  const INPUT = 1, FLAGS = ["b", "f", "fire", "jump", "l", "r", "reset"], TURNS = ["dpitch", "dyaw"];
+  function admit(inp, lax) {
+    if (inp === null || typeof inp !== "object") return "INPUT-NOT-RECORD";
+    const proto = Object.getPrototypeOf(inp);   // a plain object, of this realm or another: its prototype is a root
+    if (proto !== null && Object.getPrototypeOf(proto) !== null) return "INPUT-NOT-RECORD";
+    const keys = Object.keys(inp).sort(), a = {};
+    for (const k of keys) {
+      const v = inp[k];
+      if (FLAGS.indexOf(k) >= 0) { if (v !== true && v !== false) return "INPUT-FLAG"; }
+      else if (k === "side") { if (v !== "A" && v !== "B") return "INPUT-SIDE"; }
+      else if (TURNS.indexOf(k) >= 0) {
+        if (typeof v !== "number") return "INPUT-NUMBER";
+        if (!Number.isFinite(v) && !(lax && lax.nan && v !== v)) return "INPUT-NOT-FINITE";
+      } else if (lax && lax.unknown) continue;
+      else return "INPUT-UNKNOWN-FIELD";
+      a[k] = v;
+    }
+    return a;
+  }
+
   // ---------------------------------------------------------------- one tick
-  // inp: {f, b, l, r, jump, fire, reset, side, dyaw, dpitch}; every field optional
+  // inp: a record of {f, b, l, r, jump, fire, reset, side, dyaw, dpitch}, every field optional. Returns null when the
+  // tick ran, or the category of the refused input, the state untouched.
   function step(world, s, inp) {
-    inp = inp || {};
+    const a = admit(inp);
+    if (typeof a === "string") return a;
+    advance(world, s, a);
+    return null;
+  }
+
+  // the tick itself, on an admitted input (RULES-1.md, One tick)
+  function advance(world, s, inp) {
     s.tick += 1;
     if (inp.side) spawn(world, s, inp.side);
     else if (inp.reset) spawn(world, s, s.side);
@@ -381,6 +414,59 @@
     s.onObjective = inObjective(world, s);
     s.fx.hitMarker = Math.max(0, s.fx.hitMarker - TICK);
     for (const k in s.fx.flash) s.fx.flash[k] = Math.max(0, s.fx.flash[k] - TICK);
+  }
+
+  // ---------------------------------------------------------------- the input contract's cases (web/input_cases.json)
+  // A case's values are written as the table says: true, false and null; "f" and a number's 16 hex digits; "s" and a
+  // string; {list: [...]}; {record: [[field, value], ...]}, each field made an own property (so that "__proto__" is a
+  // field like any other, as it is in Python's dict).
+  function caseValue(v) {
+    if (v === null || typeof v === "boolean") return v;
+    if (typeof v === "string") {
+      if (v.length === 17 && v[0] === "f") return ofBits(v.slice(1));
+      if (v[0] === "s") return v.slice(1);
+      throw new Error("not a value of the table: " + v);
+    }
+    if (Array.isArray(v.list)) return v.list.map(caseValue);
+    if (Array.isArray(v.record)) {
+      const o = {};
+      for (const [k, x] of v.record) Object.defineProperty(o, k, { value: caseValue(x), enumerable: true, writable: true, configurable: true });
+      return o;
+    }
+    throw new Error("not a value of the table: " + JSON.stringify(v));
+  }
+  // each case from a new state at spawn A: every step's outcome ("tick" or a category) and the snapshot after it
+  function inputCases(map, table, stepFn) {
+    stepFn = stepFn || step;
+    const world = new World(map), out = [];
+    for (const c of table.cases) {
+      const s = newState(world, "A"), start = snapshot(s), steps = [];
+      for (const st of c.steps) {
+        let got;
+        try { const r = stepFn(world, s, caseValue(st.input)); got = r == null ? "tick" : String(r); } catch (e) { got = "THREW " + String(e && e.message || e); }
+        steps.push({ got: got, snap: snapshot(s) });
+      }
+      out.push({ name: c.name, start: start, steps: steps });
+    }
+    return out;
+  }
+  // what the table requires of a run of it: each step's outcome, a refused step's state unchanged, and a case named in
+  // same_as ending where that case ends
+  function inputFaults(table, results) {
+    const faults = [], last = {};
+    if (results.length !== table.cases.length) return ["the results hold " + results.length + " cases, the table " + table.cases.length];
+    table.cases.forEach(function (c, i) {
+      const r = results[i];
+      if (r.name !== c.name || r.steps.length !== c.steps.length) { faults.push(c.name + ": not the table's case"); return; }
+      c.steps.forEach(function (st, k) {
+        const got = r.steps[k], before = k ? r.steps[k - 1].snap : r.start;
+        if (got.got !== st.expect) faults.push(c.name + ", step " + (k + 1) + ": " + got.got + ", not " + st.expect);
+        else if (st.expect !== "tick" && got.snap !== before) faults.push(c.name + ", step " + (k + 1) + ": refused, and the state changed");
+      });
+      last[c.name] = r.steps[r.steps.length - 1].snap;
+    });
+    for (const c of table.cases) if (c.same_as && last[c.name] !== last[c.same_as]) faults.push(c.name + ": does not end where " + c.same_as + " ends");
+    return faults;
   }
 
   // move along one axis; when blocked, close the gap by halving
@@ -1116,6 +1202,44 @@
         + (r0.error ? "refused (" + r0.error + ")" : "NOT refused") + ", a tick that calls Math.cos " + (plantSrc.length ? "found in the source" : "NOT found"));
     }
 
+    // input-contract: the shared table (web/input_cases.json, which the page passes as ctx.inputCases): every admitted
+    // step ticks, every refused step is refused with its category and leaves the state as it was, and a run with
+    // refusals among its ticks ends where the run without them ends. Then four records only JavaScript can make. Plants:
+    // the check made after the tick has begun, NaN admitted, an unknown field ignored, a side applied before the rest of
+    // the record is checked; each must break the table.
+    {
+      const table = ctx && ctx.inputCases;
+      if (!table || table.format !== "VERDANDI-INPUT-CASES" || table.contract !== String(INPUT)) {
+        check("input-contract", false, "the table of cases (web/input_cases.json, contract " + INPUT + ") was not given to the self-test");
+      } else {
+        const faults = inputFaults(table, inputCases(map, table));
+        let reads = 0;
+        const getter = {};
+        Object.defineProperty(getter, "f", { get: function () { reads++; return true; }, enumerable: true });
+        const bare = Object.create(null); bare.f = true;
+        const own = [["a flag left undefined", { f: undefined }, "INPUT-FLAG"], ["a Date", new Date(0), "INPUT-NOT-RECORD"],
+                     ["a record without a prototype", bare, "tick"], ["a getter", getter, "tick"]];
+        for (const [what, inp, want] of own) {
+          const st = newState(new World(map), "A"), r = step(new World(map), st, inp), got = r == null ? "tick" : r;
+          if (got !== want) faults.push(what + ": " + got + ", not " + want);
+        }
+        if (reads !== 1) faults.push("a getter read " + reads + " times, not once");
+        const plants = [
+          ["the check made after the tick has begun", function (w, s, inp) { s.tick += 1; const a = admit(inp); if (typeof a === "string") return a; s.tick -= 1; advance(w, s, a); return null; }],
+          ["NaN admitted", function (w, s, inp) { const a = admit(inp, { nan: true }); if (typeof a === "string") return a; advance(w, s, a); return null; }],
+          ["an unknown field ignored", function (w, s, inp) { const a = admit(inp, { unknown: true }); if (typeof a === "string") return a; advance(w, s, a); return null; }],
+          ["a side applied before the rest is checked", function (w, s, inp) { if (inp && (inp.side === "A" || inp.side === "B")) spawn(w, s, inp.side); return step(w, s, inp); }],
+        ];
+        const caught = plants.map(function (p) { const f = inputFaults(table, inputCases(map, table, p[1])); return [p[0], f.length, f[0] || ""]; });
+        const steps = table.cases.reduce(function (n, c) { return n + c.steps.length; }, 0);
+        check("input-contract", !faults.length && caught.every(function (c) { return c[1] > 0; }),
+          (faults.length ? "FAULTS: " + faults.slice(0, 3).join("; ") + "; " : "") + table.cases.length + " cases, " + steps
+          + " steps (web/input_cases.json, contract " + INPUT + "): every admitted step ticked, every refused one refused with its category and the state as it was, the runs with refusals among their ticks ending where the runs without them end"
+          + "; this engine's own records: a flag left undefined, a Date, a record without a prototype, a getter (read once)"
+          + "; plants: " + caught.map(function (c) { return c[0] + " " + (c[1] ? "refused (" + c[1] + " faults)" : "NOT refused"); }).join(", "));
+      }
+    }
+
     // measured, not checked: rules 0 against their recorded baseline, and this engine's Math against the rules'
     if (ctx) {
       ctx.measurements = [];
@@ -1140,7 +1264,8 @@
 
   const RULES0_BASELINE = { tactical: "91350c39A", witness: "ce819a52A" };
 
-  const api = { RULES: RULES, math: M, TICK: TICK, P: P, World: World, newState: newState, step: step, spawn: spawn, fire: fire, aim: aim,
+  const api = { RULES: RULES, INPUT: INPUT, admit: function (inp) { return admit(inp); }, inputCases: function (map, table) { return inputCases(map, table); },
+                inputFaults: inputFaults, math: M, TICK: TICK, P: P, World: World, newState: newState, step: step, spawn: spawn, fire: fire, aim: aim,
                 rayWorld: rayWorld, blocked: blocked, groundAt: groundAt, hash: hash, snapshot: snapshot, restore: restore,
                 nudge: nudge, bits: bitsOf, fromBits: ofBits, record: record, selftest: selftest };
   return api;

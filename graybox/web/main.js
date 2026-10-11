@@ -21,9 +21,9 @@
     return fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(function () {});
   }
 
-  function selftestMode(map) {
+  function selftestMode(map, table) {
     document.body.classList.add("selftest");
-    const t0 = performance.now(), ctx = {}, measurements = [];
+    const t0 = performance.now(), ctx = { inputCases: table }, measurements = [];
     let results;
     try { results = Sim.selftest(map, ctx); } catch (e) { results = [{ name: "selftest", ok: false, detail: String(e && e.stack || e) }]; }
     for (const m of ctx.measurements || []) measurements.push(m);
@@ -286,8 +286,8 @@
     let renderer;
     try { renderer = new R.Renderer(canvas, map, Sim); } catch (e) { $("overlay").textContent = "The scene could not be built: " + e; return; }
     renderer.grid = !!q.get("grid");
-    window.GRAYBOX = { world: world, state: s, step: function (inp) { Sim.step(world, s, inp); } };   // for tests and the console
-    const keys = {}, pending = { reset: false, side: null, jump: false };
+    window.GRAYBOX = { world: world, state: s, step: function (inp) { return Sim.step(world, s, inp); } };   // for tests and the console: null, or the refusal
+    const keys = {}, pending = { reset: false, side: null, jump: false }, refusals = {};
     let mdx = 0, mdy = 0, fire = false, minimap = true;
     const evTimes = [];
     const SENS = 0.0022;
@@ -353,14 +353,17 @@
       const t0 = performance.now();
       let first = true, ticks = 0, look = [0, 0];
       while (acc >= Sim.TICK) {
+        // a record the input contract admits: flags true or false, a side only when one was asked for (RULES-1.md)
         const inp = {
-          f: keys.KeyW || keys.ArrowUp, b: keys.KeyS || keys.ArrowDown, l: keys.KeyA || keys.ArrowLeft, r: keys.KeyD || keys.ArrowRight,
-          jump: keys.Space || pending.jump, fire: fire, reset: pending.reset, side: pending.side,
+          f: !!(keys.KeyW || keys.ArrowUp), b: !!(keys.KeyS || keys.ArrowDown), l: !!(keys.KeyA || keys.ArrowLeft), r: !!(keys.KeyD || keys.ArrowRight),
+          jump: !!(keys.Space || pending.jump), fire: !!fire, reset: !!pending.reset,
           dyaw: first ? mdx * SENS : 0, dpitch: first ? -mdy * SENS : 0,
         };
+        if (pending.side) inp.side = pending.side;
         if (first) { look = [inp.dyaw, inp.dpitch]; mdx = 0; mdy = 0; const tn = performance.now(); while (evTimes.length) push(T.input, tn - evTimes.shift()); }
         pending.reset = false; pending.side = null; pending.jump = false;
-        Sim.step(world, s, inp); first = false; acc -= Sim.TICK; ticks += 1;
+        const refused = Sim.step(world, s, inp); first = false; acc -= Sim.TICK; ticks += 1;
+        if (refused && !refusals[refused]) { refusals[refused] = true; console.warn("graybox: an input was refused (" + refused + "); the state is unchanged", inp); }
         if (s.fx.lastShot) s.fx.lastShot.age += Sim.TICK;
       }
       const t1 = performance.now();
@@ -387,8 +390,14 @@
     if (!r.ok) throw new Error("the map " + name + " could not be loaded: " + r.status);
     return r.json();
   }).then(function (map) {
+    // the self-test also takes the input contract's table of cases (web/input_cases.json)
+    if (!q.get("selftest")) return [map, null];
+    return fetch("/input_cases.json").then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+      .then(function (table) { return [map, table]; });
+  }).then(function (got) {
+    const map = got[0];
     document.title = "Verðandi graybox — " + name;
-    if (q.get("selftest")) selftestMode(map); else if (q.get("bench")) benchMode(map); else playMode(map);
+    if (q.get("selftest")) selftestMode(map, got[1]); else if (q.get("bench")) benchMode(map); else playMode(map);
   }).catch(function (e) {
     $("overlay").textContent = String(e);
     post(q.get("bench") ? "/bench" : "/selftest", { map: name, ok: false, error: String(e), results: [{ name: "load", ok: false, detail: String(e) }] });

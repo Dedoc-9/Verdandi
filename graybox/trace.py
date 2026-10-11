@@ -4,7 +4,8 @@
 # graybox/trace.py — the trace experiment: where two JavaScript engines part, and why. A diagnostic, outside the
 # self-test and outside the gate; nothing passes or fails on what it finds.
 #
-#   python graybox/trace.py run [MAP] [--inputs TRACE.json | --inputs BOT.json] [--browser NAME] [--expect FAMILY] [--name LABEL] [--port N]
+#   python graybox/trace.py run [MAP] [--inputs TRACE.json | --inputs BOT.json | --cases] [--browser NAME] [--expect FAMILY]
+#                               [--name LABEL] [--port N]
 #                               [--no-browser] [--timeout SECONDS]
 #   python graybox/trace.py compare A.json B.json
 #   python graybox/trace.py selftest A.json
@@ -17,7 +18,9 @@
 # Without --inputs the worker records the runs itself (the walk is a bot's, which under rules 0 calls the engine's
 # functions); with --inputs TRACE.json it plays that trace's runs, the same start and the same inputs, so that two
 # browsers play exactly the same sequence; with --inputs BOT.json, a walk graybox/bot_ref.py made from the map alone
-# (read and refused as bot_ref.py reads it), it plays that walk only. --browser NAME opens the page in that browser
+# (read and refused as bot_ref.py reads it), it plays that walk only. With --cases it plays the input contract's table
+# (web/input_cases.json) instead and writes each step's outcome and state to graybox/build/trace/MAP/cases/, for
+# graybox/tick_ref.py cases to hold to the table and to Python. --browser NAME opens the page in that browser
 # (msedge, chrome, firefox, …) rather than the default one, and expects a trace from its engine; --expect FAMILY
 # (firefox, chromium, safari) says the same without opening anything. A trace from another engine than the one
 # expected is refused and not written: a file's name never says less than the truth about which engine made it. The trace is written to
@@ -53,7 +56,8 @@ import level  # noqa: E402
 
 WEB = os.path.join(HERE, "web")
 SERVED = {"/trace.html": "text/html; charset=utf-8", "/trace.js": "text/javascript; charset=utf-8",
-          "/sim.js": "text/javascript; charset=utf-8", "/sim_worker.js": "text/javascript; charset=utf-8"}
+          "/sim.js": "text/javascript; charset=utf-8", "/sim_worker.js": "text/javascript; charset=utf-8",
+          "/input_cases.json": "application/json"}
 RULES = ("0", "1")
 FNS = ("sin", "cos", "hypot", "atan2", "sqrt")
 
@@ -368,7 +372,10 @@ def cmd_run(argv):
     except level.MapError as e:
         print("GRAYBOX-MAP: %s" % e, file=sys.stderr)
         return 2
-    given = None
+    given, cases = None, "--cases" in argv
+    if cases and opt("--inputs"):
+        print("TRACE: --cases plays the input contract's table, and takes no --inputs", file=sys.stderr)
+        return 2
     if opt("--inputs") and bot_walk(opt("--inputs")):
         bot = bot_module()
         try:
@@ -408,7 +415,7 @@ def cmd_run(argv):
             path = self.path.split("?", 1)[0]
             if path == "/":
                 self.send_response(302)
-                self.send_header("Location", "/trace.html?map=%s%s" % (name, "&inputs=1" if given else ""))
+                self.send_header("Location", "/trace.html?map=%s%s" % (name, "&inputs=1" if given else "&cases=1" if cases else ""))
                 self.end_headers()
                 return
             if path == "/map/%s.json" % name:
@@ -459,7 +466,10 @@ def cmd_run(argv):
     if label and label.split("-")[0] in FAMILIES and label.split("-")[0] != fam:
         print("TRACE: REFUSED, not written: the name %s says %s, and the trace came from %s" % (label, label.split("-")[0], engine_tag(T.get("runtime"))), file=sys.stderr)
         return 1
-    outdir = os.path.join(HERE, "build", "trace", name)
+    if cases and T.get("format") != "VERDANDI-INPUT-RESULTS":
+        print("TRACE: the page sent no results of the input contract's table", file=sys.stderr)
+        return 1
+    outdir = os.path.join(HERE, "build", "trace", name, "cases") if cases else os.path.join(HERE, "build", "trace", name)
     os.makedirs(outdir, exist_ok=True)
     suffix = "-given" if given else ""
     path = os.path.join(outdir, engine_tag(T["runtime"]) + suffix + ".json")
@@ -469,7 +479,17 @@ def cmd_run(argv):
         with open(p, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(T, fh, separators=(",", ":"), sort_keys=True)
             fh.write("\n")
-    summary(T, path)
+    if cases:
+        steps = [st for c in T["results"] for st in c["steps"]]
+        print("TRACE  map %s  engine %s  the input contract's table, contract %s" % (name, engine_tag(T["runtime"]), T.get("contract")))
+        print("runtime  %s" % T["runtime"].get("userAgent"))
+        print("%d cases, %d steps: %d ticked, %d refused (%s)" % (len(T["results"]), len(steps), sum(1 for x in steps if x["got"] == "tick"),
+              sum(1 for x in steps if x["got"].startswith("INPUT-")), ", ".join("%s %d" % (k, sum(1 for x in steps if x["got"] == k))
+                                                                              for k in sorted({x["got"] for x in steps if x["got"] != "tick"}))))
+        print("written %s" % os.path.relpath(path))
+        print("hold it to the table and to Python: python graybox/tick_ref.py cases %s" % os.path.relpath(path))
+    else:
+        summary(T, path)
     for p in names[1:]:
         print("written %s" % os.path.relpath(p))
     return 0
