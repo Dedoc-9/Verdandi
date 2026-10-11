@@ -75,7 +75,7 @@ z down). [`briefs/plaza-night.art`](briefs/plaza-night.art) is the first.
 | `region NAME x0,z0 x1,z1` | a named place the look talks about |
 | `skyline MATERIAL MIN MAX` | 2 × 2-cell blocks of rock that border no floor, raised to MIN–MAX m |
 | `tower REGION MATERIAL MIN MAX [mass]` | the rock cells bordering a region's floor, raised to MIN–MAX m: one prism a cell, or with `mass` a few masses (each run of cells one block, cut into at most five segments stepped 2 m from MAX at the middle of each side to MIN at the ends, each with a cornice above every head) |
-| `canopy REGION MATERIAL HEIGHT [x0,z0 x1,z1] [deep D] [ribs N] [lit R,G,B CANDELAS]` | an overhead slab, which must clear the reach ceiling: D m deep (0.4 if not given), with downstand ribs 0.8 m deep every N cells across it, and downlights set into its underside every other cell along it. The ribs and the lights must clear the reach ceiling too |
+| `canopy REGION MATERIAL HEIGHT [x0,z0 x1,z1] [deep D] [ribs N] [lit R,G,B CANDELAS] [edgelit R,G,B CANDELAS]` | an overhead slab, which must clear the reach ceiling: D m deep (0.4 if not given), with downstand ribs 0.8 m deep every N cells across it, downlights set into its underside every other cell along it, and a narrow row of small fixtures, one a metre, along the edge that faces the region's middle. The ribs and the lights must clear the reach ceiling too |
 | `neon REGION MATERIAL HEIGHT EVERY` | a flush strip and a rect light on one in EVERY of the region's rock faces |
 | `lamp REGION R,G,B CANDELAS SPACING` | a point light and its housing over floor cells on an absolute lattice |
 | `puddle REGION MATERIAL PERCENT` | flat black-water planes on that share of the region's floor cells |
@@ -152,7 +152,8 @@ python art/director.py selftest                          # the vectors and the w
   never rewritten.
 - **The first round** is `art/rounds/plaza-imposing/`. Two more wait on the owner's choice: `art/rounds/plaza-mass/`
   ("make the towers read as one monumental mass, not a comb") and `art/rounds/plaza-cantilevers/` ("make the
-  cantilevers more imposing"), both evaluated at the head after the exporter's rebase (ledger #14).
+  cantilevers more imposing"), both evaluated at the head after the exporter's rebase (ledger #14); the second's D
+  and E, written for the owner's art note, at the head after the next (#21).
 
 ## The native plaza: `art/play.py`
 
@@ -162,7 +163,7 @@ Keep `serve.py` and the existing `graybox/` boundary unchanged."*
 
 ```
 python art/play.py plaza-night           # compiles the scene, holds it to the art checks, serves it; a browser opens
-python art/play.py plaza-night --intent art/rounds/plaza-cantilevers/B.intent --intent art/rounds/plaza-cantilevers/C.intent
+python art/play.py plaza-night --intent art/rounds/plaza-cantilevers/D.intent --intent art/rounds/plaza-cantilevers/E.intent
                                          # the brief, and each candidate as the director evaluates it; [ and ] step through them
 python art/play.py --selftest            # the live loop without a browser: LIVE SELFTEST 13/13
 ```

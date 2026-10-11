@@ -459,6 +459,7 @@ def export(A: dict, maps_dir=None) -> dict:
             if len(args) < 3:
                 raise ArtError("%s: canopy takes a region, a material, a height, optionally two corners inside it, and options" % where)
             x0, z0, x1, z1 = _region(A, args[0], w, h, where)
+            rx, rz = (x0 + x1 + 1) / 2.0, (z0 + z1 + 1) / 2.0
             rest = args[3:]
             if len(rest) >= 2 and is_cell(rest[0]) and is_cell(rest[1]):
                 a, b = _cell(rest[0], w, h, where), _cell(rest[1], w, h, where)
@@ -469,7 +470,7 @@ def export(A: dict, maps_dir=None) -> dict:
                 rest = rest[2:]
             mat = material(args[1], where)
             y = _num(args[2], where, 0.5, 200, "height")
-            opts = _options(rest, where, {"deep": 1, "ribs": 1, "lit": 2})
+            opts = _options(rest, where, {"deep": 1, "ribs": 1, "lit": 2, "edgelit": 2})
             deep = _num(opts["deep"][0], where, 0.2, 4.0, "depth") if "deep" in opts else 0.4
             cid = "canopy:%d,%d-%d,%d" % (x0, z0, x1, z1)
             visuals.append({"id": cid, "by": sh, "region": args[0], "asset": "cube", "material": mat,
@@ -500,6 +501,28 @@ def export(A: dict, maps_dir=None) -> dict:
                                     "box": box(px - 0.3, y - 0.1, pz - 0.3, px + 0.3, y, pz + 0.3)})
                     lights.append({"id": vid, "by": sh, "region": args[0], "type": "point", "pos": [r4(px), r4(y - 0.15), r4(pz)],
                                    "dir": [0, -1, 0], "color": col, "candela": r4(cd), "radius": r4(cell * 7)})
+            if "edgelit" in opts:
+                # a narrow row of small fixtures along the edge that faces the region's middle, set back from it, one a
+                # metre, each with its light; the rest of the underside is left dark
+                col = _rgb(opts["edgelit"][0], where)
+                cd = _num(opts["edgelit"][1], where, 0, 100000, "candelas")
+                if "housing" not in A["materials"]:
+                    raise ArtError("%s: an edge light sits in a housing: declare the material 'housing'" % where)
+                if along_x:
+                    toward = 1 if rz >= (z0 + z1 + 1) / 2.0 else -1
+                    edge = ((z1 + 1) if toward > 0 else z0) * cell - toward * 0.35
+                else:
+                    toward = 1 if rx >= (x0 + x1 + 1) / 2.0 else -1
+                    edge = ((x1 + 1) if toward > 0 else x0) * cell - toward * 0.35
+                for j in range(int(round((n1 - n0 + 1) * cell))):
+                    c = n0 * cell + 0.5 + j
+                    px, pz = (c, edge) if along_x else (edge, c)
+                    hx, hz = (0.25, 0.09) if along_x else (0.09, 0.25)
+                    vid = "%s:light-edge%d" % (cid, j)
+                    visuals.append({"id": vid, "by": sh, "region": args[0], "asset": "cube", "material": "housing",
+                                    "box": box(px - hx, y - 0.06, pz - hz, px + hx, y, pz + hz)})
+                    lights.append({"id": vid, "by": sh, "region": args[0], "type": "point", "pos": [r4(px), r4(y - 0.1), r4(pz)],
+                                   "dir": [0, -1, 0], "color": col, "candela": r4(cd), "radius": r4(cell * 4)})
         elif verb == "neon":
             if len(args) != 4:
                 raise ArtError("%s: neon takes a region, an emissive material, a height and 'every N' faces" % where)

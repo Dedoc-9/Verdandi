@@ -2679,7 +2679,8 @@ slice:
   - Height fog and each lamp's glow in it, the wet floor and the puddles as mirrors, rain and its rings, bloom.
 - **The exporter's new options**, recorded in the ledger by a rebase (#14): `tower … mass` (stepped masses with
   cornices) and the canopy's `deep`, `ribs` and `lit`. No statement of the brief used them, so the scene's bytes were
-  unchanged. A new plant in `art/check.py` refuses ribs that hang below the reach ceiling under a slab that clears it.
+  unchanged. A new plant in `art/check.py` was meant to refuse ribs that hang below the reach ceiling under a slab that
+  clears it; its slab did not clear it, so it showed nothing about the ribs (found and fixed below).
 - **The director's self-test** now holds its fixture to the art and the world the round was written against, not
   to the exporter, which is the program under test.
 
@@ -2746,6 +2747,28 @@ and the file a model writes is what the running page shows, or refuses.
   memory is returned: `dispose` deletes every object the renderer made, which was not measured. An editor that
   writes a file in pieces is met by waiting for the file to hold still and, if a piece is read, by a refusal; not by
   an atomic write.
+
+**A plant that proved nothing, found and fixed.** 0190's plant *"a canopy clear of every head whose ribs are not"*
+set its slab at 3.6 m, below the reach ceiling over the platform's middle (4.275 m), so the slab itself was refused
+and the plant said nothing about the ribs. Each canopy option's plant now shows the slab alone passing and the slab
+with the option refused: the ribs under a slab at 4.4 m, and a new plant for the edge lights.
+
+**The owner's art note on the cantilevers (2026-10-11).** *"Make the nearest cantilever lower and larger in frame, then
+keep its underside mostly dark with a narrow row of warm fixtures along the edge."* And: *"The comparison labels and
+borders also occupy enough space to interrupt the architectural read."*
+
+- **The exporter.** The canopy's `edgelit R,G,B CANDELAS`: a narrow row of small fixtures, one a metre, along the edge
+  that faces the region's middle, each with its light. Recorded by a rebase (#21, head `cac46b5c8e28` to
+  `1ff8e5e8f6be`); the brief uses it nowhere, so its scene's bytes are unchanged.
+- **D** (#22, CLEAN): the north slab alone, from 7.0 m down to 4.6 m and 2.2 m deep, over the same two rows, dark
+  beneath but for the warm row along its plaza edge. A version over a third row was rendered and set aside: the
+  plaza's pole lamps would stand under it, 0.1 m below the slab, and light its underside.
+- **E** (#23, CLEAN): D's north slab with the far slabs as in C.
+- The ledger verifies at 24 events, head `d22e7cb24356`. The play boxes are the same 87.
+- **The sheet.** The stills, from the round's views, are set edge to edge with a 2-pixel gap and a small label inside
+  the first row, nothing between the pictures. Judged from them (OBSERVED, software renderer): D's slab is lower and
+  larger in frame, a dark mass with a warm line along its edge, the magenta neon still below it. Nothing is admitted
+  until he chooses.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

@@ -422,17 +422,22 @@ def plants(out, art_path):
             res.append(("the exporter refuses " + label, False, "the exporter took it"))
         except dress.ArtError as e:
             res.append(("the exporter refuses " + label, True, "refused: " + str(e)[:90]))
-    # an option that adds dressing under a slab: the slab clears every head, its ribs (0.8 m deep) do not
-    label = "a canopy clear of every head whose ribs are not"
-    try:
-        A = dress.parse(text + "canopy plant-r concrete 3.6 ribs 1\n", os.path.basename(art_path))
-        A["name"], A["sha256"] = "plant", "-"
-        o3 = dress.export(A)
-        failed = [c for c, ok, _d in verify(o3, None, D=gcheck.source_rows(o3["W"])) if not ok]
-        res.append((label, "no dressing where a player can be" in failed,
-                    "refused by: no dressing where a player can be" if "no dressing where a player can be" in failed else "NOT refused (failed: %s)" % (failed or "nothing")))
-    except dress.ArtError as e:
-        res.append((label, False, "the exporter refused it before the checks could: " + str(e)[:90]))
+    # an option that adds dressing under a slab: the slab alone passes, and with the option it is refused, so that the
+    # refusal is the option's (a slab that is itself too low proves nothing about its ribs or its lights)
+    for label, slab, option in (("a canopy clear of every head whose ribs are not", "canopy plant-r concrete 4.4", "ribs 1"),
+                                ("a canopy clear of every head whose edge lights are not", "canopy plant-r concrete 3.3 19,10 28,10", "edgelit 255,180,120 100")):
+        try:
+            got = []
+            for add in (slab, slab + " " + option):
+                A = dress.parse(text + add + "\n", os.path.basename(art_path))
+                A["name"], A["sha256"] = "plant", "-"
+                o3 = dress.export(A)
+                got.append("no dressing where a player can be" in [c for c, ok, _d in verify(o3, None, D=gcheck.source_rows(o3["W"])) if not ok])
+            res.append((label, got == [False, True],
+                        "the slab alone passes; with '%s' refused by: no dressing where a player can be" % option if got == [False, True] else
+                        "NOT shown (the slab alone refused: %s; with the option refused: %s)" % tuple(got)))
+        except dress.ArtError as e:
+            res.append((label, False, "the exporter refused it before the checks could: " + str(e)[:90]))
     return res
 
 
