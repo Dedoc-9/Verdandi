@@ -167,6 +167,8 @@ DIRECTOR-0       the owner's ruling (2026-10-10): the operator loop for prompted
       ↓
 NATIVE-PLAZA-0   the owner's rulings (2026-10-10, 2026-10-11): Verðandi-native the primary architecture, Unreal 5.8 a secondary path; the plaza played in the browser through an art-owned launcher (art/play.py) and a WebGL 2 renderer, the graybox's simulation moving against C; two rounds evaluated, not yet chosen; live edits (2026-10-11): an edit to the brief or to a candidate intent drawn in the running page, the game untouched, a refused edit leaving the scene before it
       ↓
+DET-MATH-0       the owner's ruling (2026-10-11), outside the gate: the simulation's rules made portable. Every function whose last bits the language leaves to the engine and that reached the authoritative state (sin, cos, hypot, atan2) replaced by fdlibm's algorithms and exact square roots, built from operations ECMA-262 fixes; the rules versioned (1), rules 0 kept as the baseline; held by rules-arithmetic and math-fence in the self-test and by graybox/rules_ref.py; the same bits measured in two V8 engines and CPython; Firefox's run is the owner's
+      ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
@@ -2775,6 +2777,89 @@ both canopy-option plants showing the slab alone passing), the ledger verified a
 files at `1ff8e5e8f6be`), `art\play.py --selftest` 13 / 13, the certified gate passed (251 rows / 0 fail, rowset
 `74db4c8d78625af5`), and `art\play.py plaza-night` with C, D and E as sources launched, watching 19 files. Pushed
 `1b5e8f6..30d2527`. OBSERVED once.
+
+### DET-MATH-0 — the simulation's rules made portable · **the owner's ruling** (2026-10-11); outside the certified gate · **built** (`graybox/web/sim.js` rules 1, `graybox/rules_ref.py`, `graybox/trace.py`)
+
+**His ruling.** *"My revised ruling: investigate and implement the deterministic math layer now."* *"I would not wait
+for the desktop renderer or networking. The browser runtime is already a useful place to establish the simulation
+contract."* In four steps: identify every transcendental operation that can affect authoritative state, *"including
+the bot's input generation"*; specify deterministic replacements, *"fixed-point/integer formulations where practical,
+or carefully specified software implementations with explicit range reduction and rounding"*, since *"Simply
+replacing `hypot` with `sqrt(a*a+b*b)` is not sufficient"*; *"run the same input sequence through Firefox and
+Chromium, comparing per-tick authoritative state and identifying the first differing field"*, the replay hashes kept
+*"as a compatibility measurement, not the sole correctness criterion"*; and decide what must be bit-identical. *"If
+you change the math now, replay hashes may change. That is acceptable if you deliberately version the simulation
+behavior and preserve the old baseline for comparison."* And the scope: *"Keep the scope limited to authoritative
+state, and let the measured divergence—not a blanket desire for identical math—determine which operations need
+replacement."*
+
+**1. The census.** Every call of a function whose last bits ECMA-262 leaves to the engine, in `sim.js`: `Math.sin` and
+`Math.cos` of the yaw in `step` (the walking direction) and of the yaw and pitch in `aim` (the shot: a hit or a
+miss); `Math.hypot` in `step` (the step's length); `Math.hypot` and `Math.atan2` in the bot (`walk`: when a waypoint is
+reached, and the turn it inputs), in `lines` and `makeRuns` (the fight's start cell, yaw and pitch), and in the
+self-test's own walkers and shooters. Nothing else a tick does is the engine's choice; no numeric literal in `sim.js`
+has more than 20 significant digits (ECMA-262 lets an engine round a longer one either way); and `hash` read the
+platform's byte order through a `Float64Array`, now written with a DataView, little-endian, which every platform a
+browser runs on already is (its values unchanged). Outside the authoritative state, and left as they are: the
+renderers, the mini-map and the page's measurements in `main.js`. The art's build (`art/dress.py`) uses no such
+function (one exact integer power), so its outputs do not depend on the platform's libm. The measured divergence: node
+22 against Chromium 141, `sin` and `cos`; the owner's Firefox 157 against Chromium 141, `hypot` on about a quarter
+and `sin` on one (R-6). `atan2` was not seen to differ in either pair; it is replaced too, since it makes the bot's
+inputs and the fight's start and the specification leaves it to the engine. That goes one function beyond the
+measured divergence, and is his to reverse.
+
+**2. The replacements**, in `sim.js`, built only from `+ - * / %`, comparisons, `Math.floor`, `ceil`, `min`, `max`,
+`abs`, `imul`, the bit operators, DataView's access to a double's bits and BigInt:
+
+- `xsin`, `xcos`: fdlibm 5.3's algorithm: a Cody–Waite reduction by pi/2 in three 33-bit parts, a second and third
+  step when the first cancels, the kernels' polynomials. Defined for |x| ≤ 2²⁰ · pi/2; beyond it, a `RangeError`.
+- `xatan2`: fdlibm 5.3's, with FreeBSD's correction for |y/x| > 2⁶⁰.
+- `xsqrt`, correctly rounded, by an integer square root in BigInt, not `Math.sqrt` (whose exactness the sources this
+  session found disagree on).
+- `xhypot`, correctly rounded: the squares summed exactly in BigInt, so no step overflows or underflows, subnormals
+  rounded as subnormals, `Infinity` only when the rounded result is.
+- Every constant written as its double's bits.
+
+A fixed-point tick (integer positions and angles) would be the stronger form; it changes every number in the state
+and every reader of it, the renderers included. These replacements keep the state's form and change only the
+functions, so rules 1 differ from rules 0 at exactly the calls the census names.
+
+**3. The same inputs in two engines.** `trace.py` now plays the three runs (the walk, the fight, and a new stress run of
+3,600 ticks made from integers alone) under rules 0 and rules 1 in one trace, and `--inputs A.json` plays A's runs,
+so that two browsers play exactly the same sequence; `compare` gives, rules by rules, each function's differing
+results, the first differing call, and each run's first differing tick with its fields. In the build container, node
+(V8 12.4) against Chromium 141 (V8 14.1) on the same inputs: under rules 0, `sin` and `cos` differ on 112 and 99
+arguments and every state is still the same; under rules 1, no call of the engine's Math and every state of every run
+the same at every tick. Within Chromium, rules 0 and rules 1 part on the stress run at tick 490, in `x`, by one ulp.
+**Firefox against Chromium on his machine is the measurement this step asks for, and it is his to run** (the
+commands are with the patch). Until then, rules 1's identity in SpiderMonkey rests on the specification: NOT
+MEASURED.
+
+**4. What must be bit-identical** (rules 1; `graybox/README.md`, *The simulation's contract*): the world built from
+the map's bytes; the transition, as the next state's snapshot bytes; the serialized state (snapshot, restore, hash);
+the inputs a run is made of (the bot's walk, the fight's start, the stress run); and the rules' arithmetic. Not: the
+renderers, the view's feedback, the HUD, timings, the measurements. A player's own input is data, recorded as bits.
+
+**Versioning.** `Sim.RULES` is 1; `Sim.withRules(0)` builds the rules as they were, for the measurements and the trace
+only. The self-test prints rules 0's replay against its baseline (`91350c39A` tactical, `ce819a52A` witness, recorded
+2026-10-10) as a measurement. Rules 1's replay of the walk ends at the same hashes on both maps in these runs: the
+engine's last bits were absorbed there, as before.
+
+**Held by.** Two self-test checks, each with plants: `rules-arithmetic` (the 43 constants; each function's results
+over 4,000 arguments against `rules_ref.py`'s digest; 31 special values; the sine's domain) and `math-fence` (Math's
+23 approximated functions made to throw while the runs are recorded and played: the same states; the source naming
+none of them). Eleven mutants of `sim.js`, each refused. `graybox/rules_ref.py`: the same algorithms in Python, the
+digests and constants agreed, the square root and hypot checked exactly against their neighbours' midpoints, and the
+accuracy measured against 70 decimal digits (sine 0.70 ulp, cosine 0.74, atan2 1.06 on the first 1,000 of each set;
+a sweep of 20,000 found atan2 at 1.23, fdlibm's own). The self-test is now 29 / 29 on the tactical map and 26 / 26 on
+the witness level (Chromium, 10.5 s and 8.6 s in the container's software renderer).
+
+**Measured cost.** About 4.2–4.6 µs a tick under rules 1, 1.4 µs under rules 0 (node, the container): BigInt's exact
+hypot, once a moving tick. A development measurement, not a row.
+
+**What it does not show.** That SpiderMonkey or JavaScriptCore give the same bits (until a trace from them is
+compared). That an engine has no defect in the operations rules 1 rely on. That the movement's own numbers are
+robust: rules 1 make the same bits everywhere, not better physics. Nothing here enters the certified gate.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

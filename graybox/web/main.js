@@ -26,6 +26,7 @@
     const t0 = performance.now(), ctx = {}, measurements = [];
     let results;
     try { results = Sim.selftest(map, ctx); } catch (e) { results = [{ name: "selftest", ok: false, detail: String(e && e.stack || e) }]; }
+    for (const m of ctx.measurements || []) measurements.push(m);
     renderChecks(map, results);
     $("results").textContent = "running the self-test in a second realm…";
     realmChecks(map, ctx, results, measurements).catch(function (e) {
@@ -45,10 +46,12 @@
   // The simulation again, in a worker: a JavaScript realm with its own globals, its own Math and its own copy of
   // sim.js. resume-realm resumes the walk there from a snapshot and requires every later tick's state to be this page's
   // bit for bit; a snapshot with one bit changed must come apart at once, so the comparison is shown able to fail.
-  // Then the measurements: each run again in counterfactual engines whose Math.sin, Math.cos or Math.hypot (the ones a
-  // tick calls whose results the language does not fix to the last bit) is off by its last bit at every call. They
-  // show, in this browser, how far a last-bit difference between two engines' Math would carry a run. They are
-  // measurements, not checks: nothing passes or fails on them, and a real engine differs on some inputs, not on all.
+  // Then the measurements: each run again, under rules 0, in counterfactual engines whose Math.sin, Math.cos or
+  // Math.hypot (the ones a rules-0 tick calls whose results the language does not fix to the last bit) is off by its
+  // last bit at every call. They show, in this browser, how far a last-bit difference between two engines' Math would
+  // carry a run under the old rules. Then rules 1 in an engine whose sin, cos, hypot, atan2 and sqrt are all off: the
+  // same state at every tick, since rules 1 call none of them. They are measurements, not checks: nothing passes or
+  // fails on them (the self-test's math-fence is the check), and a real engine differs on some inputs, not on all.
   function inWorker(msg) {
     return new Promise(function (resolve) {
       let w;
@@ -81,13 +84,19 @@
             + "; a snapshot with one bit changed " + (pb === 0 ? "apart at the first tick" : "NOT told apart") });
       });
     }).then(function () {
-      const sets = [["sin"], ["cos"], ["hypot"], ["sin", "cos", "hypot"]];
+      const S0 = Sim.withRules(0), w0 = new S0.World(map);
+      const trails0 = runs.map(function (run) {
+        const s = S0.restore(run.start), trail = [];
+        for (const inp of run.inputs) { S0.step(w0, s, inp); trail.push(S0.snapshot(s)); }
+        return trail;
+      });
+      const sets = [[0, ["sin"]], [0, ["cos"]], [0, ["hypot"]], [0, ["sin", "cos", "hypot"]], [1, ["sin", "cos", "hypot", "atan2", "sqrt"]]];
       let chain = Promise.resolve();
-      for (const set of sets) chain = chain.then(function () {
-        return Promise.all(runs.map(function (r) { return inWorker({ map: map, snap: r.start, inputs: r.inputs, offByOne: set }); })).then(function (outs) {
+      for (const [rules, set] of sets) chain = chain.then(function () {
+        return Promise.all(runs.map(function (r) { return inWorker({ map: map, snap: r.start, inputs: r.inputs, offByOne: set, rules: rules }); })).then(function (outs) {
           const parts = outs.map(function (o, i) {
             if (o.error) return runs[i].name + ": " + o.error;
-            const tr = trails[i], first = apart(o.snaps, tr, 0);
+            const tr = (rules === 0 ? trails0 : trails)[i], first = apart(o.snaps, tr, 0);
             if (first < 0) return runs[i].name + ": the same state at every one of its " + tr.length + " ticks";
             let gap = 0, end = 0, changed = 0;
             for (let m = 0; m < tr.length; m++) {
@@ -100,7 +109,7 @@
             return runs[i].name + ": the state apart from tick " + (first + 1) + " of " + tr.length + "; the player at most " + gap.toExponential(1)
               + " m from this page's, " + end.toExponential(1) + " m at the end; " + (changed ? changed + " ticks with a different cell, footing or hit" : "the same cell, footing and hits at every tick");
           });
-          measurements.push({ name: "counterfactual Math." + set.join(", Math."), detail: "off by its last bit at every call, in a worker: " + parts.join("; ") + " (this browser, this machine)" });
+          measurements.push({ name: "rules " + rules + ", counterfactual Math." + set.join(", Math."), detail: "off by its last bit at every call, in a worker: " + parts.join("; ") + " (this browser, this machine)" });
         });
       });
       return chain;

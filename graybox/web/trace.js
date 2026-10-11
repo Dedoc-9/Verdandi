@@ -4,9 +4,11 @@
 // graybox/web/trace.js — the page of the trace experiment (graybox/trace.py). A diagnostic, not a check: it decides
 // nothing and is not part of the self-test.
 //
-// It asks a worker (sim_worker.js) to record and play the self-test's two runs with Math.sin, Math.cos, Math.hypot and
-// Math.atan2 logged, call by call, and sends the log back with this browser's own description of itself. trace.py
-// writes it to graybox/build/trace/ and compares two such traces, from two engines or two machines.
+// It asks a worker (sim_worker.js) to play the self-test's three runs under rules 0 and under rules 1, with Math.sin,
+// Math.cos, Math.hypot, Math.atan2 and Math.sqrt logged call by call, and sends the log and every tick's state back with
+// this browser's own description of itself. The runs are the ones the worker records, or, when trace.py was given a
+// trace to take them from (`run --inputs`), that trace's: then every browser plays the same inputs. trace.py writes it
+// to graybox/build/trace/ and compares two such traces, from two engines or two machines.
 
 (function () {
   "use strict";
@@ -20,25 +22,28 @@
     return { userAgent: n.userAgent, brands: d ? d.brands.map(function (b) { return b.brand + " " + b.version; }) : null,
              platform: d ? d.platform : null, crossOriginIsolated: !!self.crossOriginIsolated };
   };
-  fetch("/map/" + encodeURIComponent(name) + ".json").then(function (r) {
-    if (!r.ok) throw new Error("the map " + name + " could not be loaded: " + r.status);
-    return r.json();
-  }).then(function (map) {
+  const given = q.get("inputs") === "1";
+  Promise.all([
+    fetch("/map/" + encodeURIComponent(name) + ".json").then(function (r) { if (!r.ok) throw new Error("the map " + name + " could not be loaded: " + r.status); return r.json(); }),
+    given ? fetch("/inputs.json").then(function (r) { if (!r.ok) throw new Error("the given runs could not be loaded: " + r.status); return r.json(); }) : Promise.resolve(null),
+  ]).then(function (got) {
+    const map = got[0], inputs = got[1];
     return new Promise(function (resolve, reject) {
       const w = new Worker("sim_worker.js");
-      w.onmessage = function (e) { w.terminate(); if (e.data.error) reject(new Error(e.data.error)); else resolve({ map: map, trace: e.data.trace }); };
+      w.onmessage = function (e) { w.terminate(); if (e.data.error) reject(new Error(e.data.error)); else resolve({ map: map, inputs: inputs, trace: e.data.trace }); };
       w.onerror = function (e) { w.terminate(); reject(new Error(e.message || "the worker failed")); };
-      w.postMessage({ kind: "trace", map: map });
+      w.postMessage({ kind: "trace", map: map, runs: inputs ? inputs.runs : null });
     });
   }).then(function (r) {
-    const body = { format: "VERDANDI-TRACE", version: "0", map: name, manifest: r.map.manifest, runtime: runtime(),
-                   calls: r.trace.calls, runs: r.trace.runs };
-    out.textContent = "traced " + body.calls.length + " calls and " + body.runs.length + " runs; sending them to trace.py…";
+    const body = { format: "VERDANDI-TRACE", version: "1", map: name, manifest: r.map.manifest, runtime: runtime(),
+                   inputs_from: r.inputs ? r.inputs.from : null, rules: r.trace.rules };
+    out.textContent = "traced, under rules 0, " + body.rules["0"].calls.length + " calls of the engine's Math, and under rules 1, "
+      + body.rules["1"].calls.length + "; " + body.rules["1"].runs.length + " runs each; sending them to trace.py…";
     return post(body);
   }).then(function () {
     out.textContent += "\ndone";
   }).catch(function (e) {
     out.textContent = String(e && e.stack || e);
-    post({ format: "VERDANDI-TRACE", version: "0", map: name, error: String(e && e.stack || e) });
+    post({ format: "VERDANDI-TRACE", version: "1", map: name, error: String(e && e.stack || e) });
   });
 })();

@@ -4,21 +4,27 @@
 # graybox/trace.py — the trace experiment: where two JavaScript engines part, and why. A diagnostic, outside the
 # self-test and outside the gate; nothing passes or fails on what it finds.
 #
-#   python graybox/trace.py run [MAP] [--port N] [--no-browser] [--timeout SECONDS]
+#   python graybox/trace.py run [MAP] [--inputs TRACE.json] [--name LABEL] [--port N] [--no-browser] [--timeout SECONDS]
 #   python graybox/trace.py compare A.json B.json
 #   python graybox/trace.py selftest A.json
 #
-# `run` serves a page (web/trace.html) that, in a worker, records and plays the self-test's two runs (the first route's
-# recorded walk and the fight) with every call of Math.sin, Math.cos, Math.hypot and Math.atan2 logged in call order:
-# the bits of each argument and of the result. Every tick's input and every tick's snapshot of the authoritative state
-# go with it, and the browser's own description of itself. The trace is written to graybox/build/trace/MAP/, named by
-# the engine, and again as latest.json there. It reads nothing outside graybox/ and serves only the four files it names.
+# `run` serves a page (web/trace.html) that, in a worker, plays the self-test's three runs (the first route's walk, the
+# fight and the stress run) twice: under rules 0, the rules as first built, which call the engine's Math, and under
+# rules 1, which call none of it (graybox/README.md, the simulation's contract). Every call of Math.sin, Math.cos,
+# Math.hypot, Math.atan2 and Math.sqrt is logged in call order (the bits of each argument and of the result), and every
+# tick's input and every tick's snapshot of the authoritative state, with the browser's own description of itself.
+# Without --inputs the worker records the runs itself (the walk is a bot's, which under rules 0 calls the engine's
+# functions); with --inputs TRACE.json it plays that trace's runs, the same start and the same inputs, so that two
+# browsers play exactly the same sequence. The trace is written to graybox/build/trace/MAP/, named by the engine (or
+# LABEL.json with --name, lower-case letters, digits and -), and again as latest.json there. It reads nothing outside graybox/ (and the trace --inputs names) and serves only the
+# files it names.
 #
-# `compare` sets two traces side by side. For each function: its results on the arguments both runs passed (so that
-# two runs which call a function with different arguments are not mistaken for a function that differs). Then the
-# calls in order, and the first that differs, said to differ in an argument (the runs had parted before it) or in a
-# result (the engines' functions differ). Then each run: the first tick whose input differs, and the first tick whose
-# state differs, with the leaves that differ there. A state digest that matches says only what the snapshot holds.
+# `compare` sets two traces side by side, rules by rules. For each function: its results on the arguments both runs
+# passed (so that two runs which call a function with different arguments are not mistaken for a function that
+# differs). Then the calls in order, and the first that differs, said to differ in an argument (the runs had parted
+# before it) or in a result (the engines' functions differ). Then each run: the first tick whose input differs, and the
+# first tick whose state differs, with the fields (the state's leaves) that differ there. A state that matches is only
+# as complete as the snapshot, which the self-test holds to the whole of it.
 #
 # `selftest` plants differences in a copy of a trace (a function's result, a call's argument, one state leaf, one
 # input) and requires `compare` to name each where it was planted, and to find nothing between a trace and itself.
@@ -40,7 +46,8 @@ import level  # noqa: E402
 WEB = os.path.join(HERE, "web")
 SERVED = {"/trace.html": "text/html; charset=utf-8", "/trace.js": "text/javascript; charset=utf-8",
           "/sim.js": "text/javascript; charset=utf-8", "/sim_worker.js": "text/javascript; charset=utf-8"}
-FNS = ("sin", "cos", "hypot", "atan2")
+RULES = ("0", "1")
+FNS = ("sin", "cos", "hypot", "atan2", "sqrt")
 
 
 def sha(text):
@@ -105,6 +112,11 @@ def results_by_argument(calls, fn):
 
 
 def compare(A, B):
+    """Two traces, rules by rules (the rules both hold)."""
+    return {k: compare_rules(A["rules"][k], B["rules"][k]) for k in RULES if k in A["rules"] and k in B["rules"]}
+
+
+def compare_rules(A, B):
     out = {"functions": {}, "order": None, "runs": {}, "impure": []}
     for fn in FNS:
         ma, mb = results_by_argument(A["calls"], fn), results_by_argument(B["calls"], fn)
@@ -153,14 +165,26 @@ def compare(A, B):
     return out
 
 
-def print_compare(A, B, r):
+def print_compare(A, B, rr):
     print("TRACE COMPARE  map %s" % A.get("map"))
     for side, T in (("A", A), ("B", B)):
-        print("%s  %s  %s" % (side, engine_tag(T.get("runtime")), (T.get("runtime") or {}).get("userAgent", "?")))
+        print("%s  %s  %s%s" % (side, engine_tag(T.get("runtime")), (T.get("runtime") or {}).get("userAgent", "?"),
+                                "  (the runs of %s)" % T["inputs_from"]["engine"] if T.get("inputs_from") else ""))
+    if A.get("inputs_from") and B.get("inputs_from") and A["inputs_from"] == B["inputs_from"]:
+        print("both played the same given runs (%s, inputs %s)" % (A["inputs_from"]["engine"], A["inputs_from"]["inputs"][:16]))
+    for k, r in rr.items():
+        print("---- rules %s%s" % (k, " (the engine's Math)" if k == "0" else " (no engine Math: the contract)"))
+        print_rules(A["rules"][k], B["rules"][k], r, k)
+
+
+def print_rules(A, B, r, k):
     for side, fn, args, rs in r["impure"]:
         print("NOTE  in %s, Math.%s gave %d results for one argument (%s)" % (side, fn, len(rs), args))
     for fn in FNS:
         f = r["functions"][fn]
+        if f["calls"] == (0, 0):
+            print("Math.%-6s not called in either" % fn)
+            continue
         head = "Math.%-6s %d and %d calls; %d and %d distinct arguments, %d in common: " % (fn, f["calls"][0], f["calls"][1], f["A"], f["B"], f["common"])
         if not f["diff"]:
             print(head + "the same result on every one")
@@ -170,7 +194,7 @@ def print_compare(A, B, r):
                 print("    Math.%s(%s): A %s, B %s, %d ulp apart" % (fn, ", ".join(show(a) for a in args.split(",")), show(ra), show(rb), ulps(ra, rb)))
     o = r["order"]
     if o is None:
-        print("calls in order: the same %d calls, argument for argument and result for result" % len(A["calls"]))
+        print("calls in order: the same %d calls, argument for argument and result for result" % len(A["calls"]) if A["calls"] else "calls in order: no call of the engine's Math in either")
     elif o["kind"] == "length":
         print("calls in order: the same up to call %d; then one trace ends (%d and %d calls)" % (o["index"], o["A"], o["B"]))
     else:
@@ -199,18 +223,21 @@ def print_compare(A, B, r):
                 for k, a, b in ls[:6])))
     fns = [fn for fn in FNS if r["functions"][fn]["diff"]]
     parted = ["%s at tick %d" % (n, x["state"]["tick"]) for n, x in r["runs"].items() if not x.get("missing") and x["state"]]
-    print("SUMMARY  functions with different results on common arguments: %s; states parted: %s" % (
-        ", ".join("Math." + f for f in fns) or "none", "; ".join(parted) or "none"))
+    calls = len(A["calls"]) + len(B["calls"])
+    print("SUMMARY rules %s  engine Math calls: %d; functions with different results on common arguments: %s; states parted: %s" % (
+        k, calls, ", ".join("Math." + f for f in fns) or "none", "; ".join(parted) or "none"))
 
 
 # ------------------------------------------------------------------------------------------------ the file
 def load(path):
     with open(path, encoding="utf-8") as fh:
         T = json.load(fh)
-    if T.get("format") != "VERDANDI-TRACE" or T.get("version") != "0":
-        raise SystemExit("TRACE: %s is not a VERDANDI-TRACE 0 file" % path)
+    if T.get("format") != "VERDANDI-TRACE" or T.get("version") not in ("0", "1"):
+        raise SystemExit("TRACE: %s is not a VERDANDI-TRACE file of version 0 or 1" % path)
     if T.get("error"):
         raise SystemExit("TRACE: %s records a failed trace: %s" % (path, T["error"]))
+    if T["version"] == "0":   # before the rules were versioned: one section, played under what are now rules 0
+        T["rules"] = {"0": {"calls": T.pop("calls"), "runs": T.pop("runs")}}
     return T
 
 
@@ -219,14 +246,23 @@ def summary(T, path):
     print("runtime  %s" % T["runtime"].get("userAgent"))
     if T["runtime"].get("brands"):
         print("brands   %s  (%s)" % (", ".join(T["runtime"]["brands"]), T["runtime"].get("platform")))
-    for fn in FNS:
-        m = results_by_argument(T["calls"], fn)
-        pairs = "\n".join("%s>%s" % (a, ",".join(sorted(rs))) for a, rs in sorted(m.items()))
-        print("Math.%-6s %6d calls, %6d distinct arguments, digest of its (argument, result) pairs %s" % (
-            fn, sum(1 for c in T["calls"] if c[2] == fn), len(m), sha(pairs)[:16]))
-    for run in T["runs"]:
-        print("run %-10s %5d ticks; inputs %s; every tick's state %s; the last state %s" % (
-            run["name"], len(run["snaps"]), sha("\n".join(run["inputs"]))[:16], sha("\n".join(run["snaps"]))[:16], sha(run["snaps"][-1])[:16]))
+    if T.get("inputs_from"):
+        print("the runs given: those of %s (inputs %s)" % (T["inputs_from"]["engine"], T["inputs_from"]["inputs"][:16]))
+    for k in RULES:
+        if k not in T["rules"]:
+            continue
+        R = T["rules"][k]
+        print("rules %s: %d calls of the engine's Math" % (k, len(R["calls"])))
+        for fn in FNS:
+            m = results_by_argument(R["calls"], fn)
+            if not m:
+                continue
+            pairs = "\n".join("%s>%s" % (a, ",".join(sorted(rs))) for a, rs in sorted(m.items()))
+            print("  Math.%-6s %6d calls, %6d distinct arguments, digest of its (argument, result) pairs %s" % (
+                fn, sum(1 for c in R["calls"] if c[2] == fn), len(m), sha(pairs)[:16]))
+        for run in R["runs"]:
+            print("  run %-10s %5d ticks; inputs %s; every tick's state %s; the last state %s" % (
+                run["name"], len(run["snaps"]), sha("\n".join(run["inputs"]))[:16], sha("\n".join(run["snaps"]))[:16], sha(run["snaps"][-1])[:16]))
     print("written %s" % os.path.relpath(path))
     print("compare it with another trace: python graybox/trace.py compare %s OTHER.json" % os.path.relpath(path))
 
@@ -235,7 +271,11 @@ def summary(T, path):
 def cmd_run(argv):
     args = [a for a in argv if not a.startswith("--")]
     opt = lambda k, d=None: argv[argv.index(k) + 1] if k in argv and argv.index(k) + 1 < len(argv) else d
-    name = args[0] if args and args[0] not in (opt("--port"), opt("--timeout")) else "tactical"
+    name = args[0] if args and args[0] not in (opt("--port"), opt("--timeout"), opt("--inputs"), opt("--name")) else "tactical"
+    label = opt("--name")
+    if label is not None and not re.fullmatch(r"[a-z0-9][a-z0-9-]*", label):
+        print("TRACE: a trace's name is lower-case letters, digits and -", file=sys.stderr)
+        return 2
     if not re.fullmatch(r"[a-z0-9_-]+", name):
         print("TRACE: a map's name is lower-case letters, digits, - and _", file=sys.stderr)
         return 2
@@ -244,6 +284,16 @@ def cmd_run(argv):
     except level.MapError as e:
         print("GRAYBOX-MAP: %s" % e, file=sys.stderr)
         return 2
+    given = None
+    if opt("--inputs"):
+        G = load(opt("--inputs"))
+        if G.get("map") != name:
+            print("TRACE: %s is a trace of the map %s, not %s" % (opt("--inputs"), G.get("map"), name), file=sys.stderr)
+            return 2
+        src = G["rules"].get("1") or G["rules"]["0"]
+        runs = [{"name": r["name"], "start": r["start"], "inputs": r["inputs"]} for r in src["runs"]]
+        given = {"from": {"engine": engine_tag(G.get("runtime")), "inputs": sha(json.dumps(runs, sort_keys=True, separators=(",", ":")))},
+                 "runs": runs}
     done, got = threading.Event(), {}
 
     class Handler(http.server.BaseHTTPRequestHandler):
@@ -262,11 +312,13 @@ def cmd_run(argv):
             path = self.path.split("?", 1)[0]
             if path == "/":
                 self.send_response(302)
-                self.send_header("Location", "/trace.html?map=%s" % name)
+                self.send_header("Location", "/trace.html?map=%s%s" % (name, "&inputs=1" if given else ""))
                 self.end_headers()
                 return
             if path == "/map/%s.json" % name:
                 return self.send(200, level.canon(m), "application/json")
+            if given and path == "/inputs.json":
+                return self.send(200, json.dumps(given).encode("utf-8"), "application/json")
             if path in SERVED:
                 with open(os.path.join(WEB, path[1:]), "rb") as fh:
                     return self.send(200, fh.read(), SERVED[path])
@@ -283,7 +335,7 @@ def cmd_run(argv):
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", int(opt("--port", "0"))), Handler)
     url = "http://127.0.0.1:%d/" % srv.server_address[1]
     threading.Thread(target=srv.serve_forever, daemon=True).start()
-    print("TRACE  map %s  open %s" % (name, url))
+    print("TRACE  map %s  open %s%s" % (name, url, "  (playing the runs of %s)" % given["from"]["engine"] if given else ""))
     if "--no-browser" not in argv:
         webbrowser.open(url)
     ok = done.wait(float(opt("--timeout", "180")))
@@ -297,7 +349,7 @@ def cmd_run(argv):
         return 1
     outdir = os.path.join(HERE, "build", "trace", name)
     os.makedirs(outdir, exist_ok=True)
-    path = os.path.join(outdir, engine_tag(T["runtime"]) + ".json")
+    path = os.path.join(outdir, (label or engine_tag(T["runtime"]) + ("-given" if given else "")) + ".json")
     for p in (path, os.path.join(outdir, "latest.json")):   # latest.json: the last trace of this map, whatever the engine
         with open(p, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(T, fh, separators=(",", ":"), sort_keys=True)
@@ -319,10 +371,12 @@ def cmd_selftest(path):
     def found(label, ok, detail):
         checks.append((label, ok, detail))
 
-    r = compare(A, copy.deepcopy(A))
-    clean = (r["order"] is None and not any(f["diff"] for f in r["functions"].values())
-             and all(not x["input"] and not x["state"] for x in r["runs"].values()))
-    found("a trace against itself: nothing found", clean, "")
+    full = A
+    r = compare(full, copy.deepcopy(full))
+    clean = all(x["order"] is None and not any(f["diff"] for f in x["functions"].values())
+                and all(not y["input"] and not y["state"] for y in x["runs"].values()) for x in r.values())
+    found("a trace against itself: nothing found", clean, "rules " + ", ".join(sorted(r)))
+    A = full["rules"]["0"]   # the plants: in the rules-0 section, which calls the engine's Math
     play = [i for i, c in enumerate(A["calls"]) if c[0].startswith("play") and c[2] == "cos"]
     if not play:
         found("the trace has calls of Math.cos in play", False, "")
@@ -333,14 +387,14 @@ def cmd_selftest(path):
         for c in B["calls"]:
             if c[2] == fn and c[3] == args:
                 c[4] = flip(c[4])
-        r = compare(A, B)
+        r = compare_rules(A, B)
         d = r["functions"][fn]["diff"]
         first = min(i for i, c in enumerate(A["calls"]) if c[2] == fn and c[3] == args)
         found("plant: Math.cos's result changed in its last bit at one argument", len(d) == 1 and d[0][0] == args and r["order"]["kind"] == "result" and r["order"]["index"] == first,
               "named Math.cos(%s), first at call %d, as a result" % (args, first))
         B = copy.deepcopy(A)
         B["calls"][k][3] = ",".join(flip(a) for a in args.split(","))
-        r = compare(A, B)
+        r = compare_rules(A, B)
         found("plant: one call's argument changed", r["order"]["kind"] == "argument" and r["order"]["index"] == k and not r["functions"][fn]["diff"],
               "call %d named as an argument, no function blamed" % k)
     walk = A["runs"][0]
@@ -351,12 +405,12 @@ def cmd_selftest(path):
         s = json.loads(B["runs"][0]["snaps"][499])
         s["x"] = "f" + flip(s["x"][1:])
         B["runs"][0]["snaps"][499] = json.dumps(s, separators=(",", ":"), sort_keys=True)
-        r = compare(A, B)
+        r = compare_rules(A, B)
         st = r["runs"][walk["name"]]["state"]
         found("plant: one state leaf changed at tick 500", st is not None and st["tick"] == 500 and [x[0] for x in st["leaves"]] == ["x"], "tick 500, leaf x")
         B = copy.deepcopy(A)
         B["runs"][0]["inputs"][299] = B["runs"][0]["inputs"][299] + " "
-        r = compare(A, B)
+        r = compare_rules(A, B)
         inp = r["runs"][walk["name"]]["input"]
         found("plant: one input changed at tick 300", inp is not None and inp["tick"] == 300, "tick 300")
     failed = 0

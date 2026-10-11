@@ -205,6 +205,18 @@ and their outputs are given.
     `Math.sqrt(a * a + b * b)` in place of `Math.hypot(a, b)` would make those calls the same bits in every engine at
     the magnitudes the game uses; `sin`, `cos` and `atan2` would need forms built from exactly specified operations
     (as perplexdotgg/bounce#8 proposes). Either changes the simulation's numbers, and so the recorded replays' hashes.
+- **The remedy, by the owner's ruling (2026-10-11).** *"Investigate and implement the deterministic math layer now."*
+  He ruled out the naive form: *"Simply replacing `hypot` with `sqrt(a*a+b*b)` is not sufficient: `sqrt` may itself be
+  platform-dependent at the bit level, and the naive expression has different overflow and underflow behavior."* On
+  `sqrt` the sources disagree: a 2017 proposal to the specification ([tc39/ecma262#903](https://github.com/tc39/ecma262/pull/903))
+  says *"Math.sqrt is defined to have correct rounding"*, while a survey of the specification
+  ([uhyo, zenn.dev](https://zenn.dev/uhyo/articles/javascript-math-accuracy?locale=en)) lists `sqrt` among the
+  implementation-approximated functions. Rules 1 therefore use none of them: fdlibm's sine, cosine and atan2 built from
+  the four operations, and square roots by an integer square root in BigInt, correctly rounded, with hypot's squares
+  summed exactly (no intermediate overflow or underflow). Measured in the build container: the five functions give the
+  same bits under node 22, in Chromium 141 and in CPython over 20,000 arguments each; on the same inputs, node and
+  Chromium reach the same state at every tick of three runs under rules 1, and call no engine function. Under rules 0
+  they still differ in `sin` and `cos`. Firefox: NOT MEASURED until the owner's run (ROADMAP, DET-MATH-0).
 
 ## R-7 · A browser's clock
 

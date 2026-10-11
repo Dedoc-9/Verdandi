@@ -40,8 +40,9 @@ Esc releases the mouse.
 | what changed | run |
 |---|---|
 | map content (`maps/`) | `python graybox/check.py` — the conversion's conformance and its mutations; add `--compile` to compile and admit the tactical layout again through the design tool (needs a built shell, or `rustc` to build one, as the design tool does) |
-| the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (27 on the tactical map, 24 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
-| where two engines part (a diagnostic) | `python graybox/trace.py run tactical` — records and plays the self-test's walk and fight in a worker, logging every call of `Math.sin`, `Math.cos`, `Math.hypot` and `Math.atan2` with its arguments' and result's bits, every tick's input and snapshot, and the browser's description of itself; writes `graybox/build/trace/tactical/ENGINE.json` and `latest.json` (not committed). Then `python graybox/trace.py compare A.json B.json` for two such traces, and `python graybox/trace.py selftest A.json` for the comparator's own planted differences |
+| the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (29 on the tactical map, 26 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
+| the rules' arithmetic (`web/sim.js`, rules 1) | `python graybox/rules_ref.py` — the same algorithms in Python: the digests and constants `sim.js` holds, the special values, the square root and hypot checked exactly, the source naming no engine function, three plants; and the accuracy, measured. Ends with `RULES REFERENCE PASSED` |
+| where two engines part (a diagnostic) | `python graybox/trace.py run tactical` — plays the self-test's three runs (the walk, the fight, the stress run) under rules 0 and under rules 1 in a worker, logging every call of `Math.sin`, `Math.cos`, `Math.hypot`, `Math.atan2` and `Math.sqrt` with its arguments' and result's bits, every tick's input and snapshot, and the browser's description of itself; writes `graybox/build/trace/tactical/ENGINE.json` and `latest.json` (not committed). `--inputs A.json` plays A's runs instead of recording its own, so that two browsers play the same inputs; `--name LABEL` names the file. Then `python graybox/trace.py compare A.json B.json` for two such traces, rules by rules, and `python graybox/trace.py selftest A.json` for the comparator's own planted differences |
 | the renderer's cost | `python graybox/serve.py tactical --bench` — both renderers draw the same poses in your browser, alternating; the timings print, and they and a screenshot of each pose by each renderer are written to `graybox/build/bench/tactical/` (not committed). A sample is the mean of a batch of draws, each followed by a one-pixel readback; the page's clock step is printed, since some browsers round it (to 1 ms). Add `--samples N` (default 20), `--batch K` (default 10) |
 | the certified tree | the gate, at a release checkpoint |
 
@@ -63,9 +64,10 @@ the highest eye a player can reach (found by its own search, on the movement's n
 hit box. On the witness level, which has no 1 m cover, the cover check reports itself not applicable and counts as
 passed.
 
-The replay compares hashes, so four checks say what an equal hash is worth. Each runs on two runs made by playing
-(the first route's recorded walk, and a fight: shots, a jump, a walk, the targets standing again, a change of side),
-and each has a planted defect it must refuse:
+The replay compares hashes, so four checks say what an equal hash is worth. Each runs on three runs made by playing
+(the first route's recorded walk; a fight: shots, a jump, a walk, the targets standing again, a change of side; and a
+stress run of 3,600 ticks made from integers alone: held moves of every kind, a turn and a look at every tick, jumps,
+shots, a change of side, into walls and along them), and each has a planted defect it must refuse:
 
 - **`hash-coverage`.** The state's leaves are found by walking it, not listed by hand. Every leaf must be seen by the
   hash at its last bit, or be one the world declares (a target's name and place) that equals the world's value and
@@ -89,10 +91,16 @@ Together: the hash sees the whole authoritative state, what it leaves out cannot
 is all the next tick reads, in this instance, a fresh one or another realm. So equal replay hashes mean an equal game,
 up to a 32-bit hash's collisions between states that differ in more than one byte. All of this is in one browser.
 
+Two checks hold the rules' arithmetic, described in the next section: `rules-arithmetic` and `math-fence`.
+
 After the checks, the page prints lines marked `MEASURED`, which are measurements, not checks: nothing passes or
-fails on them and they are not counted. Each run is played again in a worker whose `Math.sin`, `Math.cos` or
-`Math.hypot` (the functions a tick calls whose results the language does not fix to the last bit) is off by its last
-bit at every call: a counterfactual engine. The lines say from which tick the state's bits part from the page's, how
+fails on them and they are not counted. The first two: rules 0's replay of its own walk, against the baseline hash
+recorded on 2026-10-10 (`91350c39A` on the tactical map, `ce819a52A` on the witness level), and this engine's own
+`Math.sin`, `Math.cos`, `Math.atan2`, `Math.hypot` and `Math.sqrt` against the rules' functions over the same
+arguments. Then each run is played again, under rules 0, in a worker whose `Math.sin`, `Math.cos` or `Math.hypot`
+(the functions a rules-0 tick calls whose results the language does not fix to the last bit) is off by its last
+bit at every call: a counterfactual engine. Last, rules 1 in a worker whose five functions are all off: the same
+state at every tick, since rules 1 call none of them. The lines say from which tick the state's bits part from the page's, how
 far apart the player ends, and whether any cell, footing or hit differs. In the build container, in Chromium and
 again under node, the tactical walk's bits parted at tick 1172 of 1787 and ended 2.8 × 10⁻¹⁴ m apart, with no cell,
 footing or hit different and the fight unchanged. A last-bit change in a small step is mostly absorbed when it is
@@ -101,7 +109,109 @@ differs. (A real engine differs on some inputs, not on every call; this model is
 every check matched the container's but four of the eight lines did not, so the two engines' `Math` differed
 somewhere in these runs and rounding absorbed it (R-6 in [`docs/RESEARCH-FINDINGS.md`](../docs/RESEARCH-FINDINGS.md)).
 
-The trace experiment (`trace.py`) is where that is pinned down. It is a diagnostic beside the self-test, not part of it,
+## The simulation's contract: rules 1
+
+By the owner's ruling of 2026-10-11: *"investigate and implement the deterministic math layer now"*, *"Keep the scope
+limited to authoritative state, and let the measured divergence—not a blanket desire for identical math—determine
+which operations need replacement"*, and *"if the contract is cross-browser deterministic simulation, test state
+transitions and serialized state—not just a handful of function outputs."*
+
+**What must be the same, bit for bit, in every conforming JavaScript engine** (rules 1):
+
+1. the world, `new World(map)`, from the map's canonical bytes;
+2. the transition: `step(world, state, input)` gives the same next state, as its snapshot's bytes;
+3. the serialized state: `snapshot` and `restore` (every number as the 16 hex digits of its bits), and `hash`
+   (FNV-1a over each number's bytes, little-endian, now written so whatever the platform's order). A NaN's bits are
+   not fixed by the language, so a NaN in the state would break this; no tick makes one;
+4. the inputs a run is made of: the bot's walk (`walk`), the fight's start (`makeRuns`), the stress run, each a
+   function of the map alone;
+5. the rules' arithmetic: `xsin`, `xcos`, `xatan2`, `xhypot` and `xsqrt` (`Sim.math`).
+
+**What need not be:** the renderers (`render.js`, `render_flat.js`, `art/web/scene_render.js`), the view's feedback
+`s.fx`, the HUD and the mini-map, timings, the `MEASURED` lines. A player's own input (a mouse's movement times the
+sensitivity) is data: it is recorded as given, as bits, and replayed as recorded.
+
+**Where the engine's functions reached the state** (rules 0, every call site in `sim.js`):
+
+| call | where | what it decides | |
+|---|---|---|---|
+| `Math.sin`, `Math.cos` of the yaw | `step` | the direction a step walks | the transition |
+| `Math.hypot(mx, mz)` | `step` | the step's length: the direction divided by it | the transition |
+| `Math.cos`, `Math.sin` of the pitch and the yaw | `aim`, in `fire` | the shot's ray: a hit or a miss, the score, a target down | the transition |
+| `Math.hypot`, `Math.atan2` | `walk`, the bot | when a waypoint is reached; the turn it inputs | the inputs |
+| `Math.hypot`, `Math.atan2` | `lines`, `makeRuns` | which cell the fight starts from; its yaw and pitch | the start |
+| `Math.atan2`, `Math.hypot` | the self-test's probes, cover and weapon | a walker's or shooter's yaw and pitch; a distance | the checks' runs |
+
+Measured divergence at these calls: node 22 (V8 12.4) against Chromium 141 (V8 14.1), `Math.sin` and `Math.cos` one
+ulp apart on a few arguments in a hundred; the owner's Firefox 157 against Chromium 141, `Math.hypot` on about a
+quarter and `Math.sin` on one (R-6). `Math.atan2` was not seen to differ, but the language leaves its last bits to the
+engine too, and it makes the bot's inputs and the fight's start, so rules 1 replace it with the others. Nothing else a
+tick does is left to the engine: `+ - * / %`, comparisons, `Math.floor`, `ceil`, `min`, `max`, `abs`, `imul`, the bit
+operators and `Math.PI` are fixed to the last bit by ECMA-262, and no numeric literal in `sim.js` has more than 20
+significant digits (beyond 20 a literal's rounding is the engine's choice).
+
+**The replacements.** In `sim.js`, built only from those operations, DataView's access to a double's bits, and BigInt:
+
+- `xsin`, `xcos`: fdlibm 5.3's algorithm (`k_sin.c`, `k_cos.c`, the small and medium ranges of `e_rem_pio2.c`): the
+  argument reduced by pi/2 in three parts of 33 bits (Cody and Waite), with a second and a third step when the first
+  cancels, then the kernels' polynomials. Defined for |x| ≤ 2²⁰ · pi/2 (about 1.65 × 10⁶); beyond that they refuse
+  with a `RangeError` rather than reduce wrongly. A tick's angles are wrapped to [0, 2 pi) or clamped to ±1.45.
+- `xatan2`: fdlibm 5.3's `e_atan2.c` and `s_atan.c`, with FreeBSD's later correction (when |y/x| > 2⁶⁰ the result is
+  ±pi/2 whatever the sign of x).
+- `xsqrt`: correctly rounded, by an integer square root in BigInt; `Math.sqrt` is not used.
+- `xhypot`: correctly rounded: the sum of the squares formed exactly in BigInt, then its square root as `xsqrt` takes
+  one. No step overflows or underflows; the result is `Infinity` only when the rounded result is, and subnormal
+  results are rounded as subnormals.
+- Every constant is written as the bits of its double. fdlibm's decimals have 21 significant digits, and ECMA-262 lets
+  an engine round a literal of more than 20 either way.
+
+**Rules 0 kept.** `Sim.withRules(0)` builds the simulation as it was, calling the engine's functions, to measure the
+old baseline against. Nothing plays it but the measurements and the trace.
+
+**How it is held.**
+
+- **`rules-arithmetic`** (a check): the 43 constants, fdlibm's to the last bit; each function over 4,000 arguments
+  made from integers by one generator (ordinary angles and ratios, sums near multiples of pi/2, the edges of the
+  kernels' branches, the tiny and the large, unit vectors, every binade from the subnormals to the largest double, and
+  special values), every result's bits folded into a digest that must be the one `rules_ref.py` gives; 31 special
+  values; the sine's domain refused. Plant: a sine one bit off at one argument.
+- **`math-fence`** (a check): Math's 23 approximated functions made to throw, and the three runs recorded and played:
+  the same state at every tick as without the fence. The source, read back by `Function.prototype.toString` up to the
+  self-test, comments out and the rules-0 block set aside, names none of them. Plants: rules 0 under the fence; a tick
+  that calls `Math.cos`.
+- **`rules_ref.py`**: the same algorithms in Python, whose float is the same IEEE 754 binary64. It must give the
+  digests and constants `sim.js` holds, the square root and hypot are checked exactly against the midpoints to their
+  neighbours, and it measures the accuracy against 70 decimal digits.
+- Eleven mutants of `sim.js` (a coefficient one bit off, the cosine's x/4 cut changed, no subnormal rounding, NaN
+  before an infinity in hypot, no second reduction step, atan2 without FreeBSD's correction, the source scan blind, a
+  tick calling `Math.hypot`, the sine's domain unguarded, the root's sticky bit ignored, the rules using the engine's
+  `Math`): each refused by one of the two checks.
+
+**Measured in the build container (2026-10-11).**
+
+- The five functions, over 20,000 arguments each: the same bits under node 22 (V8 12.4), in Chromium 141 (V8 14.1) and
+  in `rules_ref.py` (CPython). Node's own `Math.sin`, `Math.cos` and `Math.atan2` gave exactly the rules' bits on all of
+  them; Chromium 141's `Math.sin` differed on 476 and `Math.cos` on 405; both engines' `Math.hypot` on 5,131 (not
+  correctly rounded); `Math.sqrt` on none.
+- Accuracy against 70 decimal digits (the first 1,000 arguments of each set): sine within 0.70 ulp, cosine 0.74,
+  atan2 1.06 (fdlibm's own; a sweep of 20,000 found 1.23). The square root and hypot are correctly rounded on all
+  4,000 of each.
+- The trace, node against Chromium, on the same inputs: under rules 0 `Math.sin` and `Math.cos` differ on 112 and 99
+  arguments and every state is still the same (rounding absorbed it); under rules 1 no call of the engine's Math, and
+  every state of the three runs the same at every tick. In Chromium, rules 0 and rules 1 part on the stress run at tick
+  490, in `x`, by one ulp, and meet again: rules 0's states there depend on Chromium's functions.
+- Rules 1's replay of the walk ends at `91350c39A` on the tactical map and `ce819a52A` on the witness level, as rules
+  0's baseline did: in these runs the engine's last bits were absorbed. That is a compatibility measurement, not the
+  contract.
+- A tick costs about 4.2–4.6 µs under rules 1 and 1.4 µs under rules 0, under node (BigInt's exact hypot, called once a
+  moving tick); at 120 ticks a second, about half a millisecond a second.
+
+**What is not shown.** That another engine (SpiderMonkey in Firefox, JavaScriptCore in Safari) gives the same bits:
+by ECMA-262 it must, since rules 1 use only operations it fixes, but that is an argument from the specification, not a
+measurement, until a trace from such a browser is compared. That an engine has no bug in those operations. That a
+future change to `sim.js` keeps to the contract, beyond what the two checks and the plants catch.
+
+The trace experiment (`trace.py`) is where cross-engine differences are pinned down. It is a diagnostic beside the self-test, not part of it,
 and nothing passes or fails on what it finds. Its comparison takes each function's results only on the arguments
 both runs passed, so that runs which have already parted, and so call a function with different arguments, are not
 mistaken for a function that differs. In call order, it says whether the first difference is in an argument (the runs
@@ -126,9 +236,10 @@ are in R-6.
 | `level.py` | the converter: D to W and C, and the manifest |
 | `check.py` | the map checks, for map content |
 | `serve.py` | the launcher, and the driver of the self-test and the bench |
-| `trace.py` | the trace experiment: its own small launcher (four files and the map), and the comparison of two traces |
-| `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the state's snapshots, the self-test. No DOM; runs in a worker and under node too |
-| `web/sim_worker.js` | the simulation in a realm of its own, for the self-test and the trace: resumes a snapshot, plays a run in a counterfactual engine, or records and plays the two runs with Math logged |
+| `trace.py` | the trace experiment: its own small launcher (four files and the map, and the runs of another trace with `--inputs`), and the comparison of two traces, rules by rules |
+| `rules_ref.py` | the reference for the rules' arithmetic: the same algorithms in Python, and what holds `sim.js` to them |
+| `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the state's snapshots, the rules' arithmetic (rules 1; rules 0 kept for comparison), the self-test. No DOM; runs in a worker and under node too |
+| `web/sim_worker.js` | the simulation in a realm of its own, for the self-test and the trace: resumes a snapshot, plays a run in a counterfactual engine, or plays the three runs under both rules with Math logged |
 | `web/trace.html`, `web/trace.js` | the trace experiment's page |
 | `web/render.js` | the renderer (FPS-VISUAL-0): WebGL 1; a sky, a sun whose shadow is traced through the heights, floor modules, panelled walls, dressed cover, beams on the wall tops, a skyline outside the map, the weapon in the hand; the 1 m grid on G |
 | `web/render_flat.js` | the graybox's first renderer, kept unchanged but for its name: one shader, flat colours, the 1 m grid (`--renderer flat`) |
@@ -173,9 +284,10 @@ Not here: other players, damage to the player, an objective that scores, ammunit
 step by at most 0.55 m), ceilings, overhangs and anything not a column standing on a cell. Interpolation between
 ticks. A shot aimed at an overhead beam passes through it: the beams are decoration. The timings are software
 timestamps inside the page: they end inside the page's own callbacks (the draw time is its submission, not the
-GPU's completion), before anything is composited, and are not input-to-photon. Determinism is claimed for one build in one browser: the replay check compares two runs
-in the same page, and the state checks above say what its equal hashes cover. Nothing is claimed across browsers or
-machines; the counterfactual lines measure how a last-bit difference would carry, in the browser they run in.
+GPU's completion), before anything is composited, and are not input-to-photon. Determinism within one browser is
+checked: the replay compares two runs in the same page, and the state checks above say what its equal hashes cover.
+Across browsers and machines, rules 1 are built to give the same bits (the contract above): measured the same in two
+V8 engines and against CPython; not yet measured in another engine.
 
 ## Boundaries
 

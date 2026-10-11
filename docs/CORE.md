@@ -26,7 +26,7 @@ Two times are kept apart, and a third runtime stands beside them.
 | `shell/` | Rust | 12,641 | presentation, playback, the live loop and its durable session, the tick rules, admission, the batch, the design compiler | `shell-*` and every live, admission and compiler rung |
 | `verify/` | Python | 22,643 (`verify.py` 17,025) | the gate, the envelope, the saved-form reader, the registers, the sealers | is the gate |
 | `design/` | Python | 1,084 | the design tool, a client of the shell | its own 17 checks; no row |
-| `graybox/` | Python, JS, HTML | 3,393 | the FPS slice: converter, map checks, server, simulation and its state checks, two renderers, the trace experiment | its own checks; no row |
+| `graybox/` | Python, JS, HTML | 4,505 | the FPS slice: converter, map checks, server, simulation (rules 1, its own arithmetic) and its state checks, the rules' reference in Python, two renderers, the trace experiment | its own checks; no row |
 | `art/` | Python, Rust, JS, HTML | 6,053 | prompted art: the art file's reader and exporter to one engine scene, its checks, the native plaza (`play.py`, a WebGL 2 renderer, live edits), the Unreal 5.8 importer (an optional path); DIRECTOR-0 (the canonical form, the scope protocol, the ledger, a second implementation in Rust) | `art/check.py`, `art/director.py selftest`, `art/director/conform.rs`; no row |
 
 Line counts are of tracked `.rs`, `.py`, `.js` and `.html` files.
@@ -122,7 +122,7 @@ Each stage, its input and output, and what it keeps:
 | pinned level | `level <path> <sha256>`, the hash checked against the file | the sha256 | the same |
 | D → W | the overlay adds heights, cover and marks on floor cells only (a probe may name rock) | every cell's source lines; the manifest's converter hash | stairs become floor at height 0 |
 | W → C | the tops alone | `collision_sha256` | everything but the tops |
-| simulate | C plus the standing targets; tick 1/120 s; JS doubles | a state hash per tick (FNV-1a over 64-bit floats) | — |
+| simulate | C plus the standing targets; tick 1/120 s; JS doubles, under rules 1 only operations ECMA-262 fixes and the rules' own sine, cosine, atan2, hypot and square root | a state hash per tick (FNV-1a over 64-bit floats, little-endian); the same states in every conforming engine (`graybox/README.md`, the contract) | — |
 | render | W and the state, read only | — | — |
 
 `check.py` holds W and C to the source with its own reader. The page's self-test holds the movement, the routes, the
