@@ -20,6 +20,12 @@
 // For stills and walk-throughs: ?view=NAME opens at a view and renders it; ?cam=x,y,z,yaw,pitch (metres, degrees);
 // ?slot=K picks the source; window.PLAY.walkTo(tick) puts the player where the self-test's recorded walk is at that
 // tick and renders it.
+//
+// The studio (STUDIO-0, art/studio.py): E selects the piece of the scene under the crosshair, Enter opens the director's
+// panel. The prompt, the selection and the camera go to play.py, whose gateway asks the configured provider for at
+// most three candidates and has the director evaluate each; those it draws are sources this page switches to in place,
+// the game untouched, exactly as [ and ] do. Nothing here admits, rejects or undoes: the panel's buttons ask play.py,
+// which does it through the director's ledger. A failure of the provider is shown, and the world goes on.
 
 (function () {
   "use strict";
@@ -136,6 +142,7 @@
       busy = true;
       get("/live").then(json).then(function (live) {
         busy = false;
+        studioShow(live.studio);
         if (live.version !== cur.version || JSON.stringify(live.code) !== JSON.stringify(cur.code)) return sync(live, false);
       }).catch(function () { busy = false; say("play.py does not answer; the last scene stays"); });
     };
@@ -148,10 +155,143 @@
       }
     };
 
+    // ---------------------------------------------------------------- the studio
+    const token = document.body.getAttribute("data-studio") || "";
+    const studio = { open: false, sel: null, info: "", last: "", req: null };
+    const panel = $("studio"), promptEl = $("st-prompt"), mark = $("mark");
+    const post = function (path, body) {
+      return fetch(path, { method: "POST", headers: { "Content-Type": "application/json", "X-Studio-Token": token }, body: JSON.stringify(body || {}) })
+        .then(function (r) { return r.json().catch(function () { return { ok: false, message: "HTTP " + r.status }; }); })
+        .catch(function (e) { return { ok: false, message: "play.py does not answer (" + (e && e.message || e) + ")" }; });
+    };
+    const eye = function () { return mode === "play" ? eyeOf(s) : vcam; };
+    // the distance along the ray at which it enters the box, or Infinity (the view's own arithmetic: nothing here is state)
+    const enter = function (o, d, b) {
+      let near = -Infinity, far = Infinity;
+      for (let a = 0; a < 3; a++) {
+        const lo = b[a], hi = b[a + 3];
+        if (d[a] === 0) { if (o[a] < lo || o[a] > hi) return Infinity; continue; }
+        let t1 = (lo - o[a]) / d[a], t2 = (hi - o[a]) / d[a];
+        if (t1 > t2) { const t = t1; t1 = t2; t2 = t; }
+        if (t1 > near) near = t1;
+        if (t2 < far) far = t2;
+        if (near > far) return Infinity;
+      }
+      return far < 0 ? Infinity : Math.max(near, 0);
+    };
+    // the piece under the crosshair: the nearest box the ray meets, of the scene's dressing or its play world (a wall in
+    // front hides what is behind it, and is the map's, not the art's)
+    const pickPiece = function () {
+      const c = eye(), cp = Math.cos(c.pitch), o = [c.x, c.y, c.z], d = [cp * Math.sin(c.yaw), Math.sin(c.pitch), -cp * Math.cos(c.yaw)];
+      let best = null, bt = Infinity;
+      for (const v of S.visuals) { if (v.box) { const t = enter(o, d, v.box); if (t < bt) { bt = t; best = v; } } }
+      for (const b of S.collision || []) { const t = enter(o, d, b.box); if (t < bt) { bt = t; best = null; } }
+      return best;
+    };
+    const markSel = function () {
+      const v = studio.sel && S.visuals.find(function (x) { return x.id === studio.sel.id; });
+      if (!v) { mark.style.display = "none"; return; }
+      const c = eye(), cp = Math.cos(c.pitch), f = [cp * Math.sin(c.yaw), Math.sin(c.pitch), -cp * Math.cos(c.yaw)], r = [Math.cos(c.yaw), 0, Math.sin(c.yaw)];
+      const u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
+      const th = Math.tan(33 * deg), asp = canvas.clientWidth / canvas.clientHeight, b = v.box;
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, seen = 0;
+      for (let i = 0; i < 8; i++) {
+        const p = [b[i & 1 ? 3 : 0] - c.x, b[i & 2 ? 4 : 1] - c.y, b[i & 4 ? 5 : 2] - c.z];
+        const z = p[0] * f[0] + p[1] * f[1] + p[2] * f[2];
+        if (z < 0.1) continue;
+        seen++;
+        const sx = (p[0] * r[0] + p[1] * r[1] + p[2] * r[2]) / (z * th * asp), sy = (p[0] * u[0] + p[1] * u[1] + p[2] * u[2]) / (z * th);
+        x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+      }
+      if (!seen) { mark.style.display = "none"; return; }
+      const W = canvas.clientWidth, H = canvas.clientHeight, cl = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+      const L = cl((x0 + 1) / 2 * W, -2, W + 2), R = cl((x1 + 1) / 2 * W, -2, W + 2), T = cl((1 - y1) / 2 * H, -2, H + 2), B = cl((1 - y0) / 2 * H, -2, H + 2);
+      mark.style.display = R - L > 1 && B - T > 1 ? "block" : "none";
+      mark.style.left = L + "px"; mark.style.top = T + "px"; mark.style.width = (R - L) + "px"; mark.style.height = (B - T) + "px";
+    };
+    const select = function () {
+      const v = pickPiece();
+      studio.sel = v ? { id: v.id, material: v.material } : null;
+      studio.info = v ? v.id + " (" + v.material + ")" : "";
+      $("st-selection").textContent = v ? "Selected: " + studio.info : "No selection: the prompt is for the whole world";
+      say(v ? "selected " + studio.info : "nothing of the art under the crosshair; the selection is cleared");
+      if (v) get("/studio/piece?id=" + encodeURIComponent(v.id)).then(json).then(function (r) {
+        if (studio.sel && studio.sel.id === v.id && r.ok && r.selection) {
+          const st = r.selection.statement;
+          studio.info = r.selection.address + (st ? "  ·  line " + st.line + ": " + st.text : "");
+          $("st-selection").textContent = "Selected: " + studio.info;
+        }
+      }).catch(function () {});
+    };
+    const openPanel = function () {
+      studio.open = true; panel.classList.add("open");
+      if (document.pointerLockElement) document.exitPointerLock();
+      $("st-selection").textContent = studio.sel ? "Selected: " + studio.info : "No selection: the prompt is for the whole world";
+      setTimeout(function () { promptEl.focus(); }, 0);
+    };
+    const closePanel = function () { studio.open = false; panel.classList.remove("open"); promptEl.blur(); };
+    const note = function (r, what) { $("st-status").innerHTML = ""; const el = document.createElement("span"); el.className = r.ok ? "good" : "bad"; el.textContent = r.ok ? what : (r.code ? r.code + ": " : "") + (r.message || "failed"); $("st-status").appendChild(el); };
+    const ask = function () {
+      const c = eye();
+      post("/studio/ask", { prompt: promptEl.value, piece: studio.sel ? studio.sel.id : null,
+                            camera: { x: c.x, y: c.y, z: c.z, yaw_deg: c.yaw / deg, pitch_deg: c.pitch / deg } })
+        .then(function (r) { note(r, "asked: request " + (r.id || "")); studio.last = ""; });
+    };
+    const decide = function (what, rid, letter) {
+      post("/studio/" + what, { id: rid, candidate: letter }).then(function (r) {
+        note(r, what === "admit" ? "admitted: ledger #" + (r.ledger || []).join(", #") : "rejected: ledger #" + (r.ledger || []).join(", #"));
+        if (r.ok && what === "admit") pick(0);
+        studio.last = "";
+      });
+    };
+    $("st-ask").onclick = ask;
+    $("st-cancel").onclick = function () { if (studio.req) post("/studio/cancel", { id: studio.req.id }).then(function (r) { note({ ok: true }, r.ok ? "cancelled" : "nothing to cancel"); }); };
+    $("st-original").onclick = function () { pick(0); };
+    $("st-undo").onclick = function () { post("/studio/undo", {}).then(function (r) { note(r, "undone: ledger #" + (r.ledger || []).join(", #")); if (r.ok) pick(0); }); };
+    const studioShow = function (st) {
+      if (!st) return;
+      const key = JSON.stringify([st, cur.k]);
+      if (key === studio.last) return;
+      studio.last = key;
+      const pv = st.provider || {};
+      $("st-provider").textContent = pv.configured ? "provider: " + pv.model + " (" + pv.config + ")" : "no director: " + (pv.error || "play.py was started without --director");
+      $("st-ask").disabled = !pv.configured;
+      const r = st.request;
+      studio.req = r;
+      $("st-cancel").disabled = !(r && r.state === "running");
+      const box = $("st-cands");
+      box.innerHTML = "";
+      if (r) {
+        const head = document.createElement("div");
+        head.className = r.state === "failed" ? "bad" : "dim";
+        head.textContent = "request " + r.id + ": " + r.state + (r.message ? " — " + (r.code ? r.code + ": " : "") + r.message : "") + "  (" + Math.round(r.elapsed_ms / 100) / 10 + " s)";
+        box.appendChild(head);
+        for (const c of r.candidates || []) {
+          const el = document.createElement("div");
+          el.className = "cand" + (c.slot !== null && c.slot === cur.k ? " shown" : "");
+          const t = document.createElement("div");
+          t.textContent = c.letter + " · " + c.title + " · " + (c.verdict || "?") + (c.codes && c.codes.length ? " " + c.codes.join(",") : "") + (c.decided ? " · " + c.decided : "");
+          t.className = c.verdict === "CLEAN" ? "good" : c.verdict === "REFUSED" ? "bad" : "";
+          el.appendChild(t);
+          if (c.message) { const m = document.createElement("div"); m.className = "dim"; m.textContent = c.message.slice(0, 300); el.appendChild(m); }
+          const btn = function (label, fn, on) { const b = document.createElement("button"); b.textContent = label; b.disabled = !on; b.onclick = fn; el.appendChild(b); };
+          btn("Show", function () { pick(c.slot); }, c.slot !== null);
+          btn("Admit", function () { decide("admit", r.id, c.letter); }, c.slot !== null && c.verdict === "CLEAN" && !c.decided);
+          btn("Reject", function () { decide("reject", r.id, c.letter); }, !c.decided);
+          box.appendChild(el);
+        }
+      }
+      if (st.last && st.last.what) {
+        const l = document.createElement("div"); l.className = "dim";
+        l.textContent = "last: " + st.last.what + (st.last.candidate ? " " + st.last.candidate : "") + (st.last.of ? " of #" + st.last.of : "") + (st.last.ledger ? " (ledger #" + st.last.ledger.join(", #") + ")" : "");
+        box.appendChild(l);
+      }
+    };
+
     // the hooks a still, a walk-through or a test uses
     window.PLAY = {
       get renderer() { return R; }, get scene() { return S; }, get state() { return s; }, get world() { return world; },
-      live: cur, sim: Sim,
+      live: cur, sim: Sim, studio: studio, select: select,
       pause: function (on) { paused = !!on; },
       slot: pick,
       view: function (name, time) { goView(name); render(vcam, time || 0, s); },
@@ -190,6 +330,14 @@
     document.addEventListener("mousedown", function (e) { if (locked() && e.button === 0 && mode === "play") fire = true; });
     document.addEventListener("mouseup", function (e) { if (e.button === 0) fire = false; });
     document.addEventListener("keydown", function (e) {
+      // typing to the director is not playing: the panel's own keys, and nothing reaches the game
+      if (e.target && /^(TEXTAREA|INPUT|BUTTON)$/.test(e.target.tagName)) {
+        if (e.code === "Escape") closePanel();
+        else if (e.code === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ask(); }
+        return;
+      }
+      if (e.code === "KeyE" && mode === "play") select();
+      if (e.code === "Enter") { e.preventDefault(); openPanel(); return; }
       keys[e.code] = true;
       const n = parseInt(e.key, 10);
       if (n >= 1 && n <= views.length) { goView(views[n - 1]); overlay.style.display = "none"; }
@@ -217,9 +365,11 @@
         }
       } else acc = 0;
       render(mode === "play" ? eyeOf(s) : vcam, (now - t0) / 1000, s);
+      markSel();
       const info = cur.slots[cur.k] || {}, sv = info.served || {};
       $("hud").textContent = (S.title || brief) + "  ·  " + label + "  ·  cell " + Math.floor(s.x / S.grid.cell) + "," + Math.floor(s.z / S.grid.cell)
-        + "  ·  hits " + s.score + "\n" + views.map(function (v, i) { return (i + 1) + " " + v; }).join("  ") + "  ·  Tab play  ·  WASD, mouse, Space, R"
+        + "  ·  hits " + s.score + "\n" + views.map(function (v, i) { return (i + 1) + " " + v; }).join("  ") + "  ·  Tab play  ·  WASD, mouse, Space, R  ·  E select, Enter director"
+        + (studio.sel ? "\nselected " + studio.info : "")
         + "\nsource [" + cur.k + "] " + (info.label || "") + (sv.verdict ? "  ·  " + sv.verdict : "")
         + "  ·  scene " + cur.sha.slice(0, 12) + (cur.slots.length > 1 ? "  ·  [ ] steps through the " + cur.slots.length + " sources" : "")
         + "\nmovement and collision: the graybox's simulation against C  ·  live: play.py v" + cur.version

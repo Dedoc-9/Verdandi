@@ -4,7 +4,8 @@
 # art/play.py — the native plaza: a brief's dressed scene, played in the browser, without Unreal, and changed while it
 # runs.
 #
-#   python art/play.py BRIEF [--intent FILE]... [--art PATH] [--port N] [--no-browser] [--no-watch] [--check]
+#   python art/play.py BRIEF [--intent FILE]... [--art PATH] [--director CONFIG.json] [--root DIR] [--port N]
+#                            [--no-browser] [--no-watch] [--check]
 #   python art/play.py --selftest
 #
 # By the owner's ruling (2026-10-11): an art-owned launcher, with WebGL 2, and graybox/serve.py and the graybox's
@@ -37,7 +38,16 @@
 # map is a new collision world, and so a new game: the simulation's own new state at the spawn, nothing of the old
 # game carried into it (the edit is new authority). The renderer's own file is swapped in place too; a change to
 # play.js or sim.js is announced and loaded by reloading the page. Nothing is written to disk but the self-test's
-# scratch folder. Standard library only.
+# scratch folder, unless the studio is used (below). Standard library only.
+#
+# The studio (STUDIO-0, the owner's direction of 2026-10-11; art/studio.py, art/STUDIO.md). With --director CONFIG.json
+# the page can summon a director: Enter opens a prompt, E selects the piece under the crosshair, and the prompt, the
+# selection and the camera go to art/studio.py's gateway, which asks the configured provider for at most three
+# candidates, has the director evaluate each at the current head, and serves those it does not refuse as further
+# sources: the page switches to one in place, the game untouched. Admit, reject and undo go through the director's
+# ledger and write the brief, as art/director.py does; the requests are recorded under art/build/studio/. The page's
+# POSTs carry the token play.html is served with and must name this server as their host. --root DIR plays the brief
+# of another tree (DIR/art/briefs, DIR/art/ledger), as the self-test does in a scratch copy.
 
 import hashlib
 import http.server
@@ -75,6 +85,7 @@ CODE = [os.path.join(HERE, "dress.py"), os.path.join(HERE, "check.py"), os.path.
         os.path.join(REPO, "graybox", "level.py"), os.path.join(REPO, "graybox", "check.py")]
 SERVED = "the art checks passed; movement and collision are the graybox simulation's, against C"
 _director = None
+ROOT = REPO     # the tree whose brief and ledger the director and the studio use (--root)
 
 
 def sha256(b):
@@ -132,6 +143,10 @@ def brief_slot(brief, art_path=None):
     return _slot(label, art_path or "art/briefs/%s.art" % brief, out, map_bytes)
 
 
+def workspace(brief):
+    return director().Workspace(brief, ROOT)
+
+
 def intent_slot(brief, path):
     """The brief with the intent at `path` applied, as the director evaluates it at the current head."""
     D = director()
@@ -144,13 +159,20 @@ def intent_slot(brief, path):
     except D.canon.IntentError as e:
         return _slot(label, path, message="PLAY: the intent is malformed: %s %s" % (e.code, e))
     label = "intent %s (%s): %s" % (os.path.basename(path), it["candidate"], it["prompt"])
+    return candidate_slot(workspace(brief), it, label, path)
+
+
+def candidate_slot(ws, it, label, source="studio"):
+    """An intent evaluated by the director at the current head: a source, served unless the director refuses it."""
+    D = director()
     got = {}
 
     def keep(out1, maps):
         got["map"] = level.canon(dress.world(out1["scene"]["map"], maps))
 
+    path = source
     try:
-        verdict, _after, _t, out1, _out0, _text1 = D.evaluate_doc(D.Workspace(brief), it, on_candidate=keep)
+        verdict, _after, _t, out1, _out0, _text1 = D.evaluate_doc(ws, it, on_candidate=keep)
     except (dress.ArtError, level.MapError, OSError) as e:
         return _slot(label, path, message="PLAY: the head cannot be compiled: %s" % e)
     extra = {"verdict": verdict["verdict"], "codes": verdict["codes"], "written_against": verdict["written_against"],
@@ -205,12 +227,23 @@ class Live:
         self.inputs = [self.digest(self.inputs_of(k)) for k in range(len(slots))]
         self.compiles = [1] * len(slots)
         self.log = []
+        self.extra = []          # the studio's candidates: sources after the given ones, replaced by each request
+        self.studio = None       # art/studio.py's gateway, with --director
+        self.studio_error = ""
+
+    def publish(self, slots):
+        """The studio's candidates, served after the given sources; returns their indices."""
+        with self.lock:
+            self.extra = list(slots)
+            self.version += 1
+            n = len(self.served)
+            return list(range(n, n + len(self.extra)))
 
     # ------------------------------------------------------------------ what is watched
     def inputs_of(self, k):
         """The files source k is made from: its own (the art file; an intent and the brief it is applied to), the maps,
         and the code that compiles them."""
-        brief_file = os.path.join(dress.BRIEFS, self.brief + ".art")
+        brief_file = os.path.join(ROOT, "art", "briefs", self.brief + ".art")
         own = [self.art_path or brief_file] if k == 0 else [self.intents[k - 1], brief_file]
         return sorted(set(os.path.abspath(f) for f in own + self.shared()))
 
@@ -344,17 +377,73 @@ class Live:
                               "verdict": last.get("verdict", ""), "codes": last.get("codes", []),
                               "served": {"sha": s["sha"], "map": s["map"], "map_sha": s["map_sha"], "counts": s["counts"],
                                          "verdict": s.get("verdict", ""), "codes": s.get("codes", [])} if s else None})
-            return {"format": "VERDANDI-PLAY-LIVE 0", "brief": self.brief, "version": self.version, "compiled_ms": self.compiled_ms,
-                    "slots": slots, "code": self.code()}
+            for s in self.extra:
+                slots.append({"label": s["label"], "ok": True, "message": "", "verdict": s.get("verdict", ""), "codes": s.get("codes", []),
+                              "studio": True, "served": {"sha": s["sha"], "map": s["map"], "map_sha": s["map_sha"], "counts": s["counts"],
+                                                         "verdict": s.get("verdict", ""), "codes": s.get("codes", [])}})
+            out = {"format": "VERDANDI-PLAY-LIVE 0", "brief": self.brief, "version": self.version, "compiled_ms": self.compiled_ms,
+                   "slots": slots, "code": self.code()}
+        out["studio"] = self.studio.state() if self.studio else {"provider": {"configured": False, "model": "", "config": "", "error": self.studio_error},
+                                                                   "request": None, "last": {}}
+        return out
 
     def slot(self, k):
         with self.lock:
-            return self.served[k] if 0 <= k < len(self.served) else None
+            if 0 <= k < len(self.served):
+                return self.served[k]
+            k -= len(self.served)
+            return self.extra[k] if 0 <= k < len(self.extra) else None
+
+
+class Host:
+    """What the studio's gateway needs of this launcher."""
+
+    def __init__(self, live):
+        self.live = live
+
+    def director(self):
+        return director()
+
+    def workspace(self):
+        return workspace(self.live.brief)
+
+    def candidate_slot(self, ws, it, label):
+        return candidate_slot(ws, it, label)
+
+    def publish(self, slots):
+        return self.live.publish(slots)
+
+
+STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo")
+
+
+def studio_post(live, path, body):
+    """One of the page's studio requests: (HTTP status, JSON reply)."""
+    import studio
+    g = live.studio
+    if g is None:
+        return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
+    try:
+        if path == "/studio/ask":
+            return 200, {"ok": True, "id": g.ask(body.get("prompt"), body.get("piece"), body.get("camera"))}
+        if path == "/studio/cancel":
+            return 200, {"ok": g.cancel_request(body.get("id"))}
+        if path == "/studio/admit":
+            return 200, dict(g.admit(body.get("id"), body.get("candidate")), ok=True)
+        if path == "/studio/reject":
+            return 200, dict(g.reject(body.get("id"), body.get("candidate")), ok=True)
+        return 200, dict(g.undo(), ok=True)
+    except studio.StudioError as e:
+        return 409, {"ok": False, "code": e.code, "message": e.detail}
+    except (dress.ArtError, level.MapError, OSError, ValueError, KeyError, TypeError) as e:
+        return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
 def server(live, port=0):
+    import secrets
     page_t = open(os.path.join(WEB, "play.html"), encoding="utf-8").read()
     brief = live.brief
+    live.token = secrets.token_hex(16)
 
     class Handler(http.server.BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -383,9 +472,17 @@ def server(live, port=0):
                 return
             if path == "/play.html":
                 s0 = live.slot(0)
-                return self.send(200, page_t.replace("%BRIEF%", brief).replace("%SHA%", s0["sha"] if s0 else "").encode("utf-8"), "text/html; charset=utf-8")
+                page = page_t.replace("%BRIEF%", brief).replace("%SHA%", s0["sha"] if s0 else "").replace("%STUDIO%", live.token)
+                return self.send(200, page.encode("utf-8"), "text/html; charset=utf-8")
             if path == "/live":
                 return self.send(200, json.dumps(live.state(), sort_keys=True).encode("utf-8"), "application/json")
+            if path == "/studio/piece" and live.studio is not None and re.fullmatch(r"[a-z]+:[0-9a-z,:-]{1,60}", q.get("id", "")):
+                import studio
+                try:
+                    _ws, _p, head, _st, sel = live.studio.context(q["id"])
+                    return self.send(200, json.dumps({"ok": True, "head": head, "selection": sel}, sort_keys=True).encode("utf-8"), "application/json")
+                except studio.StudioError as e:
+                    return self.send(200, json.dumps({"ok": False, "code": e.code, "message": str(e)}).encode("utf-8"), "application/json")
             if path in FILES:
                 f, ctype = FILES[path]
                 with open(f, "rb") as fh:
@@ -397,9 +494,51 @@ def server(live, port=0):
                 return self.send(200, s["map_bytes"], "application/json")
             return self.send(404, b"not found", "text/plain")
 
+        def do_POST(self):
+            # the studio's requests: only from the page this server served (its token, in a header a page of another
+            # origin cannot send without a preflight this server never answers), and only to this host by name
+            path = self.path.partition("?")[0]
+            if path not in STUDIO_POSTS:
+                return self.send(404, b"not found", "text/plain")
+            host = self.headers.get("Host", "")
+            port_ = self.server.server_address[1]
+            if host not in ("127.0.0.1:%d" % port_, "localhost:%d" % port_) or self.headers.get("X-Studio-Token") != live.token:
+                return self.send(403, b"forbidden", "text/plain")
+            n = int(self.headers.get("Content-Length", "0") or 0)
+            if n > 65536 or not (self.headers.get("Content-Type", "").startswith("application/json")):
+                return self.send(400, b"a studio request is JSON of at most 64 KiB", "text/plain")
+            try:
+                body = json.loads(self.rfile.read(n).decode("utf-8")) if n else {}
+                if not isinstance(body, dict):
+                    raise ValueError("not an object")
+            except (UnicodeDecodeError, ValueError):
+                return self.send(400, b"not a JSON object", "text/plain")
+            code, reply = studio_post(live, path, body)
+            return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
+
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
+
+
+def start_studio(live, config, say=print):
+    """The studio's gateway on this launcher's brief. Without --director it runs with no provider: the page says so, and
+    the world is played as ever. A configuration that cannot be read is said, and the same holds."""
+    import studio
+    cfg, err = None, ""
+    if config:
+        try:
+            cfg = studio.load_config(config)
+        except studio.StudioError as e:
+            err = str(e)
+    own = os.path.abspath(os.path.join(ROOT, "art", "briefs", live.brief + ".art"))
+    if live.art_path and os.path.abspath(live.art_path) != own:
+        cfg, err = None, "the studio edits %s; --art plays another file" % os.path.relpath(own, REPO)
+    live.studio = studio.Gateway(Host(live), live.brief, cfg, ROOT)
+    live.studio.error = err
+    if config or err:
+        say("studio: %s" % (err or "the director %s (%s); Enter in the page summons it, E selects" % (cfg["model"], os.path.relpath(cfg["path"], REPO))))
+    return live.studio
 
 
 def opts(argv, k):
@@ -409,14 +548,19 @@ def opts(argv, k):
 def main(argv):
     if "--selftest" in argv:
         return selftest()
+    global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
-    vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only"))
+    vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root"))
     pos = [a for a in argv if not a.startswith("--") and a not in vals]
     if not pos:
         print("usage: python art/play.py BRIEF [--intent FILE]... [--art PATH] [--port N] [--no-browser] [--no-watch] [--check]\n"
               "       python art/play.py --selftest", file=sys.stderr)
         return 2
     brief, art_path, intents = pos[0], one("--art"), opts(argv, "--intent")
+    if one("--root"):
+        ROOT = os.path.abspath(one("--root"))
+        if art_path is None:
+            art_path = os.path.join(ROOT, "art", "briefs", brief + ".art")
     if "--emit" in argv:
         only = one("--only")
         return emit(brief, art_path, intents, None if only is None else {int(k) for k in only.split(",")})
@@ -431,6 +575,7 @@ def main(argv):
         print("the art checks passed; not served (--check)" if all(s["ok"] for s in slots) else "a source is not served (--check)")
         return 0 if all(s["ok"] for s in slots) else 1
     live = Live(brief, art_path, intents, slots=slots)
+    start_studio(live, one("--director"))
     srv = server(live, int(one("--port", "0")))
     url = "http://127.0.0.1:%d/" % srv.server_address[1]
     print(SERVED)
@@ -584,6 +729,299 @@ def selftest():
             srv.shutdown()
         shutil.rmtree(tmp, ignore_errors=True)
     print("LIVE SELFTEST %d/%d" % (sum(rows), len(rows)))
+    return 0 if all(rows) else 1
+
+
+# ---------------------------------------------------------------------------------------------- the studio's self-test
+TEST_PROVIDERS = {
+    # each a provider a director could be: what it does, and what the gateway must make of it
+    "malformed.py": "import sys; sys.stdin.read(); sys.stdout.write('this is not JSON')",
+    "wrong_id.py": "import sys, json; r = json.load(sys.stdin); print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': 'another', 'provider': {'name': 't', 'model': 't'}, 'candidates': []}))",
+    "one_bad.py": ("import sys, json; r = json.load(sys.stdin); st = r['selection']['statement']['text']\n"
+                   "good = {'title': 'Deeper', 'rationale': 'deeper', 'revision': ['= ' + st + ' deep 2.6'], 'scope': [r['selection']['patterns'][0]], 'preserve': []}\n"
+                   "bad = {'title': 'Nowhere', 'rationale': 'a slab the brief does not have', 'revision': ['= canopy plaza concrete_slab 7.0 0,0 1,1'], 'scope': ['plaza/canopy/*'], 'preserve': []}\n"
+                   "leak = {'title': 'Leaks', 'rationale': 'the slab and the lamps', 'revision': ['= ' + st + ' deep 2.0', '= lamp plaza 255,120,60 500 3'], 'scope': [r['selection']['patterns'][0]], 'preserve': []}\n"
+                   "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, 'candidates': [bad, good, leak]}))"),
+    "slow.py": "import sys, time, os; sys.stdin.read(); time.sleep(20); open(os.environ.get('STUDIO_TEST_MARK', os.devnull), 'w').write('ran to the end')",
+    "crash.py": "import sys; sys.stdin.read(); sys.stderr.write('the model is unavailable: 503\\n'); sys.exit(3)",
+    "huge.py": "import sys; sys.stdin.read(); sys.stdout.write('x' * 200000)",
+    "four.py": ("import sys, json; r = json.load(sys.stdin); st = r['selection']['statement']['text']\n"
+                "c = lambda d: {'title': 'Deep ' + d, 'rationale': 'deeper', 'revision': ['= ' + st + ' deep ' + d], 'scope': ['plaza/canopy/*'], 'preserve': []}\n"
+                "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, 'candidates': [c(d) for d in ('1.0', '1.5', '2.0', '2.5')]}))"),
+}
+
+
+def studio_selftest():
+    """The gateway end to end in a scratch copy of the brief, its ledger and the maps, served by this launcher: the
+    scripted provider's candidates drawn, replayed from their records, admitted, rejected and undone through the
+    ledger; and each way a provider can fail (no provider, a refused configuration, not JSON, another request's id, a
+    candidate the director refuses, one that leaks, a cancellation, a newer request, a timeout, an exit with an error,
+    too much output, a command that cannot start), each leaving the world served as it was."""
+    global ROOT
+    import studio
+    brief, tmp, rows = "plaza-night", tempfile.mkdtemp(prefix="studio-selftest-"), []
+    saved_root = ROOT
+
+    def row(name, ok, detail):
+        rows.append(ok)
+        print("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+
+    def cfg(name, argv, timeout=30, size=65536):
+        path = os.path.join(tmp, name + ".json")
+        open(path, "w").write(json.dumps({"provider": "cli", "argv": argv, "model": name, "timeout_s": timeout, "max_output_bytes": size}))
+        return path
+
+    def wait(g, rid, secs=60):
+        t = time.time()
+        while time.time() - t < secs:
+            r = g.state()["request"]
+            if r and r["id"] == rid and r["state"] != "running":
+                return r
+            time.sleep(0.05)
+        return g.state()["request"]
+
+    def post(srv, path, body, token, host=None):
+        req = urllib.request.Request("http://127.0.0.1:%d%s" % (srv.server_address[1], path), data=json.dumps(body).encode("utf-8"), method="POST",
+                                     headers={"Content-Type": "application/json", "X-Studio-Token": token, "Host": host or "127.0.0.1:%d" % srv.server_address[1]})
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return r.status, json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            try:
+                return e.code, json.loads(e.read())
+            except ValueError:
+                return e.code, {}
+
+    live = srv = None
+    try:
+        for sub in ("art/briefs", "art/ledger", "graybox/maps"):
+            shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        for name, code in TEST_PROVIDERS.items():
+            open(os.path.join(tmp, name), "w").write(code + "\n")
+        ROOT = tmp
+        art = os.path.join(tmp, "art", "briefs", brief + ".art")
+        original = open(art, "rb").read()
+        live = Live(brief, art, [], poll=0.15)
+        srv = server(live)
+        threading.Thread(target=live.watch, kwargs={"say": lambda s: None}, daemon=True).start()
+        s0 = live.slot(0)["sha"]
+        piece, cam = "canopy:19,10-28,11", {"x": 40.0, "y": 1.62, "z": 30.0, "yaw_deg": 0.0, "pitch_deg": 12.0}
+
+        # no provider; a configuration refused whole
+        g = start_studio(live, None, say=lambda s: None)
+        try:
+            g.ask("heavier", piece, cam)
+            row("no provider: the ask refused, the world served", False, "it was asked")
+        except studio.StudioError as e:
+            row("no provider: the ask refused, the world served", e.code == "STUDIO-NO-PROVIDER" and live.slot(0)["sha"] == s0, e.code)
+        bad_cfg = os.path.join(tmp, "shell.json")
+        open(bad_cfg, "w").write(json.dumps({"provider": "cli", "argv": "python provider.py --prompt \"$PROMPT\"", "model": "m", "timeout_s": 30, "max_output_bytes": 65536}))
+        g = start_studio(live, bad_cfg, say=lambda s: None)
+        row("a configuration with a shell line refused whole", g.cfg is None and "STUDIO-CONFIG" in g.error and live.state()["studio"]["provider"]["error"] == g.error, g.error[:90])
+
+        # the scripted provider: three candidates drawn, the same map, the request recorded
+        g = start_studio(live, os.path.join(REPO, "art", "providers", "scripted.json"), say=lambda s: None)
+        rid = g.ask("make this overhang heavier and more imposing, a restrained magenta glow underneath", piece, cam)
+        r = wait(g, rid)
+        drawn = [c for c in r["candidates"] if c["slot"] is not None]
+        same_map = all(live.slot(c["slot"])["map_sha"] == live.slot(0)["map_sha"] for c in drawn)
+        row("three candidates drawn for a selected slab", r["state"] == "done" and len(drawn) == 3 and all(c["verdict"] == "CLEAN" for c in drawn) and same_map
+            and len({live.slot(c["slot"])["sha"] for c in drawn} | {s0}) == 4,
+            "%s; %s; each a scene of its own on the same map (so the page swaps the scene and keeps the game)" % (r["message"], ", ".join("%s %s %s" % (c["letter"], c["title"], c["verdict"]) for c in drawn)))
+        st = live.state()
+        row("the page sees them as sources", [x.get("studio") for x in st["slots"]] == [None, True, True, True] and st["studio"]["request"]["id"] == rid,
+            "%d sources: the brief and the three candidates" % len(st["slots"]))
+        rec = os.path.join(tmp, "art", "build", "studio", brief, rid)
+        req = json.loads(open(os.path.join(rec, "request.json"), "rb").read())
+        log = [json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()]
+        row("the request recorded: context, response, intents", req["selection"]["statement"]["text"].startswith("canopy plaza concrete_slab 7.0 19,10 28,11")
+            and req["head"] == r["head"] and sorted(os.listdir(rec)) == ["A.intent", "B.intent", "C.intent", "request.json", "response.raw"]
+            and log[-1]["id"] == rid and log[-1]["outcome"] == "DONE" and log[-1]["model"] == "scripted-1",
+            "the selection's statement (line %d), the head, the response's sha256, each candidate's intent" % req["selection"]["statement"]["line"])
+        replay = intent_slot(brief, os.path.join(rec, "A.intent"))
+        row("a recorded candidate replayed without the provider", replay["ok"] and replay["sha"] == live.slot(drawn[0]["slot"])["sha"],
+            "play.py --intent %s gives scene %s, the one drawn" % (os.path.relpath(os.path.join(rec, "A.intent"), tmp), replay["sha"][:12]))
+
+        # the HTTP boundary: the token and the host
+        tok = live.token
+        a, _ = post(srv, "/studio/cancel", {"id": rid}, "not-the-token")
+        b, _ = post(srv, "/studio/cancel", {"id": rid}, tok, host="evil.example:80")
+        c, body = post(srv, "/studio/cancel", {"id": rid}, tok)
+        row("a POST without the page's token, or to another host, refused", a == 403 and b == 403 and c == 200, "no token %d, another host %d, the page's %d" % (a, b, c))
+
+        # admit A through HTTP: the brief written, the ledger two events longer, the head the candidate's, verified
+        n0 = len(workspace(brief) and director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0])
+        a_sha = live.slot(drawn[0]["slot"])["sha"]
+        code, body = post(srv, "/studio/admit", {"id": rid, "candidate": "A"}, tok)
+        v = live.version
+        t = time.time()
+        while live.slot(0)["sha"] != a_sha and time.time() - t < 30:
+            time.sleep(0.1)
+        events = director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0]
+        try:
+            quiet_verify = studio.quiet(director().cmd_verify, workspace(brief), quiet=True)
+            verified = True
+        except director().led.LedgerError as e:
+            verified = str(e)
+        row("A admitted: the brief written, the ledger's evaluate and admit, the page's source 0 the candidate", code == 200 and body.get("ok") and len(events) == n0 + 2
+            and [e["kind"] for e in events[-2:]] == ["evaluate", "admit"] and events[-1]["observed"]["chooser"] == "the designer (studio)"
+            and live.slot(0)["sha"] == a_sha and verified is True,
+            "ledger #%s, #%s; source 0 now scene %s; the ledger verifies" % (events[-2]["seq"], events[-1]["seq"], live.slot(0)["sha"][:12]))
+        code, body = post(srv, "/studio/admit", {"id": rid, "candidate": "B"}, tok)
+        row("B, drawn at the head before A, refused as stale", code == 409 and body.get("code") == "STUDIO-STALE", body.get("message", "")[:100])
+        code, body = post(srv, "/studio/reject", {"id": rid, "candidate": "C"}, tok)
+        events = director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0]
+        row("C rejected: an evaluation and a refusal in the ledger", code == 200 and [e["kind"] for e in events[-2:]] == ["evaluate", "refuse"], "ledger #%s" % ", #".join(body.get("ledger", [])))
+        # a second request on the slab as A left it; its third candidate admitted; then undo twice, back to the start
+        after_a = open(art, "rb").read()
+        rid2 = g.ask("deeper still", piece, cam)
+        r2 = wait(g, rid2)
+        c3 = [c for c in r2["candidates"] if c["letter"] == "C"][0]
+        code, body = post(srv, "/studio/admit", {"id": rid2, "candidate": "C"}, tok)
+        row("a second request, on the head A made: its C admitted", r2["state"] == "done" and r2["head"] != r["head"] and c3["verdict"] == "CLEAN" and code == 200,
+            "request %s at head %s; ledger #%s" % (rid2, r2["head"][:12], ", #".join(body.get("ledger", []))))
+        code, body = post(srv, "/studio/undo", {}, tok)
+        undo1 = body
+        row("undo: the last admission's exact inverse admitted, the brief as A left it", code == 200 and body.get("ok") and open(art, "rb").read() == after_a,
+            "ledger #%s, the inverse of #%s" % (", #".join(body.get("ledger", [])), body.get("of")))
+        code, body = post(srv, "/studio/undo", {}, tok)
+        t = time.time()
+        while live.slot(0)["sha"] != s0 and time.time() - t < 30:
+            time.sleep(0.1)
+        row("undo again: an undo is never undone; it walks back to A, and the brief's bytes and scene are as at the start",
+            code == 200 and body.get("ok") and body.get("of") != undo1.get("of") and open(art, "rb").read() == original and live.slot(0)["sha"] == s0,
+            "ledger #%s, the inverse of #%s; the brief as it was, byte for byte; scene %s" % (", #".join(body.get("ledger", [])), body.get("of"), s0[:12]))
+        try:
+            studio.quiet(director().cmd_verify, workspace(brief), quiet=True)
+            row("the ledger verifies after the admissions, the refusal and the undos", True, "%d events" % len(director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0]))
+        except director().led.LedgerError as e:
+            row("the ledger verifies after the admissions, the refusal and the undos", False, str(e)[:120])
+
+        # the ways a provider fails: each refused, the world as it was
+        def failing(label, name, argv, want, timeout=30, size=65536, cancel_after=None, then=None):
+            g = start_studio(live, cfg(name, argv, timeout, size), say=lambda s: None)
+            before = (live.slot(0)["sha"], live.state()["slots"][0]["ok"])
+            rid = g.ask("heavier", piece, cam)
+            if cancel_after is not None:
+                time.sleep(cancel_after)
+                g.cancel_request(rid)
+            if then:
+                then(g)
+            r = wait(g, rid, 90)
+            ok = r["code"] == want and (live.slot(0)["sha"], live.state()["slots"][0]["ok"]) == before
+            return ok, r
+
+        py = sys.executable
+        ok, r = failing("not JSON", "malformed", [py, os.path.join(tmp, "malformed.py")], "STUDIO-RESPONSE-JSON")
+        row("a provider that writes no JSON: refused whole, the world as it was", ok and len(live.state()["slots"]) == 1, r["code"] + ": " + r["message"][:70])
+        ok, r = failing("wrong id", "wrong_id", [py, os.path.join(tmp, "wrong_id.py")], "STUDIO-RESPONSE-ID")
+        row("a response to another request: refused", ok, r["message"][:90])
+        ok, r = failing("four", "four", [py, os.path.join(tmp, "four.py")], "STUDIO-RESPONSE-CANDIDATES")
+        row("a response of four candidates: refused whole, not cut to three", ok and not r["candidates"], r["message"][:90])
+        g = start_studio(live, cfg("one_bad", [py, os.path.join(tmp, "one_bad.py")]), say=lambda s: None)
+        rid = g.ask("heavier", piece, cam)
+        r = wait(g, rid)
+        by = {c["letter"]: c for c in r["candidates"]}
+        row("a candidate the director refuses is shown, never drawn; the others are", r["state"] == "done" and by["A"]["verdict"] == "REFUSED" and "INTENT-APPLY" in by["A"]["codes"]
+            and by["A"]["slot"] is None and by["B"]["verdict"] == "CLEAN" and by["B"]["slot"] is not None and by["C"]["verdict"] == "LEAKAGE",
+            "A %s %s (not drawn); B %s; C %s (it changes a lamp outside its scope)%s" % (by["A"]["verdict"], ",".join(by["A"]["codes"]), by["B"]["verdict"], by["C"]["verdict"],
+                                                                                         "" if by["B"]["verdict"] == "CLEAN" else "; " + by["B"]["message"][:200]))
+        code, body = post(srv, "/studio/admit", {"id": rid, "candidate": "C"}, tok)
+        row("a LEAKAGE candidate drawn but not admitted here", code == 409 and body.get("code") == "STUDIO-NOT-ADMISSIBLE", body.get("message", "")[:90])
+        mark = os.path.join(tmp, "slow.ran")
+        os.environ["STUDIO_TEST_MARK"] = mark
+        ok, r = failing("cancelled", "slow", [py, os.path.join(tmp, "slow.py")], "STUDIO-CANCELLED", cancel_after=0.5)
+        time.sleep(0.5)
+        row("a request cancelled: the provider killed, nothing drawn", ok and r["state"] == "cancelled" and not os.path.exists(mark), r["state"] + ", " + r["message"])
+        g = start_studio(live, cfg("slow2", [py, os.path.join(tmp, "slow.py")]), say=lambda s: None)
+        first = g.ask("heavier", piece, cam)
+        time.sleep(0.3)
+        g.cfg = studio.load_config(os.path.join(REPO, "art", "providers", "scripted.json"))
+        second = g.ask("lighter", piece, cam)
+        r2 = wait(g, second)
+        log = [json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()]
+        first_out = [e for e in log if e.get("id") == first]
+        row("a newer request supersedes the one running: its result discarded", r2["state"] == "done" and r2["id"] == second and first_out and first_out[-1]["outcome"] == "STUDIO-CANCELLED",
+            "the first %s, the second %s with %d candidates" % (first_out[-1]["outcome"] if first_out else "?", r2["state"], len(r2["candidates"])))
+        ok, r = failing("timeout", "slow3", [py, os.path.join(tmp, "slow.py")], "STUDIO-TIMEOUT", timeout=1)
+        row("a provider past its time: killed, refused", ok, r["message"][:90])
+        ok, r = failing("exit", "crash", [py, os.path.join(tmp, "crash.py")], "STUDIO-PROVIDER-EXIT")
+        row("a provider that exits with an error (the model unavailable): said, the world as it was", ok and "503" in r["message"], r["message"][:90])
+        ok, r = failing("size", "huge", [py, os.path.join(tmp, "huge.py")], "STUDIO-RESPONSE-SIZE")
+        row("a provider that prints past its limit: killed, refused", ok, r["message"][:90])
+        ok, r = failing("start", "missing", [os.path.join(tmp, "no-such-provider")], "STUDIO-PROVIDER-START")
+        row("a provider that cannot start: said, the world as it was", ok, r["message"][:90])
+        st0 = live.state()["slots"][0]
+        # the Anthropic Messages adapter, against a local server that answers as the API's documentation describes
+        seen = {}
+
+        class Mock(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_POST(self):
+                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))).decode("utf-8"))
+                seen.update(headers={k.lower(): v for k, v in self.headers.items()}, body=body, path=self.path)
+                if body.get("model") == "overloaded":
+                    out, code = {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}, 529
+                else:
+                    text = body["messages"][0]["content"]
+                    stmt = [ln.split(": ", 1)[1].split(" ; key")[0] for ln in text.splitlines() if ln.startswith("61: ")][0]
+                    out = {"id": "msg_test", "type": "message", "role": "assistant", "model": "mock-" + body["model"], "stop_reason": "tool_use",
+                           "content": [{"type": "tool_use", "id": "toolu_test", "name": "propose_candidates",
+                                        "input": {"candidates": [{"title": "Heavier section", "rationale": "deeper", "revision": ["= " + stmt + " deep 2.4"],
+                                                                  "scope": ["plaza/canopy/*"], "preserve": ["the route"]}]}}]}
+                    code = 200
+                b = json.dumps(out).encode("utf-8")
+                self.send_response(code)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(b)))
+                self.end_headers()
+                self.wfile.write(b)
+
+        mock = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Mock)
+        threading.Thread(target=mock.serve_forever, daemon=True).start()
+        saved_env = {k: os.environ.get(k) for k in ("ANTHROPIC_API_KEY", "VERDANDI_DIRECTOR_MODEL", "VERDANDI_DIRECTOR_API")}
+        try:
+            os.environ.update(ANTHROPIC_API_KEY="test-key-not-a-real-one", VERDANDI_DIRECTOR_MODEL="test-model",
+                              VERDANDI_DIRECTOR_API="http://127.0.0.1:%d/v1/messages" % mock.server_address[1])
+            g = start_studio(live, os.path.join(REPO, "art", "providers", "anthropic.json"), say=lambda s: None)
+            rid = g.ask("heavier, a deeper section", piece, cam)
+            r = wait(g, rid)
+            b, h = seen.get("body", {}), seen.get("headers", {})
+            shaped = (h.get("x-api-key") == "test-key-not-a-real-one" and h.get("anthropic-version") == "2023-06-01" and b.get("model") == "test-model"
+                      and b.get("tool_choice") == {"type": "tool", "name": "propose_candidates"} and b["tools"][0]["input_schema"] == studio.SCHEMA
+                      and "heavier, a deeper section" in b["messages"][0]["content"] and "## The art file" in b["messages"][0]["content"])
+            row("the Anthropic adapter: the request shaped as the API's documentation describes, the tool's input read back as the candidates",
+                shaped and r["state"] == "done" and len(r["candidates"]) == 1 and r["candidates"][0]["verdict"] == "CLEAN" and r["provider"]["model"] == "mock-test-model",
+                "the key in x-api-key, anthropic-version 2023-06-01, one tool whose input schema is the gateway's, the call forced; %s" % r["message"])
+            os.environ["VERDANDI_DIRECTOR_MODEL"] = "overloaded"
+            rid = g.ask("heavier", piece, cam)
+            r = wait(g, rid)
+            row("the API overloaded (529): said, the world as it was", r["code"] == "STUDIO-PROVIDER-EXIT" and "529" in r["message"] and live.slot(0)["sha"] == s0, r["message"][:100])
+            del os.environ["ANTHROPIC_API_KEY"]
+            seen.clear()
+            rid = g.ask("heavier", piece, cam)
+            r = wait(g, rid)
+            row("no key in the environment: said, nothing sent", r["code"] == "STUDIO-PROVIDER-EXIT" and "ANTHROPIC_API_KEY" in r["message"] and not seen, r["message"][:100])
+        finally:
+            mock.shutdown()
+            for k, v in saved_env.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        st0 = live.state()["slots"][0]
+        row("the brief served throughout", st0["ok"] and live.slot(0)["sha"] == s0, "scene %s%s" % (s0[:12], "" if st0["ok"] else "; " + st0["message"][:200]))
+    finally:
+        ROOT = saved_root
+        os.environ.pop("STUDIO_TEST_MARK", None)
+        if live:
+            live.stopping = True
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
+    print("STUDIO SELFTEST %d/%d" % (sum(rows), len(rows)))
     return 0 if all(rows) else 1
 
 

@@ -1,0 +1,1 @@
+{"provider": "cli", "argv": ["{python}", "art/providers/anthropic_messages.py"], "model": "Claude, through the Anthropic Messages API (VERDANDI_DIRECTOR_MODEL)", "timeout_s": 150, "max_output_bytes": 262144}

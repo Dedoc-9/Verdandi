@@ -175,7 +175,7 @@ BOT-REF-0        the owner's ruling (2026-10-11), "the next vertical slice": the
       ↓
 INPUT-CONTRACT-0 the owner's ruling (2026-10-11): the tick's input admitted or refused, whole, before anything is touched — a written domain (RULES-1.md, The input), one category for each fault, a shared table of 70 hostile and admitted cases (graybox/web/input_cases.json); sim.js and tick_ref.py agree on every step, outcome and state, in node 22 and Chromium 141, and on his machine in Firefox 157 and Edge 155; nothing admitted changed; outside the gate
       ↓
-STUDIO-0         the owner's direction (2026-10-11), declared, not built: "make the next milestone a summonable live director, not another verification rung" — in the running plaza, a selection, a prompt, three candidates previewed live, admit, reject and undo; "the LLM edits design intent; Verðandi compiles that intent into a live world; the designer remains in control"; by his ruling of the same day, after INPUT-CONTRACT-0
+STUDIO-0         the owner's direction and ruling (2026-10-11): a director summoned into the running plaza — E selects, Enter summons, a prompt answered by at most three candidates drawn in place with the game untouched, admit, reject and undo through the director's ledger; "the model proposes changes—it never directly mutates the live world"; a gateway (art/studio.py) between the page and a provider command (a scripted provider; Claude through the Anthropic Messages API), its contract in art/STUDIO.md; his acceptance test met in Chromium 141 in the build container; outside the gate
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -3222,7 +3222,7 @@ Firefox 157 and Edge 155 on his machine): every input class has a written dispos
 admission or refusal and on the category; a refused input leaves the state as it was; admitted inputs give the rules-1
 reference tick's states. MEASURED, these engines, this table.
 
-### STUDIO-0 — the summonable live director · **the owner's direction** (2026-10-11); declared, not built
+### STUDIO-0 — the summonable live director · **the owner's direction and ruling** (2026-10-11); outside the certified gate · **built** (`art/studio.py`, `art/STUDIO.md`, `art/providers/`, the studio in `art/play.py` and `art/web/`)
 
 **His words.** *"The way to streamline this is to make Verðandi feel less like a collection of procedural-generation
 scripts and more like a UE5-style world studio where the designer can summon an AI collaborator directly into a
@@ -3253,6 +3253,96 @@ simulation; an edit to an intent compiled in a fresh process and swapped into th
 head they meet and admitted or refused by a person, every step in an append-only ledger. **What does not:** a
 selection in the page, a prompt panel, a model that writes a structured proposal, candidates made from one prompt and
 compared in place, and admit, reject and undo from the page.
+
+**His ruling on the model (2026-10-11).** Asked which model the director should call, he chose *"a pluggable model
+adapter, with a persistent local director service behind it. Keep the studio independent of any particular model"*:
+*"a local director gateway that accepts requests from `play.py`, invokes a configurable model provider, validates its
+output, and returns up to three structured design candidates. Start with a CLI adapter so the first implementation
+remains standard-library-only; add direct API adapters when useful."* *"The key architectural decision is that the
+model proposes changes—it never directly mutates the live world. Verðandi owns validation, compilation, preview, and
+admission."* What makes it robust, in his list: structured output (*"Where supported, use the provider's constrained
+structured-output feature rather than relying on prompt instructions alone"*); *"Safe process boundary: Pass the
+prompt and context through stdin or a request file, never concatenate user text into a shell command. Limit output
+size, execution time, and concurrent requests"*; stale-result protection by request ids and source revisions;
+graceful failure; *"Credential isolation: API keys stay in environment variables or an appropriate local secret
+store; never expose them to browser JavaScript"*; *"Reproducibility: Record the provider/model identifier, prompt,
+context revision, candidate output, and compiler result. Replaying a recorded candidate should not require another
+model call."* *"A single configured CLI process is sufficient for the first version."* *"I would not make 'Me, in
+Cowork' the primary runtime dependency."* His acceptance test: *"press the summon key, enter a prompt, receive up to
+three valid candidates, preview one without resetting the player, reject a malformed candidate safely, cancel a stale
+request, and keep the world playable when the model is unavailable."*
+
+**Built.**
+
+- **`art/studio.py`, the gateway**, inside `art/play.py`. For a request (the prompt, the selected piece, the camera)
+  it reads the head as the files stand and writes one `VERDANDI-STUDIO-REQUEST 0`: the id and the head, the selection
+  with the brief's statement that made the piece (line, text, key) and its address patterns, the camera, every
+  statement of the brief, the revision syntax, the art language's reference (from `art/README.md`) and the response's
+  JSON Schema. A provider is a command from a configuration (an argument list, no shell), given the request on its
+  standard input, limited in time and in output, killed when the designer cancels or a newer request supersedes it.
+  Its `VERDANDI-STUDIO-RESPONSE 0` is read whole or refused whole (`STUDIO-RESPONSE-*`): the request's id, at most three
+  candidates of five bounded fields (a title, a rationale, revision lines, a scope, what it means to keep). Each
+  candidate becomes a `VERDANDI-INTENT` (the letter, the base and the prompt the gateway's) and the director evaluates
+  it at the current head; one it refuses is shown with the reason and never drawn, the others are compiled and served
+  as sources. Admission evaluates the candidate again at the head as the files stand and admits it through the ledger
+  only if that is the head it was drawn at and it is CLEAN; rejection records an evaluation and a refusal; undo admits
+  the latest admission's exact inverse as an intent of its own (an undo is never undone; undo again walks back). Every
+  request is recorded under `art/build/studio/` (the request, the raw response, each candidate's intent, one log line
+  with the head, the provider, the model, the prompt and the outcome), and a recorded candidate plays again without
+  the provider (`play.py --intent …/A.intent`).
+- **The page** (`art/web/play.js`, `play.html`): E selects the piece of the dressing under the crosshair (the nearest
+  box the ray meets; a wall in front hides it), and a frame marks it on screen; Enter opens the panel (the game goes
+  on, and typing is not playing); Ctrl+Enter asks; each candidate with its verdict and Show, Admit and Reject;
+  Original, Undo and Cancel. Show switches the drawn source as `[` and `]` do: the same map, so the scene changes and
+  the game, the player and the camera do not.
+- **`art/play.py`**: `--director CONFIG.json`; `--root DIR` (the brief and ledger of another tree, as the self-tests use);
+  `/studio/piece` and the five POSTs (ask, cancel, admit, reject, undo), each carrying the token the page is served
+  with and naming 127.0.0.1 or localhost; the studio's state in `/live`. Without `--director` the panel says so and the
+  world is played as ever.
+- **The providers** (`art/providers/`): `scripted.py`, which is not a model (three fixed variations of a selected
+  canopy, the three of his sketch: *Monolithic*, *Lit underside* with magenta fixtures if the prompt says so,
+  *Deeper canopy*; anything else answered with nothing); and `anthropic_messages.py`, Claude through the Messages API,
+  its key and model in the environment, given one tool whose input schema is the gateway's and made to call it.
+- **`art/STUDIO.md`**: the contract (the configuration, the request, the response, every refusal's code, what is kept,
+  the boundary, what is not shown).
+
+**Measured in the build container (2026-10-11).**
+
+- `python art/studio.py selftest`, 29 / 29, in a scratch copy of the brief, its ledger and the maps: the scripted
+  provider's three candidates CLEAN and drawn on the same map in 0.4 s; the request recorded, and a recorded candidate
+  replayed without the provider to the same scene; a POST without the token, or naming another host, refused (403);
+  A admitted through HTTP (the ledger's evaluate and admit, the page's source 0 the candidate, the ledger verifies);
+  B, drawn before that admission, refused as stale; C rejected; a second request on A's head and its C admitted; undo
+  twice, back to the brief's bytes and scene; the ledger verifies. And each way a provider fails, the world served as
+  it was: no provider; a configuration with a shell line; not JSON; another request's id; four candidates (refused
+  whole, not cut to three); a candidate that names no statement (shown, never drawn) beside one CLEAN and one LEAKAGE
+  (drawn, not admitted); a cancellation (the command killed before it could write its mark); a newer request (the
+  first's result discarded); a timeout; an exit with an error (*the model is unavailable: 503*); output past the limit;
+  a command that cannot start; and the Anthropic adapter against a local server answering as the API's documentation
+  describes (the key in `x-api-key`, `anthropic-version`, one tool whose input schema is the gateway's, the call
+  forced, the tool's input read back as the candidates), an overloaded answer (529) and no key (nothing sent).
+- **His acceptance test in a browser** (Chromium 141, headless, through the page's own keys and buttons; a harness of
+  the container's, not committed), 10 / 10: E selected the north slab and the frame marked it; Enter summoned the
+  director, the prompt typed did not move the player, and three CLEAN candidates came back; B shown in place — the
+  scene swapped, the same state object, the player where he stood, the ticks going on, no new game; B admitted
+  through the ledger and source 0 became it; undo restored the brief and its scene; a candidate the director refuses
+  shown with its reason and Show disabled, the others drawn; a slow request cancelled from the page while the world
+  ticked; a provider that fails (503) shown, the scene kept, and W walked the player on; no page errors.
+- Mutants of the gateway and its endpoints: 13, 12 refused by the self-test. The survivor is equivalent: dropping the
+  check that discards a response that arrives after its request was superseded leaves the second check, before the
+  candidates are published, to discard it. Two were refused only after the self-test grew: four candidates (cut to
+  three silently, until a provider of four was added) and a LEAKAGE candidate admitted (which had made the director's
+  own refusal, a `SystemExit`, drop the connection; the director's refusals are now the gateway's,
+  `STUDIO-DIRECTOR-REFUSED`).
+- Stills of the brief and the scripted provider's three candidates for the north slab, from one place in the plaza,
+  in the build container's software renderer, were sent to the owner; they show the candidates differ, and are not a
+  judgment of them.
+
+**What it does not show.** The quality of what a model proposes: the director's checks hold a candidate to the art's
+rules and to its declared scope, not to taste. The live Anthropic API (no key in the build container). Selecting a
+light or a play piece. A change to the layout (the look only). A long-running worker: each request starts the
+provider afresh, which he allowed for the first version. Any latency of a model. Firefox and Edge on his machine are
+his to run. Nothing here enters the certified gate.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
