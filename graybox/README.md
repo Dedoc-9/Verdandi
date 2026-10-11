@@ -124,7 +124,8 @@ transitions and serialized state—not just a handful of function outputs."*
 1. the world, `new World(map)`, from the map's canonical bytes;
 2. the transition: `step(world, state, input)` gives the same next state, as its snapshot's bytes, on every input the
    input contract admits, and refuses every other input with the same category, the state unchanged
-   ([`RULES-1.md`](RULES-1.md), *The input*; INPUT-CONTRACT-0);
+   ([`RULES-1.md`](RULES-1.md), *The input*; INPUT-CONTRACT-0; its table held in node 22, Chromium 141, Firefox 157
+   and Edge 155, every outcome and state Python's);
 3. the serialized state: `snapshot` and `restore` (every number as the 16 hex digits of its bits), and `hash`
    (FNV-1a over each number's bytes, little-endian, now written so whatever the platform's order). A NaN's bits are
    not fixed by the language, so a NaN in the state would break this. Before the input contract an infinite turn made

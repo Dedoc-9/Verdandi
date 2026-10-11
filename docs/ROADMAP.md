@@ -173,7 +173,7 @@ TICK-REF-0       the owner's ruling (2026-10-11), "NEXT": a second, independent 
       ↓
 BOT-REF-0        the owner's ruling (2026-10-11), "the next vertical slice": the walk made in Python from the map alone, by a policy written down (graybox/WALK-1.md, walk-1) and advanced by tick_ref.py (graybox/bot_ref.py), so that no browser originates the reference walk; on the tactical map its start and 1,787 inputs the same bytes as the browsers' own bot's, and Chromium 141, node 22, and on his machine Firefox 157 and Edge 155, playing them reach the Python tick's state at every tick; ACCEPTED provisionally by the owner (2026-10-11); the witness level next; outside the gate
       ↓
-INPUT-CONTRACT-0 the owner's ruling (2026-10-11): the tick's input admitted or refused, whole, before anything is touched — a written domain (RULES-1.md, The input), one category for each fault, a shared table of 70 hostile and admitted cases (graybox/web/input_cases.json); sim.js and tick_ref.py agree on every step, outcome and state, in node 22 and Chromium 141; nothing admitted changed; outside the gate
+INPUT-CONTRACT-0 the owner's ruling (2026-10-11): the tick's input admitted or refused, whole, before anything is touched — a written domain (RULES-1.md, The input), one category for each fault, a shared table of 70 hostile and admitted cases (graybox/web/input_cases.json); sim.js and tick_ref.py agree on every step, outcome and state, in node 22 and Chromium 141, and on his machine in Firefox 157 and Edge 155; nothing admitted changed; outside the gate
       ↓
 STUDIO-0         the owner's direction (2026-10-11), declared, not built: "make the next milestone a summonable live director, not another verification rung" — in the running plaza, a selection, a prompt, three candidates previewed live, admit, reject and undo; "the LLM edits design intent; Verðandi compiles that intent into a live world; the designer remains in control"; by his ruling of the same day, after INPUT-CONTRACT-0
       ↓
@@ -3204,6 +3204,23 @@ that is not a number, `INPUT-NUMBER`; several faults in one record, the first in
 a hostile caller in the same process (a Proxy, a getter that throws): the contract is on data records. Not
 JavaScriptCore; Firefox and Edge are his to run. Not that the table holds every input: it holds the classes he named
 and their edges.
+
+**On the owner's machine (2026-10-11).** 0200 and 0201 applied as trees `06541c0a…` and `27c689b2…`, as predicted.
+`tick_ref.py cases`: `INPUT CONTRACT HELD`, the four plants giving the container's counts. Firefox 157 and Edge 155
+played the table (`trace.py run tactical --cases`, each accepted as its family): 60 steps ticked, 61 refused (`INPUT-FLAG`
+11, `INPUT-NOT-FINITE` 17, `INPUT-NOT-RECORD` 7, `INPUT-NUMBER` 6, `INPUT-SIDE` 8, `INPUT-UNKNOWN-FIELD` 12), and
+`tick_ref.py cases` held each to the table and to Python: every outcome and every state the same, all 121 steps,
+`INPUT CONTRACT HELD BY PYTHON AND THE BROWSER`. His Firefox's own runs recorded again after the contract, against
+its trace from before it (`trace.py compare`, the same engine): every call of the engine's `Math`, every input and
+every state the same, under both rules; `tick_ref.py verify` on the new trace, VERIFIED, 5,863 ticks. The page's
+self-test in his default browser (whose `Math` measured as Firefox 157's had: `sin` different from the rules' on 70,
+`cos` 62, `hypot` 693 of 4,000) passed 30 / 30 and 27 / 27, `input-contract` among them with the same four plants'
+counts; the plaza's live self-test 13 / 13; the gate 251 rows / 0 fail; pushed `4f0ab5c..714792c`.
+
+So his acceptance criterion holds on the tactical map in four engines (node 22 and Chromium 141 in the container,
+Firefox 157 and Edge 155 on his machine): every input class has a written disposition; JavaScript and Python agree on
+admission or refusal and on the category; a refused input leaves the state as it was; admitted inputs give the rules-1
+reference tick's states. MEASURED, these engines, this table.
 
 ### STUDIO-0 — the summonable live director · **the owner's direction** (2026-10-11); declared, not built
 
