@@ -2770,6 +2770,12 @@ borders also occupy enough space to interrupt the architectural read."*
   larger in frame, a dark mass with a warm line along its edge, the magenta neon still below it. Nothing is admitted
   until he chooses.
 
+**The host run of 0191–0193 (2026-10-11).** Applied as tree `a8d7b03a…`, as predicted. The art checks passed (with
+both canopy-option plants showing the slab alone passing), the ledger verified at 24 events (head `d22e7cb24356`, the
+files at `1ff8e5e8f6be`), `art\play.py --selftest` 13 / 13, the certified gate passed (251 rows / 0 fail, rowset
+`74db4c8d78625af5`), and `art\play.py plaza-night` with C, D and E as sources launched, watching 19 files. Pushed
+`1b5e8f6..30d2527`. OBSERVED once.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
