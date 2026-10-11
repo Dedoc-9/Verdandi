@@ -175,7 +175,9 @@ BOT-REF-0        the owner's ruling (2026-10-11), "the next vertical slice": the
       ↓
 INPUT-CONTRACT-0 the owner's ruling (2026-10-11): the tick's input admitted or refused, whole, before anything is touched — a written domain (RULES-1.md, The input), one category for each fault, a shared table of 70 hostile and admitted cases (graybox/web/input_cases.json); sim.js and tick_ref.py agree on every step, outcome and state, in node 22 and Chromium 141, and on his machine in Firefox 157 and Edge 155; nothing admitted changed; outside the gate
       ↓
-STUDIO-0         the owner's direction and ruling (2026-10-11): a director summoned into the running plaza — E selects, Enter summons, a prompt answered by at most three candidates drawn in place with the game untouched, admit, reject and undo through the director's ledger; "the model proposes changes—it never directly mutates the live world"; a gateway (art/studio.py) between the page and a provider command (a scripted provider; Claude through the Anthropic Messages API), its contract in art/STUDIO.md; his acceptance test met in Chromium 141 in the build container; outside the gate
+STUDIO-0         the owner's direction and ruling (2026-10-11): a director summoned into the running plaza — E selects, Enter summons, a prompt answered by at most three candidates drawn in place with the game untouched, admit, reject and undo through the director's ledger; "the model proposes changes—it never directly mutates the live world"; a gateway (art/studio.py) between the page and a provider command (a scripted provider; Claude through the Anthropic Messages API), its contract in art/STUDIO.md; his acceptance test met in Chromium 141 in the build container; on his machine (Windows) its self-test 29 / 29, and the scripted provider tried from the page; outside the gate
+      ↓
+STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); outside the gate
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -3343,6 +3345,74 @@ rules and to its declared scope, not to taste. The live Anthropic API (no key in
 light or a play piece. A change to the layout (the look only). A long-running worker: each request starts the
 provider afresh, which he allowed for the first version. Any latency of a model. Firefox and Edge on his machine are
 his to run. Nothing here enters the certified gate.
+
+**On his machine (2026-10-11).** 0202 and 0203 applied as trees bbe88393 and 78c85323, as predicted. On Windows:
+`python art/studio.py selftest` 29 / 29 (a command that cannot start said as `[WinError 2]`), the first run of the
+gateway outside the build container; the plaza's live self-test 13 / 13; `ART CHECKS PASSED`; `DIRECTOR SELFTEST
+PASSED`; the gate 251 rows / 0 fail (rowset 74db4c8d78625af5); pushed 714792c..59861b4. He then played the plaza with
+the scripted provider. His studio records (`art/build/studio/plaza-night/`, read in his folder, not copied into the
+repository) hold four requests between 22:41 and 22:44 UTC: *"make it look more structurally realistic"*, then three
+times *"make it look more structurally realistic with realistic building code design features"*, on three of the
+plaza's canopies; each answered in 122–163 ms with the same three CLEAN candidates, since the scripted provider reads
+a prompt only for the word *magenta*; *Lit underside* (B) admitted each time (ledger #24 and #25, #28 and #29, #30
+and #31, #32 and #33) and the first undone (#26 and #27), the page swapping the scene each time. He restored the brief
+and its ledger with `git checkout`. He then started the studio on the Anthropic provider; no request was recorded, so
+nothing was sent.
+
+**What he found.** That the words did not change the answers, and *"there is no object bar code or whatever so i can
+say match the design of this object or make it look like it connects"*. Both stand on the code as built: the
+scripted provider is not a model; the request carries the selected piece's id, but the page never shows it, a second
+piece cannot be named, and nothing in metres is sent. And a model would be held to the art language: a canopy has a
+height, two corners, a depth, ribs, downlights and edge fixtures, and no statement makes a column, a bracket or a
+hanger (a column on the floor would also be refused by the check that no dressing stands where a player can be).
+
+**His rulings (2026-10-11).** On the model: *"Choose “Both, CLI first.” That gives Verðandi two real model paths
+without tying the studio to either one"* — Claude Code's CLI, *"first provider to implement and test"*, and the
+Anthropic API kept, *"configure it with a Console API key, and compare output quality, latency, reliability, and actual
+cost."* *"the CLI route is convenient for your personal development setup, but it is not a substitute for a properly
+authorized provider integration in a product offered to other users."* *"A better model cannot invent usable columns
+or hangers if the scene language cannot represent them. The model adapter and the scene-authoring language are
+separate bottlenecks."* For the CLI provider: *"`--tools ""` must actually result in no available tools. The gateway
+must independently validate the returned JSON regardless of the CLI's schema enforcement."* *"The provider's smoke
+test should prove that the model was actually invoked—not just that a provider configuration was loaded. Record the
+provider, model, exit status, schema-validation result and latency, without logging secrets."* *"Implement CLI first,
+API second, shared schema and gateway throughout."* The comparison: *"whether candidates actually reflect the
+requested change; whether the scene language can express those changes; invalid-output and timeout rates; latency
+and cost per accepted edit"*; *"the best director is not the model that generates the most text or candidates, but
+the one that helps the designer reach a good, accepted world edit with the least friction."* On the references: STUDIO-1,
+below.
+
+### STUDIO-1 — references: tags, pins, geometry and relations · **the owner's ruling** (2026-10-11); outside the certified gate · **declared**
+
+**His ruling.** *"Choose “Tags + pins + geometry” for this slice. Keep the reference system and art-language vocabulary
+separate so you can establish reliable object grounding before expanding what the compiler can build."* What it
+includes, in his list:
+
+- *"Visible tags: Stable, short IDs such as `@1`, `@2`, `@3` for the current scene revision. Show each tag in the
+  viewport and object list."*
+- *"Selection and pins: `E` selects the target; `R` pins or unpins references, up to four. Show the pins persistently
+  in the prompt panel."*
+- *"Metric geometry: For each referenced piece, include its world-space bounds in metres, position, dimensions, and
+  orientation. State the coordinate convention."*
+- *"Computed relationships: Include measured gaps, relative directions, facing, and nearest relevant wall face.
+  Distinguish measured relationships from inferred ones; don't present an approximate facing test as an exact
+  connection."*
+- *"Grounded prompt context: “Match @2” resolves to the pinned object, with its identity, geometry, and supported
+  properties included in the request. The model must not have to guess which object the user means."*
+- *"Revision safety: Bind references to a scene revision and object identity, not just a reusable tag. If an edit
+  invalidates a reference, report it rather than silently redirecting it."*
+
+Why not connecting pieces yet: *"Adding brackets, hangers, and tie-backs simultaneously expands the authoring language,
+exporter, and checks. That makes it harder to tell whether a failure came from bad references or missing construction
+vocabulary."* An image of the view is *"the next useful enhancement, not a substitute for the reference contract"*.
+His sequence: this slice; then *"Current-view image as optional model context, with a clear fallback for providers
+that do not support images"*; then *"Connecting pieces, introduced with explicit attachment semantics and new checks."*
+His acceptance criterion: *"the model consistently identifies the intended objects, receives their actual geometry,
+and proposes edits the existing compiler can express—without silently changing the meaning of a reference."*
+
+**The reading behind it** (`docs/RESEARCH-FINDINGS.md`, R-14): giving every object a short identifier a model and a
+person both use (Chat-Scene), and turning spatial relations into explicit, checked constraints (SceneCraft,
+ScanEdit). Nothing of it is claimed as new here.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

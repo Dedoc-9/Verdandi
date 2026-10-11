@@ -334,6 +334,34 @@ and their outputs are given.
   reading them alone could miss.
 - **A decision?** No.
 
+## R-14 · Referring to the objects of a scene, for a language model
+
+Read on 2026-10-11, after the owner tried STUDIO-0 and asked how to name an object to the director.
+
+- **Sources.**
+  - "Chat-Scene: Bridging 3D Scene and Large Language Models with Object Identifiers", NeurIPS 2024
+    ([pdf](https://proceedings.neurips.cc/paper_files/paper/2024/file/cebbd24f1e50bcb63d015611fe0fe767-Paper-Conference.pdf)).
+    Each object of a scene gets an identifier token (`<OBJ013>`); a question names objects by it and the model answers
+    by naming identifiers, instead of describing objects in words, which is cumbersome and ambiguous.
+  - "SceneCraft: An LLM Agent for Synthesizing 3D Scene as Blender Code", 2024
+    ([arXiv 2403.01248](https://arxiv.org/html/2403.01248v1)). A scene is a graph of assets and relations (proximity,
+    alignment, parallelism); each relation becomes a scoring function and a solver places the assets; a vision model
+    reviews a render against the request and the script is revised. Reported: a constraint passing score of 88.9
+    against 5.6 for the baseline.
+  - "ScanEdit: Hierarchically-Guided Functional 3D Scan Editing", 2025 ([arXiv 2504.15049](https://arxiv.org/html/2504.15049v1)).
+    A hierarchical scene graph (on top of, facing, against a wall); a model proposes placements and their relations,
+    which become losses (support, against a wall, collision) that an optimiser enforces.
+- **Here.** STUDIO-0 sends the selected piece's id and its statement, nothing in metres, and one piece at most. The
+  scene's pieces are axis-aligned boxes in metres (`x` east, `z` south, `y` up), and the director checks every
+  candidate's scope. The art language can say a canopy's height, corners, depth, ribs and lights, and nothing that
+  joins two pieces.
+- **Gap.** Interface. A designer cannot name a second piece, and a model is not told where anything is.
+- **What the sources do not establish.** That identifiers make a model's edits right: they make its references
+  unambiguous. That a render can replace geometry: SceneCraft uses both.
+- **Experiment.** STUDIO-1 (the owner's ruling): tags and pins, the pieces' bounds and measured relations in the
+  request, and a probe that reports, for each candidate, which tagged pieces it changed.
+- **A decision?** Made: his ruling of 2026-10-11 (`docs/ROADMAP.md`, STUDIO-1).
+
 ## Not searched, so not claimed
 
 - **The graybox's decoration bound:** decoration must stand above the highest eye a player can reach, so no
