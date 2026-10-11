@@ -169,6 +169,8 @@ NATIVE-PLAZA-0   the owner's rulings (2026-10-10, 2026-10-11): Verðandi-native 
       ↓
 DET-MATH-0       the owner's ruling (2026-10-11), outside the gate: the simulation's rules made portable. Every function whose last bits the language leaves to the engine and that reached the authoritative state (sin, cos, hypot, atan2) replaced by fdlibm's algorithms and exact square roots, built from operations ECMA-262 fixes; the rules versioned (1), rules 0 kept as the baseline; held by rules-arithmetic and math-fence in the self-test and by graybox/rules_ref.py; the same bits measured in two V8 engines and CPython; ACCEPTED by the owner (2026-10-11), cross-browser equivalence NOT ESTABLISHED until Firefox and Chromium are compared on one machine
       ↓
+TICK-REF-0       the owner's ruling (2026-10-11), "NEXT": a second, independent implementation of the full tick, in Python, from a written specification (graybox/RULES-1.md), verifying a browser's trace tick by tick and naming the first differing field; the same bytes as Chromium 141 and node 22 at every tick of both maps' runs; outside the gate
+      ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
@@ -2887,6 +2889,48 @@ family (`chromium-given.json` is a Chromium engine's), a `--name` that names a f
 `compare` now says what kind of comparison it is: `NOT A CROSS-ENGINE COMPARISON` when both traces describe the same
 browser, two builds of one family, or cross-engine. Its self-test holds the engine families of five browsers'
 descriptions and both verdicts.
+
+### TICK-REF-0 — the tick a second time, in Python · **the owner's ruling** (2026-10-11): "Full Python simulation tick — NEXT"; outside the certified gate · **built** (`graybox/RULES-1.md`, `graybox/tick_ref.py`)
+
+**His ruling.** *"Browser JavaScript records the input sequence. Python independently advances the authoritative
+simulation. Each tick's expected snapshot is compared with the browser's snapshot. The first mismatch identifies the
+tick and state field. The reference implementation does not call into the browser simulation or trust its computed
+result."* *"Keep the Python implementation independent in structure, not merely a line-for-line translation. Share
+the specified rules and test vectors, but avoid sharing implementation helpers that could reproduce the same defect
+in both implementations."* And its limit: *"It is not yet proof of server security, network protocol correctness, or
+resistance to malicious inputs."*
+
+**Built.**
+
+- **`graybox/RULES-1.md`**, the specification: the arithmetic (each operation rounded, evaluated left to right; what
+  `floor`, `fmod`, `max` and `min` mean at −0 and NaN, and where Python's own differ), the constants, the world, the
+  state, one tick in nine steps, firing, the wall's distance, a box's entry distance, the snapshot and the inputs.
+  Independence in structure is possible; independence in arithmetic is not: two programs reach the same bits only
+  by the same roundings, so every formula is fixed operation by operation.
+- **`graybox/tick_ref.py`**, written from it: its own state (classes, not a walked object), world, collision walk,
+  ray walk, snapshot writer and reader, and square root and hypot (Python's integer square root, not the BigInt
+  Newton iteration of `sim.js`). The sine, cosine and atan2 are fdlibm's, from `rules_ref.py`, which is itself a
+  separate implementation held to every result. `verify TRACE.json` converts the map the trace names and holds it to
+  the trace's manifest, makes the stress run's inputs and start again from integers, and plays every rules-1 run from
+  its start with the browser's inputs, comparing every snapshot byte for byte and naming the first differing tick and
+  its fields. It trusts nothing the browser computed but the inputs and the bot's runs' starts, read back exactly.
+- **Its self-test**, on any trace: two plants in the trace (a field one bit off at tick 1,000, found there in `x`;
+  an input of the walk changed at tick 300, found there) and six in the Python tick (the height's two updates in
+  the wrong order, five halvings for six, the shot's direction with the wrong sign, a target standing again at 0,
+  the sine's polynomial cut short, the cells scanned from the centre), each found; and the specification's numbers
+  are `sim.js`'s.
+
+**Measured in the build container (2026-10-11).** Chromium 141's and node 22's traces, the tactical map (5,863 ticks)
+and the witness level (5,247): every snapshot the same bytes as the browser's, and the stress runs' inputs and starts
+made again in Python the same. 0.65 s for a trace. One finding about the method: a defect of one place in the last bit
+can be absorbed by a run. The plain root of the sum for hypot parts from the browser on the tactical walk at tick
+1,172 and never on the witness level's runs, and a sine reduced without its tail is absorbed there too. A tick-level
+comparison does not replace the arithmetic's own check, result by result (`rules_ref.py`); the two hold different
+things.
+
+**What it does not show.** The owner's limits: not a server's security, a protocol, or resistance to malicious inputs.
+Nor that the bot's input generation is the same in Python (it is not implemented here; the stress run's inputs are).
+Firefox's and Chromium's traces on his machine are the next measurement for it, as for DET-MATH-0.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

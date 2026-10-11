@@ -42,6 +42,7 @@ Esc releases the mouse.
 | map content (`maps/`) | `python graybox/check.py` — the conversion's conformance and its mutations; add `--compile` to compile and admit the tactical layout again through the design tool (needs a built shell, or `rustc` to build one, as the design tool does) |
 | the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (29 on the tactical map, 26 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
 | the rules' arithmetic (`web/sim.js`, rules 1) | `python graybox/rules_ref.py` — the same algorithms in Python: the digests and constants `sim.js` holds, the special values, the square root and hypot checked exactly, the source naming no engine function, three plants; and the accuracy, measured. Ends with `RULES REFERENCE PASSED` |
+| the tick's second implementation (`tick_ref.py`, `RULES-1.md`) | `python graybox/tick_ref.py verify TRACE.json` — plays a browser's trace again in Python, from the specification, and compares every tick's snapshot byte for byte; `python graybox/tick_ref.py selftest TRACE.json` — two plants in the trace and six in the Python tick, each found. Ends with `TICK REFERENCE VERIFIED` and `TICK-REF SELFTEST PASSED` |
 | where two engines part (a diagnostic) | `python graybox/trace.py run tactical` — plays the self-test's three runs (the walk, the fight, the stress run) under rules 0 and under rules 1 in a worker, logging every call of `Math.sin`, `Math.cos`, `Math.hypot`, `Math.atan2` and `Math.sqrt` with its arguments' and result's bits, every tick's input and snapshot, and the browser's description of itself; writes `graybox/build/trace/tactical/ENGINE.json` and `latest.json` (not committed). `--inputs A.json` plays A's runs instead of recording its own, so that two browsers play the same inputs; `--browser msedge` (or `chrome`, `firefox`) opens the page in that browser and refuses a trace from any other engine family, so a file named `chromium-given.json` is a Chromium engine's; `--name LABEL` adds a file. Then `python graybox/trace.py compare A.json B.json` for two such traces, rules by rules, and `python graybox/trace.py selftest A.json` for the comparator's own planted differences |
 | the renderer's cost | `python graybox/serve.py tactical --bench` — both renderers draw the same poses in your browser, alternating; the timings print, and they and a screenshot of each pose by each renderer are written to `graybox/build/bench/tactical/` (not committed). A sample is the mean of a batch of draws, each followed by a one-pixel readback; the page's clock step is printed, since some browsers round it (to 1 ms). Add `--samples N` (default 20), `--batch K` (default 10) |
 | the certified tree | the gate, at a release checkpoint |
@@ -206,12 +207,27 @@ old baseline against. Nothing plays it but the measurements and the trace.
 - A tick costs about 4.2–4.6 µs under rules 1 and 1.4 µs under rules 0, under node (BigInt's exact hypot, called once a
   moving tick); at 120 ticks a second, about half a millisecond a second.
 
+**A second implementation of the tick** (`tick_ref.py`, written from [`RULES-1.md`](RULES-1.md)). By the owner's
+ruling of 2026-10-11: the browser records the inputs, Python advances the authoritative state on its own, and each
+tick's snapshot is compared with the browser's; the first that differs names its tick and its fields. It shares the
+specification and the arithmetic's algorithms with `sim.js`, nothing else: its own state (classes, not a walked
+object), world, collision and ray walks, snapshot writer and reader, and its own square root and hypot (Python's
+integer square root). It reads a trace, converts the map the trace names and holds it to the trace's manifest,
+makes the stress run's inputs and start again from integers, and plays every rules-1 run from its start. Measured in
+the build container: Chromium 141's traces and node 22's, on both maps, 5,863 and 5,247 ticks, every snapshot the
+same bytes as the browser's. Its self-test plants a field one bit off and an input changed (each found at its tick)
+and six defects in the Python tick (the height's updates in the wrong order, five halvings for six, the shot's
+direction with the wrong sign, a target standing again at 0, the sine's polynomial cut short, the cells scanned from
+the centre), each found. A defect of one place in the last bit can be absorbed by a run: the plain root of the sum
+for hypot parts from the browser on the tactical walk at tick 1172 and never on the witness level's runs. So the
+tick is held here and the arithmetic, result by result, in `rules_ref.py`.
+
 **What is not shown.** That every engine gives the same bits: ECMA-262 requires it of the operations rules 1 use, and
 the owner's Firefox 157 passed `rules-arithmetic` (its results on all 20,000 arguments as CPython's) and gave the same
 digest of every tick's state as Chromium 141 and node 22 on the tactical map's three runs, but the field-level comparison of Firefox
 and Chromium on one machine, on the same inputs, is still to run (the owner's ruling: NOT ESTABLISHED until it does).
 That an engine has no bug in those operations. That a future change to `sim.js` keeps to the contract, beyond what
-the checks and the plants catch.
+the checks, the plants and the second implementation catch. Anything about a server's security or a network.
 
 The trace experiment (`trace.py`) is where cross-engine differences are pinned down. It is a diagnostic beside the self-test, not part of it,
 and nothing passes or fails on what it finds. Its comparison takes each function's results only on the arguments
@@ -240,6 +256,8 @@ are in R-6.
 | `serve.py` | the launcher, and the driver of the self-test and the bench |
 | `trace.py` | the trace experiment: its own small launcher (four files and the map, and the runs of another trace with `--inputs`), and the comparison of two traces, rules by rules |
 | `rules_ref.py` | the reference for the rules' arithmetic: the same algorithms in Python, and what holds `sim.js` to them |
+| `RULES-1.md` | the tick as arithmetic: the specification `sim.js` and `tick_ref.py` are both written to |
+| `tick_ref.py` | the tick's second implementation, in Python, and the verifier of a browser's trace |
 | `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the state's snapshots, the rules' arithmetic (rules 1; rules 0 kept for comparison), the self-test. No DOM; runs in a worker and under node too |
 | `web/sim_worker.js` | the simulation in a realm of its own, for the self-test and the trace: resumes a snapshot, plays a run in a counterfactual engine, or plays the three runs under both rules with Math logged |
 | `web/trace.html`, `web/trace.js` | the trace experiment's page |

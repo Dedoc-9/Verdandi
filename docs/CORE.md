@@ -26,7 +26,7 @@ Two times are kept apart, and a third runtime stands beside them.
 | `shell/` | Rust | 12,641 | presentation, playback, the live loop and its durable session, the tick rules, admission, the batch, the design compiler | `shell-*` and every live, admission and compiler rung |
 | `verify/` | Python | 22,643 (`verify.py` 17,025) | the gate, the envelope, the saved-form reader, the registers, the sealers | is the gate |
 | `design/` | Python | 1,084 | the design tool, a client of the shell | its own 17 checks; no row |
-| `graybox/` | Python, JS, HTML | 4,601 | the FPS slice: converter, map checks, server, simulation (rules 1, its own arithmetic) and its state checks, the rules' reference in Python, two renderers, the trace experiment | its own checks; no row |
+| `graybox/` | Python, JS, HTML | 5,334 | the FPS slice: converter, map checks, server, simulation (rules 1, its own arithmetic) and its state checks, the rules' reference and a second implementation of the tick in Python, two renderers, the trace experiment | its own checks; no row |
 | `art/` | Python, Rust, JS, HTML | 6,053 | prompted art: the art file's reader and exporter to one engine scene, its checks, the native plaza (`play.py`, a WebGL 2 renderer, live edits), the Unreal 5.8 importer (an optional path); DIRECTOR-0 (the canonical form, the scope protocol, the ledger, a second implementation in Rust) | `art/check.py`, `art/director.py selftest`, `art/director/conform.rs`; no row |
 
 Line counts are of tracked `.rs`, `.py`, `.js` and `.html` files.
