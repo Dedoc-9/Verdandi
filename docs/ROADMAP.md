@@ -179,7 +179,7 @@ STUDIO-0         the owner's direction and ruling (2026-10-11): a director summo
       ↓
 STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); the CLI provider built, and a real model reached through it in the build container (its probe SHOWN); the references built: tags E and R make, bound to an object's id and never moved, the request's geometry and relations measured from the scene's boxes, and what each candidate touches; a real model, asked four prompts about three tagged canopies, changed exactly the objects each prompt named in 15 of 15 candidates; on his machine, through Claude Code on his Claude plan (claude-opus-5-5), the same in all 23 candidates the director drew, and in the page a canopy matched to another by its tag and admitted; outside the gate
       ↓
-STUDIO-APP-0     the owner's direction (2026-10-12): "The next objective should be a runnable Verðandi Studio, not another narrowly scoped rung" — a desktop icon, a live world with the director, a studio that proposes, builds, tests and offers changes to itself, promoted by explicit admission with rollback, "Keep the studio that is running separate from the studio being built"; researched and planned in docs/STUDIO-APP.md (the architecture decision: the page in Edge's application mode under a std-only stub and a std-lib supervisor; VCT-0, one change transaction with domain validators, ACCT among its parents; five batches); its interfaces and transaction frozen in docs/STUDIO-CONTRACT.md (the commit point the durable blessed record; Recover(J, P, F) in sixteen rules, its reference art/studio_txn.py checked over every enumerated crash point); declared, nothing built; outside the gate
+STUDIO-APP-0     the owner's direction (2026-10-12): "The next objective should be a runnable Verðandi Studio, not another narrowly scoped rung" — a desktop icon, a live world with the director, a studio that proposes, builds, tests and offers changes to itself, promoted by explicit admission with rollback, "Keep the studio that is running separate from the studio being built"; researched and planned in docs/STUDIO-APP.md (the architecture decision: the page in Edge's application mode under a std-only stub and a std-lib supervisor; VCT-0, one change transaction with domain validators, ACCT among its parents; five batches); its interfaces and transaction frozen in docs/STUDIO-CONTRACT.md (the commit point the durable blessed record; Recover(J, P, F) in sixteen rules, its reference art/studio_txn.py checked over every enumerated crash point); B1's first part built (crash-safe admissions, tags kept and shown, the API provider on structured outputs with Opus 5.5, play.py's health and shutdown, the five probes); outside the gate
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -3660,6 +3660,31 @@ row), holds the table: `check` over 54 scripted promotions, 41,568 crash states,
 catches 16 planted wrong decisions and holds a generation's integrity on a real directory (MEASURED in the
 container; the stub does not exist yet, and Windows' writes are experiment 5's to measure). The models and prices
 were checked again the same day; the default model stays his.
+
+**B1, the first part (2026-10-12).** 0210 applied as tree 5b7923ee, as predicted; on his machine `python
+art\studio_txn.py selftest` PASSED (the reference's first run on Windows: the same 41,568 crash states, 0 failures,
+the 16 plants caught); the gate 251 rows / 0 fail; pushed f99c494..7234fab (a second `git am` of the same patch,
+refused, left a session open, which `git am --quit` closes). He then brought a review with one word, *"agree?"*: stop
+the architecture work at the contract (*"Patch 0210 should be the design boundary"*), keep the probes as bounded
+prerequisites run alongside B1, take Opus 5.5 for the API provider (*"matching the model already used through Claude
+Code"*, configurable), and work by one rule: *"No new architecture proposal, theorem, verification rung, or
+candidate-design patch unless implementation exposes a concrete defect that the current contract cannot handle."*
+Agreed. Built, off the gate (MEASURED in the container): the content path made crash-safe (`art/director/durable.py`;
+an admission writes its old and new files to a pending folder, then the admit event, the commit, then the files;
+every director command and play.py's start recover first; `python art/director.py crashtest` kills a real admission
+at each of its 10 death points (a torn admit line among them) and once inside a recovery, 14 cases in all, each back
+at the parent or the child with the ledger verifying); the tags kept in `art/ledger/<brief>.tags.json` and shown as chips that a click puts into the prompt, a
+refusal naming what a tag is and how to pin it; the API provider on structured outputs, `claude-opus-5-5` from its
+configuration, a refusal or a cut answer said and not read, the self-test's mock now refusing the old forced tool
+choice as the API does; each request's basis recorded (the validators' and the configuration's sha256s, the two gaps
+the contract found); play.py's `/healthz`, `/studio/alive`, `/studio/shutdown`, signals and exit codes, `--root`
+forwarded to its `--emit` child, its port bound exclusively on Windows (where SO_REUSEADDR *"allows a socket to
+forcibly bind to a port in use by another socket"*); the page's heartbeat; the five probes under `tools/probe/`
+(probes 3 and 5 also run here on Linux: 50 killed pointer writes all whole; 200 killed promotions, every decision the
+contract's). The self-tests: STUDIO 57/57, LIVE 17/17, DIRECTOR SELFTEST and CRASHTEST PASSED; in a browser (not
+committed) 11/11 for STUDIO-1's flows and 8/8 for B1's (the heartbeat heard, the chips, an admission through the
+crash-safe path, the tags back after the studio was killed and started again). Not yet: the supervisor, the stub, the
+layout and the shortcut, after probes 1 and 2 on his machine; the live API (no key here).
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

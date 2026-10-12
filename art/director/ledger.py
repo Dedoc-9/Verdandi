@@ -11,6 +11,7 @@
 
 import os
 
+import durable
 import intent as canon
 
 PROTOCOL, VERSION = "DIRECTOR-0", "0"
@@ -28,7 +29,8 @@ def read(path):
         return [], [], ZERO
     raw = open(path, "rb").read()
     if raw and not raw.endswith(b"\n"):
-        raise LedgerError("LEDGER-TORN: the last line has no LF")
+        raise LedgerError("LEDGER-TORN: the last line has no LF (a write that did not finish); any director command, or "
+                          "the studio's start, sets the torn bytes aside and cuts the ledger at its last whole line")
     lines = raw.split(b"\n")[:-1] if raw else []
     events = []
     for i, ln in enumerate(lines):
@@ -45,11 +47,40 @@ def append(path, kind, fields):
         raise LedgerError("LEDGER-KIND: %r" % kind)
     events, _lines, head = read(path)
     ev = dict(fields, protocol=PROTOCOL, version=VERSION, seq=str(len(events)), prev=head, kind=kind)
-    b = canon.dumps(ev)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "ab") as fh:
-        fh.write(b + b"\n")
+    b = canon.dumps(ev) + b"\n"
+    if durable.torn(kind):               # the crash test: half the record written, then the process ends
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "ab") as fh:
+            fh.write(b[:len(b) // 2])
+            fh.flush()
+        durable.die()
+    durable.append(path, b)              # flushed to the disk before the event counts (B1; docs/STUDIO-CONTRACT.md)
+    durable.point("ledger:" + kind)
     return ev
+
+
+def torn_tail(path):
+    """(offset, bytes) of a torn last line — bytes after the last LF, which a writer that died mid-append left — or None."""
+    if not os.path.exists(path):
+        return None
+    raw = open(path, "rb").read()
+    if not raw or raw.endswith(b"\n"):
+        return None
+    cut = raw.rfind(b"\n") + 1
+    return cut, raw[cut:]
+
+
+def set_aside_torn(path):
+    """Keep a torn last line beside the ledger (<ledger>.torn.<offset>) and cut the ledger at its last LF. Nothing acts
+    on an event before its line is flushed, so nothing depended on the torn bytes. Returns the file kept, or None."""
+    t = torn_tail(path)
+    if t is None:
+        return None
+    cut, rest = t
+    aside = "%s.torn.%d" % (path, cut)
+    durable.write(aside, rest)
+    durable.write(path, open(path, "rb").read()[:cut])
+    return aside
 
 
 def chain(path):

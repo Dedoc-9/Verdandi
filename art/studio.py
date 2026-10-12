@@ -66,6 +66,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import studio_refs as R   # noqa: E402  (beside this file: the references' geometry and relations, STUDIO-1)
+sys.path.insert(0, os.path.join(HERE, "director"))
+import durable            # noqa: E402  (the content path's crash-safe writes: the tags file)
+import intent as canon    # noqa: E402  (DIRECTOR-0's canonical bytes: the tags file's form)
 
 REQUEST, RESPONSE, VERSION = "VERDANDI-STUDIO-REQUEST", "VERDANDI-STUDIO-RESPONSE", "0"
 REQUEST_VERSION = "1"    # STUDIO-1: the target and the pins, their geometry and relations, in place of one selection
@@ -74,12 +77,27 @@ PIECE = re.compile(r"[a-z]+:[0-9a-z,:-]{1,60}\Z")
 MENTION = re.compile(r"@([0-9]{1,4})")
 NAMESPACES = ("play", "surface", "material", "env", "asset", "view", "layout", "region")
 LETTERS = ("A", "B", "C")
+TAGS_FORMAT = "VERDANDI-STUDIO-TAGS"
+TAG = re.compile(r"@[1-9][0-9]{0,3}\Z")
 UNDO_NOTE = "undo of ledger #"
 LIMITS = {"prompt": 2000, "title": 80, "rationale": 1200, "revision": 16, "line": 400, "scope": 12, "pattern": 120,
           "preserve": 12, "item": 200, "candidates": 3}
 PATTERN = re.compile(r"[A-Za-z0-9*_.,:-]+(/[A-Za-z0-9*_.,:-]+)*\Z")
 CONFIG_KEYS = {"provider", "argv", "model", "timeout_s", "max_output_bytes"}
 USAGE_KEYS = {"input_tokens", "output_tokens", "cost_usd", "cost_basis"}
+# The validators' sources, whose hashes each request records with its configuration's (B1: the content envelope's
+# basis, docs/STUDIO-CONTRACT.md §3). The exporter's hash is already in every intent's base.
+VALIDATORS = ("art/director.py", "art/director/scope.py", "art/director/intent.py", "art/check.py")
+
+
+def basis(cfg):
+    """What a verdict on this request depended on, besides its base: the validators' sources and the configuration."""
+    def h(p):
+        try:
+            return sha256(open(p, "rb").read())
+        except OSError:
+            return ""
+    return {"validators": {v: h(os.path.join(REPO, *v.split("/"))) for v in VALIDATORS}, "config_sha256": h(cfg["path"])}
 
 # The response a provider writes: what an adapter constrains a model's output to, where the provider supports it.
 SCHEMA = {
@@ -341,13 +359,48 @@ class Gateway:
         self.records = os.path.join(root, "art", "build", "studio", brief)
         self.error = ""          # why there is no provider, when a configuration was refused
         self.running = {}        # the provider's process while it runs (run_provider's holder)
-        # the references (STUDIO-1): a tag names one object, by its id, for as long as this gateway runs; it is bound to
-        # the scene and head it was last selected or pinned at, and never moved to another object
+        # the references (STUDIO-1): a tag names one object, by its id; it is bound to the scene and head it was last
+        # selected or pinned at, and never moved to another object. B1 (docs/STUDIO-CONTRACT.md §9): the studio's tags
+        # are kept in <root>/art/ledger/<brief>.tags.json, so a restart keeps them; the counter only grows, a tag is
+        # never reused, and a tag whose object is gone stays, listed apart. A probe's gateway keeps none.
         self.tags = {}           # "@n" -> {tag, piece, address, kind, scene, head, fingerprint, statement, size_m}
         self.tag_of = {}         # object id -> "@n"
         self.next_tag = 1
         self.target = None       # the tag E selected
         self.pins = []           # the tags R pinned, at most MAX_PINS
+        self.tags_path = os.path.join(root, "art", "ledger", brief + ".tags.json") if origin == "page" else None
+        self.tags_error = ""
+        if self.tags_path and os.path.exists(self.tags_path):
+            try:
+                self._load_tags()
+            except (OSError, ValueError, KeyError, TypeError, canon.IntentError) as e:
+                self.tags_error = "the tags file %s was not read (%s); tags start again from @%d and the file is kept as it is" % (
+                    os.path.relpath(self.tags_path, root), str(e)[:120], self.next_tag)
+                self.tags_path = None    # never overwrite a file this gateway could not read
+
+    def _load_tags(self):
+        raw = open(self.tags_path, "rb").read()
+        d = canon.loads(raw[:-1] if raw.endswith(b"\n") else raw)     # one canonical document and its LF
+        if d.get("format") != TAGS_FORMAT or d.get("version") != "0" or d.get("brief") != self.brief:
+            raise ValueError("not a %s 0 file of brief %s" % (TAGS_FORMAT, self.brief))
+        nxt = canon.integer(d["next"], "next")
+        tags, tag_of = {}, {}
+        for t in d["tags"]:
+            if not TAG.match(t["tag"]) or not PIECE.match(t["piece"]) or int(t["tag"][1:]) >= nxt or t["tag"] in tags or t["piece"] in tag_of:
+                raise ValueError("a tag entry that is not one object's tag below next: %r" % (t,))
+            tags[t["tag"]] = {"tag": t["tag"], "piece": t["piece"], "address": t["address"], "kind": t["kind"], "scene": t["scene"], "head": "",
+                              "fingerprint": "", "statement": None, "size_m": []}
+            tag_of[t["piece"]] = t["tag"]
+        self.tags, self.tag_of, self.next_tag = tags, tag_of, nxt
+
+    def _save_tags(self):
+        """Write the tags file whole (a temporary file, flushed, renamed over it). Holds the lock."""
+        if not self.tags_path:
+            return
+        doc = {"format": TAGS_FORMAT, "version": "0", "brief": self.brief, "next": str(self.next_tag),
+               "tags": [{"tag": t["tag"], "piece": t["piece"], "address": t["address"], "kind": t["kind"], "scene": t["scene"]}
+                        for t in sorted(self.tags.values(), key=lambda x: int(x["tag"][1:]))]}
+        durable.write(self.tags_path, canon.dumps(doc) + b"\n")
 
     def shutdown(self):
         """Cancel the request running, and kill its provider and what it started (play.py, stopping)."""
@@ -405,12 +458,15 @@ class Gateway:
     def _bind(self, out, head, o):
         """The object's tag, made if it has none; bound (again) to this scene and head. Holds the lock."""
         tag = self.tag_of.get(o["id"])
-        if tag is None:
+        new = tag is None
+        if new:                  # tag ??= next(): made at the first touch, never reassigned, never reused
             tag = "@%d" % self.next_tag
             self.next_tag += 1
             self.tag_of[o["id"]] = tag
         self.tags[tag] = {"tag": tag, "piece": o["id"], "address": R.address(o), "kind": o["kind"], "scene": out["lineage"]["scene_sha256"],
                           "head": head, "fingerprint": R.fingerprint(o), "statement": self._statement(out, o), "size_m": R.geometry(o)["size_m"]}
+        if new:
+            self._save_tags()
         return tag
 
     def select(self, piece):
@@ -464,8 +520,11 @@ class Gateway:
                     "statement": t["statement"], "bound_scene": t["scene"], "status": status}
 
         def build():
+            known = [{"tag": t["tag"], "piece": t["piece"], "kind": t["kind"], "address": t["address"],
+                      "present": None if O is None else t["piece"] in O} for t in sorted(self.tags.values(), key=lambda x: int(x["tag"][1:]))]
             return {"target": self.target, "pins": list(self.pins), "max_pins": MAX_PINS,
-                    "items": ([item(self.target, "target")] if self.target else []) + [item(t, "pin") for t in self.pins]}
+                    "items": ([item(self.target, "target")] if self.target else []) + [item(t, "pin") for t in self.pins],
+                    "known": known, "kept": bool(self.tags_path), "tags_error": self.tags_error}
         if locked:
             return build()
         with self.lock:
@@ -490,8 +549,14 @@ class Gateway:
                 mentions.append(t)
         for t in mentions:
             if t not in active:
-                raise StudioError("STUDIO-REFERENCE", "the prompt names %s, which is not the target or a pin of this request (%s)" % (
-                    t, ", ".join("%s %s" % (a, "target" if a == target else "pin") for a in active) or "none"))
+                with self.lock:
+                    k = dict(self.tags[t]) if t in self.tags else None
+                now = ", ".join("%s %s" % (a, "target" if a == target else "pin") for a in active) or "none"
+                if k is None:
+                    raise StudioError("STUDIO-REFERENCE", "the prompt names %s, but no object has that tag (this request's: %s)" % (t, now))
+                gone = "" if k["piece"] in O else "; it is not in the scene at the head"
+                raise StudioError("STUDIO-REFERENCE", "the prompt names %s, the %s %s, which is not the target or a pin of this request "
+                                  "(%s)%s. Pin it (R on it) or make it the target (E), then ask again" % (t, k["kind"], k["address"], now, gone))
         refs = []
         for t in active:
             rec = recs[t]
@@ -617,7 +682,7 @@ class Gateway:
         self._record(rid, "request.json", rb)
         entry = {"id": rid, "at": now(), "brief": self.brief, "head": req["head"], "prompt": req["prompt"],
                  "selection": req["selection"], "references": {t: r["piece"] for t, r in req["references"].items()},
-                 "config": self.cfg["path"], "model": self.cfg["model"], "request_sha256": sha256(rb)}
+                 "config": self.cfg["path"], "model": self.cfg["model"], "request_sha256": sha256(rb), "basis": basis(self.cfg)}
         if self.origin != "page":
             entry["origin"] = self.origin
         # what the owner asked to be recorded of every call (2026-10-11): the provider, the model, the exit status, whether

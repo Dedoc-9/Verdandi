@@ -37,9 +37,14 @@ settings, both optional, are in the environment: `VERDANDI_DIRECTOR_MODEL` (as `
 such as `sonnet` or a full name; Claude Code's default if not set) and `VERDANDI_CLAUDE` (the executable, if `claude`
 on the PATH is not it; on Windows `claude.exe`, since a `.cmd` or `.ps1` shim runs only under a shell and is refused).
 
-The third asks a Claude model through the Anthropic Messages API, with a key from the Claude Console. Its key and
-model are in the environment, never in a file: `ANTHROPIC_API_KEY`, `VERDANDI_DIRECTOR_MODEL` (required; nothing
-guesses a model's id), and `VERDANDI_DIRECTOR_API` if the endpoint is not `https://api.anthropic.com/v1/messages`.
+The third asks a Claude model through the Anthropic Messages API, with a key from the Claude Console. The key is in
+the environment, never in a file: `ANTHROPIC_API_KEY`. The model is the configuration's (`art/providers/anthropic.json`
+passes `--model claude-opus-5-5`, the model his Claude Code CLI answered as, so the two providers differ in the adapter
+alone; B1, 2026-10-12); `VERDANDI_DIRECTOR_MODEL` overrides it, and `VERDANDI_DIRECTOR_API` names another endpoint. The
+answer is constrained by structured outputs (`output_config.format`, a JSON schema; the JSON is the answer's text), not
+by a forced tool choice, which every current model refuses with 400; the schema sent is the gateway's with what
+structured outputs do not support moved into its descriptions, and the gateway still enforces every limit. A refusal
+or an answer cut at its token limit is said and not read.
 
 The two model providers tell their models the same thing (`art/providers/director_prompt.py`: one system text, and the
 request rendered as text), and differ only in how the model is reached.
@@ -67,7 +72,7 @@ one, per admitted edit.
 
 In the page: what is under the crosshair is named in the corner, by its address (`plaza/canopy/19,10-28,11`) and its
 tag if it has one. **E** makes it the target; **R** pins it as a reference, or unpins it, up to four (the game's reset
-is **Backspace** here). play.py gives each a tag, `@1`, `@2`, …, which names that object for as long as it runs; each
+is **Backspace** here). play.py gives each a tag, `@1`, `@2`, …, which names that object, and keeps it across restarts; each
 tagged object is framed and labelled on screen (the target amber, a pin dashed blue), and the panel lists them with
 their addresses, sizes and statements' lines. **Enter** opens the director's panel, and the game goes on. Type the
 change, naming objects by their tags (*make @1 match @2*); **Ctrl+Enter** asks. The candidates come back with their
@@ -85,8 +90,11 @@ tag. If an edit invalidates a reference, report it rather than silently redirect
   `:something` is a part of it (a canopy's ribs, downlights and edge fixtures, a tower's cornice), and a light belongs
   to the object whose id it shares. An object's identity is its id, which holds its cells: a canopy given new corners
   is a new object.
-- **A tag** is made the first time an object is selected or pinned, and names that object, by its id, for as long as
-  play.py runs; it is never given to another. Selecting or pinning it again binds it again to the scene and head of
+- **A tag** is made the first time an object is selected or pinned, and names that object, by its id; it is never
+  given to another. B1 (docs/STUDIO-CONTRACT.md §9): the tags are kept in `art/ledger/<brief>.tags.json`, written whole
+  and flushed, so a restart keeps them; the counter only grows, so a tag is never reused; a tag whose object is gone
+  stays, listed apart. The panel shows every tag as a chip, and a click puts it into the prompt; a prompt naming a tag
+  that is not the target or a pin is refused with what that tag names and how to pin it. A probe keeps no tags file. Selecting or pinning it again binds it again to the scene and head of
   that moment. Its status, in the panel and in `/live`, is read against the scene served: *ok*, *changed* (the same
   object, another shape or look than when it was bound), or *gone* (no object of its id).
 - **A request** carries the target and the pins (below). A prompt that names a tag that is neither, or a tag whose
@@ -209,6 +217,15 @@ served with, in a header that a page of another origin cannot send without a pre
 must name 127.0.0.1 or localhost as their host. Nothing is admitted without the designer, and nothing reaches the
 world but what the director judged.
 
+## Crash safety, and what a supervisor reads (B1)
+
+Every admission is written so that a process killed at any point leaves the brief and its ledger at the parent or
+the child, never between: `art/director.py`'s docstring says how, and `python art/director.py crashtest` kills an
+admission at each of its writes and recovers it (14 cases). Every director command, and play.py's start, recovers
+first. play.py answers `GET /healthz` (`ready`, `version`, `page`, `page_age_s`, `pid`), takes the page's heartbeat on
+`POST /studio/alive` (every 5 s) and stops on `POST /studio/shutdown`, SIGTERM or Ctrl+Break; it exits 0 stopped, 70
+when its port is taken (bound exclusively on Windows), 75 when recovery refuses.
+
 ## What is not shown
 
 The quality of what a model proposes: the checks hold a candidate to the rules of the art and to its declared scope,
@@ -218,7 +235,7 @@ owner's Windows machine (`claude.exe` from Claude Code's own installer, his Clau
 in both; a `.cmd` or `.ps1` shim is refused, not measured beyond the self-test's. That a model
 identifies the intended objects in general: the references' probe is four prompts about three canopies, a few runs,
 one model. A tag on a light or a play piece (E and R pick the dressing's boxes; a light goes with its object). Tags
-that outlive play.py, or are shared between two pages. An image of the view (the next slice, by his sequence) and
+shared between two pages at once. The structured-outputs request against the live API (no key here). An image of the view (the next slice, by his sequence) and
 pieces that connect two objects (after it). A scope pattern that names one object with its parts: the director's
 grammar has none, so a model told only an object's exact address declares a scope that leaves its ribs and lights
 out (`SCOPE-LEAK`); the request now says so. Changes to the layout (the look only; a layout change is the design

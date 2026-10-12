@@ -507,6 +507,19 @@ SHOULD for the second, LATER after that.
 today; close the window and everything stops; the tags a designer made are there after a restart; the Anthropic
 provider works with a Console key; the studio survives a crash mid-admission with the brief and ledger intact.
 
+**Status (2026-10-12): the first part built, off the gate.** Done and measured in the container: the content path's
+crash safety (step 2: `art/director/durable.py`; an admission's redo-or-undo folder and recovery at every start;
+`python art/director.py crashtest`, 14 cases, each a real process killed at a write and recovered to the parent or
+the child); the tags persisted and shown (step 3, the contract's §9; chips that put a tag into the prompt; a refusal
+that says what a tag names and how to pin it); the API provider on structured outputs with `claude-opus-5-5` from its
+configuration (step 4; a forced tool choice now refused by the self-test's mock as by the API); the request record's
+basis (the validators' and the configuration's sha256s); play.py's `/healthz`, `/studio/alive`, `/studio/shutdown`,
+signals, exit codes, `--root` forwarded to the `--emit` child, and its port bound exclusively on Windows (step 1);
+the page's heartbeat; the five probes of §8 under `tools/probe/`. Still to build, after probes 1 and 2 on his machine:
+the supervisor (step 6), the stub (step 7, the contract's R0–R8, R14, R15), the layout and the shortcut (step 8), the
+CLI's extra flags (step 5, held back: the CLI works on his machine as it is, and a flag his version refuses would stop
+it).
+
 **Components.** New: `shell/studio_stub.rs` (the stub; std-only, raw FFI, built by hand like `win32.rs`, never by the
 gate), `art/studio_app.py` (the supervisor), `art/studio_launch.md` (the contract); changed: `art/play.py`
 (`/healthz`, `/studio/shutdown` POST, `--port`, `--root` forwarded to the `--emit` child, a signal handler),
@@ -794,18 +807,19 @@ the owner's machine and recorded.
 
 ## 11. Immediate next actions, in order
 
-1. The five experiments of §8 on the owner's machine (one patch of scratch scripts under `tools\probe\`, not a
-   rung; experiment 5 judged by `art/studio_txn.py`), their results recorded here.
-2. B1, in commits that each pass the self-tests: the content path's durable writes and `crashtest`; the API
-   provider on structured outputs and the CLI's flags, with `probe` run on both; the tags persisted and shown;
-   `play.py`'s health, shutdown and port; the supervisor; the stub; the layout and the shortcut; the acceptance on
-   his machine; `docs/ROADMAP.md` recorded; pushed by him.
+**The working rule from here** (the review he brought on 2026-10-12, put as *"agree?"*; agreed): *"No new
+architecture proposal, theorem, verification rung, or candidate-design patch unless implementation exposes a
+concrete defect that the current contract cannot handle."* B1 is *"one end-to-end desktop application milestone"*,
+done when he can open Verðandi from a desktop icon, walk the plaza, select an object and see its stable tag, ask the
+director to change it, see the candidate in the renderer, reject a bad edit without damaging the world, and restart
+without losing the saved intent and history.
+
+1. On his machine, the five probes of §8 (`tools\probe\`), alongside B1 rather than before all of it: 1 and 2 decide
+   the supervisor's and the stub's shape; 3, 4 and 5 bear on B2.
+2. B1's second part, after probes 1 and 2: the supervisor, the stub, the layout and the shortcut; the acceptance on
+   his machine; `probe` run on the API provider with his Console key.
 3. B2's journal and pointer with their death-point harness, before any other part of B2.
-4. His rulings: recorded in the contract's §1 (Inno Setup optional; tags by first touch, shown; stills opt-in per
-   session; the journal-replay court before B1's promotion logic; the experiments conditional). Still his: the API
-   provider's default model, deferred until current names and prices were checked — checked on 2026-10-12 (the
-   contract, §1; Haiku 5.5 $0.10 / $0.50, Sonnet 5.5 $2 / $10, Opus 5.5 $4 / $20, Fable 5.1 $10 / $50 per million
-   tokens in and out).
+4. His rulings: recorded in the contract's §1, the default model among them (Opus 5.5, configurable).
 
 ---
 

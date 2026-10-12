@@ -15,7 +15,15 @@
 #   python art/director.py verify   BRIEF                      the ledger's chain, replayed to the files as they stand
 #   python art/director.py vectors                             the reference against the conformance vectors
 #   python art/director.py selftest                            the vectors, and the whole lifecycle in a scratch copy
+#   python art/director.py crashtest                           an admission killed at each of its writes, then recovered
+#   (every command but vectors takes --root DIR: the tree whose brief and ledger it uses; the repository by default)
 #
+# Crash safety (B1, docs/STUDIO-CONTRACT.md): every command starts by recovering (recover()). An admission writes, in
+# order: the old and the new bytes of every file it changes, into <ledger>.pending/, then that folder's manifest; the
+# admit event (the commit: an admission counts once its line is flushed); the new files, each replaced whole; and last
+# the manifest's removal. Recovery finds a manifest and either completes the admission (its event is in the ledger) or
+# puts the old bytes back (it is not), so the files are the ledger's parent or its child, never between. A torn last
+# line of the ledger is set aside first. What it does not claim: an operating-system crash or a power loss.
 # What each part proves, and what it does not:
 #   scope   (art/director/scope.py) is pure: the same intent, head and scenes give the same verdict, byte for byte.
 #   ledger  (art/director/ledger.py) proves recorded lineage: which text, at which head, with which verdict, chosen by
@@ -40,6 +48,7 @@ REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "director"))
 import dress  # noqa: E402
+import durable  # noqa: E402
 import importlib.util  # noqa: E402
 _spec = importlib.util.spec_from_file_location("art_check", os.path.join(HERE, "check.py"))
 check = importlib.util.module_from_spec(_spec)
@@ -68,6 +77,7 @@ class Workspace:
         self.ledger = os.path.join(root, "art", "ledger", brief + ".ledger")
         self.maps = os.path.join(root, "graybox", "maps")
         self.build = os.path.join(root, "art", "build", brief, "director")
+        self.pending = self.ledger + ".pending"
 
     def text(self):
         return open(self.art, "rb").read().replace(b"\r\n", b"\n").decode("utf-8")
@@ -198,6 +208,98 @@ def with_layout(ws, out, lines, label):
     return tmp, new, head
 
 
+# -------------------------------------------------------------------------------------------- crash safety
+PENDING = "DIRECTOR-PENDING"
+TMP_NAME = __import__("re").compile(r"\..+\.[0-9]+\.tmp\Z")
+
+
+def _abs(ws, rel):
+    return os.path.join(ws.root, *rel.split("/"))
+
+
+def recover(ws):
+    """Bring the brief's files and ledger to a state the ledger accounts for: a torn last line set aside; an admission
+    left half done completed (its event is in the ledger) or undone (it is not). Returns what was done, as lines."""
+    done = []
+    stale = 0                                    # the temporaries of writes that died before their rename (durable.write)
+    for d in {os.path.dirname(ws.art), os.path.dirname(ws.ledger), ws.maps}:
+        for f in (os.listdir(d) if os.path.isdir(d) else []):
+            if TMP_NAME.match(f):
+                os.remove(os.path.join(d, f))
+                stale += 1
+    if stale:
+        done.append("RECOVERED %d temporary file%s of a write that did not finish, removed" % (stale, "" if stale == 1 else "s"))
+    aside = led.set_aside_torn(ws.ledger)
+    if aside:
+        done.append("RECOVERED the ledger's torn last line, kept in %s" % os.path.relpath(aside, ws.root))
+    if not os.path.isdir(ws.pending):
+        return done
+    mpath = os.path.join(ws.pending, "manifest.json")
+    if not os.path.exists(mpath):
+        durable.remove_tree(ws.pending)        # prepared no further than its files, or already finished: the files are the ledger's
+        done.append("RECOVERED a pending folder without its manifest (an admission not yet prepared, or already finished); removed")
+        return done
+    m = canon.loads(open(mpath, "rb").read())
+    if m.get("protocol") != PENDING:
+        raise led.LedgerError("PENDING-UNKNOWN: %s is not a %s manifest; read it, then move it aside" % (mpath, PENDING))
+    events, _l, _h = led.read(ws.ledger)
+    i = int(m["ledger_seq"])
+    committed = (i < len(events) and events[i]["kind"] == "admit" and events[i]["evaluation"] == m["evaluation"]
+                 and events[i]["intent_sha256"] == m["intent_sha256"])
+    side = "new" if committed else "old"
+    todo = []
+    for n, f in enumerate(m["files"]):
+        target, want = _abs(ws, f["path"]), f[side + "_sha256"]
+        if (canon.sha256(open(target, "rb").read()) if os.path.exists(target) else "") != want:
+            data = open(os.path.join(ws.pending, "%s.%d" % (side, n)), "rb").read()
+            if canon.sha256(data) != want:
+                raise led.LedgerError("PENDING-DAMAGED: %s.%d is not the bytes its manifest names; nothing was changed by recovery" % (side, n))
+            todo.append((n, target, data))
+    for n, target, data in todo:                 # every file checked before any is written
+        durable.write(target, data)
+        durable.point("recover:file-%d" % n)
+    _finish(ws)
+    done.append("RECOVERED %s: the admission of evaluation #%s %s" % (
+        "ledger #%s" % i if committed else "no admit event", m["evaluation"], "completed" if committed else "undone, the files as they were"))
+    return done
+
+
+def _finish(ws):
+    os.remove(os.path.join(ws.pending, "manifest.json"))
+    durable.point("pending:manifest-removed")
+    durable.remove_tree(ws.pending)
+
+
+def commit_admission(ws, evaluation, intent_sha256, files, fields):
+    """Admit with crash safety: files is [(absolute path, new bytes)], fields the admit event's. See recover()."""
+    events, _l, _h = led.read(ws.ledger)
+    if os.path.exists(ws.pending):
+        raise SystemExit("REFUSED: %s exists; run any director command to recover it first" % os.path.relpath(ws.pending, ws.root))
+    os.makedirs(ws.pending)
+    entries = []
+    for n, (target, new) in enumerate(files):
+        old = open(target, "rb").read()
+        durable.write(os.path.join(ws.pending, "old.%d" % n), old)
+        durable.write(os.path.join(ws.pending, "new.%d" % n), new)
+        entries.append({"path": os.path.relpath(target, ws.root).replace(os.sep, "/"), "old_sha256": canon.sha256(old), "new_sha256": canon.sha256(new)})
+        durable.point("pending:file-%d" % n)
+    durable.write(os.path.join(ws.pending, "manifest.json"), canon.dumps(
+        {"protocol": PENDING, "version": "0", "ledger_seq": str(len(events)), "evaluation": evaluation,
+         "intent_sha256": intent_sha256, "files": entries}))
+    durable.point("pending:manifest")
+    a = led.append(ws.ledger, "admit", fields)
+    for n, (target, new) in enumerate(files):
+        durable.write(target, new)
+        durable.point("install:file-%d" % n)
+    _finish(ws)
+    return a
+
+
+def say_recovered(ws):
+    for ln in recover(ws):
+        print(ln)
+
+
 # -------------------------------------------------------------------------------------------- evaluation
 def refused(it, current, code, detail):
     v = {"protocol": scopemod.PROTOCOL, "version": scopemod.VERSION, "verdict": "REFUSED", "codes": [code],
@@ -320,22 +422,26 @@ def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note=""):
         raise SystemExit("REFUSED: #%s leaks (%s); admit it only with --accept-leakage, which the ledger records" % (seq, ", ".join(v["unclaimed"][:6])))
     it = canon.load_intent(ev["intent"].encode("ascii"))
     text1, inverse = apply_revision(ws.text(), it["revision"])
-    if it["layout"]:
-        dname, _d = ws.design(out0)
-        maps, new_design, lhead = with_layout(ws, out0, it["layout"], layout_label(it))
-        try:
+    files, maps = [], None
+    try:
+        if it["layout"]:
+            dname, _d = ws.design(out0)
+            maps, _new_design, _lhead = with_layout(ws, out0, it["layout"], layout_label(it))
             for f in (dname, out0["W"]["source"]["layout"]):
-                shutil.copy(os.path.join(maps, f), os.path.join(ws.maps, f))
-        finally:
+                files.append((os.path.join(ws.maps, f), open(os.path.join(maps, f), "rb").read()))
+        # the head the files will have, computed before any of them is touched
+        _o1, parts1, _c1 = ws.export(text1, maps)
+    finally:
+        if maps:
             shutil.rmtree(maps, ignore_errors=True)
-    with open(ws.art, "wb") as fh:
-        fh.write(text1.encode("utf-8"))
-    _o1, parts1, _c1 = ws.export()
     if parts1["art_sha256"] != ev["after"]["art_sha256"] or parts1["world_sha256"] != ev["after"]["world_sha256"]:
-        raise SystemExit("the admitted files do not reach the head the evaluation predicted: stop and read the ledger")
-    a = led.append(ws.ledger, "admit", {"evaluation": seq, "intent_sha256": ev["intent_sha256"], "head_before": head, "head_after": canon.head(parts1),
-                                        "parts_after": parts1, "accepted_leakage": bool(accept_leakage), "inverse": inverse,
-                                        "design_lines": list(it["layout"]), "observed": {"at": now(), "chooser": chooser, "note": note}})
+        raise SystemExit("the admitted files would not reach the head the evaluation predicted: stop and read the ledger")
+    files.append((ws.art, text1.encode("utf-8")))
+    files = [(f, b) for f, b in files if open(f, "rb").read() != b]
+    a = commit_admission(ws, seq, ev["intent_sha256"], files, {
+        "evaluation": seq, "intent_sha256": ev["intent_sha256"], "head_before": head, "head_after": canon.head(parts1),
+        "parts_after": parts1, "accepted_leakage": bool(accept_leakage), "inverse": inverse,
+        "design_lines": list(it["layout"]), "observed": {"at": now(), "chooser": chooser, "note": note}})
     print("ADMITTED candidate %s (#%s) at head %s -> %s (ledger #%s)" % (it["candidate"], seq, head[:12], canon.head(parts1)[:12], a["seq"]))
     return a
 
@@ -714,6 +820,110 @@ def cmd_selftest():
     return 0 if not failed else 1
 
 
+def cmd_crashtest():
+    """An admission killed at each of its writes (a real process, ended by os._exit at the point), then recovered by the
+    next command: the files and the ledger are the parent or the child, never between, and the ledger verifies. And a
+    recovery killed in the middle, recovered again. In a scratch copy, with the round's candidate B (a lamp and a
+    layout: three files change)."""
+    tmp = tempfile.mkdtemp(prefix="director-crashtest-")
+    results = []
+    me = os.path.abspath(__file__)
+    env0 = {k: v for k, v in os.environ.items() if k != "VERDANDI_CRASH_AT"}
+
+    def run(args, point=None):
+        env = dict(env0, **({"VERDANDI_CRASH_AT": point} if point else {}))
+        r = subprocess.run([sys.executable, me] + args + ["--root", tmp], capture_output=True, text=True, env=env, timeout=600)
+        return r.returncode, r.stdout + r.stderr
+    try:
+        for sub in ("art/briefs", "art/rounds", "graybox/maps"):
+            shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        ws = Workspace("plaza-night", tmp)
+        rnd = os.path.join(tmp, "art", "rounds", "plaza-imposing")
+        for f, to in (("plaza-night.art", "art/briefs"), ("tactical.design", "graybox/maps"), ("tactical.layout", "graybox/maps")):
+            shutil.copy(os.path.join(rnd, "base", f), os.path.join(tmp, to, f))
+        cmd_genesis_quiet(ws)
+        rows = _quiet(cmd_evaluate, ws, [os.path.join(rnd, "B.intent")], quiet=True)
+        seq = rows[0][4]
+        ev = led.read(ws.ledger)[0][int(seq)]
+        parent = current_parts(ws)
+        child = {"art_sha256": ev["after"]["art_sha256"], "world_sha256": ev["after"]["world_sha256"]}
+        watched = [ws.art, ws.ledger] + [os.path.join(ws.maps, f) for f in ("tactical.design", "tactical.layout")]
+        snap = {f: open(f, "rb").read() for f in watched}
+
+        def restore():
+            durable.remove_tree(ws.pending)
+            for f in os.listdir(os.path.dirname(ws.ledger)):
+                if ".torn." in f:
+                    os.remove(os.path.join(os.path.dirname(ws.ledger), f))
+            for f, b in snap.items():
+                open(f, "wb").write(b)
+
+        def where():
+            p = current_parts(ws)
+            pair = {"art_sha256": p["art_sha256"], "world_sha256": p["world_sha256"]}
+            kinds = [e["kind"] for e in led.read(ws.ledger)[0]]
+            at = "parent" if pair == {k: parent[k] for k in pair} else "child" if pair == child else "between"
+            return at, kinds[-1]
+        rc, out = run(["admit", "plaza-night", seq, "--chooser", "crashtest"])
+        changed = [f for f in watched if f != ws.ledger and open(f, "rb").read() != snap[f]]
+        results.append(("an admission run to its end reaches the child and leaves no pending folder (%d files change)" % len(changed),
+                        rc == 0 and where() == ("child", "admit") and not os.path.exists(ws.pending), out.strip()[-120:]))
+        k = len(changed)
+        points = (["pending:file-%d" % n for n in range(k)] + ["pending:manifest", "torn:admit", "ledger:admit"]
+                  + ["install:file-%d" % n for n in range(k)] + ["pending:manifest-removed"])
+        for point in points:
+            restore()
+            want = "parent" if point.startswith(("pending:file", "pending:manifest")) and point != "pending:manifest-removed" or point == "torn:admit" else "child"
+            rc, out = run(["admit", "plaza-night", seq, "--chooser", "crashtest"], point)
+            died = rc == durable.CRASH_EXIT
+            rc2, out2 = run(["verify", "plaza-night"])
+            at, last = where()
+            ok = died and rc2 == 0 and "LEDGER VERIFIED" in out2 and at == want and last == ("admit" if want == "child" else "evaluate") \
+                and not os.path.exists(ws.pending)
+            detail = "died %s; then verify %d, the files at the %s, the ledger's last event %s; %s" % (
+                "yes" if died else "NO (%d)" % rc, rc2, at, last, " ".join(ln for ln in out2.splitlines() if ln.startswith("RECOVERED"))[:150])
+            if point == "torn:admit":
+                kept = [f for f in os.listdir(os.path.dirname(ws.ledger)) if ".torn." in f]
+                ok = ok and len(kept) == 1
+                detail += "; the torn bytes kept in %s" % (kept[0] if kept else "nothing")
+            if want == "parent" and ok:
+                rc3, _o3 = run(["admit", "plaza-night", seq, "--chooser", "crashtest"])
+                ok = rc3 == 0 and where() == ("child", "admit")
+                detail += "; admitted again: %s" % ("the child" if ok else "FAILED")
+            results.append(("killed at %s: recovered to the %s" % (point, want), ok, detail))
+        # a recovery killed in the middle: the admission committed, nothing installed; the recovery dies after one file
+        restore()
+        run(["admit", "plaza-night", seq, "--chooser", "crashtest"], "ledger:admit")
+        rc, _o = run(["verify", "plaza-night"], "recover:file-0")
+        rc2, out2 = run(["verify", "plaza-night"])
+        at, last = where()
+        results.append(("a recovery killed after its first file, recovered again: the child", rc == durable.CRASH_EXIT and rc2 == 0 and at == "child"
+                        and last == "admit" and not os.path.exists(ws.pending), "first recovery %d, second %d, the files at the %s" % (rc, rc2, at)))
+        # a write killed before its rename leaves a temporary beside its target: the next start removes it
+        restore()
+        planted = os.path.join(os.path.dirname(ws.art), ".plaza-night.art.99999.tmp")
+        open(planted, "wb").write(b"half of a write")
+        rc, out = run(["verify", "plaza-night"])
+        results.append(("a temporary left by a write killed before its rename is removed at the next start", rc == 0 and not os.path.exists(planted)
+                        and "temporary file" in out, " ".join(ln for ln in out.splitlines() if ln.startswith("RECOVERED"))[:120]))
+        # a pending folder whose bytes were changed is refused, not trusted
+        restore()
+        run(["admit", "plaza-night", seq, "--chooser", "crashtest"], "ledger:admit")
+        with open(os.path.join(ws.pending, "new.0"), "ab") as fh:
+            fh.write(b"# changed\n")
+        rc, out = run(["verify", "plaza-night"])
+        results.append(("a pending file changed after it was written is refused (PENDING-DAMAGED), nothing written", rc != 0 and "PENDING-DAMAGED" in out,
+                        out.strip().splitlines()[-1][:120] if out.strip() else ""))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    failed = 0
+    for name, ok, d in results:
+        print("%s %s%s" % ("PASS" if ok else "FAIL", name, (" — " + d) if d else ""))
+        failed += 0 if ok else 1
+    print("DIRECTOR CRASHTEST %s (%d cases)" % ("PASSED" if not failed else "FAILED (%d)" % failed, len(results)))
+    return 0 if not failed else 1
+
+
 def _tamper(path):
     raw = open(path, "rb").read()
     i = raw.index(b'"chooser":"selftest"')
@@ -744,7 +954,7 @@ def main(argv):
         return 2
     cmd, args = argv[0], [a for a in argv[1:]]
     flags = ("--accept-leakage",)
-    valued = ("--chooser", "--note", "--config", "--approver")
+    valued = ("--chooser", "--note", "--config", "--approver", "--root")
     pos = []
     i = 0
     while i < len(args):
@@ -760,7 +970,10 @@ def main(argv):
             return 0 if not bad else 1
         if cmd == "selftest":
             return cmd_selftest()
-        ws = Workspace(pos[0])
+        if cmd == "crashtest":
+            return cmd_crashtest()
+        ws = Workspace(pos[0], os.path.abspath(opt(args, "--root", REPO)))
+        say_recovered(ws)
         if cmd == "genesis":
             cmd_genesis(ws)
         elif cmd == "lens":

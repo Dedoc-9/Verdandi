@@ -57,6 +57,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -223,9 +224,12 @@ class Live:
     def __init__(self, brief, art_path=None, intents=(), slots=None, poll=0.3):
         self.brief, self.art_path, self.intents, self.poll = brief, art_path, list(intents), poll
         self.cmd = [sys.executable, "-B", os.path.abspath(__file__), brief, "--emit"] + \
-            (["--art", os.path.abspath(art_path)] if art_path else []) + sum((["--intent", os.path.abspath(f)] for f in self.intents), [])
+            (["--art", os.path.abspath(art_path)] if art_path else []) + sum((["--intent", os.path.abspath(f)] for f in self.intents), []) + \
+            (["--root", ROOT] if os.path.abspath(ROOT) != os.path.abspath(REPO) else [])     # the child evaluates intents in the same tree
         self.lock = threading.Lock()
         self.version, self.compiled_ms, self.stopping = 0, 0, False
+        self.stop = threading.Event()        # set by POST /studio/shutdown, SIGTERM or SIGBREAK
+        self.page_seen = None                # when the page last said it was alive (POST /studio/alive)
         slots = slots if slots is not None else compile_slots(brief, art_path, self.intents)
         self.served = [s if s["ok"] else None for s in slots]
         self.latest = slots
@@ -429,12 +433,23 @@ class Host:
         return self.live.publish(slots)
 
 
-STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin")
+STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin",
+                "/studio/alive", "/studio/shutdown")
+# B1 (docs/STUDIO-APP.md; the supervisor's view of this server): GET /healthz says the server is up and which code it
+# runs; POST /studio/alive is the page's heartbeat; POST /studio/shutdown stops the server as Ctrl+C does. Exit codes:
+# 0 stopped, 1 a source not served, 2 usage, 70 could not serve (the port), 75 refused to start (recovery refused).
+EXIT_STOPPED, EXIT_NOT_SERVED, EXIT_USAGE, EXIT_NO_SERVE, EXIT_NO_START = 0, 1, 2, 70, 75
 
 
 def studio_post(live, path, body):
     """One of the page's studio requests: (HTTP status, JSON reply)."""
     import studio
+    if path == "/studio/alive":
+        live.page_seen = time.time()
+        return 200, {"ok": True}
+    if path == "/studio/shutdown":
+        live.stop.set()
+        return 200, {"ok": True, "message": "stopping"}
     g = live.studio
     if g is None:
         return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
@@ -497,6 +512,12 @@ def server(live, port=0):
                 return self.send(200, page.encode("utf-8"), "text/html; charset=utf-8")
             if path == "/live":
                 return self.send(200, json.dumps(live.state(), sort_keys=True).encode("utf-8"), "application/json")
+            if path == "/healthz":
+                s0 = live.slot(0)
+                return self.send(200, json.dumps({"ready": bool(s0 and s0.get("ok")), "version": os.environ.get("VERDANDI_GENERATION", "dev"),
+                                                  "brief": brief, "scene_sha256": s0["sha"] if s0 else "", "page": live.page_seen is not None,
+                                                  "page_age_s": None if live.page_seen is None else round(time.time() - live.page_seen, 1),
+                                                  "pid": os.getpid()}, sort_keys=True).encode("utf-8"), "application/json")
             if path in FILES:
                 f, ctype = FILES[path]
                 with open(f, "rb") as fh:
@@ -530,9 +551,22 @@ def server(live, port=0):
             code, reply = studio_post(live, path, body)
             return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
 
-    srv = http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    srv = Server(("127.0.0.1", port), Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
+
+
+class Server(http.server.ThreadingHTTPServer):
+    """The page's server. On Windows a port is bound exclusively: SO_REUSEADDR there "allows a socket to forcibly bind to
+    a port in use by another socket" (VERIFIED, Microsoft Learn, "Using SO_REUSEADDR and SO_EXCLUSIVEADDRUSE"), so a
+    second studio would take the first one's port instead of being refused (exit 70)."""
+    allow_reuse_address = os.name != "nt"
+
+    def server_bind(self):
+        import socket
+        if os.name == "nt" and hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        http.server.ThreadingHTTPServer.server_bind(self)
 
 
 def start_studio(live, config, say=print):
@@ -578,6 +612,14 @@ def main(argv):
     if "--emit" in argv:
         only = one("--only")
         return emit(brief, art_path, intents, None if only is None else {int(k) for k in only.split(",")})
+    led_path = os.path.join(ROOT, "art", "ledger", brief + ".ledger")
+    if os.path.exists(led_path) or os.path.isdir(led_path + ".pending"):
+        try:                                     # start = recover (docs/STUDIO-CONTRACT.md): a half-done admission finished or undone first
+            for ln in director().recover(workspace(brief)):
+                print(ln)
+        except Exception as e:                   # noqa: BLE001 — a recovery that refuses stops the start, and says why
+            print("PLAY: the brief's ledger could not be recovered: %s" % e, file=sys.stderr)
+            return EXIT_NO_START
     first = brief_slot(brief, art_path)
     if not first["ok"]:
         print(first["message"], file=sys.stderr)
@@ -590,7 +632,11 @@ def main(argv):
         return 0 if all(s["ok"] for s in slots) else 1
     live = Live(brief, art_path, intents, slots=slots)
     start_studio(live, one("--director"))
-    srv = server(live, int(one("--port", "0")))
+    try:
+        srv = server(live, int(one("--port", "0")))
+    except OSError as e:
+        print("PLAY: could not serve on port %s: %s" % (one("--port", "0"), e), file=sys.stderr)
+        return EXIT_NO_SERVE
     url = "http://127.0.0.1:%d/" % srv.server_address[1]
     print(SERVED)
     if "--no-watch" not in argv:
@@ -599,8 +645,15 @@ def main(argv):
     print("open %s  — Ctrl+C here to stop" % url)
     if "--no-browser" not in argv:
         webbrowser.open(url)
+
+    def stop_on(signum, _frame):
+        live.stop.set()
+    for name in ("SIGTERM", "SIGBREAK"):          # SIGBREAK: the supervisor's CTRL_BREAK_EVENT on Windows
+        if hasattr(signal, name):
+            signal.signal(getattr(signal, name), stop_on)
     try:
-        threading.Event().wait()
+        while not live.stop.wait(0.5):           # a short wait, so Ctrl+C is heard on Windows too
+            pass
     except KeyboardInterrupt:
         pass
     live.stopping = True
@@ -738,6 +791,7 @@ def selftest():
         row("refused-keeps: the compiler stops", ok and not st[0]["ok"] and "exit 3" in st[0]["message"] and sha(0) == head["sha"]
             and sha(1) == a_sha, "the art's source refused (exit 3), its scene %s still served; the intent's not compiled" % head["sha"][:12])
         live.cmd = cmd
+        lifecycle(tmp, row)
     finally:
         if live:
             live.stopping = True
@@ -746,6 +800,86 @@ def selftest():
         shutil.rmtree(tmp, ignore_errors=True)
     print("LIVE SELFTEST %d/%d" % (sum(rows), len(rows)))
     return 0 if all(rows) else 1
+
+
+def lifecycle(tmp, row):
+    """B1, what a supervisor relies on, in a process of its own on a scratch tree: the start recovers the ledger (a torn
+    last line set aside, a pending folder left by a dead admission cleared); /healthz says ready and whether the page has
+    spoken; /studio/alive is the page's word; a second server on the port refuses to start (exit 70); /studio/shutdown
+    with the page's token stops it (exit 0), and without it is refused."""
+    import socket
+    root = os.path.join(tmp, "lifecycle")
+    for sub in ("art/briefs", "art/ledger", "graybox/maps"):
+        shutil.copytree(os.path.join(REPO, sub), os.path.join(root, sub))
+    led_ = os.path.join(root, "art", "ledger", "plaza-night.ledger")
+    for f in os.listdir(os.path.dirname(led_)):
+        if f.endswith(".tags.json"):
+            os.remove(os.path.join(os.path.dirname(led_), f))
+    with open(led_, "ab") as fh:
+        fh.write(b'{"half a line')
+    os.makedirs(led_ + ".pending")
+    open(os.path.join(led_ + ".pending", "old.0"), "wb").write(b"prepared, never committed")
+    s_ = socket.socket()
+    s_.bind(("127.0.0.1", 0))
+    port = s_.getsockname()[1]
+    s_.close()
+    cmd = [sys.executable, "-B", os.path.abspath(__file__), "plaza-night", "--root", root, "--no-browser", "--no-watch", "--port", str(port)]
+    base = "http://127.0.0.1:%d" % port
+
+    def get(path):
+        try:
+            with urllib.request.urlopen(base + path, timeout=10) as r:
+                return r.status, r.read()
+        except (urllib.error.URLError, OSError):
+            return 0, b""
+
+    def post(path, token):
+        q = urllib.request.Request(base + path, data=b"{}", method="POST", headers={"Content-Type": "application/json", "X-Studio-Token": token})
+        try:
+            with urllib.request.urlopen(q, timeout=10) as r:
+                return r.status
+        except urllib.error.HTTPError as e:
+            return e.code
+        except (urllib.error.URLError, OSError):
+            return 0
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    try:
+        t = time.time()
+        h = {}
+        while time.time() - t < 120 and p.poll() is None:
+            c, b = get("/healthz")
+            if c == 200:
+                h = json.loads(b)
+                break
+            time.sleep(0.2)
+        torn = [f for f in os.listdir(os.path.dirname(led_)) if ".torn." in f]
+        row("lifecycle: the start recovers the ledger before it serves", h.get("ready") is True and len(torn) == 1 and not os.path.exists(led_ + ".pending")
+            and open(led_, "rb").read().endswith(b"\n"), "healthz %s; the torn bytes kept in %s; the pending folder cleared" % (
+                "ready" if h.get("ready") else "NOT ready", torn[0] if torn else "nothing"))
+        page = get("/play.html")[1].decode("utf-8")
+        token = re.search(r'data-studio="([0-9a-f]+)"', page).group(1)
+        before = h.get("page")
+        a = post("/studio/alive", token)
+        after = json.loads(get("/healthz")[1]).get("page")
+        row("lifecycle: /healthz says ready, the version and whether the page has spoken; /studio/alive is the page's word",
+            before is False and a == 200 and after is True and h.get("version") == "dev" and h.get("brief") == "plaza-night" and h.get("pid") == p.pid,
+            "page %s, then %s after one POST; version %s; pid %s" % (before, after, h.get("version"), h.get("pid")))
+        second = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        row("lifecycle: a second server on the same port refuses to start (exit 70)", second.returncode == EXIT_NO_SERVE and p.poll() is None,
+            "exit %d: %s" % (second.returncode, (second.stderr.strip().splitlines() or [""])[-1][:90]))
+        no = post("/studio/shutdown", "not-the-token")
+        alive = p.poll() is None
+        yes = post("/studio/shutdown", token)
+        try:
+            rc = p.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            rc = None
+        row("lifecycle: /studio/shutdown without the page's token refused; with it, the server stops (exit 0)",
+            no == 403 and alive and yes == 200 and rc == EXIT_STOPPED, "without %d; with %d; exit %s" % (no, yes, rc))
+    finally:
+        if p.poll() is None:
+            p.kill()
+            p.wait()
 
 
 # ---------------------------------------------------------------------------------------------- the studio's self-test
@@ -851,6 +985,9 @@ def studio_selftest():
     try:
         for sub in ("art/briefs", "art/ledger", "graybox/maps"):
             shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        for f in os.listdir(os.path.join(tmp, "art", "ledger")):     # the owner's own tags and pending folders are not the test's
+            if f.endswith(".tags.json") or f.endswith(".pending"):
+                shutil.rmtree(os.path.join(tmp, "art", "ledger", f), ignore_errors=True) if f.endswith(".pending") else os.remove(os.path.join(tmp, "art", "ledger", f))
         for name, code in TEST_PROVIDERS.items():
             open(os.path.join(tmp, name), "w").write(code + "\n")
         ROOT = tmp
@@ -1019,16 +1156,23 @@ def studio_selftest():
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))).decode("utf-8"))
                 seen.update(headers={k.lower(): v for k, v in self.headers.items()}, body=body, path=self.path)
-                if body.get("model") == "overloaded":
+                tc = (body.get("tool_choice") or {}).get("type")
+                if tc in ("any", "tool"):            # as every current model answers a forced tool choice (VERIFIED 2026-10-12)
+                    out, code = {"type": "error", "error": {"type": "invalid_request_error", "message": "tool_choice any and tool are not supported"}}, 400
+                elif body.get("model") == "overloaded":
                     out, code = {"type": "error", "error": {"type": "overloaded_error", "message": "Overloaded"}}, 529
+                elif body.get("model") == "refusing":
+                    out = {"id": "msg_test", "type": "message", "role": "assistant", "model": "refusing", "stop_reason": "refusal",
+                           "usage": {"input_tokens": 10, "output_tokens": 3}, "content": [{"type": "text", "text": "I can't help with that."}]}
+                    code = 200
                 else:
                     text = body["messages"][0]["content"]
                     stmt = [ln.split(": ", 1)[1].split(" ; key")[0] for ln in text.splitlines() if ln.startswith("61: ")][0]
-                    out = {"id": "msg_test", "type": "message", "role": "assistant", "model": "mock-" + body["model"], "stop_reason": "tool_use",
-                           "usage": {"input_tokens": 1234, "output_tokens": 56},
-                           "content": [{"type": "tool_use", "id": "toolu_test", "name": "propose_candidates",
-                                        "input": {"candidates": [{"title": "Heavier section", "rationale": "deeper", "revision": ["= " + stmt + " deep 2.4"],
-                                                                  "scope": ["plaza/canopy/*"], "preserve": ["the route"]}]}}]}
+                    ans = {"candidates": [{"title": "Heavier section", "rationale": "deeper", "revision": ["= " + stmt + " deep 2.4"],
+                                           "scope": ["plaza/canopy/*"], "preserve": ["the route"]}]}
+                    out = {"id": "msg_test", "type": "message", "role": "assistant", "model": "mock-" + body["model"], "stop_reason": "end_turn",
+                           "usage": {"input_tokens": 1234, "output_tokens": 56, "cache_read_input_tokens": 0},
+                           "content": [{"type": "text", "text": json.dumps(ans)}]}
                     code = 200
                 b = json.dumps(out).encode("utf-8")
                 self.send_response(code)
@@ -1047,12 +1191,37 @@ def studio_selftest():
             rid = g.ask("heavier, a deeper section", piece, cam)
             r = wait(g, rid)
             b, h = seen.get("body", {}), seen.get("headers", {})
+            sys.path.insert(0, os.path.join(HERE, "providers"))
+            import anthropic_messages
+            sent = (b.get("output_config") or {}).get("format") or {}
+            flat = json.dumps(sent.get("schema"))
             shaped = (h.get("x-api-key") == "test-key-not-a-real-one" and h.get("anthropic-version") == "2023-06-01" and b.get("model") == "test-model"
-                      and b.get("tool_choice") == {"type": "tool", "name": "propose_candidates"} and b["tools"][0]["input_schema"] == studio.SCHEMA
+                      and "tools" not in b and "tool_choice" not in b and sent.get("type") == "json_schema"
+                      and sent.get("schema") == anthropic_messages.api_schema(studio.SCHEMA)
+                      and not any(k in flat for k in ('"maxLength"', '"minLength"', '"maxItems"')) and '"minItems": 1' in flat
+                      and b["system"][0].get("cache_control") == {"type": "ephemeral"}
                       and "heavier, a deeper section" in b["messages"][0]["content"] and "## The art file" in b["messages"][0]["content"])
-            row("the Anthropic adapter: the request shaped as the API's documentation describes, the tool's input read back as the candidates",
+            row("the Anthropic adapter: structured outputs as the API's documentation describes, the JSON text read back as the candidates",
                 shaped and r["state"] == "done" and len(r["candidates"]) == 1 and r["candidates"][0]["verdict"] == "CLEAN" and r["provider"]["model"] == "mock-test-model",
-                "the key in x-api-key, anthropic-version 2023-06-01, one tool whose input schema is the gateway's, the call forced; %s" % r["message"])
+                "output_config.format json_schema, the gateway's schema with maxLength, minLength and maxItems moved into descriptions, no tool, "
+                "a cache breakpoint on the system text; %s" % r["message"])
+            req_ = urllib.request.Request(os.environ["VERDANDI_DIRECTOR_API"], data=json.dumps({"model": "x", "tool_choice": {"type": "tool", "name": "t"}}).encode("utf-8"),
+                                          method="POST", headers={"content-type": "application/json"})
+            try:
+                urllib.request.urlopen(req_, timeout=10)
+                forced = 200
+            except urllib.error.HTTPError as e:
+                forced = e.code
+            row("the mock refuses a forced tool choice with 400, as the API does on every current model (the old adapter's request)", forced == 400, "HTTP %d" % forced)
+            del os.environ["VERDANDI_DIRECTOR_MODEL"]
+            rid = g.ask("heavier, a deeper section", piece, cam)
+            r = wait(g, rid)
+            row("the model named by the configuration (claude-opus-5-5) when the environment names none",
+                seen.get("body", {}).get("model") == "claude-opus-5-5" and r["state"] == "done", "sent %s; %s" % (seen.get("body", {}).get("model"), r["message"][:60]))
+            os.environ["VERDANDI_DIRECTOR_MODEL"] = "refusing"
+            rid = g.ask("heavier", piece, cam)
+            r = wait(g, rid)
+            row("a refusal (stop_reason refusal) said, not read; the world as it was", r["code"] == "STUDIO-PROVIDER-EXIT" and "refused" in r["message"] and live.slot(0)["sha"] == s0, r["message"][:100])
             os.environ["VERDANDI_DIRECTOR_MODEL"] = "overloaded"
             rid = g.ask("heavier", piece, cam)
             r = wait(g, rid)
@@ -1085,9 +1254,14 @@ def studio_selftest():
         api = [e for e in log if e.get("outcome") == "DONE" and (e.get("provider") or {}).get("name") == "anthropic-messages"]
         row("each call recorded with its exit status, validity, time and usage", done and all(e.get("exit") == 0 and e.get("valid") is True and e.get("provider_ms", -1) >= 0 for e in done)
             and bad and bad[-1].get("exit") == 0 and bad[-1].get("valid") is False and crashed and crashed[-1].get("exit") == 3 and "valid" not in crashed[-1]
-            and api and api[-1].get("usage") == {"input_tokens": 1234 + 0, "output_tokens": 56, "cost_usd": None, "cost_basis": "not computed here: token counts as the API reported them"}
+            and api and api[-1].get("usage") == {"input_tokens": 1234 + 0, "output_tokens": 56, "cost_usd": None,
+                                                 "cost_basis": "not computed here: token counts as the API reported them (of the input, 0 read from the cache)"}
             and not any("test-key-not-a-real-one" in ln for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), encoding="utf-8")),
             "scripted: exit 0, valid; not JSON: exit 0, not valid; 503: exit 3; the API's tokens as it counted them; no key in the log")
+        want_basis = studio.basis({"path": os.path.join(REPO, "art", "providers", "scripted.json")})
+        row("each call records its basis: the validators' sources and the configuration, by sha256",
+            done and done[-1].get("basis") == want_basis and len(want_basis["validators"]) == 4 and all(len(v) == 64 for v in want_basis["validators"].values())
+            and len(want_basis["config_sha256"]) == 64, ", ".join("%s %s" % (k.rsplit("/", 1)[-1], v[:8]) for k, v in want_basis["validators"].items()))
 
         # Claude Code's CLI, through art/providers/claude_code.py, with a stand-in for claude
         seen_path = os.path.join(tmp, "fake_claude.seen")
@@ -1202,6 +1376,9 @@ def references_selftest(row, cfg_dir=None):
     try:
         for sub in ("art/briefs", "art/ledger", "graybox/maps"):
             shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        for f in os.listdir(os.path.join(tmp, "art", "ledger")):     # the owner's own tags are not the test's
+            if f.endswith(".tags.json"):
+                os.remove(os.path.join(tmp, "art", "ledger", f))
         for name in ("all_canopies.py", "corners.py", "material.py"):
             open(os.path.join(tmp, name), "w").write(TEST_PROVIDERS[name] + "\n")
         ROOT = tmp
@@ -1339,9 +1516,11 @@ def references_selftest(row, cfg_dir=None):
         n_log = len(open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines())
         code, detail = refused(g.ask, "make @1 like @9", None, None)
         code3, detail3 = refused(g.ask, "make @1 like @3", None, None)
-        row("a prompt naming a tag that is not the target or a pin: refused, nothing asked", code == "STUDIO-REFERENCE" and code3 == "STUDIO-REFERENCE"
-            and "@9" in detail and "@3" in detail3 and len(open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()) == n_log,
-            detail[:110])
+        row("a prompt naming a tag that is not the target or a pin: refused, nothing asked; the refusal says what the tag names and how to pin it",
+            code == "STUDIO-REFERENCE" and code3 == "STUDIO-REFERENCE" and "no object has that tag" in detail
+            and "@3, the canopy plaza/canopy/19,20-28,21" in detail3 and "Pin it (R on it)" in detail3
+            and len(open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()) == n_log,
+            detail3[:150])
 
         # an object changed since it was pinned: said, and bound again by pinning it again
         sha0 = live.slot(0)["sha"]
@@ -1379,6 +1558,36 @@ def references_selftest(row, cfg_dir=None):
         row("an object gone: its tag never moves to another; the request refused until it is unpinned", st.get(t_s) == "gone" and code == "STUDIO-REFERENCE"
             and t_s in detail and t_new not in (t_s, "@1", "@2") and g.tags[t_s]["piece"] == south and r["state"] == "done",
             "the south canopy's corners moved: %s gone (%s); the new canopy pinned as %s; %s unpinned, asked again: %s" % (t_s, detail[:60], t_new, t_s, r["state"]))
+
+        # B1: the tags kept across a restart (docs/STUDIO-CONTRACT.md §9): the same numbers, the counter never going back,
+        # a gone object's tag kept; a probe keeps none; a file that cannot be read is left as it is
+        tags_file = os.path.join(tmp, "art", "ledger", brief + ".tags.json")
+        saved = open(tags_file, "rb").read()
+        doc = json.loads(saved)
+        g2 = studio.Gateway(Host(live), brief, studio.load_config(os.path.join(REPO, "art", "providers", "scripted.json")), tmp, say=lambda s: None)
+        same = g2.tag_of == g.tag_of and g2.next_tag == g.next_tag
+        s1 = g2.select(north)
+        lamp = [i for i in sorted(have) if i.startswith("lamp:") and i not in g.tag_of][0]
+        g2.pin(lamp)
+        fresh = g2.tag_of[lamp]
+        known = {k["tag"]: k for k in g2.refs()["known"]}
+        row("tags kept across a restart: the same numbers, a new object given the next, a gone object's tag kept apart and never reused",
+            same and s1["target"] == "@1" and fresh == "@%d" % g.next_tag and known[t_s]["present"] is False and known["@1"]["present"] is True
+            and doc["format"] == "VERDANDI-STUDIO-TAGS" and doc["next"] == str(g.next_tag) and g2.refs()["kept"],
+            "%d tags read back; %s gone, kept; the lamp tagged %s; the file %s" % (len(g2.tags) - 1, t_s, fresh, os.path.basename(tags_file)))
+        gp = studio.Gateway(Host(live), brief, None, tmp, say=lambda s: None, origin="probe")
+        tmp2 = tempfile.mkdtemp(prefix="studio-tags-")
+        try:
+            os.makedirs(os.path.join(tmp2, "art", "ledger"))
+            bad = os.path.join(tmp2, "art", "ledger", brief + ".tags.json")
+            open(bad, "wb").write(b"not a tags file\n")
+            g3 = studio.Gateway(Host(live), brief, None, tmp2, say=lambda s: None)
+            g3.select(north)
+            kept_bad = open(bad, "rb").read() == b"not a tags file\n" and g3.tags_error and g3.tag_of[north] == "@1"
+        finally:
+            shutil.rmtree(tmp2, ignore_errors=True)
+        row("a probe's gateway keeps no tags file; one that cannot be read is said and left as it is", gp.tags_path is None and bool(kept_bad),
+            (g3.tags_error or "")[:110])
 
         # the page's own requests
         def post(path, body, token):

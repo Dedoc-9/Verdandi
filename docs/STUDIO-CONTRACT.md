@@ -31,15 +31,15 @@ If one is not his, it is struck and nothing below that rests on it stands.
 | stills to a model | **opt-in, per session** | *"Consent should identify the provider and the content sent, and be explicit for each session."* |
 | the journal-replay court | **accepted, before B1's promotion logic** | *"Define the recovery state machine and oracle before writing the harness."* (§6–§8) |
 | the five experiments | **accepted, conditionally** | *"Stop or revise the architecture when a probe fails its stated kill criterion; don't let the probe suite become another permanent gate."* (§11) |
-| the API provider's default model | **deferred** | *"the names, availability, and prices in the proposal need current verification before becoming product defaults."* |
+| the API provider's default model | **deferred**, then **Opus 5.5, configurable** (the next review he brought, put with one word, *"agree?"*; agreed) | *"the names, availability, and prices in the proposal need current verification before becoming product defaults."* Then: *"I'd use Opus 5.5 for the initial API adapter, matching the model already used through Claude Code … Keep the model configurable so Sonnet can become the cost-optimized default later, based on measured quality and cost."* |
 
 The deferral's condition was checked the same day (VERIFIED, [models overview](https://platform.claude.com/docs/en/about-claude/models/overview),
 [pricing](https://platform.claude.com/docs/en/about-claude/pricing)): four current models, none marked deprecated —
 Fable 5.1 (`claude-fable-5-1`) $10 / $50 per million tokens in and out, Opus 5.5 (`claude-opus-5-5`) $4 / $20,
 Sonnet 5.5 (`claude-sonnet-5-5`) $2 / $10, Haiku 5.5 (`claude-haiku-5-5`) from $0.10 / $0.50; the overview says *"If
 you're unsure which model to use, start with Claude Opus 5.5 for most workloads."* His Claude Code CLI answered as
-`claude-opus-5-5` on his machine (MEASURED, 2026-10-12). The choice stays his; whatever he names is a field of the
-provider's configuration (`art/providers/anthropic_messages.json`), never a constant in the gateway.
+`claude-opus-5-5` on his machine (MEASURED, 2026-10-12). It is a field of the provider's configuration
+(`art/providers/anthropic.json`, `--model claude-opus-5-5`), never a constant in the gateway; changing it is one line.
 
 ## 2. Who may do what
 
@@ -234,8 +234,8 @@ by the grammar alone. Anything outside the process-kill model.
 
 ## 9. Tags, across deletion and projects
 
-A tag names one object by its id, in one project (`projects\<name>\tags.json`, DIRECTOR-0's canonical form, written
-durably). Its counter only grows: a tag is never reassigned and never reused, so a deleted object leaves a gap.
+A tag names one object by its id, in one project (`art\ledger\<brief>.tags.json` in the project's tree,
+DIRECTOR-0's canonical form, written whole and flushed). Its counter only grows: a tag is never reassigned and never reused, so a deleted object leaves a gap.
 When an object's id is gone at the head, its tag stays, listed apart as gone; a prompt that names it is refused
 (`STUDIO-REFERENCE`, as today) with the head at which it is missing. An undo, or a candidate, that brings the same id
 back brings the same object back — identity is the id (`art/studio_refs.py:17-18`) — and its tag with it. A new

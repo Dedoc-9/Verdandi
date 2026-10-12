@@ -249,7 +249,30 @@
       const box = $("st-refs");
       box.innerHTML = "";
       const items = studio.refs.items || [];
-      if (!items.length) { box.textContent = "No target: the prompt is for the whole world. E makes what is under the crosshair the target; R pins a reference."; return; }
+      const known = studio.refs.known || [];
+      // B1: every tag of this project, kept across restarts; a click puts it into the prompt (a tag named there must
+      // also be the target or a pin, which the gateway checks and says)
+      if (known.length) {
+        const row = document.createElement("div");
+        row.className = "tags";
+        row.appendChild(document.createTextNode("tags: "));
+        for (const k of known) {
+          const b = document.createElement("button");
+          b.className = "tag" + (k.present === false ? " gone" : "") + (items.some(function (x) { return x.tag === k.tag; }) ? " active" : "");
+          b.textContent = k.tag;
+          b.title = k.kind + " " + k.address + (k.present === false ? " (not in the scene now)" : "") + " · click to put " + k.tag + " into the prompt";
+          b.onclick = function () {
+            const at = promptEl.selectionStart || promptEl.value.length, v = promptEl.value;
+            const ins = (at > 0 && v[at - 1] !== " " ? " " : "") + k.tag + " ";
+            promptEl.value = v.slice(0, at) + ins + v.slice(at);
+            promptEl.focus(); promptEl.selectionStart = promptEl.selectionEnd = at + ins.length;
+          };
+          row.appendChild(b);
+        }
+        box.appendChild(row);
+      }
+      if (studio.refs.tags_error) { const e = document.createElement("div"); e.className = "ref gone"; e.textContent = studio.refs.tags_error; box.appendChild(e); }
+      if (!items.length) { const e = document.createElement("div"); e.textContent = "No target: the prompt is for the whole world. E makes what is under the crosshair the target; R pins a reference."; box.appendChild(e); return; }
       for (const it of items) {
         const el = document.createElement("div");
         el.className = "ref " + it.status;
@@ -381,6 +404,10 @@
       return;
     }
     setInterval(poll, 500);
+    // B1: the page's heartbeat, which the supervisor reads in /healthz (the page has spoken; the window is alive)
+    const alive = function () { post("/studio/alive", {}).catch(function () {}); };
+    alive();
+    setInterval(alive, 5000);
 
     // play: the fixed tick, as the graybox runs it
     const keys = {}, pending = { reset: false, jump: false }, refusals = {};

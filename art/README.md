@@ -165,7 +165,7 @@ Keep `serve.py` and the existing `graybox/` boundary unchanged."*
 python art/play.py plaza-night           # compiles the scene, holds it to the art checks, serves it; a browser opens
 python art/play.py plaza-night --intent art/rounds/plaza-cantilevers/D.intent --intent art/rounds/plaza-cantilevers/E.intent
                                          # the brief, and each candidate as the director evaluates it; [ and ] step through them
-python art/play.py --selftest            # the live loop without a browser: LIVE SELFTEST 13/13
+python art/play.py --selftest            # the live loop without a browser: LIVE SELFTEST 17/17
 ```
 
 - **The launch.** It compiles the brief through `dress.py` and runs the art checks on the scene. A scene that fails
@@ -202,7 +202,7 @@ python art/play.py --selftest            # the live loop without a browser: LIVE
   Claude Code's CLI on its own login, `providers/anthropic.json` through the Messages API with a Console key) for at
   most three candidates, has the director evaluate each, and serves those it does not refuse as sources the page
   switches to in place, each with what it touches. Admit, Reject and Undo go through the ledger. The contract is in
-  [`STUDIO.md`](STUDIO.md); `python art/studio.py selftest` holds the gateway (STUDIO SELFTEST 51/51), `probe` asks a
+  [`STUDIO.md`](STUDIO.md); `python art/studio.py selftest` holds the gateway (STUDIO SELFTEST 57/57), `probe` asks a
   real model whether it answers and follows the prompt (`--references`: whether it changes the objects the prompt
   names, and only those), and `report` compares the providers from what was recorded.
 
@@ -257,9 +257,10 @@ block a player is cover, and goes into the graybox map.
 | `preview.py` | the provisional first-person preview (PROVISIONAL_PREVIEW): a standalone WebGL 2 page of the scene |
 | `play.py` | the native plaza's launcher: the sources (the brief, candidate intents) compiled, checked and served beside the graybox's simulation, and compiled again when their files change; the studio's endpoints; its own self-test and the studio's |
 | `studio_refs.py` | STUDIO-1: what a tagged object is, its geometry in metres, its nearest wall, and how two stand (measured from the scene's boxes; a facing marked inferred) |
+| `director/durable.py` | B1: the content path's writes made to survive a killed process (an append flushed; a file replaced whole by a flushed temporary and a write-through rename); the death points `art/director.py crashtest` kills at |
 | `studio_txn.py` | the studio's change transaction as a reference (docs/STUDIO-CONTRACT.md): the promotion journal's form and grammar and `Recover(J, P, F)`; `check` holds it over every enumerated crash point, `selftest` plants wrong decisions, `recover ROOT` reads a studio and prints what its stub must do; nothing here launches or writes a studio |
 | `studio.py`, `STUDIO.md` | STUDIO-0: the director gateway (a provider's request and response, its limits and refusals, the candidates evaluated, admitted, rejected and undone through the ledger; `probe` and `report`), and its contract |
-| `providers/` | the gateway's providers: `scripted.py` (fixed variations of a selected canopy, not a model), `claude_code.py` (Claude through Claude Code's CLI, `claude -p`, on its own login; tools off, no session kept) and `anthropic_messages.py` (Claude through the Anthropic Messages API, its key and model in the environment), each with its configuration; `director_prompt.py`, what both model providers tell their models |
+| `providers/` | the gateway's providers: `scripted.py` (fixed variations of a selected canopy, not a model), `claude_code.py` (Claude through Claude Code's CLI, `claude -p`, on its own login; tools off, no session kept) and `anthropic_messages.py` (Claude through the Anthropic Messages API on structured outputs, its key in the environment, its model the configuration's, `claude-opus-5-5`), each with its configuration; `director_prompt.py`, what both model providers tell their models |
 | `web/play.html`, `web/play.js` | the native plaza's page: input, the fixed tick on `sim.js`, the views, the live swap, the studio's tags (E target, R pin, the names and frames on screen) and panel |
 | `web/scene_render.js` | the native renderer (WebGL 2); `load(S)` draws another scene in place, `dispose()` frees it |
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |
