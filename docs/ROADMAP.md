@@ -177,7 +177,7 @@ INPUT-CONTRACT-0 the owner's ruling (2026-10-11): the tick's input admitted or r
       ↓
 STUDIO-0         the owner's direction and ruling (2026-10-11): a director summoned into the running plaza — E selects, Enter summons, a prompt answered by at most three candidates drawn in place with the game untouched, admit, reject and undo through the director's ledger; "the model proposes changes—it never directly mutates the live world"; a gateway (art/studio.py) between the page and a provider command (a scripted provider; Claude through the Anthropic Messages API), its contract in art/STUDIO.md; his acceptance test met in Chromium 141 in the build container; on his machine (Windows) its self-test 29 / 29, and the scripted provider tried from the page; outside the gate
       ↓
-STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); the CLI provider built, and a real model reached through it in the build container (its probe SHOWN); outside the gate
+STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); the CLI provider built, and a real model reached through it in the build container (its probe SHOWN); the references built: tags E and R make, bound to an object's id and never moved, the request's geometry and relations measured from the scene's boxes, and what each candidate touches; a real model, asked four prompts about three tagged canopies, changed exactly the objects each prompt named in 15 of 15 candidates; outside the gate
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -3382,7 +3382,7 @@ and cost per accepted edit"*; *"the best director is not the model that generate
 the one that helps the designer reach a good, accepted world edit with the least friction."* On the references: STUDIO-1,
 below.
 
-### STUDIO-1 — two model paths, and references: tags, pins, geometry and relations · **the owner's rulings** (2026-10-11); outside the certified gate · **the providers built; the references declared**
+### STUDIO-1 — two model paths, and references: tags, pins, geometry and relations · **the owner's rulings** (2026-10-11); outside the certified gate · **built**
 
 **His ruling.** *"Choose “Tags + pins + geometry” for this slice. Keep the reference system and art-language vocabulary
 separate so you can establish reliable object grounding before expanding what the compiler can build."* What it
@@ -3470,6 +3470,91 @@ schema and gateway throughout".**
 **What it does not show.** The live Anthropic API (no Console key in the build container). Claude Code's CLI on
 Windows. Whether a model's candidates are good. A model's latency or cost elsewhere: two calls, one machine, one
 model.
+
+**Built, the references (2026-10-11), by his ruling: "Tags + pins + geometry".**
+
+- **`art/studio_refs.py`**, pure functions over a scene. An object is a box of the dressing with its parts (an id that
+  extends another by `:something`: a canopy's ribs, downlights and edge fixtures, a tower's cornice) and the lights
+  that share their ids; its identity is its id, which holds its cells. Its geometry: bounds, centre and size in metres,
+  underside and top, long axis, *"axis-aligned boxes; no rotation"*, its boxes and parts and lights, and, where its
+  lights record a direction, which way it faces (measured, as the scene records it). Its nearest wall of the play
+  geometry: which, on which side, how far in plan and in space, its top. Between two objects, measured from their
+  boxes: the gap (the least distance between their boxes, not their bounds), whether they touch, their overlap in
+  plan, the direction and distance between centres, the differences of undersides and tops, whether they share a
+  kind, a material, a statement, with the words *"a gap of 0 means the boxes touch or overlap, not that they are
+  joined"*; and, where the first faces somewhere, whether it faces the second, marked *inferred* (*"a half-space test
+  on centres; not a line of sight, not a connection"*). What a revision of each verb's statement can change, and how
+  many objects that statement makes.
+- **The gateway** (`art/studio.py`): E (`/studio/select`) makes an object the target, R (`/studio/pin`) pins one or
+  unpins it, up to four (`/studio/unpin` from the panel). Each object gets a tag the first time, `@1`, `@2`, …, that
+  names it by its id for as long as play.py runs and is never given to another; selecting or pinning it again binds it
+  again to the scene and head of that moment. Its status in `/live`, read against the scene served: ok, changed, gone.
+  A request (`VERDANDI-STUDIO-REQUEST 1`) carries the target and the pins with their statements, geometry, nearest
+  walls and binding (changed since or not), the relations between every two, the tags the prompt mentions, and the
+  coordinate convention. A prompt naming a tag that is neither the target nor a pin, or a tag whose object is not in
+  the scene at the head, is refused before anything is asked (`STUDIO-REFERENCE`); the target pinned, a fifth pin,
+  likewise (`STUDIO-REFERENCE`, `STUDIO-PINS`). Each candidate is shown with what it touches, from the director's own
+  verdict (what it realized, and what a changed material affected): each tag changed or not, the untagged objects of
+  the head it changed, the objects it made that the head has not.
+- **What a model is told** (`director_prompt.py`, both model providers): each tagged object with its line, what its
+  statement can change and how many objects it makes, its bounds, its nearest wall; the relations; and, in the system
+  text, *"A tag means that object and no other. Change the target; change a pinned object only if the prompt asks for
+  it"*, and that a candidate should name the tags it changes.
+- **The page**: what is under the crosshair is named in the corner, by its address and its tag if it has one; each
+  tagged object is framed and labelled on screen (the target amber, a pin dashed blue); the panel lists the target and
+  the pins with their addresses, sizes and lines, and an unpin button; each candidate says what it touches. R pinned,
+  so the game's reset moved to Backspace on this page (the graybox's own page keeps R). The scripted provider answers
+  *match @N* with one candidate giving the target the pin's material, height and options.
+- `python art/studio.py probe CONFIG --references`: his acceptance criterion put to a model. The north canopy the
+  target `@1`, the west and south canopies pinned `@2` and `@3`; four prompts, each naming what is to change; for
+  every candidate, which tags it changed and how many untagged objects, against what the prompt meant.
+
+**Measured (2026-10-11 and 12, the build container).**
+
+- `python art/studio.py selftest` 51 / 51: the 38 rows before, and thirteen in a scratch copy of their own: tags made,
+  kept and never moved (a rib names its canopy; the target refused as a pin; a fifth pin refused; a pinned object made
+  the target and back); the request's bounds, relations and nearest wall recomputed from the scene's boxes; the gap
+  between boxes, not bounds (an L of two boxes whose bounds enclose a third, 4 m from it); facing marked inferred; what
+  a model is told; *match @2* (the target given the pin's height and options, the pin and everything else untouched,
+  and the candidate says so); a candidate changing an untagged canopy, one moving the target's corners (a new object),
+  one changing a material (every object of it touched); a prompt naming `@9`, or a tag not in the request, refused with
+  nothing asked; an object changed since it was pinned (said in the page and the request, bound again when pinned
+  again); an object gone (its tag kept, the request refused until it is unpinned, the new object given a new tag); the
+  page's POSTs and `/live`.
+- **In Chromium 141**, through the page's own keys (a harness of the container's, not committed), 11 / 11: the address
+  under the crosshair named before anything is tagged; E, the target `@1` framed and labelled; the west canopy given an
+  edge of light through the studio and admitted; R, `@2` pinned and framed as a pin, the player where he stood; the
+  panel's list; *make @1 match @2*, one CLEAN candidate saying *@1 changed · @2 unchanged · no other object changed*;
+  shown in place, the game untouched; admitted, `@1` shown as *changed* and still `@1`; undone, `@1` as it was; a prompt
+  naming `@9` refused in the page; Backspace resets the game; no page errors. STUDIO-0's acceptance test run again on
+  the new page: 10 / 10.
+- Mutants of the references: 19, 19 refused (a new tag on every touch; a gone object's tag moved to another of its
+  kind; mentions not checked; no limit on pins; a part not resolved to its object; bounds from one box; the gap between
+  bounds; facing presented as measured; tagged objects counted as others; what a material affected left out; new
+  objects not told apart; a change since binding never said; a gone object shown as ok; the target kept as a pin; the
+  target pinned; no select endpoint; the scripted match keeping the target's options; the relations not told to the
+  model; re-pinning not binding again). The providers' 14 mutants run again on the final code: 14 refused.
+- **The references' probe against the real CLI** (its default model, `claude-sonnet-5-5`), each prompt asked twice, 24
+  requests in all: about 9,700 tokens in and 800–2,200 out a request, 8.7–17.5 s, $0.014–0.05 by Claude Code's own
+  estimate (about $0.64 in all). Three runs:
+  - the first, before a candidate's new objects were told apart from the others: 15 of 16 candidates changed exactly the
+    tags the prompt named and nothing else; the sixteenth gave `@1` new corners (a shorter slab), a new object by its
+    id, which the measure then counted as an untagged object;
+  - the second, with that told apart: 16 of 16 as meant (one made a new object, `@1` replaced by a shorter slab); 10
+    CLEAN and 6 LEAKAGE, all six the answers to *give @2 a warm glow along its edge*, in one run of it, whose scopes
+    named `@2`'s exact address, which does not cover the addresses of the edge fixtures its statement makes;
+  - the request was then made to say so beside each reference's patterns (*"an exact address … does not cover the
+    parts its statement makes, its ribs and lights"*); the third: 15 of 15 as meant, 15 CLEAN.
+  Before the references, the providers' probe (two other prompts, *it* for one selected canopy) had four of six
+  candidates changing the other canopies too. The prompts differ, so this is not a measured comparison.
+- His key: *"`R` pins or unpins references"*; R was the game's reset on this page, which is now Backspace (said in the
+  page and its HUD).
+
+**What it does not show.** That a model identifies the intended objects in general: four prompts, three canopies, one
+model, a few runs. The page in Firefox or Edge, or on Windows. Tags on lights or play pieces, tags that outlive play.py
+or are shared between pages. A scope pattern for one object with its parts: the director's grammar has none, and the
+request only says so; the scope protocol (DIRECTOR-0, its conformance vectors) is unchanged. The image of the view and
+the pieces that connect two objects: his next two slices. Nothing here enters the certified gate.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

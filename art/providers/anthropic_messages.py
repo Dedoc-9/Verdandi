@@ -11,9 +11,10 @@
 #   VERDANDI_DIRECTOR_MODEL   the model's id (required: nothing here guesses one)
 #   VERDANDI_DIRECTOR_API     the endpoint, https://api.anthropic.com/v1/messages if not set
 #
-# It reads a VERDANDI-STUDIO-REQUEST 0 on standard input and writes a VERDANDI-STUDIO-RESPONSE 0 on standard output
+# It reads a VERDANDI-STUDIO-REQUEST 1 on standard input and writes a VERDANDI-STUDIO-RESPONSE 0 on standard output
 # (art/STUDIO.md). The model is given the request as director_prompt.py renders it for every provider (the prompt, the
-# selection and its statement, the camera, the brief's statements, the language's reference and the revision syntax),
+# tagged objects with their statements, geometry and relations, the camera, the brief's statements, the language's
+# reference and the revision syntax),
 # and a single tool whose input schema is the response schema the request carries; it is made to call that tool, so
 # that its answer has the schema's shape rather than being prose read for JSON. The response names the model the API
 # says answered and the tokens it counted (no cost: prices are not this file's to know). What it proposes is then the gateway's to refuse and the director's to judge: nothing it

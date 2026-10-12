@@ -11,7 +11,7 @@
   #cross { position: fixed; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; background: #fff; border-radius: 50%; opacity: 0.7; pointer-events: none; }
   #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 17px; text-align: center;
              background: rgba(10, 12, 16, 0.45); white-space: pre-line; cursor: pointer; }
-  body.still #hud, body.still #cross, body.still #overlay, body.still #studio, body.still #mark { display: none; }
+  body.still #hud, body.still #cross, body.still #overlay, body.still #studio, body.still .mark { display: none; }
   /* the studio (STUDIO-0): the director's panel, beside the world, which goes on running */
   #studio { position: fixed; right: 12px; top: 12px; width: 380px; max-height: calc(100vh - 24px); overflow: auto; display: none;
             background: rgba(12, 15, 20, 0.92); color: #dfe6ec; border: 1px solid #2c3640; border-radius: 6px; padding: 10px 12px; }
@@ -27,7 +27,15 @@
   #studio button:disabled { opacity: 0.4; cursor: default; }
   #studio .cand { border-top: 1px solid #26303a; padding: 6px 0; }
   #studio .cand.shown { background: rgba(80, 120, 160, 0.12); }
-  #mark { position: fixed; border: 1px solid #ffd35a; box-shadow: 0 0 0 1px rgba(0,0,0,0.6); pointer-events: none; display: none; }
+  /* the references (STUDIO-1): each tagged object framed and labelled; the target amber, a pin cyan */
+  .mark { position: fixed; border: 1px solid #ffd35a; box-shadow: 0 0 0 1px rgba(0,0,0,0.6); pointer-events: none; display: none; }
+  .mark.pin { border-color: #6fd8ff; border-style: dashed; }
+  .mark span { position: absolute; left: -1px; top: -17px; padding: 0 4px; background: #ffd35a; color: #111; font-size: 11px; line-height: 16px; white-space: nowrap; }
+  .mark.pin span { background: #6fd8ff; }
+  #studio .ref { padding: 2px 0; }
+  #studio .ref.changed { color: #ffd38a; }
+  #studio .ref.gone { color: #ff9a8a; }
+  #studio .ref button { margin-left: 6px; padding: 0 6px; }
 </style>
 </head>
 <body data-brief="%BRIEF%" data-sha="%SHA%" data-studio="%STUDIO%">
@@ -35,13 +43,12 @@
 <div id="hud"></div>
 <div id="cross"></div>
 <div id="overlay">Click to play
-(the mouse is captured; Esc releases it · 1–9 the registered views · E selects · Enter summons the director)</div>
-<div id="mark"></div>
+(the mouse is captured; Esc releases it · 1–9 the registered views · E target · R pin · Enter summons the director · Backspace resets)</div>
 <div id="studio">
   <h2>Director</h2>
   <div id="st-provider" class="dim"></div>
-  <div id="st-selection"></div>
-  <textarea id="st-prompt" placeholder="Describe the change (Ctrl+Enter asks; Esc goes back to the world)"></textarea>
+  <div id="st-refs"></div>
+  <textarea id="st-prompt" placeholder="Describe the change; name tagged objects as @1, @2 (Ctrl+Enter asks; Esc goes back to the world)"></textarea>
   <div><button id="st-ask">Ask</button><button id="st-cancel" disabled>Cancel</button><button id="st-original">Original</button><button id="st-undo">Undo last admission</button></div>
   <div id="st-status" class="dim"></div>
   <div id="st-cands"></div>

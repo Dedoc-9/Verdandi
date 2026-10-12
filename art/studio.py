@@ -7,6 +7,8 @@
 #   python art/studio.py schema           the response schema a provider answers with (JSON Schema, for an adapter)
 #   python art/studio.py probe CONFIG.json [--brief B] [--piece ID]
 #                                         the smoke test: that the provider's model is asked and its answers follow the prompt
+#   python art/studio.py probe CONFIG.json --references [--runs N]
+#                                         STUDIO-1's measure: whether a model changes the tagged objects a prompt names, and only those
 #   python art/studio.py report [--brief B]
 #                                         every recorded request, by provider: failures, latency, tokens, cost per admitted edit
 #
@@ -17,10 +19,17 @@
 # "the model proposes changes—it never directly mutates the live world. Verðandi owns validation, compilation,
 # preview, and admission." The contract is in art/STUDIO.md.
 #
-# What it does, for one request (the page's prompt, its selection and its camera):
-#   1. the context, from the head as the files stand: the brief's statements, the selected piece's statement and the
-#      address patterns it falls under, the camera; written as one VERDANDI-STUDIO-REQUEST 0 document with an id and
-#      the head it is based on, and kept under art/build/studio/BRIEF/ID/ with everything that follows;
+# The references (STUDIO-1, the owner's ruling of 2026-10-11): E makes an object the target and R pins one as a
+# reference; each is given a tag (@1, @2, ...) that names that object, by its id, for as long as the gateway runs, and is
+# bound to the scene and head it was selected or pinned at. It is never moved to another object: a tag whose object is
+# gone refuses the request until it is unpinned, and a prompt may name only the target and the pins.
+#
+# What it does, for one request (the page's prompt, its tags and its camera):
+#   1. the context, from the head as the files stand: the brief's statements; the target and the pins, each with its
+#      statement, its geometry and its nearest wall, and the relations between them (art/studio_refs.py, measured
+#      from the scene's boxes, an approximate facing marked inferred); the camera; written as one
+#      VERDANDI-STUDIO-REQUEST 1 document with an id and the head it is based on, and kept under
+#      art/build/studio/BRIEF/ID/ with everything that follows;
 #   2. the provider, a command from a configuration file (an argv list, never a shell line; the request on its
 #      standard input, never in its arguments), with a time limit, a limit on what it may print, and cancellation:
 #      a newer request cancels the one before it, and the page's cancel kills the command;
@@ -29,7 +38,8 @@
 #      base and the prompt are the gateway's, not the model's) and evaluated by the director at the current head
 #      (art/director.py: the art checks, and the scope check, which holds everything outside the declared scope
 #      unchanged); a candidate the director refuses is shown with its reason and never drawn;
-#   4. the rest compiled and handed to play.py as sources the page can switch to, in place, the game untouched;
+#   4. the rest compiled and handed to play.py as sources the page can switch to, in place, the game untouched, each
+#      with what it touches: the tags it changed, the untagged objects it changed, the objects it made;
 #   5. nothing admitted until the designer admits one: then the candidate is evaluated again at the head as it is,
 #      and admitted through the director's ledger only if that head is the one it was previewed at. Rejecting records
 #      a refusal; undo admits the last admission's exact inverse as an intent of its own.
@@ -54,8 +64,15 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+import studio_refs as R   # noqa: E402  (beside this file: the references' geometry and relations, STUDIO-1)
 
 REQUEST, RESPONSE, VERSION = "VERDANDI-STUDIO-REQUEST", "VERDANDI-STUDIO-RESPONSE", "0"
+REQUEST_VERSION = "1"    # STUDIO-1: the target and the pins, their geometry and relations, in place of one selection
+MAX_PINS = 4
+PIECE = re.compile(r"[a-z]+:[0-9a-z,:-]{1,60}\Z")
+MENTION = re.compile(r"@([0-9]{1,4})")
+NAMESPACES = ("play", "surface", "material", "env", "asset", "view", "layout", "region")
 LETTERS = ("A", "B", "C")
 UNDO_NOTE = "undo of ledger #"
 LIMITS = {"prompt": 2000, "title": 80, "rationale": 1200, "revision": 16, "line": 400, "scope": 12, "pattern": 120,
@@ -324,6 +341,13 @@ class Gateway:
         self.records = os.path.join(root, "art", "build", "studio", brief)
         self.error = ""          # why there is no provider, when a configuration was refused
         self.running = {}        # the provider's process while it runs (run_provider's holder)
+        # the references (STUDIO-1): a tag names one object, by its id, for as long as this gateway runs; it is bound to
+        # the scene and head it was last selected or pinned at, and never moved to another object
+        self.tags = {}           # "@n" -> {tag, piece, address, kind, scene, head, fingerprint, statement, size_m}
+        self.tag_of = {}         # object id -> "@n"
+        self.next_tag = 1
+        self.target = None       # the tag E selected
+        self.pins = []           # the tags R pinned, at most MAX_PINS
 
     def shutdown(self):
         """Cancel the request running, and kill its provider and what it started (play.py, stopping)."""
@@ -342,38 +366,177 @@ class Gateway:
                     "config": os.path.basename(self.cfg["path"]) if self.cfg else ""}
             req = None
             if r:
-                req = {k: r[k] for k in ("id", "state", "prompt", "message", "code", "selection", "head", "provider")}
+                req = {k: r[k] for k in ("id", "state", "prompt", "message", "code", "references", "head", "provider")}
                 req["elapsed_ms"] = int(((r["ended"] or time.monotonic()) - r["started"]) * 1000)
-                req["candidates"] = [{k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head")} for c in r["candidates"]]
-            return {"provider": prov, "request": req, "last": dict(self.last)}
+                req["candidates"] = [{k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")} for c in r["candidates"]]
+            last = dict(self.last)
+        return {"provider": prov, "request": req, "last": last, "refs": self.refs()}
 
-    # ------------------------------------------------------------------ the context
-    def context(self, piece):
-        """The head as the files stand, the brief's statements, and the selected piece's statement and patterns."""
+    # ------------------------------------------------------------------ the references (STUDIO-1)
+    def _head(self):
         D = self.play.director()
         ws = self.play.workspace()
         out, parts, _checks = ws.export()
-        head = D.canon.head(parts)
-        stmts = [{"line": s["line"], "text": s["text"], "key": s["key"]} for s in out["lineage"]["statements"]]
-        sel = None
-        if piece is not None:
-            S = out["scene"]
-            hits = [p for p in S["visuals"] + S["lights"] if p["id"] == piece]
-            if not hits:
-                raise StudioError("STUDIO-SELECTION", "the piece %r is not in the brief's scene at the head" % piece)
-            p = hits[0]
-            st = [s for s in out["lineage"]["statements"] if s["hash"] == p["by"]]
-            kind, place = piece.split(":", 1)
-            region = "city" if p["region"] == "*" else p["region"]
-            sel = {"piece": piece, "address": "%s/%s/%s" % (region, kind, place), "region": region, "kind": kind,
-                   "statement": {"line": st[0]["line"], "text": st[0]["text"], "key": st[0]["key"]} if st else None,
-                   "material": p.get("material", ""), "patterns": ["%s/%s/*" % (region, kind)] + (["material/%s" % p["material"]] if p.get("material") else [])}
-        return ws, parts, head, stmts, sel
+        return ws, out, parts, D.canon.head(parts)
+
+    @staticmethod
+    def _root(piece, O):
+        """The object a picked box belongs to: itself, or the object whose id it extends (a canopy's rib, a light)."""
+        r = piece
+        while r not in O and r.count(":") >= 2:
+            r = r.rsplit(":", 1)[0]
+        return r if r in O else None
+
+    @staticmethod
+    def _statement(out, o):
+        st = [x for x in out["lineage"]["statements"] if x["hash"] == o["by"]]
+        return {"line": st[0]["line"], "text": st[0]["text"], "key": st[0]["key"]} if st else None
+
+    def _resolve(self, piece):
+        if not isinstance(piece, str) or not PIECE.match(piece):
+            raise StudioError("STUDIO-SELECTION", "a piece is named by its id (kind:place)")
+        ws, out, parts, head = self._head()
+        O = R.objects(out["scene"])
+        root = self._root(piece, O)
+        if root is None:
+            raise StudioError("STUDIO-SELECTION", "the piece %r is not in the brief's scene at the head" % piece)
+        return out, head, O, root
+
+    def _bind(self, out, head, o):
+        """The object's tag, made if it has none; bound (again) to this scene and head. Holds the lock."""
+        tag = self.tag_of.get(o["id"])
+        if tag is None:
+            tag = "@%d" % self.next_tag
+            self.next_tag += 1
+            self.tag_of[o["id"]] = tag
+        self.tags[tag] = {"tag": tag, "piece": o["id"], "address": R.address(o), "kind": o["kind"], "scene": out["lineage"]["scene_sha256"],
+                          "head": head, "fingerprint": R.fingerprint(o), "statement": self._statement(out, o), "size_m": R.geometry(o)["size_m"]}
+        return tag
+
+    def select(self, piece):
+        """E: the object of the picked box becomes the target (and is no longer a pin); None clears the target."""
+        if piece is None:
+            with self.lock:
+                self.target = None
+            return self.refs()
+        out, head, O, root = self._resolve(piece)
+        with self.lock:
+            tag = self._bind(out, head, O[root])
+            if tag in self.pins:
+                self.pins.remove(tag)
+            self.target = tag
+        return self.refs()
+
+    def pin(self, piece):
+        """R: the object of the picked box pinned as a reference, or unpinned if it was; at most MAX_PINS."""
+        out, head, O, root = self._resolve(piece)
+        with self.lock:
+            tag = self.tag_of.get(root)
+            if tag is not None and tag in self.pins:
+                self.pins.remove(tag)
+                return self.refs(locked=True)
+            if tag is not None and tag == self.target:
+                raise StudioError("STUDIO-REFERENCE", "%s is the target: E selects another target, R pins a reference" % tag)
+            if len(self.pins) >= MAX_PINS:
+                raise StudioError("STUDIO-PINS", "%d pins at most: unpin one first" % MAX_PINS)
+            tag = self._bind(out, head, O[root])
+            self.pins.append(tag)
+            return self.refs(locked=True)
+
+    def unpin(self, tag):
+        with self.lock:
+            if tag not in self.pins:
+                raise StudioError("STUDIO-REFERENCE", "%r is not pinned" % (tag,))
+            self.pins.remove(tag)
+            return self.refs(locked=True)
+
+    def refs(self, locked=False):
+        """The target and the pins, each with what it names and how it stands in the scene the page is served now:
+        "ok", "changed" since it was bound (the same object, another shape or look), or "gone" (no object of its id)."""
+        scene = getattr(self.play, "scene0", lambda: (None, None))()[1]
+        O = R.objects(scene) if scene is not None else None
+
+        def item(tag, role):
+            t = self.tags[tag]
+            o = O.get(t["piece"]) if O is not None else None
+            status = "unknown" if O is None else "gone" if o is None else "changed" if R.fingerprint(o) != t["fingerprint"] else "ok"
+            return {"tag": tag, "role": role, "piece": t["piece"], "address": t["address"], "kind": t["kind"], "size_m": t["size_m"],
+                    "statement": t["statement"], "bound_scene": t["scene"], "status": status}
+
+        def build():
+            return {"target": self.target, "pins": list(self.pins), "max_pins": MAX_PINS,
+                    "items": ([item(self.target, "target")] if self.target else []) + [item(t, "pin") for t in self.pins]}
+        if locked:
+            return build()
+        with self.lock:
+            return build()
+
+    def references(self, out, head, prompt):
+        """The request's references at the head as the files stand: the target and the pins, each with its identity,
+        its statement, what that statement can change, its geometry and its nearest wall; the relations between every
+        two of them; the tags the prompt mentions. A tag the prompt mentions that is neither the target nor a pin, or
+        a tag whose object is not in the scene at the head, refuses the request (STUDIO-REFERENCE): a tag is never
+        moved to another object."""
+        S = out["scene"]
+        O = R.objects(S)
+        with self.lock:
+            active = ([self.target] if self.target else []) + list(self.pins)
+            recs = {t: dict(self.tags[t]) for t in active}
+            target = self.target
+        mentions = []
+        for m in MENTION.findall(prompt):
+            t = "@" + str(int(m))
+            if t not in mentions:
+                mentions.append(t)
+        for t in mentions:
+            if t not in active:
+                raise StudioError("STUDIO-REFERENCE", "the prompt names %s, which is not the target or a pin of this request (%s)" % (
+                    t, ", ".join("%s %s" % (a, "target" if a == target else "pin") for a in active) or "none"))
+        refs = []
+        for t in active:
+            rec = recs[t]
+            o = O.get(rec["piece"])
+            if o is None:
+                raise StudioError("STUDIO-REFERENCE", "%s (%s) is not in the scene at the head; it was bound at scene %s. Unpin it, or "
+                                  "select or pin what stands there now" % (t, rec["piece"], rec["scene"][:12]))
+            region, kind = o["region"], o["kind"]
+            refs.append({"tag": t, "role": "target" if t == target else "pin", "mentioned": t in mentions, "piece": o["id"],
+                         "address": R.address(o), "kind": kind, "region": region, "material": o["material"],
+                         "statement": self._statement(out, o), "statement_makes": sum(1 for x in O.values() if x["by"] == o["by"]),
+                         "changeable": R.CHANGEABLE.get(kind, ""),
+                         "patterns": ["%s/%s/*" % (region, kind)] + (["material/%s" % o["material"]] if o["material"] else []),
+                         "geometry": R.geometry(o), "nearest_wall": R.nearest_wall(o, S),
+                         "bound": {"scene": rec["scene"], "head": rec["head"], "changed_since": R.fingerprint(o) != rec["fingerprint"]}})
+        rels = [R.relation(O[a["piece"]], O[b["piece"]], a["tag"], b["tag"]) for i, a in enumerate(refs) for b in refs[i + 1:]]
+        return refs, rels, mentions, O
+
+    @staticmethod
+    def touches(slot, refs, O):
+        """Which of the request's objects a candidate changed, and how many others, from the director's own account of
+        what it realized and affected: the measure of whether a model changed the objects it was asked about."""
+        ids = set()
+        for a in list(slot.get("realized") or []) + list(slot.get("affected") or []):
+            segs = a.split("/")
+            if len(segs) != 3 or segs[0] in NAMESPACES:
+                continue
+            i = segs[1] + ":" + segs[2]
+            r = i
+            while r not in O and r.count(":") >= 2:
+                r = r.rsplit(":", 1)[0]
+            ids.add(r if r in O else i)
+        tagged = {t: ("changed" if p in ids else "unchanged") for t, p in refs.items()}
+        # an object of the head that is not tagged, changed or removed; and an object the candidate makes that the head
+        # has not (an object's id is its cells, so a slab given new corners is a new object, and its old self is changed)
+        others = sorted(i for i in ids - set(refs.values()) if i in O)
+        added = sorted(i for i in ids if i not in O)
+        return {"tags": tagged, "others": others[:12], "others_count": len(others), "added": added[:12], "added_count": len(added),
+                "materials": list(slot.get("materials_changed") or [])}
 
     # ------------------------------------------------------------------ a request
     def ask(self, prompt, piece=None, camera=None):
         """Start a request; it cancels the one before it. Returns the request's id, or raises StudioError at once
-        (no provider, an empty prompt, an unknown piece)."""
+        (no provider, an empty prompt, an unknown piece, a reference that names nothing). `piece`, if given, is selected
+        first as the target (E does it in the page)."""
         if self.cfg is None:
             raise StudioError("STUDIO-NO-PROVIDER", "no director is configured: start play.py with --director CONFIG.json (art/STUDIO.md)")
         if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > LIMITS["prompt"]:
@@ -385,7 +548,13 @@ class Gateway:
                 cam = None
                 break
             cam[k] = round(float(v), 3)
-        ws, parts, head, stmts, sel = self.context(piece)
+        if piece is not None:
+            self.select(piece)
+        ws, out, parts, head = self._head()
+        stmts = [{"line": x["line"], "text": x["text"], "key": x["key"]} for x in out["lineage"]["statements"]]
+        refs, rels, mentions, O = self.references(out, head, prompt)
+        S = out["scene"]
+        target = refs[0] if refs and refs[0]["role"] == "target" else None
         with self.lock:
             if self.req and self.req["state"] == "running":
                 self.cancel.set()
@@ -394,16 +563,21 @@ class Gateway:
             self.n += 1
             rid = "%s-%s%d" % (datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S"), "" if self.origin == "page" else self.origin + "-", self.n)
             base = {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}
-            request = {"format": REQUEST, "version": VERSION, "id": rid, "brief": self.brief, "head": head, "base": base,
-                       "prompt": prompt.strip(), "selection": sel, "camera": cam, "statements": stmts,
+            request = {"format": REQUEST, "version": REQUEST_VERSION, "id": rid, "brief": self.brief, "head": head, "base": base,
+                       "prompt": prompt.strip(), "target": target, "references": refs, "relations": rels, "mentions": mentions,
+                       "coordinates": "%s; a cell is %g m; the walls of the play geometry are %g m high; a box is [x0, y0, z0, x1, y1, z1]" % (
+                           S["units"], S["grid"]["cell"], S["grid"]["wall"]),
+                       "camera": cam, "statements": stmts,
                        "revision_syntax": "'= <statement>' replaces the brief's statement with the same key; '+ <statement>' adds one "
                                           "whose key is new; '- <key>' removes one. A statement's key: its verb (or the verb and its "
                                           "first word; a canopy adds its two corner cells), as the statements' keys show.",
                        "language": language(),
                        "respond": {"format": RESPONSE, "version": VERSION, "id": rid, "max_candidates": LIMITS["candidates"], "schema": SCHEMA}}
-            self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "", "selection": sel,
+            self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "",
+                        "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in refs},
+                        "selection": target["address"] if target else None,
                         "head": head, "provider": {"model": self.cfg["model"]}, "candidates": [], "started": time.monotonic(),
-                        "ended": None, "base": base}
+                        "ended": None, "base": base, "objects": O}
             self.cancel = threading.Event()
             req, cancel = self.req, self.cancel
         self.play.publish([])
@@ -442,8 +616,8 @@ class Gateway:
         rb = (json.dumps(request, sort_keys=True, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
         self._record(rid, "request.json", rb)
         entry = {"id": rid, "at": now(), "brief": self.brief, "head": req["head"], "prompt": req["prompt"],
-                 "selection": (req["selection"] or {}).get("address"), "config": self.cfg["path"], "model": self.cfg["model"],
-                 "request_sha256": sha256(rb)}
+                 "selection": req["selection"], "references": {t: r["piece"] for t, r in req["references"].items()},
+                 "config": self.cfg["path"], "model": self.cfg["model"], "request_sha256": sha256(rb)}
         if self.origin != "page":
             entry["origin"] = self.origin
         # what the owner asked to be recorded of every call (2026-10-11): the provider, the model, the exit status, whether
@@ -478,7 +652,7 @@ class Gateway:
         for letter, c in zip(LETTERS, cands):
             doc = intent_doc(c, letter, self.brief, req["base"], req["prompt"])
             item = {"letter": letter, "title": c["title"].strip(), "verdict": "", "codes": [], "message": "", "slot": None,
-                    "decided": "", "head": "", "intent": None}
+                    "decided": "", "head": "", "intent": None, "touches": None}
             try:
                 raw_intent = D.canon.dumps(doc)
                 D.canon.load_intent(raw_intent)
@@ -492,10 +666,11 @@ class Gateway:
                 break
             slot = self.play.candidate_slot(ws, D.canon.load_intent(raw_intent), "studio %s %s: %s" % (rid, letter, item["title"]))
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
-                         "head": slot.get("checked_against", "")})
+                         "head": slot.get("checked_against", ""),
+                         "touches": self.touches(slot, {t: r["piece"] for t, r in req["references"].items()}, req["objects"]) if "realized" in slot else None})
             made.append((item, slot if slot["ok"] else None))
         entry["candidates"] = [{"letter": i["letter"], "title": i["title"], "verdict": i["verdict"], "codes": i["codes"],
-                                "intent_sha256": sha256(i["intent"]) if i["intent"] else ""} for i, _s in made]
+                                "intent_sha256": sha256(i["intent"]) if i["intent"] else "", "touches": i["touches"]} for i, _s in made]
         with self.lock:
             if req["state"] != "running":
                 entry.update({"outcome": req["code"] or "STUDIO-DISCARDED", "detail": "the request was %s while its candidates compiled" % req["state"]})
@@ -685,6 +860,58 @@ def probe(config, brief="plaza-night", piece=PROBE_PIECE, prompts=PROBE_PROMPTS,
     return shown, out
 
 
+REF_PROBE = (("canopy:19,10-28,11", ("canopy:19,12-20,19", "canopy:19,20-28,21")),
+             (("make @1 match @2", {"@1"}),
+              ("make @1 twice as deep; keep @2 and @3 exactly as they are", {"@1"}),
+              ("give @2 a warm glow along its edge, and leave @1 and @3 alone", {"@2"}),
+              ("make @1 look like it connects to @2, without changing @2", {"@1"})))
+
+
+def probe_refs(config, brief="plaza-night", runs=2, say=print):
+    """STUDIO-1's measure, against a real model: with a target and two pins tagged, each prompt names the objects to
+    change; for every candidate, which tagged objects it changed and how many untagged ones, by the director's own
+    account (Gateway.touches), against the objects the prompt meant. Nothing is admitted. Returns the results."""
+    sys.path.insert(0, HERE)
+    import play
+    cfg = load_config(config)
+    live = play.Live(brief, None, [])
+    g = Gateway(play.Host(live), brief, cfg, play.ROOT, say=lambda s: None, origin="probe")
+    (target, pins), prompts = REF_PROBE
+    g.select(target)
+    for p in pins:
+        g.pin(p)
+    say("PROBE REFERENCES  %s  (%s)  brief %s; %s" % (os.path.relpath(cfg["path"], REPO), cfg["model"], brief,
+                                                      ", ".join("%s %s %s" % (i["tag"], i["role"], i["piece"]) for i in g.refs()["items"])))
+    out = []
+    for prompt, meant in prompts:
+        for n in range(runs):
+            rid = g.ask(prompt, None, None)
+            t = time.monotonic()
+            while time.monotonic() - t < cfg["timeout_s"] + 60:
+                r = g.state()["request"]
+                if r["id"] == rid and r["state"] != "running":
+                    break
+                time.sleep(0.1)
+            say("%r (run %d): %s%s" % (prompt, n + 1, r["state"], "" if r["state"] == "done" else " " + r["code"] + " " + r["message"][:120]))
+            for c in r["candidates"]:
+                tt = c.get("touches") or {}
+                changed = {k for k, v in (tt.get("tags") or {}).items() if v == "changed"}
+                ok = changed == meant and tt.get("others_count", 0) == 0
+                say("    %s %-34s %-8s changed %-12s others %d  added %d%s" % (c["letter"], c["title"][:34], c["verdict"], ",".join(sorted(changed)) or "-",
+                                                                             tt.get("others_count", 0), tt.get("added_count", 0), "  as meant" if ok else ""))
+                out.append({"prompt": prompt, "run": n + 1, "letter": c["letter"], "verdict": c["verdict"], "changed": sorted(changed),
+                            "others": tt.get("others_count", 0), "added": tt.get("added_count", 0), "as_meant": ok, "meant": sorted(meant)})
+            if r["state"] != "done":
+                out.append({"prompt": prompt, "run": n + 1, "letter": "", "verdict": r["code"], "changed": [], "others": 0, "as_meant": False, "meant": sorted(meant)})
+    cands = [x for x in out if x["letter"]]
+    say("candidates %d; as meant (the tagged objects the prompt named changed, no other tagged or untagged object of the head) %d; an untagged "
+        "object changed %d; a tagged object changed that the prompt did not name %d; a new object made %d; CLEAN %d" % (
+            len(cands), sum(x["as_meant"] for x in cands), sum(1 for x in cands if x["others"]), sum(1 for x in cands if set(x["changed"]) - set(x["meant"])),
+            sum(1 for x in cands if x["added"]), sum(1 for x in cands if x["verdict"] == "CLEAN")))
+    live.stopping = True
+    return out
+
+
 def report(brief="plaza-night", root=None, say=print):
     """Every recorded request of a brief, by provider configuration: the owner's comparison (2026-10-11), "invalid-output
     and timeout rates; latency and cost per accepted edit", from art/build/studio/BRIEF/requests.jsonl."""
@@ -751,6 +978,13 @@ def main(argv):
         import play   # noqa: E402  (the gateway is tested through the launcher that hosts it)
         return play.studio_selftest()
     opt = lambda k: argv[argv.index(k) + 1] if k in argv and argv.index(k) + 1 < len(argv) else None
+    if argv[:1] == ["probe"] and len(argv) >= 2 and "--references" in argv:
+        try:
+            probe_refs(argv[1], opt("--brief") or "plaza-night", int(opt("--runs") or "2"))
+        except StudioError as e:
+            print("PROBE  %s" % e, file=sys.stderr)
+            return 2
+        return 0
     if argv[:1] == ["probe"] and len(argv) >= 2:
         try:
             shown, _out = probe(argv[1], opt("--brief") or "plaza-night", opt("--piece") or PROBE_PIECE, root=opt("--root"))
@@ -760,7 +994,7 @@ def main(argv):
         return 0 if shown else 1
     if argv[:1] == ["report"]:
         return report(opt("--brief") or "plaza-night", opt("--root"))
-    print("usage: python art/studio.py selftest | schema | probe CONFIG.json [--brief B] [--piece ID] | report [--brief B]", file=sys.stderr)
+    print("usage: python art/studio.py selftest | schema | probe CONFIG.json [--brief B] [--piece ID] | probe CONFIG.json --references [--runs N] | report [--brief B]", file=sys.stderr)
     return 2
 
 

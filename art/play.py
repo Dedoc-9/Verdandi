@@ -41,8 +41,9 @@
 # scratch folder, unless the studio is used (below). Standard library only.
 #
 # The studio (STUDIO-0, the owner's direction of 2026-10-11; art/studio.py, art/STUDIO.md). With --director CONFIG.json
-# the page can summon a director: Enter opens a prompt, E selects the piece under the crosshair, and the prompt, the
-# selection and the camera go to art/studio.py's gateway, which asks the configured provider for at most three
+# the page can summon a director: Enter opens a prompt; E makes the object under the crosshair the target and R pins
+# one as a reference (STUDIO-1: each given a tag, @1, @2, ..., by the gateway); the prompt, the tags and the camera go
+# to art/studio.py's gateway, which asks the configured provider for at most three
 # candidates, has the director evaluate each at the current head, and serves those it does not refuse as further
 # sources: the page switches to one in place, the game untouched. Admit, reject and undo go through the director's
 # ledger and write the brief, as art/director.py does; the requests are recorded under art/build/studio/. The page's
@@ -177,6 +178,10 @@ def candidate_slot(ws, it, label, source="studio"):
         return _slot(label, path, message="PLAY: the head cannot be compiled: %s" % e)
     extra = {"verdict": verdict["verdict"], "codes": verdict["codes"], "written_against": verdict["written_against"],
              "checked_against": verdict["checked_against"]}
+    # what the director found the candidate changed: the studio's account of which objects a candidate touched (STUDIO-1)
+    for k in ("realized", "affected", "materials_changed"):
+        if k in verdict:
+            extra[k] = list(verdict[k])
     if verdict["verdict"] == "REFUSED" or out1 is None:
         why = verdict.get("detail") or ""
         why = why if why.startswith(tuple(verdict["codes"])) and why else "; ".join(verdict["codes"]) + (": " + why if why else "")
@@ -400,6 +405,16 @@ class Host:
 
     def __init__(self, live):
         self.live = live
+        self._scene = (None, None)
+
+    def scene0(self):
+        """(sha, scene) of the brief as the page is served it now: what the references' status is read against."""
+        s = self.live.slot(0)
+        if s is None:
+            return None, None
+        if self._scene[0] != s["sha"]:
+            self._scene = (s["sha"], json.loads(s["scene_bytes"]))
+        return self._scene
 
     def director(self):
         return director()
@@ -414,7 +429,7 @@ class Host:
         return self.live.publish(slots)
 
 
-STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo")
+STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin")
 
 
 def studio_post(live, path, body):
@@ -426,6 +441,12 @@ def studio_post(live, path, body):
     try:
         if path == "/studio/ask":
             return 200, {"ok": True, "id": g.ask(body.get("prompt"), body.get("piece"), body.get("camera"))}
+        if path == "/studio/select":
+            return 200, {"ok": True, "refs": g.select(body.get("piece"))}
+        if path == "/studio/pin":
+            return 200, {"ok": True, "refs": g.pin(body.get("piece"))}
+        if path == "/studio/unpin":
+            return 200, {"ok": True, "refs": g.unpin(body.get("tag"))}
         if path == "/studio/cancel":
             return 200, {"ok": g.cancel_request(body.get("id"))}
         if path == "/studio/admit":
@@ -476,13 +497,6 @@ def server(live, port=0):
                 return self.send(200, page.encode("utf-8"), "text/html; charset=utf-8")
             if path == "/live":
                 return self.send(200, json.dumps(live.state(), sort_keys=True).encode("utf-8"), "application/json")
-            if path == "/studio/piece" and live.studio is not None and re.fullmatch(r"[a-z]+:[0-9a-z,:-]{1,60}", q.get("id", "")):
-                import studio
-                try:
-                    _ws, _p, head, _st, sel = live.studio.context(q["id"])
-                    return self.send(200, json.dumps({"ok": True, "head": head, "selection": sel}, sort_keys=True).encode("utf-8"), "application/json")
-                except studio.StudioError as e:
-                    return self.send(200, json.dumps({"ok": False, "code": e.code, "message": str(e)}).encode("utf-8"), "application/json")
             if path in FILES:
                 f, ctype = FILES[path]
                 with open(f, "rb") as fh:
@@ -739,10 +753,10 @@ TEST_PROVIDERS = {
     # each a provider a director could be: what it does, and what the gateway must make of it
     "malformed.py": "import sys; sys.stdin.read(); sys.stdout.write('this is not JSON')",
     "wrong_id.py": "import sys, json; r = json.load(sys.stdin); print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': 'another', 'provider': {'name': 't', 'model': 't'}, 'candidates': []}))",
-    "one_bad.py": ("import sys, json; r = json.load(sys.stdin); st = r['selection']['statement']['text']\n"
-                   "good = {'title': 'Deeper', 'rationale': 'deeper', 'revision': ['= ' + st + ' deep 2.6'], 'scope': [r['selection']['patterns'][0]], 'preserve': []}\n"
+    "one_bad.py": ("import sys, json; r = json.load(sys.stdin); st = r['target']['statement']['text']\n"
+                   "good = {'title': 'Deeper', 'rationale': 'deeper', 'revision': ['= ' + st + ' deep 2.6'], 'scope': [r['target']['patterns'][0]], 'preserve': []}\n"
                    "bad = {'title': 'Nowhere', 'rationale': 'a slab the brief does not have', 'revision': ['= canopy plaza concrete_slab 7.0 0,0 1,1'], 'scope': ['plaza/canopy/*'], 'preserve': []}\n"
-                   "leak = {'title': 'Leaks', 'rationale': 'the slab and the lamps', 'revision': ['= ' + st + ' deep 2.0', '= lamp plaza 255,120,60 500 3'], 'scope': [r['selection']['patterns'][0]], 'preserve': []}\n"
+                   "leak = {'title': 'Leaks', 'rationale': 'the slab and the lamps', 'revision': ['= ' + st + ' deep 2.0', '= lamp plaza 255,120,60 500 3'], 'scope': [r['target']['patterns'][0]], 'preserve': []}\n"
                    "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, 'candidates': [bad, good, leak]}))"),
     "slow.py": "import sys, time, os; sys.stdin.read(); time.sleep(20); open(os.environ.get('STUDIO_TEST_MARK', os.devnull), 'w').write('ran to the end')",
     "crash.py": "import sys; sys.stdin.read(); sys.stderr.write('the model is unavailable: 503\\n'); sys.exit(3)",
@@ -770,7 +784,23 @@ TEST_PROVIDERS = {
                        "if mode == 'retries': emit({'type': 'result', 'subtype': 'error_max_structured_output_retries', 'is_error': True, 'result': ''}); sys.exit(1)\n"
                        "if mode == 'auth': emit({'type': 'result', 'subtype': 'error_during_execution', 'is_error': True, 'result': 'Not logged in. Please run /login'}); sys.exit(1)\n"
                        "emit({'type': 'result', 'subtype': 'success', 'is_error': False, 'result': '', 'structured_output': {'candidates': [cand]}, 'usage': usage, 'total_cost_usd': 0.0123})\n"),
-    "four.py": ("import sys, json; r = json.load(sys.stdin); st = r['selection']['statement']['text']\n"
+    # STUDIO-1: every canopy of the brief made 1 m deep, the target's and the others' alike
+    "all_canopies.py": ("import sys, json, re; r = json.load(sys.stdin)\n"
+                        "rev = ['= ' + re.sub(r' deep [0-9.]+', '', s['text']) + ' deep 1.0' for s in r['statements'] if s['text'].startswith('canopy ')]\n"
+                        "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, "
+                        "'candidates': [{'title': 'All deep', 'rationale': 'every canopy 1 m deep', 'revision': rev, 'scope': ['plaza/canopy/*'], 'preserve': []}]}))"),
+    # STUDIO-1: the target's corners moved one cell: its id is its cells, so a new object, and the old one changed
+    "corners.py": ("import sys, json; r = json.load(sys.stdin); st = r['target']['statement']\n"
+                   "rev = ['- ' + st['key'], '+ ' + st['text'].replace(' 28,11', ' 27,11')]\n"
+                   "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, "
+                   "'candidates': [{'title': 'Narrower', 'rationale': 'one cell narrower', 'revision': rev, 'scope': ['plaza/canopy/*'], 'preserve': []}]}))"),
+    # STUDIO-1: the canopies' material lightened, their statements untouched: every object of that material is touched
+    "material.py": ("import sys, json; r = json.load(sys.stdin)\n"
+                    "m = [s['text'] for s in r['statements'] if s['text'].startswith('material concrete_slab ')][0].split()\n"
+                    "m[2] = '120,118,112'\n"
+                    "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, "
+                    "'candidates': [{'title': 'Lighter slab', 'rationale': 'a lighter concrete', 'revision': ['= ' + ' '.join(m)], 'scope': ['material/concrete_slab', 'plaza/canopy/*'], 'preserve': []}]}))"),
+    "four.py": ("import sys, json; r = json.load(sys.stdin); st = r['target']['statement']['text']\n"
                 "c = lambda d: {'title': 'Deep ' + d, 'rationale': 'deeper', 'revision': ['= ' + st + ' deep ' + d], 'scope': ['plaza/canopy/*'], 'preserve': []}\n"
                 "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, 'candidates': [c(d) for d in ('1.0', '1.5', '2.0', '2.5')]}))"),
 }
@@ -859,10 +889,10 @@ def studio_selftest():
         rec = os.path.join(tmp, "art", "build", "studio", brief, rid)
         req = json.loads(open(os.path.join(rec, "request.json"), "rb").read())
         log = [json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()]
-        row("the request recorded: context, response, intents", req["selection"]["statement"]["text"].startswith("canopy plaza concrete_slab 7.0 19,10 28,11")
+        row("the request recorded: context, response, intents", req["target"]["statement"]["text"].startswith("canopy plaza concrete_slab 7.0 19,10 28,11")
             and req["head"] == r["head"] and sorted(os.listdir(rec)) == ["A.intent", "B.intent", "C.intent", "request.json", "response.raw"]
             and log[-1]["id"] == rid and log[-1]["outcome"] == "DONE" and log[-1]["model"] == "scripted-1",
-            "the selection's statement (line %d), the head, the response's sha256, each candidate's intent" % req["selection"]["statement"]["line"])
+            "the target's statement (line %d), the head, the response's sha256, each candidate's intent" % req["target"]["statement"]["line"])
         replay = intent_slot(brief, os.path.join(rec, "A.intent"))
         row("a recorded candidate replayed without the provider", replay["ok"] and replay["sha"] == live.slot(drawn[0]["slot"])["sha"],
             "play.py --intent %s gives scene %s, the one drawn" % (os.path.relpath(os.path.join(rec, "A.intent"), tmp), replay["sha"][:12]))
@@ -1130,8 +1160,258 @@ def studio_selftest():
         if srv:
             srv.shutdown()
         shutil.rmtree(tmp, ignore_errors=True)
+    references_selftest(row, cfg_dir=None)
     print("STUDIO SELFTEST %d/%d" % (sum(rows), len(rows)))
     return 0 if all(rows) else 1
+
+
+def references_selftest(row, cfg_dir=None):
+    """STUDIO-1's references, in a scratch copy of their own (the brief edited by hand there, so no admission is made):
+    tags made, kept and never moved; the request's geometry and relations against the scene's own boxes; a candidate's
+    account of the objects it changed; a prompt naming a tag it may not; an object changed, and one gone."""
+    global ROOT
+    import studio
+    import studio_refs
+    brief, tmp = "plaza-night", tempfile.mkdtemp(prefix="studio-refs-")
+    saved_root = ROOT
+    live = srv = None
+
+    def wait(g, rid, secs=60):
+        t = time.time()
+        while time.time() - t < secs:
+            r = g.state()["request"]
+            if r and r["id"] == rid and r["state"] != "running":
+                return r
+            time.sleep(0.05)
+        return g.state()["request"]
+
+    def until(pred, secs=30):
+        t = time.time()
+        while time.time() - t < secs:
+            if pred():
+                return True
+            time.sleep(0.1)
+        return False
+
+    def refused(fn, *a):
+        try:
+            fn(*a)
+            return "", ""
+        except studio.StudioError as e:
+            return e.code, e.detail
+    try:
+        for sub in ("art/briefs", "art/ledger", "graybox/maps"):
+            shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        for name in ("all_canopies.py", "corners.py", "material.py"):
+            open(os.path.join(tmp, name), "w").write(TEST_PROVIDERS[name] + "\n")
+        ROOT = tmp
+        art = os.path.join(tmp, "art", "briefs", brief + ".art")
+        text = open(art, encoding="utf-8").read()
+        # the west canopy given ribs, edge fixtures and a depth, so that it has parts and is unlike the north one
+        west0 = "canopy plaza concrete_slab 7.6 19,12 20,19"
+        assert west0 + "\n" in text
+        text = text.replace(west0 + "\n", west0 + " deep 1.2 ribs 2 edgelit 255,178,112 60\n")
+        open(art, "w", encoding="utf-8").write(text)
+        live = Live(brief, art, [], poll=0.15)
+        srv = server(live)
+        threading.Thread(target=live.watch, kwargs={"say": lambda s: None}, daemon=True).start()
+        g = start_studio(live, os.path.join(REPO, "art", "providers", "scripted.json"), say=lambda s: None)
+        north, west, south = "canopy:19,10-28,11", "canopy:19,12-20,19", "canopy:19,20-28,21"
+
+        # tags: made on first touch, kept by the object, never given to another
+        r1 = g.select(north)
+        r2 = g.pin(west + ":rib20")                     # a part of the west canopy: the object is the canopy
+        r3 = g.pin(south)
+        un = g.pin(west)                               # pinned again: unpinned
+        again = g.pin(west)
+        code_t, _d = refused(g.pin, north)
+        extra = ["tower:19,9-23,9", "lamp:20,11", "neon:26,9:s"]
+        S0 = json.loads(live.slot(0)["scene_bytes"])
+        have = {v["id"] for v in S0["visuals"]}
+        extra = [x for x in extra if x in have] or sorted(i for i in have if i.startswith("lamp:"))[:3]
+        g.pin(extra[0])
+        g.pin(extra[1])
+        code_p, _d = refused(g.pin, extra[2])
+        g.pin(extra[1])                                # unpinned again, back to three pins
+        ok = (r1["target"] == "@1" and r2["pins"] == ["@2"] and r2["items"][1]["piece"] == west and r3["pins"] == ["@2", "@3"]
+              and un["pins"] == ["@3"] and again["pins"] == ["@3", "@2"] and code_t == "STUDIO-REFERENCE" and code_p == "STUDIO-PINS"
+              and g.tag_of[west] == "@2" and g.refs()["pins"] == ["@3", "@2", "@4"])
+        sw = g.select(west)
+        back = g.select(north)
+        g.pin(west)
+        row("tags: E selects, R pins and unpins, a part names its object, the same object keeps its tag", ok and sw["target"] == "@2" and "@2" not in sw["pins"]
+            and back["target"] == "@1" and [i["status"] for i in g.refs()["items"]] == ["ok"] * len(g.refs()["items"]),
+            "@1 the north canopy; @2 the west one, pinned through its rib; unpinned and pinned again, still @2; the target refused as a pin; "
+            "a fifth pin refused; @2 selected as the target and back")
+        for t in ("@4",):
+            if t in g.pins:
+                g.unpin(t)
+
+        # the request: geometry and relations against the scene's own boxes
+        rid = g.ask("match @2", None, {"x": 44.0, "y": 1.62, "z": 30.0, "yaw_deg": 0.0, "pitch_deg": 20.0})
+        r = wait(g, rid)
+        rec = os.path.join(tmp, "art", "build", "studio", brief, rid)
+        req = json.loads(open(os.path.join(rec, "request.json"), "rb").read())
+        S = json.loads(live.slot(0)["scene_bytes"])
+
+        def boxes(i):
+            return [v["box"] for v in S["visuals"] if v["id"] == i or v["id"].startswith(i + ":")]
+        bn, bw = boxes(north), boxes(west)
+        union = lambda B: [min(b[0] for b in B), min(b[1] for b in B), min(b[2] for b in B), max(b[3] for b in B), max(b[4] for b in B), max(b[5] for b in B)]
+        least = min(sum(max(0.0, q[k] - p[k + 3], p[k] - q[k + 3]) ** 2 for k in range(3)) ** 0.5 for p in bn for q in bw)
+        by = {x["tag"]: x for x in req["references"]}
+        rel = [x for x in req["relations"] if x["from"] == "@1" and x["to"] == "@2"][0]
+        walls = [w for w in S["collision"] if w["kind"] == "wall"]
+        nw = by["@1"]["nearest_wall"]
+        wb = [w["box"] for w in walls if w["id"] == nw["wall"]][0]
+        plan = min(((max(0.0, wb[0] - p[3], p[0] - wb[3])) ** 2 + (max(0.0, wb[2] - p[5], p[2] - wb[5])) ** 2) ** 0.5 for p in bn)
+        geo = (req["version"] == "1" and req["target"]["tag"] == "@1" and by["@1"]["geometry"]["bounds_m"] == [round(x, 3) for x in union(bn)]
+               and by["@2"]["geometry"]["bounds_m"] == [round(x, 3) for x in union(bw)] and by["@2"]["geometry"]["parts"].get("rib", 0) >= 2
+               and by["@2"]["geometry"]["parts"].get("light-edge", 0) >= 1 and req["coordinates"].startswith(S["units"])
+               and abs(rel["measured"]["gap_m"] - round(least, 3)) < 1e-9 and rel["measured"]["touching"] is (least == 0.0)
+               and abs(nw["plan_gap_m"] - round(plan, 3)) < 1e-9 and nw["basis"].startswith("measured") and rel["basis"].startswith("measured")
+               and req["mentions"] == ["@2"] and by["@2"]["mentioned"] and not by["@3"]["mentioned"] and by["@1"]["statement_makes"] == 1)
+        row("the request's geometry and relations are the scene's own boxes", geo,
+            "@1 bounds %s, @2 bounds %s (%d boxes, its ribs and fixtures); their gap %.3f m, recomputed here; @1's nearest wall %s, %.3f m in plan, recomputed here"
+            % (by["@1"]["geometry"]["bounds_m"], by["@2"]["geometry"]["bounds_m"], by["@2"]["geometry"]["boxes"], least, nw["wall"], plan))
+        neon = [i for i in sorted(have) if i.startswith("neon:")][0]
+        g.pin(neon)
+        n_tag = g.tag_of[neon]
+        out_ = studio_refs.objects(S)
+        rel_n = studio_refs.relation(out_[neon], out_[north], n_tag, "@1")
+        row("facing is inferred, and said to be", "inferred" in rel_n and rel_n["inferred"]["basis"].startswith("inferred") and "facing" not in json.dumps(rel_n["measured"])
+            and "faces" in studio_refs.geometry(out_[neon]) and studio_refs.geometry(out_[neon])["faces"]["basis"].startswith("measured"),
+            "%s's lights point %s (measured, as the scene records them); whether it faces @1 is a half-space test, marked inferred" % (n_tag, studio_refs.geometry(out_[neon])["faces"]["directions"]))
+        g.pin(neon)
+
+        # what a model is told: the tags, their geometry and their relations, as director_prompt.py renders the request
+        sys.path.insert(0, os.path.join(REPO, "art", "providers"))
+        import director_prompt
+        txt = director_prompt.user_text(req)
+        b1 = ", ".join("%g" % v for v in by["@1"]["geometry"]["bounds_m"])
+        row("what a model is told: each tag, what made it, its bounds, and how the tags stand", "@1, the target: canopy plaza/canopy/19,10-28,11" in txt
+            and "@2, pinned as a reference: canopy plaza/canopy/19,12-20,19" in txt and "(mentioned in the prompt)" in txt and "[%s] m" % b1 in txt
+            and "line 61 of the brief" in txt and "How the tagged objects stand to one another:" in txt and "@1 to @2: gap %s m" % rel["measured"]["gap_m"] in txt
+            and "nearest wall: play/wall/" in txt and "A tag means that object and no other" in director_prompt.SYSTEM,
+            "the target and the pins with their lines, bounds [%s] m, the relations and the nearest walls; the system text's rule for tags" % b1)
+
+        # a candidate's account of what it changed
+        c = r["candidates"][0] if r["candidates"] else {}
+        t = c.get("touches") or {}
+        intent = json.loads(open(os.path.join(rec, "A.intent"), "rb").read())
+        row("match @2: @1 takes @2's height and options, @2 and everything else untouched, and the candidate says so",
+            r["state"] == "done" and c.get("verdict") == "CLEAN" and intent["revision"] == ["= canopy plaza concrete_slab 7.6 19,10 28,11 deep 1.2 ribs 2 edgelit 255,178,112 60"]
+            and t.get("tags") == {"@1": "changed", "@2": "unchanged", "@3": "unchanged"} and t.get("others_count") == 0,
+            "%s; touches %s, %d other objects" % (intent["revision"][0], t.get("tags"), t.get("others_count", -1)))
+        g.cfg = studio.load_config(_cfg_file(tmp, "all", [sys.executable, os.path.join(tmp, "all_canopies.py")]))
+        g.unpin("@3")
+        rid = g.ask("make @1 a metre deep", None, None)
+        r = wait(g, rid)
+        t = (r["candidates"][0].get("touches") if r["candidates"] else None) or {}
+        row("a candidate that changes objects nobody tagged is shown so", r["state"] == "done" and t.get("tags") == {"@1": "changed", "@2": "changed"}
+            and t.get("others") == [south] and t.get("others_count") == 1 and t.get("added") == [],
+            "every canopy 1 m deep: @1 changed, @2 changed, and 1 other object (%s)" % ", ".join(t.get("others", [])))
+        g.cfg = studio.load_config(_cfg_file(tmp, "corners", [sys.executable, os.path.join(tmp, "corners.py")]))
+        rid = g.ask("make @1 one cell narrower", None, None)
+        r = wait(g, rid)
+        t = (r["candidates"][0].get("touches") if r["candidates"] else None) or {}
+        row("a candidate that moves the target's corners: the target changed, a new object made, no other touched", r["state"] == "done"
+            and t.get("tags", {}).get("@1") == "changed" and t.get("others_count") == 0 and t.get("added") == ["canopy:19,10-27,11"],
+            "touches %s; others %d; new %s" % (t.get("tags"), t.get("others_count", -1), t.get("added")))
+        g.cfg = studio.load_config(_cfg_file(tmp, "material", [sys.executable, os.path.join(tmp, "material.py")]))
+        rid = g.ask("a lighter concrete for @1", None, None)
+        r = wait(g, rid)
+        t = (r["candidates"][0].get("touches") if r["candidates"] else None) or {}
+        row("a material changed: every object of it touched, tagged or not", r["state"] == "done" and t.get("tags") == {"@1": "changed", "@2": "changed"}
+            and t.get("others") == [south] and t.get("materials") == ["concrete_slab"],
+            "concrete_slab lightened: touches %s, others %s, materials %s" % (t.get("tags"), t.get("others"), t.get("materials")))
+        # the gap is the boxes', not their bounds': an L of two boxes, 4 m from a box its bounds enclose
+        Ls = {"visuals": [{"id": "x:0", "by": "a", "region": "r", "material": "m", "box": [0, 0, 0, 1, 1, 1]},
+                          {"id": "y:0", "by": "b", "region": "r", "material": "m", "box": [5, 0, 0, 6, 1, 1]},
+                          {"id": "y:0:part1", "by": "b", "region": "r", "material": "m", "box": [0, 5, 0, 1, 6, 1]}], "lights": []}
+        OL = studio_refs.objects(Ls)
+        gL = studio_refs.relation(OL["x:0"], OL["y:0"], "@a", "@b")["measured"]["gap_m"]
+        row("a gap is measured between the boxes, not their bounds", gL == 4.0 and studio_refs.geometry(OL["y:0"])["bounds_m"] == [0, 0, 0, 6, 6, 1],
+            "an L of two boxes whose bounds enclose a third box, 4 m from it: gap %s m" % gL)
+        g.cfg = studio.load_config(os.path.join(REPO, "art", "providers", "scripted.json"))
+
+        # a prompt naming a tag that is not the target or a pin
+        n_log = len(open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines())
+        code, detail = refused(g.ask, "make @1 like @9", None, None)
+        code3, detail3 = refused(g.ask, "make @1 like @3", None, None)
+        row("a prompt naming a tag that is not the target or a pin: refused, nothing asked", code == "STUDIO-REFERENCE" and code3 == "STUDIO-REFERENCE"
+            and "@9" in detail and "@3" in detail3 and len(open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()) == n_log,
+            detail[:110])
+
+        # an object changed since it was pinned: said, and bound again by pinning it again
+        sha0 = live.slot(0)["sha"]
+        open(art, "w", encoding="utf-8").write(text.replace(west0 + " deep 1.2 ", west0 + " deep 1.6 "))
+        until(lambda: live.slot(0)["sha"] != sha0)
+        st = {i["tag"]: i["status"] for i in g.refs()["items"]}
+        g.cfg = studio.load_config(os.path.join(REPO, "art", "providers", "scripted.json"))
+        rid = g.ask("match @2", None, None)
+        wait(g, rid)
+        req = json.loads(open(os.path.join(tmp, "art", "build", "studio", brief, rid, "request.json"), "rb").read())
+        ch = {x["tag"]: x["bound"]["changed_since"] for x in req["references"]}
+        g.pin(west)
+        g.pin(west)
+        st2 = {i["tag"]: i["status"] for i in g.refs()["items"]}
+        row("an object changed since it was pinned: said, in the page and in the request; pinned again, bound again", st.get("@2") == "changed" and st.get("@1") == "ok"
+            and ch == {"@1": False, "@2": True} and st2.get("@2") == "ok" and g.tag_of[west] == "@2",
+            "the west canopy 1.2 -> 1.6 m deep: @2 %s, the request's @2 changed_since %s; pinned again: %s, still @2" % (st.get("@2"), ch.get("@2"), st2.get("@2")))
+
+        # an object gone: its tag stays its own, and the request is refused until it is unpinned
+        g.pin(south)
+        t_s = g.tag_of[south]
+        sha1 = live.slot(0)["sha"]
+        cur = open(art, encoding="utf-8").read()
+        open(art, "w", encoding="utf-8").write(cur.replace("canopy plaza concrete_slab 7.0 19,20 28,21", "canopy plaza concrete_slab 7.0 19,20 27,21"))
+        until(lambda: live.slot(0)["sha"] != sha1)
+        st = {i["tag"]: i["status"] for i in g.refs()["items"]}
+        code, detail = refused(g.ask, "match @2", None, None)
+        newer = "canopy:19,20-27,21"
+        g.pin(newer)
+        t_new = g.tag_of[newer]
+        g.unpin(t_s)
+        g.unpin(t_new)
+        rid = g.ask("match @2", None, None)
+        r = wait(g, rid)
+        row("an object gone: its tag never moves to another; the request refused until it is unpinned", st.get(t_s) == "gone" and code == "STUDIO-REFERENCE"
+            and t_s in detail and t_new not in (t_s, "@1", "@2") and g.tags[t_s]["piece"] == south and r["state"] == "done",
+            "the south canopy's corners moved: %s gone (%s); the new canopy pinned as %s; %s unpinned, asked again: %s" % (t_s, detail[:60], t_new, t_s, r["state"]))
+
+        # the page's own requests
+        def post(path, body, token):
+            q = urllib.request.Request("http://127.0.0.1:%d%s" % (srv.server_address[1], path), data=json.dumps(body).encode("utf-8"), method="POST",
+                                       headers={"Content-Type": "application/json", "X-Studio-Token": token})
+            try:
+                with urllib.request.urlopen(q, timeout=60) as h:
+                    return h.status, json.loads(h.read())
+            except urllib.error.HTTPError as e:
+                return e.code, {}
+        a, _ = post("/studio/pin", {"piece": south.replace("28", "27")}, "not-the-token")
+        b, body = post("/studio/select", {"piece": north}, live.token)
+        c_, body2 = post("/studio/pin", {"piece": "nothing:1,1"}, live.token)
+        with urllib.request.urlopen("http://127.0.0.1:%d/live" % srv.server_address[1], timeout=30) as h:
+            st = json.loads(h.read())["studio"]["refs"]
+        row("select and pin from the page: its token, the refs in /live", a == 403 and b == 200 and body["refs"]["target"] == "@1" and c_ == 409
+            and st["target"] == "@1" and all(set(i) >= {"tag", "role", "piece", "address", "status"} for i in st["items"]),
+            "no token %d; select %d; an unknown piece %d; /live lists %s" % (a, b, c_, ", ".join("%s %s %s" % (i["tag"], i["role"], i["status"]) for i in st["items"])))
+    except (studio.StudioError, KeyError, IndexError, TypeError, ValueError, OSError) as e:
+        row("the references' test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:160]))
+    finally:
+        ROOT = saved_root
+        if live:
+            live.stopping = True
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def _cfg_file(tmp, name, argv, timeout=30, size=65536):
+    path = os.path.join(tmp, name + ".json")
+    open(path, "w").write(json.dumps({"provider": "cli", "argv": argv, "model": name, "timeout_s": timeout, "max_output_bytes": size}))
+    return path
 
 
 if __name__ == "__main__":

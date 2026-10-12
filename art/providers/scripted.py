@@ -6,13 +6,16 @@
 #
 #   art/providers/scripted.json      {"provider": "cli", "argv": ["{python}", "art/providers/scripted.py"], ...}
 #
-# It reads a VERDANDI-STUDIO-REQUEST 0 on standard input and writes a VERDANDI-STUDIO-RESPONSE 0 on standard output
-# (art/STUDIO.md). For a selected canopy it proposes three candidates, the three of the owner's sketch of the studio:
+# It reads a VERDANDI-STUDIO-REQUEST 1 on standard input and writes a VERDANDI-STUDIO-RESPONSE 0 on standard output
+# (art/STUDIO.md). For a canopy as the target it proposes three candidates, the three of the owner's sketch of the studio:
 # "Monolithic" (lower by 1.2 m, to no less than 4.6 m, and 2.2 m deep), "Lit underside" (a narrow row of fixtures along
 # its edge, magenta if the prompt says so, warm otherwise, at a restrained 60 cd) and "Deeper canopy" (2.6 m deep). For
-# anything else it proposes nothing. It reads the prompt only for the word "magenta"; it understands nothing.
+# anything else it proposes nothing. It reads the prompt only for the word "magenta", and for "match @N" (STUDIO-1):
+# when the target is a canopy and @N a pinned canopy, its one candidate gives the target @N's material, height and
+# options and keeps the target's corners, leaving @N as it is. It understands nothing.
 
 import json
+import re
 import sys
 
 
@@ -36,13 +39,36 @@ def statement(head, opts):
     return " ".join(words)
 
 
+def canopy(text):
+    """(head words: verb, region, material, height, corner, corner; options), or None."""
+    words = text.split()
+    if len(words) >= 6 and words[0] == "canopy" and "," in words[4] and "," in words[5]:
+        opts = options(words[6:])
+        if opts is not None:
+            return words[:6], opts
+    return None
+
+
 def main():
     req = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     out = {"format": "VERDANDI-STUDIO-RESPONSE", "version": "0", "id": req["id"],
            "provider": {"name": "scripted", "model": "scripted-1 (fixed variations, not a model)"}, "candidates": []}
-    sel = req.get("selection") or {}
+    sel = req.get("target") or {}
     st = (sel.get("statement") or {}).get("text", "")
     words = st.split()
+    m = re.search(r"\bmatch\s+(@[0-9]+)", req.get("prompt", ""))
+    pins = {r["tag"]: r for r in req.get("references", []) if r.get("role") == "pin"}
+    if m and canopy(st) and m.group(1) in pins and canopy((pins[m.group(1)].get("statement") or {}).get("text", "")):
+        (head, _o), (phead, popts) = canopy(st), canopy(pins[m.group(1)]["statement"]["text"])
+        tag, ptag = sel["tag"], m.group(1)
+        out["candidates"] = [
+            {"title": "Matched to %s" % ptag,
+             "rationale": "%s takes %s's material, height and options (%s); its own corners stay, and %s is unchanged." % (
+                 tag, ptag, " ".join(phead[2:4] + [w for k in ("deep", "ribs", "lit", "edgelit") if k in popts for w in [k] + popts[k]]), ptag),
+             "revision": ["= " + statement(head[:2] + phead[2:4] + head[4:6], popts)], "scope": [sel["patterns"][0]],
+             "preserve": ["%s as it is" % ptag, "the player's route and every wall"]}]
+        sys.stdout.buffer.write(json.dumps(out, sort_keys=True).encode("utf-8"))
+        return 0
     if len(words) >= 6 and words[0] == "canopy" and "," in words[4] and "," in words[5]:
         head, opts = words[:6], options(words[6:])
         if opts is not None:

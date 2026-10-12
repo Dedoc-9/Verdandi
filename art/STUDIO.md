@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
-# The studio: a director summoned into the running plaza (STUDIO-0)
+# The studio: a director summoned into the running plaza (STUDIO-0, STUDIO-1)
 
 By the owner's direction of 2026-10-11: *"the LLM edits design intent; Verðandi compiles that intent into a live
 world; the designer remains in control."* And by his ruling on how a model is reached: *"a pluggable model adapter,
@@ -9,7 +9,8 @@ validation, compilation, preview, and admission."*
 
 ```text
  the page (art/web/play.js)          play.py                    art/studio.py, the gateway          a provider (a command)
- E selects, Enter summons  ──POST──►  token, host  ──────────►  context from the head  ──stdin──►  the model, or a script
+ E target, R pin           ──POST──►  token, host  ──────────►  tags bound to objects
+ Enter summons, @1 @2 …    ──POST──►  token, host  ──────────►  context from the head  ──stdin──►  the model, or a script
                                                                  limits, cancel, time    ◄─stdout─  ≤ 3 candidates (JSON)
                                                                  the response, read whole
                                                                  each candidate an intent ──► art/director.py: checks, scope
@@ -45,6 +46,7 @@ request rendered as text), and differ only in how the model is reached.
 
 ```
 python art/studio.py probe art/providers/claude_code.json
+python art/studio.py probe art/providers/claude_code.json --references
 python art/studio.py report
 ```
 
@@ -52,17 +54,46 @@ python art/studio.py report
 loaded"*: it asks about the same canopy with two different prompts, through the gateway as the page asks, records both
 requests (marked as the probe's), admits nothing, and says SHOWN only if the provider reported a model and tokens for
 each and no two prompts were answered with the same revision lines. The scripted provider is NOT SHOWN, by design.
-`report` reads every recorded request of the brief and gives, by provider configuration, what the owner asked to
+`probe --references` is STUDIO-1's measure, the owner's acceptance criterion put to a model (*"the model consistently
+identifies the intended objects, receives their actual geometry, and proposes edits the existing compiler can
+express"*): the north canopy the target `@1`, the west and south canopies pinned `@2` and `@3`, four prompts that each
+name what to change (*make @1 match @2*; *make @1 twice as deep; keep @2 and @3 exactly as they are*; *give @2 a warm
+glow along its edge, and leave @1 and @3 alone*; *make @1 look like it connects to @2, without changing @2*), each asked
+twice (`--runs N`); for every candidate, which tags it changed and how many untagged objects, against what the prompt
+meant, and its verdict. Each request costs a model call. `report` reads every recorded request of the brief and gives, by provider configuration, what the owner asked to
 compare: the requests answered, invalid outputs, timeouts and provider errors, the provider's time (median and
 longest), the candidates' verdicts, the edits admitted from the page, the tokens, and the cost where a provider reports
 one, per admitted edit.
 
-In the page: **E** selects the piece of the dressing under the crosshair (a frame marks it; a wall in front of it
-hides it). **Enter** opens the director's panel, and the game goes on. Type the change; **Ctrl+Enter** asks. The
-candidates come back with their verdicts. **Show** draws one in place: the scene changes, the game, the player and
-the camera do not. **Original** draws the brief. **Admit** writes it through the director's ledger, **Reject** records
-a refusal, and **Undo** admits the last admission's exact inverse. **Cancel** stops a request, and **Esc** goes back to
-the world. Without a selection, the prompt is for the whole world.
+In the page: what is under the crosshair is named in the corner, by its address (`plaza/canopy/19,10-28,11`) and its
+tag if it has one. **E** makes it the target; **R** pins it as a reference, or unpins it, up to four (the game's reset
+is **Backspace** here). play.py gives each a tag, `@1`, `@2`, …, which names that object for as long as it runs; each
+tagged object is framed and labelled on screen (the target amber, a pin dashed blue), and the panel lists them with
+their addresses, sizes and statements' lines. **Enter** opens the director's panel, and the game goes on. Type the
+change, naming objects by their tags (*make @1 match @2*); **Ctrl+Enter** asks. The candidates come back with their
+verdicts and what each touches (*@1 changed · @2 unchanged · no other object changed*). **Show** draws one in place:
+the scene changes, the game, the player and the camera do not. **Original** draws the brief. **Admit** writes it
+through the director's ledger, **Reject** records a refusal, and **Undo** admits the last admission's exact inverse.
+**Cancel** stops a request, and **Esc** goes back to the world. Without a target, the prompt is for the whole world.
+
+## The references (STUDIO-1)
+
+By the owner's ruling of 2026-10-11: *"Bind references to a scene revision and object identity, not just a reusable
+tag. If an edit invalidates a reference, report it rather than silently redirecting it."*
+
+- **An object** (`art/studio_refs.py`) is a box of the scene's dressing with its parts: an id that extends another by
+  `:something` is a part of it (a canopy's ribs, downlights and edge fixtures, a tower's cornice), and a light belongs
+  to the object whose id it shares. An object's identity is its id, which holds its cells: a canopy given new corners
+  is a new object.
+- **A tag** is made the first time an object is selected or pinned, and names that object, by its id, for as long as
+  play.py runs; it is never given to another. Selecting or pinning it again binds it again to the scene and head of
+  that moment. Its status, in the panel and in `/live`, is read against the scene served: *ok*, *changed* (the same
+  object, another shape or look than when it was bound), or *gone* (no object of its id).
+- **A request** carries the target and the pins (below). A prompt that names a tag that is neither, or a tag whose
+  object is not in the scene at the head, is refused before anything is asked (`STUDIO-REFERENCE`).
+- **What each candidate touches** is the gateway's own account, from the director's verdict (what it realized and
+  what a changed material affected): each tag changed or unchanged, the untagged objects of the head it changed, and
+  the objects it made that the head has not.
 
 ## A provider's configuration
 
@@ -77,14 +108,19 @@ limits; past either, the command is killed. A configuration that is not exactly 
 
 ## The request (on the provider's standard input)
 
-`VERDANDI-STUDIO-REQUEST 0`, one JSON document:
+`VERDANDI-STUDIO-REQUEST 1`, one JSON document (version 1 since STUDIO-1: `target`, `references`, `relations`, `mentions`
+and `coordinates` in place of version 0's `selection`):
 
 | field | |
 |---|---|
 | `id` | the request's id; the response must name it |
 | `brief`, `head`, `base` | the brief, and the head the request was made at (the director's head and its three parts) |
 | `prompt` | the designer's words, 1–2,000 characters |
-| `selection` | null, or the piece: its id, address, region, kind and material, the brief's statement that made it (line, text, key), and the address patterns it falls under (`plaza/canopy/*`, `material/concrete_slab`) |
+| `target` | null, or the target's reference (as in `references`) |
+| `references` | the target and the pins, each: its tag and role, whether the prompt mentions it, its id, address, kind, region and material; the brief's statement that made it (line, text, key), how many objects that statement makes, and what a revision of it can change; the address patterns it falls under (`plaza/canopy/*`, `material/concrete_slab`); its geometry (bounds, centre and size in metres, underside and top, long axis, orientation, its boxes and parts and lights, and the direction its lights point where the scene records one); the nearest wall of the play geometry (which, on which side, how far in plan and in space, its top); and its binding (the scene and head it was bound at, and whether it has changed since) |
+| `relations` | for every two references: the gap between their boxes, whether they touch, their overlap in plan, the direction and distance from one centre to the other, the differences of their undersides and tops, whether they share a kind, a material, a statement, each marked *measured*; and, where the first records a facing, whether it faces the second, marked *inferred* (a half-space test on centres, not a line of sight, not a connection) |
+| `mentions` | the tags the prompt names |
+| `coordinates` | metres; x east, z south, y up; yaw 0 north; the cell's size and the walls' height; a box's six numbers |
 | `camera` | where the designer stands and looks: x, y, z (metres), yaw and pitch (degrees) |
 | `statements` | the brief: every statement's line, text and key |
 | `revision_syntax`, `language` | how a revision is written, and the art file's statements as `art/README.md` describes them |
@@ -126,6 +162,7 @@ files stand and that head is the one it was drawn at.
 | `STUDIO-CONFIG` | the configuration is not exactly as above |
 | `STUDIO-NO-PROVIDER` | no director is configured |
 | `STUDIO-PROMPT`, `STUDIO-SELECTION` | an empty or too long prompt; a piece the head's scene does not hold |
+| `STUDIO-REFERENCE`, `STUDIO-PINS` | a prompt naming a tag that is not the target or a pin; a tagged object not in the scene at the head; the target pinned; an unpin of what is not pinned; a fifth pin |
 | `STUDIO-PROVIDER-START` | the command cannot be started |
 | `STUDIO-TIMEOUT`, `STUDIO-RESPONSE-SIZE` | past its time; past its output limit (killed) |
 | `STUDIO-CANCELLED`, `STUDIO-SUPERSEDED` | cancelled by the designer; a newer request asked (killed, its result discarded) |
@@ -141,10 +178,10 @@ files stand and that head is the one it was drawn at.
 Every request, under `art/build/studio/BRIEF/ID/` (never committed): `request.json`, `response.raw`, and each
 candidate's intent (`A.intent`, …); and one line a request, admission, rejection or undo in
 `art/build/studio/BRIEF/requests.jsonl`: the head, the configuration and the model it names, the prompt, the
-selection, the sha256 of the request and the response, and, as the owner asked (*"Record the provider, model, exit
+target's address and every tag's object, the sha256 of the request and the response, and, as the owner asked (*"Record the provider, model, exit
 status, schema-validation result and latency, without logging secrets"*), the provider and model the response names,
 the exit status, whether the response was valid, the provider's time in milliseconds, the usage it reported, each
-candidate's verdict and the outcome (a probe's requests are marked `"origin": "probe"`). Nothing a provider is given
+candidate's verdict and what it touched, and the outcome (a probe's requests are marked `"origin": "probe"`). Nothing a provider is given
 or gives holds a credential, and none is recorded. play.py also prints one line a request (`STUDIO  ID  provider
 (model)  time  tokens  A CLEAN; B LEAKAGE …`, or its refusal). A recorded candidate is played again without
 the provider: `python art/play.py BRIEF --intent art/build/studio/BRIEF/ID/A.intent`. Admissions, rejections and undos
@@ -177,9 +214,13 @@ world but what the director judged.
 The quality of what a model proposes: the checks hold a candidate to the rules of the art and to its declared scope,
 not to taste. The live Anthropic API: `anthropic_messages.py` is held only to a local server that answers as the API's
 documentation describes. `claude_code.py` was run against the real CLI only in the build container, on Linux (its
-probe SHOWN there); on Windows, finding `claude.exe` and passing its arguments are not measured. Selecting a light or a
-play piece (the frame and E pick the dressing's boxes). Changes to the layout (STUDIO-0 changes the look; a layout
-change is the design tool's). A long-running worker: each request starts the provider's command afresh, which the
-owner allowed for the first version. A latency in general: the scripted provider answers in well under a second, and
-Claude Code's CLI took 15–17 s a request in the build container's probe, which says nothing of another machine, model
-or prompt.
+probes SHOWN there); on Windows, finding `claude.exe` and passing its arguments are not measured. That a model
+identifies the intended objects in general: the references' probe is four prompts about three canopies, a few runs,
+one model. A tag on a light or a play piece (E and R pick the dressing's boxes; a light goes with its object). Tags
+that outlive play.py, or are shared between two pages. An image of the view (the next slice, by his sequence) and
+pieces that connect two objects (after it). A scope pattern that names one object with its parts: the director's
+grammar has none, so a model told only an object's exact address declares a scope that leaves its ribs and lights
+out (`SCOPE-LEAK`); the request now says so. Changes to the layout (the look only; a layout change is the design
+tool's). A long-running worker: each request starts the provider's command afresh, which the owner allowed for the
+first version. A latency in general: the scripted provider answers in well under a second, and Claude Code's CLI took
+9–17 s a request in the build container's probes, which says nothing of another machine, model or prompt.

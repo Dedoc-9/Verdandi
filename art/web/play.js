@@ -21,11 +21,16 @@
 // ?slot=K picks the source; window.PLAY.walkTo(tick) puts the player where the self-test's recorded walk is at that
 // tick and renders it.
 //
-// The studio (STUDIO-0, art/studio.py): E selects the piece of the scene under the crosshair, Enter opens the director's
-// panel. The prompt, the selection and the camera go to play.py, whose gateway asks the configured provider for at
-// most three candidates and has the director evaluate each; those it draws are sources this page switches to in place,
-// the game untouched, exactly as [ and ] do. Nothing here admits, rejects or undoes: the panel's buttons ask play.py,
-// which does it through the director's ledger. A failure of the provider is shown, and the world goes on.
+// The studio (STUDIO-0, art/studio.py): Enter opens the director's panel. The prompt and the camera go to play.py, whose
+// gateway asks the configured provider for at most three candidates and has the director evaluate each; those it
+// draws are sources this page switches to in place, the game untouched, exactly as [ and ] do. Nothing here admits,
+// rejects or undoes: the panel's buttons ask play.py, which does it through the director's ledger. A failure of the
+// provider is shown, and the world goes on.
+//
+// The references (STUDIO-1): what is under the crosshair is named on screen (its kind and address, and its tag if it
+// has one). E makes it the target, R pins it as a reference (or unpins it), up to four; play.py gives each a tag
+// (@1, @2, ...) that names that object for as long as it runs, and says whether it is as tagged, changed, or gone. Each
+// tagged object is framed and labelled; the panel lists them. The game's reset is Backspace here (R pins).
 
 (function () {
   "use strict";
@@ -157,8 +162,8 @@
 
     // ---------------------------------------------------------------- the studio
     const token = document.body.getAttribute("data-studio") || "";
-    const studio = { open: false, sel: null, info: "", last: "", req: null };
-    const panel = $("studio"), promptEl = $("st-prompt"), mark = $("mark");
+    const studio = { open: false, refs: { target: null, pins: [], items: [] }, last: "", req: null, hover: null };
+    const panel = $("studio"), promptEl = $("st-prompt");
     const post = function (path, body) {
       return fetch(path, { method: "POST", headers: { "Content-Type": "application/json", "X-Studio-Token": token }, body: JSON.stringify(body || {}) })
         .then(function (r) { return r.json().catch(function () { return { ok: false, message: "HTTP " + r.status }; }); })
@@ -188,12 +193,27 @@
       for (const b of S.collision || []) { const t = enter(o, d, b.box); if (t < bt) { bt = t; best = null; } }
       return best;
     };
-    const markSel = function () {
-      const v = studio.sel && S.visuals.find(function (x) { return x.id === studio.sel.id; });
-      if (!v) { mark.style.display = "none"; return; }
+    // the object a box belongs to (art/studio_refs.py's rule): its own id, or the id of the object it extends
+    const ids = function () { if (!S._ids) S._ids = new Set(S.visuals.map(function (v) { return v.id; })); return S._ids; };
+    const rootOf = function (id) {
+      let r = id;
+      while (r.split(":").length >= 3 && ids().has(r.slice(0, r.lastIndexOf(":")))) r = r.slice(0, r.lastIndexOf(":"));
+      return r;
+    };
+    const addressOf = function (v) { const i = v.id.indexOf(":"); return (v.region === "*" ? "city" : v.region) + "/" + v.id.slice(0, i) + "/" + v.id.slice(i + 1); };
+    const objectBox = function (piece) {
+      let b = null;
+      for (const v of S.visuals) {
+        if (v.id !== piece && v.id.indexOf(piece + ":") !== 0) continue;
+        b = b ? [Math.min(b[0], v.box[0]), Math.min(b[1], v.box[1]), Math.min(b[2], v.box[2]), Math.max(b[3], v.box[3]), Math.max(b[4], v.box[4]), Math.max(b[5], v.box[5])] : v.box.slice();
+      }
+      return b;
+    };
+    // a box's frame on screen, or null when it is behind the eye (the view's own arithmetic; nothing here is state)
+    const frameOf = function (b) {
       const c = eye(), cp = Math.cos(c.pitch), f = [cp * Math.sin(c.yaw), Math.sin(c.pitch), -cp * Math.cos(c.yaw)], r = [Math.cos(c.yaw), 0, Math.sin(c.yaw)];
       const u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
-      const th = Math.tan(33 * deg), asp = canvas.clientWidth / canvas.clientHeight, b = v.box;
+      const th = Math.tan(33 * deg), asp = canvas.clientWidth / canvas.clientHeight;
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, seen = 0;
       for (let i = 0; i < 8; i++) {
         const p = [b[i & 1 ? 3 : 0] - c.x, b[i & 2 ? 4 : 1] - c.y, b[i & 4 ? 5 : 2] - c.z];
@@ -203,38 +223,79 @@
         const sx = (p[0] * r[0] + p[1] * r[1] + p[2] * r[2]) / (z * th * asp), sy = (p[0] * u[0] + p[1] * u[1] + p[2] * u[2]) / (z * th);
         x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
       }
-      if (!seen) { mark.style.display = "none"; return; }
-      const W = canvas.clientWidth, H = canvas.clientHeight, cl = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+      if (!seen) return null;
+      const W = canvas.clientWidth, H = canvas.clientHeight, cl = function (v, a, b2) { return Math.max(a, Math.min(b2, v)); };
       const L = cl((x0 + 1) / 2 * W, -2, W + 2), R = cl((x1 + 1) / 2 * W, -2, W + 2), T = cl((1 - y1) / 2 * H, -2, H + 2), B = cl((1 - y0) / 2 * H, -2, H + 2);
-      mark.style.display = R - L > 1 && B - T > 1 ? "block" : "none";
-      mark.style.left = L + "px"; mark.style.top = T + "px"; mark.style.width = (R - L) + "px"; mark.style.height = (B - T) + "px";
+      return R - L > 1 && B - T > 1 ? { L: L, T: T, W: R - L, H: B - T } : null;
     };
+    const marks = {};
+    const markRefs = function () {
+      const want = {};
+      for (const it of studio.refs.items || []) {
+        if (it.status === "gone") continue;
+        const b = objectBox(it.piece), fr = b && frameOf(b);
+        if (!fr) continue;
+        want[it.tag] = true;
+        let el = marks[it.tag];
+        if (!el) { el = document.createElement("div"); el.className = "mark"; el.appendChild(document.createElement("span")); document.body.appendChild(el); marks[it.tag] = el; }
+        el.classList.toggle("pin", it.role === "pin");
+        el.firstChild.textContent = it.tag + (it.role === "target" ? " target" : "") + (it.status === "changed" ? " (changed)" : "");
+        el.style.display = "block"; el.style.left = fr.L + "px"; el.style.top = fr.T + "px"; el.style.width = fr.W + "px"; el.style.height = fr.H + "px";
+      }
+      for (const t in marks) if (!want[t]) marks[t].style.display = "none";
+    };
+    const tagOf = function (piece) { const it = (studio.refs.items || []).find(function (x) { return x.piece === piece; }); return it ? it.tag : ""; };
+    const showRefs = function () {
+      const box = $("st-refs");
+      box.innerHTML = "";
+      const items = studio.refs.items || [];
+      if (!items.length) { box.textContent = "No target: the prompt is for the whole world. E makes what is under the crosshair the target; R pins a reference."; return; }
+      for (const it of items) {
+        const el = document.createElement("div");
+        el.className = "ref " + it.status;
+        const st = it.statement;
+        el.textContent = it.tag + " " + it.role + " · " + it.address + " · " + it.size_m.join(" × ") + " m" + (st ? " · line " + st.line : "")
+          + (it.status === "changed" ? " · changed since tagged" : it.status === "gone" ? " · gone: no such object in this scene" : "");
+        if (it.role === "pin") {
+          const b = document.createElement("button"); b.textContent = "unpin";
+          b.onclick = function () { post("/studio/unpin", { tag: it.tag }).then(function (r) { if (r.ok) { studio.refs = r.refs; showRefs(); } note(r, "unpinned " + it.tag); }); };
+          el.appendChild(b);
+        }
+        box.appendChild(el);
+      }
+    };
+    const setRefs = function (refs) { if (refs) { studio.refs = refs; showRefs(); } };
     const select = function () {
       const v = pickPiece();
-      studio.sel = v ? { id: v.id, material: v.material } : null;
-      studio.info = v ? v.id + " (" + v.material + ")" : "";
-      $("st-selection").textContent = v ? "Selected: " + studio.info : "No selection: the prompt is for the whole world";
-      say(v ? "selected " + studio.info : "nothing of the art under the crosshair; the selection is cleared");
-      if (v) get("/studio/piece?id=" + encodeURIComponent(v.id)).then(json).then(function (r) {
-        if (studio.sel && studio.sel.id === v.id && r.ok && r.selection) {
-          const st = r.selection.statement;
-          studio.info = r.selection.address + (st ? "  ·  line " + st.line + ": " + st.text : "");
-          $("st-selection").textContent = "Selected: " + studio.info;
-        }
-      }).catch(function () {});
+      return post("/studio/select", { piece: v ? v.id : null }).then(function (r) {
+        setRefs(r.refs);
+        const t = studio.refs.target;
+        say(r.ok ? (v ? "target " + t + ": " + addressOf({ id: rootOf(v.id), region: v.region }) : "nothing of the art under the crosshair; no target") : (r.code || "") + " " + (r.message || ""));
+        return r;
+      });
+    };
+    const pin = function () {
+      const v = pickPiece();
+      if (!v) { say("nothing of the art under the crosshair to pin"); return Promise.resolve({ ok: false }); }
+      const before = tagOf(rootOf(v.id)), was = (studio.refs.pins || []).indexOf(before) >= 0;
+      return post("/studio/pin", { piece: v.id }).then(function (r) {
+        setRefs(r.refs);
+        const t = tagOf(rootOf(v.id));
+        say(r.ok ? (was ? "unpinned " + before : "pinned " + t + ": " + addressOf({ id: rootOf(v.id), region: v.region })) : (r.code || "") + ": " + (r.message || ""));
+        return r;
+      });
     };
     const openPanel = function () {
       studio.open = true; panel.classList.add("open");
       if (document.pointerLockElement) document.exitPointerLock();
-      $("st-selection").textContent = studio.sel ? "Selected: " + studio.info : "No selection: the prompt is for the whole world";
+      showRefs();
       setTimeout(function () { promptEl.focus(); }, 0);
     };
     const closePanel = function () { studio.open = false; panel.classList.remove("open"); promptEl.blur(); };
     const note = function (r, what) { $("st-status").innerHTML = ""; const el = document.createElement("span"); el.className = r.ok ? "good" : "bad"; el.textContent = r.ok ? what : (r.code ? r.code + ": " : "") + (r.message || "failed"); $("st-status").appendChild(el); };
     const ask = function () {
       const c = eye();
-      post("/studio/ask", { prompt: promptEl.value, piece: studio.sel ? studio.sel.id : null,
-                            camera: { x: c.x, y: c.y, z: c.z, yaw_deg: c.yaw / deg, pitch_deg: c.pitch / deg } })
+      post("/studio/ask", { prompt: promptEl.value, camera: { x: c.x, y: c.y, z: c.z, yaw_deg: c.yaw / deg, pitch_deg: c.pitch / deg } })
         .then(function (r) { note(r, "asked: request " + (r.id || "")); studio.last = ""; });
     };
     const decide = function (what, rid, letter) {
@@ -253,6 +314,7 @@
       const key = JSON.stringify([st, cur.k]);
       if (key === studio.last) return;
       studio.last = key;
+      if (st.refs) setRefs(st.refs);
       const pv = st.provider || {};
       $("st-provider").textContent = pv.configured ? "provider: " + pv.model + " (" + pv.config + ")" : "no director: " + (pv.error || "play.py was started without --director");
       $("st-ask").disabled = !pv.configured;
@@ -274,6 +336,13 @@
           t.className = c.verdict === "CLEAN" ? "good" : c.verdict === "REFUSED" ? "bad" : "";
           el.appendChild(t);
           if (c.message) { const m = document.createElement("div"); m.className = "dim"; m.textContent = c.message.slice(0, 300); el.appendChild(m); }
+          if (c.touches) {
+            const tt = c.touches, m = document.createElement("div"), parts = [];
+            for (const tag of Object.keys(tt.tags).sort()) parts.push(tag + " " + tt.tags[tag]);
+            parts.push(tt.others_count ? tt.others_count + " other object" + (tt.others_count === 1 ? "" : "s") + " changed (" + tt.others.slice(0, 3).join(", ") + (tt.others_count > 3 ? ", …" : "") + ")" : "no other object changed");
+            if (tt.added_count) parts.push(tt.added_count + " new (" + tt.added.slice(0, 3).join(", ") + (tt.added_count > 3 ? ", …" : "") + ")");
+            m.className = tt.others_count ? "bad" : "dim"; m.textContent = "touches: " + parts.join(" · "); el.appendChild(m);
+          }
           const btn = function (label, fn, on) { const b = document.createElement("button"); b.textContent = label; b.disabled = !on; b.onclick = fn; el.appendChild(b); };
           btn("Show", function () { pick(c.slot); }, c.slot !== null);
           btn("Admit", function () { decide("admit", r.id, c.letter); }, c.slot !== null && c.verdict === "CLEAN" && !c.decided);
@@ -291,7 +360,7 @@
     // the hooks a still, a walk-through or a test uses
     window.PLAY = {
       get renderer() { return R; }, get scene() { return S; }, get state() { return s; }, get world() { return world; },
-      live: cur, sim: Sim, studio: studio, select: select,
+      live: cur, sim: Sim, studio: studio, select: select, pin: pin, hover: function () { return studio.hover; },
       pause: function (on) { paused = !!on; },
       slot: pick,
       view: function (name, time) { goView(name); render(vcam, time || 0, s); },
@@ -337,12 +406,13 @@
         return;
       }
       if (e.code === "KeyE" && mode === "play") select();
+      if (e.code === "KeyR" && mode === "play") { pin(); return; }
       if (e.code === "Enter") { e.preventDefault(); openPanel(); return; }
       keys[e.code] = true;
       const n = parseInt(e.key, 10);
       if (n >= 1 && n <= views.length) { goView(views[n - 1]); overlay.style.display = "none"; }
       if (e.code === "Tab") { mode = "play"; label = "play"; e.preventDefault(); }
-      if (e.code === "KeyR") pending.reset = true;
+      if (e.code === "Backspace") { pending.reset = true; e.preventDefault(); }
       if (e.code === "Space") { pending.jump = true; e.preventDefault(); }
       if (e.code === "BracketLeft") step(-1);
       if (e.code === "BracketRight") step(1);
@@ -365,11 +435,14 @@
         }
       } else acc = 0;
       render(mode === "play" ? eyeOf(s) : vcam, (now - t0) / 1000, s);
-      markSel();
+      markRefs();
+      const hv = pickPiece(), hroot = hv ? rootOf(hv.id) : null;
+      studio.hover = hv ? { piece: hroot, address: addressOf({ id: hroot, region: hv.region }), tag: tagOf(hroot) } : null;
       const info = cur.slots[cur.k] || {}, sv = info.served || {};
       $("hud").textContent = (S.title || brief) + "  ·  " + label + "  ·  cell " + Math.floor(s.x / S.grid.cell) + "," + Math.floor(s.z / S.grid.cell)
-        + "  ·  hits " + s.score + "\n" + views.map(function (v, i) { return (i + 1) + " " + v; }).join("  ") + "  ·  Tab play  ·  WASD, mouse, Space, R  ·  E select, Enter director"
-        + (studio.sel ? "\nselected " + studio.info : "")
+        + "  ·  hits " + s.score + "\n" + views.map(function (v, i) { return (i + 1) + " " + v; }).join("  ") + "  ·  Tab play  ·  WASD, mouse, Space, Backspace reset  ·  E target, R pin, Enter director"
+        + "\nunder the crosshair: " + (studio.hover ? studio.hover.address + (studio.hover.tag ? "  " + studio.hover.tag : "") : "nothing of the art")
+        + (studio.refs.target ? "  ·  target " + studio.refs.target : "") + ((studio.refs.pins || []).length ? "  ·  pins " + studio.refs.pins.join(" ") : "")
         + "\nsource [" + cur.k + "] " + (info.label || "") + (sv.verdict ? "  ·  " + sv.verdict : "")
         + "  ·  scene " + cur.sha.slice(0, 12) + (cur.slots.length > 1 ? "  ·  [ ] steps through the " + cur.slots.length + " sources" : "")
         + "\nmovement and collision: the graybox's simulation against C  ·  live: play.py v" + cur.version
