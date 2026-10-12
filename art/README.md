@@ -165,7 +165,7 @@ Keep `serve.py` and the existing `graybox/` boundary unchanged."*
 python art/play.py plaza-night           # compiles the scene, holds it to the art checks, serves it; a browser opens
 python art/play.py plaza-night --intent art/rounds/plaza-cantilevers/D.intent --intent art/rounds/plaza-cantilevers/E.intent
                                          # the brief, and each candidate as the director evaluates it; [ and ] step through them
-python art/play.py --selftest            # the live loop without a browser: LIVE SELFTEST 17/17
+python art/play.py --selftest            # the live loop without a browser: LIVE SELFTEST 18/18
 ```
 
 - **The launch.** It compiles the brief through `dress.py` and runs the art checks on the scene. A scene that fails
@@ -258,6 +258,7 @@ block a player is cover, and goes into the graybox map.
 | `play.py` | the native plaza's launcher: the sources (the brief, candidate intents) compiled, checked and served beside the graybox's simulation, and compiled again when their files change; the studio's endpoints; its own self-test and the studio's |
 | `studio_refs.py` | STUDIO-1: what a tagged object is, its geometry in metres, its nearest wall, and how two stand (measured from the scene's boxes; a facing marked inferred) |
 | `director/durable.py` | B1: the content path's writes made to survive a killed process (an append flushed; a file replaced whole by a flushed temporary and a write-through rename); the death points `art/director.py crashtest` kills at |
+| `studio_app.py` | B1: the desktop studio's supervisor (a job that ends everything it starts, play.py without a console, Edge in application mode, stopping when the window closes) and its `shortcut`; `selftest` with a stand-in browser |
 | `studio_txn.py` | the studio's change transaction as a reference (docs/STUDIO-CONTRACT.md): the promotion journal's form and grammar and `Recover(J, P, F)`; `check` holds it over every enumerated crash point, `selftest` plants wrong decisions, `recover ROOT` reads a studio and prints what its stub must do; nothing here launches or writes a studio |
 | `studio.py`, `STUDIO.md` | STUDIO-0: the director gateway (a provider's request and response, its limits and refusals, the candidates evaluated, admitted, rejected and undone through the ledger; `probe` and `report`), and its contract |
 | `providers/` | the gateway's providers: `scripted.py` (fixed variations of a selected canopy, not a model), `claude_code.py` (Claude through Claude Code's CLI, `claude -p`, on its own login; tools off, no session kept) and `anthropic_messages.py` (Claude through the Anthropic Messages API on structured outputs, its key in the environment, its model the configuration's, `claude-opus-5-5`), each with its configuration; `director_prompt.py`, what both model providers tell their models |

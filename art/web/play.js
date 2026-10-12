@@ -408,6 +408,8 @@
     const alive = function () { post("/studio/alive", {}).catch(function () {}); };
     alive();
     setInterval(alive, 5000);
+    // and its last word when the window goes (a reload says it too, then speaks again at once; the supervisor waits)
+    window.addEventListener("pagehide", function () { try { navigator.sendBeacon("/studio/bye", token); } catch (e) { /* nothing to do */ } });
 
     // play: the fixed tick, as the graybox runs it
     const keys = {}, pending = { reset: false, jump: false }, refusals = {};

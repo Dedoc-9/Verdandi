@@ -222,9 +222,27 @@ world but what the director judged.
 Every admission is written so that a process killed at any point leaves the brief and its ledger at the parent or
 the child, never between: `art/director.py`'s docstring says how, and `python art/director.py crashtest` kills an
 admission at each of its writes and recovers it (14 cases). Every director command, and play.py's start, recovers
-first. play.py answers `GET /healthz` (`ready`, `version`, `page`, `page_age_s`, `pid`), takes the page's heartbeat on
-`POST /studio/alive` (every 5 s) and stops on `POST /studio/shutdown`, SIGTERM or Ctrl+Break; it exits 0 stopped, 70
-when its port is taken (bound exclusively on Windows), 75 when recovery refuses.
+first. play.py answers `GET /healthz` (`ready`, `version`, `page`, `page_age_s`, `bye_age_s`, `pid`), takes the page's
+heartbeat on `POST /studio/alive` (every 5 s) and its goodbye on `POST /studio/bye` (a `pagehide` beacon whose body is
+the token, since a beacon cannot set a header), and stops on `POST /studio/shutdown`, SIGTERM or Ctrl+Break; it exits
+0 stopped, 70 when its port is taken (bound exclusively on Windows), 75 when recovery refuses.
+
+## The desktop studio (B1)
+
+```
+python art\studio_app.py shortcut --director art\providers\claude_code.json    once: a desktop icon, "Verdandi Studio"
+```
+
+The icon starts `pythonw art\studio_app.py`, the supervisor: it joins a job object of its own (so play.py, the
+provider and the browser end with it), starts play.py on a free port without a console, opens Edge in application mode
+with a profile of its own, and stops everything when the window is closed (the page's goodbye, not followed within 3 s
+by its speaking again, as a reload does), when the page has not spoken for three minutes, or when play.py ends. A second
+click opens another window on the same studio. Errors are shown in a dialog and kept in
+`%LOCALAPPDATA%\VerdandiStudio\state\logs\`. `shortcut` keeps the shell's non-secret variables for the icon
+(`VERDANDI_CLAUDE`, `VERDANDI_DIRECTOR_MODEL`, `VERDANDI_DIRECTOR_API`); a key never: for the API provider,
+`ANTHROPIC_API_KEY` must be a user environment variable. Claude Code's native install
+(`%USERPROFILE%\.local\bin\claude.exe`) is found without any. `python art/studio_app.py selftest` holds the lifecycle
+with a stand-in browser (7 cases).
 
 ## What is not shown
 

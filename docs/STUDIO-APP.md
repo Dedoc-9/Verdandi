@@ -515,10 +515,16 @@ that says what a tag names and how to pin it); the API provider on structured ou
 configuration (step 4; a forced tool choice now refused by the self-test's mock as by the API); the request record's
 basis (the validators' and the configuration's sha256s); play.py's `/healthz`, `/studio/alive`, `/studio/shutdown`,
 signals, exit codes, `--root` forwarded to the `--emit` child, and its port bound exclusively on Windows (step 1);
-the page's heartbeat; the five probes of §8 under `tools/probe/`. Still to build, after probes 1 and 2 on his machine:
-the supervisor (step 6), the stub (step 7, the contract's R0–R8, R14, R15), the layout and the shortcut (step 8), the
-CLI's extra flags (step 5, held back: the CLI works on his machine as it is, and a flag his version refuses would stop
-it).
+the page's heartbeat; the five probes of §8 under `tools/probe/`. **The second part, after probes 1 and 2 on his
+machine** (both HELD; Edge outlived its window by more than 20 s, twice, which the plan foresaw): the supervisor
+`art/studio_app.py` (step 6: a job it joins so that everything it starts ends with it; play.py without a console; Edge in
+application mode with its own profile; stopping on the page's goodbye beacon, a three-minute silence, or play.py's end;
+a second start opening another window; a dialog and a log for errors; `selftest`, 7 cases with a stand-in browser) and
+the shortcut (step 8: `python art\studio_app.py shortcut`, a `.lnk` made with the inbox WScript.Shell). **Moved to
+B2's first step**: the stub (step 7) and the per-user layout of generations, since the checkout is B1's one generation
+and the reviewed scope says *"The studio does not need its self-updater to update itself in B1. That is B2."*; the
+stub's Rust also cannot be compiled for Windows in the build container. Held back: the CLI's extra flags (step 5: the
+CLI works on his machine as it is, and a flag his version refuses would stop it).
 
 **Components.** New: `shell/studio_stub.rs` (the stub; std-only, raw FFI, built by hand like `win32.rs`, never by the
 gate), `art/studio_app.py` (the supervisor), `art/studio_launch.md` (the contract); changed: `art/play.py`

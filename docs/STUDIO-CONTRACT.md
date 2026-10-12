@@ -200,7 +200,10 @@ valid records say were committed and that verify, and the person chooses one or 
 choice is recorded as a promotion; if it is not, the damaged file is kept aside and a new journal begins with the
 choice and the old file's sha256. Under the process-kill model, SAFE is never the answer (§8).
 
-Rules R0–R8, R14 and R15 are what B1's stub needs (one generation, no promotion); R9–R13 come with B2.
+The stub and all sixteen rules come with B2's first step, where a second generation first exists: B1's icon starts
+the supervisor (`art/studio_app.py`) in the owner's checkout, which is the one generation there is, and has no pointer
+or journal to read (the reviewed scope of 2026-10-12: *"The studio does not need its self-updater to update itself in
+B1. That is B2."*).
 
 ## 8. What the reference measured, and what it does not show
 

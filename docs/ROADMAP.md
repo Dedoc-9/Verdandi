@@ -3686,6 +3686,26 @@ committed) 11/11 for STUDIO-1's flows and 8/8 for B1's (the heartbeat heard, the
 crash-safe path, the tags back after the studio was killed and started again). Not yet: the supervisor, the stub, the
 layout and the shortcut, after probes 1 and 2 on his machine; the live API (no key here).
 
+**B1, the second part (2026-10-12).** 0211 applied as tree a3b18b17, as predicted; on his machine `python
+art\director.py crashtest` PASSED, 14 of 14 (the first run of the MoveFileExW write-through path and of `_commit` on
+Windows: every admission killed at a death point recovered to the parent or the child); the gate 251 rows / 0 fail;
+pushed 7234fab..30fe6ef. The probes: 2, the job object, HELD (nested in his shell's own job, `AssignProcessToJobObject`
+succeeded and play.py, a provider and its child were gone 0.2 s after the job closed); 1, Edge in application mode, HELD
+on its kill criterion (pointer lock engaged, W A S D walked, E framed the canopy: his answers, twice) with one case
+BROKEN twice, as the plan foresaw: Edge's process was still running 20 s after the page's last heartbeat, so closing
+the window does not end the browser. Built, off the gate: `art/studio_app.py`, the supervisor, which joins a job of its
+own so that play.py, the provider and Edge end with it; starts play.py on a free port without a console; opens Edge
+with its own profile; stops on the page's goodbye beacon (`pagehide`, not followed within 3 s by the page speaking
+again, as a reload does), on three minutes of silence (a minimized window's timers slow to about one a minute), or on
+play.py's end; opens another window when started twice; says its errors in a dialog and a log; and `shortcut`, which
+makes the desktop icon. `/studio/bye` in play.py; the page's beacon; Claude Code's native install found without
+`VERDANDI_CLAUDE`; probe 1's `--job` case (Edge started in a job, every one of its processes gone when the job closes).
+MEASURED in the container: STUDIO APP SELFTEST 7/7 with a stand-in browser that outlives its window (a reload, a
+second start, a silent page, a page that never speaks, play.py that cannot start or is stopped elsewhere), its two
+plants caught (the lingering window left running; a reload taken for a close); LIVE SELFTEST 18/18. Moved to B2's
+first step: the stub and the layout of generations (B1's one generation is his checkout; *"The studio does not need its
+self-updater to update itself in B1. That is B2."*). Not yet measured: the icon on his machine, Edge inside the job.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

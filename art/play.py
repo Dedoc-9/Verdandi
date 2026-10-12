@@ -230,6 +230,7 @@ class Live:
         self.version, self.compiled_ms, self.stopping = 0, 0, False
         self.stop = threading.Event()        # set by POST /studio/shutdown, SIGTERM or SIGBREAK
         self.page_seen = None                # when the page last said it was alive (POST /studio/alive)
+        self.page_bye = None                 # when the page last said it was going (POST /studio/bye, its pagehide beacon)
         slots = slots if slots is not None else compile_slots(brief, art_path, self.intents)
         self.served = [s if s["ok"] else None for s in slots]
         self.latest = slots
@@ -517,6 +518,7 @@ def server(live, port=0):
                 return self.send(200, json.dumps({"ready": bool(s0 and s0.get("ok")), "version": os.environ.get("VERDANDI_GENERATION", "dev"),
                                                   "brief": brief, "scene_sha256": s0["sha"] if s0 else "", "page": live.page_seen is not None,
                                                   "page_age_s": None if live.page_seen is None else round(time.time() - live.page_seen, 1),
+                                                  "bye_age_s": None if live.page_bye is None else round(time.time() - live.page_bye, 1),
                                                   "pid": os.getpid()}, sort_keys=True).encode("utf-8"), "application/json")
             if path in FILES:
                 f, ctype = FILES[path]
@@ -533,10 +535,18 @@ def server(live, port=0):
             # the studio's requests: only from the page this server served (its token, in a header a page of another
             # origin cannot send without a preflight this server never answers), and only to this host by name
             path = self.path.partition("?")[0]
-            if path not in STUDIO_POSTS:
-                return self.send(404, b"not found", "text/plain")
             host = self.headers.get("Host", "")
             port_ = self.server.server_address[1]
+            if path == "/studio/bye":
+                # the page's pagehide beacon: navigator.sendBeacon cannot set a header, so the token is its whole body
+                n = int(self.headers.get("Content-Length", "0") or 0)
+                body = self.rfile.read(n) if 0 < n <= 64 else b""
+                if host not in ("127.0.0.1:%d" % port_, "localhost:%d" % port_) or body.decode("ascii", "replace") != live.token:
+                    return self.send(403, b"forbidden", "text/plain")
+                live.page_bye = time.time()
+                return self.send(204, b"", "text/plain")
+            if path not in STUDIO_POSTS:
+                return self.send(404, b"not found", "text/plain")
             if host not in ("127.0.0.1:%d" % port_, "localhost:%d" % port_) or self.headers.get("X-Studio-Token") != live.token:
                 return self.send(403, b"forbidden", "text/plain")
             n = int(self.headers.get("Content-Length", "0") or 0)
@@ -864,6 +874,19 @@ def lifecycle(tmp, row):
         row("lifecycle: /healthz says ready, the version and whether the page has spoken; /studio/alive is the page's word",
             before is False and a == 200 and after is True and h.get("version") == "dev" and h.get("brief") == "plaza-night" and h.get("pid") == p.pid,
             "page %s, then %s after one POST; version %s; pid %s" % (before, after, h.get("version"), h.get("pid")))
+        def beacon(body):
+            q = urllib.request.Request(base + "/studio/bye", data=body, method="POST", headers={"Content-Type": "text/plain;charset=UTF-8"})
+            try:
+                with urllib.request.urlopen(q, timeout=10) as r:
+                    return r.status
+            except urllib.error.HTTPError as e:
+                return e.code
+        bad_bye = beacon(b"not-the-token")
+        none_yet = json.loads(get("/healthz")[1]).get("bye_age_s")
+        good_bye = beacon(token.encode("ascii"))
+        bye = json.loads(get("/healthz")[1]).get("bye_age_s")
+        row("lifecycle: the page's goodbye beacon (its token as the body, as sendBeacon sends it) is heard; another body refused",
+            bad_bye == 403 and none_yet is None and good_bye == 204 and bye is not None, "another body %d; the token %d; bye_age_s %s" % (bad_bye, good_bye, bye))
         second = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
         row("lifecycle: a second server on the same port refuses to start (exit 70)", second.returncode == EXIT_NO_SERVE and p.poll() is None,
             "exit %d: %s" % (second.returncode, (second.stderr.strip().splitlines() or [""])[-1][:90]))

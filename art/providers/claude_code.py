@@ -67,6 +67,9 @@ def executable():
             raise Fail("VERDANDI_CLAUDE names %s, which is not a file" % exe)
     else:
         exe = shutil.which("claude") or ""
+        native = os.path.join(os.path.expanduser("~"), ".local", "bin", "claude.exe")
+        if (not exe or exe.lower().endswith((".cmd", ".bat", ".ps1"))) and os.name == "nt" and os.path.isfile(native):
+            exe = native             # where Claude Code's native installer puts it: found without VERDANDI_CLAUDE (a desktop icon has no shell's variables)
         if not exe:
             raise Fail("claude is not on the PATH: install Claude Code, or set VERDANDI_CLAUDE to its executable")
     low = exe.lower()
