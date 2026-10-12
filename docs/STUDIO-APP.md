@@ -7,7 +7,9 @@ source, oracle file or registered entry is touched by it. Research was done firs
 cited where they bear weight), the architecture was decided second, and this document was written third. The
 inventory it stands on was read from the source at HEAD `58917b7` (2026-10-12), with `path:line` references; the
 web sources were read on 2026-10-12 and are marked VERIFIED (a primary source, cited) or INFERRED (an inference from
-one).
+one). **The interfaces and the change transaction are frozen in [`STUDIO-CONTRACT.md`](STUDIO-CONTRACT.md)** (the
+same day, after a second review); where the two differ, the contract governs, and this plan keeps the research and
+the reasons.
 
 **His direction, in his words.** *"The next objective should be a runnable Verðandi Studio, not another narrowly
 scoped rung."* *"The shift is from proving individual capabilities to building an executable application that can
@@ -263,14 +265,14 @@ content ledger share one canonical form and one chain rule (DIRECTOR-0's), two f
 ```text
  VerdandiStudio.exe   the stub: std-only Rust, raw Win32 FFI (as shell/win32.rs), outside every version directory
    │  owns   a job object (KILL_ON_JOB_CLOSE | DIE_ON_UNHANDLED_EXCEPTION); the active pointer; the promotion journal's tail
-   │  reads  studio\active.json  (which generation, its tries counter, the journal seq it was set at)
+   │  reads  studio\promotions.log and studio\active.json, and decides by the contract's §7 (the pointer a cache of the journal)
    │  never  executes code from staging; never replaced by a transaction it is part of (replaced by rename-aside, §5.6)
    ▼
  versions\<hash>\python\pythonw.exe  versions\<hash>\repo\art\studio_app.py      the supervisor: std-lib Python, one per generation
    │  starts  art\play.py --port N --root <projects\...> --director <config>   (in the job; cwd outside versions\)
    │  opens   msedge.exe --app=http://127.0.0.1:N/ --user-data-dir=<state\edge> …  (or chrome.exe; later WebView2)
    │  watches the browser PID and the page's heartbeat; stops the server with /studio/shutdown, then CTRL_BREAK, then the job
-   │  runs    the self-change transaction (§5) for candidates; launches a candidate in a fresh job; blesses or rolls back
+   │  runs    a candidate's lifecycle up to `promote` (the Try in a fresh job); the stub activates, blesses or rolls back
    ▼
  art\play.py ──► art\studio.py (the gateway) ──► a provider command (claude.exe | python anthropic_messages.py | scripted)
    │                 │                              in its own process group, inside the job, no tools, stdin only
@@ -286,16 +288,16 @@ thing, each with one writer):
 | `bin\VerdandiStudio.exe` | the stub | the installer, or a stub transaction (§5.6) | everything |
 | `runtime\python-3.x\` | the embeddable interpreter | a runtime transaction (rare) | version promotions |
 | `versions\<content-hash>\` | one immutable generation: the repository tree it was built from, its built binaries (`shell`, `conform`), its manifest (sources' sha256s, the build's rustc version, the tests' results) | the supervisor's staging, then never | until garbage-collected (never the active or the previous blessed one) |
-| `studio\active.json`, `studio\promotions.log` | the pointer and the journal | the stub (pointer), the supervisor (journal) | everything; the journal is the authority, the pointer a cache rebuilt by replay |
+| `studio\active.json`, `studio\promotions.log` | the pointer and the journal | the stub (the pointer and the activation records), the active supervisor (the lifecycle records and `promote`) | everything; the journal is the authority, the pointer a cache checked against it (the contract, §5) |
 | `projects\<name>\art\{briefs,ledger}\`, `projects\<name>\tags.json`, `projects\<name>\build\studio\` | the user's worlds: the authoritative text, the content ledger, the tags, the records | the director (through `--root`), the gateway | every promotion and rollback (clause C) |
 | `state\edge\`, `state\logs\`, `state\diagnostics\` | the private browser profile; logs; a diagnostics bundle | the browser; the supervisor | disposable |
 
 **Trust boundaries.** The model sees a request on stdin and answers on stdout; it holds no handle to any file above
 (the ocap reading of clause A). The gateway reads the answer whole or refuses it whole. The director judges content
 candidates; the supervisor judges source candidates; **only a person admits**, by a POST the page sends with its
-token to the running supervisor — never by anything a provider wrote. The stub holds the only capability to move the
-pointer, and the supervisor the only one to append the journal; a candidate's processes live in a job of their own
-and die with it. The 58 pinned sources, `oracle/`, `verify/`, the charter block, `graybox/serve.py` and the stub's
+token to the running supervisor — never by anything a provider wrote. The stub alone moves the pointer and writes the
+commit; the active supervisor writes the lifecycle up to `promote`, and nothing while a promotion is open (the
+contract, §2 and §5); a candidate's processes live in a job of their own and die with it. The 58 pinned sources, `oracle/`, `verify/`, the charter block, `graybox/serve.py` and the stub's
 own source are **never-grantable** footprints for a source candidate, as `play/…` is never grantable for a content
 candidate (`art/director/scope.py:32-35`); a change to them is the owner's, through his gate, by his push.
 
@@ -351,7 +353,7 @@ Fresh(C, B_now)   := B_C is B_now, or every member of B_now that differs is outs
 Admitted(C, B_C)  := a person said so through the supervisor, shown the diff, footprint, tests, basis, identity (T4)
 Integrity(G)      := G's manifest digest verifies and every file G names hashes as the manifest says            (T2)
 Healthy(G)        := G's supervisor answered /healthz with version is G.hash within T, and the page spoke once  (T2)
-Recoverable(P)    := P exists, Integrity(P), and J holds its BLESSED                                              (T5)
+Recoverable(P)    := P exists, Integrity(P), and J holds its blessed (or installed) record                       (T5)
 Promote(C)        := Built(C) and Checked(C, B_C) and not Leak(C) and Fresh(C, B_now) and Admitted(C, B_C)
                      and Integrity(G(C)) and Recoverable(A)
 Failed(C)         := not Promote(C)
@@ -365,13 +367,15 @@ Three claims, kept apart because their obligations differ (a reviewer's correcti
    admission: `A' is G(C) ⇒ Promote(C)`, and after it `P' is A`, `D' ≡ D`, `(∀ o ∉ cl(F(C))) o' == o`, and the tries
    counter is set. `tries = 3` is a policy, not a clause; the clause is that a counter exists and is decremented by
    rename before each launch.
-3. **Recovery correctness.** After a crash at any enumerated point, recovery (idempotent: run twice, the same end)
-   ends in a state the journal allows, each with its own next action: `A` unchanged (nothing to do); `G(C)` staged
-   and not active (garbage, or review again); `G(C)` active and unblessed with `tries > 0` (launch); `G(C)` blessed
-   (done); rolled back to `P` (say why). The journal decides, never the last pointer seen: `pointer.seq < record.seq`
-   ⇒ redo the recorded step; a pointer naming a generation with no `PROMOTE_END` is *invalid*, and the rule for an
-   invalid pointer is **recover from `J`** (the last `PROMOTE_END` whose generation has `Integrity`, else the last
-   `BLESSED`), recorded as `RECOVERED {reason}`; `active ??= last BLESSED` applies only when the pointer is missing.
+3. **Recovery correctness.** After a crash at any enumerated point, recovery is `Recover(J, P, F)`, the decision
+   table of the contract's §7: the journal, the pointer and the files read together, the first rule that holds
+   applied, its writes made record-before-pointer, until it runs a generation or stops in SAFE for a person. The
+   commit point is the durable `blessed` record: before it, a promotion continues its trial only while the candidate
+   verifies, its evidence is intact and a try remains (`boot` records count them), and otherwise rolls back to the
+   committed generation; after it, nothing undoes it. The pointer is a cache: `P ??= target` when it is missing,
+   rebuilt and recorded when unreadable or behind, and **never followed** when it names what the journal did not set
+   (SAFE). Held by `python art/studio_txn.py check`: 41,568 crash states, 195,376 crashes inside recovery, 0 failures
+   (MEASURED in the container; the contract, §8).
 
 **Three levels of consistency, claimed separately.** *Process-kill consistency*: recovery works after the
 application is terminated at each enumerated point — this is what the harness measures. *OS-crash consistency*:
@@ -442,12 +446,18 @@ record dropped on load, any other fault refuses).
 | 5. Check | `CHECKED {hash, basis, suites: {name: result, seconds}}` | the off-gate suites run inside the candidate's own job, at low integrity, against the staged tree, with scratch roots, timeouts and output limits; the basis (the validators' own hashes, the toolchain, the configuration) is recorded with the results, and a result is reused for another candidate only when its whole basis `is` the same (a verifying trace, never a bare generation hash); a candidate touching a pinned source, `oracle/` or `verify/` is marked `OWNER-GATE`: the owner runs the gate, the supervisor never does | supervisor | re-run; results are idempotent |
 | 6. Launch and health | `LAUNCHED {hash, port}` → `HEALTHY {hash, ms}` or `DEAD {hash, exit, tail}` | the candidate's own supervisor is started from `versions\<hash>\` in a fresh job, cwd outside it, on a second port; it must answer `/healthz` with `{"version": hash, "ready": true}` within T seconds; the page can open it in a second window ("try the candidate"); the candidate cannot see the pointer or the journal | the *old* supervisor | the job dies with the supervisor; `DEAD` is appended at next start if `LAUNCHED` has no end |
 | 7. Review | — | the page shows: the diff, the footprint and what the check realized, the suites' results and times, the generation's hash and the manifest, the launch's health, and the model's rationale; Admit and Reject buttons; nothing else is enabled while a candidate is unreviewed | the designer | nothing moves |
-| 8. Promote | `PROMOTE_BEGIN {hash, from: A, basis, tries}` → pointer rename → `PROMOTE_END {hash}` | only on Admit, and only while `Fresh(C, B_now)` (a basis that moved in a dependency the candidate recorded is `SOURCE-STALE`: validate again or discard) and `Integrity(G(C))` (the manifest and every file it names re-hashed now, the time measured and reported, never assumed small): the supervisor writes `studio\active.<hash>+3.json.tmp` with `{hash, seq}`, fsyncs it, and moves it over `studio\active.json` with `MoveFileExW(MOVEFILE_REPLACE_EXISTING \| MOVEFILE_WRITE_THROUGH)` (ctypes; never `os.replace`); then asks the stub to restart it: the stub closes the old job (the old supervisor, its server, its browser), reads the pointer, decrements the tries by rename, launches the new generation | supervisor then stub | `PROMOTE_BEGIN` without `PROMOTE_END` and `pointer.seq < seq` ⇒ redo the rename; otherwise the rename already happened |
-| 9. Bless or fall back | `BLESSED {hash}` or `ROLLBACK {from, to: P, reason}` | the new generation's supervisor must become `Healthy` within T seconds **and** serve the page once (a `/studio/alive` POST from the page with its token); the stub then strips the tries counter (rename) and the supervisor appends `BLESSED`; a dead or silent generation exhausts its tries and the stub launches `P` and appends `ROLLBACK` | stub and supervisor | tries in the filename survive a crash; `P` is never garbage-collected |
-| 10. Recover | `RECOVERED {reason, to}` when anything was done | at every start the stub replays `J`; a **missing** pointer gets `active ??= last BLESSED`; an **invalid** one (torn, a generation without `PROMOTE_END`, a manifest that does not verify) is replaced by what `J` allows — the last `PROMOTE_END` whose generation verifies, else the last `BLESSED` — and said; `Integrity` is checked before any launch or recovery that relies on a generation; tmp directories and generations older than `P` are garbage-collected; the first page shows what was done | stub | idempotent |
+| 8. Promote | `promote {gen, from, basis, tries}` → `activate {gen}` → pointer rename | only on Admit, and only while `Fresh(C, B_now)` (a basis that moved in a dependency the candidate recorded is `SOURCE-STALE`: validate again or discard): the supervisor appends `promote` (the admission) and exits; the stub closes the old job and, by the contract's R9, checks `Integrity(G(C))` (the manifest and every file it names re-hashed now, no unnamed file, the time measured and reported), the evidence and `Integrity(A)`, appends `activate`, then writes the pointer `{gen, seq}` by a temporary file, a flush and `MoveFileExW(MOVEFILE_REPLACE_EXISTING \| MOVEFILE_WRITE_THROUGH)`; a failed check appends `aborted` instead | supervisor, then stub | `activate` durable and the pointer behind ⇒ the pointer is moved on (R8); neither ⇒ the checks again (R9, R10) |
+| 9. Trial and commit | `boot {gen, left}` …, then `blessed {gen}` or `rollback {from, to, reason}` | before each launch on trial the stub appends `boot` (the tries are the count of these records); the candidate must answer the stub's `GET /healthz` with its own hash and `ready` within T seconds and report that the page spoke (a `/studio/alive` POST with its token); then the stub appends `blessed` — **the commit point**; a dead or silent candidate is killed with its job, and the next decision boots it again or, with no try left or a failed check, appends `rollback` and moves the pointer back | stub | before `blessed`: the trial goes on or rolls back (R11, R12); after it: committed, never undone |
+| 10. Recover | `recovered {reason}` when anything was repaired | every start, and every exit of a generation, is `Recover(J, P, F)` (the contract's §7): a torn tail set aside and truncated; a pointer missing, unreadable or behind rebuilt; a pointer naming what the journal never set, a damaged middle line, or no committed generation that verifies ⇒ SAFE, and a person chooses; tmp directories and generations other than the committed one, the one committed before it and an open candidate are garbage-collected; the first page shows what was done | stub | idempotent; 0 failures over the check's crash states |
 
-**Atomicity.** One rename per promotion, one per bless, one per fallback; no file of a generation is ever rewritten.
-**Durability.** The journal is forced before the pointer; the pointer is moved write-through; a generation's files are
+The record names are the contract's (`docs/STUDIO-CONTRACT.md` §5). This table's first version had `PROMOTE_BEGIN`,
+`PROMOTE_END`, a bless written by the new generation's own supervisor, the tries in the pointer's filename, and a
+recovery to "the last `PROMOTE_END`", which could restart an uncommitted generation as if it were committed; the
+second review of 2026-10-12 found the ambiguity, and the contract removes it.
+
+**Atomicity.** One durable append commits a promotion (`blessed`); the pointer's renames are cache updates; no file of
+a generation is ever rewritten. **Durability.** The journal is forced before the pointer; the pointer is moved
+write-through; a generation's files are
 fsynced before `STAGED` (OSTree's rule). **Provenance.** Every candidate carries its request and response hashes, its
 base, its patch, its footprint, its suites, its build inputs (sources' sha256, rustc's version) and its hash;
 `versions\<hash>\manifest.json` is the artifact's identity, and the stub refuses to activate a generation whose
@@ -518,7 +528,8 @@ and `play.html` (the heartbeat; tags in the prompt box; click a tag to insert it
    appends with flush and fsync and the file is pre-created at genesis; a torn last line is reported as
    `LEDGER-TORN` with the repair named (truncate to the last whole line, which the chain then verifies), never
    repaired silently. Used by `cmd_admit`, `cmd_refuse`, `cmd_rebase`, the studio's records.
-3. Tags persisted: `projects\<brief>\tags.json` (DIRECTOR-0 canonical form, written durably), loaded at start,
+3. Tags persisted, by the contract's §9 (a counter that only grows; a gone object's tag kept apart and refused when
+   named; a new project from `@1`): `projects\<brief>\tags.json` (DIRECTOR-0 canonical form, written durably), loaded at start,
    bound to the scene hash as today; the panel's prompt box shows the active tags; clicking a tag inserts it; a
    `STUDIO-REFERENCE` refusal names the tag most likely meant (the nearest by kind and distance); the owner's
    numbering friction is answered by display, the rule `tag ??= next()` unchanged.
@@ -527,14 +538,17 @@ and `play.html` (the heartbeat; tags in the prompt box; click a tag to insert it
    the old (`tool_choice: tool` → 400, as the real API does); prompt caching breakpoints on the system text (the
    art reference, 1 h) and the statement list (5 min), the varying part last; `usage` reports cache reads.
 5. The CLI provider: the flags above; `--bare` as an opt-in when `ANTHROPIC_API_KEY` is set (the shippable path);
-   `cache_read_input_tokens` recorded.
+   `cache_read_input_tokens` recorded. The gateway's request record gains the sha256 of the director's and the
+   scope's sources and of the provider's configuration file (the envelope's two gaps, the contract's §3); the model
+   is the configuration's field, its default the owner's ruling.
 6. The supervisor: find Edge (App Paths in the registry via `winreg`, then the two conventional paths), else Chrome,
    else refuse with `STUDIO-NO-BROWSER` and the WebView2 note; start `play.py` on a free fixed port with
    `--root projects\<name>`; launch `msedge.exe --app=… --user-data-dir=state\edge --window-size=… --no-first-run
    --no-default-browser-check`; wait on the browser PID and on the page's heartbeat (`navigator.sendBeacon('/bye')`
    on `pagehide`, a `/studio/alive` every 5 s); stop in order: `/studio/shutdown`, `CTRL_BREAK_EVENT`, then the job.
-7. The stub: create the job (`KILL_ON_JOB_CLOSE | DIE_ON_UNHANDLED_EXCEPTION`), read `studio\active.json`, verify the
-   generation's manifest, launch the supervisor suspended-assign-resume, wait; on exit, if the supervisor asked for
+7. The stub: create the job (`KILL_ON_JOB_CLOSE | DIE_ON_UNHANDLED_EXCEPTION`), decide by the contract's R0–R8, R14
+   and R15 (the journal, the pointer, the generation's manifest; SAFE shows its reason and launches nothing), held to
+   vectors emitted by `art/studio_txn.py`; launch the supervisor suspended-assign-resume, wait; on exit, if the supervisor asked for
    a restart (exit 86), loop; write `state\logs\stub.log`. Under 400 lines; raw FFI as `win32.rs` does it.
 8. Layout and shortcut: `tools\layout.py` makes the per-user tree from a checkout and the embeddable interpreter's
    zip (downloaded by the owner, its sha256 recorded); `tools\shortcut.ps1` makes the desktop `.lnk` with inbox
@@ -578,7 +592,7 @@ automatically and the designer sees why; the previous version is one click away.
 staging, build, suites, manifest), `art/studio_promote.py` (the journal, the pointer, bless and rollback, the
 replay), `art/STUDIO-SOURCE.md`; changed: `art/studio.py` (a second gateway domain), `art/providers/*` (the source
 request rendered for the model), `art/web/play.*` (the candidate view: diff, footprint, tests, Try/Admit/Reject;
-the "previous version" control), the stub (restart on exit 86; tries in the filename), `art/studio_app.py`.
+the "previous version" control), the stub (the contract's R9–R13; restart on exit 86), `art/studio_app.py`.
 
 **Prerequisites.** B1. **Steps.** The ten steps of §6, in this order of implementation: the journal and the pointer
 with their replay and death-point harness first (nothing else is trustworthy without them); then staging and the
@@ -588,7 +602,7 @@ revalidates; an unrelated change reuses the recorded result only because the bas
 unchanged; then build and suites in a low-integrity job; then launch and health; then the page; then the model's
 request format last, so that every stage is tested with hand-written candidates before any model writes one. **Acceptance.** The product list in §9, items 6–9, on his machine: a prompt yields a built candidate; Try opens
 it; Admit promotes and restarts; Reject leaves A; a candidate planted to crash after `ready` is rolled back to `P`
-with `ROLLBACK` in the journal; a power loss simulated at each death point (the harness kills the supervisor) leaves
+with `rollback` in the journal; a power loss simulated at each death point (the harness kills the supervisor) leaves
 the stub able to start `A` or `P`. **Adversarial.** A patch touching a reserved path (`SOURCE-RESERVED`); a patch
 whose realized changes exceed its footprint (`SOURCE-LEAK`); a candidate that edits `studio\active.json` (it cannot:
 no capability; the harness plants the attempt and checks the pointer is unchanged); a candidate that answers
@@ -704,8 +718,10 @@ his own ISO. **Out of scope.** Store distribution; MSIX.
 
 ## 8. The first vertical slice, and the prototype that can falsify the architecture
 
-**The prototype (one or two days, before B1 is committed to).** Four experiments with pass/fail criteria, on the
-owner's machine, nothing committed:
+**The prototype (one or two days, before B1 is committed to).** Five experiments with pass/fail criteria, on the
+owner's machine, scratch scripts under `tools\probe\`, off the gate, each ending in one verdict line (the contract's
+§11 fixes their output form; by his ruling a failed kill criterion revises the architecture, and the probes never
+become a gate):
 
 1. `msedge.exe --app=http://127.0.0.1:PORT/ --user-data-dir=%TEMP%\vs-edge --no-first-run` against a running
    `play.py --port PORT`: pointer lock works (E, R, WASD, the mouse); closing the window ends the `msedge.exe`
@@ -717,13 +733,20 @@ owner's machine, nothing committed:
    his shell's own job (nested jobs should allow it on Windows 8+); then the stub must `CREATE_BREAKAWAY_FROM_JOB`.
 3. A 40-line pointer-swap script with `MoveFileExW(... WRITE_THROUGH)` killed by a second process at random points
    over 200 runs: the pointer always reads as the old or the new file. This measures process-kill consistency only.
-   *Kill criterion:* a torn pointer is ever read → the pointer gets a length-and-hash envelope (the shell's journal
-   record form) and the stub treats a malformed one as *invalid* (recover from `J`), a missing one as `??=`.
+   *Kill criterion:* none for correctness any longer — the pointer is a cache, and an unreadable one is rebuilt by
+   the contract's R7; a torn read is recorded against axiom A1.
 4. The suites at low integrity: a 50-line `ctypes` script makes a low-integrity token and runs `python art/check.py`
    and `python art/studio.py selftest` with `TMP` set to a folder labelled Low; then tries to write
    `studio\active.json` from inside: the suites pass, the write is refused. *Kill criterion:* a suite cannot run at
    low integrity (a registry or profile write it needs) → the capability boundary of §5.2 is downgraded to
    tamper-evidence, written as such, and the Try window runs at medium against a scratch copy.
+5. The journal replay (accepted by his ruling of 2026-10-12, *"Define the recovery state machine and oracle before
+   writing the harness"* — defined: the contract's §5–§7, and `art/studio_txn.py`): a writer makes the contract's
+   records with flush and `_commit`, and the pointer by write-through rename, and is killed by `TerminateProcess` at
+   random over 200 runs; after each, `python art/studio_txn.py recover` reads the directory, and its decision is
+   compared with the contract for the records the writer had acknowledged, or one more. *Kill criterion:* any SAFE,
+   any chain fault, or any decision not the contract's → the record form is revised before B2's promotion code, and
+   B1's stub keeps the rules without a transaction.
 
 **The slice (B1 in full).** Its files, its acceptance and its tests are in §7. Its demonstrable outcome: *the icon on
 his desktop opens the plaza; he tags two canopies, matches one to the other through Claude, admits it, closes the
@@ -742,8 +765,8 @@ window; everything stops; he opens it again and the tags are there.*
 | 5. save and reopen a project with its provenance | B3 | the project's manifest and heads |
 | 6. request a studio code change and receive a separately built candidate | B2 | the journal's `STAGED`, `BUILT`, `CHECKED` |
 | 7. launch and test the candidate without replacing the working studio | B2 | `LAUNCHED`, `HEALTHY`; two windows |
-| 8. admit and promote, or reject and continue with the old version | B2 | `PROMOTE_*`, `BLESSED`; the pointer |
-| 9. recover the previous working version after a crash or an interrupted promotion | B2 | `crashtest`; `ROLLBACK` |
+| 8. admit and promote, or reject and continue with the old version | B2 | `promote`, `activate`, `blessed`; the pointer |
+| 9. recover the previous working version after a crash or an interrupted promotion | B2 | experiment 5; `crashtest`; `rollback` |
 
 The release is not complete because a packaged executable opens; it is complete when the nine rows are measured on
 the owner's machine and recorded.
@@ -755,7 +778,7 @@ the owner's machine and recorded.
 | risk | impact | mitigation | kill criterion |
 |---|---|---|---|
 | Edge `--app` keeps a background process after the last window, or pointer lock fails in it | the window's lifetime is wrong; or the world cannot be played | the heartbeat and the job; WebView2 as the fallback engine | §8.1 |
-| NTFS rename under write-through is not crash-atomic on some disk or driver | a torn pointer after power loss | the envelope and `??=` recovery; the journal is the authority | §8.3 |
+| NTFS rename under write-through is not crash-atomic on some disk or driver | a torn pointer after power loss | none needed for correctness: the pointer is a cache, rebuilt by the contract's R7; what remains load-bearing is the journal's flushed append (A2, A3) | §8.5 |
 | A candidate holds a file open in the active directory so a rename fails (antivirus, a debugger) | promotion refused | cwd outside versions; retry; name the holder; never force | repeated refusals on his machine → the versions directory moves under `state\` with exclusions documented |
 | The model's patches rarely apply, or the suites rarely pass | B2 is a toy | the request carries exact file text; the footprint bounds the patch; counts are recorded and reported by `report` | fewer than half of a month's candidates apply → the source domain is reduced to statement-level edits of `art/` only |
 | Build time on the owner's machine | review waits minutes | the shell builds in seconds; the suites run in parallel jobs; results cached by generation hash (T3) | a candidate cycle above 5 minutes → the suites are tiered (fast first, full on Admit) |
@@ -771,18 +794,18 @@ the owner's machine and recorded.
 
 ## 11. Immediate next actions, in order
 
-1. The four experiments of §8 on the owner's machine (one patch of scratch scripts under `tools\probe\`, not a
-   rung), their results recorded here.
+1. The five experiments of §8 on the owner's machine (one patch of scratch scripts under `tools\probe\`, not a
+   rung; experiment 5 judged by `art/studio_txn.py`), their results recorded here.
 2. B1, in commits that each pass the self-tests: the content path's durable writes and `crashtest`; the API
    provider on structured outputs and the CLI's flags, with `probe` run on both; the tags persisted and shown;
    `play.py`'s health, shutdown and port; the supervisor; the stub; the layout and the shortcut; the acceptance on
    his machine; `docs/ROADMAP.md` recorded; pushed by him.
 3. B2's journal and pointer with their death-point harness, before any other part of B2.
-4. His rulings, asked once: a packaging-time tool (Inno Setup) yes or no; the tag numbering stays by first touch
-   (shown) or restarts per session; which Claude model the API provider defaults to (the prices on 2026-10-12, per
-   million tokens in and out: Haiku 5.5 $0.10 / $0.50, Sonnet 5.5 $2 / $10, Opus 5.5 $4 / $20, Fable 5.1 $10 / $50;
-   a reviewer's note that Fable 5.1 is "cheaper" is wrong); whether the stills may leave the machine by default or
-   by opt-in.
+4. His rulings: recorded in the contract's §1 (Inno Setup optional; tags by first touch, shown; stills opt-in per
+   session; the journal-replay court before B1's promotion logic; the experiments conditional). Still his: the API
+   provider's default model, deferred until current names and prices were checked — checked on 2026-10-12 (the
+   contract, §1; Haiku 5.5 $0.10 / $0.50, Sonnet 5.5 $2 / $10, Opus 5.5 $4 / $20, Fable 5.1 $10 / $50 per million
+   tokens in and out).
 
 ---
 
@@ -794,7 +817,8 @@ harness for process-kill consistency, not proved, and not measured for an operat
 That the capability boundary holds beyond what Mandatory Integrity Control documents: an administrator, or code
 already at the user's integrity level, is outside it. Anything about the quality of what a model proposes for source
 or for art. The behaviour of Edge, WebView2 or Windows Sandbox beyond what the cited pages say. Whether the owner
-accepts a packaging-time tool. Nothing here enters the certified gate; the gate stays at 251 rows.
+accepts a packaging-time tool. Nothing here enters the certified gate; the gate stays at 251 rows. The contract
+([`STUDIO-CONTRACT.md`](STUDIO-CONTRACT.md)) says what its reference measured and what that does not show (§8).
 
 Sources: the research notes and report of 2026-10-12 (`docs/RESEARCH-FINDINGS.md`, R-15, lists the primary pages);
 the repository at HEAD `58917b7`.
@@ -826,3 +850,14 @@ day; the table says what was found and what the plan now does.
 The rulings the reviews recommended (a packaging-time tool as an optional path; tags persisted and shown; the
 default model configurable; session-scoped consent for stills; the three probes accepted off the gate) are
 recommendations until the owner rules; §11 asks him.
+
+**The second review (the same day).** Brought with his host run of 0209 (251 rows / 0 fail, pushed
+`2517a27..f99c494`): rulings on §11's items and the journal-replay court; a correction that *"five states are not
+yet a complete recovery specification"* (*"journal state and runtime state are separate dimensions"*; *"Do not let
+the journal alone determine recovery"*; *"At which durable operation does promotion become committed?"*); and the
+request for *"a short Studio Architecture Contract that freezes these interfaces and transaction semantics before
+B1"*. Each repository contract the review named was looked up (the contract, §10: all exist; BOT-REF-0 is a
+deterministic bot, not a model; HERMENEUTICS-0 is not a source fence; environmental independence is a deferred
+audit, not a finding). The current models and prices were checked again. Done: the contract — the commit point at
+`blessed`, the tries in the journal, the stub the only writer of the commit, `Recover(J, P, F)` as a sixteen-rule
+table — and its reference, `art/studio_txn.py`, checked exhaustively in the container.

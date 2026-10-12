@@ -179,7 +179,7 @@ STUDIO-0         the owner's direction and ruling (2026-10-11): a director summo
       ↓
 STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); the CLI provider built, and a real model reached through it in the build container (its probe SHOWN); the references built: tags E and R make, bound to an object's id and never moved, the request's geometry and relations measured from the scene's boxes, and what each candidate touches; a real model, asked four prompts about three tagged canopies, changed exactly the objects each prompt named in 15 of 15 candidates; on his machine, through Claude Code on his Claude plan (claude-opus-5-5), the same in all 23 candidates the director drew, and in the page a canopy matched to another by its tag and admitted; outside the gate
       ↓
-STUDIO-APP-0     the owner's direction (2026-10-12): "The next objective should be a runnable Verðandi Studio, not another narrowly scoped rung" — a desktop icon, a live world with the director, a studio that proposes, builds, tests and offers changes to itself, promoted by explicit admission with rollback, "Keep the studio that is running separate from the studio being built"; researched and planned in docs/STUDIO-APP.md (the architecture decision: the page in Edge's application mode under a std-only stub and a std-lib supervisor; VCT-0, one change transaction with domain validators, ACCT among its parents; five batches); declared, nothing built; outside the gate
+STUDIO-APP-0     the owner's direction (2026-10-12): "The next objective should be a runnable Verðandi Studio, not another narrowly scoped rung" — a desktop icon, a live world with the director, a studio that proposes, builds, tests and offers changes to itself, promoted by explicit admission with rollback, "Keep the studio that is running separate from the studio being built"; researched and planned in docs/STUDIO-APP.md (the architecture decision: the page in Edge's application mode under a std-only stub and a std-lib supervisor; VCT-0, one change transaction with domain validators, ACCT among its parents; five batches); its interfaces and transaction frozen in docs/STUDIO-CONTRACT.md (the commit point the durable blessed record; Recover(J, P, F) in sixteen rules, its reference art/studio_txn.py checked over every enumerated crash point); declared, nothing built; outside the gate
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -3301,7 +3301,8 @@ request, and keep the world playable when the model is unavailable."*
   the game, the player and the camera do not.
 - **`art/play.py`**: `--director CONFIG.json`; `--root DIR` (the brief and ledger of another tree, as the self-tests use);
   `/studio/piece` and the five POSTs (ask, cancel, admit, reject, undo), each carrying the token the page is served
-  with and naming 127.0.0.1 or localhost; the studio's state in `/live`. Without `--director` the panel says so and the
+  with and naming 127.0.0.1 or localhost (as built at STUDIO-0; STUDIO-1 replaced `/studio/piece` with the
+  `select`, `pin` and `unpin` POSTs, eight in all, `art/play.py:432`); the studio's state in `/live`. Without `--director` the panel says so and the
   world is played as ever.
 - **The providers** (`art/providers/`): `scripted.py`, which is not a model (three fixed variations of a selected
   canopy, the three of his sketch: *Monolithic*, *Lit underside* with magenta fixtures if the prompt says so,
@@ -3637,6 +3638,28 @@ promotion, and the only cache key; a generation's integrity verified before acti
 measured; the capability boundary made real with Windows' Mandatory Integrity Control (candidates validate and are
 tried at low integrity, which cannot write the pointer, the journal, the stub or the projects), its limit written;
 a fourth experiment for it. The reviews' recommended rulings remain his to make.
+
+**The contract (2026-10-12).** 0209 applied as tree 1d23474b, as predicted; the gate 251 rows / 0 fail; pushed
+2517a27..f99c494. He brought a second round of reviews: rulings (Inno Setup *"ACCEPT — optional"*; persistent tags
+*"Preserve first-touch numbering and display existing assignments"*; still-image consent *"explicit for each
+session"*; the journal-replay court *"ACCEPT — pre-B1 experiment"*; the five experiments *"ACCEPT, conditionally"*;
+the default model *"DEFER"* until *"the names, availability, and prices … need current verification"*), the
+correction *"Do not let the journal alone determine recovery"* with its question *"At which durable operation does
+promotion become committed?"*, and the request for *"a short Studio Architecture Contract that freezes these
+interfaces and transaction semantics before B1"*. Done, as `docs/STUDIO-CONTRACT.md`, which governs where it and the
+plan differ: the authority of each part; one candidate envelope for content and source (two gaps in the content
+domain's found and put in B1: the director's and the scope's source hashes and the configuration's digest are not
+recorded); the operations; the promotion journal `STUDIO-TXN 0`, its kinds, writers and grammar; the commit point,
+the durable `blessed` record, written by the stub, which no candidate can replace; the tries as `boot` records, so
+the pointer is a cache checked against the journal and its rename's atomicity no longer bears on correctness;
+`Recover(J, P, F)` as sixteen rules; tags across deletion and projects; the repository contracts the review named,
+looked up (all exist; two were misdescribed: BOT-REF-0 is a deterministic bot, HERMENEUTICS-0 is not a source
+fence); the five experiments' output form and kill criteria. Its reference, `art/studio_txn.py` (off the gate, no
+row), holds the table: `check` over 54 scripted promotions, 41,568 crash states, 195,376 crashes inside recovery,
+8,704 chains of failed boots and 134,773 damaged journals and pointers, every rule reached, 0 failures; `selftest`
+catches 16 planted wrong decisions and holds a generation's integrity on a real directory (MEASURED in the
+container; the stub does not exist yet, and Windows' writes are experiment 5's to measure). The models and prices
+were checked again the same day; the default model stays his.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
