@@ -177,7 +177,7 @@ INPUT-CONTRACT-0 the owner's ruling (2026-10-11): the tick's input admitted or r
       ↓
 STUDIO-0         the owner's direction and ruling (2026-10-11): a director summoned into the running plaza — E selects, Enter summons, a prompt answered by at most three candidates drawn in place with the game untouched, admit, reject and undo through the director's ledger; "the model proposes changes—it never directly mutates the live world"; a gateway (art/studio.py) between the page and a provider command (a scripted provider; Claude through the Anthropic Messages API), its contract in art/STUDIO.md; his acceptance test met in Chromium 141 in the build container; on his machine (Windows) its self-test 29 / 29, and the scripted provider tried from the page; outside the gate
       ↓
-STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); the CLI provider built, and a real model reached through it in the build container (its probe SHOWN); the references built: tags E and R make, bound to an object's id and never moved, the request's geometry and relations measured from the scene's boxes, and what each candidate touches; a real model, asked four prompts about three tagged canopies, changed exactly the objects each prompt named in 15 of 15 candidates; outside the gate
+STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); the CLI provider built, and a real model reached through it in the build container (its probe SHOWN); the references built: tags E and R make, bound to an object's id and never moved, the request's geometry and relations measured from the scene's boxes, and what each candidate touches; a real model, asked four prompts about three tagged canopies, changed exactly the objects each prompt named in 15 of 15 candidates; on his machine, through Claude Code on his Claude plan (claude-opus-5-5), the same in all 23 candidates the director drew, and in the page a canopy matched to another by its tag and admitted; outside the gate
       ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
@@ -3555,6 +3555,39 @@ model, a few runs. The page in Firefox or Edge, or on Windows. Tags on lights or
 or are shared between pages. A scope pattern for one object with its parts: the director's grammar has none, and the
 request only says so; the scope protocol (DIRECTOR-0, its conformance vectors) is unchanged. The image of the view and
 the pieces that connect two objects: his next two slices. Nothing here enters the certified gate.
+
+**On his machine (2026-10-12).** 0204, 0205 and 0206 applied as trees 8c4b8777, 82433d43 and d52126f3, as predicted.
+On Windows: `python art/studio.py selftest` 51 / 51, among them the first runs outside the build container of a
+cancelled provider's own child killed with it (`taskkill /T`) and of a `.cmd` shim refused; the plaza's live self-test
+13 / 13; `ART CHECKS PASSED`; `DIRECTOR SELFTEST PASSED`; the gate 251 rows / 0 fail; pushed 59861b4..aa83f2f. Claude
+Code was not installed; he installed it (2.1.296, `C:\Users\…\.local\bin\claude.exe`, the official installer),
+pointed `VERDANDI_CLAUDE` at it and signed in with his Claude account (`claude auth status`: logged in, `claude.ai`,
+his plan). Its default model there answered as `claude-opus-5-5`. From his studio records (read in his folder, not
+copied into the repository):
+
+- `probe claude_code.json`: SHOWN. 24.1 s and 21.7 s; about 6,000 tokens in and 2,070 out a request, ~$0.089 and
+  ~$0.077 by Claude Code's own estimate; five candidates CLEAN and one REFUSED by the exporter (`ART-REFUSED`: a slab
+  0.15 m deep, under the language's least depth of 0.2).
+- `probe claude_code.json --references`: 8 requests, 16.8–23.2 s; 20 candidates, 17 CLEAN and each changing exactly the
+  tags its prompt named and no untagged object (one making a new object, `@1` trimmed to `@2`'s length); 3 REFUSED by
+  the director (`INTENT-APPLY`: a revision naming a statement the brief does not have, each an attempt to change a
+  canopy's corners with `=`, when its corners are part of its key), and none of them drawn.
+- **The page, in his browser.** A first prompt, *"make @1 match @2"*, was refused before anything was asked
+  (`STUDIO-REFERENCE`: the prompt named `@2`, which was not the target or a pin; his target was `@1` and his pin `@4`,
+  since a tag goes to an object at its first touch and he had touched two others first); nothing was sent and nothing
+  recorded. He also found that the plaza's canopies *"already match"*: all three are the same plain slab, 0.4 m deep,
+  and differ only in height and footprint. On a second start: the west canopy the target `@1` and the south canopy
+  pinned `@2`; *"give @2 ribs and a warm glow along its edge; leave @1 alone"* (23.3 s, three CLEAN candidates, each
+  touching `@2` alone; *Rib every cell, amber edge glow* admitted, ledger #24 and #25); then *"make @1 match @2"* (18.9
+  s, three CLEAN candidates, each touching `@1` alone: *Full match: height, ribs and edge light*, *Match the dressing,
+  keep @1's height*, *Match height only, no ribs or light*; the first admitted, ledger #26 and #27, the west canopy
+  given the south one's height, ribs and edge lights). Both tags then shown *changed since tagged*, as they were.
+
+So his acceptance criterion, *"the model consistently identifies the intended objects, receives their actual geometry,
+and proposes edits the existing compiler can express—without silently changing the meaning of a reference"*, held on
+his machine for the 23 candidates the director drew (the probe's 17 and the page's 6); 3 more were refused before being
+drawn. MEASURED, his machine, his plan's default model, these prompts. And one confusion of use, not of meaning: tags
+numbered by first touch are stable, and so not the numbers a designer expects.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 

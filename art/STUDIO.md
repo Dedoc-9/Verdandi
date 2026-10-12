@@ -213,8 +213,9 @@ world but what the director judged.
 
 The quality of what a model proposes: the checks hold a candidate to the rules of the art and to its declared scope,
 not to taste. The live Anthropic API: `anthropic_messages.py` is held only to a local server that answers as the API's
-documentation describes. `claude_code.py` was run against the real CLI only in the build container, on Linux (its
-probes SHOWN there); on Windows, finding `claude.exe` and passing its arguments are not measured. That a model
+documentation describes. `claude_code.py` has been run against the real CLI in the build container (Linux) and on the
+owner's Windows machine (`claude.exe` from Claude Code's own installer, his Claude plan, 2026-10-12), its probes SHOWN
+in both; a `.cmd` or `.ps1` shim is refused, not measured beyond the self-test's. That a model
 identifies the intended objects in general: the references' probe is four prompts about three canopies, a few runs,
 one model. A tag on a light or a play piece (E and R pick the dressing's boxes; a light goes with its object). Tags
 that outlive play.py, or are shared between two pages. An image of the view (the next slice, by his sequence) and
