@@ -362,6 +362,45 @@ Read on 2026-10-11, after the owner tried STUDIO-0 and asked how to name an obje
   request, and a probe that reports, for each candidate, which tagged pieces it changed.
 - **A decision?** Made: his ruling of 2026-10-11 (`docs/ROADMAP.md`, STUDIO-1).
 
+## R-15 · The sources behind the studio plan (`docs/STUDIO-APP.md`)
+
+Read on 2026-10-12 for the architecture of a desktop Verðandi Studio; each is cited where it bears weight in that
+document, with its status (VERIFIED from the page, or INFERRED). The primary pages, grouped:
+
+- **Windows delivery.** Chromium's `chrome_switches.cc` and `process_singleton.h` (the `--app` and `--user-data-dir`
+  switches; one browser process per profile); Microsoft Learn: Edge kiosk mode; the WebView2 distribution, process
+  model and end-user FAQ pages; WebView2Feedback issues #4968, #4084, #4050 (pointer lock); "Using Python on Windows"
+  §4.4 (the embeddable package); PyInstaller's and Nuitka's manuals; Inno Setup's `PrivilegesRequired` and
+  constants; MSIX overview and sideloading; code-signing options and SmartScreen reputation; Windows Sandbox and its
+  `.wsb` file; Application Registration (App Paths; per-user installation).
+- **Supervision and atomic updates.** Microsoft Learn: Job Objects, Nested Jobs, `AssignProcessToJobObject`,
+  Terminating a Process, process creation flags, `MoveFileExA`, `ReplaceFileW`, `FlushFileBuffers`, the deprecation
+  of TxF, the WDK's rename processing; Python's `subprocess` and `os`; the CPython commit making `os.replace` a
+  `MoveFileExW`; Velopack and Squirrel.Windows; Chromium's updater design document and `upgrade_util_win.cc`;
+  Firefox's update documentation and Bugzilla 1127481; AOSP A/B updates; Chromium OS autoupdate; Nix profiles and
+  `nixos-rebuild`; OSTree's deployment model; systemd's `AUTOMATIC_BOOT_ASSESSMENT`; Pillai et al., ALICE (OSDI
+  2014); Mohan et al., ARIES (1992); Fowler, Event Sourcing.
+- **Editors.** Godot's docs source (version control, TSCN, `UndoRedo`, running code in the editor, debugging tools)
+  and issue #40366; Blender's undo system, autosave and compatibility handbook, extension guidelines; Unreal's
+  directory structure, `FScopedTransaction`, Recovery Hub, Play In Editor, Live Coding, asset versioning; Unity's
+  directories, undo, domain reloading, 6.6 notes; Unity Assistant's modes.
+- **Theory.** Goguen and Meseguer 1982; Rushby 1992; Murray et al. 2013 (seL4); Hoare 1969; Reynolds 2002; O'Hearn
+  2019; the Rodin handbook (Event-B); Haerder and Reuter 1983; Chen et al., FSCQ (SOSP 2015); Sigurbjarnarson et
+  al., Yggdrasil (OSDI 2016); Mokhov, Mitchell and Peyton Jones, Build Systems à la Carte (ICFP 2018); Dolstra 2004
+  and his thesis; Hammer et al., Adapton (PLDI 2014); Miller 2006 and "Capability Myths Demolished" (2003); Thompson
+  1984; Wheeler 2005; Gray 1985; Candea and Fox 2003; Erlang's supervisor principles; RFC 6962; Pro Git's internals.
+- **The director's providers.** platform.claude.com: implement tool use (forced `tool_choice` returns 400 on the
+  current models), structured outputs, prompt caching, vision, pricing, models; code.claude.com: the CLI reference,
+  headless, streaming versus single mode, cost tracking, permission modes, sandboxing, the Agent SDK overview (the
+  login policy); LayoutVLM (CVPR 2025), SceneCraft, 3D-VLM hallucination (2025), a 2026 benchmark on VLMs and 3D
+  layout.
+
+- **Here.** What each establishes, and what none could, is in `docs/STUDIO-APP.md` §2 and §12. Two findings changed
+  the plan's first batch: the Messages API provider's forced tool choice is refused by every current model (its
+  self-test holds it only to a mock), and the director's authoritative writes are not crash-safe while the shell's
+  are.
+- **A decision?** Made: the owner's direction of 2026-10-12 and the plan.
+
 ## Not searched, so not claimed
 
 - **The graybox's decoration bound:** decoration must stand above the highest eye a player can reach, so no

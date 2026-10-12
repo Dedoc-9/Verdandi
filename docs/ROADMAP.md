@@ -179,6 +179,8 @@ STUDIO-0         the owner's direction and ruling (2026-10-11): a director summo
       ↓
 STUDIO-1         the owner's rulings (2026-10-11), after trying STUDIO-0: two real model paths, "Both, CLI first" (Claude Code's CLI as a provider, the Anthropic API kept), compared on the same prompts; and references — visible tags, a target and up to four pinned pieces, their geometry in metres and the relations between them measured, each reference bound to a piece and a scene revision and never silently redirected; no new art vocabulary in this slice (an image of the view next, connecting pieces after); the CLI provider built, and a real model reached through it in the build container (its probe SHOWN); the references built: tags E and R make, bound to an object's id and never moved, the request's geometry and relations measured from the scene's boxes, and what each candidate touches; a real model, asked four prompts about three tagged canopies, changed exactly the objects each prompt named in 15 of 15 candidates; on his machine, through Claude Code on his Claude plan (claude-opus-5-5), the same in all 23 candidates the director drew, and in the page a canopy matched to another by its tag and admitted; outside the gate
       ↓
+STUDIO-APP-0     the owner's direction (2026-10-12): "The next objective should be a runnable Verðandi Studio, not another narrowly scoped rung" — a desktop icon, a live world with the director, a studio that proposes, builds, tests and offers changes to itself, promoted by explicit admission with rollback, "Keep the studio that is running separate from the studio being built"; researched and planned in docs/STUDIO-APP.md (the architecture decision: the page in Edge's application mode under a std-only stub and a std-lib supervisor; VCT-0, one change transaction with domain validators, ACCT among its parents; five batches); declared, nothing built; outside the gate
+      ↓
 EVIDENCE-LINK-0  accepted by the owner (2026-10-09) as the next qualifying slice: each claim a commit message or a document copies about a recorded event — ids, push ranges, row counts, hashes, prediction outcomes — traced to its authoritative source, never only to another copy; an instrument outside the repository that reads and reports; declared, defined and registered after HERMENEUTICS-0 is advanced and not bundled into it; by his final ruling of the same day, the next verification pivot
       ↓
 LIVE-AI-EDIT-0 → GUI      the owner's order after it (2026-10-06); none registered. Design objects that outlive admission, and constraints, are each a court of their own and are not seated. A competitive arena — a map that matches are played on — is declared (a text he brought, 2026-10-08): it gives those two courts their content, and is not placed in the order. Environmental independence, a court that would hold a row's verdict against what its surroundings were not declared to change, is accepted as a future audit mechanism and deferred (his ruling, 2026-10-08). PERSPECTIVE-0, observation stratified from action, reconstruction and claim, is declared (three texts he brought, the same day). REFLEX, a ladder of nine declared steps from perspective types to a reflexive certificate, gathers both (two texts, the same day). None is placed in the order
@@ -3588,6 +3590,38 @@ and proposes edits the existing compiler can express—without silently changing
 his machine for the 23 candidates the director drew (the probe's 17 and the page's 6); 3 more were refused before being
 drawn. MEASURED, his machine, his plan's default model, these prompts. And one confusion of use, not of meaning: tags
 numbered by first touch are stable, and so not the numbers a designer expects.
+
+### STUDIO-APP-0 — Verðandi Studio, a runnable application that improves itself · **the owner's direction** (2026-10-12); outside the certified gate · **declared; researched and planned**
+
+**His words.** *"The next objective should be a runnable Verðandi Studio, not another narrowly scoped rung. The
+reference work is a feature inside that product, and rendered-view context should be batched with other improvements
+when the studio workflow can use them together."* *"The shift is from proving individual capabilities to building an
+executable application that can continually improve without losing its ability to launch, edit, and play the
+world."* Two requirements, not to be conflated: progressive development, and recursive self-improvement, which
+*"requires an explicit update and rollback mechanism, not just a prompt that edits source files."* *"Keep the studio
+that is running separate from the studio being built."* *"The model must not be able to overwrite the running
+executable or promote its own changes without the update supervisor's approval."* *"I would not rewrite the renderer
+or introduce Unreal merely to obtain an executable. Packaging is a deployment step; replacing the current rendering
+architecture is a separate decision."* *"The existing 251-row gate remains a regression signal, not the definition of
+the product."* On scope and method: *"a rung would be a waste on only a simple feature like that... it should be in
+a rung batched with other updates"*; *"prioritize larger rungs"*; *"be liberal with custom theorem mixing and be
+pioneering. consider ACCT as one of many potential candidates"*; *"when faced with design forks consider producing
+both"*. And his intermediary theorem, ACCT (Admitted-Change Containment), proposed *"as a candidate design principle
+for the Studio application and update lifecycle—not yet as an established theorem or a new rung."*
+
+**What was done (2026-10-12).** Research first — Windows delivery, process supervision and atomic updates, four
+editors, the theory a change transaction composes from, the director's providers (`docs/RESEARCH-FINDINGS.md`,
+R-15) — then the inventory from the source, then the decision, then the plan: [`docs/STUDIO-APP.md`](STUDIO-APP.md).
+Its consequential decisions: the page stays, in Edge's application mode with a private profile, under a std-only
+Rust stub (raw Win32 FFI, as `shell/win32.rs`) that owns a job object and the active-generation pointer and a
+std-lib Python supervisor; every version is an immutable generation and promotion is one write-through rename,
+blessed by the *previous* generation after a health check; one change transaction (VCT-0, nine parent theorems
+mixed, ACCT its statement) with two domain validators, the content ledger and a promotion journal in one canonical
+form; five batches, B1 the desktop launch with the content path made crash-safe, B2 the self-change transaction.
+Two findings that reorder the first batch: the Messages API provider sends a forced `tool_choice`, which every
+current Claude model refuses with 400 (VERIFIED on 2026-10-12; the self-test holds the adapter only to a mock), and
+the director writes the brief and appends the ledger without fsync or rename, while the shell's journal does both.
+Nothing is built; the gate is unchanged.
 
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
