@@ -1,8 +1,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
 # Verðandi Studio — the architecture decision and the development plan (STUDIO-APP-0, declared)
 
-**Status.** A plan, by the owner's direction of 2026-10-12; nothing here is built, nothing enters the certified gate,
-and no pinned source, oracle file or registered entry is touched by it. Research was done first (its sources are
+**Status.** A plan, by the owner's direction of 2026-10-12, amended the same day after three reviews he brought were
+checked against primary sources (§13); nothing here is built, nothing enters the certified gate, and no pinned
+source, oracle file or registered entry is touched by it. Research was done first (its sources are
 cited where they bear weight), the architecture was decided second, and this document was written third. The
 inventory it stands on was read from the source at HEAD `58917b7` (2026-10-12), with `path:line` references; the
 web sources were read on 2026-10-12 and are marked VERIFIED (a primary source, cited) or INFERRED (an inference from
@@ -331,59 +332,97 @@ synthesis below is the mix.
 
 One protocol, two domains (a world's content; the studio's source), two validators, one ledger discipline. Let `G`
 be a generation (an immutable directory named by its content hash), `A` the active generation, `P` the previous
-blessed one, `J` the promotion journal, `D` the projects, `C` a candidate with declared footprint `F(C)` and base
-`base(C)`.
+blessed one, `J` the promotion journal, `D` the projects, `C` a candidate with declared footprint `F(C)`, and `B_C`
+its **basis**: the record of everything its validation depended on — the base generation's hash, the source
+revision, the manifest digest, the validators' own sources' hashes, the toolchain's identity (rustc's and Python's
+version strings), the configuration's digest. `B_now` is the same record computed at promotion time.
+
+**The operators, defined once.** `is` is identity: the same bytes, by sha256 — never a head that looks equal. `==` is
+equality of bytes. `≡` is equivalence of user data under one named procedure: the content ledger of a project
+replays to the files it holds (`director.py verify`), at the reader's version. `<` is the journal's order (`seq`), and
+nothing else. `??=` assigns only when the left side is **missing**; an **invalid** left side is a different state
+with its own rule (below), never silently reassigned.
 
 ```text
-Built(C)     := the staged generation G(C) exists, its manifest's hashes are those of its files         (T3)
-Checked(C)   := every validator of C's domain passed inside C's own job, against G(C), nothing else      (T1, T9)
-Leak(C)      := realized(C) \ cl(F(C)) != ∅   or   F(C) ∩ RESERVED != ∅                                    (T9)
-Fresh(C)     := base(C) is head(A)        — identity: the same bytes, not an equal-looking head             (T3)
-Admitted(C)  := a person said so, through the supervisor, after seeing diff, footprint, tests, identity   (T4)
-Healthy(G)   := G's supervisor answered /healthz with version == G.hash within T seconds of launch         (T2)
-Promote(C)   := Built(C) and Checked(C) and not Leak(C) and Fresh(C) and Admitted(C)                       (T1)
-Failed(C)    := not Promote(C)
+Built(C)          := G(C) exists and its manifest's hashes are those of its files                              (T3)
+Checked(C, B_C)   := every validator of C's domain passed inside C's own job against G(C), with basis B_C       (T1, T9)
+Leak(C)           := realized(C) \ cl(F(C)) != ∅   or   F(C) ∩ RESERVED != ∅                                     (T9)
+Fresh(C, B_now)   := B_C is B_now, or every member of B_now that differs is outside C's recorded dependencies   (T3)
+Admitted(C, B_C)  := a person said so through the supervisor, shown the diff, footprint, tests, basis, identity (T4)
+Integrity(G)      := G's manifest digest verifies and every file G names hashes as the manifest says            (T2)
+Healthy(G)        := G's supervisor answered /healthz with version is G.hash within T, and the page spoke once  (T2)
+Recoverable(P)    := P exists, Integrity(P), and J holds its BLESSED                                              (T5)
+Promote(C)        := Built(C) and Checked(C, B_C) and not Leak(C) and Fresh(C, B_now) and Admitted(C, B_C)
+                     and Integrity(G(C)) and Recoverable(A)
+Failed(C)         := not Promote(C)
 ```
 
-- **Atomicity and ordering (relational).** `J` is appended before anything moves (`STAGED < PROMOTE_BEGIN <
-  PROMOTE_END < LAUNCH < BLESSED`, each record forced to disk before the next step); the pointer carries the journal
-  `seq` it was set at, and a crash is redone only while `pointer.seq < record.seq` (ARIES's LSN rule). A tries counter
-  lives in the pointer's *filename* and is decremented by rename; a generation launches only while `tries > 0`.
-- **Identity, not equality.** What is promoted *is* what was checked: `promoted.hash is admitted.hash` — the stub
-  refuses to activate a generation whose manifest does not reproduce its hash. `Fresh(C)` uses identity too: a
-  candidate drawn at one head is stale at another, as `STUDIO-STALE` already rules for content.
-- **Equality for protected state.** For every path `o` outside `cl(F(C))`, `bytes(o)ₙ₊₁ == bytes(o)ₙ` (clause C of
-  ACCT). The projects tree `D` is outside every source footprint by construction (§4), so `D` is untouched by any
-  studio promotion; a *content* candidate's footprint is its declared addresses, as today.
-- **Equivalence for user data.** `Dₙ₊₁ ≡ Dₙ` is operational: the content ledger verifies and replays to the files
-  (`director.py verify`), and a migration is itself an admitted event carrying `min_reader`; a generation whose reader
-  is older than `min_reader` refuses the project (`reader.version < min_reader ⇒ refuse`), never reinterprets it (T7).
-- **Nullish assignment, for recovery.** On boot the stub reads the pointer; if it is missing, torn or names a
-  generation whose manifest does not verify, `active ??= last BLESSED in J`, and if `J` has none, `active ??= the
-  installer's generation`. The same operator names the tag rule the studio already has: `tag(object) ??= next()`,
-  assigned at first touch and never reassigned — and the owner's friction with it (2026-10-12) is addressed not by
-  changing the rule but by showing the tags (§7, batch 1).
-- **Boolean composition of validators.** `Checked(C)` for a source candidate is the conjunction of the off-gate
-  suites the tree already has (§1, last rows) plus the candidate's own launch (`Healthy`); for a content candidate it
-  is the art checks and the scope verdict, as today. `not` is where a candidate's reach is bounded: `not Leak(C)` is
-  a verdict from the validator, never a promise from the model.
+Three claims, kept apart because their obligations differ (a reviewer's correction of 2026-10-12, adopted):
 
-**What VCT-0 claims.** For every crash schedule over the enumerated death points, every candidate and every declared
-footprint: `Failed(C) ⇒ (A, D)' = (A, D)` and `J` is append-only; `Promote(C) ⇒ A' = G(C) ∧ P' = A ∧ Dₙ₊₁ ≡ Dₙ ∧ (∀ o ∉
-cl(F(C))) oₙ₊₁ == oₙ`; after any crash, recovery is idempotent and ends in one of {A unchanged, G(C) staged and not
-active, G(C) active and unblessed with tries left, G(C) blessed, rolled back to P}. **Under the axioms**: NTFS rename
-with write-through is atomic and durable; a per-record fsync persists the record; the journal file pre-exists; the
-stub's binary is not altered by any candidate; the validators are independent of the candidate; the person who admits
-is the designer.
+1. **Isolation.** `Failed(C) ⇒ A' is A ∧ D' == D ∧ (∀ o ∉ cl(F(C))) o' == o`, and `J` only grew. A candidate that
+   was not promoted changed nothing a person relies on.
+2. **Promotion correctness.** The active reference never names a generation that did not complete validation and
+   admission: `A' is G(C) ⇒ Promote(C)`, and after it `P' is A`, `D' ≡ D`, `(∀ o ∉ cl(F(C))) o' == o`, and the tries
+   counter is set. `tries = 3` is a policy, not a clause; the clause is that a counter exists and is decremented by
+   rename before each launch.
+3. **Recovery correctness.** After a crash at any enumerated point, recovery (idempotent: run twice, the same end)
+   ends in a state the journal allows, each with its own next action: `A` unchanged (nothing to do); `G(C)` staged
+   and not active (garbage, or review again); `G(C)` active and unblessed with `tries > 0` (launch); `G(C)` blessed
+   (done); rolled back to `P` (say why). The journal decides, never the last pointer seen: `pointer.seq < record.seq`
+   ⇒ redo the recorded step; a pointer naming a generation with no `PROMOTE_END` is *invalid*, and the rule for an
+   invalid pointer is **recover from `J`** (the last `PROMOTE_END` whose generation has `Integrity`, else the last
+   `BLESSED`), recorded as `RECOVERED {reason}`; `active ??= last BLESSED` applies only when the pointer is missing.
 
-**What it does not claim.** That a candidate is good, or beautiful, or that the suites catch every defect; anything
-about disks that lie about fsync, privileged malicious code, or a corrupt installer; that the model's proposal is
-reproducible (it is frozen, not reproduced).
+**Three levels of consistency, claimed separately.** *Process-kill consistency*: recovery works after the
+application is terminated at each enumerated point — this is what the harness measures. *OS-crash consistency*:
+recovery works across an operating-system crash — claimed only under the platform axioms below, and measured, if
+at all, by a VM reset. *Power-loss durability*: acknowledged writes survive loss of power — depends on the disk and
+the driver and is **not claimed**; the axioms say what it would need.
 
-**How it is held.** Mutants of the supervisor (a pointer written before the journal; a candidate allowed to append the
-journal; the old supervisor replaced by the candidate; a health check that trusts the candidate's own word; a
-generation activated whose manifest does not match) must each be refused by the death-point harness or the
-self-test; the harness enumerates the crash points as `admit-crash` does for the shell. These are off the gate.
+**The axioms** (what the parents require; each a hypothesis the implementation must state, not a fact a harness
+establishes): A1, a `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH` over an existing file
+leaves either the old or the new file at that name (Microsoft documents "does not return until the file is actually
+moved on the disk" and nowhere "atomic"); A2, `os.fsync` persists a record's bytes (on Windows it is `_commit`, which
+"forces the operating system to write the file associated with fd to disk" and says nothing of the directory
+entry — so A3); A3, the journal and the pointer's directory pre-exist, so an append and a rename extend entries that
+are already durable; A4, the stub's binary is altered by no candidate (its source is reserved; it is installed, never
+staged); A5, the validators and their inputs are independent of the candidate and cannot be changed by it after
+validation (the basis `B_C` records them; the capability boundary below enforces it); A6, the person who admits is the
+designer, and nothing admits for them. Outside the failure model: a disk that lies about flushing, an administrator
+or malicious code at the user's own integrity level, a corrupt installer.
+
+**Two notes on the operators.** `??=` also names the tag rule the studio already has: `tag(object) ??= next()`,
+assigned at first touch and never reassigned, and the owner's friction with it (2026-10-12) is answered by showing
+the tags (§7, B1), not by changing the rule. And `≡` for a project carries `min_reader`: a generation whose reader is
+older refuses the project (`reader.version < min_reader`), never reinterprets it (§6, T7).
+
+**What VCT-0 does not claim.** That a candidate is good, or beautiful, or that the suites catch every defect; that
+the model's proposal is reproducible (it is frozen, not reproduced); anything the axioms exclude.
+
+**The capability boundary (what a candidate cannot obtain, not merely which process it is).** Process separation is
+not isolation: on one Windows account, a candidate's process could write `studio\active.json` as well as the
+supervisor can. The boundary this plan adopts is Windows' Mandatory Integrity Control: "a principal with a low
+integrity level cannot write to an object with a medium integrity level, even if that object's DACL allows write
+access", objects are created `NO_WRITE_UP` by default, and "objects that lack an integrity label are treated as
+medium" (VERIFIED: [Mandatory Integrity Control](https://learn.microsoft.com/en-us/windows/win32/secauthz/mandatory-integrity-control)).
+A low-integrity process is made by `DuplicateTokenEx`, `SetTokenInformation(TokenIntegrityLevel, S-1-16-4096)` and
+`CreateProcessAsUser`, may write only under `%USERPROFILE%\AppData\LocalLow` or a folder labelled low
+(`icacls … /setintegritylevel Low`, or `SetNamedSecurityInfoW` with `S:(ML;;NW;;;LW)`) (VERIFIED, an archived
+Vista-era article still describing the mechanism: [Designing applications to run at a low integrity level](https://learn.microsoft.com/en-us/previous-versions/dotnet/articles/bb625960(v=msdn.10));
+Chromium's sandbox sets the same token level). So: a candidate's staging, build, suites and *Try* run **at low
+integrity** in their job, writing only to a low-labelled scratch (`state\low\`) and their own staging directory;
+`bin\`, `studio\`, `versions\` (once staged), `projects\` and `runtime\` are medium and cannot be written by them even
+by mistake; *Try* plays a scratch copy of a project. Trust transfers at **Admit**: the promoted generation runs at
+medium as the active studio, because the designer admitted it and `P` stays recoverable. What this does not stop: an
+administrator, or malicious code that already runs at medium — for those the hash-chained journal is evidence, not
+prevention (RFC 6962's limit). Whether the suites run under low integrity is experiment 4 of §8; if they cannot, the
+boundary is tamper-evidence alone and the plan says so.
+
+**How it is held.** Mutants of the supervisor (a pointer written before the journal; a candidate allowed to append
+the journal; the old supervisor replaced by the candidate; a health check that trusts the candidate's own word; a
+generation activated whose manifest does not match; a stale basis accepted; a low-integrity write to `studio\`
+that succeeds) must each be refused by the death-point harness or the self-test; the harness enumerates the crash
+points as `admit-crash` does for the shell. These are off the gate.
 
 ---
 
@@ -397,15 +436,15 @@ record dropped on load, any other fault refuses).
 | step | record | what happens | who | on crash here |
 |---|---|---|---|---|
 | 1. Capture | — | `head(A)` is read: the active generation's hash and the projects' ledger heads | supervisor | nothing to recover |
-| 2. Propose | `PROPOSED {request_sha256, response_sha256, footprint, base}` | the model answers a `VERDANDI-STUDIO-SOURCE-REQUEST` (the repository's file list with hashes, the footprint grammar, the self-tests' names, the tree's AGENTS.md rules) with a bounded patch: at most N files, each named, unified diffs, a rationale, a declared footprint of file globs, and the tests it expects to pass; read whole or refused whole, as `read_response` reads content; the raw response is frozen under `studio\candidates\<id>\` | gateway | the record is the only trace; nothing else exists |
+| 2. Propose | `PROPOSED {request_sha256, response_sha256, footprint, basis}` | the model answers a `VERDANDI-STUDIO-SOURCE-REQUEST` (the repository's file list with hashes, the footprint grammar, the self-tests' names, the tree's AGENTS.md rules) with a bounded patch: at most N files, each named, unified diffs, a rationale, a declared footprint of file globs, and the tests it expects to pass; read whole or refused whole, as `read_response` reads content; the raw response is frozen under `studio\candidates\<id>\` | gateway | the record is the only trace; nothing else exists |
 | 3. Stage | `STAGED {id, gen_hash}` | the active generation's tree is copied to `versions\<tmp-run-id>\`, the patch applied; the footprint check: every changed path ∈ `cl(F)`, `F ∩ RESERVED = ∅` (`SOURCE-LEAK`, `SOURCE-RESERVED`); the tree's content hash is computed and the directory renamed to `versions\<hash>\` (a rename, so a crash leaves a tmp directory that the next start garbage-collects) | supervisor | tmp directory removed at next start |
 | 4. Build | `BUILT {hash, rustc, binaries}` | `rustc -O` for what the tree builds (`shell/main.rs`, `art/director/conform.rs`) in the candidate's job, with a timeout; no rustc ⇒ `SOURCE-NO-RUSTC`, refused (the design tool refuses `DESIGN-NO-SHELL` likewise) | supervisor | the generation directory is complete or not; its manifest says which |
-| 5. Check | `CHECKED {hash, suites: {name: result, seconds}}` | the off-gate suites run inside the candidate's own job against the staged tree, with scratch roots, timeouts and output limits; a candidate touching a pinned source, `oracle/` or `verify/` is marked `OWNER-GATE`: the owner runs the gate, the supervisor never does | supervisor | re-run; results are idempotent |
+| 5. Check | `CHECKED {hash, basis, suites: {name: result, seconds}}` | the off-gate suites run inside the candidate's own job, at low integrity, against the staged tree, with scratch roots, timeouts and output limits; the basis (the validators' own hashes, the toolchain, the configuration) is recorded with the results, and a result is reused for another candidate only when its whole basis `is` the same (a verifying trace, never a bare generation hash); a candidate touching a pinned source, `oracle/` or `verify/` is marked `OWNER-GATE`: the owner runs the gate, the supervisor never does | supervisor | re-run; results are idempotent |
 | 6. Launch and health | `LAUNCHED {hash, port}` → `HEALTHY {hash, ms}` or `DEAD {hash, exit, tail}` | the candidate's own supervisor is started from `versions\<hash>\` in a fresh job, cwd outside it, on a second port; it must answer `/healthz` with `{"version": hash, "ready": true}` within T seconds; the page can open it in a second window ("try the candidate"); the candidate cannot see the pointer or the journal | the *old* supervisor | the job dies with the supervisor; `DEAD` is appended at next start if `LAUNCHED` has no end |
 | 7. Review | — | the page shows: the diff, the footprint and what the check realized, the suites' results and times, the generation's hash and the manifest, the launch's health, and the model's rationale; Admit and Reject buttons; nothing else is enabled while a candidate is unreviewed | the designer | nothing moves |
-| 8. Promote | `PROMOTE_BEGIN {hash, from: A, tries: 3}` → pointer rename → `PROMOTE_END {hash}` | only on Admit: the supervisor writes `studio\active.<hash>+3.json.tmp` with `{hash, seq}`, fsyncs it, and moves it over `studio\active.json` with `MoveFileExW(MOVEFILE_REPLACE_EXISTING \| MOVEFILE_WRITE_THROUGH)` (ctypes; never `os.replace`); then asks the stub to restart it: the stub closes the old job (the old supervisor, its server, its browser), reads the pointer, decrements the tries by rename, launches the new generation | supervisor then stub | `PROMOTE_BEGIN` without `PROMOTE_END` and `pointer.seq < seq` ⇒ redo the rename; otherwise the rename already happened |
+| 8. Promote | `PROMOTE_BEGIN {hash, from: A, basis, tries}` → pointer rename → `PROMOTE_END {hash}` | only on Admit, and only while `Fresh(C, B_now)` (a basis that moved in a dependency the candidate recorded is `SOURCE-STALE`: validate again or discard) and `Integrity(G(C))` (the manifest and every file it names re-hashed now, the time measured and reported, never assumed small): the supervisor writes `studio\active.<hash>+3.json.tmp` with `{hash, seq}`, fsyncs it, and moves it over `studio\active.json` with `MoveFileExW(MOVEFILE_REPLACE_EXISTING \| MOVEFILE_WRITE_THROUGH)` (ctypes; never `os.replace`); then asks the stub to restart it: the stub closes the old job (the old supervisor, its server, its browser), reads the pointer, decrements the tries by rename, launches the new generation | supervisor then stub | `PROMOTE_BEGIN` without `PROMOTE_END` and `pointer.seq < seq` ⇒ redo the rename; otherwise the rename already happened |
 | 9. Bless or fall back | `BLESSED {hash}` or `ROLLBACK {from, to: P, reason}` | the new generation's supervisor must become `Healthy` within T seconds **and** serve the page once (a `/studio/alive` POST from the page with its token); the stub then strips the tries counter (rename) and the supervisor appends `BLESSED`; a dead or silent generation exhausts its tries and the stub launches `P` and appends `ROLLBACK` | stub and supervisor | tries in the filename survive a crash; `P` is never garbage-collected |
-| 10. Recover | — | at every start the stub replays `J`, verifies the pointer's manifest, applies `active ??= last BLESSED`, garbage-collects tmp directories and generations older than `P`, and reports what it did on the first page | stub | idempotent |
+| 10. Recover | `RECOVERED {reason, to}` when anything was done | at every start the stub replays `J`; a **missing** pointer gets `active ??= last BLESSED`; an **invalid** one (torn, a generation without `PROMOTE_END`, a manifest that does not verify) is replaced by what `J` allows — the last `PROMOTE_END` whose generation verifies, else the last `BLESSED` — and said; `Integrity` is checked before any launch or recovery that relies on a generation; tmp directories and generations older than `P` are garbage-collected; the first page shows what was done | stub | idempotent |
 
 **Atomicity.** One rename per promotion, one per bless, one per fallback; no file of a generation is ever rewritten.
 **Durability.** The journal is forced before the pointer; the pointer is moved write-through; a generation's files are
@@ -543,9 +582,11 @@ the "previous version" control), the stub (restart on exit 86; tries in the file
 
 **Prerequisites.** B1. **Steps.** The ten steps of §6, in this order of implementation: the journal and the pointer
 with their replay and death-point harness first (nothing else is trustworthy without them); then staging and the
-footprint check with `RESERVED`; then build and suites in a job; then launch and health; then the page; then the
-model's request format last, so that every stage is tested with hand-written candidates before any model writes
-one. **Acceptance.** The product list in §9, items 6–9, on his machine: a prompt yields a built candidate; Try opens
+footprint check with `RESERVED`; then the basis record and its comparison (`Fresh`), with the three cases a reviewer
+named — a candidate on the current basis promotes; a validator or toolchain change after validation refuses or
+revalidates; an unrelated change reuses the recorded result only because the basis says the dependency is
+unchanged; then build and suites in a low-integrity job; then launch and health; then the page; then the model's
+request format last, so that every stage is tested with hand-written candidates before any model writes one. **Acceptance.** The product list in §9, items 6–9, on his machine: a prompt yields a built candidate; Try opens
 it; Admit promotes and restarts; Reject leaves A; a candidate planted to crash after `ready` is rolled back to `P`
 with `ROLLBACK` in the journal; a power loss simulated at each death point (the harness kills the supervisor) leaves
 the stub able to start `A` or `P`. **Adversarial.** A patch touching a reserved path (`SOURCE-RESERVED`); a patch
@@ -663,7 +704,7 @@ his own ISO. **Out of scope.** Store distribution; MSIX.
 
 ## 8. The first vertical slice, and the prototype that can falsify the architecture
 
-**The prototype (one or two days, before B1 is committed to).** Three experiments with pass/fail criteria, on the
+**The prototype (one or two days, before B1 is committed to).** Four experiments with pass/fail criteria, on the
 owner's machine, nothing committed:
 
 1. `msedge.exe --app=http://127.0.0.1:PORT/ --user-data-dir=%TEMP%\vs-edge --no-first-run` against a running
@@ -675,9 +716,14 @@ owner's machine, nothing committed:
    start a provider through it, close the handle: every process is gone. *Kill criterion:* assignment fails under
    his shell's own job (nested jobs should allow it on Windows 8+); then the stub must `CREATE_BREAKAWAY_FROM_JOB`.
 3. A 40-line pointer-swap script with `MoveFileExW(... WRITE_THROUGH)` killed by a second process at random points
-   over 200 runs: the pointer always reads as the old or the new file. *Kill criterion:* a torn pointer is ever
-   read → the pointer gets a length-and-hash envelope (the shell's journal record form) and the stub treats a
-   malformed one as "missing" (`??=`).
+   over 200 runs: the pointer always reads as the old or the new file. This measures process-kill consistency only.
+   *Kill criterion:* a torn pointer is ever read → the pointer gets a length-and-hash envelope (the shell's journal
+   record form) and the stub treats a malformed one as *invalid* (recover from `J`), a missing one as `??=`.
+4. The suites at low integrity: a 50-line `ctypes` script makes a low-integrity token and runs `python art/check.py`
+   and `python art/studio.py selftest` with `TMP` set to a folder labelled Low; then tries to write
+   `studio\active.json` from inside: the suites pass, the write is refused. *Kill criterion:* a suite cannot run at
+   low integrity (a registry or profile write it needs) → the capability boundary of §5.2 is downgraded to
+   tamper-evidence, written as such, and the Try window runs at medium against a scratch copy.
 
 **The slice (B1 in full).** Its files, its acceptance and its tests are in §7. Its demonstrable outcome: *the icon on
 his desktop opens the plaza; he tags two canopies, matches one to the other through Claude, admits it, closes the
@@ -716,6 +762,8 @@ the owner's machine and recorded.
 | The API provider's schema rules drift (as `tool_choice` did) | the provider breaks silently | the self-test's mock mirrors the documented rules; `probe` is run after any provider change; the CLI stays as the second path | — |
 | The charter's std-only rule against a packaging-time tool | no installer | the portable layout and the inbox-COM shortcut need no tool; the Inno script waits for his ruling | — |
 | Sending stills to a model (egress) | a privacy surprise | the per-session opt-in; the still is the renderer's, never a screen capture | — |
+| The suites or Python cannot run at low integrity (a write outside the low-labelled scratch) | the capability boundary is weaker than §5.2 claims | experiment 4 first; the boundary downgraded in writing, not quietly | §8.4 |
+| A stale basis is accepted (a validator or the toolchain changed after validation) | an old verdict authorizes a different candidate | the basis is recorded at PROPOSED and compared at PROMOTE; `SOURCE-STALE` revalidates or discards; a mutant that skips the comparison must fail | — |
 | Self-improvement promotes a generation that breaks the gate's trees | the owner's repository diverges from the certified program | reserved footprints; `OWNER-GATE` marking; the supervisor never commits | — |
 | Scope creep into a plugin framework or a general engine | the product stalls | the backlog's classes; one protocol, domain validators, no plugin API | — |
 
@@ -723,7 +771,7 @@ the owner's machine and recorded.
 
 ## 11. Immediate next actions, in order
 
-1. The three experiments of §8 on the owner's machine (one patch of scratch scripts under `tools\probe\`, not a
+1. The four experiments of §8 on the owner's machine (one patch of scratch scripts under `tools\probe\`, not a
    rung), their results recorded here.
 2. B1, in commits that each pass the self-tests: the content path's durable writes and `crashtest`; the API
    provider on structured outputs and the CLI's flags, with `probe` run on both; the tags persisted and shown;
@@ -731,18 +779,50 @@ the owner's machine and recorded.
    his machine; `docs/ROADMAP.md` recorded; pushed by him.
 3. B2's journal and pointer with their death-point harness, before any other part of B2.
 4. His rulings, asked once: a packaging-time tool (Inno Setup) yes or no; the tag numbering stays by first touch
-   (shown) or restarts per session; which Claude model the API provider defaults to; whether the stills may leave
-   the machine by default or by opt-in.
+   (shown) or restarts per session; which Claude model the API provider defaults to (the prices on 2026-10-12, per
+   million tokens in and out: Haiku 5.5 $0.10 / $0.50, Sonnet 5.5 $2 / $10, Opus 5.5 $4 / $20, Fable 5.1 $10 / $50;
+   a reviewer's note that Fable 5.1 is "cheaper" is wrong); whether the stills may leave the machine by default or
+   by opt-in.
 
 ---
 
 ## 12. What this plan does not show
 
 That the architecture works: it is decided from documentation and the repository, and §8's prototype is where it is
-first measured. That VCT-0 is a theorem: it is a statement with named parents and an explicit axiom list, held by a
-harness, not proved. Anything about the quality of what a model proposes for source or for art. The behaviour of
-Edge, WebView2 or Windows Sandbox beyond what the cited pages say. Whether the owner accepts a packaging-time tool.
-Nothing here enters the certified gate; the gate stays at 251 rows.
+first measured. That VCT-0 is a theorem: it is three claims with named parents and an explicit axiom list, held by a
+harness for process-kill consistency, not proved, and not measured for an operating-system crash or a power loss.
+That the capability boundary holds beyond what Mandatory Integrity Control documents: an administrator, or code
+already at the user's integrity level, is outside it. Anything about the quality of what a model proposes for source
+or for art. The behaviour of Edge, WebView2 or Windows Sandbox beyond what the cited pages say. Whether the owner
+accepts a packaging-time tool. Nothing here enters the certified gate; the gate stays at 251 rows.
 
 Sources: the research notes and report of 2026-10-12 (`docs/RESEARCH-FINDINGS.md`, R-15, lists the primary pages);
 the repository at HEAD `58917b7`.
+
+---
+
+## 13. The review of 2026-10-12, verified before agreement
+
+The owner brought three reviews of this plan and asked that their claims be searched before anything was agreed
+(*"websearch this before agreement"*). Each claim that bears weight was checked against a primary page the same
+day; the table says what was found and what the plan now does.
+
+| the reviewers' claim | found | the plan |
+|---|---|---|
+| "Fable 5.1 is cheaper but weaker" (first review) | **wrong on price**: Fable 5.1 is the most expensive of the four, $10 / $50 per million tokens; Sonnet 5.5 $2 / $10, Opus 5.5 $4 / $20, Haiku 5.5 $0.10 / $0.50 (VERIFIED: [pricing](https://platform.claude.com/docs/en/about-claude/pricing)); on relative strength no benchmark was read | the default model stays the owner's ruling; the prices are in §11 |
+| `tool_choice: tool` → `output_config.format` "should be validated against the exact model and API" (second review) | **validated**: "`any` and `tool` return a 400 error" on Opus 5.5, Sonnet 5.5, Fable 5.1 and Mythos 5.1 ([implement tool use](https://platform.claude.com/docs/en/agents-and-tools/tool-use/implement-tool-use)); `output_config.format` with `type: "json_schema"` is the Messages API's parameter ([API reference](https://platform.claude.com/docs/en/api/messages), [structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)); the CLI's `--json-schema` already worked on his machine with Opus 5.5 | B1 step 4 stands; the self-test's mock will refuse the old shape as the API does |
+| `_commit` is not evidence that directory entries or a later rename are durable (second review) | **right**: `os.fsync` on Windows is `_commit` ([os](https://docs.python.org/3/library/os.html)), which "forces the operating system to write the file associated with fd to disk" and says nothing of the directory ([_commit](https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/commit)) | axioms A2 and A3 in §5.2; three consistency levels claimed separately |
+| "NTFS rename with `MOVEFILE_WRITE_THROUGH` is crash-atomic" is too strong (second review) | **right**: no Microsoft page says "atomic" (§2.2) | axiom A1, a hypothesis; the harness measures process-kill consistency only |
+| Separate failure isolation, promotion correctness and recovery correctness (second review) | a structural point, not a factual one | adopted: §5.2's three claims |
+| "Process separation is not capability isolation" (second review) | **right**, and answerable: Mandatory Integrity Control's `NO_WRITE_UP` default, "a principal with a low integrity level cannot write to an object with a medium integrity level, even if that object's DACL allows write access" (VERIFIED: [MIC](https://learn.microsoft.com/en-us/windows/win32/secauthz/mandatory-integrity-control)); a low-integrity process by `SetTokenInformation(TokenIntegrityLevel)` and `CreateProcessAsUser` (VERIFIED, an archived article) | adopted: candidates validate and Try at low integrity; experiment 4; the limit written (administrators, medium-level code) |
+| `??=` must not keep a corrupt pointer; missing and invalid differ (second review) | a semantic point | adopted: `??=` for missing only; invalid recovers from the journal, recorded |
+| A generation hash is not a complete cache key (second and third reviews) | **right**, by Build Systems à la Carte's verifying traces (§2.4) | adopted: the basis record `B_C`; a suite result reused only on an identical basis; both reuse and invalidation tested |
+| Checkpoint freshness: bind a candidate to its base generation, source revision, validators, toolchain and configuration; three outcomes — fresh, stale but reusable, stale and invalidated (the third review's refinement) | consistent with T3 and `STUDIO-STALE` | adopted as `Fresh(C, B_now)` and `SOURCE-STALE` |
+| Verify the manifest and content before launch, at "microseconds per launch" (third review) | the cost claim is **unsupported**: hashing a generation is proportional to its size and the disk | adopted: `Integrity(G)` before activation and recovery, its time measured and reported |
+| `tries = 3` as a theorem clause (third review) | a policy | adopted as policy: the clause is that a counter exists and is decremented by rename |
+| A flipped verdict is a changed decision boundary, not automatically a regression (second review) | a semantic point | adopted for the verdict-drift probe: old verdicts and their inputs kept; flips classified, not failed |
+| A rendered view can reveal private project content; disclose what leaves the machine and to whom (second review) | agrees with Blender's rule (§2.3) | adopted for B3's critic: per-session consent naming the provider and what is sent |
+
+The rulings the reviews recommended (a packaging-time tool as an optional path; tags persisted and shown; the
+default model configurable; session-scoped consent for stills; the three probes accepted off the gate) are
+recommendations until the owner rules; §11 asks him.

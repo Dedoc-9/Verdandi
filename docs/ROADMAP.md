@@ -3623,6 +3623,21 @@ current Claude model refuses with 400 (VERIFIED on 2026-10-12; the self-test hol
 the director writes the brief and appends the ledger without fsync or rename, while the shell's journal does both.
 Nothing is built; the gate is unchanged.
 
+**The review (2026-10-12).** 0208 applied as tree 1fc0422a, as predicted; the gate 251 rows / 0 fail; pushed
+aa83f2f..2517a27. He then brought three reviews of the plan with one instruction, *"websearch this before
+agreement"*. Each claim that bears weight was checked against a primary page the same day (`docs/STUDIO-APP.md`
+§13): one review's price claim was wrong (Fable 5.1 is the most expensive model, $10 / $50 per million tokens, not
+"cheaper"); the second review's cautions held — `_commit` says nothing of directory entries, no Microsoft page calls
+an NTFS rename atomic, process separation is not capability isolation, a generation hash is not a complete cache
+key, missing and invalid differ for `??=`; the third review's checkpoint refinement held. The plan was amended: VCT-0
+stated as three claims (isolation, promotion correctness, recovery correctness) over an explicit axiom list, with
+three levels of consistency claimed apart (process-kill measured; OS-crash under axioms; power-loss not claimed); a
+candidate's **basis** (base, sources, validators, toolchain, configuration) recorded at proposal and compared at
+promotion, and the only cache key; a generation's integrity verified before activation and recovery, its cost
+measured; the capability boundary made real with Windows' Mandatory Integrity Control (candidates validate and are
+tried at low integrity, which cannot write the pointer, the journal, the stub or the projects), its limit written;
+a fourth experiment for it. The reviews' recommended rulings remain his to make.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
