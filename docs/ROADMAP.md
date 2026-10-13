@@ -3816,6 +3816,23 @@ taken for a close, the studio stopping with the request running; on Windows an e
 DIRECTOR RACETEST PASSED (32 cases), DIRECTOR CRASHTEST PASSED (14 cases), STUDIO SELFTEST 61/61, LIVE SELFTEST
 18/18, VECTORS 62 / 62, ART CHECKS PASSED; in a browser (not committed) B1's flows 9/9.
 
+**0216 on his machine, and CWCT written (2026-10-13).** 0216 applied as tree ff0d4a9b, as predicted; on Windows STUDIO
+APP SELFTEST 11/11 (the eleventh, a live job's list, exactly the process and its child) and DIRECTOR SELFTEST PASSED
+with the shared-map cases; the gate 251 rows / 0 fail; pushed 3b7d0a9..15901d6. B1's fix list is done but for the
+queue's two, which go with STUDIO-2. Then, in the agreed order, `docs/CWCT.md`: the Creative World Closure Theorem as
+he ruled it on 2026-10-12 — *"ACCEPT the Creative World Closure Theorem as the organizing research hypothesis. DEFER
+any claim that it is proved or novel."* — and stated as he asked, *"state the l99 version of the theorem in the docs
+plainly"*: eight clauses in plain words (nothing reaches a world but an admission, or is found; what is not admitted
+changes nothing; an interrupted admission ends at the parent or the child; a late answer never overwrites newer work;
+one world's admission changes no other; every admitted state explained by digests; no machine admits; work reaches a
+decision, conditionally), with the review's corrections (the box over failures, not admissions; recovery as an
+enumerated set; VCT-0's operators imported verbatim; `ProtectedState` defined; `CWCT ⊃ VCT-0`, the content ledger its
+content-domain instance; `◊Decided`; shared assets as pinned revisions; a batch and a kill criterion per clause; the
+proposal's integrated experiment attached to batches; hash chains with cross-references by digest), the fault model
+and the rules the measurements gave, the four operational invariants with their status, the game-and-physics
+consequences, the art reviews' obligations as measurements, and the grammar's guardrails. Its sources are
+`docs/RESEARCH-FINDINGS.md` R-16. Docs only; no row, rung, pinned source or oracle file changed.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

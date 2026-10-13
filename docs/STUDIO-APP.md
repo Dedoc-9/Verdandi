@@ -332,6 +332,9 @@ synthesis below is the mix.
 
 ### 5.2 VCT-0: the Verðandi Change Transaction (the synthesis, with its operators)
 
+*(2026-10-13: VCT-0 is the source-domain instance of the Creative World Closure Theorem, `docs/CWCT.md`, which imports
+its operators and axioms; the content ledger is the content-domain instance.)*
+
 One protocol, two domains (a world's content; the studio's source), two validators, one ledger discipline. Let `G`
 be a generation (an immutable directory named by its content hash), `A` the active generation, `P` the previous
 blessed one, `J` the promotion journal, `D` the projects, `C` a candidate with declared footprint `F(C)`, and `B_C`

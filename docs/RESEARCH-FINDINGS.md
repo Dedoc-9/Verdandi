@@ -401,6 +401,44 @@ document, with its status (VERIFIED from the page, or INFERRED). The primary pag
   are.
 - **A decision?** Made: the owner's direction of 2026-10-12 and the plan.
 
+## R-16 · Ghosts searched for before CWCT and STUDIO-2 (`docs/CWCT.md`)
+
+The owner asked, on 2026-10-12, to *"websearch for ghosts to harden in this before continuing"*. Read that day and the
+next, for what usually breaks a multi-world, queue-fed, crash-safe studio; each finding was checked against the source
+and graded there (`docs/CWCT.md` §4–§11; the fixes in `docs/ROADMAP.md`, B1 hardened). The pages, grouped:
+
+- **Durability and recovery.** Pillai et al., ALICE (OSDI 2014), via *the morning paper*; Microsoft Learn,
+  `MoveFileExA` (`MOVEFILE_WRITE_THROUGH`), `LockFileEx` (locks released when a process ends, "depends upon available
+  system resources"), Job Objects, `JOBOBJECT_BASIC_PROCESS_ID_LIST`; LWN on PostgreSQL's fsync errors (2018); Zheng et
+  al., *Understanding the Robustness of SSDs under Power Fault* (FAST '13); flock(2); Mercurial's wiki on unlinking
+  files on Windows; git for Windows' change to atomic O_APPEND with `FILE_APPEND_DATA`; the Git lock's handling.
+- **Concurrency and provenance.** Kleppmann's argument for fencing tokens, as discussed by Hochstein (2025); Cockroach
+  Labs on write skew; Crosby and Wallach, tamper-evident logging (USENIX Security 2009); event versioning
+  (event-driven.io); the Bazel book on hermeticity and cache hits; nix.dev on garbage-collector roots and Nix issue
+  #4250; Mend on mutable Docker tags; bugnet on Unity prefab overrides lost; the oneuptime write-ups on duplicates
+  under at-least-once delivery; Anthropic's model deprecations.
+- **The browser and the local server.** Chrome's Local Network Access post; a DNS-rebinding defence (Megginson);
+  Chrome's timer throttling (Chrome 88) and freezing on Energy Saver; Microsoft's performance features in Edge
+  (sleeping tabs); ungoogled-chromium's flags.
+- **Grammar, models and learning.** Hadlow's configuration complexity clock (2012); Smith and Whitehead, expressive
+  range (PCG 2010); Zhang et al., verbalized sampling (2025); Tam et al., *Let Me Speak Freely?* (2024); Jiang et al.,
+  degenerate feedback loops (AIES 2019); Hughes et al., open-endedness (ICML 2024).
+- **Game and physics engines.** Box2D's determinism post (2024); Rapier's determinism guides (Rust and JavaScript);
+  Gaffer on Games, *Floating Point Determinism* and *Fix Your Timestep*; MDN's `Math`; Unity Entities' structural
+  changes.
+- **Information flow** (the owner's reviews of 2026-10-13). The Biba model; Cecchetti, Myers and Arden on endorsement
+  (nonmalleable information flow); hyperproperties.
+
+- **Here.** The search found eight ghosts live in the source: the admission's check made before its write, the shared
+  map, the queue's torn tail, a crash that pays twice, tags that do not follow a moved object, the job's process list
+  misread, silence taken for a closed window, GETs answering any host's name. Building their fixes found six more: the
+  ledger's appends without a lock, recovery that could undo a live admission, the module-global maps folder, the
+  gateway's shared standard output, the request record's unlocked appends, and self-tests that read the owner's
+  working brief. All are fixed in B1 but three: the queue's two go with STUDIO-2, and the tags' identity is deferred.
+  Two measurements on the owner's machine came of it: the content lock taken back from a dead holder at once, and
+  unlocked appends losing and tearing lines.
+- **A decision?** Made: the fixes, in the order he approved; the rest is `docs/CWCT.md`.
+
 ## Not searched, so not claimed
 
 - **The graybox's decoration bound:** decoration must stand above the highest eye a player can reach, so no
