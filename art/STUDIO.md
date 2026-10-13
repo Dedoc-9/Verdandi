@@ -154,7 +154,9 @@ the API's token counts with no cost, since prices are not a provider's to know).
 anything here.
 
 An exit status other than 0 is a failure; the last line of the provider's standard error is shown. An empty list of
-candidates is an answer: *the director proposed nothing*.
+candidates is an answer: *the director proposed nothing*. It carries no reason. Whatever the model's own, the art file
+has no statement for some requests: it says canopies, towers, neon, lamps, puddles, materials, the sky and the air,
+and nothing of people, vehicles or props, so a prompt to add a figure can only be answered with nothing.
 
 ## What the gateway does with it
 

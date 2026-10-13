@@ -3889,6 +3889,26 @@ admitted, its ledger and tags (if the ledger verifies in the copy), and harbor-d
 from the new folder, the checkout's brief and ledger can go back to the committed ones; the desktop studio does not
 read them again, and his earlier requests' records stay in the checkout's `art/build/studio/`.
 
+**0218 on his machine, and harbor-day drawn white (2026-10-13).** 0218 applied as tree e2366170, as predicted; on
+Windows STUDIO-2 SELFTEST 13/13, STUDIO APP SELFTEST 12/12 (the new row naming the per-user folder), STUDIO SELFTEST
+61/61 (providers started with `CREATE_NO_WINDOW` run and are cancelled as before; whether a console window would have
+opened without it is still not seen), LIVE SELFTEST 18/18, ART CHECKS PASSED with harbor-day's checks and plants; the
+gate 251 rows / 0 fail; pushed fadeb7b..c925154; and the checkout's plaza put back to the committed one. His unlocked
+appends this time: 397 lines of 400, 390 whole (MEASURED; 399 and 396 before). He then played the studio from its icon
+and queued a prompt for harbor-day (Claude through Claude Code's CLI, `claude-sonnet-5-5`, $0.0230): *"the director
+proposed nothing"*. Two things his window showed. **The answer was empty**, and an empty answer carries no reason;
+whatever the model's, the art file has no statement for a person, a vehicle or a prop, so a prompt to add a figure
+can only be answered with nothing (art/STUDIO.md says so now). **harbor-day was drawn nearly white**, a defect of
+mine: its sun was written as a real sun's 90,000 lux at an exposure bias of −0.6, as Unreal would take them, but the
+native renderer is linear in lux, set on the night plaza's moon (0.35 lux at +1.5) with no exposure of its own, so the
+sunlit surfaces came out tens of thousands of times the display's white; no check sees a picture, and I had not looked at a still of it
+before delivering it. MEASURED in the container (stills, the plaza-centre view): as delivered, 51% of the pixels white;
+with the sun at 1.0, 1.6, 2.5 and 4.0 and no bias, none white, a sunlit midday from 2.5 (four more views looked at).
+Fixed: the template's sun is 2.5 at no bias; art/README.md says the native renderer's scale; AGENTS.md: a new brief, or
+a change to a brief's sky or air, is looked at in a still before it is delivered. His own harbor-day, a world of its
+own now, changes only through its ledger: an intent (`harbor-day-sun.intent`, the same two lines, scope `env/light`
+and `env/exposure`) evaluated CLEAN and admitted in a seeded copy here, and given to him to evaluate and admit there.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

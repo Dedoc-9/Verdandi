@@ -10,9 +10,9 @@ title Sunlit harbour terraces at midday
 seed saltwind
 
 time day
-sun 150 62 90000 255,246,228
+sun 150 62 2.5 255,246,228
 fog 0.012 214,226,236
-exposure -0.6
+exposure 0
 bloom 0.3
 rain 0.0
 

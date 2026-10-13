@@ -67,7 +67,7 @@ z down). [`briefs/plaza-night.art`](briefs/plaza-night.art) is the first.
 |---|---|
 | `map NAME` | the graybox map to dress (required, once) |
 | `title TEXT` · `seed WORD` | a name; the word every choice is hashed with |
-| `time night\|dusk\|day` · `moon AZ EL LUX R,G,B` (or `sun`) | the sky; the one directional light, from azimuth AZ (0 north, 90 east) and elevation EL |
+| `time night\|dusk\|day` · `moon AZ EL LUX R,G,B` (or `sun`) | the sky; the one directional light, from azimuth AZ (0 north, 90 east) and elevation EL. The native renderer reads LUX on a linear scale of its own, set on the night plaza's moon (0.35) and with no exposure of its own: a midday sun there is about 2.5 (`harbor-day`); a real sun's 100,000 lux, as Unreal takes it, is drawn white |
 | `fog DENSITY R,G,B [volumetric]` · `exposure EV` · `bloom N` · `rain 0..1` | the air and the camera |
 | `asset NAME PATH SOURCE LICENCE…` | a mesh, its engine path, its source (`engine`, `cc0`, `fab`, `generated`, `own`) and its licence; a mesh without both is refused |
 | `material NAME R,G,B ROUGH METAL [emissive R,G,B STRENGTH]` | a surface |
