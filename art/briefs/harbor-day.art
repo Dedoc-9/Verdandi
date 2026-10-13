@@ -1,0 +1,92 @@
+VERDANDI-ART 0
+# STUDIO-2, the second world: "sunlit harbour terraces at midday", dressed on the same tactical graybox as the plaza at
+# night, so that the studio holds two worlds from its first start. Nothing here moves a wall, a floor, a cover block or
+# a spawn. The direction, in one breath: pale limestone and whitewash under a high sun, a dry haze off the water;
+# painted team colours instead of neon — ochre at base A in the west, sea-blue at base B in the east, coral where they
+# meet; awnings in place of the concrete slabs.
+
+map tactical
+title Sunlit harbour terraces at midday
+seed saltwind
+
+time day
+sun 150 62 90000 255,246,228
+fog 0.012 214,226,236
+exposure -0.6
+bloom 0.3
+rain 0.0
+
+# every mesh names where it came from and under what licence
+asset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)
+
+# the palette: limestone, whitewash, dry stone paving, tide pools, painted steel, and three team colours as painted
+# signs, lit faintly from within (a sign is a neon here, and a neon must emit)
+material concrete       214,206,188 0.82 0.0
+material concrete_dark  176,168,152 0.88 0.0
+material concrete_wet   198,192,178 0.70 0.0
+material floor_wet      188,176,152 0.78 0.0
+material plaza_stone    226,218,200 0.64 0.0
+material puddle          52,96,118  0.05 0.0
+material housing         70,92,104  0.40 0.7
+material neon_amber     214,150,52  0.55 0.0 emissive 214,150,52 4
+material neon_cyan       40,120,170 0.55 0.0 emissive 40,120,170 4
+material neon_magenta   232,110,92  0.55 0.0 emissive 232,110,92 4
+
+# the play geometry: what C holds, in the look's materials
+surface ground floor_wet
+surface floor  floor_wet
+surface stair  floor_wet
+surface raised plaza_stone
+surface cover  concrete_wet
+surface wall   concrete
+
+# regions: names for the places the look talks about (cells, x across and z down). The mid lane is two regions, west
+# and east of the plaza: one region crossing the plaza put two puddles in one place, which the exporter refuses.
+region base-a      2,9  8,22
+region base-b     39,9 45,22
+region north-lane  5,3 42,6
+region south-lane  5,25 42,28
+region mid-west    9,14 18,17
+region mid-east   29,14 38,17
+region plaza      19,10 28,21
+region north-flank 23,7 24,9
+region south-flank 23,22 24,24
+
+# massing: the city beyond the walls, and the towers that make the plaza a room
+skyline concrete_dark 8 26
+tower plaza concrete_monument 16 30
+tower base-a concrete 6 10
+tower base-b concrete 6 10
+# a cantilevered slab over the plaza's north edge, and its twin over the south edge
+canopy plaza concrete_slab 7.0 19,10 28,11
+canopy plaza concrete_slab 7.0 19,20 28,21
+
+# light: the sun does the work; lamps low and warm in the shaded lanes and flanks
+neon base-a neon_amber 2.9 3
+neon base-b neon_cyan 2.9 3
+neon plaza neon_magenta 3.1 2
+neon mid-west neon_magenta 2.6 5
+neon mid-east neon_magenta 2.6 5
+lamp north-lane 255,214,170 120 4
+lamp south-lane 255,214,170 120 4
+lamp north-flank 255,226,190 150 1
+lamp south-flank 255,226,190 120 2
+lamp plaza 255,236,210 100 3
+
+# water: tide pools left on the paving
+puddle plaza puddle 35
+puddle mid-west puddle 25
+puddle mid-east puddle 25
+puddle north-lane puddle 20
+puddle south-lane puddle 20
+
+# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)
+view base-a-exit    8,15  90  0
+view north-flank   23,8  180  4
+view plaza-centre  24,15  90  2
+view plaza-corner  20,21  40  6
+view south-lane    12,26  90  0
+view mid-west      13,16  90  0
+material concrete_monument 232,224,206 0.80 0.0
+material concrete_slab 236,214,170 0.85 0.0
+canopy plaza concrete_slab 7.6 19,12 20,19

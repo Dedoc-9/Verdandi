@@ -37,6 +37,9 @@
   const Sim = window.GrayboxSim, q = new URLSearchParams(location.search), $ = function (id) { return document.getElementById(id); };
   const brief = q.get("brief") || document.body.getAttribute("data-brief");
   const deg = Math.PI / 180;
+  // STUDIO-2: the page shows one world; every read and every request names it (play.html?world=NAME)
+  const W = encodeURIComponent(brief);
+  const live_url = "/live?world=" + W;
   const get = function (url) {
     return fetch(url, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error(url + ": " + r.status); return r.arrayBuffer(); });
   };
@@ -50,7 +53,7 @@
     return get("/scene/" + brief + ".json?slot=" + k).then(function (sb) {
       return hex(sb).then(function (d) {
         if (d !== null && d !== served.sha) throw new Error("raced: the scene changed while it was fetched");
-        return get("/map/" + served.map + ".json?slot=" + k).then(function (mb) {
+        return get("/map/" + served.map + ".json?slot=" + k + "&world=" + W).then(function (mb) {
           return hex(mb).then(function (md) {
             if (md !== null && md !== served.map_sha) throw new Error("raced: the map changed while it was fetched");
             return { S: json(sb), map: json(mb), sha: served.sha, mapSha: served.map_sha };
@@ -61,7 +64,7 @@
   };
   const fail = function (e) { $("overlay").textContent = String(e && e.message || e); $("overlay").style.display = "flex"; };
 
-  get("/live").then(json).then(function (live) {
+  get(live_url).then(json).then(function (live) {
     const n = live.slots.length;
     let k = q.get("slot") !== null ? parseInt(q.get("slot"), 10) : (n > 1 && live.slots[1].served ? 1 : 0);
     if (!(k >= 0 && k < n && live.slots[k].served)) k = 0;
@@ -145,9 +148,11 @@
     const poll = function () {
       if (busy) return;
       busy = true;
-      get("/live").then(json).then(function (live) {
+      get(live_url).then(json).then(function (live) {
         busy = false;
         studioShow(live.studio);
+        worldsShow(live.worlds);
+        queueShow(live.queue);
         if (live.version !== cur.version || JSON.stringify(live.code) !== JSON.stringify(cur.code)) return sync(live, false);
       }).catch(function () { busy = false; say("play.py does not answer; the last scene stays"); });
     };
@@ -165,7 +170,8 @@
     const studio = { open: false, refs: { target: null, pins: [], items: [] }, last: "", req: null, hover: null };
     const panel = $("studio"), promptEl = $("st-prompt");
     const post = function (path, body) {
-      return fetch(path, { method: "POST", headers: { "Content-Type": "application/json", "X-Studio-Token": token }, body: JSON.stringify(body || {}) })
+      body = Object.assign({ world: brief }, body || {});
+      return fetch(path, { method: "POST", headers: { "Content-Type": "application/json", "X-Studio-Token": token }, body: JSON.stringify(body) })
         .then(function (r) { return r.json().catch(function () { return { ok: false, message: "HTTP " + r.status }; }); })
         .catch(function (e) { return { ok: false, message: "play.py does not answer (" + (e && e.message || e) + ")" }; });
     };
@@ -314,7 +320,12 @@
       showRefs();
       setTimeout(function () { promptEl.focus(); }, 0);
     };
-    const closePanel = function () { studio.open = false; panel.classList.remove("open"); promptEl.blur(); };
+    // closed, the panel keeps no focus: a button or a list of the panel still focused would take the game's keys
+    // (STUDIO-2's browser run: Queue clicked, Esc, and W did not walk)
+    const closePanel = function () {
+      studio.open = false; panel.classList.remove("open"); promptEl.blur();
+      if (document.activeElement && panel.contains(document.activeElement)) document.activeElement.blur();
+    };
     const note = function (r, what) { $("st-status").innerHTML = ""; const el = document.createElement("span"); el.className = r.ok ? "good" : "bad"; el.textContent = r.ok ? what : (r.code ? r.code + ": " : "") + (r.message || "failed"); $("st-status").appendChild(el); };
     const ask = function () {
       const c = eye();
@@ -339,6 +350,7 @@
       studio.last = key;
       if (st.refs) setRefs(st.refs);
       const pv = st.provider || {};
+      studio.provider = pv;
       $("st-provider").textContent = pv.configured ? "provider: " + pv.model + " (" + pv.config + ")" : "no director: " + (pv.error || "play.py was started without --director");
       $("st-ask").disabled = !pv.configured;
       const r = st.request;
@@ -379,6 +391,92 @@
         box.appendChild(l);
       }
     };
+
+    // ---------------------------------------------------------------- STUDIO-2: the worlds, the queue, the toasts
+    const go = function (world, extra) { location.href = "/play.html?world=" + encodeURIComponent(world) + (extra || ""); };
+    let worldsKey = "";
+    const worldsShow = function (ws) {
+      if (!ws) return;
+      const key = JSON.stringify(ws);
+      if (key === worldsKey) return;
+      worldsKey = key;
+      for (const id of ["st-world", "st-qworld"]) {
+        const sel = $(id), was = sel.value;
+        sel.innerHTML = "";
+        for (const w of ws) {
+          const o = document.createElement("option");
+          o.value = w.world; o.textContent = w.world + (id === "st-world" && w.title ? " — " + w.title.slice(0, 40) : "");
+          if (id === "st-world" ? w.world === brief : (was ? w.world === was : w.world === brief)) o.selected = true;
+          sel.appendChild(o);
+        }
+      }
+    };
+    $("st-world").onchange = function () { const v = $("st-world").value; if (v && v !== brief) go(v); };
+    $("st-dup").onclick = function () {
+      const name = $("st-newname").value.trim();
+      post("/studio/worlds/duplicate", { from: brief, name: name }).then(function (r) { note(r, "made world " + (r.world || "")); if (r.ok) go(r.world); });
+    };
+    let queueKey = "", seenNotice = performance.timeOrigin / 1000, optsKey = "";
+    const toast = function (text, bad) {
+      const el = document.createElement("div");
+      el.textContent = text; if (bad) el.className = "bad";
+      $("toasts").appendChild(el);
+      setTimeout(function () { el.remove(); }, 8000);
+    };
+    const queueOpts = function (qs) {
+      const key = JSON.stringify([qs.providers, qs.models]);
+      if (key === optsKey) return;
+      optsKey = key;
+      const ps = $("st-qprov"), ms = $("st-qmodel");
+      ps.innerHTML = ""; ms.innerHTML = "";
+      for (const p of qs.providers || []) { const o = document.createElement("option"); o.value = p.file; o.textContent = p.file.replace(/\.json$/, ""); o.title = p.label; ps.appendChild(o); }
+      for (const m of qs.models || []) { const o = document.createElement("option"); o.value = m; o.textContent = m || "the configuration's model"; ms.appendChild(o); }
+      const pv = (studio.provider || {}).config || "";
+      for (const o of ps.options) if (pv && pv.endsWith(o.value)) o.selected = true;
+    };
+    const review = function (t) {
+      if (t.world !== brief) { go(t.world, "&review=" + encodeURIComponent(t.id)); return; }
+      post("/studio/queue/review", { id: t.id }).then(function (r) { note(r, "reviewing " + t.id + (r.drawn_again ? ": drawn again at the head as it is now" : "")); openPanel(); studio.last = ""; });
+    };
+    const queueShow = function (qs) {
+      if (!qs) return;
+      queueOpts(qs);
+      for (const n of qs.notices || []) {
+        if (n[0] > seenNotice) { seenNotice = n[0]; toast(n[1] + (n[4] === "ready" ? "  (review it in the queue)" : ""), n[4] !== "ready"); }
+      }
+      const key = JSON.stringify(qs.tasks);
+      if (key === queueKey) return;
+      queueKey = key;
+      const box = $("st-qlist");
+      box.innerHTML = "";
+      const c = qs.counts || {};
+      const head = document.createElement("div"); head.className = "dim";
+      head.textContent = (c.running || 0) + " running, " + (c.queued || 0) + " queued, " + (c.ready || 0) + " ready  ·  at most " + qs.concurrency + " at once, one per world";
+      box.appendChild(head);
+      for (const t of qs.tasks || []) {
+        const el = document.createElement("div");
+        el.className = "task " + t.status;
+        const st = document.createElement("span"); st.className = "st"; st.textContent = t.status + (t.stale ? " (stale)" : "");
+        el.appendChild(st);
+        const u = t.usage || null;
+        const cost = u ? (u.cost_usd !== null && u.cost_usd !== undefined ? "  $" + Number(u.cost_usd).toFixed(4) : "  " + (u.input_tokens || 0) + "+" + (u.output_tokens || 0) + " tokens") : "";
+        el.appendChild(document.createTextNode(" " + t.world + " · " + t.prompt.slice(0, 48) + " · " + (t.model || t.provider.replace(/\.json$/, "")) + cost
+          + (t.message && t.status !== "queued" ? " — " + (t.code ? t.code + ": " : "") + t.message.slice(0, 90) : "")));
+        const btn = function (label, fn) { const b = document.createElement("button"); b.textContent = label; b.onclick = fn; el.appendChild(b); };
+        if (t.status === "queued" || t.status === "running") btn("Cancel", function () { post("/studio/queue/cancel", { id: t.id }).then(function (r) { note(r, "cancelled " + t.id); }); });
+        if (t.status === "ready") { btn("Review", function () { review(t); }); btn("Set aside", function () { post("/studio/queue/dismiss", { id: t.id }).then(function (r) { note(r, "set aside " + t.id); }); }); }
+        if (t.status === "failed" || t.status === "cancelled" || t.status === "interrupted") btn("Queue again", function () { post("/studio/queue/requeue", { id: t.id }).then(function (r) { note(r, "queued again " + t.id); }); });
+        box.appendChild(el);
+      }
+    };
+    $("st-queue").onclick = function () {
+      const c = eye();
+      const w = $("st-qworld").value || brief;
+      post("/studio/queue/add", { world: w, prompt: promptEl.value, provider: $("st-qprov").value, model: $("st-qmodel").value,
+                                  camera: w === brief ? { x: c.x, y: c.y, z: c.z, yaw_deg: c.yaw / deg, pitch_deg: c.pitch / deg } : null })
+        .then(function (r) { note(r, "queued " + (r.id || "") + " for " + w + " (its target and pins as they stand there); play on, it runs in the background"); });
+    };
+    if (q.get("review")) setTimeout(function () { review({ id: q.get("review"), world: brief }); }, 300);
 
     // the hooks a still, a walk-through or a test uses
     window.PLAY = {
@@ -429,7 +527,7 @@
     document.addEventListener("mouseup", function (e) { if (e.button === 0) fire = false; });
     document.addEventListener("keydown", function (e) {
       // typing to the director is not playing: the panel's own keys, and nothing reaches the game
-      if (e.target && /^(TEXTAREA|INPUT|BUTTON)$/.test(e.target.tagName)) {
+      if (e.target && /^(TEXTAREA|INPUT|BUTTON|SELECT)$/.test(e.target.tagName)) {
         if (e.code === "Escape") closePanel();
         else if (e.code === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ask(); }
         return;
@@ -468,7 +566,7 @@
       const hv = pickPiece(), hroot = hv ? rootOf(hv.id) : null;
       studio.hover = hv ? { piece: hroot, address: addressOf({ id: hroot, region: hv.region }), tag: tagOf(hroot) } : null;
       const info = cur.slots[cur.k] || {}, sv = info.served || {};
-      $("hud").textContent = (S.title || brief) + "  ·  " + label + "  ·  cell " + Math.floor(s.x / S.grid.cell) + "," + Math.floor(s.z / S.grid.cell)
+      $("hud").textContent = "world " + brief + "  ·  " + (S.title || brief) + "  ·  " + label + "  ·  cell " + Math.floor(s.x / S.grid.cell) + "," + Math.floor(s.z / S.grid.cell)
         + "  ·  hits " + s.score + "\n" + views.map(function (v, i) { return (i + 1) + " " + v; }).join("  ") + "  ·  Tab play  ·  WASD, mouse, Space, Backspace reset  ·  E target, R pin, Enter director"
         + "\nunder the crosshair: " + (studio.hover ? studio.hover.address + (studio.hover.tag ? "  " + studio.hover.tag : "") : "nothing of the art")
         + (studio.refs.target ? "  ·  target " + studio.refs.target : "") + ((studio.refs.pins || []).length ? "  ·  pins " + studio.refs.pins.join(" ") : "")

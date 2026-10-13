@@ -207,6 +207,12 @@ python art/play.py --selftest            # the live loop without a browser: LIVE
   [`STUDIO.md`](STUDIO.md); `python art/studio.py selftest` holds the gateway (STUDIO SELFTEST 61/61), `probe` asks a
   real model whether it answers and follows the prompt (`--references`: whether it changes the objects the prompt
   names, and only those), and `report` compares the providers from what was recorded.
+- **The worlds and the queue (STUDIO-2).** The desktop studio serves the worlds in a per-user folder
+  (`%LOCALAPPDATA%\VerdandiStudio\worlds\`, made from the checkout's briefs the first time), each a tree of its own
+  with its own ledger and maps; `play.py NAME --worlds DIR` serves them. The page switches between worlds, duplicates
+  one, and queues a prompt for any world while it plays on (`studio_queue.py`); a ready task is reviewed in its own
+  world's page, its candidates drawn again at the head as it is then. `python art/studio_queue.py selftest` holds it
+  (STUDIO-2 SELFTEST 13/13); [`STUDIO.md`](STUDIO.md) says how.
 
 ## In Unreal Engine 5.8, on the host (an optional path)
 
@@ -260,7 +266,8 @@ block a player is cover, and goes into the graybox map.
 | `play.py` | the native plaza's launcher: the sources (the brief, candidate intents) compiled, checked and served beside the graybox's simulation, and compiled again when their files change; the studio's endpoints; its own self-test and the studio's |
 | `studio_refs.py` | STUDIO-1: what a tagged object is, its geometry in metres, its nearest wall, and how two stand (measured from the scene's boxes; a facing marked inferred) |
 | `director/durable.py` | B1: the content path's writes made to survive a killed process (an append flushed; a file replaced whole by a flushed temporary and a write-through rename); the death points `art/director.py crashtest` kills at; the content lock every writer of a tree's ledgers, briefs, tags and maps holds (a thread lock and the system's file lock, released by the system when its holder dies), which `art/director.py racetest` holds to account |
-| `studio_app.py` | B1: the desktop studio's supervisor (a job that ends everything it starts, play.py without a console, Edge in application mode, stopping when the window closes) and its `shortcut`; `selftest` with a stand-in browser |
+| `studio_app.py` | B1: the desktop studio's supervisor (a job that ends everything it starts, play.py without a console, Edge in application mode, stopping when the window closes) and its `shortcut`; `selftest` with a stand-in browser. STUDIO-2: it serves the worlds folder (`--worlds DIR`, the per-user folder by default) |
+| `studio_queue.py` | STUDIO-2: the queue of creative work — prompts queued for any world with a provider and a model, run in the background at most one per world, kept across restarts in `queue.jsonl` (a torn last line set aside and cut; a task whose answer was recorded ready, not lost); `selftest` seeds worlds, queues, reviews, duplicates and keeps its plants |
 | `fixtures/selftest/` | the self-tests' world: the plaza's brief and layout as committed when the self-tests were written, laid under a scratch root by `director.py`'s `selftest_tree`; the self-tests never read the working brief, ledger or tags, which are the owner's world |
 | `studio_txn.py` | the studio's change transaction as a reference (docs/STUDIO-CONTRACT.md): the promotion journal's form and grammar and `Recover(J, P, F)`; `check` holds it over every enumerated crash point, `selftest` plants wrong decisions, `recover ROOT` reads a studio and prints what its stub must do; nothing here launches or writes a studio |
 | `studio.py`, `STUDIO.md` | STUDIO-0: the director gateway (a provider's request and response, its limits and refusals, the candidates evaluated, admitted, rejected and undone through the ledger; `probe` and `report`), and its contract |
@@ -268,6 +275,7 @@ block a player is cover, and goes into the graybox map.
 | `web/play.html`, `web/play.js` | the native plaza's page: input, the fixed tick on `sim.js`, the views, the live swap, the studio's tags (E target, R pin, the names and frames on screen) and panel |
 | `web/scene_render.js` | the native renderer (WebGL 2); `load(S)` draws another scene in place, `dispose()` frees it |
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |
+| `briefs/harbor-day.art` | STUDIO-2's second world: sunlit harbour terraces at midday, on the same graybox, nothing of the layout moved |
 | `briefs/plaza-night.revise-look` | its look revision: the wet surfaces less reflective |
 | `briefs/plaza-night.revise-layout.design` | its layout revision: the south flank one cell narrower (the north flank until B was admitted) |
 | `unreal/verdandi_import.py` | the Unreal 5.8 importer, run inside the editor |

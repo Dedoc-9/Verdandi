@@ -6,6 +6,7 @@
 #
 #   python art/play.py BRIEF [--intent FILE]... [--art PATH] [--director CONFIG.json] [--root DIR] [--port N]
 #                            [--no-browser] [--no-watch] [--check]
+#   python art/play.py NAME --worlds DIR [--director CONFIG.json] [--jobs N] [--port N] [--no-browser] [--no-watch]
 #   python art/play.py --selftest
 #
 # By the owner's ruling (2026-10-11): an art-owned launcher, with WebGL 2, and graybox/serve.py and the graybox's
@@ -28,6 +29,10 @@
 #   /map/MAP.json?slot=K                      source K's map, converted by graybox/level.py, as graybox/serve.py serves it
 #   /live                                     what is served now: each source's scene and map digests, its verdict, the
 #                                             last refusal, and the digests of the three scripts
+#   /healthz                                  the server's own state, for the supervisor (B1, below)
+#
+# (STUDIO-2) /play.html, /live and /map/ take ?world=NAME, one of the worlds this server serves (the one it started
+# with when not given); /live then also lists the worlds and the queue's state.
 #
 # Live edits (unless --no-watch). A thread watches every file the sources are made from: the art file, the intents, the
 # graybox's maps folder, and the code that compiles them (art/*.py, art/director/*.py, graybox/level.py,
@@ -49,6 +54,12 @@
 # ledger and write the brief, as art/director.py does; the requests are recorded under art/build/studio/. The page's
 # POSTs carry the token play.html is served with and must name this server as their host. --root DIR plays the brief
 # of another tree (DIR/art/briefs, DIR/art/ledger), as the self-test does in a scratch copy.
+#
+# The worlds (STUDIO-2; class Hub, seed_worlds, art/studio_queue.py, art/STUDIO.md). With --worlds DIR the server serves
+# every world in DIR, each a tree of its own (DIR/NAME/), opened when the page or the queue first asks for it; a DIR
+# with no world is first seeded from the checkout, every brief of it copied whole and kept only if its ledger verifies
+# in the copy (SEEDED.json). The page switches worlds, duplicates one, and queues a prompt for any world; the queue
+# (DIR/queue.jsonl) runs at most --jobs requests at once, one per world, while every world plays on.
 
 import hashlib
 import http.server
@@ -104,25 +115,40 @@ def director():
     return _director
 
 
-def compile_scene(brief, art_path=None):
-    """The brief's scene, held to the art checks, and the map it is played on. Raises SystemExit with the reason if
-    the brief is refused or a check fails."""
+def maps_of(root):
+    """The folder of maps a tree's briefs are played on: the root's own (STUDIO-2: every world keeps its own copy)."""
+    return os.path.join(root or ROOT, "graybox", "maps")
+
+
+def compile_scene(brief, art_path=None, maps_dir=None):
+    """The brief's scene, held to the art checks, and the map it is played on, over `maps_dir` (the repository's maps if
+    None). Raises SystemExit with the reason if the brief is refused or a check fails."""
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", brief):
         raise SystemExit("PLAY: a brief's name is lower-case letters, digits and -")
     if art_path is None and not os.path.isfile(os.path.join(dress.BRIEFS, brief + ".art")):
         raise SystemExit("PLAY: no brief art/briefs/%s.art" % brief)
-    try:
-        out = dress.export(dress.load(brief, art_path))
-    except (dress.ArtError, level.MapError) as e:
-        raise SystemExit("PLAY: the exporter refused the brief: %s" % e)
-    except OSError as e:
-        raise SystemExit("PLAY: the art file cannot be read: %s" % e)
-    res = check.verify(out, None, D=check.gcheck.source_rows(out["W"]))
-    bad = [(c, d) for c, ok, d in res if not ok and c != "the lineage binds every input"]
-    if bad:
-        raise SystemExit("PLAY: the scene is not served; it fails the art checks:\n" + "\n".join("  FAIL %s — %s" % b for b in bad))
-    scene = out["scene"]
-    m = level.convert(scene["map"])
+    # level.MAPS is one global, pointed at the folder read for the length of the conversion and the checks: the
+    # director's lock, which every such swap in this process holds (two worlds' maps, two threads)
+    D = director()
+    with D.EXPORT_LOCK if D.durable.PLANT != "no-export-lock" else D.NO_LOCK:
+        saved = level.MAPS
+        if maps_dir:
+            level.MAPS = maps_dir
+        try:
+            try:
+                out = dress.export(dress.load(brief, art_path), maps_dir=maps_dir)
+            except (dress.ArtError, level.MapError) as e:
+                raise SystemExit("PLAY: the exporter refused the brief: %s" % e)
+            except OSError as e:
+                raise SystemExit("PLAY: the art file cannot be read: %s" % e)
+            res = check.verify(out, None, D=check.gcheck.source_rows(out["W"]))
+            bad = [(c, d) for c, ok, d in res if not ok and c != "the lineage binds every input"]
+            if bad:
+                raise SystemExit("PLAY: the scene is not served; it fails the art checks:\n" + "\n".join("  FAIL %s — %s" % b for b in bad))
+            scene = out["scene"]
+            m = level.convert(scene["map"])
+        finally:
+            level.MAPS = saved
     return out, level.canon(m), m["manifest"]
 
 
@@ -136,20 +162,20 @@ def _slot(label, source, out=None, map_bytes=None, message="", **extra):
     return s
 
 
-def brief_slot(brief, art_path=None):
+def brief_slot(brief, art_path=None, root=None):
     label = "art " + os.path.basename(art_path) if art_path else "the brief"
     try:
-        out, map_bytes, _m = compile_scene(brief, art_path)
+        out, map_bytes, _m = compile_scene(brief, art_path, maps_of(root))
     except SystemExit as e:
         return _slot(label, art_path or "art/briefs/%s.art" % brief, message=str(e))
     return _slot(label, art_path or "art/briefs/%s.art" % brief, out, map_bytes)
 
 
-def workspace(brief):
-    return director().Workspace(brief, ROOT)
+def workspace(brief, root=None):
+    return director().Workspace(brief, root or ROOT)
 
 
-def intent_slot(brief, path):
+def intent_slot(brief, path, root=None):
     """The brief with the intent at `path` applied, as the director evaluates it at the current head."""
     D = director()
     label = "intent " + os.path.basename(path)
@@ -161,7 +187,7 @@ def intent_slot(brief, path):
     except D.canon.IntentError as e:
         return _slot(label, path, message="PLAY: the intent is malformed: %s %s" % (e.code, e))
     label = "intent %s (%s): %s" % (os.path.basename(path), it["candidate"], it["prompt"])
-    return candidate_slot(workspace(brief), it, label, path)
+    return candidate_slot(workspace(brief, root), it, label, path)
 
 
 def candidate_slot(ws, it, label, source="studio"):
@@ -170,7 +196,8 @@ def candidate_slot(ws, it, label, source="studio"):
     got = {}
 
     def keep(out1, maps):
-        got["map"] = level.canon(dress.world(out1["scene"]["map"], maps))
+        with D.EXPORT_LOCK:                  # dress.world points level.MAPS at the folder: the world's own, or the candidate's
+            got["map"] = level.canon(dress.world(out1["scene"]["map"], maps or ws.maps))
 
     path = source
     try:
@@ -192,15 +219,15 @@ def candidate_slot(ws, it, label, source="studio"):
     return _slot(label, path, out1, got["map"], **extra)
 
 
-def compile_slots(brief, art_path=None, intents=(), only=None):
+def compile_slots(brief, art_path=None, intents=(), only=None, root=None):
     """Every source (or those whose index is in `only`; the others are None)."""
     want = lambda k: only is None or k in only
-    return [brief_slot(brief, art_path) if want(0) else None] + [intent_slot(brief, f) if want(k + 1) else None for k, f in enumerate(intents)]
+    return [brief_slot(brief, art_path, root) if want(0) else None] + [intent_slot(brief, f, root) if want(k + 1) else None for k, f in enumerate(intents)]
 
 
 def emit(brief, art_path, intents, only=None):
     """--emit: the sources compiled, as one JSON document on stdout (what the watcher reads from a fresh process)."""
-    slots = compile_slots(brief, art_path, intents, only)
+    slots = compile_slots(brief, art_path, intents, only, root=ROOT)
     for s in slots:
         if s and s["ok"]:
             s["scene_bytes"] = s["scene_bytes"].decode("utf-8")
@@ -221,17 +248,18 @@ def line(i, s):
 class Live:
     """What is served, and the thread that changes it when the files it is made from change."""
 
-    def __init__(self, brief, art_path=None, intents=(), slots=None, poll=0.3):
+    def __init__(self, brief, art_path=None, intents=(), slots=None, poll=0.3, root=None):
         self.brief, self.art_path, self.intents, self.poll = brief, art_path, list(intents), poll
+        self.root = os.path.abspath(root or ROOT)     # the tree of this world: its brief, ledger, tags and maps (STUDIO-2)
         self.cmd = [sys.executable, "-B", os.path.abspath(__file__), brief, "--emit"] + \
             (["--art", os.path.abspath(art_path)] if art_path else []) + sum((["--intent", os.path.abspath(f)] for f in self.intents), []) + \
-            (["--root", ROOT] if os.path.abspath(ROOT) != os.path.abspath(REPO) else [])     # the child evaluates intents in the same tree
+            (["--root", self.root] if self.root != os.path.abspath(REPO) else [])     # the child compiles in the same tree
         self.lock = threading.Lock()
         self.version, self.compiled_ms, self.stopping = 0, 0, False
         self.stop = threading.Event()        # set by POST /studio/shutdown, SIGTERM or SIGBREAK
         self.page_seen = None                # when the page last said it was alive (POST /studio/alive)
         self.page_bye = None                 # when the page last said it was going (POST /studio/bye, its pagehide beacon)
-        slots = slots if slots is not None else compile_slots(brief, art_path, self.intents)
+        slots = slots if slots is not None else compile_slots(brief, art_path, self.intents, root=self.root)
         self.served = [s if s["ok"] else None for s in slots]
         self.latest = slots
         self.inputs = [self.digest(self.inputs_of(k)) for k in range(len(slots))]
@@ -253,7 +281,7 @@ class Live:
     def inputs_of(self, k):
         """The files source k is made from: its own (the art file; an intent and the brief it is applied to), the maps,
         and the code that compiles them."""
-        brief_file = os.path.join(ROOT, "art", "briefs", self.brief + ".art")
+        brief_file = os.path.join(self.root, "art", "briefs", self.brief + ".art")
         own = [self.art_path or brief_file] if k == 0 else [self.intents[k - 1], brief_file]
         return sorted(set(os.path.abspath(f) for f in own + self.shared()))
 
@@ -261,7 +289,7 @@ class Live:
         return sorted(set(f for k in range(len(self.served)) for f in self.inputs_of(k)))
 
     def shared(self):
-        maps = os.path.join(REPO, "graybox", "maps")
+        maps = maps_of(self.root)
         fs = list(CODE)
         fs += sorted(os.path.join(HERE, f) for f in os.listdir(HERE) if f.endswith(".py"))
         fs += sorted(os.path.join(HERE, "director", f) for f in os.listdir(os.path.join(HERE, "director")) if f.endswith(".py"))
@@ -425,7 +453,7 @@ class Host:
         return director()
 
     def workspace(self):
-        return workspace(self.live.brief)
+        return workspace(self.live.brief, self.live.root)
 
     def candidate_slot(self, ws, it, label):
         return candidate_slot(ws, it, label)
@@ -434,23 +462,239 @@ class Host:
         return self.live.publish(slots)
 
 
+WORLD = re.compile(r"[a-z][a-z0-9-]{1,39}\Z")
+
+
+class Hub:
+    """The worlds one studio serves (STUDIO-2): one Live and one gateway per world, each opened when first asked for and
+    kept open. The page shows one at a time (play.html?world=NAME); the queue (art/studio_queue.py) works on any of them.
+    Two kinds of tree hold the worlds:
+
+      worlds mode (--worlds DIR; the desktop studio's, the owner's choice of 2026-10-13, "Per-user folder"): each world
+      is a tree of its own, DIR/NAME/ — its brief art/briefs/NAME.art, its ledger and tags in art/ledger/, its own copy
+      of the maps in graybox/maps/, its requests' records in art/build/studio/ — so one world's admission writes no
+      other's files, by construction;
+      one tree (--root DIR, or the checkout; the self-tests'): every brief of the tree is a world, and they share its
+      maps (a layout admitted on a map another brief plays is refused: SHARED-MAP)."""
+
+    def __init__(self, live=None, config=None, say=print, watch=True, worlds_dir=None, default=None):
+        self.worlds_dir = os.path.abspath(worlds_dir) if worlds_dir else None
+        self.worlds = {live.brief: live} if live is not None else {}
+        self.default = live.brief if live is not None else default
+        self.config, self.say, self.watch = config, say, watch
+        self.lock = threading.Lock()
+        self.token = None
+        self.stop = live.stop if live is not None else threading.Event()
+        self.page_seen = self.page_bye = None
+        self.queue = None
+        if live is not None:
+            live.hub = self
+
+    def root_of(self, name):
+        """The tree a world's files live in."""
+        return os.path.join(self.worlds_dir, name) if self.worlds_dir else os.path.abspath(ROOT)
+
+    def names(self):
+        if self.worlds_dir:
+            d = self.worlds_dir
+            return sorted(n for n in (os.listdir(d) if os.path.isdir(d) else [])
+                          if WORLD.match(n) and os.path.isfile(os.path.join(d, n, "art", "briefs", n + ".art")))
+        d = os.path.join(ROOT, "art", "briefs")
+        return sorted(f[:-4] for f in os.listdir(d) if f.endswith(".art") and WORLD.match(f[:-4])) if os.path.isdir(d) else []
+
+    def world(self, name=None):
+        """The open world of that name, opened now if it is not: its ledger recovered (or started), compiled, its gateway
+        made, its files watched."""
+        import studio
+        name = name or self.default
+        live = self.worlds.get(name)
+        if live is not None:
+            return live
+        if not isinstance(name, str) or not WORLD.match(name) or name not in self.names():
+            raise studio.StudioError("STUDIO-WORLD", "no world %r: the worlds are %s" % (name, ", ".join(self.names()) or "none"))
+        with self.lock:
+            live = self.worlds.get(name)
+            if live is not None:
+                return live
+            D = director()
+            root = self.root_of(name)
+            ws = workspace(name, root)
+            try:
+                for ln in D.recover(ws):
+                    self.say(ln)
+                if not os.path.exists(ws.ledger):
+                    D._quiet(D.cmd_genesis, ws)
+                    self.say("world %s: its ledger started" % name)
+            except D.led.LedgerError as e:
+                raise studio.StudioError("STUDIO-WORLD", "world %s cannot be opened: %s" % (name, e))
+            live = Live(name, os.path.join(root, "art", "briefs", name + ".art"), [], root=root)
+            live.stop, live.token, live.hub = self.stop, self.token, self
+            start_studio(live, self.config, say=self.say)
+            if self.watch:
+                threading.Thread(target=live.watch, kwargs={"say": self.say}, daemon=True).start()
+            self.worlds[name] = live
+        self.say("world %s opened" % name)
+        return live
+
+    def listing(self):
+        out = []
+        for n in self.names():
+            title = ""
+            try:
+                with open(os.path.join(self.root_of(n), "art", "briefs", n + ".art"), encoding="utf-8") as fh:
+                    for ln in fh:
+                        if ln.startswith("title "):
+                            title = ln[6:].strip()
+                            break
+            except OSError:
+                pass
+            out.append({"world": n, "title": title, "open": n in self.worlds, "default": n == self.default})
+        return out
+
+    def busy(self):
+        """A request runs in some world, or work waits in the queue: the supervisor does not take silence for a close."""
+        for w in list(self.worlds.values()):
+            g = w.studio
+            if g is not None and g.req and g.req.get("state") == "running":
+                return True
+        if self.queue is not None:
+            c = self.queue.state()["counts"]
+            return bool(c.get("queued") or c.get("running"))
+        return False
+
+    def duplicate(self, src, name):
+        """A new world: the brief of `src` copied under `name`, its title marked, with a ledger of its own (and, in worlds
+        mode, its own copy of src's maps: nothing of the two is shared)."""
+        import studio
+        if not isinstance(name, str) or not WORLD.match(name):
+            raise studio.StudioError("STUDIO-WORLD", "a world's name is 2 to 40 of a-z, 0-9 and -, starting with a letter")
+        if name in self.names():
+            raise studio.StudioError("STUDIO-WORLD", "a world %r exists" % name)
+        if src not in self.names():
+            raise studio.StudioError("STUDIO-WORLD", "no world %r to copy" % (src,))
+        D = director()
+        src_root = self.root_of(src)
+        text = open(os.path.join(src_root, "art", "briefs", src + ".art"), encoding="utf-8").read()
+        lines = text.split("\n")
+        for i, ln in enumerate(lines):
+            if ln.startswith("title "):
+                lines[i] = "%s (%s, a copy of %s)" % (ln.rstrip(), name, src)
+                break
+        brief_bytes = "\n".join(lines).encode("utf-8")
+        if self.worlds_dir:
+            dst = self.root_of(name)
+            making = dst + ".making"                 # made aside, then put in place whole by one rename
+            shutil.rmtree(making, ignore_errors=True)
+            os.makedirs(os.path.join(making, "art", "briefs"))
+            D.durable.write(os.path.join(making, "art", "briefs", name + ".art"), brief_bytes)
+            src_maps = maps_of(src_root)
+            os.makedirs(maps_of(making))
+            for f in sorted(os.listdir(src_maps)):
+                if os.path.isfile(os.path.join(src_maps, f)):
+                    D.durable.write(os.path.join(maps_of(making), f), open(os.path.join(src_maps, f), "rb").read())
+            os.rename(making, dst)
+        else:
+            path = os.path.join(ROOT, "art", "briefs", name + ".art")
+            with D.durable.locked(D.led.lock_path(os.path.join(ROOT, "art", "ledger", name + ".ledger"))):
+                D.durable.write(path, brief_bytes)
+        return self.world(name)
+
+
+SEED_FORMAT = "VERDANDI-WORLDS-SEED"
+
+
+def seed_worlds(worlds_dir, source=None, say=print):
+    """The first worlds of a worlds folder (the owner's choice of 2026-10-13: his plaza moved to a per-user folder as the
+    first world, the checkout's plaza the template): when the folder holds no world, every brief of the checkout becomes
+    one, copied whole — its brief, its ledger and tags if it has them, and the checkout's maps — into a folder made
+    aside and put in place by one rename, and only after its ledger, replayed in the copy, verifies. A brief whose
+    ledger does not verify is not copied, and why is said; the checkout's files are read, never written, but for its
+    own recovery (a half-done admission finished or undone, as any start there does). What was copied is recorded, by
+    sha256, in SEEDED.json. Returns the names made; nothing when the folder holds worlds already."""
+    source = os.path.abspath(source or REPO)
+    worlds_dir = os.path.abspath(worlds_dir)
+    os.makedirs(worlds_dir, exist_ok=True)
+    if Hub(worlds_dir=worlds_dir).names():
+        return []
+    D = director()
+    made, record = [], {}
+    briefs = os.path.join(source, "art", "briefs")
+    for f in sorted(os.listdir(briefs)) if os.path.isdir(briefs) else []:
+        name = f[:-4]
+        if not f.endswith(".art") or not WORLD.match(name):
+            continue
+        src = D.Workspace(name, source)
+        making = os.path.join(worlds_dir, name + ".making")
+        shutil.rmtree(making, ignore_errors=True)
+        entry = {}
+        try:
+            if os.path.exists(src.ledger) or os.path.isdir(src.pending):
+                for ln in D.recover(src):
+                    say("checkout: " + ln)
+            files = [(src.art, os.path.join(making, "art", "briefs", f))]
+            for g in (src.ledger, os.path.join(source, "art", "ledger", name + ".tags.json")):
+                if os.path.exists(g):
+                    files.append((g, os.path.join(making, "art", "ledger", os.path.basename(g))))
+            src_maps = maps_of(source)
+            files += [(os.path.join(src_maps, m), os.path.join(making, "graybox", "maps", m)) for m in sorted(os.listdir(src_maps))
+                      if os.path.isfile(os.path.join(src_maps, m))]
+            for a, b in files:
+                os.makedirs(os.path.dirname(b), exist_ok=True)
+                data = open(a, "rb").read()
+                D.durable.write(b, data)
+                entry[os.path.relpath(a, source).replace(os.sep, "/")] = sha256(data)
+            if os.path.exists(src.ledger):
+                events, _st = D._quiet(D.cmd_verify, D.Workspace(name, making), quiet=True)
+                entry["ledger_events"] = str(len(events))
+            os.rename(making, os.path.join(worlds_dir, name))
+            made.append(name)
+            say("world %s made from the checkout%s" % (name, " (its ledger, %s events, verified in the copy)" % entry["ledger_events"]
+                                                       if "ledger_events" in entry else " (a new ledger will be started)"))
+        except (D.led.LedgerError, SystemExit, OSError, ValueError, dress.ArtError, level.MapError) as e:
+            shutil.rmtree(making, ignore_errors=True)
+            entry = {"refused": " ".join(str(e).split())[:300]}
+            say("world %s NOT made from the checkout: %s" % (name, entry["refused"]))
+        record[name] = entry
+    D.durable.write(os.path.join(worlds_dir, "SEEDED.json"), json.dumps(
+        {"format": SEED_FORMAT, "version": "0", "from": source, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "worlds": record},
+        sort_keys=True, indent=1).encode("utf-8") + b"\n")
+    return made
+
+
 STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin",
-                "/studio/alive", "/studio/shutdown")
+                "/studio/alive", "/studio/shutdown", "/studio/worlds/duplicate",
+                "/studio/queue/add", "/studio/queue/cancel", "/studio/queue/requeue", "/studio/queue/review", "/studio/queue/dismiss")
 # B1 (docs/STUDIO-APP.md; the supervisor's view of this server): GET /healthz says the server is up and which code it
 # runs; POST /studio/alive is the page's heartbeat; POST /studio/shutdown stops the server as Ctrl+C does. Exit codes:
 # 0 stopped, 1 a source not served, 2 usage, 70 could not serve (the port), 75 refused to start (recovery refused).
 EXIT_STOPPED, EXIT_NOT_SERVED, EXIT_USAGE, EXIT_NO_SERVE, EXIT_NO_START = 0, 1, 2, 70, 75
 
 
-def studio_post(live, path, body):
-    """One of the page's studio requests: (HTTP status, JSON reply)."""
+def studio_post(hub, path, body):
+    """One of the page's studio requests: (HTTP status, JSON reply). `body["world"]` names the world it is for (the
+    default one if it names none)."""
     import studio
     if path == "/studio/alive":
-        live.page_seen = time.time()
+        hub.page_seen = time.time()
         return 200, {"ok": True}
     if path == "/studio/shutdown":
-        live.stop.set()
+        hub.stop.set()
         return 200, {"ok": True, "message": "stopping"}
+    try:
+        if path == "/studio/worlds/duplicate":
+            return 200, {"ok": True, "world": hub.duplicate(body.get("from"), body.get("name")).brief}
+        if path.startswith("/studio/queue/"):
+            q = hub.queue
+            if q is None:
+                return 409, {"ok": False, "code": "STUDIO-NO-QUEUE", "message": "this play.py runs no queue"}
+            op = path.rsplit("/", 1)[1]
+            if op == "add":
+                return 200, {"ok": True, "id": q.add(body.get("world") or hub.default, body.get("prompt"), body.get("provider"),
+                                                     body.get("model") or "", body.get("camera"))}
+            return 200, dict(getattr(q, op)(body.get("id")), ok=True)
+        live = hub.world(body.get("world"))
+    except studio.StudioError as e:
+        return 409, {"ok": False, "code": e.code, "message": e.detail}
     g = live.studio
     if g is None:
         return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
@@ -476,11 +720,16 @@ def studio_post(live, path, body):
         return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
-def server(live, port=0):
+def server(target, port=0):
+    """The page's server for a Hub (STUDIO-2), or for one Live (made a hub of one world, as the self-tests use it)."""
     import secrets
+    import studio
     page_t = open(os.path.join(WEB, "play.html"), encoding="utf-8").read()
-    brief = live.brief
-    live.token = secrets.token_hex(16)
+    hub = target if isinstance(target, Hub) else (getattr(target, "hub", None) or Hub(target, say=lambda s: None, watch=False))
+    hub.token = secrets.token_hex(16)
+    for lv in hub.worlds.values():
+        lv.token = hub.token
+    live = hub.worlds[hub.default]
 
     class Handler(http.server.BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -515,29 +764,40 @@ def server(live, port=0):
                 self.send_header("Location", "/play.html")
                 self.end_headers()
                 return
-            if path == "/play.html":
-                s0 = live.slot(0)
-                page = page_t.replace("%BRIEF%", brief).replace("%SHA%", s0["sha"] if s0 else "").replace("%STUDIO%", live.token)
-                return self.send(200, page.encode("utf-8"), "text/html; charset=utf-8")
-            if path == "/live":
-                return self.send(200, json.dumps(live.state(), sort_keys=True).encode("utf-8"), "application/json")
+            if path in ("/play.html", "/live"):
+                try:
+                    w = hub.world(q.get("world"))
+                except studio.StudioError as e:
+                    return self.send(404, str(e).encode("utf-8"), "text/plain")
+                if path == "/play.html":
+                    s0 = w.slot(0)
+                    page = page_t.replace("%BRIEF%", w.brief).replace("%SHA%", s0["sha"] if s0 else "").replace("%STUDIO%", hub.token)
+                    return self.send(200, page.encode("utf-8"), "text/html; charset=utf-8")
+                st = w.state()
+                st["worlds"] = hub.listing()
+                st["queue"] = hub.queue.state() if hub.queue is not None else None
+                return self.send(200, json.dumps(st, sort_keys=True).encode("utf-8"), "application/json")
             if path == "/healthz":
                 s0 = live.slot(0)
-                g = getattr(live, "studio", None)
-                busy = bool(g is not None and g.req and g.req.get("state") == "running")     # a provider asked, paid for
+                busy = hub.busy()            # a request runs in some world, or work waits in the queue (paid for)
                 return self.send(200, json.dumps({"ready": bool(s0 and s0.get("ok")), "version": os.environ.get("VERDANDI_GENERATION", "dev"),
                                                   "busy": busy,
-                                                  "brief": brief, "scene_sha256": s0["sha"] if s0 else "", "page": live.page_seen is not None,
-                                                  "page_age_s": None if live.page_seen is None else round(time.time() - live.page_seen, 1),
-                                                  "bye_age_s": None if live.page_bye is None else round(time.time() - live.page_bye, 1),
+                                                  "brief": hub.default, "worlds_open": sorted(hub.worlds), "scene_sha256": s0["sha"] if s0 else "",
+                                                  "page": hub.page_seen is not None,
+                                                  "page_age_s": None if hub.page_seen is None else round(time.time() - hub.page_seen, 1),
+                                                  "bye_age_s": None if hub.page_bye is None else round(time.time() - hub.page_bye, 1),
                                                   "pid": os.getpid()}, sort_keys=True).encode("utf-8"), "application/json")
             if path in FILES:
                 f, ctype = FILES[path]
                 with open(f, "rb") as fh:
                     return self.send(200, fh.read(), ctype)
-            s = live.slot(k)
-            if s is not None and path == "/scene/%s.json" % brief:
-                return self.send(200, s["scene_bytes"], "application/json")
+            if path.startswith("/scene/") and path.endswith(".json"):
+                w = hub.worlds.get(path[len("/scene/"):-len(".json")])
+                s = w.slot(k) if w is not None else None
+                if s is not None:
+                    return self.send(200, s["scene_bytes"], "application/json")
+            w = hub.worlds.get(q.get("world") or hub.default)
+            s = w.slot(k) if w is not None else None
             if s is not None and path == "/map/%s.json" % s["map"]:
                 return self.send(200, s["map_bytes"], "application/json")
             return self.send(404, b"not found", "text/plain")
@@ -550,13 +810,13 @@ def server(live, port=0):
                 # the page's pagehide beacon: navigator.sendBeacon cannot set a header, so the token is its whole body
                 n = int(self.headers.get("Content-Length", "0") or 0)
                 body = self.rfile.read(n) if 0 < n <= 64 else b""
-                if not self.own_host() or body.decode("ascii", "replace") != live.token:
+                if not self.own_host() or body.decode("ascii", "replace") != hub.token:
                     return self.send(403, b"forbidden", "text/plain")
-                live.page_bye = time.time()
+                hub.page_bye = time.time()
                 return self.send(204, b"", "text/plain")
             if path not in STUDIO_POSTS:
                 return self.send(404, b"not found", "text/plain")
-            if not self.own_host() or self.headers.get("X-Studio-Token") != live.token:
+            if not self.own_host() or self.headers.get("X-Studio-Token") != hub.token:
                 return self.send(403, b"forbidden", "text/plain")
             n = int(self.headers.get("Content-Length", "0") or 0)
             if n > 65536 or not (self.headers.get("Content-Type", "").startswith("application/json")):
@@ -567,7 +827,7 @@ def server(live, port=0):
                     raise ValueError("not an object")
             except (UnicodeDecodeError, ValueError):
                 return self.send(400, b"not a JSON object", "text/plain")
-            code, reply = studio_post(live, path, body)
+            code, reply = studio_post(hub, path, body)
             return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
 
     srv = Server(("127.0.0.1", port), Handler)
@@ -598,10 +858,10 @@ def start_studio(live, config, say=print):
             cfg = studio.load_config(config)
         except studio.StudioError as e:
             err = str(e)
-    own = os.path.abspath(os.path.join(ROOT, "art", "briefs", live.brief + ".art"))
+    own = os.path.abspath(os.path.join(live.root, "art", "briefs", live.brief + ".art"))
     if live.art_path and os.path.abspath(live.art_path) != own:
-        cfg, err = None, "the studio edits %s; --art plays another file" % os.path.relpath(own, REPO)
-    live.studio = studio.Gateway(Host(live), live.brief, cfg, ROOT, say=say)
+        cfg, err = None, "the studio edits %s; --art plays another file" % own
+    live.studio = studio.Gateway(Host(live), live.brief, cfg, live.root, say=say)
     live.studio.error = err
     if config or err:
         say("studio: %s" % (err or "the director %s (%s); Enter in the page summons it, E selects" % (cfg["model"], os.path.relpath(cfg["path"], REPO))))
@@ -617,13 +877,17 @@ def main(argv):
         return selftest()
     global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
-    vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root"))
+    vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root")
+               + opts(argv, "--jobs") + opts(argv, "--worlds"))
     pos = [a for a in argv if not a.startswith("--") and a not in vals]
     if not pos:
         print("usage: python art/play.py BRIEF [--intent FILE]... [--art PATH] [--port N] [--no-browser] [--no-watch] [--check]\n"
+              "       python art/play.py WORLD --worlds DIR [--director CONFIG] [--port N] [--no-browser] [--jobs N]\n"
               "       python art/play.py --selftest", file=sys.stderr)
         return 2
     brief, art_path, intents = pos[0], one("--art"), opts(argv, "--intent")
+    if one("--worlds"):
+        return main_worlds(brief, os.path.abspath(one("--worlds")), one, argv)
     if one("--root"):
         ROOT = os.path.abspath(one("--root"))
         if art_path is None:
@@ -651,19 +915,55 @@ def main(argv):
         return 0 if all(s["ok"] for s in slots) else 1
     live = Live(brief, art_path, intents, slots=slots)
     start_studio(live, one("--director"))
+    # STUDIO-2: every brief of the tree can be opened beside this one, and work queued for any of them
+    hub = Hub(live, config=one("--director"), say=print, watch="--no-watch" not in argv)
+    if "--no-watch" not in argv:
+        threading.Thread(target=live.watch, daemon=True).start()
+        print("live: watching %d files; an edit that passes the checks is drawn without a restart" % len(live.watched()))
+    return serve_hub(hub, os.path.join(ROOT, "art", "build", "studio", "queue.jsonl"), one, argv)
+
+
+def main_worlds(name, worlds_dir, one, argv):
+    """--worlds DIR (STUDIO-2, the desktop studio): the worlds folder seeded from the checkout if it holds none, the world
+    `name` opened (or the first there is), every other one opened when the page or the queue asks for it."""
+    made = seed_worlds(worlds_dir, say=print)
+    hub = Hub(config=one("--director"), say=print, watch="--no-watch" not in argv, worlds_dir=worlds_dir)
+    names = hub.names()
+    if not names:
+        print("PLAY: no world in %s, and none could be made from the checkout (SEEDED.json says why)" % worlds_dir, file=sys.stderr)
+        return EXIT_NO_START
+    hub.default = name if name in names else names[0]
+    import studio
     try:
-        srv = server(live, int(one("--port", "0")))
+        live = hub.world(hub.default)
+    except studio.StudioError as e:
+        print("PLAY: %s" % e.detail, file=sys.stderr)
+        return EXIT_NO_START
+    s0 = live.slot(0)
+    if s0 is None:
+        print("PLAY: world %s is not served: %s" % (hub.default, live.latest[0]["message"]), file=sys.stderr)
+        return 1
+    print("worlds: %s (in %s%s); playing %s" % (", ".join(names), worlds_dir, "; made now from the checkout: " + ", ".join(made) if made else "", hub.default))
+    return serve_hub(hub, os.path.join(worlds_dir, "queue.jsonl"), one, argv)
+
+
+def serve_hub(hub, queue_path, one, argv):
+    """Serve a hub's page, run its queue, and stop on Ctrl+C, SIGTERM, SIGBREAK or POST /studio/shutdown."""
+    import studio_queue
+    hub.queue = studio_queue.Queue(hub, queue_path, concurrency=int(one("--jobs", "2")), say=print)
+    try:
+        srv = server(hub, int(one("--port", "0")))
     except OSError as e:
         print("PLAY: could not serve on port %s: %s" % (one("--port", "0"), e), file=sys.stderr)
         return EXIT_NO_SERVE
     url = "http://127.0.0.1:%d/" % srv.server_address[1]
+    live = hub.worlds[hub.default]
     print(SERVED)
-    if "--no-watch" not in argv:
-        threading.Thread(target=live.watch, daemon=True).start()
-        print("live: watching %d files; an edit that passes the checks is drawn without a restart" % len(live.watched()))
     print("open %s  — Ctrl+C here to stop" % url)
     if "--no-browser" not in argv:
         webbrowser.open(url)
+
+    hub.queue.start()
 
     def stop_on(signum, _frame):
         live.stop.set()
@@ -675,9 +975,11 @@ def main(argv):
             pass
     except KeyboardInterrupt:
         pass
-    live.stopping = True
-    if live.studio:
-        live.studio.shutdown()
+    hub.queue.stop()
+    for w in list(hub.worlds.values()):
+        w.stopping = True
+        if w.studio:
+            w.studio.shutdown()
     srv.shutdown()
     return 0
 

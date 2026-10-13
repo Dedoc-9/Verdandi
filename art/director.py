@@ -69,7 +69,7 @@ level = dress.level
 # maps and one over a candidate's, failed on the first export (the converter read the other folder's layout; MEASURED
 # in the container, 2026-10-13); `racetest` keeps that case and its plant.
 import threading  # noqa: E402
-EXPORT_LOCK = threading.RLock()
+EXPORT_LOCK = threading.RLock()      # every swap of level.MAPS in this process holds it (art/play.py's compile_scene too)
 NO_LOCK = __import__("contextlib").nullcontext()       # the race court's plant "no-export-lock" only
 
 

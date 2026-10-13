@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
-# The studio: a director summoned into the running plaza (STUDIO-0, STUDIO-1)
+# The studio: a director summoned into the running plaza (STUDIO-0, STUDIO-1, STUDIO-2)
 
 By the owner's direction of 2026-10-11: *"the LLM edits design intent; Verðandi compiles that intent into a live
 world; the designer remains in control."* And by his ruling on how a model is reached: *"a pluggable model adapter,
@@ -183,7 +183,8 @@ files stand and that head is the one it was drawn at.
 
 ## What is kept
 
-Every request, under `art/build/studio/BRIEF/ID/` (never committed): `request.json`, `response.raw`, and each
+Every request, under `art/build/studio/BRIEF/ID/` (never committed; in the studio's worlds, under the world's own
+folder): `request.json`, `response.raw`, and each
 candidate's intent (`A.intent`, …); and one line a request, admission, rejection or undo in
 `art/build/studio/BRIEF/requests.jsonl`: the head, the configuration and the model it names, the prompt, the
 target's address and every tag's object, the sha256 of the request and the response, and, as the owner asked (*"Record the provider, model, exit
@@ -232,7 +233,8 @@ recovery takes the same lock, so while an admission is alive a recovery refuses 
 `python art/director.py racetest` (32 cases) puts a second admission and another process's recovery at each of an
 admission's writes, and keeps the plants that break it. Briefs share the graybox's maps, so a layout admitted in one
 world would change every world that plays its map: a layout change is refused while another brief plays the map
-(SHARED-MAP), an art change admitted as before, until each world keeps a map of its own. play.py answers `GET /healthz` (`ready`, `version`, `page`, `page_age_s`, `bye_age_s`, `pid`), takes the page's
+(SHARED-MAP), an art change admitted as before. That holds in one tree; in the studio's worlds (STUDIO-2, below) each
+world keeps a copy of the maps of its own. play.py answers `GET /healthz` (`ready`, `version`, `page`, `page_age_s`, `bye_age_s`, `pid`), takes the page's
 heartbeat on `POST /studio/alive` (every 5 s) and its goodbye on `POST /studio/bye` (a `pagehide` beacon whose body is
 the token, since a beacon cannot set a header), and stops on `POST /studio/shutdown`, SIGTERM or Ctrl+Break; it exits
 0 stopped, 70 when its port is taken (bound exclusively on Windows), 75 when recovery refuses.
@@ -253,7 +255,58 @@ the studio waits for it, then stops), or when play.py ends. A second click opens
 (`VERDANDI_CLAUDE`, `VERDANDI_DIRECTOR_MODEL`, `VERDANDI_DIRECTOR_API`); a key never: for the API provider,
 `ANTHROPIC_API_KEY` must be a user environment variable. Claude Code's native install
 (`%USERPROFILE%\.local\bin\claude.exe`) is found without any. `python art/studio_app.py selftest` holds the lifecycle
-with a stand-in browser (10 cases; 11 on Windows, where a live job's process list is read as well).
+with a stand-in browser (11 cases; 12 on Windows, where a live job's process list is read as well).
+
+## The worlds and the queue (STUDIO-2)
+
+The milestone, in the owner's words: *"Build a desktop-launched application that can open two saved worlds, switch
+between them, queue an edit for either world, and review the resulting candidate without interrupting play."* Where
+the worlds live is his choice of 2026-10-13: *"Per-user folder (Recommended)"*.
+
+**Where.** `%LOCALAPPDATA%\VerdandiStudio\worlds\NAME\` (elsewhere `~/.local/share/verdandi-studio/worlds/NAME/`),
+or `--worlds DIR`. Each world is a tree of its own: its brief (`art/briefs/NAME.art`), its ledger and tags
+(`art/ledger/`), its own copy of the graybox's maps (`graybox/maps/`), its requests' records (`art/build/studio/`) and
+its content lock (`art/build/content.lock`). One world's admission therefore writes no file of another, by
+construction, and two worlds never share a map. The desktop studio serves this folder; `--root DIR` (one tree, the
+self-tests') and the checkout itself are served as before.
+
+**The first start.** When the folder holds no world it is made from the checkout: every brief there (today
+`plaza-night` and `harbor-day`) is copied whole, with its ledger and tags if it has them and the checkout's maps, into a
+folder made aside; its ledger is replayed in the copy, and only if it verifies is the folder put in place, by one
+rename. A brief whose ledger does not verify is not copied, and why is said and recorded. `SEEDED.json` records what was
+copied, by sha256. The checkout is read, never written (but for its own recovery, as any start there does); after the
+first start it is a template, and the studio's worlds change only through their own ledgers.
+
+**In the page.** The panel (**Enter**) names the world played and lists the others: choosing one loads its page.
+**Duplicate as** makes a new world from this one (its brief, its title marked as a copy, a ledger of its own and, in the
+worlds folder, its own copy of the maps) and opens it. The **Queue** section queues the prompt for any world, with a
+provider (`art/providers/*.json`) and a model (or the configuration's own), and with that world's present target and
+pins: the task runs in the background, and the page, and every world, plays on. A request asked with **Ctrl+Enter** is
+the page's own, as before; a queued one is not tied to the window.
+
+**The queue** (`art/studio_queue.py`). A task belongs to a world: it records the world, the references and the camera
+it was queued with, the head when it was queued and when it ran, the provider's configuration and the model. Tasks run
+in the order they were queued, at most two at once (`--jobs N`) and at most one per world, so that a world's requests
+meet the head the one before left. A task is *queued*, *running*, then *ready* (its candidates recorded), *failed* or
+*cancelled*; *interrupted* if the studio stopped while it ran and nothing of its answer was recorded; *reviewed* once
+decided. The panel lists every task with its state, its world and prompt, its model, and the tokens or cost its
+provider reported, with **Cancel**, **Review**, **Set aside** and **Queue again** as the state allows; a toast says when
+one is ready or failed, in whatever world's page is open. **Review** opens the task's world (another world's page loads,
+with `&review=ID`) and draws the task's recorded candidates again at the head as it is now, each evaluated again, never
+trusted: a candidate made against an older head says so (`HEAD-MOVED` in its codes) and is admitted, as every
+candidate is, only at the head it is drawn at. Nothing in the queue admits; the person does, through the gateway.
+
+**Kept across restarts.** The queue is one file, `queue.jsonl` in the worlds folder, one event a line, each appended
+under the queue's lock and flushed. Two rules from the ghost search (fixes 3 and 4 of 2026-10-13): a torn last line is
+set aside (`queue.jsonl.torn.N`) and cut from the file, durably, before anything is appended, so the next event never
+merges into it; and a task that was running when the studio stopped is *ready* if its world's records hold its answer
+(nothing is asked, or paid for, again), *interrupted* otherwise, and can be queued again.
+
+`python art/studio_queue.py selftest` (13 cases) seeds a worlds folder, refuses a brief whose ledger does not verify,
+queues for one world from another's page and reviews and admits there (the other world's ledger unchanged), duplicates
+a world, runs two worlds at once with one request per world, cancels and queues again, compiles two worlds' scenes at
+once (and keeps the plant without the export lock), and keeps fixes 3 and 4 with their plants. The studio app's
+self-test starts the supervisor without `--root` on a worlds folder.
 
 ## What is not shown
 
@@ -271,3 +324,9 @@ out (`SCOPE-LEAK`); the request now says so. Changes to the layout (the look onl
 tool's). A long-running worker: each request starts the provider's command afresh, which the owner allowed for the
 first version. A latency in general: the scripted provider answers in well under a second, and Claude Code's CLI took
 9–17 s a request in the build container's probes, which says nothing of another machine, model or prompt.
+STUDIO-2: switching worlds in a browser on a real GPU (in the build container's headless Chromium, on SwiftShader, a
+page with a live WebGL context took 40 to more than 90 s to give way to the next, the server having answered in about a
+millisecond; the browser run gave the context back first, and passed its ten flows); whether a provider started by the
+desktop studio opens a console window (it is started with `CREATE_NO_WINDOW`; not seen on Windows yet); a studio that
+dies between asking a provider and recording that the task started finds the task still queued at its next start,
+and asks again (the first answer, if one came, is in the world's records, but not the task's).

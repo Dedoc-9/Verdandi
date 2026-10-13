@@ -3833,6 +3833,62 @@ and the rules the measurements gave, the four operational invariants with their 
 consequences, the art reviews' obligations as measurements, and the grammar's guardrails. Its sources are
 `docs/RESEARCH-FINDINGS.md` R-16. Docs only; no row, rung, pinned source or oracle file changed.
 
+**0217 on his machine, and STUDIO-2 built (2026-10-13).** 0217 applied as tree 782cbdb9, as predicted; the gate 251
+rows / 0 fail; pushed 15901d6..fadeb7b. Then STUDIO-2, off the gate: the immediate milestone of his vision document of
+2026-10-12, *"Build a desktop-launched application that can open two saved worlds, switch between them, queue an edit
+for either world, and review the resulting candidate without interrupting play."*, with the worlds where he chose,
+*"Per-user folder (Recommended)"*. **The worlds.** `play.py NAME --worlds DIR` serves every world in a folder, each a
+tree of its own — its brief, its ledger and tags, its own copy of the maps, its requests' records, its content lock —
+opened when the page or the queue first asks for it (`Hub`). A folder with no world is seeded from the checkout
+(`seed_worlds`): each brief copied whole into a folder made aside, its ledger replayed there, and put in place by one
+rename only if it verifies; `SEEDED.json` records what was copied, by sha256. The desktop studio serves
+`%LOCALAPPDATA%\VerdandiStudio\worlds\` (`studio_app.py`, `--worlds DIR` to choose another). A second world to start
+with: `art/briefs/harbor-day.art`, sunlit harbour terraces at midday on the same graybox, nothing of the layout moved.
+**The page.** The panel names the world and lists the others (choosing one loads its page); Duplicate as makes a world
+from this one, with its own ledger and maps; the Queue section queues the prompt for any world, with a provider and a
+model; the task list shows each task's state, its model and the tokens or cost its provider reported, with Cancel,
+Review, Set aside and Queue again; a toast says when a task is ready or failed, in whatever world's page is open.
+**The queue** (`art/studio_queue.py`). A task belongs to a world and records its references, its camera, the heads
+when it was queued and when it ran, its provider and its model; tasks run in the order queued, at most two at once and
+one per world; Review draws its recorded candidates again at the head as it is then (`Gateway.restore`), each
+evaluated again, never trusted. Fixes 3 and 4 of the review of 2026-10-13: a torn last line of `queue.jsonl` is set
+aside and cut, durably, before the next append; a task the studio stopped under is ready when its world's records hold
+its answer, and nothing is asked again. Every append to the queue's file holds its lock (his machine's 399 of 400).
+With a maps folder per world, play.py's own compile points the module-global maps folder at the world's, and so it
+does that under `EXPORT_LOCK`, as the director's export does: a row compiles two worlds over different maps at once,
+each with its own map, and its plant, without the lock, reads across. The gateway takes a queued task's references and provider in place of the
+page's, and on Windows starts a provider with `CREATE_NO_WINDOW`, so that a studio started from its icon opens no
+console window for it (INFERRED from the flag's documentation; not seen on Windows yet).
+
+In a browser (headless Chromium, not committed): the STUDIO-2 flows 10/10 — a target chosen in harbor-day;
+plaza-night's page listing both worlds; a prompt queued for harbor-day from plaza-night's page, and the player walking
+there while it ran (41 samples with the task running, its provider answering 15 s late); the toast; the task ready,
+with Review; Review opening harbor-day with three candidates drawn; an admission there (its ledger two events longer,
+plaza-night's as it was); the switcher back to plaza-night; Duplicate making and opening plaza-copy; no page error. B1's flows 9/9 again (its
+row on the tags after a restart now waits for the page's first `/live`, which came later than the row looked). Two
+findings. A defect of the panel, fixed: after a click on one of its buttons, Esc closed the panel but left the button
+focused, so the game's keys went to it and W did not walk (B1's buttons had it too); a closed panel now keeps no focus,
+and a focused list takes its own keys. And one of the container, not the product (OBSERVED there only): in headless
+Chromium on ANGLE SwiftShader, a navigation away from a page with a live WebGL context did not finish for 40 to more
+than 90 s, the server having answered the new document within a millisecond (its request log); with the old page's
+context given back first (`WEBGL_lose_context`) the next page was ready in 0.3 s, with software compositing in 3 s
+(but a frame then took seconds). The run gives the context back before each click that navigates. Whether switching
+worlds is quick in his browser, on his GPU, is not measured. MEASURED in the container: STUDIO-2 SELFTEST 13/13
+(seeding, once, a ledger that does not verify refused; each world read by name; a request queued for one world while
+the page plays the other, reviewed and admitted there, the other world's bytes untouched; a duplicate; at most two
+requests at once and never two in one world, the studio busy while work waits; cancel and queue again; two worlds
+compiled at once over different maps, and the plant without the export lock; fixes 3 and 4 with their plants; the
+queue read back), STUDIO APP SELFTEST 11/11 (a new row: without `--root` the studio serves its worlds folder, seeded
+beforehand from the fixture; with the supervisor made to pass nothing, the row fails), STUDIO SELFTEST 61/61, LIVE
+SELFTEST 18/18, DIRECTOR SELFTEST PASSED, DIRECTOR CRASHTEST PASSED (14 cases), DIRECTOR RACETEST PASSED (32 cases),
+CONFORMANCE 62 / 62, ART CHECKS PASSED. Not built: a new world from the checkout's committed template after the first
+start (the folder is seeded once; a new world is a duplicate). Not held: a studio that dies between asking a provider
+and recording that the task started finds the task still queued at its next start and asks again. **His world,
+moving.** The studio's first start after 0218 makes the worlds folder from his checkout: his plaza with the edits he
+admitted, its ledger and tags (if the ledger verifies in the copy), and harbor-day. Once he has seen his plaza open
+from the new folder, the checkout's brief and ledger can go back to the committed ones; the desktop studio does not
+read them again, and his earlier requests' records stay in the checkout's `art/build/studio/`.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

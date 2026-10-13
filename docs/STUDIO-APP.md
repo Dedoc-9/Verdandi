@@ -665,6 +665,17 @@ so the diff can be exact). **Out of scope.** Replacing the stub (documented limi
 
 ### B3 · STUDIO-2 — the workspace: outliner, details, comparison, the image as critic, projects (SHOULD)
 
+**Status (2026-10-13): the worlds and the queue built first, off the gate.** The immediate milestone of his vision
+document of 2026-10-12 — *"Build a desktop-launched application that can open two saved worlds, switch between them,
+queue an edit for either world, and review the resulting candidate without interrupting play."* — was built under
+this name ahead of the workspace below: the worlds in his per-user folder (`%LOCALAPPDATA%\VerdandiStudio\worlds\`,
+each a tree of its own with its own ledger and maps, made from the checkout's briefs at the first start and kept only
+if each ledger verifies in the copy), the page's world switcher and Duplicate, and the queue (`art/studio_queue.py`:
+a prompt queued for any world with a provider and a model, run in the background at most one per world, reviewed in
+its world's page by drawing its candidates again at the head as it is then; kept across restarts, with fixes 3 and 4).
+`art/STUDIO.md` says how it is used; `python art/studio_queue.py selftest` holds it (13 cases). The workspace's items
+below (outliner, details, the candidate strip, projects, the critic) are still to be built.
+
 **User-visible outcome.** The page becomes a studio: an **outliner** listing the scene's objects by region and kind
 with a search box (the Unreal reference), where clicking selects (E) or pins (R) and tagged objects are marked; a
 **details pane** for the object under the crosshair or selected — its statement, its measured geometry (bounds, size,

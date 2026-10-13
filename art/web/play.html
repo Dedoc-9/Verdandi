@@ -40,6 +40,20 @@
   #studio .tag { margin: 0 4px 2px 0; padding: 0 6px; }
   #studio .tag.active { border-color: #ffd35a; }
   #studio .tag.gone { color: #ff9a8a; text-decoration: line-through; }
+  /* STUDIO-2: the worlds and the queue */
+  #studio select, #studio input { font: inherit; background: #0a0d11; color: #eef3f7; border: 1px solid #34404b; border-radius: 4px; padding: 2px 4px; }
+  #studio .row { margin: 4px 0; }
+  #studio h3 { font-size: 12px; margin: 10px 0 4px; color: #cfd8e0; border-top: 1px solid #26303a; padding-top: 6px; }
+  #studio .task { padding: 3px 0; border-top: 1px dotted #26303a; }
+  #studio .task .st { display: inline-block; min-width: 72px; }
+  #studio .task.ready .st { color: #9fe0a8; }
+  #studio .task.failed .st, #studio .task.interrupted .st { color: #ff9a8a; }
+  #studio .task.running .st { color: #ffd38a; }
+  #toasts { position: fixed; left: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+  #toasts div { background: rgba(12, 15, 20, 0.92); color: #dfe6ec; border: 1px solid #2c3640; border-left: 3px solid #9fe0a8; border-radius: 4px;
+                padding: 5px 9px; max-width: 420px; }
+  #toasts div.bad { border-left-color: #ff9a8a; }
+  body.still #toasts { display: none; }
 </style>
 </head>
 <body data-brief="%BRIEF%" data-sha="%SHA%" data-studio="%STUDIO%">
@@ -50,13 +64,19 @@
 (the mouse is captured; Esc releases it · 1–9 the registered views · E target · R pin · Enter summons the director · Backspace resets)</div>
 <div id="studio">
   <h2>Director</h2>
+  <div class="row">world <select id="st-world"></select> <input id="st-newname" size="14" placeholder="new world's name"><button id="st-dup">Duplicate</button></div>
   <div id="st-provider" class="dim"></div>
   <div id="st-refs"></div>
   <textarea id="st-prompt" placeholder="Describe the change; name tagged objects as @1, @2 (Ctrl+Enter asks; Esc goes back to the world)"></textarea>
   <div><button id="st-ask">Ask</button><button id="st-cancel" disabled>Cancel</button><button id="st-original">Original</button><button id="st-undo">Undo last admission</button></div>
   <div id="st-status" class="dim"></div>
   <div id="st-cands"></div>
+  <h3>Queue</h3>
+  <div class="row">for <select id="st-qworld"></select> <select id="st-qprov"></select> <select id="st-qmodel"></select></div>
+  <div class="row"><button id="st-queue">Queue the prompt</button> <span class="dim">it runs in the background; play on</span></div>
+  <div id="st-qlist"></div>
 </div>
+<div id="toasts"></div>
 <script src="sim.js"></script>
 <script src="scene_render.js"></script>
 <script src="play.js"></script>

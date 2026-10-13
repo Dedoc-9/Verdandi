@@ -4,7 +4,7 @@
 # art/studio_app.py — the studio's supervisor (STUDIO-APP-0, B1): one desktop icon starts the plaza with its director in
 # a window of its own, and closing the window stops everything it started. Standard library only.
 #
-#   pythonw art\studio_app.py [--brief B] [--director CONFIG.json] [--root DIR] [--state DIR] [--browser EXE]
+#   pythonw art\studio_app.py [--brief B] [--director CONFIG.json] [--worlds DIR | --root DIR] [--state DIR] [--browser EXE]
 #   python  art\studio_app.py shortcut [--director CONFIG.json]      a desktop shortcut that starts it (Windows)
 #   python  art\studio_app.py selftest                               its lifecycle, with a stand-in browser
 #
@@ -19,6 +19,11 @@
 # is POST /studio/shutdown, then the job: Edge's own process outlives its last window by more than 20 s (experiment 1,
 # twice), and the job ends it. What it does not do: choose or replace a generation (B2's stub and journal,
 # docs/STUDIO-CONTRACT.md); install anything; read a key (ANTHROPIC_API_KEY is the user's environment's, never a file's).
+#
+# The worlds it serves (STUDIO-2) are under %LOCALAPPDATA%\VerdandiStudio\worlds (elsewhere
+# ~/.local/share/verdandi-studio/worlds), or --worlds DIR: play.py --worlds seeds the folder from the checkout the first
+# time and serves every world in it; --brief names the one the window opens on. --root DIR serves one tree instead
+# (the self-tests').
 #
 # Its state is under %LOCALAPPDATA%\VerdandiStudio\state (elsewhere ~/.local/state/verdandi-studio): logs\, the
 # browser's profile, the instance lock, and settings.json, which `shortcut` writes with the non-secret variables of
@@ -50,6 +55,16 @@ def state_dir(opt=None):
     if WINDOWS:
         return os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "VerdandiStudio", "state")
     return os.path.join(os.path.expanduser("~"), ".local", "state", "verdandi-studio")
+
+
+def worlds_dir(opt=None):
+    """Where the studio's worlds live (STUDIO-2, the owner's choice of 2026-10-13, "Per-user folder (Recommended)"):
+    %LOCALAPPDATA%\\VerdandiStudio\\worlds on Windows, a folder of the user's elsewhere; never the checkout."""
+    if opt:
+        return os.path.abspath(opt)
+    if WINDOWS:
+        return os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "VerdandiStudio", "worlds")
+    return os.path.join(os.path.expanduser("~"), ".local", "share", "verdandi-studio", "worlds")
 
 
 class Log:
@@ -308,8 +323,10 @@ def run(opts, log, gui):
         argv = [child_python(), "-B", os.path.join(HERE, "play.py"), opts["brief"], "--no-browser", "--port", str(port)]
         if opts.get("director"):
             argv += ["--director", opts["director"]]
-        if opts.get("root"):
+        if opts.get("root"):                     # one tree (the self-tests'); the studio's worlds otherwise
             argv += ["--root", opts["root"]]
+        else:
+            argv += ["--worlds", opts["worlds"]]
         log("play.py on port %d (%s)" % (port, " ".join(argv[3:])))
         play = spawn(argv, play_log, env)
         t = time.time()
@@ -478,7 +495,7 @@ def selftest():
         except (OSError, IndexError):
             return False
 
-    def supervisor(name, mode, extra=(), wait=True, env_extra=None):
+    def supervisor(name, mode, extra=(), wait=True, env_extra=None, where=None):
         state = os.path.join(tmp, name)
         fake = os.path.join(tmp, "fake_browser.py")
         open(fake, "w").write(FAKE)
@@ -486,7 +503,7 @@ def selftest():
         if not (env_extra or {}).get("VERDANDI_PLANT"):
             env.pop("VERDANDI_PLANT", None)
         argv = [sys.executable, "-B", os.path.abspath(__file__), "--state", state, "--browser", fake, "--console",
-                "--bye-grace", "1", "--page-timeout", "4", "--page-wait", "25", "--tick", "0.25", "--root", root] + list(extra)
+                "--bye-grace", "1", "--page-timeout", "4", "--page-wait", "25", "--tick", "0.25"] + (where or ["--root", root]) + list(extra)
         p = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
         if not wait:
             return p, state
@@ -548,6 +565,23 @@ def selftest():
         row("play.py cannot start: said (exit 2), no window opened", rc == EXIT_NO_PLAY and "did not start" in out and not os.path.exists(os.path.join(tmp, "nobrief.record")),
             "exit %s" % rc)
 
+        # STUDIO-2: without --root the studio serves its worlds folder (here one made from the fixture beforehand, so
+        # that nothing of the checkout is read, nor recovered); the per-user folder is only named, never touched
+        spec_p = importlib.util.spec_from_file_location("play_for_selftest", os.path.join(HERE, "play.py"))
+        play_m = importlib.util.module_from_spec(spec_p)
+        spec_p.loader.exec_module(play_m)
+        worlds = os.path.join(tmp, "the-worlds")
+        made = play_m.seed_worlds(worlds, source=root, say=lambda s_: None)
+        rc, out = supervisor("worlds", "bye", where=["--worlds", worlds])
+        line = ([ln for ln in out.splitlines() if "play.py on port" in ln] or [""])[0]
+        plog = os.path.join(tmp, "worlds", "logs", "play.log")
+        plog = open(plog, encoding="utf-8", errors="replace").read() if os.path.exists(plog) else ""
+        served = ([ln for ln in plog.splitlines() if ln.startswith("worlds: ")] or [""])[0]
+        row("no --root: the studio serves its worlds folder (seeded from the fixture), its page a world of it, and stops when the window closes",
+            made == ["plaza-night"] and rc == EXIT_OK and ("--worlds " + worlds) in line and "--root" not in line and "the window was closed" in out
+            and served.startswith("worlds: plaza-night (in %s)" % worlds) and served.endswith("playing plaza-night"),
+            "made %s; exit %s; play.py said %r; the default folder would be %s" % (made, rc, served.replace(worlds, "<worlds>")[:90], worlds_dir()))
+
         # fix 6: the job's process list read as Windows lays it out (two DWORD counts, then pointer-sized ids)
         import struct
         x64 = struct.pack("<II", 3, 3) + struct.pack("<3Q", 9876, 1234, 4321)
@@ -606,6 +640,7 @@ def main(argv):
     if argv[:1] == ["selftest"]:
         return selftest()
     opts = {"brief": opt("--brief", "plaza-night"), "director": opt("--director"), "root": opt("--root"), "browser": opt("--browser"),
+            "worlds": worlds_dir(opt("--worlds")),
             "state": state_dir(opt("--state")), "no_job": "--no-job" in argv, "bye_grace": opt("--bye-grace", 3.0, float),
             "page_timeout": opt("--page-timeout", 180.0, float), "page_wait": opt("--page-wait", 90, int), "start_wait": opt("--start-wait", 120, int),
             "tick": opt("--tick", 0.5, float)}

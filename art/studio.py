@@ -212,9 +212,12 @@ def run_provider(cfg, request_bytes, cancel, holder=None):
     it is cancelled, it runs past its time, it prints more than its limit, it exits with an error (the error's `exit`
     is the status). Its standard error is kept for the message. It runs in a process group of its own, so that what it
     starts is killed with it; `holder["proc"]` is the process while it runs."""
-    kw = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
+    # its own process group; on Windows without a console window (CREATE_NO_WINDOW), which a studio started from its icon
+    # would otherwise open for every console program it runs (claude.exe among them)
+    kw = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x08000000} if os.name == "nt" else {"start_new_session": True}
+    env = dict(os.environ, **cfg["env"]) if cfg.get("env") else None     # a request's own settings (STUDIO-2: the model it was queued with)
     try:
-        p = subprocess.Popen(cfg["argv"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=REPO, shell=False, **kw)
+        p = subprocess.Popen(cfg["argv"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=REPO, shell=False, env=env, **kw)
     except OSError as e:
         raise StudioError("STUDIO-PROVIDER-START", "the provider cannot be started: %s" % e)
     if holder is not None:
@@ -535,7 +538,7 @@ class Gateway:
         with self.lock:
             return build()
 
-    def references(self, out, head, prompt):
+    def references(self, out, head, prompt, given=None):
         """The request's references at the head as the files stand: the target and the pins, each with its identity,
         its statement, what that statement can change, its geometry and its nearest wall; the relations between every
         two of them; the tags the prompt mentions. A tag the prompt mentions that is neither the target nor a pin, or
@@ -544,9 +547,15 @@ class Gateway:
         S = out["scene"]
         O = R.objects(S)
         with self.lock:
-            active = ([self.target] if self.target else []) + list(self.pins)
+            if given is not None:            # the references a queued task was made with
+                target, pins = given[0], list(given[1])
+                gone = [t for t in ([target] if target else []) + pins if t not in self.tags]
+                if gone:
+                    raise StudioError("STUDIO-REFERENCE", "the task names %s, which no object of this world has now" % ", ".join(gone))
+            else:
+                target, pins = self.target, list(self.pins)
+            active = ([target] if target else []) + pins
             recs = {t: dict(self.tags[t]) for t in active}
-            target = self.target
         mentions = []
         for m in MENTION.findall(prompt):
             t = "@" + str(int(m))
@@ -603,11 +612,13 @@ class Gateway:
                 "materials": list(slot.get("materials_changed") or [])}
 
     # ------------------------------------------------------------------ a request
-    def ask(self, prompt, piece=None, camera=None):
+    def ask(self, prompt, piece=None, camera=None, refs=None, cfg=None):
         """Start a request; it cancels the one before it. Returns the request's id, or raises StudioError at once
         (no provider, an empty prompt, an unknown piece, a reference that names nothing). `piece`, if given, is selected
-        first as the target (E does it in the page)."""
-        if self.cfg is None:
+        first as the target (E does it in the page). STUDIO-2, for the queue: `refs` (target tag, [pin tags]) are the
+        references the task was queued with, in place of the page's present ones; `cfg` the provider it was queued with."""
+        cfg = cfg or self.cfg
+        if cfg is None:
             raise StudioError("STUDIO-NO-PROVIDER", "no director is configured: start play.py with --director CONFIG.json (art/STUDIO.md)")
         if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > LIMITS["prompt"]:
             raise StudioError("STUDIO-PROMPT", "a prompt is 1 to %d characters" % LIMITS["prompt"])
@@ -622,7 +633,7 @@ class Gateway:
             self.select(piece)
         ws, out, parts, head = self._head()
         stmts = [{"line": x["line"], "text": x["text"], "key": x["key"]} for x in out["lineage"]["statements"]]
-        refs, rels, mentions, O = self.references(out, head, prompt)
+        refs, rels, mentions, O = self.references(out, head, prompt, refs)
         S = out["scene"]
         target = refs[0] if refs and refs[0]["role"] == "target" else None
         with self.lock:
@@ -646,12 +657,62 @@ class Gateway:
             self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "",
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in refs},
                         "selection": target["address"] if target else None,
-                        "head": head, "provider": {"model": self.cfg["model"]}, "candidates": [], "started": time.monotonic(),
-                        "ended": None, "base": base, "objects": O}
+                        "head": head, "provider": {"model": cfg["model"]}, "candidates": [], "started": time.monotonic(),
+                        "ended": None, "base": base, "objects": O, "cfg": cfg}
             self.cancel = threading.Event()
             req, cancel = self.req, self.cancel
         self.play.publish([])
         threading.Thread(target=self._run, args=(req, request, cancel, ws), daemon=True).start()
+        return rid
+
+    def restore(self, rid):
+        """STUDIO-2: draw again the candidates a finished request recorded (its A, B, C intents), each evaluated at the head
+        as the files stand now — after a restart, or when the person reviews a queued task after others ran for this
+        world. A candidate written against an older head is re-evaluated, never trusted (HEAD-MOVED in its codes), and is
+        admitted, as any other, only at the head it is drawn at. Returns the request's id; refuses while one runs."""
+        d = os.path.join(self.records, rid)
+        if not re.match(r"[0-9TZ:-]{8,40}\Z", rid or "") or not os.path.exists(os.path.join(d, "request.json")):
+            raise StudioError("STUDIO-NO-CANDIDATE", "no recorded request %r" % rid)
+        with self.lock:
+            if self.req and self.req["state"] == "running":
+                raise StudioError("STUDIO-BUSY", "a request for this world is running (%s): review when it ends" % self.req["id"])
+        request = json.loads(open(os.path.join(d, "request.json"), "rb").read().decode("utf-8"))
+        titles = {}
+        try:
+            for ln in open(os.path.join(self.records, "requests.jsonl"), "rb").read().splitlines():
+                e = json.loads(ln)
+                if e.get("id") == rid and e.get("candidates"):
+                    titles = {c["letter"]: c["title"] for c in e["candidates"]}
+        except (OSError, ValueError):
+            pass
+        D = self.play.director()
+        ws, out, parts, head = self._head()
+        O = R.objects(out["scene"])
+        refs = {r["tag"]: r["piece"] for r in request.get("references", [])}
+        made = []
+        for letter in LETTERS:
+            f = os.path.join(d, letter + ".intent")
+            if not os.path.exists(f):
+                continue
+            raw_intent = open(f, "rb").read()
+            item = {"letter": letter, "title": titles.get(letter, letter), "verdict": "", "codes": [], "message": "", "slot": None,
+                    "decided": "", "head": "", "intent": raw_intent, "touches": None}
+            slot = self.play.candidate_slot(ws, D.canon.load_intent(raw_intent), "studio %s %s: %s (drawn again)" % (rid, letter, item["title"]))
+            item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
+                         "head": slot.get("checked_against", ""), "touches": self.touches(slot, refs, O) if "realized" in slot else None})
+            made.append((item, slot if slot["ok"] else None))
+        drawn = [(i, s) for i, s in made if s is not None]
+        slots = self.play.publish([s for _i, s in drawn])
+        for (item, _s), k in zip(drawn, slots):
+            item["slot"] = k
+        with self.lock:
+            self.req = {"id": rid, "state": "done", "prompt": request.get("prompt", ""), "code": "", "restored": True,
+                        "message": "%d candidate%s drawn again at the head as it is now%s" % (
+                            len(drawn), "" if len(drawn) == 1 else "s", "" if request.get("head") == head else " (the world moved since it was asked)"),
+                        "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in request.get("references", [])},
+                        "selection": (request.get("target") or {}).get("address"), "head": head, "provider": {"model": "recorded"},
+                        "candidates": [i for i, _s in made], "started": time.monotonic(), "ended": time.monotonic(),
+                        "base": {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "objects": O, "cfg": self.cfg}
         return rid
 
     def cancel_request(self, rid):
@@ -693,13 +754,15 @@ class Gateway:
         self._record(rid, "request.json", rb)
         entry = {"id": rid, "at": now(), "brief": self.brief, "head": req["head"], "prompt": req["prompt"],
                  "selection": req["selection"], "references": {t: r["piece"] for t, r in req["references"].items()},
-                 "config": self.cfg["path"], "model": self.cfg["model"], "request_sha256": sha256(rb), "basis": basis(self.cfg)}
+                 "config": req["cfg"]["path"], "model": req["cfg"]["model"], "request_sha256": sha256(rb), "basis": basis(req["cfg"])}
+        if req["cfg"].get("env"):
+            entry["settings"] = dict(req["cfg"]["env"])
         if self.origin != "page":
             entry["origin"] = self.origin
         # what the owner asked to be recorded of every call (2026-10-11): the provider, the model, the exit status, whether
         # the response was valid, the latency; and the tokens and cost the provider reports. No credential is in any of it.
         try:
-            raw, ms, rc = run_provider(self.cfg, rb, cancel, self.running)
+            raw, ms, rc = run_provider(req["cfg"], rb, cancel, self.running)
             self._record(rid, "response.raw", raw)
             entry.update({"response_sha256": sha256(raw), "provider_ms": ms, "exit": rc})
             provider, cands = read_response(raw, rid)
