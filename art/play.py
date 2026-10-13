@@ -825,12 +825,8 @@ def lifecycle(tmp, row):
     with the page's token stops it (exit 0), and without it is refused."""
     import socket
     root = os.path.join(tmp, "lifecycle")
-    for sub in ("art/briefs", "art/ledger", "graybox/maps"):
-        shutil.copytree(os.path.join(REPO, sub), os.path.join(root, sub))
+    director().selftest_tree(root)                   # the fixture's world, never the owner's working brief
     led_ = os.path.join(root, "art", "ledger", "plaza-night.ledger")
-    for f in os.listdir(os.path.dirname(led_)):
-        if f.endswith(".tags.json"):
-            os.remove(os.path.join(os.path.dirname(led_), f))
     with open(led_, "ab") as fh:
         fh.write(b'{"half a line')
     os.makedirs(led_ + ".pending")
@@ -1012,16 +1008,15 @@ def studio_selftest():
 
     live = srv = None
     try:
-        for sub in ("art/briefs", "art/ledger", "graybox/maps"):
-            shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
-        for f in os.listdir(os.path.join(tmp, "art", "ledger")):     # the owner's own tags and pending folders are not the test's
-            if f.endswith(".tags.json") or f.endswith(".pending"):
-                shutil.rmtree(os.path.join(tmp, "art", "ledger", f), ignore_errors=True) if f.endswith(".pending") else os.remove(os.path.join(tmp, "art", "ledger", f))
+        director().selftest_tree(tmp)               # the fixture's world: never the owner's brief, ledger or tags
         for name, code in TEST_PROVIDERS.items():
             open(os.path.join(tmp, name), "w").write(code + "\n")
         ROOT = tmp
         art = os.path.join(tmp, "art", "briefs", brief + ".art")
         original = open(art, "rb").read()
+        row("the self-test's world is the fixture's, whatever the working brief holds", original == open(os.path.join(director().FIXTURE, brief + ".art"), "rb").read()
+            and len(director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0]) == 1,
+            "the brief art/fixtures/selftest/%s.art byte for byte; a ledger of its genesis alone" % brief)
         live = Live(brief, art, [], poll=0.15)
         srv = server(live)
         threading.Thread(target=live.watch, kwargs={"say": lambda s: None}, daemon=True).start()
@@ -1442,11 +1437,7 @@ def references_selftest(row, cfg_dir=None):
         except studio.StudioError as e:
             return e.code, e.detail
     try:
-        for sub in ("art/briefs", "art/ledger", "graybox/maps"):
-            shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
-        for f in os.listdir(os.path.join(tmp, "art", "ledger")):     # the owner's own tags are not the test's
-            if f.endswith(".tags.json"):
-                os.remove(os.path.join(tmp, "art", "ledger", f))
+        director().selftest_tree(tmp)               # the fixture's world: never the owner's brief, ledger or tags
         for name in ("all_canopies.py", "corners.py", "material.py"):
             open(os.path.join(tmp, name), "w").write(TEST_PROVIDERS[name] + "\n")
         ROOT = tmp

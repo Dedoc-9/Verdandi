@@ -456,11 +456,11 @@ def selftest():
         return int(win.group(1)) if win else None
 
     root = os.path.join(tmp, "root")
-    for sub in ("art/briefs", "art/ledger", "graybox/maps"):
-        shutil.copytree(os.path.join(REPO, sub), os.path.join(root, sub))
-    for f in os.listdir(os.path.join(root, "art", "ledger")):
-        if f.endswith(".tags.json"):
-            os.remove(os.path.join(root, "art", "ledger", f))
+    import importlib.util                       # the fixture's world (art/director.py selftest_tree), never the owner's
+    spec = importlib.util.spec_from_file_location("director_for_selftest", os.path.join(REPO, "art", "director.py"))
+    director = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(director)
+    director.selftest_tree(root)
     try:
         t = time.time()
         rc, out = supervisor("bye", "bye")

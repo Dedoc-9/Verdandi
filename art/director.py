@@ -364,6 +364,28 @@ def _commit_locked(ws, evaluation, intent_sha256, files, fields):
         raise
 
 
+# The self-tests' world (the owner's run of 2026-10-13: after he had admitted his own edits through the studio, the
+# studio's self-test failed four rows and stopped in the references' self-test, every one of them reading his working
+# brief and ledger): the plaza's brief and its layout as art/fixtures/selftest/ keeps them — the bytes committed when
+# those self-tests were written — and a ledger started on them. Never the owner's working files, which are his world.
+FIXTURE = os.path.join(HERE, "fixtures", "selftest")
+
+
+def selftest_tree(root):
+    """Lay a self-test's world under root: the graybox's own maps (nothing in art/ writes them), the fixture's brief,
+    design and layout, and a ledger started at their head. Returns the brief's workspace."""
+    os.makedirs(os.path.join(root, "art", "briefs"), exist_ok=True)
+    os.makedirs(os.path.join(root, "graybox", "maps"), exist_ok=True)
+    for f in os.listdir(os.path.join(REPO, "graybox", "maps")):
+        if f.endswith(".gbx"):
+            shutil.copy(os.path.join(REPO, "graybox", "maps", f), os.path.join(root, "graybox", "maps", f))
+    for f, to in (("plaza-night.art", "art/briefs"), ("tactical.design", "graybox/maps"), ("tactical.layout", "graybox/maps")):
+        shutil.copy(os.path.join(FIXTURE, f), os.path.join(root, *to.split("/"), f))
+    ws = Workspace("plaza-night", root)
+    cmd_genesis_quiet(ws)
+    return ws
+
+
 def say_recovered(ws):
     for ln in recover(ws):
         print(ln)

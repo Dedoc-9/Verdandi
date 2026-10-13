@@ -542,7 +542,9 @@ so a rebinding page reads nothing. Two more defects of the same kind found while
 swaps the module-global maps folder (two exports at once read each other's maps), and the gateway's `quiet()` swaps
 the process's one standard output (two at once left it redirected). `python art/director.py racetest`, 32 cases, each
 case's plant caught. Next, in the order he approved: the queue's torn tail cut (3), a crash never paying twice (4), the
-job's process list read right (6), silence never stopping a busy studio (7), and the shared map refused (2).
+job's process list read right (6), silence never stopping a busy studio (7), and the shared map refused (2). On his
+machine the race court passed 32 of 32 (the lock measured on Windows); his own admissions in the working brief then
+showed that the studio's self-tests played in it, so they now play in `art/fixtures/selftest/` (`selftest_tree`).
 
 **Components.** New: `shell/studio_stub.rs` (the stub; std-only, raw FFI, built by hand like `win32.rs`, never by the
 gate), `art/studio_app.py` (the supervisor), `art/studio_launch.md` (the contract); changed: `art/play.py`

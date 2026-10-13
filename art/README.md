@@ -204,7 +204,7 @@ python art/play.py --selftest            # the live loop without a browser: LIVE
   Claude Code's CLI on its own login, `providers/anthropic.json` through the Messages API with a Console key) for at
   most three candidates, has the director evaluate each, and serves those it does not refuse as sources the page
   switches to in place, each with what it touches. Admit, Reject and Undo go through the ledger. The contract is in
-  [`STUDIO.md`](STUDIO.md); `python art/studio.py selftest` holds the gateway (STUDIO SELFTEST 59/59), `probe` asks a
+  [`STUDIO.md`](STUDIO.md); `python art/studio.py selftest` holds the gateway (STUDIO SELFTEST 60/60), `probe` asks a
   real model whether it answers and follows the prompt (`--references`: whether it changes the objects the prompt
   names, and only those), and `report` compares the providers from what was recorded.
 
@@ -261,6 +261,7 @@ block a player is cover, and goes into the graybox map.
 | `studio_refs.py` | STUDIO-1: what a tagged object is, its geometry in metres, its nearest wall, and how two stand (measured from the scene's boxes; a facing marked inferred) |
 | `director/durable.py` | B1: the content path's writes made to survive a killed process (an append flushed; a file replaced whole by a flushed temporary and a write-through rename); the death points `art/director.py crashtest` kills at; the content lock every writer of a tree's ledgers, briefs, tags and maps holds (a thread lock and the system's file lock, released by the system when its holder dies), which `art/director.py racetest` holds to account |
 | `studio_app.py` | B1: the desktop studio's supervisor (a job that ends everything it starts, play.py without a console, Edge in application mode, stopping when the window closes) and its `shortcut`; `selftest` with a stand-in browser |
+| `fixtures/selftest/` | the self-tests' world: the plaza's brief and layout as committed when the self-tests were written, laid under a scratch root by `director.py`'s `selftest_tree`; the self-tests never read the working brief, ledger or tags, which are the owner's world |
 | `studio_txn.py` | the studio's change transaction as a reference (docs/STUDIO-CONTRACT.md): the promotion journal's form and grammar and `Recover(J, P, F)`; `check` holds it over every enumerated crash point, `selftest` plants wrong decisions, `recover ROOT` reads a studio and prints what its stub must do; nothing here launches or writes a studio |
 | `studio.py`, `STUDIO.md` | STUDIO-0: the director gateway (a provider's request and response, its limits and refusals, the candidates evaluated, admitted, rejected and undone through the ledger; `probe` and `report`), and its contract |
 | `providers/` | the gateway's providers: `scripted.py` (fixed variations of a selected canopy, not a model), `claude_code.py` (Claude through Claude Code's CLI, `claude -p`, on its own login; tools off, no session kept) and `anthropic_messages.py` (Claude through the Anthropic Messages API on structured outputs, its key in the environment, its model the configuration's, `claude-opus-5-5`), each with its configuration; `director_prompt.py`, what both model providers tell their models |

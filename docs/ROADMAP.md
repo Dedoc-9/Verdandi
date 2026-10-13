@@ -3754,6 +3754,23 @@ name refused; two `quiet()` calls at once, and their plant), LIVE SELFTEST 18/18
 `crashtest` and `racetest` will run it; Windows releases a dead holder's lock at a time that "depends upon available
 system resources", which the wait absorbs). Next, in his order: 3, 4, 6, 7, 2.
 
+**0213 on his machine, and the self-tests' world (2026-10-13).** 0213 applied as tree b1dedbf1, as predicted. On
+Windows `python art\director.py racetest` PASSED, 32 of 32: the content lock measured there for the first time — the
+chain whole under two threads and two processes, every plant caught (no lock: 5 of 5 and 3 of 3 chains broken; no
+export lock: 9 of 40 exports wrong), the recovery of another process refusing at each of the nine writes, a dead
+holder's lock taken back after 0.00 s; `crashtest` PASSED, 14 of 14. `python art\studio.py selftest` failed four rows
+(the request's record, a refused candidate shown, the Anthropic adapter and Claude Code's CLI drawing nothing) and
+stopped in the references' self-test (`assert west0 + "\n" in text`). Not 0213: the studio's, the references', the
+live loop's and the desktop studio's self-tests copied `art/briefs/`, `art/ledger/` and the maps from the checkout, and
+his brief and ledger there now hold the edits he admitted through the studio, which the rows' expectations (the
+north slab's statement, the west canopy's line, a canopy with no depth yet) were not written for — the defect
+DIRECTOR-0's self-test had and lost on 2026-10-10 (its fixture the live state). Reproduced in the container: an
+edit like his, recorded by `rebase`, failed four rows of 59 at 0213. Fixed: `art/fixtures/selftest/` keeps the brief,
+design and layout as committed when those self-tests were written, and `art/director.py`'s `selftest_tree` lays them
+under a scratch root with the graybox's own maps and starts a ledger on them; the four self-tests play there, and a
+row says so. With the same edit in the checkout: STUDIO SELFTEST 60/60, LIVE SELFTEST 18/18, STUDIO APP SELFTEST 7/7
+(MEASURED in the container).
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
