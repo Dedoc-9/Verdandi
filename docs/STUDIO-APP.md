@@ -526,6 +526,24 @@ and the reviewed scope says *"The studio does not need its self-updater to updat
 stub's Rust also cannot be compiled for Windows in the build container. Held back: the CLI's extra flags (step 5: the
 CLI works on his machine as it is, and a flag his version refuses would stop it).
 
+**Accepted on his machine (2026-10-12).** In his words: *"I ran it from the desktop icon and it worked as built.
+congratulations. movement worked and the requested changes held after closing and reopening the program, as well as the
+@1 @2 and @3 tags."* His supervisor log showed `processes left in the job at exit: 256`, a misreading of the job's
+process list (fix 6 below), not 256 processes. **Known limitation, deferred:** a tag names its object by its id, and
+an object's id carries its cells (`canopy:19,10-28,11`), so an admission that moves or resizes a tagged object leaves
+its tag "gone" (kept, listed apart, refusing a request that names it) rather than following the object.
+
+**Hardened (2026-10-13), fixes 1 and 8 of the review of that day** (the ghosts searched for, then each checked
+against the source): *one writer at a time* — every writer of a tree's ledgers, briefs, tags and maps holds the tree's
+content lock (`art/director/durable.py`), an admission from before its first write to after its last, reading the
+head again under it (the fence), and recovery takes the same lock and refuses while a live writer holds it; *every
+request by this server's name* — play.py answers a GET, as it answers a POST, only to 127.0.0.1 or localhost by name,
+so a rebinding page reads nothing. Two more defects of the same kind found while building it: `Workspace.export`
+swaps the module-global maps folder (two exports at once read each other's maps), and the gateway's `quiet()` swaps
+the process's one standard output (two at once left it redirected). `python art/director.py racetest`, 32 cases, each
+case's plant caught. Next, in the order he approved: the queue's torn tail cut (3), a crash never paying twice (4), the
+job's process list read right (6), silence never stopping a busy studio (7), and the shared map refused (2).
+
 **Components.** New: `shell/studio_stub.rs` (the stub; std-only, raw FFI, built by hand like `win32.rs`, never by the
 gate), `art/studio_app.py` (the supervisor), `art/studio_launch.md` (the contract); changed: `art/play.py`
 (`/healthz`, `/studio/shutdown` POST, `--port`, `--root` forwarded to the `--emit` child, a signal handler),

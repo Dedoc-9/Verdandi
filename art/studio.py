@@ -69,6 +69,7 @@ import studio_refs as R   # noqa: E402  (beside this file: the references' geome
 sys.path.insert(0, os.path.join(HERE, "director"))
 import durable            # noqa: E402  (the content path's crash-safe writes: the tags file)
 import intent as canon    # noqa: E402  (DIRECTOR-0's canonical bytes: the tags file's form)
+import ledger as led      # noqa: E402  (the content lock's place: ledger.lock_path)
 
 REQUEST, RESPONSE, VERSION = "VERDANDI-STUDIO-REQUEST", "VERDANDI-STUDIO-RESPONSE", "0"
 REQUEST_VERSION = "1"    # STUDIO-1: the target and the pins, their geometry and relations, in place of one selection
@@ -400,7 +401,11 @@ class Gateway:
         doc = {"format": TAGS_FORMAT, "version": "0", "brief": self.brief, "next": str(self.next_tag),
                "tags": [{"tag": t["tag"], "piece": t["piece"], "address": t["address"], "kind": t["kind"], "scene": t["scene"]}
                         for t in sorted(self.tags.values(), key=lambda x: int(x["tag"][1:]))]}
-        durable.write(self.tags_path, canon.dumps(doc) + b"\n")
+        try:                 # the content lock, as every writer of art/ledger/ holds it: a recovery sweeping that folder
+            with durable.locked(led.lock_path(self.tags_path)):           # never removes this write's temporary
+                durable.write(self.tags_path, canon.dumps(doc) + b"\n")
+        except durable.Busy:
+            raise StudioError("STUDIO-BUSY", "the tags were not saved: another writer held the content lock for the whole wait; try again")
 
     def shutdown(self):
         """Cancel the request running, and kill its provider and what it started (play.py, stopping)."""
@@ -847,12 +852,18 @@ class Gateway:
         return self.last
 
 
+# contextlib.redirect_stdout swaps the process's one sys.stdout: two quiet() calls at once (an admission and an undo,
+# two worlds' requests) left it pointing at a dead buffer in 20 of 20 trials (MEASURED in the container, 2026-10-13),
+# and play.py's console said nothing after. One at a time; the studio self-test keeps the case and its plant.
+QUIET_LOCK = threading.RLock()
+
+
 def quiet(fn, *a, **k):
     """A director command, its printing kept off the console; its refusals (it raises SystemExit) made the gateway's."""
     import io
     import contextlib
     try:
-        with contextlib.redirect_stdout(io.StringIO()):
+        with QUIET_LOCK, contextlib.redirect_stdout(io.StringIO()):
             return fn(*a, **k)
     except SystemExit as e:
         raise StudioError("STUDIO-DIRECTOR-REFUSED", " ".join(str(e).split())[:300])

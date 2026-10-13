@@ -8,6 +8,11 @@
 #   64 zeros for the first), kind, and the kind's own fields.
 # The file is the events' canonical bytes, each followed by one LF. Nothing is ever rewritten: an event is appended
 # or nothing happens. The ledger's head is the sha256 of its last line's bytes (without the LF).
+#
+# One writer at a time: append() reads the ledger and appends to it holding the tree's content lock (lock_path(),
+# durable.locked), so that two writers — two threads of the studio, the studio and a director command, two commands —
+# cannot both take the same seq and prev. Without it, two threads appending to one ledger broke its chain in 19 of 20
+# trials (MEASURED in the container, 2026-10-13; `art/director.py racetest` keeps that plant).
 
 import os
 
@@ -41,22 +46,37 @@ def read(path):
     return events, lines, (canon.sha256(lines[-1]) if lines else ZERO)
 
 
+def lock_path(path):
+    """The content lock of the tree a file of art/ledger/ belongs to: <root>/art/build/content.lock, one for every brief
+    of the root, since the briefs, the ledgers, the tags and the maps share their folders. A ledger kept anywhere else
+    has a lock of its own beside it."""
+    d = os.path.dirname(os.path.abspath(path))
+    if os.path.basename(d) == "ledger" and os.path.basename(os.path.dirname(d)) == "art":
+        return os.path.join(os.path.dirname(d), "build", "content.lock")
+    return os.path.abspath(path) + ".lock"
+
+
 def append(path, kind, fields):
     """Append one event; returns it. The caller supplies the kind's fields, never seq or prev."""
     if kind not in KINDS:
         raise LedgerError("LEDGER-KIND: %r" % kind)
-    events, _lines, head = read(path)
-    ev = dict(fields, protocol=PROTOCOL, version=VERSION, seq=str(len(events)), prev=head, kind=kind)
-    b = canon.dumps(ev) + b"\n"
-    if durable.torn(kind):               # the crash test: half the record written, then the process ends
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "ab") as fh:
-            fh.write(b[:len(b) // 2])
-            fh.flush()
-        durable.die()
-    durable.append(path, b)              # flushed to the disk before the event counts (B1; docs/STUDIO-CONTRACT.md)
-    durable.point("ledger:" + kind)
-    return ev
+    try:
+        with durable.locked(lock_path(path)):
+            events, _lines, head = read(path)
+            ev = dict(fields, protocol=PROTOCOL, version=VERSION, seq=str(len(events)), prev=head, kind=kind)
+            b = canon.dumps(ev) + b"\n"
+            if durable.torn(kind):               # the crash test: half the record written, then the process ends
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "ab") as fh:
+                    fh.write(b[:len(b) // 2])
+                    fh.flush()
+                durable.die()
+            durable.append(path, b)              # flushed to the disk before the event counts (B1; docs/STUDIO-CONTRACT.md)
+            durable.point("ledger:" + kind)
+            return ev
+    except durable.Busy:
+        raise LedgerError("LEDGER-BUSY: another writer held %s for the whole wait (%g s); nothing was appended"
+                          % (lock_path(path), durable.WAIT))
 
 
 def torn_tail(path):

@@ -9,22 +9,39 @@
 #                             (MoveFileExW with REPLACE_EXISTING | WRITE_THROUGH on Windows, retried while another
 #                             process holds the file; os.replace and a flush of the directory elsewhere)
 #   point(name)               a death point: when VERDANDI_CRASH_AT names it, the process ends there at once
-#                             (os._exit, no cleanup), which is how `art/director.py crashtest` kills it
+#                             (os._exit, no cleanup), which is how `art/director.py crashtest` kills it; HOOK, when
+#                             set, is called there first (how `art/director.py racetest` starts a second writer)
+#   locked(path, wait)        the content lock (B1's fix 1, the owner's ruling of 2026-10-13): held by every writer of
+#                             a tree's ledgers, briefs, tags and maps, and by recovery. In this process a reentrant
+#                             lock (threads); between processes the operating system's lock on the file at `path`
+#                             (msvcrt.locking on Windows, flock elsewhere), which the system releases when its holder
+#                             ends — the lease: no timeout ever takes the lock from a holder that is alive. A writer
+#                             that cannot have it within `wait` seconds raises Busy and has changed nothing.
 #
 # What it relies on, and does not prove: that a flushed write survives the end of the process (the operating system
 # keeps it); that the rename leaves the old file or the new at the name. Both are the axioms of
-# docs/STUDIO-APP.md §5.2 (A1, A2); an operating-system crash or a power loss is not claimed.
+# docs/STUDIO-APP.md §5.2 (A1, A2); an operating-system crash or a power loss is not claimed. Windows releases a dead
+# holder's lock "depends upon available system resources" later (LockFileEx), which `wait` absorbs.
 
+import contextlib
 import os
 import sys
+import threading
 import time
 
 CRASH = os.environ.get("VERDANDI_CRASH_AT", "")
 CRASH_EXIT = 77
+HOOK = None                      # the race court's: called with each death point's name before anything else there
+WAIT = float(os.environ.get("VERDANDI_LOCK_WAIT", "60"))
+# a planted defect for the race court only (art/director.py racetest): "no-lock" (locked() holds nothing),
+# "no-fence" (an admission does not read the head again under the lock), "recover-ignores-lock"
+PLANT = os.environ.get("VERDANDI_PLANT", "")
 
 
 def point(name):
-    """End the process here if the crash test asked for this point."""
+    """End the process here if the crash test asked for this point (the race court's hook first)."""
+    if HOOK is not None:
+        HOOK(name)
     if CRASH and CRASH == name:
         sys.stdout.flush()
         os._exit(CRASH_EXIT)
@@ -106,3 +123,81 @@ def remove_tree(path):
     """Remove a directory this module's caller owns (a finished pending transaction)."""
     import shutil
     shutil.rmtree(path, ignore_errors=True)
+
+
+# ------------------------------------------------------------------------------------------------ the content lock
+class Busy(Exception):
+    """The content lock was held by another writer for the whole wait."""
+
+
+class _Lock:
+    def __init__(self, path):
+        self.path, self.rlock, self.depth, self.fh = path, threading.RLock(), 0, None
+
+    def acquire(self, wait):
+        deadline = time.monotonic() + max(0.0, wait)
+        got = self.rlock.acquire(timeout=wait) if wait > 0 else self.rlock.acquire(blocking=False)
+        if not got:
+            raise Busy(self.path)
+        if self.depth == 0:                      # the outermost holder in this process takes the system's lock
+            try:
+                self.fh = self._os_lock(deadline)
+            except BaseException:
+                self.rlock.release()
+                raise
+        self.depth += 1
+
+    def _os_lock(self, deadline):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        fh = open(self.path, "a+b")
+        while True:
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    fh.seek(0)
+                    msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return fh
+            except OSError:
+                if time.monotonic() >= deadline:
+                    fh.close()
+                    raise Busy(self.path)
+                time.sleep(0.02)
+
+    def release(self):
+        self.depth -= 1
+        if self.depth == 0:
+            fh, self.fh = self.fh, None
+            try:
+                if os.name == "nt":
+                    import msvcrt
+                    fh.seek(0)
+                    msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+            finally:
+                fh.close()
+        self.rlock.release()
+
+
+_LOCKS = {}
+_LOCKS_GUARD = threading.Lock()
+
+
+@contextlib.contextmanager
+def locked(path, wait=None):
+    """Hold the content lock whose file is `path` (reentrant in the thread that holds it)."""
+    if PLANT == "no-lock":
+        yield
+        return
+    path = os.path.abspath(path)
+    with _LOCKS_GUARD:
+        lk = _LOCKS.setdefault(os.path.normcase(path), _Lock(path))
+    lk.acquire(WAIT if wait is None else wait)
+    try:
+        yield
+    finally:
+        lk.release()

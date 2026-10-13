@@ -494,7 +494,15 @@ def server(live, port=0):
             self.end_headers()
             self.wfile.write(body)
 
+        def own_host(self):
+            # only this server by name: a page of another site that rebinds its own name to 127.0.0.1 (DNS
+            # rebinding) sends its own name here, and is answered nothing — not the page's token, not the world
+            port_ = self.server.server_address[1]
+            return self.headers.get("Host", "") in ("127.0.0.1:%d" % port_, "localhost:%d" % port_)
+
         def do_GET(self):
+            if not self.own_host():
+                return self.send(403, b"forbidden: this server answers only to 127.0.0.1 or localhost by name", "text/plain")
             path, _, query = self.path.partition("?")
             q = dict(kv.split("=", 1) for kv in query.split("&") if "=" in kv)
             k = 0
@@ -535,19 +543,17 @@ def server(live, port=0):
             # the studio's requests: only from the page this server served (its token, in a header a page of another
             # origin cannot send without a preflight this server never answers), and only to this host by name
             path = self.path.partition("?")[0]
-            host = self.headers.get("Host", "")
-            port_ = self.server.server_address[1]
             if path == "/studio/bye":
                 # the page's pagehide beacon: navigator.sendBeacon cannot set a header, so the token is its whole body
                 n = int(self.headers.get("Content-Length", "0") or 0)
                 body = self.rfile.read(n) if 0 < n <= 64 else b""
-                if host not in ("127.0.0.1:%d" % port_, "localhost:%d" % port_) or body.decode("ascii", "replace") != live.token:
+                if not self.own_host() or body.decode("ascii", "replace") != live.token:
                     return self.send(403, b"forbidden", "text/plain")
                 live.page_bye = time.time()
                 return self.send(204, b"", "text/plain")
             if path not in STUDIO_POSTS:
                 return self.send(404, b"not found", "text/plain")
-            if host not in ("127.0.0.1:%d" % port_, "localhost:%d" % port_) or self.headers.get("X-Studio-Token") != live.token:
+            if not self.own_host() or self.headers.get("X-Studio-Token") != live.token:
                 return self.send(403, b"forbidden", "text/plain")
             n = int(self.headers.get("Content-Length", "0") or 0)
             if n > 65536 or not (self.headers.get("Content-Type", "").startswith("application/json")):
@@ -1063,6 +1069,45 @@ def studio_selftest():
         b, _ = post(srv, "/studio/cancel", {"id": rid}, tok, host="evil.example:80")
         c, body = post(srv, "/studio/cancel", {"id": rid}, tok)
         row("a POST without the page's token, or to another host, refused", a == 403 and b == 403 and c == 200, "no token %d, another host %d, the page's %d" % (a, b, c))
+
+        def get(path, host):
+            q = urllib.request.Request("http://127.0.0.1:%d%s" % (srv.server_address[1], path), headers={"Host": host})
+            try:
+                with urllib.request.urlopen(q, timeout=30) as r:
+                    return r.status, r.read()
+            except urllib.error.HTTPError as e:
+                return e.code, e.read()
+        own = "127.0.0.1:%d" % srv.server_address[1]
+        gets = {p: (get(p, "rebound.example:%d" % srv.server_address[1]), get(p, own)) for p in ("/play.html", "/live", "/healthz", "/scene/%s.json" % brief)}
+        row("a GET by another host's name (DNS rebinding) refused: no page, no token, no world; by this server's name served",
+            all(bad[0] == 403 and good[0] == 200 and tok.encode() not in bad[1] for bad, good in gets.values()) and get("/live", "localhost:%d" % srv.server_address[1])[0] == 200,
+            "; ".join("%s %d/%d" % (p, bad[0], good[0]) for p, (bad, good) in gets.items()))
+
+        # two director commands at once through the gateway's quiet(): the console is the console after
+        def stdout_after(plant):
+            import contextlib
+            saved, real, left = studio.QUIET_LOCK, sys.stdout, 0
+            if plant:
+                studio.QUIET_LOCK = contextlib.nullcontext()
+            try:
+                for _t in range(5):
+                    def fn(d):
+                        print("a director command's line")
+                        time.sleep(d)
+                    th = [threading.Thread(target=studio.quiet, args=(fn, d)) for d in (0.02, 0.05)]
+                    th[0].start()
+                    time.sleep(0.005)
+                    th[1].start()
+                    for x in th:
+                        x.join()
+                    left += sys.stdout is not real
+                    sys.stdout = real
+            finally:
+                studio.QUIET_LOCK = saved
+            return left
+        q0, q1 = stdout_after(False), stdout_after(True)
+        row("two director commands at once through quiet(): the console still the console (plant: no lock leaves it redirected)",
+            q0 == 0 and q1 > 0, "left redirected after %d of 5; with the plant %d of 5" % (q0, q1))
 
         # admit A through HTTP: the brief written, the ledger two events longer, the head the candidate's, verified
         n0 = len(workspace(brief) and director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0])

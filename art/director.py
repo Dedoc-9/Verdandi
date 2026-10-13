@@ -16,6 +16,7 @@
 #   python art/director.py vectors                             the reference against the conformance vectors
 #   python art/director.py selftest                            the vectors, and the whole lifecycle in a scratch copy
 #   python art/director.py crashtest                           an admission killed at each of its writes, then recovered
+#   python art/director.py racetest                            writers at once: the content lock, the fence, recovery that waits
 #   (every command but vectors takes --root DIR: the tree whose brief and ledger it uses; the repository by default)
 #
 # Crash safety (B1, docs/STUDIO-CONTRACT.md): every command starts by recovering (recover()). An admission writes, in
@@ -24,6 +25,10 @@
 # the manifest's removal. Recovery finds a manifest and either completes the admission (its event is in the ledger) or
 # puts the old bytes back (it is not), so the files are the ledger's parent or its child, never between. A torn last
 # line of the ledger is set aside first. What it does not claim: an operating-system crash or a power loss.
+# One writer at a time (fix 1, the owner's ruling of 2026-10-13): every writer of a tree's ledgers, briefs, tags and
+# maps holds the tree's content lock (art/director/durable.py), an admission from before its first write to after its
+# last, and under it reads the head again (the fence); recovery takes the same lock and, while another writer holds
+# it, refuses and changes nothing (LEDGER-BUSY), so it never undoes an admission that is alive.
 # What each part proves, and what it does not:
 #   scope   (art/director/scope.py) is pure: the same intent, head and scenes give the same verdict, byte for byte.
 #   ledger  (art/director/ledger.py) proves recorded lineage: which text, at which head, with which verdict, chosen by
@@ -58,6 +63,13 @@ import scope as scopemod  # noqa: E402
 import ledger as led  # noqa: E402
 
 level = dress.level
+# One export at a time in a process: Workspace.export points the module-global level.MAPS at the maps folder it reads
+# (a candidate's layout is drawn over a folder of its own). Two threads exporting at once, one over the repository's
+# maps and one over a candidate's, failed on the first export (the converter read the other folder's layout; MEASURED
+# in the container, 2026-10-13); `racetest` keeps that case and its plant.
+import threading  # noqa: E402
+EXPORT_LOCK = threading.RLock()
+NO_LOCK = __import__("contextlib").nullcontext()       # the race court's plant "no-export-lock" only
 
 
 def now():
@@ -88,14 +100,15 @@ class Workspace:
         maps = maps or self.maps
         A = dress.parse(text, self.brief + ".art")
         A["name"], A["sha256"] = self.brief, canon.sha256(text.encode("utf-8"))
-        saved = level.MAPS
-        level.MAPS = maps
-        try:
-            out = dress.export(A, maps_dir=maps)
-            D = check.gcheck.source_rows(out["W"])
-            res = check.verify(out, None, D=D)
-        finally:
-            level.MAPS = saved
+        with EXPORT_LOCK if durable.PLANT != "no-export-lock" else NO_LOCK:   # level.MAPS is one global
+            saved = level.MAPS
+            level.MAPS = maps
+            try:
+                out = dress.export(A, maps_dir=maps)
+                D = check.gcheck.source_rows(out["W"])
+                res = check.verify(out, None, D=D)
+            finally:
+                level.MAPS = saved
         L = out["lineage"]
         parts = {"art_sha256": A["sha256"], "world_sha256": L["canonical_sha256"], "exporter_sha256": L["exporter_sha256"]}
         return out, parts, [{"name": c, "ok": bool(ok)} for c, ok, _d in res if c != "the lineage binds every input"]
@@ -217,9 +230,26 @@ def _abs(ws, rel):
     return os.path.join(ws.root, *rel.split("/"))
 
 
-def recover(ws):
+def recover(ws, wait=None):
     """Bring the brief's files and ledger to a state the ledger accounts for: a torn last line set aside; an admission
-    left half done completed (its event is in the ledger) or undone (it is not). Returns what was done, as lines."""
+    left half done completed (its event is in the ledger) or undone (it is not). Returns what was done, as lines.
+
+    Only under the content lock (the owner's ruling of 2026-10-13: "recover() refuses rather than clears"): a pending
+    folder, a temporary or a torn line seen while the lock is held by this process is one whose writer is dead, since
+    every writer holds the lock from before its first write to after its last. If another writer holds it for the whole
+    wait, nothing is recovered or changed: LEDGER-BUSY. A lock is never taken from a holder that is alive."""
+    if durable.PLANT == "recover-ignores-lock":
+        return _recover(ws)
+    try:
+        with durable.locked(led.lock_path(ws.ledger), wait):
+            return _recover(ws)
+    except durable.Busy:
+        raise led.LedgerError("LEDGER-BUSY: another writer holds this tree's content lock (%s), an admission in progress; "
+                              "nothing was recovered or changed. Try again when it ends"
+                              % os.path.relpath(led.lock_path(ws.ledger), ws.root))
+
+
+def _recover(ws):
     done = []
     stale = 0                                    # the temporaries of writes that died before their rename (durable.write)
     for d in {os.path.dirname(ws.art), os.path.dirname(ws.ledger), ws.maps}:
@@ -271,28 +301,67 @@ def _finish(ws):
 
 
 def commit_admission(ws, evaluation, intent_sha256, files, fields):
-    """Admit with crash safety: files is [(absolute path, new bytes)], fields the admit event's. See recover()."""
+    """Admit with crash safety: files is [(absolute path, new bytes)], fields the admit event's (with head_before, the
+    head the caller checked). See recover().
+
+    The fence (fix 1 of the owner's ruling of 2026-10-13; Kleppmann: the store checks the token at the write): the
+    whole admission holds the content lock, and under it the head is computed again from the files and compared with
+    head_before before anything is written — the caller's own check was made before the lock, and another admission
+    may have landed between the two. Every caller is fenced here, whoever it is."""
+    durable.point("admit:lock-wait")
+    try:
+        with durable.locked(led.lock_path(ws.ledger)):
+            return _commit_locked(ws, evaluation, intent_sha256, files, fields)
+    except durable.Busy:
+        raise SystemExit("REFUSED (BUSY): another writer held this tree's content lock for the whole wait (%g s); nothing was "
+                         "changed. Admit again when it ends" % durable.WAIT)
+
+
+def _commit_locked(ws, evaluation, intent_sha256, files, fields):
+    if os.path.exists(ws.pending):               # this process holds the lock: the folder's writer is dead
+        for ln in _recover(ws):
+            print(ln)
+    if durable.PLANT != "no-fence":
+        _o, cur, _c = ws.export()
+        if canon.head(cur) != fields["head_before"]:
+            raise SystemExit("REFUSED (HEAD-MOVED): the head moved to %s while this admission waited for the lock (it was checked "
+                             "against %s); nothing was changed. Re-evaluate it first" % (canon.head(cur)[:12], fields["head_before"][:12]))
     events, _l, _h = led.read(ws.ledger)
-    if os.path.exists(ws.pending):
-        raise SystemExit("REFUSED: %s exists; run any director command to recover it first" % os.path.relpath(ws.pending, ws.root))
     os.makedirs(ws.pending)
-    entries = []
-    for n, (target, new) in enumerate(files):
-        old = open(target, "rb").read()
-        durable.write(os.path.join(ws.pending, "old.%d" % n), old)
-        durable.write(os.path.join(ws.pending, "new.%d" % n), new)
-        entries.append({"path": os.path.relpath(target, ws.root).replace(os.sep, "/"), "old_sha256": canon.sha256(old), "new_sha256": canon.sha256(new)})
-        durable.point("pending:file-%d" % n)
-    durable.write(os.path.join(ws.pending, "manifest.json"), canon.dumps(
-        {"protocol": PENDING, "version": "0", "ledger_seq": str(len(events)), "evaluation": evaluation,
-         "intent_sha256": intent_sha256, "files": entries}))
-    durable.point("pending:manifest")
-    a = led.append(ws.ledger, "admit", fields)
-    for n, (target, new) in enumerate(files):
-        durable.write(target, new)
-        durable.point("install:file-%d" % n)
-    _finish(ws)
-    return a
+    prepared = False
+    try:
+        entries = []
+        for n, (target, new) in enumerate(files):
+            old = open(target, "rb").read()
+            durable.write(os.path.join(ws.pending, "old.%d" % n), old)
+            durable.write(os.path.join(ws.pending, "new.%d" % n), new)
+            entries.append({"path": os.path.relpath(target, ws.root).replace(os.sep, "/"), "old_sha256": canon.sha256(old), "new_sha256": canon.sha256(new)})
+            durable.point("pending:file-%d" % n)
+        durable.write(os.path.join(ws.pending, "manifest.json"), canon.dumps(
+            {"protocol": PENDING, "version": "0", "ledger_seq": str(len(events)), "evaluation": evaluation,
+             "intent_sha256": intent_sha256, "files": entries}))
+        prepared = True
+        durable.point("pending:manifest")
+        a = led.append(ws.ledger, "admit", fields)
+        for n, (target, new) in enumerate(files):
+            durable.write(target, new)
+            durable.point("install:file-%d" % n)
+        _finish(ws)
+        return a
+    except BaseException:
+        if not prepared:
+            # nothing a recovery needs: the files and the ledger are untouched, so the folder goes (the owner's addition:
+            # no pending folder left behind by a failure)
+            durable.remove_tree(ws.pending)
+        else:
+            # prepared: the folder is this admission's redo and undo, never removed blindly. Finished now, under the
+            # lock, as a recovery would: completed if the admit event is in the ledger, undone if it is not
+            try:
+                for ln in _recover(ws):
+                    print(ln)
+            except Exception:                    # noqa: BLE001 — left for the next recovery, which refuses what it cannot account for
+                pass
+        raise
 
 
 def say_recovered(ws):
@@ -924,6 +993,319 @@ def cmd_crashtest():
     return 0 if not failed else 1
 
 
+def cmd_racetest():
+    """The race court (S1, with fix 1 of the owner's ruling of 2026-10-13): writers at once, and a second writer at every
+    point an admission writes — another thread's admission, another process's recovery. Each case has the plant it
+    must catch. In a scratch copy, with the round's candidates A (the brief alone) and B (a lamp and a layout: three
+    files), both evaluated at one head."""
+    import contextlib
+    import io
+    import threading
+    tmp = tempfile.mkdtemp(prefix="director-racetest-")
+    results = []
+    me = os.path.abspath(__file__)
+    env0 = {k: v for k, v in os.environ.items() if k not in ("VERDANDI_CRASH_AT", "VERDANDI_PLANT", "VERDANDI_LOCK_WAIT")}
+    saved_plant, saved_hook = durable.PLANT, durable.HOOK
+    lib = os.path.join(HERE, "director")
+
+    def res(name, ok, detail=""):
+        results.append((name, bool(ok), detail))
+
+    def run(args, **env):
+        r = subprocess.run([sys.executable, "-B", me] + args + ["--root", tmp], capture_output=True, text=True,
+                           env=dict(env0, **env), timeout=600)
+        return r.returncode, r.stdout + r.stderr
+    try:
+        for sub in ("art/briefs", "art/rounds", "graybox/maps"):
+            shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        lock = led.lock_path(os.path.join(tmp, "art", "ledger", "plaza-night.ledger"))
+
+        # 1. two writers of one ledger, as threads and as processes
+        race_led = os.path.join(tmp, "art", "ledger", "race.ledger")
+
+        def fresh():
+            if os.path.exists(race_led):
+                os.remove(race_led)
+            led.append(race_led, "genesis", {"note": "the race court's ledger"})
+
+        def whole():
+            try:
+                ev, _h = led.chain(race_led)
+                return len(ev) == 51
+            except led.LedgerError:
+                return False
+
+        def thread_trials(plant, trials=5):
+            broken = 0
+            durable.PLANT = plant
+            try:
+                for _t in range(trials):
+                    fresh()
+                    go, errs = threading.Barrier(2), []
+
+                    def writer(k):
+                        go.wait()
+                        try:
+                            for i in range(25):
+                                led.append(race_led, "evaluate", {"note": "%d-%d" % (k, i)})
+                        except Exception as e:           # noqa: BLE001 — a broken ledger refuses the next append
+                            errs.append(e)
+                    th = [threading.Thread(target=writer, args=(k,)) for k in (1, 2)]
+                    for t in th:
+                        t.start()
+                    for t in th:
+                        t.join()
+                    broken += 0 if (whole() and not errs) else 1
+            finally:
+                durable.PLANT = saved_plant
+            return broken
+        b0, b1 = thread_trials(""), thread_trials("no-lock")
+        res("two threads append 25 events each to one ledger: the chain whole, 51 events, in every trial", b0 == 0, "broken in %d of 5" % b0)
+        res("plant: the lock holds nothing — the chain breaks", b1 > 0, "broken in %d of 5" % b1)
+        child = ("import os, sys, time\nsys.path.insert(0, %r)\nimport ledger as led\np, go, k = sys.argv[1], sys.argv[2], sys.argv[3]\n"
+                 "while not os.path.exists(go):\n    time.sleep(0.001)\n"
+                 "for i in range(25):\n    led.append(p, 'evaluate', {'note': '%%s-%%d' %% (k, i)})\n") % lib
+
+        def process_trials(plant, trials=3):
+            broken = 0
+            for t in range(trials):
+                fresh()
+                go = os.path.join(tmp, "go.%s.%d" % (plant or "lock", t))
+                env = dict(env0, **({"VERDANDI_PLANT": plant} if plant else {}))
+                ps = [subprocess.Popen([sys.executable, "-B", "-c", child, race_led, go, str(k)], env=env,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE) for k in (1, 2)]
+                time.sleep(0.5)
+                open(go, "w").close()
+                rcs = [p.communicate(timeout=300) and p.returncode for p in ps]
+                broken += 0 if (whole() and rcs == [0, 0]) else 1
+            return broken
+        p0, p1 = process_trials(""), process_trials("no-lock")
+        res("two processes append 25 events each to one ledger: the chain whole in every trial (the system's lock)", p0 == 0, "broken in %d of 3" % p0)
+        res("plant: the lock holds nothing — two processes break the chain", p1 > 0, "broken in %d of 3" % p1)
+        os.remove(race_led)
+
+        # the brief, its ledger and the two candidates at one head
+        ws = Workspace("plaza-night", tmp)
+        rnd = os.path.join(tmp, "art", "rounds", "plaza-imposing")
+        for f, to in (("plaza-night.art", "art/briefs"), ("tactical.design", "graybox/maps"), ("tactical.layout", "graybox/maps")):
+            shutil.copy(os.path.join(rnd, "base", f), os.path.join(tmp, to, f))
+        cmd_genesis_quiet(ws)
+        rows = _quiet(cmd_evaluate, ws, [os.path.join(rnd, "A.intent"), os.path.join(rnd, "B.intent")], quiet=True)
+        seq_a, seq_b = rows[0][4], rows[1][4]
+        evs = led.read(ws.ledger)[0]
+        parent = current_parts(ws)
+        pair = lambda p: {"art_sha256": p["art_sha256"], "world_sha256": p["world_sha256"]}  # noqa: E731
+        child_a, child_b = pair(evs[int(seq_a)]["after"]), pair(evs[int(seq_b)]["after"])
+
+        # 2. two exports at once over different maps (a candidate's layout is drawn over a folder of its own)
+        it_b = canon.load_intent(evs[int(seq_b)]["intent"].encode("ascii"))
+        out0, base_parts, _c = ws.export()
+        maps_b, _n, _h = with_layout(ws, out0, it_b["layout"], layout_label(it_b))
+        _o, b_parts, _c = ws.export(None, maps_b)
+
+        def export_trials(plant, n=20):
+            wrong = [0]
+            durable.PLANT = plant
+
+            def one(maps, want):
+                for _i in range(n):
+                    try:
+                        wrong[0] += ws.export(None, maps)[1] != want
+                    except Exception:                    # noqa: BLE001 — the converter read the other folder
+                        wrong[0] += 1
+            try:
+                th = [threading.Thread(target=one, args=(None, base_parts)), threading.Thread(target=one, args=(maps_b, b_parts))]
+                for t in th:
+                    t.start()
+                for t in th:
+                    t.join()
+            finally:
+                durable.PLANT = saved_plant
+            return wrong[0]
+        e0, e1 = export_trials(""), export_trials("no-export-lock")
+        shutil.rmtree(maps_b, ignore_errors=True)
+        res("two threads export at once, over the brief's maps and over a candidate's: every head right (40 exports)", e0 == 0, "%d wrong" % e0)
+        res("plant: no export lock — an export reads the other's maps", e1 > 0, "%d of 40 wrong or failed" % e1)
+
+        # 3. an admission with a second writer at each of its points
+        watched = [ws.art, ws.ledger] + [os.path.join(ws.maps, f) for f in ("tactical.design", "tactical.layout")]
+        snap = {f: open(f, "rb").read() for f in watched}
+
+        def restore():
+            durable.HOOK = None
+            durable.remove_tree(ws.pending)
+            for f in os.listdir(os.path.dirname(ws.ledger)):
+                if ".torn." in f:
+                    os.remove(os.path.join(os.path.dirname(ws.ledger), f))
+            for f, b in snap.items():
+                with open(f, "wb") as fh:
+                    fh.write(b)
+
+        def tree():
+            t = {f: open(f, "rb").read() for f in watched}
+            if os.path.isdir(ws.pending):
+                for f in sorted(os.listdir(ws.pending)):
+                    t["pending/" + f] = open(os.path.join(ws.pending, f), "rb").read()
+            return t
+
+        def where():
+            p = pair(current_parts(ws))
+            at = "parent" if p == pair(parent) else "A" if p == child_a else "B" if p == child_b else "between"
+            kinds = [e["kind"] for e in led.read(ws.ledger)[0]]
+            return at, kinds.count("admit"), kinds[-1]
+
+        def verified():
+            try:
+                _quiet(cmd_verify, ws, quiet=True)
+                return True
+            except led.LedgerError:
+                return False
+
+        sink = io.StringIO()
+        with contextlib.redirect_stdout(sink):
+            cmd_admit(ws, seq_b, chooser="racetest")
+        k = sum(1 for f in watched if f != ws.ledger and open(f, "rb").read() != snap[f])
+        res("B admitted alone reaches its child (%d files change), no pending folder" % k, where() == ("B", 1, "admit") and not os.path.isdir(ws.pending) and verified())
+        points = (["pending:file-%d" % n for n in range(k)] + ["pending:manifest", "ledger:admit"]
+                  + ["install:file-%d" % n for n in range(k)] + ["pending:manifest-removed"])
+
+        def contest(point, plant="", recover_plant=""):
+            """B admitted by one thread; at `point` another process recovers and another thread admits A."""
+            restore()
+            st = {"first": None, "second": None, "busy": None, "same": None, "started": False}
+            reached = threading.Event()
+
+            def second():
+                try:
+                    cmd_admit(ws, seq_a, chooser="racetest-second")
+                    st["second"] = "ADMITTED"
+                except SystemExit as e:
+                    st["second"] = "REFUSED: " + " ".join(str(e).split())[:110]
+                except Exception as e:                   # noqa: BLE001 — a read of a tree half installed
+                    st["second"] = "ERROR: %s" % (" ".join(str(e).split())[:110])
+                finally:
+                    reached.set()
+
+            def hook(name):
+                me_ = threading.current_thread().name
+                if me_ == "race-second" and name == "admit:lock-wait":
+                    reached.set()
+                elif me_ == "race-first" and name == point and not st["started"]:
+                    st["started"] = True
+                    before = tree()
+                    env = {"VERDANDI_LOCK_WAIT": "0.3"}
+                    if recover_plant:
+                        env["VERDANDI_PLANT"] = recover_plant
+                    st["busy"] = run(["verify", "plaza-night"], **env)
+                    st["same"] = tree() == before
+                    t2 = threading.Thread(target=second, name="race-second")
+                    t2.start()
+                    st["t2"] = t2
+                    reached.wait(300)
+
+            def first():
+                try:
+                    cmd_admit(ws, seq_b, chooser="racetest")
+                    st["first"] = "ADMITTED"
+                except SystemExit as e:
+                    st["first"] = "REFUSED: " + " ".join(str(e).split())[:110]
+                except Exception as e:                   # noqa: BLE001
+                    st["first"] = "ERROR: %s" % (" ".join(str(e).split())[:110])
+            durable.HOOK, durable.PLANT = hook, plant
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    t1 = threading.Thread(target=first, name="race-first")
+                    t1.start()
+                    t1.join()
+                    if st.get("t2"):
+                        st["t2"].join()
+            finally:
+                durable.HOOK, durable.PLANT = None, saved_plant
+            return st
+
+        before_install = ("pending:", "ledger:")
+        for point in points:
+            st = contest(point)
+            at, admits, last = where()
+            rc, out = st["busy"] or (None, "")
+            fenced = st["second"] is not None and st["second"] != "ADMITTED" and (
+                not point.startswith(before_install) or point == "pending:manifest-removed" or "HEAD-MOVED" in st["second"])
+            ok = (st["first"] == "ADMITTED" and fenced and (at, admits, last) == ("B", 1, "admit") and verified()
+                  and not os.path.isdir(ws.pending))
+            res("at %s: the second admission %s, the files B's child, one admit event" % (
+                point, "waits for the lock and is refused by the fence" if point.startswith(before_install) and point != "pending:manifest-removed"
+                else "is refused"), ok, "second: %s; the files at %s, %d admit event%s" % (st["second"], at, admits, "" if admits == 1 else "s"))
+            res("at %s: another process's recovery refuses (LEDGER-BUSY) and changes nothing" % point,
+                rc == 1 and "LEDGER-BUSY" in out and st["same"] is True, "exit %s; %s" % (rc, (out.strip().splitlines() or [""])[-1][:110]))
+        st = contest("pending:manifest", plant="no-fence")
+        at, admits, last = where()
+        res("plant: no fence — the second admission writes over the first", st["second"] == "ADMITTED" or admits != 1 or at != "B" or not verified(),
+            "second: %s; the files at %s, %d admit events, the ledger %s" % (st["second"], at, admits, "verifies" if verified() else "does not verify"))
+        st = contest("pending:manifest", recover_plant="recover-ignores-lock")
+        res("plant: a recovery that ignores the lock changes the tree under a live admission", st["same"] is False,
+            "the tree %s while the admission held the lock; first: %s" % ("unchanged" if st["same"] else "changed", st["first"]))
+
+        # 4. a holder that dies holding the lock: the system releases it (the lease)
+        hold = ("import os, sys\nsys.path.insert(0, %r)\nimport durable\nwith durable.locked(sys.argv[1]):\n"
+                "    print('held', flush=True)\n    os._exit(77)\n") % lib
+        r = subprocess.run([sys.executable, "-B", "-c", hold, lock], capture_output=True, text=True, env=env0, timeout=120)
+        t0 = time.monotonic()
+        try:
+            with durable.locked(lock, 10):
+                took = time.monotonic() - t0
+        except durable.Busy:
+            took = None
+        res("a holder that dies holding the lock: the system releases it, no timeout needed", r.returncode == 77 and "held" in r.stdout and took is not None,
+            "the holder exit %d; the lock taken %s" % (r.returncode, "after %.2f s" % took if took is not None else "NOT within 10 s"))
+
+        # 5. a failure inside the admission (the owner's addition): no pending folder left; a prepared one finished at once
+        for point, want in (("pending:file-1", ("parent", 0, "evaluate")), ("pending:manifest", ("parent", 0, "evaluate")),
+                            ("install:file-1", ("B", 1, "admit"))):
+            restore()
+
+            def boom(name, point=point):
+                if name == point:
+                    raise RuntimeError("planted failure at " + point)
+            durable.HOOK = boom
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    cmd_admit(ws, seq_b, chooser="racetest")
+                raised = False
+            except RuntimeError:
+                raised = True
+            finally:
+                durable.HOOK = None
+            ok = raised and where() == want and not os.path.isdir(ws.pending) and verified() and (want[0] == "B" or open(ws.ledger, "rb").read() == snap[ws.ledger])
+            res("a failure at %s: the error raised, no pending folder left, the files at the %s" % (
+                point, "parent and the ledger as it was" if want[0] == "parent" else "child (the admit event was written; finished at once)"), ok,
+                "the files at %s, %d admit event%s" % (where()[0], where()[1], "" if where()[1] == 1 else "s"))
+
+        # 6. an orphan pending folder met by the next admission: recovered under the lock, then that admission completes
+        restore()
+        rc, _o = run(["admit", "plaza-night", seq_b, "--chooser", "racetest"], VERDANDI_CRASH_AT="pending:manifest")
+        orphan = os.path.isdir(ws.pending)
+        sink = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(sink):
+                cmd_admit(ws, seq_a, chooser="racetest")
+            outcome = "admitted"
+        except SystemExit as e:
+            outcome = "refused: %s" % e
+        res("an orphan pending folder (its writer killed) met by the next admission: undone under the lock, then A admitted",
+            rc == durable.CRASH_EXIT and orphan and outcome == "admitted" and where() == ("A", 1, "admit") and not os.path.isdir(ws.pending)
+            and "RECOVERED" in sink.getvalue() and verified(), "the killed writer %d; %s; %s" % (rc, outcome, " ".join(
+                ln for ln in sink.getvalue().splitlines() if ln.startswith("RECOVERED"))[:110]))
+    finally:
+        durable.HOOK, durable.PLANT = saved_hook, saved_plant
+        shutil.rmtree(tmp, ignore_errors=True)
+    failed = 0
+    for name, ok, d in results:
+        print("%s %s%s" % ("PASS" if ok else "FAIL", name, (" — " + d) if d else ""))
+        failed += 0 if ok else 1
+    print("DIRECTOR RACETEST %s (%d cases)" % ("PASSED" if not failed else "FAILED (%d)" % failed, len(results)))
+    return 0 if not failed else 1
+
+
 def _tamper(path):
     raw = open(path, "rb").read()
     i = raw.index(b'"chooser":"selftest"')
@@ -972,6 +1354,8 @@ def main(argv):
             return cmd_selftest()
         if cmd == "crashtest":
             return cmd_crashtest()
+        if cmd == "racetest":
+            return cmd_racetest()
         ws = Workspace(pos[0], os.path.abspath(opt(args, "--root", REPO)))
         say_recovered(ws)
         if cmd == "genesis":

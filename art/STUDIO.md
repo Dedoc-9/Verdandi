@@ -214,7 +214,9 @@ again, whole, as it reads every provider's: the CLI's own enforcement of the sch
 A provider's keys are in its environment; nothing of it reaches the browser but the candidates' text and their
 verdicts, and the name, model and usage its response gives. The page's requests to play.py carry a token the page is
 served with, in a header that a page of another origin cannot send without a preflight play.py never answers, and
-must name 127.0.0.1 or localhost as their host. Nothing is admitted without the designer, and nothing reaches the
+every request, a GET too, must name 127.0.0.1 or localhost as its host: a page of another site that rebinds its own name
+to 127.0.0.1 (DNS rebinding) is answered 403, so it reads neither the page's token nor the world, the prompts or the
+queue. Nothing is admitted without the designer, and nothing reaches the
 world but what the director judged.
 
 ## Crash safety, and what a supervisor reads (B1)
@@ -222,7 +224,13 @@ world but what the director judged.
 Every admission is written so that a process killed at any point leaves the brief and its ledger at the parent or
 the child, never between: `art/director.py`'s docstring says how, and `python art/director.py crashtest` kills an
 admission at each of its writes and recovers it (14 cases). Every director command, and play.py's start, recovers
-first. play.py answers `GET /healthz` (`ready`, `version`, `page`, `page_age_s`, `bye_age_s`, `pid`), takes the page's
+first. One writer at a time: every writer of a tree's ledgers, briefs, tags and maps holds the tree's content lock
+(`art/build/content.lock`; a thread lock in a process and the system's lock between processes, which the system releases
+when its holder dies); an admission holds it from before its first write to after its last and reads the head again
+under it, so a second admission drawn at the same head is refused (HEAD-MOVED) instead of writing over the first; and
+recovery takes the same lock, so while an admission is alive a recovery refuses (LEDGER-BUSY) and changes nothing.
+`python art/director.py racetest` (32 cases) puts a second admission and another process's recovery at each of an
+admission's writes, and keeps the plants that break it. play.py answers `GET /healthz` (`ready`, `version`, `page`, `page_age_s`, `bye_age_s`, `pid`), takes the page's
 heartbeat on `POST /studio/alive` (every 5 s) and its goodbye on `POST /studio/bye` (a `pagehide` beacon whose body is
 the token, since a beacon cannot set a header), and stops on `POST /studio/shutdown`, SIGTERM or Ctrl+Break; it exits
 0 stopped, 70 when its port is taken (bound exclusively on Windows), 75 when recovery refuses.

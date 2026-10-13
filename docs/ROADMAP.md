@@ -3706,6 +3706,54 @@ plants caught (the lingering window left running; a reload taken for a close); L
 first step: the stub and the layout of generations (B1's one generation is his checkout; *"The studio does not need its
 self-updater to update itself in B1. That is B2."*). Not yet measured: the icon on his machine, Edge inside the job.
 
+**B1 accepted (2026-10-12).** 0212 applied as tree 35dd9fff; every self-test passed on his machine; the gate 251
+rows / 0 fail; pushed 30fe6ef..02aedc4; probe 1 `--job` HELD; the shortcut made. Then, in his words: *"I ran it from
+the desktop icon and it worked as built. congratulations. movement worked and the requested changes held after closing
+and reopening the program, as well as the @1 @2 and @3 tags."* His supervisor's log said `processes left in the job at
+exit: 256`, a misreading of the job's process list (the structure's two counts read as one pointer-sized word), not
+256 processes. Known limitation, deferred: an object's id carries its cells, so an admission that moves or resizes a
+tagged object leaves its tag "gone" rather than following it.
+
+**B1 hardened: the ghosts searched for, and fixes 1 and 8 (2026-10-13).** He asked to *"websearch for ghosts to harden
+in this before continuing"*. The search (fencing tokens, crash consistency, fsync errors, hash-chain freshness, event
+and cache-key drift, pinned stores, DNS rebinding, browser throttling and sleeping tabs, job objects, queues that pay
+twice, the configuration complexity clock, mode collapse, physics determinism) was checked against the source; eight
+ghosts were found live, each graded, and the fixes ordered. His review: *"Go — with three amendments worth making
+before the commits start"*; *"Fix 1 must fence inside the callee, not the callers"*; *"Fix 1 needs its own recovery
+rule, or it becomes a deadlock"*; *"Fix 8 can ride with any commit."* Two further amendments were found by reading and
+measuring, and he approved them: *"Approved. Both amendments are stronger than the original plan, and the measurements
+back them up."* — the lock belongs to the store, the ledger, since two threads appending to one ledger broke its chain
+in 19 of 20 trials (MEASURED in the container); and recovery refuses rather than clears, since every director command
+and every start recovered, and so could undo an admission still alive in another process. His addition: *"When
+releasing the lock on error, remove the `.pending` folder you created before raising the exception."* His order:
+*"Proceed with Fix 1 + Fix 8 in the same commit."* Built, off the gate: the content lock (`art/director/durable.py`
+`locked`; `art/director/ledger.py` `lock_path`) — a thread lock in a process and the system's file lock between
+processes (msvcrt.locking, flock), released by the system when its holder dies, so no timeout ever takes it from a live
+holder — held by every ledger append from its read to its append, by every admission from before its first write to
+after its last, by the tags file's write, and by recovery, which waits (60 s, `VERDANDI_LOCK_WAIT`) and then refuses
+(LEDGER-BUSY) having changed nothing. One lock for a whole tree, not one for each ledger: the briefs, ledgers, tags and
+maps of every brief share their folders, and recovery sweeps them, so a lock of one brief would let it remove another
+brief's temporaries; it also serializes two worlds' writes of a shared map. The fence: under the lock an admission
+computes the head again from the files and refuses (HEAD-MOVED) if it is not the head its caller checked; every caller
+of `commit_admission` is fenced there. An orphan pending folder met by an admission under the lock is recovered first.
+On a failure, a pending folder is removed only if its manifest was not yet written; once it was, the folder is that
+admission's redo and undo, and it is finished at once under the lock instead (removed blindly, an admission whose
+event was written would be left half installed). Found while building it and fixed with it: `Workspace.export` points
+the module-global `level.MAPS` at the folder it reads, and two exports at once (the brief's maps and a candidate's)
+failed on the first try (MEASURED), so exports take one lock; the gateway's `quiet()` swaps the process's one standard
+output, and two at once left it redirected in 20 of 20 trials (MEASURED), so it takes one lock. Fix 8: play.py answers
+a GET, as a POST, only to 127.0.0.1 or localhost by name. MEASURED in the container: DIRECTOR RACETEST PASSED (32
+cases: threads and processes appending; exports at once; at each of an admission's nine writes a second admission
+refused by the fence or before it, and another process's recovery refusing and changing nothing; a holder that dies
+releasing the lock; a failure before and after the manifest; an orphan recovered by the next admission; and the plants
+— no lock, 5 of 5 chains broken by threads and 3 of 3 by processes; no export lock, 23 of 40 exports wrong; no fence,
+the second admission written over the first; a recovery that ignores the lock, the tree changed under a live
+admission), DIRECTOR CRASHTEST PASSED (14 cases), DIRECTOR SELFTEST PASSED, STUDIO SELFTEST 59/59 (a GET by a rebound
+name refused; two `quiet()` calls at once, and their plant), LIVE SELFTEST 18/18, STUDIO APP SELFTEST 7/7, VECTORS
+62 / 62, ART CHECKS PASSED; in a browser (not committed) B1's flows 9/9. Not measured: the lock on Windows (his
+`crashtest` and `racetest` will run it; Windows releases a dead holder's lock at a time that "depends upon available
+system resources", which the wait absorbs). Next, in his order: 3, 4, 6, 7, 2.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
