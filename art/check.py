@@ -22,8 +22,13 @@
 # through the design tool, after which play must still hold and every piece of the scene that changed must stand
 # next to a cell that changed. The layout revision needs the shell; without it the line says SKIPPED, never PASS.
 #
+# QUALITY-0 (art/quality.py, 0221) adds the exact checks of the scene's bytes to every verification (finite, one byte
+# form, every field known and bounded, inside the native renderer's budgets), and here the frozen reference of each
+# brief (art/references.jsonl): the same art at the same exporter must give the same bytes on every machine.
+#
 # Visual quality is not checked here and cannot be: these checks keep the art from lying about play. Whether the
-# art is good is judged from rendered viewpoints, by a person. Standard library only. Ends 0 when nothing failed.
+# art is good is judged from rendered viewpoints, by a person; QUALITY-0's detectors on stills flag and prove nothing.
+# Standard library only. Ends 0 when nothing failed.
 
 import copy
 import importlib.util
@@ -38,6 +43,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import dress  # noqa: E402
+import quality  # noqa: E402
 level = dress.level
 
 _spec = importlib.util.spec_from_file_location("graybox_check", os.path.join(REPO, "graybox", "check.py"))
@@ -216,6 +222,9 @@ def verify(out, art_path, scene_bytes=None, D=None):
     res.append(("the art carries no collision and no false ceiling",) + check_no_lies(S, reach, W))
     res.append(("every mesh names its source and licence",) + check_sources(S))
     res.append(("the lineage binds every input",) + check_lineage(out, art_path, scene_bytes))
+    # QUALITY-0 (art/quality.py): the scene's bytes exact — finite, in their one byte form, every field known and in
+    # its bounds, inside what the native renderer draws
+    res += quality.check_scene(scene_bytes)[0]
     return res
 
 
@@ -455,9 +464,15 @@ def check_brief(name):
         name, out["lineage"]["scene_sha256"][:12], out["lineage"]["counts"]["collision"], out["lineage"]["counts"]["visuals"], out["lineage"]["counts"]["lights"]))
     lines.append(("the export is deterministic: the same files, the same bytes", out["scene_bytes"] == again["scene_bytes"] and out["lineage"] == again["lineage"], ""))
     lines += verify(out, art_path)
+    try:
+        lines.append(("quality: the scene is its frozen reference",) + quality.compare_reference(name, out["lineage"], out["scene_bytes"], quality.read_references()))
+    except quality.QualityError as e:
+        lines.append(("quality: the scene is its frozen reference", False, str(e)))
     for c, ok, d in lines:
         print("%s %s%s" % ("PASS" if ok else "FAIL", c, (" — " + d) if d else ""))
         failed += 0 if ok else 1
+    for w, d in quality.check_scene(out["scene_bytes"])[1]:
+        print("NOTE %s: %s" % (w, d))
     for p, refused, by in plants(out, art_path):
         print("%s plant: %s — %s" % ("PASS" if refused else "FAIL", p, by))
         failed += 0 if refused else 1

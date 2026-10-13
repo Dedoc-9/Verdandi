@@ -11,7 +11,7 @@
 #   python art/director.py admit    BRIEF SEQ [--accept-leakage] [--chooser NAME] [--note TEXT]
 #   python art/director.py refuse   BRIEF SEQ [--chooser NAME] [--note TEXT]
 #   python art/director.py rebase   BRIEF --note TEXT          record a change made outside the loop (a hand edit, a new exporter)
-#   python art/director.py approve  BRIEF VIEW IMAGE --config TEXT [--approver NAME] [--note TEXT]
+#   python art/director.py approve  BRIEF VIEW IMAGE --config TEXT [--approver NAME] [--note TEXT] [--despite-detectors]
 #   python art/director.py verify   BRIEF                      the ledger's chain, replayed to the files as they stand
 #   python art/director.py vectors                             the reference against the conformance vectors
 #   python art/director.py selftest                            the vectors, and the whole lifecycle in a scratch copy
@@ -60,6 +60,7 @@ _spec = importlib.util.spec_from_file_location("art_check", os.path.join(HERE, "
 check = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(check)
 import intent as canon  # noqa: E402
+import quality  # noqa: E402
 import scope as scopemod  # noqa: E402
 import ledger as led  # noqa: E402
 
@@ -604,14 +605,28 @@ def cmd_rebase(ws, note):
     return r
 
 
-def cmd_approve(ws, view, image, config, approver="the owner", note=""):
+def cmd_approve(ws, view, image, config, approver="the owner", note="", despite=False):
+    """A person's acceptance of a still at the head, with QUALITY-0's detectors read on it (0221). A still the detectors
+    flag, or could not read, is approved only with despite=True (--despite-detectors), which the ledger records: a
+    detector proves nothing either way, so it cannot refuse, and it cannot be passed over in silence either."""
     out, parts, _c = ws.export()
     if view not in out["scene"]["views"]:
         raise SystemExit("no view %r in the scene" % view)
-    a = led.append(ws.ledger, "approve", {"view": view, "image_sha256": hashlib.sha256(open(image, "rb").read()).hexdigest(),
+    raw = open(image, "rb").read()
+    try:
+        m, flags = quality.detect_png(raw)
+        det, why = quality.detector_fields(m, flags), "; ".join(flags)
+    except quality.QualityError as e:
+        det, why = {"not_checked": str(e)[:200]}, "the detectors did not run: %s" % e
+    if why and not despite:
+        raise SystemExit("REFUSED: %s. A detector proves nothing, so the still can still be approved: with --despite-detectors, "
+                         "which the ledger records" % why)
+    a = led.append(ws.ledger, "approve", {"view": view, "image_sha256": hashlib.sha256(raw).hexdigest(),
                                           "render_config": config, "head": canon.head(parts),
+                                          "detectors": det, "despite_detectors": bool(why),
                                           "observed": {"at": now(), "approver": approver, "note": note}})
-    print("approved: view %s, image %s, at head %s (ledger #%s; provenance, not a reproducibility claim)" % (view, a["image_sha256"][:12], a["head"][:12], a["seq"]))
+    print("approved: view %s, image %s, at head %s (ledger #%s; provenance, not a reproducibility claim)%s" % (
+        view, a["image_sha256"][:12], a["head"][:12], a["seq"], ("; despite the detectors: " + why) if why else "; the detectors flag nothing"))
     return a
 
 
@@ -936,6 +951,36 @@ def cmd_selftest():
             results.append(("a hand edit recorded with rebase verifies", True, ""))
         except led.LedgerError as e:
             results.append(("a hand edit recorded with rebase verifies", False, str(e)))
+
+        # QUALITY-0 (0221): a still approved with its detectors; a flagged or unread still only with --despite-detectors
+        view = sorted(ws.export()[0]["scene"]["views"])[0]
+        W_, H_ = 32, 18
+        clean = bytes((x * 7 + y * 13 + c * 50) % 240 for y in range(H_) for x in range(W_) for c in range(3))
+        blown = bytes(255 if (i // 3) % W_ < W_ * 2 // 3 else (i % 5) * 30 for i in range(W_ * H_ * 3))
+        for label, pix in (("clean", clean), ("blown", blown)):
+            with open(os.path.join(tmp, label + ".png"), "wb") as fh:
+                fh.write(quality.png_bytes(W_, H_, pix))
+        with open(os.path.join(tmp, "still.jpg"), "wb") as fh:
+            fh.write(b"\xff\xd8\xff\xe0 not a png")
+        a1 = _quiet(cmd_approve, ws, view, os.path.join(tmp, "clean.png"), "selftest")
+        results.append(("a still the detectors do not flag is approved, its detectors in the ledger",
+                        a1["detectors"].get("flags") == [] and a1["despite_detectors"] is False, json.dumps(a1["detectors"], sort_keys=True)[:100]))
+        for label, f in (("a still mostly white", "blown.png"), ("a still the detectors cannot read", "still.jpg")):
+            n0 = len(led.read(ws.ledger)[0])
+            try:
+                _quiet(cmd_approve, ws, view, os.path.join(tmp, f), "selftest")
+                results.append(("%s is not approved without --despite-detectors" % label, False, "it was approved"))
+            except SystemExit as e:
+                results.append(("%s is not approved without --despite-detectors; nothing written" % label,
+                                "--despite-detectors" in str(e) and len(led.read(ws.ledger)[0]) == n0, " ".join(str(e).split())[:100]))
+            a2 = _quiet(cmd_approve, ws, view, os.path.join(tmp, f), "selftest", despite=True)
+            results.append(("  and with it, approved and recorded as despite the detectors", a2["despite_detectors"] is True,
+                            json.dumps(a2["detectors"], sort_keys=True)[:100]))
+        try:
+            cmd_verify(ws, quiet=True)
+            results.append(("the ledger with its approvals verifies", True, ""))
+        except led.LedgerError as e:
+            results.append(("the ledger with its approvals verifies", False, str(e)))
 
         # fix 2 of the review of 2026-10-13: a second world on the same map. Its head must not move when the first world
         # admits: a layout change is refused (SHARED-MAP), an art change admitted; the plant shows what the refusal prevents
@@ -1470,7 +1515,8 @@ def main(argv):
         elif cmd == "rebase":
             cmd_rebase(ws, opt(args, "--note", ""))
         elif cmd == "approve":
-            cmd_approve(ws, pos[1], pos[2], opt(args, "--config", ""), opt(args, "--approver", "the owner"), opt(args, "--note", ""))
+            cmd_approve(ws, pos[1], pos[2], opt(args, "--config", ""), opt(args, "--approver", "the owner"), opt(args, "--note", ""),
+                        despite="--despite-detectors" in args)
         elif cmd == "verify":
             cmd_verify(ws)
         else:

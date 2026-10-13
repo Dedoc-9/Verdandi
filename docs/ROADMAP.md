@@ -3950,6 +3950,53 @@ measured: whether Claude Code's CLI passes the API's stop reason on (if not, a r
 as the provider's own account). Next, in his order: the physics slice through the exporter (a platform that carries
 the player, a door, a crate, a standing person), which records one rebase in every world's ledger.
 
+**His ruling on the cage, and 0221: QUALITY-0, the scene's bytes exact (2026-10-13).** After the second research
+report (on his Dentatus and Ursprung, the creation cage and a quality rung; delivered to him, not committed) he ruled:
+*"Remove capability keywords as a pre-model refusal gate."*; *"Four candidate rungs, classified by the host … The
+model must not choose its own rung, and filenames alone must not determine it."*; *"A cage around admission, not model
+expression."*; *"Every verdict states what it did not check."*; and, refining, *"Classify the effective change, not
+only its direct diff"*. His order: *"Run 0220 on your machine first. Then proceed with the exact quality checks,
+host-derived rung classification, and mechanically complete verdicts. Defer RULES-2 until those contracts exist."*,
+the first of them *"Cheap exact quality checks. Validate finite and bounded scene values, budgets, and stored
+reference outputs. Add renderer-independent image checks such as pure-white pixel fraction and other carefully chosen
+clipping or black-frame indicators."*, with his conditions that reference images are frozen evidence identified by
+digest and that image thresholds are detectors, not proofs. 0220 had not yet been run on his machine when this was
+built. **0221, built, off the gate.** `art/quality.py`: every verification (art/check.py, the director's evaluation,
+the plaza's serving) now holds the scene's bytes exact — finite JSON in the exporter's one byte form (no NaN, no
+Infinity, no number that overflows to one, which `json.loads('1e999')` does without a word, no key twice, no integer
+above 2^53 − 1); every field known, with its type and range, restated rather than imported, and a field the checker
+does not know refused rather than passed over; every box with extent and inside the world; every coordinate under
+1,024 m, where float32 keeps the scene's 0.1 mm steps apart (from 1,024 m, 1,808 of the next 10,000 steps merge); and
+inside the native renderer's budgets, read from its own source: it draws the first 160 lights and drops the rest
+without a word, and its visibility texture is one texel to a cell, which WebGL 2 guarantees up to 2,048 wide (OpenGL ES 3.0's
+minimum as recalled, INFERRED; the specification could not be fetched here, and web3dsurvey.com reports no device
+below 4,096, OBSERVED); two
+budgets are chosen, not derived (4,096 boxes, 4 MiB). A light above 2,000 cd is noticed, not refused (its glare is
+drawn at 2,000). Each checkout brief is held to its frozen reference (`art/references.jsonl`: the scene's sha256 and
+each top-level field's, for one art at one exporter); the comparison never writes; `freeze` appends, never twice for
+the same inputs, and refuses outright if the same inputs give other bytes. When the exporter changes, the line fails,
+naming the fields the new exporter moved, until a person freezes the new references: the golden regression an
+exporter change owes. The detectors on stills (PNG, 8-bit RGB or RGBA; anything else is not checked, and says so):
+white (every channel 250 or above, and at 255 beside it), black, a channel at 255, distinct colours, mean luma; they
+flag and refuse nothing. `approve` reads them on the still it records, and a flagged or unreadable still is approved
+only with `--despite-detectors`, which the event records. MEASURED in the container: QUALITY SELFTEST 58/58, each
+check against the defect planted for it, and 23 of 23 mutants of `art/quality.py` caught by it; DIRECTOR SELFTEST
+PASSED with six new rows (a still approved with its detectors; a mostly white still and an unreadable one refused
+without `--despite-detectors` and nothing written, then approved with it and recorded so); ART CHECKS PASSED, both
+briefs at their frozen references (harbor-day scene 549d5d76035f, the digest his machine printed for 0219: one
+agreement between two machines, OBSERVED); STUDIO SELFTEST 70/70, STUDIO-2 SELFTEST 19/19, STUDIO APP SELFTEST 12/12,
+LIVE SELFTEST 18/18, DIRECTOR CRASHTEST PASSED (14 cases), DIRECTOR RACETEST PASSED (32 cases), VECTORS 62 / 62. The
+PNG reader agrees byte for byte with PIL's on 21 stills made by headless Chromium, which use filters 1 to 4 (PIL used
+here only, as a second reader; not a dependency), and the Paeth predictor it shares with the self-test's encoder is
+held to seven answers worked by hand from the specification, so that the two cannot agree on a mistake. The
+detectors on those 21 stills: harbor-day as delivered in 0218 flagged, 51.8% white (34.1% at 255) and 66.2% with a
+channel at 255; every other still at most 0.34% white and no flag. The thresholds were chosen with these stills in
+view: calibration on a handful, not a rate. A correction: 0219's record says *"51% of the pixels white"* without its
+definition; it is every channel at 250 or above, and at 255 it is 34.1%. Found, not changed: the art reader takes its
+numbers through Python's `float()`, so `2_5` reads as 25, the Arabic-Indic digits six and two (U+0666 U+0662) as 62, and `25e-1` and `+2.5` as 2.5 (MEASURED); a
+number grammar of its own is an exporter change, which moves every head, and is proposed to go with the physics
+slice's exporter change, one rebase rather than two.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

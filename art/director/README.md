@@ -144,7 +144,7 @@ is always the head it met: a candidate is never admitted on a verdict reached at
 | `admit` | the evaluation admitted, the head before and after, `accepted_leakage`, the exact inverse revision, the layout lines, who chose |
 | `refuse` | an evaluation a person refused, and their words |
 | `rebase` | a change made outside the loop (a hand edit, a new exporter): the texts and heads before and after |
-| `approve` | a person's acceptance of a still from a view: the image's sha256 and the render configuration (provenance, never a gate) |
+| `approve` | a person's acceptance of a still from a view: the image's sha256, the render configuration, and QUALITY-0's detectors read on it (0221). A still the detectors flag, or cannot read, is approved only with `--despite-detectors`, which the event records (provenance, never a gate: a detector proves nothing either way) |
 
 Re-evaluation appends a new `evaluate` event naming the old one, and the old verdict stays exactly as it was.
 

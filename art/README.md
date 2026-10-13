@@ -16,6 +16,7 @@ of the gate reads it, and it changes nothing the gate holds.
   graybox/level.py: the layout + the map's overlay ──► W (canonical) and C (collision)
   art/dress.py:     W, C + the art file ──► one scene (scene.json), its lineage, a plan view
   art/check.py:     the scene held to C and the player; planted defects refused; two revisions
+  art/quality.py:   the scene's bytes exact (finite, one byte form, known and bounded, in budget); frozen references; detectors on stills
   Unreal 5.8:       art/unreal/verdandi_import.py ──► the level: play geometry, dressing, light, air, views
   play ──► critique in plain words ──► a look revision (the art file) or a layout revision (the design tool) ──► again
 ```
@@ -107,7 +108,17 @@ and nothing hashes its pixels.
 - no piece has collision; the player is the one `graybox/web/sim.js` declares and the spawns are W's; the reach
   ceiling is the one recomputed independently;
 - every mesh names its source and licence;
-- the lineage's hashes are the files' own.
+- the lineage's hashes are the files' own;
+- the scene's bytes are exact (QUALITY-0, `art/quality.py`): finite JSON in the exporter's one byte form, with no NaN,
+  no Infinity and no number that overflows to one, no key twice, no integer above 2^53 − 1; every field known, with its
+  type and range (a field the checker does not know is refused, not passed over); every box with extent, inside the
+  world, and every coordinate under 1,024 m, where the renderer's float32 keeps the scene's 0.1 mm steps apart; inside
+  the native renderer's budgets, read from its own source (160 lights, after which it drops the rest without a word;
+  2,048 cells, the visibility texture's width WebGL 2 guarantees, as recalled from OpenGL ES 3.0 and not re-read), and
+  two chosen budgets (4,096 boxes, 4 MiB);
+- the scene is its frozen reference (`art/references.jsonl`): the same art at the same exporter gives the same bytes on
+  every machine. When the exporter changes, this line fails, naming the fields the new exporter moved, until a person
+  freezes the new references (`python art/quality.py freeze NAME --note TEXT`, appended; the old lines are kept).
 
 It then plants defects and requires the right check to refuse each one:
 
@@ -254,6 +265,8 @@ Movement. Otherwise the reach ceiling the checks compute is not the one you play
 | the scene's collision is C; no dressing where a player can be; the revisions stay local; each planted defect refused | MEASURED, here | `python art/check.py` (the build container, 2026-10-10) |
 | the importer's logic: a first import, a second that keeps every actor, a look revision that remakes none, a layout revision that remakes 5 and removes 4, the in-engine self-check passing | OBSERVED against a stand-in for the `unreal` module, not an engine | the build container; the stand-in is not in the repository |
 | the importer runs in Unreal 5.8 | NOT_MEASURED | the host's first run; its report |
+| the scene's bytes are exact: finite, one byte form, every field known and bounded, inside the native renderer's budgets; each brief its frozen reference | MEASURED, here | `python art/quality.py selftest` (58 rows, each check against its planted defect) and `python art/check.py` (the build container, 2026-10-13) |
+| the detectors on stills (white, black, a channel at 255, distinct colours) flag a still drawn white and not a sound one | OBSERVED on 21 stills of the two briefs, chosen with them in view; a detector, not a proof; its miss and false-alarm rates NOT_MEASURED | `python art/quality.py still FILE.png` |
 | the scene looks good | NOT_MEASURED, and no check can measure it | rendered viewpoints, judged by a person |
 
 The first scene uses only the engine's cube: concrete masses, wet floors, black puddles, neon, sodium lamps, moonlight
