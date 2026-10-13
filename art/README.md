@@ -204,7 +204,7 @@ python art/play.py --selftest            # the live loop without a browser: LIVE
   Claude Code's CLI on its own login, `providers/anthropic.json` through the Messages API with a Console key) for at
   most three candidates, has the director evaluate each, and serves those it does not refuse as sources the page
   switches to in place, each with what it touches. Admit, Reject and Undo go through the ledger. The contract is in
-  [`STUDIO.md`](STUDIO.md); `python art/studio.py selftest` holds the gateway (STUDIO SELFTEST 60/60), `probe` asks a
+  [`STUDIO.md`](STUDIO.md); `python art/studio.py selftest` holds the gateway (STUDIO SELFTEST 61/61), `probe` asks a
   real model whether it answers and follows the prompt (`--references`: whether it changes the objects the prompt
   names, and only those), and `report` compares the providers from what was recorded.
 

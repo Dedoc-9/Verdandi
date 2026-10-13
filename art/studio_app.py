@@ -424,7 +424,7 @@ def selftest():
     rows = []
 
     def row(name, ok, detail):
-        rows.append(ok)
+        rows.append(bool(ok))
         print("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail), flush=True)
 
     def alive(pid):

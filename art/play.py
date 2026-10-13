@@ -689,7 +689,7 @@ def selftest():
     rows = []
 
     def row(name, ok, detail):
-        rows.append(ok)
+        rows.append(bool(ok))            # `a and []` is [], and sum() of a list stopped his run of 2026-10-13
         print("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
 
     def get(srv, path):
@@ -977,7 +977,7 @@ def studio_selftest():
     saved_root = ROOT
 
     def row(name, ok, detail):
-        rows.append(ok)
+        rows.append(bool(ok))            # `a and []` is [], and sum() of a list stopped his run of 2026-10-13
         print("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
 
     def cfg(name, argv, timeout=30, size=65536):
@@ -1101,6 +1101,39 @@ def studio_selftest():
                 studio.QUIET_LOCK = saved
             return left
         q0, q1 = stdout_after(False), stdout_after(True)
+
+        # two threads recording requests at once (Gateway._log): with the lock every line kept and whole; without it,
+        # what this machine's appends do is measured and said, not judged (atomic on Linux; the C runtime's seek-then-
+        # write on Windows)
+        def record_lines(plant, n=200):
+            import contextlib
+            d = tempfile.mkdtemp(prefix="studio-log-")
+            fake = type("G", (), {"records": d})()
+            saved = studio.LOG_LOCK
+            if plant:
+                studio.LOG_LOCK = contextlib.nullcontext()
+            try:
+                th = [threading.Thread(target=lambda k=k: [studio.Gateway._log(fake, {"id": "%d-%d" % (k, i), "pad": "x" * (40 + 7 * k)}) for i in range(n)])
+                      for k in (1, 2)]
+                for t in th:
+                    t.start()
+                for t in th:
+                    t.join()
+                lines = open(os.path.join(d, "requests.jsonl"), "rb").read().splitlines()
+                whole = 0
+                for ln in lines:
+                    try:
+                        json.loads(ln)
+                        whole += 1
+                    except ValueError:
+                        pass
+                return len(lines), whole
+            finally:
+                studio.LOG_LOCK = saved
+                shutil.rmtree(d, ignore_errors=True)
+        (n0, w0), (n1, w1) = record_lines(False), record_lines(True)
+        row("two threads record 200 requests each at once: 400 lines, every one whole", n0 == 400 and w0 == 400,
+            "%d lines, %d whole; without the lock on this machine (%s): %d lines, %d whole (MEASURED, not judged)" % (n0, w0, os.name, n1, w1))
         row("two director commands at once through quiet(): the console still the console (plant: no lock leaves it redirected)",
             q0 == 0 and q1 > 0, "left redirected after %d of 5; with the plant %d of 5" % (q0, q1))
 
@@ -1196,10 +1229,25 @@ def studio_selftest():
         g.cfg = studio.load_config(os.path.join(REPO, "art", "providers", "scripted.json"))
         second = g.ask("lighter", piece, cam)
         r2 = wait(g, second)
-        log = [json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()]
-        first_out = [e for e in log if e.get("id") == first]
-        row("a newer request supersedes the one running: its result discarded", r2["state"] == "done" and r2["id"] == second and first_out and first_out[-1]["outcome"] == "STUDIO-CANCELLED",
-            "the first %s, the second %s with %d candidates" % (first_out[-1]["outcome"] if first_out else "?", r2["state"], len(r2["candidates"])))
+        # the first's record is written by its own thread once its provider's tree is dead, which on Windows (taskkill)
+        # can come after the second is done: wait for it, and say how long it took (his run of 2026-10-13 read too soon)
+        t_first, first_out = time.time(), []
+        while time.time() - t_first < 30:
+            log = []
+            for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines():
+                try:
+                    log.append(json.loads(ln))
+                except ValueError:                       # a line being written as it is read
+                    pass
+            first_out = [e for e in log if e.get("id") == first and "outcome" in e]
+            if first_out:
+                break
+            time.sleep(0.1)
+        row("a newer request supersedes the one running: its result discarded", r2["state"] == "done" and r2["id"] == second and bool(first_out)
+            and first_out[-1]["outcome"] == "STUDIO-CANCELLED",
+            "the first %s (its record %s), the second %s with %d candidates" % (
+                first_out[-1]["outcome"] if first_out else "never recorded", "after %.1f s more" % (time.time() - t_first) if first_out else "missing after 30 s",
+                r2["state"], len(r2["candidates"])))
         ok, r = failing("timeout", "slow3", [py, os.path.join(tmp, "slow.py")], "STUDIO-TIMEOUT", timeout=1)
         row("a provider past its time: killed, refused", ok, r["message"][:90])
         ok, r = failing("exit", "crash", [py, os.path.join(tmp, "crash.py")], "STUDIO-PROVIDER-EXIT")

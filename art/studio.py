@@ -670,9 +670,15 @@ class Gateway:
             fh.write(data)
 
     def _log(self, entry):
-        os.makedirs(self.records, exist_ok=True)
-        with open(os.path.join(self.records, "requests.jsonl"), "ab") as fh:
-            fh.write(json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii") + b"\n")
+        # one line at a time: the request's thread, a superseded request's and the page's admissions all record here, and
+        # on Windows an append is the C runtime's seek to the end, then a write — two at once can land on one offset, the
+        # later line over the earlier (git for Windows: "Windows does support atomic O_APPEND semantics using the file
+        # access mode FILE_APPEND_DATA", which open() does not use)
+        line = json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii") + b"\n"
+        with LOG_LOCK:
+            os.makedirs(self.records, exist_ok=True)
+            with open(os.path.join(self.records, "requests.jsonl"), "ab") as fh:
+                fh.write(line)
 
     def _finish(self, req, state, code="", message=""):
         with self.lock:
@@ -856,6 +862,7 @@ class Gateway:
 # two worlds' requests) left it pointing at a dead buffer in 20 of 20 trials (MEASURED in the container, 2026-10-13),
 # and play.py's console said nothing after. One at a time; the studio self-test keeps the case and its plant.
 QUIET_LOCK = threading.RLock()
+LOG_LOCK = threading.Lock()          # the requests' records (Gateway._log): one line at a time in this process
 
 
 def quiet(fn, *a, **k):

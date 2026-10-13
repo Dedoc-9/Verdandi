@@ -3771,6 +3771,22 @@ under a scratch root with the graybox's own maps and starts a ledger on them; th
 row says so. With the same edit in the checkout: STUDIO SELFTEST 60/60, LIVE SELFTEST 18/18, STUDIO APP SELFTEST 7/7
 (MEASURED in the container).
 
+**0214 on his machine (2026-10-13).** 0214 applied as tree 9365b09b, as predicted; the fixture row passed and with it
+the four rows his working brief had broken, and the references' self-test ran to its end. One row failed and the
+summary then stopped: *"a newer request supersedes the one running: its result discarded — the first ?"*, and
+`sum(rows)` met a list — the row's `... and first_out and ...` was `[]`, appended as the row's verdict. Two defects in
+the test and one in the gateway, fixed: a row's verdict is now `bool(ok)`, so a FAIL is counted and the summary
+printed (in the three self-tests that keep rows this way); the row waits up to 30 s for the first request's own
+record, which its thread writes only once its provider's tree is dead (on Windows by taskkill, which can come after
+the second request is done), and says how long it waited; and the gateway's `requests.jsonl` is written one line at a
+time (`studio.LOG_LOCK`), since the request's thread, a superseded request's and the page's decisions record there
+at once, and an append on Windows is the C runtime's seek to the end and then a write (git for Windows' fix for the
+same: *"Windows does support atomic O_APPEND semantics using the file access mode FILE_APPEND_DATA"*) — two at once can
+land on one offset, the later line over the earlier. Which of the two lost his row's record is not known; a new row
+records 200 lines from each of two threads and, beside its verdict on the locked writes, says what this machine's
+unlocked appends do (MEASURED there, not judged; atomic here). MEASURED in the container: STUDIO SELFTEST 61/61,
+LIVE SELFTEST 18/18, STUDIO APP SELFTEST 7/7.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
