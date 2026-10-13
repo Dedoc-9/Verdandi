@@ -1,0 +1,12 @@
+{
+ "capability": "inspect",
+ "id": "evidence",
+ "level": "deep",
+ "needs_world": false,
+ "open": "",
+ "order": 50,
+ "status": "not built",
+ "summary": "The studio's own checks: self-tests, planted defects, replay hashes and the pre-registered evaluations, with what each certifies and what it never certifies.",
+ "title": "Evidence",
+ "why": "The self-tests run from a console today (python art/studio.py selftest, python art/studio_queue.py selftest, python art/director.py selftest); a view of their results is not built yet."
+}

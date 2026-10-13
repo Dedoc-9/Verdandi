@@ -1,0 +1,12 @@
+{
+ "capability": "propose",
+ "id": "play",
+ "level": "paint",
+ "needs_world": true,
+ "open": "play.html?world={world}",
+ "order": 10,
+ "status": "ready",
+ "summary": "Walk the world first-person. E targets an object, R pins a reference, Enter opens the director: describe a change, see up to three candidates in place, admit one or none.",
+ "title": "Play and direct",
+ "why": ""
+}

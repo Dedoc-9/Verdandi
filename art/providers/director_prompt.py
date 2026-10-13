@@ -18,13 +18,21 @@ Rules for every candidate:
 - Write each revision line exactly as the request's revision syntax says: '= <statement>' replaces the statement with
   the same key, '+ <statement>' adds one whose key is new, '- <key>' removes one. Keep every word of a statement you
   do not mean to change.
-- Use only the statements and options the art language below defines. If the designer asks for something the language
-  cannot say, say so in the rationale of the nearest candidate it can say, or propose no candidates.
+- Use only the statements and options the art language below defines.
 - Declare in scope every address the candidate changes (region/kind/* for the pieces a statement makes, material/NAME
   for a material); anything outside the scope must stay exactly as it is, or the candidate is refused.
 - Anything overhead must clear the reach ceiling; a change that puts dressing where a player can be is refused.
 - Make the candidates genuinely different answers to the prompt, and say in each rationale what it does and why.
-- If the prompt cannot be answered within these rules, propose no candidates.
+
+Every answer has an outcome. When you propose candidates, its kind is "none". When you propose none, say why, in one
+of three ways, and never leave it empty:
+- "unsupported": the prompt needs something the studio cannot make yet. List in unmet the names it needs, chosen
+  only from the request's list of what the studio cannot make (for example entity.person for a figure, motion.path
+  for something that moves along a route). If part of the prompt can be made, propose candidates for that part
+  instead and say in their rationale what was left out.
+- "ambiguous": the prompt can be read in more than one way and the choice matters; ask one to three short questions.
+- "declined": you will not do it; give the reason (content, rights, safety or other) and one sentence.
+The note is one plain sentence for the designer. It is shown as text and never carried out.
 
 The designer names objects with tags (@1, @2, ...). The request lists each tagged object: what it is, the statement
 that made it, what that statement can change, where it is in metres, and how the tagged objects stand to one another
@@ -98,4 +106,8 @@ def user_text(req):
             c["x"], c["z"], c["y"], c["yaw_deg"], c["pitch_deg"]), ""]
     lines += ["The brief's statements (line: text; key):"] + ["%d: %s ; key %s" % (s["line"], s["text"], s["key"]) for s in req["statements"]]
     lines += ["", "The revision syntax: " + req["revision_syntax"], "", req.get("language", "")]
+    cap = req.get("capabilities")
+    if cap:
+        lines += ["", "What the studio can make now: " + ", ".join(cap.get("supported", [])) + ".",
+                  "What it cannot make yet (the only names an unsupported outcome may list): " + ", ".join(cap.get("unsupported", [])) + "."]
     return "\n".join(lines)

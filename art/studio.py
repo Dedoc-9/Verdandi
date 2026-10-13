@@ -11,6 +11,8 @@
 #                                         STUDIO-1's measure: whether a model changes the tagged objects a prompt names, and only those
 #   python art/studio.py report [--brief B]
 #                                         every recorded request, by provider: failures, latency, tokens, cost per admitted edit
+#   python art/studio.py records [--brief B] [--root DIR]
+#                                         the request record read back: its chain, each disposition, what was asked for and is not made
 #
 # By the owner's direction and ruling of 2026-10-11: "the LLM edits design intent; Verðandi compiles that intent into a
 # live world; the designer remains in control"; "a pluggable model adapter", behind "a local director gateway that
@@ -44,7 +46,17 @@
 #      and admitted through the director's ledger only if that head is the one it was previewed at. Rejecting records
 #      a refusal; undo admits the last admission's exact inverse as an intent of its own.
 # A timeout, a provider that cannot start or exits with an error, a response too long or malformed, a cancellation:
-# each leaves the world as it was and says why. API keys are the provider's affair, in its environment; nothing here
+# each leaves the world as it was and says why.
+#
+# Every request that ends on its own ends in one disposition (0220, after a prompt to add a figure was answered with
+# nothing and no reason): REALIZED (candidates came back), UNSUPPORTED (the studio cannot make what was asked: the
+# model names it from the closed list of capabilities the request publishes, and a name outside that list is not
+# read), AMBIGUOUS (the model asks one to three questions, shown as text and never sent back as instructions),
+# DECLINED (the provider's API reported a refusal, decided by the host; or the model declined, with a reason from a
+# closed list, its claim), or FAILED (the provider could not be run or read, or answered nothing and gave no reason).
+# What the host observes decides first; what the model says of itself is recorded as its claim. INFEASIBLE and
+# PROJECTED are reserved for a repair stage that does not exist yet. Every line of requests.jsonl names the sha256 of
+# the line before it, so a line taken out is found (`records`); a line cut from the end is not, without an anchor. API keys are the provider's affair, in its environment; nothing here
 # reads one, and nothing of a provider's reaches the browser but the candidates' text and verdicts, and the name, model
 # and usage its response gives.
 #
@@ -82,7 +94,20 @@ TAGS_FORMAT = "VERDANDI-STUDIO-TAGS"
 TAG = re.compile(r"@[1-9][0-9]{0,3}\Z")
 UNDO_NOTE = "undo of ledger #"
 LIMITS = {"prompt": 2000, "title": 80, "rationale": 1200, "revision": 16, "line": 400, "scope": 12, "pattern": 120,
-          "preserve": 12, "item": 200, "candidates": 3}
+          "preserve": 12, "item": 200, "candidates": 3, "unmet": 6, "questions": 3, "question": 200, "note": 300}
+# The capabilities the request publishes (0220): what the art language can make today, and, by name, the closed list of
+# what it cannot make yet. A model that proposes nothing because the prompt needs one of the latter names it; the
+# names the studio is asked for most become its backlog (`records`), never a gate.
+CAPABILITIES = {
+    "supported": ["look.material", "look.surface", "look.sky", "look.air", "dressing.canopy", "dressing.tower",
+                  "dressing.skyline", "dressing.neon", "dressing.lamp", "dressing.puddle", "view"],
+    "unsupported": ["entity.person", "entity.animal", "entity.vehicle", "entity.prop", "entity.vegetation", "motion.path",
+                    "motion.surface", "mechanism.door", "mechanism.trigger", "physics.dynamic", "layout.change", "audio",
+                    "text.sign", "mesh.import", "effect.particles"],
+}
+DISPOSITIONS = ("REALIZED", "UNSUPPORTED", "AMBIGUOUS", "DECLINED", "FAILED", "INFEASIBLE", "PROJECTED")
+OUTCOME_KINDS = ("none", "unsupported", "ambiguous", "declined")
+DECLINE_REASONS = ("content", "rights", "safety", "other")
 PATTERN = re.compile(r"[A-Za-z0-9*_.,:-]+(/[A-Za-z0-9*_.,:-]+)*\Z")
 CONFIG_KEYS = {"provider", "argv", "model", "timeout_s", "max_output_bytes"}
 USAGE_KEYS = {"input_tokens", "output_tokens", "cost_usd", "cost_basis"}
@@ -104,8 +129,25 @@ def basis(cfg):
 SCHEMA = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["candidates"],
+    "required": ["candidates", "outcome"],
     "properties": {
+        "outcome": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["kind", "unmet", "questions", "reason", "note"],
+            "description": "why there are no candidates, when there are none; kind none when you propose candidates",
+            "properties": {
+                "kind": {"type": "string", "enum": list(OUTCOME_KINDS),
+                         "description": "none: candidates are proposed; unsupported: the prompt needs something the studio cannot make; "
+                                        "ambiguous: the prompt can be read several ways and you need the designer's answer; declined: you will not do it"},
+                "unmet": {"type": "array", "maxItems": LIMITS["unmet"], "items": {"type": "string", "enum": list(CAPABILITIES["unsupported"])},
+                          "description": "for unsupported: what the prompt needs, from the request's list of what the studio cannot make yet"},
+                "questions": {"type": "array", "maxItems": LIMITS["questions"], "items": {"type": "string", "maxLength": LIMITS["question"]},
+                              "description": "for ambiguous: one to three short questions for the designer"},
+                "reason": {"type": "string", "enum": [""] + list(DECLINE_REASONS), "description": "for declined: why"},
+                "note": {"type": "string", "maxLength": LIMITS["note"], "description": "one sentence for the designer, or empty"},
+            },
+        },
         "candidates": {
             "type": "array", "minItems": 0, "maxItems": LIMITS["candidates"],
             "items": {
@@ -286,22 +328,25 @@ def run_provider(cfg, request_bytes, cancel, holder=None):
 
 # ------------------------------------------------------------------------------------------------ the response
 def read_response(raw, rid):
-    """The candidates of a response, each with exactly its five fields, or STUDIO-RESPONSE-*: the response refused
-    whole. An empty list of candidates is an answer: the provider proposed nothing."""
+    """(provider, candidates, outcome) of a response: the candidates each with exactly its five fields, the outcome the
+    model's account of an empty answer (None if the response has none), or STUDIO-RESPONSE-*: the response refused
+    whole. provider.stop_reason, when an adapter gives it, is what the adapter observed of its API, not the model's."""
     try:
         doc = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as e:
         raise StudioError("STUDIO-RESPONSE-JSON", "not JSON in UTF-8 (%s)" % str(e)[:120])
     if not isinstance(doc, dict) or doc.get("format") != RESPONSE or doc.get("version") != VERSION:
         raise StudioError("STUDIO-RESPONSE-FORMAT", "not a %s %s document" % (RESPONSE, VERSION))
-    if set(doc) - {"format", "version", "id", "provider", "candidates"}:
-        raise StudioError("STUDIO-RESPONSE-FIELD", "unknown fields %s" % sorted(set(doc) - {"format", "version", "id", "provider", "candidates"}))
+    if set(doc) - {"format", "version", "id", "provider", "candidates", "outcome"}:
+        raise StudioError("STUDIO-RESPONSE-FIELD", "unknown fields %s" % sorted(set(doc) - {"format", "version", "id", "provider", "candidates", "outcome"}))
     if doc.get("id") != rid:
         raise StudioError("STUDIO-RESPONSE-ID", "the response answers %r, not this request (%s)" % (doc.get("id"), rid))
     prov = doc.get("provider")
     if not isinstance(prov, dict) or not all(isinstance(prov.get(k), str) and prov.get(k) for k in ("name", "model")) or \
-            set(prov) - {"usage"} != {"name", "model"}:
-        raise StudioError("STUDIO-RESPONSE-FIELD", "provider is {name, model}, each a non-empty string, and optionally usage")
+            set(prov) - {"usage", "stop_reason"} != {"name", "model"}:
+        raise StudioError("STUDIO-RESPONSE-FIELD", "provider is {name, model}, each a non-empty string, and optionally usage and stop_reason")
+    if "stop_reason" in prov and not (isinstance(prov["stop_reason"], str) and re.fullmatch(r"[a-z_]{1,40}", prov["stop_reason"])):
+        raise StudioError("STUDIO-RESPONSE-FIELD", "provider.stop_reason is a short lower-case word, as the API names it")
     if "usage" in prov:
         u = prov["usage"]
         nat = lambda v: type(v) is int and 0 <= v < 10 ** 9
@@ -333,7 +378,59 @@ def read_response(raw, rid):
                 not all(isinstance(p, str) and p.strip() and len(p) <= LIMITS["item"] for p in c["preserve"]):
             raise StudioError("STUDIO-RESPONSE-FIELD", "%s: preserve is at most %d short strings" % (where, LIMITS["preserve"]))
         out.append(c)
-    return doc["provider"], out
+    return doc["provider"], out, read_outcome(doc.get("outcome"))
+
+
+def read_outcome(o):
+    """The model's account of an empty answer, checked whole (STUDIO-RESPONSE-OUTCOME), or None. A capability it names
+    must be one the request listed as not yet made; one the studio has, or one it never listed, refuses the response."""
+    if o is None:
+        return None
+    keys = {"kind", "unmet", "questions", "reason", "note"}
+    if not isinstance(o, dict) or set(o) != keys or o["kind"] not in OUTCOME_KINDS:
+        raise StudioError("STUDIO-RESPONSE-OUTCOME", "outcome holds exactly %s, its kind one of %s" % (sorted(keys), ", ".join(OUTCOME_KINDS)))
+    if not isinstance(o["unmet"], list) or len(o["unmet"]) > LIMITS["unmet"] or not all(isinstance(u, str) for u in o["unmet"]):
+        raise StudioError("STUDIO-RESPONSE-OUTCOME", "outcome.unmet is at most %d capability names" % LIMITS["unmet"])
+    for u in o["unmet"]:
+        if u in CAPABILITIES["supported"]:
+            raise StudioError("STUDIO-RESPONSE-OUTCOME", "outcome.unmet names %s, which the studio can make: the answer contradicts the request's own list" % u)
+        if u not in CAPABILITIES["unsupported"]:
+            raise StudioError("STUDIO-RESPONSE-OUTCOME", "outcome.unmet names %r, which the request never listed" % u[:40])
+    if not isinstance(o["questions"], list) or len(o["questions"]) > LIMITS["questions"] or \
+            not all(isinstance(q, str) and q.strip() and len(q) <= LIMITS["question"] for q in o["questions"]):
+        raise StudioError("STUDIO-RESPONSE-OUTCOME", "outcome.questions is at most %d short questions" % LIMITS["questions"])
+    if o["reason"] not in ("",) + DECLINE_REASONS or not isinstance(o["note"], str) or len(o["note"]) > LIMITS["note"]:
+        raise StudioError("STUDIO-RESPONSE-OUTCOME", "outcome.reason is one of %s or empty; outcome.note at most %d characters" % (", ".join(DECLINE_REASONS), LIMITS["note"]))
+    return {"kind": o["kind"], "unmet": sorted(set(o["unmet"])), "questions": [" ".join(q.split()) for q in o["questions"]],
+            "reason": o["reason"], "note": " ".join(o["note"].split())}
+
+
+def disposition(provider, cands, outcome):
+    """What a request that came back came to (0220). The host decides first: an API's reported refusal is DECLINED
+    whatever else came; candidates are REALIZED. With none, the model's account is read, as its claim: UNSUPPORTED with
+    the capabilities it needs, AMBIGUOUS with its questions, DECLINED with its reason; anything else is FAILED, an
+    empty answer with no reason."""
+    if provider.get("stop_reason") == "refusal":
+        return {"kind": "DECLINED", "decided_by": "host", "code": "API-REFUSAL",
+                "detail": "the provider's API reported a refusal (stop_reason refusal); nothing of its answer is read"}
+    claim = outcome if outcome and outcome["kind"] != "none" else None
+    if cands:
+        d = {"kind": "REALIZED", "decided_by": "host", "code": "", "detail": "%d candidate%s" % (len(cands), "" if len(cands) == 1 else "s")}
+        if claim:
+            d["claim"] = claim                        # candidates came with an account of none: recorded, not acted on
+        return d
+    k = claim["kind"] if claim else "none"
+    if k == "unsupported" and claim["unmet"]:
+        return {"kind": "UNSUPPORTED", "decided_by": "provider", "code": "", "unmet": claim["unmet"], "note": claim["note"],
+                "detail": "the studio cannot make %s yet (the provider's account; each is on the studio's own list of what it cannot make)" % ", ".join(claim["unmet"])}
+    if k == "ambiguous" and claim["questions"]:
+        return {"kind": "AMBIGUOUS", "decided_by": "provider", "code": "", "questions": claim["questions"], "note": claim["note"],
+                "detail": "the director asks: " + " / ".join(claim["questions"])}
+    if k == "declined" and claim["reason"]:
+        return {"kind": "DECLINED", "decided_by": "provider", "code": "MODEL-DECLINED", "reason": claim["reason"], "note": claim["note"],
+                "detail": "the model declined (%s)%s" % (claim["reason"], ": " + claim["note"] if claim["note"] else "")}
+    return {"kind": "FAILED", "decided_by": "host", "code": "STUDIO-EMPTY-WITHOUT-REASON",
+            "detail": "the provider answered with no candidates and no reason%s" % (" (its account: %s, with nothing to show for it)" % k if claim else "")}
 
 
 def intent_doc(c, letter, brief, base, prompt):
@@ -345,6 +442,67 @@ def intent_doc(c, letter, brief, base, prompt):
     return {"base": dict(base), "brief": brief, "candidate": letter, "format": "VERDANDI-INTENT", "layout": [],
             "prompt": prompt, "rationale": rationale, "revision": [" ".join(ln.split()) if ln[0] != "-" else "- " + " ".join(ln[2:].split()) for ln in c["revision"]],
             "scope": list(c["scope"]), "version": "0"}
+
+
+def last_line(path):
+    """(the last line's bytes, whether the file ends without a newline), or (None, False) for an empty or absent file."""
+    try:
+        with open(path, "rb") as fh:
+            fh.seek(0, 2)
+            n = fh.tell()
+            if n == 0:
+                return None, False
+            back = min(n, 1 << 20)
+            fh.seek(n - back)
+            data = fh.read()
+    except OSError:
+        return None, False
+    torn = not data.endswith(b"\n")
+    lines = data.split(b"\n")
+    if not torn:
+        lines = lines[:-1]
+    return lines[-1], torn
+
+
+def verify_records(path):
+    """The request record read back (0220): every chained line must name the sha256 of the line before it. Returns
+    {lines, legacy (lines before the chain began), unreadable, breaks [line numbers], dispositions {kind: n}, unmet {name: n}}.
+    A line removed from the middle is a break; lines cut from the end are not found without an anchor kept elsewhere."""
+    out = {"lines": 0, "legacy": 0, "unreadable": [], "breaks": [], "dispositions": {}, "unmet": {}}
+    try:
+        raw = open(path, "rb").read()
+    except OSError:
+        return out
+    lines = raw.split(b"\n")
+    if lines and lines[-1] == b"":
+        lines = lines[:-1]
+    chained = False
+    for i, ln in enumerate(lines):
+        out["lines"] += 1
+        try:
+            e = json.loads(ln)
+        except ValueError:
+            out["unreadable"].append(i + 1)
+            continue
+        if not isinstance(e, dict):
+            out["unreadable"].append(i + 1)
+            continue
+        if "prev" not in e:
+            if chained:
+                out["breaks"].append(i + 1)          # a line without its link, after the chain began
+            else:
+                out["legacy"] += 1
+        else:
+            chained = True
+            want = sha256(lines[i - 1]) if i > 0 else ""
+            if e["prev"] != want:
+                out["breaks"].append(i + 1)
+        d = e.get("disposition")
+        if isinstance(d, dict) and d.get("kind") in DISPOSITIONS:
+            out["dispositions"][d["kind"]] = out["dispositions"].get(d["kind"], 0) + 1
+            for u in d.get("unmet") or []:
+                out["unmet"][u] = out["unmet"].get(u, 0) + 1
+    return out
 
 
 # ------------------------------------------------------------------------------------------------ the gateway
@@ -428,6 +586,7 @@ class Gateway:
             req = None
             if r:
                 req = {k: r[k] for k in ("id", "state", "prompt", "message", "code", "references", "head", "provider")}
+                req["disposition"] = r.get("disposition")
                 req["elapsed_ms"] = int(((r["ended"] or time.monotonic()) - r["started"]) * 1000)
                 req["candidates"] = [{k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")} for c in r["candidates"]]
             last = dict(self.last)
@@ -653,6 +812,7 @@ class Gateway:
                                           "whose key is new; '- <key>' removes one. A statement's key: its verb (or the verb and its "
                                           "first word; a canopy adds its two corner cells), as the statements' keys show.",
                        "language": language(),
+                       "capabilities": CAPABILITIES,
                        "respond": {"format": RESPONSE, "version": VERSION, "id": rid, "max_candidates": LIMITS["candidates"], "schema": SCHEMA}}
             self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "",
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in refs},
@@ -735,17 +895,22 @@ class Gateway:
         # on Windows an append is the C runtime's seek to the end, then a write — two at once can land on one offset, the
         # later line over the earlier (git for Windows: "Windows does support atomic O_APPEND semantics using the file
         # access mode FILE_APPEND_DATA", which open() does not use)
-        line = json.dumps(entry, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii") + b"\n"
+        # 0220: each line names the sha256 of the line before it, so a line taken out of the record is found (`records`)
         with LOG_LOCK:
             os.makedirs(self.records, exist_ok=True)
-            with open(os.path.join(self.records, "requests.jsonl"), "ab") as fh:
-                fh.write(line)
+            path = os.path.join(self.records, "requests.jsonl")
+            prev, torn = last_line(path)
+            line = json.dumps(dict(entry, prev=sha256(prev) if prev is not None else ""), sort_keys=True, separators=(",", ":"),
+                              ensure_ascii=True).encode("ascii") + b"\n"
+            with open(path, "ab") as fh:
+                fh.write((b"\n" if torn else b"") + line)    # a torn last line stays a line of its own, which `records` reports
 
-    def _finish(self, req, state, code="", message=""):
+    def _finish(self, req, state, code="", message="", disp=None):
         with self.lock:
             if req["state"] != "running":      # cancelled or superseded meanwhile: its result is discarded
                 return False
             req["state"], req["code"], req["message"], req["ended"] = state, code, message, time.monotonic()
+            req["disposition"] = disp
             return True
 
     def _run(self, req, request, cancel, ws):
@@ -765,7 +930,7 @@ class Gateway:
             raw, ms, rc = run_provider(req["cfg"], rb, cancel, self.running)
             self._record(rid, "response.raw", raw)
             entry.update({"response_sha256": sha256(raw), "provider_ms": ms, "exit": rc})
-            provider, cands = read_response(raw, rid)
+            provider, cands, outcome = read_response(raw, rid)
             entry.update({"provider": provider, "valid": True})
             if "usage" in provider:
                 entry["usage"] = provider["usage"]
@@ -776,16 +941,32 @@ class Gateway:
             if e.code.startswith("STUDIO-RESPONSE-"):
                 entry["valid"] = False
             if e.code != "STUDIO-CANCELLED":
-                self._finish(req, "failed", e.code, e.detail)
+                disp = {"kind": "FAILED", "decided_by": "host", "code": e.code, "detail": e.detail[:300]}
+                entry["disposition"] = disp
+                self._finish(req, "failed", e.code, e.detail, disp)
             self._log(entry)
             self.say("STUDIO  %s  %s: %s" % (rid, e.code, e.detail[:200]))
             return
+        disp = disposition(provider, cands, outcome)
+        entry["disposition"] = disp
+        if disp["kind"] != "REALIZED":
+            cands = []                                   # a reported refusal: nothing of the answer is read
         with self.lock:
             if req["state"] != "running":
                 entry.update({"outcome": req["code"] or "STUDIO-DISCARDED", "detail": "the response came after the request was %s" % req["state"]})
                 self._log(entry)
                 return
             req["provider"] = provider
+        if disp["kind"] != "REALIZED":
+            # an answer without candidates: nothing to evaluate, nothing drawn, the world as it was; said and recorded
+            if disp["kind"] == "FAILED":
+                self._finish(req, "failed", disp["code"], disp["detail"], disp)
+            else:
+                self._finish(req, "done", "", "%s: %s" % (disp["kind"], disp["detail"]), disp)
+            entry["outcome"] = disp["kind"]
+            self._log(entry)
+            self.say("STUDIO  %s  %s (%s)  %s: %s" % (rid, provider["name"], provider["model"], disp["kind"], disp["detail"][:200]))
+            return
         D = self.play.director()
         made = []
         for letter, c in zip(LETTERS, cands):
@@ -822,7 +1003,7 @@ class Gateway:
                 item["slot"] = k
             req["candidates"] = [i for i, _s in made]
         n_ok = sum(1 for i, s in made if s is not None)
-        self._finish(req, "done", "", "%d candidate%s, %d drawn" % (len(made), "" if len(made) == 1 else "s", n_ok) if made else "the director proposed nothing")
+        self._finish(req, "done", "", "%d candidate%s, %d drawn" % (len(made), "" if len(made) == 1 else "s", n_ok), disp)
         entry["outcome"] = "DONE"
         self._log(entry)
         u = entry.get("usage")
@@ -1140,7 +1321,19 @@ def main(argv):
         return 0 if shown else 1
     if argv[:1] == ["report"]:
         return report(opt("--brief") or "plaza-night", opt("--root"))
-    print("usage: python art/studio.py selftest | schema | probe CONFIG.json [--brief B] [--piece ID] | probe CONFIG.json --references [--runs N] | report [--brief B]", file=sys.stderr)
+    if argv[:1] == ["records"]:
+        brief = opt("--brief") or "plaza-night"
+        path = os.path.join(os.path.abspath(opt("--root")) if opt("--root") else REPO, "art", "build", "studio", brief, "requests.jsonl")
+        v = verify_records(path)
+        print("RECORDS  %s: %d lines (%d before the chain began), %d unreadable%s, %s" % (
+            brief, v["lines"], v["legacy"], len(v["unreadable"]), (" (lines %s)" % ", ".join(map(str, v["unreadable"][:8]))) if v["unreadable"] else "",
+            "the chain whole" if not v["breaks"] else "the chain broken at line%s %s" % ("" if len(v["breaks"]) == 1 else "s", ", ".join(map(str, v["breaks"][:8])))))
+        print("RECORDS  dispositions: %s" % (", ".join("%s %d" % kv for kv in sorted(v["dispositions"].items())) or "none recorded yet"))
+        if v["unmet"]:
+            print("RECORDS  asked for and not made yet (telemetry, never a gate): %s" % ", ".join("%s %d" % kv for kv in sorted(v["unmet"].items(), key=lambda kv: (-kv[1], kv[0]))))
+        print("RECORDS  a line cut from the end is not found here: that needs the last line's hash kept outside the world folder")
+        return 1 if v["breaks"] else 0
+    print("usage: python art/studio.py selftest | schema | probe CONFIG.json [--brief B] [--piece ID] | probe CONFIG.json --references [--runs N] | report [--brief B] | records [--brief B] [--root DIR]", file=sys.stderr)
     return 2
 
 

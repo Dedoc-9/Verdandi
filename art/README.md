@@ -212,7 +212,13 @@ python art/play.py --selftest            # the live loop without a browser: LIVE
   with its own ledger and maps; `play.py NAME --worlds DIR` serves them. The page switches between worlds, duplicates
   one, and queues a prompt for any world while it plays on (`studio_queue.py`); a ready task is reviewed in its own
   world's page, its candidates drawn again at the head as it is then. `python art/studio_queue.py selftest` holds it
-  (STUDIO-2 SELFTEST 13/13); [`STUDIO.md`](STUDIO.md) says how.
+  (STUDIO-2 SELFTEST 19/19); [`STUDIO.md`](STUDIO.md) says how.
+- **Every request ends in a disposition; the icon opens a first window (0220).** A request that comes back without
+  candidates says why: UNSUPPORTED (with what the studio cannot make yet, from a closed list the request publishes),
+  AMBIGUOUS (the director's questions), DECLINED (the API's refusal, or the provider's), or FAILED (including an
+  empty answer with no reason); none of them writes the world, and the request record is hash-chained
+  (`python art/studio.py records`). The desktop icon's window asks what to open first: the worlds, each read back,
+  and the views, one manifest each in `web/views/`.
 
 ## In Unreal Engine 5.8, on the host (an optional path)
 
@@ -272,6 +278,8 @@ block a player is cover, and goes into the graybox map.
 | `studio_txn.py` | the studio's change transaction as a reference (docs/STUDIO-CONTRACT.md): the promotion journal's form and grammar and `Recover(J, P, F)`; `check` holds it over every enumerated crash point, `selftest` plants wrong decisions, `recover ROOT` reads a studio and prints what its stub must do; nothing here launches or writes a studio |
 | `studio.py`, `STUDIO.md` | STUDIO-0: the director gateway (a provider's request and response, its limits and refusals, the candidates evaluated, admitted, rejected and undone through the ledger; `probe` and `report`), and its contract |
 | `providers/` | the gateway's providers: `scripted.py` (fixed variations of a selected canopy, not a model), `claude_code.py` (Claude through Claude Code's CLI, `claude -p`, on its own login; tools off, no session kept) and `anthropic_messages.py` (Claude through the Anthropic Messages API on structured outputs, its key in the environment, its model the configuration's, `claude-opus-5-5`), each with its configuration; `director_prompt.py`, what both model providers tell their models |
+| `web/start.html`, `web/start.js`, `web/views/` | 0220: the studio's first window: the worlds read back, the views from their manifests (a view is added by adding one); it holds a token good only for its heartbeat |
+| `web/history.html`, `web/history.js` | 0220: the History view, read-only: a world's ledger and request record read back, with the head and the last line's hash to keep elsewhere |
 | `web/play.html`, `web/play.js` | the native plaza's page: input, the fixed tick on `sim.js`, the views, the live swap, the studio's tags (E target, R pin, the names and frames on screen) and panel |
 | `web/scene_render.js` | the native renderer (WebGL 2); `load(S)` draws another scene in place, `dispose()` frees it |
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |

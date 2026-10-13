@@ -1,0 +1,12 @@
+{
+ "capability": "propose",
+ "id": "mechanisms",
+ "level": "deep",
+ "needs_world": true,
+ "open": "",
+ "order": 40,
+ "status": "not built",
+ "summary": "Moving platforms, doors, crates and standing people: their paths, phases and states, with a tick scrubber and per-tick hashes.",
+ "title": "Mechanisms",
+ "why": "It arrives with the first physics slice (a platform that carries you, a door, a crate, a standing person); the art language has none of these yet."
+}

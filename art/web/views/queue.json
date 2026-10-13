@@ -1,0 +1,12 @@
+{
+ "capability": "propose",
+ "id": "queue",
+ "level": "paint",
+ "needs_world": true,
+ "open": "play.html?world={world}&panel=queue",
+ "order": 20,
+ "status": "ready",
+ "summary": "The same world with the director's queue open: line up prompts for any world, keep playing, review each one when it is ready.",
+ "title": "Queue prompts",
+ "why": ""
+}

@@ -363,6 +363,21 @@
         head.className = r.state === "failed" ? "bad" : "dim";
         head.textContent = "request " + r.id + ": " + r.state + (r.message ? " — " + (r.code ? r.code + ": " : "") + r.message : "") + "  (" + Math.round(r.elapsed_ms / 100) / 10 + " s)";
         box.appendChild(head);
+        // 0220: why there are no candidates, when there are none; the model's words shown as text, never carried out
+        const d = r.disposition;
+        if (d && d.kind !== "REALIZED") {
+          const el = document.createElement("div");
+          el.className = "disp " + (d.kind === "FAILED" ? "bad" : "dim");
+          const k = document.createElement("div");
+          k.textContent = d.kind + " · decided by " + (d.decided_by === "host" ? "the studio" : "the provider (its own account)");
+          el.appendChild(k);
+          if (d.unmet && d.unmet.length) { const u = document.createElement("div"); u.textContent = "not made yet: " + d.unmet.join(", "); el.appendChild(u); }
+          if (d.questions && d.questions.length) {
+            for (const q of d.questions) { const qq = document.createElement("div"); qq.className = "q"; qq.textContent = "? " + q; el.appendChild(qq); }
+          }
+          if (d.note) { const n = document.createElement("div"); n.className = "dim"; n.textContent = d.note; el.appendChild(n); }
+          box.appendChild(el);
+        }
         for (const c of r.candidates || []) {
           const el = document.createElement("div");
           el.className = "cand" + (c.slot !== null && c.slot === cur.k ? " shown" : "");
@@ -442,7 +457,7 @@
       if (!qs) return;
       queueOpts(qs);
       for (const n of qs.notices || []) {
-        if (n[0] > seenNotice) { seenNotice = n[0]; toast(n[1] + (n[4] === "ready" ? "  (review it in the queue)" : ""), n[4] !== "ready"); }
+        if (n[0] > seenNotice) { seenNotice = n[0]; toast(n[1] + (n[4] === "ready" ? "  (review it in the queue)" : ""), n[4] !== "ready" && n[4] !== "answered"); }
       }
       const key = JSON.stringify(qs.tasks);
       if (key === queueKey) return;
@@ -451,7 +466,7 @@
       box.innerHTML = "";
       const c = qs.counts || {};
       const head = document.createElement("div"); head.className = "dim";
-      head.textContent = (c.running || 0) + " running, " + (c.queued || 0) + " queued, " + (c.ready || 0) + " ready  ·  at most " + qs.concurrency + " at once, one per world";
+      head.textContent = (c.running || 0) + " running, " + (c.queued || 0) + " queued, " + (c.ready || 0) + " ready, " + (c.answered || 0) + " answered  ·  at most " + qs.concurrency + " at once, one per world";
       box.appendChild(head);
       for (const t of qs.tasks || []) {
         const el = document.createElement("div");
@@ -465,7 +480,8 @@
         const btn = function (label, fn) { const b = document.createElement("button"); b.textContent = label; b.onclick = fn; el.appendChild(b); };
         if (t.status === "queued" || t.status === "running") btn("Cancel", function () { post("/studio/queue/cancel", { id: t.id }).then(function (r) { note(r, "cancelled " + t.id); }); });
         if (t.status === "ready") { btn("Review", function () { review(t); }); btn("Set aside", function () { post("/studio/queue/dismiss", { id: t.id }).then(function (r) { note(r, "set aside " + t.id); }); }); }
-        if (t.status === "failed" || t.status === "cancelled" || t.status === "interrupted") btn("Queue again", function () { post("/studio/queue/requeue", { id: t.id }).then(function (r) { note(r, "queued again " + t.id); }); });
+        if (t.status === "answered") btn("Set aside", function () { post("/studio/queue/dismiss", { id: t.id }).then(function (r) { note(r, "set aside " + t.id); }); });
+        if (t.status === "answered" || t.status === "failed" || t.status === "cancelled" || t.status === "interrupted") btn("Queue again", function () { post("/studio/queue/requeue", { id: t.id }).then(function (r) { note(r, "queued again " + t.id); }); });
         box.appendChild(el);
       }
     };
@@ -477,6 +493,8 @@
         .then(function (r) { note(r, "queued " + (r.id || "") + " for " + w + " (its target and pins as they stand there); play on, it runs in the background"); });
     };
     if (q.get("review")) setTimeout(function () { review({ id: q.get("review"), world: brief }); }, 300);
+    // 0220: the launcher's "Queue prompts" view: this world with the director's queue open
+    if (q.get("panel") === "queue") setTimeout(function () { openPanel(); const ql = $("st-qlist"); if (ql && ql.scrollIntoView) ql.scrollIntoView(); }, 300);
 
     // the hooks a still, a walk-through or a test uses
     window.PLAY = {

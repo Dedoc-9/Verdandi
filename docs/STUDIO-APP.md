@@ -676,6 +676,11 @@ its world's page by drawing its candidates again at the head as it is then; kept
 `art/STUDIO.md` says how it is used; `python art/studio_queue.py selftest` holds it (13 cases). The workspace's items
 below (outliner, details, the candidate strip, projects, the critic) are still to be built.
 
+**0220 (2026-10-13): the first window and typed dispositions.** The desktop icon's window asks what to open first
+(the worlds read back; views from manifests, `art/web/views/`; a view not built says why), and every request ends in
+a disposition (REALIZED, UNSUPPORTED, AMBIGUOUS, DECLINED, FAILED) instead of an empty answer with no reason;
+`art/STUDIO.md` says how.
+
 **User-visible outcome.** The page becomes a studio: an **outliner** listing the scene's objects by region and kind
 with a search box (the Unreal reference), where clicking selects (E) or pins (R) and tagged objects are marked; a
 **details pane** for the object under the crosshair or selected — its statement, its measured geometry (bounds, size,

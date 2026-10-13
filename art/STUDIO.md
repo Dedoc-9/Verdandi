@@ -136,7 +136,7 @@ and `coordinates` in place of version 0's `selection`):
 
 ## The response (on its standard output)
 
-`VERDANDI-STUDIO-RESPONSE 0`: `{"format", "version": "0", "id", "provider": {"name", "model"[, "usage"]}, "candidates": [...]}`,
+`VERDANDI-STUDIO-RESPONSE 0`: `{"format", "version": "0", "id", "provider": {"name", "model"[, "usage"][, "stop_reason"]}, "candidates": [...][, "outcome": {...}]}`,
 at most three candidates, each with exactly these fields (`python art/studio.py schema` prints the schema, which a
 provider that supports constrained output should constrain its model to):
 
@@ -153,10 +153,32 @@ a cost in dollars or `null`, and a few words saying where the cost comes from (C
 the API's token counts with no cost, since prices are not a provider's to know). It is recorded, never charged against
 anything here.
 
-An exit status other than 0 is a failure; the last line of the provider's standard error is shown. An empty list of
-candidates is an answer: *the director proposed nothing*. It carries no reason. Whatever the model's own, the art file
-has no statement for some requests: it says canopies, towers, neon, lamps, puddles, materials, the sky and the air,
-and nothing of people, vehicles or props, so a prompt to add a figure can only be answered with nothing.
+An exit status other than 0 is a failure; the last line of the provider's standard error is shown.
+
+**Every request ends in a disposition (0220).** His first queued prompt, to add a figure, came back *"the director
+proposed nothing"*, with no reason: the art file says canopies, towers, neon, lamps, puddles, materials, the sky and
+the air, and nothing of people, vehicles or props, and the studio could not say so. Now the request publishes
+`capabilities`: what the studio can make (`look.material`, `dressing.canopy`, ...) and, by name, the closed list of
+what it cannot make yet (`entity.person`, `entity.vehicle`, `motion.path`, `motion.surface`, `mechanism.door`,
+`physics.dynamic`, `audio`, ...). The response may carry `outcome`, the model's account when it proposes nothing:
+`{"kind": none | unsupported | ambiguous | declined, "unmet": [names from that list], "questions": [...], "reason":
+content | rights | safety | other, "note": "..."}`. The gateway decides, the host's observations first:
+
+| disposition | when | decided by |
+|---|---|---|
+| `REALIZED` | one to three candidates came back (each then has its verdict: CLEAN, LEAKAGE, REFUSED) | the studio |
+| `DECLINED` | the provider's API reported a refusal (`stop_reason` refusal, which the adapter passes on) | the studio |
+| `UNSUPPORTED` | no candidates, and the outcome names what is needed from the list of what the studio cannot make | the provider (its account) |
+| `AMBIGUOUS` | no candidates, and one to three questions for the designer, shown as text and never carried out | the provider |
+| `DECLINED` | no candidates, and the provider declines with a reason from the closed list | the provider |
+| `FAILED` | the provider could not be run or read (`STUDIO-*`), or it answered nothing and gave no reason (`STUDIO-EMPTY-WITHOUT-REASON`) | the studio |
+
+An outcome that names a capability the studio has, or one the request never listed, refuses the response
+(`STUDIO-RESPONSE-OUTCOME`). `INFEASIBLE` and `PROJECTED` are reserved for a repair stage that is not built. No
+disposition but `REALIZED` evaluates, draws or writes anything: the brief and its ledger stay byte for byte as they
+were. The scripted provider gives `UNSUPPORTED` when a word of the prompt is in its small list (a person, a vehicle, a
+door, ...): word matching, not understanding. Whether Claude Code's CLI passes the API's stop reason on is not
+measured; if it does not, a refusal on that path reads as `FAILED` or as the model's own account.
 
 ## What the gateway does with it
 
@@ -184,6 +206,11 @@ files stand and that head is the one it was drawn at.
 | `STUDIO-NOTHING-TO-UNDO`, `STUDIO-NOT-UNDOABLE` | no admission left to undo (an undo is never itself undone; undo again walks further back); one that changed the layout, or whose inverse is not CLEAN |
 
 ## What is kept
+
+Each line of `requests.jsonl` now carries its disposition and `prev`, the sha256 of the line before it:
+`python art/studio.py records [--brief B] [--root DIR]` reads the record back, says whether the chain is whole (a line
+taken out of the middle is found; lines cut from the end are not, without the last line's hash kept elsewhere), counts
+the dispositions, and lists what was asked for and is not made yet, the studio's backlog (telemetry, never a gate).
 
 Every request, under `art/build/studio/BRIEF/ID/` (never committed; in the studio's worlds, under the world's own
 folder): `request.json`, `response.raw`, and each
@@ -309,6 +336,31 @@ queues for one world from another's page and reviews and admits there (the other
 a world, runs two worlds at once with one request per world, cancels and queues again, compiles two worlds' scenes at
 once (and keeps the plant without the export lock), and keeps fixes 3 and 4 with their plants. The studio app's
 self-test starts the supervisor without `--root` on a worlds folder.
+
+## The first window (0220)
+
+By his direction of 2026-10-13, *"when i click the desktop icon a window should open asking what part of the studio
+should open first; different abstractions can be added as be design"*: the icon's window opens on `start.html`, which
+lists the worlds, each read back as the window opens (its ledger replayed to its files, under its content lock: VERIFIED
+says the files are the bytes the ledger records, not that the world is right; whether the head is anchored outside the
+world folder is said, and it is not yet), and the studio's views, one manifest each in `art/web/views/`:
+
+| view | level | what |
+|---|---|---|
+| Play and direct | make | the world first-person with the director's panel |
+| Queue prompts | make | the same, with the queue open |
+| Compose | make | not built: a top-down blockout; says why |
+| History | one level deeper | the ledger and the request record read back, read-only, with the head and the last line's hash to copy elsewhere |
+| Mechanisms | one level deeper | not built: arrives with the first physics slice; says why |
+| Evidence | one level deeper | not built: the self-tests' results; says why |
+
+A view is added by adding a manifest (`id`, `title`, `summary`, `level`, `order`, `open`, `needs_world`,
+`capability` inspect or propose, `status` ready or not built, `why`); one that is not well formed, or that opens a page
+outside the studio, is listed as unavailable with why, never left out. The window and the read-only views are served
+with a second token, good for the window's heartbeat and goodbye and nothing else: they cannot ask, admit, reject,
+undo or queue. *Next time, skip this window* is a preference of the window's own browser profile, never part of a
+world. `python art/studio_queue.py selftest` holds the launcher (the token, a broken manifest, a world changed outside
+its ledger not verified) and `python art/studio_app.py selftest` the window opening on it.
 
 ## What is not shown
 

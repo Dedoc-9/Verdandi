@@ -1,0 +1,12 @@
+{
+ "capability": "propose",
+ "id": "compose",
+ "level": "paint",
+ "needs_world": true,
+ "open": "",
+ "order": 30,
+ "status": "not built",
+ "summary": "A top-down blockout of the world: rooms, routes and regions painted on the grid.",
+ "title": "Compose",
+ "why": "The layout changes through the design tool today, outside the studio; a top-down view that proposes layout edits is not built yet."
+}

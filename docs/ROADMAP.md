@@ -3909,6 +3909,47 @@ a change to a brief's sky or air, is looked at in a still before it is delivered
 own now, changes only through its ledger: an intent (`harbor-day-sun.intent`, the same two lines, scope `env/light`
 and `env/exposure`) evaluated CLEAN and admitted in a seeded copy here, and given to him to evaluate and admit there.
 
+**0219 on his machine, his pivot, and 0220: every request ends in a disposition; the icon opens a first window
+(2026-10-13).** 0219 applied as tree c140fe20, as predicted; ART CHECKS PASSED with harbor-day at scene 549d5d76035f;
+the gate 251 rows / 0 fail; pushed c925154..b3050b1. In his own harbor-day the sun's intent evaluated CLEAN (ledger #1);
+the admit command I gave him failed, `invalid literal for int() with base 10: 'N'`, because it held a placeholder where
+the ledger's number goes (my error: a command given to be pasted must be complete; nothing was written, it stopped
+reading the number). Then his pivot, toward *"a studio like a mix between ue5 and paint"* with graphics and physics,
+researched against his other repositories and the literature (the report was delivered to him, not committed), and
+his rulings on what to build: *"The physics layer should enter through the existing exporter, extending
+`art/dress.py` so that motion and interaction statements become part of the art language itself"*, and *"the
+sequence should be outcomes and launcher, followed by the physics slice"*; and his direction for the icon: *"when i
+click the desktop icon a window should open asking what part of the studio should open first; different abstractions
+can be added as be design"*. **0220, built, off the gate.** Every request that ends on its own ends in a disposition:
+the request publishes the studio's capabilities (what it can make, and by name the closed list of what it cannot make
+yet: `entity.person`, `entity.vehicle`, `motion.path`, `motion.surface`, `mechanism.door`, `physics.dynamic`, ...);
+the response may carry the provider's `outcome`, and the adapters pass on the API's `stop_reason`; the gateway decides,
+the host's observations first: REALIZED, DECLINED (the API's refusal, the studio's decision; or the provider's, with
+a reason from a closed list, its account), UNSUPPORTED (no candidates, and what is needed named from the list; a name
+the studio has, or one never listed, refuses the response), AMBIGUOUS (one to three questions, shown as text and never
+carried out), FAILED (the provider not run or not read, or an empty answer with no reason, `STUDIO-EMPTY-WITHOUT-REASON`);
+INFEASIBLE and PROJECTED reserved, no repair stage being built. No disposition but REALIZED evaluates, draws or writes
+anything. The request record is hash-chained line to line (`python art/studio.py records`: the chain, the dispositions,
+and what was asked for and is not made yet, as telemetry). The queue gains `answered` (a request that came back with
+no candidates and a reason: set aside or queued again), and fix 4 covers it (an answer recorded before a restart is
+read again, not asked again). The scripted provider names what is missing when a word of the prompt is in its small
+list (word matching, said to be). The first window: the icon's URL leads to `start.html`, which lists the worlds, each
+read back as it opens (its ledger replayed to its files under its lock; VERIFIED is integrity, not truth; not anchored
+outside the world folder, and said so), and six views from manifests in `art/web/views/` (Play and direct, Queue
+prompts, History ready; Compose, Mechanisms, Evidence not built, each saying why); a malformed manifest, or one opening
+a page outside the studio, is listed as unavailable with why. The window and the History view hold a second token,
+good for the heartbeat and goodbye only: they cannot ask, admit or queue. MEASURED in the container: STUDIO SELFTEST
+70/70 (nine new rows: each disposition, the API's refusal through both adapters, an outcome naming a capability the
+studio has refused, the world byte for byte after every answer without candidates, the record's chain with a line
+taken out found and the end cut not, as said), STUDIO-2 SELFTEST 19/19 (the launcher, its token, a broken manifest, a
+world changed outside its ledger not verified, an answered task, fix 4 for an answer), STUDIO APP SELFTEST 12/12 (the
+window opening on the launcher); in 15 runs of it here, 2 ended a row with exit 1 (the silent page once, the page that
+never speaks once), the supervisor's exception not shown, so its cause is not known: the self-test now prints that
+exception whenever the supervisor exits 1, and 5 runs since were clean (OBSERVED in the container, not on Windows); the first window and History looked at in headless Chromium at 1100 and 390 px wide. Not
+measured: whether Claude Code's CLI passes the API's stop reason on (if not, a refusal on that path reads as FAILED or
+as the provider's own account). Next, in his order: the physics slice through the exporter (a platform that carries
+the player, a door, a crate, a standing person), which records one rebase in every world's ledger.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

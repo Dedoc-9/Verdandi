@@ -451,7 +451,13 @@ if rec:
     open(rec, "a").write(json.dumps(sys.argv[1:]) + "\n")
 if mode == "record":
     sys.exit(0)
-tok = re.search(r'data-studio="([0-9a-f]+)"', urllib.request.urlopen(url + "play.html").read().decode()).group(1)
+if mode == "launcher":                               # 0220: the window opens on the launcher, which speaks with its own token
+    r0 = urllib.request.urlopen(url)
+    if not r0.geturl().endswith("/start.html"):
+        sys.exit(9)
+    tok = re.search(r'data-presence="([0-9a-f]+)"', r0.read().decode()).group(1)
+else:
+    tok = re.search(r'data-studio="([0-9a-f]+)"', urllib.request.urlopen(url + "play.html").read().decode()).group(1)
 def alive():
     urllib.request.urlopen(urllib.request.Request(url + "studio/alive", data=b"{}", method="POST",
                            headers={"Content-Type": "application/json", "X-Studio-Token": tok})).read()
@@ -508,6 +514,8 @@ def selftest():
         if not wait:
             return p, state
         out, _ = p.communicate(timeout=240)
+        if p.returncode == 1:                    # the supervisor failed with an exception: say which, whatever the row expects
+            print("       (%s: the supervisor %s)" % (name, ([ln.strip() for ln in out.splitlines() if "failed:" in ln] or ["exited 1, nothing said"])[-1][:300]), flush=True)
         return p.returncode, out
 
     def pids_in(out):
@@ -532,7 +540,7 @@ def selftest():
         win = pids_in(out)
         time.sleep(0.5)
         row("the page silent past its limit: the studio stops, the browser ended", rc == EXIT_OK and "has not spoken for" in out and win and not alive(win),
-            "exit %s; %s" % (rc, [ln for ln in out.splitlines() if "stopping" in ln][-1:]))
+            "exit %s; %s%s" % (rc, [ln for ln in out.splitlines() if "stopping" in ln][-1:], "" if rc == EXIT_OK else "; then: " + " | ".join(out.strip().splitlines()[-3:])[-300:]))
         rc, out = supervisor("mute", "mute", ["--page-wait", "6"])
         win = pids_in(out)
         time.sleep(0.5)
@@ -577,6 +585,9 @@ def selftest():
         plog = os.path.join(tmp, "worlds", "logs", "play.log")
         plog = open(plog, encoding="utf-8", errors="replace").read() if os.path.exists(plog) else ""
         served = ([ln for ln in plog.splitlines() if ln.startswith("worlds: ")] or [""])[0]
+        rc_l, out_l = supervisor("launcher", "launcher", where=["--worlds", worlds])
+        row("the window opens on the launcher (what to open first): its heartbeat keeps the studio, its goodbye closes it",
+            rc_l == EXIT_OK and "the window was closed" in out_l, "exit %s; %s" % (rc_l, ([ln for ln in out_l.splitlines() if "stopping" in ln] or [""])[-1][-80:]))
         row("no --root: the studio serves its worlds folder (seeded from the fixture), its page a world of it, and stops when the window closes",
             made == ["plaza-night"] and rc == EXIT_OK and ("--worlds " + worlds) in line and "--root" not in line and "the window was closed" in out
             and served.startswith("worlds: plaza-night (in %s)" % worlds) and served.endswith("playing plaza-night"),

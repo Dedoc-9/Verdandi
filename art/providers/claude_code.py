@@ -122,7 +122,7 @@ def ask(req):
 
         for f in (read_err, write_in):
             threading.Thread(target=f, daemon=True).start()
-        init, result = None, None
+        init, result, stop = None, None, None
         for raw in p.stdout:
             try:
                 ev = json.loads(raw.decode("utf-8"))
@@ -141,18 +141,16 @@ def ask(req):
                                "said is used" % (", ".join(extra[:6]), ", ..." if len(extra) > 6 else ""))
             elif ev.get("type") == "result":
                 result = ev
+            elif ev.get("type") == "assistant" and isinstance(ev.get("message"), dict) and isinstance(ev["message"].get("stop_reason"), str):
+                stop = ev["message"]["stop_reason"]             # 0220: the API's stop reason, where the CLI passes it on
         rc = p.wait()
         tail = bytes(err).decode("utf-8", "replace").strip().splitlines()[-1:]
         if init is None:
             raise Fail("claude (exit %d) began no session%s" % (rc, ": " + tail[0][:200] if tail else ""))
         if result is None:
             raise Fail("claude (exit %d) gave no result%s" % (rc, ": " + tail[0][:200] if tail else ""))
-        if result.get("is_error") or result.get("subtype") != "success":
-            text = " ".join(str(result.get("result") or "").split())[:200]
-            raise Fail("claude's result is %s%s" % (result.get("subtype") or "an error", ": " + text if text else ""))
-        so = result.get("structured_output")
-        if not isinstance(so, dict) or not isinstance(so.get("candidates"), list):
-            raise Fail("claude's result holds no structured output with candidates")
+        if isinstance(result.get("stop_reason"), str):
+            stop = result["stop_reason"]
         u = result.get("usage") if isinstance(result.get("usage"), dict) else {}
         n = lambda k: u.get(k) if type(u.get(k)) is int and u.get(k) >= 0 else 0
         cost = result.get("total_cost_usd")
@@ -161,7 +159,17 @@ def ask(req):
                  "cost_usd": float(cost) if type(cost) in (int, float) and cost >= 0 else None,
                  "cost_basis": "Claude Code's own client-side estimate"}
         model = init.get("model") if isinstance(init.get("model"), str) and init.get("model") else "claude (model not reported)"
-        return model, so["candidates"], usage
+        if stop == "refusal":
+            # a refusal the CLI reported: an answer with no candidates, its stop reason passed on (DECLINED by the gateway);
+            # whether this CLI passes the API's stop reason on at all is not measured
+            return model, [], usage, stop, None
+        if result.get("is_error") or result.get("subtype") != "success":
+            text = " ".join(str(result.get("result") or "").split())[:200]
+            raise Fail("claude's result is %s%s" % (result.get("subtype") or "an error", ": " + text if text else ""))
+        so = result.get("structured_output")
+        if not isinstance(so, dict) or not isinstance(so.get("candidates"), list):
+            raise Fail("claude's result holds no structured output with candidates")
+        return model, so["candidates"], usage, stop, so.get("outcome")
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
@@ -169,7 +177,7 @@ def ask(req):
 def main():
     try:
         req = json.loads(sys.stdin.buffer.read().decode("utf-8"))
-        model, cands, usage = ask(req)
+        model, cands, usage, stop, outcome = ask(req)
     except Fail as e:
         sys.stderr.write("claude_code: %s\n" % e)
         return 2
@@ -178,6 +186,10 @@ def main():
         return 2
     out = {"format": "VERDANDI-STUDIO-RESPONSE", "version": "0", "id": req["id"],
            "provider": {"name": "claude-code", "model": model, "usage": usage}, "candidates": cands}
+    if stop and __import__("re").fullmatch(r"[a-z_]{1,40}", stop):
+        out["provider"]["stop_reason"] = stop
+    if outcome is not None:
+        out["outcome"] = outcome
     sys.stdout.buffer.write(json.dumps(out, sort_keys=True).encode("utf-8"))
     return 0
 

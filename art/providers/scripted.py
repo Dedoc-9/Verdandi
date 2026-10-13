@@ -13,6 +13,10 @@
 # anything else it proposes nothing. It reads the prompt only for the word "magenta", and for "match @N" (STUDIO-1):
 # when the target is a canopy and @N a pinned canopy, its one candidate gives the target @N's material, height and
 # options and keeps the target's corners, leaving @N as it is. It understands nothing.
+#
+# 0220: when it proposes nothing it gives an outcome only where a word of the prompt is in its small list of things the
+# studio cannot make yet (a person, a vehicle, a door, an escalator, ...): UNSUPPORTED, with those names. That is word
+# matching, not understanding; anything else it answers with nothing and no reason, which the gateway records as FAILED.
 
 import json
 import re
@@ -47,6 +51,25 @@ def canopy(text):
         if opts is not None:
             return words[:6], opts
     return None
+
+
+# words of a prompt, and what the studio would need to make what they name (0220; not understanding: a list)
+LEXICON = (
+    (("person", "people", "man", "woman", "figure", "fisherman", "child", "crowd", "npc", "character"), "entity.person"),
+    (("dog", "cat", "bird", "gull", "seagull", "animal", "horse"), "entity.animal"),
+    (("car", "boat", "ship", "bus", "bike", "bicycle", "vehicle", "truck"), "entity.vehicle"),
+    (("train", "tram", "elevator", "lift", "platform", "moving"), "motion.path"),
+    (("escalator", "conveyor", "travelator"), "motion.surface"),
+    (("door", "gate", "hatch"), "mechanism.door"),
+    (("crate", "barrel", "box", "bench", "table", "chair", "prop"), "entity.prop"),
+    (("tree", "trees", "plant", "plants", "grass", "flowers"), "entity.vegetation"),
+    (("sound", "music", "noise", "audio"), "audio"),
+)
+
+
+def unmet(prompt):
+    words = set(re.findall(r"[a-z]+", prompt.lower()))
+    return sorted({name for keys, name in LEXICON if words & set(keys)})
 
 
 def main():
@@ -88,6 +111,12 @@ def main():
                 {"title": "Deeper canopy", "rationale": "The slab where it is, made 2.6 m deep: the same plan, a heavier section.",
                  "revision": ["= " + statement(head, deep)], "scope": scope, "preserve": keep},
             ]
+    if out["candidates"]:
+        out["outcome"] = {"kind": "none", "unmet": [], "questions": [], "reason": "", "note": ""}
+    elif unmet(req.get("prompt", "")):
+        names = unmet(req.get("prompt", ""))
+        out["outcome"] = {"kind": "unsupported", "unmet": names, "questions": [], "reason": "",
+                          "note": "The prompt names what the studio cannot make yet (%s); this script matched words, it did not read the prompt." % ", ".join(names)}
     sys.stdout.buffer.write(json.dumps(out, sort_keys=True).encode("utf-8"))
     return 0
 

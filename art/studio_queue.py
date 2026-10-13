@@ -10,8 +10,11 @@
 # its model. Tasks run in the order they were queued, at most `concurrency` at once, and at most one per world, so that
 # a world's requests meet the head the one before it left (Creative World Closure, docs/CWCT.md: the epoch clause).
 #
-#   queued → running → ready | failed | cancelled          ready → reviewed (a candidate admitted, all rejected, or set aside)
-#   running, when the studio stops → interrupted            failed, cancelled, interrupted → queued again (requeue)
+#   queued → running → ready | answered | failed | cancelled
+#   ready → reviewed (a candidate admitted, all rejected, or set aside)    answered → reviewed (set aside)
+#   running, when the studio stops → interrupted            answered, failed, cancelled, interrupted → queued again
+# A task is answered (0220) when its request came back with no candidates and a disposition that says why:
+# UNSUPPORTED (with what the studio cannot make yet), AMBIGUOUS (with the director's questions) or DECLINED.
 #
 # A ready task does not hold its world: the next task for it may run, and the ready one is reviewed later by drawing its
 # recorded candidates again at the head as it is then (Gateway.restore), re-evaluated, never trusted — and admitted only
@@ -43,7 +46,7 @@ import studio         # noqa: E402
 
 PROVIDERS_DIR = os.path.join(REPO, "art", "providers")
 MODELS = ("", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-1")   # "" is the configuration's own
-STATES = ("queued", "running", "ready", "failed", "cancelled", "interrupted", "reviewed")
+STATES = ("queued", "running", "ready", "answered", "failed", "cancelled", "interrupted", "reviewed")
 CONFIG = re.compile(r"[a-z][a-z0-9_]{0,40}\.json\Z")
 
 
@@ -108,9 +111,13 @@ class Queue:
             if t["status"] != "running":
                 continue
             n = self._recorded(t) if durable.PLANT != "queue-forgets" else 0
+            d = self._recorded_answer(t) if not n and durable.PLANT != "queue-forgets" else None
             if n:                                             # its answer was recorded: ready to review, nothing asked again
                 e = {"e": "ready", "id": tid, "candidates": n, "drawn": 0, "recovered": True,
                      "message": "recovered after a restart: %d candidate%s recorded; review to draw them" % (n, "" if n == 1 else "s")}
+            elif d is not None:                               # an answer with no candidates was recorded: read again, not asked again
+                e = {"e": "answered" if d["kind"] != "FAILED" else "failed", "id": tid, "code": d.get("code") or d["kind"], "recovered": True,
+                     "disposition": d, "message": "recovered after a restart: %s: %s" % (d["kind"], d["detail"])}
             else:                                             # its provider died with the studio, before it answered
                 e = {"e": "interrupted", "id": tid}
             self._event(e)
@@ -124,6 +131,18 @@ class Queue:
         if not os.path.isfile(os.path.join(d, "response.raw")):
             return 0
         return sum(1 for letter in studio.LETTERS if os.path.isfile(os.path.join(d, letter + ".intent")))
+
+    def _recorded_answer(self, t):
+        """The disposition of a task's recorded response with no candidates, read again from its record (0220), or None."""
+        if not t.get("rid") or not re.match(r"[0-9TZ:-]{8,40}\Z", t["rid"]):
+            return None
+        f = os.path.join(self.hub.root_of(t["world"]), "art", "build", "studio", t["world"], t["rid"], "response.raw")
+        try:
+            prov, cands, outcome = studio.read_response(open(f, "rb").read(), t["rid"])
+        except (OSError, studio.StudioError):
+            return None
+        d = studio.disposition(prov, cands, outcome)
+        return None if d["kind"] == "REALIZED" else d
 
     def _apply(self, e):
         k = e["e"]
@@ -139,9 +158,14 @@ class Queue:
         elif k == "ready":
             t.update(status="ready", message=e["message"], candidates=e["candidates"], drawn=e["drawn"], ended=e.get("at", ""),
                      recovered=bool(e.get("recovered")), usage=e.get("usage"))
+        elif k == "answered":
+            t.update(status="answered", code=e.get("code", ""), message=e.get("message", ""), disposition=e.get("disposition"),
+                     ended=e.get("at", ""), usage=e.get("usage"), recovered=bool(e.get("recovered")))
         elif k in ("failed", "cancelled", "interrupted"):
             t.update(status=k, code=e.get("code", ""), message=e.get("message", {"cancelled": "cancelled", "interrupted": "the studio stopped while it ran"}.get(k, "")),
                      ended=e.get("at", ""))
+            if e.get("disposition"):
+                t["disposition"] = e["disposition"]
         elif k == "reviewed":
             t.update(status="reviewed", decision=e["decision"])
         elif k == "requeued":
@@ -187,8 +211,8 @@ class Queue:
 
     def requeue(self, tid):
         t = self._task(tid)
-        if t["status"] not in ("failed", "cancelled", "interrupted"):
-            raise studio.StudioError("STUDIO-QUEUE", "task %s is %s: only a failed, cancelled or interrupted task is queued again" % (tid, t["status"]))
+        if t["status"] not in ("answered", "failed", "cancelled", "interrupted"):
+            raise studio.StudioError("STUDIO-QUEUE", "task %s is %s: only an answered, failed, cancelled or interrupted task is queued again" % (tid, t["status"]))
         with self.lock:
             self._event({"e": "requeued", "id": tid})
             self._apply({"e": "requeued", "id": tid})
@@ -210,8 +234,8 @@ class Queue:
 
     def dismiss(self, tid):
         t = self._task(tid)
-        if t["status"] != "ready":
-            raise studio.StudioError("STUDIO-QUEUE", "task %s is %s: only a ready task is set aside" % (tid, t["status"]))
+        if t["status"] not in ("ready", "answered"):
+            raise studio.StudioError("STUDIO-QUEUE", "task %s is %s: only a ready or answered task is set aside" % (tid, t["status"]))
         with self.lock:
             self._event({"e": "reviewed", "id": tid, "decision": "set aside"})
             self._apply({"e": "reviewed", "id": tid, "decision": "set aside"})
@@ -266,12 +290,15 @@ class Queue:
             r = live.studio.req if live is not None else None
             if r is None or r["id"] != t["rid"]:
                 self._end(t, "failed", "STUDIO-LOST", "the request is no longer its world's (asked over it from elsewhere)")
+            elif r["state"] == "done" and (r.get("disposition") or {}).get("kind", "REALIZED") != "REALIZED":
+                d = r["disposition"]
+                self._end(t, "answered", d["kind"], r["message"], usage=(r.get("provider") or {}).get("usage"), disp=d)
             elif r["state"] == "done":
                 drawn = sum(1 for c in r["candidates"] if c["slot"] is not None)
                 self._end(t, "ready", "", r["message"], candidates=len(r["candidates"]), drawn=drawn,
                           usage=(r.get("provider") or {}).get("usage"))
             elif r["state"] == "failed":
-                self._end(t, "failed", r["code"], r["message"])
+                self._end(t, "failed", r["code"], r["message"], disp=r.get("disposition"))
             elif r["state"] in ("cancelled", "superseded"):
                 self._end(t, "cancelled", r["code"], r["message"])
         for t in ready:                                       # a ready task whose candidates the person decided on
@@ -303,17 +330,19 @@ class Queue:
             started.append(t["id"])
         return started
 
-    def _end(self, t, status, code, message, candidates=0, drawn=0, usage=None):
+    def _end(self, t, status, code, message, candidates=0, drawn=0, usage=None, disp=None):
         with self.lock:
             if status == "ready":
                 e = {"e": "ready", "id": t["id"], "message": message, "candidates": candidates, "drawn": drawn}
-                if isinstance(usage, dict):                  # what the provider said it used, as it said it (the page shows it)
-                    e["usage"] = {k: usage[k] for k in ("input_tokens", "output_tokens", "cost_usd", "cost_basis") if k in usage}
             else:
                 e = {"e": status, "id": t["id"], "code": code, "message": message}
+            if isinstance(usage, dict) and status in ("ready", "answered"):   # what the provider said it used, as it said it
+                e["usage"] = {k: usage[k] for k in ("input_tokens", "output_tokens", "cost_usd", "cost_basis") if k in usage}
+            if isinstance(disp, dict):
+                e["disposition"] = {k: disp[k] for k in ("kind", "decided_by", "code", "detail", "unmet", "questions", "reason", "note") if k in disp}
             self._event(e)
             self._apply(e)
-            self.notices.append((time.time(), "%s · %s: %s" % (t["world"], t["prompt"][:40], message if status == "ready" else status + " (" + (code or message)[:60] + ")"),
+            self.notices.append((time.time(), "%s · %s: %s" % (t["world"], t["prompt"][:40], message if status in ("ready", "answered") else status + " (" + (code or message)[:60] + ")"),
                                  t["id"], t["world"], status))
             self.notices = self.notices[-20:]
 
@@ -490,6 +519,79 @@ def selftest():
             and len(D.led.read(os.path.join(wc, "art", "ledger", "plaza-copy.ledger"))[0]) == 1 and tree_bytes(wp) == night_before,
             (title or [""])[0].strip()[:90])
 
+        # 0220: the first window, its views and its token; a task answered with no candidates
+        c0 = urllib.request.urlopen(urllib.request.Request(base + "/", method="GET"), timeout=30)
+        landed = c0.geturl().endswith("/start.html")
+        _c, page = get("/start.html")
+        presence = re.search(rb'data-presence="([0-9a-f]+)"', page).group(1).decode()
+        _c, lj = get("/launcher.json")
+        lj = json.loads(lj)
+        vw = {v["id"]: v for v in lj["views"]}
+        wl = {w["world"]: w for w in lj["worlds"]}
+        row("the first window: / opens the launcher, which lists every world read back (its ledger replayed to its files) and every view, "
+            "each from its manifest; a view not built says why",
+            landed and wl["plaza-night"]["verified"] and wl["harbor-day"]["verified"] and wl["plaza-night"]["head"] == night.studio._head()[3]
+            and vw["play"]["status"] == "ready" and vw["history"]["capability"] == "inspect" and vw["mechanisms"]["status"] == "not built"
+            and vw["mechanisms"]["why"] and tok.encode() not in page,
+            "worlds %s; views %s" % (", ".join("%s %s" % (w, "verified" if v["verified"] else v["error"][:30]) for w, v in sorted(wl.items())),
+                                     ", ".join("%s %s" % (k, v["status"]) for k, v in sorted(vw.items()))))
+
+        def post_as(path, body, token):
+            q = urllib.request.Request(base + path, data=json.dumps(body).encode(), method="POST",
+                                       headers={"Content-Type": "application/json", "X-Studio-Token": token})
+            try:
+                with urllib.request.urlopen(q, timeout=60) as r:
+                    return r.status
+            except urllib.error.HTTPError as e:
+                return e.code
+        codes = {p_: post_as(p_, b_, presence) for p_, b_ in (("/studio/alive", {}), ("/studio/ask", {"world": "plaza-night", "prompt": "x"}),
+                                                                ("/studio/admit", {"world": "plaza-night", "id": "x", "candidate": "A"}),
+                                                                ("/studio/queue/add", {"world": "plaza-night", "prompt": "x"}))}
+        row("the launcher's token is good for the window's heartbeat and nothing else: it cannot ask, admit or queue",
+            codes["/studio/alive"] == 200 and all(v == 403 for k, v in codes.items() if k != "/studio/alive"),
+            ", ".join("%s %d" % (k.rsplit("/", 1)[-1], v) for k, v in codes.items()))
+        saved_web = play.WEB
+        try:
+            fake_web = os.path.join(tmp, "web")
+            shutil.copytree(os.path.join(saved_web, "views"), os.path.join(fake_web, "views"))
+            open(os.path.join(fake_web, "views", "broken.json"), "w").write('{"id": "broken", "title": "x"}')
+            open(os.path.join(fake_web, "views", "sneaky.json"), "w").write(json.dumps(dict(json.load(open(os.path.join(fake_web, "views", "play.json"))), id="sneaky", open="https://example.com/{world}")))
+            play.WEB = fake_web
+            vv = {v["id"]: v for v in play.views()}
+        finally:
+            play.WEB = saved_web
+        row("a manifest that is not well formed, or that opens a page outside the studio, is listed as unavailable with why, never left out",
+            vv["broken"]["status"] == "unavailable" and "fields" in vv["broken"]["why"] and vv["sneaky"]["status"] == "unavailable"
+            and "opens none of the studio's pages" in vv["sneaky"]["why"] and vv["play"]["status"] == "ready",
+            "%s; %s" % (vv["broken"]["why"][:60], vv["sneaky"]["why"][:60]))
+        hd = os.path.join(worlds, "harbor-day", "art", "briefs", "harbor-day.art")
+        keep = open(hd, "rb").read()
+        try:
+            open(hd, "ab").write(b"# changed outside the ledger\n")
+            bad_i = hub.inspect("harbor-day")
+        finally:
+            open(hd, "wb").write(keep)
+        good_i = hub.inspect("harbor-day")
+        _c, hj = get("/history.json?world=harbor-day")
+        hj = json.loads(hj)
+        row("History: the world read back, its ledger newest first, its requests with what they came to; a file changed outside the ledger is "
+            "not verified (plant), and verified again once restored",
+            not bad_i["verified"] and "UNLOGGED-CHANGE" in bad_i["error"] and good_i["verified"] and hj["inspect"]["verified"]
+            and [e["kind"] for e in hj["events"]][:2] == ["admit", "evaluate"] and hj["requests"] and not hj["records"]["breaks"],
+            "planted: %s; restored: verified %s; %d events, %d requests" % (bad_i["error"][:50], good_i["verified"], len(hj["events"]), len(hj["requests"])))
+        post("/studio/select", {"world": "harbor-day", "piece": None})        # no target: the prompt is for the whole world
+        c, r = post("/studio/queue/add", {"world": "harbor-day", "prompt": "add a fisherman on the quay", "provider": "scripted.json"})
+        tid_a = r.get("id")
+        t0 = time.time()
+        while time.time() - t0 < 60 and hub.queue._task(tid_a)["status"] in ("queued", "running"):
+            time.sleep(0.1)
+        ta = hub.queue._task(tid_a)
+        c_set = post("/studio/queue/dismiss", {"id": tid_a})[0]
+        row("a queued prompt the studio cannot make yet ends answered, not ready: UNSUPPORTED entity.person, with nothing to review; it can be set aside",
+            ta["status"] == "answered" and (ta.get("disposition") or {}).get("unmet") == ["entity.person"] and c_set == 200
+            and hub.queue._task(tid_a)["status"] == "reviewed",
+            "%s: %s" % (ta["status"], ta["message"][:90]))
+
         # 5. at most two at once, one per world; the studio busy while work waits
         for w in ("plaza-night", "harbor-day"):
             post("/studio/select", {"world": w, "piece": "canopy:19,10-28,11"})
@@ -598,6 +700,20 @@ def selftest():
             and q4p._task("t-1-000001")["status"] == "interrupted",
             "%s (%s); drawn again: %d, each re-evaluated at the head as it is now; with the plant %s" % (
                 t4["status"], t4["message"], len(drawn), q4p._task("t-1-000001")["status"]))
+        # 0220: the same for an answer with no candidates: read again from its record, its disposition kept, nothing asked again
+        rid3 = "20991231T235959-8"
+        d3 = os.path.join(os.path.dirname(rec0), rid3)
+        os.makedirs(d3, exist_ok=True)
+        open(os.path.join(d3, "response.raw"), "wb").write(json.dumps({"format": "VERDANDI-STUDIO-RESPONSE", "version": "0", "id": rid3,
+            "provider": {"name": "t", "model": "t"}, "candidates": [], "outcome": {"kind": "unsupported", "unmet": ["motion.path"], "questions": [],
+                                                                                  "reason": "", "note": ""}}).encode())
+        qp3 = os.path.join(tmp, "stopped-answered.jsonl")
+        task3 = dict(hub.queue._task(tid), id="t-1-000002", status="queued", rid="")
+        open(qp3, "wb").write((json.dumps({"e": "queued", "task": task3}) + "\n" + json.dumps({"e": "started", "id": task3["id"], "rid": rid3, "head": ""}) + "\n").encode())
+        t5 = Queue(hub, qp3, say=lambda s: None)._task("t-1-000002")
+        row("fix 4 for an answer with no candidates: after the restart the task is answered from its record (UNSUPPORTED motion.path), not asked again",
+            t5["status"] == "answered" and (t5.get("disposition") or {}).get("unmet") == ["motion.path"] and t5.get("recovered"),
+            "%s: %s" % (t5["status"], t5["message"][:100]))
 
         # 9. the queue kept across a restart
         q9 = Queue(hub, os.path.join(worlds, "queue.jsonl"), say=lambda s: None)

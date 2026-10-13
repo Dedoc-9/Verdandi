@@ -1,0 +1,12 @@
+{
+ "capability": "inspect",
+ "id": "history",
+ "level": "deep",
+ "needs_world": true,
+ "open": "history.html?world={world}",
+ "order": 30,
+ "status": "ready",
+ "summary": "The world's ledger read back: every evaluation, admission, refusal and undo, and every request with what it came to. Read-only.",
+ "title": "History",
+ "why": ""
+}

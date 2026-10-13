@@ -21,7 +21,8 @@
 # structured-outputs). B1 replaced a forced tool choice, which every current model refuses with 400 ("any and tool
 # return a 400 error"). The schema sent is the gateway's with what structured outputs do not support (minLength,
 # maxLength, maxItems) moved into the descriptions; the gateway still enforces every limit when it reads the answer.
-# A refusal (stop_reason "refusal") or a cut answer ("max_tokens") is said, not read, since its output "may not match
+# A refusal (stop_reason "refusal") is passed on as an answer with no candidates and its stop reason, for the gateway
+# to record as DECLINED (0220); a cut answer ("max_tokens") is said, not read, since its output "may not match
 # your schema". The system text carries a cache breakpoint. The response names the model the API says answered and
 # the tokens it counted (no cost: prices are not this file's to know). What it proposes is then the gateway's to
 # refuse and the director's to judge. An error is written to standard error and the exit status is not 0.
@@ -99,8 +100,15 @@ def ask(req, model):
     except (urllib.error.URLError, OSError) as e:
         raise RuntimeError("the API could not be reached: %s" % e)
     stop = ans.get("stop_reason")
+    u = ans.get("usage") or {}
+    num = lambda k: u.get(k) if isinstance(u.get(k), int) else 0
+    usage = {"input_tokens": num("input_tokens") + num("cache_creation_input_tokens") + num("cache_read_input_tokens"),
+             "output_tokens": num("output_tokens"), "cost_usd": None,
+             "cost_basis": "not computed here: token counts as the API reported them (of the input, %d read from the cache)" % num("cache_read_input_tokens")}
     if stop == "refusal":
-        raise RuntimeError("the model refused (stop_reason refusal); its answer is not read")
+        # 0220: a refusal is an answer, observed here, not an error: no candidates, and the stop reason passed on for the
+        # gateway to decide (DECLINED); nothing of the model's text is read
+        return ans.get("model") or model, [], usage, "refusal", None
     if stop == "max_tokens":
         raise RuntimeError("the answer was cut at max_tokens (%d); it is not read" % body["max_tokens"])
     text = "".join(b.get("text", "") for b in ans.get("content", []) if b.get("type") == "text")
@@ -110,21 +118,20 @@ def ask(req, model):
         raise RuntimeError("the answer's text is not JSON (stop reason %s): %r" % (stop, text[:120]))
     if not isinstance(doc, dict) or not isinstance(doc.get("candidates"), list):
         raise RuntimeError("the answer has no candidates list (stop reason %s)" % stop)
-    u = ans.get("usage") or {}
-    num = lambda k: u.get(k) if isinstance(u.get(k), int) else 0
-    usage = {"input_tokens": num("input_tokens") + num("cache_creation_input_tokens") + num("cache_read_input_tokens"),
-             "output_tokens": num("output_tokens"), "cost_usd": None,
-             "cost_basis": "not computed here: token counts as the API reported them (of the input, %d read from the cache)" % num("cache_read_input_tokens")}
-    return ans.get("model") or model, doc["candidates"], usage
+    return ans.get("model") or model, doc["candidates"], usage, stop if isinstance(stop, str) else None, doc.get("outcome")
 
 
 def main(argv):
     try:
         req = json.loads(sys.stdin.buffer.read().decode("utf-8"))
-        model, cands, usage = ask(req, model_of(argv))
+        model, cands, usage, stop, outcome = ask(req, model_of(argv))
     except (RuntimeError, ValueError, KeyError, TypeError) as e:
         return fail(str(e))
     out = {"format": "VERDANDI-STUDIO-RESPONSE", "version": "0", "id": req["id"], "provider": {"name": "anthropic-messages", "model": model, "usage": usage}, "candidates": cands}
+    if stop:
+        out["provider"]["stop_reason"] = stop         # what the API reported, observed here; the model's own account is the outcome
+    if outcome is not None:
+        out["outcome"] = outcome
     sys.stdout.buffer.write(json.dumps(out, sort_keys=True).encode("utf-8"))
     return 0
 

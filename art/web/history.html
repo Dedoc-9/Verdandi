@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History — Verðandi Studio</title>
+<style>
+  :root { --bg: #070a0e; --panel: #0e1319; --line: #26303a; --text: #dfe6ec; --dim: #8d99a5; --good: #9fe0a8; --bad: #ff9a8a; --warn: #ffd38a; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.5 ui-monospace, Consolas, monospace; }
+  main { max-width: 1100px; margin: 0 auto; padding: 22px 16px 40px; }
+  h1 { font-size: 17px; margin: 0; color: #fff; }
+  h2 { font-size: 12px; margin: 22px 0 8px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); font-weight: normal; }
+  a { color: #8fc8ff; }
+  .box { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--panel); }
+  .ok { color: var(--good); } .no { color: var(--bad); } .warn { color: var(--warn); } .dim { color: var(--dim); }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; vertical-align: top; padding: 4px 8px 4px 0; border-top: 1px solid var(--line); }
+  th { color: var(--dim); font-weight: normal; }
+  #events td:nth-child(3), #requests td:first-child, #events td:first-child { white-space: nowrap; }
+  .wrap { overflow-x: auto; }
+  code { color: #fff; word-break: break-all; }
+  button { font: inherit; background: #1d2630; color: #e7eef4; border: 1px solid #3a4652; border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+</style>
+</head>
+<body data-presence="%PRESENCE%">
+<main>
+  <p><a href="/start.html">← the studio's first window</a></p>
+  <h1 id="title">History</h1>
+  <p class="dim">Read-only. Nothing here asks, admits or changes the world.</p>
+  <h2>The ledger read back</h2>
+  <div class="box" id="verify">Replaying the ledger…</div>
+  <h2>Requests and what they came to</h2>
+  <div class="box" id="records"></div>
+  <div class="wrap"><table id="requests"></table></div>
+  <h2>Ledger events, newest first</h2>
+  <div class="wrap"><table id="events"></table></div>
+</main>
+<script src="/history.js"></script>
+</body>
+</html>
