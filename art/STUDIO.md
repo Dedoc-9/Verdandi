@@ -230,7 +230,9 @@ when its holder dies); an admission holds it from before its first write to afte
 under it, so a second admission drawn at the same head is refused (HEAD-MOVED) instead of writing over the first; and
 recovery takes the same lock, so while an admission is alive a recovery refuses (LEDGER-BUSY) and changes nothing.
 `python art/director.py racetest` (32 cases) puts a second admission and another process's recovery at each of an
-admission's writes, and keeps the plants that break it. play.py answers `GET /healthz` (`ready`, `version`, `page`, `page_age_s`, `bye_age_s`, `pid`), takes the page's
+admission's writes, and keeps the plants that break it. Briefs share the graybox's maps, so a layout admitted in one
+world would change every world that plays its map: a layout change is refused while another brief plays the map
+(SHARED-MAP), an art change admitted as before, until each world keeps a map of its own. play.py answers `GET /healthz` (`ready`, `version`, `page`, `page_age_s`, `bye_age_s`, `pid`), takes the page's
 heartbeat on `POST /studio/alive` (every 5 s) and its goodbye on `POST /studio/bye` (a `pagehide` beacon whose body is
 the token, since a beacon cannot set a header), and stops on `POST /studio/shutdown`, SIGTERM or Ctrl+Break; it exits
 0 stopped, 70 when its port is taken (bound exclusively on Windows), 75 when recovery refuses.
@@ -244,13 +246,14 @@ python art\studio_app.py shortcut --director art\providers\claude_code.json    o
 The icon starts `pythonw art\studio_app.py`, the supervisor: it joins a job object of its own (so play.py, the
 provider and the browser end with it), starts play.py on a free port without a console, opens Edge in application mode
 with a profile of its own, and stops everything when the window is closed (the page's goodbye, not followed within 3 s
-by its speaking again, as a reload does), when the page has not spoken for three minutes, or when play.py ends. A second
-click opens another window on the same studio. Errors are shown in a dialog and kept in
+by its speaking again, as a reload does), when the page has not spoken for three minutes and no request is running (a
+silent page is not a closed window: Edge's sleeping tabs freeze a background page's timers; while a provider works,
+the studio waits for it, then stops), or when play.py ends. A second click opens another window on the same studio. Errors are shown in a dialog and kept in
 `%LOCALAPPDATA%\VerdandiStudio\state\logs\`. `shortcut` keeps the shell's non-secret variables for the icon
 (`VERDANDI_CLAUDE`, `VERDANDI_DIRECTOR_MODEL`, `VERDANDI_DIRECTOR_API`); a key never: for the API provider,
 `ANTHROPIC_API_KEY` must be a user environment variable. Claude Code's native install
 (`%USERPROFILE%\.local\bin\claude.exe`) is found without any. `python art/studio_app.py selftest` holds the lifecycle
-with a stand-in browser (7 cases).
+with a stand-in browser (10 cases; 11 on Windows, where a live job's process list is read as well).
 
 ## What is not shown
 

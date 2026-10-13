@@ -523,7 +523,10 @@ def server(live, port=0):
                 return self.send(200, json.dumps(live.state(), sort_keys=True).encode("utf-8"), "application/json")
             if path == "/healthz":
                 s0 = live.slot(0)
+                g = getattr(live, "studio", None)
+                busy = bool(g is not None and g.req and g.req.get("state") == "running")     # a provider asked, paid for
                 return self.send(200, json.dumps({"ready": bool(s0 and s0.get("ok")), "version": os.environ.get("VERDANDI_GENERATION", "dev"),
+                                                  "busy": busy,
                                                   "brief": brief, "scene_sha256": s0["sha"] if s0 else "", "page": live.page_seen is not None,
                                                   "page_age_s": None if live.page_seen is None else round(time.time() - live.page_seen, 1),
                                                   "bye_age_s": None if live.page_bye is None else round(time.time() - live.page_bye, 1),

@@ -3787,6 +3787,35 @@ records 200 lines from each of two threads and, beside its verdict on the locked
 unlocked appends do (MEASURED there, not judged; atomic here). MEASURED in the container: STUDIO SELFTEST 61/61,
 LIVE SELFTEST 18/18, STUDIO APP SELFTEST 7/7.
 
+**0215 on his machine, and fixes 6, 7 and 2 (2026-10-13).** 0215 applied as tree 0bf50422, as predicted; STUDIO
+SELFTEST 61/61 on Windows, the supersede row passing with its record "after 0.0 s more"; the gate 251 rows / 0 fail;
+pushed 02aedc4..3b7d0a9 (0213, 0214, 0215). The new row's measurement on his machine: two threads appending to one
+file without a lock kept **399 lines of 400, 396 of them whole** (MEASURED; on Linux 400 whole) — the C runtime's
+append on Windows loses and tears lines written at once, so every log written by more than one thread holds a lock
+(the ledger the content lock; the gateway's record its own; the queue's, with STUDIO-2, its own). Asked where the
+studio's worlds should live — they are files of the checkout, so his edits show in `git status`, could collide with a
+patch and could reach the public repository — he chose *"Per-user folder (Recommended)"*:
+`%LOCALAPPDATA%\VerdandiStudio\worlds\<name>\`, his plaza moved there as the first world (copied, its ledger
+replayed before it is used, the checkout's files never deleted), the checkout's committed plaza the template a new world
+starts from; built with STUDIO-2. Then, in his order, fixes 6, 7 and 2, off the gate. Fix 6: `art/studio_app.py`
+reads JOBOBJECT_BASIC_PROCESS_ID_LIST as Windows lays it out — two DWORD counts, then pointer-sized ids (B1 read an
+array of pointer-sized words, took the first id for the count, and logged 256) — and grows its buffer until the list is
+whole (*"If this number is less than NumberOfAssignedProcesses, increase the size of the buffer"*); a list that cannot
+be read is said. Fix 7: play.py's `/healthz` says `busy` while a request runs, and the supervisor does not take
+silence for a closed window while it is: it waits for the request, says so once, then stops for the silence (Edge's
+sleeping tabs freeze a background page's timers; whether a minimized studio window sleeps is still not measured); a stop
+that leaves a request running says so. Fix 2: a layout admission is refused (SHARED-MAP) while another brief of the tree
+plays the same map, in `commit_admission` under the content lock, so every caller is held to it; the refusal says what
+to do; an art admission is not affected. The director's own tests now lay the round's base brief alone, not the
+checkout's other briefs. MEASURED in the container: DIRECTOR SELFTEST PASSED (with three new cases: a layout refused
+while a second world plays the map, both worlds' heads unchanged; an art change admitted, the other world's head
+unchanged; and the plant, no check, under which the other world's head moved though nothing was admitted there),
+STUDIO APP SELFTEST 10/10 (the process list read from planted bytes, 64- and 32-bit, a cut list known to be cut, B1's
+reading of the same bytes giving 256; a silent page while a request runs, the studio waiting for it; the plant, silence
+taken for a close, the studio stopping with the request running; on Windows an eleventh, a live job's list),
+DIRECTOR RACETEST PASSED (32 cases), DIRECTOR CRASHTEST PASSED (14 cases), STUDIO SELFTEST 61/61, LIVE SELFTEST
+18/18, VECTORS 62 / 62, ART CHECKS PASSED; in a browser (not committed) B1's flows 9/9.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

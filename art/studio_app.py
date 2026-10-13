@@ -158,13 +158,35 @@ class Job:
             raise OSError(ctypes.get_last_error(), "AssignProcessToJobObject")
 
     def pids(self):
-        """The processes in the job now (JobObjectBasicProcessIdList)."""
+        """The processes in the job now (JobObjectBasicProcessIdList), or None if the list could not be read. The buffer
+        grows until the list is whole: a list shorter than the job's count means it was cut (Microsoft: "If this number
+        is less than NumberOfAssignedProcesses, increase the size of the buffer")."""
         ctypes = self.ctypes
-        n = 256
-        buf = (ctypes.c_size_t * (2 + n))()
-        if not self.k32.QueryInformationJobObject(self.handle, 3, ctypes.byref(buf), ctypes.sizeof(buf), None):
-            return []
-        return [int(buf[2 + i]) for i in range(min(int(buf[1]), n))]
+        ptr = ctypes.sizeof(ctypes.c_void_p)
+        n = 64
+        while n <= 65536:
+            size = 8 + ptr * n
+            buf = ctypes.create_string_buffer(size)
+            ok = self.k32.QueryInformationJobObject(self.handle, 3, ctypes.byref(buf), size, None)
+            if not ok and ctypes.get_last_error() != 234:          # ERROR_MORE_DATA: cut, grown below
+                return None
+            assigned, ids = parse_pid_list(buf.raw, ptr)
+            if ok and len(ids) >= assigned:
+                return ids
+            n = max(n * 2, assigned + 8)
+        return None
+
+
+def parse_pid_list(raw, ptr):
+    """JOBOBJECT_BASIC_PROCESS_ID_LIST from its bytes: (NumberOfAssignedProcesses, the ids in the list). The structure
+    is two DWORDs — the job's count and the list's — then ULONG_PTR ids (8 bytes each in a 64-bit process, 4 in a
+    32-bit one). B1 read it as an array of pointer-sized words, so the two counts were one word and the first id was
+    taken for the list's count: his log's "processes left in the job at exit: 256"."""
+    import struct
+    assigned, listed = struct.unpack_from("<II", raw, 0)
+    listed = min(listed, max(0, (len(raw) - 8) // ptr))
+    ids = list(struct.unpack_from("<%d%s" % (listed, "Q" if ptr == 8 else "I"), raw, 8)) if listed else []
+    return assigned, ids
 
 
 # ------------------------------------------------------------------------------------------------ the browser
@@ -311,7 +333,7 @@ def run(opts, log, gui):
     win = subprocess.Popen(browser_argv(browser, url, state), cwd=REPO, stdin=subprocess.DEVNULL,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **({} if WINDOWS else {"start_new_session": True}))
     log("the window: %s (pid %d)" % (os.path.basename(browser), win.pid))
-    opened, spoke, why, code = time.time(), False, "", EXIT_OK
+    opened, spoke, why, code, waited = time.time(), False, "", EXIT_OK, False
     while True:
         time.sleep(opts["tick"])
         if play.poll() is not None:
@@ -324,11 +346,21 @@ def run(opts, log, gui):
             why = "the window was closed (the page said goodbye %.1f s ago and has not spoken since)" % bye
             break
         if spoke and page is not None and page > opts["page_timeout"]:
-            why = "the page has not spoken for %.0f s" % page
+            # fix 7 of the review of 2026-10-13: a silent page is not a closed window — Edge's sleeping tabs freeze a
+            # background page's timers, and a minimized window's slow to one a minute — so silence never stops the
+            # studio while a request runs (a provider asked, paid for); it stops when the request has ended
+            if h.get("busy") and os.environ.get("VERDANDI_PLANT") != "ignore-busy":
+                if not waited:
+                    log("the page has not spoken for %.0f s, but a request is running: the studio waits for it" % page)
+                    waited = True
+                continue
+            why = "the page has not spoken for %.0f s%s" % (page, " (after the running request ended)" if waited else "")
             break
         if not spoke and time.time() - opened > opts["page_wait"]:
             why, code = "the window did not open: the page never spoke in %d s" % opts["page_wait"], EXIT_NO_WINDOW
             break
+    if h and h.get("busy"):
+        why += "; a request was still running"
     log("stopping: " + why)
     token = None
     try:
@@ -350,8 +382,12 @@ def run(opts, log, gui):
         end(play)
         log("play.py did not stop when asked: ended")
     if job is not None:
-        left = [p for p in job.pids() if p != os.getpid()]
-        log("processes left in the job at exit: %d (the browser's among them if it outlived its window); they end with this process" % len(left))
+        ids = job.pids()
+        if ids is None:
+            log("the job's process list could not be read; everything in it ends with this process")
+        else:
+            left = [p for p in ids if p != os.getpid()]
+            log("processes left in the job at exit: %d (the browser's among them if it outlived its window); they end with this process" % len(left))
     else:
         end(win)
         log("the window's process group ended")
@@ -405,6 +441,10 @@ def alive():
 if mode == "mute":
     time.sleep(600)
 alive()
+if mode == "busy":                                   # asks the studio, then is silent while the provider works
+    urllib.request.urlopen(urllib.request.Request(url + "studio/ask", data=json.dumps({"prompt": "make it heavier", "piece": "canopy:19,10-28,11"}).encode(),
+                           method="POST", headers={"Content-Type": "application/json", "X-Studio-Token": tok})).read()
+    time.sleep(600)
 if mode == "silent":
     time.sleep(600)                                  # spoke once, then nothing, and lingers
 if mode == "reload":
@@ -438,11 +478,13 @@ def selftest():
         except (OSError, IndexError):
             return False
 
-    def supervisor(name, mode, extra=(), wait=True):
+    def supervisor(name, mode, extra=(), wait=True, env_extra=None):
         state = os.path.join(tmp, name)
         fake = os.path.join(tmp, "fake_browser.py")
         open(fake, "w").write(FAKE)
-        env = dict(os.environ, FAKE_MODE=mode, FAKE_RECORD=os.path.join(tmp, name + ".record"), PYTHONHASHSEED="0")
+        env = dict(os.environ, FAKE_MODE=mode, FAKE_RECORD=os.path.join(tmp, name + ".record"), PYTHONHASHSEED="0", **(env_extra or {}))
+        if not (env_extra or {}).get("VERDANDI_PLANT"):
+            env.pop("VERDANDI_PLANT", None)
         argv = [sys.executable, "-B", os.path.abspath(__file__), "--state", state, "--browser", fake, "--console",
                 "--bye-grace", "1", "--page-timeout", "4", "--page-wait", "25", "--tick", "0.25", "--root", root] + list(extra)
         p = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
@@ -505,6 +547,47 @@ def selftest():
         rc, out = supervisor("nobrief", "record", ["--brief", "no-such-brief"])
         row("play.py cannot start: said (exit 2), no window opened", rc == EXIT_NO_PLAY and "did not start" in out and not os.path.exists(os.path.join(tmp, "nobrief.record")),
             "exit %s" % rc)
+
+        # fix 6: the job's process list read as Windows lays it out (two DWORD counts, then pointer-sized ids)
+        import struct
+        x64 = struct.pack("<II", 3, 3) + struct.pack("<3Q", 9876, 1234, 4321)
+        x86 = struct.pack("<II", 2, 2) + struct.pack("<2I", 9876, 1234)
+        cut = struct.pack("<II", 5, 2) + struct.pack("<2Q", 9876, 1234)
+
+        def b1_reading(raw):                 # B1's: an array of pointer-sized words, the second taken for the count
+            words = list(struct.unpack("<%dQ" % (len(raw) // 8), raw)) + [0] * 258
+            return words[2:2 + min(words[1], 256)]
+        row("the job's process list read as Windows lays it out (64- and 32-bit), a cut list known to be cut; B1's reading of the same bytes wrong",
+            parse_pid_list(x64, 8) == (3, [9876, 1234, 4321]) and parse_pid_list(x86, 4) == (2, [9876, 1234])
+            and parse_pid_list(cut, 8) == (5, [9876, 1234]) and len(b1_reading(x64)) == 256,
+            "3 ids from 3; 2 from 2; 2 listed of 5 (the buffer grows); B1's reading: %d ids" % len(b1_reading(x64)))
+        if WINDOWS:
+            probe = ("import os, subprocess, sys, json\nsys.path.insert(0, %r)\nimport studio_app as A\nj = A.Job()\n"
+                     "c = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'])\n"
+                     "ids = j.pids()\nprint(json.dumps({'me': os.getpid(), 'child': c.pid, 'ids': ids}))\nc.kill()\n") % HERE
+            r = subprocess.run([sys.executable, "-B", "-c", probe], capture_output=True, text=True, timeout=120)
+            try:
+                got = json.loads(r.stdout.strip().splitlines()[-1])
+                ok = sorted(got["ids"]) == sorted([got["me"], got["child"]])
+                detail = "a job of a process and its child: %s, the pids %s and %s" % (got["ids"], got["me"], got["child"])
+            except (ValueError, IndexError, KeyError, TypeError):
+                ok, detail = False, (r.stderr.strip() or r.stdout.strip())[-160:]
+            row("a live job's process list: exactly the process and its child", ok, detail)
+
+        # fix 7: a silent page does not stop the studio while a request runs; it stops when the request has ended
+        slow = os.path.join(tmp, "slow_provider.py")
+        open(slow, "w").write("import os, sys, time\nsys.stdin.read()\ntime.sleep(float(os.environ.get('SLOW_S', '8')))\n")
+        slow_cfg = os.path.join(tmp, "slow.json")
+        json.dump({"provider": "cli", "argv": ["{python}", slow], "model": "slow", "timeout_s": 60, "max_output_bytes": 65536}, open(slow_cfg, "w"))
+        rc, out = supervisor("busy", "busy", ["--director", slow_cfg], env_extra={"SLOW_S": "8"})
+        stop = ([ln for ln in out.splitlines() if "stopping" in ln] or [""])[-1]
+        row("a silent page while a request runs: the studio waits for the request, then stops for the silence",
+            rc == EXIT_OK and "a request is running: the studio waits for it" in out and "after the running request ended" in stop and "still running" not in stop,
+            stop.split("stopping: ")[-1][:120])
+        rc, out = supervisor("busyplant", "busy", ["--director", slow_cfg], env_extra={"SLOW_S": "8", "VERDANDI_PLANT": "ignore-busy"})
+        stop = ([ln for ln in out.splitlines() if "stopping" in ln] or [""])[-1]
+        row("plant: silence taken as a close while a request runs — the studio stops with the request still running",
+            "a request was still running" in stop, stop.split("stopping: ")[-1][:120])
     except (RuntimeError, OSError, ValueError, subprocess.TimeoutExpired) as e:
         row("the self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:120]))
     finally:

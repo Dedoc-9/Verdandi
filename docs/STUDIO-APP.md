@@ -545,6 +545,12 @@ case's plant caught. Next, in the order he approved: the queue's torn tail cut (
 job's process list read right (6), silence never stopping a busy studio (7), and the shared map refused (2). On his
 machine the race court passed 32 of 32 (the lock measured on Windows); his own admissions in the working brief then
 showed that the studio's self-tests played in it, so they now play in `art/fixtures/selftest/` (`selftest_tree`).
+On his machine two threads appending to one file without a lock kept 399 lines of 400, 396 of them whole (MEASURED,
+2026-10-13; on Linux 400 whole): the gateway's record is written one line at a time. Fixes 6, 7 and 2 followed
+(2026-10-13): the job's process list read as Windows lays it out, its buffer grown until the list is whole; a silent
+page never stopping the studio while a request runs; a layout change refused while another brief plays its map. The
+worlds' place, his choice the same day: *"Per-user folder (Recommended)"* — `%LOCALAPPDATA%\VerdandiStudio\worlds\`,
+his plaza moved there as the first world, the checkout's plaza the template; built with STUDIO-2.
 
 **Components.** New: `shell/studio_stub.rs` (the stub; std-only, raw FFI, built by hand like `win32.rs`, never by the
 gate), `art/studio_app.py` (the supervisor), `art/studio_launch.md` (the contract); changed: `art/play.py`

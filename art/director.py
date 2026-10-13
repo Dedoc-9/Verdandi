@@ -42,6 +42,7 @@ import datetime
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -300,6 +301,30 @@ def _finish(ws):
     durable.remove_tree(ws.pending)
 
 
+MAP_LINE = re.compile(r"\s*map\s+(\S+)")
+
+
+def briefs_on_map(ws, name):
+    """The other briefs of this tree that play the map `name` (each brief's first `map` line, comments aside). A brief
+    that cannot be read is counted among them: what it plays is not known, so nothing is assumed."""
+    d, out = os.path.dirname(ws.art), []
+    for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        if not f.endswith(".art") or f == ws.brief + ".art":
+            continue
+        try:
+            text = open(os.path.join(d, f), "rb").read().decode("utf-8")
+        except (OSError, UnicodeDecodeError):
+            out.append(f[:-4] + " (unreadable)")
+            continue
+        for ln in text.splitlines():
+            m = MAP_LINE.match(ln.split("#", 1)[0])
+            if m:
+                if m.group(1) == name:
+                    out.append(f[:-4])
+                break
+    return out
+
+
 def commit_admission(ws, evaluation, intent_sha256, files, fields):
     """Admit with crash safety: files is [(absolute path, new bytes)], fields the admit event's (with head_before, the
     head the caller checked). See recover().
@@ -321,11 +346,20 @@ def _commit_locked(ws, evaluation, intent_sha256, files, fields):
     if os.path.exists(ws.pending):               # this process holds the lock: the folder's writer is dead
         for ln in _recover(ws):
             print(ln)
-    if durable.PLANT != "no-fence":
-        _o, cur, _c = ws.export()
-        if canon.head(cur) != fields["head_before"]:
-            raise SystemExit("REFUSED (HEAD-MOVED): the head moved to %s while this admission waited for the lock (it was checked "
-                             "against %s); nothing was changed. Re-evaluate it first" % (canon.head(cur)[:12], fields["head_before"][:12]))
+    out_now, cur, _c = ws.export()
+    if durable.PLANT != "no-fence" and canon.head(cur) != fields["head_before"]:
+        raise SystemExit("REFUSED (HEAD-MOVED): the head moved to %s while this admission waited for the lock (it was checked "
+                         "against %s); nothing was changed. Re-evaluate it first" % (canon.head(cur)[:12], fields["head_before"][:12]))
+    # fix 2 of the review of 2026-10-13: briefs share the graybox's maps, so a layout admitted in one world would change
+    # every world that plays its map (write skew between worlds). Until each world has a map of its own (pinned
+    # revisions, later), a layout change is refused while another brief plays the map; art changes are not affected
+    if durable.PLANT != "no-shared-map" and any(os.path.dirname(os.path.abspath(f)) == os.path.abspath(ws.maps) for f, _b in files):
+        others = briefs_on_map(ws, out_now["scene"]["map"])
+        if others:
+            raise SystemExit("REFUSED (SHARED-MAP): %s also play%s the map %s, so this layout change would change %s too; nothing was "
+                             "changed. A layout is changed only in a world whose map no other world plays, until each world keeps a "
+                             "map of its own (pinned revisions, to come); changes to the art are admitted as before" % (
+                                 ", ".join(others), "s" if len(others) == 1 else "", out_now["scene"]["map"], "that world" if len(others) == 1 else "those worlds"))
     events, _l, _h = led.read(ws.ledger)
     os.makedirs(ws.pending)
     prepared = False
@@ -825,8 +859,9 @@ def cmd_selftest():
     results = [("the conformance vectors, reproduced by the reference (%d)" % n, not bad, ", ".join(bad[:3]))]
     tmp = tempfile.mkdtemp(prefix="director-selftest-")
     try:
-        for sub in ("art/briefs", "art/rounds", "graybox/maps"):
+        for sub in ("art/rounds", "graybox/maps"):         # the checkout's briefs are not the test's: the round's base alone
             shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        os.makedirs(os.path.join(tmp, "art", "briefs"))
         ws = Workspace("plaza-night", tmp)
         rnd = os.path.join(tmp, "art", "rounds", "plaza-imposing")
         # The fixture is the head the round was written against, kept in the round's base/, never the live brief:
@@ -901,6 +936,44 @@ def cmd_selftest():
             results.append(("a hand edit recorded with rebase verifies", True, ""))
         except led.LedgerError as e:
             results.append(("a hand edit recorded with rebase verifies", False, str(e)))
+
+        # fix 2 of the review of 2026-10-13: a second world on the same map. Its head must not move when the first world
+        # admits: a layout change is refused (SHARED-MAP), an art change admitted; the plant shows what the refusal prevents
+        root2 = os.path.join(tmp, "shared")
+        for sub in ("art/rounds", "graybox/maps"):
+            shutil.copytree(os.path.join(REPO, sub), os.path.join(root2, sub))
+        os.makedirs(os.path.join(root2, "art", "briefs"))
+        rnd2 = os.path.join(root2, "art", "rounds", "plaza-imposing")
+        for f, to in (("plaza-night.art", "art/briefs"), ("tactical.design", "graybox/maps"), ("tactical.layout", "graybox/maps")):
+            shutil.copy(os.path.join(rnd2, "base", f), os.path.join(root2, to, f))
+        shutil.copy(os.path.join(rnd2, "base", "plaza-night.art"), os.path.join(root2, "art", "briefs", "plaza-twin.art"))
+        ws2, twin = Workspace("plaza-night", root2), Workspace("plaza-twin", root2)
+        cmd_genesis_quiet(ws2)
+        rows2 = cmd_evaluate(ws2, [os.path.join(rnd2, "A.intent"), os.path.join(rnd2, "B.intent")], quiet=True)
+        s_a, s_b = rows2[0][4], rows2[1][4]
+        twin0, mine0 = canon.head(current_parts(twin)), canon.head(current_parts(ws2))
+        try:
+            cmd_admit_quiet(ws2, s_b, chooser="selftest")
+            results.append(("a layout admission refused while another world plays its map (SHARED-MAP)", False, "it was admitted"))
+        except SystemExit as e:
+            results.append(("a layout admission refused while another world plays its map (SHARED-MAP); nothing changed in either world",
+                            "SHARED-MAP" in str(e) and "plaza-twin" in str(e) and canon.head(current_parts(twin)) == twin0
+                            and canon.head(current_parts(ws2)) == mine0, " ".join(str(e).split())[:110]))
+        cmd_admit_quiet(ws2, s_a, chooser="selftest")
+        mine1 = canon.head(current_parts(ws2))
+        results.append(("an art admission in the same world: admitted, the other world's head as it was", mine1 != mine0
+                        and canon.head(current_parts(twin)) == twin0, "this world %s -> %s; the other %s" % (mine0[:12], mine1[:12], twin0[:12])))
+        durable.PLANT = "no-shared-map"
+        try:
+            rb2 = cmd_reevaluate_quiet(ws2, s_b)
+            cmd_admit_quiet(ws2, rb2["seq"], chooser="selftest")
+            twin1 = canon.head(current_parts(twin))
+            results.append(("plant: no shared-map check — the layout admitted, and the other world's head moved with it", twin1 != twin0,
+                            "the other world %s -> %s, though nothing was admitted there" % (twin0[:12], twin1[:12])))
+        except SystemExit as e:
+            results.append(("plant: no shared-map check — the layout admitted", False, str(e)[:110]))
+        finally:
+            durable.PLANT = os.environ.get("VERDANDI_PLANT", "")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     failed = 0
@@ -926,8 +999,9 @@ def cmd_crashtest():
         r = subprocess.run([sys.executable, me] + args + ["--root", tmp], capture_output=True, text=True, env=env, timeout=600)
         return r.returncode, r.stdout + r.stderr
     try:
-        for sub in ("art/briefs", "art/rounds", "graybox/maps"):
+        for sub in ("art/rounds", "graybox/maps"):         # the checkout's briefs are not the test's: the round's base alone
             shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        os.makedirs(os.path.join(tmp, "art", "briefs"))
         ws = Workspace("plaza-night", tmp)
         rnd = os.path.join(tmp, "art", "rounds", "plaza-imposing")
         for f, to in (("plaza-night.art", "art/briefs"), ("tactical.design", "graybox/maps"), ("tactical.layout", "graybox/maps")):
@@ -1038,8 +1112,9 @@ def cmd_racetest():
                            env=dict(env0, **env), timeout=600)
         return r.returncode, r.stdout + r.stderr
     try:
-        for sub in ("art/briefs", "art/rounds", "graybox/maps"):
+        for sub in ("art/rounds", "graybox/maps"):         # the checkout's briefs are not the test's: the round's base alone
             shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        os.makedirs(os.path.join(tmp, "art", "briefs"))
         lock = led.lock_path(os.path.join(tmp, "art", "ledger", "plaza-night.ledger"))
 
         # 1. two writers of one ledger, as threads and as processes
