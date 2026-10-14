@@ -136,6 +136,14 @@ FNV-1a. The identity's own FNV-1a 64 is reported beside a run (`identity`), so a
 apart as a difference of world or rules before any tick is compared. The snapshot, not the hash, is the state's
 identity for the checks; the hash is the cheap comparison a replay makes.
 
+## The origin (ORT-1, 0227)
+
+A rules-2 world may have an origin, whole cells, and [`ORT-1.md`](ORT-1.md) moves it between two ticks. With it,
+`top(i, j)` reads the map's cell `(i + oi, j + oj)`, spawns, targets and the objective are read through it, and the
+identity gains `"origin": [oi, oj]` when it is not `(0, 0)`. At `(0, 0)`, every world before ORT-1, every number and byte
+of this document is unchanged: the table's values, its identities and its hashes stand (held again in node and
+Chromium after the change).
+
 ## The independent answers
 
 `web/rules2_cases.json` holds scenarios (a map, its movers, a start and inputs) and, for chosen ticks, the values

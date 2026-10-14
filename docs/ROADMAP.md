@@ -4202,6 +4202,55 @@ rules 1, and put back; a change of their material alone leaving the game untouch
 (SwiftShader): the lift a dark steel slab beside the block, at its top level with it; the detectors flag neither still.
 Not measured: his machine; a real GPU; a person riding it.
 
+**His documents on the origin, and 0227: ORT-1, the origin moved between ticks (2026-10-14).** While 0226 was being
+built he sent the *Origin Rebase Diamond Protocol* (a rebase as a state transformation at a tick boundary, Python and
+JavaScript bit-identical, conservation, overflow detection, evidence, a rung-D human admission) with *"you should be
+able to include the current rung you are building with this"*; a review of it (a sound core, a rebase is a state
+transition and not a camera move, but an implementation that establishes none of its guarantees, with its defects
+listed; *"do not integrate this version"*); a corrected draft, ORT-0 (int32 region and local coordinates, the region
+size a protocol constant), and a review of that (still blocked: a floating-point margin, duplicate ids accepted,
+region coordinates unchecked, a 30-byte buffer for variable ids, a harness that could not run, no byte comparison, a
+tick controller with no lifecycle; *"ACCEPT the protocol-constant decision and the corrected algebra. DEFER
+implementation readiness"*); and *ORT-0 → ORT-1* (a rebase as a proof-carrying transition: freeze the basis, build a
+candidate, challenge it, commit by compare-and-swap against the basis, record a receipt; framed canonical bytes;
+dependency closure; three answers; attack the contract), with *"batch/scrap and proceed"*, and then *"do an
+adversarial review for hardening and implement; websearch if needed"*. **0227, built, off the gate.**
+[`graybox/ORT-1.md`](../graybox/ORT-1.md) says what was kept of them and what was scrapped and why: kept, the transition
+and its conservation proved exactly, the closed event, the framed bytes, the candidate built without writing, every
+check before anything changes, the commit bound to its basis, the receipt, the declared dependencies, the three
+answers, the plants; scrapped, the int32 region model (a second state model would be a second simulation: here the
+state stays binary64 metres and the origin is whole cells, the shift the map's own cell), the 90% trigger (when to
+rebase is the caller's), partial rebases, a phase variable standing for atomicity, the rung-D admission (a rebase at run
+time is a step of the run; introducing ORT-1 is a change to the program, which RUNG-0 classifies) and every claim of
+being unbreakable. `sim.js` and `tick_ref.py`: a rules-2 world has an origin, read by `top`, the spawns, the targets and
+the objective, and named in the identity when it is not (0, 0); at (0, 0) rules 2 are byte for byte what they were
+(rules 2's table held again in node, in Chromium against its old results and in a new run; rules 1's trace, the input
+contract, the reference arithmetic, the bot and the page's self-tests, 30/30 and 27/27, unchanged). `web/ort.js` and
+`ort_ref.py`, written apart: `prepare` reads and writes nothing (the world rules 2, its cell whole metres, the event's
+form, its tick, the origin's bound, every leaf of the state and field of the world declared, every moved number moved
+exactly — TwoSum's error 0 — a mover still in rules 2's table, the candidate held leaf by leaf to what it should be);
+`commit` refuses a replay, a stale tick, a basis whose bytes or whose history moved, a candidate changed since it was
+prepared, and otherwise replaces the owner's one published record of world and state; receipts chained by `prev`.
+Fourteen cases worked by hand (`web/ort_cases.json`), the state after each rebase built by the checker from the state
+before and the worked numbers alone; every committed rebase held to conservation again without floating point
+(`Fraction`; BigInt counting 2^-1074). **The adversarial review**, of the build itself: a transition prepared, the world
+moved there and back, then committed — the same bytes, a longer history, the ABA problem of compare-and-swap, which a
+basis of bytes alone admitted (O11; answered by `prev`); the live state written outside a tick (O13; the bytes' check,
+which the history alone would miss); a candidate changed after it was prepared (O12; `ORT-TAMPERED`); a transform
+touching a leaf it should not (`ORT-SELF`); a world field the rebase would leave behind (O14; `ORT-UNDECLARED`); a
+refusal that writes first (every refusal held to the owner's bytes, objects, receipts, count and last id); TwoSum and
+overflow, read in the 2Sum literature (an intermediate overflow can make the error NaN, which the guard refuses: a
+false refusal at worst, never a false admission). In 0226 the same review added the targets' columns to a mover's
+travel and the twins' body to the handshake. MEASURED in the container: ORT-1 HELD BY PYTHON (14 cases; twelve plants,
+each refused by the case written for it); node v22 and headless Chromium 141 ORT-1 HELD BY PYTHON AND THE ENGINE, every
+snapshot, hash, rebase's bytes and receipt the same (4,545 ticks, 38 rebase attempts and preparations), five changes
+planted in an engine's results each found; 14 mutants of `ort.js` caught by the table, one found equivalent (a type test
+whose removal changes nothing); SHA-256 in `ort.js` against FIPS 180-2's two answers. In O10, 4,500 ticks among three
+movers with the origin moved by 1 and 4 cells and back, the global positions equal the unmoved run's exactly until tick
+2,253 and then differ by at most 4.26e-14 m, with no cell, footing, score or mover phase different (MEASURED, one run).
+Not built: a tick owner with threads, durability (no run is persisted), and the plaza calling ORT-1 (its worlds are
+96 m across; no need yet). NOT_MEASURED: Firefox, his machine.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

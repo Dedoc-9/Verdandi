@@ -1,0 +1,1106 @@
+{
+ "format": "VERDANDI-ORT-CASES",
+ "version": "1",
+ "rules": "2",
+ "map": "tactical",
+ "about": "ORT-1's cases (graybox/ORT-1.md): each a map's movers, a start, and a sequence of ticks and rebases between them, with values worked by hand from ORT-1.md ('expect' at chosen ticks, 'expect_rebase' for each rebase tried, in order) and the working ('why'). 'set' gives the moved numbers after a rebase; 'moved' the shift every moved number must show, held exactly; 'movers' each mover's box x0, z0, x1, z1 after it. Both implementations are held to these values, not to each other's output; then to each other, every tick's snapshot and hash and every rebase's bytes and receipt. The tactical map's six targets stand at the middles of cells 10,16, 37,15, 24,11, 23,20, 26,4 and 21,27: x and z (21, 33), (75, 31), (49, 23), (47, 41), (53, 9), (43, 55); a rebase by di and dj cells takes 2 di from each x and 2 dj from each z.",
+ "cases": [
+  {
+   "name": "O1 the origin moved 16 and 8 cells, then a reset",
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "rebase": [
+      16,
+      8
+     ]
+    },
+    {
+     "n": 1,
+     "in": {
+      "reset": true
+     }
+    },
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "why": "The cell is 2 m: the rebase moves every local x by -32 m and every z by -16 m. Spawn A, cell 3,15: x = 3.5 * 2 = 7 -> -25; z = 15.5 * 2 = 31 -> 15. The six targets, at the middles of cells 10,16, 37,15, 24,11, 23,20, 26,4 and 21,27: (21, 33), (75, 31), (49, 23), (47, 41), (53, 9), (43, 55) -> (-11, 17), (43, 15), (17, 7), (15, 25), (21, -7), (11, 39). Each a whole number: exact. The reset then stands the player at spawn A read through the origin: ((3 - 16) + 0.5) * 2 = -25, ((15 - 8) + 0.5) * 2 = 15, the same place; the floor there is the map's cell 3,15, top 0.",
+   "expect_rebase": [
+    {
+     "at": 0,
+     "ok": true,
+     "origin": [
+      16,
+      8
+     ],
+     "set": {
+      "x": -25,
+      "z": 15,
+      "targets": [
+       [
+        -11,
+        17
+       ],
+       [
+        43,
+        15
+       ],
+       [
+        17,
+        7
+       ],
+       [
+        15,
+        25
+       ],
+       [
+        21,
+        -7
+       ],
+       [
+        11,
+        39
+       ]
+      ]
+     }
+    }
+   ],
+   "expect": [
+    {
+     "tick": 1,
+     "x": -25,
+     "z": 15,
+     "feet": 0,
+     "onGround": true
+    },
+    {
+     "tick": 2,
+     "x": -25,
+     "z": 15,
+     "feet": 0
+    }
+   ]
+  },
+  {
+   "name": "O2 there and back: the bytes as they were",
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "n": 10,
+     "in": {
+      "f": true
+     }
+    },
+    {
+     "rebase": [
+      2,
+      8
+     ]
+    },
+    {
+     "rebase": [
+      -2,
+      -8
+     ]
+    }
+   ],
+   "why": "Ten ticks east from spawn A: x near 7.5, not a decimal a double holds, z 31. Moving the origin 2 and 8 cells takes 4 m from x and 16 m from z, toward 0: x - 4 is exact (both are whole numbers of x's own last place, and the result is smaller), z 31 - 16 = 15. Back by -2 and -8 adds them again, exactly. So the world's identity and the state's snapshot after both are byte for byte the ones before the first, and every moved number is the old one less the shift: 'moved' gives the shift, held exactly.",
+   "expect_rebase": [
+    {
+     "at": 10,
+     "ok": true,
+     "origin": [
+      2,
+      8
+     ],
+     "moved": [
+      -4,
+      -16
+     ]
+    },
+    {
+     "at": 10,
+     "ok": true,
+     "origin": [
+      0,
+      0
+     ],
+     "moved": [
+      4,
+      16
+     ]
+    }
+   ],
+   "expect_round_trip": true
+  },
+  {
+   "name": "O3 a rider carried across a rebase",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      44,
+      0,
+      6,
+      48,
+      0.5,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 8,
+     "in": {}
+    },
+    {
+     "rebase": [
+      20,
+      0
+     ]
+    },
+    {
+     "n": 9,
+     "in": {}
+    }
+   ],
+   "why": "Rules 2's K2: the deck carries its rider 0.25 m a tick. Tick 8: x = 46 + 8 * 0.25 = 48, phase 512. The rebase by 20 cells takes 40 m from every x: the rider 48 -> 8, the deck's box x 44..48 -> 4..8, T1 21 -> -19, T2 75 -> 35; z unchanged. The phase is a place along the deck's own path, which moved with it: 512. Then K2 goes on in the new frame: tick 16, x = 50 - 40 = 10, phase 1024; tick 17, x = 9.75, phase 1088.",
+   "expect_rebase": [
+    {
+     "at": 8,
+     "ok": true,
+     "origin": [
+      20,
+      0
+     ],
+     "set": {
+      "x": 8,
+      "z": 8,
+      "targets": [
+       [
+        -19,
+        33
+       ],
+       [
+        35,
+        31
+       ],
+       [
+        9,
+        23
+       ],
+       [
+        7,
+        41
+       ],
+       [
+        13,
+        9
+       ],
+       [
+        3,
+        55
+       ]
+      ]
+     },
+     "movers": [
+      [
+       4,
+       6,
+       8,
+       10
+      ]
+     ]
+    }
+   ],
+   "expect": [
+    {
+     "tick": 8,
+     "x": 48,
+     "feet": 0.5,
+     "movers": [
+      {
+       "phase": 512,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 16,
+     "x": 10,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 1024,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 17,
+     "x": 9.75,
+     "feet": 0.5,
+     "movers": [
+      {
+       "phase": 1088,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "O4 a number the rebase cannot move exactly: refused, nothing written",
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 6.1
+    }
+   },
+   "inputs": [
+    {
+     "rebase": [
+      -1048576,
+      0
+     ]
+    },
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "why": "A rebase of -2^20 cells adds 2^21 m to every x. 6.1 is a double with bits down to 2^-50; 6.1 + 2^21 needs bits down to 2^-50 and has room for 2^-31 at that size: the sum rounds, so the rebase is refused (ORT-INEXACT) and the owner's world and state are the ones it had, byte for byte. The targets' x (21, 75) would have moved exactly; it is the player's x that cannot. The tick after plays from x 6.1.",
+   "expect_rebase": [
+    {
+     "at": 0,
+     "refused": "ORT-INEXACT"
+    }
+   ],
+   "expect": [
+    {
+     "tick": 1,
+     "x": 6.1,
+     "z": 31
+    }
+   ]
+  },
+  {
+   "name": "O5 the origin's bound",
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "rebase": [
+      1048577,
+      0
+     ]
+    },
+    {
+     "rebase": [
+      1048576,
+      0
+     ]
+    },
+    {
+     "rebase": [
+      1,
+      0
+     ]
+    },
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "why": "An event moves at most 2^20 cells either way: 1048577 is refused as an event (ORT-EVENT). 2^20 cells takes 2^21 m from every x: 7 -> -2097145, 21 -> -2097131, 75 -> -2097077, each exact; the origin is 2^20. One more cell would take it past 2^20: refused (ORT-ORIGIN), nothing written. The tick after reads the floor through the origin: floor(-2097145 / 2) + 1048576 = 3, the map's cell 3.",
+   "expect_rebase": [
+    {
+     "at": 0,
+     "refused": "ORT-EVENT"
+    },
+    {
+     "at": 0,
+     "ok": true,
+     "origin": [
+      1048576,
+      0
+     ],
+     "set": {
+      "x": -2097145,
+      "z": 31,
+      "targets": [
+       [
+        -2097131,
+        33
+       ],
+       [
+        -2097077,
+        31
+       ],
+       [
+        -2097103,
+        23
+       ],
+       [
+        -2097105,
+        41
+       ],
+       [
+        -2097099,
+        9
+       ],
+       [
+        -2097109,
+        55
+       ]
+      ]
+     }
+    },
+    {
+     "at": 0,
+     "refused": "ORT-ORIGIN"
+    }
+   ],
+   "expect": [
+    {
+     "tick": 1,
+     "x": -2097145,
+     "z": 31,
+     "feet": 0,
+     "onGround": true
+    }
+   ]
+  },
+  {
+   "name": "O6 a mover outside rules 2's table after the shift: refused",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      44,
+      0,
+      6,
+      48,
+      0.5,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "rebase": [
+      -500,
+      0
+     ]
+    },
+    {
+     "rebase": [
+      22,
+      0
+     ]
+    },
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "why": "-500 cells adds 1000 m to every x: the deck's box 44..48 -> 1044..1048, beyond rules 2's 1,024 m: the world rules 2 would build is refused (ORT-MOVER), nothing written. 22 cells takes 44 m: the deck 44..48 -> 0..4, the rider 46 -> 2, T1 21 -> -23, T2 75 -> 31. The tick after: the deck carries its rider 0.25 m, x 2.25, phase 64.",
+   "expect_rebase": [
+    {
+     "at": 0,
+     "refused": "ORT-MOVER"
+    },
+    {
+     "at": 0,
+     "ok": true,
+     "origin": [
+      22,
+      0
+     ],
+     "set": {
+      "x": 2,
+      "z": 8,
+      "targets": [
+       [
+        -23,
+        33
+       ],
+       [
+        31,
+        31
+       ],
+       [
+        5,
+        23
+       ],
+       [
+        3,
+        41
+       ],
+       [
+        9,
+        9
+       ],
+       [
+        -1,
+        55
+       ]
+      ]
+     },
+     "movers": [
+      [
+       0,
+       6,
+       4,
+       10
+      ]
+     ]
+    }
+   ],
+   "expect": [
+    {
+     "tick": 1,
+     "x": 2.25,
+     "feet": 0.5,
+     "movers": [
+      {
+       "phase": 64,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "O7 events refused for their form, and for their tick",
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "event": {
+      "tick": 0,
+      "di": 1.5,
+      "dj": 0
+     }
+    },
+    {
+     "event": {
+      "tick": 0,
+      "di": true,
+      "dj": 0
+     }
+    },
+    {
+     "event": {
+      "tick": 0,
+      "di": 1
+     }
+    },
+    {
+     "event": {
+      "tick": 0,
+      "di": 1,
+      "dj": 0,
+      "seq": 1
+     }
+    },
+    {
+     "event": {
+      "tick": -1,
+      "di": 1,
+      "dj": 0
+     }
+    },
+    {
+     "event": {
+      "tick": 3,
+      "di": 1,
+      "dj": 0
+     }
+    },
+    {
+     "event": {
+      "tick": 0,
+      "di": 1,
+      "dj": 0
+     }
+    }
+   ],
+   "why": "An event is exactly tick, di and dj, each a whole number (a boolean is not one), the tick from 0: a half cell, true, a missing dj, a field more and a negative tick are each refused (ORT-EVENT). An event for tick 3 when the state is at tick 0 is refused (ORT-STALE-TICK). The last is admitted: x 7 - 2 = 5.",
+   "expect_rebase": [
+    {
+     "at": 0,
+     "refused": "ORT-EVENT"
+    },
+    {
+     "at": 0,
+     "refused": "ORT-EVENT"
+    },
+    {
+     "at": 0,
+     "refused": "ORT-EVENT"
+    },
+    {
+     "at": 0,
+     "refused": "ORT-EVENT"
+    },
+    {
+     "at": 0,
+     "refused": "ORT-EVENT"
+    },
+    {
+     "at": 0,
+     "refused": "ORT-STALE-TICK"
+    },
+    {
+     "at": 0,
+     "ok": true,
+     "origin": [
+      1,
+      0
+     ],
+     "set": {
+      "x": 5,
+      "z": 31,
+      "targets": [
+       [
+        19,
+        33
+       ],
+       [
+        73,
+        31
+       ],
+       [
+        47,
+        23
+       ],
+       [
+        45,
+        41
+       ],
+       [
+        51,
+        9
+       ],
+       [
+        41,
+        55
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "O8 the objective read through the origin",
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 47,
+     "z": 31,
+     "feet": 1,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 1,
+     "in": {}
+    },
+    {
+     "rebase": [
+      10,
+      5
+     ]
+    },
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "why": "x 47, z 31 is the map's cell 23,15, on the objective (cells 22..25 by 14..17), its top 1 m. After a rebase by 10 and 5 cells the player is at local 27, 21: local cell 13,10, which through the origin is the map's 23,15 again: still on the objective.",
+   "expect_rebase": [
+    {
+     "at": 1,
+     "ok": true,
+     "origin": [
+      10,
+      5
+     ],
+     "set": {
+      "x": 27,
+      "z": 21,
+      "targets": [
+       [
+        1,
+        23
+       ],
+       [
+        55,
+        21
+       ],
+       [
+        29,
+        13
+       ],
+       [
+        27,
+        31
+       ],
+       [
+        33,
+        -1
+       ],
+       [
+        23,
+        45
+       ]
+      ]
+     }
+    }
+   ],
+   "expect": [
+    {
+     "tick": 1,
+     "onObjective": true,
+     "feet": 1
+    },
+    {
+     "tick": 2,
+     "x": 27,
+     "z": 21,
+     "onObjective": true,
+     "feet": 1
+    }
+   ]
+  },
+  {
+   "name": "O9 a transition bound to the basis it was prepared from",
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "prepare": [
+      2,
+      0
+     ],
+     "as": "P"
+    },
+    {
+     "prepare": [
+      3,
+      0
+     ],
+     "as": "Q"
+    },
+    {
+     "commit": "Q"
+    },
+    {
+     "commit": "P"
+    },
+    {
+     "commit": "Q"
+    },
+    {
+     "prepare": [
+      1,
+      0
+     ],
+     "as": "R"
+    },
+    {
+     "n": 1,
+     "in": {}
+    },
+    {
+     "commit": "R"
+    }
+   ],
+   "why": "P and Q are prepared from the same state. Q committed: x 7 - 6 = 1, the origin 3. P then is stale: the owner's basis is no longer the one P was prepared from (ORT-STALE-BASIS). Q again is a replay, recognised before anything else (ORT-REPLAY). R, prepared at tick 0, cannot commit after a tick has passed (ORT-STALE-TICK). Each refusal writes nothing.",
+   "expect_rebase": [
+    {
+     "at": 0,
+     "ok": true,
+     "origin": [
+      3,
+      0
+     ],
+     "set": {
+      "x": 1,
+      "z": 31,
+      "targets": [
+       [
+        15,
+        33
+       ],
+       [
+        69,
+        31
+       ],
+       [
+        43,
+        23
+       ],
+       [
+        41,
+        41
+       ],
+       [
+        47,
+        9
+       ],
+       [
+        37,
+        55
+       ]
+      ]
+     }
+    },
+    {
+     "at": 0,
+     "refused": "ORT-STALE-BASIS"
+    },
+    {
+     "at": 0,
+     "refused": "ORT-REPLAY"
+    },
+    {
+     "at": 1,
+     "refused": "ORT-STALE-TICK"
+    }
+   ]
+  },
+  {
+   "name": "O10 a long run among three movers, its origin moved twice",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      8,
+      0,
+      26,
+      12,
+      0.5,
+      30
+     ],
+     "axis": [
+      0,
+      0,
+      1
+     ],
+     "len": 1024,
+     "speed": 48,
+     "policy": "stop"
+    },
+    {
+     "id": "lift",
+     "box": [
+      4,
+      0,
+      34,
+      6,
+      0.25,
+      36
+     ],
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "len": 768,
+     "speed": 16,
+     "policy": "stop"
+    },
+    {
+     "id": "wall",
+     "box": [
+      14,
+      0,
+      20,
+      14.5,
+      2.5,
+      24
+     ],
+     "axis": [
+      -1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 96,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "stress": 1500
+    },
+    {
+     "rebase": [
+      1,
+      4
+     ]
+    },
+    {
+     "stress": 1500
+    },
+    {
+     "rebase": [
+      -1,
+      -4
+     ]
+    },
+    {
+     "stress": 1500
+    }
+   ],
+   "why": "No value is worked by hand here: rules 1's stress inputs among the platform, the lift and the wall of rules 2's W1, the origin moved by 1 and 4 cells and back between them, for the two implementations to be held to each other at every tick and every rebase, and to the invariant that no tick ends with the body inside a box.",
+   "invariant": "never inside"
+  },
+  {
+   "name": "O11 the same bytes after a longer history: not the basis a transition was prepared from",
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "n": 10,
+     "in": {
+      "f": true
+     }
+    },
+    {
+     "prepare": [
+      1,
+      0
+     ],
+     "as": "P"
+    },
+    {
+     "rebase": [
+      2,
+      8
+     ]
+    },
+    {
+     "rebase": [
+      -2,
+      -8
+     ]
+    },
+    {
+     "commit": "P"
+    }
+   ],
+   "why": "P, a rebase by one cell, is prepared at tick 10. The origin is then moved by 2 and 8 cells and back (as in O2): the world's and the state's bytes are again the ones P was prepared from, but two transitions have been committed since. A basis checked by its bytes alone would take P (the ABA problem of a compare-and-swap); P names the receipt it was prepared after (none), the owner's last is the second rebase's, so P is refused (ORT-STALE-BASIS) and nothing is written. (Had P been the very rebase by 2 and 8 that was committed, it would be that transition, the same receipt, and refused as a replay.)",
+   "expect_rebase": [
+    {
+     "at": 10,
+     "ok": true,
+     "origin": [
+      2,
+      8
+     ],
+     "moved": [
+      -4,
+      -16
+     ]
+    },
+    {
+     "at": 10,
+     "ok": true,
+     "origin": [
+      0,
+      0
+     ],
+     "moved": [
+      4,
+      16
+     ]
+    },
+    {
+     "at": 10,
+     "refused": "ORT-STALE-BASIS"
+    }
+   ]
+  },
+  {
+   "name": "O12 a candidate changed after it was prepared",
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "prepare": [
+      1,
+      0
+     ],
+     "as": "P"
+    },
+    {
+     "tamper": "P"
+    },
+    {
+     "commit": "P"
+    },
+    {
+     "prepare": [
+      1,
+      0
+     ],
+     "as": "Q"
+    },
+    {
+     "commit": "Q"
+    }
+   ],
+   "why": "P is prepared, then its candidate's x is moved by a metre before it is committed: the candidate is no longer the one its receipt names (its digest is not the receipt's post), so P is refused (ORT-TAMPERED) and nothing is written. Q, prepared again from the same basis, is committed: x 7 - 2 = 5.",
+   "expect_rebase": [
+    {
+     "at": 0,
+     "refused": "ORT-TAMPERED"
+    },
+    {
+     "at": 0,
+     "ok": true,
+     "origin": [
+      1,
+      0
+     ],
+     "set": {
+      "x": 5,
+      "z": 31,
+      "targets": [
+       [
+        19,
+        33
+       ],
+       [
+        73,
+        31
+       ],
+       [
+        47,
+        23
+       ],
+       [
+        45,
+        41
+       ],
+       [
+        51,
+        9
+       ],
+       [
+        41,
+        55
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "O13 the live state written outside a tick: the prepared transition is stale",
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "prepare": [
+      1,
+      0
+     ],
+     "as": "P"
+    },
+    {
+     "poke": 1
+    },
+    {
+     "commit": "P"
+    }
+   ],
+   "why": "P is prepared at tick 0. Then the owner's live state is written outside its tick and its commit (x moved by a metre: what a bug or another writer could do): the tick and the history are what they were, but the bytes are not, so P is refused (ORT-STALE-BASIS) and nothing more is written. The bytes and the history are two checks, each catching what the other cannot (O11, O13).",
+   "expect_rebase": [
+    {
+     "at": 0,
+     "refused": "ORT-STALE-BASIS"
+    }
+   ]
+  },
+  {
+   "name": "O14 a world field no table declares: the rebase refuses rather than leave it behind",
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "world_field": "spawn_metres"
+    },
+    {
+     "rebase": [
+      1,
+      0
+     ]
+    }
+   ],
+   "why": "The live world is given a field the frame table does not name (as a later change to the simulation might add one in world-space metres). A rebase cannot know whether to move it, so it is refused (ORT-UNDECLARED) and nothing is written.",
+   "expect_rebase": [
+    {
+     "at": 0,
+     "refused": "ORT-UNDECLARED"
+    }
+   ]
+  }
+ ]
+}

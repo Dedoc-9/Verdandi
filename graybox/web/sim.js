@@ -16,6 +16,9 @@
 // them. Rules 2 (graybox/RULES-2.md, 0225) are rules 1 with movers — boxes that slide along one axis, carry a player
 // standing on them and stop rather than move into one — and a state hash bound to the rules, every constant and the
 // world: GrayboxSim.withRules(2). A world without movers plays the same ticks under rules 2 as under rules 1.
+// A rules-2 world may have an origin (graybox/ORT-1.md, 0227): whole cells, local cell (i, j) being the map's cell
+// (i + oi, j + oj); at the origin (0, 0) every number and byte of rules 2 is what it was. graybox/web/ort.js moves the
+// origin between two ticks, as a transition bound to the exact state it was prepared from.
 
 (function (root, factory) {
   // make(rules) builds one instance of the simulation under those rules; its fresh() builds another, under the same
@@ -282,6 +285,15 @@
     this.w = C.w; this.h = C.h; this.cell = C.cell; this.tops = C.tops; this.wall = W.wall;
     this.spawns = W.spawns; this.objective = W.objective; this.targetDefs = W.targets;
     this.probes = W.probes; this.routes = W.routes;
+    // ORT-1 (0227): the origin, whole cells; (0, 0) unless the map says otherwise, and only rules 2 have another
+    this.map = map; this.oi = 0; this.oj = 0;
+    const org = map.origin;
+    if (org !== undefined) {
+      if (!Array.isArray(org) || org.length !== 2 || !org.every(function (v) { return isInt(v, -ORIGIN_MAX, ORIGIN_MAX); }))
+        throw new Error("ORT-ORIGIN: the origin is not two whole numbers of cells, each at most 2^20");
+      if ((org[0] !== 0 || org[1] !== 0) && RULES !== 2) throw new Error("ORT-RULES: rules " + RULES + " have no origin; a rebased world is played under rules 2");
+      this.oi = org[0] + 0; this.oj = org[1] + 0;   // + 0: a -0 is 0
+    }
     // rules 2: the movers, each checked as RULES-2.md's table says (RULES2-MOVER), and the identity every tick's hash
     // starts from; rules 0 and 1 have none, and refuse a world that has
     this.movers = [];
@@ -294,6 +306,7 @@
     }
   }
   World.prototype.top = function (i, j) {
+    i = i + this.oi; j = j + this.oj;   // the map's cell, through the origin (0, 0 but in a rebased world)
     if (i < 0 || j < 0 || i >= this.w || j >= this.h) return Infinity;
     return this.tops[j * this.w + i];
   };
@@ -334,6 +347,7 @@
   }
 
   // ---------------------------------------------------------------- the movers (rules 2, RULES-2.md)
+  const ORIGIN_MAX = 1048576;   // 2^20 cells either way (graybox/ORT-1.md)
   function isQ(v) { return typeof v === "number" && v === v && Math.abs(v) < 1024 && v * 256 === Math.floor(v * 256); }
   function isInt(v, lo, hi) { return typeof v === "number" && v === Math.floor(v) && v >= lo && v <= hi; }
   function checkMovers(list) {
@@ -430,6 +444,7 @@
                                                                             m.axis[0], m.axis[1], m.axis[2], m.len, m.speed, m.policy]; }),
                            objective: world.objective ? world.objective.rect : null, spawns: spawns,
                            targets: world.targetDefs.map(function (t) { return [t.id, t.x, t.z]; }) } };
+    if (world.oi !== 0 || world.oj !== 0) doc.world.origin = [world.oi, world.oj];   // ORT-1: a rebased world says where
     return "VERDANDI-RULES 2\n" + JSON.stringify(enc(doc));
   }
   const FNV64_OFFSET = 0xcbf29ce484222325n, FNV64_PRIME = 0x100000001b3n, FNV64_MASK = (1n << 64n) - 1n;
@@ -446,7 +461,7 @@
       cooldown: 0, score: 0, shots: 0, onObjective: false,
       targets: world.targetDefs.map(function (t) {
         const c = world.cell;
-        return { id: t.id, x: (t.x + 0.5) * c, z: (t.z + 0.5) * c, y: world.top(t.x, t.z), up: true, downFor: 0 };
+        return { id: t.id, x: (t.x - world.oi + 0.5) * c, z: (t.z - world.oj + 0.5) * c, y: world.top(t.x - world.oi, t.z - world.oj), up: true, downFor: 0 };
       }),
       fx: { hitMarker: 0, flash: {}, lastShot: null },   // feedback for the view: not part of the authoritative state
     };
@@ -458,7 +473,7 @@
   function spawn(world, s, side) {
     const sp = world.spawns[side];
     const c = world.cell;
-    s.side = side; s.x = (sp.x + 0.5) * c; s.z = (sp.z + 0.5) * c;
+    s.side = side; s.x = (sp.x - world.oi + 0.5) * c; s.z = (sp.z - world.oj + 0.5) * c;
     s.feet = groundAt(world, s.x, s.z); s.vy = 0; s.onGround = true;
     s.yaw = sp.yaw * Math.PI / 180; s.pitch = 0;
   }
@@ -613,7 +628,7 @@
   function inObjective(world, s) {
     const o = world.objective;
     if (!o) return false;
-    const i = Math.floor(s.x / world.cell), j = Math.floor(s.z / world.cell);
+    const i = Math.floor(s.x / world.cell) + world.oi, j = Math.floor(s.z / world.cell) + world.oj;
     return i >= o.rect[0] && i <= o.rect[2] && j >= o.rect[1] && j <= o.rect[3];
   }
 
@@ -1440,7 +1455,7 @@
   const api = { RULES: RULES, INPUT: INPUT, admit: function (inp) { return admit(inp); }, inputCases: function (map, table) { return inputCases(map, table); },
                 inputFaults: inputFaults, math: M, TICK: TICK, P: P, World: World, newState: newState, step: step, spawn: spawn, fire: fire, aim: aim,
                 rayWorld: rayWorld, blocked: blocked, groundAt: groundAt, hash: hash, snapshot: snapshot, restore: restore,
-                poseOf: poseOf, rules2Cases: rules2Cases, Q: Q, BODY: BODY,
+                poseOf: poseOf, rules2Cases: rules2Cases, Q: Q, BODY: BODY, stressInputs: stressInputs,
                 nudge: nudge, bits: bitsOf, fromBits: ofBits, record: record, selftest: selftest };
   return api;
 });

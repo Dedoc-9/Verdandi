@@ -23,7 +23,29 @@
     return { userAgent: n.userAgent, brands: d ? d.brands.map(function (b) { return b.brand + " " + b.version; }) : null,
              platform: d ? d.platform : null, crossOriginIsolated: !!self.crossOriginIsolated };
   };
-  const given = q.get("inputs") === "1", cases = q.get("cases") === "1", rules2 = q.get("rules2") === "1";
+  const given = q.get("inputs") === "1", cases = q.get("cases") === "1", rules2 = q.get("rules2") === "1", ort = q.get("ort") === "1";
+  if (ort) {   // ORT-1's table (web/ort_cases.json, graybox/ORT-1.md), played in a worker under rules 2 through ort.js
+    Promise.all([
+      fetch("/map/" + encodeURIComponent(name) + ".json").then(function (r) { if (!r.ok) throw new Error("the map " + name + " could not be loaded: " + r.status); return r.json(); }),
+      fetch("/ort_cases.json").then(function (r) { if (!r.ok) throw new Error("ORT-1's table could not be loaded: " + r.status); return r.json(); }),
+    ]).then(function (got) {
+      return new Promise(function (resolve, reject) {
+        const w = new Worker("sim_worker.js");
+        w.onmessage = function (e) { w.terminate(); if (e.data.error) reject(new Error(e.data.error)); else resolve({ map: got[0], results: e.data.ort }); };
+        w.onerror = function (e) { w.terminate(); reject(new Error(e.message || "the worker failed")); };
+        w.postMessage({ kind: "ort", map: got[0], table: got[1] });
+      });
+    }).then(function (r) {
+      out.textContent = "played " + (r.results.length - 1) + " cases of ORT-1; sending them to trace.py…";
+      return post({ format: "VERDANDI-ORT-RESULTS", version: "1", map: name, manifest: r.map.manifest, runtime: runtime(), rules: 2, results: r.results });
+    }).then(function () {
+      out.textContent += "\ndone";
+    }).catch(function (e) {
+      out.textContent = String(e && e.stack || e);
+      post({ format: "VERDANDI-ORT-RESULTS", version: "1", map: name, error: String(e && e.stack || e) });
+    });
+    return;
+  }
   if (rules2) {   // rules 2's table (web/rules2_cases.json, graybox/RULES-2.md), played in a worker under rules 2
     Promise.all([
       fetch("/map/" + encodeURIComponent(name) + ".json").then(function (r) { if (!r.ok) throw new Error("the map " + name + " could not be loaded: " + r.status); return r.json(); }),

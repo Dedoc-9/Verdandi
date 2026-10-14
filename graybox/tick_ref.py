@@ -150,8 +150,10 @@ class World:
         self.spawns = {k: (v["x"], v["z"], float(v["yaw"])) for k, v in W["spawns"].items()}
         self.objective = tuple(W["objective"]["rect"]) if W.get("objective") else None
         self.target_cells = [(t["id"], t["x"], t["z"]) for t in W["targets"]]
+        self.oi = self.oj = 0   # ORT-1 (0227): the origin, whole cells; only a rules-2 world has another
 
     def top(self, i, j):
+        i, j = i + self.oi, j + self.oj   # the map's cell, through the origin
         if 0 <= i < self.w and 0 <= j < self.h:
             return self.rows[int(j)][int(i)]
         return math.inf
@@ -198,7 +200,8 @@ class State:
         s.tick = s.x = s.z = s.feet = s.vy = s.yaw = s.pitch = s.cooldown = s.score = s.shots = 0.0
         s.side, s.on_ground, s.on_objective = side, True, False
         c = world.cell
-        s.targets = [Target(tid, (tx + 0.5) * c, world.top(tx, tz), (tz + 0.5) * c, True, 0.0) for tid, tx, tz in world.target_cells]
+        s.targets = [Target(tid, (tx - world.oi + 0.5) * c, world.top(tx - world.oi, tz - world.oj), (tz - world.oj + 0.5) * c, True, 0.0)
+                     for tid, tx, tz in world.target_cells]
         spawn(world, s, side)
         return s
 
@@ -207,7 +210,7 @@ def spawn(world, s, side):
     sx, sz, yaw_degrees = world.spawns[side]
     c = world.cell
     s.side = side
-    s.x, s.z = (sx + 0.5) * c, (sz + 0.5) * c
+    s.x, s.z = (sx - world.oi + 0.5) * c, (sz - world.oj + 0.5) * c
     s.feet = world.ground(s.x, s.z)
     s.vy, s.on_ground = 0.0, True
     s.yaw, s.pitch = yaw_degrees * PI / 180.0, 0.0
@@ -422,7 +425,7 @@ def objective(world, s, inp):
         s.on_objective = False
     else:
         i0, j0, i1, j1 = world.objective
-        i, j = floor(s.x / world.cell), floor(s.z / world.cell)
+        i, j = floor(s.x / world.cell) + world.oi, floor(s.z / world.cell) + world.oj
         s.on_objective = i0 <= i <= i1 and j0 <= j <= j1
 
 
@@ -509,11 +512,20 @@ class MoverState:
         self.phase, self.stopped = phase, stopped
 
 
-class World2(World):
-    """A world of rules 2: rules 1's, with its movers and the identity its hashes start from."""
+ORIGIN_MAX = 1 << 20   # ORT-1: an origin's cells, either way
 
-    def __init__(self, conv, movers):
+
+class World2(World):
+    """A world of rules 2: rules 1's, with its movers, its origin (ORT-1, 0227; (0, 0) unless given) and the identity
+    its hashes start from."""
+
+    def __init__(self, conv, movers, origin=(0, 0)):
         World.__init__(self, conv)
+        if not (isinstance(origin, (list, tuple)) and len(origin) == 2
+                and all(isinstance(v, int) and not isinstance(v, bool) and -ORIGIN_MAX <= v <= ORIGIN_MAX for v in origin)):
+            raise MoverRefused("ORT-ORIGIN: the origin is not two whole numbers of cells, each at most 2^20")
+        self.oi, self.oj = int(origin[0]), int(origin[1])
+        self.conv = conv
         ids = set()
         self.movers = []
         for d in movers:
@@ -521,7 +533,7 @@ class World2(World):
             ids.add(m.id)
             self.movers.append(m)
         C, W = conv["collision"], conv["canonical"]
-        self.identity = identity_text(C, W, self.movers)
+        self.identity = identity_text(C, W, self.movers, (self.oi, self.oj))
         self.identity_state = fnv64(FNV_OFFSET, self.identity.encode("utf-8"))
 
 
@@ -555,8 +567,9 @@ def _idenc(v):
     return {k: _idenc(v[k]) for k in v}
 
 
-def identity_text(C, W, movers):
-    """RULES-2.md, *The state's hash*: the rules, every constant and the world, as one document."""
+def identity_text(C, W, movers, origin=(0, 0)):
+    """RULES-2.md, *The state's hash*: the rules, every constant and the world, as one document; a rebased world's
+    origin with it (ORT-1), and at the origin (0, 0) the document as rules 2 first wrote it."""
     doc = {
         "P": {"radius": K.radius, "eye": K.eye, "step": K.step, "speed": K.speed, "gravity": K.gravity, "jump": K.jump,
               "fireCooldown": K.fire_cooldown, "targetRadius": K.target_radius, "targetHeight": K.target_height,
@@ -568,6 +581,8 @@ def identity_text(C, W, movers):
                   "spawns": {k: [v["x"], v["z"], v["yaw"]] for k, v in W["spawns"].items()},
                   "targets": [[t["id"], t["x"], t["z"]] for t in W["targets"]]},
     }
+    if origin[0] != 0 or origin[1] != 0:
+        doc["world"]["origin"] = [float(origin[0]), float(origin[1])]
     return "VERDANDI-RULES 2\n" + json.dumps(_idenc(doc), separators=(",", ":"), sort_keys=True, ensure_ascii=False)
 
 
