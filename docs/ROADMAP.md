@@ -4035,6 +4035,37 @@ For his own harbor-day: an intent evaluated before 0222 is evaluated again befor
 command line it now needs a still (`--still`); the studio takes one by itself. Next in his order: the rung of a change
 to the program itself, computed by the host (0223), then RULES-2.
 
+**0223: the rung of a change to the program, computed by the host (RUNG-0, 2026-10-14).** The other half of his
+second item: *"Classify the effective change, not only its direct diff … calculate the rung from the candidate's
+dependency closure and changed semantics, conservatively escalating when that analysis is incomplete."*, and of rung D,
+*"a trusted admission path outside the candidate's authority, plus independent evidence"*. **Built, off the gate.**
+`tools/rung.py classify BASE HEAD`: the trusted base is anchored by a list of roots (the gate, the art's checks,
+QUALITY-0, the director and ADMISSION-0, the admission path and its tokens, the twins and references, the classifier
+itself, AGENTS.md), the one place names decide; everything else is computed on both trees, read through git: each
+Python file's imports (against its folder and what it puts on sys.path) and every path it names (a tracked file's path
+or name as a literal, docstrings aside; an `os.path.join` of known parts naming a file or a folder), followed through
+every Python file reached. A file in the closure is D; a root that loads code by a computed name, or reads files by
+computed paths, escalates every other changed file to D? (D for its evidence, the lines that caused it said); code
+outside is C; Markdown outside is A. It names what loosens a checker whatever the rung (a name dropped from
+ADMISSION-0's expected checks, a detector or a budget made looser, a frozen reference rewritten, the vectors changed,
+fewer plants), and what each rung needs. It never reads a commit message. `plants BASE HEAD` runs the suites' planted
+defects in both trees (git worktrees) and fails if one the old checker refused passes the new, or is gone. Who runs
+it: the copy the pushed tree holds, never the patch's (`git show origin/main:tools/rung.py > rung.py`, then `python
+rung.py classify origin/main HEAD --repo .`); this first copy came with its own patch and was judged by nobody.
+MEASURED in the container: RUNG SELFTEST 17/17 (a scratch tree: a helper imported through a folder put on sys.path, a
+module loaded from a joined path, data named file by file and folder by folder, a file the change brings under an
+import, a removed file of the checker, escalation by a computed import and by a computed read, the classifier and the
+agents' rules changed, three loosenings and one addition that loosens nothing, the plants compared; and this
+repository at HEAD: 309 files in the closure), 13 of 13 mutants of the classifier caught. On this series: 0220, 0221
+and 0222 each classify D, every file in the closure or escalated — art/dress.py is the closure's through art/play.py,
+the renderer through art/play.py and QUALITY-0, the providers through the queue, and art/README.md through art/studio.py,
+which reads its section on the art file into every provider's prompt (a document that runs, found by the reading, not
+by its name); the docs escalate, because the base reads files by computed paths in about 400 places and verify.py
+imports modules by computed names (verify.py:259, 13102). So in this repository a patch is rung D, and what D needs is
+his run on his machine and the plants: `plants b8b2fe0 39b3265` PLANTS HELD (25 planted defects refused before, 65 after,
+none lost). Not claimed: that the closure is complete (a computed path is escalated, not followed), or that a loosening
+of a kind it does not look for is seen.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
