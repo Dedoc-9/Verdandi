@@ -34,7 +34,23 @@
 
 (function () {
   "use strict";
-  const Sim = window.GrayboxSim, q = new URLSearchParams(location.search), $ = function (id) { return document.getElementById(id); };
+  // 0226: a scene with movers names the rules it is played under (rules 2, graybox/RULES-2.md), and the page plays it
+  // under those and no other: a scene naming rules this page does not play is not played (the handshake). A scene
+  // without movers is played under rules 1, as before.
+  const Base = window.GrayboxSim, q = new URLSearchParams(location.search), $ = function (id) { return document.getElementById(id); };
+  let Sim = Base;
+  const simFor = function (S) {
+    if (S.rules === undefined && !S.movers) return Base;
+    if (S.rules === 2 && Array.isArray(S.movers)) return Base.withRules(2);
+    throw new Error("this scene names rules " + JSON.stringify(S.rules) + ", which this page does not play (it plays rules 1, and rules 2 with movers)");
+  };
+  // the movers as rules 2 take them, and a key that changes when the game would: the map, the rules, and any mover's
+  // box, axis, travel, speed or policy (a mover's material is its look, and changes nothing of the game)
+  const moversOf = function (S) {
+    return (S.movers || []).map(function (m) { return { id: m.id, box: m.box, axis: m.axis, len: m.len, speed: m.speed, policy: m.policy }; });
+  };
+  const worldOf = function (S, map) { return new Sim.World(S.movers ? Object.assign({}, map, { movers: moversOf(S) }) : map); };
+  const gameKey = function (S, mapSha) { return mapSha + "|" + JSON.stringify([S.rules === undefined ? 1 : S.rules, moversOf(S)]); };
   const brief = q.get("brief") || document.body.getAttribute("data-brief");
   const deg = Math.PI / 180;
   // STUDIO-2: the page shows one world; every read and every request names it (play.html?world=NAME)
@@ -74,7 +90,8 @@
 
   function start(got, k0, live0) {
     const canvas = $("view"), P = Sim.P;
-    let S = got.S, map = got.map, world = new Sim.World(map), s = Sim.newState(world, "A");
+    let S = got.S, map = got.map, world, s;
+    try { Sim = simFor(S); world = worldOf(S, map); s = Sim.newState(world, "A"); } catch (e) { fail("The scene could not be played: " + (e && e.message || e)); return; }
     let R;
     try { R = new window.VerdandiScene.Renderer(canvas, S); } catch (e) { fail("The scene could not be drawn: " + (e && e.message || e)); return; }
     const cur = { k: k0, sha: got.sha, mapSha: got.mapSha, version: live0.version, code: live0.code, slots: live0.slots,
@@ -93,7 +110,14 @@
       const h = parseInt(q.get("h") || "0", 10) || Math.round(canvas.clientHeight * Math.min(window.devicePixelRatio || 1, 1.5));
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     };
-    const render = function (cam, time, st) { fit(); R.setTargets(targets(st)); R.draw(cam, time); };
+    // where the simulation has put each mover in this state (phase 0 in a state that has none, a walk's)
+    const moverBoxes = function (st) {
+      return world.movers.map(function (m, i) {
+        const b = Sim.poseOf(m, st.movers && st.movers[i] ? st.movers[i].phase : 0);
+        return [b.x0, b.y0, b.z0, b.x1, b.y1, b.z1];
+      });
+    };
+    const render = function (cam, time, st) { fit(); if (R.setMovers) R.setMovers(moverBoxes(st)); R.setTargets(targets(st)); R.draw(cam, time); };
     const goView = function (name) {
       const v = S.views[name]; if (!v) return;
       mode = "view"; label = "view " + name; vcam = { x: v.x, y: v.y, z: v.z, yaw: v.yaw * deg, pitch: v.pitch * deg };
@@ -103,13 +127,18 @@
     // ---------------------------------------------------------------- live
     // put a fetched source in place: the same map, the scene alone; another map, a new game
     const apply = function (k, g, t0) {
-      const sameMap = g.mapSha === cur.mapSha, from = cur.sha;
+      const sameMap = g.mapSha === cur.mapSha, sameGame = gameKey(g.S, g.mapSha) === gameKey(S, cur.mapSha), from = cur.sha;
+      let Sim2, world2, s2;
+      if (!sameGame) {
+        try { Sim2 = simFor(g.S); const keep = Sim; Sim = Sim2; try { world2 = worldOf(g.S, g.map); } finally { Sim = keep; } s2 = Sim2.newState(world2, "A"); }
+        catch (e) { say("the new scene is not played (" + (e && e.message || e) + "); the old one goes on"); return; }
+      }
       R.load(g.S);
       S = g.S; views = Object.keys(S.views).sort();
-      if (!sameMap) { map = g.map; world = new Sim.World(map); s = Sim.newState(world, "A"); walk = null; cur.games += 1; }
+      if (!sameGame) { Sim = Sim2; map = g.map; world = world2; s = s2; walk = null; cur.games += 1; }
       cur.k = k; cur.sha = g.sha; cur.mapSha = g.mapSha; cur.swaps += 1; cur.ms = Math.round(performance.now() - t0);
       say((from === g.sha ? "source " + k : "scene " + from.slice(0, 12) + " -> " + g.sha.slice(0, 12)) + " in " + cur.ms + " ms"
-        + (sameMap ? "; the game goes on untouched" : "; a new map, so a new game at the spawn"));
+        + (sameGame ? "; the game goes on untouched" : sameMap ? "; the movers or the rules changed, so a new game at the spawn" : "; a new map, so a new game at the spawn"));
     };
     const swapRenderer = function (sha) {
       const old = window.VerdandiScene, el = document.createElement("script");
@@ -551,15 +580,16 @@
     // the hooks a still, a walk-through or a test uses
     window.PLAY = {
       get renderer() { return R; }, get scene() { return S; }, get state() { return s; }, get world() { return world; },
-      live: cur, sim: Sim, studio: studio, select: select, pin: pin, hover: function () { return studio.hover; },
+      live: cur, get sim() { return Sim; }, studio: studio, select: select, pin: pin, hover: function () { return studio.hover; },
       pause: function (on) { paused = !!on; },
       slot: pick,
       view: function (name, time) { goView(name); render(vcam, time || 0, s); },
       cam: function (x, y, z, yaw, pitch, time) { mode = "view"; vcam = { x: x, y: y, z: z, yaw: yaw * deg, pitch: pitch * deg }; render(vcam, time || 0, s); },
       walkTo: function (tick) {
+        // the self-test's walk is the map's, without movers: it is played in a world of the map alone
         if (!walk) walk = Sim.record(map)[0];
-        const st = Sim.restore(walk.start);
-        for (let n = 0; n < Math.min(tick, walk.inputs.length); n++) Sim.step(world, st, walk.inputs[n]);
+        const st = Sim.restore(walk.start), w0 = new Sim.World(map);
+        for (let n = 0; n < Math.min(tick, walk.inputs.length); n++) Sim.step(w0, st, walk.inputs[n]);
         render(eyeOf(st), tick / 120, st);
         return { ticks: walk.inputs.length, x: st.x, z: st.z };
       },
@@ -642,7 +672,7 @@
         + (studio.refs.target ? "  ·  target " + studio.refs.target : "") + ((studio.refs.pins || []).length ? "  ·  pins " + studio.refs.pins.join(" ") : "")
         + "\nsource [" + cur.k + "] " + (info.label || "") + (sv.verdict ? "  ·  " + sv.verdict : "")
         + "  ·  scene " + cur.sha.slice(0, 12) + (cur.slots.length > 1 ? "  ·  [ ] steps through the " + cur.slots.length + " sources" : "")
-        + "\nmovement and collision: the graybox's simulation against C  ·  live: play.py v" + cur.version
+        + "\nmovement and collision: the graybox's simulation against C" + (world.movers.length ? " and " + world.movers.length + " mover(s), rules " + Sim.RULES : "") + "  ·  live: play.py v" + cur.version
         + (cur.note && now - cur.noteAt < 8000 ? "\n" + cur.note : "");
       requestAnimationFrame(frame);
     }

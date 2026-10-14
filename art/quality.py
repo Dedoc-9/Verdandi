@@ -23,6 +23,10 @@
 #             know is refused, not passed over (a scene that grows a field needs this checker to grow it too); boxes
 #             have extent on every axis and lie inside the world; every coordinate is under 1024 m, where the renderer's
 #             float32 keeps the scene's 0.1 mm steps apart (above it, two of them can become one number)
+#   movers    (0226) a scene with movers names the rules it is played under, 2 and no other, and carries each mover as
+#             rules 2 have it: an id, its statement, a declared material, a box of whole 1/256 m (as a double holds them
+#             exactly) inside the world, an axis, len and speed whole and in range, the policy stop, and its travel too
+#             inside the world and under 1,024 m; a scene has both fields or neither
 #   budgets   what the native renderer (art/web/scene_render.js) can draw: it draws the first 160 lights and drops the
 #             rest without a word, and it keeps a light's visibility in a texture one texel to a cell, which WebGL 2
 #             guarantees only up to 2048 wide (OpenGL ES 3.0's minimum MAX_TEXTURE_SIZE as recalled, INFERRED: the
@@ -71,6 +75,8 @@ TIMES = ("night", "dusk", "day")
 LIGHT_KINDS = ("moon", "sun")
 SCENE_LIGHT_TYPES = ("point", "rect")
 PIECE_KINDS = ("ground", "floor", "stair", "raised", "cover", "wall")
+SCENE_RULES = (2,)                 # the rules a scene with movers may name (graybox/RULES-2.md)
+AXES = ([1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1])
 
 # the detectors' thresholds (a flag, not a refusal; chosen with 16 stills in view)
 DETECT = {"near": 250, "white": 0.05, "black": 0.95, "clipped": 0.25, "flat": 4}
@@ -217,7 +223,7 @@ class Bounds:
         S = self.S
         top = ("assets", "collision", "environment", "format", "grid", "lights", "map", "materials", "name", "player", "reach",
                "regions", "spawns", "title", "tops", "units", "views", "visuals")
-        if not self.keys("scene", S, top):
+        if not self.keys("scene", S, top, ("movers", "rules")):
             if not isinstance(S, dict):
                 return self.bad
         if S.get("format") != SCENE_FORMAT:
@@ -339,6 +345,42 @@ class Bounds:
                     self.no(w + ".asset", "%r is not a declared asset" % (v["asset"],))
                 if fam == "collision" and v["kind"] not in PIECE_KINDS:
                     self.no(w + ".kind", "%r is not a kind of play geometry" % (v["kind"],))
+        if ("movers" in S) != ("rules" in S):
+            self.no("movers" if "movers" in S else "rules", "a scene has movers and the rules they are played under together, or neither")
+        if "rules" in S and (not _isint(S["rules"]) or S["rules"] not in SCENE_RULES):
+            self.no("rules", "%r is not rules %s" % (S["rules"], " or ".join(str(r) for r in SCENE_RULES)))
+        if "movers" in S:
+            arr = S["movers"]
+            if not isinstance(arr, list) or not arr:
+                self.no("movers", "is not a list of at least one mover")
+                arr = []
+            seen = set()
+            for i, m in enumerate(arr):
+                w = "movers[%d]" % i
+                if not self.keys(w, m, ("id", "by", "material", "box", "axis", "len", "speed", "policy")):
+                    continue
+                if self.text(w + ".id", m["id"]) and m["id"] in seen:
+                    self.no(w, "the id %r twice" % (m["id"],))
+                seen.add(m["id"])
+                self.text(w + ".by", m["by"])
+                if m["material"] not in M:
+                    self.no(w + ".material", "%r is not a declared material" % (m["material"],))
+                if self.box(w + ".box", m["box"]):
+                    for k, v in enumerate(m["box"]):
+                        if float(v) * 256.0 != math.floor(float(v) * 256.0):
+                            self.no(w + ".box[%d]" % k, "%r is not a whole number of 1/256 m" % (v,))
+                if not (isinstance(m["axis"], list) and m["axis"] in AXES and all(_isint(a) for a in m["axis"])):
+                    self.no(w + ".axis", "%r is not one of x, y, z, either way" % (m["axis"],))
+                ok_len = self.integer(w + ".len", m["len"], 1, 2 ** 18)
+                if ok_len:
+                    self.integer(w + ".speed", m["speed"], 0, m["len"])
+                if m["policy"] != "stop":
+                    self.no(w + ".policy", "%r is not stop" % (m["policy"],))
+                if ok_len and isinstance(m["box"], list) and len(m["box"]) == 6 and m["axis"] in AXES and all(_isnum(v) for v in m["box"]):
+                    d = m["len"] / 256.0
+                    tb = [m["box"][k] + m["axis"][k % 3] * d for k in range(6)]
+                    for k in range(6):
+                        self.coord(w + ".travel[%d]" % k, tb[k], "xyz"[k % 3])
         arr = S.get("lights")
         if not isinstance(arr, list):
             self.no("lights", "is not a list")
@@ -381,10 +423,11 @@ def renderer_limits(js_text=None):
     cap = re.findall(r"S\.lights\.slice\(0,\s*([0-9]+)\)", js_text)
     glare = re.findall(r"Math\.min\(L\.candela,\s*([0-9]+)\)", js_text)
     vis = re.findall(r"this\.tex2D\(gl\.R8,\s*wh,\s*NL,", js_text)
-    if len(cap) != 1 or len(glare) != 1 or len(vis) != 1:
-        raise QualityError("QUALITY-RENDERER", "the renderer's source no longer says its light cap, its glare cap and its "
-                           "visibility texture once each (%d, %d, %d found): the budgets need restating" % (len(cap), len(glare), len(vis)))
-    return {"lights": int(cap[0]), "glare_candela": int(glare[0]), "cells": WEBGL2_MIN_TEXTURE}
+    movers = re.findall(r"const MAX_MOVERS = ([0-9]+);", js_text)
+    if len(cap) != 1 or len(glare) != 1 or len(vis) != 1 or len(movers) != 1:
+        raise QualityError("QUALITY-RENDERER", "the renderer's source no longer says its light cap, its glare cap, its "
+                           "visibility texture and its mover cap once each (%d, %d, %d, %d found): the budgets need restating" % (len(cap), len(glare), len(vis), len(movers)))
+    return {"lights": int(cap[0]), "glare_candela": int(glare[0]), "cells": WEBGL2_MIN_TEXTURE, "movers": int(movers[0])}
 
 
 def scene_budgets(S, nbytes, limits=None):
@@ -398,7 +441,10 @@ def scene_budgets(S, nbytes, limits=None):
     cells = g.get("w", 0) * g.get("h", 0)
     if cells > lim["cells"]:
         bad.append(("grid", "%d cells: the visibility texture is one texel to a cell, and WebGL 2 guarantees %d" % (cells, lim["cells"])))
-    boxes = len(S.get("collision", [])) + len(S.get("visuals", []))
+    movers = S.get("movers", []) if isinstance(S.get("movers"), list) else []
+    if len(movers) > lim["movers"]:
+        bad.append(("movers", "%d movers: the native renderer draws the first %d and drops the rest" % (len(movers), lim["movers"])))
+    boxes = len(S.get("collision", [])) + len(S.get("visuals", [])) + len(movers)
     if boxes > BUDGET_BOXES:
         bad.append(("boxes", "%d boxes, above the budget of %d (a budget chosen, not a limit of the renderer)" % (boxes, BUDGET_BOXES)))
     if nbytes > BUDGET_BYTES:
@@ -430,7 +476,7 @@ def check_scene(scene_bytes, limits=None):
         return res, []
     res.append(("quality: the scene is inside the native renderer's budgets", not over,
                 "; ".join("%s: %s" % o for o in over) if over else "%d lights, %d boxes, %d bytes" % (
-                    len(S["lights"]), len(S["collision"]) + len(S["visuals"]), len(scene_bytes))))
+                    len(S["lights"]), len(S["collision"]) + len(S["visuals"]) + len(S.get("movers", [])), len(scene_bytes))))
     return res, notes
 
 
@@ -759,7 +805,7 @@ def cmd_selftest():
     plant("a box outside the world", lambda S: S["visuals"][0]["box"].__setitem__(3, 96.5), "outside the world")
     plant("a tower 1,024 m tall", lambda S: S["visuals"][0]["box"].__setitem__(4, 1024.0), "")
     plant("a light inside no world", lambda S: S["lights"][0]["pos"].__setitem__(2, -0.1), "outside the world")
-    plant("a field the checker does not know (movers)", lambda S: S.__setitem__("movers", []), "does not know")
+    plant("a field the checker does not know (doors)", lambda S: S.__setitem__("doors", []), "does not know")
     plant("a light with a field the checker does not know", lambda S: S["lights"][0].__setitem__("cone", 30.0), "does not know")
     plant("a visual whose material is not declared", lambda S: S["visuals"][0].__setitem__("material", "chrome"), "not a declared material")
     plant("an id twice", lambda S: S["visuals"][1].__setitem__("id", S["visuals"][0]["id"]), "twice")
@@ -772,9 +818,38 @@ def cmd_selftest():
     row("float32 keeps every 0.1 mm step apart from 1023 m to 1024 m, and merges some from 1024 m (%d pairs of the next 10,000)" % len(above),
         below and len(above) > 0)
 
+    # 0226: movers. The world with a lift and a deck passes; each defect in its movers is refused
+    outm = dress.export(dress.load("harbor-lift"))
+    SM, BM = outm["scene"], outm["scene_bytes"]
+    res, _n = check_scene(BM)
+    row("harbor-lift's scene, with %d movers under rules %s, passes every exact check" % (len(SM.get("movers", [])), SM.get("rules")),
+        all(ok for _c, ok, _d in res) and SM.get("rules") == 2 and len(SM.get("movers", [])) == 2, "; ".join(d for _c, _ok, d in res))
+
+    def mplant(label, fn, want=""):
+        S = copy.deepcopy(SM)
+        fn(S)
+        refused_by(label, scene_of(S), want)
+    mplant("movers without the rules they are played under", lambda S: S.__delitem__("rules"), "together")
+    mplant("rules without movers", lambda S: S.__delitem__("movers"), "together")
+    mplant("rules 3, which no scene may name", lambda S: S.__setitem__("rules", 3), "is not rules 2")
+    mplant("rules 2.0, a number but not an integer", lambda S: S.__setitem__("rules", 2.0), "is not rules 2")
+    mplant("a mover's corner not a whole number of 1/256 m", lambda S: S["movers"][0]["box"].__setitem__(0, 20.1), "1/256 m")
+    mplant("a mover whose travel leaves the world", lambda S: S["movers"][0].__setitem__("len", 4096 * 20), "outside the world")
+    mplant("a lift whose travel rises to 1,024 m", lambda S: S["movers"][1].__setitem__("len", 1024 * 256), "")
+    mplant("a mover's speed above its len", lambda S: S["movers"][1].__setitem__("speed", 577), "outside")
+    mplant("a mover's axis that is two axes", lambda S: S["movers"][0].__setitem__("axis", [1, 0, 1]), "either way")
+    mplant("a mover's policy other than stop", lambda S: S["movers"][0].__setitem__("policy", "push"), "not stop")
+    mplant("a mover with a field the checker does not know", lambda S: S["movers"][0].__setitem__("phase", 3), "does not know")
+    mplant("a mover whose material is not declared", lambda S: S["movers"][0].__setitem__("material", "chrome"), "not a declared material")
+    mplant("an empty list of movers", lambda S: S.__setitem__("movers", []), "at least one")
+
     # budgets
     lim = renderer_limits()
-    row("the renderer's own numbers, read from its source", lim["lights"] == 160 and lim["glare_candela"] == 2000, json.dumps(lim, sort_keys=True))
+    row("the renderer's own numbers, read from its source", lim["lights"] == 160 and lim["glare_candela"] == 2000 and lim["movers"] == 64, json.dumps(lim, sort_keys=True))
+    S = copy.deepcopy(SM)
+    while len(S["movers"]) <= lim["movers"]:
+        S["movers"].append(dict(copy.deepcopy(SM["movers"][1]), id="plant-%d" % len(S["movers"])))
+    refused_by("%d movers, one more than the renderer draws" % len(S["movers"]), scene_of(S), "drops the rest")
     S = copy.deepcopy(S0)
     while len(S["lights"]) <= lim["lights"]:
         L = copy.deepcopy(S0["lights"][len(S["lights"]) % len(S0["lights"])])

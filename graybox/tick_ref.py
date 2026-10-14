@@ -1434,7 +1434,16 @@ def cmd_rules2(path=None):
     return 0 if held else 1
 
 
+MAKES = {"verify": "python graybox/trace.py run tactical --browser msedge", "selftest": "python graybox/trace.py run tactical --browser msedge",
+         "cases": "python graybox/trace.py run tactical --cases --browser msedge", "rules2": "python graybox/trace.py run tactical --rules2 --browser msedge"}
+
+
 def main(argv):
+    # a results file named and not there is said before anything is played (0226: his run of 0225 met a traceback,
+    # the table played first, when the browser's run had not been made yet)
+    if len(argv) == 2 and argv[0] in MAKES and not os.path.isfile(argv[1]):
+        print("TICK-REF: there is no file %s: a browser writes it, so run first:  %s" % (argv[1], MAKES[argv[0]]), file=sys.stderr)
+        return 2
     if len(argv) in (1, 2) and argv[0] == "rules2":
         return cmd_rules2(argv[1] if len(argv) == 2 else None)
     if len(argv) == 2 and argv[0] == "verify":

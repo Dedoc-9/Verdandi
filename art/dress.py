@@ -20,11 +20,13 @@
 # never a running random sequence, so an edit in one place cannot reshuffle the art anywhere else. Standard library
 # only. Units are metres; x runs east, z south (the graybox's x across and z down) and y up.
 
+import decimal
 import hashlib
 import json
 import os
 import re
 import sys
+from fractions import Fraction
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -36,11 +38,19 @@ import level  # noqa: E402  (the graybox converter: W and C)
 FORMAT = "VERDANDI-ART 0"
 SCENE = "VERDANDI-ART-SCENE 0"
 LINEAGE = "VERDANDI-ART-LINEAGE 0"
+# 0226: a scene with movers is played under the graybox's rules 2 (graybox/RULES-2.md), and says so (`rules`); the
+# version is the handshake: the plaza plays a scene only under the rules it names, and art/check.py refuses a scene
+# whose rules the simulation and its twin (graybox/web/sim.js, graybox/tick_ref.py) do not both implement
+RULES = 2
+QN = 256        # a mover's phase units a metre (RULES-2.md's Q = 1/256 m)
+TICKS = 120     # the graybox's ticks a second
+AXES = {"+x": [1, 0, 0], "-x": [-1, 0, 0], "+y": [0, 1, 0], "-y": [0, -1, 0], "+z": [0, 0, 1], "-z": [0, 0, -1]}
 
 # the player, as the graybox runtime moves it (graybox/web/sim.js), and the art layer's own two assumptions
 PLAYER = {"radius": 0.35, "eye": 1.62, "step": 0.55, "speed": 6.0, "gravity": 20.0, "jump": 7.0}
 PLAYER["jump_apex"] = round(PLAYER["jump"] ** 2 / (2 * PLAYER["gravity"]), 4)   # 1.225 m
 BODY = 1.80     # the head's height above the feet: the graybox has no head, so the art layer declares one
+TARGET = {"radius": 0.4, "height": 1.9}   # a target's column, as graybox/web/sim.js stands it (restated; art/check.py reads sim.js)
 MARGIN = 0.25   # clearance kept above the highest reachable head
 FLAT = 0.02     # dressing this close to a solid top is flat on it (a puddle, a decal)
 FLUSH = 0.08    # dressing this thin, against a rock face, is flush on the wall (a sign, a neon strip)
@@ -72,28 +82,44 @@ def r4(v: float) -> float:
 
 
 # ------------------------------------------------------------------------------------------------ the art file
+# THE NUMBER GRAMMAR (0226). A number of the art file is ASCII digits, at most one '.' with digits on both sides, and a
+# '-' in front when it is negative: 7, 0.82, -10, 2.5. Nothing else: Python's float() alone took '2_5' as 25, the
+# Arabic-Indic digits six and two as 62, '25e-1' and '+2.5' as 2.5, '.5' and '5.' (MEASURED, 0221); each is now refused.
+# A whole number (a spacing, a percentage, an 'every') is a number whose value is whole: '3' and '3.0', never '2.7',
+# which int() cut to 2 without a word. A colour is three channels 0 to 255 without leading zeros, and a cell two runs of
+# ASCII digits: str.isdigit() took '²', which int() then refused with an error the exporter did not catch.
+NUMBER = re.compile(r"-?[0-9]+(?:\.[0-9]+)?")
+CHANNEL = r"(?:0|[1-9][0-9]{0,2})"
+
+
 def _num(tok, where, lo, hi, what):
-    try:
-        v = float(tok)
-    except ValueError:
-        raise ArtError("%s: %r is not a number (%s)" % (where, tok, what))
+    if not isinstance(tok, str) or not NUMBER.fullmatch(tok):
+        raise ArtError("%s: %r is not a number (%s): ASCII digits, at most one '.' between digits, and '-' in front when "
+                       "negative; no '+', '_', exponent or other digits" % (where, tok, what))
+    v = float(tok)
     if not (lo <= v <= hi):
         raise ArtError("%s: %s %r is outside %s..%s" % (where, what, tok, lo, hi))
     return v
 
 
+def _whole(tok, where, lo, hi, what):
+    _num(tok, where, lo, hi, what)
+    f = Fraction(tok)
+    if f.denominator != 1:
+        raise ArtError("%s: %s %r is not a whole number" % (where, what, tok))
+    return int(f)
+
+
 def _rgb(tok, where):
-    parts = tok.split(",")
-    if len(parts) != 3 or not all(p.isdigit() and (p == "0" or not p.startswith("0")) and int(p) <= 255 for p in parts):
+    if not isinstance(tok, str) or not re.fullmatch("%s,%s,%s" % (CHANNEL, CHANNEL, CHANNEL), tok) or any(int(p) > 255 for p in tok.split(",")):
         raise ArtError("%s: %r is not a colour R,G,B, each 0-255" % (where, tok))
-    return [int(p) for p in parts]
+    return [int(p) for p in tok.split(",")]
 
 
 def _cell(tok, w, h, where):
-    try:
-        x, z = (int(v) for v in tok.split(","))
-    except ValueError:
+    if not isinstance(tok, str) or not re.fullmatch(r"[0-9]+,[0-9]+", tok):
         raise ArtError("%s: %r is not a cell x,z" % (where, tok))
+    x, z = (int(v) for v in tok.split(","))
     if not (0 <= x < w and 0 <= z < h):
         raise ArtError("%s: the cell %d,%d is outside the %d x %d grid" % (where, x, z, w, h))
     return x, z
@@ -131,7 +157,7 @@ def parse(text: str, fname: str) -> dict:
         raise ArtError("%s: the first line is not %r" % (fname, FORMAT))
     A = {"file": fname, "statements": [], "map": None, "title": "", "seed": "verdandi", "time": "night",
          "light": None, "fog": None, "exposure": 0.0, "bloom": 0.6, "rain": 0.0, "assets": {}, "materials": {},
-         "surfaces": {}, "regions": {}, "dressing": [], "views": []}
+         "surfaces": {}, "regions": {}, "dressing": [], "views": [], "movers": []}
     for n, code in stmts[1:]:
         where = "%s line %d" % (fname, n)
         verb, args = code[0], code[1:]
@@ -206,6 +232,10 @@ def parse(text: str, fname: str) -> dict:
                 raise ArtError("%s: the view %s is declared twice" % (where, args[0]))
             A["views"].append({"name": args[0], "cell": args[1], "yaw": _num(args[2], where, 0, 360, "yaw"),
                                "pitch": _num(args[3], where, -89, 89, "pitch"), "where": where})
+        elif verb == "mover":
+            if not args or not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", args[0]):
+                raise ArtError("%s: a mover's name is a lowercase letter, then letters, digits or '-' (at most 32)" % where)
+            A["movers"].append({"args": args, "where": where, "hash": A["statements"][-1]["hash"]})
         elif verb in ("skyline", "tower", "canopy", "neon", "lamp", "puddle"):
             A["dressing"].append({"verb": verb, "args": args, "where": where, "hash": A["statements"][-1]["hash"], "skey": A["statements"][-1]["key"]})
         else:
@@ -227,17 +257,57 @@ def world(name: str, maps_dir=None) -> dict:
         level.MAPS = saved
 
 
-def reach_ceiling(W, C):
+def swept(m):
+    """A mover's box over its whole travel (metres): its box at phase 0 stretched along its axis by len/256 m. Exact:
+    every number is a whole number of 1/256 m below 2^11."""
+    d = m["len"] / float(QN)
+    b = list(m["box"])
+    for i, a in enumerate(m["axis"]):
+        if a > 0:
+            b[i + 3] = b[i + 3] + d
+        elif a < 0:
+            b[i] = b[i] - d
+    return b
+
+
+def mover_top(m):
+    """The highest a mover's top rises: its top at phase 0, or at the end of its travel when it travels up."""
+    return m["box"][4] + (m["len"] / float(QN) if m["axis"][1] > 0 else 0.0)
+
+
+def footprint(b, w, h, cell):
+    """The cells a box covers in plan with some area (strictly), inside the grid."""
+    return [(x, z) for z in range(h) if z * cell < b[5] and (z + 1) * cell > b[2] for x in range(w) if x * cell < b[3] and (x + 1) * cell > b[0]]
+
+
+def reach_ceiling(W, C, movers=()):
     """For every cell, the height dressing above it must clear: the highest head a player can raise over it.
 
     A cell is standable when a player can get onto it from a spawn: over C, a step to a neighbour may climb at most
     the jump's apex (and drop any height). The head over a cell reaches the highest standable top among the cell and
-    its eight neighbours (the player's radius leans into the next cell), plus the body, the jump and a margin."""
-    w, h, wall, tops = C["w"], C["h"], W["wall"], C["tops"]
+    its eight neighbours (the player's radius leans into the next cell), plus the body, the jump and a margin.
+
+    With movers (0226), a rider stands on a mover's top wherever it travels, and steps or jumps off it: every mover is
+    taken to be boardable (whether a player can reach it is not asked, which can only raise the ceiling); the cells under
+    its travel and their eight neighbours are standable when their top is at most its highest top plus the apex, and
+    the walk over C goes on from them; and the head over those cells and their neighbours reaches its highest top."""
+    w, h, wall, tops, cell = C["w"], C["h"], W["wall"], C["tops"], C["cell"]
     apex = PLAYER["jump_apex"]
     seen = set()
     frontier = [(sp["x"], sp["z"]) for _k, sp in sorted(W["spawns"].items())]
     seen.update(frontier)
+    rides = []   # (the cells under a mover's travel, its highest top)
+    for m in movers:
+        F = footprint(swept(m), w, h, cell)
+        hi = mover_top(m)
+        rides.append((set(F), hi))
+        for x, z in F:
+            for dz in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    a, b = x + dx, z + dz
+                    if 0 <= a < w and 0 <= b < h and (a, b) not in seen and tops[b * w + a] < wall and tops[b * w + a] <= hi + apex:
+                        seen.add((a, b))
+                        frontier.append((a, b))
     while frontier:
         nxt = []
         for x, z in frontier:
@@ -259,6 +329,9 @@ def reach_ceiling(W, C):
                     if 0 <= a < w and 0 <= b < h and (a, b) in seen:
                         t = tops[b * w + a]
                         best = t if best is None else max(best, t)
+                    for F, hi in rides:
+                        if (a, b) in F:
+                            best = hi if best is None else max(best, hi)
             if best is None:
                 t = tops[z * w + x]
                 best = t if t < wall else None
@@ -376,6 +449,108 @@ def _masses(cells, cx, cz, lo, hi):
     return out
 
 
+def _dec(f) -> str:
+    """A whole number of 1/256 m, written exactly in decimal."""
+    with decimal.localcontext() as ctx:
+        ctx.prec = 40
+        t = format(decimal.Decimal(f.numerator) / decimal.Decimal(f.denominator), "f")
+    return t.rstrip("0").rstrip(".") if "." in t else t
+
+
+def _qnum(tok, where, what, lo=-1024, hi=1024):
+    """A number of the grammar that is a whole number of 1/256 m (RULES-2.md's integer semantics), as a Fraction."""
+    _num(tok, where, lo, hi, what)
+    f = Fraction(tok)
+    if (f * QN).denominator != 1:
+        a = Fraction(int((f * QN) // 1), QN)
+        raise ArtError("%s: %s %r is not a whole number of 1/256 m (a mover's unit, graybox/RULES-2.md): the nearest are %s and %s"
+                       % (where, what, tok, _dec(a), _dec(a + Fraction(1, QN))))
+    return f
+
+
+def _movers(A, W, C):
+    """The art file's movers (0226), as rules 2 have them: each statement read, held to rules 2's own table (the twin's
+    Mover, graybox/tick_ref.py: a box of whole 1/256 m below 1,024 m, an axis, len and speed whole, the tunnelling
+    bound), and its travel held to the world: inside the grid, above every cell it crosses, clear of every spawn's
+    column, of every target's column and of every other mover's travel. Refused, with its line, otherwise.
+
+        mover NAME MATERIAL X0,Y0,Z0 X1,Y1,Z1 along AXIS travel METRES speed METRES-A-SECOND
+
+    Two opposite corners (metres; x east, y up, z south); AXIS one of +x -x +y -y +z -z; it goes out by `travel` metres
+    and back, again and again, at `speed` metres a second, which must be a whole number of 1/256 m a tick (a multiple of
+    0.46875 m/s; 0 parks it, a static box). A mover stops rather than move into a player, and carries one who stands on
+    it (RULES-2.md)."""
+    if not A["movers"]:
+        return []
+    import tick_ref   # the rules' second implementation: its Mover is rules 2's table of what a mover may be
+    w, h, cell, tops = C["w"], C["h"], C["cell"], C["tops"]
+    out, ids = [], set()
+    for d in A["movers"]:
+        args, where = d["args"], d["where"]
+        if len(args) < 4:
+            raise ArtError("%s: mover takes a name, a material, two corners X,Y,Z and 'along AXIS travel METRES speed M/S'" % where)
+        name = args[0]
+        if args[1] not in A["materials"]:
+            raise ArtError("%s: no material %s" % (where, args[1]))
+        corners = []
+        for c in args[2:4]:
+            parts = c.split(",")
+            if len(parts) != 3:
+                raise ArtError("%s: %r is not a corner X,Y,Z" % (where, c))
+            corners.append([_qnum(v, where, "a corner's coordinate", -1023, 1023) for v in parts])
+        lo = [min(corners[0][i], corners[1][i]) for i in range(3)]
+        hi = [max(corners[0][i], corners[1][i]) for i in range(3)]
+        if any(lo[i] == hi[i] for i in range(3)):
+            raise ArtError("%s: the mover %s has no extent along %s" % (where, name, "xyz"[[lo[i] == hi[i] for i in range(3)].index(True)]))
+        opts = _options(args[4:], where, {"along": 1, "travel": 1, "speed": 1})
+        miss = [k for k in ("along", "travel", "speed") if k not in opts]
+        if miss:
+            raise ArtError("%s: the mover %s needs %s" % (where, name, ", ".join(miss)))
+        if opts["along"][0] not in AXES:
+            raise ArtError("%s: along takes one of %s" % (where, " ".join(AXES)))
+        travel = _qnum(opts["travel"][0], where, "travel", 0, 1024)
+        if travel <= 0:
+            raise ArtError("%s: the mover %s travels no distance (a static box is speed 0, with any travel)" % (where, name))
+        _num(opts["speed"][0], where, 0, 1000, "speed")
+        sp = Fraction(opts["speed"][0]) * QN / TICKS
+        if sp.denominator != 1:
+            k = int(sp // 1)
+            raise ArtError("%s: speed %s m/s is not a whole number of 1/256 m a tick (a multiple of 0.46875 m/s): the nearest are %s and %s m/s"
+                           % (where, opts["speed"][0], _dec(Fraction(k * TICKS, QN)), _dec(Fraction((k + 1) * TICKS, QN))))
+        m = {"id": name, "by": d["hash"], "material": args[1], "box": [float(v) for v in lo + hi], "axis": list(AXES[opts["along"][0]]),
+             "len": int(travel * QN), "speed": int(sp), "policy": "stop"}
+        try:
+            tick_ref.Mover({k: m[k] for k in ("id", "box", "axis", "len", "speed", "policy")}, ids)
+        except tick_ref.MoverRefused as e:
+            raise ArtError("%s: %s" % (where, e))
+        ids.add(name)
+        b = swept(m)
+        if b[0] < 0 or b[2] < 0 or b[3] > w * cell or b[5] > h * cell or b[1] < 0 or b[4] >= 1024:
+            raise ArtError("%s: the mover %s's travel (%s) leaves the world (x 0..%s, z 0..%s, y 0 up to 1,024)" % (
+                where, name, ", ".join(_dec(Fraction(v)) for v in b), r4(w * cell), r4(h * cell)))
+        for x, z in footprint(b, w, h, cell):
+            if tops[z * w + x] > b[1]:
+                raise ArtError("%s: the mover %s's travel meets the solid of cell %d,%d (its top %s m, above the mover's bottom "
+                               "%s m): a mover rides above the cells it crosses" % (where, name, x, z, tops[z * w + x], _dec(Fraction(b[1]))))
+        for k, sp_ in sorted(W["spawns"].items()):
+            sx, sz, sy = (sp_["x"] + 0.5) * cell, (sp_["z"] + 0.5) * cell, tops[sp_["z"] * w + sp_["x"]]
+            px, pz = max(b[0], min(sx, b[3])), max(b[2], min(sz, b[5]))
+            if (sx - px) ** 2 + (sz - pz) ** 2 < PLAYER["radius"] ** 2 and b[4] > sy and b[1] < sy + BODY:
+                raise ArtError("%s: the mover %s's travel crosses spawn %s's column (a player appears there)" % (where, name, k))
+        for t in W["targets"]:
+            tx, tz, ty = (t["x"] + 0.5) * cell, (t["z"] + 0.5) * cell, tops[t["z"] * w + t["x"]]
+            px, pz = max(b[0], min(tx, b[3])), max(b[2], min(tz, b[5]))
+            if (tx - px) ** 2 + (tz - pz) ** 2 < TARGET["radius"] ** 2 and b[4] > ty and b[1] < ty + TARGET["height"]:
+                raise ArtError("%s: the mover %s's travel crosses target %s's column (rules 2 do not move targets: the box would pass through it)"
+                               % (where, name, t["id"]))
+        for o in out:
+            ob = swept(o)
+            if all(b[i] < ob[i + 3] and ob[i] < b[i + 3] for i in range(3)):
+                raise ArtError("%s: the mover %s's travel crosses the mover %s's" % (where, name, o["id"]))
+        out.append(m)
+    return out
+
+
 def export(A: dict, maps_dir=None) -> dict:
     """The scene and its lineage for a parsed art file."""
     conv = world(A["map"], maps_dir)
@@ -392,7 +567,8 @@ def export(A: dict, maps_dir=None) -> dict:
     for need in ("cube",):
         if need not in A["assets"]:
             raise ArtError("%s: the asset %r is not declared (every mesh names its source and licence)" % (A["file"], need))
-    reach, standable = reach_ceiling(W, C)
+    movers = _movers(A, W, C)
+    reach, standable = reach_ceiling(W, C, movers)
     seed = A["seed"]
     visuals, lights = [], []
 
@@ -479,7 +655,7 @@ def export(A: dict, maps_dir=None) -> dict:
             along_x = (x1 - x0) >= (z1 - z0)
             n0, n1 = (x0, x1) if along_x else (z0, z1)
             if "ribs" in opts:
-                every = int(_num(opts["ribs"][0], where, 1, 12, "rib spacing"))
+                every = _whole(opts["ribs"][0], where, 1, 12, "rib spacing")
                 for k in range(n0, n1 + 2, every):
                     c = k * cell
                     rb = box(max(c - 0.25, x0 * cell), y - 0.8, z0 * cell, min(c + 0.25, (x1 + 1) * cell), y, (z1 + 1) * cell) if along_x else \
@@ -531,7 +707,7 @@ def export(A: dict, maps_dir=None) -> dict:
             if A["materials"][mat]["emissive_strength"] <= 0:
                 raise ArtError("%s: the neon's material %s does not emit" % (where, mat))
             y = _num(args[2], where, 0.3, wall - 0.2, "height")
-            every = int(_num(args[3], where, 1, 64, "every"))
+            every = _whole(args[3], where, 1, 64, "every")
             col = A["materials"][mat]["emissive"]
             for z in range(z0, z1 + 1):
                 for x in range(x0, x1 + 1):
@@ -567,7 +743,7 @@ def export(A: dict, maps_dir=None) -> dict:
             x0, z0, x1, z1 = _region(A, args[0], w, h, where)
             col = _rgb(args[1], where)
             cd = _num(args[2], where, 0, 100000, "candelas")
-            sp = int(_num(args[3], where, 1, 48, "spacing"))
+            sp = _whole(args[3], where, 1, 48, "spacing")
             if "housing" not in A["materials"]:
                 raise ArtError("%s: a lamp hangs in a housing: declare the material 'housing'" % where)
             for z in range(z0, z1 + 1):
@@ -587,7 +763,7 @@ def export(A: dict, maps_dir=None) -> dict:
                 raise ArtError("%s: puddle takes a region, a material and a percentage of its floor cells" % where)
             x0, z0, x1, z1 = _region(A, args[0], w, h, where)
             mat = material(args[1], where)
-            pct = int(_num(args[2], where, 0, 100, "percentage"))
+            pct = _whole(args[2], where, 0, 100, "percentage")
             for z in range(z0, z1 + 1):
                 for x in range(x0, x1 + 1):
                     k = z * w + x
@@ -600,6 +776,17 @@ def export(A: dict, maps_dir=None) -> dict:
                     ex, ez = 0.15 + (hv >> 20) % 40 / 100.0, 0.15 + (hv >> 26) % 40 / 100.0
                     visuals.append({"id": "puddle:%d,%d" % (x, z), "by": sh, "region": args[0], "asset": "cube", "material": mat,
                                     "box": box(x * cell + ix, 0.001, z * cell + iz, (x + 1) * cell - ex, 0.008, (z + 1) * cell - ez)})
+    # dressing in a mover's path would be cut by it as it passes: only a piece flat on the floor may lie under one
+    for v in visuals:
+        b = v["box"]
+        for m in movers:
+            mb = swept(m)
+            if all(b[i] < mb[i + 3] and mb[i] < b[i + 3] for i in range(3)):
+                flat = all(b[4] <= tops[z * w + x] + FLAT for x, z in footprint(b, w, h, cell))
+                if not flat:
+                    line = {s["hash"]: s["line"] for s in A["statements"]}
+                    raise ArtError("%s: %s (from line %d) stands in the path of the mover %s (line %d)" % (
+                        A["file"], v["id"], line.get(v["by"], 0), m["id"], line.get(m["by"], 0)))
     # one fixture to a place: a place is the kind and the cell (and face) a piece of dressing stands on, whatever
     # region or statement made it. Two pieces in one place are coplanar copies that flicker in an engine, and an
     # address that names two things names neither (DIRECTOR-0's addresses rest on this).
@@ -635,6 +822,10 @@ def export(A: dict, maps_dir=None) -> dict:
         "assets": {k: v for k, v in sorted(A["assets"].items()) if k in used},
         "collision": collision, "visuals": sorted(visuals, key=lambda v: v["id"]), "lights": sorted(lights, key=lambda v: v["id"]),
     }
+    if movers:
+        # only a scene with movers names its rules and carries them: a scene without is byte for byte what it was
+        scene["rules"] = RULES
+        scene["movers"] = movers
     scene_bytes = (json.dumps(scene, indent=1, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
     lineage = {
         "format": LINEAGE, "name": A["name"],
@@ -645,7 +836,7 @@ def export(A: dict, maps_dir=None) -> dict:
         "scene_sha256": sha256(scene_bytes),
         "assets": scene["assets"],
         "statements": A["statements"],
-        "counts": {"collision": len(collision), "visuals": len(visuals), "lights": len(lights)},
+        "counts": dict({"collision": len(collision), "visuals": len(visuals), "lights": len(lights)}, **({"movers": len(movers)} if movers else {})),
     }
     return {"scene": scene, "scene_bytes": scene_bytes, "lineage": lineage, "W": W, "C": C}
 
@@ -697,6 +888,12 @@ def plan_svg(out: dict) -> str:
             fill, op = "#e0e0e0", 0.9
         parts.append('<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="%s" fill-opacity="%.2f"/>'
                      % (b[0] * sc, b[2] * sc, max(0.6, (b[3] - b[0]) * sc), max(0.6, (b[5] - b[2]) * sc), fill, op))
+    for m in S.get("movers", []):
+        b, a = swept(m), m["box"]
+        parts.append('<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="none" stroke="#f0c040" stroke-width="1.2" stroke-dasharray="3 2"/>'
+                     % (b[0] * sc, b[2] * sc, (b[3] - b[0]) * sc, (b[5] - b[2]) * sc))
+        parts.append('<rect x="%.2f" y="%.2f" width="%.2f" height="%.2f" fill="#f0c040" fill-opacity="0.55"/><text x="%.2f" y="%.2f" fill="#fff" font-size="9">%s</text>'
+                     % (a[0] * sc, a[2] * sc, (a[3] - a[0]) * sc, (a[5] - a[2]) * sc, a[0] * sc + 2, a[2] * sc - 2, m["id"]))
     for L in S["lights"]:
         if L["type"] == "point":
             parts.append('<circle cx="%.2f" cy="%.2f" r="5" fill="%s" fill-opacity="0.35"/><circle cx="%.2f" cy="%.2f" r="1.6" fill="%s"/>'
@@ -704,8 +901,9 @@ def plan_svg(out: dict) -> str:
     for k, sp in S["spawns"].items():
         parts.append('<circle cx="%.2f" cy="%.2f" r="5" fill="none" stroke="%s" stroke-width="2"/><text x="%.2f" y="%.2f" fill="#fff" font-size="9" text-anchor="middle">%s</text>'
                      % (sp["x"] * sc, sp["z"] * sc, "#ffb347" if k == "A" else "#47d1ff", sp["x"] * sc, sp["z"] * sc + 3, k))
-    parts.append('<text x="8" y="%d" fill="#cfd6dd" font-size="12">%s — %d play boxes, %d dressing pieces, %d lights</text>'
-                 % (h * px + 16, (S["title"] or S["name"]).replace("&", "&amp;").replace("<", "&lt;"), len(S["collision"]), len(S["visuals"]), len(S["lights"])))
+    parts.append('<text x="8" y="%d" fill="#cfd6dd" font-size="12">%s — %d play boxes, %d dressing pieces, %d lights%s</text>'
+                 % (h * px + 16, (S["title"] or S["name"]).replace("&", "&amp;").replace("<", "&lt;"), len(S["collision"]), len(S["visuals"]), len(S["lights"]),
+                    (", %d movers (dashed: where each travels)" % len(S["movers"])) if S.get("movers") else ""))
     parts.append('<text x="8" y="%d" fill="#7f8a95" font-size="10">scene %s · plan view, not a render</text>' % (h * px + 32, out["lineage"]["scene_sha256"][:16]))
     parts.append("</svg>")
     return "\n".join(parts) + "\n"
@@ -740,8 +938,9 @@ def main(argv) -> int:
         d = dest or os.path.join(BUILD, name)
         write(out, d)
         L = out["lineage"]
-        print("%s  scene %s  (%d play boxes, %d dressing pieces, %d lights)  ->  %s"
-              % (name, L["scene_sha256"][:16], L["counts"]["collision"], L["counts"]["visuals"], L["counts"]["lights"], os.path.relpath(d, REPO)))
+        print("%s  scene %s  (%d play boxes, %d dressing pieces, %d lights%s)  ->  %s"
+              % (name, L["scene_sha256"][:16], L["counts"]["collision"], L["counts"]["visuals"], L["counts"]["lights"],
+                 (", %d movers, rules %d" % (L["counts"]["movers"], RULES)) if L["counts"].get("movers") else "", os.path.relpath(d, REPO)))
     return 0
 
 

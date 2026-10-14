@@ -246,8 +246,9 @@ def line(i, s):
         return "PLAY  [%d] %s  NOT SERVED\n%s" % (i, s["label"], s["message"])
     c = s["counts"]
     v = ("  %s %s" % (s["verdict"], ",".join(s["codes"]) or "-")) if s["verdict"] else ""
-    return "PLAY  [%d] %s  scene %s  (%d play boxes, %d dressing pieces, %d lights)  map %s %s%s" % (
-        i, s["label"], s["sha"][:12], c["collision"], c["visuals"], c["lights"], s["map"], s["map_sha"][:12], v)
+    return "PLAY  [%d] %s  scene %s  (%d play boxes, %d dressing pieces, %d lights%s)  map %s %s%s" % (
+        i, s["label"], s["sha"][:12], c["collision"], c["visuals"], c["lights"],
+        (", %d movers, played under rules 2" % c["movers"]) if c.get("movers") else "", s["map"], s["map_sha"][:12], v)
 
 
 class Live:
@@ -1272,6 +1273,7 @@ def selftest():
         plants = [
             ("a canopy where a player can be", text + b"canopy plaza concrete 3.0\n", "no dressing where a player can be"),
             ("a statement the exporter cannot read", text + b"canopy plaza\n", "the exporter refused"),
+            ("a mover whose travel goes through a wall (0226)", text + b"mover p concrete 40,0,30 42,0.5,32 along -z travel 24 speed 3.75\n", "solid"),
         ]
         for name, body_, want in plants:
             v = live.version
@@ -1281,6 +1283,16 @@ def selftest():
             row("refused-keeps: " + name, ok and not st["ok"] and want in st["message"] and sha(0) == s1["sha"]
                 and sha256(get(srv, "/scene/%s.json" % brief)[1]) == s1["sha"],
                 "refused (%s); scene %s still served" % (want, s1["sha"][:12]))
+        # 0226: an edit that adds a lift is served, the scene naming rules 2 and carrying the mover for the page to play
+        v = live.version
+        open(art, "wb").write(text + b"mover lift concrete 40,0,30 42,0.25,32 along +y travel 2.25 speed 0.9375\n")
+        ok = until(live, v)
+        st = live.state()["slots"][0]
+        served = json.loads(get(srv, "/scene/%s.json" % brief)[1] or b"{}")
+        row("mover-served", ok and st["ok"] and served.get("rules") == 2 and [m["id"] for m in served.get("movers", [])] == ["lift"]
+            and sha256(get(srv, "/scene/%s.json" % brief)[1]) == sha(0),
+            "a lift added to the art: served under rules %s, its mover %s, len %s, speed %s" % (
+                served.get("rules"), (served.get("movers") or [{}])[0].get("id"), (served.get("movers") or [{}])[0].get("len"), (served.get("movers") or [{}])[0].get("speed")))
         v = live.version
         open(art, "wb").write(base)
         ok = until(live, v)

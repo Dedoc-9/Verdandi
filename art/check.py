@@ -15,6 +15,11 @@
 #   no lies   no dressing carries collision, and the scene's own reach ceiling is the one recomputed here
 #   sources   every mesh names its source and licence; every material a piece uses is declared
 #   lineage   the lineage's hashes are the files' and the scene's own
+#   movers    (0226) a scene with movers names rules 2, which graybox/web/sim.js and graybox/tick_ref.py both implement
+#             (the handshake); each mover is inside rules 2's table and its tunnelling bound, restated here; its travel
+#             stays in the world, above every cell it crosses, clear of every spawn's column and of every other mover's
+#             travel; the reach ceiling counts a rider at a mover's highest; and no dressing stands in a mover's path
+#             but what lies flat on the floor
 #
 # Then it plants defects and requires the check that should catch each one to refuse it, and it makes two
 # revisions in the owner's words: a look revision ("make the wet surfaces less reflective"), which may change the
@@ -52,13 +57,38 @@ _spec.loader.exec_module(gcheck)
 
 
 # ------------------------------------------------------------------------------------------------ the verifier
+def travel_of(m):
+    """A mover's box over its travel, computed again here: its box, and the box moved len/256 m along its axis."""
+    b, d = m["box"], m["len"] / 256.0
+    moved = [b[i] + m["axis"][i % 3] * d for i in range(6)]
+    return [min(b[i], moved[i]) for i in range(3)] + [max(b[i + 3], moved[i + 3]) for i in range(3)]
+
+
+def cells_under(b, g):
+    """The cells under a box in plan, with some area."""
+    c = g["cell"]
+    return {(x, z) for x in range(g["w"]) for z in range(g["h"]) if x * c < b[3] and b[0] < (x + 1) * c and z * c < b[5] and b[2] < (z + 1) * c}
+
+
 def reach_here(S):
-    """The reach ceiling, computed again from the scene's C and player, apart from the exporter's code."""
+    """The reach ceiling, computed again from the scene's C and player, apart from the exporter's code. A rider is
+    counted at each mover's highest top, over the cells under its travel and their neighbours, and steps off it onto
+    any of those cells no higher than that top plus the jump."""
     g, P = S["grid"], S["player"]
     w, h, wall, tops = g["w"], g["h"], g["wall"], S["tops"]
     apex = P["jump"] * P["jump"] / (2.0 * P["gravity"])
     cells = lambda sp: (int(sp["x"] // g["cell"]), int(sp["z"] // g["cell"]))
     start = sorted({cells(sp) for sp in S["spawns"].values()})
+    rides = []
+    for m in S.get("movers", []):
+        tb = travel_of(m)
+        rides.append((cells_under(tb, g), max(m["box"][4], tb[4])))
+    for under, hi in rides:
+        for x, z in sorted(under):
+            for a in (x - 1, x, x + 1):
+                for b in (z - 1, z, z + 1):
+                    if 0 <= a < w and 0 <= b < h and tops[b * w + a] < wall and tops[b * w + a] <= hi + apex and (a, b) not in start:
+                        start.append((a, b))
     ok, todo = set(start), list(start)
     while todo:
         x, z = todo.pop()
@@ -70,6 +100,7 @@ def reach_here(S):
     for z in range(h):
         for x in range(w):
             near = [tops[b * w + a] for a in (x - 1, x, x + 1) for b in (z - 1, z, z + 1) if (a, b) in ok]
+            near += [hi for under, hi in rides if any((a, b) in under for a in (x - 1, x, x + 1) for b in (z - 1, z, z + 1))]
             if near:
                 out.append(round(max(near) + P["body"] + apex + P["margin"], 4))
             else:
@@ -114,10 +145,15 @@ def check_envelope(S, reach):
     g, P = S["grid"], S["player"]
     w, h, cell, wall, tops = g["w"], g["h"], g["cell"], g["wall"], S["tops"]
     rock = lambda x, z: not (0 <= x < w and 0 <= z < h) or tops[z * w + x] >= wall
+    paths = [(m["id"], travel_of(m)) for m in S.get("movers", [])]
     for v in S["visuals"]:
         x0, y0, z0, x1, y1, z1 = v["box"]
         if not (x1 > x0 and y1 > y0 and z1 > z0):
             return False, "%s is not a box" % v["id"]
+        for mid, tb in paths:
+            if x0 < tb[3] and tb[0] < x1 and y0 < tb[4] and tb[1] < y1 and z0 < tb[5] and tb[2] < z1:
+                if not all(y1 <= tops[z * w + x] + P["flat"] + 1e-9 for x, z in cells_under(v["box"], g)):
+                    return False, "%s stands in the path of the mover %s" % (v["id"], mid)
         for z in range(max(0, int(z0 // cell)), min(h, int(-(-z1 // cell)))):
             for x in range(max(0, int(x0 // cell)), min(w, int(-(-x1 // cell)))):
                 cx0, cz0, cx1, cz1 = x * cell, z * cell, (x + 1) * cell, (z + 1) * cell
@@ -149,6 +185,15 @@ def sim_player():
     return {k: vals[k] for k in ("radius", "eye", "step", "speed", "gravity", "jump")}
 
 
+def sim_target():
+    """A target's radius and height as graybox/web/sim.js declares them."""
+    import re
+    src = open(os.path.join(REPO, "graybox", "web", "sim.js"), encoding="utf-8").read()
+    m = re.search(r"const P = \{([^}]*)\}", src)
+    vals = dict((k, float(v)) for k, v in re.findall(r"(\w+):\s*([0-9.]+)", m.group(1))) if m else {}
+    return {"targetRadius": vals.get("targetRadius", 0.0), "targetHeight": vals.get("targetHeight", 0.0)}
+
+
 def check_no_lies(S, reach, W=None):
     sim = sim_player()
     off = [k for k, v in sim.items() if S["player"].get(k) != v]
@@ -175,6 +220,89 @@ def check_no_lies(S, reach, W=None):
     if lit:
         return False, "the light %s carries geometry" % lit[0]
     return True, "no piece has collision; the player is sim.js's and the spawns W's; the reach ceiling is the one recomputed here; lights are only light"
+
+
+def sim_rules2():
+    """What the simulation and its twin say of rules 2, read from their sources: (sim.js offers rules 2, its body and
+    phase unit; tick_ref.py's rules-2 version and phase unit). None where a source no longer says it once."""
+    import re
+    js = open(os.path.join(REPO, "graybox", "web", "sim.js"), encoding="utf-8").read()
+    py = open(os.path.join(REPO, "graybox", "tick_ref.py"), encoding="utf-8").read()
+    offers = re.findall(r"rules === 2 \? 2 :", js)
+    unit = re.findall(r"const BODY = ([0-9.]+), Q = 1 / ([0-9]+);", js)
+    twin = re.findall(r"^RULES2 = ([0-9]+)$", py, re.M)
+    tq = re.findall(r"^Q = 1\.0 / ([0-9]+)\.0$", py, re.M)
+    tb = re.findall(r"^BODY = ([0-9.]+)$", py, re.M)
+    return {"sim": 2 if len(offers) == 1 else None, "body": float(unit[0][0]) if len(unit) == 1 else None,
+            "q": int(unit[0][1]) if len(unit) == 1 else None, "twin": int(twin[0]) if len(twin) == 1 else None,
+            "twin_q": int(tq[0]) if len(tq) == 1 else None, "twin_body": float(tb[0]) if len(tb) == 1 else None}
+
+
+def check_movers(S, W=None):
+    """A scene's movers (0226), held here apart from the exporter's code: the rules' handshake, rules 2's table, and
+    every mover's travel against the world, the spawns and the other movers."""
+    if "movers" not in S and "rules" not in S:
+        return True, "no movers: the scene is played as before (rules 1)"
+    if not S.get("movers") or "rules" not in S:
+        return False, "the scene has %s without %s" % (("rules", "movers") if "rules" in S else ("movers", "rules"))
+    if S["rules"] != 2:
+        return False, "the scene names rules %r: movers are played under rules 2, and no other rules are offered here" % (S["rules"],)
+    R = sim_rules2()
+    if R["sim"] != 2 or R["twin"] != 2 or R["q"] != 256 or R["twin_q"] != 256 or R["body"] is None or R["body"] != R["twin_body"]:
+        return False, "the scene needs rules 2 (1/256 m units): graybox/web/sim.js says %s and graybox/tick_ref.py says %s" % (
+            "rules 2 offered, Q 1/%s" % R["q"] if R["sim"] == 2 else "no rules 2", "rules %s, Q 1/%s" % (R["twin"], R["twin_q"]))
+    g, P = S["grid"], S["player"]
+    w, h, cell, tops = g["w"], g["h"], g["cell"], S["tops"]
+    radius, body = sim_player()["radius"], R["body"]
+    seen, paths = set(), []
+    for m in S["movers"]:
+        mid = m.get("id")
+        if not isinstance(mid, str) or mid in seen:
+            return False, "a mover's id %r is not text, or not unique" % (mid,)
+        seen.add(mid)
+        b = m.get("box")
+        if not (isinstance(b, list) and len(b) == 6 and all(isinstance(v, (int, float)) and abs(v) < 1024 and (v * 256) == int(v * 256) for v in b)):
+            return False, "the mover %s's box is not six whole numbers of 1/256 m below 1,024 m" % mid
+        if not (b[0] < b[3] and b[1] < b[4] and b[2] < b[5]):
+            return False, "the mover %s's box has no extent on some axis" % mid
+        a = m.get("axis")
+        if not (isinstance(a, list) and len(a) == 3 and sorted(abs(v) for v in a) == [0, 0, 1] and all(v in (-1, 0, 1) for v in a)):
+            return False, "the mover %s's axis is not one of x, y, z" % mid
+        n, sp = m.get("len"), m.get("speed")
+        if not (isinstance(n, int) and 1 <= n <= 2 ** 18 and isinstance(sp, int) and 0 <= sp <= n):
+            return False, "the mover %s's len or speed is not whole and in range" % mid
+        if m.get("policy") != "stop":
+            return False, "the mover %s's policy is not stop" % mid
+        if m.get("material") not in S["materials"]:
+            return False, "the mover %s's material is not declared" % mid
+        k = a.index(1) if 1 in a else a.index(-1)
+        thick = b[k + 3] - b[k]
+        bound = body + thick if k == 1 else 2 * radius + thick
+        if not sp / 256.0 < bound:
+            return False, "the mover %s moves %s m a tick, not less than its tunnelling bound %s m" % (mid, sp / 256.0, bound)
+        tb = travel_of(m)
+        if tb[0] < 0 or tb[2] < 0 or tb[1] < 0 or tb[3] > w * cell or tb[5] > h * cell or tb[4] >= 1024:
+            return False, "the mover %s's travel leaves the world" % mid
+        hit = sorted((x, z) for x, z in cells_under(tb, g) if tops[z * w + x] > tb[1])
+        if hit:
+            return False, "the mover %s's travel meets the solid of cell %d,%d" % ((mid,) + hit[0])
+        for side, spn in sorted(S["spawns"].items()):
+            px, pz = max(tb[0], min(spn["x"], tb[3])), max(tb[2], min(spn["z"], tb[5]))
+            if (spn["x"] - px) ** 2 + (spn["z"] - pz) ** 2 < radius ** 2 and tb[4] > spn["y"] and tb[1] < spn["y"] + body:
+                return False, "the mover %s's travel crosses spawn %s's column" % (mid, side)
+        if W is not None:
+            sp = sim_target()
+            for t in W["targets"]:
+                tx, tz, ty = (t["x"] + 0.5) * cell, (t["z"] + 0.5) * cell, tops[t["z"] * w + t["x"]]
+                px, pz = max(tb[0], min(tx, tb[3])), max(tb[2], min(tz, tb[5]))
+                if (tx - px) ** 2 + (tz - pz) ** 2 < sp["targetRadius"] ** 2 and tb[4] > ty and tb[1] < ty + sp["targetHeight"]:
+                    return False, "the mover %s's travel crosses target %s's column" % (mid, t["id"])
+        for oid, ob in paths:
+            if all(tb[i] < ob[i + 3] and ob[i] < tb[i + 3] for i in range(3)):
+                return False, "the movers %s and %s cross each other's travel" % (oid, mid)
+        paths.append((mid, tb))
+    return True, "%d mover(s) under rules 2, which sim.js and tick_ref.py both implement: each within rules 2's table and its tunnelling bound; each travel above the cells it crosses and clear of the spawns' columns%s and of each other" % (
+        len(S["movers"]), ", the targets'" if W is not None else "")
 
 
 def check_sources(S):
@@ -221,6 +349,7 @@ def verify(out, art_path, scene_bytes=None, D=None):
     res.append(("no dressing where a player can be",) + check_envelope(S, reach))
     res.append(("the art carries no collision and no false ceiling",) + check_no_lies(S, reach, W))
     res.append(("every mesh names its source and licence",) + check_sources(S))
+    res.append(("movers: rules 2 holds them and their paths are clear",) + check_movers(S, W))
     res.append(("the lineage binds every input",) + check_lineage(out, art_path, scene_bytes))
     # QUALITY-0 (art/quality.py): the scene's bytes exact — finite, in their one byte form, every field known and in
     # its bounds, inside what the native renderer draws
@@ -447,6 +576,124 @@ def plants(out, art_path):
                         "NOT shown (the slab alone refused: %s; with the option refused: %s)" % tuple(got)))
         except dress.ArtError as e:
             res.append((label, False, "the exporter refused it before the checks could: " + str(e)[:90]))
+    # 0226: the number grammar. The lamp alone passes; each variant of one of its numbers is refused for that number
+    base = "lamp plant-r 255,200,150 100 5"
+    try:
+        A = dress.parse(text + base + "\n", os.path.basename(art_path))
+        A["name"], A["sha256"] = "plant", "-"
+        dress.export(A)
+        base_ok = True
+    except dress.ArtError as e:
+        base_ok, why = False, str(e)
+    for label, add, says in (
+            ("an exponent ('1e2' candelas)", "lamp plant-r 255,200,150 1e2 5", "is not a number"),
+            ("a '+' ('+100')", "lamp plant-r 255,200,150 +100 5", "is not a number"),
+            ("an underscore ('1_00', which float() reads as 100)", "lamp plant-r 255,200,150 1_00 5", "is not a number"),
+            ("Arabic-Indic digits (one, zero, zero)", "lamp plant-r 255,200,150 \u0661\u0660\u0660 5", "is not a number"),
+            ("a fraction where a whole number goes ('5.5' cells, which int() cut to 5)", "lamp plant-r 255,200,150 100 5.5", "is not a whole number"),
+            ("a superscript two in a colour, which str.isdigit() took", "lamp plant-r 255,\u00b200,150 100 5", "is not a colour")):
+        if not base_ok:
+            res.append(("the number grammar refuses " + label, False, "NOT shown: the lamp alone was refused: " + why[:80]))
+            continue
+        try:
+            A = dress.parse(text + add + "\n", os.path.basename(art_path))
+            A["name"], A["sha256"] = "plant", "-"
+            dress.export(A)
+            res.append(("the number grammar refuses " + label, False, "the exporter took it"))
+        except dress.ArtError as e:
+            res.append(("the number grammar refuses " + label, says in str(e), ("refused: " if says in str(e) else "refused for another reason: ") + str(e)[:90]))
+        except Exception as e:   # noqa: BLE001  (a crash is not a refusal)
+            res.append(("the number grammar refuses " + label, False, "the exporter crashed: %s: %s" % (type(e).__name__, e)))
+    # 0226: movers the exporter must refuse, each beside one it takes, so that the refusal is the defect's
+    good = "mover plant-ok concrete 40,0,30 42,0.25,32 along +y travel 2.25 speed 0.9375"
+    slab = "canopy plant-r concrete 5.2 20,15 20,15"
+    for label, ok_text, add, says in (
+            ("a mover whose corner is not a whole number of 1/256 m", good, "mover plant-m concrete 40.1,0,30 42,0.25,32 along +y travel 2.25 speed 0.9375", "1/256 m"),
+            ("a mover whose speed is not a whole number of 1/256 m a tick", good, "mover plant-m concrete 40,0,30 42,0.25,32 along +y travel 2.25 speed 1", "a tick"),
+            ("a mover past the tunnelling bound (rules 2's own table refuses it)", good, "mover plant-m concrete 40,0,30 40.25,2,32 along +x travel 6 speed 114.375", "RULES2-MOVER"),
+            ("a mover whose travel goes through a wall", good, "mover plant-m concrete 40,0,30 42,0.5,32 along -z travel 24 speed 3.75", "solid"),
+            ("a mover whose travel crosses a spawn", good, "mover plant-m concrete 10,0,30 12,0.5,32 along -x travel 4 speed 3.75", "spawn"),
+            ("a mover whose travel crosses a target", good, "mover plant-m concrete 24,0,32 26,0.5,34 along -x travel 6 speed 3.75", "target"),
+            ("two movers whose travels cross", good, good + "\nmover plant-m concrete 38,1,30 39,1.25,32 along +x travel 3 speed 3.75", "plant-ok"),
+            ("a mover whose travel meets a piece of dressing (a slab at 5.2 m over a lift rising to 6.25 m)", slab + "\n" + good,
+             slab + "\nmover plant-m concrete 40,0,30 42,0.25,32 along +y travel 6 speed 0.9375", "in the path")):
+        try:
+            got = []
+            for t2 in (ok_text, add):
+                A = dress.parse(text + t2 + "\n", os.path.basename(art_path))
+                A["name"], A["sha256"] = "plant", "-"
+                try:
+                    dress.export(A)
+                    got.append(None)
+                except dress.ArtError as e:
+                    got.append(str(e))
+            ok = got[0] is None and got[1] is not None and says in got[1]
+            res.append(("the exporter refuses " + label, ok, ("refused: " + got[1][:100]) if ok else "NOT shown (the good mover: %s; the defect: %s)" % (got[0] or "taken", got[1] or "taken")))
+        except dress.ArtError as e:
+            res.append(("the exporter refuses " + label, False, "the plant itself did not read: " + str(e)[:90]))
+    # 0226: a canopy clear of every head on foot, not of a rider's: the slab alone passes, and with a lift under it, which
+    # raises a rider's head to 5.8 m, the same slab is refused by the envelope (the exporter takes both)
+    try:
+        got = []
+        for add in ("canopy plant-r concrete 4.4", "canopy plant-r concrete 4.4\n" + good):
+            A = dress.parse(text + add + "\n", os.path.basename(art_path))
+            A["name"], A["sha256"] = "plant", "-"
+            o3 = dress.export(A)
+            got.append("no dressing where a player can be" in [c for c, ok, _d in verify(o3, None, D=gcheck.source_rows(o3["W"])) if not ok])
+        res.append(("a canopy clear of every head on foot, not of a rider's on a lift", got == [False, True],
+                    "the slab alone passes; with a lift under it refused by: no dressing where a player can be" if got == [False, True] else
+                    "NOT shown (the slab alone refused: %s; with the lift refused: %s)" % tuple(got)))
+    except dress.ArtError as e:
+        res.append(("a canopy clear of every head on foot, not of a rider's on a lift", False, "the exporter refused it before the checks could: " + str(e)[:90]))
+    # 0226: the scene's movers held here apart from the exporter: the brief with a lift, exported, passes every check;
+    # each defect planted in its scene is refused by the movers' check, or by the ceiling's
+    try:
+        A = dress.parse(text + good + "\n", os.path.basename(art_path))
+        A["name"], A["sha256"] = "plant", "-"
+        o3 = dress.export(A)
+    except dress.ArtError as e:
+        o3 = None
+        res.append(("the brief with a lift passes every check", False, "the exporter refused it: " + str(e)[:90]))
+    if o3 is not None:
+        D3 = gcheck.source_rows(o3["W"])
+        S3 = o3["scene"]
+        base_fail = [c for c, ok, _d in verify(o3, None, D=D3) if not ok]
+        res.append(("the brief with a lift passes every check", not base_fail, "it did not: " + ", ".join(base_fail) if base_fail else
+                    "rules %s, %d mover(s); every check passed" % (S3.get("rules"), len(S3.get("movers", [])))))
+
+        def judged(label, S4, expect):
+            failed = [c for c, ok, _d in verify(dict(o3, scene=S4), None, scene_bytes=o3["scene_bytes"], D=D3) if not ok]
+            res.append((label, expect in failed, ("refused by: " + expect) if expect in failed else "NOT refused by %r (failed: %s)" % (expect, failed or "nothing")))
+        S4 = copy.deepcopy(S3)
+        S4["rules"] = 3
+        judged("the scene names rules 3, which neither sim.js nor tick_ref.py implements (the handshake)", S4, "movers: rules 2 holds them and their paths are clear")
+        S4 = copy.deepcopy(S3)
+        S4["movers"][-1].update(box=[40.0, 0.0, 30.0, 40.25, 2.0, 32.0], axis=[1, 0, 0], len=1024, speed=244)
+        S4["reach"] = reach_here(S4)
+        judged("a mover past the tunnelling bound, in the scene", S4, "movers: rules 2 holds them and their paths are clear")
+        S4 = copy.deepcopy(S3)
+        S4["movers"][-1].update(axis=[0, 0, -1], len=4096 * 3)
+        S4["reach"] = reach_here(S4)
+        judged("a mover's travel through a wall, in the scene", S4, "movers: rules 2 holds them and their paths are clear")
+        S4 = copy.deepcopy(S3)
+        S4["movers"][-1]["box"][0] = 40.1
+        judged("a mover's corner not a whole number of 1/256 m, in the scene", S4, "movers: rules 2 holds them and their paths are clear")
+        S4 = copy.deepcopy(S3)
+        S4["reach"] = copy.deepcopy(S["reach"])
+        judged("the lift's rider left out of the scene's reach ceiling", S4, "the art carries no collision and no false ceiling")
+        S4 = copy.deepcopy(S3)
+        S4["movers"][-1].update(box=[24.0, 0.0, 32.0, 26.0, 0.5, 34.0], axis=[-1, 0, 0], len=6 * 256)
+        S4["reach"] = reach_here(S4)
+        judged("a mover's travel through a target's column, in the scene", S4, "movers: rules 2 holds them and their paths are clear")
+        S4 = copy.deepcopy(S3)
+        S4["movers"][-1].update(box=[24.0, 0.0, 32.0, 26.0, 0.5, 34.0], axis=[-1, 0, 0], len=6 * 256)
+        S4["reach"] = reach_here(S4)
+        failed = [c for c, ok, _d in verify(dict(o3, scene=S4, W=dict(o3["W"], targets=[])), None, scene_bytes=o3["scene_bytes"], D=D3) if not ok]
+        res.append(("  the same scene over a world without targets passes the movers' check (the refusal is the target's)",
+                    "movers: rules 2 holds them and their paths are clear" not in failed, "failed: %s" % (failed or "nothing")))
+        S4 = copy.deepcopy(S3)
+        del S4["rules"]
+        judged("movers without the rules they are played under", S4, "movers: rules 2 holds them and their paths are clear")
     return res
 
 
@@ -460,8 +707,9 @@ def check_brief(name):
     except (dress.ArtError, level.MapError) as e:
         print("FAIL %s: the exporter refused the brief: %s" % (name, e))
         return 1, 0
-    print("== %s   scene %s   (%d play boxes, %d dressing pieces, %d lights)" % (
-        name, out["lineage"]["scene_sha256"][:12], out["lineage"]["counts"]["collision"], out["lineage"]["counts"]["visuals"], out["lineage"]["counts"]["lights"]))
+    print("== %s   scene %s   (%d play boxes, %d dressing pieces, %d lights%s)" % (
+        name, out["lineage"]["scene_sha256"][:12], out["lineage"]["counts"]["collision"], out["lineage"]["counts"]["visuals"], out["lineage"]["counts"]["lights"],
+        (", %d movers under rules %s" % (out["lineage"]["counts"]["movers"], out["scene"]["rules"])) if out["lineage"]["counts"].get("movers") else ""))
     lines.append(("the export is deterministic: the same files, the same bytes", out["scene_bytes"] == again["scene_bytes"] and out["lineage"] == again["lineage"], ""))
     lines += verify(out, art_path)
     try:

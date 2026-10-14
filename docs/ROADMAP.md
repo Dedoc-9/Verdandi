@@ -4139,6 +4139,69 @@ moves every world's head once, with the number grammar's fix), QUALITY-0 and ADM
 renderer drawing them, the plaza playing `withRules(2)` by the version handshake, and the exporter's checks of swept
 boxes against rock, spawns and each other; his references frozen again after it.
 
+**0225 on his machine, and 0226: movers enter through the art language (2026-10-14).** His run of 0225 (Windows,
+Python 3.14, Edge 155): applied as tree d228b6dc, as predicted; `tick_ref.py rules2` RULES 2 HELD BY PYTHON, line for
+line the container's; then, the browser's run made, RULES 2 HELD BY PYTHON AND THE ENGINE: every snapshot, hash and
+**identity** the same over 9,284 ticks, the identities the container's (fa57af895f527fdf to dd2eeb4aa57b16d0) —
+rules 2 agreeing across machines and engines (V8 in Edge on Windows, V8 in node and Chromium 141 on Linux, CPython 3.11
+and 3.14), MEASURED; RULES REFERENCE PASSED; GRAYBOX SELFTEST 30/30 and 27/27; the translation probe's six lines as
+the container printed them (to the three digits printed: not a comparison of bits); the gate 251 rows / 0 fail, rowset
+74db4c8d78625af5; pushed 52670bd..cc8ed69. Not run there: rules 1's trace held to Python (`tick_ref.py verify`) and
+Firefox. His first comparison was asked for before the browser had written its file, and `tick_ref.py` played the
+whole table and then stopped on a traceback: it now says which file is missing and the command that writes it, before
+playing anything. **0226, built, off the gate**, by his ruling that *"the physics layer should enter through the
+existing exporter, extending `art/dress.py` so that motion and interaction statements become part of the art language
+itself"*, the exporter change that moves every head once carrying the number grammar found in 0221. `art/dress.py`:
+**the number grammar** — a number is ASCII digits, at most one `.` between digits, a `-` in front when negative;
+`2_5`, `+2.5`, `25e-1`, `.5`, `5.` and digits of other scripts are refused (float() took them, MEASURED in 0221); a
+spacing, a percentage or an `every` must be whole (`int()` cut `2.7` to 2 without a word); a colour's channels and a
+cell's coordinates ASCII (`str.isdigit()` took a superscript two, which `int()` then refused with an error the exporter
+did not catch: a crash, now a refusal). **The mover statement**, `mover NAME MATERIAL X0,Y0,Z0 X1,Y1,Z1 along AXIS
+travel METRES speed M/S`: its corners and travel whole numbers of 1/256 m (exactly, through `Fraction`), its speed a
+whole number of 1/256 m a tick (a refusal names the two nearest speeds); held to rules 2's own table by the twin's
+`Mover` (the tunnelling bound among it), and its travel to the world: inside the grid, above every cell it crosses,
+clear of every spawn's column, of every target's column (rules 2 do not move targets: a box would pass through one),
+of every other mover's travel, and of every piece of dressing but what lies flat on the floor. The reach ceiling counts a rider at each mover's highest top (every mover taken to be boardable, which can
+only raise it) and the cells a rider can step off onto. A scene with movers names `rules: 2` and carries them; a scene
+without is byte for byte what it was (harbor-day 549d5d76035f and plaza-night 99001240ed5c, the same scenes and plan
+views as before), so the only head that moves is the exporter's: recorded in the plaza's ledger by a rebase (#24,
+1ff8e5e8f6be to aaf42446abed). `art/check.py` holds movers apart from the exporter's code: the handshake (a scene
+names rules 2, which `sim.js` and `tick_ref.py` both say they implement, read from their sources, with the same unit
+and the same body), rules 2's table restated, every travel against the world, the spawns, the targets and the other
+movers, a rider in the reach ceiling, no dressing in a path; twenty-two new plants in every brief (the grammar's six
+beside a lamp the exporter takes; eight movers the exporter refuses beside one it takes; a slab clear of every head on
+foot refused once a lift stands under it; seven defects planted in the brief's scene with a lift, which itself passes
+every check, among them rules 3, a travel through a target's column — and the same scene over a world without targets
+passing, so that the refusal is the target's — and a rider left out of the ceiling). QUALITY-0 knows `rules` and `movers` (both or
+neither, rules 2 only, every field bounded, every travel inside the world and under 1,024 m) and the renderer's mover cap
+(64, read from its source). The scope protocol: a mover is play (`play/mover/NAME`), and any change to one, or to the
+rules, is refused whatever is granted (SCOPE-PLAY), its material being its look (`surface/mover`); three new vectors
+fix it (65 in all, the 62 before byte for byte the same), the Rust twin reproduces all 65, and each twin with the rule
+taken out fails the vector it should. So a mover enters a world by a person's edit, recorded with `rebase`, never
+through a prompt, and the studio still names `motion.path` among what it cannot make. ADMISSION-0: the movers' check
+among the expected ones, `mover` among the play kinds, `sim.js` and `tick_ref.py` among the components a verdict rests
+on, and a scene with movers says that no tick was run. The plaza: `play.js` plays a scene under the rules it names and
+no other (rules 2 with its movers; a scene naming rules it does not play is not played), starts a new game when the
+movers or the rules change and not when only their look does; `scene_render.js` draws each mover where the simulation
+has put it (no moon shadow: that map is drawn once). The Unreal importer refuses a scene with movers. A world to play
+them: `art/briefs/harbor-lift.art`, harbor-day with a deck sliding 16 m along the south lane at 3.75 m/s and a lift
+beside the 2.6 m block at its west end, rising 2.25 m at 0.9375 m/s. MEASURED in the container: ART CHECKS all PASS
+but the three references (the exporter changed; his act to freeze, the comparison saying no field moved for harbor-day
+and plaza-night); QUALITY SELFTEST 73/73; DIRECTOR SELFTEST PASSED (a new row: an intent adding a lift refused,
+SCOPE-PLAY, its record saying the mover was not played), CRASHTEST (15 cases) and RACETEST (32 cases) PASSED; VECTORS
+65 / 65 and CONFORMANCE 65 / 65; LIVE SELFTEST 20/20 (a lift added to the art served under rules 2; a mover through a
+wall refused, the scene before it served); STUDIO SELFTEST 74/74; STUDIO-2 SELFTEST 19/19; STUDIO APP SELFTEST 12/12;
+STUDIO-TXN SELFTEST PASSED; RUNG SELFTEST 17/17; `tools/rung.py classify` D (the twins, AGENTS.md and the art's checks
+are roots), and `plants` NOT HELD with one plant *gone*, read and kept so: QUALITY-0's *a field the checker does not know
+(movers)* cannot stand now that movers are a known field, and is planted as *(doors)*, the same defect under another
+name, beside thirteen plants of the movers' own fields — the comparison is right to stop on it, and a person to read
+it. In headless Chromium (not committed), harbor-lift played: rules 2 and
+its two movers; the movers moving; a rider carried 0.5 m by the deck in 16 ticks and 0.78125 m up by the lift in 100,
+exactly; the lift to the block's top and a step east onto it; the movers taken out of the art on disk, a new game under
+rules 1, and put back; a change of their material alone leaving the game untouched; no page error. OBSERVED there
+(SwiftShader): the lift a dark steel slab beside the block, at its top level with it; the detectors flag neither still.
+Not measured: his machine; a real GPU; a person riding it.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

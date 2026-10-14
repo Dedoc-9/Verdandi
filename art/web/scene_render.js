@@ -20,9 +20,14 @@
 //   - bloom, and a tone curve.
 // Nothing hashes its pixels: a person judges what it draws. load(S) changes the scene it draws in place (a live edit);
 // dispose() frees the renderer, so that a newer copy of this file can take the canvas over.
+// Movers (0226): setMovers(boxes) gives the boxes where the simulation has put the scene's movers this frame; they are
+// drawn each frame in their materials beside the targets (the first MAX_MOVERS of them; art/quality.py reads the cap
+// from here). They cast no moon shadow (the shadow map is drawn once) and light no cell's line of sight.
 
 (function (root) {
   "use strict";
+
+  const MAX_MOVERS = 64;
 
   // ---------------------------------------------------------------- matrices (column-major)
   function mul(a, b) {
@@ -599,9 +604,22 @@ void main() {
     this.b2 = this.target(Math.max(2, w >> 3), Math.max(2, h >> 3), false); this.b2b = this.target(this.b2.w, this.b2.h, false);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   };
+  // the movers' boxes this frame ([x0, y0, z0, x1, y1, z1] each, in the scene's order), drawn with the next setTargets
+  Renderer.prototype.setMovers = function (boxes) { this.moverBoxes = (boxes || []).slice(0, MAX_MOVERS); };
   Renderer.prototype.setTargets = function (boxes) {
     // the targets (gameplay marks, not art): upright boxes in a plain red, drawn as the simulation places them
     const gl = this.gl, P = [], N = [], A = [], E = [], K = [];
+    // the movers, in their materials: stone on top and concrete on their sides, as a floor is
+    const ms = (this.S && this.S.movers) || [], mb = this.moverBoxes || [];
+    for (let i = 0; i < Math.min(ms.length, mb.length); i++) {
+      const m = this.S.materials[ms[i].material], [x0, y0, z0, x1, y1, z1] = mb[i], base = lin(m.base), em = lin(m.emissive).map(function (v) { return v * m.emissive_strength * 0.12; });
+      const faces = [[[1, 0, 0], [[x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]]], [[-1, 0, 0], [[x0, y0, z1], [x0, y1, z1], [x0, y1, z0], [x0, y0, z0]]],
+        [[0, 1, 0], [[x0, y1, z0], [x0, y1, z1], [x1, y1, z1], [x1, y1, z0]]], [[0, -1, 0], [[x0, y0, z1], [x0, y0, z0], [x1, y0, z0], [x1, y0, z1]]],
+        [[0, 0, 1], [[x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [x0, y0, z1]]], [[0, 0, -1], [[x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [x1, y0, z0]]]];
+      for (const [nrm, v] of faces) for (const j of [0, 1, 2, 0, 2, 3]) {
+        P.push(...v[j]); N.push(...nrm); A.push(base[0], base[1], base[2], m.roughness); E.push(em[0], em[1], em[2], m.metallic); K.push(nrm[1] === 1 ? 1 : 0);
+      }
+    }
     for (const b of boxes) {
       const [x0, y0, z0, x1, y1, z1] = b.box, col = b.up ? [0.35, 0.04, 0.03] : [0.08, 0.02, 0.02], em = b.up ? [0.05, 0.004, 0.002] : [0, 0, 0];
       const faces = [[[1, 0, 0], [[x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]]], [[-1, 0, 0], [[x0, y0, z1], [x0, y1, z1], [x0, y1, z0], [x0, y0, z0]]],

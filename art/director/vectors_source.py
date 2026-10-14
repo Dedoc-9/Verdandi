@@ -140,6 +140,24 @@ def scope_cases():
     c = clone(b)
     del c["visuals"][1]
     out.append(("a piece removed; a pattern that touched nothing", intent_doc(["gate/tower/*", "yard/neon/*"]), b, c, H0, ok))
+    # 15-17 (0226): movers are play. A mover added is refused, whatever the grant; its material is its look, which a
+    # surface grant covers; its travel changed beside a layout change inside a layout grant is still refused
+    lift = {"id": "lift", "by": "s5", "material": "stone", "box": [2.0, 0.0, 2.0, 4.0, 0.25, 4.0], "axis": [0, 1, 0], "len": 256, "speed": 2,
+            "policy": "stop"}
+    c = clone(b)
+    c["rules"], c["movers"] = 2, [lift]
+    out.append(("a mover added: play, refused whatever is granted", intent_doc(["**", "layout/yard"]), b, c, H0, ok))
+    bm = clone(b)
+    bm["rules"], bm["movers"] = 2, [lift]
+    c = clone(bm)
+    c["materials"]["granite"] = mat((80, 80, 80), 0.7)
+    c["movers"][0]["material"] = "granite"
+    out.append(("a mover's new material, under a surface grant: clean", intent_doc(["surface/mover", "material/granite"]), bm, c, H0, ok))
+    c = clone(bm)
+    c["tops"][1 * 6 + 4] = 4.0
+    c["collision"].append({"id": "c:4,1-4,1", "kind": "wall", "material": "stone", "cells": [4, 1, 4, 1], "box": [8.0, 0.0, 2.0, 10.0, 4.0, 4.0]})
+    c["movers"][0]["len"] = 128
+    out.append(("a mover's travel changed beside a granted layout change: refused", intent_doc(["layout/gate", "gate/**"], revision=(), layout=("close 4,1 4,1",)), bm, c, H0, ok))
     return out
 
 

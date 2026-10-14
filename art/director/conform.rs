@@ -629,6 +629,19 @@ fn pieces(scene: &V) -> BTreeMap<String, Piece> {
             });
         }
     }
+    // the movers (0226): play pieces, play/mover/<name>; their shape is everything but their id, statement and material
+    if let Some(V::Arr(ms)) = scene.get("movers") {
+        for m in ms {
+            let id = m.g("id").s().to_string();
+            out.insert(format!("mover/{}", id), Piece {
+                address: format!("play/mover/{}", id),
+                material: m.g("material").s().to_string(),
+                play: Some("mover".to_string()),
+                shape: V::Obj(["axis", "box", "len", "policy", "speed"].iter().map(|k| (k.to_string(), m.g(k).clone())).collect()),
+                light: None,
+            });
+        }
+    }
     let region_of = |r: &str| if r == "*" { "city".to_string() } else { r.to_string() };
     if let Some(V::Arr(vs)) = scene.get("visuals") {
         for v in vs {
@@ -838,6 +851,10 @@ fn check_scope(it: &V, base: &V, cand: &V, current: &V, checks: &V) -> V {
         }
     }
     if !play_shape.is_empty() && cells.is_empty() {
+        codes.insert("SCOPE-PLAY");
+    }
+    // a mover's shape changed, or the rules: refused, whatever is granted (0226)
+    if play_shape.iter().any(|a| a.starts_with("play/mover/")) || base.get("rules") != cand.get("rules") {
         codes.insert("SCOPE-PLAY");
     }
     let surfaces: BTreeSet<String> = patterns.iter().filter(|p| p.starts_with("surface/")).map(|p| p["surface/".len()..].to_string()).collect();

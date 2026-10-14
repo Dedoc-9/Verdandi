@@ -451,7 +451,8 @@ def refused(it, current, code, detail):
 
 # ADMISSION-0 (0222): the components a verdict rests on, by sha256 as the files stand when it is made (CRLF read as LF)
 TRUSTED = ("art/check.py", "art/quality.py", "art/director.py", "art/director/scope.py", "art/director/contract.py",
-           "art/director/intent.py", "art/director/ledger.py", "graybox/check.py", "art/web/scene_render.js")
+           "art/director/intent.py", "art/director/ledger.py", "graybox/check.py", "art/web/scene_render.js",
+           "graybox/web/sim.js", "graybox/tick_ref.py")
 
 
 def trusted_components(parts):
@@ -516,7 +517,8 @@ def evaluate_doc(ws, it, re_of="", on_candidate=None):
         verdict = scopemod.check_scope(it, out0["scene"], out1["scene"], cur, checks)
         timings["scope"] = ms(t)
         after.update({"art_sha256": parts1["art_sha256"], "world_sha256": parts1["world_sha256"]})
-        rec = contract.record(it, verdict, checks, trusted, True, regions | set(out1["scene"].get("regions", {})))
+        rec = contract.record(it, verdict, checks, trusted, True, regions | set(out1["scene"].get("regions", {})),
+                              movers=len(out1["scene"].get("movers", [])))
         return verdict, after, timings, out1, out0, text1, rec
     finally:
         timings["total"] = ms(t0)
@@ -1102,6 +1104,19 @@ def cmd_selftest():
                         and all(x in r0.get("not_checked", []) for x in contract.NEVER_CHECKED) and len(r0.get("trusted", [])) == len(TRUSTED) + 1
                         and r0.get("horizon", {}).get("ticks") == "0",
                         "rung %s; %d certified, %d not checked, %d trusted" % (r0.get("rung"), len(r0.get("certifies", [])), len(r0.get("not_checked", [])), len(r0.get("trusted", [])))))
+        # 0226: a mover is play. An intent that adds one is refused whatever its scope, and its record says the mover was
+        # not played
+        mdoc = {"base": {k: current_parts(ws)[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "brief": ws.brief, "candidate": "M",
+                "format": "VERDANDI-INTENT", "layout": [], "prompt": "add a lift", "rationale": "a mover through an intent",
+                "revision": ["+ mover selftest-lift concrete 40,0,30 42,0.25,32 along +y travel 2.25 speed 0.9375"], "scope": ["**", "material/concrete"],
+                "version": "0"}
+        vM, _aM, _tM, outM, _oM, _xM, recM = evaluate_doc(ws, canon.load_intent(canon.dumps(mdoc)))
+        results.append(("an intent that adds a mover (play) is refused whatever it grants (SCOPE-PLAY); its record says the mover was not played",
+                        vM["verdict"] == "REFUSED" and "SCOPE-PLAY" in vM["codes"] and "play/mover/selftest-lift" in vM["realized"] and outM is not None
+                        and len(outM["scene"].get("movers", [])) == 1 and recM["horizon"]["why"].startswith("the scene's 1 mover")
+                        and any(x.startswith("anything over time: the scene's 1 mover") for x in recM["not_checked"])
+                        and "check: movers: rules 2 holds them and their paths are clear" in recM["certifies"],
+                        "%s %s; realized %s" % (vM["verdict"], ",".join(vM["codes"]), ", ".join(vM["realized"])[:60])))
         adm = [e for e in events if e["kind"] == "admit" and not e["design_lines"]][-1]
         src = canon.load_intent(events[int(adm["evaluation"])]["intent"].encode("ascii"))
         inv_doc = {"base": {k: current_parts(ws)[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "brief": ws.brief, "candidate": "U",

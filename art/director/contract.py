@@ -26,7 +26,8 @@
 #
 # CERTIFIES is derived: the checks that ran and passed, by name, and the scope protocol's finding when it found one.
 # NOT_CHECKED is every expected check that did not run (a skip is never a pass) and what the director never checks.
-# HORIZON: the scene format has nothing that moves, so no tick was run and none is claimed.
+# HORIZON: no tick is run and none is claimed. A scene without movers has nothing that moves; a scene with movers
+#   (0226) has each one held to rules 2's table and its travel checked as a swept box (art/check.py), not played.
 # TRUSTED: the sha256 of each component the verdict rests on, as the files stood when it was made.
 # REQUIRES, for rung A: the verdict CLEAN (or LEAKAGE accepted by the person, recorded); every expected check ran and
 #   passed; and a still of the candidate as drawn, its detectors read by the host (art/quality.py) — a still they flag
@@ -50,6 +51,7 @@ EXPECTED_CHECKS = (
     "quality: the scene's bytes are finite JSON in its one byte form",
     "quality: every field is known and inside its bounds",
     "quality: the scene is inside the native renderer's budgets",
+    "movers: rules 2 holds them and their paths are clear",
 )
 
 # what the director never checks, said on every record
@@ -57,15 +59,18 @@ NEVER_CHECKED = (
     "whether the candidate does what its prompt asked: a person judges it",
     "whether the picture is good: a person judges it; the still's detectors flag and prove nothing",
     "the scene in Unreal: the importer is not run here",
-    "anything over time: nothing in the scene moves, so no tick was run",
+    "anything over time: nothing in the scene moves, so no tick was run",   # with movers, MOVING below in its place
     "the provider's account of itself (its rationale, its outcome, its scope's intent): text, not evidence",
 )
 
 # the kinds of VERDANDI-ART 0 as this classifier knows them (restated from art/dress.py and art/director/scope.py)
 DRESSING_KINDS = ("canopy", "lamp", "neon", "puddle", "skyline", "tower")
-PLAY_KINDS = ("cover", "floor", "ground", "raised", "stair", "wall")
+PLAY_KINDS = ("cover", "floor", "ground", "mover", "raised", "stair", "wall")
 NAMED = ("asset", "env", "material", "region", "view")
 ENV_FIELDS = ("bloom", "exposure", "fog", "light", "rain", "time", "title")
+
+MOVING = ("anything over time: the scene's %d mover(s) were held to rules 2's table and their travel checked as swept boxes; "
+          "no tick was run, so how they meet a player over time is not checked")
 
 UNDO_STILL = "the exact inverse of admission #%s: its picture is the one admitted before it"
 
@@ -99,9 +104,9 @@ def classify(verdict, exported, regions):
                  "classified from the scope protocol's realized and affected addresses, not from the intent's words"]
 
 
-def record(intent, verdict, ran, trusted, exported, regions=()):
+def record(intent, verdict, ran, trusted, exported, regions=(), movers=0):
     """The record of one evaluation. ran: [{name, ok}] of the checks that ran (None if none did); trusted: [(path,
-    sha256)] of the components the verdict rests on, and the exporter's."""
+    sha256)] of the components the verdict rests on, and the exporter's; movers: how many the candidate scene has."""
     ran = list(ran or [])
     names = {c["name"]: c["ok"] for c in ran}
     rung, basis = classify(verdict, exported, set(regions))
@@ -115,7 +120,8 @@ def record(intent, verdict, ran, trusted, exported, regions=()):
     certifies += ["check: " + n for n in EXPECTED_CHECKS if names.get(n) is True]
     certifies += ["check: " + n for n in sorted(names) if names[n] is True and n not in EXPECTED_CHECKS]
     skipped = [n for n in EXPECTED_CHECKS if n not in names]
-    not_checked = ["did not run: " + n for n in skipped] + list(NEVER_CHECKED)
+    never = [MOVING % movers if movers and n.startswith("anything over time") else n for n in NEVER_CHECKED]
+    not_checked = ["did not run: " + n for n in skipped] + never
     requires = []
     if rung == "A":
         requires = ["verdict: CLEAN, or LEAKAGE accepted by the person and recorded",
@@ -128,7 +134,8 @@ def record(intent, verdict, ran, trusted, exported, regions=()):
         "rung": rung, "rung_basis": basis,
         "certifies": certifies,
         "not_checked": not_checked,
-        "horizon": {"ticks": "0", "why": "nothing in VERDANDI-ART-SCENE 0 moves: no tick was run and none is claimed"},
+        "horizon": {"ticks": "0", "why": "nothing in VERDANDI-ART-SCENE 0 moves: no tick was run and none is claimed" if not movers else
+                    "the scene's %d mover(s) move under rules 2: no tick was run and none is claimed" % movers},
         "trusted": ["%s %s" % (p, h) for p, h in sorted(trusted)],
         "requires": requires,
         "intent_sha256": canon.sha256(canon.dumps(intent)) if intent is not None else "",

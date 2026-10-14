@@ -62,7 +62,10 @@ two regions, west and east.
 ## The art file: `VERDANDI-ART 0`
 
 One statement to a line; `#` starts a comment. Colours are R,G,B 0–255 (sRGB), lengths metres, cells `x,z` (x across,
-z down). [`briefs/plaza-night.art`](briefs/plaza-night.art) is the first.
+z down). [`briefs/plaza-night.art`](briefs/plaza-night.art) is the first. **A number** (0226) is ASCII digits, at most
+one `.` with digits on both sides, and a `-` in front when negative: `7`, `0.82`, `-10`. Nothing else is read as one
+(`+2.5`, `2_5`, `25e-1`, `.5`, `5.` and digits of other scripts are refused, which Python's `float()` alone took); a
+spacing, a percentage or an `every` is a whole number (`3` or `3.0`, never `2.7`).
 
 | statement | meaning |
 |---|---|
@@ -81,6 +84,7 @@ z down). [`briefs/plaza-night.art`](briefs/plaza-night.art) is the first.
 | `lamp REGION R,G,B CANDELAS SPACING` | a point light and its housing over floor cells on an absolute lattice |
 | `puddle REGION MATERIAL PERCENT` | flat black-water planes on that share of the region's floor cells |
 | `view NAME x,z YAW PITCH` | a first-person viewpoint for critique, on a standable cell |
+| `mover NAME MATERIAL X0,Y0,Z0 X1,Y1,Z1 along AXIS travel METRES speed M/S` | (0226) a box that goes out `travel` metres along AXIS (`+x`, `-x`, `+y`, `-y`, `+z`, `-z`) and back, again and again, at `speed` metres a second; it carries a player who stands on it and stops rather than move into one ([`graybox/RULES-2.md`](../graybox/RULES-2.md)). Its corners and travel are whole numbers of 1/256 m below 1,024 m, and its speed a whole number of 1/256 m a tick (a multiple of 0.46875 m/s; 0 parks it). Refused when rules 2 refuse it (the tunnelling bound), or when its travel leaves the world, meets a cell's solid, crosses a spawn's column, another mover's travel or a piece of dressing (a piece flat on the floor may lie under it). A scene with movers names rules 2 and is played under them. **A person's edit only:** a mover is play, and the director refuses any intent that adds, removes or moves one (SCOPE-PLAY), whatever it grants; a mover's material is its look (`surface/mover`) |
 
 **A look revision** (`VERDANDI-ART-REVISION 0`, [`briefs/plaza-night.revise-look`](briefs/plaza-night.revise-look))
 replaces the brief's statements of the same verb and name and nothing else. **A layout revision**
@@ -297,6 +301,7 @@ block a player is cover, and goes into the graybox map.
 | `web/scene_render.js` | the native renderer (WebGL 2); `load(S)` draws another scene in place, `dispose()` frees it |
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |
 | `briefs/harbor-day.art` | STUDIO-2's second world: sunlit harbour terraces at midday, on the same graybox, nothing of the layout moved |
+| `briefs/harbor-lift.art` | 0226: harbor-day with a deck sliding along the south lane and a lift beside the tall block at its west end, the first world with movers |
 | `briefs/plaza-night.revise-look` | its look revision: the wet surfaces less reflective |
 | `briefs/plaza-night.revise-layout.design` | its layout revision: the south flank one cell narrower (the north flank until B was admitted) |
 | `unreal/verdandi_import.py` | the Unreal 5.8 importer, run inside the editor |

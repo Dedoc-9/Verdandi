@@ -17,7 +17,8 @@
 #
 # ADDRESSES. Every piece of the scene has one:
 #   <region>/<kind>/<place>   dressing and its light: plaza/tower/18,10, plaza/neon/13,17:s, city/skyline/0,0
-#   play/<kind>/<id>          the play geometry, C's boxes: play/wall/c:0,0-7,2, play/ground/ground
+#   play/<kind>/<id>          the play geometry, C's boxes: play/wall/c:0,0-7,2, play/ground/ground; and the movers
+#                             (0226): play/mover/<name>
 #   material/<name>  env/<field>  view/<name>  asset/<name>  region/<name> (a region's bounds)
 # A piece is identified by its kind and place (one fixture to a place); its region is where its statement put it.
 #
@@ -36,7 +37,9 @@
 #
 # VERDICT. REFUSED if any of: a grant of play/ or a malformed pattern; the layout changed cells outside every
 # layout grant (SCOPE-LAYOUT); the spawns or the grid changed, or play geometry changed with no cell changing
-# (SCOPE-PLAY); a graph defect; a failed check (CHECK-FAILED). Otherwise LEAKAGE if anything changed or was affected
+# (SCOPE-PLAY); a mover added, removed, or its box, axis, travel, speed or policy changed, or the scene's rules changed,
+# with or without a layout grant (SCOPE-PLAY: no grant covers motion in version 0; a mover's material is its look, and
+# surface/mover covers it as surface/<kind> covers any play geometry's); a graph defect; a failed check (CHECK-FAILED). Otherwise LEAKAGE if anything changed or was affected
 # that no pattern covers (SCOPE-LEAK), and CLEAN if not. HEAD-MOVED says the candidate was written against another
 # head than the one it was checked against: the verdict is the new head's, never the old one's.
 
@@ -103,6 +106,9 @@ def _pieces(scene: dict) -> dict:
         key = "play/" + b["id"]
         out[key] = {"address": "play/%s/%s" % (b["kind"], b["id"]), "material": b["material"], "play": b["kind"],
                     "shape": {"kind": b["kind"], "cells": b["cells"], "box": b["box"]}, "light": None}
+    for m in scene.get("movers", []):
+        out["mover/" + m["id"]] = {"address": "play/mover/%s" % m["id"], "material": m["material"], "play": "mover",
+                                   "shape": {k: m[k] for k in ("axis", "box", "len", "policy", "speed")}, "light": None}
     for v in scene.get("visuals", []):
         kind, place = v["id"].split(":", 1)
         region = "city" if v["region"] == "*" else v["region"]
@@ -209,6 +215,8 @@ def check_scope(intent: dict, base: dict, cand: dict, current: dict, checks: lis
         x0, x1 = base.get(fam, {}), cand.get(fam, {})
         realized |= {"%s/%s" % (ns, k) for k in set(x0) | set(x1) if x0.get(k) != x1.get(k)}
     if play_shape and not cells:
+        codes.add("SCOPE-PLAY")
+    if any(a.startswith("play/mover/") for a in play_shape) or base.get("rules") != cand.get("rules"):
         codes.add("SCOPE-PLAY")
     # coverage
     surfaces = {p.split("/", 1)[1] for p in patterns if p.startswith("surface/")}

@@ -51,7 +51,8 @@ A mover's **pose** at a phase `p` (`0 ≤ p < 2·len`): `o = p` if `p < len`, el
 `len` and back); `d = o·Q`; the box `x0 + ax·d, y0 + ay·d, z0 + az·d, x1 + ax·d, y1 + ay·d, z1 + az·d`.
 
 Movers do not meet the world's cells or each other: the art layer refuses a world whose movers' swept boxes meet rock,
-a spawn's column, or each other's (that check is the exporter's, not the tick's).
+a spawn's column, or each other's (that check is the exporter's, not the tick's: `art/dress.py`'s `mover` statement and
+`art/check.py`, 0226).
 
 ## The state
 

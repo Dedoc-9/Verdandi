@@ -121,8 +121,8 @@ player, and are refused unless slow enough that no tick can pass one through a p
 wholly above the head is a ceiling; a parked mover is a static box. Every rules-2 hash is FNV-1a 64 bound to an
 identity: the rules' version, every constant (gravity and the timestep among them), the map and every mover. A world
 without movers plays the same ticks under rules 2 as under rules 1. `GrayboxSim.withRules(2)`; `tick_ref.py`'s rules
-2 are written from the same document. No page plays rules 2 yet: the art language's mover statement, which moves every
-world's head once, comes next.
+2 are written from the same document. The native plaza (`art/play.py`) plays rules 2 for a scene with movers, which the
+art language's `mover` statement makes (0226); `serve.py`'s pages play rules 1.
 
 ## The simulation's contract: rules 1
 
