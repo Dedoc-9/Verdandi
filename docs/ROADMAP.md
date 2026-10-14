@@ -4251,6 +4251,43 @@ movers with the origin moved by 1 and 4 cells and back, the global positions equ
 Not built: a tick owner with threads, durability (no run is persisted), and the plaza calling ORT-1 (its worlds are
 96 m across; no need yet). NOT_MEASURED: Firefox, his machine.
 
+**His run of 0226 and 0227, his report, and 0228: RULES-3, solid walls, targets with a top, push (2026-10-14).** He
+applied 0226 and 0227 on Windows (Python 3.14, Edge 155): every suite passed, the gate 251 rows / 0 fail, pushed
+cc8ed69..78e458b, his own commit freezing the art's references at the exporter 61587cd0fda2 among them. Then he played
+harbor-lift and reported three things: from the lift he jumped onto the ledge toward the centre and could *"walk
+through the wall up there"*; on a dummy he got *"stuck into it instead of collision keeping me on top of it"*, freed
+only by shooting it down; the lift and the deck *"worked as intended sliding and lifting"*, but *"The sliding deck
+doesn't move my would be character if i get in the way like when lifted"*. Each read against the rules and measured in
+the container: rules 1 and 2 know no wall (a wall is a cell 4 m high, and a jump of 1.225 m plus a step of 0.55 m reaches
+it from a 2.6 m cover or from the lift's top at 2.5 m; the art draws the city's rock above 4 m, and he walked inside the
+drawing): of 1,944 jumps from the lift's top, 233 ended on a wall's top. A standing target blocks only a body below its
+top, and has no top: a player above it walks into its column and falls into it, and every step from inside ends inside
+(1,045 of 15,552 tries ended held in a target). The deck stopping for him is rules 2's one policy, stop, as specified.
+And the art's own reach model, which was to keep a player off what is drawn above the walls, counted a jump's apex
+alone, between neighbouring cells alone, since ART-GENERATION-0: the climb is apex and step, 1.775 m, and neither the
+model nor 0226's adversarial review of it saw that (0229 corrects it). **0228, built, off the gate.**
+[`graybox/RULES-3.md`](../graybox/RULES-3.md): rules 2 with a cell as high as the world's wall blocking the body at any
+height; a standing target's top as ground (within a step of the feet, as any top); a target that would stand again
+while a body is in its column waiting, down, until it is clear; and a mover's policy push (along x or z, the player in
+its way moved by the mover's exact displacement unless that place is blocked, else the mover holds still; along y, as
+stop). The identity names rules 3 and the world's wall. `sim.js` (`GrayboxSim.withRules(3)`) and `tick_ref.py`
+(`rules3`), both from the document; rules 1 and 2 unchanged byte for byte. `web/rules3_cases.json`: fourteen cases
+worked by hand, among them his three (R5 the wall 0.5 m above the feet; R9 standing on a target and shooting it from
+its top; R1 the pusher), and, where rules 3 change what rules 2 do, what rules 2 do with the same inputs, which both
+implementations play and are held to; two stress runs among three pushers. `trace.py run --rules3`; the worker plays it.
+MEASURED in the container: RULES 3 HELD BY PYTHON (nine plants, each caught by a worked value); node v22 and headless
+Chromium 141 RULES 3 HELD BY PYTHON AND THE ENGINE (9,753 ticks of rules 3 and 653 of their rules-2 runs, every snapshot,
+hash and identity), six changes planted in an engine's results each found; 19 mutants of `sim.js`'s rules 3, 17 caught,
+two shown equivalent (a waiting target's test at the feet equal to its top, needing a surface at exactly t.y + 1.9 under
+a down target; a push tested against the mover's old pose, which keeps the pushed player's place relative to the box);
+the stress runs pushed 14 times and held a push 57 times, stood 15 ticks on a target's top, and no tick ended in a box,
+a standing target or over a wall's cell. Against his report, the same searches under rules 3: 0 of 1,944 jumps from the
+lift end on a wall; 0 of 14,940 tries end held in a target. Rules 1 and 2 unchanged: GRAYBOX SELFTEST 30/30 and 27/27,
+TICK REFERENCE VERIFIED, TICK-REF SELFTEST PASSED, INPUT CONTRACT HELD BY PYTHON AND THE BROWSER, RULES 2 HELD BY PYTHON
+AND THE ENGINE (node, Chromium), RULES REFERENCE PASSED, BOT-REF SELFTEST PASSED, ORT-1 HELD BY PYTHON AND THE ENGINE
+(ORT-1 moves rules 2's worlds alone and refuses a rules-3 world). Nothing plays rules 3 yet: 0229 makes the art's
+scenes name them. NOT_MEASURED: Firefox, his machine.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

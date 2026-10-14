@@ -144,6 +144,12 @@ identity gains `"origin": [oi, oj]` when it is not `(0, 0)`. At `(0, 0)`, every 
 of this document is unchanged: the table's values, its identities and its hashes stand (held again in node and
 Chromium after the change).
 
+## Rules 3 (0228)
+
+[`RULES-3.md`](RULES-3.md) are these rules with solid walls, a standing target's top as ground, a target that waits for
+its column to clear, and the policy push. Nothing of this document changes with them: its table, identities and hashes
+stand (held again in node and Chromium after the change).
+
 ## The independent answers
 
 `web/rules2_cases.json` holds scenarios (a map, its movers, a start and inputs) and, for chosen ticks, the values

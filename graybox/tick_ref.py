@@ -8,6 +8,7 @@
 #   python graybox/tick_ref.py selftest TRACE.json
 #   python graybox/tick_ref.py cases [RESULTS.json]
 #   python graybox/tick_ref.py rules2 [RESULTS.json]
+#   python graybox/tick_ref.py rules3 [RESULTS.json]
 #
 # By the owner's ruling of 2026-10-11: "implement a second, independent version of the full simulation tick in
 # Python", where "Browser JavaScript records the input sequence", "Python independently advances the authoritative
@@ -39,6 +40,10 @@
 # `rules2` plays rules 2's table (web/rules2_cases.json) here and holds each case to the values its working gives by
 # hand, and holds the case of no movers to rules 1 played here; given the results a JavaScript engine sent (graybox/
 # trace.py run --rules2), it holds them to the same values and to Python, every tick's snapshot and hash.
+#
+# Rules 3 (graybox/RULES-3.md, 0228): rules 2 with solid walls, targets with a top, a target that waits for a clear
+# column, and a mover's policy push; written here from RULES-3.md as rules 2 were. `rules3` plays its table
+# (web/rules3_cases.json) as `rules2` plays rules 2's.
 #
 # What it does not show: that a server built on it is secure, that inputs from a malicious client are bounded, or
 # anything about a network. Standard library only; it writes nothing.
@@ -463,7 +468,7 @@ class Mover:
     """One mover of the world, as RULES-2.md's table admits it."""
     __slots__ = ("id", "x0", "y0", "z0", "x1", "y1", "z1", "ax", "ay", "az", "length", "speed", "policy")
 
-    def __init__(self, d, ids):
+    def __init__(self, d, ids, policies=("stop",)):
         mid = d.get("id") if isinstance(d, dict) else None
         if not isinstance(mid, str) or not mid or mid in ids:
             raise MoverRefused("RULES2-MOVER: mover %r: its id is not text, or not unique" % (mid,))
@@ -489,9 +494,9 @@ class Mover:
         if not integer(d.get("speed"), 0, d["len"]):
             raise MoverRefused("RULES2-MOVER: mover %r: its speed is not an integer from 0 to its len" % mid)
         self.length, self.speed = float(d["len"]), float(d["speed"])
-        if d.get("policy") != "stop":
-            raise MoverRefused("RULES2-MOVER: mover %r: its policy is not stop" % mid)
-        self.id, self.policy = mid, "stop"
+        if d.get("policy") not in policies:
+            raise MoverRefused("RULES2-MOVER: mover %r: its policy is not %s" % (mid, " or ".join(policies)))
+        self.id, self.policy = mid, d["policy"]
         # the tunnelling bound: less than the body's depth plus the box's own, along its axis
         t = (self.x1 - self.x0) if self.ax else (self.y1 - self.y0) if self.ay else (self.z1 - self.z0)
         bound = (BODY + t) if self.ay else (2.0 * K.radius + t)
@@ -518,6 +523,8 @@ ORIGIN_MAX = 1 << 20   # ORT-1: an origin's cells, either way
 class World2(World):
     """A world of rules 2: rules 1's, with its movers, its origin (ORT-1, 0227; (0, 0) unless given) and the identity
     its hashes start from."""
+    RULES = 2
+    POLICIES = ("stop",)
 
     def __init__(self, conv, movers, origin=(0, 0)):
         World.__init__(self, conv)
@@ -528,13 +535,31 @@ class World2(World):
         self.conv = conv
         ids = set()
         self.movers = []
+        wall = self._wall(conv["canonical"])
+        if wall is not None:   # rules 3 alone read it; a rules-2 world keeps the fields it had (ORT-1 declares each)
+            self.wall = wall
         for d in movers:
-            m = Mover(d, ids)
+            m = Mover(d, ids, self.POLICIES)
             ids.add(m.id)
             self.movers.append(m)
         C, W = conv["collision"], conv["canonical"]
-        self.identity = identity_text(C, W, self.movers, (self.oi, self.oj))
+        self.identity = identity_text(C, W, self.movers, (self.oi, self.oj), self.RULES, wall)
         self.identity_state = fnv64(FNV_OFFSET, self.identity.encode("utf-8"))
+
+    def _wall(self, W):
+        return None   # rules 2 do not read the wall's height
+
+
+class World3(World2):
+    """A world of rules 3 (RULES-3.md): rules 2's, with the wall's height read, and push among the policies."""
+    RULES = 3
+    POLICIES = ("stop", "push")
+
+    def _wall(self, W):
+        v = W.get("wall")
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not (K.step < v < math.inf):
+            raise MoverRefused("RULES3-WALL: the world's wall height is not a number above the step")
+        return float(v)
 
 
 class State2(State):
@@ -567,14 +592,15 @@ def _idenc(v):
     return {k: _idenc(v[k]) for k in v}
 
 
-def identity_text(C, W, movers, origin=(0, 0)):
+def identity_text(C, W, movers, origin=(0, 0), rules=RULES2, wall=None):
     """RULES-2.md, *The state's hash*: the rules, every constant and the world, as one document; a rebased world's
-    origin with it (ORT-1), and at the origin (0, 0) the document as rules 2 first wrote it."""
+    origin with it (ORT-1), and at the origin (0, 0) the document as rules 2 first wrote it. Rules 3 (RULES-3.md):
+    their number, and the wall's height in the world."""
     doc = {
         "P": {"radius": K.radius, "eye": K.eye, "step": K.step, "speed": K.speed, "gravity": K.gravity, "jump": K.jump,
               "fireCooldown": K.fire_cooldown, "targetRadius": K.target_radius, "targetHeight": K.target_height,
               "targetDown": K.target_down, "range": K.ray_range, "height": BODY},
-        "Q": Q, "TICK": TICK, "input": float(INPUT), "pitch": K.pitch_limit, "rules": float(RULES2), "stand": K.stand_again,
+        "Q": Q, "TICK": TICK, "input": float(INPUT), "pitch": K.pitch_limit, "rules": float(rules), "stand": K.stand_again,
         "world": {"cell": float(C["cell"]), "h": float(C["h"]), "w": float(C["w"]), "tops": [float(t) for t in C["tops"]],
                   "movers": [[m.id, m.x0, m.y0, m.z0, m.x1, m.y1, m.z1, m.ax, m.ay, m.az, m.length, m.speed, m.policy] for m in movers],
                   "objective": list(W["objective"]["rect"]) if W.get("objective") else None,
@@ -583,7 +609,9 @@ def identity_text(C, W, movers, origin=(0, 0)):
     }
     if origin[0] != 0 or origin[1] != 0:
         doc["world"]["origin"] = [float(origin[0]), float(origin[1])]
-    return "VERDANDI-RULES 2\n" + json.dumps(_idenc(doc), separators=(",", ":"), sort_keys=True, ensure_ascii=False)
+    if rules >= 3:
+        doc["world"]["wall"] = wall
+    return "VERDANDI-RULES %d\n" % rules + json.dumps(_idenc(doc), separators=(",", ":"), sort_keys=True, ensure_ascii=False)
 
 
 def hash2(world, s):
@@ -717,6 +745,133 @@ def tick2(world, s, inp):
         raise InputRefused(a)
     s.tick = s.tick + 1.0
     for phase in PHASES2:
+        phase(world, s, a)
+
+
+# ------------------------------------------------------------------------------------------------ rules 3 (RULES-3.md)
+def walled(world, x, z):
+    """A cell as high as the wall's height under the circle: a wall, at any height."""
+    return any(world.top(i, j) >= world.wall for i, j in world.cells_near(x, z, K.radius))
+
+
+def in_column(t, x, z, feet):
+    rr = K.radius + K.target_radius
+    dx, dz = x - t.x, z - t.z
+    return dx * dx + dz * dz < rr * rr and feet < t.y + K.target_height
+
+
+def is_blocked3(world, s, x, z, feet, k=None, bk=None):
+    return walled(world, x, z) or is_blocked2(world, s, x, z, feet, k, bk)
+
+
+def move3(world, s, dx, dz):
+    if not is_blocked3(world, s, s.x + dx, s.z + dz, s.feet):
+        s.x, s.z = s.x + dx, s.z + dz
+        return
+    for _ in range(6):
+        dx, dz = dx / 2.0, dz / 2.0
+        if not is_blocked3(world, s, s.x + dx, s.z + dz, s.feet):
+            s.x, s.z = s.x + dx, s.z + dz
+
+
+def movers3(world, s, inp):
+    for k, m in enumerate(world.movers):
+        st = s.movers[k]
+        if m.speed == 0:
+            st.stopped = False
+            continue
+        n = st.phase + m.speed
+        if n >= 2.0 * m.length:
+            n = n - 2.0 * m.length
+        a, b = m.pose(st.phase), m.pose(n)
+        dx, dy, dz = b[0] - a[0], b[1] - a[1], b[2] - a[2]
+        if s.on_ground and s.feet == a[4] and plan_over(s.x, s.z, a):          # a rider: carried, or the mover stops
+            nx, nz, nf = s.x + dx, s.z + dz, s.feet + dy
+            if is_blocked3(world, s, nx, nz, nf, k, b):
+                st.stopped = True
+            else:
+                st.phase, st.stopped = n, False
+                s.x, s.z, s.feet = nx, nz, nf
+        elif plan_over(s.x, s.z, b) and b[4] > s.feet and b[1] < s.feet + BODY:  # in its way
+            if push(world, s, k, m, b, dx, dz):
+                st.phase, st.stopped = n, False
+            else:
+                st.stopped = True
+        else:
+            st.phase, st.stopped = n, False
+
+
+def push(world, s, k, m, b, dx, dz):
+    """A player in mover k's way, it at b: policy push along x or z moves the player by its displacement, unless that
+    place is blocked; anything else holds the mover still. True when the player was moved."""
+    if m.policy != "push" or m.ay != 0:
+        return False
+    nx, nz = s.x + dx, s.z + dz
+    if is_blocked3(world, s, nx, nz, s.feet, k, b):
+        return False
+    s.x, s.z = nx, nz
+    return True
+
+
+def walk3(world, s, inp):
+    fwd = (1.0 if truthy(inp.get("f")) else 0.0) - (1.0 if truthy(inp.get("b")) else 0.0)
+    side = (1.0 if truthy(inp.get("r")) else 0.0) - (1.0 if truthy(inp.get("l")) else 0.0)
+    sy, cy = sin(s.yaw), cos(s.yaw)
+    mx, mz = fwd * sy + side * cy, (-fwd) * cy + side * sy
+    length = hypot(mx, mz)
+    if length > 0:
+        move3(world, s, mx / length * K.speed * TICK, 0.0)
+        move3(world, s, 0.0, mz / length * K.speed * TICK)
+
+
+def height3(world, s, inp):
+    was, before = s.on_ground, s.feet
+    if truthy(inp.get("jump")) and s.on_ground:
+        s.vy, s.on_ground = K.jump, False
+    s.vy = s.vy - K.gravity * TICK
+    s.feet = s.feet + s.vy * TICK
+    boxes = poses(world, s)
+    c = min([b[1] for b in boxes if plan_over(s.x, s.z, b) and b[1] >= before + BODY] + [math.inf])
+    if s.feet + BODY > c:
+        s.feet = c - BODY
+        if s.vy > 0:
+            s.vy = 0.0
+    tops = [world.ground(s.x, s.z)]
+    tops += [b[4] for b in boxes if plan_over(s.x, s.z, b) and b[4] <= before + K.step]
+    tops += target_tops(s, s.x, s.z, before)
+    g = max(tops)
+    if s.feet <= g or (was and s.vy <= 0 and s.feet - g <= K.step):
+        s.feet, s.vy, s.on_ground = g, 0.0, True
+    else:
+        s.on_ground = False
+
+
+def target_tops(s, x, z, before):
+    """The tops of the standing targets whose columns the body is in, as high as a step above before."""
+    rr = K.radius + K.target_radius
+    return [t.y + K.target_height for t in s.targets
+            if t.up and (x - t.x) * (x - t.x) + (z - t.z) * (z - t.z) < rr * rr and t.y + K.target_height <= before + K.step]
+
+
+def stand_again3(world, s, inp):
+    for t in s.targets:
+        if not t.up:
+            t.down_for = t.down_for - TICK
+            if t.down_for <= K.stand_again:
+                t.up = not in_column(t, s.x, s.z, s.feet)   # a body in its column: it waits
+                t.down_for = 0.0
+
+
+PHASES3 = (respawn2, movers3, aim2, walk3, height3, weapon, stand_again3, objective)
+
+
+def tick3(world, s, inp):
+    """One tick of rules 3 (RULES-3.md), on an input the contract admits."""
+    a = admit(inp)
+    if isinstance(a, str):
+        raise InputRefused(a)
+    s.tick = s.tick + 1.0
+    for phase in PHASES3:
         phase(world, s, a)
 
 
@@ -1225,27 +1380,44 @@ RULES2_CASES = os.path.join(HERE, "web", "rules2_cases.json")
 SET2 = {"feet": "feet", "onGround": "on_ground", "pitch": "pitch", "vy": "vy", "x": "x", "yaw": "yaw", "z": "z"}
 
 
-def play2(conv, case):
-    """A case of rules 2's table played here: its identity, start, every tick's snapshot and hash; or why the world
-    was refused."""
+SET_TARGET = {"downFor": "down_for", "up": "up"}
+
+
+def play2(conv, case, rules=2):
+    """A case of rules 2's table (or rules 3's) played here: its identity, start, every tick's snapshot and hash; or
+    why the world was refused."""
     r = {"name": case["name"]}
+    if case.get("world"):   # a case may set the world's wall height, and nothing else of it
+        if set(case["world"]) != {"wall"}:
+            raise ValueError("a case can set the world's wall alone")
+        conv = dict(conv, canonical=dict(conv["canonical"], wall=case["world"]["wall"]))
     try:
-        world = World2(conv, case.get("movers") or [])
+        world = (World3 if rules == 3 else World2)(conv, case.get("movers") or [])
     except MoverRefused as e:
         r["refused"] = str(e)
         return r
+    r["identity_text"] = world.identity
     s = State2.new(world, (case.get("start") or {}).get("side", "A"))
     for k, v in sorted(((case.get("start") or {}).get("set") or {}).items()):
         setattr(s, SET2[k], v if isinstance(v, bool) else float(v))
+    for tid, kv in sorted(((case.get("start") or {}).get("targets") or {}).items()):
+        t = [t for t in s.targets if t.id == tid][0]
+        for k, v in sorted(kv.items()):
+            setattr(t, SET_TARGET[k], v if isinstance(v, bool) else float(v))
     r.update(identity="%016x" % world.identity_state, start=write_snapshot2(s), snaps=[], hashes=[])
     inside = 0
+    step = tick3 if rules == 3 else tick2
     for seg in case.get("inputs") or []:
         for inp in (stress_inputs(seg["stress"]) if seg.get("stress") else [dict(seg.get("in") or {}) for _ in range(seg["n"])]):
-            tick2(world, s, inp)
+            step(world, s, inp)
             r["snaps"].append(write_snapshot2(s))
             r["hashes"].append(hash2(world, s))
-            # the invariant stop and blocked give: the body never ends a tick inside a box, but standing on its top
+            # the invariant stop and blocked give: the body never ends a tick inside a box, but standing on its top;
+            # under rules 3 not inside a standing target below its top, nor over a wall's cell either
             if any(plan_over(s.x, s.z, b) and b[4] > s.feet and b[1] < s.feet + BODY for b in poses(world, s)):
+                inside += 1
+            elif rules == 3 and (any(t.up and in_column(t, s.x, s.z, s.feet) for t in s.targets)
+                                 or any(world.top(i, j) >= world.wall for i, j in world.cells_near(s.x, s.z, K.radius))):
                 inside += 1
     r["inside"] = inside
     return r
@@ -1292,6 +1464,20 @@ def expect_faults(case, r):
                 wantm = [{"phase": float(m["phase"]), "stopped": m["stopped"]} for m in v]
                 if got != wantm:
                     out.append("tick %d: movers %s, worked %s" % (t, got, wantm))
+            elif k == "targets":   # rules 3's table: a target's up and downFor
+                for tid, want in sorted(v.items()):
+                    got = [x for x in d["targets"] if x["id"] == "s" + tid]
+                    gotv = {"up": got[0]["up"], "downFor": _dec(got[0]["downFor"])} if got else None
+                    wantv = {"up": want["up"], "downFor": float(want["downFor"])} if "downFor" in want else {"up": want["up"]}
+                    if gotv is not None and "downFor" not in want:
+                        gotv = {"up": gotv["up"]}
+                    if gotv != wantv:
+                        out.append("tick %d: target %s %s, worked %s" % (t, tid, gotv, wantv))
+            elif k == "about":     # a value worked to within a stated bound (a sum of steps no double holds exactly)
+                for f, (wv, tol) in sorted(v.items()):
+                    gv = _dec(d[f])
+                    if not abs(gv - wv) <= tol:
+                        out.append("tick %d: %s %r, worked %r within %g" % (t, f, gv, wv, tol))
             else:
                 gv = _dec(d[k])
                 wv = v if isinstance(v, bool) else float(v)
@@ -1300,13 +1486,39 @@ def expect_faults(case, r):
     return out
 
 
-def run_table2(conv, table):
-    """Every case played here, with its faults against the working, and the case of no movers against rules 1."""
+def rules2_case(case):
+    """A rules-3 case as rules 2 are held to it: its expect_rules2 and expect_rules2_refused in the places of expect
+    and expect_refused."""
+    c = dict(case, expect=case.get("expect_rules2") or [])
+    c.pop("expect_refused", None)
+    if case.get("expect_rules2_refused"):
+        c["expect_refused"] = case["expect_rules2_refused"]
+    return c
+
+
+def run_table2(conv, table, rules=2):
+    """Every case played here, with its faults against the working, and the case of no movers against rules 1; under
+    rules 3, a case's values under rules 2 (expect_rules2), its snapshots equal to rules 2's (rules2_equal) and its
+    identity's text (identity_has) as well."""
     rows, mine = [], {}
     for case in table["cases"]:
-        r = play2(conv, case)
+        r = play2(conv, case, rules)
         mine[case["name"]] = r
         faults = expect_faults(case, r)
+        if rules == 3 and not r.get("refused"):
+            for part in case.get("identity_has") or []:
+                if part not in r["identity_text"]:
+                    faults.append("the identity does not hold %r" % part)
+        if rules == 3 and (case.get("expect_rules2") or case.get("rules2_equal") or case.get("expect_rules2_refused")):
+            r2 = r["rules2"] = play2(conv, case, 2)
+            faults += ["under rules 2, " + f for f in expect_faults(rules2_case(case), r2)]
+            if not r.get("refused"):
+                if case.get("rules2_equal"):
+                    bad = [n + 1 for n, (a, b) in enumerate(zip(r2.get("snaps", []), r["snaps"])) if a != b]
+                    if bad or len(r2.get("snaps", [])) != len(r["snaps"]):
+                        faults.append("parts from rules 2 at tick %s" % (bad[:1] or ["count"])[0])
+                    elif not faults:
+                        case = dict(case, _rules1="every one of %d ticks the same bytes as rules 2's (the identity apart)" % len(r["snaps"]))
         if case.get("invariant") == "never inside" and r.get("inside"):
             faults.append("%d tick(s) ended with the body inside a box" % r["inside"])
         if case.get("rules1_equal") and not r.get("refused"):
@@ -1319,8 +1531,8 @@ def run_table2(conv, table):
                 faults = faults or []
                 case = dict(case, _rules1="every one of %d ticks the same bytes as rules 1's, but for the empty movers" % len(ones))
         rows.append((case["name"], not faults, "; ".join(faults)[:240] if faults else (case.get("_rules1") or (
-            "refused as worked: %s" % r["refused"][:70] if r.get("refused") else ("%d ticks; no tick ended with the body inside a box" % len(r["snaps"])
-                                                                                 if case.get("invariant") else "%d ticks; every value worked by hand held" % len(r.get("snaps", [])))))))
+            "refused as worked: %s" % r["refused"][:70] if r.get("refused") else ("%d ticks; no tick ended with the body inside a box%s" % (len(r["snaps"]), ", a standing target or a wall's cell" if rules == 3 else "")
+                                                                                 if case.get("invariant") else "%d ticks; every value worked by hand held%s" % (len(r.get("snaps", [])), ", and under rules 2 theirs" if case.get("expect_rules2") else ""))))))
     return rows, mine
 
 
@@ -1376,11 +1588,11 @@ def _plant(name):
         g["height2"] = h2
     elif name == "no tunnelling bound":
         class M(saved["Mover"]):
-            def __init__(self, d, ids):
+            def __init__(self, d, ids, *policies):
                 d = dict(d)
                 sp = d.get("speed")
                 d["speed"] = 0
-                saved["Mover"].__init__(self, d, ids)
+                saved["Mover"].__init__(self, d, ids, *policies)
                 self.speed = float(sp)
         g["Mover"] = M
     g["PHASES2"] = (respawn2, g["movers2"], aim2, walk2, g["height2"], weapon, stand_again, objective)
@@ -1390,25 +1602,107 @@ def _plant(name):
 PLANTS2 = ("no carry", "wrap at more than 2 len", "no stop", "no ceiling", "no tunnelling bound")
 
 
+def _plant3(name):
+    """A mutant of this file's rules 3, by name, for rules3's own check that the worked values bite: returns undo."""
+    g = globals()
+    saved = {k: g[k] for k in ("walled", "target_tops", "stand_again3", "push", "identity_text", "PHASES3")}
+    wall_of = World3._wall
+
+    def undo():
+        g.update(saved)
+        World3._wall = wall_of
+    if name == "walls by height alone":
+        g["walled"] = lambda world, x, z: False
+    elif name == "no target top":
+        g["target_tops"] = lambda s, x, z, before: []
+    elif name == "a target's top at any height":
+        g["target_tops"] = lambda s, x, z, before: saved["target_tops"](s, x, z, math.inf)
+    elif name == "any wall height":
+        World3._wall = lambda self, W: float(W.get("wall"))
+    elif name == "a target stands at once":
+        g["stand_again3"] = stand_again
+    elif name == "push as stop":
+        g["push"] = lambda world, s, k, m, b, dx, dz: False
+    elif name == "push into a wall":
+        def p3(world, s, k, m, b, dx, dz):
+            if m.policy != "push" or m.ay != 0:
+                return False
+            s.x, s.z = s.x + dx, s.z + dz
+            return True
+        g["push"] = p3
+    elif name == "push along y":
+        def p3(world, s, k, m, b, dx, dz):
+            if m.policy != "push":
+                return False
+            nx, nz = s.x + dx, s.z + dz
+            if is_blocked3(world, s, nx, nz, s.feet, k, b):
+                return False
+            s.x, s.z = nx, nz
+            return True
+        g["push"] = p3
+    elif name == "the wall left out of the identity":
+        g["identity_text"] = lambda *a: re.sub(r',"wall":"f[0-9a-f]{16}"', "", saved["identity_text"](*a))
+    g["PHASES3"] = (respawn2, movers3, aim2, walk3, height3, weapon, g["stand_again3"], objective)
+    return undo
+
+
+PLANTS3 = ("walls by height alone", "no target top", "a target's top at any height", "a target stands at once", "push as stop",
+           "push into a wall", "push along y", "the wall left out of the identity", "any wall height")
+RULES3_CASES = os.path.join(HERE, "web", "rules3_cases.json")
+
+
+def engine_faults(case, t, m):
+    """Where an engine's run of a case (t) parts from the values worked by hand, or from this file's run of it (m)."""
+    faults = expect_faults(case, t)
+    if bool(t.get("refused")) != bool(m.get("refused")):
+        faults.append("refused there %r, here %r" % (t.get("refused"), m.get("refused")))
+    elif not m.get("refused"):
+        if t.get("identity") != m["identity"]:
+            faults.append("identity there %s, here %s" % (t.get("identity"), m["identity"]))
+        if t.get("start") != m["start"]:
+            faults.append("the start differs")
+        for n, (a, b) in enumerate(zip(m["snaps"], t.get("snaps", []))):
+            if a != b:
+                fa, fb = fields_of(a), fields_of(b)
+                diff = [k for k in sorted(set(fa) | set(fb)) if fa.get(k) != fb.get(k)]
+                faults.append("FIRST DIFFERENT at tick %d: %s" % (n + 1, ", ".join(diff[:5])))
+                break
+        hb = [n + 1 for n, (a, b) in enumerate(zip(m["hashes"], t.get("hashes", []))) if a != b]
+        if hb:
+            faults.append("hash first different at tick %d (here %s, there %s)" % (hb[0], m["hashes"][hb[0] - 1], t["hashes"][hb[0] - 1]))
+        if len(t.get("snaps", [])) != len(m["snaps"]):
+            faults.append("%d ticks there, %d here" % (len(t.get("snaps", [])), len(m["snaps"])))
+    return faults
+
+
 def cmd_rules2(path=None):
-    with open(RULES2_CASES, encoding="utf-8") as fh:
+    return cmd_rules(path, 2)
+
+
+def cmd_rules3(path=None):
+    return cmd_rules(path, 3)
+
+
+def cmd_rules(path, rules):
+    where, plants, plant = (RULES3_CASES, PLANTS3, _plant3) if rules == 3 else (RULES2_CASES, PLANTS2, _plant)
+    with open(where, encoding="utf-8") as fh:
         table = json.load(fh)
     conv = level.convert(table["map"])
-    print("RULES2  %s  map %s  rules 2 (RULES-2.md), %d cases" % (os.path.relpath(RULES2_CASES), table["map"], len(table["cases"])))
-    rows, mine = run_table2(conv, table)
+    print("RULES%d  %s  map %s  rules %d (RULES-%d.md), %d cases" % (rules, os.path.relpath(where), table["map"], rules, rules, len(table["cases"])))
+    rows, mine = run_table2(conv, table, rules)
     for name, ok, detail in rows:
         print("%s %s — %s" % ("PASS" if ok else "FAIL", name, detail))
     caught = 0
-    for p in PLANTS2:
-        undo = _plant(p)
+    for p in plants:
+        undo = plant(p)
         try:
-            prow, _m = run_table2(conv, table)
+            prow, _m = run_table2(conv, table, rules)
         finally:
             undo()
         bit = [n for n, ok, _d in prow if not ok]
         caught += 1 if bit else 0
         print("%s plant: %s — %s" % ("PASS" if bit else "FAIL", p, ("caught by " + ", ".join(b.split(" ")[0] for b in bit)) if bit else "NOT caught by any worked value"))
-    ok = all(r[1] for r in rows) and caught == len(PLANTS2)
+    ok = all(r[1] for r in rows) and caught == len(plants)
     engine_ok = True
     if path:
         with open(path, encoding="utf-8") as fh:
@@ -1422,35 +1716,23 @@ def cmd_rules2(path=None):
                 print("FAIL %s — not in the results" % case["name"])
                 engine_ok = False
                 continue
-            faults = expect_faults(case, t)
-            if bool(t.get("refused")) != bool(m.get("refused")):
-                faults.append("refused there %r, here %r" % (t.get("refused"), m.get("refused")))
-            elif not m.get("refused"):
-                if t.get("identity") != m["identity"]:
-                    faults.append("identity there %s, here %s" % (t.get("identity"), m["identity"]))
-                if t.get("start") != m["start"]:
-                    faults.append("the start differs")
-                for n, (a, b) in enumerate(zip(m["snaps"], t.get("snaps", []))):
-                    if a != b:
-                        fa, fb = fields_of(a), fields_of(b)
-                        diff = [k for k in sorted(set(fa) | set(fb)) if fa.get(k) != fb.get(k)]
-                        faults.append("FIRST DIFFERENT at tick %d: %s" % (n + 1, ", ".join(diff[:5])))
-                        break
-                hb = [n + 1 for n, (a, b) in enumerate(zip(m["hashes"], t.get("hashes", []))) if a != b]
-                if hb:
-                    faults.append("hash first different at tick %d (here %s, there %s)" % (hb[0], m["hashes"][hb[0] - 1], t["hashes"][hb[0] - 1]))
-                if len(t.get("snaps", [])) != len(m["snaps"]):
-                    faults.append("%d ticks there, %d here" % (len(t.get("snaps", [])), len(m["snaps"])))
+            faults = engine_faults(case, t, m)
+            if "rules2" in m:   # rules 3's table: the engine's run of the same case under rules 2, held likewise
+                if not isinstance(t.get("rules2"), dict):
+                    faults.append("no run under rules 2 there")
+                else:
+                    faults += ["under rules 2, " + f for f in engine_faults(rules2_case(case), t["rules2"], m["rules2"])]
             engine_ok = engine_ok and not faults
             print("%s %s — %s" % ("PASS" if not faults else "FAIL", case["name"], "; ".join(faults)[:240] if faults else (
                 "refused there as here" if m.get("refused") else "%d ticks: every snapshot and hash the same, identity %s" % (len(m["snaps"]), m["identity"]))))
     held = ok and engine_ok
-    print("RULES 2 %s%s" % ("HELD BY PYTHON" if ok else "NOT HELD", (" AND THE ENGINE" if engine_ok else "; THE ENGINE PARTS") if path else ""))
+    print("RULES %d %s%s" % (rules, "HELD BY PYTHON" if ok else "NOT HELD", (" AND THE ENGINE" if engine_ok else "; THE ENGINE PARTS") if path else ""))
     return 0 if held else 1
 
 
 MAKES = {"verify": "python graybox/trace.py run tactical --browser msedge", "selftest": "python graybox/trace.py run tactical --browser msedge",
-         "cases": "python graybox/trace.py run tactical --cases --browser msedge", "rules2": "python graybox/trace.py run tactical --rules2 --browser msedge"}
+         "cases": "python graybox/trace.py run tactical --cases --browser msedge", "rules2": "python graybox/trace.py run tactical --rules2 --browser msedge",
+         "rules3": "python graybox/trace.py run tactical --rules3 --browser msedge"}
 
 
 def main(argv):
@@ -1461,13 +1743,15 @@ def main(argv):
         return 2
     if len(argv) in (1, 2) and argv[0] == "rules2":
         return cmd_rules2(argv[1] if len(argv) == 2 else None)
+    if len(argv) in (1, 2) and argv[0] == "rules3":
+        return cmd_rules3(argv[1] if len(argv) == 2 else None)
     if len(argv) == 2 and argv[0] == "verify":
         return cmd_verify(argv[1])
     if len(argv) == 2 and argv[0] == "selftest":
         return cmd_selftest(argv[1])
     if len(argv) in (1, 2) and argv[0] == "cases":
         return cmd_cases(argv[1] if len(argv) == 2 else None)
-    print("usage: python graybox/tick_ref.py verify TRACE.json | selftest TRACE.json | cases [RESULTS.json] | rules2 [RESULTS.json]", file=sys.stderr)
+    print("usage: python graybox/tick_ref.py verify TRACE.json | selftest TRACE.json | cases [RESULTS.json] | rules2 [RESULTS.json] | rules3 [RESULTS.json]", file=sys.stderr)
     return 2
 
 

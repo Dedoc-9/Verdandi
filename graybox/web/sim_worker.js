@@ -13,7 +13,8 @@
 // Math.sqrt with its arguments' and its result's bits (under rules 1 there should be none), and every tick's input and
 // snapshot. The wrappers return what the engine returns; the page's realm is never touched. With `kind: "cases"`
 // (trace.py run --cases), it plays the input contract's table under rules 1 and sends back each step's outcome and
-// state. With `kind: "rules2"` (trace.py run --rules2), rules 2's table, every case's snapshots and hashes; with
+// state. With `kind: "rules2"` (trace.py run --rules2), rules 2's table, every case's snapshots and hashes (and
+// `kind: "rules3"`, rules 3's, likewise); with
 // `kind: "ort"` (trace.py run --ort), ORT-1's table through graybox/web/ort.js.
 
 importScripts("sim.js");
@@ -76,6 +77,10 @@ self.onmessage = function (e) {
     }
     if (d.kind === "rules2") {   // rules 2's table (web/rules2_cases.json), under rules 2
       self.postMessage({ id: d.id, rules2: self.GrayboxSim.withRules(2).rules2Cases(d.map, d.table) });
+      return;
+    }
+    if (d.kind === "rules3") {   // rules 3's table (web/rules3_cases.json, graybox/RULES-3.md), under rules 3
+      self.postMessage({ id: d.id, rules3: self.GrayboxSim.withRules(3).rules2Cases(d.map, d.table) });
       return;
     }
     if (d.kind === "ort") {      // ORT-1's table (web/ort_cases.json): rebases between ticks, under rules 2

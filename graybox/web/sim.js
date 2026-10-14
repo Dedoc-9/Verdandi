@@ -19,13 +19,17 @@
 // A rules-2 world may have an origin (graybox/ORT-1.md, 0227): whole cells, local cell (i, j) being the map's cell
 // (i + oi, j + oj); at the origin (0, 0) every number and byte of rules 2 is what it was. graybox/web/ort.js moves the
 // origin between two ticks, as a transition bound to the exact state it was prepared from.
+// Rules 3 (graybox/RULES-3.md, 0228) are rules 2 with solid walls (a cell as high as the world's wall blocks the body at
+// any height), standing targets with a top a player can stand on, a target that waits to stand again while a body is
+// in its column, and a mover's policy push (a mover along x or z moves a player in its way with it, or stops when the
+// player cannot go): GrayboxSim.withRules(3). Rules 1 and 2 are unchanged by them, byte for byte.
 
 (function (root, factory) {
   // make(rules) builds one instance of the simulation under those rules; its fresh() builds another, under the same
   // rules, that shares no variable with the first (the self-test resumes snapshots in fresh instances, to show that the
   // state holds everything a tick reads). source is the factory's text, for the self-test's reading of its own code.
   const make = function (rules) {
-    const m = factory(rules === 0 ? 0 : rules === 2 ? 2 : 1);
+    const m = factory(rules === 0 ? 0 : rules === 2 ? 2 : rules === 3 ? 3 : 1);
     m.fresh = function () { return make(m.RULES); };
     m.withRules = make;
     m.source = String(factory);
@@ -46,6 +50,8 @@
   Object.freeze(P);
   // rules 2 (RULES-2.md): the body's height, used against movers only, and a mover's phase unit, metres
   const BODY = 1.8, Q = 1 / 256;
+  // rules 3 (RULES-3.md): the policies a mover may have
+  const POLICIES = RULES >= 3 ? ["stop", "push"] : ["stop"];
 
   // ---------------------------------------------------------------- the rules' arithmetic (rules 1)
   // A tick's numbers come from operations ECMA-262 fixes to the last bit: + - * / % (IEEE 754 binary64, round to
@@ -291,13 +297,15 @@
     if (org !== undefined) {
       if (!Array.isArray(org) || org.length !== 2 || !org.every(function (v) { return isInt(v, -ORIGIN_MAX, ORIGIN_MAX); }))
         throw new Error("ORT-ORIGIN: the origin is not two whole numbers of cells, each at most 2^20");
-      if ((org[0] !== 0 || org[1] !== 0) && RULES !== 2) throw new Error("ORT-RULES: rules " + RULES + " have no origin; a rebased world is played under rules 2");
+      if ((org[0] !== 0 || org[1] !== 0) && RULES < 2) throw new Error("ORT-RULES: rules " + RULES + " have no origin; a rebased world is played under rules 2");
       this.oi = org[0] + 0; this.oj = org[1] + 0;   // + 0: a -0 is 0
     }
-    // rules 2: the movers, each checked as RULES-2.md's table says (RULES2-MOVER), and the identity every tick's hash
-    // starts from; rules 0 and 1 have none, and refuse a world that has
+    // rules 2 and 3: the movers, each checked as RULES-2.md's table says (RULES2-MOVER), and the identity every tick's
+    // hash starts from; rules 0 and 1 have none, and refuse a world that has. Rules 3 read the wall's height too.
     this.movers = [];
-    if (RULES === 2) {
+    if (RULES >= 3 && !(typeof this.wall === "number" && this.wall > P.step && this.wall < Infinity))
+      throw new Error("RULES3-WALL: the world's wall height is not a number above the step");
+    if (RULES >= 2) {
       this.movers = checkMovers(map.movers || []);
       this.identity = identityText(this);
       this.identityState = fnv64(FNV64_OFFSET, new TextEncoder().encode(this.identity));
@@ -334,10 +342,19 @@
       const dx = x - t.x, dz = z - t.z, rr = P.radius + P.targetRadius;
       if (dx * dx + dz * dz < rr * rr && feet < t.y + P.targetHeight) return true;
     }
-    if (RULES === 2) {   // a box the player cannot step onto that reaches into the body (RULES-2.md)
+    if (RULES >= 2) {   // a box the player cannot step onto that reaches into the body (RULES-2.md)
       for (const bx of boxesOf(world, s, k, bk)) if (over(x, z, bx) && bx.y1 > feet + P.step && bx.y0 < feet + BODY) return true;
     }
+    if (RULES >= 3) {   // a wall blocks the body at any height (RULES-3.md)
+      touching(world, x, z, P.radius, function (i, j) { if (world.top(i, j) >= world.wall) b = true; });
+      if (b) return true;
+    }
     return false;
+  }
+  // rules 3: the body reaches into a standing target's column (the test blocked makes of a target)
+  function inTarget(t, x, z, feet) {
+    const dx = x - t.x, dz = z - t.z, rr = P.radius + P.targetRadius;
+    return dx * dx + dz * dz < rr * rr && feet < t.y + P.targetHeight;
   }
 
   function groundAt(world, x, z) {
@@ -365,7 +382,7 @@
           Math.abs(a[0]) + Math.abs(a[1]) + Math.abs(a[2]) !== 1) no("its axis is not one of x, y, z, either way");
       if (!isInt(m.len, 1, 262144)) no("its len is not an integer from 1 to 2^18");
       if (!isInt(m.speed, 0, m.len)) no("its speed is not an integer from 0 to its len");
-      if (m.policy !== "stop") no("its policy is not stop");
+      if (POLICIES.indexOf(m.policy) < 0) no("its policy is not " + POLICIES.join(" or "));
       const t = a[0] !== 0 ? b[3] - b[0] : a[1] !== 0 ? b[4] - b[1] : b[5] - b[2];
       const bound = a[1] !== 0 ? BODY + t : 2 * P.radius + t;
       if (!(m.speed * Q < bound)) no("it moves " + m.speed * Q + " m a tick, not less than the tunnelling bound " + bound + " m");
@@ -390,10 +407,19 @@
     for (let i = 0; i < world.movers.length; i++) out.push(i === k ? bk : poseOf(world.movers[i], s.movers[i].phase));
     return out;
   }
-  // the tops at or under the body, as high as a step above `before`, and the cells' ground
+  // the tops at or under the body, as high as a step above `before`, and the cells' ground; under rules 3 a standing
+  // target's top among them (RULES-3.md)
   function groundAt2(world, s, x, z, before) {
     let g = groundAt(world, x, z);
     for (const b of boxesOf(world, s)) if (over(x, z, b) && b.y1 <= before + P.step && b.y1 > g) g = b.y1;
+    if (RULES >= 3) {
+      const rr = P.radius + P.targetRadius;
+      for (const t of s.targets) {
+        if (!t.up) continue;
+        const dx = x - t.x, dz = z - t.z, top = t.y + P.targetHeight;
+        if (dx * dx + dz * dz < rr * rr && top <= before + P.step && top > g) g = top;
+      }
+    }
     return g;
   }
   // the lowest underside wholly above the head
@@ -416,7 +442,13 @@
         if (!blocked(world, s, nx, nz, nf, k, b)) { st.phase = n; s.x = nx; s.z = nz; s.feet = nf; st.stopped = false; }
         else st.stopped = true;
       } else if (over(s.x, s.z, b) && b.y1 > s.feet && b.y0 < s.feet + BODY) {
-        st.stopped = true;
+        // in its way: policy stop holds still; policy push (rules 3, along x or z) moves the player with it, by the same
+        // exact displacement, unless the place it would push the player to is blocked (RULES-3.md)
+        if (m.policy === "push" && m.axis[1] === 0) {
+          const nx = s.x + dx, nz = s.z + dz;
+          if (!blocked(world, s, nx, nz, s.feet, k, b)) { st.phase = n; s.x = nx; s.z = nz; st.stopped = false; }
+          else st.stopped = true;
+        } else st.stopped = true;
       } else {
         st.phase = n; st.stopped = false;
       }
@@ -438,14 +470,15 @@
     p.height = BODY;
     const spawns = {};
     for (const k of Object.keys(world.spawns).sort()) { const sp = world.spawns[k]; spawns[k] = [sp.x, sp.z, sp.yaw]; }
-    const doc = { P: p, Q: Q, TICK: TICK, input: INPUT, pitch: 1.45, rules: 2, stand: 1e-9,
+    const doc = { P: p, Q: Q, TICK: TICK, input: INPUT, pitch: 1.45, rules: RULES, stand: 1e-9,
                   world: { cell: world.cell, h: world.h, w: world.w, tops: world.tops,
                            movers: world.movers.map(function (m) { return [m.id, m.box.x0, m.box.y0, m.box.z0, m.box.x1, m.box.y1, m.box.z1,
                                                                             m.axis[0], m.axis[1], m.axis[2], m.len, m.speed, m.policy]; }),
                            objective: world.objective ? world.objective.rect : null, spawns: spawns,
                            targets: world.targetDefs.map(function (t) { return [t.id, t.x, t.z]; }) } };
     if (world.oi !== 0 || world.oj !== 0) doc.world.origin = [world.oi, world.oj];   // ORT-1: a rebased world says where
-    return "VERDANDI-RULES 2\n" + JSON.stringify(enc(doc));
+    if (RULES >= 3) doc.world.wall = world.wall;                                       // rules 3: the wall's height
+    return "VERDANDI-RULES " + RULES + "\n" + JSON.stringify(enc(doc));
   }
   const FNV64_OFFSET = 0xcbf29ce484222325n, FNV64_PRIME = 0x100000001b3n, FNV64_MASK = (1n << 64n) - 1n;
   function fnv64(h, bytes) {
@@ -465,7 +498,7 @@
       }),
       fx: { hitMarker: 0, flash: {}, lastShot: null },   // feedback for the view: not part of the authoritative state
     };
-    if (RULES === 2) s.movers = world.movers.map(function () { return { phase: 0, stopped: false }; });
+    if (RULES >= 2) s.movers = world.movers.map(function () { return { phase: 0, stopped: false }; });
     spawn(world, s, s.side);
     return s;
   }
@@ -521,7 +554,7 @@
     s.tick += 1;
     if (inp.side) spawn(world, s, inp.side);
     else if (inp.reset) spawn(world, s, s.side);
-    if (RULES === 2) moversStep(world, s);
+    if (RULES >= 2) moversStep(world, s);
     s.yaw = wrap(s.yaw + (inp.dyaw || 0));
     s.pitch = clamp(s.pitch + (inp.dpitch || 0), -1.45, 1.45);
     // walking: forward is -z at yaw 0 and +x at yaw 90 degrees; right is +x at yaw 0
@@ -540,7 +573,7 @@
     s.vy -= P.gravity * TICK;
     s.feet += s.vy * TICK;
     let g;
-    if (RULES === 2) {   // a box above the head stops the rise; the tops under the body are ground (RULES-2.md, step 7)
+    if (RULES >= 2) {   // a box above the head stops the rise; the tops under the body are ground (RULES-2.md, step 7)
       const c = ceilingAt(world, s, s.x, s.z, before);
       if (s.feet + BODY > c) { s.feet = c - BODY; if (s.vy > 0) s.vy = 0; }
       g = groundAt2(world, s, s.x, s.z, before);
@@ -556,7 +589,8 @@
     s.cooldown = Math.max(0, s.cooldown - TICK);
     if (inp.fire && s.cooldown === 0) { s.cooldown = P.fireCooldown; fire(world, s); }
     for (const t of s.targets) {
-      if (!t.up) { t.downFor -= TICK; if (t.downFor <= 1e-9) { t.up = true; t.downFor = 0; } }
+      // rules 3: a target whose column a body is in waits, down, its downFor 0, until the column is clear (RULES-3.md)
+      if (!t.up) { t.downFor -= TICK; if (t.downFor <= 1e-9) { if (!(RULES >= 3 && inTarget(t, s.x, s.z, s.feet))) t.up = true; t.downFor = 0; } }
     }
     s.onObjective = inObjective(world, s);
     s.fx.hitMarker = Math.max(0, s.fx.hitMarker - TICK);
@@ -700,8 +734,8 @@
   function hash(s, world) {
     const nums = [s.tick, s.x, s.z, s.feet, s.vy, s.yaw, s.pitch, s.onGround ? 1 : 0, s.cooldown, s.score, s.shots, s.onObjective ? 1 : 0];
     for (const t of s.targets) nums.push(t.up ? 1 : 0, t.downFor);
-    if (RULES === 2) {   // FNV-1a 64 from the identity's state: the rules, the constants and the world in every hash
-      if (!world || world.identityState === undefined) throw new Error("a rules-2 hash is bound to its world: hash(s, world)");
+    if (RULES >= 2) {   // FNV-1a 64 from the identity's state: the rules, the constants and the world in every hash
+      if (!world || world.identityState === undefined) throw new Error("a rules-" + RULES + " hash is bound to its world: hash(s, world)");
       for (const mv of s.movers) nums.push(mv.phase, mv.stopped ? 1 : 0);
       const bytes = new Uint8Array(nums.length * 8);
       for (let i = 0; i < nums.length; i++) { HV.setFloat64(0, nums[i], true); for (let k = 0; k < 8; k++) bytes[i * 8 + k] = HV.getUint8(k); }
@@ -1422,19 +1456,30 @@
   // Each case: a map's movers, a start (a side, then fields set), inputs ({n, in} runs); played here, every tick's
   // snapshot and hash sent back with the world's identity, for graybox/tick_ref.py rules2 to hold to the values worked
   // by hand and to Python's own run. A world this refuses is sent back refused, with why.
-  const SETTABLE = ["feet", "onGround", "pitch", "vy", "x", "yaw", "z"];
+  const SETTABLE = ["feet", "onGround", "pitch", "vy", "x", "yaw", "z"], SETTABLE_TARGET = ["downFor", "up"];
   function rules2Cases(map, table) {
-    if (RULES !== 2) throw new Error("rules2Cases runs under rules 2");
+    if (RULES < 2) throw new Error("rules2Cases runs under rules 2 or 3");
     const out = [];
     for (const c of table.cases) {
       const r = { name: c.name };
       try {
-        const world = new World(Object.assign({}, map, { movers: c.movers || [] }));
+        // a case may set the world's wall height (rules 3's table: a world refused for it)
+        if (c.world && Object.keys(c.world).some(function (k) { return k !== "wall"; })) throw new Error("a case can set the world's wall alone");
+        const world = new World(Object.assign({}, map, { movers: c.movers || [] }, c.world ? { canonical: Object.assign({}, map.canonical, c.world) } : {}));
         const s = newState(world, (c.start && c.start.side) || "A");
         const set = (c.start && c.start.set) || {};
         for (const k of Object.keys(set).sort()) { if (SETTABLE.indexOf(k) < 0) throw new Error("a start cannot set " + k); s[k] = set[k]; }
+        // a start may set a target's up and downFor (rules 3's table: a target down beside a player)
+        const tset = (c.start && c.start.targets) || {};
+        for (const id of Object.keys(tset).sort()) {
+          const t = s.targets.find(function (q) { return q.id === id; });
+          if (!t) throw new Error("a start names no target " + id);
+          for (const k of Object.keys(tset[id]).sort()) { if (SETTABLE_TARGET.indexOf(k) < 0) throw new Error("a start cannot set a target's " + k); t[k] = tset[id][k]; }
+        }
         r.identity = hex64(world.identityState);
         r.start = snapshot(s);
+        // rules 3's table also names what rules 2 do with the same case: played here under rules 2 too, sent back beside
+        if (RULES >= 3 && (c.expect_rules2 || c.rules2_equal || c.expect_rules2_refused)) r.rules2 = api.withRules(2).rules2Cases(map, { cases: [c] })[0];
         r.snaps = []; r.hashes = [];
         for (const seg of c.inputs || []) {
           const made = seg.stress ? stressInputs(seg.stress) : null;   // rules 1's stress inputs, made from integers
@@ -1446,6 +1491,7 @@
         }
       } catch (e) {
         r.refused = String(e && e.message || e);
+        if (RULES >= 3 && c.expect_rules2_refused) r.rules2 = api.withRules(2).rules2Cases(map, { cases: [c] })[0];
       }
       out.push(r);
     }

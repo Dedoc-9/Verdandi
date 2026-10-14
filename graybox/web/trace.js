@@ -24,6 +24,7 @@
              platform: d ? d.platform : null, crossOriginIsolated: !!self.crossOriginIsolated };
   };
   const given = q.get("inputs") === "1", cases = q.get("cases") === "1", rules2 = q.get("rules2") === "1", ort = q.get("ort") === "1";
+  const rules3 = q.get("rules3") === "1";
   if (ort) {   // ORT-1's table (web/ort_cases.json, graybox/ORT-1.md), played in a worker under rules 2 through ort.js
     Promise.all([
       fetch("/map/" + encodeURIComponent(name) + ".json").then(function (r) { if (!r.ok) throw new Error("the map " + name + " could not be loaded: " + r.status); return r.json(); }),
@@ -46,25 +47,27 @@
     });
     return;
   }
-  if (rules2) {   // rules 2's table (web/rules2_cases.json, graybox/RULES-2.md), played in a worker under rules 2
+  if (rules2 || rules3) {   // rules 2's table (web/rules2_cases.json, graybox/RULES-2.md), played in a worker under rules
+    // 2; or rules 3's (web/rules3_cases.json, graybox/RULES-3.md), under rules 3
+    const nr = rules3 ? 3 : 2, kind = "rules" + nr, FORMAT = "VERDANDI-RULES" + nr + "-RESULTS";
     Promise.all([
       fetch("/map/" + encodeURIComponent(name) + ".json").then(function (r) { if (!r.ok) throw new Error("the map " + name + " could not be loaded: " + r.status); return r.json(); }),
-      fetch("/rules2_cases.json").then(function (r) { if (!r.ok) throw new Error("rules 2's table could not be loaded: " + r.status); return r.json(); }),
+      fetch("/" + kind + "_cases.json").then(function (r) { if (!r.ok) throw new Error("rules " + nr + "'s table could not be loaded: " + r.status); return r.json(); }),
     ]).then(function (got) {
       return new Promise(function (resolve, reject) {
         const w = new Worker("sim_worker.js");
-        w.onmessage = function (e) { w.terminate(); if (e.data.error) reject(new Error(e.data.error)); else resolve({ map: got[0], results: e.data.rules2 }); };
+        w.onmessage = function (e) { w.terminate(); if (e.data.error) reject(new Error(e.data.error)); else resolve({ map: got[0], results: e.data[kind] }); };
         w.onerror = function (e) { w.terminate(); reject(new Error(e.message || "the worker failed")); };
-        w.postMessage({ kind: "rules2", map: got[0], table: got[1] });
+        w.postMessage({ kind: kind, map: got[0], table: got[1] });
       });
     }).then(function (r) {
-      out.textContent = "played " + r.results.length + " cases of rules 2; sending them to trace.py…";
-      return post({ format: "VERDANDI-RULES2-RESULTS", version: "1", map: name, manifest: r.map.manifest, runtime: runtime(), rules: 2, results: r.results });
+      out.textContent = "played " + r.results.length + " cases of rules " + nr + "; sending them to trace.py…";
+      return post({ format: FORMAT, version: "1", map: name, manifest: r.map.manifest, runtime: runtime(), rules: nr, results: r.results });
     }).then(function () {
       out.textContent += "\ndone";
     }).catch(function (e) {
       out.textContent = String(e && e.stack || e);
-      post({ format: "VERDANDI-RULES2-RESULTS", version: "1", map: name, error: String(e && e.stack || e) });
+      post({ format: FORMAT, version: "1", map: name, error: String(e && e.stack || e) });
     });
     return;
   }

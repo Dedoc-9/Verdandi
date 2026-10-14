@@ -164,7 +164,7 @@ class Prepared:
 def prepare(ow, event, frame=FRAME, guard=True, selfcheck=True, extra=None):
     """A candidate transition, or Refused. Writes nothing: the owner's world and state are only read."""
     world, s = ow.world, ow.state
-    if not isinstance(world, T.World2):
+    if not isinstance(world, T.World2) or world.RULES != 2:   # a rules-3 world (RULES-3.md, 0228) is not one
         raise Refused("ORT-RULES", "the world is not a rules-2 world")
     if not (world.cell == math.floor(world.cell) and 1 <= world.cell <= 64):
         raise Refused("ORT-CELL", "the cell is %r m, not a whole number of metres from 1 to 64" % world.cell)

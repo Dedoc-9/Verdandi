@@ -4,7 +4,7 @@
 # graybox/trace.py — the trace experiment: where two JavaScript engines part, and why. A diagnostic, outside the
 # self-test and outside the gate; nothing passes or fails on what it finds.
 #
-#   python graybox/trace.py run [MAP] [--inputs TRACE.json | --inputs BOT.json | --cases | --rules2 | --ort] [--browser NAME] [--expect FAMILY]
+#   python graybox/trace.py run [MAP] [--inputs TRACE.json | --inputs BOT.json | --cases | --rules2 | --rules3 | --ort] [--browser NAME] [--expect FAMILY]
 #                               [--name LABEL] [--port N]
 #                               [--no-browser] [--timeout SECONDS]
 #   python graybox/trace.py compare A.json B.json
@@ -23,6 +23,8 @@
 # graybox/tick_ref.py cases to hold to the table and to Python. With --rules2 it plays rules 2's table
 # (web/rules2_cases.json: movers, graybox/RULES-2.md) under rules 2 and writes every case's snapshots and hashes to
 # graybox/build/trace/MAP/rules2/, for graybox/tick_ref.py rules2 to hold to the values worked by hand and to Python.
+# With --rules3, rules 3's table (web/rules3_cases.json, graybox/RULES-3.md) likewise, to graybox/build/trace/MAP/rules3/,
+# for graybox/tick_ref.py rules3.
 # With --ort it plays ORT-1's table (web/ort_cases.json: rebases between ticks, graybox/ORT-1.md) through web/ort.js and
 # writes it to graybox/build/trace/MAP/ort/, for graybox/ort_ref.py to hold to the worked values and to Python.
 # --browser NAME opens the page in that browser
@@ -62,7 +64,7 @@ import level  # noqa: E402
 WEB = os.path.join(HERE, "web")
 SERVED = {"/trace.html": "text/html; charset=utf-8", "/trace.js": "text/javascript; charset=utf-8",
           "/sim.js": "text/javascript; charset=utf-8", "/sim_worker.js": "text/javascript; charset=utf-8",
-          "/input_cases.json": "application/json", "/rules2_cases.json": "application/json",
+          "/input_cases.json": "application/json", "/rules2_cases.json": "application/json", "/rules3_cases.json": "application/json",
           "/ort.js": "text/javascript; charset=utf-8", "/ort_cases.json": "application/json"}
 RULES = ("0", "1")
 FNS = ("sin", "cos", "hypot", "atan2", "sqrt")
@@ -379,8 +381,12 @@ def cmd_run(argv):
         print("GRAYBOX-MAP: %s" % e, file=sys.stderr)
         return 2
     given, cases, rules2, ort = None, "--cases" in argv, "--rules2" in argv, "--ort" in argv
+    rules3 = "--rules3" in argv
     if rules2 and (cases or opt("--inputs")):
         print("TRACE: --rules2 plays rules 2's table, and takes no --cases or --inputs", file=sys.stderr)
+        return 2
+    if rules3 and (cases or rules2 or ort or opt("--inputs")):
+        print("TRACE: --rules3 plays rules 3's table, and takes no --cases, --rules2, --ort or --inputs", file=sys.stderr)
         return 2
     if ort and (cases or rules2 or opt("--inputs")):
         print("TRACE: --ort plays ORT-1's table, and takes no --cases, --rules2 or --inputs", file=sys.stderr)
@@ -427,7 +433,7 @@ def cmd_run(argv):
             path = self.path.split("?", 1)[0]
             if path == "/":
                 self.send_response(302)
-                self.send_header("Location", "/trace.html?map=%s%s" % (name, "&inputs=1" if given else "&cases=1" if cases else "&rules2=1" if rules2 else "&ort=1" if ort else ""))
+                self.send_header("Location", "/trace.html?map=%s%s" % (name, "&inputs=1" if given else "&cases=1" if cases else "&rules2=1" if rules2 else "&rules3=1" if rules3 else "&ort=1" if ort else ""))
                 self.end_headers()
                 return
             if path == "/map/%s.json" % name:
@@ -484,10 +490,13 @@ def cmd_run(argv):
     if rules2 and T.get("format") != "VERDANDI-RULES2-RESULTS":
         print("TRACE: the page sent no results of rules 2's table", file=sys.stderr)
         return 1
+    if rules3 and T.get("format") != "VERDANDI-RULES3-RESULTS":
+        print("TRACE: the page sent no results of rules 3's table", file=sys.stderr)
+        return 1
     if ort and T.get("format") != "VERDANDI-ORT-RESULTS":
         print("TRACE: the page sent no results of ORT-1's table", file=sys.stderr)
         return 1
-    outdir = os.path.join(HERE, "build", "trace", name, "cases" if cases else "rules2" if rules2 else "ort") if (cases or rules2 or ort) else os.path.join(HERE, "build", "trace", name)
+    outdir = os.path.join(HERE, "build", "trace", name, "cases" if cases else "rules2" if rules2 else "rules3" if rules3 else "ort") if (cases or rules2 or rules3 or ort) else os.path.join(HERE, "build", "trace", name)
     os.makedirs(outdir, exist_ok=True)
     suffix = "-given" if given else ""
     path = os.path.join(outdir, engine_tag(T["runtime"]) + suffix + ".json")
@@ -503,12 +512,13 @@ def cmd_run(argv):
         print("%d ticks played, %d rebases tried" % (sum(len(r.get("snaps", [])) for r in T["results"]), sum(len(r.get("events", [])) for r in T["results"])))
         print("written %s" % os.path.relpath(path))
         print("hold it to the worked values and to Python: python graybox/ort_ref.py %s" % os.path.relpath(path))
-    elif rules2:
-        print("TRACE  map %s  engine %s  rules 2's table, %d cases" % (name, engine_tag(T["runtime"]), len(T["results"])))
+    elif rules2 or rules3:
+        nr = 3 if rules3 else 2
+        print("TRACE  map %s  engine %s  rules %d's table, %d cases" % (name, engine_tag(T["runtime"]), nr, len(T["results"])))
         print("runtime  %s" % T["runtime"].get("userAgent"))
         print("%d ticks played, %d cases refused as worlds" % (sum(len(r.get("snaps", [])) for r in T["results"]), sum(1 for r in T["results"] if r.get("refused"))))
         print("written %s" % os.path.relpath(path))
-        print("hold it to the worked values and to Python: python graybox/tick_ref.py rules2 %s" % os.path.relpath(path))
+        print("hold it to the worked values and to Python: python graybox/tick_ref.py rules%d %s" % (nr, os.path.relpath(path)))
     elif cases:
         steps = [st for c in T["results"] for st in c["steps"]]
         print("TRACE  map %s  engine %s  the input contract's table, contract %s" % (name, engine_tag(T["runtime"]), T.get("contract")))

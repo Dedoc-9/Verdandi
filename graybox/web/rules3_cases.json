@@ -1,0 +1,1257 @@
+{
+ "format": "VERDANDI-RULES3-CASES",
+ "version": "1",
+ "rules": "3",
+ "map": "tactical",
+ "about": "Rules 3's cases (graybox/RULES-3.md): each a map's movers, a start and inputs, with values worked by hand from RULES-3.md at chosen ticks ('expect'), the same inputs' values under rules 2 where rules 3 change them ('expect_rules2'), and the working ('why'). 'about' gives a value worked to within a bound, where the player's place is a sum of steps of 0.05 m that no double holds; every other value is exact. A start may set a target's up and downFor ('targets'). Both implementations are held to these values, not to each other's output; then to each other, every tick's snapshot and hash. The tactical map: the north lane (x 10 to 64 m, z 6 to 14 m), its north wall (row 2, top 4 m, the world's wall), T1 at x 21, z 33 and T5 at x 53, z 9. 'expect_rules2_refused': rules 2 refuse the case's world, as worked.",
+ "cases": [
+  {
+   "name": "R1 a pusher moves a player in its way, then leaves him",
+   "movers": [
+    {
+     "id": "block",
+     "box": [
+      44,
+      0,
+      6,
+      46,
+      2,
+      8
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "push"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 48.5,
+     "z": 7,
+     "feet": 0,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 20,
+     "in": {}
+    }
+   ],
+   "expect_rules2_refused": "RULES2-MOVER",
+   "identity_has": [
+    "VERDANDI-RULES 3\n",
+    "\"rules\":\"f4008000000000000\"",
+    "\"wall\":\"f4010000000000000\""
+   ],
+   "why": "RULES2's K3 with policy push. x1 after t ticks = 46 + 0.25 t. Tick 9: x1 = 48.25, the circle at 48.5 overlapped (0.25 < 0.35) and the box reaches the body (y1 2 > 0, y0 0 < 1.8): the player is in its way. Push: the place x + 0.25 = 48.75 is not blocked (cell 24,3 is floor; the box at its new pose is 0.5 away; no target near): x = 48.75, phase 576. So every tick to 16, one push of 0.25 each, exact: tick 16 phase 1024 (len), x = 48.5 + 8 x 0.25 = 50.5. Tick 17: phase 1088, the box back 0.25 (x1 = 49.75), 0.75 from the player: no push, x 50.5. Tick 20: phase 1088 + 3 x 64 = 1280. The identity names rules 3 (the double 3, 4008000000000000) and the world's wall (4 m, 4010000000000000). Rules 2 refuse the world: their only policy is stop.",
+   "expect": [
+    {
+     "tick": 8,
+     "x": 48.5,
+     "movers": [
+      {
+       "phase": 512,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 9,
+     "x": 48.75,
+     "z": 7,
+     "feet": 0,
+     "movers": [
+      {
+       "phase": 576,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 16,
+     "x": 50.5,
+     "movers": [
+      {
+       "phase": 1024,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 17,
+     "x": 50.5,
+     "movers": [
+      {
+       "phase": 1088,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 20,
+     "x": 50.5,
+     "feet": 0,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 1280,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "R2 a pusher stops when the wall is behind the player",
+   "movers": [
+    {
+     "id": "block",
+     "box": [
+      44,
+      0,
+      10,
+      48,
+      2,
+      12
+     ],
+     "axis": [
+      0,
+      0,
+      -1
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "push"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 7.5,
+     "feet": 0,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 16,
+     "in": {}
+    }
+   ],
+   "why": "z0 after t ticks = 10 - 0.25 t. The circle at z 7.5 is overlapped when z0 < 7.85: tick 9 (z0 7.75). Pushed 0.25 a tick: z 7.25 (tick 9), 7.0, 6.75, 6.5 (tick 12), phase 768; the circle at 6.5 reaches z 6.15, clear of the north wall's cells (row 2, z 4 to 6). Tick 13: z0 would be 6.75, the push would put the player at 6.25, whose circle meets cell 22,2 (top 4: a wall, and above a step): blocked, so the mover stops, phase 768, the player at 6.5. It stays so.",
+   "expect": [
+    {
+     "tick": 8,
+     "z": 7.5,
+     "movers": [
+      {
+       "phase": 512,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 9,
+     "z": 7.25,
+     "movers": [
+      {
+       "phase": 576,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 12,
+     "z": 6.5,
+     "x": 46,
+     "movers": [
+      {
+       "phase": 768,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 13,
+     "z": 6.5,
+     "movers": [
+      {
+       "phase": 768,
+       "stopped": true
+      }
+     ]
+    },
+    {
+     "tick": 16,
+     "z": 6.5,
+     "feet": 0,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 768,
+       "stopped": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "R3 a pusher along y holds still, as stop does",
+   "movers": [
+    {
+     "id": "press",
+     "box": [
+      45,
+      2.5,
+      6,
+      47,
+      3,
+      8
+     ],
+     "axis": [
+      0,
+      -1,
+      0
+     ],
+     "len": 256,
+     "speed": 64,
+     "policy": "push"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 7,
+     "feet": 0,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 10,
+     "in": {}
+    }
+   ],
+   "why": "y0 after t ticks = 2.5 - 0.25 t. It reaches the body (y0 < 0 + 1.8) first at tick 3 (1.75): a push is along x or z only, so it holds still, phase 2 x 64 = 128, stopped, as long as the player stands there. Its underside at 2.0 is a ceiling above the head (1.8), never met standing.",
+   "expect": [
+    {
+     "tick": 2,
+     "movers": [
+      {
+       "phase": 128,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 3,
+     "feet": 0,
+     "movers": [
+      {
+       "phase": 128,
+       "stopped": true
+      }
+     ]
+    },
+    {
+     "tick": 10,
+     "feet": 0,
+     "x": 46,
+     "z": 7,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 128,
+       "stopped": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "R4 a pusher along y rising under a player holds still",
+   "movers": [
+    {
+     "id": "shaft",
+     "box": [
+      44,
+      -0.59375,
+      6,
+      46,
+      -0.09375,
+      8
+     ],
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "len": 64,
+     "speed": 32,
+     "policy": "push"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 45,
+     "z": 7,
+     "feet": 0,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 5,
+     "in": {}
+    }
+   ],
+   "why": "A plate below the floor, top -0.09375, rising 0.125 a tick, the player standing over it on the floor (not a rider: the feet are not at its top). Its next top, 0.03125, is above the feet and its underside below the head: the player is in its way. Along y there is no push: it holds still, phase 0, stopped, every tick; the player stays on the floor at feet 0. (A push along y would raise the plate under the feet, and the height step would stand the player on it at 0.03125.)",
+   "expect": [
+    {
+     "tick": 1,
+     "feet": 0,
+     "movers": [
+      {
+       "phase": 0,
+       "stopped": true
+      }
+     ]
+    },
+    {
+     "tick": 5,
+     "feet": 0,
+     "x": 45,
+     "z": 7,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 0,
+       "stopped": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "R5 a wall holds a player at any height",
+   "movers": [
+    {
+     "id": "ledge",
+     "box": [
+      44,
+      0,
+      6,
+      48,
+      3.5,
+      8
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1,
+     "speed": 0,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 7,
+     "feet": 3.5,
+     "onGround": true,
+     "yaw": 0
+    }
+   },
+   "inputs": [
+    {
+     "n": 40,
+     "in": {
+      "f": true
+     }
+    }
+   ],
+   "why": "A parked box, top 3.5, against the north wall (row 2, top 4 = the wall's height). Forward at yaw 0 is -z, 0.05 m a tick. Under rules 3 a cell as high as the wall blocks at any height: the circle never meets row 2 (z stays above 6.35, the last full step refused, then the halvings close the gap to less than 0.05/64), the feet stay 3.5 on the box. Under rules 2 the wall is 0.5 above the feet, within a step: the first tick the circle meets row 2 the ground is 4, and the player walks on along the wall's top: at tick 40, z = 7 - 40 x 0.05 = 5.0 (forty additions of a step no double holds: within 1e-12), feet 4.",
+   "expect": [
+    {
+     "tick": 40,
+     "feet": 3.5,
+     "x": 46,
+     "onGround": true,
+     "about": {
+      "z": [
+       6.3504,
+       0.0005
+      ]
+     },
+     "movers": [
+      {
+       "phase": 0,
+       "stopped": false
+      }
+     ]
+    }
+   ],
+   "expect_rules2": [
+    {
+     "tick": 40,
+     "feet": 4,
+     "onGround": true,
+     "about": {
+      "z": [
+       5.0,
+       1e-12
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "R6 a target's top is ground",
+   "movers": [
+    {
+     "id": "step",
+     "box": [
+      18,
+      0,
+      32,
+      20,
+      1,
+      34
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1,
+     "speed": 0,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 19,
+     "z": 33,
+     "feet": 1,
+     "onGround": true,
+     "yaw": 0
+    }
+   },
+   "inputs": [
+    {
+     "n": 1,
+     "in": {
+      "r": true,
+      "jump": true
+     }
+    },
+    {
+     "n": 39,
+     "in": {
+      "r": true
+     }
+    },
+    {
+     "n": 60,
+     "in": {}
+    },
+    {
+     "n": 80,
+     "in": {
+      "r": true
+     }
+    }
+   ],
+   "why": "T1 stands at x 21, z 33 (cell 10,16, top 0), its top at 1.9; a parked box, top 1, west of it. Right at yaw 0 is +x, 0.05 m a tick; jump at tick 1 from feet 1: after k ticks feet = 1 + (7k - k(k+1)/12)/120, above 1.9 from k = 21 to 62. The walk comes before the height step, so at tick k it is held by T1 (circle within 0.75 and feet < 1.9) only if x passes 20.25 with the feet of tick k-1 below 1.9: x passes 20.25 at k = 26, feet then 2.07: never held. Walking stops at tick 40, x 21.0 (within 1e-12), above T1. Rules 3: T1's top is ground (within 0.75, 1.9 <= before + step): at tick 63 the feet would be 1.875 < 1.9: feet 1.9, vy 0, on the ground; at tick 62 (1.904) still in the air. From tick 101 right again: on the top at feet 1.9, not held (1.9 < 1.9 is false), off it at 21.75, a fall of 1.9 m (52 ticks): on the floor by tick 180, x = 21 + 80 x 0.05 = 25.0. Rules 2: no top, the player falls into T1's column to the floor at tick 98 (feet 1 + (686 - 808.5)/120 < 0) and is held there: every step from inside the column ends inside it, so x stays at its tick-40 value, 21.0, to tick 180.",
+   "expect": [
+    {
+     "tick": 40,
+     "onGround": false,
+     "about": {
+      "x": [
+       21.0,
+       1e-12
+      ]
+     }
+    },
+    {
+     "tick": 62,
+     "onGround": false
+    },
+    {
+     "tick": 63,
+     "feet": 1.9,
+     "vy": 0,
+     "onGround": true
+    },
+    {
+     "tick": 100,
+     "feet": 1.9,
+     "onGround": true,
+     "z": 33,
+     "about": {
+      "x": [
+       21.0,
+       1e-12
+      ]
+     }
+    },
+    {
+     "tick": 180,
+     "feet": 0,
+     "onGround": true,
+     "about": {
+      "x": [
+       25.0,
+       1e-12
+      ]
+     }
+    }
+   ],
+   "expect_rules2": [
+    {
+     "tick": 63,
+     "onGround": false
+    },
+    {
+     "tick": 97,
+     "onGround": false
+    },
+    {
+     "tick": 98,
+     "feet": 0,
+     "vy": 0,
+     "onGround": true
+    },
+    {
+     "tick": 180,
+     "feet": 0,
+     "onGround": true,
+     "about": {
+      "x": [
+       21.0,
+       1e-12
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "R7 a target's top more than a step above the feet is not ground",
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 21,
+     "z": 33,
+     "feet": 0,
+     "onGround": true,
+     "yaw": 0
+    }
+   },
+   "inputs": [
+    {
+     "n": 5,
+     "in": {
+      "r": true
+     }
+    }
+   ],
+   "why": "A start no tick of rules 3 reaches (they never leave a body in a standing target's column below its top): the player inside T1's column at feet 0, as rules 2 left him. Its top, 1.9, is more than a step above the feet (0 + 0.55), so it is not ground: the feet stay 0. Every step from inside the column ends inside it, below its top: held, x 21.",
+   "expect": [
+    {
+     "tick": 5,
+     "x": 21,
+     "z": 33,
+     "feet": 0,
+     "onGround": true,
+     "targets": {
+      "T1": {
+       "up": true,
+       "downFor": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "R8 a target waits for its column to clear",
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 21,
+     "z": 33,
+     "feet": 0,
+     "onGround": true,
+     "yaw": 0
+    },
+    "targets": {
+     "T1": {
+      "up": false,
+      "downFor": 0.02
+     }
+    }
+   },
+   "inputs": [
+    {
+     "n": 10,
+     "in": {}
+    },
+    {
+     "n": 20,
+     "in": {
+      "r": true
+     }
+    }
+   ],
+   "why": "T1 down, 0.02 s to go, the player standing at its centre (a down target holds nobody). downFor less 1/120 a tick: 0.0117, 0.0033, then below 1e-9 at tick 3. Rules 3: a body in its column (distance 0 < 0.75, feet 0 < 1.9): it waits, down, downFor 0, every tick while the body is there. From tick 11 right, 0.05 m a tick: at tick 24 the player is 0.7 from its centre (waiting), at tick 26 0.8 (clear: up). Rules 2: up at tick 3, with the player inside it, who is then held: every step from inside the column ends inside it, x stays 21.",
+   "expect": [
+    {
+     "tick": 3,
+     "targets": {
+      "T1": {
+       "up": false,
+       "downFor": 0
+      }
+     }
+    },
+    {
+     "tick": 10,
+     "targets": {
+      "T1": {
+       "up": false,
+       "downFor": 0
+      }
+     }
+    },
+    {
+     "tick": 24,
+     "targets": {
+      "T1": {
+       "up": false,
+       "downFor": 0
+      }
+     },
+     "about": {
+      "x": [
+       21.7,
+       1e-12
+      ]
+     }
+    },
+    {
+     "tick": 26,
+     "targets": {
+      "T1": {
+       "up": true,
+       "downFor": 0
+      }
+     }
+    },
+    {
+     "tick": 30,
+     "z": 33,
+     "feet": 0,
+     "targets": {
+      "T1": {
+       "up": true,
+       "downFor": 0
+      }
+     },
+     "about": {
+      "x": [
+       22.0,
+       1e-12
+      ]
+     }
+    }
+   ],
+   "expect_rules2": [
+    {
+     "tick": 3,
+     "targets": {
+      "T1": {
+       "up": true,
+       "downFor": 0
+      }
+     }
+    },
+    {
+     "tick": 30,
+     "x": 21,
+     "z": 33,
+     "targets": {
+      "T1": {
+       "up": true,
+       "downFor": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "R9 standing on a target, shot from its top",
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 21,
+     "z": 33,
+     "feet": 1.9,
+     "onGround": true,
+     "yaw": 0,
+     "pitch": -1.45
+    }
+   },
+   "inputs": [
+    {
+     "n": 1,
+     "in": {
+      "fire": true
+     }
+    },
+    {
+     "n": 309,
+     "in": {}
+    },
+    {
+     "n": 20,
+     "in": {
+      "r": true
+     }
+    }
+   ],
+   "why": "The owner's report of 0228: on a dummy, stuck in it, freed by shooting it. Rules 3: on T1's top (feet 1.9, its top the ground), looking down at pitch -1.45 and firing: the ray from the eye (3.52) meets T1's box at its top, about 1.63 m, before the floor (3.55): T1 down, score 1, the player still at 1.9 on the ground (the height step comes before the weapon). Tick 2: no top under the body, the fall begins: feet 1.9 - k(k+1)/1440 at tick 1 + k, below 0 at k = 52: on the floor at tick 53. T1's 2.5 s run out at tick 300; the player in its column, it waits. From tick 311 right, 0.05 m a tick: clear by tick 330 (1.0 m away), up. Rules 2: no top, at tick 1 the player is already falling into the column (onGround false), shoots, lands; at tick 300 T1 stands with the player inside it, held from then on: x 21 at tick 330.",
+   "expect": [
+    {
+     "tick": 1,
+     "feet": 1.9,
+     "onGround": true,
+     "score": 1,
+     "targets": {
+      "T1": {
+       "up": false
+      }
+     }
+    },
+    {
+     "tick": 52,
+     "onGround": false
+    },
+    {
+     "tick": 53,
+     "feet": 0,
+     "onGround": true
+    },
+    {
+     "tick": 305,
+     "targets": {
+      "T1": {
+       "up": false,
+       "downFor": 0
+      }
+     }
+    },
+    {
+     "tick": 330,
+     "feet": 0,
+     "targets": {
+      "T1": {
+       "up": true,
+       "downFor": 0
+      }
+     },
+     "about": {
+      "x": [
+       22.0,
+       1e-12
+      ]
+     }
+    }
+   ],
+   "expect_rules2": [
+    {
+     "tick": 1,
+     "onGround": false,
+     "score": 1,
+     "targets": {
+      "T1": {
+       "up": false
+      }
+     }
+    },
+    {
+     "tick": 305,
+     "targets": {
+      "T1": {
+       "up": true,
+       "downFor": 0
+      }
+     }
+    },
+    {
+     "tick": 330,
+     "x": 21,
+     "z": 33,
+     "feet": 0,
+     "targets": {
+      "T1": {
+       "up": true,
+       "downFor": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "R10 a pusher stops at a standing target",
+   "movers": [
+    {
+     "id": "block",
+     "box": [
+      48,
+      0,
+      8,
+      50,
+      2,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "push"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 51.625,
+     "z": 9,
+     "feet": 0,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 12,
+     "in": {}
+    }
+   ],
+   "why": "T5 stands at x 53, z 9. x1 after t ticks = 50 + 0.25 t; the circle at 51.625 is overlapped when x1 > 51.275: tick 6 (51.5), pushed to 51.875; tick 7 (51.75) to 52.125, 0.875 from T5. Tick 8: the push would put the player at 52.375, 0.625 from T5's centre, within 0.75 with the feet below its top: blocked, so the mover stops at phase 7 x 64 = 448, the player at 52.125.",
+   "expect": [
+    {
+     "tick": 6,
+     "x": 51.875,
+     "movers": [
+      {
+       "phase": 384,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 7,
+     "x": 52.125,
+     "movers": [
+      {
+       "phase": 448,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 8,
+     "x": 52.125,
+     "movers": [
+      {
+       "phase": 448,
+       "stopped": true
+      }
+     ]
+    },
+    {
+     "tick": 12,
+     "x": 52.125,
+     "z": 9,
+     "movers": [
+      {
+       "phase": 448,
+       "stopped": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "R11 a rider of a pusher is carried as a rider",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      44,
+      0,
+      6,
+      48,
+      0.5,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "push"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 32,
+     "in": {}
+    }
+   ],
+   "why": "RULES2's K2 with policy push: a rider is carried whatever the policy: x = 46 + 0.25 t to tick 16 (50), back 0.25 at tick 17 (49.75), at 46 at tick 32, feet 0.5 on the ground each tick.",
+   "expect": [
+    {
+     "tick": 1,
+     "x": 46.25,
+     "feet": 0.5,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 64,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 16,
+     "x": 50,
+     "movers": [
+      {
+       "phase": 1024,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 17,
+     "x": 49.75,
+     "movers": [
+      {
+       "phase": 1088,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 32,
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 0,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "R12 rules 3 play rules 2's ticks where nothing of theirs is met",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      44,
+      0,
+      6,
+      48,
+      0.5,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 32,
+     "in": {}
+    },
+    {
+     "n": 1,
+     "in": {
+      "jump": true
+     }
+    },
+    {
+     "n": 40,
+     "in": {
+      "f": true,
+      "dyaw": 0.01
+     }
+    }
+   ],
+   "rules2_equal": true,
+   "why": "RULES2's K2, then a jump and a walk on the lane's floor, near no wall's cell, no target and no player in the deck's way: every snapshot the same bytes as rules 2's (the hash differs, its identity naming rules 3).",
+   "expect": [
+    {
+     "tick": 16,
+     "x": 50,
+     "movers": [
+      {
+       "phase": 1024,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "R13 a policy rules 3 do not have",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      44,
+      0,
+      6,
+      48,
+      0.5,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "pull"
+    }
+   ],
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "expect_refused": "RULES2-MOVER",
+   "expect_rules2_refused": "RULES2-MOVER",
+   "why": "stop and push are rules 3's policies; any other is refused, as rules 2 refuse any but stop."
+  },
+  {
+   "name": "R14 a world whose wall is no higher than a step",
+   "world": {
+    "wall": 0.5
+   },
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "expect_refused": "RULES3-WALL",
+   "why": "Rules 3 read the world's wall height: a number above the step (0.55), or every cell a player can step onto would be a wall. 0.5 is refused."
+  },
+  {
+   "name": "W3 the stress run among three pushers, from spawn A",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      8,
+      0,
+      26,
+      12,
+      0.5,
+      30
+     ],
+     "axis": [
+      0,
+      0,
+      1
+     ],
+     "len": 1024,
+     "speed": 48,
+     "policy": "push"
+    },
+    {
+     "id": "lift",
+     "box": [
+      4,
+      0,
+      34,
+      6,
+      0.25,
+      36
+     ],
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "len": 768,
+     "speed": 16,
+     "policy": "push"
+    },
+    {
+     "id": "wall",
+     "box": [
+      14,
+      0,
+      20,
+      14.5,
+      2.5,
+      24
+     ],
+     "axis": [
+      -1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 96,
+     "policy": "push"
+    }
+   ],
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "stress": 6000
+    }
+   ],
+   "invariant": "never inside",
+   "why": "No value worked by hand: RULES2's W1 with every policy push (the lift's, along y, holding still as stop does), for the two implementations to be held to each other tick by tick, and to the invariant rules 3 give: no tick ends with the body inside a box (but on its top), inside a standing target below its top, or over a wall's cell."
+  },
+  {
+   "name": "W4 the stress run from T1's top",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      8,
+      0,
+      26,
+      12,
+      0.5,
+      30
+     ],
+     "axis": [
+      0,
+      0,
+      1
+     ],
+     "len": 1024,
+     "speed": 48,
+     "policy": "push"
+    },
+    {
+     "id": "lift",
+     "box": [
+      4,
+      0,
+      34,
+      6,
+      0.25,
+      36
+     ],
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "len": 768,
+     "speed": 16,
+     "policy": "push"
+    },
+    {
+     "id": "wall",
+     "box": [
+      14,
+      0,
+      20,
+      14.5,
+      2.5,
+      24
+     ],
+     "axis": [
+      -1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 96,
+     "policy": "push"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 21,
+     "z": 33,
+     "feet": 1.9,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "stress": 3000
+    }
+   ],
+   "invariant": "never inside",
+   "why": "The same, the player starting on a target's top."
+  }
+ ]
+}
