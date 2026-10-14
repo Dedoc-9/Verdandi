@@ -3997,6 +3997,44 @@ numbers through Python's `float()`, so `2_5` reads as 25, the Arabic-Indic digit
 number grammar of its own is an exporter change, which moves every head, and is proposed to go with the physics
 slice's exporter change, one rebase rather than two.
 
+**0222: every verdict complete, the rung computed by the host, the evidence before Admit (ADMISSION-0, 2026-10-14).**
+His ruling's third item and the intent half of the second: *"Every verdict states what it did not check."*, *"Four
+candidate rungs, classified by the host … The model must not choose its own rung, and filenames alone must not
+determine it."* and *"Classify the effective change, not only its direct diff"*. **Built, off the gate.**
+`art/director/contract.py` (pure): every evaluation carries a record beside its DIRECTOR-0 verdict, which is unchanged
+(VECTORS 62 / 62): the rung, computed from the effective change — the scope protocol's realized and affected
+addresses, never the intent's words or its declared scope — A when each is an instance or a parameter of an admitted
+kind, C when one is of a kind the classifier does not know, D when the candidate did not export (unknown, classified at
+the top); certifies, derived from the checks that ran and passed and the scope's finding; not_checked, every expected
+check that did not run and what the director never checks; a horizon of 0 ticks, since nothing in the scene moves; the
+sha256 of every component the verdict rests on; and what an admission requires. For rung A that is the verdict CLEAN
+(or LEAKAGE accepted), every expected check passed, and a still of the candidate as drawn with its detectors read by
+the host, a flagged still admitted only despite them; an undo needs no still, being checked to be the exact inverse of
+the admission it undoes. `admit` refuses (ADMISSION-0) until every item is present; an evaluation from before the
+record is evaluated again. The still is kept beside the ledger by its sha256, written under the content lock before the
+admission's first write; replay refuses an admission of a recorded evaluation without its evidence (LEDGER-EVIDENCE),
+and verify reads every still again (LEDGER-STILL). The studio: each candidate's card shows its rung and why, what an
+admission needs and what was not checked; Admit takes a still from the canvas (a copy at most 960 pixels wide) and gives
+it to play.py (`POST /studio/still`), which reads its detectors; a flagged still admits nothing and shows **Admit
+despite**. `python art/director.py record BRIEF SEQ` prints a record; `admit` takes `--still FILE.png`
+(`--despite-detectors`, `--inverse-of SEQ`). MEASURED in the container: DIRECTOR SELFTEST PASSED (17 new rows: the
+record complete, an admission refused without a still, with a flagged still, and as an undo that is not one, then
+admitted as each should be; the evidence and the still read back; three plants on the evidence — detectors that are not
+the still's, a still taken away, an admit event written past the director — each refused; a kind the classifier does
+not know classified C and not admitted; a candidate that did not export classified D; a skipped check said and keeping
+the admission out), DIRECTOR CRASHTEST PASSED (15 cases: one more, death after the still is kept), DIRECTOR RACETEST
+PASSED (32 cases), STUDIO SELFTEST 73/73 (three new rows: no still, a flagged still, a still not PNG or without the
+studio's token), STUDIO-2 SELFTEST 19/19 (the launcher's token cannot give a still), LIVE SELFTEST 18/18, STUDIO APP
+SELFTEST 12/12, STUDIO-TXN SELFTEST PASSED, QUALITY SELFTEST 58/58, ART CHECKS PASSED; in headless Chromium (not
+committed) B1's flows 9/9 and STUDIO-2's 10/10 with the still taken by the page, and the card looked at. OBSERVED
+there: on SwiftShader the still and the admission took 13 s at 640 × 360 and 122 s at 800 × 450, and `toBlob` waited
+minutes for an idle moment the drawing page never had, which is why the page encodes with `toDataURL`; on a real GPU
+the time from Admit to admitted is NOT_MEASURED. What is not claimed: that the still shows the candidate (it is bound
+by digest; at the command line a person gives it), or that the rung is right beyond the kinds the classifier restates.
+For his own harbor-day: an intent evaluated before 0222 is evaluated again before it can be admitted, and at the
+command line it now needs a still (`--still`); the studio takes one by itself. Next in his order: the rung of a change
+to the program itself, computed by the host (0223), then RULES-2.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

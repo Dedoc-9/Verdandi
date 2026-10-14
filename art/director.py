@@ -8,7 +8,11 @@
 #   python art/director.py lens     BRIEF REGION               what a proposer reads: the region, its pieces, their materials
 #   python art/director.py evaluate BRIEF FILE...              check candidate intents at the current head; a contact sheet
 #   python art/director.py reevaluate BRIEF SEQ                check an earlier evaluation's intent again, at the current head
-#   python art/director.py admit    BRIEF SEQ [--accept-leakage] [--chooser NAME] [--note TEXT]
+#   python art/director.py admit    BRIEF SEQ --still FILE.png [--despite-detectors] [--accept-leakage] [--chooser NAME] [--note TEXT]
+#                                                              (ADMISSION-0, 0222: the evaluation's record must be complete and what
+#                                                              it requires present; --inverse-of SEQ in place of a still for an undo)
+#   python art/director.py record   BRIEF SEQ                  an evaluation's record: its rung and why, what it certifies, what it did
+#                                                              not check, what an admission needs, what it rests on
 #   python art/director.py refuse   BRIEF SEQ [--chooser NAME] [--note TEXT]
 #   python art/director.py rebase   BRIEF --note TEXT          record a change made outside the loop (a hand edit, a new exporter)
 #   python art/director.py approve  BRIEF VIEW IMAGE --config TEXT [--approver NAME] [--note TEXT] [--despite-detectors]
@@ -60,6 +64,7 @@ _spec = importlib.util.spec_from_file_location("art_check", os.path.join(HERE, "
 check = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(check)
 import intent as canon  # noqa: E402
+import contract  # noqa: E402
 import quality  # noqa: E402
 import scope as scopemod  # noqa: E402
 import ledger as led  # noqa: E402
@@ -92,6 +97,7 @@ class Workspace:
         self.maps = os.path.join(root, "graybox", "maps")
         self.build = os.path.join(root, "art", "build", brief, "director")
         self.pending = self.ledger + ".pending"
+        self.stills = self.ledger + ".stills"       # ADMISSION-0's evidence: each admission's still, by its sha256
 
     def text(self):
         return open(self.art, "rb").read().replace(b"\r\n", b"\n").decode("utf-8")
@@ -326,7 +332,7 @@ def briefs_on_map(ws, name):
     return out
 
 
-def commit_admission(ws, evaluation, intent_sha256, files, fields):
+def commit_admission(ws, evaluation, intent_sha256, files, fields, stills=()):
     """Admit with crash safety: files is [(absolute path, new bytes)], fields the admit event's (with head_before, the
     head the caller checked). See recover().
 
@@ -337,13 +343,13 @@ def commit_admission(ws, evaluation, intent_sha256, files, fields):
     durable.point("admit:lock-wait")
     try:
         with durable.locked(led.lock_path(ws.ledger)):
-            return _commit_locked(ws, evaluation, intent_sha256, files, fields)
+            return _commit_locked(ws, evaluation, intent_sha256, files, fields, stills)
     except durable.Busy:
         raise SystemExit("REFUSED (BUSY): another writer held this tree's content lock for the whole wait (%g s); nothing was "
                          "changed. Admit again when it ends" % durable.WAIT)
 
 
-def _commit_locked(ws, evaluation, intent_sha256, files, fields):
+def _commit_locked(ws, evaluation, intent_sha256, files, fields, stills=()):
     if os.path.exists(ws.pending):               # this process holds the lock: the folder's writer is dead
         for ln in _recover(ws):
             print(ln)
@@ -362,6 +368,14 @@ def _commit_locked(ws, evaluation, intent_sha256, files, fields):
                              "map of its own (pinned revisions, to come); changes to the art are admitted as before" % (
                                  ", ".join(others), "s" if len(others) == 1 else "", out_now["scene"]["map"], "that world" if len(others) == 1 else "those worlds"))
     events, _l, _h = led.read(ws.ledger)
+    # the admission's still (ADMISSION-0), kept by its sha256 before anything else is written: content-addressed, so a
+    # still left by an admission that then failed names nothing and harms nothing, and the event never names a still
+    # that is not on the disk
+    for path, b in stills:
+        if not (os.path.exists(path) and canon.sha256(open(path, "rb").read()) == os.path.basename(path)[:-4]):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            durable.write(path, b)
+    durable.point("admit:stills")
     os.makedirs(ws.pending)
     prepared = False
     try:
@@ -435,8 +449,32 @@ def refused(it, current, code, detail):
     return v
 
 
+# ADMISSION-0 (0222): the components a verdict rests on, by sha256 as the files stand when it is made (CRLF read as LF)
+TRUSTED = ("art/check.py", "art/quality.py", "art/director.py", "art/director/scope.py", "art/director/contract.py",
+           "art/director/intent.py", "art/director/ledger.py", "graybox/check.py", "art/web/scene_render.js")
+
+
+def trusted_components(parts):
+    out = [("art/dress.py (the exporter)", parts["exporter_sha256"])]
+    for rel in TRUSTED:
+        try:
+            out.append((rel, canon.sha256(open(os.path.join(REPO, rel), "rb").read().replace(b"\r\n", b"\n"))))
+        except OSError:
+            out.append((rel, "missing"))
+    return out
+
+
+def evaluation_fields(raw, verdict, after, timings, record, re_of=""):
+    """The fields of an evaluate event: the intent's bytes, its verdict, the head it predicts, and its record."""
+    raw = raw if isinstance(raw, bytes) else raw.encode("ascii")
+    return {"intent": raw.decode("ascii"), "intent_sha256": canon.sha256(raw), "re_evaluation_of": re_of,
+            "verdict": verdict, "after": after, "record": record, "observed": {"at": now(), "ms": timings}}
+
+
 def evaluate_doc(ws, it, re_of="", on_candidate=None):
-    """One intent at the current head: its verdict, the head after it, and the stage timings. on_candidate(out1, maps),
+    """One intent at the current head: its verdict, the head after it, the stage timings, the scenes and the candidate's
+    text, and its ADMISSION-0 record (art/director/contract.py: rung, certifies, not_checked, horizon, trusted, requires).
+    on_candidate(out1, maps),
     if given, is called with the candidate's export and the maps folder it was made over, while that folder exists
     (art/play.py converts the candidate's map there to play it)."""
     t0 = time.perf_counter()
@@ -446,14 +484,17 @@ def evaluate_doc(ws, it, re_of="", on_candidate=None):
     timings["base_export"] = ms(t)
     after = {"art_sha256": "", "world_sha256": "", "layout_head": ""}
     tmp = None
+    trusted = trusted_components(cur)
+    regions = set(out0["scene"].get("regions", {}))
+    no = lambda v: (v, after, timings, None, out0, None, contract.record(it, v, None, trusted, False, regions))
     try:
         if it["brief"] != ws.brief:
-            return refused(it, cur, "INTENT-BRIEF", "the intent is for %r" % it["brief"]), after, timings, None, out0, None
+            return no(refused(it, cur, "INTENT-BRIEF", "the intent is for %r" % it["brief"]))
         t = time.perf_counter()
         try:
             text1, _inv = apply_revision(ws.text(), it["revision"])
         except canon.IntentError as e:
-            return refused(it, cur, e.code, str(e)), after, timings, None, out0, None
+            return no(refused(it, cur, e.code, str(e)))
         maps = None
         if it["layout"]:
             try:
@@ -461,13 +502,13 @@ def evaluate_doc(ws, it, re_of="", on_candidate=None):
                 tmp = maps
                 after["layout_head"] = head
             except (RuntimeError, canon.IntentError) as e:
-                return refused(it, cur, "LAYOUT-REFUSED", str(e)[:300]), after, timings, None, out0, None
+                return no(refused(it, cur, "LAYOUT-REFUSED", str(e)[:300]))
         timings["apply"] = ms(t)
         t = time.perf_counter()
         try:
             out1, parts1, checks = ws.export(text1, maps)
         except (dress.ArtError, level.MapError) as e:
-            return refused(it, cur, "ART-REFUSED", str(e)[:300]), after, timings, None, out0, None
+            return no(refused(it, cur, "ART-REFUSED", str(e)[:300]))
         timings["candidate_export_and_checks"] = ms(t)
         if on_candidate is not None:
             on_candidate(out1, maps or ws.maps)
@@ -475,7 +516,8 @@ def evaluate_doc(ws, it, re_of="", on_candidate=None):
         verdict = scopemod.check_scope(it, out0["scene"], out1["scene"], cur, checks)
         timings["scope"] = ms(t)
         after.update({"art_sha256": parts1["art_sha256"], "world_sha256": parts1["world_sha256"]})
-        return verdict, after, timings, out1, out0, text1
+        rec = contract.record(it, verdict, checks, trusted, True, regions | set(out1["scene"].get("regions", {})))
+        return verdict, after, timings, out1, out0, text1, rec
     finally:
         timings["total"] = ms(t0)
         if tmp:
@@ -496,14 +538,16 @@ def cmd_evaluate(ws, files, quiet=False):
                                                         "detail": str(e)[:300], "observed": {"at": now()}})
             rows.append((os.path.basename(f), "-", "REFUSED", e.code, ev["seq"], {}))
             continue
-        verdict, after, timings, out1, out0, _text1 = evaluate_doc(ws, it)
-        ev = led.append(ws.ledger, "evaluate", {"intent": raw.decode("ascii"), "intent_sha256": canon.sha256(raw), "re_evaluation_of": "",
-                                                "verdict": verdict, "after": after, "observed": {"at": now(), "ms": timings}})
-        rows.append((os.path.basename(f), it["candidate"], verdict["verdict"], ",".join(verdict["codes"]) or "-", ev["seq"], timings))
+        verdict, after, timings, out1, out0, _text1, rec = evaluate_doc(ws, it)
+        ev = led.append(ws.ledger, "evaluate", evaluation_fields(raw, verdict, after, timings, rec))
+        rows.append((os.path.basename(f), it["candidate"], verdict["verdict"], ",".join(verdict["codes"]) or "-", ev["seq"], timings, rec))
         sheet.append((it, verdict, out0, out1, ev["seq"], timings))
     if not quiet:
         for r in rows:
-            print("%-26s %-3s %-8s %-40s ledger #%s  %s ms" % (r[0], r[1], r[2], r[3][:40], r[4], r[5].get("total", "-")))
+            print("%-26s %-3s %-8s %-40s ledger #%s  %s ms%s" % (r[0], r[1], r[2], r[3][:40], r[4], r[5].get("total", "-"),
+                                                               ("  rung %s" % r[6]["rung"]) if len(r) > 6 else ""))
+        print("Each evaluation's record says what it certifies, what it did not check, its rung and what an admission needs: "
+              "python art/director.py record %s SEQ" % ws.brief)
         if sheet:
             p = contact_sheet(ws, sheet)
             print("contact sheet: %s" % os.path.relpath(p, ws.root))
@@ -516,9 +560,8 @@ def cmd_reevaluate(ws, seq):
     if ev["kind"] != "evaluate":
         raise SystemExit("#%s is not an evaluation" % seq)
     it = canon.load_intent(ev["intent"].encode("ascii"))
-    verdict, after, timings, out1, out0, _t = evaluate_doc(ws, it)
-    new = led.append(ws.ledger, "evaluate", {"intent": ev["intent"], "intent_sha256": ev["intent_sha256"], "re_evaluation_of": seq,
-                                             "verdict": verdict, "after": after, "observed": {"at": now(), "ms": timings}})
+    verdict, after, timings, out1, out0, _t, rec = evaluate_doc(ws, it)
+    new = led.append(ws.ledger, "evaluate", evaluation_fields(ev["intent"], verdict, after, timings, rec, re_of=seq))
     print("candidate %s re-evaluated at the current head: %s %s (ledger #%s; it was %s at #%s)" % (
         it["candidate"], verdict["verdict"], ",".join(verdict["codes"]) or "-", new["seq"], ev["verdict"]["verdict"], seq))
     if out0 is not None:
@@ -531,7 +574,52 @@ def current_parts(ws):
     return parts
 
 
-def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note=""):
+def admission_evidence(ws, events, it, still=None, despite=False, inverse_of="", accept_leakage=False):
+    """(evidence, still bytes or None, inverse_ok): what an admission brings to its evaluation's record (ADMISSION-0).
+    The still's detectors are read here, by the host, from the file's bytes; never taken from a page or a caller."""
+    ev = {"accepted_leakage": bool(accept_leakage), "still_sha256": "", "detectors": {}, "despite_detectors": bool(despite), "inverse_of": str(inverse_of or "")}
+    raw = None
+    if still is not None:
+        raw = still if isinstance(still, bytes) else open(still, "rb").read()
+        ev["still_sha256"] = canon.sha256(raw)
+        try:
+            m, flags = quality.detect_png(raw)
+            ev["detectors"] = quality.detector_fields(m, flags)
+        except quality.QualityError as e:
+            ev["detectors"] = {"not_checked": str(e)[:200]}
+    ok = False
+    if ev["inverse_of"]:
+        i = ev["inverse_of"]
+        ok = i.isdigit() and int(i) < len(events) and events[int(i)]["kind"] == "admit" and list(events[int(i)]["inverse"]) == list(it["revision"]) \
+            and not it["layout"]
+    return ev, raw, ok
+
+
+def cmd_record(ws, seq):
+    """An evaluation's ADMISSION-0 record, as a person reads it."""
+    events, _l, _h = led.read(ws.ledger)
+    ev = events[int(seq)]
+    if ev["kind"] != "evaluate":
+        raise SystemExit("#%s is not an evaluation" % seq)
+    r = ev.get("record")
+    if r is None:
+        print("#%s has no ADMISSION-0 record: it was evaluated before 0222. Evaluate it again to have one: python art/director.py reevaluate %s %s" % (seq, ws.brief, seq))
+        return None
+    it = canon.load_intent(ev["intent"].encode("ascii"))
+    print("evaluation #%s: candidate %s, %s %s, rung %s" % (seq, it["candidate"], ev["verdict"]["verdict"], ",".join(ev["verdict"]["codes"]) or "-", r["rung"]))
+    for title, k in (("why this rung (computed by the host from what changed)", "rung_basis"), ("certifies", "certifies"),
+                     ("did not check", "not_checked"), ("an admission needs", "requires"), ("rests on", "trusted")):
+        print("  %s:" % title)
+        for x in r[k]:
+            print("    - " + x)
+    print("  horizon: %s ticks (%s)" % (r["horizon"]["ticks"], r["horizon"]["why"]))
+    return r
+
+
+def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note="", still=None, despite=False, inverse_of=""):
+    """Admit an evaluation. ADMISSION-0 (0222): its record must be complete and every item it requires present — for
+    rung A a still of the candidate (a file, or its bytes), its detectors read here; a flagged one only with despite —
+    or, for an undo, inverse_of naming the admission it is the exact inverse of."""
     events, _l, _h = led.read(ws.ledger)
     ev = events[int(seq)]
     if ev["kind"] != "evaluate":
@@ -547,6 +635,10 @@ def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note=""):
     if v["verdict"] == "LEAKAGE" and not accept_leakage:
         raise SystemExit("REFUSED: #%s leaks (%s); admit it only with --accept-leakage, which the ledger records" % (seq, ", ".join(v["unclaimed"][:6])))
     it = canon.load_intent(ev["intent"].encode("ascii"))
+    evidence, still_bytes, inverse_ok = admission_evidence(ws, events, it, still, despite, inverse_of, accept_leakage)
+    lack = contract.missing(ev.get("record"), v, evidence, inverse_ok)
+    if lack:
+        raise SystemExit("REFUSED (ADMISSION-0): #%s cannot be admitted yet: %s" % (seq, "; ".join(lack)))
     text1, inverse = apply_revision(ws.text(), it["revision"])
     files, maps = [], None
     try:
@@ -564,11 +656,16 @@ def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note=""):
         raise SystemExit("the admitted files would not reach the head the evaluation predicted: stop and read the ledger")
     files.append((ws.art, text1.encode("utf-8")))
     files = [(f, b) for f, b in files if open(f, "rb").read() != b]
+    stills = [(os.path.join(ws.stills, evidence["still_sha256"] + ".png"), still_bytes)] if still_bytes is not None else []
     a = commit_admission(ws, seq, ev["intent_sha256"], files, {
         "evaluation": seq, "intent_sha256": ev["intent_sha256"], "head_before": head, "head_after": canon.head(parts1),
         "parts_after": parts1, "accepted_leakage": bool(accept_leakage), "inverse": inverse,
-        "design_lines": list(it["layout"]), "observed": {"at": now(), "chooser": chooser, "note": note}})
-    print("ADMITTED candidate %s (#%s) at head %s -> %s (ledger #%s)" % (it["candidate"], seq, head[:12], canon.head(parts1)[:12], a["seq"]))
+        "design_lines": list(it["layout"]), "evidence": evidence, "observed": {"at": now(), "chooser": chooser, "note": note}}, stills)
+    det = evidence["detectors"]
+    print("ADMITTED candidate %s (#%s) at head %s -> %s (ledger #%s; %s)" % (
+        it["candidate"], seq, head[:12], canon.head(parts1)[:12], a["seq"],
+        ("the exact inverse of #%s" % evidence["inverse_of"]) if evidence["inverse_of"] else
+        "still %s, %s" % (evidence["still_sha256"][:12], ("despite the detectors: " + ", ".join(det.get("flags") or [det.get("not_checked", "")])) if evidence["despite_detectors"] else "the detectors flag nothing")))
     return a
 
 
@@ -659,6 +756,20 @@ def replay(ws, events):
             if src["verdict"]["verdict"] == "REFUSED" or (src["verdict"]["verdict"] == "LEAKAGE" and not ev["accepted_leakage"]):
                 raise E("LEDGER-VERDICT: #%s admits a %s candidate" % (ev["seq"], src["verdict"]["verdict"]))
             it = canon.load_intent(src["intent"].encode("ascii"))
+            # ADMISSION-0 (0222): an evaluation with a record is admitted only with the evidence it requires; one from
+            # before the record (a legacy admission) carries none, and an admission of one carries none either
+            if "record" in src:
+                evd = ev.get("evidence")
+                if evd is None or bool(evd.get("accepted_leakage")) != bool(ev["accepted_leakage"]):
+                    raise E("LEDGER-EVIDENCE: #%s admits a recorded evaluation without its evidence" % ev["seq"])
+                i = evd.get("inverse_of", "")
+                inv_ok = bool(i) and i.isdigit() and int(i) < int(ev["seq"]) and events[int(i)]["kind"] == "admit" \
+                    and list(events[int(i)]["inverse"]) == list(it["revision"]) and not it["layout"]
+                lack = contract.missing(src["record"], src["verdict"], evd, inv_ok)
+                if lack:
+                    raise E("LEDGER-EVIDENCE: #%s admits #%s lacking %s" % (ev["seq"], ev["evaluation"], "; ".join(lack)))
+            elif "evidence" in ev:
+                raise E("LEDGER-EVIDENCE: #%s carries evidence for an evaluation that has no record" % ev["seq"])
             st["art"], _inv = apply_revision(st["art"], it["revision"])
             if canon.sha256(st["art"].encode("utf-8")) != src["after"]["art_sha256"] != "":
                 raise E("LEDGER-REPLAY: #%s's text does not reach the art the evaluation recorded" % ev["seq"])
@@ -681,9 +792,38 @@ def replay(ws, events):
     return st
 
 
-def cmd_verify(ws, quiet=False):
+def check_stills(ws, events, deep=True):
+    """ADMISSION-0's evidence read back: every admission's still is on the disk with the bytes it names, and (deep) its
+    detectors, read again from those bytes, are the ones recorded. Returns how many stills; raises LedgerError."""
+    n = 0
+    for ev in events:
+        evd = ev.get("evidence") if ev["kind"] == "admit" else None
+        if not evd or not evd.get("still_sha256"):
+            continue
+        p = os.path.join(ws.stills, evd["still_sha256"] + ".png")
+        if not os.path.exists(p):
+            raise led.LedgerError("LEDGER-STILL: #%s's still %s is not in %s: the evidence of that admission is gone" % (ev["seq"], evd["still_sha256"][:12], os.path.relpath(ws.stills, ws.root)))
+        raw = open(p, "rb").read()
+        if canon.sha256(raw) != evd["still_sha256"]:
+            raise led.LedgerError("LEDGER-STILL: #%s's still is not the bytes it names" % ev["seq"])
+        if deep:
+            try:
+                m, flags = quality.detect_png(raw)
+                det = quality.detector_fields(m, flags)
+            except quality.QualityError as e:
+                det = {"not_checked": str(e)[:200]}
+            if det != evd["detectors"]:
+                raise led.LedgerError("LEDGER-STILL: #%s's detectors, read again from its still, are not the ones recorded" % ev["seq"])
+        n += 1
+    return n
+
+
+def cmd_verify(ws, quiet=False, deep=True):
+    """The ledger's chain, replayed to the files as they stand, and every admission's still (deep: its detectors read
+    again; the launcher's look is not deep, the command is)."""
     events, head = led.chain(ws.ledger)
     st = replay(ws, events)
+    stills = check_stills(ws, events, deep)
     out, parts, _c = ws.export()
     dname, dtext = ws.design(out)
     if st["art"] != ws.text():
@@ -696,8 +836,9 @@ def cmd_verify(ws, quiet=False):
     for e in events:
         kinds[e["kind"]] = kinds.get(e["kind"], 0) + 1
     if not quiet:
-        print("LEDGER VERIFIED  %d events (%s), head %s; the files are the head %s" % (
-            len(events), ", ".join("%s %d" % kv for kv in sorted(kinds.items())), head[:12], st["head"][:12]))
+        print("LEDGER VERIFIED  %d events (%s), head %s; the files are the head %s; %d still%s, %s" % (
+            len(events), ", ".join("%s %d" % kv for kv in sorted(kinds.items())), head[:12], st["head"][:12], stills,
+            "" if stills == 1 else "s", "each the bytes it names, its detectors read again" if deep else "each the bytes it names"))
     return events, st
 
 
@@ -952,6 +1093,113 @@ def cmd_selftest():
         except led.LedgerError as e:
             results.append(("a hand edit recorded with rebase verifies", False, str(e)))
 
+        # ADMISSION-0 (0222): every evaluation's record complete; an admission needs what its record requires
+        events, _l, _h = led.read(ws.ledger)
+        last_eval = [e for e in events if e["kind"] == "evaluate"][-1]
+        r0 = last_eval.get("record") or {}
+        results.append(("an evaluation carries its record: rung A from what changed, every expected check certified, what was not checked, what it rests on",
+                        r0.get("rung") == "A" and all("check: " + n in r0.get("certifies", []) for n in contract.EXPECTED_CHECKS)
+                        and all(x in r0.get("not_checked", []) for x in contract.NEVER_CHECKED) and len(r0.get("trusted", [])) == len(TRUSTED) + 1
+                        and r0.get("horizon", {}).get("ticks") == "0",
+                        "rung %s; %d certified, %d not checked, %d trusted" % (r0.get("rung"), len(r0.get("certifies", [])), len(r0.get("not_checked", [])), len(r0.get("trusted", [])))))
+        adm = [e for e in events if e["kind"] == "admit" and not e["design_lines"]][-1]
+        src = canon.load_intent(events[int(adm["evaluation"])]["intent"].encode("ascii"))
+        inv_doc = {"base": {k: current_parts(ws)[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "brief": ws.brief, "candidate": "U",
+                   "format": "VERDANDI-INTENT", "layout": [], "prompt": "undo: " + src["prompt"], "rationale": "the exact inverse of #%s" % adm["seq"],
+                   "revision": list(adm["inverse"]), "scope": list(src["scope"]), "version": "0"}
+        inv_path = os.path.join(tmp, "U.intent")
+        with open(inv_path, "wb") as fh:
+            fh.write(canon.dumps(inv_doc))
+        su = cmd_evaluate(ws, [inv_path], quiet=True)[0][4]
+        n0 = len(led.read(ws.ledger)[0])
+        for label, kw, want in (("without a still", {"still": None}, "no still of the candidate"),
+                                ("said to undo an admission it is not the inverse of", {"still": None, "inverse_of": rb["seq"]}, "not that admission's exact inverse")):
+            try:
+                cmd_admit_quiet(ws, su, chooser="selftest", **kw)
+                results.append(("an admission %s is refused" % label, False, "it was admitted"))
+            except SystemExit as e:
+                results.append(("an admission %s is refused (ADMISSION-0), nothing written" % label, "ADMISSION-0" in str(e) and want in str(e)
+                                and len(led.read(ws.ledger)[0]) == n0, " ".join(str(e).split())[:110]))
+        au = cmd_admit_quiet(ws, su, chooser="selftest", still=None, inverse_of=adm["seq"])
+        results.append(("the exact inverse of an admission (an undo) is admitted without a still, naming it", au["evidence"]["inverse_of"] == adm["seq"]
+                        and au["evidence"]["still_sha256"] == "", json.dumps(au["evidence"], sort_keys=True)[:110]))
+        sc = cmd_reevaluate_quiet(ws, rc["seq"])["seq"]
+        Wb, Hb = 32, 18
+        white = quality.png_bytes(Wb, Hb, bytes(255 if (i // 3) % Wb < 24 else 40 + (i % 11) * 9 for i in range(Wb * Hb * 3)))
+        n0 = len(led.read(ws.ledger)[0])
+        try:
+            cmd_admit_quiet(ws, sc, chooser="selftest", still=white)
+            results.append(("a still the detectors flag is not admitted without despite", False, "it was admitted"))
+        except SystemExit as e:
+            results.append(("a still the detectors flag is not admitted without despite, nothing written", "flag" in str(e) and "BLOWN" in str(e)
+                            and len(led.read(ws.ledger)[0]) == n0, " ".join(str(e).split())[:110]))
+        ac = cmd_admit_quiet(ws, sc, chooser="selftest", still=white, despite=True)
+        kept = os.path.join(ws.stills, ac["evidence"]["still_sha256"] + ".png")
+        results.append(("  and with despite, admitted: the still kept by its sha256 beside the ledger, its detectors and the despite recorded",
+                        os.path.exists(kept) and open(kept, "rb").read() == white and ac["evidence"]["despite_detectors"] is True
+                        and "BLOWN" in ac["evidence"]["detectors"]["flags"], json.dumps(ac["evidence"]["detectors"].get("flags"))))
+        try:
+            cmd_verify(ws, quiet=True)
+            results.append(("the ledger with its evidence verifies, each still read again", True, ""))
+        except led.LedgerError as e:
+            results.append(("the ledger with its evidence verifies", False, str(e)))
+        # plants on the evidence: each must be refused by verify
+        saved_led = open(ws.ledger, "rb").read()
+        events, _l, _h = led.read(ws.ledger)
+        forged = json.loads(json.dumps(events[-1]))
+        forged["evidence"]["detectors"]["flags"] = []
+        try:
+            check_stills(ws, [forged])
+            results.append(("plant: an admission whose recorded detectors are not its still's — refused", False, "not refused"))
+        except led.LedgerError as e:
+            results.append(("plant: an admission whose recorded detectors are not its still's — refused", "LEDGER-STILL" in str(e), str(e)[:100]))
+        os.rename(kept, kept + ".gone")
+        try:
+            cmd_verify(ws, quiet=True)
+            results.append(("plant: an admission's still taken away — refused", False, "verify passed"))
+        except led.LedgerError as e:
+            results.append(("plant: an admission's still taken away — refused", "LEDGER-STILL" in str(e), str(e)[:100]))
+        os.rename(kept + ".gone", kept)
+        ev_all = led.read(ws.ledger)[0]
+        last_adm = [e for e in ev_all if e["kind"] == "admit"][-1]
+        src2 = canon.load_intent(ev_all[int(last_adm["evaluation"])]["intent"].encode("ascii"))
+        inv2 = dict(inv_doc, base={k: current_parts(ws)[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")},
+                    revision=list(last_adm["inverse"]), scope=list(src2["scope"]), rationale="the exact inverse of #%s" % last_adm["seq"])
+        with open(inv_path, "wb") as fh:
+            fh.write(canon.dumps(inv2))
+        sd = cmd_evaluate(ws, [inv_path], quiet=True)[0][4]
+        lid = len(led.read(ws.ledger)[0])
+        led.append(ws.ledger, "admit", {"evaluation": sd, "intent_sha256": led.read(ws.ledger)[0][int(sd)]["intent_sha256"],
+                                        "head_before": canon.head(current_parts(ws)), "head_after": "x",
+                                        "parts_after": current_parts(ws), "accepted_leakage": False, "inverse": [], "design_lines": [],
+                                        "observed": {"at": "2026-10-13T00:00:00Z", "chooser": "a forger", "note": ""}})
+        try:
+            replay(ws, led.read(ws.ledger)[0])
+            results.append(("plant: an admit event written past the director, with no evidence — refused by replay", False, "replay passed"))
+        except led.LedgerError as e:
+            results.append(("plant: an admit event written past the director, with no evidence — refused by replay (#%d)" % lid,
+                            "LEDGER-EVIDENCE" in str(e), str(e)[:100]))
+        open(ws.ledger, "wb").write(saved_led)
+        # the classifier: what it does with what an intent cannot make today, and with a skipped check
+        v0 = dict(last_eval["verdict"], realized=["plaza/mover/3,4"], affected=[])
+        rk, why = contract.classify(v0, True, {"plaza"})
+        rec_c = contract.record(None, v0, [{"name": n, "ok": True} for n in contract.EXPECTED_CHECKS], [], True, {"plaza"})
+        results.append(("an address of a kind the classifier does not know (plaza/mover/3,4) classifies C, and the director will not admit it",
+                        rk == "C" and contract.missing(rec_c, v0, {"still_sha256": "x", "detectors": {"flags": []}})[0].startswith("rung C"), why[0][:100]))
+        rk, why = contract.classify(dict(v0, codes=["ART-REFUSED"]), False, {"plaza"})
+        results.append(("a candidate that did not export classifies D: unknown classifies at the top", rk == "D", why[0][:100]))
+        skipped = [{"name": n, "ok": True} for n in contract.EXPECTED_CHECKS if not n.startswith("quality: every field")]
+        rec_s = contract.record(None, last_eval["verdict"], skipped, [], True, set(ws.export()[0]["scene"]["regions"]))
+        lack = contract.missing(rec_s, last_eval["verdict"], {"still_sha256": "x", "detectors": {"flags": []}})
+        results.append(("a check that did not run is said (not checked) and keeps the admission out: a skip is not a pass",
+                        any(x.startswith("did not run: quality: every field") for x in rec_s["not_checked"]) and any("not passed or not run" in x for x in lack),
+                        "; ".join(lack)[:110]))
+        rl = contract.record(None, dict(last_eval["verdict"], verdict="CLEAN"), [{"name": n, "ok": True} for n in contract.EXPECTED_CHECKS], [], True,
+                             set(ws.export()[0]["scene"]["regions"]))
+        results.append(("an evaluation from before the record (none) cannot be admitted: it is evaluated again",
+                        contract.missing(None, last_eval["verdict"], {})[0].startswith("the evaluation has no ADMISSION-0 record")
+                        and contract.missing(rl, dict(last_eval["verdict"], verdict="CLEAN"), {"still_sha256": "x", "detectors": {"flags": []}}) == [], ""))
+
         # QUALITY-0 (0221): a still approved with its detectors; a flagged or unread still only with --despite-detectors
         view = sorted(ws.export()[0]["scene"]["views"])[0]
         W_, H_ = 32, 18
@@ -1041,6 +1289,8 @@ def cmd_crashtest():
 
     def run(args, point=None):
         env = dict(env0, **({"VERDANDI_CRASH_AT": point} if point else {}))
+        if args and args[0] == "admit":
+            args = args + ["--still", selftest_still_file(tmp)]
         r = subprocess.run([sys.executable, me] + args + ["--root", tmp], capture_output=True, text=True, env=env, timeout=600)
         return r.returncode, r.stdout + r.stderr
     try:
@@ -1079,11 +1329,11 @@ def cmd_crashtest():
         results.append(("an admission run to its end reaches the child and leaves no pending folder (%d files change)" % len(changed),
                         rc == 0 and where() == ("child", "admit") and not os.path.exists(ws.pending), out.strip()[-120:]))
         k = len(changed)
-        points = (["pending:file-%d" % n for n in range(k)] + ["pending:manifest", "torn:admit", "ledger:admit"]
+        points = (["admit:stills"] + ["pending:file-%d" % n for n in range(k)] + ["pending:manifest", "torn:admit", "ledger:admit"]
                   + ["install:file-%d" % n for n in range(k)] + ["pending:manifest-removed"])
         for point in points:
             restore()
-            want = "parent" if point.startswith(("pending:file", "pending:manifest")) and point != "pending:manifest-removed" or point == "torn:admit" else "child"
+            want = "parent" if point.startswith(("pending:file", "pending:manifest")) and point != "pending:manifest-removed" or point in ("torn:admit", "admit:stills") else "child"
             rc, out = run(["admit", "plaza-night", seq, "--chooser", "crashtest"], point)
             died = rc == durable.CRASH_EXIT
             rc2, out2 = run(["verify", "plaza-night"])
@@ -1153,6 +1403,8 @@ def cmd_racetest():
         results.append((name, bool(ok), detail))
 
     def run(args, **env):
+        if args and args[0] == "admit":
+            args = args + ["--still", selftest_still_file(tmp)]
         r = subprocess.run([sys.executable, "-B", me] + args + ["--root", tmp], capture_output=True, text=True,
                            env=dict(env0, **env), timeout=600)
         return r.returncode, r.stdout + r.stderr
@@ -1305,7 +1557,7 @@ def cmd_racetest():
 
         sink = io.StringIO()
         with contextlib.redirect_stdout(sink):
-            cmd_admit(ws, seq_b, chooser="racetest")
+            cmd_admit_still(ws, seq_b, chooser="racetest")
         k = sum(1 for f in watched if f != ws.ledger and open(f, "rb").read() != snap[f])
         res("B admitted alone reaches its child (%d files change), no pending folder" % k, where() == ("B", 1, "admit") and not os.path.isdir(ws.pending) and verified())
         points = (["pending:file-%d" % n for n in range(k)] + ["pending:manifest", "ledger:admit"]
@@ -1319,7 +1571,7 @@ def cmd_racetest():
 
             def second():
                 try:
-                    cmd_admit(ws, seq_a, chooser="racetest-second")
+                    cmd_admit_still(ws, seq_a, chooser="racetest-second")
                     st["second"] = "ADMITTED"
                 except SystemExit as e:
                     st["second"] = "REFUSED: " + " ".join(str(e).split())[:110]
@@ -1347,7 +1599,7 @@ def cmd_racetest():
 
             def first():
                 try:
-                    cmd_admit(ws, seq_b, chooser="racetest")
+                    cmd_admit_still(ws, seq_b, chooser="racetest")
                     st["first"] = "ADMITTED"
                 except SystemExit as e:
                     st["first"] = "REFUSED: " + " ".join(str(e).split())[:110]
@@ -1411,7 +1663,7 @@ def cmd_racetest():
             durable.HOOK = boom
             try:
                 with contextlib.redirect_stdout(io.StringIO()):
-                    cmd_admit(ws, seq_b, chooser="racetest")
+                    cmd_admit_still(ws, seq_b, chooser="racetest")
                 raised = False
             except RuntimeError:
                 raised = True
@@ -1429,7 +1681,7 @@ def cmd_racetest():
         sink = io.StringIO()
         try:
             with contextlib.redirect_stdout(sink):
-                cmd_admit(ws, seq_a, chooser="racetest")
+                cmd_admit_still(ws, seq_a, chooser="racetest")
             outcome = "admitted"
         except SystemExit as e:
             outcome = "refused: %s" % e
@@ -1461,8 +1713,24 @@ def _quiet(fn, *a, **k):
         return fn(*a, **k)
 
 
+def selftest_still():
+    """The still the self-tests' admissions bring (ADMISSION-0): synthetic, and the detectors flag nothing. It is not a
+    picture of the candidate, which these tests never draw: they test the admission's mechanism, not a look."""
+    w, h = 32, 18
+    return quality.png_bytes(w, h, bytes((x * 7 + y * 13 + c * 50) % 240 for y in range(h) for x in range(w) for c in range(3)))
+
+
+def selftest_still_file(root):
+    p = os.path.join(root, "selftest-still.png")
+    if not os.path.exists(p):
+        with open(p, "wb") as fh:
+            fh.write(selftest_still())
+    return p
+
+
 cmd_genesis_quiet = lambda ws: _quiet(cmd_genesis, ws)
-cmd_admit_quiet = lambda ws, s, **k: _quiet(cmd_admit, ws, s, **k)
+cmd_admit_quiet = lambda ws, s, **k: _quiet(cmd_admit, ws, s, **dict({"still": selftest_still()}, **k))
+cmd_admit_still = lambda ws, s, **k: cmd_admit(ws, s, **dict({"still": selftest_still()}, **k))
 cmd_reevaluate_quiet = lambda ws, s: _quiet(cmd_reevaluate, ws, s)
 cmd_refuse_quiet = lambda ws, s, **k: _quiet(cmd_refuse, ws, s, **k)
 cmd_rebase_quiet = lambda ws, n: _quiet(cmd_rebase, ws, n)
@@ -1477,8 +1745,8 @@ def main(argv):
         print(__doc__ if __doc__ else open(__file__, encoding="utf-8").read().split("\n\n")[0])
         return 2
     cmd, args = argv[0], [a for a in argv[1:]]
-    flags = ("--accept-leakage",)
-    valued = ("--chooser", "--note", "--config", "--approver", "--root")
+    flags = ("--accept-leakage", "--despite-detectors")
+    valued = ("--chooser", "--note", "--config", "--approver", "--root", "--still", "--inverse-of")
     pos = []
     i = 0
     while i < len(args):
@@ -1508,8 +1776,11 @@ def main(argv):
             cmd_evaluate(ws, pos[1:])
         elif cmd == "reevaluate":
             cmd_reevaluate(ws, pos[1])
+        elif cmd == "record":
+            cmd_record(ws, pos[1])
         elif cmd == "admit":
-            cmd_admit(ws, pos[1], "--accept-leakage" in args, opt(args, "--chooser", "the owner"), opt(args, "--note", ""))
+            cmd_admit(ws, pos[1], "--accept-leakage" in args, opt(args, "--chooser", "the owner"), opt(args, "--note", ""),
+                      still=opt(args, "--still"), despite="--despite-detectors" in args, inverse_of=opt(args, "--inverse-of", ""))
         elif cmd == "refuse":
             cmd_refuse(ws, pos[1], opt(args, "--chooser", "the owner"), opt(args, "--note", ""))
         elif cmd == "rebase":

@@ -139,9 +139,9 @@ is always the head it met: a candidate is never admitted on a verdict reached at
 | kind | records |
 |---|---|
 | `genesis` | the brief, the head and its parts, the art text and the design text |
-| `evaluate` | the intent's canonical text and sha256, the verdict (with its base and checked heads), the head after it would be admitted, `re_evaluation_of` (the seq it re-evaluates, or ""), observed timings |
+| `evaluate` | the intent's canonical text and sha256, the verdict (with its base and checked heads), the head after it would be admitted, `re_evaluation_of` (the seq it re-evaluates, or ""), its ADMISSION-0 `record` (0222, §7), observed timings |
 | `refuse_input` | an input refused before it was an intent: its sha256 and code |
-| `admit` | the evaluation admitted, the head before and after, `accepted_leakage`, the exact inverse revision, the layout lines, who chose |
+| `admit` | the evaluation admitted, the head before and after, `accepted_leakage`, the exact inverse revision, the layout lines, who chose, and (0222) its `evidence`: the still's sha256 and its detectors as the host read them, whether it was admitted despite them, or the admission it is the exact inverse of |
 | `refuse` | an evaluation a person refused, and their words |
 | `rebase` | a change made outside the loop (a hand edit, a new exporter): the texts and heads before and after |
 | `approve` | a person's acceptance of a still from a view: the image's sha256, the render configuration, and QUALITY-0's detectors read on it (0221). A still the detectors flag, or cannot read, is approved only with `--despite-detectors`, which the event records (provenance, never a gate: a detector proves nothing either way) |
@@ -153,6 +153,10 @@ Verification (`director.py verify`) replays the ledger from its genesis:
 - every event must follow from those before it;
 - every admission must rest on an evaluation made at the head it admitted;
 - no admission may rest on a REFUSED verdict;
+- an admission of an evaluation that has a record must carry the evidence the record requires (`LEDGER-EVIDENCE`), and
+  one of an evaluation from before the record carries none;
+- every admission's still is on the disk as the bytes it names, its detectors read again from them (`LEDGER-STILL`;
+  the launcher's look checks the bytes only);
 - the files must be the text and head the replay reaches.
 
 An edit outside the loop is refused (`UNLOGGED-CHANGE`) until a `rebase` records it.
@@ -162,7 +166,8 @@ An edit outside the loop is refused (`UNLOGGED-CHANGE`) until a `rebase` records
 ```
 python art/director.py lens plaza-night plaza             # what a proposer reads before it writes
 python art/director.py evaluate plaza-night art/rounds/plaza-imposing/*.intent
-python art/director.py admit plaza-night 1                # a person's choice, by its ledger number
+python art/director.py record plaza-night 1               # its record: rung and why, certifies, not checked, needs, rests on
+python art/director.py admit plaza-night 1 --still s.png  # a person's choice, by its ledger number, with a still of it as drawn
 python art/director.py reevaluate plaza-night 3           # after the head moved
 python art/director.py refuse plaza-night 4 --note "it reaches the bases"
 python art/director.py verify plaza-night
@@ -175,6 +180,27 @@ On Windows, name the program `art\build\conform.exe`. `art/build/` exists once `
 The self-test's fixture is the round's `base/`: the files at the head its candidates were written against. It checks
 that its scratch copy starts at that head, so it does not depend on what has since been admitted to the live brief.
 
+## 7. Every verdict complete (ADMISSION-0, 0222)
+
+By the owner's ruling of 2026-10-13, *"Every verdict states what it did not check."* and *"Four candidate rungs,
+classified by the host … The model must not choose its own rung, and filenames alone must not determine it."*, every
+evaluation carries a record (`art/director/contract.py`, pure, in the ledger's restricted form) beside its DIRECTOR-0
+verdict, which is unchanged (the 62 vectors still hold):
+
+| field | what |
+|---|---|
+| `rung`, `rung_basis` | computed by the host from the effective change, the scope protocol's realized and affected addresses, never from the intent's words: **A** when each is an instance or a parameter of an admitted kind, **C** when one is of a kind the classifier does not know, **D** when the candidate did not export (its change unknown, classified at the top). An intent carries no code and the language has no form for vocabulary, so B does not arise from one |
+| `certifies` | derived: the scope protocol's finding, the layout's cells, and each check that ran and passed, by name |
+| `not_checked` | every expected check that did not run (a skip is never a pass) and what the director never checks: whether the candidate does what was asked, whether the picture is good, the scene in Unreal, anything over time, the provider's account of itself |
+| `horizon` | 0 ticks: nothing in the scene moves, and nothing over time is claimed |
+| `trusted` | the sha256 of the exporter and of each component the verdict rests on (the checks, QUALITY-0, the director, scope, the record, the canonical form, the ledger, the graybox checks, the renderer) |
+| `requires` | for rung A: the verdict CLEAN (or LEAKAGE accepted, recorded); every expected check ran and passed; a still of the candidate as drawn, its detectors read by the host, a flagged still admitted only despite them (recorded) — or, for an undo, the admission it is the exact inverse of (checked, not taken on its word). Rungs C and D are not admitted by the director |
+
+`admit` refuses (`ADMISSION-0`) until every item is present; an evaluation from before the record is evaluated again.
+The still is kept beside the ledger by its sha256 (`art/ledger/<brief>.ledger.stills/`), written under the content lock
+before the admission's first write. It is bound to the admission by digest; nothing here proves it shows the candidate
+(the studio's page takes it from the canvas as it draws the candidate; at the command line a person gives it).
+
 ## 6. What it proves, and what it does not
 
 | claim | shown by | does not show |
@@ -183,4 +209,5 @@ that its scratch copy starts at that head, so it does not depend on what has sin
 | a candidate's verdict belongs to the head it met | `HEAD-MOVED`; the self-test refuses an admission at a moved head and re-evaluates as a new event | — |
 | the ledger is append-only and replays to the files | `verify`; the self-test's plants (a hand edit, a changed line) refused | the last line alone has no successor to name it: it rests on the commit that holds it |
 | the layout's authority stays the shell's | a layout candidate is compiled and admitted by the design tool, and C is rebuilt by the graybox converter | — |
+| every verdict says what it certifies, what it did not check and its rung; an admission brings what its record requires | the director's self-test (17 rows: the record complete, an admission refused without a still, with a flagged still, or with an undo that is not one; the evidence and the still read back; three plants on the evidence; the classifier on a kind it does not know, a candidate that did not export, a skipped check) | that the still shows the candidate, or that the rung is right beyond the kinds the classifier lists: it is a restatement of the language, held to it by the plants |
 | the art is good | nothing here | a person judges rendered views; an approved still records acceptance, not reproducibility |

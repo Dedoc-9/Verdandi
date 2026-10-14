@@ -588,7 +588,9 @@ class Gateway:
                 req = {k: r[k] for k in ("id", "state", "prompt", "message", "code", "references", "head", "provider")}
                 req["disposition"] = r.get("disposition")
                 req["elapsed_ms"] = int(((r["ended"] or time.monotonic()) - r["started"]) * 1000)
-                req["candidates"] = [{k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")} for c in r["candidates"]]
+                req["candidates"] = [dict({k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")},
+                                          record=c.get("record"), still={k: c["still"][k] for k in ("sha256", "detectors", "flags")} if c.get("still") else None)
+                                     for c in r["candidates"]]
             last = dict(self.last)
         return {"provider": prov, "request": req, "last": last, "refs": self.refs()}
 
@@ -856,10 +858,11 @@ class Gateway:
                 continue
             raw_intent = open(f, "rb").read()
             item = {"letter": letter, "title": titles.get(letter, letter), "verdict": "", "codes": [], "message": "", "slot": None,
-                    "decided": "", "head": "", "intent": raw_intent, "touches": None}
+                    "decided": "", "head": "", "intent": raw_intent, "touches": None, "record": None, "still": None}
             slot = self.play.candidate_slot(ws, D.canon.load_intent(raw_intent), "studio %s %s: %s (drawn again)" % (rid, letter, item["title"]))
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
-                         "head": slot.get("checked_against", ""), "touches": self.touches(slot, refs, O) if "realized" in slot else None})
+                         "head": slot.get("checked_against", ""), "touches": self.touches(slot, refs, O) if "realized" in slot else None,
+                         "record": slot.get("record")})
             made.append((item, slot if slot["ok"] else None))
         drawn = [(i, s) for i, s in made if s is not None]
         slots = self.play.publish([s for _i, s in drawn])
@@ -972,7 +975,7 @@ class Gateway:
         for letter, c in zip(LETTERS, cands):
             doc = intent_doc(c, letter, self.brief, req["base"], req["prompt"])
             item = {"letter": letter, "title": c["title"].strip(), "verdict": "", "codes": [], "message": "", "slot": None,
-                    "decided": "", "head": "", "intent": None, "touches": None}
+                    "decided": "", "head": "", "intent": None, "touches": None, "record": None, "still": None}
             try:
                 raw_intent = D.canon.dumps(doc)
                 D.canon.load_intent(raw_intent)
@@ -986,7 +989,7 @@ class Gateway:
                 break
             slot = self.play.candidate_slot(ws, D.canon.load_intent(raw_intent), "studio %s %s: %s" % (rid, letter, item["title"]))
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
-                         "head": slot.get("checked_against", ""),
+                         "head": slot.get("checked_against", ""), "record": slot.get("record"),
                          "touches": self.touches(slot, {t: r["piece"] for t, r in req["references"].items()}, req["objects"]) if "realized" in slot else None})
             made.append((item, slot if slot["ok"] else None))
         entry["candidates"] = [{"letter": i["letter"], "title": i["title"], "verdict": i["verdict"], "codes": i["codes"],
@@ -1025,27 +1028,62 @@ class Gateway:
                 raise StudioError("STUDIO-DECIDED", "candidate %s is already %s" % (letter, c[0]["decided"]))
             return r, c[0]
 
-    def admit(self, rid, letter):
-        """Admit a drawn candidate: evaluated again at the head as the files stand, and admitted through the ledger only
-        if that is the head it was drawn at and its verdict is CLEAN."""
+    def still(self, rid, letter, png):
+        """A drawn candidate's still, as the page drew it (ADMISSION-0, 0222): kept in the world's build folder by its
+        sha256, its detectors read here from the bytes. It flags; it decides nothing. Admit names it."""
         r, c = self._candidate(rid, letter)
         if c["slot"] is None or c["intent"] is None:
             raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s was not drawn (%s)" % (letter, c["verdict"]))
         D = self.play.director()
         ws = self.play.workspace()
+        h = sha256(png)
+        try:
+            m, flags = D.quality.detect_png(png)
+            det, said = D.quality.detector_fields(m, flags), flags
+        except D.quality.QualityError as e:
+            det, said = {"not_checked": str(e)[:200]}, ["NOT READ: " + str(e)[:200]]
+        d = os.path.join(ws.build, "stills")
+        os.makedirs(d, exist_ok=True)
+        path = os.path.join(d, h + ".png")
+        with open(path, "wb") as fh:
+            fh.write(png)
+        with self.lock:
+            c["still"] = {"sha256": h, "path": path, "detectors": det, "flags": said}
+        return {"still": h, "detectors": det, "flags": said}
+
+    def admit(self, rid, letter, still="", despite=False):
+        """Admit a drawn candidate: evaluated again at the head as the files stand, and admitted through the ledger only
+        if that is the head it was drawn at, its verdict is CLEAN, and (ADMISSION-0) it brings the still the page took of
+        it as drawn — a still the detectors flag only when the designer admits despite them."""
+        r, c = self._candidate(rid, letter)
+        if c["slot"] is None or c["intent"] is None:
+            raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s was not drawn (%s)" % (letter, c["verdict"]))
+        st = c.get("still")
+        if not st or not still or st["sha256"] != still:
+            raise StudioError("STUDIO-NO-STILL", "candidate %s has no still taken as it was drawn: the page takes one as you admit, and an "
+                                                 "admission needs it (ADMISSION-0)" % letter)
+        png = open(st["path"], "rb").read()
+        if sha256(png) != still:
+            raise StudioError("STUDIO-NO-STILL", "candidate %s's still is no longer the bytes the page sent: take it again" % letter)
+        D = self.play.director()
+        ws = self.play.workspace()
         it = D.canon.load_intent(c["intent"])
-        verdict, after, timings, _o1, _o0, _t = D.evaluate_doc(ws, it)
+        verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
         if verdict["checked_against"] != c["head"]:
             raise StudioError("STUDIO-STALE", "the head moved since candidate %s was drawn (%s, now %s): ask again" % (letter, c["head"][:12], verdict["checked_against"][:12]))
         if verdict["verdict"] != "CLEAN":
             raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s is %s (%s); only a CLEAN candidate is admitted here" % (letter, verdict["verdict"], ",".join(verdict["codes"])))
-        ev = D.led.append(ws.ledger, "evaluate", {"intent": c["intent"].decode("ascii"), "intent_sha256": sha256(c["intent"]), "re_evaluation_of": "",
-                                                  "verdict": verdict, "after": after, "observed": {"at": now(), "ms": timings}})
-        a = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note="request %s, candidate %s" % (rid, letter))
+        if st["flags"] and not despite:
+            raise StudioError("STUDIO-STILL-FLAGGED", "candidate %s's still: %s. A detector proves nothing: admit despite it, which the ledger "
+                                                      "records, or reject the candidate" % (letter, "; ".join(st["flags"])))
+        ev = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(c["intent"], verdict, after, timings, rec))
+        a = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note="request %s, candidate %s" % (rid, letter),
+                  still=png, despite=bool(despite))
         with self.lock:
             c["decided"] = "admitted"
             self.last = {"what": "admitted", "request": rid, "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head": a["head_after"]}
-        self._log({"id": rid, "at": now(), "decision": "admit", "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head_after": a["head_after"]})
+        self._log({"id": rid, "at": now(), "decision": "admit", "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head_after": a["head_after"],
+                   "still_sha256": still, "despite_detectors": bool(st["flags"])})
         return self.last
 
     def reject(self, rid, letter):
@@ -1057,9 +1095,8 @@ class Gateway:
                 c["decided"] = "rejected"
             return {"what": "rejected", "request": rid, "candidate": letter, "ledger": []}
         it = D.canon.load_intent(c["intent"])
-        verdict, after, timings, _o1, _o0, _t = D.evaluate_doc(ws, it)
-        ev = D.led.append(ws.ledger, "evaluate", {"intent": c["intent"].decode("ascii"), "intent_sha256": sha256(c["intent"]), "re_evaluation_of": "",
-                                                  "verdict": verdict, "after": after, "observed": {"at": now(), "ms": timings}})
+        verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
+        ev = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(c["intent"], verdict, after, timings, rec))
         x = quiet(D.cmd_refuse, ws, ev["seq"], chooser="the designer (studio)", note="request %s, candidate %s" % (rid, letter))
         with self.lock:
             c["decided"] = "rejected"
@@ -1090,12 +1127,11 @@ class Gateway:
                "revision": list(a["inverse"]), "scope": list(src["scope"]), "version": "0"}
         raw = D.canon.dumps(doc)
         it = D.canon.load_intent(raw)
-        verdict, after, timings, _o1, _o0, _t = D.evaluate_doc(ws, it)
-        ev = D.led.append(ws.ledger, "evaluate", {"intent": raw.decode("ascii"), "intent_sha256": sha256(raw), "re_evaluation_of": "",
-                                                  "verdict": verdict, "after": after, "observed": {"at": now(), "ms": timings}})
+        verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
+        ev = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(raw, verdict, after, timings, rec))
         if verdict["verdict"] != "CLEAN":
             raise StudioError("STUDIO-NOT-UNDOABLE", "the inverse of #%s is %s (%s), recorded as #%s and not admitted" % (a["seq"], verdict["verdict"], ",".join(verdict["codes"]), ev["seq"]))
-        u = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note=UNDO_NOTE + a["seq"])
+        u = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note=UNDO_NOTE + a["seq"], inverse_of=a["seq"])
         with self.lock:
             self.last = {"what": "undone", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head": u["head_after"]}
         self._log({"at": now(), "decision": "undo", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head_after": u["head_after"]})

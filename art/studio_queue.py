@@ -495,7 +495,12 @@ def selftest():
         c, r = post("/studio/queue/review", {"id": tid})
         led_h = os.path.join(worlds, "harbor-day", "art", "ledger", "harbor-day.ledger")
         n0 = len(D.led.read(led_h)[0])
-        c2, a = post("/studio/admit", {"world": "harbor-day", "id": t["rid"], "candidate": "A"})
+        # ADMISSION-0 (0222): the still the page takes of the candidate as drawn, given with the studio's token
+        qs = urllib.request.Request(base + "/studio/still?world=harbor-day&id=%s&candidate=A" % t["rid"], data=D.selftest_still(), method="POST",
+                                    headers={"Content-Type": "image/png", "X-Studio-Token": tok})
+        with urllib.request.urlopen(qs, timeout=60) as r_:
+            still = json.loads(r_.read()).get("still", "")
+        c2, a = post("/studio/admit", {"world": "harbor-day", "id": t["rid"], "candidate": "A", "still": still})
         time.sleep(0.5)
         try:
             D._quiet(D.cmd_verify, D.Workspace("harbor-day", os.path.join(worlds, "harbor-day")), quiet=True)
@@ -547,7 +552,14 @@ def selftest():
         codes = {p_: post_as(p_, b_, presence) for p_, b_ in (("/studio/alive", {}), ("/studio/ask", {"world": "plaza-night", "prompt": "x"}),
                                                                 ("/studio/admit", {"world": "plaza-night", "id": "x", "candidate": "A"}),
                                                                 ("/studio/queue/add", {"world": "plaza-night", "prompt": "x"}))}
-        row("the launcher's token is good for the window's heartbeat and nothing else: it cannot ask, admit or queue",
+        qs = urllib.request.Request(base + "/studio/still?world=plaza-night&id=x&candidate=A", data=D.selftest_still(), method="POST",
+                                    headers={"Content-Type": "image/png", "X-Studio-Token": presence})
+        try:
+            with urllib.request.urlopen(qs, timeout=60) as r_:
+                codes["/studio/still"] = r_.status
+        except urllib.error.HTTPError as e:
+            codes["/studio/still"] = e.code
+        row("the launcher's token is good for the window's heartbeat and nothing else: it cannot ask, give a still, admit or queue",
             codes["/studio/alive"] == 200 and all(v == 403 for k, v in codes.items() if k != "/studio/alive"),
             ", ".join("%s %d" % (k.rsplit("/", 1)[-1], v) for k, v in codes.items()))
         saved_web = play.WEB

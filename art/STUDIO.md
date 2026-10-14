@@ -202,8 +202,20 @@ files stand and that head is the one it was drawn at.
 | `STUDIO-RESPONSE-JSON`, `-FORMAT`, `-ID`, `-FIELD`, `-CANDIDATES`, `-REVISION`, `-SCOPE` | the response is not JSON, not this format, for another request, or a field breaks its rule |
 | `INTENT-*`, the director's verdicts | a candidate that is not an intent, or that the director refuses (`INTENT-APPLY`, `CHECK-FAILED`, …) or finds leaking (`LEAKAGE`) |
 | `STUDIO-STALE`, `STUDIO-NOT-ADMISSIBLE`, `STUDIO-DECIDED`, `STUDIO-NO-CANDIDATE` | at admission: the head moved since it was drawn; not CLEAN; already decided; no such candidate |
+| `STUDIO-NO-STILL`, `STUDIO-STILL-FLAGGED` | at admission (ADMISSION-0, 0222): no still taken of the candidate as drawn; a still the detectors flag, admitted only with "Admit despite" |
 | `STUDIO-DIRECTOR-REFUSED` | the director itself refused the admission, refusal or undo (its own reason shown) |
 | `STUDIO-NOTHING-TO-UNDO`, `STUDIO-NOT-UNDOABLE` | no admission left to undo (an undo is never itself undone; undo again walks further back); one that changed the layout, or whose inverse is not CLEAN |
+
+## The record and the still (ADMISSION-0, 0222)
+
+Each candidate's card shows what the studio computed of it: its rung and why (from what changed, never from the
+model's words), what an admission needs, and, folded, what was not checked. **Admit** draws the candidate if another
+source is shown, waits two frames, takes the canvas as a PNG (a copy at most 960 pixels wide) and gives it to play.py
+(`POST /studio/still`, the studio's token, the PNG as the body), which keeps it and reads its detectors (QUALITY-0) from
+the bytes. With no flag the candidate is admitted with that still; with a flag nothing is admitted, the flag is shown,
+and **Admit despite** appears beside it (recorded in the ledger). The still goes into the world's ledger folder by its
+sha256 and `verify` reads it again. Undo needs no still: it is checked to be the exact inverse of the admission it
+undoes. The detectors flag a still drawn white or black; they prove nothing about a picture, and the designer judges it.
 
 ## What is kept
 
@@ -253,7 +265,7 @@ world but what the director judged.
 
 Every admission is written so that a process killed at any point leaves the brief and its ledger at the parent or
 the child, never between: `art/director.py`'s docstring says how, and `python art/director.py crashtest` kills an
-admission at each of its writes and recovers it (14 cases). Every director command, and play.py's start, recovers
+admission at each of its writes and recovers it (15 cases since 0222, which added the point after an admission's still is kept). Every director command, and play.py's start, recovers
 first. One writer at a time: every writer of a tree's ledgers, briefs, tags and maps holds the tree's content lock
 (`art/build/content.lock`; a thread lock in a process and the system's lock between processes, which the system releases
 when its holder dies); an admission holds it from before its first write to after its last and reads the head again

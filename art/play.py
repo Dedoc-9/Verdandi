@@ -75,6 +75,7 @@ import tempfile
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import webbrowser
 
@@ -203,11 +204,13 @@ def candidate_slot(ws, it, label, source="studio"):
 
     path = source
     try:
-        verdict, _after, _t, out1, _out0, _text1 = D.evaluate_doc(ws, it, on_candidate=keep)
+        verdict, _after, _t, out1, _out0, _text1, rec = D.evaluate_doc(ws, it, on_candidate=keep)
     except (dress.ArtError, level.MapError, OSError) as e:
         return _slot(label, path, message="PLAY: the head cannot be compiled: %s" % e)
     extra = {"verdict": verdict["verdict"], "codes": verdict["codes"], "written_against": verdict["written_against"],
-             "checked_against": verdict["checked_against"]}
+             "checked_against": verdict["checked_against"],
+             # ADMISSION-0 (0222): the rung the host computed and why, what an admission needs, what was not checked
+             "record": {k: rec[k] for k in ("rung", "rung_basis", "requires", "not_checked")}}
     # what the director found the candidate changed: the studio's account of which objects a candidate touched (STUDIO-1)
     for k in ("realized", "affected", "materials_changed"):
         if k in verdict:
@@ -768,6 +771,9 @@ def seed_worlds(worlds_dir, source=None, say=print):
             for g in (src.ledger, os.path.join(source, "art", "ledger", name + ".tags.json")):
                 if os.path.exists(g):
                     files.append((g, os.path.join(making, "art", "ledger", os.path.basename(g))))
+            if os.path.isdir(src.stills):           # ADMISSION-0: the admissions' stills go with the ledger that names them
+                files += [(os.path.join(src.stills, p_), os.path.join(making, "art", "ledger", os.path.basename(src.stills), p_))
+                          for p_ in sorted(os.listdir(src.stills)) if p_.endswith(".png")]
             src_maps = maps_of(source)
             files += [(os.path.join(src_maps, m), os.path.join(making, "graybox", "maps", m)) for m in sorted(os.listdir(src_maps))
                       if os.path.isfile(os.path.join(src_maps, m))]
@@ -801,6 +807,24 @@ STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/rejec
 # runs; POST /studio/alive is the page's heartbeat; POST /studio/shutdown stops the server as Ctrl+C does. Exit codes:
 # 0 stopped, 1 a source not served, 2 usage, 70 could not serve (the port), 75 refused to start (recovery refused).
 EXIT_STOPPED, EXIT_NOT_SERVED, EXIT_USAGE, EXIT_NO_SERVE, EXIT_NO_START = 0, 1, 2, 70, 75
+
+
+STILL_MAX = 32 * 1024 * 1024
+
+
+def studio_still(hub, world, rid, letter, png):
+    """A candidate's still, as the page drew it (ADMISSION-0): kept, and its detectors read by the host."""
+    import studio
+    try:
+        live = hub.world(world)
+        g = live.studio
+        if g is None:
+            return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
+        return 200, dict(g.still(rid, letter, png), ok=True)
+    except studio.StudioError as e:
+        return 409, {"ok": False, "code": e.code, "message": e.detail}
+    except OSError as e:
+        return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
 def studio_post(hub, path, body):
@@ -843,7 +867,7 @@ def studio_post(hub, path, body):
         if path == "/studio/cancel":
             return 200, {"ok": g.cancel_request(body.get("id"))}
         if path == "/studio/admit":
-            return 200, dict(g.admit(body.get("id"), body.get("candidate")), ok=True)
+            return 200, dict(g.admit(body.get("id"), body.get("candidate"), body.get("still") or "", body.get("despite") is True), ok=True)
         if path == "/studio/reject":
             return 200, dict(g.reject(body.get("id"), body.get("candidate")), ok=True)
         return 200, dict(g.undo(), ok=True)
@@ -963,6 +987,17 @@ def server(target, port=0):
                     return self.send(403, b"forbidden", "text/plain")
                 hub.page_bye = time.time()
                 return self.send(204, b"", "text/plain")
+            if path == "/studio/still":
+                # ADMISSION-0 (0222): the still of a candidate as the page drew it, PNG bytes as the body (not JSON), with
+                # the studio's token; its detectors are read here, by the host, never taken from the page
+                if not self.own_host() or self.headers.get("X-Studio-Token") != hub.token:
+                    return self.send(403, b"forbidden", "text/plain")
+                n = int(self.headers.get("Content-Length", "0") or 0)
+                if not (0 < n <= STILL_MAX) or self.headers.get("Content-Type", "") != "image/png":
+                    return self.send(400, b"a still is image/png of at most 32 MiB", "text/plain")
+                q = urllib.parse.parse_qs(self.path.partition("?")[2])
+                code, reply = studio_still(hub, (q.get("world") or [None])[0], (q.get("id") or [""])[0], (q.get("candidate") or [""])[0], self.rfile.read(n))
+                return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
             if path not in STUDIO_POSTS:
                 return self.send(404, b"not found", "text/plain")
             tok_ = self.headers.get("X-Studio-Token")
@@ -1480,6 +1515,24 @@ def studio_selftest():
             except ValueError:
                 return e.code, {}
 
+    def post_still(srv, rid, letter, token, png=None, ctype="image/png"):
+        """ADMISSION-0: a still given for a candidate, as the page gives it (PNG bytes, the studio's token)."""
+        png = director().selftest_still() if png is None else png
+        req = urllib.request.Request("http://127.0.0.1:%d/studio/still?id=%s&candidate=%s" % (srv.server_address[1], rid, letter), data=png, method="POST",
+                                     headers={"Content-Type": ctype, "X-Studio-Token": token})
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return r.status, json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            try:
+                return e.code, json.loads(e.read())
+            except ValueError:
+                return e.code, {}
+
+    def admit_with_still(srv, rid, letter, token):
+        c, s_ = post_still(srv, rid, letter, token)
+        return post(srv, "/studio/admit", {"id": rid, "candidate": letter, "still": s_.get("still", "")}, token)
+
     live = srv = None
     try:
         director().selftest_tree(tmp)               # the fixture's world: never the owner's brief, ledger or tags
@@ -1614,7 +1667,25 @@ def studio_selftest():
         # admit A through HTTP: the brief written, the ledger two events longer, the head the candidate's, verified
         n0 = len(workspace(brief) and director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0])
         a_sha = live.slot(drawn[0]["slot"])["sha"]
+        # ADMISSION-0 (0222): an admission brings a still of the candidate as drawn; the host reads its detectors
         code, body = post(srv, "/studio/admit", {"id": rid, "candidate": "A"}, tok)
+        n1 = len(director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0])
+        row("ADMISSION-0: A with no still is not admitted (STUDIO-NO-STILL), nothing written", code == 409 and body.get("code") == "STUDIO-NO-STILL" and n1 == n0,
+            body.get("message", "")[:100])
+        Q = director().quality
+        white = Q.png_bytes(32, 18, bytes(255 if (i // 3) % 32 < 24 else 40 + (i % 11) * 9 for i in range(32 * 18 * 3)))
+        c_w, s_w = post_still(srv, rid, "A", tok, white)
+        code, body = post(srv, "/studio/admit", {"id": rid, "candidate": "A", "still": s_w.get("still", "")}, tok)
+        n1 = len(director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0])
+        row("a still the detectors flag (read by the host from the bytes): A not admitted without despite, nothing written",
+            c_w == 200 and "BLOWN" in " ".join(s_w.get("flags", [])) and code == 409 and body.get("code") == "STUDIO-STILL-FLAGGED" and n1 == n0,
+            "%s; %s" % ("; ".join(s_w.get("flags", []))[:60], body.get("message", "")[:60]))
+        cx, bx = post_still(srv, rid, "A", tok, b"GIF89a not a png", ctype="image/gif")
+        cy, by_ = post_still(srv, rid, "A", "not-the-studio-token")
+        st_a = [c for c in g.state()["request"]["candidates"] if c["letter"] == "A"][0]
+        row("a still that is not image/png refused (400); a page without the studio's token cannot give one (403); the page sees the flagged still",
+            cx == 400 and cy == 403 and st_a["still"] and "BLOWN" in " ".join(st_a["still"]["flags"]), "%d, %d; the state shows %s" % (cx, cy, (st_a["still"] or {}).get("sha256", "")[:12]))
+        code, body = admit_with_still(srv, rid, "A", tok)
         v = live.version
         t = time.time()
         while live.slot(0)["sha"] != a_sha and time.time() - t < 30:
@@ -1629,7 +1700,7 @@ def studio_selftest():
             and [e["kind"] for e in events[-2:]] == ["evaluate", "admit"] and events[-1]["observed"]["chooser"] == "the designer (studio)"
             and live.slot(0)["sha"] == a_sha and verified is True,
             "ledger #%s, #%s; source 0 now scene %s; the ledger verifies" % (events[-2]["seq"], events[-1]["seq"], live.slot(0)["sha"][:12]))
-        code, body = post(srv, "/studio/admit", {"id": rid, "candidate": "B"}, tok)
+        code, body = admit_with_still(srv, rid, "B", tok)
         row("B, drawn at the head before A, refused as stale", code == 409 and body.get("code") == "STUDIO-STALE", body.get("message", "")[:100])
         code, body = post(srv, "/studio/reject", {"id": rid, "candidate": "C"}, tok)
         events = director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0]
@@ -1639,7 +1710,7 @@ def studio_selftest():
         rid2 = g.ask("deeper still", piece, cam)
         r2 = wait(g, rid2)
         c3 = [c for c in r2["candidates"] if c["letter"] == "C"][0]
-        code, body = post(srv, "/studio/admit", {"id": rid2, "candidate": "C"}, tok)
+        code, body = admit_with_still(srv, rid2, "C", tok)
         row("a second request, on the head A made: its C admitted", r2["state"] == "done" and r2["head"] != r["head"] and c3["verdict"] == "CLEAN" and code == 200,
             "request %s at head %s; ledger #%s" % (rid2, r2["head"][:12], ", #".join(body.get("ledger", []))))
         code, body = post(srv, "/studio/undo", {}, tok)
@@ -1690,7 +1761,7 @@ def studio_selftest():
             and by["A"]["slot"] is None and by["B"]["verdict"] == "CLEAN" and by["B"]["slot"] is not None and by["C"]["verdict"] == "LEAKAGE",
             "A %s %s (not drawn); B %s; C %s (it changes a lamp outside its scope)%s" % (by["A"]["verdict"], ",".join(by["A"]["codes"]), by["B"]["verdict"], by["C"]["verdict"],
                                                                                          "" if by["B"]["verdict"] == "CLEAN" else "; " + by["B"]["message"][:200]))
-        code, body = post(srv, "/studio/admit", {"id": rid, "candidate": "C"}, tok)
+        code, body = admit_with_still(srv, rid, "C", tok)
         row("a LEAKAGE candidate drawn but not admitted here", code == 409 and body.get("code") == "STUDIO-NOT-ADMISSIBLE", body.get("message", "")[:90])
         mark = os.path.join(tmp, "slow.ran")
         os.environ["STUDIO_TEST_MARK"] = mark

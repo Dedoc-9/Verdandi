@@ -332,12 +332,43 @@
       post("/studio/ask", { prompt: promptEl.value, camera: { x: c.x, y: c.y, z: c.z, yaw_deg: c.yaw / deg, pitch_deg: c.pitch / deg } })
         .then(function (r) { note(r, "asked: request " + (r.id || "")); studio.last = ""; });
     };
-    const decide = function (what, rid, letter) {
-      post("/studio/" + what, { id: rid, candidate: letter }).then(function (r) {
+    const decide = function (what, rid, letter, extra) {
+      post("/studio/" + what, Object.assign({ id: rid, candidate: letter }, extra || {})).then(function (r) {
         note(r, what === "admit" ? "admitted: ledger #" + (r.ledger || []).join(", #") : "rejected: ledger #" + (r.ledger || []).join(", #"));
         if (r.ok && what === "admit") pick(0);
         studio.last = "";
       });
+    };
+    // ADMISSION-0 (0222): an admission brings a still of the candidate as drawn. Admit draws it (if another source is
+    // shown), waits two frames, takes the canvas as PNG and gives it to play.py, which keeps it and reads its detectors;
+    // with no flag the candidate is admitted with that still, and with a flag nothing is admitted and the flag is shown,
+    // with "Admit despite" beside it. The page decides nothing: the host reads the still and the director admits.
+    const twoFrames = function () { return new Promise(function (res) { requestAnimationFrame(function () { requestAnimationFrame(res); }); }); };
+    // The still is a copy at most 960 pixels wide (the host reads its detectors in Python: a smaller still is a quicker
+    // read and a smaller piece of evidence), encoded at once with toDataURL: toBlob encodes when the page is idle, and a
+    // page that draws every frame on a slow renderer was not idle for minutes (OBSERVED in the container, SwiftShader).
+    const takeStill = function (rid, letter) {
+      return twoFrames().then(function () {
+        const k = Math.min(1, 960 / canvas.width), c2 = document.createElement("canvas");
+        c2.width = Math.max(1, Math.round(canvas.width * k)); c2.height = Math.max(1, Math.round(canvas.height * k));
+        c2.getContext("2d").drawImage(canvas, 0, 0, c2.width, c2.height);
+        const u = c2.toDataURL("image/png"), bin = atob(u.slice(u.indexOf(",") + 1)), a = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+        return fetch("/studio/still?world=" + encodeURIComponent(brief) + "&id=" + encodeURIComponent(rid) + "&candidate=" + encodeURIComponent(letter),
+          { method: "POST", headers: { "Content-Type": "image/png", "X-Studio-Token": token }, body: a }).then(function (r) { return r.json(); });
+      });
+    };
+    const admitWithStill = function (rid, c) {
+      $("st-status").textContent = "taking a still of " + c.letter + " as drawn…";
+      (c.slot !== cur.k ? pick(c.slot) : Promise.resolve()).then(function () { return takeStill(rid, c.letter); }).then(function (s) {
+        if (!s.ok) { note(s, ""); return; }
+        if (s.flags && s.flags.length) {
+          note({ ok: false, code: "THE STILL IS FLAGGED", message: s.flags.join("; ") + ". A detector proves nothing: look, then Admit despite, or Reject" }, "");
+          studio.last = "";
+          return;
+        }
+        decide("admit", rid, c.letter, { still: s.still });
+      }).catch(function (e) { note({ ok: false, code: "NO STILL", message: String(e && e.message || e) }, ""); });
     };
     $("st-ask").onclick = ask;
     $("st-cancel").onclick = function () { if (studio.req) post("/studio/cancel", { id: studio.req.id }).then(function (r) { note({ ok: true }, r.ok ? "cancelled" : "nothing to cancel"); }); };
@@ -394,8 +425,29 @@
             m.className = tt.others_count ? "bad" : "dim"; m.textContent = "touches: " + parts.join(" · "); el.appendChild(m);
           }
           const btn = function (label, fn, on) { const b = document.createElement("button"); b.textContent = label; b.disabled = !on; b.onclick = fn; el.appendChild(b); };
+          // ADMISSION-0 (0222): the rung the host computed, what an admission needs, what was not checked, and the still
+          if (c.record) {
+            const rr = document.createElement("div");
+            rr.className = "dim";
+            rr.textContent = "rung " + c.record.rung + " (computed by the studio from what changed) · an admission needs: " + c.record.requires.join("; ");
+            el.appendChild(rr);
+            const nc = document.createElement("details"), sm = document.createElement("summary");
+            sm.textContent = "not checked (" + c.record.not_checked.length + ")";
+            nc.appendChild(sm);
+            for (const x of c.record.not_checked) { const li = document.createElement("div"); li.className = "dim"; li.textContent = "· " + x; nc.appendChild(li); }
+            el.appendChild(nc);
+          }
+          if (c.still) {
+            const sv = document.createElement("div");
+            sv.className = c.still.flags.length ? "bad" : "dim";
+            sv.textContent = "still " + c.still.sha256.slice(0, 12) + ": " + (c.still.flags.length ? c.still.flags.join("; ") : "the detectors flag nothing (they prove nothing either)");
+            el.appendChild(sv);
+          }
+          const flagged = !!(c.still && c.still.flags.length);
           btn("Show", function () { pick(c.slot); }, c.slot !== null);
-          btn("Admit", function () { decide("admit", r.id, c.letter); }, c.slot !== null && c.verdict === "CLEAN" && !c.decided);
+          btn("Admit", function () { admitWithStill(r.id, c); }, c.slot !== null && c.verdict === "CLEAN" && !c.decided && (!c.record || c.record.rung === "A"));
+          if (flagged) btn("Admit despite: " + c.still.flags.map(function (f) { return f.split(":")[0]; }).join(", "),
+            function () { decide("admit", r.id, c.letter, { still: c.still.sha256, despite: true }); }, c.slot !== null && c.verdict === "CLEAN" && !c.decided);
           btn("Reject", function () { decide("reject", r.id, c.letter); }, !c.decided);
           box.appendChild(el);
         }
