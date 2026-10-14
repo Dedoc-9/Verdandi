@@ -4340,6 +4340,34 @@ retired, QUALITY-0's *rules without movers*: under 0229 that is every scene with
 none no longer refused. NOT_MEASURED: his machine, Edge, a real GPU; the search is a search and not a proof (a place it
 did not reach is not shown unreachable).
 
+**His push of 0228, 0229 and the references, and his plan: the studio's shell (2026-10-14).** He ran 0228 and 0229
+(every suite passed; RUNG-0 from his pushed classifier, `rung D` each, the renamed check read as one loosening; the gate
+251 rows / 0 fail, rowset 74db4c8d78625af5), froze the three references at the 0229 exporter, and pushed
+`78e458b..14e980f`. Then two mockups of *Verðandi Studio* and a plan in sprints: Sprint 1, the core studio shell
+(*"Launch Verðandi, enter the world, select an object, inspect it, and play"*); Sprint 2, Mark & Shape (*"Mark a wall,
+draw a doorway outline, save it, reopen it, and request an edit against that exact region"*); then the candidate loop, a
+world-generation slice, the dynamic world, scale; with authority kept apart from views, authoring from runtime, and
+*"the Director proposes, the host validates, a human admits"*. **0230, STUDIO-3, the shell: built, off the gate.**
+`art/web/play.html`, `art/web/play.js` and a new `art/web/studio_ui.js` make the play page a studio after his first
+mockup (art/STUDIO.md, *The shell*): the menu bar, the context bar (scene, layer, selection; connected, world,
+revision, source, rules), the navigator, the viewport with its tools, pills and measured statistics, the inspector
+(Transform, Static Mesh, Materials, Collision, LOD, Physics, Gameplay Tags, Custom Properties), Layers, World Settings,
+the asset browser with thumbnails from a second renderer, the candidates with theirs, the ledger, the director as a
+drawer, and the roadmap in a footer; what is not built says so and why. The page opens in an editor (a free camera, the
+cursor picking by the ray through its pixel, a click selecting, the selection drawn as its box in blue); **P** plays as
+before, Esc returns. `art/play.py`: GET `/object.json` and `/validate.json`, read-only (nothing bound, no tag), and POST
+`/studio/build` (compile every source again now); each served source keeps its check rows and its statements. LIVE
+SELFTEST 24/24 (four new rows: the inspector's read and that it writes nothing, Validate's rows equal to the checks
+compiled, Validate during a refusal, Local Build with and without the token). MEASURED in the container: ART CHECKS
+PASSED; LIVE SELFTEST 24/24; STUDIO SELFTEST 74/74; STUDIO-2 SELFTEST 19/19 (18/19 once, the row *the queue read back
+after a restart* failing on its task count and passing on the next run with nothing changed: OBSERVED, a race in that
+row, not read further); STUDIO APP SELFTEST 12/12. In headless Chromium 141 with SwiftShader (not committed): the shell
+drawn at 1600 × 900 and 1920 × 1080, a click selecting the canopy (`/object.json`: line 61), F framing it, E making it
+`@1`, the scripted director's three candidates drawn as thumbnails, P capturing the mouse and leaving play putting the
+editor's camera at the player's eye, Validate listing 10 of 10 rows, nothing on the console but the favicon's 404. NOT_MEASURED: his machine, Edge, a real GPU's frame rate (SwiftShader's
+is no measure). Docs: AGENTS.md (and the RUNG-0 row's command for PowerShell, `cmd /c`: its `>` writes UTF-16, as his
+run of 0229 found), art/STUDIO.md, docs/CORE.md, this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

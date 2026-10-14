@@ -254,6 +254,12 @@ python art/play.py --selftest            # the live loop without a browser: LIVE
   one, and queues a prompt for any world while it plays on (`studio_queue.py`); a ready task is reviewed in its own
   world's page, its candidates drawn again at the head as it is then. `python art/studio_queue.py selftest` holds it
   (STUDIO-2 SELFTEST 19/19); [`STUDIO.md`](STUDIO.md) says how.
+- **The shell (STUDIO-3, 0230).** The play page is a studio around the play surface, after the owner's mockup: a menu
+  bar, the scene, layer and selection, a navigator, the viewport with its tools, pills and measured statistics, an
+  inspector (`/object.json`, read from the scene served; nothing bound), the layers and the world's settings, an asset
+  browser with thumbnails a second renderer draws, the candidates, the ledger, and the roadmap. It opens in an editor
+  (a click selects what the ray through the cursor meets; P plays, Esc returns). Nothing in it is the world: it reads
+  what `play.py` serves and asks `play.py` to act. What is not built says so. [`STUDIO.md`](STUDIO.md), *The shell*.
 - **Every request ends in a disposition; the icon opens a first window (0220).** A request that comes back without
   candidates says why: UNSUPPORTED (with what the studio cannot make yet, from a closed list the request publishes),
   AMBIGUOUS (the director's questions), DECLINED (the API's refusal, or the provider's), or FAILED (including an
@@ -314,6 +320,7 @@ block a player is cover, and goes into the graybox map.
 | `check.py` | the art's checks, plants and revisions |
 | `preview.py` | the provisional first-person preview (PROVISIONAL_PREVIEW): a standalone WebGL 2 page of the scene |
 | `play.py` | the native plaza's launcher: the sources (the brief, candidate intents) compiled, checked and served beside the graybox's simulation, and compiled again when their files change; the studio's endpoints; its own self-test and the studio's |
+| `web/studio_ui.js` | STUDIO-3: the shell's icons (inline SVG), its DOM builder, the view's arithmetic (a camera's basis, a point projected, the ray through a pixel, where a ray enters a box and through which face, MARK-0's face frames) and the thumbnailer (a second renderer on a small canvas) |
 | `studio_refs.py` | STUDIO-1: what a tagged object is, its geometry in metres, its nearest wall, and how two stand (measured from the scene's boxes; a facing marked inferred) |
 | `director/durable.py` | B1: the content path's writes made to survive a killed process (an append flushed; a file replaced whole by a flushed temporary and a write-through rename); the death points `art/director.py crashtest` kills at; the content lock every writer of a tree's ledgers, briefs, tags and maps holds (a thread lock and the system's file lock, released by the system when its holder dies), which `art/director.py racetest` holds to account |
 | `studio_app.py` | B1: the desktop studio's supervisor (a job that ends everything it starts, play.py without a console, Edge in application mode, stopping when the window closes) and its `shortcut`; `selftest` with a stand-in browser. STUDIO-2: it serves the worlds folder (`--worlds DIR`, the per-user folder by default) |

@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
-# The studio: a director summoned into the running plaza (STUDIO-0, STUDIO-1, STUDIO-2)
+# The studio: a director summoned into the running plaza (STUDIO-0, STUDIO-1, STUDIO-2, STUDIO-3)
 
 By the owner's direction of 2026-10-11: *"the LLM edits design intent; Verðandi compiles that intent into a live
 world; the designer remains in control."* And by his ruling on how a model is reached: *"a pluggable model adapter,
@@ -70,8 +70,9 @@ compare: the requests answered, invalid outputs, timeouts and provider errors, t
 longest), the candidates' verdicts, the edits admitted from the page, the tokens, and the cost where a provider reports
 one, per admitted edit.
 
-In the page: what is under the crosshair is named in the corner, by its address (`plaza/canopy/19,10-28,11`) and its
-tag if it has one. **E** makes it the target; **R** pins it as a reference, or unpins it, up to four (the game's reset
+In the page (since STUDIO-3 the page opens in the editor; **P** plays, and in play what follows is what is under the
+crosshair; in the editor it is what is selected): what is under the crosshair is named in the corner, by its address
+(`plaza/canopy/19,10-28,11`) and its tag if it has one. **E** makes it the target; **R** pins it as a reference, or unpins it, up to four (the game's reset
 is **Backspace** here). play.py gives each a tag, `@1`, `@2`, …, which names that object, and keeps it across restarts; each
 tagged object is framed and labelled on screen (the target amber, a pin dashed blue), and the panel lists them with
 their addresses, sizes and statements' lines. **Enter** opens the director's panel, and the game goes on. Type the
@@ -80,6 +81,64 @@ verdicts and what each touches (*@1 changed · @2 unchanged · no other object c
 the scene changes, the game, the player and the camera do not. **Original** draws the brief. **Admit** writes it
 through the director's ledger, **Reject** records a refusal, and **Undo** admits the last admission's exact inverse.
 **Cancel** stops a request, and **Esc** goes back to the world. Without a target, the prompt is for the whole world.
+
+## The shell (STUDIO-3, 0230)
+
+By the owner's plan of 2026-10-14 (Sprint 1, *"Core studio shell"*: *"Launch Verðandi, enter the world, select an
+object, inspect it, and play"*), the page is a studio around the play surface, after his mockup: a menu bar (File, Edit,
+View, World, Tools, Build, Play, Validate, Help; on its right **Local Build**, **Play (1080p)** and **Validate**), a bar
+naming the scene (the world), the layer and the selection, with what play.py says (connected, the world, the ledger's
+revision, the source drawn and its scene, the rules), a navigator (World, Create, Content, Review), the viewport, an
+inspector with the world's layers and settings, and a dock of the asset browser, the candidates and the ledger.
+
+Nothing in the shell is the world. It reads what play.py serves and asks play.py to act, through the routes the studio
+already had and three new ones: GET `/object.json` (what a picked box's object is, read from the scene and lineage of the
+source drawn: its address, kind, region, boxes, materials, the mesh the scene names, whether it collides, the statement
+that made it and how many objects that statement makes, its nearest wall; a box of the play geometry is the map's and
+says so; nothing is bound and no tag is made), GET `/validate.json` (the art checks' rows as they were run when the
+source was compiled, and its latest refusal if it was refused; read back, not run again) and POST `/studio/build`
+(every source compiled again now, as the watcher does on an edit, with the page's token; what fails leaves the scene
+before it drawn).
+
+**The editor.** The page opens in it: a free camera (right-drag looks, the right button held with W A S D flies, Q and E
+down and up, the wheel moves forward), the cursor naming what it is over, a click selecting it. The pick is the view's
+arithmetic: the ray through the cursor's pixel and the nearest box it enters of the layers shown, the dressing, the
+play geometry, the movers and the standing targets. The selection is drawn as its box, projected in blue on a canvas over
+the picture; **F** frames it. **P** (or Tab, or the tool strip's last button) plays: the mouse is captured and the game's
+keys apply, as before; **Esc** comes back to the editor at the player's eye. The game waits while it is not played.
+**Play (1080p)** plays at 1920 × 1080, the window filled, the picture 16:9. **E** and **R** make the selection the
+director's target or pin it; in play they take what is under the crosshair, as before. A box of the play geometry, a
+mover or a target can be inspected, not tagged: it is the map's.
+
+**The viewport.** The tool strip: select (Q) and measure (T: two clicks, the distance between the points the rays hit,
+in plan and in rise); move, rotate and scale are drawn and not built, and say why (nothing in the editor moves the
+world). The pills: Perspective (and Top and Side, telephoto cameras: the renderer draws in perspective only, and they say
+so), Lit (the renderer's picture, with the dressing's wireframe or the play geometry drawn over it), Show (the grid of
+cells, the regions, the spawns and targets, the tags, the statistics). The statistics are what the page measures and no
+more: frames a second, the frame's time, the time to issue it (the GPU's is not measured), the draw calls the renderer
+made (counted), its triangles, boxes and lights, and the canvas's size; video memory is *n/a*, since WebGL does not
+report it.
+
+**The panels.** The inspector: Transform (the boxes' centre and size, read-only; nothing is rotated), Static Mesh (the
+asset the scene names, its source and licence), Materials (each with a flat swatch, a key and not the renderer's
+picture), Collision, LOD, Physics, Gameplay Tags (the studio's tag) and Custom Properties (the statement, its key, what
+it makes and can change, the nearest wall, the lights). Layers: each shown or hidden (the renderer is given the scene
+without it; the game is not touched) and locked or not (never picked); the bar's Layer limits a click to one. World
+Settings: the environment, the grid, the player's constants, the spawns, the regions, the views, the source. The asset
+browser: the scene's own pieces by folder (the dressing by kind, the play geometry by kind, the movers, the spawns and
+targets, the lights, the materials, the regions, the views, and the views saved in the page, each with the art
+statement it would be), each drawn as a thumbnail by a second renderer from a camera framed on it: the scene as it
+stands, from there. The candidates: the request's, each drawn the same way from the target's frame, with its verdict
+(*Ready* when CLEAN and undecided), its rung, and Show, Admit and Reject, which do what the director's drawer does (an
+admission brings its still, as ADMISSION-0 requires). The ledger: `/history.json`, newest first, ADMITTED, CANDIDATE,
+REJECTED, REFUSED, REBASED. The director's panel is a drawer over the inspector (Enter). A footer keeps the roadmap
+in view: Sprint 1, the shell; then Mark & Shape, the candidate loop, a world-generation slice, the dynamic world,
+scale.
+
+What is not built says so, with why: Geometry (the layout changes through the design tool), Voxel Tools (the world is
+cells and boxes), Decals (no statement), Audio (the studio cannot make it yet), AI (none), Prefabs (one statement makes
+one object), Procedural (a later slice), Templates (a world is a duplicate of one), Compare (with Mark & Shape). Stills
+(`?view`, `?cam`, `?still`) are the picture alone, as before.
 
 ## The references (STUDIO-1)
 

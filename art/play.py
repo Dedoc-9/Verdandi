@@ -24,12 +24,17 @@
 # is. Then it serves, on 127.0.0.1 only, exactly these and nothing else:
 #
 #   /play.html, /play.js, /scene_render.js    art/web/, the page and the renderer
+#   /studio_ui.js                             art/web/, the shell's icons, view arithmetic and thumbnailer (STUDIO-3)
 #   /sim.js                                   graybox/web/sim.js, the graybox's simulation, read and served unchanged
 #   /scene/BRIEF.json?slot=K                  source K's compiled scene, from memory (K is 0 if not given)
 #   /map/MAP.json?slot=K                      source K's map, converted by graybox/level.py, as graybox/serve.py serves it
 #   /live                                     what is served now: each source's scene and map digests, its verdict, the
 #                                             last refusal, and the digests of the three scripts
 #   /healthz                                  the server's own state, for the supervisor (B1, below)
+#   /object.json?piece=ID&slot=K              STUDIO-3 (0230): what the inspector shows of the object a picked box
+#                                             belongs to, read from source K's scene and lineage (nothing bound, no tag)
+#   /validate.json?slot=K                     STUDIO-3: the art checks' rows as run when source K was compiled, and its
+#                                             latest refusal if it was refused (read back, not run again)
 #
 # (STUDIO-2) /play.html, /live and /map/ take ?world=NAME, one of the worlds this server serves (the one it started
 # with when not given); /live then also lists the worlds and the queue's state.
@@ -95,6 +100,7 @@ FILES = {
     "/start.js": (os.path.join(WEB, "start.js"), "text/javascript; charset=utf-8"),
     "/history.js": (os.path.join(WEB, "history.js"), "text/javascript; charset=utf-8"),
     "/scene_render.js": (os.path.join(WEB, "scene_render.js"), "text/javascript; charset=utf-8"),
+    "/studio_ui.js": (os.path.join(WEB, "studio_ui.js"), "text/javascript; charset=utf-8"),
     "/sim.js": (os.path.join(REPO, "graybox", "web", "sim.js"), "text/javascript; charset=utf-8"),
 }
 CODE = [os.path.join(HERE, "dress.py"), os.path.join(HERE, "check.py"), os.path.join(HERE, "director.py"),
@@ -145,6 +151,8 @@ def compile_scene(brief, art_path=None, maps_dir=None):
             except OSError as e:
                 raise SystemExit("PLAY: the art file cannot be read: %s" % e)
             res = check.verify(out, None, D=check.gcheck.source_rows(out["W"]))
+            # STUDIO-3 (0230): the rows as run, kept for the page's Validate (read back, never run again by a page)
+            out["checks"] = [[c, bool(ok), str(d)[:400]] for c, ok, d in res]
             bad = [(c, d) for c, ok, d in res if not ok and c != "the lineage binds every input"]
             if bad:
                 raise SystemExit("PLAY: the scene is not served; it fails the art checks:\n" + "\n".join("  FAIL %s — %s" % b for b in bad))
@@ -160,7 +168,10 @@ def _slot(label, source, out=None, map_bytes=None, message="", **extra):
     if out is not None:
         c = out["lineage"]["counts"]
         s.update({"scene_bytes": out["scene_bytes"], "sha": out["lineage"]["scene_sha256"], "map": out["scene"]["map"],
-                  "map_bytes": map_bytes, "map_sha": sha256(map_bytes), "counts": c})
+                  "map_bytes": map_bytes, "map_sha": sha256(map_bytes), "counts": c,
+                  # STUDIO-3 (0230): what the inspector names (the statement that made a piece) and what Validate shows
+                  "statements": [{k: x[k] for k in ("line", "text", "key", "hash")} for x in out["lineage"]["statements"]],
+                  "checks": out.get("checks")})
     s.update(extra)
     return s
 
@@ -803,7 +814,8 @@ def seed_worlds(worlds_dir, source=None, say=print):
 
 STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin",
                 "/studio/alive", "/studio/shutdown", "/studio/worlds/duplicate",
-                "/studio/queue/add", "/studio/queue/cancel", "/studio/queue/requeue", "/studio/queue/review", "/studio/queue/dismiss")
+                "/studio/queue/add", "/studio/queue/cancel", "/studio/queue/requeue", "/studio/queue/review", "/studio/queue/dismiss",
+                "/studio/build")
 # B1 (docs/STUDIO-APP.md; the supervisor's view of this server): GET /healthz says the server is up and which code it
 # runs; POST /studio/alive is the page's heartbeat; POST /studio/shutdown stops the server as Ctrl+C does. Exit codes:
 # 0 stopped, 1 a source not served, 2 usage, 70 could not serve (the port), 75 refused to start (recovery refused).
@@ -858,6 +870,15 @@ def studio_post(hub, path, body):
         live = hub.world(body.get("world"))
     except studio.StudioError as e:
         return 409, {"ok": False, "code": e.code, "message": e.detail}
+    if path == "/studio/build":
+        # STUDIO-3 (0230), Local Build: every source of this world compiled again now, as the watcher does on an edit (a
+        # fresh process; what passes replaces what was served, what fails leaves it served and says why). Writes nothing.
+        lines = live.recompile()
+        for ln in lines:
+            live.log.append(ln)
+        st = live.state()["slots"]
+        return 200, {"ok": True, "version": live.version, "ms": live.compiled_ms, "lines": lines,
+                     "slots": [{"label": s["label"], "ok": s["ok"], "message": s["message"][:600]} for s in st]}
     g = live.studio
     if g is None:
         return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
@@ -881,6 +902,107 @@ def studio_post(hub, path, body):
         return 409, {"ok": False, "code": e.code, "message": e.detail}
     except (dress.ArtError, level.MapError, OSError, ValueError, KeyError, TypeError) as e:
         return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
+
+
+# ------------------------------------------------------------------------------- STUDIO-3 (0230): what the shell reads
+# The shell's inspector and its Validate read what is served and nothing else: GET /object.json and GET /validate.json
+# make no tag, bind nothing, write nothing and compile nothing. They answer from the slot the page shows (the scene's
+# bytes and the lineage's statements kept with it), so what they say is about the scene drawn, not the files on disk.
+_SCENES = {}             # scene sha -> the parsed scene: a cache of what is served (at most 8), never a source
+_SCENES_LOCK = threading.Lock()
+PIECE_GET = re.compile(r"(?:play:|mover:|target:)?[A-Za-z0-9_.,:+-]{1,160}\Z")
+
+
+def scene_of(slot):
+    with _SCENES_LOCK:
+        S = _SCENES.get(slot["sha"])
+        if S is None:
+            S = json.loads(slot["scene_bytes"])
+            if len(_SCENES) >= 8:
+                _SCENES.pop(next(iter(_SCENES)))
+            _SCENES[slot["sha"]] = S
+        return S
+
+
+def _materials(S, names):
+    return [dict(S["materials"][m], name=m) for m in sorted(set(names)) if m in S.get("materials", {})]
+
+
+def object_info(slot, piece):
+    """What the inspector shows of the object a picked box belongs to (0230), from the scene and lineage of `slot`:
+    `piece` is a box id of the dressing (its object: the box's own id, or the object it is a part of, as STUDIO-1 reads
+    it), play:ID for a box of the play geometry (C), mover:ID or target:ID. None if the scene has no such piece."""
+    import studio_refs as R
+    S = scene_of(slot)
+    stmts = slot.get("statements") or []
+    by_hash = lambda h: next(({"line": x["line"], "text": x["text"], "key": x["key"]} for x in stmts if x["hash"] == h), None)
+    grid = S["grid"]
+    out = {"piece": piece, "scene": slot["sha"], "units": S["units"], "assets": S.get("assets", {})}
+    if piece.startswith("play:"):
+        c = next((c for c in S.get("collision", []) if c["id"] == piece[5:]), None)
+        if c is None:
+            return None
+        o = {"id": c["id"], "boxes": [[float(x) for x in c["box"]]], "parts": {}, "lights": []}
+        st = next(({"line": x["line"], "text": x["text"], "key": x["key"]} for x in stmts if x["key"] == "surface " + c["kind"]), None)
+        out.update(layer="play", kind=c["kind"], address="play/%s/%s" % (c["kind"], c["id"]), region="", object=c["id"],
+                   cells=c.get("cells"), materials=_materials(S, [c["material"]]), geometry=R.geometry(o), statement=st,
+                   statement_basis="the play geometry is the map's (C); the art's statement 'surface %s' gives it its look only" % c["kind"],
+                   collision={"blocks": True, "basis": "play geometry: the simulation moves the player against these boxes (C)"},
+                   mesh=None, lights=[], parts={}, statement_makes=None)
+        return out
+    if piece.startswith("mover:"):
+        m = next((m for m in S.get("movers", []) if m["id"] == piece[6:]), None)
+        if m is None:
+            return None
+        o = {"id": m["id"], "boxes": [[float(x) for x in m["box"]]], "parts": {}, "lights": []}
+        out.update(layer="movers", kind="mover", address="play/mover/%s" % m["id"], region="", object=m["id"],
+                   materials=_materials(S, [m["material"]]), geometry=R.geometry(o), statement=by_hash(m.get("by")),
+                   mover={k: m[k] for k in ("axis", "len", "speed", "policy") if k in m}, rules=S.get("rules"),
+                   collision={"blocks": True, "basis": "a mover of rules %s: it carries a player on it and %s one in its way (graybox/RULES-3.md); "
+                              "the box is its rest pose" % (S.get("rules"), "pushes" if m.get("policy") == "push" else "holds still for")},
+                   mesh=None, lights=[], parts={}, statement_makes=None)
+        return out
+    if piece.startswith("target:"):
+        t = (S.get("targets") or {}).get(piece[7:])
+        if t is None:
+            return None
+        out.update(layer="targets", kind="target", address="play/target/%s" % piece[7:], region="", object=piece[7:], position=t,
+                   materials=[], statement=None, statement_basis="targets are the map's (W), not the art's",
+                   collision={"blocks": True, "basis": "rules 3: a standing target blocks a body and has a top (graybox/RULES-3.md)"},
+                   mesh=None, lights=[], parts={}, statement_makes=None)
+        return out
+    O = R.objects(S)
+    root = piece
+    while root not in O and root.count(":") >= 2:
+        root = root.rsplit(":", 1)[0]
+    if root not in O:
+        return None
+    o = O[root]
+    names = [v["material"] for v in S["visuals"] if v["id"] == root or v["id"].startswith(root + ":")]
+    asset = next((v.get("asset") for v in S["visuals"] if v["id"] == root), None)
+    out.update(layer=o["kind"], kind=o["kind"], address=R.address(o), region=o["region"], object=root, picked=piece,
+               materials=_materials(S, names), geometry=R.geometry(o), statement=by_hash(o["by"]),
+               statement_makes=sum(1 for x in O.values() if x["by"] == o["by"]), changeable=R.CHANGEABLE.get(o["kind"], ""),
+               nearest_wall=R.nearest_wall(o, S), lights=o["lights"], parts=o["parts"],
+               mesh={"asset": asset, "source": (S.get("assets", {}).get(asset) or {})} if asset else None,
+               collision={"blocks": False, "basis": "dressing: the art carries no collision (art/check.py); the player moves against the play "
+                          "geometry and the movers alone"},
+               cell=[int(((o["boxes"][0][0] + o["boxes"][0][3]) / 2) // grid["cell"]), int(((o["boxes"][0][2] + o["boxes"][0][5]) / 2) // grid["cell"])])
+    return out
+
+
+def validate_info(live, k):
+    """Validate (0230): the art checks' rows as they were run when source k was compiled, and why it is refused if its
+    latest compile was; read back, not run again."""
+    s, latest = live.slot(k), (live.latest[k] if 0 <= k < len(live.latest) else None)
+    out = {"world": live.brief, "slot": k, "version": live.version, "served": s is not None}
+    if s is not None:
+        out.update(sha=s["sha"], label=s["label"], checks=s.get("checks"), verdict=s.get("verdict", ""), codes=s.get("codes", []),
+                   record=s.get("record"), basis="the art checks (art/check.py) as run when this scene was compiled; a candidate's are the "
+                   "director's (its verdict and codes)" if s.get("checks") is None else "the art checks (art/check.py) as run when this scene was compiled")
+    if latest is not None and not latest["ok"]:
+        out["refused"] = latest["message"][:2000]
+    return out
 
 
 def server(target, port=0):
@@ -986,6 +1108,20 @@ def server(target, port=0):
                                                   "page_age_s": None if hub.page_seen is None else round(time.time() - hub.page_seen, 1),
                                                   "bye_age_s": None if hub.page_bye is None else round(time.time() - hub.page_bye, 1),
                                                   "pid": os.getpid()}, sort_keys=True).encode("utf-8"), "application/json")
+            if path in ("/object.json", "/validate.json"):
+                qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
+                try:
+                    w = hub.world(qq.get("world"))
+                except studio.StudioError as e:
+                    return self.send(404, json.dumps({"ok": False, "code": e.code, "message": e.detail}).encode("utf-8"), "application/json")
+                if path == "/validate.json":
+                    return self.send(200, json.dumps(dict(validate_info(w, k), ok=True), sort_keys=True).encode("utf-8"), "application/json")
+                s, piece = w.slot(k), qq.get("piece", "")
+                got = object_info(s, piece) if s is not None and PIECE_GET.match(piece) else None
+                if got is None:
+                    return self.send(404, json.dumps({"ok": False, "code": "STUDIO-OBJECT", "message": "no piece %r in source %d's scene" % (piece[:80], k)}).encode("utf-8"),
+                                     "application/json")
+                return self.send(200, json.dumps(dict(got, ok=True), sort_keys=True).encode("utf-8"), "application/json")
             if path in FILES:
                 f, ctype = FILES[path]
                 with open(f, "rb") as fh:
@@ -1246,6 +1382,44 @@ def selftest():
                "/map/%s.json" % brief, "/graybox/web/sim.js", "/web/play.js"]
         codes = [get(srv, p)[0] for p in bad]
         row("named-paths-only", all(c == 404 for c in codes), "%d paths outside the named ones, every one 404" % len(bad))
+        # STUDIO-3 (0230): the shell's reads answer from the scene served and write nothing; Local Build compiles again
+        tags = os.path.join(REPO, "art", "ledger", brief + ".tags.json")
+        tags_before = open(tags, "rb").read() if os.path.exists(tags) else None
+        v0 = live.version
+        S0 = json.loads(body)
+        root = next(v["id"] for v in S0["visuals"] if v["id"].startswith("canopy:") and v["id"].count(":") == 1)
+        rib = next((v["id"] for v in S0["visuals"] if v["id"].startswith(root + ":")), root)      # a part reads as its object
+        line_no = next(i + 1 for i, ln in enumerate(base.decode("utf-8").split("\n")) if ln.startswith("canopy plaza") and " %s %s" % tuple(root.split(":")[1].replace("-", " ").split(" ")) in ln)
+        wall = next(c for c in S0["collision"] if c["kind"] == "wall")
+        jget = lambda path: (lambda c_b: (c_b[0], json.loads(c_b[1] or b"{}")))(get(srv, path))
+        c_o, o = jget("/object.json?piece=%s" % urllib.parse.quote(rib))
+        c_w, w = jget("/object.json?piece=%s" % urllib.parse.quote("play:" + wall["id"]))
+        refused_reads = [get(srv, "/object.json?piece=%s" % urllib.parse.quote(x))[0] for x in ("nope:1", "../art/play.py", "", "canopy:" + "9" * 200)]
+        tags_after = open(tags, "rb").read() if os.path.exists(tags) else None
+        row("shell-object-read", c_o == 200 and o["object"] == root and o["statement"]["line"] == line_no and o["collision"]["blocks"] is False
+            and c_w == 200 and w["collision"]["blocks"] is True and w["statement"]["key"] == "surface wall" and refused_reads == [404] * 4
+            and tags_before == tags_after and live.version == v0,
+            "%s reads as its object %s, made by line %d; a wall is the map's and blocks (surface wall); four bad pieces 404; no tag written, v%d" % (rib, root, line_no, v0))
+        c_v, val = jget("/validate.json")
+        out_, _mb, _mf = compile_scene(brief, art)
+        names = [c for c, _ok, _d in check.verify(out_, None, D=check.gcheck.source_rows(out_["W"]))]
+        row("shell-validate-read", c_v == 200 and val["sha"] == s0["sha"] and [r[0] for r in val["checks"]] == names and all(r[1] for r in val["checks"]),
+            "%d check rows, as compiled for scene %s, every one passed" % (len(val["checks"]), s0["sha"][:12]))
+        page = get(srv, "/play.html")[1].decode("utf-8")
+        tok = re.search(r'data-studio="([0-9a-f]+)"', page).group(1)
+
+        def build(token):
+            rq = urllib.request.Request("http://127.0.0.1:%d/studio/build" % srv.server_address[1], data=b"{}", method="POST",
+                                        headers={"Content-Type": "application/json", "X-Studio-Token": token})
+            try:
+                with urllib.request.urlopen(rq, timeout=120) as r:
+                    return r.status, json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                return e.code, {}
+        c_b, bres = build(tok)
+        c_x, _x = build("0" * 32)
+        row("shell-local-build", c_b == 200 and bres["ok"] and bres["lines"] == [] and all(s_["ok"] for s_ in bres["slots"]) and c_x == 403 and sha(0) == s0["sha"],
+            "Build now: every source compiled again in %d ms, nothing changed, scene %s still served; without the token 403" % (bres.get("ms", -1), s0["sha"][:12]))
         st = json.loads(get(srv, "/live")[1])
         c1 = live.slot(1)
         row("intent-served", c1 is not None and st["slots"][1]["served"]["verdict"] == "CLEAN" and st["slots"][1]["served"]["map_sha"] == s0["map_sha"],
@@ -1283,6 +1457,9 @@ def selftest():
             row("refused-keeps: " + name, ok and not st["ok"] and want in st["message"] and sha(0) == s1["sha"]
                 and sha256(get(srv, "/scene/%s.json" % brief)[1]) == s1["sha"],
                 "refused (%s); scene %s still served" % (want, s1["sha"][:12]))
+        _c, val = (lambda c_b: (c_b[0], json.loads(c_b[1] or b"{}")))(get(srv, "/validate.json"))
+        row("shell-validate-refused", "solid" in val.get("refused", "") and val.get("sha") == s1["sha"] and all(r[1] for r in val.get("checks") or [[0, False]]),
+            "Validate says the latest compile was refused (a mover through a wall) and shows the checks of scene %s, the one drawn" % s1["sha"][:12])
         # 0226: an edit that adds a lift is served, the scene naming its rules (rules 3 since 0229) and carrying the mover
         # for the page to play
         v = live.version
