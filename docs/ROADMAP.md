@@ -4089,6 +4089,56 @@ SELFTEST 74/74 in 4 of 4 runs after it; STUDIO-2 SELFTEST 19/19 in 15 of 16 runs
 not known); LIVE SELFTEST 18/18, STUDIO APP SELFTEST 12/12, STUDIO-TXN SELFTEST PASSED. Not measured: the new row on
 Windows, which is where the reset happens; his run of the rest of 0223's list is still to come.
 
+**0224 on his machine, and 0225: RULES-2, movers, in the simulation and its twin (2026-10-14).** His run of 0224, on
+Windows: STUDIO SELFTEST 74/74, the new row among them, so a refusal now reaches the client where the reset happens
+(MEASURED there); STUDIO-2 SELFTEST 19/19; LIVE SELFTEST 18/18; STUDIO APP SELFTEST 13/13 (the row reading a live
+job's process list runs on Windows only); RUNG SELFTEST 17/17, the classifier giving 0224 rung D; PLANTS HELD (25
+refused before, 65 after); the gate 251 rows / 0 fail; pushed b3050b1..52670bd. That closes the three items of his
+order of 2026-10-13 that came before RULES-2 (0221 to 0223, and 0224 their fix). With it came his document
+*Verification Complete: The Foundation Is Solid*, whose first milestone for RULES-2 is one mover and one rider (the
+platform empty, a player standing on it, the player jumping off mid-motion), and three checks before it: the rules'
+version in the tick's hash, independent test vectors, and a disposition for overflow. Where it describes the
+foundation as proven 32-bit fixed point, that is not this repository: the simulation is binary64 under RULES-1, and
+what has been compared between two machines is the exporter's bytes (0221), not a tick. **0225, built, off the
+gate.** [`graybox/RULES-2.md`](../graybox/RULES-2.md): rules 1 with movers — boxes on one axis whose coordinates are
+multiples of `Q` = 1/256 m below 1,024 m, moving ping-pong by whole phase units, so none of a mover's arithmetic rounds
+in any engine; the mover step a slot of the tick after the spawn and before the yaw, one code path (a world without
+movers plays the same ticks); a rider (on the ground, feet exactly on the top, overlapping in plan) carried by the
+exact displacement, or the mover stopped when the carried body would be blocked; a mover that would enter a player
+stopped (policy `stop`); a box wholly above the head a ceiling; a parked mover a static box; and a world refused
+(`RULES2-MOVER`) unless every mover is slow enough that no tick can pass it through a player (`speed·Q < 2·radius + t`
+along x or z, `height + t` along y). Every rules-2 hash is FNV-1a 64 seeded with an identity: `VERDANDI-RULES 2`, then
+every constant (gravity and the timestep among them), the input contract's version, the map and every mover, each
+number as its bits; the identity's own hash is reported beside a run. `GrayboxSim.withRules(2)` in `sim.js` (the
+default stays rules 1) and `tick_ref.py rules2`, both written from the document. His three checks, as built: the
+version and every parameter in every tick's hash (the identity); independent answers ([`rules2_cases.json`](../graybox/web/rules2_cases.json),
+eleven cases whose values were worked by hand from the document, with the working, each implementation held to them
+and not to the other, then to each other); overflow refused where a world is made (the bounds above), so no integer of
+the mover arithmetic is ever outside what a double holds exactly. His milestone is K2 (a rider carried out and back,
+x 46.25 at tick 1, 50 at 16, 49.75 at 17, 46 at 32), K4 (a rider jumping off mid-motion keeps none of the motion, x
+47.25 at ticks 5, 6 and 8) and W2 (3,000 ticks of the stress run from the platform's top). MEASURED in the container:
+`tick_ref.py rules2` RULES 2 HELD BY PYTHON (every worked value; K11, no movers, 157 ticks the same bytes as rules 1's but for the empty list of movers;
+W1 and W2, 6,000 and 3,000 ticks among a deck, a lift and a wall, no tick ending with the body inside a box) and its
+five plants in the Python tick each caught by a worked case (no carry, a wrap past 2·len, no stop, no ceiling, no
+tunnelling bound); node v22 and headless Chromium 141 (`trace.py run tactical --rules2`) each RULES 2 HELD BY PYTHON
+AND THE ENGINE, every snapshot, hash and identity the same over 9,284 ticks; rules 1 unchanged: GRAYBOX SELFTEST 30/30
+and 27/27, TICK REFERENCE VERIFIED, TICK-REF SELFTEST PASSED, RULES REFERENCE PASSED, INPUT CONTRACT HELD BY PYTHON AND
+THE BROWSER. NOT_MEASURED: Firefox (none in the container), and his machine. No page plays rules 2 yet.
+
+**A measurement for his open-world proposal (`graybox/translate_probe.py`).** His second document, *The Continuous
+Open-World Coordinate Solution*, rests its determinism on moving the origin changing nothing. The probe plays rules 1's
+stress run (3,600 ticks, from spawn A) on the tactical map and on the same map moved by 2^k m along x and z, k = 7, 10,
+14, 17, 20 and 23 (a whole number of cells), and sets the two runs against each other tick by tick. MEASURED: at every
+offset the runs part from tick 1; the widest gap grows from 5.65e-13 m (128 m) to 3.95e-08 m (8,388.61 km), where
+doubles are 1.86e-09 m apart; in no run did a cell, the footing or a hit differ. So rules 1 are deterministic and not
+translation-invariant bit for bit: a world rebased in the middle of a run plays different bits afterwards, which makes
+a rebase a step of the rules, at a defined tick, done the same by both implementations, and not a change of view or an
+admission. What it does not show: another map, a longer run (a gap can grow until a discrete outcome differs), rules 2,
+or an engine other than Python's arithmetic. Next: 0226, the art language's mover statement (`art/dress.py`, which
+moves every world's head once, with the number grammar's fix), QUALITY-0 and ADMISSION-0 learning movers, the scene
+renderer drawing them, the plaza playing `withRules(2)` by the version handshake, and the exporter's checks of swept
+boxes against rock, spawns and each other; his references frozen again after it.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

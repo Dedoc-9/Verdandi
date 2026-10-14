@@ -1,0 +1,883 @@
+{
+ "format": "VERDANDI-RULES2-CASES",
+ "version": "1",
+ "rules": "2",
+ "map": "tactical",
+ "about": "Rules 2's cases (graybox/RULES-2.md): each a map's movers, a start and inputs, with values worked by hand from RULES-2.md at chosen ticks ('expect'), and the working ('why'). Both implementations are held to these values, not to each other's output; then to each other, every tick's snapshot and hash. The north lane's open floor of the tactical map, cells 22 to 27 by 3 to 5 (x 44 to 56 m, z 6 to 12 m), holds every mover. A number here is a binary fraction or a decimal a double holds as the rules compute it, so equality is exact.",
+ "cases": [
+  {
+   "name": "K1 a ping-pong mover's phases",
+   "movers": [
+    {
+     "id": "m",
+     "box": [
+      46,
+      0,
+      8,
+      48,
+      0.5,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 4,
+     "speed": 3,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "n": 8,
+     "in": {}
+    }
+   ],
+   "why": "2*len = 8. Each tick n = p + 3, less 8 when it reaches 8: 3, 6, 9-8=1, 4, 7, 10-8=2, 5, 8-8=0. The player is at spawn A, far from the box: never a rider, never met.",
+   "expect": [
+    {
+     "tick": 1,
+     "movers": [
+      {
+       "phase": 3,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 2,
+     "movers": [
+      {
+       "phase": 6,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 3,
+     "movers": [
+      {
+       "phase": 1,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 4,
+     "movers": [
+      {
+       "phase": 4,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 5,
+     "movers": [
+      {
+       "phase": 7,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 6,
+     "movers": [
+      {
+       "phase": 2,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 7,
+     "movers": [
+      {
+       "phase": 5,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 8,
+     "movers": [
+      {
+       "phase": 0,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "K2 a rider carried exactly, out and back",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      44,
+      0,
+      6,
+      48,
+      0.5,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 32,
+     "in": {}
+    }
+   ],
+   "why": "speed 64 = 0.25 m a tick. The player stands on the top (feet 0.5 = y1, on the ground, over the box): a rider, carried by the exact displacement before anything else of the tick. Out for 16 ticks (phase 1024 = len, o = 1024, x0 = 48): x = 46 + 16 * 0.25 = 50. Tick 17: phase 1088, o = 2048 - 1088 = 960, the box back 0.25: x = 49.75. Tick 32: phase 2048 - 2048 = 0, x = 46. The height step: before = 0.5, gravity takes feet below 0.5, the box's top (0.5 <= before + step) is the ground: feet = 0.5, on the ground, every tick.",
+   "expect": [
+    {
+     "tick": 1,
+     "x": 46.25,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true,
+     "vy": 0,
+     "movers": [
+      {
+       "phase": 64,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 16,
+     "x": 50,
+     "feet": 0.5,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 1024,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 17,
+     "x": 49.75,
+     "feet": 0.5,
+     "movers": [
+      {
+       "phase": 1088,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 32,
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 0,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "K3 a mover stops at a player standing in its way",
+   "movers": [
+    {
+     "id": "block",
+     "box": [
+      44,
+      0,
+      6,
+      46,
+      2,
+      8
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 48.5,
+     "z": 7,
+     "feet": 0,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 20,
+     "in": {}
+    }
+   ],
+   "why": "x1 after t ticks = 46 + 0.25 t. The circle (radius 0.35 at x 48.5, z 7 inside the box's z 6..8) is overlapped when 48.5 - x1 < 0.35, x1 > 48.15. Tick 8: x1 = 48 (not); tick 9 would make it 48.25 (yes), and the box reaches the body (y1 2 > feet 0, y0 0 < 1.8): the step is refused, phase held at 8 * 64 = 512, stopped. It stays so while the player stands.",
+   "expect": [
+    {
+     "tick": 8,
+     "x": 48.5,
+     "movers": [
+      {
+       "phase": 512,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 9,
+     "x": 48.5,
+     "movers": [
+      {
+       "phase": 512,
+       "stopped": true
+      }
+     ]
+    },
+    {
+     "tick": 20,
+     "x": 48.5,
+     "feet": 0,
+     "movers": [
+      {
+       "phase": 512,
+       "stopped": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "K4 a rider jumps off mid-motion",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      44,
+      0,
+      6,
+      48,
+      0.5,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 64,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 4,
+     "in": {}
+    },
+    {
+     "n": 1,
+     "in": {
+      "jump": true
+     }
+    },
+    {
+     "n": 3,
+     "in": {}
+    }
+   ],
+   "why": "Ticks 1-4 carry the rider to x = 47. Tick 5: the mover's step comes before the height step, so the rider, still on the ground, is carried to 47.25; then the jump: vy = 7 - 20/120, off the ground. From tick 6 the player is not a rider (not on the ground): x stays 47.25 (no input walks, and the rules give a player no horizontal velocity), while the box goes on (phase 6 * 64 = 384 at tick 6, 512 at tick 8; its top 0.5 is below the feet, so it never reaches the body).",
+   "expect": [
+    {
+     "tick": 4,
+     "x": 47,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 256,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 5,
+     "x": 47.25,
+     "onGround": false,
+     "movers": [
+      {
+       "phase": 320,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 6,
+     "x": 47.25,
+     "onGround": false,
+     "movers": [
+      {
+       "phase": 384,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 8,
+     "x": 47.25,
+     "onGround": false,
+     "movers": [
+      {
+       "phase": 512,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "K5 a parked mover is a static box under its rider",
+   "movers": [
+    {
+     "id": "parked",
+     "box": [
+      44,
+      0,
+      6,
+      48,
+      0.5,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 0,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 10,
+     "in": {}
+    }
+   ],
+   "why": "speed 0: the mover's step changes nothing and it is not stopped. The player stands on its top: feet 0.5 = the ground the box gives, x 46, every tick.",
+   "expect": [
+    {
+     "tick": 10,
+     "x": 46,
+     "z": 8,
+     "feet": 0.5,
+     "onGround": true,
+     "vy": 0,
+     "movers": [
+      {
+       "phase": 0,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "K6 a lift carries its rider up and back",
+   "movers": [
+    {
+     "id": "lift",
+     "box": [
+      44,
+      0,
+      6,
+      46,
+      0.25,
+      8
+     ],
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "len": 512,
+     "speed": 32,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 45,
+     "z": 7,
+     "feet": 0.25,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 17,
+     "in": {}
+    }
+   ],
+   "why": "speed 32 = 0.125 m a tick up. A rider on the plate (feet 0.25 = y1): feet = 0.25 + 0.125 t, exact. Tick 16: phase 512 = len, feet = 2.25. Tick 17: phase 544, o = 1024 - 544 = 480, the plate down 0.125: feet = 2.125. The ground each tick is the plate's top (at the feet, so within a step of before).",
+   "expect": [
+    {
+     "tick": 1,
+     "feet": 0.375,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 32,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 16,
+     "feet": 2.25,
+     "x": 45,
+     "z": 7,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 512,
+       "stopped": false
+      }
+     ]
+    },
+    {
+     "tick": 17,
+     "feet": 2.125,
+     "onGround": true,
+     "movers": [
+      {
+       "phase": 544,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "K7 a box above the head stops a jump",
+   "movers": [
+    {
+     "id": "slab",
+     "box": [
+      44,
+      2.75,
+      6,
+      48,
+      3,
+      10
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1,
+     "speed": 0,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 46,
+     "z": 8,
+     "feet": 0,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "n": 1,
+     "in": {
+      "jump": true
+     }
+    },
+    {
+     "n": 30,
+     "in": {}
+    }
+   ],
+   "why": "The slab's underside, 2.75, is wholly above the head (0 + 1.8): a ceiling, not a wall. A jump from rest: after t ticks feet = the sum over i = 1..t of (7 - 20 i / 120) / 120, as rules 1 compute it; the head (feet + 1.8) first passes 2.75 at tick 23 (feet would be 0.9583...), so feet = 2.75 - 1.8 = 0.95 (the double) and vy, still rising (7 - 23/6 > 0), = 0. Free, the jump would rise to 1.225.",
+   "expect": [
+    {
+     "tick": 23,
+     "feet": 0.95,
+     "vy": 0,
+     "onGround": false,
+     "movers": [
+      {
+       "phase": 0,
+       "stopped": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "K8 the tunnelling bound along x: the last speed admitted",
+   "movers": [
+    {
+     "id": "thin",
+     "box": [
+      44,
+      0,
+      6,
+      44.25,
+      2,
+      8
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 243,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "why": "t = 0.25: the bound is 2 * 0.35 + 0.25 = 0.95 (the double). 243/256 = 0.94921875 < 0.95: admitted.",
+   "expect_refused": false
+  },
+  {
+   "name": "K9 the tunnelling bound along x: the first speed refused",
+   "movers": [
+    {
+     "id": "thin",
+     "box": [
+      44,
+      0,
+      6,
+      44.25,
+      2,
+      8
+     ],
+     "axis": [
+      1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 244,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "why": "244/256 = 0.953125, not below 0.95: refused (RULES2-MOVER).",
+   "expect_refused": "RULES2-MOVER"
+  },
+  {
+   "name": "K10 the tunnelling bound along y: either side of it",
+   "movers": [
+    {
+     "id": "lift",
+     "box": [
+      44,
+      0,
+      6,
+      46,
+      0.25,
+      8
+     ],
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "len": 1024,
+     "speed": 525,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "n": 1,
+     "in": {}
+    }
+   ],
+   "why": "Along y the bound is height + t = 1.8 + 0.25 = 2.05 (the double). 525/256 = 2.05078125 is not below it: refused. (524/256 = 2.046875 would be admitted; K6 runs well below it.)",
+   "expect_refused": "RULES2-MOVER"
+  },
+  {
+   "name": "K11 no movers: rules 2 play rules 1's ticks",
+   "movers": [],
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "n": 30,
+     "in": {
+      "f": true
+     }
+    },
+    {
+     "n": 1,
+     "in": {
+      "f": true,
+      "jump": true
+     }
+    },
+    {
+     "n": 60,
+     "in": {
+      "f": true,
+      "dyaw": 0.01
+     }
+    },
+    {
+     "n": 5,
+     "in": {
+      "fire": true
+     }
+    },
+    {
+     "n": 20,
+     "in": {
+      "l": true,
+      "dpitch": -0.02
+     }
+    },
+    {
+     "n": 1,
+     "in": {
+      "side": "B"
+     }
+    },
+    {
+     "n": 40,
+     "in": {
+      "b": true,
+      "r": true
+     }
+    }
+   ],
+   "why": "With no movers every predicate of rules 2 is rules 1's (no box is over, no ceiling, the ground the cells'), so every field of rules 1 is the same bits in every tick; the snapshot adds an empty list of movers. Held against rules 1 played on the same start and inputs.",
+   "rules1_equal": true
+  },
+  {
+   "name": "W1 the stress run among three movers, from spawn A",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      8,
+      0,
+      26,
+      12,
+      0.5,
+      30
+     ],
+     "axis": [
+      0,
+      0,
+      1
+     ],
+     "len": 1024,
+     "speed": 48,
+     "policy": "stop"
+    },
+    {
+     "id": "lift",
+     "box": [
+      4,
+      0,
+      34,
+      6,
+      0.25,
+      36
+     ],
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "len": 768,
+     "speed": 16,
+     "policy": "stop"
+    },
+    {
+     "id": "wall",
+     "box": [
+      14,
+      0,
+      20,
+      14.5,
+      2.5,
+      24
+     ],
+     "axis": [
+      -1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 96,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A"
+   },
+   "inputs": [
+    {
+     "stress": 6000
+    }
+   ],
+   "why": "No value is worked by hand here: a long run (rules 1's stress inputs, made from integers in both implementations: walking, turning, jumps, shots, a change of side at the middle) among a platform sliding along z, a lift and a wall sliding along x near spawn A, for the two implementations to be held to each other tick by tick, and to the invariant RULES-2.md's stop and blocked give: no tick ends with the body inside a box unless standing on its top.",
+   "invariant": "never inside"
+  },
+  {
+   "name": "W2 the stress run from the platform's top",
+   "movers": [
+    {
+     "id": "deck",
+     "box": [
+      8,
+      0,
+      26,
+      12,
+      0.5,
+      30
+     ],
+     "axis": [
+      0,
+      0,
+      1
+     ],
+     "len": 1024,
+     "speed": 48,
+     "policy": "stop"
+    },
+    {
+     "id": "lift",
+     "box": [
+      4,
+      0,
+      34,
+      6,
+      0.25,
+      36
+     ],
+     "axis": [
+      0,
+      1,
+      0
+     ],
+     "len": 768,
+     "speed": 16,
+     "policy": "stop"
+    },
+    {
+     "id": "wall",
+     "box": [
+      14,
+      0,
+      20,
+      14.5,
+      2.5,
+      24
+     ],
+     "axis": [
+      -1,
+      0,
+      0
+     ],
+     "len": 1024,
+     "speed": 96,
+     "policy": "stop"
+    }
+   ],
+   "start": {
+    "side": "A",
+    "set": {
+     "x": 10,
+     "z": 28,
+     "feet": 0.5,
+     "onGround": true
+    }
+   },
+   "inputs": [
+    {
+     "stress": 3000
+    }
+   ],
+   "why": "The same, the player starting as the platform's rider.",
+   "invariant": "never inside"
+  }
+ ]
+}

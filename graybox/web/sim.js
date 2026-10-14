@@ -13,14 +13,16 @@
 // state and input give the same next state, bit for bit, in every conforming engine (the contract: graybox/README.md).
 // Rules 0 are the rules as first built, calling the engine's Math.sin, Math.cos, Math.hypot and Math.atan2, whose last
 // bits the language leaves to the engine; they are kept to measure the old baseline against, and nothing else uses
-// them.
+// them. Rules 2 (graybox/RULES-2.md, 0225) are rules 1 with movers — boxes that slide along one axis, carry a player
+// standing on them and stop rather than move into one — and a state hash bound to the rules, every constant and the
+// world: GrayboxSim.withRules(2). A world without movers plays the same ticks under rules 2 as under rules 1.
 
 (function (root, factory) {
   // make(rules) builds one instance of the simulation under those rules; its fresh() builds another, under the same
   // rules, that shares no variable with the first (the self-test resumes snapshots in fresh instances, to show that the
   // state holds everything a tick reads). source is the factory's text, for the self-test's reading of its own code.
   const make = function (rules) {
-    const m = factory(rules === 0 ? 0 : 1);
+    const m = factory(rules === 0 ? 0 : rules === 2 ? 2 : 1);
     m.fresh = function () { return make(m.RULES); };
     m.withRules = make;
     m.source = String(factory);
@@ -39,6 +41,8 @@
   // The rules, frozen, so that no tick and no page can change them in the middle of a run. (Frozen here rather than
   // in the declaration: art/check.py reads the player's numbers from the declaration's text.)
   Object.freeze(P);
+  // rules 2 (RULES-2.md): the body's height, used against movers only, and a mover's phase unit, metres
+  const BODY = 1.8, Q = 1 / 256;
 
   // ---------------------------------------------------------------- the rules' arithmetic (rules 1)
   // A tick's numbers come from operations ECMA-262 fixes to the last bit: + - * / % (IEEE 754 binary64, round to
@@ -278,6 +282,16 @@
     this.w = C.w; this.h = C.h; this.cell = C.cell; this.tops = C.tops; this.wall = W.wall;
     this.spawns = W.spawns; this.objective = W.objective; this.targetDefs = W.targets;
     this.probes = W.probes; this.routes = W.routes;
+    // rules 2: the movers, each checked as RULES-2.md's table says (RULES2-MOVER), and the identity every tick's hash
+    // starts from; rules 0 and 1 have none, and refuse a world that has
+    this.movers = [];
+    if (RULES === 2) {
+      this.movers = checkMovers(map.movers || []);
+      this.identity = identityText(this);
+      this.identityState = fnv64(FNV64_OFFSET, new TextEncoder().encode(this.identity));
+    } else if (map.movers && map.movers.length) {
+      throw new Error("RULES2-MOVER: rules " + RULES + " have no movers; a world with movers is played under rules 2");
+    }
   }
   World.prototype.top = function (i, j) {
     if (i < 0 || j < 0 || i >= this.w || j >= this.h) return Infinity;
@@ -298,7 +312,7 @@
     }
   }
 
-  function blocked(world, s, x, z, feet) {
+  function blocked(world, s, x, z, feet, k, bk) {
     let b = false;
     touching(world, x, z, P.radius, function (i, j) { if (world.top(i, j) > feet + P.step) b = true; });
     if (b) return true;
@@ -306,6 +320,9 @@
       if (!t.up) continue;
       const dx = x - t.x, dz = z - t.z, rr = P.radius + P.targetRadius;
       if (dx * dx + dz * dz < rr * rr && feet < t.y + P.targetHeight) return true;
+    }
+    if (RULES === 2) {   // a box the player cannot step onto that reaches into the body (RULES-2.md)
+      for (const bx of boxesOf(world, s, k, bk)) if (over(x, z, bx) && bx.y1 > feet + P.step && bx.y0 < feet + BODY) return true;
     }
     return false;
   }
@@ -315,6 +332,112 @@
     touching(world, x, z, P.radius, function (i, j) { const t = world.top(i, j); if (t > g) g = t; });
     return g;
   }
+
+  // ---------------------------------------------------------------- the movers (rules 2, RULES-2.md)
+  function isQ(v) { return typeof v === "number" && v === v && Math.abs(v) < 1024 && v * 256 === Math.floor(v * 256); }
+  function isInt(v, lo, hi) { return typeof v === "number" && v === Math.floor(v) && v >= lo && v <= hi; }
+  function checkMovers(list) {
+    if (!Array.isArray(list)) throw new Error("RULES2-MOVER: the movers are not a list");
+    const seen = {}, out = [];
+    for (const m of list) {
+      const no = function (why) { throw new Error("RULES2-MOVER: mover " + JSON.stringify(m && m.id) + ": " + why); };
+      if (!m || typeof m.id !== "string" || m.id === "" || seen[m.id]) no("its id is not text, or not unique");
+      seen[m.id] = true;
+      const b = m.box;
+      if (!Array.isArray(b) || b.length !== 6 || !b.every(isQ)) no("its box is not six multiples of 1/256 m below 1,024 m");
+      if (!(b[0] < b[3] && b[1] < b[4] && b[2] < b[5])) no("its box has no extent on some axis");
+      const a = m.axis;
+      if (!Array.isArray(a) || a.length !== 3 || !a.every(function (v) { return v === 0 || v === 1 || v === -1; }) ||
+          Math.abs(a[0]) + Math.abs(a[1]) + Math.abs(a[2]) !== 1) no("its axis is not one of x, y, z, either way");
+      if (!isInt(m.len, 1, 262144)) no("its len is not an integer from 1 to 2^18");
+      if (!isInt(m.speed, 0, m.len)) no("its speed is not an integer from 0 to its len");
+      if (m.policy !== "stop") no("its policy is not stop");
+      const t = a[0] !== 0 ? b[3] - b[0] : a[1] !== 0 ? b[4] - b[1] : b[5] - b[2];
+      const bound = a[1] !== 0 ? BODY + t : 2 * P.radius + t;
+      if (!(m.speed * Q < bound)) no("it moves " + m.speed * Q + " m a tick, not less than the tunnelling bound " + bound + " m");
+      out.push(Object.freeze({ id: m.id, box: Object.freeze({ x0: b[0], y0: b[1], z0: b[2], x1: b[3], y1: b[4], z1: b[5] }),
+                               axis: Object.freeze([a[0], a[1], a[2]]), len: m.len, speed: m.speed, policy: m.policy }));
+    }
+    return Object.freeze(out);
+  }
+  function poseOf(m, p) {
+    const o = p < m.len ? p : 2 * m.len - p, d = o * Q, a = m.axis, b = m.box;
+    return { x0: b.x0 + a[0] * d, y0: b.y0 + a[1] * d, z0: b.z0 + a[2] * d, x1: b.x1 + a[0] * d, y1: b.y1 + a[1] * d, z1: b.z1 + a[2] * d };
+  }
+  // the circle of the player's radius at (x, z) overlaps the box in plan, strictly
+  function over(x, z, b) {
+    const px = Math.max(b.x0, Math.min(x, b.x1)), pz = Math.max(b.z0, Math.min(z, b.z1));
+    const dx = x - px, dz = z - pz;
+    return dx * dx + dz * dz < P.radius * P.radius;
+  }
+  // every mover's pose at its phase; mover k at `bk` instead, when k is given
+  function boxesOf(world, s, k, bk) {
+    const out = [];
+    for (let i = 0; i < world.movers.length; i++) out.push(i === k ? bk : poseOf(world.movers[i], s.movers[i].phase));
+    return out;
+  }
+  // the tops at or under the body, as high as a step above `before`, and the cells' ground
+  function groundAt2(world, s, x, z, before) {
+    let g = groundAt(world, x, z);
+    for (const b of boxesOf(world, s)) if (over(x, z, b) && b.y1 <= before + P.step && b.y1 > g) g = b.y1;
+    return g;
+  }
+  // the lowest underside wholly above the head
+  function ceilingAt(world, s, x, z, before) {
+    let c = Infinity;
+    for (const b of boxesOf(world, s)) if (over(x, z, b) && b.y0 >= before + BODY && b.y0 < c) c = b.y0;
+    return c;
+  }
+  // the mover step: each mover in the world's order (RULES-2.md, A mover's step)
+  function moversStep(world, s) {
+    for (let k = 0; k < world.movers.length; k++) {
+      const m = world.movers[k], st = s.movers[k];
+      if (m.speed === 0) { st.stopped = false; continue; }
+      let n = st.phase + m.speed;
+      if (n >= 2 * m.len) n = n - 2 * m.len;
+      const a = poseOf(m, st.phase), b = poseOf(m, n);
+      const dx = b.x0 - a.x0, dy = b.y0 - a.y0, dz = b.z0 - a.z0;
+      if (s.onGround && s.feet === a.y1 && over(s.x, s.z, a)) {
+        const nx = s.x + dx, nz = s.z + dz, nf = s.feet + dy;
+        if (!blocked(world, s, nx, nz, nf, k, b)) { st.phase = n; s.x = nx; s.z = nz; s.feet = nf; st.stopped = false; }
+        else st.stopped = true;
+      } else if (over(s.x, s.z, b) && b.y1 > s.feet && b.y0 < s.feet + BODY) {
+        st.stopped = true;
+      } else {
+        st.phase = n; st.stopped = false;
+      }
+    }
+  }
+  // the identity every rules-2 hash starts from (RULES-2.md, The state's hash): the rules, every constant and the world
+  function identityText(world) {
+    const enc = function (v) {
+      if (typeof v === "number") return "f" + bitsOf(v);
+      if (typeof v === "string") return "s" + v;
+      if (v === null) return null;
+      if (Array.isArray(v)) return v.map(enc);
+      const o = {};
+      for (const k of Object.keys(v).sort()) o[k] = enc(v[k]);
+      return o;
+    };
+    const p = {};
+    for (const k of Object.keys(P)) p[k] = P[k];
+    p.height = BODY;
+    const spawns = {};
+    for (const k of Object.keys(world.spawns).sort()) { const sp = world.spawns[k]; spawns[k] = [sp.x, sp.z, sp.yaw]; }
+    const doc = { P: p, Q: Q, TICK: TICK, input: INPUT, pitch: 1.45, rules: 2, stand: 1e-9,
+                  world: { cell: world.cell, h: world.h, w: world.w, tops: world.tops,
+                           movers: world.movers.map(function (m) { return [m.id, m.box.x0, m.box.y0, m.box.z0, m.box.x1, m.box.y1, m.box.z1,
+                                                                            m.axis[0], m.axis[1], m.axis[2], m.len, m.speed, m.policy]; }),
+                           objective: world.objective ? world.objective.rect : null, spawns: spawns,
+                           targets: world.targetDefs.map(function (t) { return [t.id, t.x, t.z]; }) } };
+    return "VERDANDI-RULES 2\n" + JSON.stringify(enc(doc));
+  }
+  const FNV64_OFFSET = 0xcbf29ce484222325n, FNV64_PRIME = 0x100000001b3n, FNV64_MASK = (1n << 64n) - 1n;
+  function fnv64(h, bytes) {
+    for (let i = 0; i < bytes.length; i++) { h ^= BigInt(bytes[i]); h = (h * FNV64_PRIME) & FNV64_MASK; }
+    return h;
+  }
+  function hex64(h) { return ("0000000000000000" + h.toString(16)).slice(-16); }
 
   // ---------------------------------------------------------------- the state
   function newState(world, side) {
@@ -327,6 +450,7 @@
       }),
       fx: { hitMarker: 0, flash: {}, lastShot: null },   // feedback for the view: not part of the authoritative state
     };
+    if (RULES === 2) s.movers = world.movers.map(function () { return { phase: 0, stopped: false }; });
     spawn(world, s, s.side);
     return s;
   }
@@ -382,6 +506,7 @@
     s.tick += 1;
     if (inp.side) spawn(world, s, inp.side);
     else if (inp.reset) spawn(world, s, s.side);
+    if (RULES === 2) moversStep(world, s);
     s.yaw = wrap(s.yaw + (inp.dyaw || 0));
     s.pitch = clamp(s.pitch + (inp.dpitch || 0), -1.45, 1.45);
     // walking: forward is -z at yaw 0 and +x at yaw 90 degrees; right is +x at yaw 0
@@ -395,11 +520,18 @@
       moveAxis(world, s, 0, mz);
     }
     // gravity, the jump, the ground
-    const wasOnGround = s.onGround;
+    const wasOnGround = s.onGround, before = s.feet;
     if (inp.jump && s.onGround) { s.vy = P.jump; s.onGround = false; }
     s.vy -= P.gravity * TICK;
     s.feet += s.vy * TICK;
-    const g = groundAt(world, s.x, s.z);
+    let g;
+    if (RULES === 2) {   // a box above the head stops the rise; the tops under the body are ground (RULES-2.md, step 7)
+      const c = ceilingAt(world, s, s.x, s.z, before);
+      if (s.feet + BODY > c) { s.feet = c - BODY; if (s.vy > 0) s.vy = 0; }
+      g = groundAt2(world, s, s.x, s.z, before);
+    } else {
+      g = groundAt(world, s.x, s.z);
+    }
     if (s.feet <= g || (wasOnGround && s.vy <= 0 && s.feet - g <= P.step)) {
       s.feet = g; s.vy = 0; s.onGround = true;
     } else {
@@ -550,9 +682,16 @@
   // FNV-1a over each number's 8 bytes, little-endian (as a Float64Array lays them on every platform a browser runs on;
   // written with a DataView so that the order is the hash's, not the platform's)
   const HV = new DataView(new ArrayBuffer(8));
-  function hash(s) {
+  function hash(s, world) {
     const nums = [s.tick, s.x, s.z, s.feet, s.vy, s.yaw, s.pitch, s.onGround ? 1 : 0, s.cooldown, s.score, s.shots, s.onObjective ? 1 : 0];
     for (const t of s.targets) nums.push(t.up ? 1 : 0, t.downFor);
+    if (RULES === 2) {   // FNV-1a 64 from the identity's state: the rules, the constants and the world in every hash
+      if (!world || world.identityState === undefined) throw new Error("a rules-2 hash is bound to its world: hash(s, world)");
+      for (const mv of s.movers) nums.push(mv.phase, mv.stopped ? 1 : 0);
+      const bytes = new Uint8Array(nums.length * 8);
+      for (let i = 0; i < nums.length; i++) { HV.setFloat64(0, nums[i], true); for (let k = 0; k < 8; k++) bytes[i * 8 + k] = HV.getUint8(k); }
+      return hex64(fnv64(world.identityState, bytes)) + s.side;
+    }
     let h = 0x811c9dc5;
     for (const v of nums) {
       HV.setFloat64(0, v, true);
@@ -1264,9 +1403,44 @@
 
   const RULES0_BASELINE = { tactical: "91350c39A", witness: "ce819a52A" };
 
+  // ---------------------------------------------------------------- rules 2's table of cases (web/rules2_cases.json)
+  // Each case: a map's movers, a start (a side, then fields set), inputs ({n, in} runs); played here, every tick's
+  // snapshot and hash sent back with the world's identity, for graybox/tick_ref.py rules2 to hold to the values worked
+  // by hand and to Python's own run. A world this refuses is sent back refused, with why.
+  const SETTABLE = ["feet", "onGround", "pitch", "vy", "x", "yaw", "z"];
+  function rules2Cases(map, table) {
+    if (RULES !== 2) throw new Error("rules2Cases runs under rules 2");
+    const out = [];
+    for (const c of table.cases) {
+      const r = { name: c.name };
+      try {
+        const world = new World(Object.assign({}, map, { movers: c.movers || [] }));
+        const s = newState(world, (c.start && c.start.side) || "A");
+        const set = (c.start && c.start.set) || {};
+        for (const k of Object.keys(set).sort()) { if (SETTABLE.indexOf(k) < 0) throw new Error("a start cannot set " + k); s[k] = set[k]; }
+        r.identity = hex64(world.identityState);
+        r.start = snapshot(s);
+        r.snaps = []; r.hashes = [];
+        for (const seg of c.inputs || []) {
+          const made = seg.stress ? stressInputs(seg.stress) : null;   // rules 1's stress inputs, made from integers
+          for (let i = 0; i < (made ? made.length : seg.n); i++) {
+            const e = step(world, s, made ? made[i] : Object.assign({}, seg.in || {}));
+            if (e) throw new Error("an input was refused: " + e);
+            r.snaps.push(snapshot(s)); r.hashes.push(hash(s, world));
+          }
+        }
+      } catch (e) {
+        r.refused = String(e && e.message || e);
+      }
+      out.push(r);
+    }
+    return out;
+  }
+
   const api = { RULES: RULES, INPUT: INPUT, admit: function (inp) { return admit(inp); }, inputCases: function (map, table) { return inputCases(map, table); },
                 inputFaults: inputFaults, math: M, TICK: TICK, P: P, World: World, newState: newState, step: step, spawn: spawn, fire: fire, aim: aim,
                 rayWorld: rayWorld, blocked: blocked, groundAt: groundAt, hash: hash, snapshot: snapshot, restore: restore,
+                poseOf: poseOf, rules2Cases: rules2Cases, Q: Q, BODY: BODY,
                 nudge: nudge, bits: bitsOf, fromBits: ofBits, record: record, selftest: selftest };
   return api;
 });

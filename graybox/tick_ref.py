@@ -7,6 +7,7 @@
 #   python graybox/tick_ref.py verify TRACE.json
 #   python graybox/tick_ref.py selftest TRACE.json
 #   python graybox/tick_ref.py cases [RESULTS.json]
+#   python graybox/tick_ref.py rules2 [RESULTS.json]
 #
 # By the owner's ruling of 2026-10-11: "implement a second, independent version of the full simulation tick in
 # Python", where "Browser JavaScript records the input sequence", "Python independently advances the authoritative
@@ -32,6 +33,12 @@
 # (web/input_cases.json) here and holds it to each step's required outcome, with four plants that must break it; given
 # the results a browser sent (graybox/trace.py run --cases), it holds them to the table and to Python, step by step,
 # the outcome and the state.
+#
+# Rules 2 (graybox/RULES-2.md, 0225): movers, written here from RULES-2.md in this file's own shape — a Mover and its
+# pose, the body against boxes, the mover step, the height step with a ceiling, the identity-bound FNV-1a 64 hash.
+# `rules2` plays rules 2's table (web/rules2_cases.json) here and holds each case to the values its working gives by
+# hand, and holds the case of no movers to rules 1 played here; given the results a JavaScript engine sent (graybox/
+# trace.py run --rules2), it holds them to the same values and to Python, every tick's snapshot and hash.
 #
 # What it does not show: that a server built on it is secure, that inputs from a malicious client are bounded, or
 # anything about a network. Standard library only; it writes nothing.
@@ -436,6 +443,266 @@ def advance(world, s, a):
     s.tick = s.tick + 1.0
     for name in PHASES:
         globals()[name](world, s, a)
+
+
+# ------------------------------------------------------------------------------------------------ rules 2 (RULES-2.md)
+RULES2 = 2
+Q = 1.0 / 256.0
+BODY = 1.8
+FNV_OFFSET, FNV_PRIME, FNV_MASK = 0xcbf29ce484222325, 0x100000001b3, (1 << 64) - 1
+
+
+class MoverRefused(Exception):
+    pass
+
+
+class Mover:
+    """One mover of the world, as RULES-2.md's table admits it."""
+    __slots__ = ("id", "x0", "y0", "z0", "x1", "y1", "z1", "ax", "ay", "az", "length", "speed", "policy")
+
+    def __init__(self, d, ids):
+        mid = d.get("id") if isinstance(d, dict) else None
+        if not isinstance(mid, str) or not mid or mid in ids:
+            raise MoverRefused("RULES2-MOVER: mover %r: its id is not text, or not unique" % (mid,))
+
+        def q(v):
+            return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and abs(v) < 1024 and float(v) * 256.0 == floor(float(v) * 256.0)
+        box = d.get("box")
+        if not (isinstance(box, list) and len(box) == 6 and all(q(v) for v in box)):
+            raise MoverRefused("RULES2-MOVER: mover %r: its box is not six multiples of 1/256 m below 1,024 m" % mid)
+        self.x0, self.y0, self.z0, self.x1, self.y1, self.z1 = (float(v) for v in box)
+        if not (self.x0 < self.x1 and self.y0 < self.y1 and self.z0 < self.z1):
+            raise MoverRefused("RULES2-MOVER: mover %r: its box has no extent on some axis" % mid)
+        axis = d.get("axis")
+        if not (isinstance(axis, list) and len(axis) == 3 and all(v in (-1, 0, 1) and not isinstance(v, bool) for v in axis)
+                and sum(abs(v) for v in axis) == 1):
+            raise MoverRefused("RULES2-MOVER: mover %r: its axis is not one of x, y, z, either way" % mid)
+        self.ax, self.ay, self.az = (float(v) for v in axis)
+
+        def integer(v, lo, hi):
+            return isinstance(v, int) and not isinstance(v, bool) and lo <= v <= hi
+        if not integer(d.get("len"), 1, 1 << 18):
+            raise MoverRefused("RULES2-MOVER: mover %r: its len is not an integer from 1 to 2^18" % mid)
+        if not integer(d.get("speed"), 0, d["len"]):
+            raise MoverRefused("RULES2-MOVER: mover %r: its speed is not an integer from 0 to its len" % mid)
+        self.length, self.speed = float(d["len"]), float(d["speed"])
+        if d.get("policy") != "stop":
+            raise MoverRefused("RULES2-MOVER: mover %r: its policy is not stop" % mid)
+        self.id, self.policy = mid, "stop"
+        # the tunnelling bound: less than the body's depth plus the box's own, along its axis
+        t = (self.x1 - self.x0) if self.ax else (self.y1 - self.y0) if self.ay else (self.z1 - self.z0)
+        bound = (BODY + t) if self.ay else (2.0 * K.radius + t)
+        if not self.speed * Q < bound:
+            raise MoverRefused("RULES2-MOVER: mover %r: %r m a tick is not less than the tunnelling bound %r m" % (mid, self.speed * Q, bound))
+
+    def pose(self, phase):
+        o = phase if phase < self.length else 2.0 * self.length - phase
+        d = o * Q
+        return (self.x0 + self.ax * d, self.y0 + self.ay * d, self.z0 + self.az * d,
+                self.x1 + self.ax * d, self.y1 + self.ay * d, self.z1 + self.az * d)
+
+
+class MoverState:
+    __slots__ = ("phase", "stopped")
+
+    def __init__(self, phase, stopped):
+        self.phase, self.stopped = phase, stopped
+
+
+class World2(World):
+    """A world of rules 2: rules 1's, with its movers and the identity its hashes start from."""
+
+    def __init__(self, conv, movers):
+        World.__init__(self, conv)
+        ids = set()
+        self.movers = []
+        for d in movers:
+            m = Mover(d, ids)
+            ids.add(m.id)
+            self.movers.append(m)
+        C, W = conv["collision"], conv["canonical"]
+        self.identity = identity_text(C, W, self.movers)
+        self.identity_state = fnv64(FNV_OFFSET, self.identity.encode("utf-8"))
+
+
+class State2(State):
+    __slots__ = ("movers",)
+
+    @classmethod
+    def new(cls, world, side):
+        s = super().new(world, side)
+        s.movers = [MoverState(0.0, False) for _m in world.movers]
+        return s
+
+
+def fnv64(h, data):
+    for b in data:
+        h = ((h ^ b) * FNV_PRIME) & FNV_MASK
+    return h
+
+
+def _idenc(v):
+    if isinstance(v, bool):
+        raise TypeError("the identity holds no booleans")
+    if isinstance(v, (int, float)):
+        return "f" + struct.pack(">d", float(v)).hex()
+    if isinstance(v, str):
+        return "s" + v
+    if v is None:
+        return None
+    if isinstance(v, (list, tuple)):
+        return [_idenc(x) for x in v]
+    return {k: _idenc(v[k]) for k in v}
+
+
+def identity_text(C, W, movers):
+    """RULES-2.md, *The state's hash*: the rules, every constant and the world, as one document."""
+    doc = {
+        "P": {"radius": K.radius, "eye": K.eye, "step": K.step, "speed": K.speed, "gravity": K.gravity, "jump": K.jump,
+              "fireCooldown": K.fire_cooldown, "targetRadius": K.target_radius, "targetHeight": K.target_height,
+              "targetDown": K.target_down, "range": K.ray_range, "height": BODY},
+        "Q": Q, "TICK": TICK, "input": float(INPUT), "pitch": K.pitch_limit, "rules": float(RULES2), "stand": K.stand_again,
+        "world": {"cell": float(C["cell"]), "h": float(C["h"]), "w": float(C["w"]), "tops": [float(t) for t in C["tops"]],
+                  "movers": [[m.id, m.x0, m.y0, m.z0, m.x1, m.y1, m.z1, m.ax, m.ay, m.az, m.length, m.speed, m.policy] for m in movers],
+                  "objective": list(W["objective"]["rect"]) if W.get("objective") else None,
+                  "spawns": {k: [v["x"], v["z"], v["yaw"]] for k, v in W["spawns"].items()},
+                  "targets": [[t["id"], t["x"], t["z"]] for t in W["targets"]]},
+    }
+    return "VERDANDI-RULES 2\n" + json.dumps(_idenc(doc), separators=(",", ":"), sort_keys=True, ensure_ascii=False)
+
+
+def hash2(world, s):
+    nums = [s.tick, s.x, s.z, s.feet, s.vy, s.yaw, s.pitch, 1.0 if s.on_ground else 0.0, s.cooldown, s.score, s.shots,
+            1.0 if s.on_objective else 0.0]
+    for t in s.targets:
+        nums += [1.0 if t.up else 0.0, t.down_for]
+    for mv in s.movers:
+        nums += [mv.phase, 1.0 if mv.stopped else 0.0]
+    h = fnv64(world.identity_state, b"".join(struct.pack("<d", v) for v in nums))
+    return "%016x%s" % (h, s.side)
+
+
+def write_snapshot2(s):
+    """Rules 1's snapshot with `movers` in its place among the sorted keys (after `feet`)."""
+    base = write_snapshot(s)
+    movers = '"movers":[%s]' % ",".join('{"phase":%s,"stopped":%s}' % (_enc(m.phase), _enc(m.stopped)) for m in s.movers)
+    at = base.index('"onGround":')
+    return base[:at] + movers + "," + base[at:]
+
+
+def plan_over(x, z, b):
+    """The circle of the player's radius at (x, z) overlaps box b in plan, strictly."""
+    px = js_max(b[0], js_min(x, b[3]))
+    pz = js_max(b[2], js_min(z, b[5]))
+    dx, dz = x - px, z - pz
+    return dx * dx + dz * dz < K.radius * K.radius
+
+
+def poses(world, s, k=None, bk=None):
+    return [bk if i == k else m.pose(s.movers[i].phase) for i, m in enumerate(world.movers)]
+
+
+def is_blocked2(world, s, x, z, feet, k=None, bk=None):
+    if is_blocked(world, s, x, z, feet):
+        return True
+    return any(plan_over(x, z, b) and b[4] > feet + K.step and b[1] < feet + BODY for b in poses(world, s, k, bk))
+
+
+def move2(world, s, dx, dz):
+    if not is_blocked2(world, s, s.x + dx, s.z + dz, s.feet):
+        s.x, s.z = s.x + dx, s.z + dz
+        return
+    for _ in range(6):
+        dx, dz = dx / 2.0, dz / 2.0
+        if not is_blocked2(world, s, s.x + dx, s.z + dz, s.feet):
+            s.x, s.z = s.x + dx, s.z + dz
+
+
+def respawn2(world, s, inp):
+    if truthy(inp.get("side")):
+        spawn(world, s, inp["side"])
+    elif truthy(inp.get("reset")):
+        spawn(world, s, s.side)
+
+
+def movers2(world, s, inp):
+    for k, m in enumerate(world.movers):
+        st = s.movers[k]
+        if m.speed == 0:
+            st.stopped = False
+            continue
+        n = st.phase + m.speed
+        if n >= 2.0 * m.length:
+            n = n - 2.0 * m.length
+        a, b = m.pose(st.phase), m.pose(n)
+        dx, dy, dz = b[0] - a[0], b[1] - a[1], b[2] - a[2]
+        rider = s.on_ground and s.feet == a[4] and plan_over(s.x, s.z, a)
+        if rider:
+            nx, nz, nf = s.x + dx, s.z + dz, s.feet + dy
+            if is_blocked2(world, s, nx, nz, nf, k, b):
+                st.stopped = True
+            else:
+                st.phase, st.stopped = n, False
+                s.x, s.z, s.feet = nx, nz, nf
+        elif plan_over(s.x, s.z, b) and b[4] > s.feet and b[1] < s.feet + BODY:
+            st.stopped = True
+        else:
+            st.phase, st.stopped = n, False
+
+
+def aim2(world, s, inp):
+    s.yaw = math.fmod(math.fmod(s.yaw + number(inp, "dyaw"), TWO_PI) + TWO_PI, TWO_PI)
+    p = s.pitch + number(inp, "dpitch")
+    s.pitch = -K.pitch_limit if p < -K.pitch_limit else K.pitch_limit if p > K.pitch_limit else p
+
+
+def walk2(world, s, inp):
+    fwd = (1.0 if truthy(inp.get("f")) else 0.0) - (1.0 if truthy(inp.get("b")) else 0.0)
+    side = (1.0 if truthy(inp.get("r")) else 0.0) - (1.0 if truthy(inp.get("l")) else 0.0)
+    sy, cy = sin(s.yaw), cos(s.yaw)
+    mx, mz = fwd * sy + side * cy, (-fwd) * cy + side * sy
+    length = hypot(mx, mz)
+    if length > 0:
+        move2(world, s, mx / length * K.speed * TICK, 0.0)
+        move2(world, s, 0.0, mz / length * K.speed * TICK)
+
+
+def height2(world, s, inp):
+    was, before = s.on_ground, s.feet
+    if truthy(inp.get("jump")) and s.on_ground:
+        s.vy, s.on_ground = K.jump, False
+    s.vy = s.vy - K.gravity * TICK
+    s.feet = s.feet + s.vy * TICK
+    boxes = poses(world, s)
+    c = math.inf
+    for b in boxes:
+        if plan_over(s.x, s.z, b) and b[1] >= before + BODY and b[1] < c:
+            c = b[1]
+    if s.feet + BODY > c:
+        s.feet = c - BODY
+        if s.vy > 0:
+            s.vy = 0.0
+    g = world.ground(s.x, s.z)
+    for b in boxes:
+        if plan_over(s.x, s.z, b) and b[4] <= before + K.step and b[4] > g:
+            g = b[4]
+    if s.feet <= g or (was and s.vy <= 0 and s.feet - g <= K.step):
+        s.feet, s.vy, s.on_ground = g, 0.0, True
+    else:
+        s.on_ground = False
+
+
+PHASES2 = (respawn2, movers2, aim2, walk2, height2, weapon, stand_again, objective)
+
+
+def tick2(world, s, inp):
+    """One tick of rules 2 (RULES-2.md, *One tick*), on an input the contract admits."""
+    a = admit(inp)
+    if isinstance(a, str):
+        raise InputRefused(a)
+    s.tick = s.tick + 1.0
+    for phase in PHASES2:
+        phase(world, s, a)
 
 
 # ------------------------------------------------------------------------------------------------ the input (contract 1)
@@ -938,14 +1205,245 @@ MUTANTS = [
 ]
 
 
+# ------------------------------------------------------------------------------------------------ rules 2's cases
+RULES2_CASES = os.path.join(HERE, "web", "rules2_cases.json")
+SET2 = {"feet": "feet", "onGround": "on_ground", "pitch": "pitch", "vy": "vy", "x": "x", "yaw": "yaw", "z": "z"}
+
+
+def play2(conv, case):
+    """A case of rules 2's table played here: its identity, start, every tick's snapshot and hash; or why the world
+    was refused."""
+    r = {"name": case["name"]}
+    try:
+        world = World2(conv, case.get("movers") or [])
+    except MoverRefused as e:
+        r["refused"] = str(e)
+        return r
+    s = State2.new(world, (case.get("start") or {}).get("side", "A"))
+    for k, v in sorted(((case.get("start") or {}).get("set") or {}).items()):
+        setattr(s, SET2[k], v if isinstance(v, bool) else float(v))
+    r.update(identity="%016x" % world.identity_state, start=write_snapshot2(s), snaps=[], hashes=[])
+    inside = 0
+    for seg in case.get("inputs") or []:
+        for inp in (stress_inputs(seg["stress"]) if seg.get("stress") else [dict(seg.get("in") or {}) for _ in range(seg["n"])]):
+            tick2(world, s, inp)
+            r["snaps"].append(write_snapshot2(s))
+            r["hashes"].append(hash2(world, s))
+            # the invariant stop and blocked give: the body never ends a tick inside a box, but standing on its top
+            if any(plan_over(s.x, s.z, b) and b[4] > s.feet and b[1] < s.feet + BODY for b in poses(world, s)):
+                inside += 1
+    r["inside"] = inside
+    return r
+
+
+def play1_like(conv, case):
+    """The same start and inputs under rules 1, for the case of no movers: every snapshot."""
+    world = World(conv)
+    s = State.new(world, (case.get("start") or {}).get("side", "A"))
+    for k, v in sorted(((case.get("start") or {}).get("set") or {}).items()):
+        setattr(s, SET2[k], v if isinstance(v, bool) else float(v))
+    out = []
+    for seg in case.get("inputs") or []:
+        for _ in range(seg["n"]):
+            tick(world, s, dict(seg.get("in") or {}))
+            out.append(write_snapshot(s))
+    return out
+
+
+def expect_faults(case, r):
+    """Where a played case parts from the values worked by hand (its 'expect', its 'expect_refused')."""
+    out = []
+    want = case.get("expect_refused")
+    if want is not None:
+        got = r.get("refused")
+        if want is False and got:
+            out.append("refused (%s), and the working admits it" % got[:80])
+        elif want and not (got or "").startswith(want):
+            out.append("not refused %s (%s)" % (want, (got or "admitted")[:80]))
+        return out
+    if r.get("refused"):
+        return ["refused: %s" % r["refused"][:100]]
+    for e in case.get("expect") or []:
+        t = e["tick"]
+        if t > len(r["snaps"]):
+            out.append("no tick %d" % t)
+            continue
+        d = json.loads(r["snaps"][t - 1])
+        for k, v in e.items():
+            if k == "tick":
+                continue
+            if k == "movers":
+                got = [{"phase": _dec(m["phase"]), "stopped": m["stopped"]} for m in d["movers"]]
+                wantm = [{"phase": float(m["phase"]), "stopped": m["stopped"]} for m in v]
+                if got != wantm:
+                    out.append("tick %d: movers %s, worked %s" % (t, got, wantm))
+            else:
+                gv = _dec(d[k])
+                wv = v if isinstance(v, bool) else float(v)
+                if type(gv) is not type(wv) or gv != wv:
+                    out.append("tick %d: %s %r, worked %r" % (t, k, gv, wv))
+    return out
+
+
+def run_table2(conv, table):
+    """Every case played here, with its faults against the working, and the case of no movers against rules 1."""
+    rows, mine = [], {}
+    for case in table["cases"]:
+        r = play2(conv, case)
+        mine[case["name"]] = r
+        faults = expect_faults(case, r)
+        if case.get("invariant") == "never inside" and r.get("inside"):
+            faults.append("%d tick(s) ended with the body inside a box" % r["inside"])
+        if case.get("rules1_equal") and not r.get("refused"):
+            ones = play1_like(conv, case)
+            strip = lambda t: t.replace('"movers":[],', "", 1)
+            bad = [n + 1 for n, (a, b) in enumerate(zip(ones, r["snaps"])) if a != strip(b)]
+            if bad or len(ones) != len(r["snaps"]):
+                faults.append("parts from rules 1 at tick %s" % (bad[:1] or ["count"])[0])
+            else:
+                faults = faults or []
+                case = dict(case, _rules1="every one of %d ticks the same bytes as rules 1's, but for the empty movers" % len(ones))
+        rows.append((case["name"], not faults, "; ".join(faults)[:240] if faults else (case.get("_rules1") or (
+            "refused as worked: %s" % r["refused"][:70] if r.get("refused") else ("%d ticks; no tick ended with the body inside a box" % len(r["snaps"])
+                                                                                 if case.get("invariant") else "%d ticks; every value worked by hand held" % len(r.get("snaps", [])))))))
+    return rows, mine
+
+
+def _plant(name):
+    """A mutant of this file's rules 2, by name, for rules2's own check that the worked values bite: returns undo."""
+    g = globals()
+    saved = {k: g[k] for k in ("movers2", "height2", "Mover", "PHASES2")}
+
+    def undo():
+        g.update(saved)
+    if name == "no carry":
+        def m2(world, s, inp):
+            on = s.on_ground
+            s.on_ground = False                 # no rider is ever seen
+            saved["movers2"](world, s, inp)
+            s.on_ground = on
+        g["movers2"] = m2
+    elif name == "wrap at more than 2 len":
+        def m2(world, s, inp):
+            for k, m in enumerate(world.movers):
+                st = s.movers[k]
+                n = st.phase + m.speed
+                if n > 2.0 * m.length:
+                    n = n - 2.0 * m.length
+                st.phase, st.stopped = n, False
+        g["movers2"] = m2
+    elif name == "no stop":
+        def m2(world, s, inp):
+            for k, m in enumerate(world.movers):
+                st = s.movers[k]
+                if m.speed == 0:
+                    continue
+                n = st.phase + m.speed
+                if n >= 2.0 * m.length:
+                    n = n - 2.0 * m.length
+                st.phase, st.stopped = n, False
+        g["movers2"] = m2
+    elif name == "no ceiling":
+        def h2(world, s, inp):
+            was, before = s.on_ground, s.feet
+            if truthy(inp.get("jump")) and s.on_ground:
+                s.vy, s.on_ground = K.jump, False
+            s.vy = s.vy - K.gravity * TICK
+            s.feet = s.feet + s.vy * TICK
+            g_ = world.ground(s.x, s.z)
+            for b in poses(world, s):
+                if plan_over(s.x, s.z, b) and b[4] <= before + K.step and b[4] > g_:
+                    g_ = b[4]
+            if s.feet <= g_ or (was and s.vy <= 0 and s.feet - g_ <= K.step):
+                s.feet, s.vy, s.on_ground = g_, 0.0, True
+            else:
+                s.on_ground = False
+        g["height2"] = h2
+    elif name == "no tunnelling bound":
+        class M(saved["Mover"]):
+            def __init__(self, d, ids):
+                d = dict(d)
+                sp = d.get("speed")
+                d["speed"] = 0
+                saved["Mover"].__init__(self, d, ids)
+                self.speed = float(sp)
+        g["Mover"] = M
+    g["PHASES2"] = (respawn2, g["movers2"], aim2, walk2, g["height2"], weapon, stand_again, objective)
+    return undo
+
+
+PLANTS2 = ("no carry", "wrap at more than 2 len", "no stop", "no ceiling", "no tunnelling bound")
+
+
+def cmd_rules2(path=None):
+    with open(RULES2_CASES, encoding="utf-8") as fh:
+        table = json.load(fh)
+    conv = level.convert(table["map"])
+    print("RULES2  %s  map %s  rules 2 (RULES-2.md), %d cases" % (os.path.relpath(RULES2_CASES), table["map"], len(table["cases"])))
+    rows, mine = run_table2(conv, table)
+    for name, ok, detail in rows:
+        print("%s %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+    caught = 0
+    for p in PLANTS2:
+        undo = _plant(p)
+        try:
+            prow, _m = run_table2(conv, table)
+        finally:
+            undo()
+        bit = [n for n, ok, _d in prow if not ok]
+        caught += 1 if bit else 0
+        print("%s plant: %s — %s" % ("PASS" if bit else "FAIL", p, ("caught by " + ", ".join(b.split(" ")[0] for b in bit)) if bit else "NOT caught by any worked value"))
+    ok = all(r[1] for r in rows) and caught == len(PLANTS2)
+    engine_ok = True
+    if path:
+        with open(path, encoding="utf-8") as fh:
+            R = json.load(fh)
+        theirs = {r["name"]: r for r in R.get("results", [])}
+        eng = (R.get("runtime") or {}).get("userAgent", "?")
+        print("held to the results of %s (%s)" % (os.path.basename(path), eng[:90]))
+        for case in table["cases"]:
+            t, m = theirs.get(case["name"]), mine[case["name"]]
+            if t is None:
+                print("FAIL %s — not in the results" % case["name"])
+                engine_ok = False
+                continue
+            faults = expect_faults(case, t)
+            if bool(t.get("refused")) != bool(m.get("refused")):
+                faults.append("refused there %r, here %r" % (t.get("refused"), m.get("refused")))
+            elif not m.get("refused"):
+                if t.get("identity") != m["identity"]:
+                    faults.append("identity there %s, here %s" % (t.get("identity"), m["identity"]))
+                if t.get("start") != m["start"]:
+                    faults.append("the start differs")
+                for n, (a, b) in enumerate(zip(m["snaps"], t.get("snaps", []))):
+                    if a != b:
+                        fa, fb = fields_of(a), fields_of(b)
+                        diff = [k for k in sorted(set(fa) | set(fb)) if fa.get(k) != fb.get(k)]
+                        faults.append("FIRST DIFFERENT at tick %d: %s" % (n + 1, ", ".join(diff[:5])))
+                        break
+                hb = [n + 1 for n, (a, b) in enumerate(zip(m["hashes"], t.get("hashes", []))) if a != b]
+                if hb:
+                    faults.append("hash first different at tick %d (here %s, there %s)" % (hb[0], m["hashes"][hb[0] - 1], t["hashes"][hb[0] - 1]))
+                if len(t.get("snaps", [])) != len(m["snaps"]):
+                    faults.append("%d ticks there, %d here" % (len(t.get("snaps", [])), len(m["snaps"])))
+            engine_ok = engine_ok and not faults
+            print("%s %s — %s" % ("PASS" if not faults else "FAIL", case["name"], "; ".join(faults)[:240] if faults else (
+                "refused there as here" if m.get("refused") else "%d ticks: every snapshot and hash the same, identity %s" % (len(m["snaps"]), m["identity"]))))
+    held = ok and engine_ok
+    print("RULES 2 %s%s" % ("HELD BY PYTHON" if ok else "NOT HELD", (" AND THE ENGINE" if engine_ok else "; THE ENGINE PARTS") if path else ""))
+    return 0 if held else 1
+
+
 def main(argv):
+    if len(argv) in (1, 2) and argv[0] == "rules2":
+        return cmd_rules2(argv[1] if len(argv) == 2 else None)
     if len(argv) == 2 and argv[0] == "verify":
         return cmd_verify(argv[1])
     if len(argv) == 2 and argv[0] == "selftest":
         return cmd_selftest(argv[1])
     if len(argv) in (1, 2) and argv[0] == "cases":
         return cmd_cases(argv[1] if len(argv) == 2 else None)
-    print("usage: python graybox/tick_ref.py verify TRACE.json | selftest TRACE.json | cases [RESULTS.json]", file=sys.stderr)
+    print("usage: python graybox/tick_ref.py verify TRACE.json | selftest TRACE.json | cases [RESULTS.json] | rules2 [RESULTS.json]", file=sys.stderr)
     return 2
 
 

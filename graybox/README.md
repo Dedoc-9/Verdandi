@@ -43,6 +43,7 @@ Esc releases the mouse.
 | the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (30 on the tactical map, 27 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
 | the rules' arithmetic (`web/sim.js`, rules 1) | `python graybox/rules_ref.py` — the same algorithms in Python: the digests and constants `sim.js` holds, the special values, the square root and hypot checked exactly, the source naming no engine function, three plants; and the accuracy, measured. Ends with `RULES REFERENCE PASSED` |
 | the tick's second implementation (`tick_ref.py`, `RULES-1.md`) | `python graybox/tick_ref.py verify TRACE.json` — plays a browser's trace again in Python, from the specification, and compares every tick's snapshot byte for byte; `python graybox/tick_ref.py selftest TRACE.json` — two plants in the trace and six in the Python tick, each found. Ends with `TICK REFERENCE VERIFIED` and `TICK-REF SELFTEST PASSED` |
+| rules 2: movers (`RULES-2.md`, `web/rules2_cases.json`) | `python graybox/tick_ref.py rules2` — rules 2's table played in Python, each case held to the values worked by hand from `RULES-2.md`, the case of no movers held to rules 1, and five plants in the Python tick that the worked values must catch; `python graybox/trace.py run tactical --rules2 --browser msedge` (or `firefox`) — the same table in a browser, written to `graybox/build/trace/tactical/rules2/`; then `python graybox/tick_ref.py rules2 graybox/build/trace/tactical/rules2/chromium.json` — the browser held to the worked values and to Python, every tick's snapshot and hash. Ends with `RULES 2 HELD BY PYTHON AND THE ENGINE` |
 | the input contract (`RULES-1.md`, *The input*; `web/input_cases.json`) | `python graybox/tick_ref.py cases` — the shared table of hostile inputs played in Python, each step held to its required outcome (a tick, or a refusal with its category and the state unchanged), with four plants that must break it; `python graybox/trace.py run tactical --cases --browser msedge` (or `firefox`) — the same table played in a browser, written to `graybox/build/trace/tactical/cases/` (not committed); then `python graybox/tick_ref.py cases graybox/build/trace/tactical/cases/chromium.json` — the browser's results held to the table and to Python, step by step. Ends with `INPUT CONTRACT HELD BY PYTHON AND THE BROWSER`. The page's self-test plays the table too (`input-contract`) |
 | the bot's walk (`bot_ref.py`, `WALK-1.md`) | `python graybox/bot_ref.py make tactical` — the walk made in Python from the map alone, written to `graybox/build/bot/tactical-walk.json` (not committed); `python graybox/bot_ref.py check FILE` — read whole or refused, made again the same, held to what a walk is for; `python graybox/bot_ref.py compare FILE TRACE.json` — beside a browser's walk, the start, each input and each state; `python graybox/bot_ref.py selftest TRACE.json` — made three times, and the plants. Ends with `BOT TRACE CHECKED`, `BOT TRACE AGREES WITH THE BROWSER'S WALK` and `BOT-REF SELFTEST PASSED`. `python graybox/trace.py run tactical --inputs graybox/build/bot/tactical-walk.json --browser msedge` has a browser play it |
 | where two engines part (a diagnostic) | `python graybox/trace.py run tactical` — plays the self-test's three runs (the walk, the fight, the stress run) under rules 0 and under rules 1 in a worker, logging every call of `Math.sin`, `Math.cos`, `Math.hypot`, `Math.atan2` and `Math.sqrt` with its arguments' and result's bits, every tick's input and snapshot, and the browser's description of itself; writes `graybox/build/trace/tactical/ENGINE.json` and `latest.json` (not committed). `--inputs A.json` plays A's runs instead of recording its own, so that two browsers play the same inputs; `--browser msedge` (or `chrome`, `firefox`) opens the page in that browser and refuses a trace from any other engine family, so a file named `chromium-given.json` is a Chromium engine's; `--name LABEL` adds a file. Then `python graybox/trace.py compare A.json B.json` for two such traces, rules by rules, and `python graybox/trace.py selftest A.json` for the comparator's own planted differences |
@@ -111,6 +112,17 @@ added to a position near 50 m, but once one rounding goes the other way the bits
 differs. (A real engine differs on some inputs, not on every call; this model is the harsher one.) On the owner's machine
 every check matched the container's but four of the eight lines did not, so the two engines' `Math` differed
 somewhere in these runs and rounding absorbed it (R-6 in [`docs/RESEARCH-FINDINGS.md`](../docs/RESEARCH-FINDINGS.md)).
+
+## Rules 2: movers (0225)
+
+[`RULES-2.md`](RULES-2.md): rules 1 with movers — boxes on one axis, ping-pong, in phase units of 1/256 m — that carry
+a player standing on them (by the exact displacement, before anything else of the tick), stop rather than move into a
+player, and are refused unless slow enough that no tick can pass one through a player (the tunnelling bound); a box
+wholly above the head is a ceiling; a parked mover is a static box. Every rules-2 hash is FNV-1a 64 bound to an
+identity: the rules' version, every constant (gravity and the timestep among them), the map and every mover. A world
+without movers plays the same ticks under rules 2 as under rules 1. `GrayboxSim.withRules(2)`; `tick_ref.py`'s rules
+2 are written from the same document. No page plays rules 2 yet: the art language's mover statement, which moves every
+world's head once, comes next.
 
 ## The simulation's contract: rules 1
 
@@ -288,11 +300,14 @@ are in R-6.
 | `trace.py` | the trace experiment: its own small launcher (four files and the map, and with `--inputs` the runs of another trace or a walk `bot_ref.py` made), and the comparison of two traces, rules by rules |
 | `rules_ref.py` | the reference for the rules' arithmetic: the same algorithms in Python, and what holds `sim.js` to them |
 | `RULES-1.md` | the tick as arithmetic: the specification `sim.js` and `tick_ref.py` are both written to |
+| `RULES-2.md` | rules 1 with movers, and the hash bound to the rules, the constants and the world (0225) |
+| `web/rules2_cases.json` | rules 2's table: eleven cases with values worked by hand from `RULES-2.md`, and two long runs among three movers held between the implementations |
 | `tick_ref.py` | the tick's second implementation, in Python, and the verifier of a browser's trace |
+| `translate_probe.py` | a measurement, not a check (0225): rules 1's stress run with the world moved by 2^7 to 2^23 m along x and z, set against the unmoved run tick by tick; it writes nothing and no check reads it |
 | `web/input_cases.json` | the input contract's table: 70 cases of hostile and admitted inputs, each step's required outcome, held to by `sim.js` (the self-test's `input-contract`, `trace.py run --cases`) and `tick_ref.py cases` |
 | `WALK-1.md` | the bot's policy, `walk-1`: the walk as inputs chosen from the map and an observation of the present state; the specification `sim.js`'s bot and `bot_ref.py` are both written to, and the walk's file |
 | `bot_ref.py` | the walk made in Python from the map alone, its checks, and its comparison with a browser's trace |
-| `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the state's snapshots, the rules' arithmetic (rules 1; rules 0 kept for comparison), the self-test. No DOM; runs in a worker and under node too |
+| `web/sim.js` | the simulation: movement, collision, gravity, the weapon, the targets, the state's snapshots, the rules' arithmetic (rules 1; rules 0 kept for comparison; rules 2, movers), the self-test. No DOM; runs in a worker and under node too |
 | `web/sim_worker.js` | the simulation in a realm of its own, for the self-test and the trace: resumes a snapshot, plays a run in a counterfactual engine, or plays the three runs under both rules with Math logged |
 | `web/trace.html`, `web/trace.js` | the trace experiment's page |
 | `web/render.js` | the renderer (FPS-VISUAL-0): WebGL 1; a sky, a sun whose shadow is traced through the heights, floor modules, panelled walls, dressed cover, beams on the wall tops, a skyline outside the map, the weapon in the hand; the 1 m grid on G |
