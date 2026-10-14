@@ -943,11 +943,15 @@ class Gateway:
                 entry["exit"] = e.exit
             if e.code.startswith("STUDIO-RESPONSE-"):
                 entry["valid"] = False
+            # the record first, then the state: a request reads as ended only once its line is in the record (his run of
+            # 0223's self-test: a reader of the record after the request ended found no line, 1 run in 4 here)
             if e.code != "STUDIO-CANCELLED":
                 disp = {"kind": "FAILED", "decided_by": "host", "code": e.code, "detail": e.detail[:300]}
                 entry["disposition"] = disp
+                self._log(entry)
                 self._finish(req, "failed", e.code, e.detail, disp)
-            self._log(entry)
+            else:
+                self._log(entry)
             self.say("STUDIO  %s  %s: %s" % (rid, e.code, e.detail[:200]))
             return
         disp = disposition(provider, cands, outcome)
@@ -962,12 +966,12 @@ class Gateway:
             req["provider"] = provider
         if disp["kind"] != "REALIZED":
             # an answer without candidates: nothing to evaluate, nothing drawn, the world as it was; said and recorded
+            entry["outcome"] = disp["kind"]
+            self._log(entry)
             if disp["kind"] == "FAILED":
                 self._finish(req, "failed", disp["code"], disp["detail"], disp)
             else:
                 self._finish(req, "done", "", "%s: %s" % (disp["kind"], disp["detail"]), disp)
-            entry["outcome"] = disp["kind"]
-            self._log(entry)
             self.say("STUDIO  %s  %s (%s)  %s: %s" % (rid, provider["name"], provider["model"], disp["kind"], disp["detail"][:200]))
             return
         D = self.play.director()
@@ -1006,9 +1010,9 @@ class Gateway:
                 item["slot"] = k
             req["candidates"] = [i for i, _s in made]
         n_ok = sum(1 for i, s in made if s is not None)
-        self._finish(req, "done", "", "%d candidate%s, %d drawn" % (len(made), "" if len(made) == 1 else "s", n_ok), disp)
         entry["outcome"] = "DONE"
         self._log(entry)
+        self._finish(req, "done", "", "%d candidate%s, %d drawn" % (len(made), "" if len(made) == 1 else "s", n_ok), disp)
         u = entry.get("usage")
         self.say("STUDIO  %s  %s (%s)  %.1f s%s  %s" % (
             rid, provider["name"], provider["model"], entry["provider_ms"] / 1000.0,

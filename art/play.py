@@ -810,6 +810,11 @@ EXIT_STOPPED, EXIT_NOT_SERVED, EXIT_USAGE, EXIT_NO_SERVE, EXIT_NO_START = 0, 1, 
 
 
 STILL_MAX = 32 * 1024 * 1024
+# A refused request's body is read before the refusal is sent (up to its limit). A server that answers and closes with
+# the request's bytes still unread makes the system reset the connection, and on Windows the client then loses the
+# answer: his run of 0223's self-test, 2026-10-14, ended in WinError 10053 on a still refused for its token (on Linux
+# the answer arrives first, MEASURED in the container, so the container never saw it). The self-test's plant turns it off.
+DRAIN = True
 
 
 def studio_still(hub, world, rid, letter, png):
@@ -904,6 +909,26 @@ def server(target, port=0):
             self.end_headers()
             self.wfile.write(body)
 
+        def refuse(self, code, msg, cap):
+            """Answer a refusal only after reading what was sent, up to `cap` bytes (see DRAIN)."""
+            try:
+                n = int(self.headers.get("Content-Length", "0") or 0)
+            except ValueError:
+                n = 0
+            if DRAIN and 0 < n <= cap:
+                try:
+                    self.connection.settimeout(10)
+                    left = n
+                    while left > 0:
+                        b = self.rfile.read(min(left, 65536))
+                        if not b:
+                            break
+                        left -= len(b)
+                except OSError:
+                    pass
+            self.close_connection = True
+            return self.send(code, msg, "text/plain")
+
         def own_host(self):
             # only this server by name: a page of another site that rebinds its own name to 127.0.0.1 (DNS
             # rebinding) sends its own name here, and is answered nothing — not the page's token, not the world
@@ -984,28 +1009,28 @@ def server(target, port=0):
                 n = int(self.headers.get("Content-Length", "0") or 0)
                 body = self.rfile.read(n) if 0 < n <= 64 else b""
                 if not self.own_host() or body.decode("ascii", "replace") not in (hub.token, hub.presence):
-                    return self.send(403, b"forbidden", "text/plain")
+                    return self.refuse(403, b"forbidden", 0 if 0 < n <= 64 else 64)
                 hub.page_bye = time.time()
                 return self.send(204, b"", "text/plain")
             if path == "/studio/still":
                 # ADMISSION-0 (0222): the still of a candidate as the page drew it, PNG bytes as the body (not JSON), with
                 # the studio's token; its detectors are read here, by the host, never taken from the page
                 if not self.own_host() or self.headers.get("X-Studio-Token") != hub.token:
-                    return self.send(403, b"forbidden", "text/plain")
+                    return self.refuse(403, b"forbidden", STILL_MAX)
                 n = int(self.headers.get("Content-Length", "0") or 0)
                 if not (0 < n <= STILL_MAX) or self.headers.get("Content-Type", "") != "image/png":
-                    return self.send(400, b"a still is image/png of at most 32 MiB", "text/plain")
+                    return self.refuse(400, b"a still is image/png of at most 32 MiB", STILL_MAX)
                 q = urllib.parse.parse_qs(self.path.partition("?")[2])
                 code, reply = studio_still(hub, (q.get("world") or [None])[0], (q.get("id") or [""])[0], (q.get("candidate") or [""])[0], self.rfile.read(n))
                 return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
             if path not in STUDIO_POSTS:
-                return self.send(404, b"not found", "text/plain")
+                return self.refuse(404, b"not found", 65536)
             tok_ = self.headers.get("X-Studio-Token")
             if not self.own_host() or not (tok_ == hub.token or (path == "/studio/alive" and tok_ == hub.presence)):
-                return self.send(403, b"forbidden", "text/plain")
+                return self.refuse(403, b"forbidden", 65536)
             n = int(self.headers.get("Content-Length", "0") or 0)
             if n > 65536 or not (self.headers.get("Content-Type", "").startswith("application/json")):
-                return self.send(400, b"a studio request is JSON of at most 64 KiB", "text/plain")
+                return self.refuse(400, b"a studio request is JSON of at most 64 KiB", 65536)
             try:
                 body = json.loads(self.rfile.read(n).decode("utf-8")) if n else {}
                 if not isinstance(body, dict):
@@ -1685,6 +1710,36 @@ def studio_selftest():
         st_a = [c for c in g.state()["request"]["candidates"] if c["letter"] == "A"][0]
         row("a still that is not image/png refused (400); a page without the studio's token cannot give one (403); the page sees the flagged still",
             cx == 400 and cy == 403 and st_a["still"] and "BLOWN" in " ".join(st_a["still"]["flags"]), "%d, %d; the state shows %s" % (cx, cy, (st_a["still"] or {}).get("sha256", "")[:12]))
+        # a refusal sent only after the request's body is read (DRAIN): the headers sent alone, then nothing answered while
+        # the body is still to come; with the plant (no draining) the answer comes before the body, which is what Windows
+        # turned into WinError 10053 on his machine (2026-10-14)
+        import select
+        import socket as socket_
+
+        def answered_early(path, ctype, n):
+            c = socket_.create_connection(("127.0.0.1", srv.server_address[1]), timeout=30)
+            try:
+                c.sendall(("POST %s HTTP/1.1\r\nHost: 127.0.0.1:%d\r\nContent-Type: %s\r\nContent-Length: %d\r\n"
+                           "X-Studio-Token: not-the-studio-token\r\n\r\n" % (path, srv.server_address[1], ctype, n)).encode("ascii"))
+                early = bool(select.select([c], [], [], 0.6)[0])
+                try:
+                    c.sendall(b"\x89" * n)
+                except OSError:
+                    pass
+                return early, c.recv(64)
+            finally:
+                c.close()
+        e1, r1 = answered_early("/studio/still?id=%s&candidate=A" % rid, "image/png", 4000)
+        e2, r2 = answered_early("/studio/admit", "application/json", 300)
+        global DRAIN
+        DRAIN = False
+        try:
+            e3, _r3 = answered_early("/studio/still?id=%s&candidate=A" % rid, "image/png", 4000)
+        finally:
+            DRAIN = True
+        row("a refusal is sent only after the request's body is read (a still, a JSON request); plant, no draining: the answer comes first",
+            not e1 and not e2 and r1.startswith(b"HTTP/1.0 403") and r2.startswith(b"HTTP/1.0 403") and e3,
+            "answered before the body: still %s, JSON %s; with the plant %s" % (e1, e2, e3))
         code, body = admit_with_still(srv, rid, "A", tok)
         v = live.version
         t = time.time()

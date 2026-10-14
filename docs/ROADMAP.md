@@ -4066,6 +4066,29 @@ his run on his machine and the plants: `plants b8b2fe0 39b3265` PLANTS HELD (25 
 none lost). Not claimed: that the closure is complete (a computed path is escalated, not followed), or that a loosening
 of a kind it does not look for is seen.
 
+**0220 to 0223 on his machine, and 0224: a refusal answered only after its request is read (2026-10-14).** His first
+`git am` of 0221 failed on AGENTS.md, docs/CORE.md and docs/ROADMAP.md: his checkout was at 0219 (tree c140fe20), 0220
+not yet applied, and 0221 edits lines 0220 adds (the same three files fail on 0219's tree here, and 0220 then 0221 to
+0223 reach the predicted tree). Aborted, then applied in order: 0220 as tree db333247 and 0223 as tree 733ab149, both
+as predicted. On his machine (Windows, Python 3.14): QUALITY SELFTEST 58/58; ART CHECKS PASSED, **each brief equal to
+its frozen reference** — harbor-day 549d5d76035f and plaza-night 99001240ed5c, frozen in the container under Python
+3.11 on Linux: the first mechanical comparison of the exporter's bytes between two machines, two of two equal
+(MEASURED); DIRECTOR SELFTEST PASSED, with ADMISSION-0's rows; DIRECTOR CRASHTEST PASSED (15 cases); DIRECTOR RACETEST
+PASSED (32 cases); then STUDIO SELFTEST stopped after 13 rows, `ConnectionAbortedError: [WinError 10053]`, on the row
+that gives a still with a token that is not the studio's. The cause: the server refused the still at once and closed
+the connection with the request's body unread; the system then resets the connection, and Windows drops the answer
+the client had not yet read (Linux hands it over first: in the container a client read the 403 in 10 of 10 trials,
+bodies of 60 kB and 3 MB, MEASURED, which is why this row passed here). **0224, built, off the gate.** `art/play.py`:
+every refusal of a POST (403, 400, 404) reads the request's body first, up to its limit (64 KiB for JSON, 32 MiB for a
+still), with a timeout, then answers and closes. A new row holds it where the container can: the headers sent alone,
+no answer comes while the body is still to come, then the 403; the plant (no draining) answers before the body.
+`art/studio.py`: a request's line is written to its record before the request reads as ended (it was written just
+after): a reader that waits for the end and then reads the record found no line in 1 of 2 runs of the studio's
+self-test here before the change (the Claude Code row, IndexError), and cannot now. MEASURED in the container: STUDIO
+SELFTEST 74/74 in 4 of 4 runs after it; STUDIO-2 SELFTEST 19/19 in 15 of 16 runs, and 17/19 once, its failing rows not kept (OBSERVED; the cause
+not known); LIVE SELFTEST 18/18, STUDIO APP SELFTEST 12/12, STUDIO-TXN SELFTEST PASSED. Not measured: the new row on
+Windows, which is where the reset happens; his run of the rest of 0223's list is still to come.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
