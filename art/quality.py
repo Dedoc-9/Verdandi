@@ -23,10 +23,11 @@
 #             know is refused, not passed over (a scene that grows a field needs this checker to grow it too); boxes
 #             have extent on every axis and lie inside the world; every coordinate is under 1024 m, where the renderer's
 #             float32 keeps the scene's 0.1 mm steps apart (above it, two of them can become one number)
-#   movers    (0226) a scene with movers names the rules it is played under, 2 and no other, and carries each mover as
-#             rules 2 have it: an id, its statement, a declared material, a box of whole 1/256 m (as a double holds them
-#             exactly) inside the world, an axis, len and speed whole and in range, the policy stop, and its travel too
-#             inside the world and under 1,024 m; a scene has both fields or neither
+#   rules     (0226, 0229) a scene names the rules it is played under, 3 and no other (graybox/RULES-3.md), and its
+#             targets, each a point inside the world; it carries movers when it has any, each as the rules have it: an
+#             id, its statement, a declared material, a box of whole 1/256 m (as a double holds them exactly) inside the
+#             world, an axis, len and speed whole and in range, the policy stop or push (push along x or z), and its
+#             travel too inside the world and under 1,024 m
 #   budgets   what the native renderer (art/web/scene_render.js) can draw: it draws the first 160 lights and drops the
 #             rest without a word, and it keeps a light's visibility in a texture one texel to a cell, which WebGL 2
 #             guarantees only up to 2048 wide (OpenGL ES 3.0's minimum MAX_TEXTURE_SIZE as recalled, INFERRED: the
@@ -75,7 +76,8 @@ TIMES = ("night", "dusk", "day")
 LIGHT_KINDS = ("moon", "sun")
 SCENE_LIGHT_TYPES = ("point", "rect")
 PIECE_KINDS = ("ground", "floor", "stair", "raised", "cover", "wall")
-SCENE_RULES = (2,)                 # the rules a scene with movers may name (graybox/RULES-2.md)
+SCENE_RULES = (3,)                 # the rules a scene may name (graybox/RULES-3.md; 0229, every scene names them)
+POLICIES = ("stop", "push")        # a mover's policies under rules 3 (push along x or z)
 AXES = ([1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1])
 
 # the detectors' thresholds (a flag, not a refusal; chosen with 16 stills in view)
@@ -222,8 +224,8 @@ class Bounds:
     def walk(self):
         S = self.S
         top = ("assets", "collision", "environment", "format", "grid", "lights", "map", "materials", "name", "player", "reach",
-               "regions", "spawns", "title", "tops", "units", "views", "visuals")
-        if not self.keys("scene", S, top, ("movers", "rules")):
+               "regions", "rules", "spawns", "targets", "title", "tops", "units", "views", "visuals")
+        if not self.keys("scene", S, top, ("movers",)):
             if not isinstance(S, dict):
                 return self.bad
         if S.get("format") != SCENE_FORMAT:
@@ -259,6 +261,14 @@ class Bounds:
                     self.num(w + ".yaw", sp[k]["yaw"], 0, 360)
         else:
             self.no("spawns", "is not an object")
+        tg = S.get("targets")
+        if isinstance(tg, dict):
+            for k in sorted(tg):
+                w = "targets." + k
+                if self.keys(w, tg[k], ("x", "y", "z")):
+                    self.coord(w + ".x", tg[k]["x"], "x"); self.coord(w + ".y", tg[k]["y"], "y"); self.coord(w + ".z", tg[k]["z"], "z")
+        elif "targets" in S:
+            self.no("targets", "is not an object")
         vw = S.get("views")
         if isinstance(vw, dict):
             for k in sorted(vw):
@@ -345,8 +355,6 @@ class Bounds:
                     self.no(w + ".asset", "%r is not a declared asset" % (v["asset"],))
                 if fam == "collision" and v["kind"] not in PIECE_KINDS:
                     self.no(w + ".kind", "%r is not a kind of play geometry" % (v["kind"],))
-        if ("movers" in S) != ("rules" in S):
-            self.no("movers" if "movers" in S else "rules", "a scene has movers and the rules they are played under together, or neither")
         if "rules" in S and (not _isint(S["rules"]) or S["rules"] not in SCENE_RULES):
             self.no("rules", "%r is not rules %s" % (S["rules"], " or ".join(str(r) for r in SCENE_RULES)))
         if "movers" in S:
@@ -374,8 +382,10 @@ class Bounds:
                 ok_len = self.integer(w + ".len", m["len"], 1, 2 ** 18)
                 if ok_len:
                     self.integer(w + ".speed", m["speed"], 0, m["len"])
-                if m["policy"] != "stop":
-                    self.no(w + ".policy", "%r is not stop" % (m["policy"],))
+                if m["policy"] not in POLICIES:
+                    self.no(w + ".policy", "%r is not stop or push" % (m["policy"],))
+                elif m["policy"] == "push" and isinstance(m["axis"], list) and m["axis"] in AXES and m["axis"][1] != 0:
+                    self.no(w + ".policy", "push along y, which the rules do not do")
                 if ok_len and isinstance(m["box"], list) and len(m["box"]) == 6 and m["axis"] in AXES and all(_isnum(v) for v in m["box"]):
                     d = m["len"] / 256.0
                     tb = [m["box"][k] + m["axis"][k % 3] * d for k in range(6)]
@@ -823,22 +833,25 @@ def cmd_selftest():
     SM, BM = outm["scene"], outm["scene_bytes"]
     res, _n = check_scene(BM)
     row("harbor-lift's scene, with %d movers under rules %s, passes every exact check" % (len(SM.get("movers", [])), SM.get("rules")),
-        all(ok for _c, ok, _d in res) and SM.get("rules") == 2 and len(SM.get("movers", [])) == 2, "; ".join(d for _c, _ok, d in res))
+        all(ok for _c, ok, _d in res) and SM.get("rules") == 3 and len(SM.get("movers", [])) == 2, "; ".join(d for _c, _ok, d in res))
 
     def mplant(label, fn, want=""):
         S = copy.deepcopy(SM)
         fn(S)
         refused_by(label, scene_of(S), want)
-    mplant("movers without the rules they are played under", lambda S: S.__delitem__("rules"), "together")
-    mplant("rules without movers", lambda S: S.__delitem__("movers"), "together")
-    mplant("rules 3, which no scene may name", lambda S: S.__setitem__("rules", 3), "is not rules 2")
-    mplant("rules 2.0, a number but not an integer", lambda S: S.__setitem__("rules", 2.0), "is not rules 2")
+    mplant("a scene that names no rules", lambda S: S.__delitem__("rules"), "has no rules")
+    mplant("a scene without its targets", lambda S: S.__delitem__("targets"), "has no targets")
+    mplant("rules 2, which no scene may name now (0229)", lambda S: S.__setitem__("rules", 2), "is not rules 3")
+    mplant("rules 3.0, a number but not an integer", lambda S: S.__setitem__("rules", 3.0), "is not rules 3")
+    mplant("a target outside the world", lambda S: S["targets"][sorted(S["targets"])[0]].__setitem__("x", -1.0), "outside the world")
+    mplant("a target with a field the checker does not know", lambda S: S["targets"][sorted(S["targets"])[0]].__setitem__("up", True), "does not know")
     mplant("a mover's corner not a whole number of 1/256 m", lambda S: S["movers"][0]["box"].__setitem__(0, 20.1), "1/256 m")
     mplant("a mover whose travel leaves the world", lambda S: S["movers"][0].__setitem__("len", 4096 * 20), "outside the world")
     mplant("a lift whose travel rises to 1,024 m", lambda S: S["movers"][1].__setitem__("len", 1024 * 256), "")
     mplant("a mover's speed above its len", lambda S: S["movers"][1].__setitem__("speed", 577), "outside")
     mplant("a mover's axis that is two axes", lambda S: S["movers"][0].__setitem__("axis", [1, 0, 1]), "either way")
-    mplant("a mover's policy other than stop", lambda S: S["movers"][0].__setitem__("policy", "push"), "not stop")
+    mplant("a mover's policy other than stop or push", lambda S: S["movers"][0].__setitem__("policy", "pull"), "not stop or push")
+    mplant("a lift that pushes, along y", lambda S: S["movers"][1].__setitem__("policy", "push"), "push along y")
     mplant("a mover with a field the checker does not know", lambda S: S["movers"][0].__setitem__("phase", 3), "does not know")
     mplant("a mover whose material is not declared", lambda S: S["movers"][0].__setitem__("material", "chrome"), "not a declared material")
     mplant("an empty list of movers", lambda S: S.__setitem__("movers", []), "at least one")

@@ -8,8 +8,10 @@
 #
 # It reads a VERDANDI-STUDIO-REQUEST 1 on standard input and writes a VERDANDI-STUDIO-RESPONSE 0 on standard output
 # (art/STUDIO.md). For a canopy as the target it proposes three candidates, the three of the owner's sketch of the studio:
-# "Monolithic" (lower by 1.2 m, to no less than 4.6 m, and 2.2 m deep), "Lit underside" (a narrow row of fixtures along
-# its edge, magenta if the prompt says so, warm otherwise, at a restrained 60 cd) and "Deeper canopy" (2.6 m deep). For
+# "Monolithic" (lower by 1.0 m, to no less than 6.0 m, and 2.2 m deep; 0229: REACH-1 puts the ceiling over the
+# fixture's slabs at 5.875 m, a head on the 2.6 m covers under them, so 4.6 m, or 5.8 m, would be refused for it), "Lit
+# underside" (a narrow row of fixtures along its edge, magenta if the prompt says so, warm otherwise, at a restrained
+# 60 cd) and "Deeper canopy" (2.6 m deep). For
 # anything else it proposes nothing. It reads the prompt only for the word "magenta", and for "match @N" (STUDIO-1):
 # when the target is a canopy and @N a pinned canopy, its one candidate gives the target @N's material, height and
 # options and keeps the target's corners, leaving @N as it is. It understands nothing.
@@ -99,12 +101,12 @@ def main():
             scope = [sel["patterns"][0]]
             keep = ["the player's route and every wall", "the other slabs, the lamps and the neon"]
             low = dict(opts, deep=["2.2"])
-            low_head = head[:3] + ["%.1f" % max(4.6, height - 1.2)] + head[4:]
+            low_head = head[:3] + ["%.1f" % max(6.0, height - 1.0)] + head[4:]
             colour = "255,40,190" if "magenta" in req.get("prompt", "").lower() else "255,178,112"
             lit = dict(opts, edgelit=[colour, "60"])
             deep = dict(opts, deep=["2.6"])
             out["candidates"] = [
-                {"title": "Monolithic", "rationale": "The slab brought down to %.1f m and made 2.2 m deep, so that it fills more of the frame and reads as one heavy mass." % max(4.6, height - 1.2),
+                {"title": "Monolithic", "rationale": "The slab brought down to %.1f m and made 2.2 m deep, so that it fills more of the frame and reads as one heavy mass." % max(6.0, height - 1.0),
                  "revision": ["= " + statement(low_head, low)], "scope": scope, "preserve": keep},
                 {"title": "Lit underside", "rationale": "The slab where it is, with a narrow row of small fixtures along its edge at a restrained 60 cd, so that its underside reads against the dark.",
                  "revision": ["= " + statement(head, lit)], "scope": scope, "preserve": keep},

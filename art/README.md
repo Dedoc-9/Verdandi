@@ -44,11 +44,32 @@ be. Every piece of dressing is one of:
 - **flush on a rock face**: at most 8 cm deep against a rock neighbour (signs, neon strips);
 - **above every head**: wholly above the cell's reach ceiling (canopies, lamp housings).
 
-The reach ceiling of a cell is the highest standable top among the cell and its eight neighbours, plus the body
-(1.80 m, an assumption of this layer: the graybox player has no head), the jump's apex (1.225 m: a jump of 7 m/s
-under 20 m/s²) and a margin of 0.25 m. A cell is standable when a player can get onto it from a spawn, each step
-climbing at most the jump's apex. So a 1 m crate is standable and a 2.6 m pillar is not. Decoration that should change
-play is not art: it goes into the graybox map as cover and is checked there (the owner's three-worlds rule,
+**The reach ceiling, REACH-1 (0229).** Every scene is played under the graybox's rules 3
+([`graybox/RULES-3.md`](../graybox/RULES-3.md)), and says so (`rules`): a cell as high as the wall holds a body at any
+height, so nobody stands on the rock and dressing inside it is out of every head's way; a target has a top a player
+can stand on. Over that world the ceiling of a cell is the highest a head can rise over it, plus a margin of 0.25 m:
+
+- **where a body may stand**: every open cell's top; every mover's top, over its whole travel in plan, from its lowest
+  to its highest; every target's top, over its column (its radius, 0.4 m, either way of its centre);
+- **which of them are reached**: from the spawns' cells, a body reaches a surface s2 from a surface s when, jumping
+  from s's highest (7 m/s up, 20 m/s² down, 6 m/s across), its feet are still as high as s2's lowest less the step
+  (0.55 m; less nothing for a target, which holds a body below its top) after flying the gap between the two, less a
+  radius (0.35 m) at each end: with `need = lo2 − allowance − hi`, `need ≤ apex` (1.225 m) and
+  `gap ≤ 2·radius + speed·t`, `t = (jump + √(jump² − 2·gravity·need)) / gravity`. Nothing between them is asked to be
+  open, which can only add surfaces;
+- **the head over a cell**: from each reached surface, the body flies the gap to the cell less two radii at the
+  walking speed; while it rises (0.35 s) its head is at the surface's highest plus the apex plus the body (1.80 m, an
+  assumption of this layer: the graybox player has no head), after that falling, and a fall below 0 is not counted
+  (the body lands first, on a surface counted itself). An open cell no surface reaches keeps its own top plus the body,
+  the apex and the margin; a rock cell none reaches has no ceiling.
+
+The arithmetic is written once and done the same way in the exporter and in `art/check.py` (square roots by
+`math.sqrt`, correctly rounded on every machine, never `**` or `pow`), so the two ceilings are the same numbers.
+Before 0229 a climb was the apex alone and only to a neighbouring cell: the simulation climbs the apex and a step
+(1.775 m), crosses gaps and stands on targets, and the old ceiling sat 2.3 m under a head beside a 2.6 m cover
+(MEASURED, 0229: in a search of rules 3's simulation over the tactical map, 334 cells where a head rose above the old
+ceiling less its margin; none above REACH-1's, the closest 0.029 m under it). Decoration that should change play is
+not art: it goes into the graybox map as cover and is checked there (the owner's three-worlds rule,
 [`docs/BOUNDARIES.md`](../docs/BOUNDARIES.md)).
 
 Each dressing choice is a hash of its statement and its cell, never a running random sequence. An edit in one place
@@ -84,7 +105,7 @@ spacing, a percentage or an `every` is a whole number (`3` or `3.0`, never `2.7`
 | `lamp REGION R,G,B CANDELAS SPACING` | a point light and its housing over floor cells on an absolute lattice |
 | `puddle REGION MATERIAL PERCENT` | flat black-water planes on that share of the region's floor cells |
 | `view NAME x,z YAW PITCH` | a first-person viewpoint for critique, on a standable cell |
-| `mover NAME MATERIAL X0,Y0,Z0 X1,Y1,Z1 along AXIS travel METRES speed M/S` | (0226) a box that goes out `travel` metres along AXIS (`+x`, `-x`, `+y`, `-y`, `+z`, `-z`) and back, again and again, at `speed` metres a second; it carries a player who stands on it and stops rather than move into one ([`graybox/RULES-2.md`](../graybox/RULES-2.md)). Its corners and travel are whole numbers of 1/256 m below 1,024 m, and its speed a whole number of 1/256 m a tick (a multiple of 0.46875 m/s; 0 parks it). Refused when rules 2 refuse it (the tunnelling bound), or when its travel leaves the world, meets a cell's solid, crosses a spawn's column, another mover's travel or a piece of dressing (a piece flat on the floor may lie under it). A scene with movers names rules 2 and is played under them. **A person's edit only:** a mover is play, and the director refuses any intent that adds, removes or moves one (SCOPE-PLAY), whatever it grants; a mover's material is its look (`surface/mover`) |
+| `mover NAME MATERIAL X0,Y0,Z0 X1,Y1,Z1 along AXIS travel METRES speed M/S [policy stop\|push]` | (0226) a box that goes out `travel` metres along AXIS (`+x`, `-x`, `+y`, `-y`, `+z`, `-z`) and back, again and again, at `speed` metres a second; it carries a player who stands on it ([`graybox/RULES-2.md`](../graybox/RULES-2.md)). Its policy (0229, [`graybox/RULES-3.md`](../graybox/RULES-3.md)) says what it does with a player in its way: `stop` (the default) holds it still; `push`, along x or z only, moves the player with it and holds it still only when the player cannot go (a push along y is refused: say stop). Its corners and travel are whole numbers of 1/256 m below 1,024 m, and its speed a whole number of 1/256 m a tick (a multiple of 0.46875 m/s; 0 parks it). Refused when the rules refuse it (the tunnelling bound), or when its travel leaves the world, meets a cell's solid, crosses a spawn's or a target's column, another mover's travel or a piece of dressing (a piece flat on the floor may lie under it). Every scene names rules 3 and is played under them. **A person's edit only:** a mover is play, and the director refuses any intent that adds, removes or moves one (SCOPE-PLAY), whatever it grants; a mover's material is its look (`surface/mover`) |
 
 **A look revision** (`VERDANDI-ART-REVISION 0`, [`briefs/plaza-night.revise-look`](briefs/plaza-night.revise-look))
 replaces the brief's statements of the same verb and name and nothing else. **A layout revision**
@@ -109,8 +130,11 @@ and nothing hashes its pixels.
 - the graybox map's own checks pass;
 - the collision boxes, laid back onto the grid, are C cell for cell;
 - no dressing stands where a player can be;
-- no piece has collision; the player is the one `graybox/web/sim.js` declares and the spawns are W's; the reach
-  ceiling is the one recomputed independently;
+- no piece has collision; the player is the one `graybox/web/sim.js` declares and the spawns and targets are W's; the
+  reach ceiling is the one recomputed independently (REACH-1);
+- the rules: the scene names rules 3, which `graybox/web/sim.js` and `graybox/tick_ref.py` both say they implement
+  (the handshake, read from their sources); each mover inside the rules' table, its policy stop or push (push along x
+  or z), its travel in the world and clear of the spawns', the targets' and the other movers' columns;
 - every mesh names its source and licence;
 - the lineage's hashes are the files' own;
 - the scene's bytes are exact (QUALITY-0, `art/quality.py`): finite JSON in the exporter's one byte form, with no NaN,
@@ -128,7 +152,9 @@ It then plants defects and requires the right check to refuse each one:
 
 - a wall's box dropped, or a cover box made taller;
 - a decorative wall on open floor;
-- a canopy under the reach ceiling, or a sign standing off its wall;
+- a canopy under the reach ceiling, or a sign standing off its wall; a slab at 4.5 m beside the 2.6 m cover, clear of
+  the ceiling before 0229 and not of a head on the cover (and the same slab at 6.0 m, which passes);
+- a scene that names rules 2, rules 4 or none; a lift that pushes; a target moved from W's;
 - dressing given collision;
 - a falsified ceiling, a player who jumps lower than `graybox/web/sim.js` says, or a spawn moved from W's;
 - a mesh with no licence;
@@ -270,6 +296,7 @@ Movement. Otherwise the reach ceiling the checks compute is not the one you play
 | the importer's logic: a first import, a second that keeps every actor, a look revision that remakes none, a layout revision that remakes 5 and removes 4, the in-engine self-check passing | OBSERVED against a stand-in for the `unreal` module, not an engine | the build container; the stand-in is not in the repository |
 | the importer runs in Unreal 5.8 | NOT_MEASURED | the host's first run; its report |
 | the scene's bytes are exact: finite, one byte form, every field known and bounded, inside the native renderer's budgets; each brief its frozen reference | MEASURED, here | `python art/quality.py selftest` (58 rows, each check against its planted defect) and `python art/check.py` (the build container, 2026-10-13) |
+| the reach ceiling (REACH-1) is above every head the graybox's rules 3 raise | MEASURED, here, as a search and not a proof: a breadth-first search of rules 3's simulation over landings (24 yaws, jumps at once, after 3 or 8 ticks, or none; with movers, after waiting 0, 60 or 150 ticks), every tick's head over the cells under the body: the tactical map, 308,352 tries, no head above REACH-1's ceiling less its margin, the closest 0.029 m under it, 334 cells above the old one; harbor-lift with its movers, 400,032 tries, none above, the closest 0.029 m | the build container (node v22), 2026-10-14; the search is not in the repository |
 | the detectors on stills (white, black, a channel at 255, distinct colours) flag a still drawn white and not a sound one | OBSERVED on 21 stills of the two briefs, chosen with them in view; a detector, not a proof; its miss and false-alarm rates NOT_MEASURED | `python art/quality.py still FILE.png` |
 | the scene looks good | NOT_MEASURED, and no check can measure it | rendered viewpoints, judged by a person |
 
@@ -291,6 +318,7 @@ block a player is cover, and goes into the graybox map.
 | `director/durable.py` | B1: the content path's writes made to survive a killed process (an append flushed; a file replaced whole by a flushed temporary and a write-through rename); the death points `art/director.py crashtest` kills at; the content lock every writer of a tree's ledgers, briefs, tags and maps holds (a thread lock and the system's file lock, released by the system when its holder dies), which `art/director.py racetest` holds to account |
 | `studio_app.py` | B1: the desktop studio's supervisor (a job that ends everything it starts, play.py without a console, Edge in application mode, stopping when the window closes) and its `shortcut`; `selftest` with a stand-in browser. STUDIO-2: it serves the worlds folder (`--worlds DIR`, the per-user folder by default) |
 | `studio_queue.py` | STUDIO-2: the queue of creative work — prompts queued for any world with a provider and a model, run in the background at most one per world, kept across restarts in `queue.jsonl` (a torn last line set aside and cut; a task whose answer was recorded ready, not lost); `selftest` seeds worlds, queues, reviews, duplicates and keeps its plants |
+| `fixtures/round/` | 0229: the round the director's self-tests play, `rounds/plaza-imposing/`'s candidates over its base with its two slabs at 6.0 m, which REACH-1 clears (its README says why; the owner's round is unchanged) |
 | `fixtures/selftest/` | the self-tests' world: the plaza's brief and layout as committed when the self-tests were written, laid under a scratch root by `director.py`'s `selftest_tree`; the self-tests never read the working brief, ledger or tags, which are the owner's world |
 | `studio_txn.py` | the studio's change transaction as a reference (docs/STUDIO-CONTRACT.md): the promotion journal's form and grammar and `Recover(J, P, F)`; `check` holds it over every enumerated crash point, `selftest` plants wrong decisions, `recover ROOT` reads a studio and prints what its stub must do; nothing here launches or writes a studio |
 | `studio.py`, `STUDIO.md` | STUDIO-0: the director gateway (a provider's request and response, its limits and refusals, the candidates evaluated, admitted, rejected and undone through the ledger; `probe` and `report`), and its contract |
@@ -301,7 +329,7 @@ block a player is cover, and goes into the graybox map.
 | `web/scene_render.js` | the native renderer (WebGL 2); `load(S)` draws another scene in place, `dispose()` frees it |
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |
 | `briefs/harbor-day.art` | STUDIO-2's second world: sunlit harbour terraces at midday, on the same graybox, nothing of the layout moved |
-| `briefs/harbor-lift.art` | 0226: harbor-day with a deck sliding along the south lane and a lift beside the tall block at its west end, the first world with movers |
+| `briefs/harbor-lift.art` | 0226: harbor-day with a deck sliding along the south lane and a lift beside the tall block at its west end, the first world with movers; 0229, the deck pushes a player in its way |
 | `briefs/plaza-night.revise-look` | its look revision: the wet surfaces less reflective |
 | `briefs/plaza-night.revise-layout.design` | its layout revision: the south flank one cell narrower (the north flank until B was admitted) |
 | `unreal/verdandi_import.py` | the Unreal 5.8 importer, run inside the editor |

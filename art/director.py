@@ -418,6 +418,15 @@ def _commit_locked(ws, evaluation, intent_sha256, files, fields, stills=()):
 # brief and ledger): the plaza's brief and its layout as art/fixtures/selftest/ keeps them — the bytes committed when
 # those self-tests were written — and a ledger started on them. Never the owner's working files, which are his world.
 FIXTURE = os.path.join(HERE, "fixtures", "selftest")
+# the round the self-tests play (0229): art/rounds/plaza-imposing's candidates over its base with the two slabs at 6.0 m,
+# which REACH-1 clears (art/fixtures/round/README.md); laid where the round lay, art/rounds/plaza-imposing
+ROUND = os.path.join(HERE, "fixtures", "round")
+
+
+def lay_round(root):
+    """The graybox's own maps and the self-tests' round under root."""
+    shutil.copytree(os.path.join(REPO, "graybox", "maps"), os.path.join(root, "graybox", "maps"))
+    shutil.copytree(ROUND, os.path.join(root, "art", "rounds", "plaza-imposing"))
 
 
 def selftest_tree(root):
@@ -1017,8 +1026,7 @@ def cmd_selftest():
     results = [("the conformance vectors, reproduced by the reference (%d)" % n, not bad, ", ".join(bad[:3]))]
     tmp = tempfile.mkdtemp(prefix="director-selftest-")
     try:
-        for sub in ("art/rounds", "graybox/maps"):         # the checkout's briefs are not the test's: the round's base alone
-            shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        lay_round(tmp)                                     # the checkout's briefs are not the test's: the round's base alone
         os.makedirs(os.path.join(tmp, "art", "briefs"))
         ws = Workspace("plaza-night", tmp)
         rnd = os.path.join(tmp, "art", "rounds", "plaza-imposing")
@@ -1115,7 +1123,7 @@ def cmd_selftest():
                         vM["verdict"] == "REFUSED" and "SCOPE-PLAY" in vM["codes"] and "play/mover/selftest-lift" in vM["realized"] and outM is not None
                         and len(outM["scene"].get("movers", [])) == 1 and recM["horizon"]["why"].startswith("the scene's 1 mover")
                         and any(x.startswith("anything over time: the scene's 1 mover") for x in recM["not_checked"])
-                        and "check: movers: rules 2 holds them and their paths are clear" in recM["certifies"],
+                        and "check: the rules: rules 3 hold the scene, its movers and their paths clear" in recM["certifies"],
                         "%s %s; realized %s" % (vM["verdict"], ",".join(vM["codes"]), ", ".join(vM["realized"])[:60])))
         adm = [e for e in events if e["kind"] == "admit" and not e["design_lines"]][-1]
         src = canon.load_intent(events[int(adm["evaluation"])]["intent"].encode("ascii"))
@@ -1248,8 +1256,7 @@ def cmd_selftest():
         # fix 2 of the review of 2026-10-13: a second world on the same map. Its head must not move when the first world
         # admits: a layout change is refused (SHARED-MAP), an art change admitted; the plant shows what the refusal prevents
         root2 = os.path.join(tmp, "shared")
-        for sub in ("art/rounds", "graybox/maps"):
-            shutil.copytree(os.path.join(REPO, sub), os.path.join(root2, sub))
+        lay_round(root2)
         os.makedirs(os.path.join(root2, "art", "briefs"))
         rnd2 = os.path.join(root2, "art", "rounds", "plaza-imposing")
         for f, to in (("plaza-night.art", "art/briefs"), ("tactical.design", "graybox/maps"), ("tactical.layout", "graybox/maps")):
@@ -1309,8 +1316,7 @@ def cmd_crashtest():
         r = subprocess.run([sys.executable, me] + args + ["--root", tmp], capture_output=True, text=True, env=env, timeout=600)
         return r.returncode, r.stdout + r.stderr
     try:
-        for sub in ("art/rounds", "graybox/maps"):         # the checkout's briefs are not the test's: the round's base alone
-            shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        lay_round(tmp)                                     # the checkout's briefs are not the test's: the round's base alone
         os.makedirs(os.path.join(tmp, "art", "briefs"))
         ws = Workspace("plaza-night", tmp)
         rnd = os.path.join(tmp, "art", "rounds", "plaza-imposing")
@@ -1424,8 +1430,7 @@ def cmd_racetest():
                            env=dict(env0, **env), timeout=600)
         return r.returncode, r.stdout + r.stderr
     try:
-        for sub in ("art/rounds", "graybox/maps"):         # the checkout's briefs are not the test's: the round's base alone
-            shutil.copytree(os.path.join(REPO, sub), os.path.join(tmp, sub))
+        lay_round(tmp)                                     # the checkout's briefs are not the test's: the round's base alone
         os.makedirs(os.path.join(tmp, "art", "briefs"))
         lock = led.lock_path(os.path.join(tmp, "art", "ledger", "plaza-night.ledger"))
 

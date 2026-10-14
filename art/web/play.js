@@ -35,14 +35,17 @@
 (function () {
   "use strict";
   // 0226: a scene with movers names the rules it is played under (rules 2, graybox/RULES-2.md), and the page plays it
-  // under those and no other: a scene naming rules this page does not play is not played (the handshake). A scene
-  // without movers is played under rules 1, as before.
+  // under those and no other: a scene naming rules this page does not play is not played (the handshake). 0229: the
+  // exporter names rules 3 (graybox/RULES-3.md) on every scene, with movers or without: walls hold a body at any height,
+  // a target has a top and waits for its column to clear, a mover may push. A scene that names no rules (an exporter
+  // before 0226) is played under rules 1, and one with movers under rules 2, as before.
   const Base = window.GrayboxSim, q = new URLSearchParams(location.search), $ = function (id) { return document.getElementById(id); };
   let Sim = Base;
   const simFor = function (S) {
     if (S.rules === undefined && !S.movers) return Base;
     if (S.rules === 2 && Array.isArray(S.movers)) return Base.withRules(2);
-    throw new Error("this scene names rules " + JSON.stringify(S.rules) + ", which this page does not play (it plays rules 1, and rules 2 with movers)");
+    if (S.rules === 3 && (S.movers === undefined || Array.isArray(S.movers))) return Base.withRules(3);
+    throw new Error("this scene names rules " + JSON.stringify(S.rules) + ", which this page does not play (it plays rules 3, and rules 1 and 2 as scenes before 0229 named them)");
   };
   // the movers as rules 2 take them, and a key that changes when the game would: the map, the rules, and any mover's
   // box, axis, travel, speed or policy (a mover's material is its look, and changes nothing of the game)
@@ -672,7 +675,7 @@
         + (studio.refs.target ? "  ·  target " + studio.refs.target : "") + ((studio.refs.pins || []).length ? "  ·  pins " + studio.refs.pins.join(" ") : "")
         + "\nsource [" + cur.k + "] " + (info.label || "") + (sv.verdict ? "  ·  " + sv.verdict : "")
         + "  ·  scene " + cur.sha.slice(0, 12) + (cur.slots.length > 1 ? "  ·  [ ] steps through the " + cur.slots.length + " sources" : "")
-        + "\nmovement and collision: the graybox's simulation against C" + (world.movers.length ? " and " + world.movers.length + " mover(s), rules " + Sim.RULES : "") + "  ·  live: play.py v" + cur.version
+        + "\nmovement and collision: the graybox's simulation, rules " + Sim.RULES + ", against C" + (world.movers.length ? " and " + world.movers.length + " mover(s)" : "") + "  ·  live: play.py v" + cur.version
         + (cur.note && now - cur.noteAt < 8000 ? "\n" + cur.note : "");
       requestAnimationFrame(frame);
     }

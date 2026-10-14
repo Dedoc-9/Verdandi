@@ -4288,6 +4288,58 @@ AND THE ENGINE (node, Chromium), RULES REFERENCE PASSED, BOT-REF SELFTEST PASSED
 (ORT-1 moves rules 2's worlds alone and refuses a rules-3 world). Nothing plays rules 3 yet: 0229 makes the art's
 scenes name them. NOT_MEASURED: Firefox, his machine.
 
+**0229: the art plays rules 3, and its reach ceiling is held to the simulation (2026-10-14).** His report found the
+art's own model wrong as well: the reach ceiling (dressing must stand above the highest a head can rise) counted a climb
+of the jump's apex alone, to a neighbouring cell alone, since ART-GENERATION-0, and nobody on a wall. The simulation
+climbs the apex and a step (1.775 m), crosses gaps, stands on targets, and under rules 1 and 2 on the walls: a slab or a
+lamp the model put above every head hung in the way of a head on a 2.6 m cover, and the city's rock drawn above 4 m
+stood where a player walked. 0226's adversarial review of movers checked a rider's ceiling and missed the climb.
+**0229, built, off the gate.** `art/dress.py`: every scene names rules 3 (with movers or without) and carries its
+targets; the mover statement takes `policy stop|push` (push along y refused: say stop); REACH-1 (`art/README.md`): the
+surfaces a body may stand on (open cells, movers' tops over their travel, targets' tops), those reached from the spawns
+by the jumps the rules allow (the feet still as high as the next surface less the step, less nothing for a target,
+after flying the gap), and over each cell the highest head a body flying from one of them raises there, rising then
+falling, plus the margin; square roots by `math.sqrt`, correctly rounded on every machine. `art/check.py`: REACH-1
+again, apart from the exporter's code and with its arithmetic (the two ceilings equal, number for number, on every
+brief), the handshake for rules 3 read from `sim.js` and `tick_ref.py` (`RULES3`), every scene held to name rules 3, a
+mover's policy stop or push, the scene's targets W's; seven new plants in every brief, among them a slab at 4.5 m
+beside the 2.6 m cover (clear of the old ceiling, 3.275 m, not of a head on the cover; REACH-1 says 5.875 m) beside the
+same slab at 6.0 m, which passes. QUALITY-0 knows `rules` (3, required), `targets` and the two policies (76 rows).
+`art/web/play.js` plays rules 3 (and rules 1 and 2 for scenes before 0229); the Unreal importer takes a scene that
+names rules (Unreal moves its character by its own movement, said) and still refuses movers. `art/briefs/harbor-lift.art`:
+the deck pushes, by his report; the lift, along y, holds still for a player in its way, as before. What moved in the
+three scenes: `rules` and `targets` added, the ceiling raised at 531 cells and none lowered, so 23 lamps a scene hang
+higher (by 0.2 to 2.575 m); nothing else. The plaza's ledger rebased (#25). The director's self-tests played the first
+round, whose base hangs its slabs at 5.2 m over the 2.6 m covers: under REACH-1, A and B are refused for those slabs
+(CHECK-FAILED) and D for them and its leak. They now play `art/fixtures/round/`, the same candidates over that base with
+the two slabs at 6.0 m (A, B and C CLEAN, D LEAKAGE, E and F REFUSED, the round's own verdicts); the owner's round and
+its record are unchanged. The scripted provider's *Monolithic* lowers a slab by 1 m to no less than 6.0 m (it lowered
+by 1.2 m to 4.6 m, which REACH-1 refuses over the fixture's slabs). MEASURED in the container: a breadth-first search of
+rules 3's simulation (node v22; 24 yaws, jumps at once, after 3 or 8 ticks or none, movers waited for) recording every
+tick's head over the cells under the body: the tactical map, 308,352 tries, no head above REACH-1's ceiling less its
+margin (the closest 0.029 m under), and 334 cells where a head rose above the old ceiling's (by up to 2.3 m, beside the
+2.6 m cover at 20,11); harbor-lift with its movers, 400,032 tries, none above REACH-1's. ART CHECKS all PASS but the
+three references (his to freeze: the fields that moved are `lights`, `reach`, `rules`, `targets` and `visuals`, as
+read); QUALITY SELFTEST 76/76; DIRECTOR SELFTEST, CRASHTEST (15) and RACETEST (32) PASSED; VECTORS and CONFORMANCE
+65 / 65; LIVE SELFTEST 20/20; STUDIO SELFTEST 74/74; STUDIO-2 SELFTEST 19/19; STUDIO APP SELFTEST 12/12; STUDIO-TXN
+SELFTEST PASSED; RUNG SELFTEST 17/17; RULES 3 HELD BY PYTHON AND THE ENGINE again. In headless Chromium 141 (not
+committed), harbor-lift played under rules 3, 14 of 14: a rider carried by the deck and the lift; on the floor in the
+deck's way, pushed from tick 5, 96 pushes of 1/32 m by tick 100; 1,944 jumps from the lift's top, none ending on a wall
+or over a wall's cell; standing 30 ticks on a target's top and walking off it; a target down with the player in its
+column waiting, then standing once he walked out; the deck's policy edited to stop, the movers taken out and put back,
+each a new game under rules 3; a repaint keeping the game. RUNG-0, run from the classifier his push holds: 0228 and 0229
+each rung D (files in the trusted base's closure); 0228's plants HELD (103 refused before and after); 0229 reads one
+loosening and nine plants gone, each read here: the expected check *movers: rules 2 holds them and their paths are
+clear* dropped from ADMISSION-0's list is that check renamed (*the rules: rules 3 hold the scene, its movers and their
+paths clear*, in the list in its place), and it now holds every scene, not only those with movers; of the plants,
+seven are reworded for rules 3 (a scene that names no rules for movers without their rules, twice; rules 4 and rules 2
+for rules 3 as the rules no scene may name; rules 3.0 for rules 2.0; the policies stop or push; the tunnelling bound as
+the rules' own), one moved (the false ceiling planted at 3,0, which REACH-1 now gives a ceiling, for 4,2), and one is
+retired, QUALITY-0's *rules without movers*: under 0229 that is every scene without movers, the norm and no defect
+(its place taken by *an empty list of movers*, kept, and *a scene without its targets*, new); 113 refused after,
+none no longer refused. NOT_MEASURED: his machine, Edge, a real GPU; the search is a search and not a proof (a place it
+did not reach is not shown unreachable).
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

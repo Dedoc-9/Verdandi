@@ -1,8 +1,8 @@
 VERDANDI-ART 0
 # 0226, the first world with movers: harbor-day as it stands, with a deck that slides along the south lane and a lift
 # beside the tall block at its west end, so that a player can ride both (graybox/RULES-2.md: a mover carries a player
-# who stands on it and stops rather than move into one). Everything else is harbor-day's, statement for statement; the
-# plaza plays it under rules 2. Movers enter a world by a person's edit, recorded in its ledger, not through a prompt:
+# who stands on it). Everything else is harbor-day's, statement for statement; the plaza plays it under rules 3
+# (graybox/RULES-3.md, 0229), as it plays every scene. Movers enter a world by a person's edit, recorded in its ledger, not through a prompt:
 # the director's scope protocol refuses any change to play, and a mover is play.
 
 map tactical
@@ -92,8 +92,10 @@ material concrete_slab 236,214,170 0.85 0.0
 canopy plaza concrete_slab 7.6 19,12 20,19
 
 # movers (0226): a deck of painted steel sliding 16 m east along the south lane and back at 3.75 m/s, and a lift beside
-# the 2.5 m block at the lane's west end, rising 2.25 m to the block's top and back at 0.9375 m/s
+# the 2.5 m block at the lane's west end, rising 2.25 m to the block's top and back at 0.9375 m/s. 0229, by the owner's
+# report of 2026-10-14 ("The sliding deck doesn't move my would be character if i get in the way"): the deck pushes a
+# player in its way (rules 3's policy push); the lift, along y, holds still for one, as before
 material lift_steel 96,104,112 0.45 0.6
-mover deck lift_steel 20,0,56 24,0.5,58 along +x travel 16 speed 3.75
+mover deck lift_steel 20,0,56 24,0.5,58 along +x travel 16 speed 3.75 policy push
 mover lift lift_steel 16,0,52 18,0.25,54 along +y travel 2.25 speed 0.9375
 view lift 6,27 60 8

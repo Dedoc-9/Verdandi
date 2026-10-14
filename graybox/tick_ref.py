@@ -550,9 +550,12 @@ class World2(World):
         return None   # rules 2 do not read the wall's height
 
 
+RULES3 = 3   # rules 3's version (RULES-3.md); art/check.py reads it from here, the handshake (0229)
+
+
 class World3(World2):
     """A world of rules 3 (RULES-3.md): rules 2's, with the wall's height read, and push among the policies."""
-    RULES = 3
+    RULES = RULES3
     POLICIES = ("stop", "push")
 
     def _wall(self, W):

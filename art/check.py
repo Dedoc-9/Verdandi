@@ -11,15 +11,17 @@
 #   play      the graybox map's own checks pass on W and C (walls, probes, routes, spawns)
 #   collision the scene's collision boxes, laid back onto the grid, are C exactly; the ground is there; no box overlaps
 #   envelope  no dressing stands where a player can be: each piece is inside rock, inside a solid top, flat on the
-#             floor, flush on a rock face, or above the reach ceiling, which is recomputed here from C and the player
-#   no lies   no dressing carries collision, and the scene's own reach ceiling is the one recomputed here
+#             floor, flush on a rock face, or above the reach ceiling, which is recomputed here from C, the player, the
+#             targets and the movers (REACH-1, 0229: art/README.md)
+#   no lies   no dressing carries collision; the scene's player is sim.js's, its spawns and targets W's, and its own
+#             reach ceiling the one recomputed here
 #   sources   every mesh names its source and licence; every material a piece uses is declared
 #   lineage   the lineage's hashes are the files' and the scene's own
-#   movers    (0226) a scene with movers names rules 2, which graybox/web/sim.js and graybox/tick_ref.py both implement
-#             (the handshake); each mover is inside rules 2's table and its tunnelling bound, restated here; its travel
-#             stays in the world, above every cell it crosses, clear of every spawn's column and of every other mover's
-#             travel; the reach ceiling counts a rider at a mover's highest; and no dressing stands in a mover's path
-#             but what lies flat on the floor
+#   rules     (0226, 0229) a scene names rules 3, which graybox/web/sim.js and graybox/tick_ref.py both implement (the
+#             handshake), for the reach ceiling holds only under them; each mover is inside the rules' table and its
+#             tunnelling bound, restated here, its policy stop or push (push along x or z); its travel stays in the
+#             world, above every cell it crosses, clear of every spawn's and target's column and of every other mover's
+#             travel; and no dressing stands in a mover's path but what lies flat on the floor
 #
 # Then it plants defects and requires the check that should catch each one to refuse it, and it makes two
 # revisions in the owner's words: a look revision ("make the wet surfaces less reflective"), which may change the
@@ -38,6 +40,7 @@
 import copy
 import importlib.util
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -71,38 +74,64 @@ def cells_under(b, g):
 
 
 def reach_here(S):
-    """The reach ceiling, computed again from the scene's C and player, apart from the exporter's code. A rider is
-    counted at each mover's highest top, over the cells under its travel and their neighbours, and steps off it onto
-    any of those cells no higher than that top plus the jump."""
+    """The reach ceiling, REACH-1 (art/README.md), computed again from the scene's C, player, targets and movers, apart
+    from the exporter's code (and with its arithmetic, operation for operation, so that the two give the same doubles):
+    the places a body may stand (open cells, movers' tops over their travel, targets' tops), those reached from the
+    spawns by jumps the rules allow, and over each cell the highest head a body flying from one of them raises there."""
+    import math
     g, P = S["grid"], S["player"]
-    w, h, wall, tops = g["w"], g["h"], g["wall"], S["tops"]
-    apex = P["jump"] * P["jump"] / (2.0 * P["gravity"])
-    cells = lambda sp: (int(sp["x"] // g["cell"]), int(sp["z"] // g["cell"]))
-    start = sorted({cells(sp) for sp in S["spawns"].values()})
-    rides = []
+    w, h, cell, wall, tops = g["w"], g["h"], g["cell"], g["wall"], S["tops"]
+    r, step, speed, grav, v = P["radius"], P["step"], P["speed"], P["gravity"], P["jump"]
+    apex = v * v / (2.0 * grav)
+    T = sim_target()
+    places = {}   # name: (lo, hi, x0, z0, x1, z1, how far below its lowest the feet may be and still come onto it)
+    for z in range(h):
+        for x in range(w):
+            if tops[z * w + x] < wall:
+                places[("cell", x, z)] = (tops[z * w + x],) * 2 + (x * cell, z * cell, (x + 1) * cell, (z + 1) * cell, step)
     for m in S.get("movers", []):
         tb = travel_of(m)
-        rides.append((cells_under(tb, g), max(m["box"][4], tb[4])))
-    for under, hi in rides:
-        for x, z in sorted(under):
-            for a in (x - 1, x, x + 1):
-                for b in (z - 1, z, z + 1):
-                    if 0 <= a < w and 0 <= b < h and tops[b * w + a] < wall and tops[b * w + a] <= hi + apex and (a, b) not in start:
-                        start.append((a, b))
-    ok, todo = set(start), list(start)
+        y_end = m["box"][4] + m["axis"][1] * (m["len"] / 256.0)
+        places[("mover", m["id"])] = (min(m["box"][4], y_end), max(m["box"][4], y_end), tb[0], tb[2], tb[3], tb[5], step)
+    for tid, t in S.get("targets", {}).items():
+        top = t["y"] + T["targetHeight"]
+        places[("target", tid)] = (top, top, t["x"] - T["targetRadius"], t["z"] - T["targetRadius"], t["x"] + T["targetRadius"], t["z"] + T["targetRadius"], 0.0)
+
+    def apart(p, q):
+        dx = max(q[2] - p[4], p[2] - q[4], 0.0)
+        dz = max(q[3] - p[5], p[3] - q[5], 0.0)
+        return math.sqrt(dx * dx + dz * dz)
+
+    reached = {("cell", int(sp["x"] // cell), int(sp["z"] // cell)) for sp in S["spawns"].values()}
+    reached &= set(places)
+    todo, every = sorted(reached), sorted(places.items())
     while todo:
-        x, z = todo.pop()
-        for a, b in ((x + 1, z), (x - 1, z), (x, z + 1), (x, z - 1)):
-            if 0 <= a < w and 0 <= b < h and (a, b) not in ok and tops[b * w + a] < wall and tops[b * w + a] - tops[z * w + x] <= apex:
-                ok.add((a, b))
-                todo.append((a, b))
+        p = places[todo.pop()]
+        for name, q in every:
+            if name in reached:
+                continue
+            need = q[0] - q[6] - p[1]   # the feet above p's highest when they cross onto q
+            if need <= apex and apart(p, q) <= 2.0 * r + speed * ((v + math.sqrt(v * v - 2.0 * grav * need)) / grav):
+                reached.add(name)
+                todo.append(name)
+    # each place with how far (in plan, along x or z) a body may fly from it before its feet would be below 0, and a
+    # metre more: a cell farther than that from a place gets no head from it, and no rounding is asked to say so
+    stand = [(places[n], 2.0 * r + speed * (v + math.sqrt(v * v + 2.0 * grav * max(places[n][1], 0.0))) / grav + 1.0) for n in sorted(reached)]
     out = []
     for z in range(h):
         for x in range(w):
-            near = [tops[b * w + a] for a in (x - 1, x, x + 1) for b in (z - 1, z, z + 1) if (a, b) in ok]
-            near += [hi for under, hi in rides if any((a, b) in under for a in (x - 1, x, x + 1) for b in (z - 1, z, z + 1))]
-            if near:
-                out.append(round(max(near) + P["body"] + apex + P["margin"], 4))
+            here = (0, 0, x * cell, z * cell, (x + 1) * cell, (z + 1) * cell)
+            heads = []
+            for p, far in stand:
+                if max(here[2] - p[4], p[2] - here[4], here[3] - p[5], p[3] - here[5]) > far:
+                    continue
+                t = max(0.0, apart(p, here) - 2.0 * r) / speed
+                if t <= v / grav:
+                    heads.append(p[1] + apex + P["body"])
+                elif p[1] + (v * t - 0.5 * grav * t * t) >= 0:
+                    heads.append(p[1] + (v * t - 0.5 * grav * t * t) + P["body"])
+            if heads:
+                out.append(round(max(heads) + P["margin"], 4))
             else:
                 out.append(round(tops[z * w + x] + P["body"] + apex + P["margin"], 4) if tops[z * w + x] < wall else None)
     return out
@@ -205,6 +234,12 @@ def check_no_lies(S, reach, W=None):
             got = S["spawns"].get(k, {})
             if (got.get("x"), got.get("z"), got.get("yaw")) != (round((sp["x"] + 0.5) * g["cell"], 4), round((sp["z"] + 0.5) * g["cell"], 4), round(sp["yaw"], 4)):
                 return False, "the scene's spawn %s is not W's" % k
+        # 0229: the targets, whose tops the reach ceiling counts, are W's, each where W stands it
+        want = {t["id"]: {"x": round((t["x"] + 0.5) * g["cell"], 4), "z": round((t["z"] + 0.5) * g["cell"], 4),
+                          "y": S["tops"][t["z"] * g["w"] + t["x"]]} for t in W["targets"]}
+        if S.get("targets") != want:
+            diff = sorted(set(want) ^ set(S.get("targets") or {})) or sorted(k for k in want if want[k] != S["targets"][k])
+            return False, "the scene's targets are not W's (%s)" % ", ".join(diff[:3])
     for name, vw in sorted(S.get("views", {}).items()):
         x, z = int(vw["x"] // S["grid"]["cell"]), int(vw["z"] // S["grid"]["cell"])
         if reach[z * S["grid"]["w"] + x] is None or S["tops"][z * S["grid"]["w"] + x] >= S["grid"]["wall"]:
@@ -219,38 +254,41 @@ def check_no_lies(S, reach, W=None):
     lit = [L["id"] for L in S["lights"] if any(k in L for k in ("box", "collision", "asset"))]
     if lit:
         return False, "the light %s carries geometry" % lit[0]
-    return True, "no piece has collision; the player is sim.js's and the spawns W's; the reach ceiling is the one recomputed here; lights are only light"
+    return True, "no piece has collision; the player is sim.js's, the spawns and targets W's; the reach ceiling is the one recomputed here; lights are only light"
 
 
-def sim_rules2():
-    """What the simulation and its twin say of rules 2, read from their sources: (sim.js offers rules 2, its body and
-    phase unit; tick_ref.py's rules-2 version and phase unit). None where a source no longer says it once."""
+def sim_rules3():
+    """What the simulation and its twin say of rules 3, read from their sources: (sim.js offers rules 3, its body and
+    phase unit, its policies; tick_ref.py's rules-3 version, phase unit and body). None where a source no longer says it
+    once."""
     import re
     js = open(os.path.join(REPO, "graybox", "web", "sim.js"), encoding="utf-8").read()
     py = open(os.path.join(REPO, "graybox", "tick_ref.py"), encoding="utf-8").read()
-    offers = re.findall(r"rules === 2 \? 2 :", js)
+    offers = re.findall(r"rules === 3 \? 3 :", js)
     unit = re.findall(r"const BODY = ([0-9.]+), Q = 1 / ([0-9]+);", js)
-    twin = re.findall(r"^RULES2 = ([0-9]+)$", py, re.M)
+    pol = re.findall(r'const POLICIES = RULES >= 3 \? \["stop", "push"\] : \["stop"\];', js)
+    twin = re.findall(r"^RULES3 = ([0-9]+)(?:  +#[^\n]*)?$", py, re.M)
     tq = re.findall(r"^Q = 1\.0 / ([0-9]+)\.0$", py, re.M)
     tb = re.findall(r"^BODY = ([0-9.]+)$", py, re.M)
-    return {"sim": 2 if len(offers) == 1 else None, "body": float(unit[0][0]) if len(unit) == 1 else None,
-            "q": int(unit[0][1]) if len(unit) == 1 else None, "twin": int(twin[0]) if len(twin) == 1 else None,
+    return {"sim": 3 if len(offers) == 1 else None, "body": float(unit[0][0]) if len(unit) == 1 else None,
+            "q": int(unit[0][1]) if len(unit) == 1 else None, "push": len(pol) == 1, "twin": int(twin[0]) if len(twin) == 1 else None,
             "twin_q": int(tq[0]) if len(tq) == 1 else None, "twin_body": float(tb[0]) if len(tb) == 1 else None}
 
 
-def check_movers(S, W=None):
-    """A scene's movers (0226), held here apart from the exporter's code: the rules' handshake, rules 2's table, and
-    every mover's travel against the world, the spawns and the other movers."""
-    if "movers" not in S and "rules" not in S:
-        return True, "no movers: the scene is played as before (rules 1)"
-    if not S.get("movers") or "rules" not in S:
-        return False, "the scene has %s without %s" % (("rules", "movers") if "rules" in S else ("movers", "rules"))
-    if S["rules"] != 2:
-        return False, "the scene names rules %r: movers are played under rules 2, and no other rules are offered here" % (S["rules"],)
-    R = sim_rules2()
-    if R["sim"] != 2 or R["twin"] != 2 or R["q"] != 256 or R["twin_q"] != 256 or R["body"] is None or R["body"] != R["twin_body"]:
-        return False, "the scene needs rules 2 (1/256 m units): graybox/web/sim.js says %s and graybox/tick_ref.py says %s" % (
-            "rules 2 offered, Q 1/%s" % R["q"] if R["sim"] == 2 else "no rules 2", "rules %s, Q 1/%s" % (R["twin"], R["twin_q"]))
+def check_rules(S, W=None):
+    """A scene's rules and movers (0226, 0229), held here apart from the exporter's code: the rules' handshake (every
+    scene names rules 3), the rules' table for each mover, and every mover's travel against the world, the spawns, the
+    targets and the other movers."""
+    if S.get("rules") != 3 or isinstance(S.get("rules"), bool):
+        return False, "the scene names rules %r: a scene is played under rules 3, whose walls and targets the reach ceiling counts on, and no other rules are offered here" % (S.get("rules"),)
+    R = sim_rules3()
+    if R["sim"] != 3 or R["twin"] != 3 or R["q"] != 256 or R["twin_q"] != 256 or R["body"] is None or R["body"] != R["twin_body"] or not R["push"]:
+        return False, "the scene needs rules 3 (1/256 m units, the policies stop and push): graybox/web/sim.js says %s and graybox/tick_ref.py says %s" % (
+            "rules 3 offered, Q 1/%s, push %s" % (R["q"], "offered" if R["push"] else "not offered") if R["sim"] == 3 else "no rules 3", "rules %s, Q 1/%s" % (R["twin"], R["twin_q"]))
+    if "movers" not in S:
+        return True, "rules 3, which sim.js and tick_ref.py both implement; no movers"
+    if not isinstance(S["movers"], list) or not S["movers"]:
+        return False, "the scene's movers are not a list of at least one mover"
     g, P = S["grid"], S["player"]
     w, h, cell, tops = g["w"], g["h"], g["cell"], S["tops"]
     radius, body = sim_player()["radius"], R["body"]
@@ -271,8 +309,10 @@ def check_movers(S, W=None):
         n, sp = m.get("len"), m.get("speed")
         if not (isinstance(n, int) and 1 <= n <= 2 ** 18 and isinstance(sp, int) and 0 <= sp <= n):
             return False, "the mover %s's len or speed is not whole and in range" % mid
-        if m.get("policy") != "stop":
-            return False, "the mover %s's policy is not stop" % mid
+        if m.get("policy") not in ("stop", "push"):
+            return False, "the mover %s's policy is not stop or push" % mid
+        if m["policy"] == "push" and a[1] != 0:
+            return False, "the mover %s pushes along y, which rules 3 do not do" % mid
         if m.get("material") not in S["materials"]:
             return False, "the mover %s's material is not declared" % mid
         k = a.index(1) if 1 in a else a.index(-1)
@@ -301,7 +341,7 @@ def check_movers(S, W=None):
             if all(tb[i] < ob[i + 3] and ob[i] < tb[i + 3] for i in range(3)):
                 return False, "the movers %s and %s cross each other's travel" % (oid, mid)
         paths.append((mid, tb))
-    return True, "%d mover(s) under rules 2, which sim.js and tick_ref.py both implement: each within rules 2's table and its tunnelling bound; each travel above the cells it crosses and clear of the spawns' columns%s and of each other" % (
+    return True, "rules 3, which sim.js and tick_ref.py both implement; %d mover(s), each within the rules' table and its tunnelling bound, its policy stop or push (push along x or z); each travel above the cells it crosses and clear of the spawns' columns%s and of each other" % (
         len(S["movers"]), ", the targets'" if W is not None else "")
 
 
@@ -336,6 +376,9 @@ def check_lineage(out, art_path, scene_bytes):
     return True, "art %s, layout head %s, scene %s" % (L["art_sha256"][:12], (L["map_source"].get("layout_head") or "-")[:12], L["scene_sha256"][:12])
 
 
+RULES_CHECK = "the rules: rules 3 hold the scene, its movers and their paths clear"
+
+
 def verify(out, art_path, scene_bytes=None, D=None):
     S, W, C = out["scene"], out["W"], out["C"]
     scene_bytes = out["scene_bytes"] if scene_bytes is None else scene_bytes
@@ -349,7 +392,7 @@ def verify(out, art_path, scene_bytes=None, D=None):
     res.append(("no dressing where a player can be",) + check_envelope(S, reach))
     res.append(("the art carries no collision and no false ceiling",) + check_no_lies(S, reach, W))
     res.append(("every mesh names its source and licence",) + check_sources(S))
-    res.append(("movers: rules 2 holds them and their paths are clear",) + check_movers(S, W))
+    res.append((RULES_CHECK,) + check_rules(S, W))
     res.append(("the lineage binds every input",) + check_lineage(out, art_path, scene_bytes))
     # QUALITY-0 (art/quality.py): the scene's bytes exact — finite, in their one byte form, every field known and in
     # its bounds, inside what the native renderer draws
@@ -561,9 +604,16 @@ def plants(out, art_path):
         except dress.ArtError as e:
             res.append(("the exporter refuses " + label, True, "refused: " + str(e)[:90]))
     # an option that adds dressing under a slab: the slab alone passes, and with the option it is refused, so that the
-    # refusal is the option's (a slab that is itself too low proves nothing about its ribs or its lights)
-    for label, slab, option in (("a canopy clear of every head whose ribs are not", "canopy plant-r concrete 4.4", "ribs 1"),
-                                ("a canopy clear of every head whose edge lights are not", "canopy plant-r concrete 3.3 19,10 28,10", "edgelit 255,180,120 100")):
+    # refusal is the option's (a slab that is itself too low proves nothing about its ribs or its lights). 0229: each
+    # slab set just above the highest ceiling over its cells (REACH-1 raised them), the ribs 0.8 m below it and the edge
+    # lights 0.06 m, so that the option, not the height chosen, is what is refused
+    region_r = (19, 10, 28, 21)
+
+    def over(x0, z0, x1, z1, plus):
+        top = max(S["reach"][z * w + x] for z in range(z0, z1 + 1) for x in range(x0, x1 + 1) if S["reach"][z * w + x] is not None)
+        return "%.2f" % (math.ceil((top + plus) * 100) / 100.0)
+    for label, slab, option in (("a canopy clear of every head whose ribs are not", "canopy plant-r concrete %s" % over(*region_r, plus=0.1), "ribs 1"),
+                                ("a canopy clear of every head whose edge lights are not", "canopy plant-r concrete %s 19,10 28,10" % over(19, 10, 28, 10, plus=0.03), "edgelit 255,180,120 100")):
         try:
             got = []
             for add in (slab, slab + " " + option):
@@ -610,13 +660,15 @@ def plants(out, art_path):
     for label, ok_text, add, says in (
             ("a mover whose corner is not a whole number of 1/256 m", good, "mover plant-m concrete 40.1,0,30 42,0.25,32 along +y travel 2.25 speed 0.9375", "1/256 m"),
             ("a mover whose speed is not a whole number of 1/256 m a tick", good, "mover plant-m concrete 40,0,30 42,0.25,32 along +y travel 2.25 speed 1", "a tick"),
-            ("a mover past the tunnelling bound (rules 2's own table refuses it)", good, "mover plant-m concrete 40,0,30 40.25,2,32 along +x travel 6 speed 114.375", "RULES2-MOVER"),
+            ("a mover past the tunnelling bound (the rules' own table refuses it)", good, "mover plant-m concrete 40,0,30 40.25,2,32 along +x travel 6 speed 114.375", "RULES2-MOVER"),
             ("a mover whose travel goes through a wall", good, "mover plant-m concrete 40,0,30 42,0.5,32 along -z travel 24 speed 3.75", "solid"),
             ("a mover whose travel crosses a spawn", good, "mover plant-m concrete 10,0,30 12,0.5,32 along -x travel 4 speed 3.75", "spawn"),
             ("a mover whose travel crosses a target", good, "mover plant-m concrete 24,0,32 26,0.5,34 along -x travel 6 speed 3.75", "target"),
             ("two movers whose travels cross", good, good + "\nmover plant-m concrete 38,1,30 39,1.25,32 along +x travel 3 speed 3.75", "plant-ok"),
             ("a mover whose travel meets a piece of dressing (a slab at 5.2 m over a lift rising to 6.25 m)", slab + "\n" + good,
-             slab + "\nmover plant-m concrete 40,0,30 42,0.25,32 along +y travel 6 speed 0.9375", "in the path")):
+             slab + "\nmover plant-m concrete 40,0,30 42,0.25,32 along +y travel 6 speed 0.9375", "in the path"),
+            ("a mover pushing along y (0229: rules 3 push along x or z)", good, "mover plant-m concrete 40,0,30 42,0.25,32 along +y travel 2.25 speed 0.9375 policy push", "pushes along y"),
+            ("a mover with a policy rules 3 do not have", good, "mover plant-m concrete 40,0,30 42,0.25,32 along +y travel 2.25 speed 0.9375 policy pull", "policy takes")):
         try:
             got = []
             for t2 in (ok_text, add):
@@ -632,10 +684,11 @@ def plants(out, art_path):
         except dress.ArtError as e:
             res.append(("the exporter refuses " + label, False, "the plant itself did not read: " + str(e)[:90]))
     # 0226: a canopy clear of every head on foot, not of a rider's: the slab alone passes, and with a lift under it, which
-    # raises a rider's head to 5.8 m, the same slab is refused by the envelope (the exporter takes both)
+    # raises a rider's head to 5.775 m, the same slab is refused by the envelope (the exporter takes both). 0229: the slab
+    # is one cell, 20,15, whose ceiling on foot REACH-1 puts at 4.275 m (a 1 m step two cells off), and 5.2 m high
     try:
         got = []
-        for add in ("canopy plant-r concrete 4.4", "canopy plant-r concrete 4.4\n" + good):
+        for add in (slab, slab + "\n" + good):
             A = dress.parse(text + add + "\n", os.path.basename(art_path))
             A["name"], A["sha256"] = "plant", "-"
             o3 = dress.export(A)
@@ -645,6 +698,20 @@ def plants(out, art_path):
                     "NOT shown (the slab alone refused: %s; with the lift refused: %s)" % tuple(got)))
     except dress.ArtError as e:
         res.append(("a canopy clear of every head on foot, not of a rider's on a lift", False, "the exporter refused it before the checks could: " + str(e)[:90]))
+    # 0229: REACH-1 against 0226's model. Beside the 2.6 m cover at 20,11, 0226's ceiling counted a head on the floor
+    # alone (3.275 m), for a climb of the apex alone (1.225 m) never reached the cover; the simulation climbs the apex
+    # and a step (1.775 m) from the 1 m steps, stands on the cover and raises a head to 5.625 m there. A slab at 4.5 m
+    # over 20,10: clear of 0226's ceiling, not of that head; and one at 6.0 m, clear of both
+    for label, add, refused in (("a slab at 4.5 m beside the 2.6 m cover: clear of 0226's ceiling, not of a head on the cover", "canopy plant-r concrete 4.5 20,10 20,10", True),
+                                ("  a slab at 6.0 m there passes (the refusal is the height's)", "canopy plant-r concrete 6.0 20,10 20,10", False)):
+        try:
+            A = dress.parse(text + add + "\n", os.path.basename(art_path))
+            A["name"], A["sha256"] = "plant", "-"
+            o3 = dress.export(A)
+            got = "no dressing where a player can be" in [c for c, ok, _d in verify(o3, None, D=gcheck.source_rows(o3["W"])) if not ok]
+            res.append((label, got == refused, ("refused by: no dressing where a player can be" if got else "passed") + (" (the ceiling over 20,10 is %s m)" % o3["scene"]["reach"][10 * w + 20])))
+        except dress.ArtError as e:
+            res.append((label, False, "the exporter refused it before the checks could: " + str(e)[:90]))
     # 0226: the scene's movers held here apart from the exporter: the brief with a lift, exported, passes every check;
     # each defect planted in its scene is refused by the movers' check, or by the ceiling's
     try:
@@ -665,35 +732,46 @@ def plants(out, art_path):
             failed = [c for c, ok, _d in verify(dict(o3, scene=S4), None, scene_bytes=o3["scene_bytes"], D=D3) if not ok]
             res.append((label, expect in failed, ("refused by: " + expect) if expect in failed else "NOT refused by %r (failed: %s)" % (expect, failed or "nothing")))
         S4 = copy.deepcopy(S3)
-        S4["rules"] = 3
-        judged("the scene names rules 3, which neither sim.js nor tick_ref.py implements (the handshake)", S4, "movers: rules 2 holds them and their paths are clear")
+        S4["rules"] = 4
+        judged("the scene names rules 4, which neither sim.js nor tick_ref.py implements (the handshake)", S4, RULES_CHECK)
+        S4 = copy.deepcopy(S3)
+        S4["rules"] = 2
+        judged("the scene names rules 2, under which a wall can be climbed and the ceiling does not hold", S4, RULES_CHECK)
+        S4 = copy.deepcopy(S3)
+        S4["movers"][-1]["policy"] = "push"
+        judged("the lift given the policy push, along y, in the scene", S4, RULES_CHECK)
+        S4 = copy.deepcopy(S3)
+        tid = sorted(S4["targets"])[0]
+        S4["targets"][tid] = dict(S4["targets"][tid], x=round(S4["targets"][tid]["x"] + cell, 4))
+        S4["reach"] = reach_here(S4)
+        judged("target %s moved a cell from W's, and the ceiling made to match" % tid, S4, "the art carries no collision and no false ceiling")
         S4 = copy.deepcopy(S3)
         S4["movers"][-1].update(box=[40.0, 0.0, 30.0, 40.25, 2.0, 32.0], axis=[1, 0, 0], len=1024, speed=244)
         S4["reach"] = reach_here(S4)
-        judged("a mover past the tunnelling bound, in the scene", S4, "movers: rules 2 holds them and their paths are clear")
+        judged("a mover past the tunnelling bound, in the scene", S4, RULES_CHECK)
         S4 = copy.deepcopy(S3)
         S4["movers"][-1].update(axis=[0, 0, -1], len=4096 * 3)
         S4["reach"] = reach_here(S4)
-        judged("a mover's travel through a wall, in the scene", S4, "movers: rules 2 holds them and their paths are clear")
+        judged("a mover's travel through a wall, in the scene", S4, RULES_CHECK)
         S4 = copy.deepcopy(S3)
         S4["movers"][-1]["box"][0] = 40.1
-        judged("a mover's corner not a whole number of 1/256 m, in the scene", S4, "movers: rules 2 holds them and their paths are clear")
+        judged("a mover's corner not a whole number of 1/256 m, in the scene", S4, RULES_CHECK)
         S4 = copy.deepcopy(S3)
         S4["reach"] = copy.deepcopy(S["reach"])
         judged("the lift's rider left out of the scene's reach ceiling", S4, "the art carries no collision and no false ceiling")
         S4 = copy.deepcopy(S3)
         S4["movers"][-1].update(box=[24.0, 0.0, 32.0, 26.0, 0.5, 34.0], axis=[-1, 0, 0], len=6 * 256)
         S4["reach"] = reach_here(S4)
-        judged("a mover's travel through a target's column, in the scene", S4, "movers: rules 2 holds them and their paths are clear")
+        judged("a mover's travel through a target's column, in the scene", S4, RULES_CHECK)
         S4 = copy.deepcopy(S3)
         S4["movers"][-1].update(box=[24.0, 0.0, 32.0, 26.0, 0.5, 34.0], axis=[-1, 0, 0], len=6 * 256)
         S4["reach"] = reach_here(S4)
         failed = [c for c, ok, _d in verify(dict(o3, scene=S4, W=dict(o3["W"], targets=[])), None, scene_bytes=o3["scene_bytes"], D=D3) if not ok]
         res.append(("  the same scene over a world without targets passes the movers' check (the refusal is the target's)",
-                    "movers: rules 2 holds them and their paths are clear" not in failed, "failed: %s" % (failed or "nothing")))
+                    RULES_CHECK not in failed, "failed: %s" % (failed or "nothing")))
         S4 = copy.deepcopy(S3)
         del S4["rules"]
-        judged("movers without the rules they are played under", S4, "movers: rules 2 holds them and their paths are clear")
+        judged("a scene that names no rules", S4, RULES_CHECK)
     return res
 
 

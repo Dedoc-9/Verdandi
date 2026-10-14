@@ -27,7 +27,8 @@
 # CERTIFIES is derived: the checks that ran and passed, by name, and the scope protocol's finding when it found one.
 # NOT_CHECKED is every expected check that did not run (a skip is never a pass) and what the director never checks.
 # HORIZON: no tick is run and none is claimed. A scene without movers has nothing that moves; a scene with movers
-#   (0226) has each one held to rules 2's table and its travel checked as a swept box (art/check.py), not played.
+#   (0226) has each one held to the rules' table (rules 3 since 0229) and its travel checked as a swept box
+#   (art/check.py), not played.
 # TRUSTED: the sha256 of each component the verdict rests on, as the files stood when it was made.
 # REQUIRES, for rung A: the verdict CLEAN (or LEAKAGE accepted by the person, recorded); every expected check ran and
 #   passed; and a still of the candidate as drawn, its detectors read by the host (art/quality.py) — a still they flag
@@ -51,7 +52,7 @@ EXPECTED_CHECKS = (
     "quality: the scene's bytes are finite JSON in its one byte form",
     "quality: every field is known and inside its bounds",
     "quality: the scene is inside the native renderer's budgets",
-    "movers: rules 2 holds them and their paths are clear",
+    "the rules: rules 3 hold the scene, its movers and their paths clear",
 )
 
 # what the director never checks, said on every record
@@ -69,7 +70,7 @@ PLAY_KINDS = ("cover", "floor", "ground", "mover", "raised", "stair", "wall")
 NAMED = ("asset", "env", "material", "region", "view")
 ENV_FIELDS = ("bloom", "exposure", "fog", "light", "rain", "time", "title")
 
-MOVING = ("anything over time: the scene's %d mover(s) were held to rules 2's table and their travel checked as swept boxes; "
+MOVING = ("anything over time: the scene's %d mover(s) were held to rules 3's table and their travel checked as swept boxes; "
           "no tick was run, so how they meet a player over time is not checked")
 
 UNDO_STILL = "the exact inverse of admission #%s: its picture is the one admitted before it"
@@ -135,7 +136,7 @@ def record(intent, verdict, ran, trusted, exported, regions=(), movers=0):
         "certifies": certifies,
         "not_checked": not_checked,
         "horizon": {"ticks": "0", "why": "nothing in VERDANDI-ART-SCENE 0 moves: no tick was run and none is claimed" if not movers else
-                    "the scene's %d mover(s) move under rules 2: no tick was run and none is claimed" % movers},
+                    "the scene's %d mover(s) move under rules 3: no tick was run and none is claimed" % movers},
         "trusted": ["%s %s" % (p, h) for p, h in sorted(trusted)],
         "requires": requires,
         "intent_sha256": canon.sha256(canon.dumps(intent)) if intent is not None else "",

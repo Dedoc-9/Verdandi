@@ -272,11 +272,16 @@ def import_scene(path):
     scene = json.load(open(path, encoding="utf-8"))
     if scene.get("format") != "VERDANDI-ART-SCENE 0":
         raise RuntimeError("%s is not a VERDANDI-ART-SCENE 0 scene" % path)
-    if "movers" in scene or "rules" in scene:
-        # 0226: movers move under the graybox's rules 2, which this importer does not play; a level without them would
+    if "movers" in scene:
+        # 0226: movers move under the graybox's rules, which this importer does not play; a level without them would
         # not be the scene, so it is not made at all
         raise RuntimeError("%s has movers (rules %s): this importer does not bring movers into Unreal yet; the native plaza "
                            "(art/play.py) plays them" % (path, scene.get("rules")))
+    if scene.get("rules") is not None:
+        # 0229: every scene names the graybox's rules 3; Unreal moves a character by its own movement, not by them (as it
+        # never moved one by rules 1), so a player there may climb what the graybox holds: said, and the level made
+        warn("the scene names the graybox's rules %s, which Unreal's own character movement does not play: its walls and "
+             "targets are made as boxes, and how a player moves among them is Unreal's" % scene["rules"])
     say("engine %s; scene %s (%s), map %s" % (unreal.SystemLibrary.get_engine_version(), scene["name"], scene.get("title", ""), scene["map"]))
     eas = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
     cube_path = scene["assets"]["cube"]["path"]

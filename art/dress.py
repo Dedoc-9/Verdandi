@@ -23,6 +23,7 @@
 import decimal
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -38,10 +39,13 @@ import level  # noqa: E402  (the graybox converter: W and C)
 FORMAT = "VERDANDI-ART 0"
 SCENE = "VERDANDI-ART-SCENE 0"
 LINEAGE = "VERDANDI-ART-LINEAGE 0"
-# 0226: a scene with movers is played under the graybox's rules 2 (graybox/RULES-2.md), and says so (`rules`); the
+# 0226: a scene with movers was played under the graybox's rules 2 (graybox/RULES-2.md), and said so (`rules`); the
 # version is the handshake: the plaza plays a scene only under the rules it names, and art/check.py refuses a scene
-# whose rules the simulation and its twin (graybox/web/sim.js, graybox/tick_ref.py) do not both implement
-RULES = 2
+# whose rules the simulation and its twin (graybox/web/sim.js, graybox/tick_ref.py) do not both implement. 0229: every
+# scene names rules 3 (graybox/RULES-3.md), with movers or without, for the reach ceiling below holds only under them:
+# a wall is never entered, a target has a top, and nobody stands where rules 1 and 2 let a body walk on the rock
+RULES = 3
+POLICIES = ("stop", "push")   # a mover's policies under rules 3; push moves along x or z only
 QN = 256        # a mover's phase units a metre (RULES-2.md's Q = 1/256 m)
 TICKS = 120     # the graybox's ticks a second
 AXES = {"+x": [1, 0, 0], "-x": [-1, 0, 0], "+y": [0, 1, 0], "-y": [0, -1, 0], "+z": [0, 0, 1], "-z": [0, 0, -1]}
@@ -281,62 +285,92 @@ def footprint(b, w, h, cell):
 
 
 def reach_ceiling(W, C, movers=()):
-    """For every cell, the height dressing above it must clear: the highest head a player can raise over it.
+    """For every cell, the height dressing above it must clear: the highest a player's head can rise over it, under
+    the graybox's rules 3 (graybox/RULES-3.md), by REACH-1 (0229; art/README.md). Before 0229 a climb was the jump's
+    apex alone and only to a neighbouring cell: the simulation climbs the apex and a step (1.775 m), crosses gaps, and
+    stands on targets, and that model was below it.
 
-    A cell is standable when a player can get onto it from a spawn: over C, a step to a neighbour may climb at most
-    the jump's apex (and drop any height). The head over a cell reaches the highest standable top among the cell and
-    its eight neighbours (the player's radius leans into the next cell), plus the body, the jump and a margin.
+    Surfaces a player may stand on: every open cell's top (a cell as high as the wall is rock, which rules 3 never let a
+    body enter); every mover's top, over its whole travel in plan, from its lowest to its highest; every target's top
+    (rules 3), over its column. From a surface s a player reaches a surface s2 when, jumping from s's highest at once,
+    the feet are still as high as s2's lowest less the step (less nothing, for a target, which holds a body below its
+    top) after flying the gap between them: with need = lo2 - allowance - hi, need <= the apex and the gap at most
+    2 radius + speed t, t = (jump + sqrt(jump^2 - 2 gravity need)) / gravity. Nothing in between is asked to be open,
+    which can only add surfaces. The standable surfaces are those reached so from the spawns' cells.
 
-    With movers (0226), a rider stands on a mover's top wherever it travels, and steps or jumps off it: every mover is
-    taken to be boardable (whether a player can reach it is not asked, which can only raise the ceiling); the cells under
-    its travel and their eight neighbours are standable when their top is at most its highest top plus the apex, and
-    the walk over C goes on from them; and the head over those cells and their neighbours reaches its highest top."""
+    The head over a cell: from each standable surface, the body flies the gap to the cell less two radii (its own
+    circle at both ends) at the walking speed; within the rise the feet are at the surface's highest plus the apex, after
+    it falling, and a fall below 0 is not counted (the body lands first, on a surface counted itself). The cell's ceiling
+    is the highest head plus the margin; with no surface in range, an open cell's own top plus the body and the apex
+    (as before), a rock cell none."""
     w, h, wall, tops, cell = C["w"], C["h"], W["wall"], C["tops"], C["cell"]
-    apex = PLAYER["jump_apex"]
-    seen = set()
-    frontier = [(sp["x"], sp["z"]) for _k, sp in sorted(W["spawns"].items())]
-    seen.update(frontier)
-    rides = []   # (the cells under a mover's travel, its highest top)
-    for m in movers:
-        F = footprint(swept(m), w, h, cell)
-        hi = mover_top(m)
-        rides.append((set(F), hi))
-        for x, z in F:
-            for dz in (-1, 0, 1):
-                for dx in (-1, 0, 1):
-                    a, b = x + dx, z + dz
-                    if 0 <= a < w and 0 <= b < h and (a, b) not in seen and tops[b * w + a] < wall and tops[b * w + a] <= hi + apex:
-                        seen.add((a, b))
-                        frontier.append((a, b))
-    while frontier:
-        nxt = []
-        for x, z in frontier:
-            for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                a, b = x + dx, z + dz
-                if 0 <= a < w and 0 <= b < h and (a, b) not in seen:
-                    t = tops[b * w + a]
-                    if t < wall and t - tops[z * w + x] <= apex:
-                        seen.add((a, b))
-                        nxt.append((a, b))
-        frontier = nxt
-    reach = []
+    P = PLAYER
+    r, step, speed, g, v = P["radius"], P["step"], P["speed"], P["gravity"], P["jump"]
+    apex, rise = P["jump_apex"], v / g
+    # (lo, hi, x0, z0, x1, z1, allowance, the cell it is, if it is one)
+    surf = []
     for z in range(h):
         for x in range(w):
-            best = None
-            for dz in (-1, 0, 1):
-                for dx in (-1, 0, 1):
-                    a, b = x + dx, z + dz
-                    if 0 <= a < w and 0 <= b < h and (a, b) in seen:
-                        t = tops[b * w + a]
-                        best = t if best is None else max(best, t)
-                    for F, hi in rides:
-                        if (a, b) in F:
-                            best = hi if best is None else max(best, hi)
-            if best is None:
-                t = tops[z * w + x]
-                best = t if t < wall else None
-            reach.append(None if best is None else r4(best + BODY + apex + MARGIN))
-    return reach, seen
+            t = tops[z * w + x]
+            if t < wall:
+                surf.append((t, t, x * cell, z * cell, (x + 1) * cell, (z + 1) * cell, step, (x, z)))
+    for m in movers:
+        b, d = swept(m), m["len"] / float(QN)
+        lo = m["box"][4] - (d if m["axis"][1] < 0 else 0.0)
+        surf.append((lo, mover_top(m), b[0], b[2], b[3], b[5], step, None))
+    for t in W["targets"]:
+        # where the scene says it stands (to 0.1 mm), so that art/check.py, which reads the scene, counts the same top
+        cx, cz, ty = r4((t["x"] + 0.5) * cell), r4((t["z"] + 0.5) * cell), r4(tops[t["z"] * w + t["x"]])
+        top = ty + TARGET["height"]
+        surf.append((top, top, cx - TARGET["radius"], cz - TARGET["radius"], cx + TARGET["radius"], cz + TARGET["radius"], 0.0, None))
+
+    def gap(a, b):
+        dx = max(0.0, a[2] - b[4], b[2] - a[4])
+        dz = max(0.0, a[3] - b[5], b[3] - a[5])
+        return math.sqrt(dx * dx + dz * dz)   # correctly rounded on every machine, as pow is not
+
+    index = {s[7]: k for k, s in enumerate(surf) if s[7] is not None}
+    todo = sorted({index[(sp["x"], sp["z"])] for sp in W["spawns"].values() if (sp["x"], sp["z"]) in index})
+    ok = set(todo)
+    while todo:
+        k = todo.pop()
+        a = surf[k]
+        for j, b in enumerate(surf):
+            if j in ok:
+                continue
+            need = b[0] - b[6] - a[1]
+            if need > apex:
+                continue
+            t = (v + math.sqrt(v * v - 2.0 * g * need)) / g
+            if gap(a, b) <= 2.0 * r + speed * t:
+                ok.add(j)
+                todo.append(j)
+    standable = {surf[k][7] for k in ok if surf[k][7] is not None}
+    best = [None] * (w * h)
+    for k in sorted(ok):
+        a = surf[k]
+        # beyond far the feet would be below 0; a cell more either way, so that no rounding decides what is looked at
+        far = 2.0 * r + speed * (v + math.sqrt(v * v + 2.0 * g * max(0.0, a[1]))) / g + cell
+        for z in range(max(0, int((a[3] - far) // cell)), min(h, int((a[5] + far) // cell) + 1)):
+            for x in range(max(0, int((a[2] - far) // cell)), min(w, int((a[4] + far) // cell) + 1)):
+                t = max(0.0, gap(a, (0, 0, x * cell, z * cell, (x + 1) * cell, (z + 1) * cell)) - 2.0 * r) / speed
+                if t <= rise:
+                    head = a[1] + apex + BODY
+                else:
+                    up = v * t - 0.5 * g * t * t
+                    if a[1] + up < 0:
+                        continue
+                    head = a[1] + up + BODY
+                if best[z * w + x] is None or head > best[z * w + x]:
+                    best[z * w + x] = head
+    reach = []
+    for k, hd in enumerate(best):
+        if hd is None:
+            tt = tops[k]
+            reach.append(r4(tt + BODY + apex + MARGIN) if tt < wall else None)
+        else:
+            reach.append(r4(hd + MARGIN))
+    return reach, standable
 
 
 # ------------------------------------------------------------------------------------------------ the scene
@@ -474,12 +508,13 @@ def _movers(A, W, C):
     bound), and its travel held to the world: inside the grid, above every cell it crosses, clear of every spawn's
     column, of every target's column and of every other mover's travel. Refused, with its line, otherwise.
 
-        mover NAME MATERIAL X0,Y0,Z0 X1,Y1,Z1 along AXIS travel METRES speed METRES-A-SECOND
+        mover NAME MATERIAL X0,Y0,Z0 X1,Y1,Z1 along AXIS travel METRES speed METRES-A-SECOND [policy stop|push]
 
     Two opposite corners (metres; x east, y up, z south); AXIS one of +x -x +y -y +z -z; it goes out by `travel` metres
     and back, again and again, at `speed` metres a second, which must be a whole number of 1/256 m a tick (a multiple of
-    0.46875 m/s; 0 parks it, a static box). A mover stops rather than move into a player, and carries one who stands on
-    it (RULES-2.md)."""
+    0.46875 m/s; 0 parks it, a static box). It carries a player who stands on it (RULES-2.md). Its policy (0229, rules 3,
+    RULES-3.md) says what it does with a player in its way: stop (the default) holds it still; push, along x or z only,
+    moves the player with it, and holds it still only when the player cannot go."""
     if not A["movers"]:
         return []
     import tick_ref   # the rules' second implementation: its Mover is rules 2's table of what a mover may be
@@ -502,7 +537,7 @@ def _movers(A, W, C):
         hi = [max(corners[0][i], corners[1][i]) for i in range(3)]
         if any(lo[i] == hi[i] for i in range(3)):
             raise ArtError("%s: the mover %s has no extent along %s" % (where, name, "xyz"[[lo[i] == hi[i] for i in range(3)].index(True)]))
-        opts = _options(args[4:], where, {"along": 1, "travel": 1, "speed": 1})
+        opts = _options(args[4:], where, {"along": 1, "travel": 1, "speed": 1, "policy": 1})
         miss = [k for k in ("along", "travel", "speed") if k not in opts]
         if miss:
             raise ArtError("%s: the mover %s needs %s" % (where, name, ", ".join(miss)))
@@ -517,10 +552,16 @@ def _movers(A, W, C):
             k = int(sp // 1)
             raise ArtError("%s: speed %s m/s is not a whole number of 1/256 m a tick (a multiple of 0.46875 m/s): the nearest are %s and %s m/s"
                            % (where, opts["speed"][0], _dec(Fraction(k * TICKS, QN)), _dec(Fraction((k + 1) * TICKS, QN))))
+        policy = opts["policy"][0] if "policy" in opts else "stop"
+        if policy not in POLICIES:
+            raise ArtError("%s: policy takes one of %s" % (where, " ".join(POLICIES)))
+        if policy == "push" and AXES[opts["along"][0]][1] != 0:
+            raise ArtError("%s: the mover %s pushes along y: rules 3 push along x or z only (along y a mover in a player's way "
+                           "holds still, as stop does), so say policy stop" % (where, name))
         m = {"id": name, "by": d["hash"], "material": args[1], "box": [float(v) for v in lo + hi], "axis": list(AXES[opts["along"][0]]),
-             "len": int(travel * QN), "speed": int(sp), "policy": "stop"}
+             "len": int(travel * QN), "speed": int(sp), "policy": policy}
         try:
-            tick_ref.Mover({k: m[k] for k in ("id", "box", "axis", "len", "speed", "policy")}, ids)
+            tick_ref.Mover({k: m[k] for k in ("id", "box", "axis", "len", "speed", "policy")}, ids, POLICIES)
         except tick_ref.MoverRefused as e:
             raise ArtError("%s: %s" % (where, e))
         ids.add(name)
@@ -541,7 +582,7 @@ def _movers(A, W, C):
             tx, tz, ty = (t["x"] + 0.5) * cell, (t["z"] + 0.5) * cell, tops[t["z"] * w + t["x"]]
             px, pz = max(b[0], min(tx, b[3])), max(b[2], min(tz, b[5]))
             if (tx - px) ** 2 + (tz - pz) ** 2 < TARGET["radius"] ** 2 and b[4] > ty and b[1] < ty + TARGET["height"]:
-                raise ArtError("%s: the mover %s's travel crosses target %s's column (rules 2 do not move targets: the box would pass through it)"
+                raise ArtError("%s: the mover %s's travel crosses target %s's column (the rules do not move targets: the box would pass through it)"
                                % (where, name, t["id"]))
         for o in out:
             ob = swept(o)
@@ -822,9 +863,12 @@ def export(A: dict, maps_dir=None) -> dict:
         "assets": {k: v for k, v in sorted(A["assets"].items()) if k in used},
         "collision": collision, "visuals": sorted(visuals, key=lambda v: v["id"]), "lights": sorted(lights, key=lambda v: v["id"]),
     }
+    # 0229: every scene names the rules it is played under, rules 3, and its targets (whose tops the reach ceiling
+    # counts); a scene carries movers when it has any
+    scene["rules"] = RULES
+    scene["targets"] = {t["id"]: {"x": r4((t["x"] + 0.5) * cell), "z": r4((t["z"] + 0.5) * cell), "y": r4(tops[t["z"] * w + t["x"]])}
+                        for t in sorted(W["targets"], key=lambda t: t["id"])}
     if movers:
-        # only a scene with movers names its rules and carries them: a scene without is byte for byte what it was
-        scene["rules"] = RULES
         scene["movers"] = movers
     scene_bytes = (json.dumps(scene, indent=1, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
     lineage = {
