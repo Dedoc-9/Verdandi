@@ -6,7 +6,7 @@
 #
 #   art/providers/scripted.json      {"provider": "cli", "argv": ["{python}", "art/providers/scripted.py"], ...}
 #
-# It reads a VERDANDI-STUDIO-REQUEST 1 on standard input and writes a VERDANDI-STUDIO-RESPONSE 0 on standard output
+# It reads a VERDANDI-STUDIO-REQUEST 1 or 2 on standard input and writes a VERDANDI-STUDIO-RESPONSE 0 on standard output
 # (art/STUDIO.md). For a canopy as the target it proposes three candidates, the three of the owner's sketch of the studio:
 # "Monolithic" (lower by 1.0 m, to no less than 6.0 m, and 2.2 m deep; 0229: REACH-1 puts the ceiling over the
 # fixture's slabs at 5.875 m, a head on the 2.6 m covers under them, so 4.6 m, or 5.8 m, would be refused for it), "Lit
@@ -15,6 +15,10 @@
 # anything else it proposes nothing. It reads the prompt only for the word "magenta", and for "match @N" (STUDIO-1):
 # when the target is a canopy and @N a pinned canopy, its one candidate gives the target @N's material, height and
 # options and keeps the target's corners, leaving @N as it is. It understands nothing.
+#
+# MARK-0 (0231): a request of version 2 names shapes. When the first is drawn on the play geometry and is an opening or an
+# addition, it answers UNSUPPORTED layout.change (the art cannot change the map); when it is drawn on a canopy and no target
+# is selected, that canopy is its target, as if E had selected it. It reads the shape's surface, not its outline.
 #
 # 0220: when it proposes nothing it gives an outcome only where a word of the prompt is in its small list of things the
 # studio cannot make yet (a person, a vehicle, a door, an escalator, ...): UNSUPPORTED, with those names. That is word
@@ -79,6 +83,17 @@ def main():
     out = {"format": "VERDANDI-STUDIO-RESPONSE", "version": "0", "id": req["id"],
            "provider": {"name": "scripted", "model": "scripted-1 (fixed variations, not a model)"}, "candidates": []}
     sel = req.get("target") or {}
+    shapes = req.get("shapes") or []
+    if shapes:
+        on = shapes[0]["on"]
+        if on.get("layer") == "play" and shapes[0]["operation"] in ("subtract", "add"):
+            out["outcome"] = {"kind": "unsupported", "unmet": ["layout.change"], "questions": [], "reason": "",
+                              "note": "#%s is %s in the play geometry (%s): that is a layout change, which the studio cannot make yet; "
+                                      "this script read the shape's surface, not the prompt." % (shapes[0]["name"], shapes[0]["meaning"], on["address"])}
+            sys.stdout.buffer.write(json.dumps(out, sort_keys=True).encode("utf-8"))
+            return 0
+        if not sel and on.get("kind") == "canopy" and on.get("statement"):
+            sel = {"tag": "#" + shapes[0]["name"], "statement": on["statement"], "patterns": on["patterns"]}
     st = (sel.get("statement") or {}).get("text", "")
     words = st.split()
     m = re.search(r"\bmatch\s+(@[0-9]+)", req.get("prompt", ""))

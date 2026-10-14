@@ -66,6 +66,7 @@
 # in the copy (SEEDED.json). The page switches worlds, duplicates one, and queues a prompt for any world; the queue
 # (DIR/queue.jsonl) runs at most --jobs requests at once, one per world, while every world plays on.
 
+import decimal
 import hashlib
 import http.server
 import importlib.util
@@ -88,6 +89,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import dress  # noqa: E402
+import studio_marks  # noqa: E402  (MARK-0, 0231: the shapes marked on the scene's surfaces)
 
 level = dress.level
 _spec = importlib.util.spec_from_file_location("art_check", os.path.join(HERE, "check.py"))
@@ -285,6 +287,7 @@ class Live:
         self.extra = []          # the studio's candidates: sources after the given ones, replaced by each request
         self.studio = None       # art/studio.py's gateway, with --director
         self.studio_error = ""
+        self.shapes = studio_marks.Shapes(self.root, brief)   # MARK-0 (0231): this world's shapes, art/ledger/BRIEF.shapes.json
 
     def publish(self, slots):
         """The studio's candidates, served after the given sources; returns their indices."""
@@ -437,7 +440,7 @@ class Live:
                               "studio": True, "served": {"sha": s["sha"], "map": s["map"], "map_sha": s["map_sha"], "counts": s["counts"],
                                                          "verdict": s.get("verdict", ""), "codes": s.get("codes", [])}})
             out = {"format": "VERDANDI-PLAY-LIVE 0", "brief": self.brief, "version": self.version, "compiled_ms": self.compiled_ms,
-                   "slots": slots, "code": self.code()}
+                   "slots": slots, "code": self.code(), "shapes_revision": self.shapes.revision}
         out["studio"] = self.studio.state() if self.studio else {"provider": {"configured": False, "model": "", "config": "", "error": self.studio_error},
                                                                    "request": None, "last": {}}
         return out
@@ -468,6 +471,10 @@ class Host:
 
     def director(self):
         return director()
+
+    def shapes(self):
+        """MARK-0: this world's shapes, which a request names by #name."""
+        return self.live.shapes
 
     def workspace(self):
         return workspace(self.live.brief, self.live.root)
@@ -815,7 +822,7 @@ def seed_worlds(worlds_dir, source=None, say=print):
 STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin",
                 "/studio/alive", "/studio/shutdown", "/studio/worlds/duplicate",
                 "/studio/queue/add", "/studio/queue/cancel", "/studio/queue/requeue", "/studio/queue/review", "/studio/queue/dismiss",
-                "/studio/build")
+                "/studio/build", "/studio/shapes/save", "/studio/shapes/delete")
 # B1 (docs/STUDIO-APP.md; the supervisor's view of this server): GET /healthz says the server is up and which code it
 # runs; POST /studio/alive is the page's heartbeat; POST /studio/shutdown stops the server as Ctrl+C does. Exit codes:
 # 0 stopped, 1 a source not served, 2 usage, 70 could not serve (the port), 75 refused to start (recovery refused).
@@ -870,6 +877,21 @@ def studio_post(hub, path, body):
         live = hub.world(body.get("world"))
     except studio.StudioError as e:
         return 409, {"ok": False, "code": e.code, "message": e.detail}
+    if path in ("/studio/shapes/save", "/studio/shapes/delete"):
+        # MARK-0 (0231): a shape saved against the brief's scene as it is served now (its anchor must name that scene and a
+        # box of it exactly as it stands), or deleted; the shapes are the designer's markup, not the world, and need no
+        # director. A refusal says its code; nothing is half written.
+        try:
+            if path.endswith("/delete"):
+                live.shapes.delete(body.get("name"))
+                return 200, {"ok": True, "revision": live.shapes.revision}
+            s0 = live.slot(0)
+            if s0 is None:
+                return 409, {"ok": False, "code": "SHAPE-STALE", "message": "nothing of this world is served"}
+            got = live.shapes.save(body.get("shape"), scene_of(s0), s0["sha"])
+            return 200, {"ok": True, "shape": got, "revision": live.shapes.revision}
+        except studio_marks.ShapeError as e:
+            return 409, {"ok": False, "code": e.code, "message": e.detail}
     if path == "/studio/build":
         # STUDIO-3 (0230), Local Build: every source of this world compiled again now, as the watcher does on an edit (a
         # fresh process; what passes replaces what was served, what fails leaves it served and says why). Writes nothing.
@@ -926,6 +948,19 @@ def scene_of(slot):
 
 def _materials(S, names):
     return [dict(S["materials"][m], name=m) for m in sorted(set(names)) if m in S.get("materials", {})]
+
+
+def _no_constant(s):
+    raise ValueError("%s is not a number of a shape" % s)
+
+
+def _no_twice(pairs):
+    d = {}
+    for k, v in pairs:
+        if k in d:
+            raise ValueError("the key %r twice" % k)
+        d[k] = v
+    return d
 
 
 def object_info(slot, piece):
@@ -1108,6 +1143,17 @@ def server(target, port=0):
                                                   "page_age_s": None if hub.page_seen is None else round(time.time() - hub.page_seen, 1),
                                                   "bye_age_s": None if hub.page_bye is None else round(time.time() - hub.page_bye, 1),
                                                   "pid": os.getpid()}, sort_keys=True).encode("utf-8"), "application/json")
+            if path == "/shapes.json":
+                # MARK-0 (0231): this world's shapes, each with its status against the brief's scene served now and the host's
+                # checks (read; nothing written)
+                qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
+                try:
+                    w = hub.world(qq.get("world"))
+                except studio.StudioError as e:
+                    return self.send(404, json.dumps({"ok": False, "code": e.code, "message": e.detail}).encode("utf-8"), "application/json")
+                s0 = w.slot(0)
+                st = w.shapes.state(scene_of(s0) if s0 is not None else None)
+                return self.send(200, json.dumps(dict(st, ok=True, scene=s0["sha"] if s0 else ""), sort_keys=True).encode("utf-8"), "application/json")
             if path in ("/object.json", "/validate.json"):
                 qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
                 try:
@@ -1169,10 +1215,15 @@ def server(target, port=0):
             if n > 65536 or not (self.headers.get("Content-Type", "").startswith("application/json")):
                 return self.refuse(400, b"a studio request is JSON of at most 64 KiB", 65536)
             try:
-                body = json.loads(self.rfile.read(n).decode("utf-8")) if n else {}
+                raw_ = self.rfile.read(n) if n else b"{}"
+                if path == "/studio/shapes/save":
+                    # MARK-0: a coordinate is the decimal written, never the nearest double; NaN, Infinity and a key twice refused
+                    body = json.loads(raw_.decode("utf-8"), parse_float=decimal.Decimal, parse_constant=_no_constant, object_pairs_hook=_no_twice)
+                else:
+                    body = json.loads(raw_.decode("utf-8"))
                 if not isinstance(body, dict):
                     raise ValueError("not an object")
-            except (UnicodeDecodeError, ValueError):
+            except (UnicodeDecodeError, ValueError, RecursionError):
                 return self.send(400, b"not a JSON object", "text/plain")
             code, reply = studio_post(hub, path, body)
             return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
@@ -2309,6 +2360,130 @@ def studio_selftest():
     references_selftest(row, cfg_dir=None)
     print("STUDIO SELFTEST %d/%d" % (sum(rows), len(rows)))
     return 0 if all(rows) else 1
+
+
+def marks_selftest(row):
+    """MARK-0 (0231) over HTTP, in the fixture's world with the scripted director: a doorway outlined on a wall of the
+    play geometry and a region on a canopy's underside, saved with the page's token and read back after a restart; the
+    refusals (no token, NaN, a decimal past the millimetre, a key twice, an older scene); the director asked about each
+    (#doorway: version 2, unsupported, layout.change; #underside: the canopy its target, three candidates); the canopy
+    moved by an edit of the brief, so its shape reads changed and a request naming it is refused (STUDIO-SHAPE); a shape
+    deleted. Writes only in a scratch tree."""
+    global ROOT
+    import studio
+    brief, tmp = "plaza-night", tempfile.mkdtemp(prefix="marks-selftest-")
+    saved_root = ROOT
+    live = srv = None
+    try:
+        director().selftest_tree(tmp)
+        ROOT = tmp
+        art = os.path.join(tmp, "art", "briefs", brief + ".art")
+        live = Live(brief, art, [], poll=0.15, root=tmp)
+        threading.Thread(target=live.watch, kwargs={"say": lambda s: None}, daemon=True).start()
+        g = start_studio(live, os.path.join(HERE, "providers", "scripted.json"), say=lambda s: None)
+        srv = server(live)
+        port = srv.server_address[1]
+        tok = re.search(r'data-studio="([0-9a-f]+)"', urllib.request.urlopen("http://127.0.0.1:%d/play.html" % port, timeout=30).read().decode("utf-8")).group(1)
+
+        def post(path, raw, token=tok):
+            rq = urllib.request.Request("http://127.0.0.1:%d%s" % (port, path), data=raw if isinstance(raw, bytes) else json.dumps(raw).encode("utf-8"),
+                                        method="POST", headers={"Content-Type": "application/json", "X-Studio-Token": token})
+            try:
+                with urllib.request.urlopen(rq, timeout=120) as r:
+                    return r.status, json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                b = e.read()
+                try:
+                    return e.code, json.loads(b)
+                except ValueError:
+                    return e.code, {"raw": b[:80].decode("latin-1")}
+
+        def shapes():
+            with urllib.request.urlopen("http://127.0.0.1:%d/shapes.json" % port, timeout=30) as r:
+                return json.loads(r.read())
+        s0 = live.slot(0)
+        S = json.loads(s0["scene_bytes"])
+        wall = next(c for c in S["collision"] if c["kind"] == "wall" and c["box"][3] - c["box"][0] >= 4 and c["box"][4] - c["box"][1] >= 3)
+        canopy = next(v for v in S["visuals"] if v["id"] == "canopy:19,10-28,11")
+        view = {"x": 40.0, "y": 1.62, "z": 30.0, "yaw_deg": 0.0, "pitch_deg": 12.0}
+        door = {"name": "doorway", "operation": "subtract", "anchor": {"piece": "play:" + wall["id"], "face": "+z", "box": wall["box"], "scene": s0["sha"], "view": view},
+                "vertices": [[1.5, 0], [2.5, 0], [2.5, 2.2], [1.5, 2.2]],
+                "constraints": {"within": True, "clearance_m": 2.0, "supports": True, "collision": True, "material": "keep"}, "note": "a doorway to the lane"}
+        under = {"name": "underside", "operation": "region", "anchor": {"piece": canopy["id"], "face": "-y", "box": canopy["box"], "scene": s0["sha"], "view": view},
+                 "vertices": [[2, 0.5], [8, 0.5], [8, 3.5], [2, 3.5]], "constraints": {"within": True, "clearance_m": None, "supports": False, "collision": False, "material": "keep"}}
+        empty = shapes()["shapes"] == []
+        c_x, _x = post("/studio/shapes/save", {"shape": door}, "0" * 32)
+        c_d, r_d = post("/studio/shapes/save", {"shape": door})
+        c_u, r_u = post("/studio/shapes/save", {"shape": under})
+        path = os.path.join(tmp, "art", "ledger", brief + ".shapes.json")
+        got = {s["name"]: s for s in shapes()["shapes"]}
+        row("marks: saved with the page's token", empty and c_x == 403 and c_d == 200 and c_u == 200 and os.path.exists(path)
+            and got["doorway"]["status"] == "ok" and got["doorway"]["checks"]["clearance"]["ok"] is True and got["underside"]["status"] == "ok",
+            "none at first; without the token 403; #doorway on %s's +z face (%s) and #underside on the canopy's underside, ok, in %s" % (
+                wall["id"], got.get("doorway", {}).get("checks", {}).get("clearance", {}).get("detail", "")[:60], os.path.relpath(path, tmp)))
+        again = Live(brief, art, [], poll=0.15, root=tmp)
+        row("marks: read back after a restart", sorted(s["name"] for s in again.shapes.state(S)["shapes"]) == ["doorway", "underside"],
+            "a new launcher on the same tree reads both from the file")
+        before = open(path, "rb").read()
+        bad = [("NaN", post("/studio/shapes/save", b'{"shape": {"name": "x", "vertices": [[NaN, 0]]}}')[0], 400),
+               ("a key twice", post("/studio/shapes/save", b'{"shape": {"name": "x", "name": "y"}}')[0], 400),
+               ("1.0000000000000001", post("/studio/shapes/save", ('{"shape": %s}' % json.dumps(dict(door, name="fine")).replace("[1.5, 0]", "[1.0000000000000001, 0]", 1)).encode())[1].get("code"), "SHAPE-NUMBER"),
+               ("an older scene", post("/studio/shapes/save", {"shape": dict(door, name="old", anchor=dict(door["anchor"], scene="0" * 64))})[1].get("code"), "SHAPE-STALE"),
+               ("a bow-tie", post("/studio/shapes/save", {"shape": dict(door, name="tie", vertices=[[1.5, 0], [2.5, 2.2], [2.5, 0], [1.5, 2.2]])})[1].get("code"), "SHAPE-SIMPLE")]
+        row("marks: refusals over HTTP", all(g_ == w_ for _n, g_, w_ in bad) and open(path, "rb").read() == before,
+            "; ".join("%s %s" % (n, g_) for n, g_, _w in bad) + "; the file unchanged")
+        # the director asked about each shape
+        c_a, r_a = post("/studio/ask", {"prompt": "cut #doorway through to the lane", "camera": view})
+        st = None
+        for _i in range(600):
+            st = live.studio.state()["request"]
+            if st and st["state"] != "running":
+                break
+            time.sleep(0.1)
+        req = json.loads(open(os.path.join(tmp, "art", "build", "studio", brief, r_a.get("id", "x"), "request.json"), "rb").read()) if c_a == 200 else {}
+        sh = (req.get("shapes") or [{}])[0]
+        row("marks: the director asked about #doorway", c_a == 200 and req.get("version") == "2" and sh.get("name") == "doorway" and len(sh.get("world_m", [])) == 4
+            and (st.get("disposition") or {}).get("kind") == "UNSUPPORTED" and (st.get("disposition") or {}).get("unmet") == ["layout.change"] and live.slot(0)["sha"] == s0["sha"],
+            "request version %s with #doorway in the world at %s; %s %s; the world as it was" % (
+                req.get("version"), sh.get("world_m", [None])[0], (st.get("disposition") or {}).get("kind"), (st.get("disposition") or {}).get("unmet")))
+        c_b, r_b = post("/studio/ask", {"prompt": "light #underside", "camera": view})
+        for _i in range(1200):
+            st = live.studio.state()["request"]
+            if st and st["id"] == r_b.get("id") and st["state"] != "running":
+                break
+            time.sleep(0.1)
+        cands = [(c["letter"], c["title"], c["verdict"]) for c in (st or {}).get("candidates", [])]
+        row("marks: #underside answered on its canopy", c_b == 200 and st["state"] == "done" and len(cands) == 3 and st.get("shapes") == ["underside"],
+            "no target selected; the scripted director read the shape's canopy: %s" % cands)
+        # the canopy moved by an edit of the brief: its shape reads changed, and a request naming it is refused
+        text = open(art, encoding="utf-8").read()
+        v = live.version
+        open(art, "w", encoding="utf-8").write(text.replace("canopy plaza concrete_slab 7.0 19,10 28,11", "canopy plaza concrete_slab 7.6 19,10 28,11", 1))
+        t0 = time.time()
+        while live.version == v and time.time() - t0 < 120:
+            time.sleep(0.1)
+        got = {s["name"]: s for s in shapes()["shapes"]}
+        c_c, r_c = post("/studio/ask", {"prompt": "light #underside again", "camera": view})
+        row("marks: a shape whose box moved is changed, and refused as input", got["underside"]["status"] == "changed" and got["doorway"]["status"] == "ok"
+            and c_c == 409 and r_c.get("code") == "STUDIO-SHAPE",
+            "the canopy raised 0.6 m: #underside %s, #doorway %s; asking about #underside: %s" % (got["underside"]["status"], got["doorway"]["status"], r_c.get("code")))
+        c_r, _r = post("/studio/shapes/delete", {"name": "underside"})
+        c_n, r_n = post("/studio/shapes/delete", {"name": "nothing"})
+        row("marks: deleted", c_r == 200 and [s["name"] for s in shapes()["shapes"]] == ["doorway"] and c_n == 409 and r_n.get("code") == "SHAPE-NAME",
+            "#underside deleted; deleting a shape there is not: %s" % r_n.get("code"))
+    except Exception as e:  # noqa: BLE001 — the self-test says what stopped it
+        import traceback
+        traceback.print_exc()
+        row("marks: the HTTP self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+    finally:
+        ROOT = saved_root
+        if live:
+            live.stopping = True
+            if live.studio:
+                live.studio.shutdown()
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def references_selftest(row, cfg_dir=None):

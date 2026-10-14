@@ -82,9 +82,11 @@ sys.path.insert(0, os.path.join(HERE, "director"))
 import durable            # noqa: E402  (the content path's crash-safe writes: the tags file)
 import intent as canon    # noqa: E402  (DIRECTOR-0's canonical bytes: the tags file's form)
 import ledger as led      # noqa: E402  (the content lock's place: ledger.lock_path)
+import studio_marks       # noqa: E402  (MARK-0: the shapes a request names)
 
 REQUEST, RESPONSE, VERSION = "VERDANDI-STUDIO-REQUEST", "VERDANDI-STUDIO-RESPONSE", "0"
 REQUEST_VERSION = "1"    # STUDIO-1: the target and the pins, their geometry and relations, in place of one selection
+REQUEST_VERSION_SHAPES = "2"   # MARK-0 (0231): version 1 and the shapes the prompt names (#name), each where it is
 MAX_PINS = 4
 PIECE = re.compile(r"[a-z]+:[0-9a-z,:-]{1,60}\Z")
 MENTION = re.compile(r"@([0-9]{1,4})")
@@ -586,6 +588,7 @@ class Gateway:
             req = None
             if r:
                 req = {k: r[k] for k in ("id", "state", "prompt", "message", "code", "references", "head", "provider")}
+                req["shapes"] = r.get("shapes", [])
                 req["disposition"] = r.get("disposition")
                 req["elapsed_ms"] = int(((r["ended"] or time.monotonic()) - r["started"]) * 1000)
                 req["candidates"] = [dict({k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")},
@@ -750,6 +753,52 @@ class Gateway:
         rels = [R.relation(O[a["piece"]], O[b["piece"]], a["tag"], b["tag"]) for i, a in enumerate(refs) for b in refs[i + 1:]]
         return refs, rels, mentions, O
 
+    def shapes_of(self, prompt, out, O):
+        """MARK-0 (0231): the shapes the prompt names (#name), each as the director reads it: where it is on the world as
+        the files stand (its face, its vertices in the face's frame and in the world, its area), the object it is drawn on
+        and the statement that made that object, the host's checks, and the designer's words. A name no shape has, or a
+        shape that is not as it was marked (changed, gone), refuses the request (STUDIO-SHAPE): a shape is never moved to
+        another surface."""
+        names = studio_marks.mentions(prompt)
+        if not names:
+            return []
+        store = getattr(self.play, "shapes", lambda: None)()
+        if store is None:
+            raise StudioError("STUDIO-SHAPE", "the prompt names %s, but this studio keeps no shapes" % ", ".join("#" + n for n in names))
+        try:
+            got = store.resolve(names, out["scene"])
+        except studio_marks.ShapeError as e:
+            raise StudioError(e.code, e.detail)
+        res = []
+        for ev in got:
+            piece = ev["piece"]
+            if piece.startswith("play:"):
+                c = next(c for c in out["scene"]["collision"] if c["id"] == piece[5:])
+                on = {"layer": "play", "kind": c["kind"], "address": "play/%s/%s" % (c["kind"], c["id"]), "material": c["material"],
+                      "statement": None, "changeable": "nothing: the play geometry is the map's; an opening or an addition in it is a layout "
+                                                        "change, which the art cannot make (layout.change)", "patterns": []}
+            else:
+                root = piece
+                while root not in O and root.count(":") >= 2:
+                    root = root.rsplit(":", 1)[0]
+                o = O[root]
+                on = {"layer": "dressing", "kind": o["kind"], "address": R.address(o), "object": o["id"], "material": o["material"],
+                      "statement": self._statement(out, o), "statement_makes": sum(1 for x in O.values() if x["by"] == o["by"]),
+                      "changeable": R.CHANGEABLE.get(o["kind"], ""),
+                      "patterns": ["%s/%s/*" % (o["region"], o["kind"])] + (["material/%s" % o["material"]] if o["material"] else [])}
+            r3 = lambda v: round(float(v) + 0.0, 3)
+            res.append({"name": ev["name"], "operation": ev["operation"], "meaning": studio_marks.OPERATIONS[ev["operation"]],
+                        "closed": ev["closed"], "on": dict(on, piece=piece, face=ev["face"]), "status": ev["status"],
+                        "face": {"width_m": r3(ev["face_m"]["width"]), "height_m": r3(ev["face_m"]["height"]), "normal": ev["face_m"]["normal"],
+                                 "origin_m": [r3(x) for x in ev["face_m"]["origin"]], "u": ev["face_m"]["u"], "v": ev["face_m"]["v"]},
+                        "vertices_m": ev["vertices_m"], "world_m": [[r3(x) for x in p_] for p_ in ev["world_m"]],
+                        "area_m2": r3(ev["area_m2"]) if "area_m2" in ev else None,
+                        "checks": {k: {"ok": c["ok"], "detail": c["detail"]} for k, c in sorted(ev["checks"].items())},
+                        "words": ev["words"], "note": ev["note"],
+                        "basis": "the shape is the designer's mark, not the world: its vertices are exact (millimetres on the face); the checks "
+                                 "are the studio's; the words are the designer's and nothing checks them"})
+        return res
+
     @staticmethod
     def touches(slot, refs, O):
         """Which of the request's objects a candidate changed, and how many others, from the director's own account of
@@ -796,6 +845,7 @@ class Gateway:
         stmts = [{"line": x["line"], "text": x["text"], "key": x["key"]} for x in out["lineage"]["statements"]]
         refs, rels, mentions, O = self.references(out, head, prompt, refs)
         S = out["scene"]
+        shapes = self.shapes_of(prompt, out, O)
         target = refs[0] if refs and refs[0]["role"] == "target" else None
         with self.lock:
             if self.req and self.req["state"] == "running":
@@ -805,7 +855,7 @@ class Gateway:
             self.n += 1
             rid = "%s-%s%d" % (datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S"), "" if self.origin == "page" else self.origin + "-", self.n)
             base = {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}
-            request = {"format": REQUEST, "version": REQUEST_VERSION, "id": rid, "brief": self.brief, "head": head, "base": base,
+            request = {"format": REQUEST, "version": REQUEST_VERSION_SHAPES if shapes else REQUEST_VERSION, "id": rid, "brief": self.brief, "head": head, "base": base,
                        "prompt": prompt.strip(), "target": target, "references": refs, "relations": rels, "mentions": mentions,
                        "coordinates": "%s; a cell is %g m; the walls of the play geometry are %g m high; a box is [x0, y0, z0, x1, y1, z1]" % (
                            S["units"], S["grid"]["cell"], S["grid"]["wall"]),
@@ -816,7 +866,9 @@ class Gateway:
                        "language": language(),
                        "capabilities": CAPABILITIES,
                        "respond": {"format": RESPONSE, "version": VERSION, "id": rid, "max_candidates": LIMITS["candidates"], "schema": SCHEMA}}
-            self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "",
+            if shapes:
+                request["shapes"] = shapes
+            self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "", "shapes": [s["name"] for s in shapes],
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in refs},
                         "selection": target["address"] if target else None,
                         "head": head, "provider": {"model": cfg["model"]}, "candidates": [], "started": time.monotonic(),
@@ -868,10 +920,22 @@ class Gateway:
         slots = self.play.publish([s for _i, s in drawn])
         for (item, _s), k in zip(drawn, slots):
             item["slot"] = k
+        # MARK-0: a recorded request's shapes are read again against the head: one that is not as it was marked is said
+        stale = []
+        store = getattr(self.play, "shapes", lambda: None)()
+        for s in request.get("shapes", []):
+            st = "gone"
+            if store is not None:
+                got = [x for x in store.state(out["scene"])["shapes"] if x["name"] == s.get("name")]
+                st = got[0]["status"] if got else "gone"
+            if st != "ok":
+                stale.append("#%s is %s now" % (s.get("name"), st))
         with self.lock:
             self.req = {"id": rid, "state": "done", "prompt": request.get("prompt", ""), "code": "", "restored": True,
-                        "message": "%d candidate%s drawn again at the head as it is now%s" % (
-                            len(drawn), "" if len(drawn) == 1 else "s", "" if request.get("head") == head else " (the world moved since it was asked)"),
+                        "shapes": [s.get("name") for s in request.get("shapes", [])],
+                        "message": "%d candidate%s drawn again at the head as it is now%s%s" % (
+                            len(drawn), "" if len(drawn) == 1 else "s", "" if request.get("head") == head else " (the world moved since it was asked)",
+                            "; " + ", ".join(stale) if stale else ""),
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in request.get("references", [])},
                         "selection": (request.get("target") or {}).get("address"), "head": head, "provider": {"model": "recorded"},
                         "candidates": [i for i, _s in made], "started": time.monotonic(), "ended": time.monotonic(),
@@ -925,6 +989,8 @@ class Gateway:
                  "config": req["cfg"]["path"], "model": req["cfg"]["model"], "request_sha256": sha256(rb), "basis": basis(req["cfg"])}
         if req["cfg"].get("env"):
             entry["settings"] = dict(req["cfg"]["env"])
+        if req.get("shapes"):
+            entry["shapes"] = list(req["shapes"])
         if self.origin != "page":
             entry["origin"] = self.origin
         # what the owner asked to be recorded of every call (2026-10-11): the provider, the model, the exit status, whether

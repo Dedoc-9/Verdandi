@@ -43,6 +43,7 @@
          padding: 4px 10px; cursor: pointer; white-space: nowrap; }
   .btn:hover:not(:disabled) { border-color: #3a5684; background: #182742; }
   .btn:disabled { opacity: .45; cursor: default; }
+  a.btn { color: var(--text); text-decoration: none; }
   .btn.primary { background: var(--accent); border-color: #5b98ff; color: #fff; }
   .btn.primary:hover:not(:disabled) { background: #4a8dff; }
   .btn.small { padding: 2px 7px; font-size: 11px; }
@@ -92,6 +93,9 @@
   #pills .pill { background: rgba(10,17,29,.86); border: 1px solid var(--line2); border-radius: 14px; padding: 3px 11px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
   #pills .pill:hover { border-color: #3a5684; }
   #pills .drop { top: 28px; }
+  #vtabs { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); display: none; background: rgba(10,17,29,.88); border: 1px solid var(--line2); border-radius: 7px; padding: 2px; }
+  #vtabs button { background: none; border: 0; padding: 4px 12px; border-radius: 5px; cursor: pointer; color: #b8c4d6; }
+  #vtabs button.active { background: var(--raise); color: #fff; box-shadow: inset 0 -2px 0 var(--accent); }
   #stats { position: absolute; right: 10px; top: 10px; background: rgba(10,17,29,.86); border: 1px solid var(--line2); border-radius: 7px; padding: 6px 10px;
            font: 11px/1.55 var(--mono); color: #c7d2e2; display: grid; grid-template-columns: auto auto; column-gap: 12px; min-width: 150px; }
   #stats span:nth-child(odd) { color: var(--dim); } #stats span:nth-child(even) { text-align: right; }
@@ -101,6 +105,15 @@
   #cross { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; background: #fff; border-radius: 50%; opacity: .7; pointer-events: none; display: none; }
   #overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: #fff; font-size: 16px; text-align: center;
              background: rgba(6, 10, 18, 0.55); white-space: pre-line; cursor: pointer; }
+  #shapebar { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: none; gap: 4px; padding: 4px; background: rgba(10,17,29,.9);
+              border: 1px solid var(--line2); border-radius: 8px; }
+  #shapebar button { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; border-radius: 5px; padding: 5px 10px; cursor: pointer; color: #c4cfdf; }
+  #shapebar button:hover:not(:disabled) { background: var(--raise); }
+  #shapebar button.active { background: var(--accent); color: #fff; }
+  #shapebar button:disabled { color: #4a5872; cursor: default; }
+  #shapebar kbd { font: 10px var(--mono); color: var(--faint); border: 1px solid var(--line2); border-radius: 3px; padding: 0 4px; }
+  #shapebar .sep { width: 1px; background: var(--line2); margin: 3px 4px; }
+
   /* the dock */
   #dock { display: grid; grid-template-columns: 1.12fr 1.28fr .9fr; gap: 1px; background: var(--line); border-top: 1px solid var(--line); min-height: 0; }
   .dpanel { background: var(--panel); display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -183,6 +196,42 @@
   .lay button.off { color: #4a5872; }
   .lay .n { font: 10.5px var(--mono); color: var(--faint); }
 
+  .vtab { display: grid; grid-template-columns: 44px repeat(2, minmax(0, 1fr)) 26px; gap: 4px; align-items: center; }
+  .vtab .hd { color: var(--faint); font-size: 10.5px; }
+  .vtab input { width: 100%; background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; font: 11px var(--mono); }
+  .vtab .ix { color: var(--faint); font: 10.5px var(--mono); }
+  .vtab .rm { background: none; border: 0; color: var(--faint); cursor: pointer; }
+  .vtab .rm:hover { color: var(--bad); }
+  .vtab .cur { outline: 1px solid var(--sel); }
+  .con { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 3px 0; }
+  .tagh { font: 600 9px/14px system-ui; padding: 0 5px; border-radius: 3px; letter-spacing: .04em; }
+  .tagh.host { background: rgba(60,207,145,.15); color: var(--good); } .tagh.words { background: rgba(131,148,173,.15); color: var(--dim); }
+  .tagh.fail { background: rgba(242,113,107,.16); color: var(--bad); }
+  /* Mark & Shape (MARK-0, 0231): the same shell with its own left panel and dock */
+  #marknav, #markdock { display: none; }
+  body.mark #leftnav, body.mark #dock { display: none; }
+  body.mark #marknav { display: block; }
+  body.mark #markdock { display: grid; }
+  body.mark #vtabs, body.mark #shapebar { display: flex; }
+  body.mark #center { grid-template-rows: minmax(0, 1fr) 236px; }
+  #marknav { border-right: 1px solid var(--line); }
+  body.mark #hint { bottom: 58px; }
+  #marknav label.navit input { margin: 0 2px 0 0; }
+  .wrow { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; align-items: center; padding: 6px 10px; cursor: pointer; }
+  .wrow:hover { background: var(--raise); } .wrow.active { background: rgba(61,130,246,.15); box-shadow: inset 2px 0 0 var(--accent); }
+  .wrow .th { width: 56px; height: 38px; border-radius: 4px; background: #050a12 center / cover no-repeat; border: 1px solid var(--line2); }
+  .wrow .nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .wrow .sb { color: var(--faint); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #markdock { grid-template-columns: 1fr 1.25fr; gap: 1px; background: var(--line); border-top: 1px solid var(--line); min-height: 0; }
+  .split { position: relative; flex: 1; min-height: 0; background: #050a12; overflow: hidden; user-select: none; }
+  .split img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .split .cur { clip-path: inset(0 50% 0 0); }
+  .split .bar { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,.8); cursor: ew-resize; }
+  .split .knob { position: absolute; top: 50%; left: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; background: #fff; color: #111;
+                 display: grid; place-items: center; box-shadow: 0 1px 6px rgba(0,0,0,.6); pointer-events: none; font-weight: 700; }
+  .split .lab { position: absolute; top: 8px; padding: 2px 8px; background: rgba(8,14,24,.85); border-radius: 4px; font-size: 11px; }
+  .split .lab.l { left: 8px; } .split .lab.r { right: 8px; }
+  .split .none { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); padding: 20px; text-align: center; }
+
   /* the roadmap strip: the product's goal kept in view */
   #roadmap { display: flex; align-items: center; gap: 0; padding: 0 8px; background: #08101c; border-top: 1px solid var(--line); font-size: 11px; color: var(--faint); overflow: hidden; white-space: nowrap; }
   #roadmap .sp { display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; border-right: 1px solid var(--line); }
@@ -215,6 +264,7 @@
   #studio .task { padding: 3px 0; border-top: 1px dotted #22314a; }
   #studio .task .st { display: inline-block; min-width: 72px; }
   #studio .task.ready .st { color: #9fe0a8; } #studio .task.failed .st, #studio .task.interrupted .st { color: #ff9a8a; } #studio .task.running .st { color: #ffd38a; }
+  #studio .shapes { padding: 2px 0 4px; }
   #toasts { position: fixed; left: 230px; bottom: 34px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; z-index: 70; }
   #toasts div { background: rgba(13, 21, 35, 0.96); color: #dfe6ec; border: 1px solid var(--line2); border-left: 3px solid var(--good); border-radius: 5px; padding: 6px 10px; max-width: 460px; }
   #toasts div.bad { border-left-color: var(--bad); }
@@ -230,11 +280,11 @@
   /* Play (1080p): the viewport alone, the window filled, the picture 16:9 */
   body.playfull #vp { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; }
   body.playfull #view, body.playfull #ov { position: static; width: min(100vw, calc(100vh * 16 / 9)); height: min(100vh, calc(100vw * 9 / 16)); grid-area: 1 / 1; }
-  body.playfull #tools, body.playfull #pills, body.playfull #hint { display: none; }
+  body.playfull #tools, body.playfull #pills, body.playfull #vtabs, body.playfull #shapebar, body.playfull #hint { display: none; }
   /* stills (?view, ?cam, ?still): the picture alone, as before */
   body.still > *:not(#work) { display: none !important; }
   body.still #work, body.still #center, body.still #vp { display: block; position: fixed; inset: 0; }
-  body.still #leftnav, body.still #right, body.still #dock, body.still #vp > *:not(#view) { display: none !important; }
+  body.still #leftnav, body.still #right, body.still #dock, body.still #marknav, body.still #markdock, body.still #vp > *:not(#view) { display: none !important; }
   body.still #view { position: fixed; inset: 0; width: 100vw; height: 100vh; }
 </style>
 </head>
@@ -254,16 +304,19 @@
 </div>
 <main id="work">
   <aside id="leftnav"></aside>
+  <aside id="marknav"></aside>
   <section id="center">
     <div id="vp">
       <canvas id="view"></canvas>
       <canvas id="ov"></canvas>
       <div id="pills"></div>
+      <div id="vtabs"></div>
       <div id="tools"></div>
       <div id="stats"></div>
       <div id="hud"></div>
       <div id="hint"></div>
       <div id="cross"></div>
+      <div id="shapebar"></div>
       <div id="overlay">Click to play
 (the mouse is captured; Esc returns to the editor · 1–9 the registered views · E target · R pin · Enter summons the director · Backspace resets)</div>
     </div>
@@ -271,6 +324,10 @@
       <div class="dpanel" id="assets"><div class="dhead" id="a-head"></div><div class="dbody"><div id="a-tree"></div><div id="a-grid"></div></div></div>
       <div class="dpanel" id="cands"><div class="dhead" id="c-head"></div><div class="dbody"><div id="c-list"></div></div></div>
       <div class="dpanel" id="ledger"><div class="dhead" id="l-head"></div><div class="dbody"><div id="l-list"></div></div></div>
+    </div>
+    <div id="markdock">
+      <div class="dpanel" id="mcands"><div class="dhead" id="mc-head"></div><div class="dbody"><div id="mc-list"></div></div></div>
+      <div class="dpanel" id="mdiff"><div class="dhead" id="md-head"></div><div id="split" class="split"></div></div>
     </div>
   </section>
   <aside id="right"><div id="rtabs"></div><div id="rbody"></div></aside>
@@ -281,7 +338,8 @@
   <div class="row">world <select id="st-world"></select> <input id="st-newname" size="14" placeholder="new world's name"><button id="st-dup">Duplicate</button></div>
   <div id="st-provider" class="dim"></div>
   <div id="st-refs"></div>
-  <textarea id="st-prompt" placeholder="Describe the change; name tagged objects as @1, @2 (Ctrl+Enter asks; Esc goes back to the world)"></textarea>
+  <div id="st-shapes" class="shapes"></div>
+  <textarea id="st-prompt" placeholder="Describe the change; name tagged objects as @1, @2 and marked shapes as #name (Ctrl+Enter asks; Esc goes back to the world)"></textarea>
   <div><button id="st-ask">Ask</button><button id="st-cancel" disabled>Cancel</button><button id="st-original">Original</button><button id="st-undo">Undo last admission</button></div>
   <div id="st-status" class="dim"></div>
   <div id="st-cands"></div>

@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
-# The studio: a director summoned into the running plaza (STUDIO-0, STUDIO-1, STUDIO-2, STUDIO-3)
+# The studio: a director summoned into the running plaza (STUDIO-0, STUDIO-1, STUDIO-2, STUDIO-3, MARK-0)
 
 By the owner's direction of 2026-10-11: *"the LLM edits design intent; Verðandi compiles that intent into a live
 world; the designer remains in control."* And by his ruling on how a model is reached: *"a pluggable model adapter,
@@ -137,8 +137,61 @@ scale.
 
 What is not built says so, with why: Geometry (the layout changes through the design tool), Voxel Tools (the world is
 cells and boxes), Decals (no statement), Audio (the studio cannot make it yet), AI (none), Prefabs (one statement makes
-one object), Procedural (a later slice), Templates (a world is a duplicate of one), Compare (with Mark & Shape). Stills
-(`?view`, `?cam`, `?still`) are the picture alone, as before.
+one object), Procedural (a later slice), Templates (a world is a duplicate of one). Stills (`?view`, `?cam`, `?still`) are the
+picture alone, as before.
+
+## Marks and shapes (MARK-0, 0231)
+
+By the owner's plan (Sprint 2, *"Mark a wall, draw a doorway outline, save it, reopen it, and request an edit against
+that exact region"*) and his second mockup. **M** (or the tool strip's shape, or Create ▸ Mark & Shape) turns the shell
+to Mark & Shape: on the left the worlds and the layers (and the shapes), over the viewport the tabs Viewport, Top, Side
+and Perspective, under it a toolbar (Select Q, Move W, Rotate E, Scale R, Add Point, Finish Shape, Cancel), on the right
+the shape's inspector, and below the candidates with their M, C and P and a split of the world and a candidate.
+
+**A shape** is the designer's mark, never the world. Add Point's first click on a surface marks it: the box the ray
+meets (of the dressing, or of the play geometry; a mover or a target moves, and is refused) and the face it comes
+through. Each click after it adds a point where the ray meets that face's plane, snapped to the face's edges within
+15 cm and else to 5 cm (Shift draws free); Enter finishes, Esc drops it. A shape is an opening (subtract), an addition
+(add), a region or a path (an open line). Its vertices are surface-local: metres along the face's u and v from its
+origin, to the millimetre, in the frames `art/studio_marks.py` defines (seen from outside, u right and v up; on a top
+face u east and v north). Q selects a shape (a click inside it) or a point of the one being edited; W moves a point, or
+the whole shape; E rotates it and R scales it about its centre, on its face; the inspector's table edits a point's u and
+v, inserts a point after the selected one and deletes one. Nothing is kept until Save.
+
+**Saved** through `POST /studio/shapes/save` with the page's token, in `art/ledger/<brief>.shapes.json` (VERDANDI-SHAPES
+0, the canonical bytes of DIRECTOR-0, integers as strings, written whole under the content lock; a file that cannot be
+read is never overwritten). The host checks every save against the scene served now: the anchor must name that scene
+and a box of it with exactly the coordinates the page saw (SHAPE-STALE otherwise: mark it again), a coordinate is the
+decimal written (the body is read with its numbers as decimals; NaN, Infinity, a key twice, more than three decimals
+refused), a closed shape is simple (no zero-length edge, no fold, no two edges that are not neighbours meeting, an
+area), and every vertex is on the face unless the designer unticks *Keep within surface bounds*. `GET /shapes.json`
+gives each shape's status against the scene served now: *ok* (its box exactly as marked: every vertex where it was in
+the world), *changed* (the box moved or changed size; the vertices are read again on the new face, and if the marked
+face itself did not move that is said), *gone* (no box of its id), *ambiguous* (two boxes share it). A shape is never
+moved to another surface.
+
+**Constraints.** Two are checked by the host, exactly, and marked HOST: *Keep within surface bounds*, and *Maintain
+player clearance (≥ c m)*: on an upright face, an opening admits an upright rectangle as wide as a body (2 r) and c
+tall standing within a step of the face's foot (a body walks through it), an addition one anywhere in it; decided over
+a finite set of positions that provably contains one if any fits (`admits_rect`, its comment says why), up to 16
+vertices (beyond, NOT CHECKED, said). The others, *Preserve structural supports*, *Update collision* and the material,
+are WORDS: the director is told them, and nothing checks them.
+
+**The director.** A prompt names a shape as `#name` (the drawer lists the shapes; a click puts one in). The gateway
+reads each named shape against the head as the files stand and sends it in a request of version 2 (below): a name no
+shape has, or a shape not *ok* at the head, refuses the request (STUDIO-SHAPE). The scripted provider answers an opening
+or an addition in the play geometry UNSUPPORTED, `layout.change` (the art cannot change the map), and a shape on a
+canopy with no target as if that canopy were the target; a model is told what a shape is and that it is where the
+designer means. A queued task's shapes are read when it runs; a reviewed one says which of its shapes are no longer ok.
+
+**The candidates and the split.** Each candidate card has M (the look: materials, lights, the air), C (the play: the
+collision, the movers, the targets; a CLEAN candidate of the art never changes it) and P (the placement of the
+dressing: a box added, removed or moved), computed by the page from the two scenes it was served, exactly, and said to
+be so. The split draws the world (source [0]) and the chosen candidate from one camera (framed on the shape), with a
+slider; **Compare** shows it larger.
+
+What the shapes do not do yet: hold a candidate to the region (the director is told; nothing checks where a candidate's
+change lands against the shape, the roadmap's candidate loop), and change the play geometry (no opening is cut).
 
 ## The references (STUDIO-1)
 
@@ -176,7 +229,8 @@ limits; past either, the command is killed. A configuration that is not exactly 
 ## The request (on the provider's standard input)
 
 `VERDANDI-STUDIO-REQUEST 1`, one JSON document (version 1 since STUDIO-1: `target`, `references`, `relations`, `mentions`
-and `coordinates` in place of version 0's `selection`):
+and `coordinates` in place of version 0's `selection`; version 2 since MARK-0, when the prompt names shapes: version 1
+and `shapes`):
 
 | field | |
 |---|---|
@@ -192,6 +246,7 @@ and `coordinates` in place of version 0's `selection`):
 | `statements` | the brief: every statement's line, text and key |
 | `revision_syntax`, `language` | how a revision is written, and the art file's statements as `art/README.md` describes them |
 | `respond` | the response's format, the id again, at most 3 candidates, and the JSON Schema they follow |
+| `shapes` | version 2 only (MARK-0): the shapes the prompt names, each: its name, operation and what it means, whether it is closed; the box and face it is on (the piece, its address, kind and layer, the statement that made it and what a revision of it can change, or the play geometry's, which the art cannot change); the face's size, origin, u and v; its vertices in the face's frame and in the world (metres); its area; the host's checks; the designer's words (unchecked) and note |
 
 ## The response (on its standard output)
 

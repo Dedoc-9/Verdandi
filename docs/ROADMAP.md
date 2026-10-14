@@ -4368,6 +4368,47 @@ editor's camera at the player's eye, Validate listing 10 of 10 rows, nothing on 
 is no measure). Docs: AGENTS.md (and the RUNG-0 row's command for PowerShell, `cmd /c`: its `>` writes UTF-16, as his
 run of 0229 found), art/STUDIO.md, docs/CORE.md, this entry.
 
+**0231, MARK-0, Mark & Shape: built, off the gate.** His Sprint 2, after his second mockup (art/STUDIO.md, *Marks and
+shapes*): **M** turns the shell to marking (the worlds, the layers and the shapes on the left; Viewport, Top, Side and
+Perspective over the viewport; Select, Move, Rotate, Scale, Add Point, Finish Shape and Cancel under it; the shape's
+inspector on the right, with its vertices in the face's frame and its constraints marked HOST or WORDS; the candidates
+with M, C and P and a split of the world and a candidate below). A click marks one face of one box (of the dressing or
+the play geometry); each click after it adds a point where the ray meets that face's plane, snapped to its edges and to
+5 cm; Enter saves. `art/studio_marks.py` (new): the face frames; exact predicates on integer millimetres and fractions
+(simple, within, and the clearance a body needs: an upright rectangle 2 r wide and c tall standing within a step of the
+face's foot, decided over a finite set of positions that contains one if any fits); a shape's status against a scene
+(ok only when its box is exactly as marked; changed, with whether the marked face itself moved; gone; ambiguous); the
+shapes file under the content lock; `#name` mentions. `art/play.py`: GET `/shapes.json`, POST `/studio/shapes/save` and
+`/delete` with the page's token (a shape's body read with its numbers as decimals; NaN, Infinity and a key twice
+refused). `art/studio.py`: a prompt naming `#name` sends that shape in a request of version 2, refused (STUDIO-SHAPE) if
+no shape has the name or it is not ok at the head; `art/providers/director_prompt.py` renders it; the scripted provider
+answers an opening in the play geometry UNSUPPORTED `layout.change` and a shape on a canopy as that canopy targeted.
+Three agents ran beside the build, each with web search (their files in the session's scratch, not committed):
+ADVERSARY-A fired 54 attacks at the HTTP surface (10 real defects in the code before 0230, fixed in 0232) and wrote the
+planned shapes rows; THEOREM-B wrote an independent exact geometry with proofs (the frames' bijection, simplicity as a
+Jordan polygon, the candidate set of the clearance test; 26 of 26 mutants caught) and found what this build took: the
+scene's boxes are not all on the millimetre (8 coordinates of harbor-lift's 2,910 are not: a shape keeps its box as the
+exact decimal), a door must stand on the floor (the walkable clearance), a numeric body read as doubles rounds silently
+(read as decimals), a box changed behind its face (said), two boxes of one id (ambiguous); MIXER-C prepared Sprint 3
+(an object-level scene diff with M, C and P, exact containment in a shape's prism, proofs of determinism, inverse and
+completeness) and found two defects of the gateway fixed in 0232. MEASURED in the container: MARKS SELFTEST 19/19 (12
+pure, 7 over HTTP with the scripted director: a doorway saved and read back after a restart; NaN, a key twice, a decimal
+past the millimetre, an older scene and a bow-tie refused; #doorway asked, version 2, UNSUPPORTED layout.change, the
+world as it was; #underside answered on its canopy, three candidates; the canopy raised by an edit, #underside changed
+and refused as input; a shape deleted); the two implementations of the predicates, the build's and THEOREM-B's, agree on
+30,000 polygons (simple) and 3,000 clearance questions, 0 disagreements; 20 mutants planted in `studio_marks.py`, 14
+caught by its self-test, 6 equivalent (an orientation's sign compared only for equality; the crossing number's ray to
+either side; NaN caught downstream; three of `simple()`'s guards, each implied by the others: 0 differences on 126,339
+polygons, 66,339 of them every polygon of 3 to 5 vertices on a 3 x 3 lattice); LIVE SELFTEST 24/24; STUDIO SELFTEST
+74/74; STUDIO-2 SELFTEST 19/19; STUDIO APP SELFTEST 12/12; ART CHECKS PASSED. In headless Chromium 141 (not committed),
+at 1920 x 1080: M, four clicks on a wall's +z face at 7.4 to 8.6 m by 0 to 2.3 m (snapped exactly), Enter, saved ok
+with clearance, simple and within held; the page reloaded and the shape read back ok; "cut #wall_opening_01 through"
+asked: UNSUPPORTED layout.change; a region on the canopy's underside, "light #region_01 warmly": three candidates, M, C
+and P read A P, B M and P, C P (C never); the split drawn; nothing on the console but the favicon's 404. NOT_MEASURED:
+his machine, Edge, a real GPU. What the shapes do not do yet: hold a candidate to the region (the director is told;
+nothing checks where a change lands: the candidate loop's), and cut the play geometry. Docs: AGENTS.md, art/README.md,
+art/STUDIO.md, docs/CORE.md, this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

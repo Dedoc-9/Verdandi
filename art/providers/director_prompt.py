@@ -3,7 +3,7 @@
 #
 # art/providers/director_prompt.py — what every model provider of the director gateway (art/studio.py) tells its model:
 # one system text and one rendering of a VERDANDI-STUDIO-REQUEST 1 as plain text (the tagged objects, their geometry
-# and their relations among it, STUDIO-1), so that two providers given the same
+# and their relations among it, STUDIO-1; and, in a request of version 2, MARK-0's shapes), so that two providers given the same
 # request ask their models the same thing, and differ only in how the model is reached (the owner's ruling of
 # 2026-10-11: "shared schema and gateway throughout"). Standard library only; imported by the providers beside it.
 
@@ -39,7 +39,14 @@ that made it, what that statement can change, where it is in metres, and how the
 and to the nearest wall, measured from the scene. A tag means that object and no other. Change the target; change a
 pinned object only if the prompt asks for it, and otherwise keep it exactly as it is (it is a reference). Change no
 object that is not tagged unless the prompt asks for it; if the only statement that can make the change also makes
-other objects, say so in the rationale. Name, in each rationale, the tagged objects the candidate changes."""
+other objects, say so in the rationale. Name, in each rationale, the tagged objects the candidate changes.
+
+The designer may also name shapes (#name): an outline drawn on one face of one box of the world, exact to the
+millimetre, with what the designer means by it (an opening to cut, an addition, a region to change, a path). A shape is
+the designer's mark, not the world, and it is where the designer means: keep the candidate's change to that region, and
+say in each rationale how the candidate answers the shape, or why it cannot (the art language changes whole statements;
+an opening in the play geometry is a layout change, which the studio cannot make: unsupported, layout.change). The
+shape's checks are the studio's own; its words are the designer's, and nothing has checked them."""
 
 
 def _ref_lines(r):
@@ -98,6 +105,30 @@ def user_text(req):
             lines += ["", "How the tagged objects stand to one another:"]
             for x in rels:
                 lines += _rel_lines(x)
+        lines += [""]
+    shapes = req.get("shapes") or []
+    if shapes:
+        lines += ["The shapes the designer drew and named (a shape is that outline on that face and nowhere else):"]
+        for s in shapes:
+            on, f = s["on"], s["face"]
+            st = on.get("statement") or {}
+            lines += ["#%s: %s, %s of %d vertices, on the %s face of %s (%s)%s" % (
+                          s["name"], s["meaning"], "a closed outline" if s["closed"] else "an open path", len(s["vertices_m"]), on["face"], on["address"],
+                          on["kind"], (", made by line %s of the brief: %s" % (st.get("line"), st.get("text"))) if st else ", the map's play geometry"),
+                      "    the face: %s x %s m, its origin at [%s] m, u along %s and v along %s (metres on the face from its origin)" % (
+                          f["width_m"], f["height_m"], ", ".join("%g" % v for v in f["origin_m"]), f["u"], f["v"]),
+                      "    vertices (u, v) m: " + "; ".join("(%g, %g)" % tuple(v) for v in s["vertices_m"]),
+                      "    in the world (x, y, z) m: " + "; ".join("(%g, %g, %g)" % tuple(v) for v in s["world_m"])]
+            if s.get("area_m2") is not None:
+                lines.append("    area %s m2" % s["area_m2"])
+            lines.append("    the studio's checks: " + "; ".join("%s %s (%s)" % (k, "yes" if c["ok"] else "no" if c["ok"] is False else "not checked", c["detail"])
+                                                          for k, c in sorted(s["checks"].items())))
+            if on.get("changeable"):
+                lines.append("    what a revision of its statement can change: " + on["changeable"])
+            if s["words"]:
+                lines.append("    the designer's words, not checked: " + "; ".join(s["words"]))
+            if s.get("note"):
+                lines.append("    the designer's note: " + s["note"])
         lines += [""]
     lines += ["Coordinates: " + req.get("coordinates", ""), ""]
     if req.get("camera"):

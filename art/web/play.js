@@ -106,7 +106,7 @@
     try { Sim = simFor(S); world = worldOf(S, map); s = Sim.newState(world, "A"); } catch (e) { fail("The scene could not be played: " + (e && e.message || e)); return; }
     // ---------------------------------------------------------------- the shell's state (a view's: none of it is the world)
     const ui = { mode: "edit", tool: "select", sel: null, info: null, infoErr: "", hover: null, layer: "all", hidden: {}, locked: {},
-                 show: { grid: false, regions: false, spawns: true, tags: true, rain: true, wire: false, collision: false, stats: true },
+                 show: { grid: false, regions: false, spawns: true, tags: true, rain: true, wire: false, collision: false, stats: true, shapes: true },
                  rtab: "inspector", nav: "overview", folder: "dressing", measure: [], saved: [], connected: true, history: null, histKey: "",
                  statsAt: 0, frames: 0, fps: 0, frameMs: 0, cpuMs: 0, calls: 0, callsShown: 0, lastFrame: 0, cursor: null, rmb: false, drag: null };
     // what the renderer is given: the scene with the hidden layers left out (a view of it; the game is not touched)
@@ -235,6 +235,7 @@
         busy = false;
         ui.connected = true;
         studioShow(live.studio);
+        if (live.shapes_revision !== undefined && live.shapes_revision !== mk.rev) shapesLoad();
         worldsShow(live.worlds);
         queueShow(live.queue);
         if (live.version !== cur.version || JSON.stringify(live.code) !== JSON.stringify(cur.code)) return sync(live, false);
@@ -577,6 +578,7 @@
         box.appendChild(l);
       }
       shell.candidates();
+      if (mk.on) { markCandidates(); splitShow(); }
     };
     const admissible = function (c) { return c.slot !== null && c.verdict === "CLEAN" && !c.decided && (!c.record || c.record.rung === "A"); };
 
@@ -676,9 +678,7 @@
       prefabs: "Not built. Every object is made by one statement of the brief; there is no prefab statement.",
       procedural: "Not built. World generation is a later slice of the roadmap.",
       templates: "Not built. A new world is a duplicate of one (the director's drawer, Duplicate).",
-      compare: "Not built yet: a split view of the current scene and a candidate comes with Mark & Shape (the roadmap's next sprint).",
       move: "Not built. Nothing in the editor moves the world: it changes through a proposal the host checks and a person admits.",
-      mark: "Not built yet: marking a surface and drawing a shape on it is the roadmap's next sprint (Mark & Shape).",
     };
     const nb = function (k) { toast(NOT_BUILT[k] || "Not built.", true); };
     const menus = {}, closeMenus = function () { document.querySelectorAll(".menu.open, .pillmenu.open").forEach(function (m) { m.classList.remove("open"); }); };
@@ -810,7 +810,7 @@
         ["Select", function () { setTool("select"); }, { key: "Q", on: ui.tool === "select", icon: "select" }],
         ["Measure", function () { setTool("measure"); }, { key: "T", on: ui.tool === "measure", icon: "ruler" }],
         ["Move, rotate, scale", function () { nb("move"); }, { nb: true, icon: "move", title: NOT_BUILT.move }],
-        ["Mark & Shape", function () { nb("mark"); }, { nb: true, icon: "shape", title: NOT_BUILT.mark }],
+        ["Mark & Shape", function () { setMark(!mk.on); }, { key: "M", on: mk.on, icon: "shape" }],
         "-",
         ["Director…", openPanel, { key: "Enter", icon: "wand" }],
       ]; });
@@ -845,16 +845,20 @@
       });
       right.appendChild(el("button.btn.primary#mb-play", { title: "Play at 1920 × 1080, the window filled (Esc returns to the editor)", onclick: function () { enterPlay(true); } }, icon("play"), "Play (1080p)"));
       right.appendChild(el("button.btn#mb-validate", { title: "The art checks as they were run for this source", onclick: validate }, icon("shield"), "Validate"));
+      if (mk.on) {
+        right.appendChild(el("button.btn", { title: "Current vs a candidate, side by side under a slider", onclick: compareModal }, icon("compare"), "Compare"));
+        right.appendChild(el("a.btn", { href: "/history.html?world=" + W, style: { textDecoration: "none" }, title: "the world's ledger, read back" }, icon("book"), "Ledger"));
+      }
     };
 
     // ---- the left navigator
     const NAV = [
       ["World", [["overview", "Overview", "overview"], ["layers", "Layers", "layers"], ["bookmarks", "Bookmarks", "bookmark"], ["saved", "Saved Views", "camera"]]],
       ["Create", [["geometry", "Geometry", "cube", true], ["voxel", "Voxel Tools", "voxel", true], ["paint", "Paint / Materials", "brush"], ["decals", "Decals", "decal", true],
-                  ["lights", "Lights", "bulb"], ["audio", "Audio", "audio", true], ["gameplay", "Gameplay", "gamepad"], ["ai", "AI / Spawns", "agent"], ["volumes", "Volumes", "volume"]]],
+                  ["mark", "Mark & Shape", "shape"], ["lights", "Lights", "bulb"], ["audio", "Audio", "audio", true], ["gameplay", "Gameplay", "gamepad"], ["ai", "AI / Spawns", "agent"], ["volumes", "Volumes", "volume"]]],
       ["Content", [["assets", "Asset Browser", "folder"], ["materials", "Materials", "sphere"], ["prefabs", "Prefabs", "prefab", true], ["scenes", "Scenes", "map"],
                    ["procedural", "Procedural", "sparkle", true], ["templates", "Templates", "template", true]]],
-      ["Review", [["candidates", "Candidates", "candidates"], ["compare", "Compare", "compare", true], ["history", "History / Ledger", "history"], ["validation", "Validation", "shield"]]],
+      ["Review", [["candidates", "Candidates", "candidates"], ["compare", "Compare", "compare"], ["history", "History / Ledger", "history"], ["validation", "Validation", "shield"]]],
     ];
     const buildNav = function () {
       const host = $("leftnav");
@@ -887,6 +891,8 @@
       else if (id === "candidates") { flash("cands"); if (!studio.req) openPanel(); }
       else if (id === "history") { flash("ledger"); ui.histKey = ""; }
       else if (id === "validation") validate();
+      else if (id === "mark") setMark(true);
+      else if (id === "compare") compareModal();
     };
 
     // ---- the viewport's tools, pills and statistics
@@ -907,7 +913,7 @@
       T("scale", "scale", NOT_BUILT.move, null, true);
       host.appendChild(el("hr"));
       T("measure", "ruler", "Measure (T): click two points; the distance between them, in metres");
-      T("mark", "shape", NOT_BUILT.mark, null, true);
+      T("mark", "shape", "Mark & Shape (M): mark a surface and draw a shape on it", function () { setMark(!mk.on); });
       host.appendChild(el("hr"));
       T("frame", "focus", "Frame the selection (F)", frameSelection);
       T("play", "play", "Play (P): the mouse is captured; Esc returns here", function () { enterPlay(false); });
@@ -942,6 +948,7 @@
         ["Regions", function () { ui.show.regions = !ui.show.regions; }, { on: ui.show.regions }],
         ["Spawns and targets", function () { ui.show.spawns = !ui.show.spawns; }, { on: ui.show.spawns }],
         ["Tags", function () { ui.show.tags = !ui.show.tags; }, { on: ui.show.tags }],
+        ["Shapes", function () { ui.show.shapes = !ui.show.shapes; }, { on: ui.show.shapes }],
         ["Statistics", function () { ui.show.stats = !ui.show.stats; $("stats").style.display = ui.show.stats ? "" : "none"; }, { on: ui.show.stats }],
       ]; });
     };
@@ -970,10 +977,11 @@
         el("span.chip", { title: insp ? "the ledger's head " + (insp.head || "") + (insp.verified ? ", verified (integrity, not truth)" : "") : "the ledger is read with the history" },
           "Revision ", el("b", {}, insp ? "#" + insp.events + (insp.head ? " · " + insp.head.slice(0, 8) : "") : "—")), " ",
         el("span.chip", { title: "the source drawn and its scene's digest" }, "Source ", el("b", {}, "[" + cur.k + "] " + cur.sha.slice(0, 8)), sv.verdict ? " " + sv.verdict : ""), " ",
-        el("span.chip", { title: "the simulation's rules (graybox/RULES-3.md)" }, "Rules ", el("b", {}, String(Sim.RULES))));
+        el("span.chip", { title: "the simulation's rules (graybox/RULES-3.md)" }, "Rules ", el("b", {}, String(Sim.RULES))), " ",
+        el("span.chip", { title: "Play (1080p) draws at 1920 × 1080" }, el("b", {}, "1080p")));
       $("mb-src").textContent = "[" + cur.k + "]";
     };
-    const ROADMAP = [["done", "Sprint 1", "Core studio shell"], ["next", "Sprint 2", "Mark & Shape"], ["next", "Sprint 3", "Candidate loop"],
+    const ROADMAP = [["done", "Sprint 1", "Core studio shell"], ["done", "Sprint 2", "Mark & Shape"], ["next", "Sprint 3", "Candidate loop"],
                      ["next", "Sprint 4", "World generation slice"], ["next", "Sprint 5", "Dynamic world"], ["next", "Sprint 6", "Scale"]];
     const buildRoadmap = function () {
       const host = $("roadmap");
@@ -1026,6 +1034,7 @@
     const rgb = function (c) { return c ? c.join(", ") : "-"; };
     shell.inspector = function () {
       if (ui.rtab !== "inspector") return;
+      if (mk.on && (mk.draft || mk.sel || !ui.sel)) { shell.shapeInspector(); return; }
       const host = $("rbody");
       host.innerHTML = "";
       if (!ui.sel) {
@@ -1429,6 +1438,7 @@
           if (top) label2(top[0] + 6, top[1] - 6, nameOf(ui.sel), "#4d8dff", "#fff");
         }
       }
+      if (ui.show.shapes) drawShapes(c, B, W0, H0);
       if (ui.measure.length) {
         og.strokeStyle = "#ffcf5a"; og.fillStyle = "#ffcf5a"; og.lineWidth = 2;
         const pts = ui.measure.map(function (p) { return U.project(c, p, W0, H0); });
@@ -1441,6 +1451,521 @@
       }
     };
 
+    // ================================================================ MARK-0 (0231): Mark & Shape
+    // The designer marks a surface and draws an outline on it: a shape anchored to one face of one box of the world (the
+    // dressing or the play geometry), its vertices surface-local, to the millimetre (art/studio_marks.py: the face frames,
+    // the exact checks, the status). A shape is markup, not the world: it is saved through play.py with the page's token,
+    // its status and checks come from the host, and the director reads it only when the prompt names it (#name). Every
+    // edit here (move, rotate, scale a vertex or the shape) changes the outline, never the world; nothing is kept until
+    // Save, and the host checks what is kept.
+    const mk = { on: false, tool: "point", draft: null, sel: null, shapes: [], rev: -1, err: "", vsel: -1, drag: null, snap: true, tab: "viewport",
+                 vcam: null, diffWith: null, diffAt: 0.5, diffKey: "", mcp: {}, sceneCache: {} };
+    const OPS = [["subtract", "Opening (Subtract)"], ["add", "Addition (Add)"], ["region", "Region"], ["path", "Path"]];
+    const UPRIGHT = { "+x": 1, "-x": 1, "+z": 1, "-z": 1 };
+    const boxOfPiece = function (piece) {
+      if (piece.indexOf("play:") === 0) { const c = S.collision.find(function (x) { return x.id === piece.slice(5); }); return c ? c.box : null; }
+      const v = S.visuals.find(function (x) { return x.id === piece; });
+      return v ? v.box : null;
+    };
+    const frameOfShape = function (sh) { const b = boxOfPiece(sh.piece); return b ? U.FRAMES[sh.face](b) : null; };
+    const worldOf2 = function (F, mmuv) { return U.toWorld(F, [mmuv[0] / 1000, mmuv[1] / 1000]); };
+    // the outline being drawn or edited: the draft, or a saved shape taken into the editor
+    const editing = function () { return mk.draft; };
+    const shapeNamed = function (n) { return mk.shapes.find(function (x) { return x.name === n; }) || null; };
+    const shapesLoad = function () {
+      getJSON("/shapes.json?world=" + W).then(function (d) {
+        if (!d.ok) return;
+        mk.shapes = d.shapes || []; mk.rev = d.revision; mk.err = d.error || "";
+        if (mk.sel && !shapeNamed(mk.sel) && !(mk.draft && mk.draft.name === mk.sel)) mk.sel = null;
+        if (mk.on) { markNav(); shell.inspector(); }
+        shapesInDrawer();
+      }).catch(function () { /* the list stays as it was */ });
+    };
+    // the director's drawer lists the shapes; a click puts #name into the prompt (a name the prompt holds must be a shape)
+    const shapesInDrawer = function () {
+      const box = $("st-shapes");
+      box.innerHTML = "";
+      if (!mk.shapes.length) return;
+      box.appendChild(document.createTextNode("shapes: "));
+      for (const sh of mk.shapes) {
+        const b = el("button.tag" + (sh.status === "ok" ? "" : ".gone"), { title: OPS.find(function (o) { return o[0] === sh.operation; })[1] + " on " + nameOf(sh.piece) + " (" + sh.face + "), " + sh.status + " · click to put #" + sh.name + " into the prompt",
+          onclick: function () { const at = promptEl.selectionStart || promptEl.value.length, v = promptEl.value, ins = (at > 0 && v[at - 1] !== " " ? " " : "") + "#" + sh.name + " ";
+            promptEl.value = v.slice(0, at) + ins + v.slice(at); promptEl.focus(); promptEl.selectionStart = promptEl.selectionEnd = at + ins.length; } }, "#" + sh.name);
+        box.appendChild(b);
+      }
+    };
+    const uniqueName = function (base) {
+      for (let i = 1; i < 100; i++) { const n = base + "_" + String(i).padStart(2, "0"); if (!shapeNamed(n)) return n; }
+      return base + "_" + Date.now() % 1000;
+    };
+    // the ray through a canvas point meets the plane of a face: its face-local point in millimetres, or null
+    const onFace = function (F, normal, px, py) {
+      const r = U.rayAt(eye(), px, py, canvas.clientWidth, canvas.clientHeight);
+      const dn = r.d[0] * normal[0] + r.d[1] * normal[1] + r.d[2] * normal[2];
+      if (Math.abs(dn) < 1e-9) return null;
+      const t = ((F.o[0] - r.o[0]) * normal[0] + (F.o[1] - r.o[1]) * normal[1] + (F.o[2] - r.o[2]) * normal[2]) / dn;
+      if (t <= 0) return null;
+      const p = [r.o[0] + r.d[0] * t, r.o[1] + r.d[1] * t, r.o[2] + r.d[2] * t], l = U.toLocal(F, p);
+      return [Math.round(l[0] * 1000), Math.round(l[1] * 1000)];
+    };
+    // snapping: to the face's edges and corners within 150 mm, else to a 50 mm grid (Shift: no snapping)
+    const snap = function (F, uv, free) {
+      if (free || !mk.snap) return uv;
+      const Wm = Math.round(F.W * 1000), Hm = Math.round(F.H * 1000), near = 150;
+      const one = function (x, max) { if (Math.abs(x) <= near) return 0; if (Math.abs(x - max) <= near) return max; return Math.round(x / 50) * 50; };
+      return [one(uv[0], Wm), one(uv[1], Hm)];
+    };
+    const startDraft = function (h) {
+      if (cur.k !== 0) { toast("Mark the world itself: show the original (source [0]) first; a shape is never drawn on a candidate", true); return false; }
+      if (/^(mover|target):/.test(h.piece)) { toast("A mover or a target moves: mark a surface that stays", true); return false; }
+      const layer = h.piece.indexOf("play:") === 0 ? "play" : h.piece.split(":")[0];
+      const op = UPRIGHT[h.face] ? (layer === "play" ? "subtract" : "region") : "region";
+      mk.draft = { name: uniqueName(op === "subtract" ? (layer === "play" ? "wall_opening" : "opening") : op), piece: h.piece, face: h.face, box: h.box.slice(), layer: layer,
+                   operation: op, verts: [], saved: false, note: "",
+                   constraints: { within: true, clearance_m: op === "subtract" ? 2.0 : null, supports: op === "subtract", collision: op === "subtract", material: "keep" },
+                   view: camNow(), scene: cur.sha };
+      mk.sel = mk.draft.name; mk.vsel = -1;
+      return true;
+    };
+    // a saved shape taken into the editor (its vertices as kept, its anchor as the scene has it now)
+    const editSaved = function (name) {
+      const sh = shapeNamed(name);
+      if (!sh) return;
+      if (sh.status !== "ok") { toast("#" + name + " is " + sh.status + ": mark it again on the world as it is now (" + (sh.why || "") + ")", true); mk.sel = name; mk.draft = null; shell.inspector(); return; }
+      mk.draft = { name: sh.name, piece: sh.piece, face: sh.face, box: boxOfPiece(sh.piece).slice(), layer: sh.layer, operation: sh.operation,
+                   verts: sh.vertices_m.map(function (v) { return [Math.round(v[0] * 1000), Math.round(v[1] * 1000)]; }), saved: true, dirty: false, note: sh.note || "",
+                   constraints: { within: sh.constraints.within, clearance_m: sh.constraints.clearance_mm ? Number(sh.constraints.clearance_mm) / 1000 : null,
+                                  supports: sh.constraints.supports, collision: sh.constraints.collision, material: sh.constraints.material },
+                   view: camNow(), scene: cur.sha };
+      mk.sel = name; mk.vsel = -1;
+      shell.inspector();
+    };
+    const finish = function () {
+      const d = mk.draft;
+      if (!d) return;
+      const closed = d.operation !== "path";
+      if (d.verts.length < (closed ? 3 : 2)) { toast("A " + (closed ? "closed shape needs three" : "path needs two") + " points at least", true); return; }
+      const sv0 = (cur.slots[0] || {}).served || {};
+      const body = { shape: { name: d.name, operation: d.operation, anchor: { piece: d.piece, face: d.face, box: d.box, scene: sv0.sha || cur.sha, view: d.view },
+                              vertices: d.verts.map(function (v) { return [v[0] / 1000, v[1] / 1000]; }),
+                              constraints: d.constraints, note: d.note } };
+      post("/studio/shapes/save", body).then(function (r) {
+        if (!r.ok) { toast((r.code || "") + ": " + (r.message || "not saved"), true); return; }
+        toast("Saved #" + d.name + " · " + r.shape.status + " · " + Object.keys(r.shape.checks).map(function (k) { const c = r.shape.checks[k]; return k + (c.ok ? " ✓" : c.ok === false ? " ✗" : " –"); }).join(", "));
+        mk.draft = null; mk.sel = d.name; mk.vsel = -1;
+        shapesLoad();
+      });
+    };
+    const cancel = function () { if (mk.draft) { const was = mk.draft.saved; mk.draft = null; mk.vsel = -1; if (!was) mk.sel = null; toast(was ? "Edits dropped" : "Shape dropped"); shell.inspector(); } };
+    const deleteShape = function (name) {
+      post("/studio/shapes/delete", { name: name }).then(function (r) {
+        if (!r.ok) { toast((r.code || "") + ": " + (r.message || ""), true); return; }
+        toast("Deleted #" + name); if (mk.sel === name) { mk.sel = null; mk.draft = null; } shapesLoad();
+      });
+    };
+    const centroid = function (vs) { let x = 0, y = 0; for (const v of vs) { x += v[0]; y += v[1]; } return [x / vs.length, y / vs.length]; };
+
+    // the camera tabs: Viewport (the free camera), Top and Side (telephoto, near-orthographic: the renderer draws in
+    // perspective only), Perspective (framed on the shape)
+    const shapeBox = function () {
+      const d = mk.draft || shapeNamed(mk.sel);
+      if (!d) return ui.sel ? objectBox(ui.sel) : null;
+      const F = d.verts ? U.FRAMES[d.face](d.box) : frameOfShape(d);
+      if (!F) return null;
+      const vs = d.verts || (d.vertices_m || []).map(function (v) { return [v[0] * 1000, v[1] * 1000]; });
+      if (!vs.length) return objectBox(d.piece);
+      const pts = vs.map(function (v) { return worldOf2(F, v); });
+      return [0, 1, 2].map(function (k) { return Math.min.apply(null, pts.map(function (p) { return p[k]; })); }).concat([0, 1, 2].map(function (k) { return Math.max.apply(null, pts.map(function (p) { return p[k]; })); }));
+    };
+    const setVTab = function (t) {
+      if (ui.mode === "play") leavePlay();
+      if (mk.tab === "viewport" && t !== "viewport") mk.vcam = Object.assign({}, ecam);
+      mk.tab = t;
+      document.querySelectorAll("#vtabs button").forEach(function (b) { b.classList.toggle("active", b.dataset.tab === t); });
+      const b = shapeBox(), d = mk.draft || shapeNamed(mk.sel);
+      if (t === "viewport") { if (mk.vcam) ecam = mk.vcam; ui.projection = "perspective"; return; }
+      if (!b) { projection(t === "perspective" ? "perspective" : t); return; }
+      const cx = (b[0] + b[3]) / 2, cy = (b[1] + b[4]) / 2, cz = (b[2] + b[5]) / 2, size = Math.max(1.5, Math.hypot(b[3] - b[0], b[4] - b[1], b[5] - b[2]));
+      if (t === "top") { ecam = { x: cx, y: cy + 300, z: cz + 0.001, yaw: 0, pitch: -89.6 * deg, fov: 2 * Math.atan(size * 0.8 / 300) / deg }; ui.projection = "top"; }
+      else if (t === "side") {
+        const n = d && d.face && UPRIGHT[d.face] ? U.NORMALS[d.face] : [0, 0, 1], D = 300;
+        ecam = { x: cx + n[0] * D, y: cy, z: cz + n[2] * D, yaw: Math.atan2(-n[0], n[2]), pitch: 0, fov: 2 * Math.atan(size * 0.75 / D) / deg }; ui.projection = "side";
+      } else {
+        const n = d && d.face ? U.NORMALS[d.face] : null;
+        if (n && n[1] === 0) {
+          const yaw = Math.atan2(-n[0], n[2]) + 22 * deg, pitch = -10 * deg, f = U.basis({ yaw: yaw, pitch: pitch }).f, dist = size / Math.tan(33 * deg) * 0.95;
+          ecam = { x: cx - f[0] * dist, y: Math.max(0.6, cy - f[1] * dist), z: cz - f[2] * dist, yaw: yaw, pitch: pitch, fov: 66 };
+        } else if (n) {
+          const pitch = (n[1] > 0 ? -55 : 50) * deg, f = U.basis({ yaw: 0, pitch: pitch }).f, dist = size / Math.tan(33 * deg) * 0.9;
+          ecam = { x: cx - f[0] * dist, y: Math.max(0.6, cy - f[1] * dist), z: cz - f[2] * dist, yaw: 0, pitch: pitch, fov: 66 };
+        } else ecam = U.frameCam(b, 66);
+        ui.projection = "perspective";
+      }
+      label = t + (t === "top" || t === "side" ? " (telephoto)" : "");
+    };
+
+    // ---- the mouse on the viewport, in Mark & Shape
+    const nearVertex = function (px, py) {
+      const d = mk.draft;
+      if (!d) return -1;
+      const F = U.FRAMES[d.face](d.box), c = eye();
+      let best = -1, bd = 9;
+      d.verts.forEach(function (v, i) { const sp = U.project(c, worldOf2(F, v), canvas.clientWidth, canvas.clientHeight); if (sp) { const dd = Math.hypot(sp[0] - px, sp[1] - py); if (dd < bd) { bd = dd; best = i; } } });
+      return best;
+    };
+    const insidePoly = function (vs, p) {
+      let c = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        if ((vs[i][1] > p[1]) !== (vs[j][1] > p[1]) && p[0] < (vs[j][0] - vs[i][0]) * (p[1] - vs[i][1]) / (vs[j][1] - vs[i][1]) + vs[i][0]) c = !c;
+      }
+      return c;
+    };
+    const pickShape = function (px, py) {
+      let best = null, bt = Infinity;
+      const r = U.rayAt(eye(), px, py, canvas.clientWidth, canvas.clientHeight);
+      for (const sh of mk.shapes) {
+        if (sh.status !== "ok" && sh.status !== "changed") continue;
+        const F = frameOfShape(sh);
+        if (!F) continue;
+        const n = U.NORMALS[sh.face], dn = r.d[0] * n[0] + r.d[1] * n[1] + r.d[2] * n[2];
+        if (Math.abs(dn) < 1e-9) continue;
+        const t = ((F.o[0] - r.o[0]) * n[0] + (F.o[1] - r.o[1]) * n[1] + (F.o[2] - r.o[2]) * n[2]) / dn;
+        if (t <= 0 || t >= bt) continue;
+        const l = U.toLocal(F, [r.o[0] + r.d[0] * t, r.o[1] + r.d[1] * t, r.o[2] + r.d[2] * t]);
+        if (insidePoly(sh.vertices_m, l)) { bt = t; best = sh.name; }
+      }
+      return best;
+    };
+    const markDown = function (e, at) {
+      const d = mk.draft;
+      if (mk.tool === "point") {
+        if (!d) {
+          const h = hitAt(at[0], at[1]);
+          if (!h) { toast("Nothing there to mark", true); return true; }
+          if (!startDraft(h)) return true;
+        }
+        const D = mk.draft, F = U.FRAMES[D.face](D.box), uv = onFace(F, U.NORMALS[D.face], at[0], at[1]);
+        if (!uv) { toast("That point is not on the plane of the marked face", true); return true; }
+        const s2 = snap(F, uv, e.shiftKey);
+        if (D.constraints.within && (s2[0] < 0 || s2[1] < 0 || s2[0] > Math.round(F.W * 1000) || s2[1] > Math.round(F.H * 1000))) { toast("Off the face: the shape keeps within the surface's bounds (untick it to draw past them)", true); return true; }
+        if (mk.vsel >= 0 && mk.vsel < D.verts.length - 1) { D.verts.splice(mk.vsel + 1, 0, s2); mk.vsel += 1; } else { D.verts.push(s2); mk.vsel = D.verts.length - 1; }
+        D.dirty = true; shell.inspector();
+        return true;
+      }
+      if (mk.tool === "select") {
+        const vi = nearVertex(at[0], at[1]);
+        if (vi >= 0) { mk.vsel = vi; shell.inspector(); return true; }
+        const n = pickShape(at[0], at[1]);
+        if (n) { if (!mk.draft || mk.draft.name !== n) editSaved(n); return true; }
+        return false;       // nothing of the shapes: the object under the cursor is selected, as in the editor
+      }
+      if (!d) { toast("Select a shape first (Q, then click it)", true); return true; }
+      const F = U.FRAMES[d.face](d.box), uv = onFace(F, U.NORMALS[d.face], at[0], at[1]);
+      if (!uv) return true;
+      const vi = mk.tool === "move" ? nearVertex(at[0], at[1]) : -1;
+      mk.drag = { tool: mk.tool, start: uv, at: at, base: d.verts.map(function (v) { return v.slice(); }), vi: vi >= 0 ? vi : -1, c: centroid(d.verts) };
+      if (vi >= 0) mk.vsel = vi;
+      return true;
+    };
+    const markMove = function (e, at) {
+      const g = mk.drag, d = mk.draft;
+      if (!g || !d) return;
+      const F = U.FRAMES[d.face](d.box), uv = onFace(F, U.NORMALS[d.face], at[0], at[1]);
+      if (!uv) return;
+      if (g.tool === "move") {
+        const du = uv[0] - g.start[0], dv = uv[1] - g.start[1];
+        d.verts = g.base.map(function (v, i) { return g.vi < 0 || i === g.vi ? snap(F, [v[0] + du, v[1] + dv], e.shiftKey || g.vi < 0) : v.slice(); });
+        if (g.vi < 0) { const s0 = snap(F, d.verts[0], e.shiftKey), ou = s0[0] - d.verts[0][0], ovv = s0[1] - d.verts[0][1]; d.verts = d.verts.map(function (v) { return [v[0] + ou, v[1] + ovv]; }); }
+      } else if (g.tool === "rotate") {
+        const a = (at[0] - g.at[0]) * 0.5 * deg, ca = Math.cos(a), sa = Math.sin(a);
+        d.verts = g.base.map(function (v) { const x = v[0] - g.c[0], y = v[1] - g.c[1]; return [Math.round(g.c[0] + x * ca - y * sa), Math.round(g.c[1] + x * sa + y * ca)]; });
+      } else if (g.tool === "scale") {
+        const k = Math.max(0.05, 1 + (at[0] - g.at[0]) / 200);
+        d.verts = g.base.map(function (v) { return [Math.round(g.c[0] + (v[0] - g.c[0]) * k), Math.round(g.c[1] + (v[1] - g.c[1]) * k)]; });
+      }
+      d.dirty = true;
+    };
+    const markUp = function () { if (mk.drag) { mk.drag = null; shell.inspector(); } };
+
+    // ---- the shape's inspector (image 2's right panel)
+    shell.shapeInspector = function () {
+      const host = $("rbody");
+      host.innerHTML = "";
+      const d = mk.draft, sh = !d && mk.sel ? shapeNamed(mk.sel) : null;
+      if (!d && !sh) {
+        host.appendChild(el("div.empty", {}, el("p", {}, "No shape."), el("p.dim", {}, "Add Point is on: click a surface to mark it; each click adds a point on that face (snapped to its edges and to 5 cm; Shift draws free). Enter finishes, Esc cancels. Q selects a shape to edit; W moves a point (or the whole shape), E rotates it, R scales it."),
+          el("p.dim", {}, "A shape is your mark, not the world: the director reads it when the prompt names it (#name), and the host checks what it can.")));
+        return;
+      }
+      const name = d ? d.name : sh.name, status = d ? (d.saved ? (d.dirty ? "edited" : "ok") : "draft") : sh.status;
+      const op = d ? d.operation : sh.operation, piece = d ? d.piece : sh.piece, face = d ? d.face : sh.face;
+      const cons = d ? d.constraints : { within: sh.constraints.within, clearance_m: sh.constraints.clearance_mm ? Number(sh.constraints.clearance_mm) / 1000 : null, supports: sh.constraints.supports, collision: sh.constraints.collision, material: sh.constraints.material };
+      const checks = !d || (d.saved && !d.dirty) ? (shapeNamed(name) || {}).checks || {} : {};
+      const badge = status === "ok" ? "admitted" : status === "changed" || status === "edited" ? "refused" : status === "gone" || status === "ambiguous" ? "rejected" : "candidate";
+      host.appendChild(el("div.ihead", {}, el("div.t", {}, "Shape: " + name), el("div.s", {}, el("span.badge." + badge, {}, status), el("span", {}, (OPS.find(function (o) { return o[0] === op; }) || [0, op])[1])),
+        !d && sh && sh.why ? el("div.s.warn", {}, sh.why) : null));
+      const ro = !d;
+      const nameIn = el("input", { value: name, disabled: ro || (d && d.saved), style: { width: "100%", background: "var(--panel2)", border: "1px solid var(--line)", borderRadius: "4px", padding: "2px 6px" },
+        onchange: function (e) { d.name = e.target.value.trim(); mk.sel = d.name; } });
+      const opSel = el("select", { disabled: ro, style: { width: "100%", background: "var(--raise)", border: "1px solid var(--line2)", borderRadius: "4px", padding: "2px 4px" },
+        onchange: function (e) { d.operation = e.target.value; d.dirty = true; shell.inspector(); } },
+        OPS.map(function (o) { return el("option", { value: o[0], selected: o[0] === op }, o[1]); }));
+      host.appendChild(sec("Shape", true, null, [kv([["Name", nameIn], ["Type", opSel], ["Target", el("span.field", {}, nameOf(piece) + " · " + face + " face")],
+        ["Layer", (d ? d.layer : sh.layer) === "play" ? "Play geometry (C)" : "Dressing · " + (d ? d.layer : sh.layer)]])]));
+      // the vertices, in the face's frame (metres, to the millimetre)
+      const vs = d ? d.verts : sh.vertices_m.map(function (v) { return [Math.round(v[0] * 1000), Math.round(v[1] * 1000)]; });
+      const F = d ? U.FRAMES[d.face](d.box) : frameOfShape(sh);
+      const tbl = el("div.vtab", {}, el("span.hd", {}, "#"), el("span.hd", {}, "U (m)"), el("span.hd", {}, "V (m)"), el("span.hd", {}, ""));
+      vs.forEach(function (v, i) {
+        const inp = function (k) {
+          return el("input", { value: (v[k] / 1000).toFixed(3), disabled: ro, class: i === mk.vsel ? "cur" : "", onfocus: function () { mk.vsel = i; },
+            onchange: function (e) { const x = Number(e.target.value); if (!isFinite(x)) { toast("Not a number", true); shell.inspector(); return; } d.verts[i][k] = Math.round(x * 1000); d.dirty = true; shell.inspector(); } });
+        };
+        tbl.append(el("span.ix", {}, String(i)), inp(0), inp(1), ro ? el("span") : el("button.rm", { title: "delete this point", onclick: function () { d.verts.splice(i, 1); mk.vsel = Math.min(mk.vsel, d.verts.length - 1); d.dirty = true; shell.inspector(); } }, "✕"));
+      });
+      host.appendChild(sec("Vertices (surface local)", true, vs.length + " · face " + (F ? F.W.toFixed(3) + " × " + F.H.toFixed(3) + " m" : "?"), [tbl,
+        ro ? el("div.lock", {}, icon("info"), el("span", {}, "Q and a click on the shape (or Edit) takes it into the editor.")) :
+          el("div.acts", { style: { marginTop: "6px" } },
+            el("button.btn.small", { onclick: function () { setMarkTool("point"); } }, icon("plus"), "Add Point"),
+            el("button.btn.small", { disabled: vs.length < 2, onclick: function () { const i = mk.vsel >= 0 ? mk.vsel : vs.length - 1, j = (i + 1) % vs.length; d.verts.splice(i + 1, 0, [Math.round((vs[i][0] + vs[j][0]) / 2), Math.round((vs[i][1] + vs[j][1]) / 2)]); mk.vsel = i + 1; d.dirty = true; shell.inspector(); } }, "Insert"),
+            el("button.btn.small", { disabled: mk.vsel < 0, onclick: function () { d.verts.splice(mk.vsel, 1); mk.vsel = -1; d.dirty = true; shell.inspector(); } }, "Delete"))]));
+      // the constraints: what the host checks, and the words it passes on unchecked
+      const tag = function (kind, ok) { return el("span.tagh." + (ok === false ? "fail" : kind), { title: kind === "host" ? "checked by the host (art/studio_marks.py), exactly" : "the designer's words: passed to the director, checked by nothing" }, kind === "host" ? (ok === false ? "HOST ✗" : ok === true ? "HOST ✓" : "HOST") : "WORDS"); };
+      const box = function (k, lab, kind, ok, extra) {
+        return el("div.con", {}, el("input", { type: "checkbox", checked: !!cons[k], disabled: ro, onchange: function (e) { d.constraints[k] = e.target.checked; d.dirty = true; } }), el("span", {}, lab, extra || null), tag(kind, ok));
+      };
+      const cl = el("input", { value: cons.clearance_m === null ? "" : String(cons.clearance_m), disabled: ro, size: 4, style: { width: "48px", background: "var(--panel2)", border: "1px solid var(--line)", borderRadius: "4px", margin: "0 4px", padding: "0 4px" },
+        onchange: function (e) { const x = e.target.value.trim(); d.constraints.clearance_m = x === "" ? null : Number(x); d.dirty = true; } });
+      const mat = el("select", { disabled: ro, style: { background: "var(--raise)", border: "1px solid var(--line2)", borderRadius: "4px" }, onchange: function (e) { d.constraints.material = e.target.value; d.dirty = true; } },
+        [el("option", { value: "keep", selected: cons.material === "keep" }, "keep")].concat(Object.keys(S.materials).sort().map(function (m) { return el("option", { value: m, selected: cons.material === m }, m); })));
+      host.appendChild(sec("Constraints", true, null, [
+        box("supports", "Preserve structural supports", "words"),
+        el("div.con", {}, el("input", { type: "checkbox", checked: cons.clearance_m !== null, disabled: ro, onchange: function (e) { d.constraints.clearance_m = e.target.checked ? 2.0 : null; d.dirty = true; shell.inspector(); } }),
+          el("span", {}, "Maintain player clearance (≥", cl, "m)"), tag("host", (checks.clearance || {}).ok)),
+        box("collision", "Update collision", "words"),
+        box("within", "Keep within surface bounds", "host", (checks.within || {}).ok),
+        el("div.con", {}, el("span"), el("span", {}, "Material ", mat), tag("words")),
+        el("div.lock", {}, icon("info"), el("span", {}, "HOST: the studio checks it exactly when the shape is saved. WORDS: the director is told, and nothing checks it."))]));
+      if (Object.keys(checks).length) {
+        host.appendChild(sec("Host checks", true, null, Object.keys(checks).sort().map(function (k) {
+          const c = checks[k];
+          return el("div.vrow", {}, el("span", { class: c.ok ? "good" : c.ok === false ? "bad" : "dim" }, c.ok ? "✓" : c.ok === false ? "✗" : "–"), el("div", {}, el("div", {}, k), el("div.d", {}, c.detail)));
+        })));
+      }
+      const noteIn = el("input", { value: d ? d.note : sh.note || "", disabled: ro, maxlength: 200, placeholder: "a note for the director (one line)", style: { width: "100%", background: "var(--panel2)", border: "1px solid var(--line)", borderRadius: "4px", padding: "2px 6px" },
+        onchange: function (e) { d.note = e.target.value; d.dirty = true; } });
+      host.appendChild(sec("Note", false, null, [noteIn]));
+      host.appendChild(el("div.acts", { style: { padding: "10px 12px" } },
+        d ? el("button.btn.small.primary", { onclick: finish, title: "Enter" }, icon("check"), d.saved ? "Save" : "Finish Shape") : el("button.btn.small", { onclick: function () { editSaved(name); } }, icon("pen"), "Edit"),
+        d ? el("button.btn.small", { onclick: cancel, title: "Esc" }, icon("x"), "Cancel") : null,
+        (!d || d.saved) ? el("button.btn.small", { onclick: function () { deleteShape(name); } }, icon("x"), "Delete") : null,
+        (!d || (d.saved && !d.dirty)) ? el("button.btn.small", { onclick: function () { openPanel(); const v = promptEl.value; if (v.indexOf("#" + name) < 0) promptEl.value = (v ? v.trim() + " " : "") + "#" + name + " "; promptEl.focus(); } }, icon("wand"), "Ask about #" + name) : null,
+        el("button.btn.small", { onclick: function () { setVTab("perspective"); } }, icon("focus"), "Frame")));
+    };
+
+    // ---- the left panel: the worlds and the layers
+    const worldThumb = {};
+    const markNav = function () {
+      const host = $("marknav");
+      host.innerHTML = "";
+      host.appendChild(el("div.navsec", {}, el("h4", {}, "Worlds")));
+      for (const w of worlds) {
+        const th = el("div.th", {}, w.world === brief ? null : el("span", { style: { display: "grid", placeItems: "center", height: "100%", color: "var(--faint)", fontWeight: "700" } }, w.world.slice(0, 2).toUpperCase()));
+        if (w.world === brief && views.length) {
+          const v = S.views[views[0]];
+          thumbOf("world:" + views[0], { x: v.x, y: v.y, z: v.z, yaw: v.yaw * deg, pitch: v.pitch * deg, fov: 66 }, th);
+        }
+        host.appendChild(el("div.wrow" + (w.world === brief ? ".active" : ""), { title: w.title || w.world, onclick: function () { if (w.world !== brief) go(w.world, "&mode=mark"); } },
+          th, el("div", {}, el("div.nm", {}, w.world), el("div.sb", {}, w.title || ""))));
+      }
+      host.appendChild(el("div.navsec", {}, el("h4", {}, "Layers")));
+      const counts = {};
+      for (const o of Object.values(objects())) counts[o.kind] = (counts[o.kind] || 0) + 1;
+      const rows = [["play", "Play geometry (C)"]].concat(Object.keys(counts).sort().map(function (k) { return [k, k]; })).concat([["movers", "Movers"], ["targets", "Targets"], ["lights", "Lights"]]);
+      for (const [id, lab] of rows) {
+        host.appendChild(el("label.navit", { style: { cursor: "pointer" } }, el("input", { type: "checkbox", checked: !ui.hidden[id], onchange: function (e) { ui.hidden[id] = !e.target.checked; R.load(viewScene(S)); } }), lab));
+      }
+      host.appendChild(el("div.navsec", {}, el("h4", {}, "Shapes (" + mk.shapes.length + ")")));
+      if (mk.err) host.appendChild(el("div.empty.bad", {}, mk.err));
+      for (const sh of mk.shapes) {
+        host.appendChild(el("button.navit" + (mk.sel === sh.name ? ".active" : ""), { title: sh.why || "", onclick: function () { mk.sel = sh.name; mk.draft = null; shell.inspector(); markNav(); } },
+          icon(sh.operation === "path" ? "pen" : "shape"), "#" + sh.name, el("span.nb", { style: { color: sh.status === "ok" ? "var(--good)" : "var(--warn)" } }, sh.status)));
+      }
+    };
+
+    // ---- the candidates with their M, C and P, and the split between the world and a candidate
+    // M the look changed (materials, lights, the air), C the play changed (the collision, the movers, the targets: a
+    // CLEAN candidate of the art never does), P the placement of the dressing changed (a box added, removed or moved):
+    // computed by this page from the two scenes it was served, exactly (their JSON), and said to be so
+    const sceneAt = function (k) {
+      const sv = (cur.slots[k] || {}).served;
+      if (!sv) return Promise.reject(new Error("source " + k + " is not served"));
+      if (mk.sceneCache[sv.sha]) return Promise.resolve({ S: mk.sceneCache[sv.sha], sha: sv.sha });
+      return get("/scene/" + brief + ".json?slot=" + k).then(json).then(function (Sx) { mk.sceneCache[sv.sha] = Sx; return { S: Sx, sha: sv.sha }; });
+    };
+    const mcpOf = function (A, B) {
+      const J = JSON.stringify, byId = function (L) { const o = {}; for (const v of L || []) o[v.id] = v; return o; };
+      const va = byId(A.visuals), vb = byId(B.visuals);
+      let p = false, m = J(A.materials) !== J(B.materials) || J(A.lights) !== J(B.lights) || J(A.environment) !== J(B.environment);
+      for (const id in va) { if (!vb[id] || J(va[id].box) !== J(vb[id].box)) p = true; else if (va[id].material !== vb[id].material) m = true; }
+      for (const id in vb) if (!va[id]) p = true;
+      const c = J(A.collision) !== J(B.collision) || J(A.movers || []) !== J(B.movers || []) || J(A.targets || {}) !== J(B.targets || {});
+      return { m: m, c: c, p: p };
+    };
+    const mcpFor = function (c, node) {
+      const sv = (cur.slots[c.slot] || {}).served;
+      if (!sv) return;
+      if (mk.mcp[sv.sha]) { paintMcp(node, mk.mcp[sv.sha]); return; }
+      Promise.all([sceneAt(0), sceneAt(c.slot)]).then(function (r) { mk.mcp[sv.sha] = mcpOf(r[0].S, r[1].S); document.querySelectorAll('.card[data-sha="' + sv.sha + '"] .badges').forEach(function (n) { paintMcp(n, mk.mcp[sv.sha]); }); }).catch(function () {});
+    };
+    const paintMcp = function (node, x) {
+      node.innerHTML = "";
+      for (const [k, cls, t] of [["M", "m", "the look (materials, lights, air)"], ["C", "c", "the play (collision, movers, targets)"], ["P", "p", "the placement of the dressing"]]) {
+        node.appendChild(el("span.mcp." + cls + (x[cls] ? ".on" : ""), { title: (x[cls] ? "changes " : "does not change ") + t + " (computed by this page from the two scenes)" }, k));
+      }
+    };
+    const markCandidates = function () {
+      const r = studio.req, host = $("mc-list"), head = $("mc-head");
+      const cands = (r && r.candidates) || [];
+      head.innerHTML = "";
+      head.append(icon("candidates"), "Candidates (" + cands.length + ")", el("span.dim", {}, r ? " · " + r.state + ((r.shapes || []).length ? " · " + r.shapes.map(function (n) { return "#" + n; }).join(" ") : "") : " · ask the director about a shape"), el("span.spacer"),
+        el("button.btn.small", { onclick: openPanel }, icon("wand"), "Director"));
+      host.innerHTML = "";
+      host.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:8px;align-content:start;grid-auto-rows:max-content";
+      if (r && r.disposition && r.disposition.kind !== "REALIZED") host.appendChild(el("div.empty", { style: { gridColumn: "1 / -1", padding: "6px 4px" } }, el("b", {}, r.disposition.kind), " · " + (r.disposition.unmet || []).join(", ") + (r.disposition.note ? " — " + r.disposition.note : "")));
+      for (const c of cands) {
+        const sv = c.slot !== null ? (cur.slots[c.slot] || {}).served : null;
+        const badges = el("div.badges"), th = el("div.th", {}, el("span.letter", {}, c.letter), badges);
+        const icon2 = c.decided ? (c.decided.indexOf("admit") === 0 ? el("span.good", {}, "●") : el("span.bad", {}, "✗")) : c.verdict === "CLEAN" ? el("span.good", {}, "✓") : el("span.warn", {}, "!");
+        const card = el("div.card" + (mk.diffWith === c.letter ? ".shown" : ""), { dataset: { sha: sv ? sv.sha : "", letter: c.letter }, title: c.message || "", onclick: function () { mk.diffWith = c.letter; markCandidates(); splitShow(); } },
+          th, el("div.tt", {}, c.title), el("div.st", {}, icon2, el("span", {}, c.decided || (c.verdict === "CLEAN" ? "Ready" : c.verdict || "?")), c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
+          el("div.acts", {}, el("button.btn.small", { disabled: c.slot === null, onclick: function (e) { e.stopPropagation(); pick(c.slot); } }, "Show"),
+            el("button.btn.small", { disabled: !admissible(c), onclick: function (e) { e.stopPropagation(); admitWithStill(r.id, c); } }, "Admit"),
+            el("button.btn.small", { disabled: !!c.decided, onclick: function (e) { e.stopPropagation(); decide("reject", r.id, c.letter); } }, "Reject")));
+        host.appendChild(card);
+        if (c.slot !== null) { candThumb(c, th); mcpFor(c, badges); }
+      }
+      if (!cands.length && !(r && r.disposition)) host.appendChild(el("div.empty", { style: { gridColumn: "1 / -1" } }, "No candidates. Name a shape in a prompt (#name) and ask the director."));
+      if (!mk.diffWith && cands.some(function (c) { return c.slot !== null; })) { mk.diffWith = cands.find(function (c) { return c.slot !== null; }).letter; splitShow(); }
+    };
+    // the split: the world (source [0]) and the candidate, drawn by the thumbnailer from one camera at 640 x 360; the
+    // slider shows how much of each
+    const splitShow = function (big) {
+      const host = big || $("split"), head = $("md-head");
+      const r = studio.req, c = r && (r.candidates || []).find(function (x) { return x.letter === mk.diffWith && x.slot !== null; });
+      if (!big) { head.innerHTML = ""; head.append(icon("compare"), "Preview / Diff", el("span.dim", {}, c ? " · Current vs Candidate " + c.letter : ""), el("span.spacer"),
+        el("button.btn.small", { onclick: function () { compareModal(); } }, "Larger")); }
+      host.innerHTML = "";
+      const turn = (mk.splitTurn = (mk.splitTurn || 0) + 1);     // a later call wins: an earlier one's answer is dropped
+      if (!c) { host.appendChild(el("div.none", {}, "Current vs a candidate: ask the director, then pick a candidate.")); return; }
+      const b = shapeBox(), cam = b ? U.frameCam(b, 60) : Object.assign({}, eye(), { fov: 66 });
+      const key = cur.sha + "|" + JSON.stringify(cam).slice(0, 90) + "|" + c.letter;
+      const imA = el("img.cur"), imB = el("img"), bar = el("div.bar"), knob = el("div.knob", {}, "⇔");
+      host.append(imB, imA, bar, knob, el("span.lab.l", {}, "Current"), el("span.lab.r", {}, "Candidate " + c.letter));
+      const place = function () { const pc = Math.round(mk.diffAt * 1000) / 10; imA.style.clipPath = "inset(0 " + (100 - pc) + "% 0 0)"; bar.style.left = pc + "%"; knob.style.left = pc + "%"; };
+      place();
+      const dragTo = function (e) { const rr = host.getBoundingClientRect(); mk.diffAt = Math.max(0, Math.min(1, (e.clientX - rr.left) / rr.width)); place(); };
+      host.onmousedown = function (e) { dragTo(e); const mv = function (e2) { dragTo(e2); }, up = function () { document.removeEventListener("mousemove", mv); document.removeEventListener("mouseup", up); }; document.addEventListener("mousemove", mv); document.addEventListener("mouseup", up); };
+      if (mk.split && mk.split.key === key) { imA.src = mk.split.a; imB.src = mk.split.b; return; }
+      Promise.all([sceneAt(0), sceneAt(c.slot)]).then(function (rs) {
+        thumbs.later(function () {
+          const w0 = thumbs.canvas.width, h0 = thumbs.canvas.height;
+          thumbs.canvas.width = 640; thumbs.canvas.height = 360;
+          let a = "", bb = "";
+          if (thumbs.scene(rs[0].S, rs[0].sha)) a = thumbs.shot(cam, moverBoxes(s), targets(s));
+          if (thumbs.scene(rs[1].S, rs[1].sha)) bb = thumbs.shot(cam, moverBoxes(s), targets(s));
+          thumbs.canvas.width = w0; thumbs.canvas.height = h0;
+          mk.split = { key: key, a: a, b: bb };
+          if (turn === mk.splitTurn || big) { imA.src = a; imB.src = bb; }
+        }, true);
+      }).catch(function (e) { if (turn === mk.splitTurn || big) host.appendChild(el("div.none", {}, String(e && e.message || e))); });
+    };
+    const compareModal = function () {
+      const box = el("div.split", { style: { position: "relative", height: "min(60vh, 520px)", background: "#050a12", overflow: "hidden", borderRadius: "6px" } });
+      modal(el("span", {}, icon("compare"), " Compare · Current vs Candidate " + (mk.diffWith || "")), el("div", {}, box, el("p.dim", {}, "Drag the slider. The two pictures are the thumbnailer's, from one camera: the world as served (source [0]) and the candidate as drawn.")));
+      splitShow(box);
+    };
+
+    // ---- the overlay: every shape on its face, the draft with its rubber band
+    const drawShapes = function (c, B, W0, H0) {
+      const poly = function (pts, closed, stroke, fill, width, dash) {
+        const sp = [];
+        for (let i = 0; i < pts.length; i++) { const p = U.project(c, pts[i], W0, H0); if (!p) return; sp.push(p); }
+        og.beginPath(); og.moveTo(sp[0][0], sp[0][1]); for (const p of sp.slice(1)) og.lineTo(p[0], p[1]); if (closed) og.closePath();
+        if (fill && closed) { og.fillStyle = fill; og.fill(); }
+        og.strokeStyle = stroke; og.lineWidth = width; og.setLineDash(dash || []); og.stroke(); og.setLineDash([]);
+        return sp;
+      };
+      for (const sh of mk.shapes) {
+        if (mk.draft && mk.draft.name === sh.name) continue;
+        if (sh.status !== "ok" && sh.status !== "changed") continue;
+        const F = frameOfShape(sh);
+        if (!F) continue;
+        const pts = sh.vertices_m.map(function (v) { return U.toWorld(F, v); }), sel = mk.sel === sh.name;
+        const sp = poly(pts, sh.operation !== "path", sh.status === "ok" ? (sel ? "#5fd3f3" : "rgba(95,211,243,0.8)") : "#ffcf5a", sh.status === "ok" ? "rgba(95,211,243,0.13)" : "rgba(255,207,90,0.10)", sel ? 2 : 1.4, sh.status === "ok" ? [] : [6, 4]);
+        if (sp) label2(sp[0][0] + 4, sp[0][1] - 4, "#" + sh.name + (sh.status === "ok" ? "" : " (" + sh.status + ")"), sh.status === "ok" ? "#5fd3f3" : "#ffcf5a");
+      }
+      const d = mk.draft;
+      if (!d) return;
+      const F = U.FRAMES[d.face](d.box), pts = d.verts.map(function (v) { return worldOf2(F, v); });
+      // the marked face, outlined
+      const corners = [[0, 0], [F.W, 0], [F.W, F.H], [0, F.H]].map(function (uv) { return U.toWorld(F, uv); });
+      poly(corners, true, "rgba(255,255,255,0.35)", null, 1, [3, 3]);
+      if (pts.length) {
+        const sp = poly(pts, d.operation !== "path" && pts.length > 2, "#ffffff", "rgba(77,141,255,0.18)", 2);
+        if (sp) {
+          sp.forEach(function (p, i) { og.fillStyle = i === mk.vsel ? "#4d8dff" : "#ffffff"; og.fillRect(p[0] - 4, p[1] - 4, 8, 8); og.strokeStyle = "#0a111d"; og.strokeRect(p[0] - 4, p[1] - 4, 8, 8); });
+          label2(sp[0][0] + 6, sp[0][1] - 6, "#" + d.name + (d.saved ? "" : " (draft)"), "#ffffff");
+        }
+        // the rubber band to where the next point would go
+        if (mk.tool === "point" && ui.cursor && !mk.drag) {
+          const uv = onFace(F, U.NORMALS[d.face], ui.cursor[0], ui.cursor[1]);
+          if (uv) {
+            const q = worldOf2(F, snap(F, uv, false)), a = U.project(c, pts[mk.vsel >= 0 ? mk.vsel : pts.length - 1], W0, H0), z = U.project(c, q, W0, H0);
+            if (a && z) { og.strokeStyle = "rgba(255,255,255,0.7)"; og.setLineDash([5, 4]); og.beginPath(); og.moveTo(a[0], a[1]); og.lineTo(z[0], z[1]); og.stroke(); og.setLineDash([]);
+              og.fillStyle = "#4d8dff"; og.beginPath(); og.arc(z[0], z[1], 4, 0, Math.PI * 2); og.fill(); }
+          }
+        }
+      }
+    };
+
+    // ---- entering and leaving Mark & Shape; its toolbar and tabs
+    const setMarkTool = function (t) {
+      mk.tool = t;
+      document.querySelectorAll("#shapebar button[data-tool]").forEach(function (b) { b.classList.toggle("active", b.dataset.tool === t); });
+      vp.classList.toggle("pick", t === "point");
+    };
+    const buildShapebar = function () {
+      const host = $("shapebar");
+      host.innerHTML = "";
+      const B2 = function (id, ic, lab, key, title, fn) { host.appendChild(el("button", { dataset: id ? { tool: id } : {}, title: title, onclick: fn || function () { setMarkTool(id); } }, icon(ic), lab, key ? el("kbd", {}, key) : null)); };
+      B2("select", "select", "Select", "Q", "Select a shape, or a point of the one being edited");
+      B2("move", "move", "Move", "W", "Drag a point, or the whole shape, on its face");
+      B2("rotate", "rotate", "Rotate", "E", "Drag sideways: the shape turns about its centre, on its face");
+      B2("scale", "scale", "Scale", "R", "Drag sideways: the shape grows or shrinks about its centre");
+      host.appendChild(el("span.sep"));
+      B2("point", "plus", "Add Point", "", "Click a surface: the first click marks it, each click adds a point on that face");
+      B2(null, "finish", "Finish Shape", "↵", "Save the shape (Enter)", finish);
+      B2(null, "x", "Cancel", "Esc", "Drop the shape being drawn, or the edits", cancel);
+      setMarkTool(mk.tool);
+    };
+    const buildVTabs = function () {
+      const host = $("vtabs");
+      host.innerHTML = "";
+      for (const [id, lab] of [["viewport", "Viewport"], ["top", "Top"], ["side", "Side"], ["perspective", "Perspective"]]) {
+        host.appendChild(el("button" + (mk.tab === id ? ".active" : ""), { dataset: { tab: id }, title: id === "top" || id === "side" ? "a telephoto camera, near-orthographic: the renderer draws in perspective only" : "", onclick: function () { setVTab(id); } }, lab));
+      }
+    };
+    const setMark = function (on) {
+      if (ui.mode === "play") leavePlay();
+      mk.on = !!on;
+      document.body.classList.toggle("mark", mk.on);
+      setTool(mk.on ? "mark" : "select");
+      if (mk.on) { buildShapebar(); buildVTabs(); markNav(); markCandidates(); splitShow(); setTab("inspector"); shapesLoad(); }
+      else { mk.draft = null; if (mk.tab !== "viewport") setVTab("viewport"); shell.inspector(); }
+      buildMenus(); buildRoadmap(); chips();
+    };
+
     // ---- assembling the shell
     buildMenus(); buildNav(); buildTools(); buildPills(); buildTabs(); buildRoadmap(); fillLayers();
     $("hint").textContent = "Click to select · right-drag to look · right button + WASD to fly · F frame · P play · Enter director";
@@ -1450,9 +1975,9 @@
     shell.sceneChanged = function () {
       objIndex = null; fillLayers(); shell.assets(); shell.layers(); shell.worldSettings();
       if (ui.sel) { if (pieceBoxes(ui.sel).length) setSel(ui.sel); else setSel(null); }
-      chips(); buildMenus();
+      chips(); buildMenus(); shapesLoad(); if (mk.on) markNav();
     };
-    shell.slotsChanged = function () { chips(); shell.candidates(); };
+    shell.slotsChanged = function () { chips(); shell.candidates(); if (mk.on) { markCandidates(); splitShow(); } };
 
     // the hooks a still, a walk-through or a test uses
     window.PLAY = {
@@ -1472,7 +1997,9 @@
       },
       // STUDIO-3: the shell's state for a test (read-only copies), and its gestures
       shell: { get ui() { return ui; }, setSel: setSel, setTab: setTab, setFolder: setFolder, navGo: navGo, play: enterPlay, edit: leavePlay, validate: validate,
-               hitAt: hitAt, get cam() { return Object.assign({}, eye()); }, setCam: function (c) { ecam = Object.assign({ fov: 66 }, c); } },
+               hitAt: hitAt, get cam() { return Object.assign({}, eye()); }, setCam: function (c) { ecam = Object.assign({ fov: 66 }, c); },
+               get thumbs() { return thumbs; },
+               mark: { get state() { return mk; }, set: setMark, tool: setMarkTool, finish: finish, cancel: cancel, tab: setVTab, load: shapesLoad, edit: editSaved, compare: compareModal } },
     };
     if (q.get("view") || q.get("cam") || q.get("still")) {
       document.body.classList.add("still");
@@ -1490,6 +2017,8 @@
     // and its last word when the window goes (a reload says it too, then speaks again at once; the supervisor waits)
     window.addEventListener("pagehide", function () { try { navigator.sendBeacon("/studio/bye", token); } catch (e) { /* nothing to do */ } });
     if (q.get("review")) setTimeout(function () { review({ id: q.get("review"), world: brief }); }, 300);
+    if (q.get("mode") === "mark") setTimeout(function () { setMark(true); }, 0);
+    shapesLoad();
     // 0220: the launcher's "Queue prompts" view: this world with the director's queue open
     if (q.get("panel") === "queue") setTimeout(function () { openPanel(); const ql = $("st-qlist"); if (ql && ql.scrollIntoView) ql.scrollIntoView(); }, 300);
 
@@ -1511,11 +2040,13 @@
       closeMenus();
       if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
       if (e.button === 2) { ui.rmb = true; vp.classList.add("fly"); e.preventDefault(); return; }
+      if (e.button === 0 && mk.on && markDown(e, local(e))) return;
       if (e.button === 0) ui.drag = { at: local(e), moved: 0 };
     });
     document.addEventListener("mouseup", function (e) {
       if (e.button === 0) fire = false;
       if (e.button === 2 && ui.rmb) { ui.rmb = false; vp.classList.remove("fly"); }
+      if (e.button === 0 && mk.drag) { markUp(); return; }
       if (e.button === 0 && ui.drag && ui.mode === "edit") {
         const d = ui.drag; ui.drag = null;
         if (d.moved > 4) return;
@@ -1533,6 +2064,7 @@
     document.addEventListener("mousemove", function (e) {
       if (ui.mode === "play") { if (lockOK()) { mdx += e.movementX; mdy += e.movementY; } return; }
       if (ui.rmb) { ecam.yaw += e.movementX * SENS; ecam.pitch = Math.max(-1.55, Math.min(1.55, ecam.pitch - e.movementY * SENS)); if (ui.projection !== "perspective") { ui.projection = "perspective"; ecam.fov = 66; } return; }
+      if (mk.drag) markMove(e, local(e));
       if (ui.drag) ui.drag.moved += Math.abs(e.movementX) + Math.abs(e.movementY);
       if (e.target === canvas) ui.cursor = local(e); else ui.cursor = null;
     });
@@ -1550,6 +2082,15 @@
         return;
       }
       if (e.target && e.target.tagName === "BUTTON" && (e.code === "Enter" || e.code === "Space")) return;
+      if (mk.on && ui.mode === "edit" && !ui.rmb && !studio.open) {
+        // Mark & Shape: Q W E R are its tools; Enter finishes the shape (or summons the director); Esc drops it
+        const T = { KeyQ: "select", KeyW: "move", KeyE: "rotate", KeyR: "scale" }[e.code];
+        if (T) { setMarkTool(T); return; }
+        if (e.code === "Enter" && mk.draft) { e.preventDefault(); finish(); return; }
+        if (e.code === "Escape" && mk.draft && !$("modal").classList.contains("open")) { cancel(); return; }
+        if (e.code === "Delete" && mk.draft && mk.vsel >= 0) { mk.draft.verts.splice(mk.vsel, 1); mk.vsel = -1; mk.draft.dirty = true; shell.inspector(); return; }
+      }
+      if (e.code === "KeyM" && ui.mode === "edit" && !ui.rmb) { setMark(!mk.on); return; }
       if (e.code === "Escape") {
         if ($("modal").classList.contains("open")) { $("modal").classList.remove("open"); return; }
         if (studio.open) { closePanel(); return; }
