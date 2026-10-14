@@ -208,7 +208,10 @@ tag. If an edit invalidates a reference, report it rather than silently redirect
   stays, listed apart. The panel shows every tag as a chip, and a click puts it into the prompt; a prompt naming a tag
   that is not the target or a pin is refused with what that tag names and how to pin it. A probe keeps no tags file. Selecting or pinning it again binds it again to the scene and head of
   that moment. Its status, in the panel and in `/live`, is read against the scene served: *ok*, *changed* (the same
-  object, another shape or look than when it was bound), or *gone* (no object of its id).
+  object, another shape or look than when it was bound), or *gone* (no object of its id). HARDEN-0 (0232): the tags
+  file keeps each tag's object's fingerprint as it was bound, so a tag read back after a restart is as it was; a tag
+  from a file before 0232 reads *unknown* until it is bound again (it read *changed*, and the model was told so, every
+  restart: MIXER-C's finding), and the request says its change is not known.
 - **A request** carries the target and the pins (below). A prompt that names a tag that is neither, or a tag whose
   object is not in the scene at the head, is refused before anything is asked (`STUDIO-REFERENCE`).
 - **What each candidate touches** is the gateway's own account, from the director's verdict (what it realized and
@@ -374,6 +377,17 @@ every request, a GET too, must name 127.0.0.1 or localhost as its host: a page o
 to 127.0.0.1 (DNS rebinding) is answered 403, so it reads neither the page's token nor the world, the prompts or the
 queue. Nothing is admitted without the designer, and nothing reaches the
 world but what the director judged.
+
+**HARDEN-0 (0232): the boundary is total.** After ADVERSARY-A's 54 attacks on it (beside 0230 and 0231), every request
+ends in an answer and every request a page starts ends: a Content-Length that is not a whole number of bytes (negative,
+`abc`) is a 400, never read to the end of the connection; JSON nested too deep for the parser is a 400; a world named by
+anything but a string, or a task's id that is not a string, is refused with its code (409) instead of a reset
+connection; whatever a handler raises that it did not expect is answered 500 `STUDIO-INTERNAL` with the exception's
+kind, its traceback on the console; a connection that stays silent is let go after a minute (`SOCKET_TIMEOUT`); a
+prompt holding half of a character (a lone surrogate, as half an emoji pasted) is refused before it runs
+(`STUDIO-PROMPT`), and a request's thread that raises anything ends the request failed (`STUDIO-FAILED`), recorded:
+before 0232 that prompt left the request running for ever and the server busy. A camera that is not an object, or one
+of 10^400 metres, is no camera. `python art/play.py --boundary-selftest` holds it (BOUNDARY SELFTEST 7/7).
 
 ## Crash safety, and what a supervisor reads (B1)
 

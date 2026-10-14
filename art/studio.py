@@ -552,8 +552,13 @@ class Gateway:
         for t in d["tags"]:
             if not TAG.match(t["tag"]) or not PIECE.match(t["piece"]) or int(t["tag"][1:]) >= nxt or t["tag"] in tags or t["piece"] in tag_of:
                 raise ValueError("a tag entry that is not one object's tag below next: %r" % (t,))
+            # HARDEN-0 (0232): the object's fingerprint as it was tagged is kept (a file before 0232 has none: its tags read
+            # "unknown" until they are bound again, never "changed")
+            fp = t.get("fingerprint", "")
+            if not isinstance(fp, str) or (fp and not re.fullmatch(r"[0-9a-f]{64}", fp)):
+                raise ValueError("a tag's fingerprint that is not a sha256: %r" % (fp,))
             tags[t["tag"]] = {"tag": t["tag"], "piece": t["piece"], "address": t["address"], "kind": t["kind"], "scene": t["scene"], "head": "",
-                              "fingerprint": "", "statement": None, "size_m": []}
+                              "fingerprint": fp, "statement": None, "size_m": []}
             tag_of[t["piece"]] = t["tag"]
         self.tags, self.tag_of, self.next_tag = tags, tag_of, nxt
 
@@ -562,7 +567,8 @@ class Gateway:
         if not self.tags_path:
             return
         doc = {"format": TAGS_FORMAT, "version": "0", "brief": self.brief, "next": str(self.next_tag),
-               "tags": [{"tag": t["tag"], "piece": t["piece"], "address": t["address"], "kind": t["kind"], "scene": t["scene"]}
+               "tags": [dict({"tag": t["tag"], "piece": t["piece"], "address": t["address"], "kind": t["kind"], "scene": t["scene"]},
+                             **({"fingerprint": t["fingerprint"]} if t["fingerprint"] else {}))
                         for t in sorted(self.tags.values(), key=lambda x: int(x["tag"][1:]))]}
         try:                 # the content lock, as every writer of art/ledger/ holds it: a recovery sweeping that folder
             with durable.locked(led.lock_path(self.tags_path)):           # never removes this write's temporary
@@ -687,7 +693,7 @@ class Gateway:
         def item(tag, role):
             t = self.tags[tag]
             o = O.get(t["piece"]) if O is not None else None
-            status = "unknown" if O is None else "gone" if o is None else "changed" if R.fingerprint(o) != t["fingerprint"] else "ok"
+            status = "unknown" if O is None or (o is not None and not t["fingerprint"]) else "gone" if o is None else "changed" if R.fingerprint(o) != t["fingerprint"] else "ok"
             return {"tag": tag, "role": role, "piece": t["piece"], "address": t["address"], "kind": t["kind"], "size_m": t["size_m"],
                     "statement": t["statement"], "bound_scene": t["scene"], "status": status}
 
@@ -749,7 +755,9 @@ class Gateway:
                          "changeable": R.CHANGEABLE.get(kind, ""),
                          "patterns": ["%s/%s/*" % (region, kind)] + (["material/%s" % o["material"]] if o["material"] else []),
                          "geometry": R.geometry(o), "nearest_wall": R.nearest_wall(o, S),
-                         "bound": {"scene": rec["scene"], "head": rec["head"], "changed_since": R.fingerprint(o) != rec["fingerprint"]}})
+                         "bound": {"scene": rec["scene"], "head": rec["head"],
+                                   # HARDEN-0: not known (None) when the tag was read from a file without its fingerprint
+                                   "changed_since": (R.fingerprint(o) != rec["fingerprint"]) if rec["fingerprint"] else None}})
         rels = [R.relation(O[a["piece"]], O[b["piece"]], a["tag"], b["tag"]) for i, a in enumerate(refs) for b in refs[i + 1:]]
         return refs, rels, mentions, O
 
@@ -817,7 +825,16 @@ class Gateway:
         # an object of the head that is not tagged, changed or removed; and an object the candidate makes that the head
         # has not (an object's id is its cells, so a slab given new corners is a new object, and its old self is changed)
         others = sorted(i for i in ids - set(refs.values()) if i in O)
-        added = sorted(i for i in ids if i not in O)
+        # HARDEN-0 (0232): an object the candidate adds is counted once, with its parts (a new canopy and its ribs and
+        # lights were each counted as a new object; the sprint-3 review MEASURED it)
+        new = {i for i in ids if i not in O}
+
+        def root_new(i):
+            r = i
+            while r.count(":") >= 2 and r.rsplit(":", 1)[0] in new:
+                r = r.rsplit(":", 1)[0]
+            return r
+        added = sorted({root_new(i) for i in new})
         return {"tags": tagged, "others": others[:12], "others_count": len(others), "added": added[:12], "added_count": len(added),
                 "materials": list(slot.get("materials_changed") or [])}
 
@@ -832,10 +849,18 @@ class Gateway:
             raise StudioError("STUDIO-NO-PROVIDER", "no director is configured: start play.py with --director CONFIG.json (art/STUDIO.md)")
         if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > LIMITS["prompt"]:
             raise StudioError("STUDIO-PROMPT", "a prompt is 1 to %d characters" % LIMITS["prompt"])
+        try:
+            # HARDEN-0 (0232): a prompt is text: half of a character (a lone surrogate, as half an emoji pasted) is refused
+            # here, not found by the request's thread after it reads as running (ADVERSARY-A: it stayed running for ever)
+            prompt.encode("utf-8")
+        except UnicodeEncodeError:
+            raise StudioError("STUDIO-PROMPT", "the prompt holds half of a character (a lone surrogate): type it again")
         cam = {}
+        if camera is not None and not isinstance(camera, dict):
+            camera = None                # a camera that is not an object is no camera (it was a 500 before 0232)
         for k in ("x", "y", "z", "yaw_deg", "pitch_deg"):
             v = (camera or {}).get(k)
-            if not isinstance(v, (int, float)) or isinstance(v, bool) or v != v or v in (float("inf"), float("-inf")):
+            if not isinstance(v, (int, float)) or isinstance(v, bool) or v != v or v in (float("inf"), float("-inf")) or not (-1e9 < v < 1e9):
                 cam = None
                 break
             cam[k] = round(float(v), 3)
@@ -981,6 +1006,22 @@ class Gateway:
             return True
 
     def _run(self, req, request, cancel, ws):
+        """The request's thread. HARDEN-0 (0232): whatever it raises, the request ends (failed, STUDIO-FAILED, recorded),
+        never left running with no thread behind it."""
+        try:
+            self._run1(req, request, cancel, ws)
+        except Exception as e:  # noqa: BLE001 — a request always ends
+            import traceback
+            detail = "%s: %s" % (type(e).__name__, str(e)[:300])
+            disp = {"kind": "FAILED", "decided_by": "host", "code": "STUDIO-FAILED", "detail": detail}
+            try:
+                self._log({"id": req["id"], "at": now(), "brief": self.brief, "head": req["head"], "outcome": "STUDIO-FAILED", "detail": detail, "disposition": disp})
+            except Exception:  # noqa: BLE001 — the record could not be written either; the state still ends
+                pass
+            self._finish(req, "failed", "STUDIO-FAILED", detail, disp)
+            self.say("STUDIO  %s  STUDIO-FAILED: %s\n%s" % (req["id"], detail, traceback.format_exc()[-800:]))
+
+    def _run1(self, req, request, cancel, ws):
         rid = req["id"]
         rb = (json.dumps(request, sort_keys=True, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
         self._record(rid, "request.json", rb)

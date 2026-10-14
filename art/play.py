@@ -531,10 +531,12 @@ class Hub:
         made, its files watched."""
         import studio
         name = name or self.default
+        if not isinstance(name, str):
+            raise studio.StudioError("STUDIO-WORLD", "a world is named by a string, not %s" % type(name).__name__)
         live = self.worlds.get(name)
         if live is not None:
             return live
-        if not isinstance(name, str) or not WORLD.match(name) or name not in self.names():
+        if not WORLD.match(name) or name not in self.names():
             raise studio.StudioError("STUDIO-WORLD", "no world %r: the worlds are %s" % (name, ", ".join(self.names()) or "none"))
         with self.lock:
             live = self.worlds.get(name)
@@ -830,6 +832,7 @@ EXIT_STOPPED, EXIT_NOT_SERVED, EXIT_USAGE, EXIT_NO_SERVE, EXIT_NO_START = 0, 1, 
 
 
 STILL_MAX = 32 * 1024 * 1024
+SOCKET_TIMEOUT = 60       # HARDEN-0: seconds a connection may stay silent (the boundary self-test shortens it)
 # A refused request's body is read before the refusal is sent (up to its limit). A server that answers and closes with
 # the request's bytes still unread makes the system reset the connection, and on Windows the client then loses the
 # answer: his run of 0223's self-test, 2026-10-14, ended in WinError 10053 on a still refused for its token (on Linux
@@ -852,6 +855,16 @@ def studio_still(hub, world, rid, letter, png):
         return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
+def internal(hub, path, e):
+    """HARDEN-0 (0232): what a request is answered when its handler raised what it did not expect: 500 and the
+    exception's kind, the traceback to the console. A request always ends in an answer (ADVERSARY-A found five that
+    ended in a reset connection: a list for a world, a list for a task's id, a camera that is not an object, one of
+    10^400 metres, JSON nested 40,000 deep)."""
+    import traceback
+    hub.say("PLAY  %s raised %s: %s\n%s" % (path, type(e).__name__, str(e)[:200], traceback.format_exc()[-1200:]))
+    return 500, {"ok": False, "code": "STUDIO-INTERNAL", "message": "%s: %s" % (type(e).__name__, str(e)[:200])}
+
+
 def studio_post(hub, path, body):
     """One of the page's studio requests: (HTTP status, JSON reply). `body["world"]` names the world it is for (the
     default one if it names none)."""
@@ -860,7 +873,8 @@ def studio_post(hub, path, body):
         hub.page_seen = time.time()
         return 200, {"ok": True}
     if path == "/studio/shutdown":
-        hub.stop.set()
+        # HARDEN-0 (0232): the server stops once this answer is written (do_POST sets hub.stop after sending it): set here,
+        # the process could end with the answer half sent, and the supervisor read IncompleteRead (OBSERVED once, 0232)
         return 200, {"ok": True, "message": "stopping"}
     try:
         if path == "/studio/worlds/duplicate":
@@ -1056,8 +1070,17 @@ def server(target, port=0):
     live = hub.worlds[hub.default]
 
     class Handler(http.server.BaseHTTPRequestHandler):
+        # HARDEN-0 (0232): every read and write of the connection waits at most this long, so a client that stops
+        # sending (a slow-loris) holds its thread a minute, not for ever (ADVERSARY-A, MEASURED: without it, for ever)
+        timeout = SOCKET_TIMEOUT
+
         def log_message(self, *a):
             pass
+
+        def length(self):
+            """The body's length as the request states it: an integer of 0 or more, or None (refused 400)."""
+            v = self.headers.get("Content-Length", "0") or "0"
+            return int(v) if re.fullmatch(r"[0-9]{1,12}", v.strip()) else None
 
         def send(self, code, body, ctype):
             self.send_response(code)
@@ -1069,10 +1092,7 @@ def server(target, port=0):
 
         def refuse(self, code, msg, cap):
             """Answer a refusal only after reading what was sent, up to `cap` bytes (see DRAIN)."""
-            try:
-                n = int(self.headers.get("Content-Length", "0") or 0)
-            except ValueError:
-                n = 0
+            n = self.length() or 0
             if DRAIN and 0 < n <= cap:
                 try:
                     self.connection.settimeout(10)
@@ -1187,9 +1207,13 @@ def server(target, port=0):
             # the studio's requests: only from the page this server served (its token, in a header a page of another
             # origin cannot send without a preflight this server never answers), and only to this host by name
             path = self.path.partition("?")[0]
+            if self.length() is None:
+                # HARDEN-0: a length that is not a number of 0 or more (negative, "abc") is refused, never read to the end
+                self.close_connection = True
+                return self.send(400, b"a Content-Length is a whole number of bytes", "text/plain")
             if path == "/studio/bye":
                 # the page's pagehide beacon: navigator.sendBeacon cannot set a header, so the token is its whole body
-                n = int(self.headers.get("Content-Length", "0") or 0)
+                n = self.length()
                 body = self.rfile.read(n) if 0 < n <= 64 else b""
                 if not self.own_host() or body.decode("ascii", "replace") not in (hub.token, hub.presence):
                     return self.refuse(403, b"forbidden", 0 if 0 < n <= 64 else 64)
@@ -1200,18 +1224,21 @@ def server(target, port=0):
                 # the studio's token; its detectors are read here, by the host, never taken from the page
                 if not self.own_host() or self.headers.get("X-Studio-Token") != hub.token:
                     return self.refuse(403, b"forbidden", STILL_MAX)
-                n = int(self.headers.get("Content-Length", "0") or 0)
+                n = self.length()
                 if not (0 < n <= STILL_MAX) or self.headers.get("Content-Type", "") != "image/png":
                     return self.refuse(400, b"a still is image/png of at most 32 MiB", STILL_MAX)
                 q = urllib.parse.parse_qs(self.path.partition("?")[2])
-                code, reply = studio_still(hub, (q.get("world") or [None])[0], (q.get("id") or [""])[0], (q.get("candidate") or [""])[0], self.rfile.read(n))
+                try:
+                    code, reply = studio_still(hub, (q.get("world") or [None])[0], (q.get("id") or [""])[0], (q.get("candidate") or [""])[0], self.rfile.read(n))
+                except Exception as e:  # noqa: BLE001 — HARDEN-0: the boundary is total (see below)
+                    code, reply = internal(hub, path, e)
                 return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
             if path not in STUDIO_POSTS:
                 return self.refuse(404, b"not found", 65536)
             tok_ = self.headers.get("X-Studio-Token")
             if not self.own_host() or not (tok_ == hub.token or (path == "/studio/alive" and tok_ == hub.presence)):
                 return self.refuse(403, b"forbidden", 65536)
-            n = int(self.headers.get("Content-Length", "0") or 0)
+            n = self.length()
             if n > 65536 or not (self.headers.get("Content-Type", "").startswith("application/json")):
                 return self.refuse(400, b"a studio request is JSON of at most 64 KiB", 65536)
             try:
@@ -1225,8 +1252,14 @@ def server(target, port=0):
                     raise ValueError("not an object")
             except (UnicodeDecodeError, ValueError, RecursionError):
                 return self.send(400, b"not a JSON object", "text/plain")
-            code, reply = studio_post(hub, path, body)
-            return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
+            try:
+                code, reply = studio_post(hub, path, body)
+            except Exception as e:  # noqa: BLE001 — HARDEN-0: whatever a handler raises is answered, never a reset connection
+                code, reply = internal(hub, path, e)
+            self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
+            if path == "/studio/shutdown" and code == 200:
+                self.wfile.flush()
+                hub.stop.set()            # after the answer is written: the main thread then stops the server and ends
 
     srv = Server(("127.0.0.1", port), Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -1273,6 +1306,8 @@ def opts(argv, k):
 def main(argv):
     if "--selftest" in argv:
         return selftest()
+    if "--boundary-selftest" in argv:
+        return boundary_selftest()
     global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
     vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root")
@@ -2484,6 +2519,143 @@ def marks_selftest(row):
         if srv:
             srv.shutdown()
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def boundary_selftest():
+    """HARDEN-0 (0232): the HTTP boundary is total and a request always ends, in the fixture's world with the scripted
+    director: what ADVERSARY-A found ending in a reset connection or a request running for ever, each answered now;
+    a silent client let go; a tag read back after a restart as it was, and an object a candidate adds counted once."""
+    global ROOT, SOCKET_TIMEOUT
+    import socket
+    import studio
+    rows = []
+
+    def row(name, ok, detail):
+        rows.append(bool(ok))
+        print("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+    brief, tmp = "plaza-night", tempfile.mkdtemp(prefix="boundary-selftest-")
+    saved = (ROOT, SOCKET_TIMEOUT, studio.run_provider)
+    live = srv = None
+    try:
+        director().selftest_tree(tmp)
+        ROOT, SOCKET_TIMEOUT = tmp, 2
+        art = os.path.join(tmp, "art", "briefs", brief + ".art")
+        live = Live(brief, art, [], poll=0.15, root=tmp)
+        start_studio(live, os.path.join(HERE, "providers", "scripted.json"), say=lambda s: None)
+        srv = server(live)
+        live.hub.say = lambda s: None
+        import studio_queue
+        live.hub.queue = studio_queue.Queue(live.hub, os.path.join(tmp, "queue.jsonl"), say=lambda s: None)     # not started: its routes only
+        port = srv.server_address[1]
+        tok = re.search(r'data-studio="([0-9a-f]+)"', urllib.request.urlopen("http://127.0.0.1:%d/play.html" % port, timeout=30).read().decode("utf-8")).group(1)
+
+        def raw(data, wait=10):
+            s = socket.create_connection(("127.0.0.1", port), timeout=wait)
+            try:
+                s.sendall(data)
+                buf = b""
+                while True:
+                    b = s.recv(65536)
+                    if not b:
+                        break
+                    buf += b
+                return buf
+            except (socket.timeout, ConnectionResetError) as e:
+                return ("<%s>" % type(e).__name__).encode()
+            finally:
+                s.close()
+
+        def req(path, body, ctype="application/json", length=None):
+            body = body if isinstance(body, bytes) else json.dumps(body).encode("utf-8")
+            head = "POST %s HTTP/1.0\r\nHost: 127.0.0.1:%d\r\nX-Studio-Token: %s\r\nContent-Type: %s\r\nContent-Length: %s\r\n\r\n" % (
+                path, port, tok, ctype, len(body) if length is None else length)
+            out = raw(head.encode("ascii") + body)
+            status = out.split(b" ", 2)[1].decode("ascii", "replace") if out.startswith(b"HTTP/") else out[:20].decode("latin-1")
+            return status, out
+        got = [("a Content-Length of abc", req("/studio/select", b"{}", length="abc")[0], "400"),
+               ("a Content-Length of -5", req("/studio/select", b"{}", length="-5")[0], "400"),
+               ("JSON nested 40,000 deep", req("/studio/select", b"[" * 40000 + b"]" * 40000)[0], "400"),
+               ("a list for a world", req("/studio/select", {"world": [1], "piece": None})[0], "409"),
+               ("a list for a task's id", req("/studio/queue/cancel", {"id": [1]})[0], "409"),
+               ("a bad still's length", req("/studio/still?id=x&candidate=A", b"", ctype="image/png", length="1e3")[0], "400")]
+        row("boundary: every request answered", all(g == w for _n, g, w in got), "; ".join("%s %s" % (n, g) for n, g, _w in got))
+        s0 = live.slot(0)["sha"]
+        st_p, out_p = req("/studio/ask", b'{"prompt": "make it \\ud83d magenta", "camera": null}')
+        st_c, out_c = req("/studio/ask", {"prompt": "heavier", "piece": "canopy:19,10-28,11", "camera": [1, 2]})
+        rid = json.loads(out_c.split(b"\r\n\r\n", 1)[1] or b"{}").get("id", "")
+        t0 = time.time()
+        while time.time() - t0 < 120 and (live.studio.state()["request"] or {}).get("state") == "running":
+            time.sleep(0.1)
+        r = live.studio.state()["request"] or {}
+        row("boundary: a prompt with half a character refused, a camera that is not an object ignored",
+            st_p == "409" and b"STUDIO-PROMPT" in out_p and st_c == "200" and r.get("id") == rid and r.get("state") == "done" and live.slot(0)["sha"] == s0,
+            "half an emoji: %s STUDIO-PROMPT, nothing running; a camera [1, 2]: %s, the request %s" % (st_p, st_c, r.get("state")))
+
+        def boom(*a, **k):
+            raise RuntimeError("planted: the provider's runner raised")
+        studio.run_provider = boom
+        st_b, out_b = req("/studio/ask", {"prompt": "heavier", "piece": "canopy:19,10-28,11"})
+        t0 = time.time()
+        while time.time() - t0 < 60 and (live.studio.state()["request"] or {}).get("state") == "running":
+            time.sleep(0.05)
+        studio.run_provider = saved[2]
+        r = live.studio.state()["request"] or {}
+        h = json.loads(urllib.request.urlopen("http://127.0.0.1:%d/healthz" % port, timeout=30).read())
+        real_post = studio_post
+
+        def planted(hub_, path_, body_):
+            raise ZeroDivisionError("planted: a handler raised what it did not expect")
+        globals()["studio_post"] = planted
+        try:
+            st_i, out_i = req("/studio/select", {"piece": None})
+        finally:
+            globals()["studio_post"] = real_post
+        row("boundary: what a handler did not expect is answered", st_i == "500" and b"STUDIO-INTERNAL" in out_i and b"ZeroDivisionError" in out_i,
+            "a planted ZeroDivisionError in the POST handler: %s STUDIO-INTERNAL, the connection answered, not reset" % st_i)
+        row("boundary: a request's thread that raises ends the request", st_b == "200" and r.get("state") == "failed" and r.get("code") == "STUDIO-FAILED" and h["busy"] is False,
+            "planted RuntimeError in the provider's runner: the request %s (%s), the server not busy" % (r.get("state"), r.get("code")))
+        t0 = time.time()
+        s = socket.create_connection(("127.0.0.1", port), timeout=30)
+        s.sendall(b"GET /li")
+        try:
+            closed = s.recv(10) == b""
+        except (socket.timeout, ConnectionResetError):
+            closed = False
+        s.close()
+        row("boundary: a silent client let go", closed and time.time() - t0 < 20, "half a request line, then silence: closed after %.1f s (the timeout set to %d s here)" % (time.time() - t0, SOCKET_TIMEOUT))
+        # a tag read back after a restart is as it was (the fingerprint kept); one from a file before 0232 is unknown
+        g = live.studio
+        g.select("canopy:19,10-28,11")
+        doc = json.loads(open(g.tags_path, "rb").read())
+        g2 = studio.Gateway(Host(live), brief, None, root=tmp, say=lambda s: None)
+        st2 = g2.refs()["known"][0]["tag"], [it for it in (g2.select("canopy:19,10-28,11") and g2.refs()["items"])][0]["status"]
+        old = dict(doc, tags=[{k: v for k, v in t.items() if k != "fingerprint"} for t in doc["tags"]])
+        open(g.tags_path, "wb").write(studio.canon.dumps(old) + b"\n")
+        g3 = studio.Gateway(Host(live), brief, None, root=tmp, say=lambda s: None)
+        g3.target = "@1"
+        st3 = g3.refs()["items"][0]["status"]
+        row("tags: a tag read back after a restart", "fingerprint" in doc["tags"][0] and st2[1] == "ok" and st3 == "unknown",
+            "kept with its object's fingerprint: after a restart %s; from a file without it: %s (it read changed before 0232)" % (st2[1], st3))
+        O = {"canopy:19,10-28,11": {}}
+        slot = {"realized": ["plaza/canopy/2,2-4,4", "plaza/canopy/2,2-4,4:rib3", "plaza/canopy/2,2-4,4:rib4", "plaza/canopy/2,2-4,4:light-edge1"], "affected": []}
+        t = studio.Gateway.touches(slot, {}, O)
+        row("touches: an object a candidate adds counts once", t["added_count"] == 1 and t["added"] == ["canopy:2,2-4,4"],
+            "a new canopy with two ribs and an edge light: %d new (%s)" % (t["added_count"], ", ".join(t["added"])))
+    except Exception as e:  # noqa: BLE001
+        import traceback
+        traceback.print_exc()
+        row("the boundary self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+    finally:
+        ROOT, SOCKET_TIMEOUT, studio.run_provider = saved
+        if live:
+            live.stopping = True
+            if live.studio:
+                live.studio.shutdown()
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
+    print("BOUNDARY SELFTEST %d/%d" % (sum(rows), len(rows)))
+    return 0 if all(rows) else 1
 
 
 def references_selftest(row, cfg_dir=None):

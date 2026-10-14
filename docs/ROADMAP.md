@@ -4409,6 +4409,29 @@ his machine, Edge, a real GPU. What the shapes do not do yet: hold a candidate t
 nothing checks where a change lands: the candidate loop's), and cut the play geometry. Docs: AGENTS.md, art/README.md,
 art/STUDIO.md, docs/CORE.md, this entry.
 
+**0232, HARDEN-0, the studio's HTTP boundary made total: built, off the gate.** From what ADVERSARY-A (54 attacks, a
+harness of its own, run against the code before 0230) and MIXER-C (the Sprint 3 review) MEASURED. A prompt holding half
+of a character (a lone surrogate: half an emoji pasted) was accepted, and the request's thread died writing it, leaving
+the request running for ever and the server busy: it is refused now (STUDIO-PROMPT), and a request's thread that raises
+anything ends its request failed (STUDIO-FAILED), recorded. Five requests ended in a reset connection instead of an
+answer (a non-integer Content-Length, JSON nested 40,000 deep, a list for a world, a list for a task's id, a camera that
+is not an object or of 10^400 metres): each is answered with its code now, and whatever a handler raises that it did not
+expect is answered 500 STUDIO-INTERNAL. A negative Content-Length was read to the end of the connection: 400. A client
+that stops sending held its thread for ever: let go after a minute (`SOCKET_TIMEOUT`). After a restart every tag read
+*changed* and the model was told so (the tags file did not keep what its object was): the file keeps each tag's
+fingerprint, and a tag from an older file reads *unknown* until bound again. An object a candidate adds was counted once
+for each of its parts: once now. And, OBSERVED once under load in this build's own run, the supervisor read the answer
+to POST /studio/shutdown cut short (IncompleteRead): the server stops only after that answer is written. MEASURED in the
+container: BOUNDARY SELFTEST 7/7 (every request answered; half a character refused and a camera that is not an object
+ignored; a planted exception in the POST handler answered 500; a planted exception in the request's thread ending it
+failed with the server not busy; a silent client let go at the timeout; a tag read back after a restart ok, one from a
+file before 0232 unknown; an added canopy with its parts one object); nine fixes taken out one at a time, each caught
+by it; ADVERSARY-A's harness against 0232: 52 of 54 PASS, no reset connection and no request left running; the two left
+are its own thresholds (it wants a silent client closed within 4 s, the boundary allows a minute; it wants a 64 KiB
+shape refused as JSON, play.py refuses a body over 64 KiB before reading it, 400 plain text); MARKS SELFTEST 19/19; LIVE
+SELFTEST 24/24; STUDIO SELFTEST 74/74; STUDIO-2 SELFTEST 19/19; STUDIO APP SELFTEST 12/12 (11/12 once, the row above,
+before the fix). Docs: AGENTS.md, art/STUDIO.md (*Its boundary*, the tags), docs/CORE.md, this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

@@ -70,6 +70,8 @@ def _ref_lines(r):
             w["address"], w["side"], w["plan_gap_m"], w["gap_m"], w["wall_top_m"], w["basis"]))
     if r["bound"]["changed_since"]:
         lines.append("    it has changed since the designer tagged it (the same object, another shape or look)")
+    elif r["bound"]["changed_since"] is None:
+        lines.append("    whether it has changed since the designer tagged it is not known (the tag was kept from before the studio restarted)")
     return lines
 
 

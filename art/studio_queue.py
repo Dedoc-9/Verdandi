@@ -242,6 +242,8 @@ class Queue:
         return {"id": tid}
 
     def _task(self, tid):
+        if not isinstance(tid, str):
+            raise studio.StudioError("STUDIO-QUEUE", "a task is named by its id, a string")       # HARDEN-0 (0232): a list was a 500
         with self.lock:
             t = self.tasks.get(tid)
             if t is None:
