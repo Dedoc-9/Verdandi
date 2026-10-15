@@ -135,14 +135,15 @@ SINGLE = ("map", "title", "seed", "time", "fog", "exposure", "bloom", "rain", "s
 
 def statement_key(code) -> str:
     """The name a revision uses for a statement: one per brief. The verb alone for a statement that may appear once;
-    the verb and its first word for the named ones; a canopy adds its corners, since a region may hold several."""
+    the verb and its first word for the named ones; a canopy or a building adds its corners, since a region may hold
+    several. A bay's first word is the place of the piece it makes (FACADE-0, 0237), so its key names that piece."""
     verb, args = code[0], code[1:]
     if verb in SINGLE:
         return verb
     if verb in ("moon", "sun"):
         return "light"
-    if verb == "canopy" and len(args) >= 5 and is_cell(args[3]) and is_cell(args[4]):
-        return "canopy %s %s %s" % (args[0], args[3], args[4])
+    if verb in ("canopy", "building") and len(args) >= 5 and is_cell(args[3]) and is_cell(args[4]):
+        return "%s %s %s %s" % (verb, args[0], args[3], args[4])
     return "%s %s" % (verb, args[0] if args else "")
 
 
@@ -240,7 +241,7 @@ def parse(text: str, fname: str) -> dict:
             if not args or not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", args[0]):
                 raise ArtError("%s: a mover's name is a lowercase letter, then letters, digits or '-' (at most 32)" % where)
             A["movers"].append({"args": args, "where": where, "hash": A["statements"][-1]["hash"]})
-        elif verb in ("skyline", "tower", "canopy", "neon", "lamp", "puddle"):
+        elif verb in ("skyline", "tower", "canopy", "neon", "lamp", "puddle", "building", "bay"):
             A["dressing"].append({"verb": verb, "args": args, "where": where, "hash": A["statements"][-1]["hash"], "skey": A["statements"][-1]["key"]})
         else:
             raise ArtError("%s: %r is not a statement of %s" % (where, verb, FORMAT))
@@ -592,6 +593,48 @@ def _movers(A, W, C):
     return out
 
 
+# FACADE-0 (0237): a building's facade. Each bay of each floor of each side that looks onto open cells is one piece, a window
+# set in the bay or a panel filling it, standing out from the face by a few centimetres: thinner than FLUSH, so that it
+# is flush on a rock face wherever a player can be, and art/check.py holds it there like any other piece. No opening,
+# no mesh, no depth: the building's mass is a box on rock, and its facade is a grid of thin boxes on that box's faces.
+ELEMENTS = ("window", "panel", "blank")
+STOREY = 4.0                     # a floor's height when the building does not say (the graybox's wall height)
+WINDOW = (0.35, 0.9, 0.45, 0.05)  # inset at each side of the bay, sill above the floor, head below the next, how far it stands out
+PANEL = (0.03, 0.03, 0.03, 0.04)  # the joints round a panel, and how far it stands out
+BAY = re.compile(r"(0|[1-9][0-9]*),(0|[1-9][0-9]*)-(0|[1-9][0-9]*),(0|[1-9][0-9]*):([nsew])-b(0|[1-9][0-9]*)-f(0|[1-9][0-9]*)")
+assert max(WINDOW[3], PANEL[3]) < FLUSH
+
+
+def _bay(d, A):
+    """A bay statement read for form: bay PLACE window|panel [MATERIAL] | bay PLACE blank. Its place is the piece it
+    makes, building:PLACE; whether a building has that bay is decided where the buildings are made."""
+    args, where = d["args"], d["where"]
+    if len(args) not in (2, 3) or not BAY.fullmatch(args[0]):
+        raise ArtError("%s: bay takes a place x0,z0-x1,z1:SIDE-bK-fN (a building's corners, its side n, s, e or w, the bay "
+                       "and the floor, whole numbers without leading zeros), an element (%s) and, but for blank, optionally "
+                       "a material" % (where, ", ".join(ELEMENTS)))
+    if args[1] not in ELEMENTS:
+        raise ArtError("%s: %r is not an element of a bay (%s)" % (where, args[1], ", ".join(ELEMENTS)))
+    if args[1] == "blank" and len(args) == 3:
+        raise ArtError("%s: a blank bay has no element, so no material" % where)
+    if len(args) == 3 and args[2] not in A["materials"]:
+        raise ArtError("%s: no material %s" % (where, args[2]))
+    return {"place": args[0], "element": args[1], "material": args[2] if len(args) == 3 else None, "by": d["hash"], "where": where}
+
+
+def _facade(side, element, a, b, y0, y1, face):
+    """The box of one bay's element: along the face from a to b, from the floor y0 to the next y1, on the face's plane."""
+    i, lo, hi, d = WINDOW if element == "window" else PANEL
+    a, b, y0, y1 = a + i, b - i, y0 + lo, y1 - hi
+    if side == "s":
+        return a, y0, face, b, y1, face + d
+    if side == "n":
+        return a, y0, face - d, b, y1, face
+    if side == "e":
+        return face, y0, a, face + d, y1, b
+    return face - d, y0, a, face, y1, b
+
+
 def export(A: dict, maps_dir=None) -> dict:
     """The scene and its lineage for a parsed art file."""
     conv = world(A["map"], maps_dir)
@@ -621,6 +664,14 @@ def export(A: dict, maps_dir=None) -> dict:
     def box(x0, y0, z0, x1, y1, z1):
         return [r4(x0), r4(y0), r4(z0), r4(x1), r4(y1), r4(z1)]
 
+    # FACADE-0 (0237): the bay statements, by the place of the piece each makes; each is used where its building is made, and
+    # one no building has is refused below
+    bays = {}
+    for d in A["dressing"]:
+        if d["verb"] == "bay":
+            b_ = _bay(d, A)
+            bays[b_["place"]] = b_
+    buildings = {}      # (x0, z0, x1, z1) -> {where, sides: {side: (bays, floors)}}
     for d in A["dressing"]:
         verb, args, where, sh, skey = d["verb"], d["args"], d["where"], d["hash"], d["skey"]
         # a choice is keyed by the statement's name and the cell, not by its text: a revision of a statement's
@@ -817,6 +868,71 @@ def export(A: dict, maps_dir=None) -> dict:
                     ex, ez = 0.15 + (hv >> 20) % 40 / 100.0, 0.15 + (hv >> 26) % 40 / 100.0
                     visuals.append({"id": "puddle:%d,%d" % (x, z), "by": sh, "region": args[0], "asset": "cube", "material": mat,
                                     "box": box(x * cell + ix, 0.001, z * cell + iz, (x + 1) * cell - ex, 0.008, (z + 1) * cell - ez)})
+        elif verb == "building":
+            if len(args) < 5 or not (is_cell(args[3]) and is_cell(args[4])):
+                raise ArtError("%s: building takes a region, a material, a height, two corner cells and options (face ELEMENT "
+                               "MATERIAL, storey METRES, bay CELLS)" % where)
+            gx0, gz0, gx1, gz1 = _region(A, args[0], w, h, where)
+            mat = material(args[1], where)
+            top = _num(args[2], where, wall + 1, 400, "height")
+            a, b = _cell(args[3], w, h, where), _cell(args[4], w, h, where)
+            x0, z0, x1, z1 = min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1])
+            soft = [(x, z) for z in range(z0, z1 + 1) for x in range(x0, x1 + 1) if not rock(x, z)]
+            if soft:
+                raise ArtError("%s: a building stands on rock, and the cell %d,%d is not" % ((where,) + soft[0]))
+            ring = [(x, z0 - 1) for x in range(x0, x1 + 1)] + [(x, z1 + 1) for x in range(x0, x1 + 1)] + \
+                   [(x0 - 1, z) for z in range(z0, z1 + 1)] + [(x1 + 1, z) for z in range(z0, z1 + 1)]
+            if not any(gx0 <= x <= gx1 and gz0 <= z <= gz1 for x, z in ring):
+                raise ArtError("%s: the building at %d,%d-%d,%d borders no cell of its region %s" % (where, x0, z0, x1, z1, args[0]))
+            for (ox0, oz0, ox1, oz1), o in buildings.items():
+                if x0 <= ox1 and ox0 <= x1 and z0 <= oz1 and oz0 <= z1:
+                    raise ArtError("%s: the building at %d,%d-%d,%d shares cells with the building of %s" % (where, x0, z0, x1, z1, o["where"]))
+            opts = _options(args[5:], where, {"face": 2, "storey": 1, "bay": 1})
+            storey = Fraction(STOREY)
+            if "storey" in opts:
+                _num(opts["storey"][0], where, 2.5, 8, "storey height")
+                storey = Fraction(opts["storey"][0])
+            every = _whole(opts["bay"][0], where, 1, 8, "bay width in cells") if "bay" in opts else 1
+            face = None
+            if "face" in opts:
+                if opts["face"][0] not in ("window", "panel"):
+                    raise ArtError("%s: a building's face is window or panel, and a material" % where)
+                face = (opts["face"][0], material(opts["face"][1], where))
+            floors = int(Fraction(args[2]) // storey)
+            info = buildings[(x0, z0, x1, z1)] = {"where": where, "sides": {}}
+            bid = "building:%d,%d-%d,%d" % (x0, z0, x1, z1)
+            visuals.append({"id": bid, "by": sh, "region": args[0], "asset": "cube", "material": mat,
+                            "box": box(x0 * cell, wall, z0 * cell, (x1 + 1) * cell, top, (z1 + 1) * cell)})
+            # the sides, each with its bays counted from its west or north end; a bay is drawn only where every cell in
+            # front of it is open (a bay against rock would be inside it)
+            for side, (n0, n1), front, plane in (("n", (x0, x1), lambda c: (c, z0 - 1), z0 * cell), ("s", (x0, x1), lambda c: (c, z1 + 1), (z1 + 1) * cell),
+                                                 ("w", (z0, z1), lambda c: (x0 - 1, c), x0 * cell), ("e", (z0, z1), lambda c: (x1 + 1, c), (x1 + 1) * cell)):
+                spans = [(c, min(n1, c + every - 1)) for c in range(n0, n1 + 1, every)]
+                for k, (c0, c1) in enumerate(spans):
+                    if not all(walk(*front(c)) for c in range(c0, c1 + 1)):
+                        continue
+                    info["sides"].setdefault(side, [[], floors])[0].append(k)
+                    for f in range(floors):
+                        place = "%d,%d-%d,%d:%s-b%d-f%d" % (x0, z0, x1, z1, side, k, f)
+                        o = bays.pop(place, None)
+                        if face is None and o is None:
+                            continue
+                        if face is None:
+                            raise ArtError("%s: the building of %s has no face, so no bay to change: give it face ELEMENT MATERIAL" % (o["where"], where))
+                        element, emat, by = (o["element"], o["material"] or face[1], o["by"]) if o else (face[0], face[1], sh)
+                        if element == "blank":
+                            continue
+                        visuals.append({"id": "building:" + place, "by": by, "region": args[0], "asset": "cube", "material": emat,
+                                        "box": box(*_facade(side, element, c0 * cell, (c1 + 1) * cell, float(f * storey), float((f + 1) * storey), plane))})
+    # FACADE-0: a bay no building has is refused, with what the building it names does have
+    for o in sorted(bays.values(), key=lambda o: int(o["where"].rsplit(" ", 1)[1])):
+        m = BAY.fullmatch(o["place"])
+        info = buildings.get(tuple(int(m.group(i)) for i in (1, 2, 3, 4)))
+        if info is None:
+            raise ArtError("%s: no building has the corners %s" % (o["where"], o["place"].split(":")[0]))
+        have = "; ".join("%s: bays %s, floors 0-%d" % (sd, ",".join("b%d" % k for k in ks), fl - 1) for sd, (ks, fl) in sorted(info["sides"].items())) or "none"
+        raise ArtError("%s: the building of %s has no bay %s (a bay is a side's run of cells that looks onto open cells, on a "
+                       "floor below its height; it has %s)" % (o["where"], info["where"], o["place"].split(":")[1], have))
     # dressing in a mover's path would be cut by it as it passes: only a piece flat on the floor may lie under one
     for v in visuals:
         b = v["box"]
@@ -918,7 +1034,7 @@ def plan_svg(out: dict) -> str:
         b = v["box"]
         kind = v["id"].split(":")[0]
         m = S["materials"][v["material"]]
-        if kind in ("skyline", "tower"):
+        if kind in ("skyline", "tower", "building"):
             hgt = b[4]
             a = min(1.0, 0.25 + hgt / 40)
             fill, op = "#9aa7b4", a

@@ -1340,6 +1340,8 @@ def main(argv):
         return selftest()
     if "--boundary-selftest" in argv:
         return boundary_selftest()
+    if "--facade-selftest" in argv:
+        return facade_selftest()
     global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
     vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root")
@@ -2709,6 +2711,181 @@ def held_selftest(row):
         if srv:
             srv.shutdown()
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+FACADE_LINES = ("material glass_dark 24,30,38 0.06 0.9",
+                "building north-lane concrete_dark 14 10,2 17,2 face window glass_dark storey 3.5")
+FACADE_BAY = "10,2-17,2:s-b3-f2"
+# FACADE-0's planted bays: each line is refused by the exporter, with these words in its reason
+FACADE_PLANTS = (("bay 10,2-17,2:s-b8-f2 panel concrete_dark", "has no bay s-b8-f2"),
+                 ("bay 10,2-17,2:n-b3-f2 panel concrete_dark", "has no bay n-b3-f2"),
+                 ("bay 10,2-17,2:s-b3-f4 panel concrete_dark", "has no bay s-b3-f4"),
+                 ("bay 10,2-17,2:s-b3-f2 louvre concrete_dark", "not an element of a bay"),
+                 ("bay 10,2-17,2:s-b3-f2 panel corten", "no material corten"),
+                 ("bay 11,2-17,2:s-b3-f2 panel concrete_dark", "no building has the corners 11,2-17,2"),
+                 ("bay 10,2-17,2:s-b03-f2 panel concrete_dark", "bay takes a place"),
+                 ("bay 10,2-17,2:s-b3-f2 blank concrete_dark", "a blank bay has no element"))
+
+
+def facade_selftest():
+    """FACADE-0 (0237): one bay of one floor of a building's facade changed through the studio, in the fixture's world with a
+    building added (FACADE_LINES) and the scripted director: the building drawn and held to the art checks and their
+    plants; a shape on one bay of the building's south side, three candidates and their accounts (the bay panelled and
+    the bay blank held, the column panelled not); the first admitted, its ledger receipt exact (the evaluation's
+    predicted head reached, the inverse one line); the admitted scene held to the checks again and changed in that one
+    piece; undone, the brief, the head and the scene's bytes as they were; then, at the director, each planted bay
+    refused with its reason, and a bay beyond the candidate's scope refused as leakage, its account not held. Writes only
+    in a scratch tree."""
+    global ROOT
+    import studio
+    rows = []
+
+    def row(name, ok, detail):
+        rows.append(bool(ok))
+        print("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+    brief, tmp = "plaza-night", tempfile.mkdtemp(prefix="facade-selftest-")
+    saved_root = ROOT
+    live = srv = None
+    D = director()
+    try:
+        os.makedirs(os.path.join(tmp, "art", "briefs"))
+        os.makedirs(os.path.join(tmp, "graybox", "maps"))
+        for f in os.listdir(os.path.join(REPO, "graybox", "maps")):
+            if f.endswith(".gbx"):
+                shutil.copy(os.path.join(REPO, "graybox", "maps", f), os.path.join(tmp, "graybox", "maps", f))
+        for f in ("tactical.design", "tactical.layout"):
+            shutil.copy(os.path.join(D.FIXTURE, f), os.path.join(tmp, "graybox", "maps", f))
+        art = os.path.join(tmp, "art", "briefs", brief + ".art")
+        original = open(os.path.join(D.FIXTURE, brief + ".art"), "rb").read().replace(b"\r\n", b"\n") + ("\n".join(FACADE_LINES) + "\n").encode("ascii")
+        open(art, "wb").write(original)
+        ws = D.Workspace(brief, tmp)
+        D.cmd_genesis_quiet(ws)
+        out0, parts0, checks0 = ws.export()
+        head0 = D.canon.head(parts0)
+        S0 = out0["scene"]
+        mass = next(v for v in S0["visuals"] if v["id"] == "building:10,2-17,2")
+        bays = [v for v in S0["visuals"] if v["id"].startswith("building:10,2-17,2:")]
+        res = D.check.verify(out0, art)
+        pl = D.check.plants(out0, art)
+        row("facade: the building drawn and held to the art checks", len(bays) == 32 and mass["box"] == [20.0, 4.0, 4.0, 36.0, 14.0, 6.0]
+            and all(ok for _c, ok, _d in res) and all(p[1] for p in pl),
+            "the mass and %d windows, 8 bays by 4 floors on its one side that looks onto open cells; %d checks pass; %d of %d plants refused"
+            % (len(bays), len(res), sum(1 for p in pl if p[1]), len(pl)))
+        ROOT = tmp
+        live = Live(brief, art, [], poll=0.15, root=tmp)
+        threading.Thread(target=live.watch, kwargs={"say": lambda s_: None}, daemon=True).start()
+        start_studio(live, os.path.join(HERE, "providers", "scripted.json"), say=lambda s_: None)
+        srv = server(live)
+        base = "http://127.0.0.1:%d" % srv.server_address[1]
+        tok = re.search(r'data-studio="([0-9a-f]+)"', urllib.request.urlopen(base + "/play.html", timeout=30).read().decode("utf-8")).group(1)
+
+        def post(path, raw, ctype="application/json"):
+            rq = urllib.request.Request(base + path, data=raw if isinstance(raw, bytes) else json.dumps(raw).encode("utf-8"), method="POST",
+                                        headers={"Content-Type": ctype, "X-Studio-Token": tok})
+            try:
+                with urllib.request.urlopen(rq, timeout=120) as r:
+                    return r.status, json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                b = e.read()
+                try:
+                    return e.code, json.loads(b)
+                except ValueError:
+                    return e.code, {"raw": b[:80].decode("latin-1")}
+
+        def lines():
+            return [json.loads(x) for x in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines() if x.strip()]
+        s0 = live.slot(0)
+        # the shape: bay 3 of floor 2 of the mass's south face (+z), in the face's frame (u east from the mass's west end,
+        # v up from its foot at 4 m): x 26-28 m, y 7-10.5 m
+        shape = {"name": "bay", "operation": "region", "anchor": {"piece": mass["id"], "face": "+z", "box": mass["box"], "scene": s0["sha"], "view": {}},
+                 "vertices": [[6, 3], [8, 3], [8, 6.5], [6, 6.5]], "constraints": {"within": True, "supports": False, "collision": False, "material": "keep"}}
+        c_s, _r = post("/studio/shapes/save", {"shape": shape})
+        c_a, r_a = post("/studio/ask", {"prompt": "close #bay"})
+        st = None
+        for _i in range(1200):
+            st = live.studio.state()["request"]
+            if st and st["id"] == r_a.get("id") and st["state"] != "running":
+                break
+            time.sleep(0.1)
+        cands = {c["letter"]: c for c in (st or {}).get("candidates", [])}
+        verd = {c["title"]: (c["verdict"], ((c.get("held") or {}).get("accounts") or [{}])[0].get("verdict")) for c in cands.values()}
+        order = [o["letter"] for o in (st or {}).get("order", [])]
+        row("facade: a shape on one bay, three candidates and their accounts", c_s == 200 and c_a == 200 and len(cands) == 3
+            and verd.get("Panelled bay") == ("CLEAN", "held") and verd.get("Blank bay") == ("CLEAN", "held")
+            and verd.get("Panelled column", ("", ""))[0] == "CLEAN" and verd.get("Panelled column", ("", "held"))[1] != "held"
+            and sorted(order[:2]) == ["A", "B"] and order[2:] == ["C"],
+            "#bay on %s; %s; the host's order %s" % (FACADE_BAY, "; ".join("%s %s %s" % (k, v[0], v[1]) for k, v in sorted(verd.items())), order))
+        c_p, s_p = post("/studio/still?id=%s&candidate=A" % st["id"], D.selftest_still(), "image/png")
+        c_m, r_m = post("/studio/admit", {"id": st["id"], "candidate": "A", "still": s_p.get("still", "")})
+        events, _l, _h = D.led.read(ws.ledger)
+        adm = events[-1]
+        ev = events[int(adm.get("evaluation", 0))] if adm.get("kind") == "admit" else {}
+        _o1, parts1, _c1 = ws.export()
+        want = original + ("bay %s panel concrete_dark\n" % FACADE_BAY).encode("ascii")
+        dec = [x for x in lines() if x.get("decision") == "admit"]
+        row("facade: one bay admitted, its receipt exact", c_p == 200 and c_m == 200 and adm["kind"] == "admit" and adm["inverse"] == ["- bay " + FACADE_BAY]
+            and adm["head_before"] == head0 and adm["head_after"] == D.canon.head(parts1) and ev.get("after", {}).get("art_sha256") == parts1["art_sha256"]
+            and open(art, "rb").read() == want and dec and dec[-1].get("comparison", {}).get("chosen") == "A",
+            "admit %s %s; ledger #%s: evaluation #%s, head %s -> %s (the evaluation's prediction), inverse %s, still %s; the brief one line longer; the request's record chose A"
+            % (c_m, "" if c_m == 200 else str(r_m)[:160], adm.get("seq"), adm.get("evaluation"), head0[:12], adm.get("head_after", "")[:12], adm.get("inverse"), adm.get("evidence", {}).get("still_sha256", "")[:12]))
+        out1 = ws.export()[0]
+        res1 = D.check.verify(out1, art)
+        d = scene_diff.diff(S0, out1["scene"])
+        sm = scene_diff.summary(d)
+        piece = next((v for v in out1["scene"]["visuals"] if v["id"] == "building:" + FACADE_BAY), {})
+        row("facade: the admitted scene holds the checks, changed in that one piece", all(ok for _c, ok, _d in res1) and piece.get("material") == "concrete_dark"
+            and piece.get("box") == [26.03, 7.03, 6.0, 27.97, 10.47, 6.04] and sm["objects"] == {"added": 0, "removed": 0, "changed": 1},
+            "%d checks pass; building:%s a panel in concrete_dark %s; the diff: %s" % (len(res1), FACADE_BAY, piece.get("box"), sm))
+        c_u, r_u = post("/studio/undo", {})
+        _o2, parts2, _c2 = ws.export()
+        row("facade: undone, the brief, the head and the scene as they were", c_u == 200 and open(art, "rb").read() == original
+            and D.canon.head(parts2) == head0 and _o2["scene_bytes"] == out0["scene_bytes"],
+            "undo %s: the brief's bytes, the head %s and the scene's %d bytes those before the admission" % (c_u, D.canon.head(parts2)[:12], len(_o2["scene_bytes"])))
+        # at the director: planted bays, and a bay beyond the candidate's scope
+        cur = {k: parts2[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}
+
+        def intent(rev, scope, letter="P"):
+            doc = {"base": cur, "brief": brief, "candidate": letter, "format": "VERDANDI-INTENT", "layout": [], "prompt": "a planted bay",
+                   "rationale": "Planted by the facade self-test.", "revision": rev, "scope": scope, "version": "0"}
+            return D.canon.load_intent(D.canon.dumps(doc))
+        addr = "north-lane/building/" + FACADE_BAY
+        got = []
+        for line, why in FACADE_PLANTS:
+            v = D.evaluate_doc(ws, intent(["+ " + line], [addr]))[0]
+            got.append((line, v["verdict"] == "REFUSED" and v["codes"] == ["ART-REFUSED"] and why in v.get("detail", "")))
+        row("facade: planted bays refused, each with its reason", all(ok for _l, ok in got),
+            "%d of %d refused by the exporter%s" % (sum(1 for _l, ok in got if ok), len(got), "; NOT: " + ", ".join(l_ for l_, ok in got if not ok) if not all(ok for _l, ok in got) else ""))
+        other = FACADE_BAY.replace("b3", "b4")
+        v, _a, _t, o1, o0, _x, _r = D.evaluate_doc(ws, intent(["+ bay %s panel concrete_dark" % other], [addr]))
+        rec = live.shapes.records(["bay"])
+        held = held_report(o0["scene"], o1["scene"], rec) if o1 is not None else {}
+        hv = ((held.get("accounts") or [{}])[0]).get("verdict")
+        ev2 = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(D.canon.dumps(intent(["+ bay %s panel concrete_dark" % other], [addr])), v, _a, _t, _r))
+        try:
+            D._quiet(D.cmd_admit, ws, ev2["seq"], chooser="facade-selftest", still=D.selftest_still())
+            refused = ""
+        except SystemExit as e:
+            refused = str(e)
+        row("facade: a bay beyond the candidate's scope is leakage, not held, not admitted", v["verdict"] == "LEAKAGE" and hv not in (None, "held")
+            and "leaks" in refused and open(art, "rb").read() == original,
+            "%s scoped to %s: %s (%s), its account against #bay %s; the admission: %s" % (other, FACADE_BAY, v["verdict"], ",".join(v["codes"]), hv, refused[:80]))
+        row("facade: the export memo served the loop", D.MEMO_STATS["hit"] > 0 or not D.MEMO["on"],
+            "B0's memo: %s" % dict(D.MEMO_STATS))
+    except Exception as e:  # noqa: BLE001 — the self-test says what stopped it
+        import traceback
+        traceback.print_exc()
+        row("facade: the self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+    finally:
+        ROOT = saved_root
+        if live:
+            live.stopping = True
+            if live.studio:
+                live.studio.shutdown()
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
+    print("FACADE SELFTEST %d/%d" % (sum(rows), len(rows)))
+    return 0 if all(rows) else 1
 
 
 def boundary_selftest():

@@ -36,6 +36,7 @@ SUITES = (
     ("racetest", ["art/director.py", "racetest"], r"^DIRECTOR RACETEST (PASSED|FAILED)\b.*$", 50),
     ("crashtest", ["art/director.py", "crashtest"], r"^DIRECTOR CRASHTEST (PASSED|FAILED)\b.*$", 45),
     ("check", ["art/check.py"], r"^ART CHECKS (PASSED|FAILED)\b.*$", 40),
+    ("facade", ["art/play.py", "--facade-selftest"], r"^FACADE SELFTEST (\d+)/(\d+)$", 40),       # FACADE-0 (0237)
     ("queue", ["art/studio_queue.py", "selftest"], r"^STUDIO-2 SELFTEST (\d+)/(\d+)$", 37),
     ("studio", ["art/studio.py", "selftest"], r"^STUDIO SELFTEST (\d+)/(\d+)$", 30),
     ("quality", ["art/quality.py", "selftest"], r"^QUALITY SELFTEST (\d+)/(\d+)$", 20),
@@ -127,7 +128,7 @@ def main(argv):
                 fh.write("\n===== run %d: %s (exit %s, %.1f s)\n%s" % (k + 1, r["name"], r["rc"], r["seconds"], r["output"]))
         say("ART SELFTESTS %s: %d run(s), wall %s s%s; log %s" % (
             "PASSED" if ok else "FAILED", repeat, ", ".join("%.1f" % w for w in walls),
-            "" if same else "; the summaries differ between runs", os.path.relpath(log, REPO) if log.startswith(REPO) else log))
+            "" if same else "; the summaries differ between runs", os.path.relpath(log, REPO) if log.startswith(REPO + os.sep) else log))
     return 0 if ok else 1
 
 

@@ -4649,6 +4649,56 @@ is his to run. NOT_MEASURED: his machine. No row, rung, pinned source or oracle 
 art/README.md, docs/CORE.md (art 22,497 lines), this entry.
 
 
+### FACADE-0 — a building and its bays · Phase I, B1, **built, off the gate** (0237, `art/dress.py`)
+
+**What it is.** Two statements of `VERDANDI-ART 0`, small on purpose (his words: no arbitrary meshes, no openings, no
+general geometry framework). `building REGION MATERIAL HEIGHT x0,z0 x1,z1 [face window|panel MATERIAL] [storey M]
+[bay N]`: a block on rock (every cell of the rectangle rock, one cell beside it in its region, no cell shared with
+another building), from the wall's top to HEIGHT; with `face`, every bay of every floor on each side that looks onto
+open cells is one piece, `building:x0,z0-x1,z1:SIDE-bK-fN`, a window set in the bay or a panel filling it, standing out
+from the face by 5 or 4 cm: less than FLUSH, so that `art/check.py`'s envelope holds it as flush on a rock face wherever
+a player can be, with no new rule. `bay x0,z0-x1,z1:SIDE-bK-fN window|panel [MATERIAL]` or `... blank`: one bay of one
+floor, named by the place of the piece it makes, so that its statement's key is that piece; one no building has is
+refused, with the bays the building does have. A bay is the finer verb HELD-0's *Not done* asked for: a statement
+whose objects are one piece, which a small region can hold. The director's classifier knows the kind (rung A for a
+bay's edit); the studio's words for what a building's statement can change; the scripted director answers a shape on a
+building's side with the bay under it panelled, blank, or panelled on every floor.
+
+**Its falsifiers.** `python art/play.py --facade-selftest` (FACADE SELFTEST 8/8, over HTTP with the scripted director,
+in the fixture's world with one building added on the north lane's north side, 8 bays by 4 floors of 3.5 m): the
+building drawn, the art checks passing on it and their 50 plants refused; #bay drawn on bay 3 of floor 2 of its south
+face, three candidates CLEAN, *Panelled bay* and *Blank bay* held, *Panelled column* outside, the column last in the
+host's order; *Panelled bay* admitted with its still: the ledger's receipt names its evaluation, the head before, the
+head after (the evaluation's prediction, reached), the inverse `- bay 10,2-17,2:s-b3-f2` and the still, the brief one
+line longer, the request's record choosing it; the admitted scene passing the checks and changed in that one piece
+(its box and material; its statement's hash, which no badge reads, also moves); undone, the brief's bytes, the head and
+the scene's 157,998 bytes those before the admission; eight planted bays refused by the exporter, each with its reason
+(a bay beyond the side, a side against rock, a floor above the roof, an unknown element, an undeclared material, no
+building at the corners, a leading zero, a blank with a material); a bay beyond the candidate's scope refused as
+LEAKAGE (SCOPE-LEAK), its account against #bay *missed*, its admission refused; and the export memo serving the loop. The suite joins `art/selftests.py` (fourteen suites).
+
+**Measured in the container** (2 processors, Python 3.11). The same harness as THROUGHPUT-0's on #bay, ten requests
+each way (p50 / p95 ms, the memo off against on): the whole request 3,515 / 3,834 against 315 / 1,454; one candidate's
+evaluation 957 / 1,143 against 56 / 449; the admission 2,007 / 2,482 against 89 / 137; the undo 2,341 / 3,010 against
+80 / 186; the head's scene build 409 / 600 against 386 / 563; 177 hits and 4 misses; every iteration ended with the
+brief's bytes as they began. The full check of the two patches, `python art/selftests.py --repeat 2`, two suites at
+once: fourteen suites, 284.5 s and 289.1 s, the summaries the same in both runs, ART SELFTESTS PASSED, with QUALITY-0's
+three references frozen again at this exporter in a scratch copy (his act; no field of any scene moved, the bytes the
+same). Before the queue's repair (0236) and before that freeze, the same command read STUDIO-2 17/19 in its first run
+and 19/19 in its second, and the three references unfrozen: so the runner's `--repeat` caught a flake no single run
+had. The rung D, loosening nothing (`python tools/rung.py classify 1e2501c HEAD`). The gate: a memo of the gate, kept
+privately (strace over the gate's run of 0235's tree, 251 rows / 0 fail, rowset 74db4c8d78625af5; outside the
+repository and the verifier), records 210 files read, 15 folders listed, 1 path looked at without being opened and 5
+tried and not found, none of them in `art/`, `docs/` or AGENTS.md; for these two patches applied to 0235's tree it reads HIT, and it reads MISS, naming what moved, for a byte appended to a file the gate read (HIT again once it was put back), a file added to a folder it listed, a path it did not find made present, and the path it looked at moved away; a byte appended to `art/dress.py` is a HIT. A memo's HIT predicts the gate's
+result unchanged; it is not a pass, and the gate is his to run.
+
+**Not done.** Held is not a gate: a candidate scoped honestly to another bay is CLEAN and admissible, and its account
+(*missed*, *outside*) informs the designer and the order, as in HELD-0; whether a region should refuse an admission is
+his to rule (his risk of a generator touching other lots). No openings, depth, mullions or meshes; a building's
+facade on a side against rock is not drawn; the industrial district of the flagship (B5) is not made. NOT_MEASURED: a
+building in the page or in a browser, his machine. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md,
+art/README.md, art/STUDIO.md, docs/CORE.md (art 22,866 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

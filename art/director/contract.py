@@ -65,7 +65,7 @@ NEVER_CHECKED = (
 )
 
 # the kinds of VERDANDI-ART 0 as this classifier knows them (restated from art/dress.py and art/director/scope.py)
-DRESSING_KINDS = ("canopy", "lamp", "neon", "puddle", "skyline", "tower")
+DRESSING_KINDS = ("building", "canopy", "lamp", "neon", "puddle", "skyline", "tower")   # building: FACADE-0 (0237)
 PLAY_KINDS = ("cover", "floor", "ground", "mover", "raised", "stair", "wall")
 NAMED = ("asset", "env", "material", "region", "view")
 ENV_FIELDS = ("bloom", "exposure", "fog", "light", "rain", "time", "title")

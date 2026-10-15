@@ -20,6 +20,11 @@
 # addition, it answers UNSUPPORTED layout.change (the art cannot change the map); when it is drawn on a canopy and no target
 # is selected, that canopy is its target, as if E had selected it. It reads the shape's surface, not its outline.
 #
+# FACADE-0 (0237): when the first shape is drawn on a side of a building (its mass, or one bay's window or panel), the bay
+# under the shape's middle is its target, and it proposes three candidates: "Panelled bay" (that bay of that floor a
+# panel in the building's own material), "Blank bay" (left blank) and "Panelled column" (the same bay panelled on every
+# floor, which reaches beyond a shape drawn on one floor). It reads the building's statement and the shape's place.
+#
 # 0220: when it proposes nothing it gives an outcome only where a word of the prompt is in its small list of things the
 # studio cannot make yet (a person, a vehicle, a door, an escalator, ...): UNSUPPORTED, with those names. That is word
 # matching, not understanding; anything else it answers with nothing and no reason, which the gateway records as FAILED.
@@ -27,6 +32,7 @@
 import json
 import re
 import sys
+from fractions import Fraction
 
 
 def options(tokens):
@@ -78,6 +84,65 @@ def unmet(prompt):
     return sorted({name for keys, name in LEXICON if words & set(keys)})
 
 
+BAY_PIECE = re.compile(r"building:([0-9]+,[0-9]+-[0-9]+,[0-9]+):([nsew])-b([0-9]+)-f([0-9]+)$")
+SIDE = {(0, 0, 1): "s", (0, 0, -1): "n", (1, 0, 0): "e", (-1, 0, 0): "w"}
+
+
+def building(text):
+    """A building statement's words: {region, material, height, rect, storey, bay}, or None."""
+    words = text.split()
+    if len(words) < 6 or words[0] != "building":
+        return None
+    try:
+        a, b = [int(v) for v in words[4].split(",")], [int(v) for v in words[5].split(",")]
+        opts, i = {}, 6
+        while i < len(words):
+            n = {"face": 2, "storey": 1, "bay": 1}[words[i]]
+            opts[words[i]] = words[i + 1:i + 1 + n]
+            i += 1 + n
+        return {"region": words[1], "material": words[2], "height": Fraction(words[3]), "rect": (min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1])),
+                "storey": Fraction(opts.get("storey", ["4"])[0]), "bay": int(opts.get("bay", ["1"])[0])}
+    except (ValueError, KeyError, IndexError):
+        return None
+
+
+def facade(shape, req):
+    """The candidates for a shape on a building's side, or None."""
+    on = shape["on"]
+    B = building((on.get("statement") or {}).get("text", ""))
+    if B is None:
+        return None
+    x0, z0, x1, z1 = B["rect"]
+    corners = "%d,%d-%d,%d" % B["rect"]
+    m = BAY_PIECE.match(on.get("piece", ""))
+    if m:
+        side, k, f = m.group(2), int(m.group(3)), int(m.group(4))
+    else:
+        side = SIDE.get(tuple(int(v) for v in shape["face"]["normal"]))
+        if side is None or on.get("piece") != "building:" + corners:
+            return None
+        cells = (x1 - x0 + 1) if side in "ns" else (z1 - z0 + 1)
+        cell = Fraction(str(shape["face"]["width_m"])) / cells
+        pts = shape["world_m"]
+        cx, cy, cz = (sum(Fraction(str(p[i])) for p in pts) / len(pts) for i in range(3))
+        along = (cx - x0 * cell) if side in "ns" else (cz - z0 * cell)
+        k, f = int(along // (B["bay"] * cell)), int(cy // B["storey"])
+    floors = int(B["height"] // B["storey"])
+    keys = {s_["key"] for s_ in req.get("statements", [])}
+    place = lambda f_: "%s:%s-b%d-f%d" % (corners, side, k, f_)
+    line = lambda f_, rest: "%s bay %s %s" % ("=" if "bay " + place(f_) in keys else "+", place(f_), rest)
+    addr = lambda f_: "%s/building/%s" % (B["region"], place(f_))
+    keep = ["the player's route and every wall", "every other bay of the building"]
+    return [
+        {"title": "Panelled bay", "rationale": "Bay %d of floor %d closed with a panel in the building's own %s: the facade reads more solid there." % (k, f, B["material"]),
+         "revision": [line(f, "panel " + B["material"])], "scope": [addr(f)], "preserve": keep},
+        {"title": "Blank bay", "rationale": "Bay %d of floor %d left blank, the mass's face showing: a pause in the grid." % (k, f),
+         "revision": [line(f, "blank")], "scope": [addr(f)], "preserve": keep},
+        {"title": "Panelled column", "rationale": "Bay %d panelled on every floor, %d of them: a solid stripe up the facade." % (k, floors),
+         "revision": [line(g, "panel " + B["material"]) for g in range(floors)], "scope": [addr(g) for g in range(floors)], "preserve": keep[:1]},
+    ]
+
+
 def main():
     req = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     out = {"format": "VERDANDI-STUDIO-RESPONSE", "version": "0", "id": req["id"],
@@ -90,6 +155,12 @@ def main():
             out["outcome"] = {"kind": "unsupported", "unmet": ["layout.change"], "questions": [], "reason": "",
                               "note": "#%s is %s in the play geometry (%s): that is a layout change, which the studio cannot make yet; "
                                       "this script read the shape's surface, not the prompt." % (shapes[0]["name"], shapes[0]["meaning"], on["address"])}
+            sys.stdout.buffer.write(json.dumps(out, sort_keys=True).encode("utf-8"))
+            return 0
+        if not sel and on.get("kind") == "building" and on.get("layer") == "dressing":
+            out["candidates"] = facade(shapes[0], req) or []
+            if out["candidates"]:
+                out["outcome"] = {"kind": "none", "unmet": [], "questions": [], "reason": "", "note": ""}
             sys.stdout.buffer.write(json.dumps(out, sort_keys=True).encode("utf-8"))
             return 0
         if not sel and on.get("kind") == "canopy" and on.get("statement"):

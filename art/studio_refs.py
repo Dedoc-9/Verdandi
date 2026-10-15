@@ -180,4 +180,8 @@ CHANGEABLE = {
     "lamp": "its statement makes every lamp of its region: the colour, the candelas, the spacing",
     "puddle": "its statement makes every puddle of its region: the material, the percentage of floor cells",
     "skyline": "its statement makes every skyline block: the material, the least and greatest heights",
+    # FACADE-0 (0237)
+    "building": "its statement makes this building alone, its mass and every bay of its facade: the material, the height, the two "
+                "corner cells, face window|panel MATERIAL, storey M, bay N; one bay of one floor is changed by a bay statement of its "
+                "own, named by the bay's place: bay x0,z0-x1,z1:SIDE-bK-fN window|panel [MATERIAL], or blank",
 }

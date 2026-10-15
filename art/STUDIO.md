@@ -237,6 +237,15 @@ Not done: a region drawn as a volume in the viewport (the inspector says the rea
 the region (a light is its fixture's box: NOT_MEASURED, said); finer verbs where a statement makes many objects (a
 request whose statements reach the region only with objects outside it is told so, and its candidates read outside).
 
+## A building's bays (FACADE-0, 0237)
+
+A building's facade is a grid of pieces, one for each bay of each floor of each side that looks onto open cells
+(`building:x0,z0-x1,z1:s-b3-f2` is bay 3 of floor 2 on the south side), and a `bay` statement changes one of them and
+nothing else: a window, a panel, or blank. A shape drawn on one bay of a side and asked about is held by a candidate
+that changes that bay alone. The scripted director answers a shape on a building's side with three candidates: the bay
+under the shape's middle panelled in the building's own material, the same bay left blank (both held), and that bay
+panelled on every floor (outside: it reaches the floors above and below). An undo is the bay statement taken away.
+
 ## The references (STUDIO-1)
 
 By the owner's ruling of 2026-10-11: *"Bind references to a scene revision and object identity, not just a reusable
