@@ -4508,6 +4508,64 @@ from the memo: a cell edit there hashes 295 blocks).
 **Not done.** No row, no rung; nothing in `kernel/`, `workshop/`, `shell/` or `verify/` changed, and nothing reads
 DSC-0. NOT_MEASURED: his machine. Docs: AGENTS.md, docs/CORE.md (tools/ 1,996 lines), this entry.
 
+**His run of 0234, and his ruling (2026-10-15).** The tree 3f3ce251 as predicted; `PROBE 6-dsc VERDICT HELD`, 36 cases
+HELD on his machine (there, a cell edit at 48 x 48 about 0.054 ms and a paint about 2.7 ms at the workshop's rate; the
+incumbent's cell edit past a tenth of a frame at 1024 x 1024 and past a frame at 4096 x 4096); the rung D, loosening
+nothing; the plants 82/82 HELD; the gate 251 rows / 0 fail, rowset 74db4c8d78625af5. MEASURED on his machine. His
+ruling: *"DSC-0 should remain an isolated reference probe, not become part of the current kernel or studio admission
+path"*, frozen at 0234; its roots, receipts and proofs are never put in authoritative state; the log keeps history, a
+state commitment says content, admission gives permission, and a tree commitment does none of the other two. And: *"let's
+not get distracted from the main trajectory"*: the candidate loop, below.
+
+### HELD-0 and COMPARE-0 — the candidate loop · Sprint 3, **built, off the gate** (0235, `art/scene_diff.py`)
+
+**What it is.** The owner's Sprint 3 (art/STUDIO.md, *The candidate loop*), on what MIXER-C prepared beside 0230 and
+0231. What a candidate changed is said by the host once, from the two scenes of its own evaluation (the head as the
+files stood when it was evaluated, and the candidate; never the slot served, never the page): an identity diff, keyed
+by id and never by likeness, whose inverse is the diff read backwards and which applied to its base gives the candidate
+(and to any other scene is refused), with M, C and P read from it. For each shape the prompt names, every box the
+candidate changes is related exactly to the shape's region, its outline swept along its face's normal from the back of
+the marked box out to its reach (to the sky on a top face, 1 m elsewhere, settable; an opening runs on through its
+box), and the candidate reads held, adjacent, outside, missed, empty or stale. The request tells the director the region
+and which statements make objects wholly in it at the head. The candidates are shown in the host's order (the
+director's verdict, the region, the play for a request of the art, the objects not held, how much changed, the letter;
+never a model's words); Diff outlines the account's boxes over the split; an admission records the set it was chosen
+from, and **None** records a set rejected. `art/scene_diff.py` and `art/scene_diff_test.py` (new); `art/studio_marks.py`:
+a shape's status decided in one place, its reach; `art/studio.py`: the shapes' records with the request, the report
+with each candidate (`<letter>.held.json`, its sha256 on the request's line), `host_order`, the comparison record,
+`none`, `held`, the region facts for the director; `art/play.py`: the report in `candidate_slot`, GET `/held.json`,
+POST `/studio/none`, the HTTP self-test; `art/providers/director_prompt.py`: the region and what it can hold;
+`art/web/play.js` and `play.html`: the host's M, C and P (the page computes none now), the region's verdicts on the
+cards, the host's order, None, Diff, the inspector's *Region*, the split framed on the request's shape from the side its
+face looks to, and Sprint 3 in the roadmap's footer.
+
+**Measured in the container.** SCENE-DIFF SELFTEST PASSED: 13 properties (MIXER-C's twelve, over 160 random scene pairs,
+960 polygons against an area oracle, 640 boxes against per-face formulas worked by hand, DIRECTOR-0's scope protocol on
+160 pairs; and T9, the region's reach) and 20 of 20 planted defects caught (MIXER-C's 18 and two of the reach). HELD
+SELFTEST 8/8 over HTTP with the scripted director: #whole on a canopy's underside; every candidate with its report (its
+base the evaluation's head); the request naming the canopy's statement as wholly in the region; *Lit underside* held,
+*Monolithic* and *Deeper canopy* outside (the slab brought down, or made deeper, beyond the region's 1 m reach); the
+host's order B, A, C; the order unchanged by a candidate's title; one admitted and the set recorded, the other two not
+chosen and one still rejected through the ledger after; none chosen of a second set, recorded, and refused again; the
+canopy then raised, so the first request reviewed again reads stale for every candidate. Nine defects planted in the
+integration (the order reading a title, the siblings decided rather than compared, none taken twice, the state carrying
+the boxes, the report taken against the candidate itself, the region's facts swapped, a review reading no shapes, the
+ranks inverted, the record naming no order): 9 caught by those rows. STUDIO SELFTEST 74/74 (its request-record row now
+expects each candidate's report beside its intent); MARKS SELFTEST 19/19; LIVE SELFTEST 24/24; STUDIO-2 SELFTEST 19/19;
+BOUNDARY SELFTEST 7/7; STUDIO APP SELFTEST 12/12; DIRECTOR SELFTEST PASSED; ART CHECKS PASSED. In headless Chromium 141
+at 1920 x 1080 with SwiftShader (a scratch tree, not committed; one run end to end): #whole saved, its inspector showing
+*Region* (1 m below the underside), *light #whole* asked through the drawer, the cards in the host's order B #1 (#whole
+held, M P), A #2 and C #3 (#whole outside, P) in both docks, Diff over the split (40 boxes against #whole for B, 2 for
+A), None: the server's state none chosen at once, the page's 110 s later (SwiftShader drew a frame in about 11 s, and
+the page's thread was busy drawing the thumbnails: OBSERVED; on a GPU NOT_MEASURED), every card none chosen and the
+button gone; nothing on the console but the favicon's 404.
+
+**Not done.** The region drawn as a volume in the viewport; a lamp held inside a region lights beyond it (a light is its
+fixture's box: NOT_MEASURED, said in the page); statements that make many objects cannot be held by a small region
+(the director is told which can; finer verbs are a change of the language). NOT_MEASURED: his machine, Edge, a real
+GPU. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md, art/README.md, art/STUDIO.md, docs/CORE.md
+(art 22,123 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

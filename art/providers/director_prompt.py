@@ -46,7 +46,11 @@ millimetre, with what the designer means by it (an opening to cut, an addition, 
 the designer's mark, not the world, and it is where the designer means: keep the candidate's change to that region, and
 say in each rationale how the candidate answers the shape, or why it cannot (the art language changes whole statements;
 an opening in the play geometry is a layout change, which the studio cannot make: unsupported, layout.change). The
-shape's checks are the studio's own; its words are the designer's, and nothing has checked them."""
+shape's checks are the studio's own; its words are the designer's, and nothing has checked them. The studio holds every
+candidate to the shapes named: it decides exactly whether every box the candidate changes lies in the shape's region
+(the outline swept from the back of the marked box out to the region's reach) and shows the candidates in that order,
+held first. Each shape lists the statements whose objects lie wholly in its region now, and those that reach it with
+objects outside it: changing one of the latter changes something outside the region."""
 
 
 def _ref_lines(r):
@@ -131,6 +135,12 @@ def user_text(req):
                 lines.append("    the designer's words, not checked: " + "; ".join(s["words"]))
             if s.get("note"):
                 lines.append("    the designer's note: " + s["note"])
+            g = s.get("region") or {}
+            if g and "error" not in g:
+                lines.append("    its region: the outline swept from the back of the box out to %s" % (
+                    "the sky" if g["reach_m"] is None else "%g m from the face" % g["reach_m"]))
+                lines.append("    statements whose every object lies in the region now: " + (", ".join(g["statements_inside"]) or "none"))
+                lines.append("    statements that reach the region with objects outside it: " + (", ".join(g["statements_partly"]) or "none"))
         lines += [""]
     lines += ["Coordinates: " + req.get("coordinates", ""), ""]
     if req.get("camera"):

@@ -981,7 +981,7 @@
         el("span.chip", { title: "Play (1080p) draws at 1920 × 1080" }, el("b", {}, "1080p")));
       $("mb-src").textContent = "[" + cur.k + "]";
     };
-    const ROADMAP = [["done", "Sprint 1", "Core studio shell"], ["done", "Sprint 2", "Mark & Shape"], ["next", "Sprint 3", "Candidate loop"],
+    const ROADMAP = [["done", "Sprint 1", "Core studio shell"], ["done", "Sprint 2", "Mark & Shape"], ["done", "Sprint 3", "Candidate loop"],
                      ["next", "Sprint 4", "World generation slice"], ["next", "Sprint 5", "Dynamic world"], ["next", "Sprint 6", "Scale"]];
     const buildRoadmap = function () {
       const host = $("roadmap");
@@ -1248,15 +1248,18 @@
       const cands = (r && r.candidates) || [];
       head.innerHTML = "";
       head.append(icon("candidates"), "Candidates (" + cands.length + ")", el("span.dim", {}, r ? " · request " + r.state + (r.prompt ? ": " + r.prompt.slice(0, 40) : "") : " · no request"), el("span.spacer"),
-        el("button.btn.small", { onclick: openPanel }, icon("wand"), "Director"));
+        noneOf(r) || "", el("button.btn.small", { onclick: openPanel }, icon("wand"), "Director"));
       host.innerHTML = "";
-      for (const c of cands) {
-        const th = el("div.th", {}, el("span.letter", {}, c.letter));
+      for (const [c, rank] of ordered(r)) {
+        const badges = el("div.badges");
+        const th = el("div.th", {}, el("span.letter", {}, c.letter), rank !== undefined && (r.order || []).length > 1 ? el("span.rank", { title: "the host's order: " + (r.order[rank].key || []).join(" · ") }, "#" + (rank + 1)) : null, badges);
+        paintMcp(badges, c);
         const st = c.decided ? el("span.badge." + (c.decided.indexOf("admit") === 0 ? "admitted" : "rejected"), {}, c.decided)
+          : c.compared ? el("span.badge.neutral", { title: "recorded with the set it was compared in; it can still be rejected (the ledger records that)" }, c.compared)
           : c.verdict === "CLEAN" ? el("span.badge.candidate", {}, "Ready") : el("span.badge.refused", {}, c.verdict || "?");
         const sv = c.slot !== null ? (cur.slots[c.slot] || {}).served : null;
         const card = el("div.card" + (c.slot !== null && c.slot === cur.k ? ".shown" : ""), { title: (c.message || c.title || ""), dataset: { sha: sv ? sv.sha : "", letter: c.letter } },
-          th, el("div.tt", {}, c.title), el("div.st", {}, st, c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
+          th, el("div.tt", {}, c.title), heldChips(c), el("div.st", {}, st, c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
           el("div.acts", {}, el("button.btn.small", { disabled: c.slot === null, onclick: function () { pick(c.slot); } }, "Show"),
             el("button.btn.small", { disabled: !admissible(c), onclick: function () { admitWithStill(r.id, c); } }, "Admit"),
             el("button.btn.small", { disabled: !!c.decided, onclick: function () { decide("reject", r.id, c.letter); } }, "Reject")));
@@ -1459,7 +1462,7 @@
     // edit here (move, rotate, scale a vertex or the shape) changes the outline, never the world; nothing is kept until
     // Save, and the host checks what is kept.
     const mk = { on: false, tool: "point", draft: null, sel: null, shapes: [], rev: -1, err: "", vsel: -1, drag: null, snap: true, tab: "viewport",
-                 vcam: null, diffWith: null, diffAt: 0.5, diffKey: "", mcp: {}, sceneCache: {} };
+                 vcam: null, diffWith: null, diffAt: 0.5, diffKey: "", diffMode: false, sceneCache: {} };
     const OPS = [["subtract", "Opening (Subtract)"], ["add", "Addition (Add)"], ["region", "Region"], ["path", "Path"]];
     const UPRIGHT = { "+x": 1, "-x": 1, "+z": 1, "-z": 1 };
     const boxOfPiece = function (piece) {
@@ -1522,7 +1525,7 @@
       const op = UPRIGHT[h.face] ? (layer === "play" ? "subtract" : "region") : "region";
       mk.draft = { name: uniqueName(op === "subtract" ? (layer === "play" ? "wall_opening" : "opening") : op), piece: h.piece, face: h.face, box: h.box.slice(), layer: layer,
                    operation: op, verts: [], saved: false, note: "",
-                   constraints: { within: true, clearance_m: op === "subtract" ? 2.0 : null, supports: op === "subtract", collision: op === "subtract", material: "keep" },
+                   constraints: { within: true, clearance_m: op === "subtract" ? 2.0 : null, supports: op === "subtract", collision: op === "subtract", material: "keep", reach_m: null },
                    view: camNow(), scene: cur.sha };
       mk.sel = mk.draft.name; mk.vsel = -1;
       return true;
@@ -1535,7 +1538,8 @@
       mk.draft = { name: sh.name, piece: sh.piece, face: sh.face, box: boxOfPiece(sh.piece).slice(), layer: sh.layer, operation: sh.operation,
                    verts: sh.vertices_m.map(function (v) { return [Math.round(v[0] * 1000), Math.round(v[1] * 1000)]; }), saved: true, dirty: false, note: sh.note || "",
                    constraints: { within: sh.constraints.within, clearance_m: sh.constraints.clearance_mm ? Number(sh.constraints.clearance_mm) / 1000 : null,
-                                  supports: sh.constraints.supports, collision: sh.constraints.collision, material: sh.constraints.material },
+                                  supports: sh.constraints.supports, collision: sh.constraints.collision, material: sh.constraints.material,
+                                  reach_m: sh.constraints.reach_mm ? Number(sh.constraints.reach_mm) / 1000 : null },
                    view: camNow(), scene: cur.sha };
       mk.sel = name; mk.vsel = -1;
       shell.inspector();
@@ -1567,8 +1571,8 @@
 
     // the camera tabs: Viewport (the free camera), Top and Side (telephoto, near-orthographic: the renderer draws in
     // perspective only), Perspective (framed on the shape)
-    const shapeBox = function () {
-      const d = mk.draft || shapeNamed(mk.sel);
+    const shapeBox = function (given) {
+      const d = given || mk.draft || shapeNamed(mk.sel);
       if (!d) return ui.sel ? objectBox(ui.sel) : null;
       const F = d.verts ? U.FRAMES[d.face](d.box) : frameOfShape(d);
       if (!F) return null;
@@ -1576,6 +1580,20 @@
       if (!vs.length) return objectBox(d.piece);
       const pts = vs.map(function (v) { return worldOf2(F, v); });
       return [0, 1, 2].map(function (k) { return Math.min.apply(null, pts.map(function (p) { return p[k]; })); }).concat([0, 1, 2].map(function (k) { return Math.max.apply(null, pts.map(function (p) { return p[k]; })); }));
+    };
+    // a shape seen from the side its face looks to (from below for an underside), at the field of view given
+    const shapeCam = function (b, d, fov) {
+      const cx = (b[0] + b[3]) / 2, cy = (b[1] + b[4]) / 2, cz = (b[2] + b[5]) / 2, size = Math.max(1.5, Math.hypot(b[3] - b[0], b[4] - b[1], b[5] - b[2]));
+      const n = d && d.face ? U.NORMALS[d.face] : null, half = Math.tan(fov / 2 * deg);
+      if (n && n[1] === 0) {
+        const yaw = Math.atan2(-n[0], n[2]) + 22 * deg, pitch = -10 * deg, f = U.basis({ yaw: yaw, pitch: pitch }).f, dist = size / half * 0.95;
+        return { x: cx - f[0] * dist, y: Math.max(0.6, cy - f[1] * dist), z: cz - f[2] * dist, yaw: yaw, pitch: pitch, fov: fov };
+      }
+      if (n) {
+        const pitch = (n[1] > 0 ? -55 : 50) * deg, f = U.basis({ yaw: 0, pitch: pitch }).f, dist = size / half * 0.9;
+        return { x: cx - f[0] * dist, y: Math.max(0.6, cy - f[1] * dist), z: cz - f[2] * dist, yaw: 0, pitch: pitch, fov: fov };
+      }
+      return U.frameCam(b, fov);
     };
     const setVTab = function (t) {
       if (ui.mode === "play") leavePlay();
@@ -1591,14 +1609,7 @@
         const n = d && d.face && UPRIGHT[d.face] ? U.NORMALS[d.face] : [0, 0, 1], D = 300;
         ecam = { x: cx + n[0] * D, y: cy, z: cz + n[2] * D, yaw: Math.atan2(-n[0], n[2]), pitch: 0, fov: 2 * Math.atan(size * 0.75 / D) / deg }; ui.projection = "side";
       } else {
-        const n = d && d.face ? U.NORMALS[d.face] : null;
-        if (n && n[1] === 0) {
-          const yaw = Math.atan2(-n[0], n[2]) + 22 * deg, pitch = -10 * deg, f = U.basis({ yaw: yaw, pitch: pitch }).f, dist = size / Math.tan(33 * deg) * 0.95;
-          ecam = { x: cx - f[0] * dist, y: Math.max(0.6, cy - f[1] * dist), z: cz - f[2] * dist, yaw: yaw, pitch: pitch, fov: 66 };
-        } else if (n) {
-          const pitch = (n[1] > 0 ? -55 : 50) * deg, f = U.basis({ yaw: 0, pitch: pitch }).f, dist = size / Math.tan(33 * deg) * 0.9;
-          ecam = { x: cx - f[0] * dist, y: Math.max(0.6, cy - f[1] * dist), z: cz - f[2] * dist, yaw: 0, pitch: pitch, fov: 66 };
-        } else ecam = U.frameCam(b, 66);
+        ecam = shapeCam(b, d, 66);
         ui.projection = "perspective";
       }
       label = t + (t === "top" || t === "side" ? " (telephoto)" : "");
@@ -1699,7 +1710,8 @@
       }
       const name = d ? d.name : sh.name, status = d ? (d.saved ? (d.dirty ? "edited" : "ok") : "draft") : sh.status;
       const op = d ? d.operation : sh.operation, piece = d ? d.piece : sh.piece, face = d ? d.face : sh.face;
-      const cons = d ? d.constraints : { within: sh.constraints.within, clearance_m: sh.constraints.clearance_mm ? Number(sh.constraints.clearance_mm) / 1000 : null, supports: sh.constraints.supports, collision: sh.constraints.collision, material: sh.constraints.material };
+      const cons = d ? d.constraints : { within: sh.constraints.within, clearance_m: sh.constraints.clearance_mm ? Number(sh.constraints.clearance_mm) / 1000 : null, supports: sh.constraints.supports, collision: sh.constraints.collision, material: sh.constraints.material,
+                                         reach_m: sh.constraints.reach_mm ? Number(sh.constraints.reach_mm) / 1000 : null };
       const checks = !d || (d.saved && !d.dirty) ? (shapeNamed(name) || {}).checks || {} : {};
       const badge = status === "ok" ? "admitted" : status === "changed" || status === "edited" ? "refused" : status === "gone" || status === "ambiguous" ? "rejected" : "candidate";
       host.appendChild(el("div.ihead", {}, el("div.t", {}, "Shape: " + name), el("div.s", {}, el("span.badge." + badge, {}, status), el("span", {}, (OPS.find(function (o) { return o[0] === op; }) || [0, op])[1])),
@@ -1746,6 +1758,14 @@
         box("within", "Keep within surface bounds", "host", (checks.within || {}).ok),
         el("div.con", {}, el("span"), el("span", {}, "Material ", mat), tag("words")),
         el("div.lock", {}, icon("info"), el("span", {}, "HOST: the studio checks it exactly when the shape is saved. WORDS: the director is told, and nothing checks it."))]));
+      // HELD-0 (0235): the region a candidate is held to is this outline swept from the back of its box out to the reach
+      const reachDefault = face === "+y" ? "to the sky" : "1 m";
+      const rin = el("input", { value: cons.reach_m === null || cons.reach_m === undefined ? "" : String(cons.reach_m), disabled: ro, placeholder: reachDefault, size: 6,
+        style: { width: "76px", background: "var(--panel2)", border: "1px solid var(--line)", borderRadius: "4px", margin: "0 4px", padding: "0 4px" },
+        onchange: function (e) { const x = e.target.value.trim(); d.constraints.reach_m = x === "" ? null : Number(x); d.dirty = true; } });
+      host.appendChild(sec("Region", true, null, [el("div.con", {}, el("span"), el("span", {}, "Reaches out", rin, "m from the surface"), tag("host")),
+        el("div.lock", {}, icon("info"), el("span", {}, "A candidate is held to this outline swept from the back of the marked box out to the reach (empty: " + reachDefault +
+          (face === "+y" ? ", since what stands on a floor rises from it" : "") + "; an opening runs on through the box). The host decides held, adjacent or outside exactly."))]));
       if (Object.keys(checks).length) {
         host.appendChild(sec("Host checks", true, null, Object.keys(checks).sort().map(function (k) {
           const c = checks[k];
@@ -1803,47 +1823,62 @@
       if (mk.sceneCache[sv.sha]) return Promise.resolve({ S: mk.sceneCache[sv.sha], sha: sv.sha });
       return get("/scene/" + brief + ".json?slot=" + k).then(json).then(function (Sx) { mk.sceneCache[sv.sha] = Sx; return { S: Sx, sha: sv.sha }; });
     };
-    const mcpOf = function (A, B) {
-      const J = JSON.stringify, byId = function (L) { const o = {}; for (const v of L || []) o[v.id] = v; return o; };
-      const va = byId(A.visuals), vb = byId(B.visuals);
-      let p = false, m = J(A.materials) !== J(B.materials) || J(A.lights) !== J(B.lights) || J(A.environment) !== J(B.environment);
-      for (const id in va) { if (!vb[id] || J(va[id].box) !== J(vb[id].box)) p = true; else if (va[id].material !== vb[id].material) m = true; }
-      for (const id in vb) if (!va[id]) p = true;
-      const c = J(A.collision) !== J(B.collision) || J(A.movers || []) !== J(B.movers || []) || J(A.targets || {}) !== J(B.targets || {});
-      return { m: m, c: c, p: p };
-    };
-    const mcpFor = function (c, node) {
-      const sv = (cur.slots[c.slot] || {}).served;
-      if (!sv) return;
-      if (mk.mcp[sv.sha]) { paintMcp(node, mk.mcp[sv.sha]); return; }
-      Promise.all([sceneAt(0), sceneAt(c.slot)]).then(function (r) { mk.mcp[sv.sha] = mcpOf(r[0].S, r[1].S); document.querySelectorAll('.card[data-sha="' + sv.sha + '"] .badges').forEach(function (n) { paintMcp(n, mk.mcp[sv.sha]); }); }).catch(function () {});
-    };
-    const paintMcp = function (node, x) {
+    // HELD-0 (0235): M, C and P are the host's (art/scene_diff.py, from the two scenes of the candidate's own evaluation),
+    // never computed here: one diff, written once
+    const paintMcp = function (node, c) {
       node.innerHTML = "";
+      const h = c.held;
+      if (!h || h.error) { if (h && h.error) node.appendChild(el("span.mcp", { title: "the host could not read this candidate's change: " + h.error }, "?")); return; }
       for (const [k, cls, t] of [["M", "m", "the look (materials, lights, air)"], ["C", "c", "the play (collision, movers, targets)"], ["P", "p", "the placement of the dressing"]]) {
-        node.appendChild(el("span.mcp." + cls + (x[cls] ? ".on" : ""), { title: (x[cls] ? "changes " : "does not change ") + t + " (computed by this page from the two scenes)" }, k));
+        node.appendChild(el("span.mcp." + cls + (h.badges[k] ? ".on" : ""), { title: (h.badges[k] ? "changes " : "does not change ") + t + " (the host's diff, exact; " + h.entries + " entries)" }, k));
       }
+    };
+    // each named shape's verdict: the host's account of where the candidate changed the world against it
+    const HELDT = { held: "every change inside the region", adjacent: "nothing beyond the region's boundary; something on it", outside: "something changed outside the region (or the whole world: the air, the play)",
+                    missed: "it changed things, none of them in the region", empty: "nothing in the world changed", stale: "the shape is not as marked in this candidate's base: mark it again" };
+    const heldChips = function (c) {
+      const h = c.held;
+      if (!h || h.error || !(h.accounts || []).length) return null;
+      return el("div.heldrow", {}, h.accounts.map(function (a) {
+        const why = HELDT[a.verdict] + (a.outside_count ? " · " + a.outside_count + " object" + (a.outside_count === 1 ? "" : "s") + " not held: " + (a.outside || []).join(", ") : "") +
+          ((a.global || []).length ? " · whole-world: " + a.global.join(", ") : "") + (a.reach_m === null || a.reach_m === undefined ? "" : " · the region reaches " + a.reach_m + " m");
+        return el("span.hv." + a.verdict, { title: "#" + a.shape + ": " + why + " (the host's account, exact; a light is held by its fixture's box, not by the light it casts, which is not measured)" }, "#" + a.shape + " " + a.verdict);
+      }));
+    };
+    // the host's order (art/studio.py host_order: verdict, region, play, objects outside, entries, letter; no model words)
+    const ordered = function (r) {
+      const cands = (r && r.candidates) || [], order = (r && r.order) || [];
+      const rank = {};
+      order.forEach(function (o, i) { rank[o.letter] = i; });
+      return cands.slice().sort(function (a, b) { return (rank[a.letter] === undefined ? 99 : rank[a.letter]) - (rank[b.letter] === undefined ? 99 : rank[b.letter]); })
+        .map(function (c) { return [c, rank[c.letter]]; });
+    };
+    const noneOf = function (r) {
+      if (!r || r.state !== "done" || !(r.candidates || []).some(function (c) { return !c.decided && !c.compared; })) return null;
+      return el("button.btn.small", { title: "None of these: every candidate not decided is marked so, and the set is recorded as rejected (the world as it was)",
+        onclick: function (e) { e.stopPropagation(); post("/studio/none", { id: r.id }).then(function (x) { if (!x.ok) toast((x.code || "") + ": " + (x.message || ""), true); else toast("None chosen: " + (x.candidates || []).join(", ")); }); } }, "None");
     };
     const markCandidates = function () {
       const r = studio.req, host = $("mc-list"), head = $("mc-head");
       const cands = (r && r.candidates) || [];
       head.innerHTML = "";
-      head.append(icon("candidates"), "Candidates (" + cands.length + ")", el("span.dim", {}, r ? " · " + r.state + ((r.shapes || []).length ? " · " + r.shapes.map(function (n) { return "#" + n; }).join(" ") : "") : " · ask the director about a shape"), el("span.spacer"),
-        el("button.btn.small", { onclick: openPanel }, icon("wand"), "Director"));
+      head.append(icon("candidates"), "Candidates (" + cands.length + ")", el("span.dim", {}, r ? " · " + r.state + ((r.shapes || []).length ? " · " + r.shapes.map(function (n) { return "#" + n; }).join(" ") : "") + ((r.order || []).length > 1 ? " · in the host's order" : "") : " · ask the director about a shape"), el("span.spacer"),
+        noneOf(r) || "", el("button.btn.small", { onclick: openPanel }, icon("wand"), "Director"));
       host.innerHTML = "";
       host.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:8px;align-content:start;grid-auto-rows:max-content";
       if (r && r.disposition && r.disposition.kind !== "REALIZED") host.appendChild(el("div.empty", { style: { gridColumn: "1 / -1", padding: "6px 4px" } }, el("b", {}, r.disposition.kind), " · " + (r.disposition.unmet || []).join(", ") + (r.disposition.note ? " — " + r.disposition.note : "")));
-      for (const c of cands) {
+      for (const [c, rank] of ordered(r)) {
         const sv = c.slot !== null ? (cur.slots[c.slot] || {}).served : null;
-        const badges = el("div.badges"), th = el("div.th", {}, el("span.letter", {}, c.letter), badges);
+        const badges = el("div.badges"), th = el("div.th", {}, el("span.letter", {}, c.letter), rank !== undefined && (r.order || []).length > 1 ? el("span.rank", { title: "the host's order: " + (r.order[rank].key || []).join(" · ") }, "#" + (rank + 1)) : null, badges);
         const icon2 = c.decided ? (c.decided.indexOf("admit") === 0 ? el("span.good", {}, "●") : el("span.bad", {}, "✗")) : c.verdict === "CLEAN" ? el("span.good", {}, "✓") : el("span.warn", {}, "!");
         const card = el("div.card" + (mk.diffWith === c.letter ? ".shown" : ""), { dataset: { sha: sv ? sv.sha : "", letter: c.letter }, title: c.message || "", onclick: function () { mk.diffWith = c.letter; markCandidates(); splitShow(); } },
-          th, el("div.tt", {}, c.title), el("div.st", {}, icon2, el("span", {}, c.decided || (c.verdict === "CLEAN" ? "Ready" : c.verdict || "?")), c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
+          th, el("div.tt", {}, c.title), heldChips(c), el("div.st", {}, icon2, el("span", {}, c.decided || c.compared || (c.verdict === "CLEAN" ? "Ready" : c.verdict || "?")), c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
           el("div.acts", {}, el("button.btn.small", { disabled: c.slot === null, onclick: function (e) { e.stopPropagation(); pick(c.slot); } }, "Show"),
             el("button.btn.small", { disabled: !admissible(c), onclick: function (e) { e.stopPropagation(); admitWithStill(r.id, c); } }, "Admit"),
             el("button.btn.small", { disabled: !!c.decided, onclick: function (e) { e.stopPropagation(); decide("reject", r.id, c.letter); } }, "Reject")));
         host.appendChild(card);
-        if (c.slot !== null) { candThumb(c, th); mcpFor(c, badges); }
+        if (c.slot !== null) candThumb(c, th);
+        paintMcp(badges, c);
       }
       if (!cands.length && !(r && r.disposition)) host.appendChild(el("div.empty", { style: { gridColumn: "1 / -1" } }, "No candidates. Name a shape in a prompt (#name) and ask the director."));
       if (!mk.diffWith && cands.some(function (c) { return c.slot !== null; })) { mk.diffWith = cands.find(function (c) { return c.slot !== null; }).letter; splitShow(); }
@@ -1854,11 +1889,14 @@
       const host = big || $("split"), head = $("md-head");
       const r = studio.req, c = r && (r.candidates || []).find(function (x) { return x.letter === mk.diffWith && x.slot !== null; });
       if (!big) { head.innerHTML = ""; head.append(icon("compare"), "Preview / Diff", el("span.dim", {}, c ? " · Current vs Candidate " + c.letter : ""), el("span.spacer"),
+        el("button.btn.small" + (mk.diffMode ? ".primary" : ""), { title: "Diff: outline every box the candidate changes, as the host accounts it", onclick: function () { mk.diffMode = !mk.diffMode; splitShow(); } }, "Diff"),
         el("button.btn.small", { onclick: function () { compareModal(); } }, "Larger")); }
       host.innerHTML = "";
       const turn = (mk.splitTurn = (mk.splitTurn || 0) + 1);     // a later call wins: an earlier one's answer is dropped
       if (!c) { host.appendChild(el("div.none", {}, "Current vs a candidate: ask the director, then pick a candidate.")); return; }
-      const b = shapeBox(), cam = b ? U.frameCam(b, 60) : Object.assign({}, eye(), { fov: 66 });
+      // framed on the request's first shape (else the one selected), from the side its face looks to
+      const named = (r.shapes || []).length ? shapeNamed(r.shapes[0]) : null, sd = named && named.status === "ok" ? named : (mk.draft || shapeNamed(mk.sel));
+      const b = shapeBox(sd), cam = b ? shapeCam(b, sd, 60) : Object.assign({}, eye(), { fov: 66 });
       const key = cur.sha + "|" + JSON.stringify(cam).slice(0, 90) + "|" + c.letter;
       const imA = el("img.cur"), imB = el("img"), bar = el("div.bar"), knob = el("div.knob", {}, "⇔");
       host.append(imB, imA, bar, knob, el("span.lab.l", {}, "Current"), el("span.lab.r", {}, "Candidate " + c.letter));
@@ -1866,7 +1904,7 @@
       place();
       const dragTo = function (e) { const rr = host.getBoundingClientRect(); mk.diffAt = Math.max(0, Math.min(1, (e.clientX - rr.left) / rr.width)); place(); };
       host.onmousedown = function (e) { dragTo(e); const mv = function (e2) { dragTo(e2); }, up = function () { document.removeEventListener("mousemove", mv); document.removeEventListener("mouseup", up); }; document.addEventListener("mousemove", mv); document.addEventListener("mouseup", up); };
-      if (mk.split && mk.split.key === key) { imA.src = mk.split.a; imB.src = mk.split.b; return; }
+      if (mk.split && mk.split.key === key) { imA.src = mk.split.a; imB.src = mk.split.b; diffOverlay(r, c, cam, host, bar, turn, big); return; }
       Promise.all([sceneAt(0), sceneAt(c.slot)]).then(function (rs) {
         thumbs.later(function () {
           const w0 = thumbs.canvas.width, h0 = thumbs.canvas.height;
@@ -1876,9 +1914,38 @@
           if (thumbs.scene(rs[1].S, rs[1].sha)) bb = thumbs.shot(cam, moverBoxes(s), targets(s));
           thumbs.canvas.width = w0; thumbs.canvas.height = h0;
           mk.split = { key: key, a: a, b: bb };
-          if (turn === mk.splitTurn || big) { imA.src = a; imB.src = bb; }
+          if (turn === mk.splitTurn || big) { imA.src = a; imB.src = bb; diffOverlay(r, c, cam, host, bar, turn, big); }
         }, true);
       }).catch(function (e) { if (turn === mk.splitTurn || big) host.appendChild(el("div.none", {}, String(e && e.message || e))); });
+    };
+    // HELD-0 (0235), Diff mode: the boxes the host's account names (GET /held.json), drawn from the split's camera at the
+    // thumbnailer's 640 x 360 and laid over both pictures; a box before the change dashed, after it solid. With a shape
+    // named, each is coloured by its relation to the region (inside, touching, crossing, outside); without, by what
+    // happened to it (added, removed, changed). The page draws the host's account; it computes none.
+    const REL = [["inside", "#58d68d"], ["touching", "#ffcf5a"], ["crossing", "#ff9a3c"], ["outside", "#ff5fd2"]];
+    const KINDC = [["added", "#58d68d"], ["removed", "#ff6b6b"], ["changed", "#5fd3f3"]];
+    const diffOverlay = function (r, c, cam, host, bar, turn, big) {
+      if (!mk.diffMode) return;
+      getJSON("/held.json?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter).then(function (h) {
+        if (!(turn === mk.splitTurn || big)) return;
+        const cv = document.createElement("canvas");
+        cv.width = 640; cv.height = 360;
+        const g2 = cv.getContext("2d");
+        const rel = (h.accounts || []).some(function (a) { return a.verdict !== "stale"; });
+        const col = function (b) { return rel && b.relation ? (REL.find(function (x) { return x[0] === b.relation; }) || [0, "#fff"])[1] : b.why === "added" ? KINDC[0][1] : b.why === "removed" ? KINDC[1][1] : KINDC[2][1]; };
+        for (const b of h.boxes || []) {
+          g2.strokeStyle = col(b); g2.lineWidth = b.side === "a" ? 1.2 : 1.8; g2.setLineDash(b.side === "a" ? [4, 3] : []);
+          g2.beginPath();
+          for (const [p, q] of U.boxEdges(cam, b.box, 640, 360)) { g2.moveTo(p[0], p[1]); g2.lineTo(q[0], q[1]); }
+          g2.stroke();
+        }
+        const im = el("img.ovl");
+        im.src = cv.toDataURL();
+        host.insertBefore(im, bar);
+        const keys = rel ? REL : KINDC;
+        host.appendChild(el("div.legend", {}, keys.map(function (x) { return el("span", {}, el("i", { style: { borderColor: x[1] } }), x[0]); }),
+          el("span.dim", {}, (h.boxes_count || 0) + " box" + (h.boxes_count === 1 ? "" : "es") + (rel ? " · against #" + h.accounts.find(function (a) { return a.verdict !== "stale"; }).shape : "") + " · the host's account")));
+      }).catch(function (e) { if (turn === mk.splitTurn || big) host.appendChild(el("div.legend", {}, "Diff: " + String(e && e.message || e))); });
     };
     const compareModal = function () {
       const box = el("div.split", { style: { position: "relative", height: "min(60vh, 520px)", background: "#050a12", overflow: "hidden", borderRadius: "6px" } });

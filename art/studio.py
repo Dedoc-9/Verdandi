@@ -83,6 +83,7 @@ import durable            # noqa: E402  (the content path's crash-safe writes: t
 import intent as canon    # noqa: E402  (DIRECTOR-0's canonical bytes: the tags file's form)
 import ledger as led      # noqa: E402  (the content lock's place: ledger.lock_path)
 import studio_marks       # noqa: E402  (MARK-0: the shapes a request names)
+import scene_diff         # noqa: E402  (HELD-0: a shape's region, and what lies in it)
 
 REQUEST, RESPONSE, VERSION = "VERDANDI-STUDIO-REQUEST", "VERDANDI-STUDIO-RESPONSE", "0"
 REQUEST_VERSION = "1"    # STUDIO-1: the target and the pins, their geometry and relations, in place of one selection
@@ -508,6 +509,39 @@ def verify_records(path):
 
 
 # ------------------------------------------------------------------------------------------------ the gateway
+REGION_RANK = {"held": 0, "adjacent": 1, "outside": 2, "missed": 3, "empty": 4, "stale": 5}
+VERDICT_RANK = {"CLEAN": 0, "LEAKAGE": 1}
+
+
+def held_line(item):
+    """What a request's record line keeps of a candidate's report (HELD-0): M, C and P, how much changed, and each named
+    shape's verdict; the whole report is the request's <letter>.held.json, named by its sha256."""
+    h = item.get("held")
+    if not h:
+        return None
+    if "error" in h:
+        return {"error": h["error"][:200]}
+    return {"badges": h["badges"], "entries": h["entries"], "objects": h["objects"], "sha256": item.get("held_sha256", ""),
+            "accounts": [{k: a.get(k) for k in ("shape", "verdict", "objects", "outside_count")} for a in h["accounts"]]}
+
+
+def host_order(items):
+    """COMPARE-0 (0235): the candidates in the host's order, by host facts alone and lexicographically, never a weighted
+    sum: the director's verdict (CLEAN, then LEAKAGE, then the rest); the region (the worst of its shapes' verdicts:
+    held, adjacent, outside, missed, empty, stale; a candidate with no report last); for an art request, the play
+    geometry changed (C) after it unchanged; the objects outside the regions; the diff's entries; the letter. The
+    model's title, rationale and words are never read."""
+    def key(i):
+        h = i.get("held") or {}
+        ok = bool(h) and "error" not in h
+        accs = h.get("accounts", []) if ok else []
+        region = max([REGION_RANK.get(a["verdict"], 6) for a in accs] or [0]) if ok else 6
+        c_art = 1 if ok and h["badges"]["C"] and not i.get("layout") else 0
+        return [VERDICT_RANK.get(i["verdict"], 2), region, c_art, sum(a.get("outside_count", 0) for a in accs), h.get("entries", 0) if ok else 1 << 30, i["letter"]]
+    keyed = sorted((key(i), i["letter"]) for i in items)
+    return [{"letter": letter, "key": k[:5]} for k, letter in keyed]
+
+
 class Gateway:
     """One brief's director gateway. `play` gives what the gateway needs of art/play.py: director() (the director
     module), workspace() (the brief's Workspace), candidate_slot(ws, intent_dict, label) (a candidate evaluated at the
@@ -597,9 +631,11 @@ class Gateway:
                 req["shapes"] = r.get("shapes", [])
                 req["disposition"] = r.get("disposition")
                 req["elapsed_ms"] = int(((r["ended"] or time.monotonic()) - r["started"]) * 1000)
-                req["candidates"] = [dict({k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")},
-                                          record=c.get("record"), still={k: c["still"][k] for k in ("sha256", "detectors", "flags")} if c.get("still") else None)
+                req["candidates"] = [dict({k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")}, compared=c.get("compared", ""),
+                                          record=c.get("record"), still={k: c["still"][k] for k in ("sha256", "detectors", "flags")} if c.get("still") else None,
+                                          held={k: v for k, v in c["held"].items() if k != "boxes"} if c.get("held") else None)
                                      for c in r["candidates"]]
+                req["order"] = r.get("order", [])
             last = dict(self.last)
         return {"provider": prov, "request": req, "last": last, "refs": self.refs()}
 
@@ -777,6 +813,7 @@ class Gateway:
             got = store.resolve(names, out["scene"])
         except studio_marks.ShapeError as e:
             raise StudioError(e.code, e.detail)
+        recs = {r_["name"]: r_ for r_ in store.records(names)}
         res = []
         for ev in got:
             piece = ev["piece"]
@@ -805,7 +842,30 @@ class Gateway:
                         "words": ev["words"], "note": ev["note"],
                         "basis": "the shape is the designer's mark, not the world: its vertices are exact (millimetres on the face); the checks "
                                  "are the studio's; the words are the designer's and nothing checks them"})
+            res[-1]["region"] = self._held_region(recs.get(ev["name"]), out, O)
         return res
+
+    def _held_region(self, rec, out, O):
+        """HELD-0 (0235): the region a candidate is held to (the outline swept from the back of the marked box out to its
+        reach) and, at the head, which statements make objects that lie wholly in it and which make some in it and some
+        outside: the director's real choice before it answers. Host facts, exact."""
+        if rec is None:
+            return None
+        try:
+            reg = scene_diff.region(rec, out["scene"])
+        except scene_diff.DiffError as e:
+            return {"error": e.detail[:200]}
+        by = {}
+        for o in O.values():
+            rels = {scene_diff.classify(b, reg) for b in o["boxes"]}
+            e = by.setdefault(o["by"], {"inside": 0, "meets": 0, "outside": 0})
+            e["inside" if rels == {"inside"} else "meets" if rels - {"outside"} else "outside"] += 1
+        keys = {x["hash"]: x["key"] for x in out["lineage"]["statements"]}
+        inside = sorted(keys[h] for h, e in by.items() if h in keys and e["inside"] and not e["meets"] and not e["outside"])
+        partly = sorted(keys[h] for h, e in by.items() if h in keys and (e["meets"] or e["inside"]) and (e["meets"] or e["outside"]))
+        return {"reach_m": None if reg["reach"] is None else float(reg["reach"]),
+                "statements_inside": inside[:24], "statements_partly": partly[:24],
+                "rule": "held: every box the candidate changes lies in this region; the studio decides it exactly and orders the candidates by it"}
 
     @staticmethod
     def touches(slot, refs, O):
@@ -871,6 +931,8 @@ class Gateway:
         refs, rels, mentions, O = self.references(out, head, prompt, refs)
         S = out["scene"]
         shapes = self.shapes_of(prompt, out, O)
+        store = getattr(self.play, "shapes", lambda: None)()
+        shape_recs = store.records([x["name"] for x in shapes]) if (shapes and store is not None) else []
         target = refs[0] if refs and refs[0]["role"] == "target" else None
         with self.lock:
             if self.req and self.req["state"] == "running":
@@ -897,7 +959,7 @@ class Gateway:
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in refs},
                         "selection": target["address"] if target else None,
                         "head": head, "provider": {"model": cfg["model"]}, "candidates": [], "started": time.monotonic(),
-                        "ended": None, "base": base, "objects": O, "cfg": cfg}
+                        "ended": None, "base": base, "objects": O, "cfg": cfg, "shape_recs": shape_recs}
             self.cancel = threading.Event()
             req, cancel = self.req, self.cancel
         self.play.publish([])
@@ -928,6 +990,10 @@ class Gateway:
         ws, out, parts, head = self._head()
         O = R.objects(out["scene"])
         refs = {r["tag"]: r["piece"] for r in request.get("references", [])}
+        # HELD-0: the request's shapes as they are kept now (a shape marked again since is held as it stands now; one that
+        # is not ok at this head is accounted "stale", and said below)
+        store = getattr(self.play, "shapes", lambda: None)()
+        shape_recs = store.records([s_.get("name") for s_ in request.get("shapes", [])]) if store is not None else []
         made = []
         for letter in LETTERS:
             f = os.path.join(d, letter + ".intent")
@@ -935,11 +1001,13 @@ class Gateway:
                 continue
             raw_intent = open(f, "rb").read()
             item = {"letter": letter, "title": titles.get(letter, letter), "verdict": "", "codes": [], "message": "", "slot": None,
-                    "decided": "", "head": "", "intent": raw_intent, "touches": None, "record": None, "still": None}
-            slot = self.play.candidate_slot(ws, D.canon.load_intent(raw_intent), "studio %s %s: %s (drawn again)" % (rid, letter, item["title"]))
+                    "decided": "", "head": "", "intent": raw_intent, "touches": None, "record": None, "still": None, "held": None}
+            it = D.canon.load_intent(raw_intent)
+            item["layout"] = bool(it["layout"])
+            slot = self.play.candidate_slot(ws, it, "studio %s %s: %s (drawn again)" % (rid, letter, item["title"]), shapes=shape_recs)
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
                          "head": slot.get("checked_against", ""), "touches": self.touches(slot, refs, O) if "realized" in slot else None,
-                         "record": slot.get("record")})
+                         "record": slot.get("record"), "held": slot.get("held")})
             made.append((item, slot if slot["ok"] else None))
         drawn = [(i, s) for i, s in made if s is not None]
         slots = self.play.publish([s for _i, s in drawn])
@@ -964,7 +1032,8 @@ class Gateway:
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in request.get("references", [])},
                         "selection": (request.get("target") or {}).get("address"), "head": head, "provider": {"model": "recorded"},
                         "candidates": [i for i, _s in made], "started": time.monotonic(), "ended": time.monotonic(),
-                        "base": {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "objects": O, "cfg": self.cfg}
+                        "base": {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "objects": O, "cfg": self.cfg,
+                        "shape_recs": shape_recs, "order": host_order([i for i, _s in made])}
         return rid
 
     def cancel_request(self, rid):
@@ -1086,7 +1155,8 @@ class Gateway:
         for letter, c in zip(LETTERS, cands):
             doc = intent_doc(c, letter, self.brief, req["base"], req["prompt"])
             item = {"letter": letter, "title": c["title"].strip(), "verdict": "", "codes": [], "message": "", "slot": None,
-                    "decided": "", "head": "", "intent": None, "touches": None, "record": None, "still": None}
+                    "decided": "", "head": "", "intent": None, "touches": None, "record": None, "still": None, "held": None,
+                    "layout": bool(doc.get("layout"))}
             try:
                 raw_intent = D.canon.dumps(doc)
                 D.canon.load_intent(raw_intent)
@@ -1098,13 +1168,22 @@ class Gateway:
             item["intent"] = raw_intent
             if cancel.is_set():
                 break
-            slot = self.play.candidate_slot(ws, D.canon.load_intent(raw_intent), "studio %s %s: %s" % (rid, letter, item["title"]))
+            slot = self.play.candidate_slot(ws, D.canon.load_intent(raw_intent), "studio %s %s: %s" % (rid, letter, item["title"]),
+                                            shapes=req.get("shape_recs", ()))
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
-                         "head": slot.get("checked_against", ""), "record": slot.get("record"),
+                         "head": slot.get("checked_against", ""), "record": slot.get("record"), "held": slot.get("held"),
                          "touches": self.touches(slot, {t: r["piece"] for t, r in req["references"].items()}, req["objects"]) if "realized" in slot else None})
+            if item["held"] is not None:
+                # HELD-0: the whole report kept beside the intent; the record's line names it by its sha256
+                hb = (json.dumps(item["held"], sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")
+                self._record(rid, letter + ".held.json", hb)
+                item["held_sha256"] = sha256(hb)
             made.append((item, slot if slot["ok"] else None))
+        order = host_order([i for i, _s in made])
+        entry["order"] = order
         entry["candidates"] = [{"letter": i["letter"], "title": i["title"], "verdict": i["verdict"], "codes": i["codes"],
-                                "intent_sha256": sha256(i["intent"]) if i["intent"] else "", "touches": i["touches"]} for i, _s in made]
+                                "intent_sha256": sha256(i["intent"]) if i["intent"] else "", "touches": i["touches"],
+                                "held": held_line(i)} for i, _s in made]
         with self.lock:
             if req["state"] != "running":
                 entry.update({"outcome": req["code"] or "STUDIO-DISCARDED", "detail": "the request was %s while its candidates compiled" % req["state"]})
@@ -1116,6 +1195,7 @@ class Gateway:
             for (item, _s), k in zip(drawn, slots):
                 item["slot"] = k
             req["candidates"] = [i for i, _s in made]
+            req["order"] = order
         n_ok = sum(1 for i, s in made if s is not None)
         entry["outcome"] = "DONE"
         self._log(entry)
@@ -1192,10 +1272,51 @@ class Gateway:
                   still=png, despite=bool(despite))
         with self.lock:
             c["decided"] = "admitted"
+            comparison = self._compared(r, letter)
             self.last = {"what": "admitted", "request": rid, "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head": a["head_after"]}
         self._log({"id": rid, "at": now(), "decision": "admit", "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head_after": a["head_after"],
-                   "still_sha256": still, "despite_detectors": bool(st["flags"])})
+                   "still_sha256": still, "despite_detectors": bool(st["flags"]), "comparison": comparison})
         return self.last
+
+    def _compared(self, r, chosen):
+        """COMPARE-0 (0235): one admission (or none) is chosen from a set, and the record says so: what was shown, in the
+        host's order, with each one's region verdicts, what was chosen, and which were not. A candidate not chosen is
+        marked so for the page and stays undecided: rejecting it still writes its refusal to the ledger, and admitting it
+        is refused as it was (the head moved: STUDIO-STALE). Holds the lock."""
+        not_chosen = []
+        for x in r["candidates"]:
+            if x["letter"] != chosen and not x["decided"]:
+                x["compared"] = "not chosen" if chosen else "none chosen"
+                not_chosen.append(x["letter"])
+        return {"shown": [x["letter"] for x in r["candidates"] if x["slot"] is not None], "order": [o["letter"] for o in r.get("order", [])],
+                "chosen": chosen or None, "not_chosen": not_chosen,
+                "held": {x["letter"]: held_line(x) for x in r["candidates"] if x.get("held")}}
+
+    def none(self, rid):
+        """COMPARE-0: none of a request's candidates is chosen: every one not decided is marked so, and one line records
+        the set rejected. The ledger is not written (it holds what is admitted and what is rejected one by one); the world
+        is as it was."""
+        with self.lock:
+            r = self.req
+            if not r or r["id"] != rid or r["state"] != "done":
+                raise StudioError("STUDIO-NO-CANDIDATE", "no finished request %s" % rid)
+            if not any(not x["decided"] and not x.get("compared") for x in r["candidates"]):
+                raise StudioError("STUDIO-DECIDED", "every candidate of request %s is already decided, or none was chosen" % rid)
+            comparison = self._compared(r, "")
+            self.last = {"what": "none", "request": rid, "candidates": comparison["not_chosen"]}
+        self._log({"id": rid, "at": now(), "decision": "none", "comparison": comparison})
+        return self.last
+
+    def held(self, rid, letter):
+        """HELD-0: a candidate's whole report (with the boxes Diff mode outlines), as its evaluation computed it."""
+        with self.lock:
+            r = self.req
+            if not r or r["id"] != rid or r["state"] != "done":
+                raise StudioError("STUDIO-NO-CANDIDATE", "no finished request %s" % (rid if isinstance(rid, str) else "")[:40])
+            c = [x for x in r["candidates"] if x["letter"] == letter]
+            if not c or not c[0].get("held"):
+                raise StudioError("STUDIO-NO-CANDIDATE", "request %s has no candidate %s with a report" % (rid, letter if isinstance(letter, str) else ""))
+            return dict(c[0]["held"], letter=letter, request=rid)
 
     def reject(self, rid, letter):
         r, c = self._candidate(rid, letter)

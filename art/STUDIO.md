@@ -186,12 +186,56 @@ designer means. A queued task's shapes are read when it runs; a reviewed one say
 
 **The candidates and the split.** Each candidate card has M (the look: materials, lights, the air), C (the play: the
 collision, the movers, the targets; a CLEAN candidate of the art never changes it) and P (the placement of the
-dressing: a box added, removed or moved), computed by the page from the two scenes it was served, exactly, and said to
-be so. The split draws the world (source [0]) and the chosen candidate from one camera (framed on the shape), with a
-slider; **Compare** shows it larger.
+dressing: a box added, removed or moved), the host's since 0235 (below). The split draws the world (source [0]) and the
+chosen candidate from one camera (framed on the request's shape, from the side its face looks to), with a slider;
+**Compare** shows it larger.
 
-What the shapes do not do yet: hold a candidate to the region (the director is told; nothing checks where a candidate's
-change lands against the shape, the roadmap's candidate loop), and change the play geometry (no opening is cut).
+What the shapes do not do yet: change the play geometry (no opening is cut).
+
+## The candidate loop (HELD-0 and COMPARE-0, 0235)
+
+By the owner's plan (Sprint 3, *the candidate loop*: candidates held to marked regions, compared, Preview and Diff,
+iterated), on what MIXER-C prepared beside 0230 and 0231.
+
+**What a candidate changed** is the host's, said once (`art/scene_diff.py`). Its evaluation's two scenes, the head as
+the files stood when it was evaluated and the candidate, are compared by identity (a record is its id, an object its id
+with its parts, never matched by likeness), field by field as the bytes the exporter wrote: a diff whose inverse is the
+diff read backwards and which applied to its base gives the candidate, and to anything else is refused. M, C and P are
+read from it, each raised exactly when its part of the scene changes (the self-test checks them against projections of
+the scene written apart). The page shows them and computes none.
+
+**Held.** A shape's region is its outline swept along its face's outward normal, from the back of the marked box out
+to the shape's *reach*: by default to the sky on a top face (what stands on a floor rises from it) and 1 m on any
+other (what hangs on a wall or under a canopy); an opening runs on through its box, as far again behind it (at most
+1 m). The inspector's *Region* sets the reach (blank: the default). For each shape the prompt names, every box the
+candidate adds, removes, moves or repaints (a material changed counts every box made of it; a light its fixture; a
+mover its whole travel) is related to the region exactly (inside, crossing, touching, outside, over the decimals the
+scene states), and the candidate's verdict is **held** (every change inside), **adjacent** (nothing beyond the
+region's boundary, something on it), **outside** (something beyond it, or a change of the whole world: the air, the
+play), **missed** (it changed things, none in the region), **empty** (nothing physical changed) or **stale** (the shape
+is not as it was marked in the candidate's base: mark it again; never re-read). The request tells the director the
+region and, at the head, which statements make objects wholly in it and which reach it with objects outside it; nothing
+the director says about where its change lands is believed.
+
+**The order.** The candidates are shown in the host's order, lexicographic and by host facts alone: the director's
+verdict (CLEAN, then LEAKAGE, then the rest), the region (the worst of the shapes' verdicts: held, adjacent, outside,
+missed, empty, stale; no report last), the play changed for a request of the art (C) after unchanged, the objects not
+held, how much changed, the letter. A title or a rationale never enters it.
+
+**Diff.** The split's **Diff** outlines, over both pictures, every box the account names (GET `/held.json`): before the
+change dashed, after it solid; with a shape named, each coloured by its relation to the region (inside, touching,
+crossing, outside), else by what happened to it (added, removed, changed).
+
+**One or none.** Admitting a candidate records, on its line of the request's record, the set it was chosen from: what
+was shown, the host's order, each one's region verdicts, the one chosen and those not chosen; those are marked *not
+chosen* and stay undecided (rejecting one still writes its refusal to the ledger; admitting one is refused, the head
+having moved). **None** (on the candidates' bar, POST `/studio/none`) marks every undecided candidate *none chosen* and
+records the set rejected in one line; the ledger is not written and the world is as it was. Each candidate's whole
+report is kept beside its intent (`<letter>.held.json`), named by its sha256 on the request's line.
+
+Not done: a region drawn as a volume in the viewport (the inspector says the reach); the light a held lamp casts beyond
+the region (a light is its fixture's box: NOT_MEASURED, said); finer verbs where a statement makes many objects (a
+request whose statements reach the region only with objects outside it is told so, and its candidates read outside).
 
 ## The references (STUDIO-1)
 

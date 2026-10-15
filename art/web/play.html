@@ -230,6 +230,14 @@
                  display: grid; place-items: center; box-shadow: 0 1px 6px rgba(0,0,0,.6); pointer-events: none; font-weight: 700; }
   .split .lab { position: absolute; top: 8px; padding: 2px 8px; background: rgba(8,14,24,.85); border-radius: 4px; font-size: 11px; }
   .split .lab.l { left: 8px; } .split .lab.r { right: 8px; }
+  .split img.ovl { pointer-events: none; }
+  .split .legend { position: absolute; left: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 3px 8px; background: rgba(8,14,24,.85); border-radius: 4px; font-size: 10.5px; max-width: calc(100% - 16px); }
+  .split .legend i { display: inline-block; width: 10px; height: 8px; border: 2px solid; margin-right: 4px; vertical-align: -1px; }
+  .heldrow { display: flex; flex-wrap: wrap; gap: 3px; padding: 0 7px 3px; }
+  .hv { font: 600 9.5px var(--mono); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line2); background: rgba(8,14,24,.6); white-space: nowrap; }
+  .hv.held { color: #7ee2a8; border-color: #2f7a52; } .hv.adjacent { color: #ffd77a; border-color: #8a6a1f; } .hv.outside { color: #ff8be0; border-color: #8a3a74; }
+  .hv.missed, .hv.empty { color: var(--dim); } .hv.stale { color: #ffcf5a; border-style: dashed; }
+  .card .rank { position: absolute; left: 30px; top: 6px; padding: 1px 5px; border-radius: 4px; background: rgba(8,14,24,.85); font: 600 10px var(--mono); color: var(--dim); }
   .split .none { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); padding: 20px; text-align: center; }
 
   /* the roadmap strip: the product's goal kept in view */

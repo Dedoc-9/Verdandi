@@ -65,6 +65,7 @@ MATERIAL = re.compile(r"[a-z][a-z0-9_]{0,39}\Z")
 MAX_VERTICES, MAX_SHAPES, NOTE_MAX = 64, 64, 200
 LIMIT_MM = 10 ** 9                    # a thousand kilometres: a coordinate beyond it is not a coordinate of this world
 CLEARANCE_MAX_VERTICES = 16           # the exact clearance test's reach (CLEARANCE); beyond it the check says NOT CHECKED
+REACH_MAX_MM = 1000000                # HELD-0: a region reaches at most a kilometre from its face
 DECIMAL = re.compile(r"-?(0|[1-9][0-9]{0,11})(\.[0-9]{1,12})?\Z")
 
 
@@ -366,8 +367,8 @@ def parse(doc, scene, sha, player_radius=None):
             raise ShapeError("SHAPE-VERTICES", "vertex %d is [u, v]" % i)
         verts.append((mm(p[0], "vertex %d's u" % i), mm(p[1], "vertex %d's v" % i)))
     c = doc.get("constraints") or {}
-    if not isinstance(c, dict) or set(c) - {"within", "clearance_m", "supports", "collision", "material"}:
-        raise ShapeError("SHAPE-CONSTRAINTS", "constraints are {within, clearance_m, supports, collision, material}")
+    if not isinstance(c, dict) or set(c) - {"within", "clearance_m", "supports", "collision", "material", "reach_m"}:
+        raise ShapeError("SHAPE-CONSTRAINTS", "constraints are {within, clearance_m, supports, collision, material, reach_m}")
     for k in ("within", "supports", "collision"):
         if not isinstance(c.get(k, False), bool):
             raise ShapeError("SHAPE-CONSTRAINTS", "%s is true or false" % k)
@@ -375,6 +376,11 @@ def parse(doc, scene, sha, player_radius=None):
     clear_mm = None if clear is None else mm(clear, "the clearance")
     if clear_mm is not None and not (0 < clear_mm <= 20000):
         raise ShapeError("SHAPE-CONSTRAINTS", "a clearance is more than 0 and at most 20 m")
+    # HELD-0 (0235): how far the shape's region reaches out from its face (none given: the face's default, REACH below)
+    reach = c.get("reach_m")
+    reach_mm = None if reach is None else mm(reach, "the reach")
+    if reach_mm is not None and not (0 < reach_mm <= REACH_MAX_MM):
+        raise ShapeError("SHAPE-CONSTRAINTS", "a reach is more than 0 and at most %d m" % (REACH_MAX_MM // 1000))
     mat = c.get("material", "keep")
     if not isinstance(mat, str) or not (mat == "keep" or (MATERIAL.match(mat) and mat in scene.get("materials", {}))):
         raise ShapeError("SHAPE-CONSTRAINTS", "the material is keep or one of the scene's materials")
@@ -386,7 +392,8 @@ def parse(doc, scene, sha, player_radius=None):
            "vertices": [[str(u), str(v)] for u, v in verts],
            "constraints": {"within": bool(c.get("within", True)), "supports": bool(c.get("supports", False)),
                            "collision": bool(c.get("collision", False)), "material": mat,
-                           "clearance_mm": "" if clear_mm is None else str(clear_mm)},
+                           "clearance_mm": "" if clear_mm is None else str(clear_mm),
+                           "reach_mm": "" if reach_mm is None else str(reach_mm)},
            "note": note}
     ev = evaluate(rec, scene, player_radius)
     if not ev["checks"]["simple"]["ok"]:
@@ -394,6 +401,26 @@ def parse(doc, scene, sha, player_radius=None):
     if rec["constraints"]["within"] and not ev["checks"]["within"]["ok"]:
         raise ShapeError("SHAPE-WITHIN", ev["checks"]["within"]["detail"])
     return rec
+
+
+def status_of(rec, scene):
+    """A kept shape's status against a scene, with its box there: ("ok", box) when a box of its id has exactly the
+    coordinates it was marked on, ("changed", box), ("gone", None) or ("ambiguous", None). The one place a status is
+    decided (evaluate below, and HELD-0's region, art/scene_diff.py)."""
+    got = box_in(scene, rec["anchor"]["piece"])
+    if got is None or got == "ambiguous":
+        return ("gone" if got is None else "ambiguous"), None
+    return ("ok" if got[0] == [Fraction(Decimal(x)) for x in rec["anchor"]["box"]] else "changed"), got[0]
+
+
+def reach_of(rec):
+    """HELD-0: how far the shape's region reaches out from its face, in metres (a Fraction), or None for "to the sky":
+    the shape's own reach if it has one; else, on a top face, to the sky (what stands on a floor rises from it), and on
+    any other face 1 m (what hangs on a wall or under a canopy)."""
+    r = rec["constraints"].get("reach_mm", "")
+    if r:
+        return Fraction(int(r), 1000)
+    return None if rec["anchor"]["face"] == "+y" else Fraction(1)
 
 
 def evaluate(rec, scene, player_radius=None):
@@ -404,14 +431,15 @@ def evaluate(rec, scene, player_radius=None):
     out = {"name": rec["name"], "operation": rec["operation"], "closed": rec["operation"] != "path", "piece": piece, "face": face,
            "layer": "play" if piece.startswith("play:") else piece.split(":", 1)[0], "note": rec["note"],
            "vertices_m": [[int(u) / 1000, int(v) / 1000] for u, v in rec["vertices"]],
-           "constraints": dict(rec["constraints"]), "bound_scene": rec["anchor"]["scene"]}
+           "constraints": dict(rec["constraints"]), "bound_scene": rec["anchor"]["scene"],
+           "reach_m": None if reach_of(rec) is None else float(reach_of(rec)), "reach_given": bool(rec["constraints"].get("reach_mm"))}
     if got is None or got == "ambiguous":
         out.update(status="gone" if got is None else "ambiguous", checks={}, world_m=None,
                    why="no box %s in the scene served now; the shape stays, listed apart" % piece if got is None else
                    "more than one box is %s; a shape never guesses which" % piece)
         return out
     box = got[0]
-    out["status"] = "ok" if box == bound else "changed"
+    out["status"] = status_of(rec, scene)[0]
     F = frame(box, face)
     if out["status"] == "changed":
         F0 = frame(bound, face)
@@ -540,6 +568,13 @@ class Shapes:
             rev = self.revision
         return {"format": FORMAT, "revision": rev, "kept": bool(self.path), "error": self.error,
                 "shapes": [evaluate(s, scene) if scene is not None else {"name": s["name"], "status": "unknown"} for s in items]}
+
+    def records(self, names):
+        """HELD-0: the kept records of the named shapes (copies), as the request's regions; a name no shape has is left
+        out (resolve refuses it first)."""
+        import copy
+        with self.lock:
+            return [copy.deepcopy(self.items[n]) for n in names if n in self.items]
 
     def resolve(self, names, scene, objects=None):
         """The shapes a request names, each as the director reads it; a name unknown, or a shape not ok, refuses."""

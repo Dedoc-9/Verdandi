@@ -90,6 +90,7 @@ REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import dress  # noqa: E402
 import studio_marks  # noqa: E402  (MARK-0, 0231: the shapes marked on the scene's surfaces)
+import scene_diff  # noqa: E402  (HELD-0, 0235: what a candidate changed, and where, against a shape)
 
 level = dress.level
 _spec = importlib.util.spec_from_file_location("art_check", os.path.join(HERE, "check.py"))
@@ -206,8 +207,23 @@ def intent_slot(brief, path, root=None):
     return candidate_slot(workspace(brief, root), it, label, path)
 
 
-def candidate_slot(ws, it, label, source="studio"):
-    """An intent evaluated by the director at the current head: a source, served unless the director refuses it."""
+def held_report(scene0, scene1, shapes=()):
+    """HELD-0 (0235): what the candidate changed against the base of its own evaluation (never the served slot: the
+    head may have moved), its M, C and P, and its account against each shape the request names (art/scene_diff.py).
+    What cannot be read is said, never raised: a candidate is drawn without its account rather than not drawn."""
+    t = time.perf_counter()
+    try:
+        r = scene_diff.report(scene0, scene1, shapes)
+    except (scene_diff.DiffError, studio_marks.ShapeError, KeyError, TypeError, ValueError) as e:
+        return {"format": "VERDANDI-HELD", "version": "0", "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
+    r["ms"] = int((time.perf_counter() - t) * 1000)
+    return r
+
+
+def candidate_slot(ws, it, label, source="studio", shapes=()):
+    """An intent evaluated by the director at the current head: a source, served unless the director refuses it.
+    HELD-0: `shapes` (kept shape records, VERDANDI-SHAPES 0) are the regions the request names; the slot carries the
+    candidate's report against them ("held")."""
     D = director()
     got = {}
 
@@ -217,7 +233,7 @@ def candidate_slot(ws, it, label, source="studio"):
 
     path = source
     try:
-        verdict, _after, _t, out1, _out0, _text1, rec = D.evaluate_doc(ws, it, on_candidate=keep)
+        verdict, _after, _t, out1, out0, _text1, rec = D.evaluate_doc(ws, it, on_candidate=keep)
     except (dress.ArtError, level.MapError, OSError) as e:
         return _slot(label, path, message="PLAY: the head cannot be compiled: %s" % e)
     extra = {"verdict": verdict["verdict"], "codes": verdict["codes"], "written_against": verdict["written_against"],
@@ -228,6 +244,8 @@ def candidate_slot(ws, it, label, source="studio"):
     for k in ("realized", "affected", "materials_changed"):
         if k in verdict:
             extra[k] = list(verdict[k])
+    if out1 is not None and out0 is not None:
+        extra["held"] = held_report(out0["scene"], out1["scene"], shapes)
     if verdict["verdict"] == "REFUSED" or out1 is None:
         why = verdict.get("detail") or ""
         why = why if why.startswith(tuple(verdict["codes"])) and why else "; ".join(verdict["codes"]) + (": " + why if why else "")
@@ -479,8 +497,8 @@ class Host:
     def workspace(self):
         return workspace(self.live.brief, self.live.root)
 
-    def candidate_slot(self, ws, it, label):
-        return candidate_slot(ws, it, label)
+    def candidate_slot(self, ws, it, label, shapes=()):
+        return candidate_slot(ws, it, label, shapes=shapes)
 
     def publish(self, slots):
         return self.live.publish(slots)
@@ -824,7 +842,7 @@ def seed_worlds(worlds_dir, source=None, say=print):
 STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin",
                 "/studio/alive", "/studio/shutdown", "/studio/worlds/duplicate",
                 "/studio/queue/add", "/studio/queue/cancel", "/studio/queue/requeue", "/studio/queue/review", "/studio/queue/dismiss",
-                "/studio/build", "/studio/shapes/save", "/studio/shapes/delete")
+                "/studio/build", "/studio/shapes/save", "/studio/shapes/delete", "/studio/none")
 # B1 (docs/STUDIO-APP.md; the supervisor's view of this server): GET /healthz says the server is up and which code it
 # runs; POST /studio/alive is the page's heartbeat; POST /studio/shutdown stops the server as Ctrl+C does. Exit codes:
 # 0 stopped, 1 a source not served, 2 usage, 70 could not serve (the port), 75 refused to start (recovery refused).
@@ -933,6 +951,8 @@ def studio_post(hub, path, body):
             return 200, dict(g.admit(body.get("id"), body.get("candidate"), body.get("still") or "", body.get("despite") is True), ok=True)
         if path == "/studio/reject":
             return 200, dict(g.reject(body.get("id"), body.get("candidate")), ok=True)
+        if path == "/studio/none":
+            return 200, dict(g.none(body.get("id")), ok=True)
         return 200, dict(g.undo(), ok=True)
     except studio.StudioError as e:
         return 409, {"ok": False, "code": e.code, "message": e.detail}
@@ -1174,6 +1194,18 @@ def server(target, port=0):
                 s0 = w.slot(0)
                 st = w.shapes.state(scene_of(s0) if s0 is not None else None)
                 return self.send(200, json.dumps(dict(st, ok=True, scene=s0["sha"] if s0 else ""), sort_keys=True).encode("utf-8"), "application/json")
+            if path == "/held.json":
+                # HELD-0 (0235): a candidate's report as the host computed it (its diff's summary, M, C and P, its accounts
+                # against the request's shapes and the boxes Diff mode outlines). Read; nothing written.
+                qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
+                try:
+                    w = hub.world(qq.get("world"))
+                    if w.studio is None:
+                        raise studio.StudioError("STUDIO-NO-PROVIDER", "the studio is not running")
+                    got = w.studio.held(qq.get("id", ""), qq.get("candidate", ""))
+                except studio.StudioError as e:
+                    return self.send(404, json.dumps({"ok": False, "code": e.code, "message": e.detail}).encode("utf-8"), "application/json")
+                return self.send(200, json.dumps(dict(got, ok=True), sort_keys=True).encode("utf-8"), "application/json")
             if path in ("/object.json", "/validate.json"):
                 qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
                 try:
@@ -1879,9 +1911,10 @@ def studio_selftest():
         req = json.loads(open(os.path.join(rec, "request.json"), "rb").read())
         log = [json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()]
         row("the request recorded: context, response, intents", req["target"]["statement"]["text"].startswith("canopy plaza concrete_slab 7.0 19,10 28,11")
-            and req["head"] == r["head"] and sorted(os.listdir(rec)) == ["A.intent", "B.intent", "C.intent", "request.json", "response.raw"]
-            and log[-1]["id"] == rid and log[-1]["outcome"] == "DONE" and log[-1]["model"] == "scripted-1",
-            "the target's statement (line %d), the head, the response's sha256, each candidate's intent" % req["target"]["statement"]["line"])
+            and req["head"] == r["head"] and sorted(os.listdir(rec)) == ["A.held.json", "A.intent", "B.held.json", "B.intent", "C.held.json", "C.intent", "request.json", "response.raw"]
+            and log[-1]["id"] == rid and log[-1]["outcome"] == "DONE" and log[-1]["model"] == "scripted-1"
+            and all(c["held"]["sha256"] for c in log[-1]["candidates"]),
+            "the target's statement (line %d), the head, the response's sha256, each candidate's intent and (HELD-0) its report" % req["target"]["statement"]["line"])
         replay = intent_slot(brief, os.path.join(rec, "A.intent"))
         row("a recorded candidate replayed without the provider", replay["ok"] and replay["sha"] == live.slot(drawn[0]["slot"])["sha"],
             "play.py --intent %s gives scene %s, the one drawn" % (os.path.relpath(os.path.join(rec, "A.intent"), tmp), replay["sha"][:12]))
@@ -2518,6 +2551,155 @@ def marks_selftest(row):
         import traceback
         traceback.print_exc()
         row("marks: the HTTP self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+    finally:
+        ROOT = saved_root
+        if live:
+            live.stopping = True
+            if live.studio:
+                live.studio.shutdown()
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def held_selftest(row):
+    """HELD-0 and COMPARE-0 (0235) over HTTP, in the fixture's world with the scripted director: a region marked on a
+    canopy's whole underside and asked about (#whole), each candidate's report computed against its own evaluation's
+    base, read back whole (/held.json) and kept with the request; the accounts against the region (the lit underside's
+    fixtures held, the slab brought down or made deeper beyond the region's reach not), the host's order, a candidate
+    admitted with the set it was chosen from recorded and its siblings not chosen, and none chosen of another set; the
+    canopy then raised by an edit of the brief, so a request reviewed again says its shape is stale. Writes only in a
+    scratch tree."""
+    global ROOT
+    import studio
+    brief, tmp = "plaza-night", tempfile.mkdtemp(prefix="held-selftest-")
+    saved_root = ROOT
+    live = srv = None
+    try:
+        director().selftest_tree(tmp)
+        ROOT = tmp
+        art = os.path.join(tmp, "art", "briefs", brief + ".art")
+        live = Live(brief, art, [], poll=0.15, root=tmp)
+        threading.Thread(target=live.watch, kwargs={"say": lambda s: None}, daemon=True).start()
+        start_studio(live, os.path.join(HERE, "providers", "scripted.json"), say=lambda s: None)
+        srv = server(live)
+        port = srv.server_address[1]
+        base = "http://127.0.0.1:%d" % port
+        tok = re.search(r'data-studio="([0-9a-f]+)"', urllib.request.urlopen(base + "/play.html", timeout=30).read().decode("utf-8")).group(1)
+
+        def post(path, raw, ctype="application/json"):
+            rq = urllib.request.Request(base + path, data=raw if isinstance(raw, bytes) else json.dumps(raw).encode("utf-8"), method="POST",
+                                        headers={"Content-Type": ctype, "X-Studio-Token": tok})
+            try:
+                with urllib.request.urlopen(rq, timeout=120) as r:
+                    return r.status, json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                b = e.read()
+                try:
+                    return e.code, json.loads(b)
+                except ValueError:
+                    return e.code, {"raw": b[:80].decode("latin-1")}
+
+        def get(path):
+            try:
+                with urllib.request.urlopen(base + path, timeout=60) as r:
+                    return r.status, json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                return e.code, json.loads(e.read() or b"{}")
+
+        def ask(prompt):
+            c, r = post("/studio/ask", {"prompt": prompt})
+            st = None
+            for _i in range(1200):
+                st = live.studio.state()["request"]
+                if st and st["id"] == r.get("id") and st["state"] != "running":
+                    break
+                time.sleep(0.1)
+            return c, st
+
+        def lines():
+            return [json.loads(x) for x in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines() if x.strip()]
+        s0 = live.slot(0)
+        S = json.loads(s0["scene_bytes"])
+        canopy = next(v for v in S["visuals"] if v["id"] == "canopy:19,10-28,11")
+        W, D = canopy["box"][3] - canopy["box"][0], canopy["box"][5] - canopy["box"][2]
+        whole = {"name": "whole", "operation": "region", "anchor": {"piece": canopy["id"], "face": "-y", "box": canopy["box"], "scene": s0["sha"], "view": {}},
+                 "vertices": [[0, 0], [W, 0], [W, D], [0, D]], "constraints": {"within": True, "supports": False, "collision": False, "material": "keep"}}
+        c_s, r_s = post("/studio/shapes/save", {"shape": whole})
+        c_a, st = ask("light #whole")
+        cands = {c["letter"]: c for c in (st or {}).get("candidates", [])}
+        verd = {c["title"]: ((c.get("held") or {}).get("accounts") or [{}])[0].get("verdict") for c in cands.values()}
+        bad = [L for L, c in cands.items() if not c.get("held") or "boxes" in c["held"] or "error" in c["held"]]
+        c_h, full = get("/held.json?id=%s&candidate=A" % st["id"]) if st else (0, {})
+        D_ = director()
+        _o, _p, _c = D_.Workspace(brief, tmp).export()
+        kept = os.path.exists(os.path.join(tmp, "art", "build", "studio", brief, st["id"], "A.held.json")) if st else False
+        row("held: every candidate carries the host's report", c_s == 200 and c_a == 200 and len(cands) == 3 and not bad and c_h == 200
+            and full.get("boxes") and full.get("base") == scene_diff.canon_sha(_o["scene"]) and kept,
+            "#whole on the canopy's underside; %d candidates, each with M/C/P and an account (in /live without its boxes); /held.json %s with %d boxes, "
+            "its base the evaluation's own head; A.held.json kept with the request" % (len(cands), c_h, len(full.get("boxes") or [])))
+        rq = json.loads(open(os.path.join(tmp, "art", "build", "studio", brief, st["id"], "request.json"), "rb").read()) if st else {}
+        reg = ((rq.get("shapes") or [{}])[0]).get("region") or {}
+        mine = next((x["key"] for x in rq.get("statements", []) if x["text"].startswith("canopy plaza concrete_slab 7.0 19,10 28,11")), "?")
+        row("held: the request names what the region can hold", reg.get("reach_m") == 1.0 and mine in reg.get("statements_inside", [])
+            and mine not in reg.get("statements_partly", []),
+            "#whole reaches %s m below the underside; wholly in it: %s; reaching it with objects outside: %s" % (
+                reg.get("reach_m"), reg.get("statements_inside"), reg.get("statements_partly")))
+        row("held: the accounts against the region", verd.get("Lit underside") == "held" and verd.get("Monolithic") not in ("held", None)
+            and verd.get("Deeper canopy") not in ("held", None),
+            "; ".join("%s %s" % kv for kv in sorted(verd.items())) + " (the region reaches 1 m below the underside: new fixtures under it are held, "
+            "a slab brought down or made deeper is not)")
+        order = [o["letter"] for o in st.get("order", [])]
+        first = cands[order[0]]["title"] if order else ""
+        row("compare: the host's order", order and first == "Lit underside" and sorted(order) == sorted(cands),
+            "%s (%s first; keys %s)" % (order, first, [o["key"] for o in st.get("order", [])]))
+        # the order reads host facts alone: two candidates the same but for the model's words keep the letters' order
+        same = dict(cands[order[0]]) if order else {}
+        words = [dict(same, letter="A", title="Stays exactly inside #whole", rationale="held, as asked"), dict(same, letter="B", title="Elsewhere")]
+        o1, o2 = studio.host_order(words), studio.host_order([dict(words[0], title="Elsewhere"), dict(words[1], title="Stays exactly inside #whole")])
+        row("compare: the order reads no model words", [o["letter"] for o in o1] == ["A", "B"] == [o["letter"] for o in o2] and o1[0]["key"] == o1[1]["key"],
+            "two candidates alike but for their titles and rationale: %s and %s, one key" % ([o["letter"] for o in o1], [o["letter"] for o in o2]))
+        # admit the first: the set it was chosen from recorded, its siblings not chosen
+        L0 = order[0] if order else "A"
+        c_p, s_p = post("/studio/still?id=%s&candidate=%s" % (st["id"], L0), director().selftest_still(), "image/png")
+        c_m, r_m = post("/studio/admit", {"id": st["id"], "candidate": L0, "still": s_p.get("still", "")})
+        st2 = live.studio.state()["request"]
+        dec = {c["letter"]: (c["decided"], c.get("compared", "")) for c in st2["candidates"]}
+        cmp_ = [x for x in lines() if x.get("decision") == "admit"]
+        cmp_ = cmp_[-1].get("comparison", {}) if cmp_ else {}
+        other = sorted(k for k in dec if k != L0)
+        c_r, r_r = post("/studio/reject", {"id": st["id"], "candidate": other[-1]}) if other else (0, {})
+        row("compare: one admitted, the set recorded", c_m == 200 and dec.get(L0, ("",))[0] == "admitted" and [dec[k] for k in other] == [("", "not chosen")] * 2
+            and cmp_.get("chosen") == L0 and cmp_.get("order") == order and cmp_.get("not_chosen") == other and set(cmp_.get("held", {})) == set(dec)
+            and c_r == 200,
+            "admitted %s; the others compared %s and still undecided (%s rejected after it: %s); the record: shown %s, order %s, chosen %s, not chosen %s" % (
+                L0, [dec[k][1] for k in other], other[-1] if other else "", c_r, cmp_.get("shown"), cmp_.get("order"), cmp_.get("chosen"), cmp_.get("not_chosen")))
+        # a second set, none chosen
+        c_b, st3 = ask("light #whole again")
+        c_n, r_n = post("/studio/none", {"id": st3["id"]})
+        c_n2, r_n2 = post("/studio/none", {"id": st3["id"]})
+        dec3 = sorted(c.get("compared", "") for c in live.studio.state()["request"]["candidates"])
+        none_ = [x for x in lines() if x.get("decision") == "none"]
+        row("compare: none chosen, recorded", c_n == 200 and dec3 and set(dec3) == {"none chosen"} and none_ and none_[-1]["id"] == st3["id"]
+            and none_[-1]["comparison"]["chosen"] is None and c_n2 == 409 and r_n2.get("code") == "STUDIO-DECIDED"
+            and live.studio.state()["last"].get("what") == "none",
+            "%d candidates none chosen; one line, decision none; again: %s" % (len(dec3), r_n2.get("code")))
+        # the canopy raised by an edit of the brief: the first request reviewed again says its shape is stale
+        text = open(art, encoding="utf-8").read()
+        v = live.version
+        open(art, "w", encoding="utf-8").write(text.replace("canopy plaza concrete_slab 7.0 19,10 28,11", "canopy plaza concrete_slab 7.6 19,10 28,11", 1))
+        t0 = time.time()
+        while live.version == v and time.time() - t0 < 120:
+            time.sleep(0.1)
+        live.studio.restore(st["id"])
+        st4 = live.studio.state()["request"]
+        stale = [((c.get("held") or {}).get("accounts") or [{}])[0].get("verdict") for c in st4["candidates"]]
+        row("held: a shape not as marked is stale, never re-read", stale and set(stale) == {"stale"} and "#whole is changed" in st4["message"],
+            "the canopy raised 0.6 m; request %s drawn again: accounts %s; %s" % (st["id"], stale, st4["message"][:120]))
+    except Exception as e:  # noqa: BLE001 — the self-test says what stopped it
+        import traceback
+        traceback.print_exc()
+        row("held: the HTTP self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
     finally:
         ROOT = saved_root
         if live:

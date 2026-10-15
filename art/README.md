@@ -265,6 +265,13 @@ python art/play.py --selftest            # the live loop without a browser: LIVE
   status ok, changed or gone against the scene served). A prompt names a shape as `#name`, and the director reads it
   (a request of version 2); a shape not as it was marked is refused. `python art/studio_marks.py selftest` (MARKS
   SELFTEST); [`STUDIO.md`](STUDIO.md), *Marks and shapes*.
+- **The candidate loop (HELD-0 and COMPARE-0, 0235).** Every candidate's change is said by the host against the base of
+  its own evaluation (`scene_diff.py`: an identity diff, its inverse, M, C and P each raised exactly when its part of the
+  scene changes) and, for each shape the prompt names, held to that shape's region (the outline swept from the back of
+  the marked box out to its reach), exactly: held, adjacent, outside, missed, empty or stale. The candidates are shown
+  in the host's order (no model words read), Diff mode outlines what the account names, and one admitted, or none,
+  records the set it was chosen from. `python art/scene_diff.py selftest` (SCENE-DIFF SELFTEST, HELD SELFTEST);
+  [`STUDIO.md`](STUDIO.md), *The candidate loop*.
 - **Every request ends in a disposition; the icon opens a first window (0220).** A request that comes back without
   candidates says why: UNSUPPORTED (with what the studio cannot make yet, from a closed list the request publishes),
   AMBIGUOUS (the director's questions), DECLINED (the API's refusal, or the provider's), or FAILED (including an
@@ -327,6 +334,8 @@ block a player is cover, and goes into the graybox map.
 | `play.py` | the native plaza's launcher: the sources (the brief, candidate intents) compiled, checked and served beside the graybox's simulation, and compiled again when their files change; the studio's endpoints; its own self-test and the studio's |
 | `web/studio_ui.js` | STUDIO-3: the shell's icons (inline SVG), its DOM builder, the view's arithmetic (a camera's basis, a point projected, the ray through a pixel, where a ray enters a box and through which face, MARK-0's face frames) and the thumbnailer (a second renderer on a small canvas) |
 | `studio_marks.py` | MARK-0: shapes on the scene's surfaces — the face frames, exact predicates (simple, within, the clearance a body needs, `admits_rect`), a shape's status against a scene, the shapes file (canonical bytes under the content lock), the `#name` mentions; `selftest` (worked values, slow witnesses, plants, and over HTTP through `play.py` and the scripted director) |
+| `scene_diff.py` | HELD-0: what a candidate changed (an identity diff of two scenes, keyed by id and never by likeness; its inverse; applying it to its base and nothing else; M, C and P), a shape's region (MARK-0's frames and status) and a box's relation to it (inside, crossing, touching, outside: exact, over the decimals the scene states), and the account of a candidate against a region; `selftest` runs `scene_diff_test.py` |
+| `scene_diff_test.py` | HELD-0's falsifiers: thirteen properties against oracles written apart (projections of a scene for M, C and P, an area oracle for containment, per-face formulas worked by hand, DIRECTOR-0's scope protocol), twenty planted defects, then HELD-0 and COMPARE-0 over HTTP through `play.py` and the scripted director |
 | `studio_refs.py` | STUDIO-1: what a tagged object is, its geometry in metres, its nearest wall, and how two stand (measured from the scene's boxes; a facing marked inferred) |
 | `director/durable.py` | B1: the content path's writes made to survive a killed process (an append flushed; a file replaced whole by a flushed temporary and a write-through rename); the death points `art/director.py crashtest` kills at; the content lock every writer of a tree's ledgers, briefs, tags and maps holds (a thread lock and the system's file lock, released by the system when its holder dies), which `art/director.py racetest` holds to account |
 | `studio_app.py` | B1: the desktop studio's supervisor (a job that ends everything it starts, play.py without a console, Edge in application mode, stopping when the window closes) and its `shortcut`; `selftest` with a stand-in browser. STUDIO-2: it serves the worlds folder (`--worlds DIR`, the per-user folder by default) |
