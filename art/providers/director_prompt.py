@@ -141,6 +141,11 @@ def user_text(req):
                     "the sky" if g["reach_m"] is None else "%g m from the face" % g["reach_m"]))
                 lines.append("    statements whose every object lies in the region now: " + (", ".join(g["statements_inside"]) or "none"))
                 lines.append("    statements that reach the region with objects outside it: " + (", ".join(g["statements_partly"]) or "none"))
+        if req.get("strict"):
+            # STRICT-0 (0238)
+            lines.append("This request is strict: a candidate is admitted only if every box it changes lies inside the regions of the shapes "
+                         "above (any one of them), and it changes neither the air nor the play. The studio checks this exactly; a candidate "
+                         "with any change outside is refused, whatever its rationale says.")
         lines += [""]
     lines += ["Coordinates: " + req.get("coordinates", ""), ""]
     if req.get("camera"):

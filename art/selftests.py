@@ -37,6 +37,7 @@ SUITES = (
     ("crashtest", ["art/director.py", "crashtest"], r"^DIRECTOR CRASHTEST (PASSED|FAILED)\b.*$", 45),
     ("check", ["art/check.py"], r"^ART CHECKS (PASSED|FAILED)\b.*$", 40),
     ("facade", ["art/play.py", "--facade-selftest"], r"^FACADE SELFTEST (\d+)/(\d+)$", 40),       # FACADE-0 (0237)
+    ("strict", ["art/play.py", "--strict-selftest"], r"^STRICT SELFTEST (\d+)/(\d+)$", 60),       # STRICT-0 (0238)
     ("queue", ["art/studio_queue.py", "selftest"], r"^STUDIO-2 SELFTEST (\d+)/(\d+)$", 37),
     ("studio", ["art/studio.py", "selftest"], r"^STUDIO SELFTEST (\d+)/(\d+)$", 30),
     ("quality", ["art/quality.py", "selftest"], r"^QUALITY SELFTEST (\d+)/(\d+)$", 20),

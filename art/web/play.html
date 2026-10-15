@@ -348,7 +348,7 @@
   <div id="st-refs"></div>
   <div id="st-shapes" class="shapes"></div>
   <textarea id="st-prompt" placeholder="Describe the change; name tagged objects as @1, @2 and marked shapes as #name (Ctrl+Enter asks; Esc goes back to the world)"></textarea>
-  <div><button id="st-ask">Ask</button><button id="st-cancel" disabled>Cancel</button><button id="st-original">Original</button><button id="st-undo">Undo last admission</button></div>
+  <div><button id="st-ask">Ask</button><label class="dim" id="st-strict-l" title="STRICT-0: admit a candidate only if every box it changes lies inside the regions of the shapes the prompt names (#name); the host checks it again when you admit"><input type="checkbox" id="st-strict"> Strict: held only</label><button id="st-cancel" disabled>Cancel</button><button id="st-original">Original</button><button id="st-undo">Undo last admission</button></div>
   <div id="st-status" class="dim"></div>
   <div id="st-cands"></div>
   <h3>Queue</h3>

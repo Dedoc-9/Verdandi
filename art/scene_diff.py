@@ -673,6 +673,56 @@ def account(d, a, b, reg, rows=None):
 VERDICTS = ("held", "adjacent", "empty", "outside", "missed", "stale")
 
 
+# STRICT-0 (0238): region-strict admission. A request may be strict: then a candidate is admitted only when its footprint
+# lies within the union of the named shapes' regions. Its receipt is that footprint, box by box, each with the shapes
+# whose regions hold it; its inverse receipt is the footprint of the change back, held against the same regions (the
+# regions are the request's, computed in the candidate's base, and do not move with the change).
+STRICT_CODES = ("ADMIT-OUTSIDE", "ADMIT-EMPTY", "ADMIT-STALE")
+
+
+def dec(f):
+    """A coordinate as exact decimal text (a scene's numbers are decimals, so the expansion ends)."""
+    f = Fraction(f)
+    n, d = abs(f.numerator), f.denominator
+    k = next((k for k in range(65) if (n * 10 ** k) % d == 0), None)
+    if k is None:
+        raise DiffError("SCENE-DIFF-NUMBER", "%s is not a decimal" % f)
+    t = str(n * 10 ** k // d).rjust(k + 1, "0")
+    t = t[:-k] + "." + t[-k:] if k else t
+    return ("-" if f < 0 else "") + t
+
+
+def receipt_of(rows, regs):
+    """[{piece, object, why, sides, box, inside}] for footprint rows, `inside` naming the regions that hold each box."""
+    return [{"piece": piece, "object": o, "why": why, "sides": side, "box": [dec(x) for x in box],
+             "inside": sorted(n for n, reg in regs if classify(box, reg) == "inside")} for o, why, side, piece, box in rows]
+
+
+def strict(a, b, shapes):
+    """The strict check of a candidate `b` against its base `a` and the request's shape records: ok when something in the
+    world's boxes changed, nothing changed the whole world (the air, the tops, spawns or targets), and every box of the
+    footprint lies inside at least one shape's region; else ADMIT-OUTSIDE (a box outside every region, or a change of
+    the whole world), ADMIT-EMPTY (nothing to hold), ADMIT-STALE (no shape, or one not as marked in the base). With its
+    receipt and inverse receipt and their sha256. A function of the two scenes and the records alone."""
+    regs, stale = [], []
+    for rec in shapes:
+        try:
+            regs.append((rec.get("name"), region(rec, a)))
+        except DiffError:
+            stale.append(rec.get("name"))
+    d = diff(a, b)
+    rows = footprint(d, a, b)
+    rec_ = receipt_of(rows, regs)
+    inv = receipt_of(footprint(diff(b, a), b, a), regs)
+    outside = [r["piece"] for r in rec_ if not r["inside"]]
+    glob = global_changes(d)
+    code = "ADMIT-STALE" if stale or not regs else "ADMIT-OUTSIDE" if outside or glob else "ADMIT-EMPTY" if not rows else ""
+    sha = lambda v: hashlib.sha256(enc(v).encode("ascii")).hexdigest()
+    return {"format": "VERDANDI-STRICT", "version": "0", "ok": not code, "code": code, "shapes": [n for n, _r in regs], "stale": stale,
+            "outside": outside[:16], "outside_count": len(outside), "global": glob[:12], "count": len(rec_),
+            "receipt": rec_, "receipt_sha256": sha(rec_), "inverse_receipt": inv, "inverse_receipt_sha256": sha(inv)}
+
+
 def report(a, b, shapes=()):
     """What the studio keeps of a candidate (play.candidate_slot): the diff's summary and M, C and P; for each shape the
     request names, its account against the candidate's own base `a` (or "stale", if the shape is not ok in it); and the

@@ -445,7 +445,7 @@
     const note = function (r, what) { $("st-status").innerHTML = ""; const e = document.createElement("span"); e.className = r.ok ? "good" : "bad"; e.textContent = r.ok ? what : (r.code ? r.code + ": " : "") + (r.message || "failed"); $("st-status").appendChild(e); };
     const camNow = function () { const c = eye(); return { x: c.x, y: c.y, z: c.z, yaw_deg: c.yaw / deg, pitch_deg: c.pitch / deg }; };
     const ask = function () {
-      post("/studio/ask", { prompt: promptEl.value, camera: camNow() })
+      post("/studio/ask", { prompt: promptEl.value, camera: camNow(), strict: $("st-strict").checked })
         .then(function (r) { note(r, "asked: request " + (r.id || "")); studio.last = ""; });
     };
     const decide = function (what, rid, letter, extra) {
@@ -580,7 +580,7 @@
       shell.candidates();
       if (mk.on) { markCandidates(); splitShow(); }
     };
-    const admissible = function (c) { return c.slot !== null && c.verdict === "CLEAN" && !c.decided && (!c.record || c.record.rung === "A"); };
+    const admissible = function (c) { return c.slot !== null && c.verdict === "CLEAN" && !c.decided && (!c.record || c.record.rung === "A") && !(c.strict && !c.strict.ok); };
 
     // ---------------------------------------------------------------- STUDIO-2: the worlds, the queue, the toasts
     const go = function (wname, extra) { location.href = "/play.html?world=" + encodeURIComponent(wname) + (extra || ""); };
@@ -1836,14 +1836,23 @@
     // each named shape's verdict: the host's account of where the candidate changed the world against it
     const HELDT = { held: "every change inside the region", adjacent: "nothing beyond the region's boundary; something on it", outside: "something changed outside the region (or the whole world: the air, the play)",
                     missed: "it changed things, none of them in the region", empty: "nothing in the world changed", stale: "the shape is not as marked in this candidate's base: mark it again" };
+    // STRICT-0 (0238): a strict request's check, the host's: PASS when every box the candidate changes lies in a region
+    const strictChip = function (c) {
+      const s = c.strict;
+      if (!s) return null;
+      const why = s.ok ? "every one of its " + s.count + " changed box" + (s.count === 1 ? "" : "es") + " lies inside a named region (receipt " + (s.receipt_sha256 || "").slice(0, 12) + ")"
+        : (s.code || "") + (s.outside_count ? ": " + s.outside_count + " box" + (s.outside_count === 1 ? "" : "es") + " outside every region: " + (s.outside || []).join(", ") : "")
+          + ((s.global || []).length ? ": the whole world changes: " + s.global.join(", ") : "") + (s.error ? ": " + s.error : "");
+      return el("span.hv." + (s.ok ? "held" : "outside"), { title: "strict: " + why + " (the host checks it again when you admit)" }, "strict " + (s.ok ? "PASS" : "FAIL"));
+    };
     const heldChips = function (c) {
       const h = c.held;
-      if (!h || h.error || !(h.accounts || []).length) return null;
-      return el("div.heldrow", {}, h.accounts.map(function (a) {
+      if (!h || h.error || !(h.accounts || []).length) return c.strict ? el("div.heldrow", {}, strictChip(c)) : null;
+      return el("div.heldrow", {}, [strictChip(c)].filter(Boolean).concat(h.accounts.map(function (a) {
         const why = HELDT[a.verdict] + (a.outside_count ? " · " + a.outside_count + " object" + (a.outside_count === 1 ? "" : "s") + " not held: " + (a.outside || []).join(", ") : "") +
           ((a.global || []).length ? " · whole-world: " + a.global.join(", ") : "") + (a.reach_m === null || a.reach_m === undefined ? "" : " · the region reaches " + a.reach_m + " m");
         return el("span.hv." + a.verdict, { title: "#" + a.shape + ": " + why + " (the host's account, exact; a light is held by its fixture's box, not by the light it casts, which is not measured)" }, "#" + a.shape + " " + a.verdict);
-      }));
+      })));
     };
     // the host's order (art/studio.py host_order: verdict, region, play, objects outside, entries, letter; no model words)
     const ordered = function (r) {

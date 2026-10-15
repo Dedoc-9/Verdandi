@@ -285,3 +285,27 @@ The default model (his). The numbers: `tries` (the plan's 3), the health timeout
 patch format and its footprint grammar (B2). Whether SAFE's choice is a window of the stub's or a page served by a
 known generation. Garbage collection beyond its one rule: never the committed generation, the one committed before it,
 or an open transaction's candidate. And whether anything here enters the gate: it does not.
+
+## 13. Region-strict admission (STRICT-0, 0238; the owner's ruling of 2026-10-15)
+
+*"B2 should be Region-strict admission, and 'held' should default to information but be opt-in per request (Strict
+mode) so a request can require only held candidates be admitted."* A request is strict only when it says so, and names
+the shapes that hold it. The footprint of a candidate is every box its change touches, computed by the host from the
+two scenes of its own evaluation (never from the provider's words, never from the page); its support is the union of
+the named shapes' regions, computed in the candidate's base. A strict candidate is admissible only when its footprint is
+not empty, lies inside the support box for box, and changes nothing of the whole world.
+
+| code | when | where |
+|---|---|---|
+| STUDIO-STRICT | a strict request names no shape | the ask, refused |
+| ADMIT-OUTSIDE | a box of the footprint outside every region, or a change of the whole world | the candidate's check (FAIL); the admission, refused and recorded (`admit-refused`); the director, when the check it is given did not pass or brings no receipt |
+| ADMIT-EMPTY | nothing a region could hold changed | as ADMIT-OUTSIDE |
+| ADMIT-STALE | no shape, or a shape not as marked in the base | as ADMIT-OUTSIDE |
+
+Recorded with every strict admission, in the ledger's admit event (`region`): `strict`, `ok`, the shapes' names, the
+sha256 of their records, the count, the **receipt** and the **inverse receipt** (each box as the piece, its object, why it
+is in the footprint, the side or sides it is on, its box as exact decimals, and the regions that hold it), each with its
+sha256. Undo: the exact inverse revision (`inverse`), admitted as an intent of its own; the change it makes is the
+inverse receipt. Not decided here: strict as a gate on every request that names a shape (his escalation path, after the
+self-tests hold on his machine and the latencies are watched), and anything in the workshop, the shell or the verifier:
+a strict admission is an admission of the art.

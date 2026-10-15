@@ -246,6 +246,25 @@ that changes that bay alone. The scripted director answers a shape on a building
 under the shape's middle panelled in the building's own material, the same bay left blank (both held), and that bay
 panelled on every floor (outside: it reaches the floors above and below). An undo is the bay statement taken away.
 
+## Region-strict admission (STRICT-0, 0238)
+
+A request may be **strict** (the drawer's *Strict: held only*, or `"strict": true` with POST `/studio/ask`). It must
+name at least one shape (STUDIO-STRICT otherwise), and the director is told it is strict. Each candidate then carries
+the host's strict check (`art/scene_diff.py` `strict`), computed from the two scenes of its own evaluation like its
+account: its **receipt**, every box it changes (a changed piece is two boxes, as it was and as it is), each with the
+shapes whose regions hold it; its **inverse receipt**, the same for the change back; and its verdict, **PASS** when
+every box lies inside at least one named region and nothing changes the whole world (the air, the tops, spawns or
+targets), else **ADMIT-OUTSIDE** (a box outside every region, or a change of the whole world), **ADMIT-EMPTY** (nothing
+for a region to hold) or **ADMIT-STALE** (a shape not as marked). The whole check is kept beside the intent
+(`<letter>.strict.json`), named by its sha256 on the request's line; the card shows *strict PASS* or *strict FAIL*
+with the boxes outside, and Admit is off for a FAIL. Admitting checks again, from the admission's own evaluation and
+never the card's: a FAIL is refused with its code and the refusal is a line of the request's record
+(`admit-refused`); a PASS is admitted with the check in the ledger's admit event (`region`: the shapes, the sha256 of
+their records, the receipt and the inverse receipt, each with its sha256), and the director refuses a strict admission
+that brings no passed check or no receipt. Undo is the exact inverse revision, as ever; the change it makes is the
+inverse receipt, box for box. A request that is not strict is as it was: its held accounts inform the order and the
+designer and refuse nothing. The queue's requests are not strict.
+
 ## The references (STUDIO-1)
 
 By the owner's ruling of 2026-10-11: *"Bind references to a scene revision and object identity, not just a reusable

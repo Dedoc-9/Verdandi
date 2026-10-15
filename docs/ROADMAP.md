@@ -4699,6 +4699,66 @@ facade on a side against rock is not drawn; the industrial district of the flags
 building in the page or in a browser, his machine. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md,
 art/README.md, art/STUDIO.md, docs/CORE.md (art 22,866 lines), this entry.
 
+**His run of 0236 and 0237, and his ruling on B2 (2026-10-15).** Both applied, the tree c8784d88 as predicted; the
+three references frozen again at the 0237 exporter, his act, no field moved (a79995b); `python art\selftests.py
+--repeat 2`: ART SELFTESTS PASSED, fourteen suites at once, 91.4 s and 94.2 s, the summaries the same in both runs
+(STUDIO APP 13/13 there, 12/12 in the container); the gate 251 rows / 0 fail, rowset 74db4c8d78625af5, as the private
+memo of the gate had predicted; pushed b2ea25c..a79995b. MEASURED on his machine: B0's full check of an art-only patch
+within 15 minutes, twice on the same inputs, logged. Not in his paste: the rung's classification and plants (the
+command given him lacked `--repo .`). His ruling: *"B2 should be Region-strict admission, and 'held' should default to
+information but be opt-in per request (Strict mode) so a request can require only held candidates be admitted"*, with
+a contract (a strict request's declared support; the host's dry run of each candidate and its footprint; the footprint
+within the support or the admission refused, ADMIT-OUTSIDE; the receipt and the inverse receipt in the ledger), six
+tests and a path to making it a gate later. Taken as: off the gate, the art layer's own self-tests, as his ruling says;
+the dry run is the director's evaluation, which compiles the candidate without writing anything, and the footprint is
+HELD-0's exact one; nothing in `workshop/`, `shell/` or `verify/` (his checklist's `workshop/session.rs`,
+`verify/dsc_incremental` and a CI job): a facade's edit is an admission of the art, which never reaches the workshop,
+and Phase I leaves the kernel and its rows as they are; his `DSC-ORDER` is not used, DSC-0 staying the reference he
+froze; `ADMIT-OUTSIDE` as he named it, with `ADMIT-EMPTY` and `ADMIT-STALE` for the other two ways a strict check
+cannot pass.
+
+### STRICT-0 — region-strict admission · Phase I, B2, **built, off the gate** (0238, `art/scene_diff.py`, `art/studio.py`)
+
+**What it is.** A request may be strict (the drawer's *Strict: held only*; `"strict": true` with POST `/studio/ask`);
+it must then name a shape (STUDIO-STRICT), and the director is told. Each of its candidates carries the host's strict
+check, from the two scenes of its own evaluation (`art/scene_diff.py` `strict`): the receipt, every box the change
+touches (a changed piece twice, as it was and as it is), each with the shapes whose regions hold it, its coordinates as
+exact decimals; the inverse receipt, the same for the change back against the same regions; PASS when the footprint is
+not empty, every box lies inside at least one region, and nothing of the whole world changes; else ADMIT-OUTSIDE,
+ADMIT-EMPTY or ADMIT-STALE. The whole check is kept beside the intent (`<letter>.strict.json`), named on the request's
+line; the card shows it and Admit is off for a FAIL. Admitting checks again from the admission's own evaluation: a FAIL
+is refused and recorded (`admit-refused`, with its code); a PASS is admitted with `region` in the ledger's admit event
+(the shapes, their records' sha256, the count, the receipt and the inverse receipt with their sha256), and
+`cmd_admit` itself refuses a strict admission whose check did not pass or that brings no receipt. A request not strict
+is byte for byte as before. docs/STUDIO-CONTRACT.md §13 has the codes and what is recorded.
+
+**Its falsifiers.** `python art/play.py --strict-selftest` (STRICT SELFTEST 11/11, over HTTP with the scripted director,
+in the fixture's world with two buildings side by side on the north lane): a strict request without a shape refused; a
+request not strict without a strict field anywhere; #bay strict: *Panelled bay* and *Blank bay* PASS, *Panelled column*
+FAIL ADMIT-OUTSIDE (6 of its 8 boxes, those of floors 0, 1 and 3, outside), each check kept; the column's admission
+refused, the refusal recorded, the brief and the ledger as they were (B2-SOUNDNESS); *Panelled bay* admitted with its
+receipt (2 boxes: the window as it was, the panel as it is) and inverse receipt in the ledger, the receipt's sha256 the
+same at the evaluation, at the admission and from the files as admitted (B2-AGREEMENT); undone, the brief, the head and
+the scene's bytes as before, and the undo's own footprint exactly the recorded inverse receipt (B2-INVERSE); a provider
+whose one candidate edits the neighbouring building's bay, its scope honest and so CLEAN at the director, refused
+ADMIT-OUTSIDE (B2-PLANTED); the director's own refusal of a failed check and of a check without receipts. Its three
+plants, each caught: the check skipped at admission, a footprint passed when any box (not every box) is held, the
+receipts left out of the ledger. The suite joins `art/selftests.py` (fifteen suites).
+
+**Measured in the container** (2 processors, Python 3.11; the private harness of THROUGHPUT-0 on #bay, ten requests each
+way, the memo on, p50 / p95 in ms, the request not strict against strict): one candidate's evaluation 64 / 544 against
+161 / 614 (the check is two diffs and two footprints, about 0.1 s); the whole request 361 / 1,821 against 659 / 2,183;
+the admission 90 / 150 against 192 / 250 (the check made again); the undo 107 / 171 against 96 / 181; every iteration
+admitted and undone, the brief's bytes as they began. The full check, `python art/selftests.py --repeat 2`, two suites
+at once, with the three references frozen again in a scratch copy as he froze them: fifteen suites, 328.4 s and 352.6
+s, the summaries the same, ART SELFTESTS PASSED.
+
+**Not done.** Strict as a gate on every request that names a shape (his escalation path); the queue's requests are not
+strict; the page's checkbox and chips are drawn by the page from the host's state and were not run in a browser
+(NOT_MEASURED; the host's refusal holds whatever the page does). NOT_MEASURED: his machine. No row, rung, pinned
+source or oracle file changed. Docs: AGENTS.md, art/STUDIO.md, docs/STUDIO-CONTRACT.md, docs/CORE.md (art
+23,202 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

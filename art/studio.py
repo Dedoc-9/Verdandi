@@ -525,6 +525,29 @@ def held_line(item):
             "accounts": [{k: a.get(k) for k in ("shape", "verdict", "objects", "outside_count")} for a in h["accounts"]]}
 
 
+# STRICT-0's plants, each set by its self-test alone (play.strict_selftest) and each caught by one of its rows: the check
+# skipped at admission, a footprint passed when any box (not every box) is held, the receipts left out of the ledger
+STRICT_PLANT = ""
+STRICT_PLANTS = ("strict-not-checked", "strict-any-region", "strict-no-receipt")
+
+
+def strict_check(scene0, scene1, shapes):
+    """art/scene_diff.py's strict check, said and never raised: a check that cannot be made refuses (ADMIT-STALE)."""
+    try:
+        return scene_diff.strict(scene0, scene1, shapes)
+    except (scene_diff.DiffError, studio_marks.ShapeError, KeyError, TypeError, ValueError) as e:
+        return {"format": "VERDANDI-STRICT", "version": "0", "ok": False, "code": "ADMIT-STALE", "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
+
+
+def strict_line(rep, sha):
+    """STRICT-0 (0238): what the request's record line and the page keep of a candidate's strict check; the whole check,
+    with its receipt and inverse receipt, is the request's <letter>.strict.json, named by its sha256."""
+    if "error" in rep:
+        return {"ok": False, "code": rep["code"], "error": rep["error"][:200], "sha256": sha}
+    return {"ok": rep["ok"], "code": rep["code"], "count": rep["count"], "outside": rep["outside"], "outside_count": rep["outside_count"],
+            "global": rep["global"], "stale": rep["stale"], "receipt_sha256": rep["receipt_sha256"], "sha256": sha}
+
+
 def host_order(items):
     """COMPARE-0 (0235): the candidates in the host's order, by host facts alone and lexicographically, never a weighted
     sum: the director's verdict (CLEAN, then LEAKAGE, then the rest); the region (the worst of its shapes' verdicts:
@@ -633,8 +656,10 @@ class Gateway:
                 req["elapsed_ms"] = int(((r["ended"] or time.monotonic()) - r["started"]) * 1000)
                 req["candidates"] = [dict({k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")}, compared=c.get("compared", ""),
                                           record=c.get("record"), still={k: c["still"][k] for k in ("sha256", "detectors", "flags")} if c.get("still") else None,
-                                          held={k: v for k, v in c["held"].items() if k != "boxes"} if c.get("held") else None)
+                                          held={k: v for k, v in c["held"].items() if k != "boxes"} if c.get("held") else None,
+                                          strict=c.get("strict"))
                                      for c in r["candidates"]]
+                req["strict"] = bool(r.get("strict"))
                 req["order"] = r.get("order", [])
             last = dict(self.last)
         return {"provider": prov, "request": req, "last": last, "refs": self.refs()}
@@ -899,11 +924,13 @@ class Gateway:
                 "materials": list(slot.get("materials_changed") or [])}
 
     # ------------------------------------------------------------------ a request
-    def ask(self, prompt, piece=None, camera=None, refs=None, cfg=None):
+    def ask(self, prompt, piece=None, camera=None, refs=None, cfg=None, strict=False):
         """Start a request; it cancels the one before it. Returns the request's id, or raises StudioError at once
         (no provider, an empty prompt, an unknown piece, a reference that names nothing). `piece`, if given, is selected
         first as the target (E does it in the page). STUDIO-2, for the queue: `refs` (target tag, [pin tags]) are the
-        references the task was queued with, in place of the page's present ones; `cfg` the provider it was queued with."""
+        references the task was queued with, in place of the page's present ones; `cfg` the provider it was queued with.
+        STRICT-0 (0238): `strict` (True only) admits a candidate only when every box it changes lies within the named
+        shapes' regions; a strict request names at least one shape."""
         cfg = cfg or self.cfg
         if cfg is None:
             raise StudioError("STUDIO-NO-PROVIDER", "no director is configured: start play.py with --director CONFIG.json (art/STUDIO.md)")
@@ -931,6 +958,9 @@ class Gateway:
         refs, rels, mentions, O = self.references(out, head, prompt, refs)
         S = out["scene"]
         shapes = self.shapes_of(prompt, out, O)
+        strict = strict is True
+        if strict and not shapes:
+            raise StudioError("STUDIO-STRICT", "a strict request is held to the regions of the shapes it names (#name), and this one names none")
         store = getattr(self.play, "shapes", lambda: None)()
         shape_recs = store.records([x["name"] for x in shapes]) if (shapes and store is not None) else []
         target = refs[0] if refs and refs[0]["role"] == "target" else None
@@ -955,11 +985,13 @@ class Gateway:
                        "respond": {"format": RESPONSE, "version": VERSION, "id": rid, "max_candidates": LIMITS["candidates"], "schema": SCHEMA}}
             if shapes:
                 request["shapes"] = shapes
+            if strict:
+                request["strict"] = True
             self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "", "shapes": [s["name"] for s in shapes],
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in refs},
                         "selection": target["address"] if target else None,
                         "head": head, "provider": {"model": cfg["model"]}, "candidates": [], "started": time.monotonic(),
-                        "ended": None, "base": base, "objects": O, "cfg": cfg, "shape_recs": shape_recs}
+                        "ended": None, "base": base, "objects": O, "cfg": cfg, "shape_recs": shape_recs, "strict": strict}
             self.cancel = threading.Event()
             req, cancel = self.req, self.cancel
         self.play.publish([])
@@ -1169,7 +1201,7 @@ class Gateway:
             if cancel.is_set():
                 break
             slot = self.play.candidate_slot(ws, D.canon.load_intent(raw_intent), "studio %s %s: %s" % (rid, letter, item["title"]),
-                                            shapes=req.get("shape_recs", ()))
+                                            shapes=req.get("shape_recs", ()), strict=req.get("strict", False))
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
                          "head": slot.get("checked_against", ""), "record": slot.get("record"), "held": slot.get("held"),
                          "touches": self.touches(slot, {t: r["piece"] for t, r in req["references"].items()}, req["objects"]) if "realized" in slot else None})
@@ -1178,12 +1210,19 @@ class Gateway:
                 hb = (json.dumps(item["held"], sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")
                 self._record(rid, letter + ".held.json", hb)
                 item["held_sha256"] = sha256(hb)
+            if slot.get("strict") is not None:
+                # STRICT-0: the whole check (its receipt and inverse receipt) kept beside the intent; the line names it
+                sb = (json.dumps(slot["strict"], sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")
+                self._record(rid, letter + ".strict.json", sb)
+                item["strict"] = strict_line(slot["strict"], sha256(sb))
+            elif req.get("strict"):
+                item["strict"] = {"ok": False, "code": "ADMIT-STALE", "detail": "the candidate was not drawn, so nothing of it can be held"}
             made.append((item, slot if slot["ok"] else None))
         order = host_order([i for i, _s in made])
         entry["order"] = order
         entry["candidates"] = [{"letter": i["letter"], "title": i["title"], "verdict": i["verdict"], "codes": i["codes"],
                                 "intent_sha256": sha256(i["intent"]) if i["intent"] else "", "touches": i["touches"],
-                                "held": held_line(i)} for i, _s in made]
+                                "held": held_line(i), **({"strict": i["strict"]} if "strict" in i else {})} for i, _s in made]
         with self.lock:
             if req["state"] != "running":
                 entry.update({"outcome": req["code"] or "STUDIO-DISCARDED", "detail": "the request was %s while its candidates compiled" % req["state"]})
@@ -1264,18 +1303,44 @@ class Gateway:
             raise StudioError("STUDIO-STALE", "the head moved since candidate %s was drawn (%s, now %s): ask again" % (letter, c["head"][:12], verdict["checked_against"][:12]))
         if verdict["verdict"] != "CLEAN":
             raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s is %s (%s); only a CLEAN candidate is admitted here" % (letter, verdict["verdict"], ",".join(verdict["codes"])))
+        region = None
+        if r.get("strict"):
+            # STRICT-0 (0238): checked again here, from this admission's own evaluation (never the card's), against the
+            # shapes as the request kept them; refused, and the refusal recorded with its reason, unless every box the
+            # candidate changes lies within their regions
+            rep = strict_check(_o0["scene"], _o1["scene"], r.get("shape_recs", ())) if _o0 is not None and _o1 is not None else \
+                {"ok": False, "code": "ADMIT-STALE", "error": "the candidate did not export"}
+            if STRICT_PLANT == "strict-any-region" and rep.get("count"):
+                rep = dict(rep, ok=any(x["inside"] for x in rep["receipt"]), code="")
+            if STRICT_PLANT == "strict-not-checked":
+                rep = dict(rep, ok=True, code="")
+            if not rep["ok"]:
+                self._log({"id": rid, "at": now(), "decision": "admit-refused", "candidate": letter, "code": rep["code"],
+                           "strict": strict_line(rep, "")})
+                raise StudioError(rep["code"], "candidate %s is not held by the request's regions (strict): %s" % (letter, (
+                    "%d of its %d boxes outside every region: %s" % (rep["outside_count"], rep["count"], ", ".join(rep["outside"][:6])) if rep.get("outside_count")
+                    else "it changes the whole world: " + ", ".join(rep["global"][:6]) if rep.get("global")
+                    else rep.get("error") or ("its shapes are not as marked: " + ", ".join("#" + n for n in rep.get("stale", []))) if rep["code"] == "ADMIT-STALE"
+                    else "it changes nothing a region could hold")))
+            region = {"strict": True, "ok": rep["ok"], "shapes": rep["shapes"],
+                      "support_sha256": sha256(json.dumps(r.get("shape_recs", []), sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")),
+                      "count": str(rep["count"]), "receipt": rep["receipt"], "receipt_sha256": rep["receipt_sha256"],
+                      "inverse_receipt": rep["inverse_receipt"], "inverse_receipt_sha256": rep["inverse_receipt_sha256"]}
+            if STRICT_PLANT == "strict-no-receipt":
+                region = {k: v for k, v in region.items() if k not in ("receipt", "inverse_receipt")}
         if st["flags"] and not despite:
             raise StudioError("STUDIO-STILL-FLAGGED", "candidate %s's still: %s. A detector proves nothing: admit despite it, which the ledger "
                                                       "records, or reject the candidate" % (letter, "; ".join(st["flags"])))
         ev = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(c["intent"], verdict, after, timings, rec))
         a = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note="request %s, candidate %s" % (rid, letter),
-                  still=png, despite=bool(despite))
+                  still=png, despite=bool(despite), region=region)
         with self.lock:
             c["decided"] = "admitted"
             comparison = self._compared(r, letter)
             self.last = {"what": "admitted", "request": rid, "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head": a["head_after"]}
-        self._log({"id": rid, "at": now(), "decision": "admit", "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head_after": a["head_after"],
-                   "still_sha256": still, "despite_detectors": bool(st["flags"]), "comparison": comparison})
+        self._log(dict({"id": rid, "at": now(), "decision": "admit", "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head_after": a["head_after"],
+                        "still_sha256": still, "despite_detectors": bool(st["flags"]), "comparison": comparison},
+                       **({"strict": {k: region[k] for k in ("count", "receipt_sha256", "inverse_receipt_sha256", "support_sha256")}} if region else {})))
         return self.last
 
     def _compared(self, r, chosen):

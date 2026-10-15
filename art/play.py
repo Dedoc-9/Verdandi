@@ -220,10 +220,10 @@ def held_report(scene0, scene1, shapes=()):
     return r
 
 
-def candidate_slot(ws, it, label, source="studio", shapes=()):
+def candidate_slot(ws, it, label, source="studio", shapes=(), strict=False):
     """An intent evaluated by the director at the current head: a source, served unless the director refuses it.
     HELD-0: `shapes` (kept shape records, VERDANDI-SHAPES 0) are the regions the request names; the slot carries the
-    candidate's report against them ("held")."""
+    candidate's report against them ("held"). STRICT-0: for a strict request, also its strict check ("strict")."""
     D = director()
     got = {}
 
@@ -246,6 +246,9 @@ def candidate_slot(ws, it, label, source="studio", shapes=()):
             extra[k] = list(verdict[k])
     if out1 is not None and out0 is not None:
         extra["held"] = held_report(out0["scene"], out1["scene"], shapes)
+        if strict:
+            import studio
+            extra["strict"] = studio.strict_check(out0["scene"], out1["scene"], shapes)
     if verdict["verdict"] == "REFUSED" or out1 is None:
         why = verdict.get("detail") or ""
         why = why if why.startswith(tuple(verdict["codes"])) and why else "; ".join(verdict["codes"]) + (": " + why if why else "")
@@ -497,8 +500,8 @@ class Host:
     def workspace(self):
         return workspace(self.live.brief, self.live.root)
 
-    def candidate_slot(self, ws, it, label, shapes=()):
-        return candidate_slot(ws, it, label, shapes=shapes)
+    def candidate_slot(self, ws, it, label, shapes=(), strict=False):
+        return candidate_slot(ws, it, label, shapes=shapes, strict=strict)
 
     def publish(self, slots):
         return self.live.publish(slots)
@@ -938,7 +941,7 @@ def studio_post(hub, path, body):
         return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
     try:
         if path == "/studio/ask":
-            return 200, {"ok": True, "id": g.ask(body.get("prompt"), body.get("piece"), body.get("camera"))}
+            return 200, {"ok": True, "id": g.ask(body.get("prompt"), body.get("piece"), body.get("camera"), strict=body.get("strict") is True)}
         if path == "/studio/select":
             return 200, {"ok": True, "refs": g.select(body.get("piece"))}
         if path == "/studio/pin":
@@ -1342,6 +1345,8 @@ def main(argv):
         return boundary_selftest()
     if "--facade-selftest" in argv:
         return facade_selftest()
+    if "--strict-selftest" in argv:
+        return strict_selftest()
     global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
     vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root")
@@ -2886,6 +2891,202 @@ def facade_selftest():
         shutil.rmtree(tmp, ignore_errors=True)
     print("FACADE SELFTEST %d/%d" % (sum(rows), len(rows)))
     return 0 if all(rows) else 1
+
+
+# STRICT-0 (0238): the neighbouring lot (a second building beside FACADE_LINES's), and a provider that edits it
+STRICT_LINES = FACADE_LINES + ("building north-lane concrete 12 18,2 23,2 face panel concrete_dark storey 4",)
+NEIGHBOUR_PROVIDER = (
+    "import sys, json; r = json.load(sys.stdin)\n"
+    "c = {'title': 'Next door', 'rationale': 'the neighbouring lot panelled instead', 'revision': ['+ bay 18,2-23,2:s-b0-f1 window glass_dark'],\n"
+    "     'scope': ['north-lane/building/18,2-23,2:s-b0-f1'], 'preserve': []}\n"
+    "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 'neighbour', 'model': 't'},\n"
+    "                  'candidates': [c], 'outcome': {'kind': 'none', 'unmet': [], 'questions': [], 'reason': '', 'note': ''}}))")
+
+
+def strict_selftest(plant=""):
+    """STRICT-0 (0238): region-strict admission over HTTP, in the fixture's world with two buildings side by side on the
+    north lane (STRICT_LINES) and the scripted director: a strict request must name a shape; a request not strict is as
+    before; a strict one gives each candidate its check and keeps it beside the intent (the bay panelled and the bay
+    blank PASS, the column FAIL, ADMIT-OUTSIDE); the column's admission refused and the refusal recorded; a candidate
+    that edits the neighbouring lot, declared honestly in its scope, refused; the bay panelled admitted with its
+    receipt and inverse receipt in the ledger, the receipt the same at the evaluation, at the admission and from the
+    files as admitted; undone, the head as before and the change back exactly the inverse receipt; the director's own
+    check. With `plant` (art/studio.py STRICT_PLANTS) one defect is set and the rows are returned for the caller to see
+    which fail. Writes only in a scratch tree."""
+    global ROOT
+    import studio
+    rows = []
+
+    def row(name, ok, detail):
+        rows.append((name, bool(ok)))
+        if not plant:
+            print("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+    brief, tmp = "plaza-night", tempfile.mkdtemp(prefix="strict-selftest-")
+    saved_root, saved_plant = ROOT, studio.STRICT_PLANT
+    live = srv = None
+    D = director()
+    try:
+        studio.STRICT_PLANT = plant
+        os.makedirs(os.path.join(tmp, "art", "briefs"))
+        os.makedirs(os.path.join(tmp, "graybox", "maps"))
+        for f in os.listdir(os.path.join(REPO, "graybox", "maps")):
+            if f.endswith(".gbx"):
+                shutil.copy(os.path.join(REPO, "graybox", "maps", f), os.path.join(tmp, "graybox", "maps", f))
+        for f in ("tactical.design", "tactical.layout"):
+            shutil.copy(os.path.join(D.FIXTURE, f), os.path.join(tmp, "graybox", "maps", f))
+        art = os.path.join(tmp, "art", "briefs", brief + ".art")
+        original = open(os.path.join(D.FIXTURE, brief + ".art"), "rb").read().replace(b"\r\n", b"\n") + ("\n".join(STRICT_LINES) + "\n").encode("ascii")
+        open(art, "wb").write(original)
+        ws = D.Workspace(brief, tmp)
+        D.cmd_genesis_quiet(ws)
+        out0, parts0, _c0 = ws.export()
+        head0 = D.canon.head(parts0)
+        mass = next(v for v in out0["scene"]["visuals"] if v["id"] == "building:10,2-17,2")
+        open(os.path.join(tmp, "neighbour.py"), "w").write(NEIGHBOUR_PROVIDER + "\n")
+        neighbour_cfg = os.path.join(tmp, "neighbour.json")
+        open(neighbour_cfg, "w").write(json.dumps({"provider": "cli", "argv": ["{python}", os.path.join(tmp, "neighbour.py")], "model": "neighbour",
+                                                   "timeout_s": 30, "max_output_bytes": 65536}))
+        ROOT = tmp
+        live = Live(brief, art, [], poll=0.15, root=tmp)
+        threading.Thread(target=live.watch, kwargs={"say": lambda s_: None}, daemon=True).start()
+        start_studio(live, os.path.join(HERE, "providers", "scripted.json"), say=lambda s_: None)
+        srv = server(live)
+        base = "http://127.0.0.1:%d" % srv.server_address[1]
+        tok = re.search(r'data-studio="([0-9a-f]+)"', urllib.request.urlopen(base + "/play.html", timeout=30).read().decode("utf-8")).group(1)
+
+        def post(path, raw, ctype="application/json"):
+            rq = urllib.request.Request(base + path, data=raw if isinstance(raw, bytes) else json.dumps(raw).encode("utf-8"), method="POST",
+                                        headers={"Content-Type": ctype, "X-Studio-Token": tok})
+            try:
+                with urllib.request.urlopen(rq, timeout=120) as r:
+                    return r.status, json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                b = e.read()
+                try:
+                    return e.code, json.loads(b)
+                except ValueError:
+                    return e.code, {"raw": b[:80].decode("latin-1")}
+
+        def ask(prompt, strict):
+            c, r = post("/studio/ask", {"prompt": prompt, "strict": strict})
+            st = None
+            for _i in range(1200):
+                st = live.studio.state()["request"]
+                if st and st["id"] == r.get("id") and st["state"] != "running":
+                    break
+                time.sleep(0.1)
+            return c, r, st
+
+        def admit(st, letter):
+            c_p, s_p = post("/studio/still?id=%s&candidate=%s" % (st["id"], letter), D.selftest_still(), "image/png")
+            return post("/studio/admit", {"id": st["id"], "candidate": letter, "still": s_p.get("still", "")})
+
+        def lines():
+            return [json.loads(x) for x in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines() if x.strip()]
+
+        def admits():
+            return [e for e in D.led.read(ws.ledger)[0] if e["kind"] == "admit"]
+        s0 = live.slot(0)
+        shape = {"name": "bay", "operation": "region", "anchor": {"piece": mass["id"], "face": "+z", "box": mass["box"], "scene": s0["sha"], "view": {}},
+                 "vertices": [[6, 3], [8, 3], [8, 6.5], [6, 6.5]], "constraints": {"within": True, "supports": False, "collision": False, "material": "keep"}}
+        post("/studio/shapes/save", {"shape": shape})
+        c1, r1 = post("/studio/ask", {"prompt": "close the bay", "strict": True})
+        row("strict: a strict request names the shapes that hold it", c1 == 409 and r1.get("code") == "STUDIO-STRICT", "%s %s" % (c1, r1.get("code")))
+        c_n, _r, st_n = ask("close #bay", False)
+        rq_n = json.loads(open(os.path.join(tmp, "art", "build", "studio", brief, st_n["id"], "request.json"), "rb").read())
+        row("strict: a request not strict is as it was", c_n == 200 and "strict" not in rq_n and st_n["strict"] is False
+            and all(c.get("strict") is None for c in st_n["candidates"]) and all("strict" not in c for c in lines()[-1].get("candidates", [])),
+            "no strict field in the request, the state's candidates or the record's line")
+        c_s, _r, st = ask("close #bay", True)
+        d_s = os.path.join(tmp, "art", "build", "studio", brief, st["id"])
+        rq_s = json.loads(open(os.path.join(d_s, "request.json"), "rb").read())
+        cands = {c["title"]: c for c in st["candidates"]}
+        sv = {t: ((c.get("strict") or {}).get("ok"), (c.get("strict") or {}).get("code"), (c.get("strict") or {}).get("outside_count")) for t, c in cands.items()}
+        kept = all(os.path.exists(os.path.join(d_s, c["letter"] + ".strict.json")) for c in st["candidates"])
+        line = [x for x in lines() if x.get("id") == st["id"] and x.get("candidates")]
+        whole = json.loads(open(os.path.join(d_s, "C.strict.json"), "rb").read()) if kept else {}
+        row("strict: each candidate's check, kept beside its intent", c_s == 200 and rq_s.get("strict") is True and st["strict"] is True
+            and sv.get("Panelled bay") == (True, "", 0) and sv.get("Blank bay") == (True, "", 0) and sv.get("Panelled column") == (False, "ADMIT-OUTSIDE", 6)
+            and kept and line and all("strict" in c for c in line[-1]["candidates"]) and whole.get("receipt") and whole.get("inverse_receipt")
+            and sorted({x["piece"] for x in whole["receipt"] if not x["inside"]}) == ["building:10,2-17,2:s-b3-f%d" % f for f in (0, 1, 3)],
+            "; ".join("%s %s%s" % (t, "PASS" if v[0] else "FAIL " + str(v[1]), " (%s boxes outside)" % v[2] if v[2] else "") for t, v in sorted(sv.items()))
+            + "; the column's receipt: %d boxes (each piece's box before and after), outside every region those of %s" % (
+                len(whole.get("receipt", [])), sorted({x["piece"].split(":")[-1] for x in whole.get("receipt", []) if not x["inside"]})))
+        letter = {c["title"]: c["letter"] for c in st["candidates"]}
+        n0 = len(admits())
+        c_c, r_c = admit(st, letter.get("Panelled column", "C"))
+        refused = [x for x in lines() if x.get("decision") == "admit-refused" and x.get("id") == st["id"]]
+        row("strict: a candidate outside the regions is refused at admission, and the refusal recorded", c_c == 409 and r_c.get("code") == "ADMIT-OUTSIDE"
+            and len(admits()) == n0 and open(art, "rb").read() == original and refused and refused[-1]["code"] == "ADMIT-OUTSIDE",
+            "%s %s: %s" % (c_c, r_c.get("code"), (r_c.get("message") or "")[:110]))
+        L = letter.get("Panelled bay", "A")
+        card = (cands.get("Panelled bay") or {}).get("strict") or {}
+        c_a, r_a = admit(st, L)
+        ad = admits()[-1] if len(admits()) > n0 else {}
+        reg = ad.get("region") or {}
+        o1, _p1, _c1 = ws.export()
+        t_ = time.perf_counter()
+        files = studio.strict_check(out0["scene"], o1["scene"], live.shapes.records(["bay"]))
+        check_ms = (time.perf_counter() - t_) * 1000
+        row("strict: admitted with its receipt and inverse receipt, the same at evaluation, at admission and from the files", c_a == 200 and reg.get("strict") is True
+            and reg.get("receipt_sha256") == card.get("receipt_sha256") == files.get("receipt_sha256") and reg.get("count") == "2"
+            and [(x["piece"], x["sides"]) for x in reg.get("receipt", [])] in ([("building:10,2-17,2:s-b3-f2", "a"), ("building:10,2-17,2:s-b3-f2", "b")],
+                                                                                 [("building:10,2-17,2:s-b3-f2", "b"), ("building:10,2-17,2:s-b3-f2", "a")])
+            and reg.get("inverse_receipt_sha256") == files.get("inverse_receipt_sha256"),
+            "admit %s; ledger #%s: receipt %s (%s boxes: the window before, the panel after), card %s, from the files %s; inverse %s; the check took %.0f ms" % (
+                c_a, ad.get("seq"), (reg.get("receipt_sha256") or "")[:12], reg.get("count"), (card.get("receipt_sha256") or "")[:12],
+                (files.get("receipt_sha256") or "")[:12], (reg.get("inverse_receipt_sha256") or "")[:12], check_ms))
+        c_u, _ru = post("/studio/undo", {})
+        o2, p2, _c2 = ws.export()
+        back = studio.strict_check(o1["scene"], o2["scene"], live.shapes.records(["bay"]))
+        regs = [("bay", scene_diff.region(live.shapes.records(["bay"])[0], out0["scene"]))]
+        back_rows = scene_diff.receipt_of(scene_diff.footprint(scene_diff.diff(o1["scene"], o2["scene"]), o1["scene"], o2["scene"]), regs)
+        row("strict: undone, the head as before and the change back exactly the inverse receipt", c_u == 200 and open(art, "rb").read() == original
+            and D.canon.head(p2) == head0 and o2["scene_bytes"] == out0["scene_bytes"] and back_rows == reg.get("inverse_receipt"),
+            "undo %s; head %s; the undo's footprint %s the recorded inverse receipt (%d boxes)" % (
+                c_u, D.canon.head(p2)[:12], "is" if back_rows == reg.get("inverse_receipt") else "is NOT", len(back_rows)))
+        start_studio(live, neighbour_cfg, say=lambda s_: None)
+        c_x, _r, st_x = ask("close #bay", True)
+        nx = (st_x.get("candidates") or [{}])[0]
+        n1 = len(admits())
+        c_y, r_y = admit(st_x, nx.get("letter", "A")) if nx else (0, {})
+        row("strict: a candidate that edits the neighbouring lot, its scope honest, is refused", c_x == 200 and nx.get("verdict") == "CLEAN"
+            and (nx.get("strict") or {}).get("ok") is False and c_y == 409 and r_y.get("code") == "ADMIT-OUTSIDE" and len(admits()) == n1
+            and open(art, "rb").read() == original,
+            "the director: %s; strict %s; admit %s %s" % (nx.get("verdict"), (nx.get("strict") or {}).get("code"), c_y, r_y.get("code")))
+        bad = []
+        for region in ({"strict": True, "ok": False, "receipt": [], "inverse_receipt": []}, {"strict": True, "ok": True}):
+            try:
+                D._quiet(D.cmd_admit, ws, "0", region=region)
+                bad.append("admitted")
+            except SystemExit as e:
+                bad.append("refused" if "ADMIT-OUTSIDE" in str(e) else str(e)[:60])
+        row("strict: the director refuses a strict admission whose check failed or that brings no receipt", bad == ["refused", "refused"], ", ".join(bad))
+    except Exception as e:  # noqa: BLE001 — the self-test says what stopped it
+        import traceback
+        if not plant:
+            traceback.print_exc()
+        row("strict: the self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+    finally:
+        ROOT = saved_root
+        studio.STRICT_PLANT = saved_plant
+        if live:
+            live.stopping = True
+            if live.studio:
+                live.studio.shutdown()
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
+    if plant:
+        return rows
+    caught = []
+    for p_ in studio.STRICT_PLANTS:
+        failed = [n for n, ok in strict_selftest(p_) if not ok]
+        caught.append(bool(failed))
+        print("[%s] strict plant %s caught — %s" % ("PASS" if failed else "FAIL", p_, ("by: " + "; ".join(f[8:] for f in failed)) if failed else "NOT CAUGHT"))
+    ok = all(ok for _n, ok in rows) and all(caught)
+    print("STRICT SELFTEST %d/%d" % (sum(ok_ for _n, ok_ in rows) + sum(caught), len(rows) + len(caught)))
+    return 0 if ok else 1
 
 
 def boundary_selftest():

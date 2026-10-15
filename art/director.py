@@ -764,10 +764,14 @@ def cmd_record(ws, seq):
     return r
 
 
-def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note="", still=None, despite=False, inverse_of=""):
+def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note="", still=None, despite=False, inverse_of="", region=None):
     """Admit an evaluation. ADMISSION-0 (0222): its record must be complete and every item it requires present — for
     rung A a still of the candidate (a file, or its bytes), its detectors read here; a flagged one only with despite —
-    or, for an undo, inverse_of naming the admission it is the exact inverse of."""
+    or, for an undo, inverse_of naming the admission it is the exact inverse of. STRICT-0 (0238): `region`, from a
+    strict request (art/studio.py), is refused unless its check passed, and is recorded with the admission: the shapes'
+    sha256, the receipt (every box the change touches, each with the regions that hold it) and the inverse receipt."""
+    if region is not None and region.get("strict") and not (region.get("ok") is True and "receipt" in region and "inverse_receipt" in region):
+        raise SystemExit("REFUSED (ADMIT-OUTSIDE): #%s comes from a strict request whose check did not pass, or brings no receipt" % seq)
     events, _l, _h = led.read(ws.ledger)
     ev = events[int(seq)]
     if ev["kind"] != "evaluate":
@@ -808,7 +812,8 @@ def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note="", still
     a = commit_admission(ws, seq, ev["intent_sha256"], files, {
         "evaluation": seq, "intent_sha256": ev["intent_sha256"], "head_before": head, "head_after": canon.head(parts1),
         "parts_after": parts1, "accepted_leakage": bool(accept_leakage), "inverse": inverse,
-        "design_lines": list(it["layout"]), "evidence": evidence, "observed": {"at": now(), "chooser": chooser, "note": note}}, stills)
+        "design_lines": list(it["layout"]), "evidence": evidence, "observed": {"at": now(), "chooser": chooser, "note": note},
+        **({"region": region} if region is not None else {})}, stills)
     det = evidence["detectors"]
     print("ADMITTED candidate %s (#%s) at head %s -> %s (ledger #%s; %s)" % (
         it["candidate"], seq, head[:12], canon.head(parts1)[:12], a["seq"],
