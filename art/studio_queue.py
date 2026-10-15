@@ -626,8 +626,12 @@ def selftest():
         row("at most two requests at once and never two in one world; the studio busy while work waits, not after",
             most == 2 and per_world == 1 and busy_seen and not busy_after, "at most %d at once, %d in one world; busy while waiting %s, after %s" % (
                 most, per_world, busy_seen, busy_after))
-        c, r = post("/studio/queue/add", {"world": "plaza-copy", "prompt": "one to cancel", "provider": "slow.json"})
+        # the scheduler stopped and gone before the task is added, so that it is still queued when cancelled (added first, it
+        # was started before the stop 1 run in 2 under load: OBSERVED at 0236, "running" where "cancelled" was meant)
         hub.queue.stop()
+        if hub.queue.thread is not None:
+            hub.queue.thread.join(30)
+        c, r = post("/studio/queue/add", {"world": "plaza-copy", "prompt": "one to cancel", "provider": "slow.json"})
         c2, _r = post("/studio/queue/cancel", {"id": r.get("id")})
         c3, _r = post("/studio/queue/requeue", {"id": ids[0]})
         row("a queued task cancelled; a failed one queued again", c2 == 200 and hub.queue._task(r["id"])["status"] == "cancelled" and c3 == 200

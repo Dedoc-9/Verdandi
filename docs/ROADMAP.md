@@ -4566,6 +4566,89 @@ fixture's box: NOT_MEASURED, said in the page); statements that make many object
 GPU. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md, art/README.md, art/STUDIO.md, docs/CORE.md
 (art 22,123 lines), this entry.
 
+**His run of 0235, and the plan he approved (2026-10-15).** Every self-test of the art layer passed on his machine
+(SCENE-DIFF 20 of 20 plants, HELD 8/8, STUDIO 74/74, MARKS 19/19, LIVE 24/24, STUDIO-2 19/19, BOUNDARY 7/7, STUDIO APP
+13/13, ART CHECKS PASSED); the rung D, loosening nothing; the plants 82/82; the gate 251 rows / 0 fail; pushed
+14e980f..b2ea25c. MEASURED on his machine. He approved the plan put to him: Phase I in the order B0 to B5, ending in a
+flagship (a facade edit in an industrial district); D1, the renderer (the WebGL viewer grows; the Unreal importer stays
+an export path), decided only once there are real measurements of renderers; the 48 x 48 kernel and its gate rows
+untouched through Phase I. His acceptance for B0: the full check of an art-only patch within 15 minutes on his host,
+twice on the same inputs, logged, p50 and p95 before and after, the scene's build, each candidate's generation and
+validation, the admission and the whole request timed apart, and a result reused only where candidates cannot
+contaminate each other. For B1: one bay of a facade changed and admitted, its exact receipt in the ledger, the art
+checks passing, its account held, malformed edits and edits outside the region refused, and an admission then its undo
+giving back the head before them byte for byte; *"small and falsifiable"*: no arbitrary meshes, no openings, no general
+geometry framework. His safeguards: *"a memo skip is not a pass"*; a memo of the gate stays outside the authoritative
+verifier until its invalidation is proven, and names the gate's version, command and environment and every file it
+read. For later (B3): the impact panel's deltas (polycount, lights, texture bytes, an estimated frame time marked
+advisory) with their provenance (the producer, the prompt's sha256); a preview in motion as a deterministic camera path
+over a seeded simulation. Taken as follows, and said to him: his "make these gated tests in verify/" and his "no change
+to [...] gate rows in Phase I" cannot both hold, and the second is the plan he approved, so B0's and B1's tests are the
+art layer's own self-tests (`art/selftests.py` runs them all) and verify/ is untouched; and the "Incremental
+Merkle-Assisted Admission" he brought with it (receipts, proofs and signatures in the workshop, the shell and the
+verifier) is declined under his ruling on DSC-0, which measured no gain at 48 x 48: a bay's edit is a change of the art,
+not of the kernel's cells, and the art layer's admission already has its evidence (the ledger's receipt, the request's
+record, the account against the region) and its undo (the exact inverse revision).
+
+### THROUGHPUT-0 — the export memo, and the self-tests in one command · Phase I, B0, **built, off the gate** (0236, `art/director.py`, `art/selftests.py`)
+
+**What it is.** An evaluation exports the head and the candidate, an admission evaluates again, and an undo evaluates
+the inverse and admits it: one request of three candidates and one admission exported the head five times and each
+candidate twice, each about 0.35 s in the container. `Workspace.export` now goes through an exact memo: one result per
+brief, sha256 of the text and maps folder, kept with the sha256 of every file the export opened and every folder it
+listed, recorded while it ran (PEP 578's audit events, in the exporting thread alone), and used again only while each
+of them is byte for byte as it was and each path it tried and did not find is still absent. A result is kept as its
+pickle and every use is given a copy of its own, so that what one caller does to its result reaches no other. Not
+kept: an export that raised, wrote a file, opened something by a descriptor, or ran while a file it read changed (its
+stat before and after); none while a plant of the director is set, or with `VERDANDI_EXPORT_MEMO=0`. What it does not
+see: a branch on whether a file exists that opens nothing; the export has none (VERIFIED by reading `art/dress.py`,
+`graybox/level.py`, `graybox/check.py`'s `source_rows`, `art/check.py`'s `verify` and `art/quality.py`'s
+`check_scene`). `art/selftests.py` (new) runs every self-test of the art layer, thirteen suites, at most a machine's
+processors at once, each in a process of its own (`PYTHONHASHSEED=0`, `PYTHONUTF8=1`), each passing only on its exit
+status and its summary line both; it logs every suite's summary, wall time and output (`art/build/selftests/`), and
+`--repeat 2` fails unless the summaries are the same in both runs. It is not the gate and reads nothing of it.
+
+**What the export reads.** Seven files, MEASURED by the memo's own record over the fixture's world: `art/dress.py`,
+`graybox/level.py`, `graybox/tick_ref.py`, `graybox/web/sim.js`, `art/web/scene_render.js` (QUALITY-0's bounds of the
+native renderer) and, in the maps folder, the map and its layout; no folder listed. The fifth is one a list written by
+hand from the exporter would have missed.
+
+**Its falsifiers.** `python art/director.py memotest` (and the same rows at the end of `selftest`): nine rows against
+the export computed with the memo off: a result used again equals the export; a caller that clears a copy's visuals and
+changes its head and checks changes nothing the next caller is given; every file above recorded; another text is
+another result; a byte appended to the map is a miss; an export that writes is not kept; a file another thread rewrites
+while the export reads it is not kept; a path not found must stay absent; off under a plant. Its four plants, each
+caught: the kept object handed out itself (by the copy row), the inputs never checked (by the map and the absent path),
+the text left out of the key (by another text), a writing export kept (by its row). And one repair the full check asked for: `art/studio_queue.py`'s self-test added a task and then stopped the scheduler, which under load had started it first (OBSERVED once in two runs, the task *running* where *cancelled* was meant); the scheduler is now stopped and gone before the task is added.
+
+**Measured in the container** (2 processors, Python 3.11; a private harness, not committed: HELD-0's canopy loop over
+HTTP with the scripted director, ten requests, each asked on #whole, its three candidates evaluated, the first admitted
+with a still and then undone; the memo off, `VERDANDI_EXPORT_MEMO=0`, which is 0235's export, against on; p50 / p95 in
+ms; at 0237's tree, which changes none of this loop's code):
+
+| stage | memo off | memo on |
+|---|---|---|
+| the head's scene build (the page's, `brief_slot`) | 411 / 613 | 402 / 511 |
+| the provider (the candidates' generation) | 40 / 60 | 40 / 47 |
+| one candidate's evaluation (its validation, its map, its account) | 884 / 1,032 | 68 / 413 |
+| the whole request (three candidates) | 3,187 / 3,731 | 350 / 1,362 |
+| the admission | 1,873 / 2,640 | 76 / 142 |
+| the undo | 2,454 / 3,243 | 83 / 174 |
+
+The memo's own count: 177 hits, 4 misses. What this shows and what it does not: the ten requests repeat one prompt at
+one head, so after the first every export hits; the first request, whose head and three candidates were new, is the
+p95 (1,362 ms against 3,187 at p50 with the memo off), and a candidate never seen misses once, on its own export (413
+ms at p95). An admission and an undo always hit, since the evaluation before each exported the same texts. The page's
+build of the head does not go through the memo and did not move. Every one of the twenty iterations ended with the
+brief's bytes as they began.
+
+**Not done.** The page's own build of the head (`play.py`'s `compile_scene`, the scene the page plays after every
+change) does not go through the memo: it reads the brief's file and keeps the checks' details, and is a second change.
+A memo of the gate is kept privately, outside the repository and the verifier ("a memo skip is not a pass"); the gate
+is his to run. NOT_MEASURED: his machine. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md,
+art/README.md, docs/CORE.md (art 22,497 lines), this entry.
+
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

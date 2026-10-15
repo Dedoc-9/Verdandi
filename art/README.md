@@ -184,7 +184,17 @@ python art/director.py verify plaza-night                # the ledger replayed t
 python art/director.py selftest                          # the vectors and the whole lifecycle, in a scratch copy
 python art/director.py crashtest                         # an admission killed at each of its writes, then recovered
 python art/director.py racetest                          # writers at once: the content lock, the fence, recovery that waits
+python art/director.py memotest                          # THROUGHPUT-0: the export memo against the export itself, and its four plants
+python art/selftests.py --repeat 2                       # THROUGHPUT-0: every self-test of the art layer, in parallel, twice, logged
 ```
+
+- **One export is kept per text, brief and maps folder (THROUGHPUT-0, 0236).** An evaluation exports the head and the candidate,
+  and an admission or an undo evaluates again; `Workspace.export` keeps each result with the sha256 of every file the
+  export opened and every folder it listed, recorded as it ran (PEP 578's audit events, in the exporting thread), and
+  uses it again only while every one of them is byte for byte as it was. Each use gets a copy of its own (a pickle), so
+  one candidate's changes to its result reach no other. Not kept: an export that raised, wrote, or ran while a file it
+  read changed; nothing while a plant of the director is set, or with `VERDANDI_EXPORT_MEMO=0`. It does not see a
+  branch on a file's existence that opens nothing; the export has none.
 
 - **Each candidate is checked against the head it meets.** It gets one of three verdicts: CLEAN; LEAKAGE (it touches
   more than it declared, including everything that shares a material it changed); or REFUSED (a reserved or

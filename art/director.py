@@ -19,6 +19,7 @@
 #   python art/director.py verify   BRIEF                      the ledger's chain, replayed to the files as they stand
 #   python art/director.py vectors                             the reference against the conformance vectors
 #   python art/director.py selftest                            the vectors, and the whole lifecycle in a scratch copy
+#   python art/director.py memotest                            THROUGHPUT-0 (0236): the export memo against the export itself, and its plants
 #   python art/director.py crashtest                           an admission killed at each of its writes, then recovered
 #   python art/director.py racetest                            writers at once: the content lock, the fence, recovery that waits
 #   (every command but vectors takes --root DIR: the tree whose brief and ledger it uses; the repository by default)
@@ -79,6 +80,137 @@ EXPORT_LOCK = threading.RLock()      # every swap of level.MAPS in this process 
 NO_LOCK = __import__("contextlib").nullcontext()       # the race court's plant "no-export-lock" only
 
 
+# THROUGHPUT-0 (0236): an exact memo of Workspace.export. An export is a function of its text, its brief's name, the maps folder it
+# is pointed at, and the files it reads; the memo keeps one result per (brief, text, maps folder) with the sha256 of
+# every file the export opened and of every folder it listed, recorded as it ran (PEP 578's audit events "open",
+# "os.listdir" and "os.scandir", in the exporting thread only), and a result is used again only when every one of them
+# is byte for byte as it was; a path it tried and did not find must still be absent. A result is never shared: it is
+# kept as its pickle and every use takes a copy of its own, so that a caller that changes what it was given changes
+# nothing another sees. Not kept: an export that raised, wrote a file, opened something not named by a path, or ran
+# while a file it read changed (its stat before and after); none while a plant of durable is set, or with
+# VERDANDI_EXPORT_MEMO=0. What it does not see: a branch on whether a file exists that opens nothing (os.path.exists
+# and the like raise no audit event; the export reads none, VERIFIED by reading dress.py, graybox/level.py, graybox/check.py's
+# source_rows, check.verify and quality.check_scene).
+import collections  # noqa: E402
+import pickle  # noqa: E402
+MEMO = {"on": os.environ.get("VERDANDI_EXPORT_MEMO", "1") != "0", "max": 24, "plant": ""}
+MEMO_STATS = collections.Counter()
+_memo = collections.OrderedDict()     # key -> (inputs {path: sha256}, listings {path: sha256}, absent [path], blob)
+_reading = threading.local()
+_HOOKED = []
+
+
+def _audit(event, args):
+    rec = getattr(_reading, "rec", None)
+    if rec is None or event not in ("open", "os.listdir", "os.scandir"):
+        return
+    path = args[0]
+    if event != "open":
+        if path is None:
+            path = "."
+        if not isinstance(path, (str, bytes)):
+            rec["bad"] = "a folder listed by descriptor"
+            return
+        rec["dirs"].add(os.path.realpath(os.fsdecode(path)))
+        return
+    if not isinstance(path, (str, bytes)):
+        rec["bad"] = "a file opened by descriptor"
+        return
+    mode, flags = args[1], args[2] if len(args) > 2 else 0
+    writes = (isinstance(mode, str) and any(c in mode for c in "wax+")) or (mode is None and flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND))
+    p = os.path.realpath(os.fsdecode(path))
+    if writes:
+        rec["bad"] = "it wrote %s" % p
+    elif p not in rec["files"]:
+        try:
+            st = os.stat(p)
+            rec["files"][p] = (st.st_mtime_ns, st.st_size, st.st_ino)
+        except OSError:
+            rec["files"][p] = None
+
+
+def _digest(p):
+    try:
+        with open(p, "rb") as fh:
+            return hashlib.sha256(fh.read()).hexdigest()
+    except OSError:
+        return None
+
+
+def _listing(p):
+    try:
+        return hashlib.sha256("\n".join(sorted(os.listdir(p))).encode("utf-8", "surrogateescape")).hexdigest()
+    except OSError:
+        return None
+
+
+def _still(entry):
+    """Is every input of a kept result as it was?"""
+    inputs, dirs, absent = entry[:3]
+    if MEMO["plant"] == "memo-no-validate":
+        return True
+    return all(_digest(p) == h for p, h in inputs.items()) and all(_listing(p) == h for p, h in dirs.items()) \
+        and not any(os.path.exists(p) for p in absent)
+
+
+def memo_call(key, compute):
+    """compute() once per key while its inputs stand: the result, a copy of its own on every call."""
+    if not MEMO["on"] or durable.PLANT:
+        MEMO_STATS["off"] += 1
+        return compute()
+    with EXPORT_LOCK:
+        entry = _memo.get(key)
+        if entry is not None:
+            if _still(entry):
+                _memo.move_to_end(key)
+                MEMO_STATS["hit"] += 1
+                return pickle.loads(entry[3]) if MEMO["plant"] != "memo-shares" else entry[4]
+            del _memo[key]
+            MEMO_STATS["stale"] += 1
+        if not _HOOKED:
+            sys.addaudithook(_audit)
+            _HOOKED.append(True)
+        rec = {"files": {}, "dirs": set(), "bad": ""}
+        saved, _reading.rec = getattr(_reading, "rec", None), rec
+        try:
+            result = compute()
+        finally:
+            _reading.rec = saved
+        MEMO_STATS["miss"] += 1
+        if rec["bad"] and MEMO["plant"] != "memo-keeps-writes":
+            MEMO_STATS["not kept"] += 1
+            return result
+        inputs, absent = {}, []
+        for p, st in sorted(rec["files"].items()):
+            if st is None:
+                if os.path.exists(p):
+                    MEMO_STATS["not kept"] += 1     # absent when it was opened, present now: it changed while the export ran
+                    return result
+                absent.append(p)
+                continue
+            try:
+                now_ = os.stat(p)
+            except OSError:
+                MEMO_STATS["not kept"] += 1
+                return result
+            if (now_.st_mtime_ns, now_.st_size, now_.st_ino) != st:
+                MEMO_STATS["not kept"] += 1         # written while the export read it: the bytes it read are not known
+                return result
+            inputs[p] = _digest(p)
+        dirs = {d: _listing(d) for d in sorted(rec["dirs"])}
+        blob = pickle.dumps(result, protocol=pickle.HIGHEST_PROTOCOL)
+        _memo[key] = (inputs, dirs, absent, blob) + ((result,) if MEMO["plant"] == "memo-shares" else ())
+        while len(_memo) > MEMO["max"]:
+            _memo.popitem(last=False)
+        return pickle.loads(blob) if MEMO["plant"] != "memo-shares" else result
+
+
+def memo_clear():
+    with EXPORT_LOCK:
+        _memo.clear()
+    MEMO_STATS.clear()
+
+
 def now():
     return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -103,9 +235,14 @@ class Workspace:
         return open(self.art, "rb").read().replace(b"\r\n", b"\n").decode("utf-8")
 
     def export(self, text=None, maps=None):
-        """The scene of an art text over a maps folder, with the parts of its head and its checks' results."""
+        """The scene of an art text over a maps folder, with the parts of its head and its checks' results. THROUGHPUT-0 (0236):
+        through the memo above, which gives the same result as computing it again, or computes it again."""
         text = self.text() if text is None else text
         maps = maps or self.maps
+        key = (self.brief, canon.sha256(text.encode("utf-8")), os.path.realpath(maps)) if MEMO["plant"] != "memo-key-text" else (self.brief, os.path.realpath(maps))
+        return memo_call(key, lambda: self._export(text, maps))
+
+    def _export(self, text, maps):
         A = dress.parse(text, self.brief + ".art")
         A["name"], A["sha256"] = self.brief, canon.sha256(text.encode("utf-8"))
         with EXPORT_LOCK if durable.PLANT != "no-export-lock" else NO_LOCK:   # level.MAPS is one global
@@ -1291,12 +1428,103 @@ def cmd_selftest():
             durable.PLANT = os.environ.get("VERDANDI_PLANT", "")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    results += memo_rows()
     failed = 0
     for name, ok, d in results:
         print("%s %s%s" % ("PASS" if ok else "FAIL", name, (" — " + d) if d else ""))
         failed += 0 if ok else 1
     print("DIRECTOR SELFTEST %s" % ("PASSED" if not failed else "FAILED (%d)" % failed))
     return 0 if not failed else 1
+
+
+MEMO_PLANTS = ("memo-shares", "memo-no-validate", "memo-key-text", "memo-keeps-writes")
+
+
+def memo_rows(plant=""):
+    """THROUGHPUT-0 (0236): the export memo held to the export itself. Each row compares what the memo gives with the export
+    computed with the memo off (the oracle), in a scratch copy of the fixture's world; then each of the memo's four
+    plants is set in turn and must fail a row. [(name, ok, detail)]."""
+    tmp = tempfile.mkdtemp(prefix="memo-selftest-")
+    saved, rows = dict(MEMO), []
+    try:
+        ws = selftest_tree(tmp)
+        oracle = lambda text=None: (MEMO.update(on=False), ws.export(text), MEMO.update(on=True))[1]
+        MEMO.update(on=True, plant=plant)
+        memo_clear()
+        ref = oracle()
+        r1, r2 = ws.export(), ws.export()
+        rows.append(("memo: a result used again is the result computed again", r1 == ref and r2 == ref and MEMO_STATS["hit"] == 1 and MEMO_STATS["miss"] == 1,
+                     "one miss, then one hit equal to the export computed with the memo off (%s)" % dict(MEMO_STATS)))
+        r2[0]["scene"]["visuals"].clear()
+        r2[1]["art_sha256"] = "0" * 64
+        r2[2].append({"name": "planted", "ok": False})
+        r3 = ws.export()
+        rows.append(("memo: a caller that changes what it was given changes nothing another is given", r3 == ref,
+                     "the scene's visuals cleared, the head's art sha256 and the checks changed in one copy; the next is the oracle's"))
+        entry = next(iter(_memo.values()))
+        want = [os.path.join(HERE, "dress.py"), os.path.join(REPO, "graybox", "level.py"), os.path.join(REPO, "graybox", "web", "sim.js"),
+                os.path.join(REPO, "graybox", "tick_ref.py"), os.path.join(ws.maps, "tactical.gbx"), os.path.join(ws.maps, "tactical.layout")]
+        lack = [os.path.relpath(w_, tmp if w_.startswith(tmp) else REPO) for w_ in want if os.path.realpath(w_) not in entry[0]]
+        rows.append(("memo: every file the export read is recorded", not lack,
+                     "%d files, %d listings, %d absent; the exporter, the converter, sim.js, tick_ref.py, the map and its layout among them%s"
+                     % (len(entry[0]), len(entry[1]), len(entry[2]), (": MISSING " + ", ".join(lack)) if lack else "")))
+        text2 = ws.text() + "material memo_test 1,2,3 0.5 0.0\n"
+        r4 = ws.export(text2)
+        rows.append(("memo: another text is another result", r4 == oracle(text2) and r4 != ref, "a material appended: the oracle's result, not the base's"))
+        gbx = os.path.join(ws.maps, "tactical.gbx")
+        with open(gbx, "ab") as fh:
+            fh.write(b"# a byte the memo must see\n")
+        r5, ref5 = ws.export(), oracle()
+        rows.append(("memo: a byte changed in the maps folder is a miss", r5 == ref5 and r5 != ref and MEMO_STATS["stale"] >= 1,
+                     "a comment appended to the map: the map's sha256 in the world moves, and the memo computes again (%s)" % dict(MEMO_STATS)))
+        f = os.path.join(tmp, "written.txt")
+        n0 = MEMO_STATS["not kept"]
+        memo_call(("memo-write",), lambda: open(f, "w").write("x"))
+        memo_call(("memo-write",), lambda: open(f, "w").write("x"))
+        rows.append(("memo: an export that writes a file is not kept", MEMO_STATS["not kept"] - n0 == 2, "twice, computed twice"))
+        g = os.path.join(tmp, "read.txt")
+        open(g, "w").write("before")
+
+        def read_then_changed():
+            v = open(g).read()
+            t = threading.Thread(target=lambda: (time.sleep(0.01), open(g, "w").write("after, and longer")))
+            t.start()
+            t.join()
+            return v
+        n0 = MEMO_STATS["not kept"]
+        memo_call(("memo-race",), read_then_changed)
+        again = memo_call(("memo-race",), read_then_changed)
+        rows.append(("memo: a file written while the export read it is not kept", MEMO_STATS["not kept"] - n0 == 2 and again == "after, and longer",
+                     "another thread wrote it during the computation: its stat moved, so the result was not kept"))
+        gone = os.path.join(tmp, "absent.txt")
+
+        def try_read():
+            try:
+                return open(gone).read()
+            except OSError:
+                return "absent"
+        a1 = memo_call(("memo-absent",), try_read)
+        open(gone, "w").write("present")
+        a2 = memo_call(("memo-absent",), try_read)
+        rows.append(("memo: a path the export did not find must stay absent", a1 == "absent" and a2 == "present", "%s, then %s" % (a1, a2)))
+        durable.PLANT, n0 = "no-fence", MEMO_STATS["off"]
+        try:
+            ws.export()
+            ws.export()
+        finally:
+            durable.PLANT = os.environ.get("VERDANDI_PLANT", "")
+        rows.append(("memo: off while a plant of the director is set", MEMO_STATS["off"] - n0 == 2, "two exports under the plant no-fence, both computed"))
+    finally:
+        MEMO.clear()
+        MEMO.update(saved)
+        memo_clear()
+        shutil.rmtree(tmp, ignore_errors=True)
+    if plant:
+        return rows
+    for p_ in MEMO_PLANTS:
+        caught = [n for n, ok, _d in memo_rows(p_) if not ok]
+        rows.append(("memo plant %s caught" % p_, bool(caught), ("by: " + "; ".join(c[6:] for c in caught)) if caught else "NOT CAUGHT"))
+    return rows
 
 
 def cmd_crashtest():
@@ -1786,6 +2014,13 @@ def main(argv):
             return cmd_crashtest()
         if cmd == "racetest":
             return cmd_racetest()
+        if cmd == "memotest":
+            rows = memo_rows()
+            for name, ok, d in rows:
+                print("%s %s%s" % ("PASS" if ok else "FAIL", name, (" — " + d) if d else ""))
+            bad = sum(1 for _n, ok, _d in rows if not ok)
+            print("MEMO SELFTEST %s" % ("PASSED" if not bad else "FAILED (%d)" % bad))
+            return 0 if not bad else 1
         ws = Workspace(pos[0], os.path.abspath(opt(args, "--root", REPO)))
         say_recovered(ws)
         if cmd == "genesis":
