@@ -852,7 +852,7 @@ def seed_worlds(worlds_dir, source=None, say=print):
 STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin",
                 "/studio/alive", "/studio/shutdown", "/studio/worlds/duplicate",
                 "/studio/queue/add", "/studio/queue/cancel", "/studio/queue/requeue", "/studio/queue/review", "/studio/queue/dismiss",
-                "/studio/build", "/studio/shapes/save", "/studio/shapes/delete", "/studio/none")
+                "/studio/build", "/studio/shapes/save", "/studio/shapes/delete", "/studio/none", "/studio/preview", "/studio/preview/finish")
 # B1 (docs/STUDIO-APP.md; the supervisor's view of this server): GET /healthz says the server is up and which code it
 # runs; POST /studio/alive is the page's heartbeat; POST /studio/shutdown stops the server as Ctrl+C does. Exit codes:
 # 0 stopped, 1 a source not served, 2 usage, 70 could not serve (the port), 75 refused to start (recovery refused).
@@ -881,6 +881,19 @@ def studio_still(hub, world, rid, letter, png):
         return 409, {"ok": False, "code": e.code, "message": e.detail}
     except OSError as e:
         return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
+
+
+def studio_preview_still(hub, world, rid, letter, side, k, png):
+    """PREVIEW-0 (0240): one still of the preview, as the page drew it at a pose of the plan; kept until the report."""
+    import studio
+    try:
+        g = hub.world(world).studio
+        if g is None:
+            return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
+        kk = int(k) if re.fullmatch(r"[0-9]{1,3}", k or "") else -1
+        return 200, dict(g.preview_still(rid, letter, side, kk, png), ok=True)
+    except studio.StudioError as e:
+        return 409, {"ok": False, "code": e.code, "message": e.detail}
 
 
 def internal(hub, path, e):
@@ -963,6 +976,10 @@ def studio_post(hub, path, body):
             return 200, dict(g.reject(body.get("id"), body.get("candidate")), ok=True)
         if path == "/studio/none":
             return 200, dict(g.none(body.get("id")), ok=True)
+        if path == "/studio/preview":
+            return 200, dict(g.preview_plan(body.get("id"), body.get("candidate")), ok=True)
+        if path == "/studio/preview/finish":
+            return 200, dict(g.preview_finish(body.get("id"), body.get("candidate")), ok=True)
         return 200, dict(g.undo(), ok=True)
     except studio.StudioError as e:
         return 409, {"ok": False, "code": e.code, "message": e.detail}
@@ -1216,6 +1233,19 @@ def server(target, port=0):
                 except studio.StudioError as e:
                     return self.send(404, json.dumps({"ok": False, "code": e.code, "message": e.detail}).encode("utf-8"), "application/json")
                 return self.send(200, json.dumps(dict(got, ok=True), sort_keys=True).encode("utf-8"), "application/json")
+            if path in ("/preview.json", "/preview.png"):
+                # PREVIEW-0 (0240): a candidate's preview report, or one of its stills, as kept. Read; nothing written.
+                qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
+                try:
+                    w = hub.world(qq.get("world"))
+                    if w.studio is None:
+                        raise studio.StudioError("STUDIO-NO-PROVIDER", "the studio is not running")
+                    if path == "/preview.png":
+                        return self.send(200, w.studio.preview_png(qq.get("id", ""), qq.get("candidate", ""), qq.get("side", ""), qq.get("k", "")), "image/png")
+                    got = w.studio.preview_report(qq.get("id", ""), qq.get("candidate", ""))
+                except studio.StudioError as e:
+                    return self.send(404, json.dumps({"ok": False, "code": e.code, "message": e.detail}).encode("utf-8"), "application/json")
+                return self.send(200, json.dumps(dict(got, ok=True), sort_keys=True).encode("utf-8"), "application/json")
             if path in ("/object.json", "/validate.json"):
                 qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
                 try:
@@ -1261,6 +1291,20 @@ def server(target, port=0):
                     return self.refuse(403, b"forbidden", 0 if 0 < n <= 64 else 64)
                 hub.page_bye = time.time()
                 return self.send(204, b"", "text/plain")
+            if path == "/studio/preview/still":
+                # PREVIEW-0 (0240): a still of the preview, PNG bytes as the body, with the studio's token
+                if not self.own_host() or self.headers.get("X-Studio-Token") != hub.token:
+                    return self.refuse(403, b"forbidden", STILL_MAX)
+                n = self.length()
+                if not (0 < n <= STILL_MAX) or self.headers.get("Content-Type", "") != "image/png":
+                    return self.refuse(400, b"a still is image/png of at most 32 MiB", STILL_MAX)
+                q = urllib.parse.parse_qs(self.path.partition("?")[2])
+                one = lambda k: (q.get(k) or [""])[0]
+                try:
+                    code, reply = studio_preview_still(hub, one("world") or None, one("id"), one("candidate"), one("side"), one("k"), self.rfile.read(n))
+                except Exception as e:  # noqa: BLE001 — HARDEN-0: the boundary is total
+                    code, reply = internal(hub, path, e)
+                return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
             if path == "/studio/still":
                 # ADMISSION-0 (0222): the still of a candidate as the page drew it, PNG bytes as the body (not JSON), with
                 # the studio's token; its detectors are read here, by the host, never taken from the page
@@ -1356,6 +1400,8 @@ def main(argv):
         return strict_selftest()
     if "--impact-selftest" in argv:
         return impact_selftest()
+    if "--preview-selftest" in argv:
+        return preview_selftest()
     global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
     vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root")
@@ -3255,6 +3301,190 @@ def impact_selftest(plant=""):
         print("[%s] impact plant %s caught — %s" % ("PASS" if failed else "FAIL", p_, ("by: " + "; ".join(f[8:] for f in failed)) if failed else "NOT CAUGHT"))
     ok = all(ok for _n, ok in rows) and all(caught)
     print("IMPACT-STUDIO SELFTEST %d/%d" % (sum(ok_ for _n, ok_ in rows) + sum(caught), len(rows) + len(caught)))
+    return 0 if ok else 1
+
+
+def preview_selftest(plant=""):
+    """PREVIEW-0 (0240): the preview in motion over HTTP, in the fixture's world with FACADE_LINES's building and the
+    scripted director. The plan of a candidate and both sides' stills at each of its poses, the report, the four files
+    beside the intent and the request's line naming them by sha256 (B4-PAIR-STILLS: a bay's dressing leaves the play as
+    it was, every tick's state the same); the same preview again, the same states, archives and report
+    (B4-DETERMINISM); a still drawn again otherwise, UNTRUSTED_IMAGE and the state still verified; another candidate's
+    preview starting with nothing of the last (B4-RESET-ON-CHANGE) and a capture cut short, PREVIEW-INCOMPLETE, never
+    replayed (B4-INCOMPLETE-CAPTURE); another request, another seed (B4-SEED-SENSITIVITY); the head moved, PREVIEW-STALE;
+    the refusals; the retention; the cost (B4-TIMING-BOUNDARY). With `plant` (art/motion.py PLANTS) the rows are returned
+    for the caller to see which fail. Writes only in a scratch tree."""
+    global ROOT
+    import studio
+    import motion
+    import quality
+    rows = []
+
+    def row(name, ok, detail):
+        rows.append((name, bool(ok)))
+        if not plant:
+            print("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+    brief, tmp = "plaza-night", tempfile.mkdtemp(prefix="preview-selftest-")
+    saved_root, saved_plant = ROOT, motion.PLANT
+    live = srv = None
+    D = director()
+    try:
+        motion.PLANT = plant
+        motion._SHARED.clear()
+        ws = D.selftest_tree(tmp)
+        art = os.path.join(tmp, "art", "briefs", brief + ".art")
+        open(art, "ab").write(("\n".join(FACADE_LINES) + "\n").encode("ascii"))
+        mass = next(v for v in ws.export()[0]["scene"]["visuals"] if v["id"] == "building:10,2-17,2")
+        ROOT = tmp
+        live = Live(brief, art, [], poll=0.15, root=tmp)
+        threading.Thread(target=live.watch, kwargs={"say": lambda s_: None}, daemon=True).start()
+        start_studio(live, os.path.join(HERE, "providers", "scripted.json"), say=lambda s_: None)
+        srv = server(live)
+        base = "http://127.0.0.1:%d" % srv.server_address[1]
+        tok = re.search(r'data-studio="([0-9a-f]+)"', urllib.request.urlopen(base + "/play.html", timeout=30).read().decode("utf-8")).group(1)
+
+        def post(path, raw, ctype="application/json", token=True):
+            rq = urllib.request.Request(base + path, data=raw if isinstance(raw, bytes) else json.dumps(raw).encode("utf-8"), method="POST",
+                                        headers=dict({"Content-Type": ctype}, **({"X-Studio-Token": tok} if token else {})))
+            try:
+                with urllib.request.urlopen(rq, timeout=120) as r:
+                    return r.status, json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                body = e.read() or b"{}"
+                return e.code, json.loads(body) if body[:1] == b"{" else {"body": body.decode("utf-8", "replace")}
+
+        def get(path):
+            with urllib.request.urlopen(base + path, timeout=60) as r:
+                return r.read()
+
+        def ask(prompt):
+            c, r = post("/studio/ask", {"prompt": prompt})
+            st = None
+            for _i in range(1200):
+                st = live.studio.state()["request"]
+                if st and st["id"] == r.get("id") and st["state"] != "running":
+                    break
+                time.sleep(0.1)
+            return c, st
+        pic = lambda tint: quality.png_bytes(48, 27, bytes((x * 5 + y * 3 + c * 40 + tint) % 256 for y in range(27) for x in range(48) for c in range(3)))
+
+        def preview(rid, letter, skip=(), other=None):
+            """The page's part: the plan, a still of each side at each pose (but those in `skip`), the report."""
+            t0 = time.perf_counter()
+            c_p, pl = post("/studio/preview", {"id": rid, "candidate": letter})
+            for k in range(len(pl.get("still_ticks", []))):
+                for side in ("base", "candidate"):
+                    if (side, k) not in skip:
+                        png = (other or {}).get((side, k)) or pic(0 if side == "base" else 9)
+                        post("/studio/preview/still?id=%s&candidate=%s&side=%s&k=%d" % (rid, letter, side, k), png, "image/png")
+            c_f, rep = post("/studio/preview/finish", {"id": rid, "candidate": letter})
+            return c_p, pl, c_f, rep, time.perf_counter() - t0
+        s0 = live.slot(0)
+        shape = {"name": "bay", "operation": "region", "anchor": {"piece": mass["id"], "face": "+z", "box": mass["box"], "scene": s0["sha"], "view": {}},
+                 "vertices": [[6, 3], [8, 3], [8, 6.5], [6, 6.5]], "constraints": {"within": True, "supports": False, "collision": False, "material": "keep"}}
+        post("/studio/shapes/save", {"shape": shape})
+        _c, st = ask("close #bay")
+        rid = st["id"]
+        d = os.path.join(tmp, "art", "build", "studio", brief, rid)
+        old = os.path.join(d, "Z.preview.meta.json")
+        open(old, "w").write(json.dumps({"made_at": 0}))
+        open(os.path.join(d, "Z.preview.report.json"), "w").write("{}")
+        c_p, pl, c_f, rep, secs = preview(rid, "A")
+        files = {n: open(os.path.join(d, "A." + n), "rb").read() for n in ("preview.meta.json", "preview.states.tar.gz", "preview.stills.tar.gz", "preview.report.json")
+                 if os.path.exists(os.path.join(d, "A." + n))}
+        stills = sorted(os.listdir(os.path.join(d, "A.stills"))) if os.path.isdir(os.path.join(d, "A.stills")) else []
+        rec = [json.loads(x) for x in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines() if x.strip()]
+        line = [x for x in rec if x.get("id") == rid and x.get("decision") == "preview"]
+        meta = json.loads(files.get("preview.meta.json", b"{}"))
+        keys = ("request", "candidate", "provider", "prompt_sha256", "camera_path_id", "viewport", "framerate", "tick_count", "seed", "made_at", "semantics")
+        got_json = json.loads(get("/preview.json?id=%s&candidate=A" % rid))
+        got_png = get("/preview.png?id=%s&candidate=A&side=candidate&k=3" % rid)
+        row("a candidate's preview: both sides' stills paired at each pose, the four files, the line naming them (B4-PAIR-STILLS)",
+            c_p == 200 and c_f == 200 and len(pl["poses"]) == 8 and pl["still_ticks"] == [k * motion.TICKS_PER_POSE for k in range(8)] and pl["ticks"] == 960
+            and pl["slots"]["base"] == 0 and len(pl["frames"]["base"]) == 8 and rep["replayed"] and rep["state_verified"] and rep["code"] == ""
+            and [t["comparison_result"] for t in rep["ticks"]] == ["PASS"] * 8 and all(0 < t["ssim"] < 1 for t in rep["ticks"])
+            and len(files) == 4 and line and line[-1]["files"] == {n: hashlib.sha256(b).hexdigest() for n, b in files.items()} and line[-1]["state_verified"]
+            and stills == sorted("%s-%d.png" % (s_, k) for s_ in ("base", "candidate") for k in range(8)) and all(k in meta for k in keys)
+            and meta["prompt_sha256"] == hashlib.sha256(b"close #bay").hexdigest() and meta["seed"] == rep["seed"] == pl["seed"] and meta["tick_count"] == 960
+            and got_json["fingerprints_sha256"] == rep["fingerprints_sha256"] and got_png == pic(9)
+            and rep["provenance"] == {"request": rid, "candidate": "A", "provider": "scripted", "model": meta["model"], "prompt_sha256": meta["prompt_sha256"]},
+            "path %s, seed %s, %d ticks, %d poses: every state the same on both sides (the bay is dressing, not play); SSIM %s; files %s"
+            % (pl.get("path_id"), pl.get("seed"), pl.get("ticks", 0), len(pl.get("poses", [])), [t.get("ssim") for t in rep.get("ticks", [])][:2], sorted(files)))
+        row("the archives' retention at a preview's end: one older than 30 days removed, its line kept", not os.path.exists(old)
+            and not os.path.exists(os.path.join(d, "Z.preview.report.json")) and len(files) == 4, "Z.preview.* (made at 0) removed; A's kept")
+        _c, _pl2, _f, rep2, _s = preview(rid, "A")
+        files2 = {n: open(os.path.join(d, "A." + n), "rb").read() for n in files}
+        row("the same preview again: the same states, archives and report (B4-DETERMINISM)", rep2["fingerprints_sha256"] == rep["fingerprints_sha256"]
+            and files2["preview.states.tar.gz"] == files["preview.states.tar.gz"] and files2["preview.stills.tar.gz"] == files["preview.stills.tar.gz"]
+            and {k: v for k, v in rep2.items() if k != "files"} == {k: v for k, v in rep.items() if k != "files"}
+            and json.loads(files2["preview.meta.json"])["made_at"] >= meta["made_at"],
+            "states %s, the stills' archive %s: the same bytes; the meta differs only in made_at" % (
+                hashlib.sha256(files2["preview.states.tar.gz"]).hexdigest()[:12], hashlib.sha256(files2["preview.stills.tar.gz"]).hexdigest()[:12]))
+        _c, _pl3, _f, rep3, _s = preview(rid, "A", other={("candidate", 2): pic(77)})
+        row("a still drawn again otherwise, its state as before: UNTRUSTED_IMAGE, the state still verified", [t["comparison_result"] for t in rep3["ticks"]]
+            == ["PASS"] * 2 + ["UNTRUSTED"] + ["PASS"] * 5 and rep3["untrusted_ticks"] == [240] and rep3["state_verified"] and rep3["replayed"],
+            "tick 240 %s: %s" % (rep3["ticks"][2]["comparison_result"], rep3["ticks"][2].get("reason")))
+        c_n, r_n = post("/studio/preview/finish", {"id": rid, "candidate": "B"})
+        c_b, _pb = post("/studio/preview", {"id": rid, "candidate": "B"})
+        c_bf, rep_b = post("/studio/preview/finish", {"id": rid, "candidate": "B"})
+        _c, _pl4, _f, rep4, _s = preview(rid, "B", skip={("candidate", 5)})
+        line4 = [json.loads(x) for x in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines() if x.strip()][-1]
+        row("another candidate's preview starts with nothing of the last (B4-RESET-ON-CHANGE)", c_n == 409 and r_n.get("code") == "PREVIEW-NO-PLAN" and c_b == 200
+            and c_bf == 200 and rep_b["incomplete_ticks"] == pl["still_ticks"] and not rep_b["replayed"],
+            "B's report before any still of its own: %d of 8 ticks INCOMPLETE; a report before any plan %s" % (len(rep_b.get("incomplete_ticks", [])), r_n.get("code")))
+        row("a capture cut short: PREVIEW-INCOMPLETE at its tick, never replayed, and its line says so (B4-INCOMPLETE-CAPTURE)", not rep4["replayed"]
+            and rep4["code"] == "PREVIEW-INCOMPLETE" and rep4["incomplete_ticks"] == [600] and not rep4["state_verified"]
+            and rep4["ticks"][5]["comparison_result"] == "INCOMPLETE" and line4.get("decision") == "preview" and line4.get("replayed") is False
+            and line4.get("code") == "PREVIEW-INCOMPLETE", "the candidate's still at pose 5 not drawn: %s at %s; the line: replayed %s"
+            % (rep4["code"], rep4["incomplete_ticks"], line4.get("replayed")))
+        bad = [post("/studio/preview/still?id=%s&candidate=A&side=candidate&k=0" % rid, pic(0), "image/png"),
+               post("/studio/preview", {"id": rid, "candidate": "A"}),
+               post("/studio/preview/still?id=%s&candidate=A&side=candidate&k=8" % rid, pic(0), "image/png"),
+               post("/studio/preview/still?id=%s&candidate=A&side=other&k=0" % rid, pic(0), "image/png"),
+               post("/studio/preview/still?id=%s&candidate=A&side=base&k=0" % rid, b"\x89PNG not a picture", "image/png"),
+               post("/studio/preview/still?id=%s&candidate=A&side=base&k=0" % rid, pic(0), "image/png", token=False),
+               post("/studio/preview", {"id": "nope", "candidate": "A"})]
+        codes = [(c_, r_.get("code")) for c_, r_ in bad]
+        row("the refusals: a still without a plan, beyond the plan's poses, of no side, not a PNG, without the token; an unknown request",
+            codes == [(409, "PREVIEW-NO-PLAN"), (200, None), (409, "PREVIEW-STILL"), (409, "PREVIEW-STILL"), (409, "PREVIEW-STILL"), (403, None), (409, "STUDIO-NO-CANDIDATE")],
+            "%s" % codes)
+        _c, st2 = ask("panel #bay")
+        _c, _p5, _f, rep5, _s = preview(st2["id"], "A")
+        row("another request, another seed: other states (B4-SEED-SENSITIVITY)", rep5["seed"] == st2["id"] != rep["seed"]
+            and rep5["fingerprints_sha256"]["base"] != rep["fingerprints_sha256"]["base"] and rep5["state_verified"],
+            "seed %s against %s: the base's fingerprints %s against %s" % (rep5["seed"], rep["seed"], rep5["fingerprints_sha256"]["base"][:12], rep["fingerprints_sha256"]["base"][:12]))
+        c_s, s_s = post("/studio/still?id=%s&candidate=A" % st2["id"], D.selftest_still(), "image/png")
+        c_m, _r_m = post("/studio/admit", {"id": st2["id"], "candidate": "A", "still": s_s.get("still", "")})
+        c_st, r_st = post("/studio/preview", {"id": st2["id"], "candidate": "B"})
+        row("the head moved since the candidate was drawn: PREVIEW-STALE", c_m == 200 and c_st == 409 and r_st.get("code") == "PREVIEW-STALE",
+            "A admitted (%s), B's preview %s %s" % (c_m, c_st, r_st.get("code")))
+        row("one candidate's preview well inside 10 s, its simulation well inside 1 s (B4-TIMING-BOUNDARY)", secs < 10 and pl["sim_ms"] < 1000,
+            "the whole preview over HTTP %.2f s (16 stills and the report); both sides' 960 ticks %d ms" % (secs, pl["sim_ms"]))
+    except Exception as e:  # noqa: BLE001 — the self-test says what stopped it
+        import traceback
+        if not plant:
+            traceback.print_exc()
+        row("preview: the self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+    finally:
+        ROOT = saved_root
+        motion.PLANT = saved_plant
+        motion._SHARED.clear()
+        if live:
+            live.stopping = True
+            if live.studio:
+                live.studio.shutdown()
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
+    if plant:
+        return rows
+    caught = []
+    for p_ in motion.PLANTS:
+        failed = [n for n, ok in preview_selftest(p_) if not ok]
+        caught.append(bool(failed))
+        print("[%s] preview plant %s caught — %s" % ("PASS" if failed else "FAIL", p_, ("by: " + "; ".join(f[:60] for f in failed)) if failed else "NOT CAUGHT"))
+    ok = all(ok for _n, ok in rows) and all(caught)
+    print("PREVIEW-STUDIO SELFTEST %d/%d" % (sum(ok_ for _n, ok_ in rows) + sum(caught), len(rows) + len(caught)))
     return 0 if ok else 1
 
 

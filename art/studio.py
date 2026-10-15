@@ -85,6 +85,7 @@ import ledger as led      # noqa: E402  (the content lock's place: ledger.lock_p
 import studio_marks       # noqa: E402  (MARK-0: the shapes a request names)
 import scene_diff         # noqa: E402  (HELD-0: a shape's region, and what lies in it)
 import impact             # noqa: E402  (IMPACT-0: what a candidate costs the native renderer, advisory)
+import motion             # noqa: E402  (PREVIEW-0: the preview in motion, a replayable experiment)
 
 REQUEST, RESPONSE, VERSION = "VERDANDI-STUDIO-REQUEST", "VERDANDI-STUDIO-RESPONSE", "0"
 REQUEST_VERSION = "1"    # STUDIO-1: the target and the pins, their geometry and relations, in place of one selection
@@ -679,7 +680,8 @@ class Gateway:
                 req["candidates"] = [dict({k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")}, compared=c.get("compared", ""),
                                           record=c.get("record"), still={k: c["still"][k] for k in ("sha256", "detectors", "flags")} if c.get("still") else None,
                                           held={k: v for k, v in c["held"].items() if k != "boxes"} if c.get("held") else None,
-                                          strict=c.get("strict"), impact=c.get("impact"))
+                                          strict=c.get("strict"), impact=c.get("impact"),
+                                          preview={k: c["preview_report"][k] for k in ("replayed", "state_verified", "code", "path_id")} if c.get("preview_report") else None)
                                      for c in r["candidates"]]
                 req["strict"] = bool(r.get("strict"))
                 req["path"] = {k: r["path"][k] for k in ("id", "name", "seed")} if r.get("path") else None
@@ -1104,7 +1106,7 @@ class Gateway:
 
     def _record(self, rid, name, data):
         d = os.path.join(self.records, rid)
-        os.makedirs(d, exist_ok=True)
+        os.makedirs(os.path.dirname(os.path.join(d, name)), exist_ok=True)
         with open(os.path.join(d, name), "wb") as fh:
             fh.write(data)
 
@@ -1376,6 +1378,97 @@ class Gateway:
                         "still_sha256": still, "despite_detectors": bool(st["flags"]), "comparison": comparison},
                        **({"strict": {k: region[k] for k in ("count", "receipt_sha256", "inverse_receipt_sha256", "support_sha256")}} if region else {})))
         return self.last
+
+    # ------------------------------------------------------------------ PREVIEW-0 (0240): the preview in motion
+    def _drawn(self, rid, letter):
+        with self.lock:
+            r = self.req
+            if not r or r["id"] != rid or r["state"] != "done":
+                raise StudioError("STUDIO-NO-CANDIDATE", "no finished request %s" % (rid if isinstance(rid, str) else "")[:40])
+            c = [x for x in r["candidates"] if x["letter"] == letter]
+            if not c or c[0]["slot"] is None or c[0]["intent"] is None:
+                raise StudioError("STUDIO-NO-CANDIDATE", "request %s has no drawn candidate %s" % (rid, letter if isinstance(letter, str) else ""))
+            return r, c[0]
+
+    def preview_plan(self, rid, letter):
+        """Both sides played along the request's path with its seed (art/motion.py plan), from the candidate's own
+        evaluation at the head as the files stand; the page then draws a still of each side at each pose."""
+        r, c = self._drawn(rid, letter)
+        D = self.play.director()
+        ws = self.play.workspace()
+        verdict, _a, _t, o1, o0, _x, _r = D.evaluate_doc(ws, D.canon.load_intent(c["intent"]))
+        if verdict["checked_against"] != c["head"]:
+            raise StudioError("PREVIEW-STALE", "the head moved since candidate %s was drawn: ask again" % letter)
+        if o1 is None or o0 is None:
+            raise StudioError("PREVIEW-NO-PLAN", "candidate %s did not export, so it has no motion to show" % letter)
+        path = r.get("path") or impact.camera_path(o0["scene"], impact.focus_of(o0["scene"]), rid)
+        p = motion.plan(o0, o1, path, path["seed"])
+        with self.lock:
+            c["preview"] = {"plan": p, "stills": {}}
+        return {"path_id": p["path_id"], "seed": p["seed"], "spawn": p["spawn"], "poses": p["poses"], "still_ticks": p["still_ticks"], "ticks": p["ticks"],
+                "viewport": p["viewport"], "frames": p["frames"], "first_difference": p["first_difference"], "sim_ms": p["sim_ms"],
+                "slots": {"base": 0, "candidate": c["slot"]}}
+
+    def preview_still(self, rid, letter, side, k, png):
+        r, c = self._drawn(rid, letter)
+        pv = c.get("preview")
+        if not pv:
+            raise StudioError("PREVIEW-NO-PLAN", "no preview of candidate %s is under way: ask for its plan first" % letter)
+        if side not in ("base", "candidate") or not isinstance(k, int) or not 0 <= k < len(pv["plan"]["still_ticks"]):
+            raise StudioError("PREVIEW-STILL", "a still is of the base or the candidate, at one of the plan's poses")
+        try:
+            import quality
+            quality.decode_png(png)
+        except Exception as e:  # noqa: BLE001 — a still the host cannot read is refused, never kept
+            raise StudioError("PREVIEW-STILL", "the still is not an 8-bit RGB or RGBA PNG: %s" % str(e)[:120])
+        with self.lock:
+            pv["stills"][(side, k)] = png
+        return {"side": side, "pose": k, "sha256": sha256(png)}
+
+    def preview_finish(self, rid, letter):
+        """The preview's report (art/motion.py report), its four files kept beside the intent and its stills in a folder
+        of their own, and one line of the request's record naming them by their sha256 (which outlives their retention)."""
+        r, c = self._drawn(rid, letter)
+        pv = c.get("preview")
+        if not pv:
+            raise StudioError("PREVIEW-NO-PLAN", "no preview of candidate %s is under way" % letter)
+        p, stills = pv["plan"], dict(pv["stills"])
+        rep = motion.report(p, stills, c.get("preview_report"))
+        prov = (c.get("impact") or {}).get("provenance") or {}
+        meta = {"format": motion.FORMAT, "version": motion.VERSION, "request": rid, "candidate": letter, "provider": prov.get("producer", ""),
+                "model": prov.get("model", ""), "prompt_sha256": prov.get("prompt_sha256") or sha256(r.get("prompt", "").encode("utf-8")),
+                "camera_path_id": p["path_id"], "viewport": p["viewport"], "framerate": p["framerate"], "tick_count": p["ticks"], "seed": p["seed"],
+                "spawn": p["spawn"], "still_ticks": p["still_ticks"], "semantics": p["semantics"], "made_at": time.time()}
+        rep["provenance"] = {k: meta[k] for k in ("request", "candidate", "provider", "model", "prompt_sha256")}
+        files = motion.artifacts(p, stills, rep, meta)
+        shas = {}
+        for name, data in sorted(files.items()):
+            self._record(rid, "%s.%s" % (letter, name), data)
+            shas[name] = sha256(data)
+        for (side, k), data in sorted(stills.items()):
+            self._record(rid, "%s.stills/%s-%d.png" % (letter, side, k), data)
+        with self.lock:
+            c["preview_report"] = rep
+            c.pop("preview", None)
+        self._log({"id": rid, "at": now(), "decision": "preview", "candidate": letter, "replayed": rep["replayed"], "state_verified": rep["state_verified"],
+                   "code": rep["code"], "path_id": p["path_id"], "seed": p["seed"], "files": shas})
+        motion.gc(self.records, motion.RETENTION_DAYS)          # the previews past their retention; their sha256 stay on their lines
+        return dict(rep, files=shas)
+
+    def preview_report(self, rid, letter):
+        r, c = self._drawn(rid, letter)
+        if not c.get("preview_report"):
+            raise StudioError("PREVIEW-NO-PLAN", "candidate %s has no preview yet" % letter)
+        return c["preview_report"]
+
+    def preview_png(self, rid, letter, side, k):
+        self._drawn(rid, letter)
+        if side not in ("base", "candidate") or not re.match(r"[0-9]{1,3}\Z", str(k)):
+            raise StudioError("PREVIEW-STILL", "a still is of the base or the candidate, at one of the plan's poses")
+        f = os.path.join(self.records, rid, "%s.stills" % letter, "%s-%s.png" % (side, k))
+        if not os.path.exists(f):
+            raise StudioError("PREVIEW-STILL", "no still %s %s of candidate %s" % (side, k, letter))
+        return open(f, "rb").read()
 
     def _compared(self, r, chosen):
         """COMPARE-0 (0235): one admission (or none) is chosen from a set, and the record says so: what was shown, in the

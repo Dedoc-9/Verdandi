@@ -1262,7 +1262,8 @@
           th, el("div.tt", {}, c.title), heldChips(c), impactRow(c), el("div.st", {}, st, c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
           el("div.acts", {}, el("button.btn.small", { disabled: c.slot === null, onclick: function () { pick(c.slot); } }, "Show"),
             el("button.btn.small", { disabled: !admissible(c), onclick: function () { admitWithStill(r.id, c); } }, "Admit"),
-            el("button.btn.small", { disabled: !!c.decided, onclick: function () { decide("reject", r.id, c.letter); } }, "Reject")));
+            el("button.btn.small", { disabled: !!c.decided, onclick: function () { decide("reject", r.id, c.letter); } }, "Reject"),
+            el("button.btn.small", { disabled: c.slot === null, title: "Preview in motion: both sides along the request's path, the same seed; the host's states are the evidence", onclick: function () { previewRun(r, c); } }, "Preview")));
         host.appendChild(card);
         if (c.slot !== null) candThumb(c, th);
       }
@@ -1884,6 +1885,70 @@
       return el("button.btn.small", { title: "None of these: every candidate not decided is marked so, and the set is recorded as rejected (the world as it was)",
         onclick: function (e) { e.stopPropagation(); post("/studio/none", { id: r.id }).then(function (x) { if (!x.ok) toast((x.code || "") + ": " + (x.message || ""), true); else toast("None chosen: " + (x.candidates || []).join(", ")); }); } }, "None");
     };
+    // PREVIEW-0 (0240): the preview in motion. The host plays the base and the candidate along the request's path with
+    // its seed (the graybox's own tick, in Python) and gives the page the poses and the boxes of the movers and targets at
+    // each; the page draws a still of each side at each pose with the renderer it plays with, gives them to the host, and
+    // shows the host's report: at each pose the two states' fingerprints (the evidence) and the stills' SSIM (a look).
+    const previewRun = function (r, c) {
+      toast("Preview of " + c.letter + ": the host plays both sides…");
+      post("/studio/preview", { id: r.id, candidate: c.letter }).then(function (pl) {
+        if (!pl.ok) { toast((pl.code || "") + " " + (pl.message || ""), true); return; }
+        return Promise.all([sceneAt(pl.slots.base), sceneAt(pl.slots.candidate)]).then(function (rs) {
+          // one still at a time, each in its own turn of the thumbnailer (the page goes on drawing between them), each
+          // given to the host as it is drawn; a still not drawn is left out, and the host's report says so
+          const jobs = [];
+          [["base", rs[0]], ["candidate", rs[1]]].forEach(function (sd) { pl.poses.forEach(function (p, k) { jobs.push([sd[0], sd[1], p, k]); }); });
+          return jobs.reduce(function (pr, j) {
+            return pr.then(function () {
+              return new Promise(function (done) {
+                thumbs.later(function () {
+                  const w0 = thumbs.canvas.width, h0 = thumbs.canvas.height;
+                  let u = "";
+                  try {
+                    thumbs.canvas.width = pl.viewport[0]; thumbs.canvas.height = pl.viewport[1];
+                    if (thumbs.scene(j[1].S, j[1].sha)) {
+                      const f = pl.frames[j[0]][j[3]], p = j[2];
+                      u = thumbs.shot({ x: p.x, y: p.y, z: p.z, yaw: p.yaw_deg * Math.PI / 180, pitch: p.pitch_deg * Math.PI / 180, fov: 66 }, f.movers, f.targets, "image/png");
+                    }
+                  } finally { thumbs.canvas.width = w0; thumbs.canvas.height = h0; done(u); }
+                }, true);
+              }).then(function (u) {
+                if (u.indexOf("data:image/png") !== 0) return;
+                const bin = atob(u.slice(u.indexOf(",") + 1)), a = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+                return fetch("/studio/preview/still?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter + "&side=" + j[0] + "&k=" + j[3],
+                  { method: "POST", headers: { "Content-Type": "image/png", "X-Studio-Token": token }, body: a });
+              });
+            });
+          }, Promise.resolve());
+        }).then(function () { return post("/studio/preview/finish", { id: r.id, candidate: c.letter }); }).then(function (rep) {
+          if (!rep || !rep.ok) { toast(((rep || {}).code || "") + " " + ((rep || {}).message || ""), true); return; }
+          previewShow(r, c, rep);
+        });
+      });
+    };
+    const previewShow = function (r, c, rep) {
+      let k = 0, timer = null;
+      const img = function (side) { return "/preview.png?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter + "&side=" + side + "&k=" + k; };
+      const imA = el("img", { style: { width: "100%", display: "block" } }), imB = el("img", { style: { width: "100%", display: "block" } }), info = el("div.dim"), badge = el("span.hv." + (rep.state_verified ? "held" : "outside"),
+        { title: rep.state_verified ? "every tick's state is the base's: the candidate's motion is the base's (fingerprints of the graybox's own tick)" : (rep.code || "the states differ") + (rep.first_difference ? " · first at tick " + rep.first_difference.tick + ": " + rep.first_difference.fields.join(", ") : "") },
+        rep.state_verified ? "state verified" : rep.code || "states differ");
+      const show = function () {
+        const t = rep.ticks[k];
+        imA.src = img("base"); imB.src = img("candidate");
+        info.textContent = "pose " + (k + 1) + " of " + rep.ticks.length + " · tick " + t.tick + " · " + t.comparison_result + (t.ssim !== undefined ? " · SSIM " + t.ssim + " (a look, not a verdict)" : "") +
+          " · state " + (t.state_fingerprint.base || "-").slice(0, 10) + (t.state_fingerprint.base === t.state_fingerprint.candidate ? " = " : " ≠ ") +
+          (t.state_fingerprint.candidate || "-").slice(0, 10) + (t.reason ? " · " + t.reason : "");
+      };
+      const step = function (d) { k = (k + d + rep.ticks.length) % rep.ticks.length; show(); };
+      const play = function () { if (timer) { clearInterval(timer); timer = null; } else timer = setInterval(function () { step(1); }, 700); };
+      modal(el("span", {}, icon("compare"), " Preview in motion · Current vs Candidate " + c.letter, " ", badge),
+        el("div", {}, el("div", { style: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "6px" } }, el("div", {}, el("div.dim", {}, "Current"), imA), el("div", {}, el("div.dim", {}, "Candidate " + c.letter), imB)),
+          el("div", { style: { margin: "6px 0" } }, el("button.btn.small", { onclick: function () { step(-1); } }, "◀"), el("button.btn.small", { onclick: play }, "Play"), el("button.btn.small", { onclick: function () { step(1); } }, "▶")),
+          info, el("p.dim", {}, "path " + rep.path_id + " · seed " + rep.seed + " · " + (rep.replayed ? "replayed" : "not replayed") + " · " + rep.advisory),
+          el("p.dim", {}, "provenance: " + [(rep.provenance || {}).provider, (rep.provenance || {}).model, "prompt sha256 " + ((rep.provenance || {}).prompt_sha256 || "").slice(0, 12)].join(" · ") + " · " + rep.semantics)));
+      show();
+    };
     const markCandidates = function () {
       const r = studio.req, host = $("mc-list"), head = $("mc-head");
       const cands = (r && r.candidates) || [];
@@ -1901,7 +1966,8 @@
           th, el("div.tt", {}, c.title), heldChips(c), impactRow(c), el("div.st", {}, icon2, el("span", {}, c.decided || c.compared || (c.verdict === "CLEAN" ? "Ready" : c.verdict || "?")), c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
           el("div.acts", {}, el("button.btn.small", { disabled: c.slot === null, onclick: function (e) { e.stopPropagation(); pick(c.slot); } }, "Show"),
             el("button.btn.small", { disabled: !admissible(c), onclick: function (e) { e.stopPropagation(); admitWithStill(r.id, c); } }, "Admit"),
-            el("button.btn.small", { disabled: !!c.decided, onclick: function (e) { e.stopPropagation(); decide("reject", r.id, c.letter); } }, "Reject")));
+            el("button.btn.small", { disabled: !!c.decided, onclick: function (e) { e.stopPropagation(); decide("reject", r.id, c.letter); } }, "Reject"),
+            el("button.btn.small", { disabled: c.slot === null, title: "Preview in motion: both sides along the request's path, the same seed; the host's states are the evidence", onclick: function (e) { e.stopPropagation(); previewRun(r, c); } }, "Preview")));
         host.appendChild(card);
         if (c.slot !== null) candThumb(c, th);
         paintMcp(badges, c);

@@ -144,8 +144,8 @@
   .card .badges { position: absolute; right: 5px; top: 5px; display: flex; gap: 3px; }
   .card .tt { padding: 4px 7px 2px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card .st { padding: 0 7px 5px; font-size: 11px; display: flex; align-items: center; gap: 5px; }
-  .card .acts { display: flex; flex-wrap: nowrap; gap: 3px; padding: 0 5px 6px; }
-  .card .acts .btn { padding: 1px 4px; font-size: 10.5px; flex: 1 1 0; min-width: 0; justify-content: center; }
+  .card .acts { display: flex; flex-wrap: wrap; gap: 3px; padding: 0 5px 6px; }
+  .card .acts .btn { padding: 1px 4px; font-size: 10.5px; flex: 1 1 calc(50% - 3px); min-width: 0; justify-content: center; }
   .card.new { border-style: dashed; align-items: center; justify-content: center; min-height: 120px; cursor: pointer; color: var(--dim); gap: 6px; }
   .card.new:hover { border-color: #3a5684; color: #fff; }
   .badge { display: inline-block; font: 600 9.5px/15px system-ui, sans-serif; letter-spacing: .05em; padding: 0 6px; border-radius: 3px; text-transform: uppercase; }

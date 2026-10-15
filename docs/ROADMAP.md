@@ -4827,6 +4827,82 @@ preview in motion); no measured frame beside the estimate ("simulate" against "e
 the page's panel was not run in a browser. NOT_MEASURED: his machine, a GPU. No row, rung, pinned source or oracle file
 changed. Docs: AGENTS.md, art/STUDIO.md, docs/CORE.md (art 23,712 lines), this entry.
 
+**His run of 0239, and his go for B4 (2026-10-15).** 0239 applied on fb1616f; the rung D, loosening nothing, and the
+plants 82/82 HELD; ART SELFTESTS PASSED, seventeen suites at once, 97.2 s and 105.5 s, the summaries the same
+(IMPACT SELFTEST 9/9, IMPACT-STUDIO SELFTEST 8/8); the gate 251 rows / 0 fail; pushed fb1616f..31444a9. MEASURED on his
+machine. His word on B4: *"go; websearch as you go to keep tight and elegant"*, with a specification: for each
+candidate a meta (request, candidate, provider, prompt sha256, camera path, viewport, framerate, tick count, seed,
+timestamp, semantics version), an archive of per-tick states and fingerprints, an archive of stills and a report (per
+tick the state fingerprint, the image digest and a comparison result PASS, DIFFER or UNTRUSTED); the same camera path
+for base and candidate, a seeded simulation with an explicit spawn, the state fingerprints' equality the canonical
+proof and SSIM or PSNR advisory; B4-DETERMINISM, B4-SEED-SENSITIVITY, B4-PAIR-STILLS, B4-PLANTED-MISMATCH (a mover's
+start moved: the tick and the reason), B4-INCOMPLETE-CAPTURE (a failure code, never "replayed"), B4-RESET-ON-CHANGE and
+B4-TIMING-BOUNDARY; a split preview with play, pause and step, a *state verified* badge, the provenance and seed, the
+frame's compare; 30 days' retention with the record keeping the sha256; UNTRUSTED_IMAGE when images differ and states
+match, a missing still a failure; off the gate, nothing in `kernel/` or `verify/`. Taken as follows: his
+`verify/tests/b4_preview.py` would be a change to `verify/`, which the same specification rules out, so the tests are
+the art layer's own (`art/motion.py selftest`, `art/play.py --preview-selftest`, both in `art/selftests.py`); his
+`docs/STUDIO-B4.md` is a section of `art/STUDIO.md`, where every surface of the studio is written; his orchestrator API
+is the studio's own routes; every tick's state is kept, and the stills are drawn at each of the path's eight poses, not
+at every tick (here the page drew one in about 18 s on a CPU's rasterizer, so 960 a side would take this container
+hours); UNTRUSTED is a state seen before with other still bytes (the base's and a candidate's stills are meant to
+differ where the states agree: that is what a change of dressing is); the retention is a function run at the end of
+every preview and from the command line, not a daemon; the meta's `made_at` is the one clock, and nothing else holds
+one.
+
+### PREVIEW-0 — the preview in motion · Phase I, B4, **built, off the gate** (0240, `art/motion.py`)
+
+**What it is.** *Preview* on a candidate's card: the host plays the base and the candidate along the request's camera
+path (IMPACT-0's, named and seeded by the request) with one seeded simulation, the graybox's own tick under rules 3 in
+its Python twin `graybox/tick_ref.py` from spawn A, driven by an actor whose next input is drawn every 30 ticks from a
+stream seeded by the request: 120 ticks a pose, 960 a side, each side from a world and a state made new. Every tick's
+state is written canonically (the twin's snapshot, every mover's box, the world's identity, the stream's counter) and
+fingerprinted by sha256; the page draws a still of each side at each pose with the renderer it plays with and gives
+them to the host, which reads each, compares and keeps. Per pose PASS, DIFFER (with the first tick that differs and its
+fields), INCOMPLETE (`PREVIEW-INCOMPLETE`, never replayed) or UNTRUSTED (`UNTRUSTED_IMAGE`); *state verified* only when
+every pose is complete and every state agrees; SSIM (Wang et al. 2004, the reference's window and constants, on luma at
+96 x 54) and PSNR a look. Kept beside the intent: `<letter>.preview.meta.json`, `.preview.states.tar.gz` (every tick,
+both sides), `.preview.stills.tar.gz`, `.preview.report.json`, each named by sha256 on the request's line; the archives
+the same bytes from the same inputs. The page: Current | Candidate, ◀ Play ▶, the badge, per pose the tick, the
+result, the SSIM and both fingerprints, the path, the seed and the provenance. Nothing that decides reads it.
+
+**Its falsifiers.** `python art/motion.py selftest` (PREVIEW SELFTEST 12/12, harbor-lift with its two movers): the same
+inputs, the same 961 states a side and the same archives (B4-DETERMINISM); another seed, 960 of 961 ticks other
+(B4-SEED-SENSITIVITY); the first mover started 0.5 m along x: DIFFER from tick 0, fields `identity` and `movers`
+(B4-PLANTED-MISMATCH); a still missing, PREVIEW-INCOMPLETE at tick 360 and not replayed (B4-INCOMPLETE-CAPTURE); a
+still drawn again otherwise, UNTRUSTED and the state still verified, and the planted mover's states DIFFER and not
+verified; the base the same after a run of another world (B4-RESET-ON-CHANGE); both sides' 960 ticks in 0.3 s
+(B4-TIMING-BOUNDARY); SSIM 1 for an image against itself and 0.26 for a flat field against a ramp; the retention; three
+plants caught (the stream not seeded, one run's world and state carried into the next, a capture cut short passed).
+`python art/play.py --preview-selftest` (PREVIEW-STUDIO SELFTEST 13/13, over HTTP with the scripted director in the
+facade's world): the plan and both sides' stills at the eight poses, the four files and the line naming them, the
+meta's fields, the report and a still read back, every state the base's (the bay is dressing, not play: B4-PAIR-STILLS);
+a preview older than 30 days removed at the next one's end; the same preview again to the same states, archives and
+report (B4-DETERMINISM); a still drawn again otherwise, UNTRUSTED_IMAGE; another candidate's preview starting with
+nothing of the last (B4-RESET-ON-CHANGE); a capture cut short, PREVIEW-INCOMPLETE on its line (B4-INCOMPLETE-CAPTURE);
+the refusals (a still without a plan, beyond the poses, of no side, not a PNG, without the token; an unknown request);
+another request, another seed (B4-SEED-SENSITIVITY); the head moved, PREVIEW-STALE; the whole preview over HTTP 0.8 s
+(B4-TIMING-BOUNDARY); the same three plants caught. Both join `art/selftests.py` (nineteen suites).
+
+**In a browser (OBSERVED, the container's headless Chromium on SwiftShader, the facade's world, #bay, the scripted
+director).** The first run found two defects, each now repaired: the thumbnailer gave JPEG, the host refused every
+still, and the report read PREVIEW-INCOMPLETE at all eight poses, not replayed (the failure code doing its work on a real
+fault); and the two stills overflowed the dialog. After: *Blank bay*'s sixteen stills drawn one at a time and given to
+the host in 281 s at 1280 x 720 (a CPU drawing both the page and the stills), the badge *state verified*, PASS at
+every pose, SSIM 0.994 to 1, step and play moving the pose. Some of the path's poses stand inside or behind a building
+(IMPACT-0's orbit at 14 m does not look for geometry): the stills show a wall.
+
+**Measured in the container** (2 processors, Python 3.11): one candidate's plan, both sides' 960 ticks, 0.23 to 0.30 s;
+the whole preview over HTTP with synthetic stills 0.8 s. The full check, `python art/selftests.py --repeat 2`, two
+suites at once, with the three references frozen again in a scratch copy as he froze them: nineteen suites, 741.9 s and
+705.4 s, the summaries the same, ART SELFTESTS PASSED (the container slower than at 0239, the two suites that write and
+sync the most, crashtest and racetest, about seven times as long; nothing of theirs changed).
+
+**Not done.** A planted mismatch over HTTP: an art candidate cannot move play (the director's scope refuses it), so the
+mismatch is planted in `art/motion.py`'s own test; the camera path avoiding geometry; stills at every tick; the page's
+own `sim.js` beside the twin's fingerprints. NOT_MEASURED: his machine, a GPU. No row, rung, pinned source or oracle
+file changed. Docs: AGENTS.md, art/STUDIO.md, docs/CORE.md (art 24,534 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

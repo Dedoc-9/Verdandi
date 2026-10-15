@@ -222,13 +222,14 @@
       this.sha = sha; return true;
     } catch (e) { this.error = String(e && e.message || e); return false; }
   };
-  // draw from `cam` and return a data URL (JPEG: a thumbnail is a picture, not evidence)
-  Thumbs.prototype.shot = function (cam, movers, targets) {
+  // draw from `cam` and return a data URL (JPEG: a thumbnail is a picture, not evidence; PREVIEW-0's stills ask for
+  // "image/png", which the host reads)
+  Thumbs.prototype.shot = function (cam, movers, targets, type) {
     if (!this.R) return "";
     if (this.R.setMovers) this.R.setMovers(movers || []);
     this.R.setTargets(targets || []);
     this.R.draw(cam, 0);
-    return this.canvas.toDataURL("image/jpeg", 0.82);
+    return type === "image/png" ? this.canvas.toDataURL("image/png") : this.canvas.toDataURL("image/jpeg", 0.82);
   };
   // queue work (a function returning nothing), a few each frame, so that the page goes on drawing
   Thumbs.prototype.later = function (fn, first) {

@@ -282,6 +282,43 @@ the request, the seed). Budgets (`impact_model.json`) are advisory: a candidate 
 admission reads any of it. The preview's camera path is named and seeded by the request (eight poses round the first
 shape, or the target, at 14 m), the same for every candidate of the request.
 
+## The preview in motion (PREVIEW-0, 0240)
+
+*Preview* on a candidate's card plays the base and the candidate along the request's camera path (IMPACT-0's, named
+and seeded by the request, the same for all its candidates) with one seeded simulation, and shows them side by side.
+The host plays (`art/motion.py`): the graybox's own tick under rules 3, in its Python twin `graybox/tick_ref.py`, from
+spawn A, driven by an actor whose next input (walk, strafe, turn, jump, back, stand) is drawn every 30 ticks from a
+stream seeded by the request; 120 ticks a pose, 960 for the path's eight poses, each side from a world and a state made
+new. Each tick's state is written canonically (the twin's snapshot, every mover's box, the world's identity, the
+stream's counter) and its **state fingerprint** is that text's sha256: the canonical evidence. The page draws a still of
+each side at each pose with the renderer it plays with (PNG, 480 x 270) and gives them to the host
+(`POST /studio/preview/still`); the host reads each (an RGB or RGBA PNG, else `PREVIEW-STILL`), compares, and keeps.
+The stills' SSIM (Wang, Bovik, Sheikh and Simoncelli 2004: an 11 x 11 Gaussian window of sigma 1.5, K1 0.01, K2 0.03,
+on luma box-averaged to 96 x 54) and PSNR are **advisory**: a look, never a verdict.
+
+Per pose, `comparison_result`: **PASS** (both states the same, both stills given), **DIFFER** (the states differ; the
+report names the first tick that differs and its fields, e.g. `identity`, `movers`, `snapshot.x`), **INCOMPLETE** (a
+still or a state missing: the report's code is `PREVIEW-INCOMPLETE` and it is never called *replayed*), **UNTRUSTED**
+(`UNTRUSTED_IMAGE`: the candidate's earlier preview had this state with other still bytes; the renderer moved, not the
+world). *State verified* only when every pose is complete and every state agrees. A candidate of the art, CLEAN at the
+director, never changes play, so its states are the base's at every tick: the badge says so, and a DIFFER says the
+candidate moved the play.
+
+Kept beside the intent, named on the request's line by sha256 (`"decision": "preview"`):
+
+| file | |
+|---|---|
+| `<letter>.preview.meta.json` | request, candidate, provider, model, prompt_sha256, camera_path_id, viewport, framerate (120), tick_count, seed, spawn, still_ticks, semantics, `made_at` (the one clock in it) |
+| `<letter>.preview.states.tar.gz` | each side's state at every tick (`base.states.jsonl`, `candidate.states.jsonl`) and its fingerprints |
+| `<letter>.preview.stills.tar.gz` | the stills, `<side>-<pose>-tick<tick>.png` (and `<letter>.stills/` for the page) |
+| `<letter>.preview.report.json` | per pose: tick, state_fingerprint, image_digest, comparison_result, ssim, psnr; replayed, code, state_verified, first_difference, the provenance |
+
+The archives are the same bytes from the same inputs (sorted members, every time and owner nought, no name or time in
+the gzip header). Retention: 30 days by the meta's `made_at` (`art/motion.py gc FOLDER [DAYS]`, and at the end of every
+preview over the brief's records); the request's line keeps the sha256 for good. Refusals: `PREVIEW-NO-PLAN` (no
+export, or no preview under way), `PREVIEW-STALE` (the head moved since the candidate was drawn), `PREVIEW-STILL`. Off
+the gate: nothing that decides reads a preview.
+
 ## The references (STUDIO-1)
 
 By the owner's ruling of 2026-10-11: *"Bind references to a scene revision and object identity, not just a reusable
