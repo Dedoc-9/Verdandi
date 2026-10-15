@@ -265,6 +265,23 @@ that brings no passed check or no receipt. Undo is the exact inverse revision, a
 inverse receipt, box for box. A request that is not strict is as it was: its held accounts inform the order and the
 designer and refuse nothing. The queue's requests are not strict.
 
+## The impact panel (IMPACT-0, 0239)
+
+Every candidate carries what it costs the native renderer (`art/web/scene_render.js`) against the base of its own
+evaluation, computed by the host (`art/impact.py`) and kept beside its intent (`<letter>.impact.json`, named on the
+request's line): the triangles (every play box and piece of dressing a box of twelve; a target ten, a mover twelve),
+the draw calls of one frame (all static triangles are one call a pass), the lights the renderer draws (the first 160)
+and their candelas, the bytes of the textures it builds from the scene (the lights, their visibility per cell, the
+height and roof fields; the scenes carry no image), and one frame's milliseconds, an **ESTIMATE** from those counts by
+the linear model in `art/impact_model.json`, whose coefficients are the exact least squares of its calibration rows,
+each row a scene drawn by the renderer on the host and date the file names. The card shows the differences and the
+estimate's; its tooltip (*how computed*) gives the terms, the calibration's host and date, the counts, the preview's
+path, the director's words for why (not checked) and the provenance (the provider, its model, the prompt's sha256,
+the request, the seed). Budgets (`impact_model.json`) are advisory: a candidate over one reads *over budget
+(advisory)*, and nothing is refused for it. *ADVISORY ESTIMATE — not admission evidence*: no verdict, order or
+admission reads any of it. The preview's camera path is named and seeded by the request (eight poses round the first
+shape, or the target, at 14 m), the same for every candidate of the request.
+
 ## The references (STUDIO-1)
 
 By the owner's ruling of 2026-10-11: *"Bind references to a scene revision and object identity, not just a reusable

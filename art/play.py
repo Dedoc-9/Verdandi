@@ -220,7 +220,7 @@ def held_report(scene0, scene1, shapes=()):
     return r
 
 
-def candidate_slot(ws, it, label, source="studio", shapes=(), strict=False):
+def candidate_slot(ws, it, label, source="studio", shapes=(), strict=False, impact_ctx=None):
     """An intent evaluated by the director at the current head: a source, served unless the director refuses it.
     HELD-0: `shapes` (kept shape records, VERDANDI-SHAPES 0) are the regions the request names; the slot carries the
     candidate's report against them ("held"). STRICT-0: for a strict request, also its strict check ("strict")."""
@@ -249,6 +249,13 @@ def candidate_slot(ws, it, label, source="studio", shapes=(), strict=False):
         if strict:
             import studio
             extra["strict"] = studio.strict_check(out0["scene"], out1["scene"], shapes)
+        if impact_ctx is not None:
+            # IMPACT-0 (0239): what the candidate costs the native renderer against the same base, advisory
+            import impact
+            try:
+                extra["impact"] = impact.report(out0["scene"], out1["scene"], impact_ctx["provenance"], impact_ctx["path"], impact_ctx.get("rationale", ""))
+            except (impact.ImpactError, OSError, KeyError, TypeError, ValueError) as e:
+                extra["impact"] = {"format": impact.FORMAT, "version": impact.VERSION, "advisory": impact.ADVISORY, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
     if verdict["verdict"] == "REFUSED" or out1 is None:
         why = verdict.get("detail") or ""
         why = why if why.startswith(tuple(verdict["codes"])) and why else "; ".join(verdict["codes"]) + (": " + why if why else "")
@@ -500,8 +507,8 @@ class Host:
     def workspace(self):
         return workspace(self.live.brief, self.live.root)
 
-    def candidate_slot(self, ws, it, label, shapes=(), strict=False):
-        return candidate_slot(ws, it, label, shapes=shapes, strict=strict)
+    def candidate_slot(self, ws, it, label, shapes=(), strict=False, impact_ctx=None):
+        return candidate_slot(ws, it, label, shapes=shapes, strict=strict, impact_ctx=impact_ctx)
 
     def publish(self, slots):
         return self.live.publish(slots)
@@ -1347,6 +1354,8 @@ def main(argv):
         return facade_selftest()
     if "--strict-selftest" in argv:
         return strict_selftest()
+    if "--impact-selftest" in argv:
+        return impact_selftest()
     global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
     vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root")
@@ -1918,10 +1927,11 @@ def studio_selftest():
         req = json.loads(open(os.path.join(rec, "request.json"), "rb").read())
         log = [json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()]
         row("the request recorded: context, response, intents", req["target"]["statement"]["text"].startswith("canopy plaza concrete_slab 7.0 19,10 28,11")
-            and req["head"] == r["head"] and sorted(os.listdir(rec)) == ["A.held.json", "A.intent", "B.held.json", "B.intent", "C.held.json", "C.intent", "request.json", "response.raw"]
+            and req["head"] == r["head"] and sorted(os.listdir(rec)) == ["A.held.json", "A.impact.json", "A.intent", "B.held.json", "B.impact.json", "B.intent",
+                                                                           "C.held.json", "C.impact.json", "C.intent", "request.json", "response.raw"]
             and log[-1]["id"] == rid and log[-1]["outcome"] == "DONE" and log[-1]["model"] == "scripted-1"
-            and all(c["held"]["sha256"] for c in log[-1]["candidates"]),
-            "the target's statement (line %d), the head, the response's sha256, each candidate's intent and (HELD-0) its report" % req["target"]["statement"]["line"])
+            and all(c["held"]["sha256"] and c["impact"]["sha256"] for c in log[-1]["candidates"]),
+            "the target's statement (line %d), the head, the response's sha256, each candidate's intent, (HELD-0) its report and (IMPACT-0) its impact" % req["target"]["statement"]["line"])
         replay = intent_slot(brief, os.path.join(rec, "A.intent"))
         row("a recorded candidate replayed without the provider", replay["ok"] and replay["sha"] == live.slot(drawn[0]["slot"])["sha"],
             "play.py --intent %s gives scene %s, the one drawn" % (os.path.relpath(os.path.join(rec, "A.intent"), tmp), replay["sha"][:12]))
@@ -3086,6 +3096,165 @@ def strict_selftest(plant=""):
         print("[%s] strict plant %s caught — %s" % ("PASS" if failed else "FAIL", p_, ("by: " + "; ".join(f[8:] for f in failed)) if failed else "NOT CAUGHT"))
     ok = all(ok for _n, ok in rows) and all(caught)
     print("STRICT SELFTEST %d/%d" % (sum(ok_ for _n, ok_ in rows) + sum(caught), len(rows) + len(caught)))
+    return 0 if ok else 1
+
+
+# IMPACT-0 (0239): a provider whose one candidate hangs the lanes' lamps at twice the density (over the lights budget)
+LAMPS_PROVIDER = (
+    "import sys, json; r = json.load(sys.stdin)\n"
+    "c = {'title': 'Brighter lanes', 'rationale': 'the lanes lit twice as densely, to read the facades at night',\n"
+    "     'revision': ['= lamp north-lane 255,170,90 600 2', '= lamp south-lane 255,170,90 600 2'], 'scope': ['north-lane/lamp/*', 'south-lane/lamp/*'], 'preserve': []}\n"
+    "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 'lamps', 'model': 'lamps-1'},\n"
+    "                  'candidates': [c], 'outcome': {'kind': 'none', 'unmet': [], 'questions': [], 'reason': '', 'note': ''}}))")
+
+
+def impact_selftest(plant=""):
+    """IMPACT-0 (0239): each candidate's impact over HTTP, in the fixture's world with FACADE_LINES's building and the
+    scripted director: shown and kept beside the intent with every field (IMPACT-SAVED); computed again from the same
+    scenes, provenance and seed to the same bytes (IMPACT-DET); another prompt, another provenance (IMPACT-PROV); a
+    candidate over the lights budget flagged and still admitted, the flag advisory (IMPACT-PLANT); eight candidates' impacts
+    computed twice, the same, and timed (IMPACT-REPEAT). With `plant` (art/impact.py PLANTS) the rows are returned for the
+    caller to see which fail. Writes only in a scratch tree."""
+    global ROOT
+    import studio
+    import impact
+    rows = []
+
+    def row(name, ok, detail):
+        rows.append((name, bool(ok)))
+        if not plant:
+            print("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+    brief, tmp = "plaza-night", tempfile.mkdtemp(prefix="impact-selftest-")
+    saved_root, saved_plant = ROOT, impact.PLANT
+    live = srv = None
+    D = director()
+    try:
+        impact.PLANT = plant
+        os.makedirs(os.path.join(tmp, "art", "briefs"))
+        os.makedirs(os.path.join(tmp, "graybox", "maps"))
+        for f in os.listdir(os.path.join(REPO, "graybox", "maps")):
+            if f.endswith(".gbx"):
+                shutil.copy(os.path.join(REPO, "graybox", "maps", f), os.path.join(tmp, "graybox", "maps", f))
+        for f in ("tactical.design", "tactical.layout"):
+            shutil.copy(os.path.join(D.FIXTURE, f), os.path.join(tmp, "graybox", "maps", f))
+        art = os.path.join(tmp, "art", "briefs", brief + ".art")
+        open(art, "wb").write(open(os.path.join(D.FIXTURE, brief + ".art"), "rb").read().replace(b"\r\n", b"\n") + ("\n".join(FACADE_LINES) + "\n").encode("ascii"))
+        ws = D.Workspace(brief, tmp)
+        D.cmd_genesis_quiet(ws)
+        out0 = ws.export()[0]
+        mass = next(v for v in out0["scene"]["visuals"] if v["id"] == "building:10,2-17,2")
+        open(os.path.join(tmp, "lamps.py"), "w").write(LAMPS_PROVIDER + "\n")
+        lamps_cfg = os.path.join(tmp, "lamps.json")
+        open(lamps_cfg, "w").write(json.dumps({"provider": "cli", "argv": ["{python}", os.path.join(tmp, "lamps.py")], "model": "lamps-1", "timeout_s": 30, "max_output_bytes": 65536}))
+        ROOT = tmp
+        live = Live(brief, art, [], poll=0.15, root=tmp)
+        threading.Thread(target=live.watch, kwargs={"say": lambda s_: None}, daemon=True).start()
+        start_studio(live, os.path.join(HERE, "providers", "scripted.json"), say=lambda s_: None)
+        srv = server(live)
+        base = "http://127.0.0.1:%d" % srv.server_address[1]
+        tok = re.search(r'data-studio="([0-9a-f]+)"', urllib.request.urlopen(base + "/play.html", timeout=30).read().decode("utf-8")).group(1)
+
+        def post(path, raw, ctype="application/json"):
+            rq = urllib.request.Request(base + path, data=raw if isinstance(raw, bytes) else json.dumps(raw).encode("utf-8"), method="POST",
+                                        headers={"Content-Type": ctype, "X-Studio-Token": tok})
+            try:
+                with urllib.request.urlopen(rq, timeout=120) as r:
+                    return r.status, json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                return e.code, json.loads(e.read() or b"{}")
+
+        def ask(prompt):
+            c, r = post("/studio/ask", {"prompt": prompt})
+            st = None
+            for _i in range(1200):
+                st = live.studio.state()["request"]
+                if st and st["id"] == r.get("id") and st["state"] != "running":
+                    break
+                time.sleep(0.1)
+            return c, st
+        s0 = live.slot(0)
+        shape = {"name": "bay", "operation": "region", "anchor": {"piece": mass["id"], "face": "+z", "box": mass["box"], "scene": s0["sha"], "view": {}},
+                 "vertices": [[6, 3], [8, 3], [8, 6.5], [6, 6.5]], "constraints": {"within": True, "supports": False, "collision": False, "material": "keep"}}
+        post("/studio/shapes/save", {"shape": shape})
+        prompt = "close #bay"
+        c_a, st = ask(prompt)
+        d = os.path.join(tmp, "art", "build", "studio", brief, st["id"])
+        cands = st["candidates"]
+        saved = {c["letter"]: json.loads(open(os.path.join(d, c["letter"] + ".impact.json"), "rb").read()) for c in cands
+                 if os.path.exists(os.path.join(d, c["letter"] + ".impact.json"))}
+        rec = [json.loads(x) for x in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines() if x.strip()]
+        lined = [x for x in rec if x.get("id") == st["id"] and x.get("candidates")]
+        fields = lambda m: all(k in m["delta"] for k in ("triangles", "draw_calls", "lights", "lights_drawn", "candela", "texture_bytes")) \
+            and m["estimate"]["label"] == "ESTIMATE" and "calibrated on" in m["estimate"]["how"] and m["advisory"] == impact.ADVISORY \
+            and all(m["provenance"].get(k) for k in ("producer", "model", "prompt_sha256", "request", "seed")) and m["preview"]["path_id"]
+        same_path = {m["preview"]["path_id"] for m in saved.values()}
+        dt = {c["title"]: (c["impact"] or {}).get("delta", {}).get("triangles") for c in cands}
+        row("impact: every candidate's panel, kept beside its intent (IMPACT-SAVED)", c_a == 200 and len(saved) == 3 and all(fields(m) for m in saved.values())
+            and all({k: v for k, v in (c["impact"] or {}).items() if k != "sha256"} == saved[c["letter"]] for c in cands)
+            and lined and all("impact" in x for x in lined[-1]["candidates"]) and len(same_path) == 1 and st["path"]["id"] in same_path
+            and dt == {"Panelled bay": 0, "Blank bay": -12, "Panelled column": 0},
+            "triangles %s; one preview path %s for the request; estimate %s; %s" % (
+                dt, sorted(same_path), (saved.get("A") or {}).get("estimate", {}).get("delta_ms"), (saved.get("A") or {}).get("advisory")))
+        A = saved.get("A") or {}
+        it = D.canon.load_intent(open(os.path.join(d, "A.intent"), "rb").read())
+        _v, _a, _t, o1, o0, _x, _r = D.evaluate_doc(ws, it)
+        path2 = impact.camera_path(o0["scene"], impact.focus_of(o0["scene"], json.loads(open(os.path.join(d, "request.json"), "rb").read()).get("shapes", [])), st["id"])
+        again = impact.report(o0["scene"], o1["scene"], A.get("provenance", {}), path2, (A.get("rationale") or {}).get("text", ""))
+        row("impact: the same scenes, provenance and seed give the same bytes (IMPACT-DET)", impact.enc(again) == impact.enc(A),
+            "%d bytes again from the evaluation's own scenes and the request's seed; path %s" % (len(impact.enc(again)), path2["id"]))
+        c_b, st2 = ask("panel #bay")
+        p1, p2 = A.get("provenance", {}), ((st2["candidates"] or [{}])[0].get("impact") or {}).get("provenance", {})
+        row("impact: another prompt, another provenance (IMPACT-PROV)", p1.get("prompt_sha256") == hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+            and p2.get("prompt_sha256") == hashlib.sha256(b"panel #bay").hexdigest() and p1.get("producer") == "scripted" and p1.get("request") == st["id"]
+            and p2.get("request") == st2["id"] and p1.get("model"),
+            "%s %s; %s %s (%s, %s)" % (p1.get("prompt_sha256", "")[:12], p1.get("request"), p2.get("prompt_sha256", "")[:12], p2.get("request"), p1.get("producer"), p1.get("model")))
+        start_studio(live, lamps_cfg, say=lambda s_: None)
+        c_l, st3 = ask("light the lanes")
+        L = (st3["candidates"] or [{}])[0]
+        m = L.get("impact") or {}
+        c_p, s_p = post("/studio/still?id=%s&candidate=%s" % (st3["id"], L.get("letter", "A")), D.selftest_still(), "image/png")
+        c_m, r_m = post("/studio/admit", {"id": st3["id"], "candidate": L.get("letter", "A"), "still": s_p.get("still", "")})
+        row("impact: a candidate over a budget is flagged and still admitted, the flag advisory (IMPACT-PLANT)", L.get("verdict") == "CLEAN" and m.get("flag") == "over budget (advisory)"
+            and [o["budget"] for o in m.get("over_budget", [])] == ["lights_drawn"] and m.get("candidate", {}).get("lights_drawn", 0) > m.get("budgets", {}).get("lights_drawn", 1e9)
+            and c_m == 200,
+            "lights drawn %s > budget %s; %s; admitted %s" % (m.get("candidate", {}).get("lights_drawn"), m.get("budgets", {}).get("lights_drawn"), m.get("flag"), c_m))
+        texts = [open(art, encoding="utf-8").read() + "bay 10,2-17,2:s-b%d-f2 panel concrete_dark\n" % k for k in range(8)]
+        prov = {"producer": "t", "model": "t", "prompt_sha256": "0" * 64, "request": "r", "seed": "r"}
+        head = ws.export()[0]["scene"]
+        path = impact.camera_path(head, [0, 0, 0], "r")
+        t0 = time.perf_counter()
+        scenes = [ws.export(t)[0]["scene"] for t in texts]
+        t1 = time.perf_counter()
+        r1 = [impact.enc(impact.report(head, sc, prov, path)) for sc in scenes]
+        t2 = time.perf_counter()
+        r2 = [impact.enc(impact.report(head, sc, prov, path)) for sc in scenes]
+        per = (t2 - t1) / 8 * 1000
+        row("impact: eight candidates' impacts twice, the same, each well inside 5 s (IMPACT-REPEAT)", r1 == r2 and per < 5000,
+            "8 candidates: their scenes %.0f ms, their impacts %.1f ms each (both times the same bytes)" % ((t1 - t0) * 1000, per))
+    except Exception as e:  # noqa: BLE001 — the self-test says what stopped it
+        import traceback
+        if not plant:
+            traceback.print_exc()
+        row("impact: the self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+    finally:
+        ROOT = saved_root
+        impact.PLANT = saved_plant
+        if live:
+            live.stopping = True
+            if live.studio:
+                live.studio.shutdown()
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
+    if plant:
+        return rows
+    caught = []
+    for p_ in impact.PLANTS:
+        failed = [n for n, ok in impact_selftest(p_) if not ok]
+        caught.append(bool(failed))
+        print("[%s] impact plant %s caught — %s" % ("PASS" if failed else "FAIL", p_, ("by: " + "; ".join(f[8:] for f in failed)) if failed else "NOT CAUGHT"))
+    ok = all(ok for _n, ok in rows) and all(caught)
+    print("IMPACT-STUDIO SELFTEST %d/%d" % (sum(ok_ for _n, ok_ in rows) + sum(caught), len(rows) + len(caught)))
     return 0 if ok else 1
 
 

@@ -1751,10 +1751,14 @@ def cmd_racetest():
         _o, b_parts, _c = ws.export(None, maps_b)
 
         def export_trials(plant, n=20):
-            wrong = [0]
+            # the two threads start together and switch finely, so that the plant's race is met whatever else the machine
+            # runs (with the interpreter's own switching it was missed once, 0 of 40, under two suites at once: OBSERVED at 0239)
+            wrong, gate, si = [0], threading.Barrier(2), sys.getswitchinterval()
             durable.PLANT = plant
+            sys.setswitchinterval(1e-5)
 
             def one(maps, want):
+                gate.wait()
                 for _i in range(n):
                     try:
                         wrong[0] += ws.export(None, maps)[1] != want
@@ -1768,6 +1772,7 @@ def cmd_racetest():
                     t.join()
             finally:
                 durable.PLANT = saved_plant
+                sys.setswitchinterval(si)
             return wrong[0]
         e0, e1 = export_trials(""), export_trials("no-export-lock")
         shutil.rmtree(maps_b, ignore_errors=True)

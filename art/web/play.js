@@ -1259,7 +1259,7 @@
           : c.verdict === "CLEAN" ? el("span.badge.candidate", {}, "Ready") : el("span.badge.refused", {}, c.verdict || "?");
         const sv = c.slot !== null ? (cur.slots[c.slot] || {}).served : null;
         const card = el("div.card" + (c.slot !== null && c.slot === cur.k ? ".shown" : ""), { title: (c.message || c.title || ""), dataset: { sha: sv ? sv.sha : "", letter: c.letter } },
-          th, el("div.tt", {}, c.title), heldChips(c), el("div.st", {}, st, c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
+          th, el("div.tt", {}, c.title), heldChips(c), impactRow(c), el("div.st", {}, st, c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
           el("div.acts", {}, el("button.btn.small", { disabled: c.slot === null, onclick: function () { pick(c.slot); } }, "Show"),
             el("button.btn.small", { disabled: !admissible(c), onclick: function () { admitWithStill(r.id, c); } }, "Admit"),
             el("button.btn.small", { disabled: !!c.decided, onclick: function () { decide("reject", r.id, c.letter); } }, "Reject")));
@@ -1845,6 +1845,23 @@
           + ((s.global || []).length ? ": the whole world changes: " + s.global.join(", ") : "") + (s.error ? ": " + s.error : "");
       return el("span.hv." + (s.ok ? "held" : "outside"), { title: "strict: " + why + " (the host checks it again when you admit)" }, "strict " + (s.ok ? "PASS" : "FAIL"));
     };
+    // IMPACT-0 (0239): what the candidate costs the native renderer, the host's counts and an estimate; advisory
+    const signed = function (v, unit) { return (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v).toLocaleString() + (unit || ""); };
+    const impactRow = function (c) {
+      const m = c.impact;
+      if (!m) return null;
+      if (m.error) return el("div.impact", { title: m.advisory + ": " + m.error }, el("span.iv", {}, "impact: not computed"));
+      const d = m.delta, e = m.estimate;
+      const how = m.advisory + "\n" + e.how + "\nbase " + m.base.triangles.toLocaleString() + " triangles, " + m.base.draw_calls + " draw calls, " + m.base.lights_drawn + " lights drawn, " +
+        m.base.texture_bytes.toLocaleString() + " texture bytes; " + e.base_ms + " → " + e.candidate_ms + " ms (ESTIMATE)\npreview path " + m.preview.path_id +
+        (m.rationale && m.rationale.text ? "\nwhy, in the director's words (not checked): " + m.rationale.text : "") +
+        "\nprovenance: " + [m.provenance.producer, m.provenance.model, "prompt " + (m.provenance.prompt_sha256 || "").slice(0, 12), m.provenance.request].join(" · ");
+      return el("div.impact", { title: how },
+        el("span.iv", {}, signed(d.triangles, " tris")), el("span.iv", {}, d.draw_calls ? signed(d.draw_calls, " draws") : m.candidate.draw_calls + " draws"),
+        el("span.iv", {}, signed(d.lights_drawn, " lights")), el("span.iv", {}, signed(Math.round(d.texture_bytes / 1024), " KB tex")),
+        el("span.iv.est", {}, signed(e.delta_ms, " ms ESTIMATE")),
+        m.flag ? el("span.iv.over", { title: m.over_budget.map(function (o) { return o.budget + " " + o.value + " > " + o.limit; }).join("; ") }, m.flag) : null);
+    };
     const heldChips = function (c) {
       const h = c.held;
       if (!h || h.error || !(h.accounts || []).length) return c.strict ? el("div.heldrow", {}, strictChip(c)) : null;
@@ -1881,7 +1898,7 @@
         const badges = el("div.badges"), th = el("div.th", {}, el("span.letter", {}, c.letter), rank !== undefined && (r.order || []).length > 1 ? el("span.rank", { title: "the host's order: " + (r.order[rank].key || []).join(" · ") }, "#" + (rank + 1)) : null, badges);
         const icon2 = c.decided ? (c.decided.indexOf("admit") === 0 ? el("span.good", {}, "●") : el("span.bad", {}, "✗")) : c.verdict === "CLEAN" ? el("span.good", {}, "✓") : el("span.warn", {}, "!");
         const card = el("div.card" + (mk.diffWith === c.letter ? ".shown" : ""), { dataset: { sha: sv ? sv.sha : "", letter: c.letter }, title: c.message || "", onclick: function () { mk.diffWith = c.letter; markCandidates(); splitShow(); } },
-          th, el("div.tt", {}, c.title), heldChips(c), el("div.st", {}, icon2, el("span", {}, c.decided || c.compared || (c.verdict === "CLEAN" ? "Ready" : c.verdict || "?")), c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
+          th, el("div.tt", {}, c.title), heldChips(c), impactRow(c), el("div.st", {}, icon2, el("span", {}, c.decided || c.compared || (c.verdict === "CLEAN" ? "Ready" : c.verdict || "?")), c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
           el("div.acts", {}, el("button.btn.small", { disabled: c.slot === null, onclick: function (e) { e.stopPropagation(); pick(c.slot); } }, "Show"),
             el("button.btn.small", { disabled: !admissible(c), onclick: function (e) { e.stopPropagation(); admitWithStill(r.id, c); } }, "Admit"),
             el("button.btn.small", { disabled: !!c.decided, onclick: function (e) { e.stopPropagation(); decide("reject", r.id, c.letter); } }, "Reject")));

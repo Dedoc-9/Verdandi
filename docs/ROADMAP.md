@@ -4759,6 +4759,74 @@ strict; the page's checkbox and chips are drawn by the page from the host's stat
 source or oracle file changed. Docs: AGENTS.md, art/STUDIO.md, docs/STUDIO-CONTRACT.md, docs/CORE.md (art
 23,202 lines), this entry.
 
+**His run of 0238, and his go for B3 (2026-10-15).** 0238 applied on a79995b; the rung D, loosening nothing, and the
+plants 82/82 HELD (`--repo .`); the gate 251 rows / 0 fail, rowset 74db4c8d78625af5; ART SELFTESTS PASSED, fifteen
+suites at once, 94.3 s and 93.9 s, the summaries the same (STRICT SELFTEST 11/11); pushed a79995b..fb1616f. MEASURED on
+his machine. His word on B3: *"Go — build B3 exactly that way"*, with a checklist: the panel's fields (polycount,
+draw calls, lights and their candela sum, texture bytes, estimated frame-ms labelled ESTIMATE, the provenance, the
+preview's seeded camera path, the advisory badge); a linear model `frame_ms = a*triangles + b*drawcalls + c*lights +
+d*texture_MB + e` calibrated on this host from measured draws of the head scene and variations, the data, host and date
+recorded; the impact saved with the candidate; IMPACT-DET, IMPACT-PLANT, IMPACT-PROV and IMPACT-REPEAT as art
+self-tests; one candidate's impact under 5 s; nothing in `kernel/` or `verify/`. Taken as follows: a term that does not
+vary in the calibration cannot be fitted, so `b` (every static triangle is one call a pass: the draw calls are the same
+in every scene) and `d` (the textures the renderer builds from a scene are, here, a function of its lights) are said
+and left at nought, their cost in the intercept and in `c`; texture bytes are the textures the renderer builds from the
+scene, which carries no image; the host is the container's software rasterizer, so the estimate's absolute
+milliseconds are a CPU's and a frame budget is not checked against them (the advisory budgets are counts); the impact is
+kept with the request's other records (`art/build/studio/<brief>/<request>/<letter>.impact.json`) rather than a
+folder of its own.
+
+### IMPACT-0 — the impact panel · Phase I, B3, **built, off the gate** (0239, `art/impact.py`, `art/impact_model.json`)
+
+**What it is.** For each candidate, against the base of its own evaluation, what the native renderer makes of each
+scene, counted as `scene_render.js` makes it: the triangles, the draw calls of a frame, the lights it draws (the first
+160) and their candelas, the bytes of the textures it builds from the scene; their differences; an ESTIMATE of a
+frame's milliseconds from the model in `art/impact_model.json`; the advisory budgets it is over; the provenance (the
+provider, its model, the configured model, the prompt's sha256, the request, the seed); the preview's camera path,
+named and seeded by the request and the same for all its candidates; the director's words for why, not checked. Kept
+beside the intent (`<letter>.impact.json`, named on the request's line), shown on the card with the terms, the
+calibration's host and date in its tooltip, and read by nothing that decides: *ADVISORY ESTIMATE — not admission
+evidence*.
+
+**The model.** Measured in the container on 2026-10-15 (19:57 UTC): ten scenes, the fixture's world with FACADE-0's
+building and its variations (more buildings, the lanes' lamps twice as dense, no skyline, no puddles, and their
+combinations), each drawn by `scene_render.js` in headless Chromium on SwiftShader at 480 x 270 from its view
+plaza-centre, two frames to warm and five timed (to readPixels after gl.finish), the median kept; the triangles and
+lights of every row the renderer's own (`R.triangles`, `R.nl`) and `art/impact.py`'s, equal in all ten. The least
+squares, exactly: `frame_ms = -589.294 + 0.2566 x triangles + 18.203 x lights`, the root mean square of its residuals
+654 ms over frames of 1.6 to 4.6 s (the skyline's fill, which no count here sees, is most of the misfit). A CPU's
+rasterizer, not a GPU: what the estimate gives is a direction and a proportion, until D1 measures renderers.
+
+**Its falsifiers.** `python art/impact.py selftest` (IMPACT SELFTEST 9/9): the counts against a scene worked by hand;
+the lights past the renderer's cap neither drawn nor counted in its textures; the model's coefficients its rows' least
+squares again, exactly; the path named, seeded, the same for the same seed; a candidate over a budget flagged; the
+report a function of its inputs, and another prompt another provenance; its three plants caught (the budgets skipped,
+the provenance fixed, the path seeded by the clock). `python art/play.py --impact-selftest` (IMPACT-STUDIO SELFTEST 8/8,
+over HTTP with the scripted director in the facade's world): every candidate's panel with every field, kept and on its
+line, one path for the request (IMPACT-SAVED; the bay panelled and the column panelled change no triangle, the blank bay
+takes twelve away); the impact computed again from the evaluation's own scenes, provenance and seed to the same bytes
+(IMPACT-DET); another prompt, another prompt sha256 and request (IMPACT-PROV); a candidate hanging the lanes' lamps
+twice as densely, 138 lights drawn against a budget of 128, flagged *over budget (advisory)* and still admitted
+(IMPACT-PLANT); eight candidates' impacts twice, the same bytes, 0.2 ms each (their scenes 3.6 s; IMPACT-REPEAT); the
+same three plants caught here.
+
+**Two repairs the full check asked for.** STUDIO SELFTEST's row on a request's record lists the files kept beside it,
+and now expects each candidate's impact there too (73/74 until it did). DIRECTOR RACETEST's plant without the export
+lock was missed once, 0 of 40 exports wrong with two suites running at once (OBSERVED at 0239; caught in every run
+before): the two threads now start together at a barrier and switch every 10 microseconds while they race, and the plant
+was caught 40, 28 and 38 times of 40 in three runs after; its honest row still finds every head right.
+
+**Measured in the container** (2 processors, Python 3.11): one candidate's impact 0.2 ms beside the export it rides on
+(eight candidates' scenes 3.6 s, their impacts 1.6 ms in all); the full check, `python art/selftests.py --repeat 2`, two
+suites at once, with the three references frozen again in a scratch copy as he froze them: seventeen suites, 323.5 s
+and 323.1 s, the summaries the same, ART SELFTESTS PASSED (IMPACT SELFTEST 9/9, IMPACT-STUDIO SELFTEST 8/8).
+
+**Not done.** A request drawn again (`restore`) shows no impact (its candidates are evaluated again at another head;
+the recorded impact is of the first); the path is recorded and named, and the page does not yet move along it (the
+preview in motion); no measured frame beside the estimate ("simulate" against "estimate") until a timing pass on a GPU;
+the page's panel was not run in a browser. NOT_MEASURED: his machine, a GPU. No row, rung, pinned source or oracle file
+changed. Docs: AGENTS.md, art/STUDIO.md, docs/CORE.md (art 23,712 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

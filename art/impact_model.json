@@ -1,0 +1,192 @@
+{
+ "budgets": {
+  "lights_drawn": 128,
+  "texture_bytes": 262144,
+  "triangles": 60000
+ },
+ "budgets_basis": "advisory, set at 0239: the lights below the renderer's 160 with room for edits; the triangles about ten times the plaza's; the scene's textures 256 KiB. The owner's to change; a candidate over one is flagged, never refused",
+ "calibration": {
+  "camera": "each scene's view plaza-centre",
+  "counts_agree": "the triangles and lights drawn of every row are the renderer's own (R.triangles and R.nl) and art/impact.py's",
+  "date": "2026-10-15T19:57Z",
+  "frames": 5,
+  "host": "the container: headless Chromium (Playwright 1.56) on SwiftShader, a CPU rasterizer, 2 processors; not a GPU",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "resolution": [
+   480,
+   270
+  ],
+  "rms_ms": 654.144,
+  "rows": [
+   {
+    "draw_calls": 20,
+    "lights": 80,
+    "ms": 2479.2,
+    "ms_frames": [
+     2442.7,
+     2479.2,
+     2525,
+     2675,
+     2396.2
+    ],
+    "name": "b+1",
+    "texture_bytes": 137728,
+    "triangles": 6360
+   },
+   {
+    "draw_calls": 20,
+    "lights": 80,
+    "ms": 2392,
+    "ms_frames": [
+     2363,
+     2392,
+     2378.3,
+     2461.2,
+     2706.7
+    ],
+    "name": "b+3",
+    "texture_bytes": 137728,
+    "triangles": 8016
+   },
+   {
+    "draw_calls": 20,
+    "lights": 138,
+    "ms": 3928.2,
+    "ms_frames": [
+     3862.6,
+     3998.3,
+     3928.2,
+     3797.4,
+     3944.8
+    ],
+    "name": "b+3 lights+NS",
+    "texture_bytes": 228672,
+    "triangles": 8712
+   },
+   {
+    "draw_calls": 20,
+    "lights": 80,
+    "ms": 2532,
+    "ms_frames": [
+     2508.4,
+     2606,
+     2551,
+     2431,
+     2532
+    ],
+    "name": "base",
+    "texture_bytes": 137728,
+    "triangles": 6132
+   },
+   {
+    "draw_calls": 20,
+    "lights": 109,
+    "ms": 4602.2,
+    "ms_frames": [
+     4714.9,
+     4520.9,
+     5086.3,
+     4602.2,
+     4400.1
+    ],
+    "name": "lights+N",
+    "texture_bytes": 183200,
+    "triangles": 6480
+   },
+   {
+    "draw_calls": 20,
+    "lights": 138,
+    "ms": 4118.5,
+    "ms_frames": [
+     3984.3,
+     4118.5,
+     4126.2,
+     4403,
+     3964.8
+    ],
+    "name": "lights+NS",
+    "texture_bytes": 228672,
+    "triangles": 6828
+   },
+   {
+    "draw_calls": 20,
+    "lights": 80,
+    "ms": 2479.9,
+    "ms_frames": [
+     2575.2,
+     2399.6,
+     2453,
+     2479.9,
+     2830.1
+    ],
+    "name": "nopuddles",
+    "texture_bytes": 137728,
+    "triangles": 5052
+   },
+   {
+    "draw_calls": 20,
+    "lights": 80,
+    "ms": 2531.8,
+    "ms_frames": [
+     2531.8,
+     2504.8,
+     2585.1,
+     2633.7,
+     2453.8
+    ],
+    "name": "nopuddles b+3",
+    "texture_bytes": 137728,
+    "triangles": 6936
+   },
+   {
+    "draw_calls": 20,
+    "lights": 80,
+    "ms": 1605.3,
+    "ms_frames": [
+     1420,
+     1493.6,
+     1605.3,
+     1786.4,
+     1726.6
+    ],
+    "name": "noskyline",
+    "texture_bytes": 137728,
+    "triangles": 4884
+   },
+   {
+    "draw_calls": 20,
+    "lights": 138,
+    "ms": 2368,
+    "ms_frames": [
+     2310.5,
+     2355.2,
+     2368,
+     2522.8,
+     2408.5
+    ],
+    "name": "noskyline lights+NS",
+    "texture_bytes": 228672,
+    "triangles": 5580
+   }
+  ],
+  "scene_render_sha256": "0b5cae9dc2f7b8047788ca6df052044b702651e8555cbfdbcbd5b4fb18e3b7be",
+  "scenes": "the fixture's world with FACADE_LINES's building (base), more buildings (b+1, b+3), the lanes' lamps twice as dense (lights+N, lights+NS), without the skyline or the puddles, and their combinations",
+  "statistic": "the median frame, from the draw call to readPixels after gl.finish",
+  "warmup_frames": 2
+ },
+ "coefficients": {
+  "intercept": "-589.294041091",
+  "lights": "18.202850784",
+  "triangles": "0.256580195"
+ },
+ "format": "VERDANDI-IMPACT-MODEL",
+ "not_identified": {
+  "draw_calls": "the same in every calibration scene (20 a frame: every static triangle is one call a pass), so its cost is in the intercept",
+  "texture_mb": "a function of the lights drawn here (their visibility per cell is most of it), so its cost is in the lights' coefficient"
+ },
+ "terms": [
+  "triangles",
+  "lights"
+ ],
+ "version": "0"
+}

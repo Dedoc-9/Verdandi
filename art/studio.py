@@ -84,6 +84,7 @@ import intent as canon    # noqa: E402  (DIRECTOR-0's canonical bytes: the tags 
 import ledger as led      # noqa: E402  (the content lock's place: ledger.lock_path)
 import studio_marks       # noqa: E402  (MARK-0: the shapes a request names)
 import scene_diff         # noqa: E402  (HELD-0: a shape's region, and what lies in it)
+import impact             # noqa: E402  (IMPACT-0: what a candidate costs the native renderer, advisory)
 
 REQUEST, RESPONSE, VERSION = "VERDANDI-STUDIO-REQUEST", "VERDANDI-STUDIO-RESPONSE", "0"
 REQUEST_VERSION = "1"    # STUDIO-1: the target and the pins, their geometry and relations, in place of one selection
@@ -531,6 +532,27 @@ STRICT_PLANT = ""
 STRICT_PLANTS = ("strict-not-checked", "strict-any-region", "strict-no-receipt")
 
 
+def bounds_of(O, piece):
+    """IMPACT-0: the box around an object's boxes ({"box": [...]}), the object found by a piece of it; None if none."""
+    if not piece:
+        return None
+    root = piece
+    while root not in O and root.count(":") >= 2:
+        root = root.rsplit(":", 1)[0]
+    if root not in O or not O[root]["boxes"]:
+        return None
+    bs = O[root]["boxes"]
+    return {"box": [min(b[i] for b in bs) for i in range(3)] + [max(b[i] for b in bs) for i in range(3, 6)]}
+
+
+def impact_line(rep, sha):
+    """IMPACT-0 (0239): what the request's record line keeps of a candidate's impact; the whole is <letter>.impact.json."""
+    if "error" in rep:
+        return {"error": rep["error"][:200], "sha256": sha}
+    return {"delta": rep["delta"], "estimate_delta_ms": rep["estimate"]["delta_ms"], "flag": rep["flag"],
+            "over_budget": [o["budget"] for o in rep["over_budget"]], "path_id": rep["preview"]["path_id"], "sha256": sha}
+
+
 def strict_check(scene0, scene1, shapes):
     """art/scene_diff.py's strict check, said and never raised: a check that cannot be made refuses (ADMIT-STALE)."""
     try:
@@ -657,9 +679,10 @@ class Gateway:
                 req["candidates"] = [dict({k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")}, compared=c.get("compared", ""),
                                           record=c.get("record"), still={k: c["still"][k] for k in ("sha256", "detectors", "flags")} if c.get("still") else None,
                                           held={k: v for k, v in c["held"].items() if k != "boxes"} if c.get("held") else None,
-                                          strict=c.get("strict"))
+                                          strict=c.get("strict"), impact=c.get("impact"))
                                      for c in r["candidates"]]
                 req["strict"] = bool(r.get("strict"))
+                req["path"] = {k: r["path"][k] for k in ("id", "name", "seed")} if r.get("path") else None
                 req["order"] = r.get("order", [])
             last = dict(self.last)
         return {"provider": prov, "request": req, "last": last, "refs": self.refs()}
@@ -987,7 +1010,9 @@ class Gateway:
                 request["shapes"] = shapes
             if strict:
                 request["strict"] = True
-            self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "", "shapes": [s["name"] for s in shapes],
+            # IMPACT-0 (0239): the preview's camera path, named and seeded by the request, the same for all its candidates
+            path = impact.camera_path(S, impact.focus_of(S, shapes, bounds_of(O, (target or {}).get("piece"))), rid)
+            self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "", "shapes": [s["name"] for s in shapes], "path": path,
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in refs},
                         "selection": target["address"] if target else None,
                         "head": head, "provider": {"model": cfg["model"]}, "candidates": [], "started": time.monotonic(),
@@ -1200,8 +1225,11 @@ class Gateway:
             item["intent"] = raw_intent
             if cancel.is_set():
                 break
+            ctx = {"path": req["path"], "rationale": c.get("rationale", ""),
+                   "provenance": {"producer": provider.get("name", ""), "model": provider.get("model", ""), "configured_model": req["cfg"].get("model", ""),
+                                  "prompt_sha256": sha256(req["prompt"].encode("utf-8")), "request": rid, "seed": req["path"]["seed"]}}
             slot = self.play.candidate_slot(ws, D.canon.load_intent(raw_intent), "studio %s %s: %s" % (rid, letter, item["title"]),
-                                            shapes=req.get("shape_recs", ()), strict=req.get("strict", False))
+                                            shapes=req.get("shape_recs", ()), strict=req.get("strict", False), impact_ctx=ctx)
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
                          "head": slot.get("checked_against", ""), "record": slot.get("record"), "held": slot.get("held"),
                          "touches": self.touches(slot, {t: r["piece"] for t, r in req["references"].items()}, req["objects"]) if "realized" in slot else None})
@@ -1217,12 +1245,18 @@ class Gateway:
                 item["strict"] = strict_line(slot["strict"], sha256(sb))
             elif req.get("strict"):
                 item["strict"] = {"ok": False, "code": "ADMIT-STALE", "detail": "the candidate was not drawn, so nothing of it can be held"}
+            if slot.get("impact") is not None:
+                # IMPACT-0: the whole impact beside the intent, the line naming it; advisory, it decides nothing
+                ib = (json.dumps(slot["impact"], sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")
+                self._record(rid, letter + ".impact.json", ib)
+                item["impact"] = dict(slot["impact"], sha256=sha256(ib))
             made.append((item, slot if slot["ok"] else None))
         order = host_order([i for i, _s in made])
         entry["order"] = order
         entry["candidates"] = [{"letter": i["letter"], "title": i["title"], "verdict": i["verdict"], "codes": i["codes"],
                                 "intent_sha256": sha256(i["intent"]) if i["intent"] else "", "touches": i["touches"],
-                                "held": held_line(i), **({"strict": i["strict"]} if "strict" in i else {})} for i, _s in made]
+                                "held": held_line(i), **({"strict": i["strict"]} if "strict" in i else {}),
+                                **({"impact": impact_line(i["impact"], i["impact"]["sha256"])} if i.get("impact") else {})} for i, _s in made]
         with self.lock:
             if req["state"] != "running":
                 entry.update({"outcome": req["code"] or "STUDIO-DISCARDED", "detail": "the request was %s while its candidates compiled" % req["state"]})
