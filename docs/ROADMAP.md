@@ -4432,6 +4432,17 @@ shape refused as JSON, play.py refuses a body over 64 KiB before reading it, 400
 SELFTEST 24/24; STUDIO SELFTEST 74/74; STUDIO-2 SELFTEST 19/19; STUDIO APP SELFTEST 12/12 (11/12 once, the row above,
 before the fix). Docs: AGENTS.md, art/STUDIO.md (*Its boundary*, the tags), docs/CORE.md, this entry.
 
+**His run of 0230 to 0232, and 0233 (2026-10-15).** He applied the three (the tree 341d53a3, as predicted); MARKS
+SELFTEST 19/19, BOUNDARY SELFTEST 7/7 and LIVE SELFTEST 24/24 on his machine (Windows, Python 3.14); STUDIO SELFTEST
+stopped after 14 rows with WinError 10053 in its own helper: the row *a refusal is sent only after the request's body is
+read* sends a still with its plant on (DRAIN off: the server answers before it reads, and closes), then the body, then
+reads the answer, and on Windows the body met at a closed socket brings a reset that loses the answer, the very loss
+0224's draining prevents: OBSERVED on his machine, where that row had passed in every run since 0224; whether 0232's
+socket timeout moved the race is not measured (on Linux the answer is read before the reset). **0233, built, off the
+gate:** the helper takes a reset as the answer lost (its text in its place) instead of stopping the self-test; the row
+reads the plant's `early` alone, as it did, and the two answers it reads with draining on (both must be 403) fail it if
+they were lost, and now say what they were. STUDIO SELFTEST 74/74 in the container. NOT_MEASURED: his machine's run.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

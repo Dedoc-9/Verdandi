@@ -2002,7 +2002,15 @@ def studio_selftest():
                     c.sendall(b"\x89" * n)
                 except OSError:
                     pass
-                return early, c.recv(64)
+                try:
+                    got = c.recv(64)
+                except OSError as e:
+                    # the answer lost to a reset, what draining prevents (0224). With the plant (DRAIN off) the server answers
+                    # before it reads and closes; on Windows the body the client then sends is met with a reset and the answer
+                    # is lost with it (his run of 0232's self-test, 2026-10-15: WinError 10053 here, and the self-test stopped).
+                    # The row reads the plant's `early` alone; the two answers it reads (r1, r2) fail it if they were lost.
+                    got = ("<%s>" % type(e).__name__).encode("ascii")
+                return early, got
             finally:
                 c.close()
         e1, r1 = answered_early("/studio/still?id=%s&candidate=A" % rid, "image/png", 4000)
@@ -2015,7 +2023,7 @@ def studio_selftest():
             DRAIN = True
         row("a refusal is sent only after the request's body is read (a still, a JSON request); plant, no draining: the answer comes first",
             not e1 and not e2 and r1.startswith(b"HTTP/1.0 403") and r2.startswith(b"HTTP/1.0 403") and e3,
-            "answered before the body: still %s, JSON %s; with the plant %s" % (e1, e2, e3))
+            "answered before the body: still %s, JSON %s; with the plant %s; the answers %r, %r" % (e1, e2, e3, r1[:16], r2[:16]))
         code, body = admit_with_still(srv, rid, "A", tok)
         v = live.version
         t = time.time()
