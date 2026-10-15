@@ -4443,6 +4443,71 @@ gate:** the helper takes a reset as the answer lost (its text in its place) inst
 reads the plant's `early` alone, as it did, and the two answers it reads with draining on (both must be 403) fail it if
 they were lost, and now say what they were. STUDIO SELFTEST 74/74 in the container. NOT_MEASURED: his machine's run.
 
+**His run of 0233 (2026-10-15).** The tree edba9f1b as predicted; STUDIO SELFTEST 74/74, STUDIO-2 SELFTEST 19/19,
+STUDIO APP SELFTEST 13/13, ART CHECKS PASSED, the rung D and loosening nothing, the plants 82/82 HELD; the gate 251 rows
+/ 0 fail, rowset 74db4c8d78625af5. MEASURED on his machine.
+
+### DSC-0 — the state-commitment court · probe 6, **built, off the gate** (0234, `tools/probe/state_commit.py`)
+
+**The question.** With his run of 0233 he brought outside documents: a recursive-proof state that would "dissolve the
+ledger", and Differential State Commitments, a Merkle tree over the grid giving "O(k log n) verification instead of
+O(n) replay", with a threat analysis and a draft implementation said to be ready to deploy. The question they put:
+should the session's content function become a tree commitment now?
+
+**The draft, read and run (a port of its root and its batch in the container, not committed).** Its tree has
+`TREE_DEPTH = 8` over 256 x 256 leaves, so in a release build its root reads 256 of the 65,536 leaves (one column;
+`debug_assert` stops a debug build first): MEASURED, a change of cell (10, 5) leaves the root as it was. Its batch checks
+every old value against the state before the batch, then writes in a stable sort, so two operations on one cell that
+both claim the empty value are both accepted and the cell keeps whichever came last: the forged prior value its own
+threat analysis names first, MEASURED. Its command-line verifier checks a manifest against a new empty grid, never reads
+the manifest's proofs, and its proof siblings are a placeholder; its test of a single change asserts that a cached root
+differs from itself; its falsification report gives timings, three platforms and "ALL EXPRESSIONS PASSED" for code
+that names crates (sha2, serde, clap, chrono, proptest, fastrand) this repository's build cannot reach (rustc alone, no
+Cargo, no `--extern`: §2 of docs/CORE.md). READ, not run: the report's numbers were written before any run could be.
+
+**The repository's facts that decide it (read).** An edit's law is local: inside the level, the border rock, the
+alphabet (`apply`, workshop/session.rs; `push_edit_cell`, shell/playback.rs), and the grant is an operation kind, a
+rectangle and classes (shell/admit.rs); the design tool's reachability is "a view, not a constraint". The kernel's world
+is at most 48 x 48 cells (`LATTICE`, kernel/mantle.rs:53). The content is the SHA-256 of the whole level and tiles; the
+shell keeps the two digests as an exact memo and the workshop keeps none.
+
+**The court.** DSC-0 is built as a reference over the same bytes: leaves that name their place, nodes apart from
+leaves, a path's sides taken from its index and never from the proof, a tile class committed by its generator when it
+is one colour (and then only so), a root bound to the level's extent, one byte form for a batch's receipt (strictly
+increasing places, each with its old and new value, nothing that changes nothing) and for its proof (the siblings the
+union of its paths needs, exactly that many), and a verifier that is given the root before, the receipt and the proof
+and nothing else. The probe's kill criteria are in its header: soundness, agreement with the workshop, and necessity at
+the kernel's largest world. MEASURED in the container: `PROBE 6-dsc VERDICT HELD`, 36 cases HELD, at two seeds (60 edits
+over a plain base and 60 over a textured one; 120 and 120). Sixteen forgeries refused with their codes (an old value, a
+place twice, places out of order, a change of nothing, a sibling, a hash too many and one too few, a proof moved to
+another place, a padding place, a class that does not exist, an empty receipt, a border cell, a byte outside the
+alphabet, the extent transposed, a class's old colour, trailing bytes), and a stale root; the reference agrees with the
+workshop at the end of every batch (the content it logged, the final bytes of its replay, its verify); the root reached
+by receipts is the root computed again from the bytes; the inverse receipts walk back to the genesis over the plain
+base. Fifteen mutants of the verifier: 13 caught; two equivalent for soundness, and shown so: with a leaf that does not
+name its place, 7,018 of 277,394 proofs also verify at another place holding the same value, every one to the true root
+(a proof stops naming one place; nothing false is accepted), and since no leaf's preimage is 64 bytes long a node cannot
+pass for a leaf without the node prefix (which costs no block).
+
+**What it settles.** (1) DSC is replay with a tree-shaped content function, not a replacement for the log: a receipt
+for cells that went back to their old values verifies again (`limit-history`: a root holds no history, so the duplicate
+and anchor checks stay with the log), and a paint over a textured class has no inverse without the class's old bytes
+(`limit-inverse-texture`: undo needs the log or the base). ESTABLISHED by construction, and reproduced. (2) A tree
+commitment cannot certify the present heads: each head folds the SHA-256 of the whole state, which only the whole
+state's bytes give, so a tree kept beside the chain verifies nothing of it for less than replay costs, and adopting one
+means a new content function and every head moving. ESTABLISHED. (3) It buys nothing measurable at the kernel's world:
+one cell edit at 48 x 48 hashes 307 blocks (about 0.09 ms at the workshop's own rate here) against DSC-0's 54, and a
+paint 15,363 blocks (about 4.7 ms) against 18. MEASURED. (4) Its place is the format of a larger world: at the
+workshop's rate the incumbent's cell edit passes a tenth of a 60 Hz frame at 1024 x 1024 cells (about 5.1 ms) and a
+whole frame at 2048 x 2048 (about 20 ms), while DSC-0's verification stays between 0.04 and 0.13 ms through 4096 x 4096:
+MEASURED over levels of the present layout made larger, which the kernel refuses; INFERRED for a format that does not
+exist yet. Kept apart from this: the admission path's own growth, the design tool's admission at 89 ms after 3 designs
+and 137 ms after 80 (160 edits) in the container, which is the session read and written whole, not hashing (INFERRED
+from the memo: a cell edit there hashes 295 blocks).
+
+**Not done.** No row, no rung; nothing in `kernel/`, `workshop/`, `shell/` or `verify/` changed, and nothing reads
+DSC-0. NOT_MEASURED: his machine. Docs: AGENTS.md, docs/CORE.md (tools/ 1,996 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
