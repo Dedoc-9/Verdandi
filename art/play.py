@@ -1130,12 +1130,17 @@ def server(target, port=0):
             return int(v) if re.fullmatch(r"[0-9]{1,12}", v.strip()) else None
 
         def send(self, code, body, ctype):
-            self.send_response(code)
-            for k, v in (("Content-Type", ctype), ("Content-Length", str(len(body))), ("Cache-Control", "no-store"),
-                         ("Cross-Origin-Opener-Policy", "same-origin"), ("Cross-Origin-Embedder-Policy", "require-corp")):
-                self.send_header(k, v)
-            self.end_headers()
-            self.wfile.write(body)
+            # 0244: a client that hung up before its answer (a refused request's sender often does) is let go quietly:
+            # the socket server printed its reset as a traceback, which RUNG-0 read as a suite stopping early
+            try:
+                self.send_response(code)
+                for k, v in (("Content-Type", ctype), ("Content-Length", str(len(body))), ("Cache-Control", "no-store"),
+                             ("Cross-Origin-Opener-Policy", "same-origin"), ("Cross-Origin-Embedder-Policy", "require-corp")):
+                    self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                self.close_connection = True
 
         def refuse(self, code, msg, cap):
             """Answer a refusal only after reading what was sent, up to `cap` bytes (see DRAIN)."""

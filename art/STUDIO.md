@@ -373,6 +373,28 @@ WORLD REQUEST LETTER --note TEXT` appends to `art/visual_baselines.jsonl` the sh
 report, archives and sheet), its path and subject, and his note, only from a preview that is complete, every state
 verified, its path clear and framed in both scenes; refused otherwise, and without a note.
 
+## Certificates (CERT-0) and glue (GLUE-0), 0244
+
+**Every admission's certificate.** After each admission and each undo the studio writes, by the ledger's sequence
+number, `art/build/studio/<world>/certificates/<seq>.json` (`art/certificate.py`): the parent (the head before and its
+parts), the operation (its revision lines), the inverse (the ledger's), the child (the head after and its parts), the
+statement keys it touches, its provenance and the ledger event it is made from (its sha256). The ledger stays the
+authority. The certificate is checked at once against the brief as admitted, exactly and without exporting anything:
+the child's text is the child's, each head is its parts', the change is the art's alone, and the inverse applied to the
+child gives the parent byte for byte (`exact`) or, failing that, its statements token for token (`statements`: the
+same scene, the head not). The request's line and the admission's answer carry the summary; an undo's answer says
+whether the head before the admission came back (`head_restored`). Found by it (0244): an `=` on a statement written in
+aligned columns, and every `-`, are undone statement for statement but not byte for byte (the line comes back in single
+spaces; a removed statement comes back at the end, without its comment), so the head after such an undo is not the head
+before, though the scene is; only `+` and `=` on single-spaced statements are exact.
+
+**Glue.** `art/glue.py` judges two edits written against one head: they *commute* when both orders apply and give the
+same scene, and they *glue* when, besides, the glued scene changes exactly what each changes and both agree on every
+section they both change (a section: a piece by its id, a material by its name, the environment; the provenance field
+`by` left out). Otherwise the pair is OBSTRUCTED, and its obstruction is an object with a sha256 the same whichever
+edit is named first: which orders would not apply, where the orders differ, where the two disagree. `python art/glue.py
+census` judges every pair of seven of the flagship's edits. Nothing in the studio decides by it yet.
+
 ## Legibility along the path (LEGIBLE-0, 0241: one test of Meaning-to-View)
 
 `art/legibility.py` asks whether the evidence for a piece survives the view: along a path, at each pose, the share of

@@ -396,15 +396,23 @@ def suite_output(root, suite):
     of its plant rows, its first brief's, not all of them, until 0242 (MEASURED by simulation in the container)."""
     r = subprocess.run([sys.executable, "-B"] + list(suite), cwd=root, capture_output=True,
                        env=dict(os.environ, PYTHONHASHSEED="0", PYTHONUTF8="1", PYTHONIOENCODING="utf-8"), timeout=1800)
-    return r.stdout.decode("utf-8", "replace"), r.stderr.decode("utf-8", "replace")
+    return r.stdout.decode("utf-8", "replace"), r.stderr.decode("utf-8", "replace"), r.returncode
 
 
-def crashed(err):
-    """The last line of a traceback in a suite's error output, or None: a suite that raised did not run to its end, and
-    its rows after the raise were never printed."""
-    if "Traceback (most recent call last)" not in err:
+def crashed(err, rc=1):
+    """The exception that ended a suite, or None: it ended with a non-zero status and its error output ends with a
+    traceback (the frames, then the exception's own line). A traceback a suite logs and goes on from is not a stop
+    (0244: STUDIO SELFTEST logs one when a request's thread fails, by design, and 0242's reading took it for a stop)."""
+    lines = [ln for ln in err.rstrip().splitlines() if ln.strip()]
+    at = [i for i, ln in enumerate(lines) if ln.startswith("Traceback (most recent call last)")]
+    if rc == 0 or not at:
         return None
-    return [ln for ln in err.strip().splitlines() if ln.strip()][-1][:200]
+    tail = lines[at[-1] + 1:]
+    frames = [ln for ln in tail if ln.startswith(" ")]
+    last = tail[-1] if tail else ""
+    if not frames or last.startswith(" ") or not re.match(r"[A-Za-z_][\w.]*(: |$)", last):
+        return None
+    return last[:200]
 
 
 def plant_rows(root, broken=None):
@@ -414,8 +422,8 @@ def plant_rows(root, broken=None):
     for suite in SUITES:
         if not os.path.exists(os.path.join(root, suite[0])):
             continue
-        txt, err = suite_output(root, suite)
-        why = crashed(err)
+        txt, err, rc = suite_output(root, suite)
+        why = crashed(err, rc)
         if why and broken is not None:
             broken.append((" ".join(suite), why))
         for ln in txt.splitlines():
@@ -551,7 +559,7 @@ def cmd_selftest():
         saved = os.environ.get("PYTHONIOENCODING")
         os.environ["PYTHONIOENCODING"] = "cp1252"       # the owner's console, as a Windows pipe has it
         try:
-            txt, err = suite_output(d, ("suite.py",))
+            txt, err, rc = suite_output(d, ("suite.py",))
             r = subprocess.run([sys.executable, "-B", "suite.py"], cwd=d, capture_output=True, env=dict(os.environ, PYTHONUTF8="0"))
         finally:
             if saved is None:
@@ -559,10 +567,18 @@ def cmd_selftest():
             else:
                 os.environ["PYTHONIOENCODING"] = saved
         got = [PLANT_ROW.match(ln).group(2) for ln in txt.splitlines() if PLANT_ROW.match(ln)]
-        bare = crashed(r.stderr.decode("cp1252", "replace"))
+        bare = crashed(r.stderr.decode("cp1252", "replace"), r.returncode)
         row("a suite printing what a cp1252 console cannot write is read whole; left to cp1252 it stops, and the stop is said",
-            got == ["plant: one", "plant: two \u0661\u0660\u0660", "plant: three"] and not crashed(err) and bare is not None and "UnicodeEncodeError" in bare,
+            got == ["plant: one", "plant: two \u0661\u0660\u0660", "plant: three"] and not crashed(err, rc) and bare is not None and "UnicodeEncodeError" in bare,
             "read as UTF-8: %d of 3 rows; under cp1252: %s" % (len(got), bare))
+        # 0244: a traceback a suite logs and goes on from is not a stop; one that ends it is
+        open(os.path.join(d, "logs.py"), "w", encoding="utf-8").write(
+            "import sys, traceback\ntry:\n    1 / 0\nexcept ZeroDivisionError:\n    sys.stderr.write(traceback.format_exc() + '-' * 40 + '\\n')\nprint('PASS plant: after — refused')\n")
+        open(os.path.join(d, "dies.py"), "w", encoding="utf-8").write("print('PASS plant: before — refused')\n1 / 0\n")
+        t1, e1, r1 = suite_output(d, ("logs.py",))
+        t2, e2, r2 = suite_output(d, ("dies.py",))
+        row("a traceback a suite logs and goes on from is not a stop; an exception that ends it is", crashed(e1, r1) is None and "plant: after" in t1
+            and (crashed(e2, r2) or "").startswith("ZeroDivisionError"), "logged: %s; ended: %s" % (crashed(e1, r1), crashed(e2, r2)))
     finally:
         import shutil as _sh
         _sh.rmtree(d, ignore_errors=True)

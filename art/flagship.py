@@ -18,7 +18,7 @@
 #   preview    one path for every candidate, clear in both scenes and framed for the        FLAGSHIP-FRAMING
 #              region in both; both sides' stills; replayed and every state verified       FLAGSHIP-PREVIEW
 #   admit      admitted; the ledger's admit event from the request's head to the head the   FLAGSHIP-ADMIT
-#              files now have, with its region receipt
+#              files now have, with its region receipt; its certificate exact (CERT-0, 0244)
 #   undo       undone; the head, the brief's bytes and the scene's bytes as before          FLAGSHIP-UNDO
 #
 # The procedure decides nothing for the studio: the studio's admission reads none of the impact, the framing or the
@@ -160,18 +160,22 @@ def run(http, shape, prompt, choose, wait, snapshot, still_of, admission_still, 
     after = snapshot()
     new = after["admits"][len(before_admit["admits"]):]
     ad = new[-1] if new else {}
+    cert = a.get("certificate") or {}
     ok = c == 200 and len(new) == 1 and ad.get("head_before") == st["head"] and ad.get("head_after") == after["head"] != before_admit["head"] \
-        and bool((ad.get("region") or {}).get("receipt"))
+        and bool((ad.get("region") or {}).get("receipt")) and cert.get("ok") is True and cert.get("exact") is True and cert.get("seq") == ad.get("seq")
     if not done("admit", ok, "FLAGSHIP-ADMIT", {"status": c, "code": a.get("code"), "message": (a.get("message") or "")[:160], "seq": ad.get("seq"),
                                                 "head_before": ad.get("head_before"), "head_after": ad.get("head_after"),
-                                                "receipt_sha256": (ad.get("region") or {}).get("receipt_sha256")}):
+                                                "receipt_sha256": (ad.get("region") or {}).get("receipt_sha256"),
+                                                "certificate": {k: cert.get(k) for k in ("seq", "sha256", "exact", "codes")}}):
         return result()
     # undo
     hook("undo")
     c, u = http.post("/studio/undo", {})
     back = snapshot()
     same = {k: back[k] for k in ("head", "brief_sha256", "scene_sha256")} == {k: before_admit[k] for k in ("head", "brief_sha256", "scene_sha256")}
-    done("undo", c == 200 and same, "FLAGSHIP-UNDO", {"status": c, "head": back["head"], "as_before": same})
+    done("undo", c == 200 and same and u.get("head_restored") is True and (u.get("certificate") or {}).get("ok") is True, "FLAGSHIP-UNDO",
+         {"status": c, "head": back["head"], "as_before": same, "head_restored": u.get("head_restored"),
+          "certificate": {k: (u.get("certificate") or {}).get(k) for k in ("seq", "sha256", "exact")}})
     return result()
 
 
@@ -276,11 +280,11 @@ def selftest():
         row("the flagship's edit from mark to undo, every stage's evidence (FLAGSHIP-0)", r1["ok"] and world(r1["world_after"]) == world(r1["world_before"])
             and len(r1["world_after"]["admits"]) == len(r1["world_before"]["admits"]) + 2,
             "stages %s; held %s, strict %s, impact %s; path %s framed for #bay in both scenes (smallest %s px); replayed %s, verified %s; admitted #%s %s -> %s, "
-            "receipt %s; undone, the head, the brief and the scene as before" % (
+            "receipt %s, certificate %s exact; undone, the head, the brief and the scene as before" % (
                 [s_["stage"] + ("" if s_["ok"] else " " + s_["code"]) for s_ in r1["stages"]], ev.get("candidate", {}).get("held"), ev.get("candidate", {}).get("strict"),
                 ev.get("candidate", {}).get("impact"), pv.get("path"), [int(x) for x in pv.get("smallest_px", [0])], pv.get("replayed"), pv.get("state_verified"),
                 ev.get("admit", {}).get("seq"), (ev.get("admit", {}).get("head_before") or "")[:12], (ev.get("admit", {}).get("head_after") or "")[:12],
-                (ev.get("admit", {}).get("receipt_sha256") or "")[:12]))
+                (ev.get("admit", {}).get("receipt_sha256") or "")[:12], (ev.get("admit", {}).get("certificate", {}).get("sha256") or "")[:12]))
         # planted failures: each stops its transition, and the active world is as it was
         r2 = go("Panelled column")
         rid2 = next(s_["evidence"]["id"] for s_ in r2["stages"] if s_["stage"] == "request")

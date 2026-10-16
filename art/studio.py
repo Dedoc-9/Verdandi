@@ -87,6 +87,7 @@ import scene_diff         # noqa: E402  (HELD-0: a shape's region, and what lies
 import impact             # noqa: E402  (IMPACT-0: what a candidate costs the native renderer, advisory)
 import motion             # noqa: E402  (PREVIEW-0: the preview in motion, a replayable experiment)
 import camera             # noqa: E402  (PATH-0: the preview's camera path and its clearance rule)
+import certificate        # noqa: E402  (CERT-0: every admission's certificate and the exact check of its inverse)
 
 REQUEST, RESPONSE, VERSION = "VERDANDI-STUDIO-REQUEST", "VERDANDI-STUDIO-RESPONSE", "0"
 REQUEST_VERSION = "1"    # STUDIO-1: the target and the pins, their geometry and relations, in place of one selection
@@ -1400,14 +1401,17 @@ class Gateway:
             raise StudioError("STUDIO-STILL-FLAGGED", "candidate %s's still: %s. A detector proves nothing: admit despite it, which the ledger "
                                                       "records, or reject the candidate" % (letter, "; ".join(st["flags"])))
         ev = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(c["intent"], verdict, after, timings, rec))
+        parent_text = ws.text()
         a = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note="request %s, candidate %s" % (rid, letter),
                   still=png, despite=bool(despite), region=region)
+        cert = self._certify(ws, a, it["revision"], parent_text, (c.get("impact") or {}).get("provenance") or {"request": rid}, rid, letter)
         with self.lock:
             c["decided"] = "admitted"
+            c["certificate"] = cert
             comparison = self._compared(r, letter)
-            self.last = {"what": "admitted", "request": rid, "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head": a["head_after"]}
+            self.last = {"what": "admitted", "request": rid, "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head": a["head_after"], "certificate": cert}
         self._log(dict({"id": rid, "at": now(), "decision": "admit", "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head_after": a["head_after"],
-                        "still_sha256": still, "despite_detectors": bool(st["flags"]), "comparison": comparison},
+                        "still_sha256": still, "despite_detectors": bool(st["flags"]), "comparison": comparison, "certificate": cert},
                        **({"strict": {k: region[k] for k in ("count", "receipt_sha256", "inverse_receipt_sha256", "support_sha256")}} if region else {})))
         return self.last
 
@@ -1602,11 +1606,31 @@ class Gateway:
         ev = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(raw, verdict, after, timings, rec))
         if verdict["verdict"] != "CLEAN":
             raise StudioError("STUDIO-NOT-UNDOABLE", "the inverse of #%s is %s (%s), recorded as #%s and not admitted" % (a["seq"], verdict["verdict"], ",".join(verdict["codes"]), ev["seq"]))
+        parent_text = ws.text()
         u = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note=UNDO_NOTE + a["seq"], inverse_of=a["seq"])
+        cert = self._certify(ws, u, list(a["inverse"]), parent_text, {"producer": "undo", "of": a["seq"]})
+        # CERT-0: whether the undo gave back the head before the admission it undoes (exactly when that admission's
+        # certificate is exact; otherwise its statements and its scene, under another head: said, never hidden)
+        restored = {"head": u["head_after"] == a["head_before"]}
         with self.lock:
-            self.last = {"what": "undone", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head": u["head_after"]}
-        self._log({"at": now(), "decision": "undo", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head_after": u["head_after"]})
+            self.last = {"what": "undone", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head": u["head_after"], "certificate": cert,
+                         "head_restored": u["head_after"] == a["head_before"]}
+        self._log({"at": now(), "decision": "undo", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head_after": u["head_after"], "certificate": cert,
+                   "head_restored": restored["head"]})
         return self.last
+
+    def _certify(self, ws, event, revision, parent_text, provenance, rid="", letter=""):
+        """CERT-0 (0244): the admission's certificate (art/certificate.py), kept by its ledger sequence number in the
+        world's certificates folder and checked at once against the brief as admitted; what the request's line keeps of it."""
+        try:
+            child = ws.text()
+            cert = certificate.make(self.brief, event, revision, parent_text, child, provenance, rid, letter)
+            res = certificate.check(cert, child)
+            b = (json.dumps(cert, sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")
+            self._record("certificates", "%s.json" % event["seq"], b)
+            return {"seq": event["seq"], "sha256": sha256(b), "ok": res["ok"], "exact": res["exact"], "statements": res["statements"], "codes": res["codes"]}
+        except Exception as e:  # noqa: BLE001 — a certificate that cannot be made is said, the admission stands (the ledger is the authority)
+            return {"seq": event.get("seq"), "ok": False, "error": "%s: %s" % (type(e).__name__, str(e)[:200])}
 
 
 # contextlib.redirect_stdout swaps the process's one sys.stdout: two quiet() calls at once (an admission and an undo,

@@ -5101,6 +5101,86 @@ approve, after his eyes on the sheet); plants completeness (its own rung); the d
 machine, a GPU. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md, art/STUDIO.md, docs/CORE.md (art
 25,835 lines), this entry.
 
+**His run of 0243, and a trajectory tweak (2026-10-16).** 0243 applied on 3ebb854; the rung D; PLANTS HELD, 116 and
+116; ART SELFTESTS PASSED, twenty-two suites at once, 181.9 s and 174.7 s; the gate 251 rows / 0 fail, rowset
+74db4c8d78625af5; pushed 3ebb854..e1fb9f4. MEASURED on his machine. Then two documents and a note. The first: drop
+probabilistic patchwork for exact algebra fitting the model: admissions as morphisms and stored inverses as
+isomorphisms (a groupoid), local edits as sections over a cover of the world that glue when they agree on overlaps and
+whose disagreement is a canonical obstruction (a sheaf, its Čech cocycle), operations as rewrite rules whose critical
+pairs say where order matters, a few lemmas in Lean; start with a sheaf-merge pilot. The second: the agent as a typed
+producer and curator of artifacts: admission certificates (parent, operation, inverse, child), a census of critical
+pairs, a declared cover with section deltas, and a detector of dusk's near-collisions with ranked fixes; nothing
+float-dependent on the certified path, measured proxies for the director's proposals only. The note: *"the integral of
+two gaussians has an analytical closed-form algebraic solution... consider tailoring sigma packet variance to handle
+(CONTENT TIME) smooth fuzzing constraints if needed"*. Taken as follows: certificates and glue first, in the art layer
+(his `workshop/inverse.rs`, `verify/sheaf_merge.rs` and `kernel/op_algebra.rs` would touch what Phase I keeps as it is),
+the census's first table with them; the ledger's form untouched (it is shared with the Rust conformance vectors), the
+certificates derived from it and kept with the world's records; an obstruction reported as it is and not reduced by a
+coboundary (statements, boxes and materials carry no group to subtract in; a conflict is an object, as in Mimram and Di
+Giusto's category of patches); Lean not begun. The Gaussian closed form (the integral of the product of two normal
+densities is a normal density in the difference of their means, its variance the sum of theirs) considered and not
+used: nothing certified rests on a float, by his own rule, and the scenes have no content-time axis to fuzz yet (one
+sun, still); it enters the director's advisory proposals if dusk is given time.
+
+### CERT-0 and GLUE-0 — every admission's certificate, and two edits glued or not · **built, off the gate** (0244, `art/certificate.py`, `art/glue.py`)
+
+**Certificates.** After each admission and each undo the studio writes the admission's certificate by its ledger
+sequence number (`art/build/studio/<world>/certificates/<seq>.json`): parent, operation, inverse, child, the statement
+keys touched, provenance, and the sha256 of the ledger event it is made from; checked at once against the brief as
+admitted, exactly and without an export: the child's text is the child's, each head its parts', the change the art's
+alone, and the inverse applied to the child gives the parent byte for byte (`exact`) or its statements token for token
+(`statements`). The admission's answer and the request's line carry it; an undo says whether the head before came back
+(`head_restored`). FLAGSHIP-0's admit and undo stages now require the certificate, exact.
+
+**What the certificates found (MEASURED).** The stored inverse is an isomorphism on texts only for `+` and for `=` on a
+statement written in single spaces. An `=` on a statement written in aligned columns comes back in single spaces, and
+a `-` comes back at the end of the file without its comment: the statements and the scene are as before (the same bytes
+of scene), the brief's bytes and so the head are not. So an undo of such an admission leaves the world's head new, and
+a brief's frozen reference would no longer match it (its art sha256 moved). The flagship's edit (`+ bay`) is exact,
+which is why FLAGSHIP-0's undo held. The repair is a change of the revision language and is his to rule: (a) the
+inverse of `=` and `-` recorded as the exact row and its line (a positioned, verbatim form applied only by undo; old
+ledgers replay as they are; the intent's validation and the Rust conformance vectors learn the form); or (b) the head's
+art part taken over the statements instead of the bytes (sorted, single-spaced, comments out), a change of DIRECTOR-0's
+head that re-freezes every reference and rebases every ledger. The agent's recommendation: (a).
+
+**Glue.** Two edits written against one head commute when both orders apply and give the same scene; they glue when,
+besides, the glued scene changes exactly what each changes and the two agree on every section both change (a piece by
+its id, a material by its name, the environment; the provenance `by` left out). Otherwise OBSTRUCTED, the obstruction
+an object with a sha256 the same whichever edit is named first. The census of seven of the flagship's edits (two bays
+panelled or blank, a neighbouring bay, the whole face panelled, the warehouse raised, a lighter glass, the lanes'
+lamps): 21 pairs, 16 glue, 5 obstructed: the same bay set two ways (neither order applies), the face against each of
+three bays (they commute, the bay's statement winning either way, but they set the bay differently: commuting is not
+gluing), and the face against the raised warehouse (one statement, two values: the orders differ).
+
+**Its falsifiers.** CERT SELFTEST 7/7: four admissions' certificates, exact where they should be and statements-only
+where they should be; the finding, the scene's bytes the same and the head not; a wrong inverse, a child not the
+admitted text, a parent head not its parts', a layout's change, each refused with its code; the certificate a function
+of its inputs; three plants caught (the child unhashed, statements taken for exact, the heads unchecked). GLUE SELFTEST
+9/9: two bays glue; one bay two values obstructed with one fingerprint either way; the same value twice glues; the face
+and a bay commute and do not glue; a material and a bay glue; the census twice the same; three plants caught (the
+sections unchecked, the fingerprint ordered, a repeat refused). FLAGSHIP SELFTEST 9/9 with the certificates.
+
+**Two repairs the classifier's own run asked for.** 0243's classifier on this patch said, in two of three runs,
+*"THE NEW CHECKER STOPPED EARLY: art/studio.py selftest"* and PLANTS NOT HELD (OBSERVED, a cp1252 console simulated):
+STUDIO SELFTEST's output carried a traceback it went on from
+(74/74 every time), and 0242's reading took any traceback for a stop. Caught again in a worktree as the classifier
+makes one: the traceback was the socket server's, printed when a client the studio refuses (a still sent without the
+token) hung up before the 403 was written (ConnectionResetError in `send`). Two repairs: `art/play.py`'s server lets a
+client that hung up go quietly; `tools/rung.py` calls a suite stopped only when it ended with a non-zero status and its
+error output ends with the traceback that ended it (RUNG SELFTEST 19/19, its new row a suite that logs a traceback and
+goes on against one that dies). The first takes effect for this patch's own run; the second from the next patch, once
+he takes the classifier from origin/main.
+
+**Measured in the container** (2 processors, Python 3.11): a certificate made and checked in milliseconds; the census's
+21 pairs 12.6 s (four exports a pair, 0.12 s each); the full check, `python art/selftests.py --repeat 2`, two suites at
+once, the four references frozen in a scratch copy: twenty-four suites, 955.0 s and 964.2 s, ART SELFTESTS PASSED.
+
+**Not done.** The inverse's repair (his ruling); the cover declared as a file and section deltas in the ledger (E3's
+rest); the census over every kind of statement (E2's rest); the dusk detector and ranked fixes (E4); glue used by the
+studio (a second candidate re-evaluated or merged when it glues); Lean; the dashboard. NOT_MEASURED: his machine. No
+row, rung, pinned source or oracle file changed. Docs: AGENTS.md (two rows), art/STUDIO.md, docs/CORE.md (art 26,311 lines, tools
+2,063), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
