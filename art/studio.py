@@ -86,6 +86,7 @@ import studio_marks       # noqa: E402  (MARK-0: the shapes a request names)
 import scene_diff         # noqa: E402  (HELD-0: a shape's region, and what lies in it)
 import impact             # noqa: E402  (IMPACT-0: what a candidate costs the native renderer, advisory)
 import motion             # noqa: E402  (PREVIEW-0: the preview in motion, a replayable experiment)
+import camera             # noqa: E402  (PATH-0: the preview's camera path and its clearance rule)
 
 REQUEST, RESPONSE, VERSION = "VERDANDI-STUDIO-REQUEST", "VERDANDI-STUDIO-RESPONSE", "0"
 REQUEST_VERSION = "1"    # STUDIO-1: the target and the pins, their geometry and relations, in place of one selection
@@ -1013,7 +1014,7 @@ class Gateway:
             if strict:
                 request["strict"] = True
             # IMPACT-0 (0239): the preview's camera path, named and seeded by the request, the same for all its candidates
-            path = impact.camera_path(S, impact.focus_of(S, shapes, bounds_of(O, (target or {}).get("piece"))), rid)
+            path = self._path(S, shapes, bounds_of(O, (target or {}).get("piece")), rid)
             self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "", "shapes": [s["name"] for s in shapes], "path": path,
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in refs},
                         "selection": target["address"] if target else None,
@@ -1024,6 +1025,15 @@ class Gateway:
         self.play.publish([])
         threading.Thread(target=self._run, args=(req, request, cancel, ws), daemon=True).start()
         return rid
+
+    def _path(self, S, shapes, target_box, rid):
+        """PATH-0 (0241): the request's camera path (art/camera.py), or, when too few poses about its focus are clear, a
+        path of none that says why (the preview then refuses: PREVIEW-NO-PATH)."""
+        focus, normal = impact.aim_of(S, shapes, target_box)
+        try:
+            return impact.camera_path(S, focus, rid, normal)
+        except camera.CameraError as e:
+            return {"id": "none", "name": "none", "seed": rid, "focus": focus, "poses": [], "refused": "%s: %s" % (e.code, e.detail)}
 
     def restore(self, rid):
         """STUDIO-2: draw again the candidates a finished request recorded (its A, B, C intents), each evaluated at the head
@@ -1054,19 +1064,32 @@ class Gateway:
         store = getattr(self.play, "shapes", lambda: None)()
         shape_recs = store.records([s_.get("name") for s_ in request.get("shapes", [])]) if store is not None else []
         made = []
+        # PATH-0 (0241): the request's path again, at the head as it is now, seeded by its id; each candidate's impact
+        # computed again from its evaluation now (kept in the state; the first, recorded one is left as it was)
+        path = self._path(out["scene"], request.get("shapes", []), bounds_of(O, (request.get("target") or {}).get("piece")), rid)
         for letter in LETTERS:
             f = os.path.join(d, letter + ".intent")
             if not os.path.exists(f):
                 continue
             raw_intent = open(f, "rb").read()
+            try:
+                was = json.loads(open(os.path.join(d, letter + ".impact.json"), "rb").read())
+            except (OSError, ValueError):
+                was = {}
+            wp = was.get("provenance") or {}
+            ctx = {"path": path, "rationale": (was.get("rationale") or {}).get("text", ""),
+                   "provenance": {"producer": wp.get("producer", "recorded"), "model": wp.get("model", ""), "configured_model": wp.get("configured_model", ""),
+                                  "prompt_sha256": sha256(request.get("prompt", "").encode("utf-8")), "request": rid, "seed": path["seed"]}}
             item = {"letter": letter, "title": titles.get(letter, letter), "verdict": "", "codes": [], "message": "", "slot": None,
                     "decided": "", "head": "", "intent": raw_intent, "touches": None, "record": None, "still": None, "held": None}
             it = D.canon.load_intent(raw_intent)
             item["layout"] = bool(it["layout"])
-            slot = self.play.candidate_slot(ws, it, "studio %s %s: %s (drawn again)" % (rid, letter, item["title"]), shapes=shape_recs)
+            slot = self.play.candidate_slot(ws, it, "studio %s %s: %s (drawn again)" % (rid, letter, item["title"]), shapes=shape_recs, impact_ctx=ctx)
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
                          "head": slot.get("checked_against", ""), "touches": self.touches(slot, refs, O) if "realized" in slot else None,
                          "record": slot.get("record"), "held": slot.get("held")})
+            if slot.get("impact") is not None:
+                item["impact"] = dict(slot["impact"], sha256=sha256((json.dumps(slot["impact"], sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")))
             made.append((item, slot if slot["ok"] else None))
         drawn = [(i, s) for i, s in made if s is not None]
         slots = self.play.publish([s for _i, s in drawn])
@@ -1092,7 +1115,7 @@ class Gateway:
                         "selection": (request.get("target") or {}).get("address"), "head": head, "provider": {"model": "recorded"},
                         "candidates": [i for i, _s in made], "started": time.monotonic(), "ended": time.monotonic(),
                         "base": {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "objects": O, "cfg": self.cfg,
-                        "shape_recs": shape_recs, "order": host_order([i for i, _s in made])}
+                        "shape_recs": shape_recs, "order": host_order([i for i, _s in made]), "path": path}
         return rid
 
     def cancel_request(self, rid):
@@ -1401,11 +1424,16 @@ class Gateway:
             raise StudioError("PREVIEW-STALE", "the head moved since candidate %s was drawn: ask again" % letter)
         if o1 is None or o0 is None:
             raise StudioError("PREVIEW-NO-PLAN", "candidate %s did not export, so it has no motion to show" % letter)
-        path = r.get("path") or impact.camera_path(o0["scene"], impact.focus_of(o0["scene"]), rid)
+        path = r.get("path") or self._path(o0["scene"], (), None, rid)
+        if not path.get("poses"):
+            raise StudioError("PREVIEW-NO-PATH", "the request has no camera path: %s" % path.get("refused", "none was made"))
         p = motion.plan(o0, o1, path, path["seed"])
+        # PATH-0: the path made at the head, held again to the rule against the candidate's own scene (a candidate may
+        # put a box where a pose stands): said in the plan and the report, never moved
+        p["path_check"] = {"id": path["id"], "rule": camera.RULE, "base": camera.check(o0["scene"], path), "candidate": camera.check(o1["scene"], path)}
         with self.lock:
             c["preview"] = {"plan": p, "stills": {}}
-        return {"path_id": p["path_id"], "seed": p["seed"], "spawn": p["spawn"], "poses": p["poses"], "still_ticks": p["still_ticks"], "ticks": p["ticks"],
+        return {"path_id": p["path_id"], "path_check": p["path_check"], "seed": p["seed"], "spawn": p["spawn"], "poses": p["poses"], "still_ticks": p["still_ticks"], "ticks": p["ticks"],
                 "viewport": p["viewport"], "frames": p["frames"], "first_difference": p["first_difference"], "sim_ms": p["sim_ms"],
                 "slots": {"base": 0, "candidate": c["slot"]}}
 

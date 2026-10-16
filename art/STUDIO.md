@@ -319,6 +319,33 @@ preview over the brief's records); the request's line keeps the sha256 for good.
 export, or no preview under way), `PREVIEW-STALE` (the head moved since the candidate was drawn), `PREVIEW-STILL`. Off
 the gate: nothing that decides reads a preview.
 
+## The camera path and its rule (PATH-0, 0241)
+
+The preview's path (`art/camera.py`, through IMPACT-0's `camera_path`) is held to one rule, decided exactly (rational
+arithmetic from the numbers as the scene and the path write them): every box of the scene is an obstacle (its play
+geometry, its dressing, every mover over its whole travel, every target's column); a pose is clear when it is at least
+0.5 m from every box in the max norm and 0.5 m above the ground plane; the segment between two consecutive poses passes
+inside no box grown by 0.5 m. Sight (each pose's line to the focus, its last 0.75 m left out, inside no box) is recorded
+for each pose, not required. With a shape, the path is an arc of eight poses over 120 degrees in front of the shape's
+face, one radius and one rise all round (the first of 14, 11, 17, 8, 20 and 5 m, and 6, 4, 9 and 2.5 m, that clears
+every pose and every segment with every pose seeing the focus; failing sight, the first that clears); without one, an
+orbit of the focus; failing both, each pose on its own, one that cannot clear left out and named. Fewer than four clear
+poses: no path (`CAMERA-PATH-NONE`), and the preview refuses (`PREVIEW-NO-PATH`). The same scene, focus, face and seed
+give the same path, byte for byte. The path is made at the head and held to the rule again against each candidate's own
+scene when it is previewed (`path_check` in the plan and the report, shown in the dialog), never moved for one. A
+request drawn again (`restore`) makes its path again from its recorded shapes, and each drawn candidate's impact again.
+The rule is geometric: it says nothing of how well a pose frames its subject, which a person judges by eye.
+
+## Legibility along the path (LEGIBLE-0, 0241: one test of Meaning-to-View)
+
+`art/legibility.py` asks whether the evidence for a piece survives the view: along a path, at each pose, the share of
+a 5 x 5 grid of points on the piece's outward face that is framed and seen (occlusion by camera.py's exact test), the
+face's area in pixels at the preview's 480 x 270 and 66 degrees, and the WCAG 2.x contrast ratio of the base colours of
+the piece's material and the surface it is set in. A pose reads the cue when at least half the face is seen, its area is
+at least 24 x 24 pixels and the contrast at least 3:1 (thresholds declared and borrowed from screen standards, not
+fitted). A **proxy**: no lighting, emission, reflection or hue, never a claim of what a person perceives, and nothing
+that decides reads it. Not yet on the cards or in the request's record; its self-test measures the flagship.
+
 ## The references (STUDIO-1)
 
 By the owner's ruling of 2026-10-11: *"Bind references to a scene revision and object identity, not just a reusable

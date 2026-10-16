@@ -1927,6 +1927,14 @@
         });
       });
     };
+    // PATH-0 (0241): the path made at the head, held again to its clearance rule against both scenes (the host's check)
+    const pathSaid = function (pc) {
+      if (!pc) return "camera path: not checked";
+      const n = (pc.base || []).length + (pc.candidate || []).length;
+      return "camera path " + pc.id + ": " + (n ? n + " breach" + (n === 1 ? "" : "es") + " of its clearance rule (" +
+        (pc.candidate || []).concat(pc.base || []).slice(0, 3).map(function (v) { return v.code + " " + v.box + (v.pose !== undefined ? " at pose " + (v.pose + 1) : " on segment " + v.segment.map(function (x) { return x + 1; }).join("–")); }).join("; ") + ")"
+        : "clear of every box in both scenes, every pose and every segment between them");
+    };
     const previewShow = function (r, c, rep) {
       let k = 0, timer = null;
       const img = function (side) { return "/preview.png?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter + "&side=" + side + "&k=" + k; };
@@ -1946,7 +1954,8 @@
         el("div", {}, el("div", { style: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: "6px" } }, el("div", {}, el("div.dim", {}, "Current"), imA), el("div", {}, el("div.dim", {}, "Candidate " + c.letter), imB)),
           el("div", { style: { margin: "6px 0" } }, el("button.btn.small", { onclick: function () { step(-1); } }, "◀"), el("button.btn.small", { onclick: play }, "Play"), el("button.btn.small", { onclick: function () { step(1); } }, "▶")),
           info, el("p.dim", {}, "path " + rep.path_id + " · seed " + rep.seed + " · " + (rep.replayed ? "replayed" : "not replayed") + " · " + rep.advisory),
-          el("p.dim", {}, "provenance: " + [(rep.provenance || {}).provider, (rep.provenance || {}).model, "prompt sha256 " + ((rep.provenance || {}).prompt_sha256 || "").slice(0, 12)].join(" · ") + " · " + rep.semantics)));
+          el("p.dim", {}, "provenance: " + [(rep.provenance || {}).provider, (rep.provenance || {}).model, "prompt sha256 " + ((rep.provenance || {}).prompt_sha256 || "").slice(0, 12)].join(" · ") + " · " + rep.semantics),
+          el("p.dim", { title: (rep.path_check || {}).rule || "" }, pathSaid(rep.path_check))));
       show();
     };
     const markCandidates = function () {

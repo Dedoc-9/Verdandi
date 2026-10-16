@@ -41,7 +41,7 @@ INPUT_EVERY = 30              # the actor's next input, drawn from the stream ev
 VIEWPORT = (480, 270)         # the stills' size, as the page draws them
 SSIM_SIZE = (96, 54)          # the stills compared as luma, box-averaged to this size
 RETENTION_DAYS = 30           # a preview's files kept this long; the request's record keeps their sha256 for good
-CODES = ("PREVIEW-INCOMPLETE", "PREVIEW-STALE", "PREVIEW-NO-PLAN", "PREVIEW-STILL")
+CODES = ("PREVIEW-INCOMPLETE", "PREVIEW-STALE", "PREVIEW-NO-PLAN", "PREVIEW-STILL", "PREVIEW-NO-PATH")
 INPUTS = ({"f": True}, {"f": True, "l": True}, {"f": True, "r": True}, {"f": True, "jump": True}, {}, {"b": True},
           {"f": True, "dyaw": 0.05}, {"f": True, "dyaw": -0.05})
 
@@ -259,6 +259,7 @@ def report(p, stills, previous=None):
     return {"format": FORMAT, "version": VERSION, "semantics": p["semantics"], "path_id": p["path_id"], "seed": p["seed"], "ticks": rows,
             "replayed": not incomplete, "code": "PREVIEW-INCOMPLETE" if incomplete else "", "incomplete_ticks": incomplete,
             "untrusted_ticks": untrusted, "state_verified": bool(agree and not incomplete), "first_difference": p["first_difference"],
+            "path_check": p.get("path_check"),
             "fingerprints_sha256": {s: sha256(enc(p["fingerprints"][s]).encode("ascii")) for s in ("base", "candidate")},
             "advisory": "the stills' SSIM and PSNR are a look, never a verdict: the states are the evidence"}
 

@@ -4903,6 +4903,94 @@ mismatch is planted in `art/motion.py`'s own test; the camera path avoiding geom
 own `sim.js` beside the twin's fingerprints. NOT_MEASURED: his machine, a GPU. No row, rung, pinned source or oracle
 file changed. Docs: AGENTS.md, art/STUDIO.md, docs/CORE.md (art 24,534 lines), this entry.
 
+**His run of 0240, and his word on what follows (2026-10-15 and 16).** 0240 applied on 31444a9; the rung D, loosening
+nothing, and the plants 82/82 HELD; ART SELFTESTS PASSED, nineteen suites at once, 103.6 s and 107.2 s, the summaries the
+same (PREVIEW SELFTEST 12/12, PREVIEW-STUDIO SELFTEST 13/13); the gate 251 rows / 0 fail, rowset 74db4c8d78625af5;
+pushed 31444a9..c6e59a3. MEASURED on his machine. On the three steps put to him he agreed the sequence (B5a, B5b, D1-M)
+with two refinements: *"B5a should establish a trustworthy camera path, not merely a visually clear one"*, each pose
+and the segments between poses checked against the world's geometry and collision with a defined clearance; and B5b
+proves the flagship with the scripted director, a real provider's run recorded apart as observed. His decisions: a
+fourth world, harbor-day unchanged; GPU measurement after B5, on the flagship, outside the gate; the missing impact of a
+request drawn again repaired in B5a only if small and localised. His caveat: clearance proves only the geometric
+condition, not good framing, so he reviews the reference path by eye before freezing it. Then, on Meaning-to-View (the
+relation of what a world means, what it holds and what a view shows of it; a contract per role of intent, cues,
+conditions, failure and evidence; Wang and Zahl's Kakeya result an inspiration for directional test families, not a
+theorem about perception): *"maybe you can batch a test on this logic with this rung"*. Taken as follows: one test of
+it in this rung, LEGIBLE-0, small, deterministic and advisory, on the flagship's window along the flagship's path; the
+roles' language, the director's corrections and the directional families stay after B5, as he put them.
+
+### PATH-0 and LEGIBLE-0 — the foundry yard, a camera path that holds, and one test of Meaning-to-View · Phase I, B5a, **built, off the gate** (0241, `art/briefs/foundry-yard.art`, `art/camera.py`, `art/legibility.py`)
+
+**The district.** `art/briefs/foundry-yard.art`, the fourth world, an industrial district at dusk on the tactical
+graybox (no wall, floor, cover, spawn or target moved): six buildings of FACADE-0's statement on the rock that faces the
+two side lanes, brick warehouses glazed with wired glass and corrugated-steel sheds panelled in rusted steel in wide
+bays, the yard's roofs (the skyline) behind them, sodium lamps, oil on the paving, signal colours at the bases; only
+statements the language has. The flagship's warehouse is `building:10,2-17,2` (eight bays, four floors), where FACADE-0's
+fixture stood. The art checks pass on it but for its reference, which is his to freeze (`python art/quality.py freeze
+foundry-yard`), after looking at the path. A finding on the way: with the warehouses three cells deep, the skyline's
+blocks stood inside them (the skyline takes rock that borders no floor, and the building statement does not reserve
+its cells from it); the district's buildings are one cell deep, and the exporter is unchanged (a change to it would
+ask him to freeze every reference again). OBSERVED.
+
+**The path (PATH-0).** `art/camera.py`: every box of the scene an obstacle (collision, dressing, each mover over its
+travel, each target's column); a pose clear at 0.5 m in the max norm and 0.5 m above the ground plane; the segment
+between consecutive poses inside no box grown by 0.5 m; all decided in exact rational arithmetic, floats only choosing
+what to try. With a shape, an arc of eight poses over 120 degrees in front of its face at one radius and rise all round
+(the first that clears every pose and segment with every pose seeing the focus); without one, an orbit; failing both,
+each pose on its own, one that cannot clear named and left out; fewer than four, no path (CAMERA-PATH-NONE; the preview
+then refuses, PREVIEW-NO-PATH). The same scene, focus, face and seed give the same path. IMPACT-0's `camera_path` is
+this plan now, aimed by the shape's face (`aim_of`). The path is made at the head and checked again against each
+candidate's own scene when it is previewed (`path_check`, in the plan, the report and the dialog), never moved. A request
+drawn again makes its path again from its recorded shapes and each drawn candidate's impact again (the defect left at
+0239, small and localised: three places in `restore`).
+
+**One test of Meaning-to-View (LEGIBLE-0).** `art/legibility.py`: for a piece a person names as the subject, at each
+pose of a path, the share of a 5 x 5 grid on its outward face framed and seen (camera.py's exact occlusion), its area in
+pixels at the preview's 480 x 270 and 66 degrees, and the WCAG contrast ratio of its material's base colour against the
+surface it is set in; a pose reads the cue at half the face seen, 24 x 24 pixels and 3:1 (declared, borrowed from screen
+standards, not fitted). A proxy: no light, emission, reflection or hue; not a perception claim; nothing decides by it.
+
+**Its falsifiers.** `python art/camera.py selftest` (PATH SELFTEST 8/8): the rule against boxes worked by hand (0.5 m
+in front of a wall clear, 0.499 m not, a 4 cm sign counts, a segment through the wall refused, one along the grown top
+exactly clear); planted in the district, pose 3 moved inside the flagship's warehouse (CAMERA-INSIDE) and behind it
+(CAMERA-CROSSES on segments 2-3 and 3-4); 81 paths, every view and every building's face of the four worlds with three
+seeds, each checked again exactly and clear, every face's arc whole with every pose seeing its focus, and 12 views'
+orbits refused in the narrow flanks (CAMERA-PATH-NONE, said); the same inputs the same path; the flagship's arc in front
+of its face at 14 m and 9 m up; three plants caught (segments not checked, no margin, the dressing ignored).
+`python art/legibility.py selftest` (LEGIBLE SELFTEST 6/6): the projection, the centre, the contrast (white on black
+21:1, mid grey on black 5.32:1) and the occlusion worked by hand; the flagship's window measured; planted collapses
+each found by its proxy (a hoarding before it: seen 0; the bay in the wall's own brick: contrast 1:1; a pose behind the
+face: seen 0; one grazing it from 60 m: 0.8 px; one turned away: unframed); three plants caught (occlusion skipped,
+unframed points counted, sRGB not linearised). PREVIEW-STUDIO SELFTEST 14/14 now: the pair's path an arc held clear in
+both scenes, and a request drawn again with its path and every drawn candidate's impact, its preview state verified.
+Both new suites join `art/selftests.py` (twenty-one).
+
+**What the test found (MEASURED, a proxy).** The flagship's window along the flagship's path: seen whole at all eight
+poses, but 172 to 365 pixels (under 24 x 24) and 1.37:1 against its brick (glass_wired 52,64,70 on brick 128,64,48): by
+these proxies no pose reads it. The preview's stills agree (OBSERVED): base against *Panelled bay* SSIM 0.9997 to
+0.9999 at every pose, the bay about 0.2% of the frame. For B5b: the subject of a one-bay edit is too
+small in the preview's frame as it is drawn now, and the window does not stand apart from its brick by luminance.
+
+**In a browser (OBSERVED, headless Chromium on SwiftShader, the foundry yard, #bay on the flagship's bay 3 of floor 2,
+the scripted director).** The arc's eight stills drawn and given to the host in 152 s; state verified, PASS at every
+pose; the path clear in both scenes; every still frames the warehouse (at 0240 two of the orbit's stills showed a wall);
+in two, the yard's dark roofs fill the foot of the frame. The contact sheet is his to review before he freezes.
+
+**A repair the full check asked for.** DIRECTOR RACETEST's plant without the export lock was missed again, 0 of 40
+exports wrong, with two suites at once in the container (OBSERVED at 0241, after 0239's repair of the same: a barrier and
+fine switching left the race to chance). Under that plant alone, `_export` now holds the window the lock closes open for
+20 ms, so the race is met, not hoped for: caught 18, 32 and 36 times of 40 in three runs; the honest path is as it was.
+
+**Measured in the container** (2 processors, Python 3.11): a flagship arc made in 0.15 s, checked again exactly in 0.05 s, the legibility probe along it 0.95 s; 81 paths made and
+checked again in 28.8 s; the full check, `python art/selftests.py --repeat 2`, two suites at once, with the four
+references frozen in a scratch copy: twenty-one suites, 748.1 s and 727.1 s, the summaries the same, ART SELFTESTS PASSED.
+
+**Not done.** The roles' language (entrance, barrier, route, landmark, cover), the director's corrective proposals and
+directional families of views (his Meaning-to-View plan, after B5); legibility on the cards or in the record; the
+framing judged by anything but a person; orbits in the narrow flanks; the exporter's skyline inside a deep building.
+NOT_MEASURED: his machine, a GPU. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md, art/README.md,
+art/STUDIO.md, docs/CORE.md (art 25,241 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

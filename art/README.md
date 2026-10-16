@@ -364,6 +364,7 @@ block a player is cover, and goes into the graybox map.
 | `briefs/plaza-night.art` | the first brief: a rain-soaked brutalist coastal plaza at night, on the tactical graybox |
 | `briefs/harbor-day.art` | STUDIO-2's second world: sunlit harbour terraces at midday, on the same graybox, nothing of the layout moved |
 | `briefs/harbor-lift.art` | 0226: harbor-day with a deck sliding along the south lane and a lift beside the tall block at its west end, the first world with movers; 0229, the deck pushes a player in its way |
+| `briefs/foundry-yard.art` | 0241 (Phase I's B5a): the fourth world, an industrial district at dusk on the same graybox: brick warehouses and corrugated-steel sheds (FACADE-0's buildings and bays) along both side lanes, nothing of the layout moved; the flagship's warehouse is `building:10,2-17,2` |
 | `briefs/plaza-night.revise-look` | its look revision: the wet surfaces less reflective |
 | `briefs/plaza-night.revise-layout.design` | its layout revision: the south flank one cell narrower (the north flank until B was admitted) |
 | `unreal/verdandi_import.py` | the Unreal 5.8 importer, run inside the editor |

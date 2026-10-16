@@ -3244,7 +3244,8 @@ def impact_selftest(plant=""):
         A = saved.get("A") or {}
         it = D.canon.load_intent(open(os.path.join(d, "A.intent"), "rb").read())
         _v, _a, _t, o1, o0, _x, _r = D.evaluate_doc(ws, it)
-        path2 = impact.camera_path(o0["scene"], impact.focus_of(o0["scene"], json.loads(open(os.path.join(d, "request.json"), "rb").read()).get("shapes", [])), st["id"])
+        aim = impact.aim_of(o0["scene"], json.loads(open(os.path.join(d, "request.json"), "rb").read()).get("shapes", []))
+        path2 = impact.camera_path(o0["scene"], aim[0], st["id"], aim[1])
         again = impact.report(o0["scene"], o1["scene"], A.get("provenance", {}), path2, (A.get("rationale") or {}).get("text", ""))
         row("impact: the same scenes, provenance and seed give the same bytes (IMPACT-DET)", impact.enc(again) == impact.enc(A),
             "%d bytes again from the evaluation's own scenes and the request's seed; path %s" % (len(impact.enc(again)), path2["id"]))
@@ -3407,7 +3408,9 @@ def preview_selftest(plant=""):
             and stills == sorted("%s-%d.png" % (s_, k) for s_ in ("base", "candidate") for k in range(8)) and all(k in meta for k in keys)
             and meta["prompt_sha256"] == hashlib.sha256(b"close #bay").hexdigest() and meta["seed"] == rep["seed"] == pl["seed"] and meta["tick_count"] == 960
             and got_json["fingerprints_sha256"] == rep["fingerprints_sha256"] and got_png == pic(9)
-            and rep["provenance"] == {"request": rid, "candidate": "A", "provider": "scripted", "model": meta["model"], "prompt_sha256": meta["prompt_sha256"]},
+            and rep["provenance"] == {"request": rid, "candidate": "A", "provider": "scripted", "model": meta["model"], "prompt_sha256": meta["prompt_sha256"]}
+            and rep["path_check"]["id"] == pl["path_id"] and rep["path_check"]["base"] == [] and rep["path_check"]["candidate"] == []
+            and pl["path_id"].startswith("arc-"),
             "path %s, seed %s, %d ticks, %d poses: every state the same on both sides (the bay is dressing, not play); SSIM %s; files %s"
             % (pl.get("path_id"), pl.get("seed"), pl.get("ticks", 0), len(pl.get("poses", [])), [t.get("ssim") for t in rep.get("ticks", [])][:2], sorted(files)))
         row("the archives' retention at a preview's end: one older than 30 days removed, its line kept", not os.path.exists(old)
@@ -3448,6 +3451,18 @@ def preview_selftest(plant=""):
         row("the refusals: a still without a plan, beyond the plan's poses, of no side, not a PNG, without the token; an unknown request",
             codes == [(409, "PREVIEW-NO-PLAN"), (200, None), (409, "PREVIEW-STILL"), (409, "PREVIEW-STILL"), (409, "PREVIEW-STILL"), (403, None), (409, "STUDIO-NO-CANDIDATE")],
             "%s" % codes)
+        # PATH-0 (0241): a request drawn again at the head as it is now has its path and every drawn candidate's impact
+        # again, and its preview plays
+        live.studio.restore(rid)
+        st6 = live.studio.state()["request"]
+        imp = {c["letter"]: ((c.get("impact") or {}).get("preview") or {}).get("path_id") for c in st6["candidates"] if c.get("slot") is not None}
+        _c, pl6, _f, rep6, _s = preview(rid, "B")
+        row("a request drawn again: its path and each candidate's impact again, and its preview plays (PATH-0)", "drawn again" in (st6.get("message") or "") and imp
+            and set(imp.values()) == {pl6.get("path_id")} == {pl["path_id"]} and rep6["replayed"] and rep6["state_verified"]
+            and rep6["path_check"]["base"] == [] and rep6["path_check"]["candidate"] == [],
+            "drawn again (after a restart, or a queued task reviewed): impact on %s, path %s (asked along %s); B's preview: replayed %s, state verified %s, "
+            "the path's breaches %s" % (sorted(imp), pl6.get("path_id"), pl.get("path_id"), rep6.get("replayed"), rep6.get("state_verified"),
+                                        {k: len(v) for k, v in (rep6.get("path_check") or {}).items() if isinstance(v, list)}))
         _c, st2 = ask("panel #bay")
         _c, _p5, _f, rep5, _s = preview(st2["id"], "A")
         row("another request, another seed: other states (B4-SEED-SENSITIVITY)", rep5["seed"] == st2["id"] != rep["seed"]

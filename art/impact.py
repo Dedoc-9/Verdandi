@@ -33,7 +33,6 @@ MODEL = os.path.join(HERE, "impact_model.json")
 FORMAT, VERSION = "VERDANDI-IMPACT", "0"
 ADVISORY = "ADVISORY ESTIMATE — not admission evidence"
 POST_PASSES = 13        # bright 1, blur of the quarter 2 x 2, down to the eighth 1, its blur 3 x 2, tone 1 (scene_render.js draw)
-PATH_POSES = 8          # the preview's camera path: poses around the focus
 
 # IMPACT-0's plants, each set by its self-test and each caught by one of its rows
 PLANT = ""
@@ -141,24 +140,27 @@ def budgets_over(c, budgets):
 
 
 # ------------------------------------------------------------------------------------------------ the preview path
-def camera_path(scene, focus, seed, name="orbit"):
-    """A named, seeded path of PATH_POSES poses around `focus` ([x, y, z] in metres): at 14 m, 6 m above it, looking at
-    it, starting at an angle the seed decides. The same focus and seed give the same path, byte for byte; its id is the
-    sha256 of its canonical form. The page shows every candidate of a request along it."""
+def camera_path(scene, focus, seed, normal=None):
+    """The preview's path about `focus` ([x, y, z] in metres), seeded by the request: since PATH-0 (0241), art/camera.py's
+    plan, every pose and every segment between consecutive poses held to its clearance rule against every box of the
+    scene, exactly; with a face's `normal`, an arc in front of that face. The same scene, focus, normal and seed give the
+    same path, byte for byte; its id is the sha256 of its canonical form. The page shows every candidate of a request
+    along it. Raises camera.CameraError when too few poses are clear."""
     if PLANT == "impact-path-unseeded":
         import time
         seed = str(time.time())
-    a0 = int(sha256(str(seed).encode("utf-8"))[:8], 16) % 360
-    fx, fy, fz = (float(v) for v in focus)
-    poses = []
-    for k in range(PATH_POSES):
-        a = math.radians(a0 + 360.0 * k / PATH_POSES)
-        x, z, y = fx + 14.0 * math.sin(a), fz - 14.0 * math.cos(a), fy + 6.0
-        yaw = math.degrees(math.atan2(fx - x, -(fz - z))) % 360
-        pitch = -math.degrees(math.atan2(6.0, 14.0))
-        poses.append({"x": round(x, 3), "y": round(y, 3), "z": round(z, 3), "yaw_deg": round(yaw, 3), "pitch_deg": round(pitch, 3)})
-    doc = {"name": name, "seed": str(seed), "focus": [round(fx, 3), round(fy, 3), round(fz, 3)], "poses": poses}
-    return dict(doc, id="%s-%s" % (name, sha256(enc(doc).encode("ascii"))[:12]))
+    import camera
+    return camera.plan(scene, focus, seed, normal)
+
+
+def aim_of(scene, shapes=(), target=None):
+    """PATH-0: (focus, normal): focus_of's point, and the first shape's face normal when it has one."""
+    f = focus_of(scene, shapes, target)
+    for s in shapes or ():
+        if s.get("world_m"):
+            n = (s.get("face") or {}).get("normal")
+            return f, ([float(v) for v in n] if n else None)
+    return f, None
 
 
 def focus_of(scene, shapes=(), target=None):
@@ -231,7 +233,7 @@ def selftest():
         "%s; rms %s ms over %d rows (%s, %s)" % (co, rms, len(m["calibration"]["rows"]), m["calibration"]["host"], m["calibration"]["date"]))
     p1, p2 = camera_path(S, [1, 2, 3], "seed-a"), camera_path(S, [1, 2, 3], "seed-a")
     p3 = camera_path(S, [1, 2, 3], "seed-b")
-    row("the preview's path: named, seeded, the same for the same seed", p1 == p2 and p1["id"] != p3["id"] and len(p1["poses"]) == PATH_POSES,
+    row("the preview's path: named, seeded, the same for the same seed", p1 == p2 and p1["id"] != p3["id"] and len(p1["poses"]) == 8,
         "%s, %s" % (p1["id"], p3["id"]))
     prov = {"producer": "t", "model": "t-1", "prompt_sha256": sha256(b"close #bay"), "request": "r1", "seed": "r1"}
     r1, r2 = report(S, many, prov, p1, "why", m), report(S, many, prov, p1, "why", m)

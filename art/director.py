@@ -248,6 +248,8 @@ class Workspace:
         with EXPORT_LOCK if durable.PLANT != "no-export-lock" else NO_LOCK:   # level.MAPS is one global
             saved = level.MAPS
             level.MAPS = maps
+            if durable.PLANT == "no-export-lock":
+                time.sleep(0.02)    # the race court's plant only: the window the lock closes held open, so that the race is met, not hoped for
             try:
                 out = dress.export(A, maps_dir=maps)
                 D = check.gcheck.source_rows(out["W"])
@@ -1751,8 +1753,9 @@ def cmd_racetest():
         _o, b_parts, _c = ws.export(None, maps_b)
 
         def export_trials(plant, n=20):
-            # the two threads start together and switch finely, so that the plant's race is met whatever else the machine
-            # runs (with the interpreter's own switching it was missed once, 0 of 40, under two suites at once: OBSERVED at 0239)
+            # the two threads start together and switch finely, and under the plant each holds the window the lock closes open
+            # for 20 ms (_export), so that the race is met whatever else the machine runs (with chance alone it was missed:
+            # 0 of 40 once at 0239, under two suites at once, and again at 0241 after the 0239 repair: OBSERVED)
             wrong, gate, si = [0], threading.Barrier(2), sys.getswitchinterval()
             durable.PLANT = plant
             sys.setswitchinterval(1e-5)
