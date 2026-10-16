@@ -4991,6 +4991,49 @@ framing judged by anything but a person; orbits in the narrow flanks; the export
 NOT_MEASURED: his machine, a GPU. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md, art/README.md,
 art/STUDIO.md, docs/CORE.md (art 25,241 lines), this entry.
 
+**His run of 0241, and the visual review (2026-10-16).** 0241 applied on c6e59a3; the rung D, loosening nothing; the
+plants on his machine *"82 planted defects refused by the old checker; 82 by the new"* with three art/check.py rows GONE
+(the neon sign off its wall, a piece of dressing given collision, the scene changed after export) and *"PLANTS NOT
+HELD (0 no longer refused, 3 gone)"*; foundry-yard's reference frozen (scene 9743e35c7303 at exporter 0ddd26bd1f48,
+as predicted) and committed (1918135); ART SELFTESTS PASSED, twenty-one suites at once, 123.6 s and 146.1 s; the gate
+251 rows / 0 fail, rowset 74db4c8d78625af5; pushed c6e59a3..1918135. MEASURED on his machine. The review of the
+contact sheet that followed: the industrial dusk promising, the warehouse's massing readable, the eight views a useful
+baseline; the flagship's window not legible in them and a one-bay edit barely visible; *"keep foundry-yard
+unfrozen"* as a visual reference, the sheet kept as 0241's provisional baseline, the visual reference frozen after B5b
+fixes a framed comparison. For B5b: the marked bay the explicit subject; a clear arc's distance chosen for the
+subject's coverage and then fixed for the baseline and every candidate; the stills compared themselves, not SSIM
+alone; PATH-0's clearance unchanged, and a framing that cannot be met said as a framing failure, never met by weakening
+the path; the 24 x 24 pixel and 3:1 thresholds kept explicitly as engineering proxies, not perceptual legibility.
+Taken as follows: the reference he froze is the scene's bytes (what ART CHECKS compares), which approves nothing
+visual, so it stays; 0241's docs ran the two together ("his to freeze after he reviews the path"), and art/STUDIO.md
+now keeps them apart: the eight views are a provisional visual baseline until B5b, whatever the freeze's note says.
+
+### RUNG-0's plants on a Windows console · **repaired** (0242, `tools/rung.py`, `art/check.py`)
+
+**What his three GONE rows were.** R5 (`rung.py plants`) runs each suite and reads its plant rows from its output. On
+Windows a pipe is cp1252, and art/check.py's number-grammar plant (since 0226) prints the Arabic-Indic digits it
+refuses: the suite raised UnicodeEncodeError there, at its first brief, and R5 read the 22 rows printed before. At
+0241 the first brief became foundry-yard, whose three subject-named rows differ from the old first brief's (its first
+neon, its first piece of dressing, its first material), so those three were GONE and three new ones came. MEASURED by
+simulation in the container (the suites run with a cp1252 console at 0240 and at 0241): exactly his result, 82 and 82,
+the same three gone, art/check.py stopped at 22 rows both times. VERIFIED by reading art/check.py's whole output at
+0241: the three plants are refused still, in harbor-day, harbor-lift and plaza-night. So no defect passed, but on his
+machine R5 has compared only art/check.py's first brief's first 22 plants since 0226, and said HELD of them.
+
+**The repair.** `tools/rung.py`: R5 runs every suite with UTF-8 output (PYTHONUTF8, PYTHONIOENCODING) and reads it as
+UTF-8, whatever the console; a suite that raised is named (*THE OLD CHECKER STOPPED EARLY* is said; *THE NEW
+CHECKER STOPPED EARLY* is NOT HELD). RUNG SELFTEST 18/18, its new row: a suite printing three plant rows, the second
+with those digits, read whole under a cp1252 console, and the same suite left to cp1252 stopping with its stop said.
+`art/check.py`: its output writes a character the console cannot as an escape rather than stopping the checks.
+A patch to the classifier is judged by the pushed tree's classifier: this one by 0241's, whose R5 reads 0242's
+art/check.py whole (it no longer stops) against 0241's 22 rows; the next patch by this one, after he takes it from
+origin/main.
+
+**Measured in the container**: RUNG SELFTEST 18/18; 0241's classifier on this patch, a cp1252 console simulated: PLANTS
+HELD; the full check, `python art/selftests.py --repeat 2`, two suites at once, the four references frozen in a
+scratch copy: twenty-one suites, 689.2 s and 680.8 s, ART SELFTESTS PASSED. NOT_MEASURED: his machine. No row, pinned
+source or oracle file changed. Docs: AGENTS.md (RUNG-0's row), art/STUDIO.md, docs/CORE.md (art 25,246 lines, tools 2,047), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

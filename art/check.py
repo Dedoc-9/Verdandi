@@ -886,6 +886,11 @@ def check_brief(name):
 
 
 def main(argv) -> int:
+    # 0242: a console that cannot write a character (a Windows pipe is cp1252; the number-grammar plant's refusal quotes
+    # Arabic-Indic digits) writes it escaped rather than stopping the checks there
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="backslashreplace")
     names = [a for a in argv if not a.startswith("--")] or sorted(f[:-4] for f in os.listdir(dress.BRIEFS) if f.endswith(".art"))
     failed = skipped = 0
     for name in names:

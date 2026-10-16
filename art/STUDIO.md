@@ -334,7 +334,10 @@ poses: no path (`CAMERA-PATH-NONE`), and the preview refuses (`PREVIEW-NO-PATH`)
 give the same path, byte for byte. The path is made at the head and held to the rule again against each candidate's own
 scene when it is previewed (`path_check` in the plan and the report, shown in the dialog), never moved for one. A
 request drawn again (`restore`) makes its path again from its recorded shapes, and each drawn candidate's impact again.
-The rule is geometric: it says nothing of how well a pose frames its subject, which a person judges by eye.
+The rule is geometric: it says nothing of how well a pose frames its subject, which a person judges by eye. A world's
+reference (`python art/quality.py freeze NAME`) is its scene's bytes at an exporter, so that ART CHECKS see a changed
+exporter or platform; it approves nothing visual. A world's views are a visual baseline only when the owner approves
+them: the foundry yard's eight (0241's contact sheet) are provisional until B5b's framed comparison.
 
 ## Legibility along the path (LEGIBLE-0, 0241: one test of Meaning-to-View)
 

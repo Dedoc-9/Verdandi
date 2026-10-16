@@ -389,15 +389,36 @@ SUITES = (("art/quality.py", "selftest"), ("art/check.py",), ("art/director.py",
 PLANT_ROW = re.compile(r"^\[?(PASS|FAIL)\]? ?(plant: .*?)(?: — .*)?$")
 
 
-def plant_rows(root):
-    """Every planted-defect row of the suites in a checkout: {suite + row: passed}."""
+def suite_output(root, suite):
+    """A suite's output, as UTF-8 whatever the console: the child is told to write UTF-8 (PYTHONUTF8, PYTHONIOENCODING)
+    and is read as UTF-8. A Windows pipe is cp1252 by default, and a suite that prints what cp1252 cannot write stops
+    there: art/check.py did, at its number-grammar plant (Arabic-Indic digits), so on the owner's machine R5 compared 22
+    of its plant rows, its first brief's, not all of them, until 0242 (MEASURED by simulation in the container)."""
+    r = subprocess.run([sys.executable, "-B"] + list(suite), cwd=root, capture_output=True,
+                       env=dict(os.environ, PYTHONHASHSEED="0", PYTHONUTF8="1", PYTHONIOENCODING="utf-8"), timeout=1800)
+    return r.stdout.decode("utf-8", "replace"), r.stderr.decode("utf-8", "replace")
+
+
+def crashed(err):
+    """The last line of a traceback in a suite's error output, or None: a suite that raised did not run to its end, and
+    its rows after the raise were never printed."""
+    if "Traceback (most recent call last)" not in err:
+        return None
+    return [ln for ln in err.strip().splitlines() if ln.strip()][-1][:200]
+
+
+def plant_rows(root, broken=None):
+    """Every planted-defect row of the suites in a checkout: {suite + row: passed}. A suite that raised is added to
+    `broken` (suite, the error's last line)."""
     out = {}
     for suite in SUITES:
         if not os.path.exists(os.path.join(root, suite[0])):
             continue
-        r = subprocess.run([sys.executable, "-B"] + list(suite), cwd=root, capture_output=True, text=True,
-                           env=dict(os.environ, PYTHONHASHSEED="0"), timeout=1800)
-        for ln in r.stdout.splitlines():
+        txt, err = suite_output(root, suite)
+        why = crashed(err)
+        if why and broken is not None:
+            broken.append((" ".join(suite), why))
+        for ln in txt.splitlines():
             m = PLANT_ROW.match(ln.strip())
             if m:
                 out[" ".join(suite) + " | " + m.group(2).strip()] = m.group(1) == "PASS"
@@ -414,14 +435,14 @@ def compare_plants(old, new):
 def cmd_plants(repo, base, head):
     """R5: every planted defect the old checker refused, refused by the new one (by the row's words; a reworded row is
     listed as gone, for a person to read)."""
-    rows = {}
+    rows, broken = {}, {base: [], head: []}
     tmp = tempfile.mkdtemp(prefix="rung-plants-")
     try:
         for rev in (base, head):
             wt = os.path.join(tmp, rev.replace("/", "_"))
             git(repo, "worktree", "add", "--detach", wt, rev)
             try:
-                rows[rev] = plant_rows(wt)
+                rows[rev] = plant_rows(wt, broken[rev])
             finally:
                 git(repo, "worktree", "remove", "--force", wt)
     finally:
@@ -435,8 +456,14 @@ def cmd_plants(repo, base, head):
         print("  NOW PASSES THROUGH: " + k)
     for k in lost:
         print("  GONE (or reworded; read it): " + k)
-    print("PLANTS HELD" if not worse and not lost else "PLANTS NOT HELD (%d no longer refused, %d gone)" % (len(worse), len(lost)))
-    return 0 if not worse and not lost else 1
+    for su, why in broken[base]:
+        print("  THE OLD CHECKER STOPPED EARLY (its rows after were not compared): %s: %s" % (su, why))
+    for su, why in broken[head]:
+        print("  THE NEW CHECKER STOPPED EARLY (its rows after were never run): %s: %s" % (su, why))
+    ok = not worse and not lost and not broken[head]
+    print("PLANTS HELD" if ok else "PLANTS NOT HELD (%d no longer refused, %d gone%s)" % (
+        len(worse), len(lost), ", %d suite(s) of the new checker stopped early" % len(broken[head]) if broken[head] else ""))
+    return 0 if ok else 1
 
 
 # ------------------------------------------------------------------------------------------------ the self-test
@@ -515,6 +542,30 @@ def cmd_selftest():
     worse, lost = compare_plants({"s | plant: a": True, "s | plant: b": True, "s | plant: c": False}, {"s | plant: a": False, "s | plant: c": True, "s | plant: d": True})
     row("the plants compared: one the old checker refused and the new does not, one gone, are both said; new ones and one fixed are not held against it",
         worse == ["s | plant: a"] and lost == ["s | plant: b"], "no longer refused %s; gone %s" % (worse, lost))
+    # 0242: a suite that prints what the console cannot write is read whole, and one that raises is said
+    import tempfile as _t
+    d = _t.mkdtemp(prefix="rung-enc-")
+    try:
+        open(os.path.join(d, "suite.py"), "w", encoding="utf-8").write(
+            "print('PASS plant: one — refused')\nprint('PASS plant: two \\u0661\\u0660\\u0660 — refused')\nprint('PASS plant: three — refused')\n")
+        saved = os.environ.get("PYTHONIOENCODING")
+        os.environ["PYTHONIOENCODING"] = "cp1252"       # the owner's console, as a Windows pipe has it
+        try:
+            txt, err = suite_output(d, ("suite.py",))
+            r = subprocess.run([sys.executable, "-B", "suite.py"], cwd=d, capture_output=True, env=dict(os.environ, PYTHONUTF8="0"))
+        finally:
+            if saved is None:
+                os.environ.pop("PYTHONIOENCODING", None)
+            else:
+                os.environ["PYTHONIOENCODING"] = saved
+        got = [PLANT_ROW.match(ln).group(2) for ln in txt.splitlines() if PLANT_ROW.match(ln)]
+        bare = crashed(r.stderr.decode("cp1252", "replace"))
+        row("a suite printing what a cp1252 console cannot write is read whole; left to cp1252 it stops, and the stop is said",
+            got == ["plant: one", "plant: two \u0661\u0660\u0660", "plant: three"] and not crashed(err) and bare is not None and "UnicodeEncodeError" in bare,
+            "read as UTF-8: %d of 3 rows; under cp1252: %s" % (len(got), bare))
+    finally:
+        import shutil as _sh
+        _sh.rmtree(d, ignore_errors=True)
     m = PLANT_ROW.match("[PASS] plant: a still taken away — refused — LEDGER-STILL: #19")
     row("a plant row is read from a suite's line, its words without the detail", bool(m) and m.group(1) == "PASS" and m.group(2) == "plant: a still taken away", m.group(2) if m else "")
     msgless = report(*cls(H, [("M", "art/feature.py")]))
