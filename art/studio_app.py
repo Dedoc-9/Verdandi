@@ -467,6 +467,7 @@ alive()
 if mode == "busy":                                   # asks the studio, then is silent while the provider works
     urllib.request.urlopen(urllib.request.Request(url + "studio/ask", data=json.dumps({"prompt": "make it heavier", "piece": "canopy:19,10-28,11"}).encode(),
                            method="POST", headers={"Content-Type": "application/json", "X-Studio-Token": tok})).read()
+    alive()                                          # 0243: speaks once its request runs, so the silence begins while it runs
     time.sleep(600)
 if mode == "silent":
     time.sleep(600)                                  # spoke once, then nothing, and lingers

@@ -1935,6 +1935,16 @@
         (pc.candidate || []).concat(pc.base || []).slice(0, 3).map(function (v) { return v.code + " " + v.box + (v.pose !== undefined ? " at pose " + (v.pose + 1) : " on segment " + v.segment.map(function (x) { return x + 1; }).join("–")); }).join("; ") + ")"
         : "clear of every box in both scenes, every pose and every segment between them");
     };
+    // FRAME-0 (0243): whether the path frames the marked region in each scene (the host's, from the scenes' numbers)
+    const framedSaid = function (fr) {
+      if (!fr) return el("p.dim", {}, "no subject: the path is not framed for one");
+      const one = function (side, f) {
+        return side + (f.met ? " framed at every pose (smallest " + Math.round(f.smallest_px) + " px)" :
+          " not framed at pose" + (f.poses.filter(function (p) { return !p.framed; }).length > 1 ? "s " : " ") +
+          f.poses.filter(function (p) { return !p.framed; }).map(function (p) { return (p.pose + 1) + " (" + p.why.join(", ") + ")"; }).join("; "));
+      };
+      return el("p.dim", { title: fr.rule }, "subject #" + (fr.subject || {}).shape + ": " + one("current", fr.base) + " · " + one("candidate", fr.candidate));
+    };
     const previewShow = function (r, c, rep) {
       let k = 0, timer = null;
       const img = function (side) { return "/preview.png?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter + "&side=" + side + "&k=" + k; };
@@ -1955,7 +1965,11 @@
           el("div", { style: { margin: "6px 0" } }, el("button.btn.small", { onclick: function () { step(-1); } }, "◀"), el("button.btn.small", { onclick: play }, "Play"), el("button.btn.small", { onclick: function () { step(1); } }, "▶")),
           info, el("p.dim", {}, "path " + rep.path_id + " · seed " + rep.seed + " · " + (rep.replayed ? "replayed" : "not replayed") + " · " + rep.advisory),
           el("p.dim", {}, "provenance: " + [(rep.provenance || {}).provider, (rep.provenance || {}).model, "prompt sha256 " + ((rep.provenance || {}).prompt_sha256 || "").slice(0, 12)].join(" · ") + " · " + rep.semantics),
-          el("p.dim", { title: (rep.path_check || {}).rule || "" }, pathSaid(rep.path_check))));
+          el("p.dim", { title: (rep.path_check || {}).rule || "" }, pathSaid(rep.path_check)),
+          framedSaid(rep.framing),
+          el("details", {}, el("summary", {}, "Inspect: both stills at every pose, and the subject's crops"),
+            el("img", { src: "/preview.png?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter + "&side=compare&k=0",
+                        style: { width: "100%", display: "block" }, onerror: function () { this.replaceWith(el("span.dim", {}, "no sheet (a still is missing)")); } }))));
       show();
     };
     const markCandidates = function () {

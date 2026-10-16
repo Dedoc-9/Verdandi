@@ -47,8 +47,18 @@ RISES = (6.0, 4.0, 9.0, 2.5)
 TURNS = (0.0, 7.0, -7.0, 14.0, -14.0)
 RULE = "clear: >= 0.5 m from every box (max norm) and >= 0.5 m above the ground plane; consecutive poses' segments inside no grown box; exact"
 
+# FRAME-0 (0243, B5b): with a subject (the marked region of a face), the arc is framed for it
+FRAME_RADII = (5.0, 6.0, 8.0, 10.0, 12.0, 14.0, 17.0, 20.0)
+FRAME_AREA = 24 * 24              # px at the preview's 480 x 270: LEGIBLE-0's size, borrowed again
+FRAME_SEEN = 0.5                  # a majority of the subject seen
+FRAME_INSET = 0.05                # its four corners inside the still less 5% at each edge
+SUBJECT_OFFSET = 0.1              # m: the subject's points sampled in front of the face (a bay stands out 4-5 cm)
+FRAME_RULE = ("framed: at every pose the subject's four corners inside the still less 5% at each edge, at least half of it seen "
+              "(exact occlusion, 0.1 m in front of the face) and at least 24 x 24 px; among the rings that hold PATH-0 and this, the one "
+              "whose smallest subject is largest")
+
 PLANT = ""
-PLANTS = ("camera-endpoints-only", "camera-no-margin", "camera-visuals-ignored")
+PLANTS = ("camera-endpoints-only", "camera-no-margin", "camera-visuals-ignored", "frame-any-ring")
 
 
 class CameraError(Exception):
@@ -245,7 +255,40 @@ def _ring(f, angles, radius, rise, obs, grown, fm, need_sight, skip):
     return poses, skipped
 
 
-def plan(scene, focus, seed, normal=None, name=None):
+def subject_of(shapes):
+    """FRAME-0: the first shape on an upright face, as {shape, corners, normal}: the rectangle round its vertices in the
+    face's plane (its corners in order round it), or None."""
+    for s_ in shapes or ():
+        w, n = s_.get("world_m") or [], (s_.get("face") or {}).get("normal")
+        if len(w) < 3 or not n or abs(float(n[1])) > 1e-9:
+            continue
+        xs, ys, zs = [p[0] for p in w], [p[1] for p in w], [p[2] for p in w]
+        y0, y1 = min(ys), max(ys)
+        if float(n[2]):
+            z = zs[0]
+            c = [[min(xs), y0, z], [max(xs), y0, z], [max(xs), y1, z], [min(xs), y1, z]]
+        else:
+            x = xs[0]
+            c = [[x, y0, min(zs)], [x, y0, max(zs)], [x, y1, max(zs)], [x, y1, min(zs)]]
+        return {"shape": s_.get("name"), "corners": [[round(float(v), 4) for v in p] for p in c], "normal": [float(v) for v in n]}
+    return None
+
+
+def framing(scene, path, subject, exact=True):
+    """FRAME-0: at each pose, what it shows of the subject (legibility.view), and whether the path frames it."""
+    import legibility
+    boxes = [b for _i, b in obstacles(scene)]
+    rows = []
+    for k, pose in enumerate(path["poses"]):
+        v = legibility.view(pose, subject["corners"], subject["normal"], boxes, exact=exact, offset=SUBJECT_OFFSET, inset=FRAME_INSET)
+        why = ([] if v["inside"] else ["not framed"]) + ([] if v["seen"] >= FRAME_SEEN else ["not seen (%.0f%%)" % (100 * v["seen"])]) + \
+              ([] if v["area_px"] >= FRAME_AREA else ["small (%.0f px)" % v["area_px"]])
+        rows.append(dict(v, pose=k, framed=not why, why=why))
+    return {"rule": FRAME_RULE, "met": bool(rows) and all(r["framed"] for r in rows), "poses": rows,
+            "smallest_px": min((r["area_px"] for r in rows), default=0.0)}
+
+
+def plan(scene, focus, seed, normal=None, name=None, subject=None):
     """The path: {name, seed, focus, normal, margin, rule, radius, rise, poses, sight, skipped, id}. See the head of
     this file. Tried in order: one radius and rise all round with every pose seeing the focus; the same without sight;
     then each pose on its own, a pose that cannot clear left out."""
@@ -263,7 +306,23 @@ def plan(scene, focus, seed, normal=None, name=None):
     grown = _grown_all(scene)
     fm = float(MARGIN) + 1e-6
     got, ring = None, [None, None]
-    for need_sight in (True, False):
+    frame = None
+    if subject is not None and flat:
+        # FRAME-0: every ring that holds PATH-0 with every pose seeing the focus, framed for the subject in floats; the one
+        # whose smallest subject is largest is taken and its framing decided exactly. None framed: the plain arc below,
+        # its framing said not met (FRAME-NONE), the path never loosened to meet it
+        best = None
+        for radius in FRAME_RADII:
+            for rise in RISES:
+                g = _ring(f, angles, radius, rise, obs, grown, fm, True, False)
+                if not g:
+                    continue
+                fr = framing(scene, {"poses": g[0]}, subject, exact=False)
+                if (fr["met"] or PLANT == "frame-any-ring") and (best is None or fr["smallest_px"] > best[0]):
+                    best = (fr["smallest_px"], g, [radius, rise])
+        if best is not None:
+            got, ring = best[1], best[2]
+    for need_sight in ((True, False) if got is None else ()):
         for radius in RADII:
             for rise in RISES:
                 got = _ring(f, angles, radius, rise, obs, grown, fm, need_sight, False)
@@ -282,6 +341,10 @@ def plan(scene, focus, seed, normal=None, name=None):
     doc = {"name": name, "seed": str(seed), "focus": [round(v, 3) for v in f], "normal": [float(v) for v in normal] if flat else None,
            "margin": str(MARGIN), "rule": RULE, "radius": ring[0], "rise": ring[1], "poses": poses, "skipped": skipped}
     doc["sight"] = sight(scene, doc)
+    if subject is not None:
+        frame = framing(scene, doc, subject)
+        doc["subject"] = subject
+        doc["framing"] = dict(frame, code="" if frame["met"] else "FRAME-NONE")
     return dict(doc, id="%s-%s" % (name, sha256(enc(doc).encode("ascii"))[:12]))
 
 
@@ -377,6 +440,25 @@ def selftest():
     row("a facade's arc stands in front of its face, one radius and rise all round, and sees its focus", a1["name"] == "arc" and front
         and len(a1["poses"]) == POSES and all(a1["sight"]) and a1["radius"] is not None,
         "%d poses at %s m and %s m up, all in front, all seeing %s" % (len(a1["poses"]), a1["radius"], a1["rise"], a1["focus"]))
+    # FRAME-0 (0243): the flagship's marked bay (bay 3 of floor 2, as #bay marks it: 2 x 3.5 m of the face) framed
+    sub = {"shape": "bay", "corners": [[26.0, 7.0, 6.0], [28.0, 7.0, 6.0], [28.0, 10.5, 6.0], [26.0, 10.5, 6.0]], "normal": [0.0, 0.0, 1.0]}
+    fc2 = [27.0, 8.75, 6.0]
+    plain = plan(S, fc2, "req-1", [0, 0, 1])
+    framed = plan(S, fc2, "req-1", [0, 0, 1], subject=sub)
+    fr = framed.get("framing") or {}
+    before = framing(S, plain, sub)
+    row("FRAME-0: the marked bay framed at every pose, the path still clear, the framing decided exactly again",
+        fr.get("met") and fr.get("smallest_px", 0) >= FRAME_AREA and not check(S, framed) and framing(S, framed, sub) == {k: v for k, v in fr.items() if k != "code"}
+        and len(framed["poses"]) == POSES,
+        "framed at %s m, %s m up: the bay %s to %s px at its poses, all seen; the arc unframed for it (B5a's way): %s to %s px, framed %s" % (
+            framed["radius"], framed["rise"], int(fr.get("smallest_px", 0)), int(max((r["area_px"] for r in fr.get("poses", [])), default=0)),
+            int(before["smallest_px"]), int(max(r["area_px"] for r in before["poses"])), before["met"]))
+    tiny = dict(sub, corners=[[26.9, 8.7, 6.0], [27.0, 8.7, 6.0], [27.0, 8.8, 6.0], [26.9, 8.8, 6.0]])
+    small = plan(S, fc2, "req-1", [0, 0, 1], subject=tiny)
+    row("FRAME-0: a subject no ring can frame (10 cm square): FRAME-NONE, said, and the path the plain arc, never loosened to meet it",
+        small["framing"]["code"] == "FRAME-NONE" and not small["framing"]["met"] and small["poses"] == plain["poses"] and not check(S, small),
+        "framing %s; its largest %.0f px; the poses those of the plain arc: %s" % (small["framing"]["code"], max(r["area_px"] for r in small["framing"]["poses"]),
+                                                                                small["poses"] == plain["poses"]))
     if PLANT:
         return rows
     caught = []

@@ -339,6 +339,40 @@ reference (`python art/quality.py freeze NAME`) is its scene's bytes at an expor
 exporter or platform; it approves nothing visual. A world's views are a visual baseline only when the owner approves
 them: the foundry yard's eight (0241's contact sheet) are provisional until B5b's framed comparison.
 
+## The flagship's acceptance (FLAGSHIP-0) and a path framed for its subject (FRAME-0), 0243
+
+**Framing.** When a request's shape lies on an upright face, its arc is framed for the shape's region (the rectangle
+round its vertices on the face): of the rings that hold PATH-0 with every pose seeing the focus (radii 5 to 20 m, rises
+2.5 to 9 m), the one whose smallest view of the region is largest, provided that at every pose the region's four
+corners are inside the still less 5% at each edge, at least half of it is seen (exact occlusion, sampled 0.1 m in front
+of the face, before a bay's 4-5 cm) and it covers at least 24 x 24 pixels at 480 x 270. The framing is decided in
+floats to choose and exactly to record; it is said in the path (`framing`: met, each pose's area, share seen and box
+on the still). When no ring frames it the path is PATH-0's plain arc and the framing reads `FRAME-NONE`: the path is
+never loosened to meet a framing. The path is made in the request's own thread and is the same for every candidate; at
+a preview it is framed again against each scene (a candidate may hide or move what it frames), and the dialog says so.
+The thresholds are engineering proxies (LEGIBLE-0's), not perceptual legibility.
+
+**The sheet to inspect.** When both sides' stills are complete, the host writes `<letter>.preview.compare.png`: at
+each pose the base's and the candidate's stills at half size and, when the path frames a subject, both crops of the
+subject (its box on the still and a fifth round it) enlarged side by side, then their difference eight times over (where
+the candidate changed the picture, however faintly); named on the request's line by its sha256
+and shown under *Inspect* in the preview's dialog. A picture for a person, not evidence: SSIM stays a look.
+
+**The flagship's acceptance.** `python art/flagship.py selftest` (or `python art/play.py --flagship-selftest`): in the
+foundry yard, with the scripted director, the marked bay's edit through the studio's own HTTP surface, each stage's
+evidence required before the next: *mark* (the region on the warehouse's face, ok), *request* (strict, tied to the head
+it was asked at), *candidate* (held, strict PASS, its impact present), *preview* (one path for every candidate, clear
+and framed in both scenes; replayed, every state verified), *admit* (the ledger's admit event from the request's head
+to the files' head, with its region receipt), *undo* (the head, the brief's bytes and the scene's bytes as before). The
+first stage without its evidence stops the procedure with its code (`FLAGSHIP-MARK`, `-REQUEST`, `-HELD`,
+`-NO-IMPACT`, `-FRAMING`, `-PREVIEW`, `-ADMIT`, `-UNDO`) and nothing further is asked of the studio. The procedure is an
+acceptance: the studio's own admission still reads none of the impact, the framing or the preview.
+
+**A visual baseline** is the owner's act, apart from the scene's bytes reference: `python art/flagship.py approve
+WORLD REQUEST LETTER --note TEXT` appends to `art/visual_baselines.jsonl` the sha256 of a preview's files (its meta,
+report, archives and sheet), its path and subject, and his note, only from a preview that is complete, every state
+verified, its path clear and framed in both scenes; refused otherwise, and without a note.
+
 ## Legibility along the path (LEGIBLE-0, 0241: one test of Meaning-to-View)
 
 `art/legibility.py` asks whether the evidence for a piece survives the view: along a path, at each pose, the share of

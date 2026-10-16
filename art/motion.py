@@ -259,9 +259,59 @@ def report(p, stills, previous=None):
     return {"format": FORMAT, "version": VERSION, "semantics": p["semantics"], "path_id": p["path_id"], "seed": p["seed"], "ticks": rows,
             "replayed": not incomplete, "code": "PREVIEW-INCOMPLETE" if incomplete else "", "incomplete_ticks": incomplete,
             "untrusted_ticks": untrusted, "state_verified": bool(agree and not incomplete), "first_difference": p["first_difference"],
-            "path_check": p.get("path_check"),
+            "path_check": p.get("path_check"), "framing": p.get("framing"),
             "fingerprints_sha256": {s: sha256(enc(p["fingerprints"][s]).encode("ascii")) for s in ("base", "candidate")},
             "advisory": "the stills' SSIM and PSNR are a look, never a verdict: the states are the evidence"}
+
+
+# ------------------------------------------------------------------------------------------------ the sheet to inspect
+def compare_sheet(p, stills):
+    """FRAME-0 (0243): a picture for a person to inspect, not evidence: at each pose a row of the base's and the
+    candidate's stills at half size, and, when the path frames a subject, both crops of the subject (its box on the still
+    and a fifth round it, square) enlarged side by side, then their difference eight times over (where the candidate
+    changed the picture, however faintly). PNG bytes, or None when a still is missing."""
+    import quality
+    n = len(p["still_ticks"])
+    if any((s_, k) not in stills for s_ in ("base", "candidate") for k in range(n)):
+        return None
+    fr = (p.get("framing") or {}).get("base")
+    C, G = 135, 4
+    W = 240 * 2 + G + ((C * 3 + G * 3) if fr else 0)
+    H = n * 135 + (n - 1) * G
+    out = bytearray([18, 18, 20] * (W * H))
+
+    def put(x0, y0, w, h, px):
+        for y in range(h):
+            out[((y0 + y) * W + x0) * 3:((y0 + y) * W + x0 + w) * 3] = px[y * w * 3:(y + 1) * w * 3]
+
+    for k in range(n):
+        y0 = k * (135 + G)
+        imgs = [quality.decode_png(stills[(s_, k)]) for s_ in ("base", "candidate")]
+        for j, (w, h, rgb) in enumerate(imgs):
+            half = bytearray(240 * 135 * 3)
+            for y in range(135):
+                sy = min(h - 1, y * h // 135)
+                for x in range(240):
+                    sx = min(w - 1, x * w // 240)
+                    half[(y * 240 + x) * 3:(y * 240 + x) * 3 + 3] = rgb[(sy * w + sx) * 3:(sy * w + sx) * 3 + 3]
+            put(j * (240 + G), y0, 240, 135, bytes(half))
+        bb = fr["poses"][k]["bbox"] if fr and k < len(fr["poses"]) else None
+        if bb:
+            crops = []
+            for j, (w, h, rgb) in enumerate(imgs):
+                sx_, sy_ = w / 480.0, h / 270.0
+                cx, cy = (bb[0] + bb[2]) / 2 * sx_, (bb[1] + bb[3]) / 2 * sy_
+                half_side = max(bb[2] - bb[0], bb[3] - bb[1]) * 0.6 * max(sx_, sy_) + 2
+                crop = bytearray(C * C * 3)
+                for y in range(C):
+                    sy = int(min(h - 1, max(0, cy - half_side + (y + 0.5) * 2 * half_side / C)))
+                    for x in range(C):
+                        sx = int(min(w - 1, max(0, cx - half_side + (x + 0.5) * 2 * half_side / C)))
+                        crop[(y * C + x) * 3:(y * C + x) * 3 + 3] = rgb[(sy * w + sx) * 3:(sy * w + sx) * 3 + 3]
+                put(480 + G * 2 + j * (C + G), y0, C, C, bytes(crop))
+                crops.append(crop)
+            put(480 + G * 2 + 2 * (C + G), y0, C, C, bytes(min(255, 8 * abs(a_ - b_)) for a_, b_ in zip(crops[0], crops[1])))
+    return quality.png_bytes(W, H, bytes(out))
 
 
 # ------------------------------------------------------------------------------------------------ the archives

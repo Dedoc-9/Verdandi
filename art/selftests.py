@@ -44,6 +44,7 @@ SUITES = (
     ("preview-studio", ["art/play.py", "--preview-selftest"], r"^PREVIEW-STUDIO SELFTEST (\d+)/(\d+)$", 60),
     ("path", ["art/camera.py", "selftest"], r"^PATH SELFTEST (\d+)/(\d+)$", 35),                     # PATH-0 (0241)
     ("legible", ["art/legibility.py", "selftest"], r"^LEGIBLE SELFTEST (\d+)/(\d+)$", 15),            # LEGIBLE-0 (0241)
+    ("flagship", ["art/play.py", "--flagship-selftest"], r"^FLAGSHIP SELFTEST (\d+)/(\d+)$", 90),      # FLAGSHIP-0 (0243)
     ("queue", ["art/studio_queue.py", "selftest"], r"^STUDIO-2 SELFTEST (\d+)/(\d+)$", 37),
     ("studio", ["art/studio.py", "selftest"], r"^STUDIO SELFTEST (\d+)/(\d+)$", 30),
     ("quality", ["art/quality.py", "selftest"], r"^QUALITY SELFTEST (\d+)/(\d+)$", 20),

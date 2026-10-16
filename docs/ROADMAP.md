@@ -5034,6 +5034,73 @@ HELD; the full check, `python art/selftests.py --repeat 2`, two suites at once, 
 scratch copy: twenty-one suites, 689.2 s and 680.8 s, ART SELFTESTS PASSED. NOT_MEASURED: his machine. No row, pinned
 source or oracle file changed. Docs: AGENTS.md (RUNG-0's row), art/STUDIO.md, docs/CORE.md (art 25,246 lines, tools 2,047), this entry.
 
+**His run of 0242, and his word on what follows (2026-10-16).** 0242 applied on 1918135; the rung D; the plants by
+0241's classifier *"82 planted defects refused by the old checker; 116 by the new"*, PLANTS HELD, as predicted; RUNG
+SELFTEST 18/18; ART SELFTESTS FAILED: in the first run STUDIO APP SELFTEST 11/13 and PREVIEW-STUDIO SELFTEST 13/14, in
+the second all twenty-one passed (210.4 s and 185.6 s); the gate 251 rows / 0 fail, rowset 74db4c8d78625af5; pushed
+1918135..3ebb854; his classifier taken again from origin/main. MEASURED on his machine. Read from his log: PREVIEW-STUDIO's
+timing row failed on its simulation, 1,076 ms against a bound of 1 s that was the agent's, not his; STUDIO APP's two rows
+on a silent page while a request runs failed because the studio stopped at 4 s of silence before the request had begun
+(its start slowed by 0241's path planning, under sixteen suites at once; INFERRED from its stop line and the code). His
+word: plants completeness a rung of its own, later and not before B5b (an expected row set defined apart from the output,
+each suite's rows accounted by identity, exact reconciliation, failing closed, planted omissions, both consoles), and a
+green plants result not read as complete until then; B5b next, then the studio's dashboard foundation as the next product
+rung, D1-M in parallel on his own device; the visual baseline his approval, apart from the bytes freeze and the plants.
+Taken as follows: agreed, with two refinements said to him: a plant row's identity is its suite, world and kind (its
+subject's id detail, not identity), and the expected set shrinking is a loosening the classifier names; the dashboard a
+consolidation of the shell the studio already has, audited against his five areas before anything is built.
+
+### FRAME-0 and FLAGSHIP-0 — a path framed for its subject, and the flagship's acceptance · Phase I, B5b, **built, off the gate** (0243, `art/camera.py`, `art/flagship.py`)
+
+**Two repairs his run asked for.** PREVIEW-STUDIO's timing row keeps his 10 s for the whole preview and drops the
+agent's own 1 s for the simulation, a loosening of a test's bound, named. STUDIO APP's stand-in page speaks once more
+after its request is accepted, so its silence begins while the request runs, which is what the two rows mean to test;
+and the request's path is made in the request's own thread, so asking returns as quickly as before 0241.
+
+**Framing (FRAME-0).** With a shape on an upright face, the arc is framed for the shape's region: of the rings that hold
+PATH-0 with every pose seeing the focus, the one whose smallest view of the region is largest, provided that at every
+pose its four corners lie inside the still less 5% at each edge, at least half of it is seen (exact occlusion) and it
+covers at least 24 x 24 px; chosen in floats, recorded exactly; when no ring frames it, PATH-0's plain arc and
+FRAME-NONE, the path never loosened to meet it. Framed again against each scene at a preview. The sheet to inspect
+(`<letter>.preview.compare.png`): both stills at each pose, both crops of the subject and their difference eight times
+over. The thresholds stay engineering proxies, as he asked.
+
+**The flagship's acceptance (FLAGSHIP-0).** `python art/play.py --flagship-selftest`: in the foundry yard with the
+scripted director, the marked bay's edit through the studio's HTTP surface, each stage's evidence required before the
+next (mark, request, candidate, preview, admit, undo; see art/STUDIO.md), the first without it stopping the procedure with
+its code. The studio's own admission still reads none of what the procedure asks for. A visual baseline is his act:
+`python art/flagship.py approve WORLD REQUEST LETTER --note TEXT`, from a complete, verified and framed preview only, into
+`art/visual_baselines.jsonl`, apart from the bytes reference.
+
+**Its falsifiers.** PATH SELFTEST 11/11: the marked bay framed at every pose (5 m out, 2.5 m up: 2,769 to 8,984 px, all
+seen, against 271 to 921 px on 0241's plain arc), the path clear, the framing decided exactly again; a 10 cm subject no
+ring can frame: FRAME-NONE and the plain arc's poses, unchanged; a fourth plant caught (a ring taken whatever its
+framing). FLAGSHIP SELFTEST 9/9: the whole edit from mark to undo, every stage's evidence, the head, the brief and the
+scene as before; planted, each stopping its transition with the active world as it was: an invalid region (the column,
+stopped at the candidate, and the studio's own admission refusing it too, ADMIT-OUTSIDE), the impact missing
+(FLAGSHIP-NO-IMPACT), the preview's verification failing (FLAGSHIP-PREVIEW, first difference at tick 0), a stale revision
+(the brief edited after the preview: FLAGSHIP-ADMIT, the studio's STUDIO-STALE, the world as the edit left it); the visual
+baseline written from the honest run's preview and refused from the unverified one and without a note; three plants of
+the procedure caught (the held, impact and verification checks each skipped). PREVIEW-STUDIO SELFTEST 14/14 (the sheet
+among the preview's files).
+
+**In a browser (OBSERVED, headless Chromium on SwiftShader, the foundry yard, #bay, *Panelled bay*).** The framed arc's
+sixteen stills in 161 s; the subject framed in both scenes at every pose (3,981 to 8,993 px); state verified, PASS at
+every pose. The sheet shows what framing could and could not do: the bay now fills its crops, yet the panel and the
+window it replaces differ inside the subject's box by at most 15 to 17 levels of 255 in any channel at seven of the
+eight poses (at the eighth a lamp's glint on the new panel, 238; MEASURED from the stills), so the raw crops look alike
+and only the difference shows the change, the same panel at every pose. Framing answered the size; the
+contrast at dusk (LEGIBLE-0's 1.37:1) is the world's, a question for the director's correction, not the camera's.
+
+**Measured in the container** (2 processors, Python 3.11): a framed path 1.4 s, in the request's thread; FLAGSHIP SELFTEST
+82 s alone (its honest and four planted runs, and its three plants); the full check, `python art/selftests.py --repeat 2`, two suites at once, the four
+references frozen in a scratch copy: twenty-two suites, 799.9 s and 835.2 s, ART SELFTESTS PASSED.
+
+**Not done.** The real provider's rehearsal (his machine, OBSERVED, never this acceptance); the visual baseline (his to
+approve, after his eyes on the sheet); plants completeness (its own rung); the dashboard (next). NOT_MEASURED: his
+machine, a GPU. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md, art/STUDIO.md, docs/CORE.md (art
+25,835 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

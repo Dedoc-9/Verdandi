@@ -140,7 +140,7 @@ def budgets_over(c, budgets):
 
 
 # ------------------------------------------------------------------------------------------------ the preview path
-def camera_path(scene, focus, seed, normal=None):
+def camera_path(scene, focus, seed, normal=None, subject=None):
     """The preview's path about `focus` ([x, y, z] in metres), seeded by the request: since PATH-0 (0241), art/camera.py's
     plan, every pose and every segment between consecutive poses held to its clearance rule against every box of the
     scene, exactly; with a face's `normal`, an arc in front of that face. The same scene, focus, normal and seed give the
@@ -150,7 +150,7 @@ def camera_path(scene, focus, seed, normal=None):
         import time
         seed = str(time.time())
     import camera
-    return camera.plan(scene, focus, seed, normal)
+    return camera.plan(scene, focus, seed, normal, subject=subject)
 
 
 def aim_of(scene, shapes=(), target=None):

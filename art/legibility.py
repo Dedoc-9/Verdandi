@@ -117,6 +117,51 @@ def face(box, normal):
     return [[x, y0, z0], [x, y0, z1], [x, y1, z1], [x, y1, z0]]
 
 
+def grid(corners, n=GRID, offset=0.0, normal=(0, 0, 0)):
+    """n x n points over a face's four corners (the middle of each cell), moved `offset` m along its normal."""
+    return [[corners[0][i] + (corners[1][i] - corners[0][i]) * (a + 0.5) / n + (corners[3][i] - corners[0][i]) * (b + 0.5) / n + offset * normal[i]
+             for i in range(3)] for a in range(n) for b in range(n)]
+
+
+def view(pose, corners, normal, boxes, exact=True, offset=0.0, inset=0.0):
+    """What a pose shows of a face: the share of its grid (moved `offset` m out along its normal) in front of its plane,
+    framed and on a line from the camera inside no box (exact, or in floats to choose); its area in pixels; the box of
+    its corners on the still; and whether all four corners lie inside the viewport less `inset` of it at each edge."""
+    w, h = VIEWPORT
+    eye = [pose["x"], pose["y"], pose["z"]]
+    lo = [min([eye[i]] + [c[i] for c in corners]) - 0.01 for i in range(3)]
+    hi = [max([eye[i]] + [c[i] for c in corners]) + 0.01 for i in range(3)]
+    near = [b for b in boxes if all(b[i] < hi[i] and b[i + 3] > lo[i] for i in range(3))]
+    if exact:
+        e = [camera.q(v) for v in eye]
+        near_q = [camera._grown(b, 0) for b in near]
+    seen = 0
+    pts = grid(corners, GRID, offset, normal)
+    for pt in pts:
+        front = sum((eye[i] - pt[i]) * normal[i] for i in range(3)) > 0
+        pr = project(pose, pt)
+        framed = pr is not None and 0 <= pr[0] <= w and 0 <= pr[1] <= h
+        if not front or not (framed or PLANT == "legibility-unframed-seen"):
+            continue
+        if PLANT != "legibility-no-occlusion":
+            if exact:
+                q_ = [camera.q(round(v, 6)) for v in pt]
+                if any(camera.crosses(e, q_, g) for g in near_q):
+                    continue
+            elif any(camera._f_crosses(eye, pt, b, 0.0) for b in near):
+                continue
+        seen += 1
+    prj = [project(pose, p_) for p_ in corners]
+    area, bbox, inside = 0.0, None, False
+    if all(prj):
+        poly = _clip([(p_[0], p_[1]) for p_ in prj], w, h)
+        area = abs(sum(poly[i - 1][0] * poly[i][1] - poly[i][0] * poly[i - 1][1] for i in range(len(poly)))) / 2 if len(poly) >= 3 else 0.0
+        xs, ys = [p_[0] for p_ in prj], [p_[1] for p_ in prj]
+        bbox = [round(min(xs), 1), round(min(ys), 1), round(max(xs), 1), round(max(ys), 1)]
+        inside = min(xs) >= inset * w and max(xs) <= (1 - inset) * w and min(ys) >= inset * h and max(ys) <= (1 - inset) * h
+    return {"seen": round(seen / float(len(pts)), 4), "area_px": round(area, 1), "bbox": bbox, "inside": inside}
+
+
 def probe(scene, path, piece, against, normal):
     """At each pose of the path: the share of the piece's face framed and seen, its area in pixels, the contrast of its
     material against `against`'s, and whether the cue reads (and why not). A function of its arguments alone."""
@@ -125,34 +170,14 @@ def probe(scene, path, piece, against, normal):
     mats = scene["materials"]
     c = round(contrast(mats[P["material"]]["base"], mats[A["material"]]["base"]), 4)
     corners = face(P["box"], normal)
-    pts = [[corners[0][i] + (corners[1][i] - corners[0][i]) * (a + 0.5) / GRID + (corners[3][i] - corners[0][i]) * (b + 0.5) / GRID for i in range(3)]
-           for a in range(GRID) for b in range(GRID)]
-    grown = [camera._grown(b, 0) for _i, b in camera.obstacles(scene)]
-    w, h = VIEWPORT
+    boxes = [b for _i, b in camera.obstacles(scene)]
     rows = []
     for k, pose in enumerate(path["poses"]):
-        eye = [pose["x"], pose["y"], pose["z"]]
-        seen = 0
-        for pt in pts:
-            front = sum((eye[i] - pt[i]) * normal[i] for i in range(3)) > 0
-            pr = project(pose, pt)
-            framed = pr is not None and 0 <= pr[0] <= w and 0 <= pr[1] <= h
-            if not front or not (framed or PLANT == "legibility-unframed-seen"):
-                continue
-            if PLANT != "legibility-no-occlusion":
-                e, q_ = [camera.q(v) for v in eye], [camera.q(round(v, 6)) for v in pt]
-                if any(camera.crosses(e, q_, g) for g in grown):
-                    continue
-            seen += 1
-        prj = [project(pose, p_) for p_ in corners]
-        area = 0.0
-        if all(prj):
-            poly = _clip([(p_[0], p_[1]) for p_ in prj], w, h)
-            area = abs(sum(poly[i - 1][0] * poly[i][1] - poly[i][0] * poly[i - 1][1] for i in range(len(poly)))) / 2 if len(poly) >= 3 else 0.0
-        share = seen / float(len(pts))
+        v = view(pose, corners, normal, boxes)
+        share, area = v["seen"], v["area_px"]
         why = ([] if share >= SEEN_MIN else ["not seen (%.0f%% of the face)" % (100 * share)]) + \
               ([] if area >= AREA_MIN else ["small (%.0f px)" % area]) + ([] if c >= CONTRAST_MIN else ["low contrast (%.2f:1)" % c])
-        rows.append({"pose": k, "seen": round(share, 4), "area_px": round(area, 1), "contrast": c, "reads": not why, "why": why})
+        rows.append({"pose": k, "seen": share, "area_px": area, "contrast": c, "reads": not why, "why": why})
     return {"piece": piece, "against": against, "normal": list(normal), "path_id": path.get("id"), "advisory": ADVISORY,
             "thresholds": {"seen": SEEN_MIN, "area_px": AREA_MIN, "contrast": CONTRAST_MIN}, "poses": rows,
             "reads": sum(r["reads"] for r in rows)}

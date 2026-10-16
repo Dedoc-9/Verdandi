@@ -1014,8 +1014,11 @@ class Gateway:
             if strict:
                 request["strict"] = True
             # IMPACT-0 (0239): the preview's camera path, named and seeded by the request, the same for all its candidates
-            path = self._path(S, shapes, bounds_of(O, (target or {}).get("piece")), rid)
-            self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "", "shapes": [s["name"] for s in shapes], "path": path,
+            # PATH-0/FRAME-0: the path is made in the request's own thread (it may take a second or more), named in the
+            # state once made; the page's preview waits for the request anyway
+            path_args = (S, shapes, bounds_of(O, (target or {}).get("piece")))
+            path = None
+            self.req = {"id": rid, "state": "running", "prompt": prompt.strip(), "message": "", "code": "", "shapes": [s["name"] for s in shapes], "path": path, "path_args": path_args,
                         "references": {r["tag"]: {"role": r["role"], "piece": r["piece"], "address": r["address"]} for r in refs},
                         "selection": target["address"] if target else None,
                         "head": head, "provider": {"model": cfg["model"]}, "candidates": [], "started": time.monotonic(),
@@ -1028,10 +1031,11 @@ class Gateway:
 
     def _path(self, S, shapes, target_box, rid):
         """PATH-0 (0241): the request's camera path (art/camera.py), or, when too few poses about its focus are clear, a
-        path of none that says why (the preview then refuses: PREVIEW-NO-PATH)."""
+        path of none that says why (the preview then refuses: PREVIEW-NO-PATH). FRAME-0 (0243): with a shape on an upright
+        face, the arc framed for the shape's region (its framing said in the path, met or FRAME-NONE)."""
         focus, normal = impact.aim_of(S, shapes, target_box)
         try:
-            return impact.camera_path(S, focus, rid, normal)
+            return impact.camera_path(S, focus, rid, normal, camera.subject_of(shapes))
         except camera.CameraError as e:
             return {"id": "none", "name": "none", "seed": rid, "focus": focus, "poses": [], "refused": "%s: %s" % (e.code, e.detail)}
 
@@ -1174,6 +1178,11 @@ class Gateway:
 
     def _run1(self, req, request, cancel, ws):
         rid = req["id"]
+        if req.get("path") is None and req.get("path_args"):
+            made = self._path(*req["path_args"], rid)
+            with self.lock:
+                req["path"] = made
+                req.pop("path_args", None)
         rb = (json.dumps(request, sort_keys=True, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
         self._record(rid, "request.json", rb)
         entry = {"id": rid, "at": now(), "brief": self.brief, "head": req["head"], "prompt": req["prompt"],
@@ -1431,9 +1440,13 @@ class Gateway:
         # PATH-0: the path made at the head, held again to the rule against the candidate's own scene (a candidate may
         # put a box where a pose stands): said in the plan and the report, never moved
         p["path_check"] = {"id": path["id"], "rule": camera.RULE, "base": camera.check(o0["scene"], path), "candidate": camera.check(o1["scene"], path)}
+        if path.get("subject"):
+            # FRAME-0: the subject framed in each scene along the one path (a candidate may hide or move what it frames)
+            p["framing"] = {"subject": path["subject"], "rule": camera.FRAME_RULE,
+                            "base": camera.framing(o0["scene"], path, path["subject"]), "candidate": camera.framing(o1["scene"], path, path["subject"])}
         with self.lock:
             c["preview"] = {"plan": p, "stills": {}}
-        return {"path_id": p["path_id"], "path_check": p["path_check"], "seed": p["seed"], "spawn": p["spawn"], "poses": p["poses"], "still_ticks": p["still_ticks"], "ticks": p["ticks"],
+        return {"path_id": p["path_id"], "path_check": p["path_check"], "framing": p.get("framing"), "seed": p["seed"], "spawn": p["spawn"], "poses": p["poses"], "still_ticks": p["still_ticks"], "ticks": p["ticks"],
                 "viewport": p["viewport"], "frames": p["frames"], "first_difference": p["first_difference"], "sim_ms": p["sim_ms"],
                 "slots": {"base": 0, "candidate": c["slot"]}}
 
@@ -1475,6 +1488,11 @@ class Gateway:
             shas[name] = sha256(data)
         for (side, k), data in sorted(stills.items()):
             self._record(rid, "%s.stills/%s-%d.png" % (letter, side, k), data)
+        sheet = motion.compare_sheet(p, stills)
+        if sheet is not None:
+            # FRAME-0: the sheet a person inspects (both stills at each pose and the subject's crops), named by its sha256
+            self._record(rid, "%s.preview.compare.png" % letter, sheet)
+            shas["preview.compare.png"] = sha256(sheet)
         with self.lock:
             c["preview_report"] = rep
             c.pop("preview", None)
@@ -1491,9 +1509,10 @@ class Gateway:
 
     def preview_png(self, rid, letter, side, k):
         self._drawn(rid, letter)
-        if side not in ("base", "candidate") or not re.match(r"[0-9]{1,3}\Z", str(k)):
+        if side not in ("base", "candidate", "compare") or not re.match(r"[0-9]{1,3}\Z", str(k)):
             raise StudioError("PREVIEW-STILL", "a still is of the base or the candidate, at one of the plan's poses")
-        f = os.path.join(self.records, rid, "%s.stills" % letter, "%s-%s.png" % (side, k))
+        f = os.path.join(self.records, rid, "%s.stills" % letter, "%s-%s.png" % (side, k)) if side != "compare" \
+            else os.path.join(self.records, rid, "%s.preview.compare.png" % letter)
         if not os.path.exists(f):
             raise StudioError("PREVIEW-STILL", "no still %s %s of candidate %s" % (side, k, letter))
         return open(f, "rb").read()
