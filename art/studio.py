@@ -185,11 +185,16 @@ SCHEMA = {
 
 
 class StudioError(Exception):
-    """A refusal, with its code: STUDIO-<WHAT>."""
+    """A refusal, with its code: STUDIO-<WHAT>; and, when the director refused (STUDIO-DIRECTOR-REFUSED), the director's
+    own code (LEDGER-SAFE-0, 0245: LEDGER-UNLOGGED, HEAD-MOVED, ADMISSION-0, ...), kept as a field of the answer."""
 
-    def __init__(self, code, detail):
+    def __init__(self, code, detail, director=""):
         Exception.__init__(self, "%s: %s" % (code, detail))
-        self.code, self.detail = code, detail
+        self.code, self.detail, self.director = code, detail, director
+
+    def answer(self):
+        """The HTTP answer's body (art/play.py)."""
+        return dict({"ok": False, "code": self.code, "message": self.detail}, **({"director_code": self.director} if self.director else {}))
 
 
 def now():
@@ -1400,7 +1405,10 @@ class Gateway:
         if st["flags"] and not despite:
             raise StudioError("STUDIO-STILL-FLAGGED", "candidate %s's still: %s. A detector proves nothing: admit despite it, which the ledger "
                                                       "records, or reject the candidate" % (letter, "; ".join(st["flags"])))
-        ev = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(c["intent"], verdict, after, timings, rec))
+        # LEDGER-SAFE-0 (0245): the evaluation was made outside the content lock; it is appended under it, and only at the
+        # head the ledger holds (another admission may have landed meanwhile, or the files changed outside the loop)
+        durable.point("studio:admit-evaluated")
+        ev = quiet(D.append_evaluation, ws, c["intent"], verdict, after, timings, rec)
         parent_text = ws.text()
         a = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note="request %s, candidate %s" % (rid, letter),
                   still=png, despite=bool(despite), region=region)
@@ -1571,7 +1579,7 @@ class Gateway:
             return {"what": "rejected", "request": rid, "candidate": letter, "ledger": []}
         it = D.canon.load_intent(c["intent"])
         verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
-        ev = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(c["intent"], verdict, after, timings, rec))
+        ev = quiet(D.append_evaluation, ws, c["intent"], verdict, after, timings, rec)
         x = quiet(D.cmd_refuse, ws, ev["seq"], chooser="the designer (studio)", note="request %s, candidate %s" % (rid, letter))
         with self.lock:
             c["decided"] = "rejected"
@@ -1603,7 +1611,7 @@ class Gateway:
         raw = D.canon.dumps(doc)
         it = D.canon.load_intent(raw)
         verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
-        ev = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(raw, verdict, after, timings, rec))
+        ev = quiet(D.append_evaluation, ws, raw, verdict, after, timings, rec)
         if verdict["verdict"] != "CLEAN":
             raise StudioError("STUDIO-NOT-UNDOABLE", "the inverse of #%s is %s (%s), recorded as #%s and not admitted" % (a["seq"], verdict["verdict"], ",".join(verdict["codes"]), ev["seq"]))
         parent_text = ws.text()
@@ -1625,12 +1633,48 @@ class Gateway:
         try:
             child = ws.text()
             cert = certificate.make(self.brief, event, revision, parent_text, child, provenance, rid, letter)
-            res = certificate.check(cert, child)
-            b = (json.dumps(cert, sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")
-            self._record("certificates", "%s.json" % event["seq"], b)
-            return {"seq": event["seq"], "sha256": sha256(b), "ok": res["ok"], "exact": res["exact"], "statements": res["statements"], "codes": res["codes"]}
+            return self._keep_certificate(cert, child)
         except Exception as e:  # noqa: BLE001 — a certificate that cannot be made is said, the admission stands (the ledger is the authority)
             return {"seq": event.get("seq"), "ok": False, "error": "%s: %s" % (type(e).__name__, str(e)[:200])}
+
+    def _keep_certificate(self, cert, child):
+        """A certificate checked against the child's text and kept by its ledger sequence number, written whole and
+        flushed (durable.write: LEDGER-SAFE-0, 0245; a plain write before). What the request's line keeps of it."""
+        res = certificate.check(cert, child)
+        b = (json.dumps(cert, sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")
+        durable.write(os.path.join(self.records, "certificates", "%s.json" % cert["ledger"]["seq"]), b)
+        return {"seq": cert["ledger"]["seq"], "sha256": sha256(b), "ok": res["ok"], "exact": res["exact"], "statements": res["statements"], "codes": res["codes"]}
+
+    def recover_certificates(self):
+        """LEDGER-SAFE-0 (0245): a certificate is derived from the ledger, so every art admission the ledger holds without
+        one is given one at the start, from the ledger alone: the parent's and the child's texts replayed, the operation
+        the admitted evaluation's revision. Among them the one a crash left without (the studio writes it after the admit
+        event), and those the studio never certified (the command line's, those from before CERT-0). The request's
+        provenance is not in the ledger: such a certificate says it was made from the ledger, and names the admission's
+        note. Art admissions only, as the studio certifies (a layout's is the design tool's). Returns the sequence numbers
+        made. It never stops a start: an admission whose part of the ledger does not replay gets none (verify says why)."""
+        D = self.play.director()
+        try:
+            ws = self.play.workspace()
+            events = D.led.read(ws.ledger)[0] if os.path.exists(ws.ledger) else []
+        except Exception:  # noqa: BLE001 — the start goes on; the ledger's own reading says what is wrong with it
+            return []
+        made = []
+        for i, ev in enumerate(events):
+            try:
+                if ev.get("kind") != "admit" or ev.get("design_lines") or os.path.exists(os.path.join(self.records, "certificates", "%s.json" % ev["seq"])):
+                    continue
+                parent = D.replay(ws, events[:i])["art"]
+                src = D.canon.load_intent(events[int(ev["evaluation"])]["intent"].encode("ascii"))
+                child = D.replay(ws, events[:i + 1])["art"]
+                cert = certificate.make(self.brief, ev, src["revision"], parent, child,
+                                        {"producer": "made from the ledger at the start (0245)", "note": ev.get("observed", {}).get("note", "")},
+                                        "", src["candidate"])
+                self._keep_certificate(cert, child)
+                made.append(ev["seq"])
+            except Exception:  # noqa: BLE001 — a certificate that cannot be made is not made; the start goes on
+                continue
+        return made
 
 
 # contextlib.redirect_stdout swaps the process's one sys.stdout: two quiet() calls at once (an admission and an undo,
@@ -1640,15 +1684,29 @@ QUIET_LOCK = threading.RLock()
 LOG_LOCK = threading.Lock()          # the requests' records (Gateway._log): one line at a time in this process
 
 
+DIRECTOR_CODE = re.compile(r"(?:REFUSED \(([A-Z0-9-]+)\)|([A-Z]+(?:-[A-Z0-9]+)+):)")
+
+
+def director_code(e):
+    """The director's own code of a refusal: a Refusal's field, or the code its message opens with ('REFUSED (CODE): ...',
+    'LEDGER-CODE: ...'); '' when it names none."""
+    if getattr(e, "refusal", ""):
+        return e.refusal
+    m = DIRECTOR_CODE.match(" ".join(str(e).split()))
+    return (m.group(1) or m.group(2)) if m else ""
+
+
 def quiet(fn, *a, **k):
-    """A director command, its printing kept off the console; its refusals (it raises SystemExit) made the gateway's."""
+    """A director command, its printing kept off the console; its refusals (SystemExit, or the ledger's LedgerError) made
+    the gateway's, STUDIO-DIRECTOR-REFUSED with the director's own code kept (LEDGER-SAFE-0, 0245; it was lost before)."""
     import io
     import contextlib
     try:
         with QUIET_LOCK, contextlib.redirect_stdout(io.StringIO()):
             return fn(*a, **k)
-    except SystemExit as e:
-        raise StudioError("STUDIO-DIRECTOR-REFUSED", " ".join(str(e).split())[:300])
+    except (SystemExit, led.LedgerError) as e:
+        # 600, not 300 (0245): a refusal's remedy (LEDGER-UNLOGGED's rebase command, a world's --root) is not cut away
+        raise StudioError("STUDIO-DIRECTOR-REFUSED", " ".join(str(e).split())[:600], director_code(e))
 
 
 # ------------------------------------------------------------------------------------------------ the probe and the report

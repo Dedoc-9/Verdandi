@@ -1,0 +1,3950 @@
+# Capability matrix — the rows (generated, 2026-10-16)
+
+Generated from the inventory workflow's JSON, not written by hand; the synthesis, the dashboard audit and the patch
+plan are in [`CAPABILITY-MATRIX.md`](CAPABILITY-MATRIX.md), which says how these rows were made and what they do not
+show. HEAD `6af1d9f`. Every row was read, not run, unless its text says otherwise. Each `evidence` entry is a
+`file:line` the grading agent says it opened; at most two are kept here, shortened.
+
+A row's status is the last grade it reached: the reader's, then a skeptic's correction (`corrected`), then a
+contradiction's resolution (`resolved F<n>`). Where a grade moved, the earlier one is named. Rows marked
+`from-verifier` were added by a skeptic, and `from-filler` by an agent answering the critic.
+
+| status | rows |
+|---|---|
+| EXISTS-TESTED | 191 |
+| EXISTS-UNVERIFIED | 54 |
+| PARTIAL | 341 |
+| MISSING | 61 |
+| CONFLICTS-WITH-SPEC | 57 |
+| **all** | **704** |
+
+Skeptics corrected 87 reader grades. In the seven sections whose skeptics finished in both runs (R1, R3, R4, R5, R7, R8, R9), 26 of 284
+shared rows came out with a different grade the second time; the grades in this file are the second run's.
+
+## R1 — kernel, workshop, shell (Rust, held by the gate)
+
+R1 is the gate-held Rust core. The kernel is a frozen, std-only renderer that takes W, M and C and returns a frame digest and a picture, and it holds no authority. The workshop verifies sessions by replay. The shell holds the one append-only, hash-chained session log, which is the world, and admits typed proposals (VRDNP1, and VRDNP2 batches compiled from VERDANDI-DESIGN 0) through a registered order that a fence checks. The gate covers these strongly, with planted defects: malformed-input rejection (single-byte mutant courts over every language), stale refusal with no rebase, a capability grant with a cell rectangle, all-or-nothing batches, a journaled and atomically sealed session with 8 and 12 planted crash points, replay and checkpoint equivalence, and idempotence and order laws for the compiler. Most of what SPEC2 §4-§6 asks of a world model is absent from this subsystem. The world here is a 48×48 cell lattice, five tile classes and a camera, so there are no entity, surface or chart ids, no relations, transforms or rebase, no inverse capture, only a memo and renderer-identity form of dependency invalidation, no non-local checks beyond COMPILE-CAMERA, and no migrations; undo is truncate-and-replay or stepping back to a retained parent file. SPEC1's AnchorGraph authority, dense renumbered ids, Q32.32, VRDN header, new module layout or C ABI, and sha2 crate each collide with the pinned single-file std-only sources, the frozen oracle arithmetic and formats, and SPEC2's own defer or reject decisions.
+
+**Surprises.**
+
+- Verified by reading, not run: an admitted VRDNP1 or VRDNP2 'close' of the cell the camera stands on is not refused. shell/playback.rs:601-611 checks outside, border and alphabet only, while workshop/edit.rs:388 refuses 'the carried camera ... would stand in rock' and the compiler refuses COMPILE-CAMERA (shell/designcompile.rs:342). No admit-capability case covers it (verify/verify.py:11045-11050). A child admitted that way would refuse its next render, since the kernel will not compose an eye on rock.
+- The workshop's own writers are not crash-safe: workshop/session.rs:383 (commit and undo) and workshop/sessionwalk.rs:631 overwrite their only copy with fs::write. WORKSHOP-1's undo (session.rs:475) truncates the log and rewrites that file, so a crash mid-write tears the only copy. Only the shell's live path (livesession.rs:546-572) writes through a temp file and an atomic move.
+- Recovery never selects anything by itself. --resume loads the path a person names (shell/livesession.rs:612-616). No code finds 'the last verified durable state', and the design tool's pointer, project.json, is replaced without a flush (design/design.py:95-101).
+- The charter (README.md:26-28) says SHELL 'contains no authority mirror', yet the shell holds the live authority and its own copy of the workshop's fold (docs/CORE.md:151; shell/README.md:149, G17). The ghost documents this, but the ratified text reads the other way.
+- shell playback's apply_spec (shell/playback.rs:141-157) writes level_bytes[16 + z*w + x] with no bound, border or alphabet check. In a tampered session an x of w or more lands in the next row, and an index past the level panics rather than giving a typed refusal. BINARY-SDK.md:334-335 records this as found by reading; it was not run here either.
+- A saved session carries no version member at all: shell/livesession.rs:496-500 writes name, magic and data, and the loader checks only name and magic (livesession.rs:643). So 'schema version' cannot even be read off a session today.
+- The README's invariant 'A read cannot edit the authority' is held by membrane-wall on demonstration types that no other file uses (docs/CORE.md:161-162). The live session relies on module privacy instead (README.md:159 says so).
+- docs/CORE.md:4 says it describes 'HEAD 4247a61 ... 2026-10-09', but its tables were updated through 0244. Its kernel, workshop and shell line counts (4,655, 3,123, 12,641) match wc at HEAD 6af1d9f.
+- MIN_BYTES (shell/admit.rs:51) and MIN_BATCH_BYTES (shell/designevent.rs:48) are declared and never tested directly (BINARY-SDK.md:336-337).
+
+- **R1.kernel-isolation** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §4 Kernel / world model: no UI, network/provider calls, windowing, GPU API
+  - *Capability:* The kernel has no UI, network, windowing, GPU API or model logic: std-only, no shell dependency, reads no clock.
+  - *Held by:* reasoncourt-fence (any byte change to a pinned kernel .rs, or a new file, is red); kernel-build (bare rustc, so std-only by construction); bearing-fence (token scan of kernel/bearing.rs and kernel/vocab.rs only); reader…
+  - *Gap:* The pins freeze the bytes. They do not test the property: no row scans mantle.rs, formats.rs or fast.rs for a window, socket or clock (CORE.md:149), so the amendment that moved a pin would need its own check.
+  - *Skeptic:* Part of the row's claim is false. kernel/main.rs imports std::time::Instant (line 63) and reads the clock at lines 131-136, 291-306 and others for its timing flags, so the kernel program does read a clock; CORE.md:196 says the same. kernel/fast.rs:588 and bearingfast.rs:289 spawn scoped threads. On…
+  - *Evidence:* kernel/README.md:4-8 contract: std-only, no shell dependency, mints no authority; README.md:19-20 charter KERNEL line
+- **R1.kernel-owns-world-semantics** · CONFLICTS-WITH-SPEC · SPEC2 §4 Kernel / world model
+  - *Capability:* The kernel owns stable IDs, authored world semantics, local transforms, versioned schemas, canonical serialization, typed operations and invariant definitions.
+  - *Held by:* none (the ratified charter's division of labour)
+  - *Gap:* Typed ops, validation and the canonical languages exist, but in shell/ and workshop/, not the kernel. IDs, transforms and relations exist nowhere in the core.
+  - *Conflict:* README.md:17-24, the charter, 'ratified before the first commit': 'KERNEL deterministic · std-only ...', 'WORKSHOP owns authored edits · validates before projection · can create new authority'. AGENTS.md:57 forbids editing that block without the owner. kernel/README.md:7: 'The kernel mints no authority: it cannot chan…
+  - *Evidence:* kernel/README.md:7-8 'The kernel mints no authority'; README.md:17-24 charter: WORKSHOP owns authored edits
+- **R1.one-mutation-path** · PARTIAL (reader EXISTS-TESTED, corrected, resolved F10) · SPEC2 §2 principle 2 'One mutation path'; §4 Workshop 'the only supported path for author…
+  - *Capability:* Keys (UI), single proposals and batches all change the world through the same validated append, with no privileged shortcut.
+  - *Held by:* admit-replay (an admitted child equals the same edit made by a key; outcome equivalence); admit-fence and designevent-fence (by source: the admission appends through push_edit_cell/push_edit_tile in the registered order)
+  - *Gap:* The one path is the shell's LiveSession, not a workshop module; the workshop verifies afterwards with sessionwalk verify. Per AGENTS.md §4, art/ keeps its own ledger and admission for art briefs, a path beside this one (outside R1).
+  - *Skeptic:* There is more than one mutation path. Inside the shell, keys, VRDNP1 and VRDNP2 do share LiveSession's push, with the same validation and fold (callers at liveinput.rs:520/562, admit.rs:402-404, designevent.rs:352-354, livesession.rs:784). But keys call push directly: they never pass the admission …
+  - *Evidence:* shell/playback.rs:451-484 LiveSession: private fields, appended only by push; shell/playback.rs:599-630 push_edit_cell validates, folds, appends
+- **R1.candidate-isolation-preview** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §2 principle 3 'Candidate isolation'; §6 'preview exact candidate revision; require…
+  - *Capability:* A candidate binds its base revision, tool and schema identities and payload digest, and is evaluated in memory without touching the active world. A preview binds the admission to the exact previewed bytes and head.
+  - *Held by:* designevent-admit (a dry run writes nothing; --previewed with another digest or head is ADMIT-PREVIEW; renderer or bearing mismatch is ADMIT-PROGRAM); admit-anchor; admit-crash
+  - *Gap:* No world ID separate from the parent head. The candidate is recomputed each run, not kept as a workspace. VRDNP1 has no preview binding. shell design admits without --previewed when the caller omits it, so explicit admission after preview is the design tool's convention, not the shell's rule. The proposal's bytes are not kept (G20).
+  - *Skeptic:* What is tested is solid: binding to parent, renderer and bearing identity and the payload digest (admit.rs:368-393; designevent.rs:290-333). verify.py:14514-14520 checks that the dry run writes nothing and leaves the parent unchanged. verify.py:14524-14528 refuses a bound admission when the digest …
+  - *Evidence:* shell/admit.rs:12-25 VRDNP1 lines: renderer, bearing, parent, proposal; shell/admit.rs:37-39 a refused admission leaves no run directory, journal or file
+- **R1.stale-refusal** · EXISTS-TESTED (resolved F8) · SPEC2 §2.3 'Stale candidates are refused'; §17 'stale refusal'
+  - *Capability:* A candidate made against any head but the session's is refused with both heads named and no rebase. A proposal id already admitted is refused.
+  - *Held by:* admit-anchor (an earlier head, and a head one character off: ADMIT-ANCHOR with both heads and 'no rebase'); admit-idempotent (the same bytes offered to the child are ADMIT-ANCHOR; a re-anchored id is ADMIT-DUPLICATE, ag…
+  - *Gap:* By design there is no rebase or compensating transaction (SPEC2 §5 allows either); a stale candidate must be remade.
+  - *Evidence:* shell/admit.rs:385-393 the anchor and duplicate checks; shell/designevent.rs:325-333 the same for batches
+- **R1.permissions-region** · EXISTS-TESTED · SPEC2 §4 Workshop 'permissions ... region containment'; §6 'check permissions/capabilitie…
+  - *Capability:* Admission checks a capability grant (operation kinds, an inclusive cell rectangle, tile classes) taken from the admitter's command line; a proposal cannot carry a grant.
+  - *Held by:* admit-capability (9 cases outside the grant, among them a rectangle one cell short on either axis; malformed grants; the smallest covering grant admits and is recorded); designevent-admit (at every place of eight, an op…
+  - *Gap:* The region is the admitter's cell rectangle, not one the candidate declares; with no entities there is no entity or relation-level containment.
+  - *Evidence:* shell/admit.rs:34-36 the grant is the admitter's; a proposal cannot carry one; shell/admit.rs:254-326 Grant, grant_of, permits
+- **R1.dependency-invalidation** · PARTIAL · SPEC2 §4 Workshop 'dependency invalidation'; §6 'compute dependency invalidation'
+  - *Capability:* Derived results are invalidated when their sources change, and a stale derived value is never accepted.
+  - *Held by:* designevent-replay (memo against the computation with no memo; a wrong-memo plant is caught); livesession-classify (a comment-only render change loads LOAD-DIFFERENT-RENDERER, a digest-changing one refuses DIFFERENT-REN…
+  - *Gap:* No dependency graph runs from authored state to derived artifacts: no collision or nav caches and no derived-artifact fingerprints carrying a source revision. Invalidation is limited to the content memo and the renderer and bearing identity of saved frames.
+  - *Evidence:* shell/playback.rs:478-483 the memo fields w_sha and m_sha; shell/playback.rs:614-621 the memo recomputed only by the edit that changes its bytes
+- **R1.inverse-capture** · PARTIAL (reader MISSING, corrected) · SPEC2 §4 Workshop 'inverse capture'; §5 'prior values for invertible fields'
+  - *Capability:* Each transaction captures the prior values of the fields it changes, so a checked inverse exists.
+  - *Held by:* art/selftests.py suite cert (CERT SELFTEST: the plant 'a wrong inverse' must be refused CERT-INVERSE, art/certificate.py:154-164) and suite director (DIRECTOR SELFTEST: 'an admission said to undo an admission it is not …
+  - *Gap:* Nothing in kernel/, workshop/ or shell/ captures the prior cell value or tile colour. Undo relies on the retained parent file or on prefix replay. The 0244 commit message describes inverses captured for art briefs in art/certificate.py, off the gate and outside R1.
+  - *Skeptic:* I ran Grep 'inverse' over the whole repo (27 files). In shell/ it finds only the blit swap and the key-name inverse; in kernel/ and workshop/ it finds nothing about transactions. Grep '(?i)undo\|prior' in shell/*.rs finds nothing. The capture does exist outside R1. In art/director.py:272-308, apply_…
+  - *Evidence:* shell/playback.rs:970-979 the Admit envelope holds no prior value; shell/playback.rs:612-627 an edit event keeps its spec and the content after, not the pri…
+- **R1.transaction-receipt** · PARTIAL · SPEC2 §5 'A transaction binds ...'; §4 Workshop 'admission receipts ... durable commits'
+  - *Capability:* A transaction binds base revision, operations, declared region, prior values, dependency effects, validation, child revision, provenance and a durable receipt.
+  - *Held by:* admit-replay (a resealed file whose envelope does not stand is refused by the shell, the workshop and the sealer); designevent-replay; livesession-save; admit-idempotent
+  - *Gap:* Bound: parent and child heads, the operation (event spec), grant (region), proposal id, payload digest and tool identities. Not bound: prior values, dependency effects, validation evidence. The proposal bytes are not kept, so a verifier cannot recompute the digest (G20). The proposer id is claimed, not authenticated, and the seal is a hash, not a signature (G16).
+  - *Evidence:* shell/playback.rs:970-979 Admit {language, proposal, digest, renderer, bearing, parent, h…; shell/livesession.rs:689-711 the loader holds each envelope's parent and head to the chai…
+- **R1.runtime-tick-movement-checkpoint** · PARTIAL · SPEC2 §4 Runtime / simulation; §6 Runtime family 'checkpoint save/restore'
+  - *Capability:* Runtime owns tick scheduling, character movement, collision queries, rigid bodies, triggers, navigation, runtime state and checkpoints.
+  - *Held by:* simtick-law (exhaustive over 360,000 heading ids; a reversed tie-break, a tick a microsecond off and a step of 87 print different lines); simtick-equivalence; shell-playback-checkpoint; sessionwalk-interleave (a move bl…
+  - *Gap:* The core has a grid step against rock cells, a heading, input ticks and checkpoint/resume of the replay. It has no rigid bodies, constraints, triggers, gameplay events, navigation or capsule controller; the playable simulation is graybox/sim.js, off the gate and outside R1. The tick records when an input arrived and is never folded (CORE.md:77-78).
+  - *Evidence:* shell/simtick.rs:11-21 a 64 Hz tick of exactly 15,625 µs; the integer look law; shell/simtick.rs:35 no float, static, file, thread or unsafe
+- **R1.runtime-authored-separation** · CONFLICTS-WITH-SPEC (resolved F10) · SPEC2 §4 'Runtime state is distinct from authored design state'; §6 Runtime family 'Keep …
+  - *Capability:* Runtime state is kept apart from authored design state, and runtime operations from authored transactions.
+  - *Held by:* sessionwalk-interleave; sessionwalk-projection (dropping every move leaves W and M identical; dropping the edits changes where a move ends)
+  - *Gap:* Authored content is hashed apart (content = sha256(W ‖ M)) and a move never changes W or M, but moves, looks and edits share one log and one head.
+  - *Conflict:* workshop/README.md:40-41: 'Order is meaning: an edit that opens a cell changes what a later move sees, so moves and edits cannot be two chains.' This is a deliberate design that sessionwalk-interleave holds.
+  - *Evidence:* workshop/README.md:31-43 one head folds moves, edits and looks; workshop/README.md:40-41 'Order is meaning ... moves and edits cannot be two chains'
+- **R1.core-ids** · PARTIAL · SPEC2 §5 'Core data concepts'
+  - *Capability:* Versioned WorldId, EntityId, AssetId, RevisionId, CandidateId, TransactionId, ChartId, SurfaceId and MaterialId.
+  - *Held by:* workshop-cell/-tile/-identity (W, M and content witnesses); sessionwalk-replay (heads); admit-idempotent (proposal ids)
+  - *Gap:* Present: content-addressed W and M (asset-like), the chain head (a revision id), proposal id and digest (a candidate id), five tile-class slots (materials), and run_id (a clock-derived run id). Missing: WorldId, EntityId, ChartId, SurfaceId, and versioned id types. Cells are addressed by position only.
+  - *Evidence:* kernel/formats.rs:8-12 W = sha256 of the level file, M = sha256 of the tiles file; shell/playback.rs:494-496 content = memo of sha256(W), sha256(M)
+- **R1.relations-transforms-rebase** · PARTIAL (reader MISSING, corrected) · SPEC2 §5 semantic relations; coordinate policy (local transforms, rebase); geo-stability …
+  - *Capability:* Semantic relations, local transforms with a parent or chart, hierarchy, rejection of cyclic or singular hierarchies, and explicit origin rebasing.
+  - *Held by:* art/selftests.py suite director (DIRECTOR SELFTEST runs the conformance vectors, art/director.py:1168-1170, among them 'materials in a cycle of parents: refused'), suite facade (FACADE SELFTEST plants a bay naming no bu…
+  - *Gap:* The core world is at most a 48×48 lattice of cells (#.<>), five tiles and a camera. It has no entities, relations, transforms, hierarchy, charts or rebase. ORT-1 (the origin moved between ticks) lives in graybox/, off the gate and outside R1.
+  - *Skeptic:* I searched graybox/, art/ and docs/ for rebase, origin, parent, cycle, dangling and hosted. Explicit origin rebasing exists: ORT-1 (graybox/ORT-1.md:1-20; graybox/ort_ref.py). It conserves every global position exactly and refuses an inexact shift (ORT-INEXACT), a field missing from the frame table…
+  - *Evidence:* kernel/formats.rs:23-43 Level is a cell grid; Camera is an integer cell and a facing; kernel/mantle.rs:40 and 53 Q = 256, LATTICE = 48
+- **R1.coordinate-arithmetic** · PARTIAL · SPEC2 §5 coordinate policy; §4 Kernel 'declared arithmetic rules'; §2.4 honest determinism
+  - *Capability:* Declared units, axes, angle units, numeric scale, overflow policy and arithmetic rules.
+  - *Held by:* kernel-oracle, kernel-corpus, bearing-oracle (exact reproduction); bearingfast-checked (an overflow-checks=on build over the court set); bearingfast-bounds; simtick-law; simtick-fence (no float)
+  - *Gap:* Declared and tested: Q = 256 per cell, x east and z south, facing 0..3, headings in 360,000 ids, integer arithmetic with checked bounds. Undeclared, since none exist: transform order, scale bounds, hierarchy depth. The camera token's 'as i32' narrowing (formats.rs:156; BINARY-SDK.md:105-107) is silent; the session path escapes it only because LiveSession::new requires a traver…
+  - *Evidence:* kernel/mantle.rs:22-28 exact rationals, numerators below 2^36, i64, no overflow path; kernel/mantle.rs:36-55 the declared constants
+- **R1.canonical-bytes** · PARTIAL · SPEC2 §5 'Use versioned canonical bytes ...'
+  - *Capability:* Versioned canonical bytes with fixed endianness, explicit lengths, option tags, stable enum discriminants, defined string normalization, no NaN or infinity, and declared numeric scales.
+  - *Held by:* admit-reader and admit-single (one byte sequence per typed proposal); designevent-language (one per typed batch); readercourt-language and readercourt-writers (integers only, one string spelling); oracle-frozen
+  - *Gap:* Canonical: VRDNP1, VRDNP2, the level text and the envelope's canonical JSON. Not canonical: the saved form that sessions are written in (member order and whitespace are free). There are no option tags, no Unicode (NFC) normalization and no schema version in a saved session, and byte order differs between the level (LE) and the frame digest (BE).
+  - *Evidence:* kernel/formats.rs:8-12 and 54-93 VRDNLVL1: magic, LE u32 lengths, fixed-size tables; shell/admit.rs:22-25 'each typed proposal has exactly one byte sequence'
+- **R1.malformed-rejection** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §5 'strict malformed-input rejection'
+  - *Capability:* Malformed input is rejected strictly and typed, never with a panic, at every reader.
+  - *Held by:* readercourt-agree; admit-reader; admit-single; designevent-language; text-refuse; livesession-recover
+  - *Gap:* The kernel's own refusals are untyped strings (BINARY-SDK.md:52). shell playback's apply_spec does not bound a cell (playback.rs:141-157). The fuzzing is exhaustive single-byte neighbourhoods plus registered splices, not random or structural fuzzing.
+  - *Skeptic:* The tested readers are well covered. readercourt_agree (verify.py:11838-11883) requires the Rust and Python readers to agree on every single-byte substitution, deletion and insertion. admit_reader refuses every prefix and the named hostile cases with no panic (10855-10867). But the claim 'at every …
+  - *Evidence:* kernel/savedform.rs:22-36 codes with a byte offset; verify/verify.py:11838-11883 readercourt_agree
+- **R1.roundtrip** · EXISTS-TESTED · SPEC2 §5 'Test round-trip'
+  - *Capability:* Formats round-trip: decode∘encode is the identity on canonical values, and a saved session reads back to the state that was saved.
+  - *Held by:* text-roundtrip (every corpus level, W unchanged, text re-emitted byte for byte); admit-reader (each mutant is refused or emits itself byte for byte); designevent-language; livesession-save (saved, read back, replayed be…
+  - *Gap:* Saved-session bytes are not reproducible run to run (run_id from the clock, BINARY-SDK.md:203-204); only the heads are.
+  - *Evidence:* verify/verify.py:1924-1942 text_roundtrip; shell/admit.rs:178-205 emit, and the verdict's 'respelled' count
+- **R1.idempotence-order-independence** · EXISTS-TESTED · SPEC2 §5 'normalization idempotence, order independence'
+  - *Capability:* Normalization is idempotent and order-independent where order carries no meaning.
+  - *Held by:* hermeneutics-laws (fixed point: a design compiled against its own admitted child is COMPILE-EMPTY; exchange; corner order; plants each caught); designevent-language (the oracle writer, given operations in another order,…
+  - *Gap:* The shell refuses a non-canonical batch (ADMIT-ORDER) rather than normalising it. The laws are checked on registered instances, not over all inputs.
+  - *Evidence:* verify/verify.py:16599-16644 hermeneutics_laws; verify/verify.py:14272-14278 designevent_language docstring
+- **R1.migrations** · MISSING (corrected, resolved F12) · SPEC2 §5 'Test ... migrations'; §17 'schema migration'
+  - *Capability:* Versioned schemas with tested migrations from old files.
+  - *Held by:* none
+  - *Gap:* There is no migration code or test. A new format gets a new name (VRDNP2 beside VRDNP1), and a renderer change is classified, not migrated (LOAD-DIFFERENT-RENDERER).
+  - *Skeptic:* I ran Grep '(?i)migrat\|upgrade_\|def upgrade\|legacy format\|old format' over the code (excluding oracle/ and verify/build). Code has no hits. In docs the hits are a review's pivot ('Never silently migrate authority', docs/ROADMAP.md:1514; 'Opening a session already reports and never migrates', :1545)…
+  - *Evidence:* docs/BINARY-SDK.md:267-279 no compatibility policy; a session's version is not checked on…; shell/livesession.rs:496-500 a saved session is written with name and magic, no version m…
+- **R1.distinct-hashes** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §5 'Keep distinct hashes ... never compare a cached root to itself'
+  - *Capability:* Distinct hashes for authored state, runtime snapshot, candidate payload, derived artifacts and evidence; a cached value is never compared with itself as proof.
+  - *Held by:* workshop-cell, workshop-tile, workshop-identity (W and M move apart); kernel-selftest (a mirrored sign table moves pictures, never a frame digest); designevent-replay (the memo against a recomputation, with a plant)
+  - *Gap:* The core has no Merkle tree (workshop/session.rs:16-18 explains why). A checkpoint has no hash of its own beyond the head it resumes to.
+  - *Skeptic:* Authored state (content of W and M), the candidate payload (proposal digest), derived artifacts (frame digest and picture sha256) and evidence (seal, envelope chain_hash) are kept apart. kernel_selftest (verify.py:905-930) and workshop_cell and workshop_tile (1027-1050) show that W, M, the frame an…
+  - *Evidence:* kernel/README.md:4-6 two witnesses, URDRFB1 frame digest and picture sha256; workshop/README.md:24-36 content and head
+- **R1.source-of-truth-log** · EXISTS-TESTED · SPEC2 §5 'Keep the current repository's source-of-truth model ... Do not demote a session…
+  - *Capability:* Keep the current source-of-truth model, an append-only session log whose replay is the world.
+  - *Held by:* sessionwalk-replay, sessionwalk-batch-invariance, livesession-save, livesession-resume, admit-replay, shell-playback-*
+  - *Gap:* Kept as SPEC2 asks. G17: the shell replays with its own copy of the workshop's fold, held to it by rows rather than shared code.
+  - *Evidence:* README.md:100 goal 2: 'The world on the screen is that log's replay'; shell/playback.rs:425-428 a left fold; private fields
+- **R1.undo** · PARTIAL (resolved F11) · SPEC2 §5 'Transactions and undo'; §17 'undo'
+  - *Capability:* Undo restores the prior authored state, or applies a checked inverse against the expected child revision, and refuses with a conflict when later edits depend on it.
+  - *Held by:* workshop1-undo (undo to n equals a fresh session of the first n edits); admit-idempotent and admit-crash (the parent's bytes unchanged); design/test_design.py t_undo (own check, not run at HEAD)
+  - *Gap:* The shell and the admission seam have no undo of their own. Undo is a step back to the retained parent session (the design tool) or a truncation of WORKSHOP-1's log, which discards later edits instead of refusing on a dependency. There is no checked inverse against an expected child revision and no redo.
+  - *Evidence:* workshop/session.rs:8-9 and 468-478 undo = truncate the log, then replay; workshop/session.rs:383 the result is written in place
+- **R1.crash-points** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §5 'Crash consistency'
+  - *Capability:* Writes go to temporary files, are flushed and are atomically replaced; crash points are tested; a torn record is dropped and an inconsistent state refuses.
+  - *Held by:* admit-crash (8 death points); designevent-crash (12); livesession-recover (torn tail dropped; four corrupt journals refused); livesession-save (seal plants)
+  - *Gap:* Crashes are planted process exits (exit 70), not power loss; durability is the file system's promise (G16).
+  - *Skeptic:* The shell's session writer is thoroughly tested. write_saved (livesession.rs:546-572) writes a temporary file with create_new, calls sync_all, then MoveFileExW with WRITE_THROUGH or a rename plus a directory fsync (517-543). The journal put calls sync_data before counting (304-314). admit_crash (ve…
+  - *Evidence:* shell/livesession.rs:303-314 a journal record goes through sync_data before it counts; shell/livesession.rs:517-543 MoveFileExW with REPLACE_EXISTING\|WRITE_THROUGH, or rename p…
+- **R1.recovery-selection** · PARTIAL · SPEC2 §5 'Recovery selects the last verified durable state'
+  - *Capability:* Recovery selects the last verified durable state, never a partly written manifest or UI cache, and every writer of authority is crash-safe.
+  - *Held by:* livesession-recover; designevent-crash (a journal holding part of a batch is refused)
+  - *Gap:* Nothing picks the last verified durable state automatically: a person names the journal or session for --resume. WORKSHOP-1's session tool and the session-walk tool overwrite their only copy in place. The design tool's pointer (project.json) is replaced without a flush, off the gate.
+  - *Evidence:* shell/livesession.rs:612-616 load takes a named path; shell/livesession.rs:743-746 a log ending inside a batch is refused
+- **R1.ops-cells-paint** · PARTIAL · SPEC2 §6 Initial operation families: Geometry (wall/floor edits, openings) and Appearance…
+  - *Capability:* The operation families the core implements: geometry (open or close a cell, room, entrance) and appearance (paint a tile class).
+  - *Held by:* admit-capability; designevent-admit; designir-compile; designir-equivalence; hermeneutics-laws; liveauthor-authority; workshop-cell; workshop-tile
+  - *Gap:* Geometry is a cell's value (#, ., <, >) and rectangles of cells; appearance is one flat colour for a whole tile class out of five. There are no parametric dimensions, wall openings, roofs, terrain, material parameters, lights, decals, signage or vegetation.
+  - *Evidence:* shell/admit.rs:57-63 Op::{Open, Close, Paint}; shell/designcompile.rs:12-27 statements open, close, room, entrance, paint and what they …
+- **R1.ops-structure-gameplay** · PARTIAL (reader MISSING, corrected) · SPEC2 §6 Initial operation families: Structure, Gameplay
+  - *Capability:* Structure operations (create or delete an entity, reparent, transform, relations, prefabs, procedural buildings) and gameplay operations (collision shapes, triggers, doors, movement surfaces, nav links, tags, movers).
+  - *Held by:* art/selftests.py suite director (DIRECTOR SELFTEST and its vectors, e.g. 'a piece removed', 'a mover added: play, refused whatever is granted'), suite facade (FACADE SELFTEST), suite cert ('+', '=' and '-' revisions cer…
+  - *Gap:* None of these exist in the Rust core. Collision is the rock cells themselves. Movers, targets and buildings exist in graybox/ and art/, outside the gate and outside R1.
+  - *Skeptic:* I searched art/, graybox/ and design/ for create, delete, building, mover, target and trigger. Structure operations exist outside the Rust core, in the art revision language that the director admits. '+ stmt' creates a statement whose key is new, '- key' deletes one, '= stmt' replaces one, and a ba…
+  - *Evidence:* shell/admit.rs:12-21 VRDNP1 has three ops only; shell/designcompile.rs:18-19 the design language's statements
+- **R1.admission-sequence** · PARTIAL · SPEC2 §6 'Admission sequence'
+  - *Capability:* Admission runs in order: parse; permissions; base revision; references and types; region; dependency invalidation; local invariants; non-local checks; prior values; evidence; preview; explicit admission.
+  - *Held by:* admit-fence and designevent-fence (the registered order, by source); admit-reader; admit-anchor; admit-capability; designevent-admit
+  - *Gap:* Present, in order: IO, SIZE, PARSE, RANGE, (ORDER, PREVIEW digest), PROGRAM, the loader's integrity and replay, SESSION, ANCHOR, DUPLICATE, CAPABILITY with the cell rectangle, AUTHORITY (local validation, nothing to change), (PREVIEW head). Missing: dependency invalidation; non-local checks for connectivity, sightlines and budgets (only the compiler's COMPILE-CAMERA); prior-va…
+  - *Evidence:* shell/admit.rs:28-33 the registered order; shell/designevent.rs:27-31 the batch's order
+- **R1.local-invariants** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §6 'run local invariants'; §4 Workshop 'schema validation'
+  - *Capability:* Local invariants are checked before an edit is applied, and the old authority stands on a refusal.
+  - *Held by:* workshop-invalid (the workshop's edit record refuses 6 invalid edits, the camera left in rock among them); admit-capability (ADMIT-AUTHORITY for outside, border and nothing-to-change)
+  - *Gap:* The admission's push checks outside, border and alphabet only; it does not refuse closing the cell the camera stands on, which workshop/edit.rs:388 and the compiler (designcompile.rs:342) refuse. No admit-capability case covers it (verify.py:11045-11050). Verified by reading; not run.
+  - *Skeptic:* Admission validates only OUTSIDE, BORDER and VALUE (playback.rs:599-611). It does not hold the invariant LiveSession::new demands, that the camera stand on a traversable cell (playback.rs:489-491). A VRDNP1 or VRDNP2 close of the camera's own cell is appended. The workshop's edit record refuses tha…
+  - *Evidence:* shell/playback.rs:599-611 OUTSIDE, BORDER, VALUE; workshop/sessionwalk.rs:211-221 apply validates the border; 'no camera'
+- **R1.typed-refusals** · PARTIAL · SPEC2 §6 'Refusals are typed data, not strings'
+  - *Capability:* Refusals are typed data: a stable code, offending entities, expected and actual revision, region, witness and repair hints.
+  - *Held by:* admit-reader (the registered refusal and line); admit-anchor (both heads named); readercourt-* (code plus byte offset); refusallog-* rows; designevent-admit (each refusal names its line)
+  - *Gap:* Present: stable codes, the line, expected and actual heads, a context map. Missing: a list of offending entities beyond the cell named in the message, a witness object, repair hints. The kernel's refusals are untyped, and the refusal log is an observation that no rule reads.
+  - *Evidence:* shell/admit.rs:75-81 Unrecognized {code, line, expected}; shell/admit.rs:334-339 refuse records reason, attribution and context
+- **R1.atomicity** · EXISTS-TESTED · SPEC2 §17 'transaction atomicity'
+  - *Capability:* A transaction is all or nothing: a batch is refused whole or admitted whole, and no durable state holds part of it.
+  - *Held by:* designevent-admit (the child of one admission equals the same operations one at a time; a refusal at any place leaves nothing); designevent-crash (part of a batch is refused by the loader); admit-crash (no state holds a…
+  - *Evidence:* shell/designevent.rs:8-10 'Either all N are appended ... or the batch is refused and noth…; shell/designevent.rs:338-365 all N in memory before anything is written
+- **R1.stable-identity** · PARTIAL · SPEC2 §17 'stable identity across edits/reload'; §2.6
+  - *Capability:* Persistent references survive unrelated edits, save and reload.
+  - *Held by:* livesession-resume (the child's first n events are the parent's; lineage on its own chain); admit-replay and designevent-replay (a child continued by keys keeps every envelope byte for byte); admit-idempotent (a proposa…
+  - *Gap:* Stable today: positional cell addresses, the five class slots, event indices, chain heads and proposal ids. No entity or surface identity exists to preserve, so there is nothing to test against an unrelated edit. Saved bytes change at every save because of run_id; heads do not.
+  - *Evidence:* verify/verify.py:7236-7241 resume keeps the parent's events and lineage; verify/verify.py:11094-11100 an id reused two admissions later is refused
+- **R1.spec1-anchorgraph-authority** · CONFLICTS-WITH-SPEC · SPEC1 §1.1, §1.2, §2
+  - *Capability:* SPEC1 makes an AnchorGraph in normal form the authority and demotes the session log to a regenerable audit view.
+  - *Held by:* sessionwalk-*, livesession-*, admit-replay (the log is the authority)
+  - *Gap:* No AnchorGraph, Chart, Relation or normalization passes exist in the tree.
+  - *Conflict:* SPEC2 §5 (spec2.md:48): 'Keep the current repository's source-of-truth model ... Do not demote a session log'. SPEC2 §16 (spec2.md:129): 'Replace current authority with canonical graph — Defer'. README.md:100: 'The world on the screen is that log's replay'. Every core .rs is pinned (AGENTS.md:51-54).
+  - *Evidence:* README.md:100 goal 2, one history; shell/livesession.rs:28-30 'The session stays the authority'
+- **R1.spec1-dense-ids** · CONFLICTS-WITH-SPEC · SPEC1 §2.3 Compact
+  - *Capability:* SPEC1's Compact pass renumbers EntityIds densely in canonical order, so ids are unstable across edits.
+  - *Held by:* admit-idempotent (ids persist in history)
+  - *Gap:* Nothing is renumbered today, which is what SPEC2 asks.
+  - *Conflict:* SPEC2 §2 principle 6 (spec2.md:17): 'do not compact/renumber live IDs on edits'. SPEC2 §16 (spec2.md:130): 'Dense canonical IDs as live IDs — Reject'. The admission and the loader rely on ids that persist across the history (shell/admit.rs:390-393; shell/livesession.rs:699).
+  - *Evidence:* shell/admit.rs:390-393 ADMIT-DUPLICATE against the whole admitted history; shell/livesession.rs:699 the loader requires each admitted proposal id once
+- **R1.spec1-q32** · CONFLICTS-WITH-SPEC · SPEC1 §2 Basis (Vec3Q Q32.32); §6
+  - *Capability:* SPEC1 makes Q32.32 fixed point the arithmetic of bases, physics and rendering.
+  - *Held by:* kernel-oracle, kernel-corpus, bearing-oracle (the frozen arithmetic reproduces the oracle)
+  - *Gap:* No Q32.32 type exists in the Rust core.
+  - *Conflict:* kernel/README.md:47: mantle.rs is 'the frozen correctness oracle, never modified for performance', and its arithmetic is the tag's byte for byte. docs/ROADMAP.md:5553: 'the tree's Rust holds no Q32.32. Its laws are integer'. Sources pinned (AGENTS.md:51). SPEC2 §16 (spec2.md:131): 'Fixed-point for all physics — Do not…
+  - *Evidence:* kernel/mantle.rs:22-28 exact reduced rationals in i64, i128 where needed; kernel/mantle.rs:40 Q = 256
+- **R1.spec1-vrdn-header** · CONFLICTS-WITH-SPEC · SPEC1 §2.4
+  - *Capability:* SPEC1 serializes with a b"VRDN" + u16 schema-version header, LE fixed-width ints, u32 counts, NFC strings and presence bytes.
+  - *Held by:* oracle-frozen; admit-reader; designevent-language; readercourt-*
+  - *Gap:* Shared with SPEC1: LE fixed-width ints and explicit lengths (VRDNLVL1, VRDNTIL1), integers only. Different: a magic per format (no VRDN+u16), text languages for proposals, JSON saved form for sessions, no NFC, no presence bytes.
+  - *Conflict:* VRDNLVL1 and VRDNTIL1 are the oracle's formats, and oracle/ is read-only (AGENTS.md:48). VRDNP1, VRDNP2 and VERDANDI-DESIGN 0 are 'frozen by the registration' (shell/admit.rs:12; shell/designevent.rs:12), and registered entries may not be edited (AGENTS.md:49). A VRDN header can only be a new format beside these.
+  - *Evidence:* kernel/formats.rs:8-12 and 19-20 8-byte magics with a version digit (VRDNLVL1, VRDNTIL1); shell/admit.rs:12 VRDNP1 'frozen by the registration'
+- **R1.spec1-module-layout-abi** · CONFLICTS-WITH-SPEC · SPEC1 §9 Architecture
+  - *Capability:* SPEC1's module layout kernel/{graph,norm,ops,phys,render_ref,abi.rs} and workshop/{admit,cert,predicates,ledger}, with a C ABI (vrd_graph_new ... vrd_render_ref).
+  - *Held by:* reasoncourt-fence, mintwatch-fence (the pinned file set)
+  - *Gap:* No library, cdylib or C ABI exists. Admission lives in shell/, not workshop/, and the playable physics is graybox/, not kernel/phys.
+  - *Conflict:* AGENTS.md:51-54: every .rs under kernel/, shell/ and workshop/ is pinned, and 'A new file needs a link too'. AGENTS.md:58: 'There is no Cargo and no crate'. docs/BINARY-SDK.md:346-348 says whether a library exists at all is an owner decision 'against the charter's std-only rule and the single-file builds the pins hold…
+  - *Evidence:* docs/BINARY-SDK.md:11-14 no Cargo.toml, no lib.rs; shared code pasted in by #[path]; docs/CORE.md:37-40 every binary is one bare rustc -O
+- **R1.spec1-sha2** · CONFLICTS-WITH-SPEC · SPEC1 §9 dependency policy; §10 DEP-0
+  - *Capability:* SPEC1's kernel dependency policy: the `sha2` crate only (or a vendored SHA-256), with the dependency list as a gate row (DEP-0).
+  - *Held by:* kernel-oracle and records-* (the hand-written SHA-256 reproduces every registered digest)
+  - *Gap:* The vendored alternative SPEC1 allows already exists. No DEP-0 row exists: nothing scans for crates (CORE.md:172).
+  - *Conflict:* AGENTS.md:58: 'Add a dependency. There is no Cargo and no crate: Rust is std-only and built by bare rustc.'
+  - *Evidence:* kernel/mantle.rs:74-89 hand-rolled SHA-256 (FIPS 180-4); docs/BINARY-SDK.md:46 the digest is hand-written
+- **R1.spec1-float-free** · PARTIAL · SPEC1 §2.4 'floats forbidden'; Appendix A hard prohibitions
+  - *Capability:* No floating point on the certified path, enforced by a lint over kernel/ and workshop/, and no HashMap in the kernel.
+  - *Held by:* simtick-fence (an f32/f64 token scan of shell/simtick.rs only); kernel paths held by byte identity to the oracle
+  - *Gap:* The certified arithmetic is integer, but no lint covers kernel/ or workshop/. f64 appears in off-gate timing percentiles, and kernel/fast.rs uses a HashSet in a measurement court.
+  - *Evidence:* docs/CORE.md:175 no float is fenced only in shell/simtick.rs; verify/verify.py:9405-9418 simtick_fence's float scan
+- **R1.v-runtime-authored-one-log** · CONFLICTS-WITH-SPEC (from-verifier, resolved F10) · SPEC2 §4 'Runtime state is distinct from authored design state'; §6 'Runtime ... Keep the…
+  - *Capability:* Runtime state and runtime operations (moves, looks, ticks, sensitivity, checkpoints) are kept separate from authored transactions.
+  - *Held by:* sessionwalk-interleave; sessionwalk-batch-invariance (the interleaving is the tested design)
+  - *Gap:* Authored content has its own hash (content of W and M), but runtime events and authored edits share one log and one head.
+  - *Conflict:* Deliberate design: workshop/sessionwalk.rs:6-10 'the two cannot be two independent chains'; README.md:100 'Every accepted change (a step, a look, an opened cell, a painted class, an admitted proposal) is one typed event in one append-only log'. SPEC2 §5 also says to keep the current source-of-truth model.
+  - *Evidence:* workshop/sessionwalk.rs:5-17 one interleaved log of edits and moves, one head; shell/playback.rs:451-484 LiveSession holds the camera, heading and ticks beside level an…
+- **R1.v-presentation-no-authority** · EXISTS-TESTED (from-verifier) · SPEC2 §4 Renderer 'Presentation history never feeds back into world authority'; §2.7 'Evi…
+  - *Capability:* Presentation and its evidence never feed back into world authority: playback, checkpoint and resume write no authority, and nothing on the path reads the refusal log.
+  - *Held by:* shell-playback-no-authority (W, M and the session file byte-identical after playback, checkpoint and resume); input-not-authority; refusallog-fence (no shell .rs and no verify .py but the listed ones names the log)
+  - *Gap:* Covers playback, checkpoint and resume, and the refusal log. The window build (--cfg shell_window) is off the gate.
+  - *Evidence:* verify/verify.py:2977-2992 shell_playback_no_authority; verify/verify.py:5811-5821 refusallog_fence: nothing else reads the log
+- **R1.v-core-change-fenced** · EXISTS-TESTED (from-verifier) · SPEC2 §2.8 'must not silently alter the certified core or frozen reference evidence'
+  - *Capability:* No experiment or tooling can silently change the certified core: every Rust source under kernel/, shell/ and workshop/, and every sealer, is pinned by sha256, and a new file is refused.
+  - *Held by:* reasoncourt-fence; mintwatch-fence; oracle-frozen
+  - *Gap:* Holds bytes, not properties: a change made through a registered amendment moves the pin with nothing re-checked but that amendment's own rows.
+  - *Evidence:* verify/verify.py:12262-12300 RSN_SOURCES; verify/verify.py:13132-13138 the set of files and each pin compared
+- **R1.v-independent-session-verifier** · EXISTS-TESTED (from-verifier) · SPEC2 §4 Verification 'cross-implementation checks'
+  - *Capability:* A saved or admitted session is verified without the shell by the workshop's sessionwalk and by the Python sealer, and a resealed forgery is refused by all three.
+  - *Held by:* livesession-save; admit-replay; designevent-replay (_de_three: shell, workshop and sealer each refuse a resealed file for its envelope)
+  - *Gap:* One author wrote both implementations (G17, G23): agreement shows consistency, not truth.
+  - *Evidence:* verify/verify.py:7194-7196 workshop verifies the saved file; verify/verify.py:14675-14693 _de_three: three verifiers refuse
+- **R1.v-renderer-exact-revision** · EXISTS-TESTED (from-verifier) · SPEC2 §4 Renderer 'Extracts a render snapshot for an exact world revision'
+  - *Capability:* A frame is a pure function of the exact revision (W, M, camera) and reproduces the frozen oracle's witnesses bit for bit, twice.
+  - *Held by:* kernel-oracle (two runs equal, and equal to the oracle); kernel-corpus; kernel-selftest (a mirrored sign table moves pictures and no frame digest)
+  - *Gap:* A CPU software renderer only: no GPU resources, lighting or post-processing in R1.
+  - *Evidence:* verify/verify.py:869-878 kernel_oracle: two runs compared, then the oracle; verify/verify.py:905-930 kernel_selftest plant
+- **R1.v-determinism-scopes** · PARTIAL (from-verifier) · SPEC2 §2.4 honest determinism
+  - *Capability:* Determinism within one build, cross-host, reproducible and visually equivalent are distinguished, each with its own evidence.
+  - *Held by:* kernel-oracle; gauntlet2-threaded-equiv; sessionwalk-batch-invariance; AGENTS.md §4 check: verify.py run twice, compact outputs byte-identical
+  - *Gap:* Within-build determinism and reproduction of a frozen oracle are tested. Cross-host determinism is only observed and is forbidden as a claim. The taxonomy is a document's table, not code. R1 has no visually-equivalent-within-tolerance instrument.
+  - *Evidence:* docs/CORE.md:179-193 the determinism table by scope; docs/CORE.md:190 saved session bytes not reproducible
+- **R1.v-size-budgets** · PARTIAL (from-verifier) · SPEC2 §6 'run required non-local checks (connectivity, sightlines, budgets ...)'
+  - *Capability:* Admission enforces budgets on a candidate's size and operation count.
+  - *Held by:* designevent-admit (a recognized batch of 4,096 operations refused; the largest batch the lattice admits admitted); admit-reader (a megabyte refused ADMIT-SIZE)
+  - *Gap:* Only byte and operation-count bounds exist. There are no render, memory, connectivity or sightline budgets at admission.
+  - *Evidence:* shell/designevent.rs:46-49 MAX_OPERATIONS and byte bounds; shell/admit.rs:50-52 MIN_BYTES and MAX_BYTES
+- **R1.m-distinct-hashes** · PARTIAL (from-verifier) · SPEC2 §5 'Keep distinct hashes for authored state, runtime snapshot, candidate payload, d…
+  - *Capability:* Separate hashes for authored state, runtime snapshot, candidate payload, derived artifacts and evidence; a hash proves the identity of its input bytes, not that they are correct.
+  - *Held by:* text-reformat, text-edit, sessionwalk-projection, workshop-stale, workshop-projection (gate rows)
+  - *Gap:* Authored content, the history head, the candidate's digest, the derived frame digest and pixel sha, and the record chain hash are all separate and held by rows. There is no runtime-snapshot hash apart from the head: the head folds moves' frame digests together with edits (workshop/README.md:33-36), and the camera is carried as a text token.
+  - *Evidence:* workshop/README.md:25 content = sha256(sha256(W) ‖ sha256(M)), authored state; workshop/README.md:33-37 the head folds moves, edits and looks; stamps and envelopes are …
+- **R1.m-dsc0-tree-commitment** · EXISTS-TESTED (from-verifier) · SPEC2 §5 'A Merkle tree must prove it covers every required leaf; never compare a cached …
+  - *Capability:* A tree (Merkle) commitment over the session's world whose root is bound to its shape and whose leaves are bound to their places, with forged receipts and proofs refused, as SPEC2 asks of any Merkle tree.
+  - *Held by:* AGENTS.md §4 check `python tools/probe/state_commit.py` (PROBE 6-dsc VERDICT HELD; each forge-* case must be refused). Own check, not run at HEAD; the last recorded run was on the owner's host at 0234 (docs/ROADMAP.md:4…
+  - *Gap:* By the owner's ruling it stays out of every authoritative path (docs/ROADMAP.md:4515-4516: 'DSC-0 should remain an isolated reference probe, not become part of the current kernel or studio admission path'). Nothing reads its roots, and the session's content function remains the flat sha256(W ‖ M).
+  - *Evidence:* tools/probe/state_commit.py:12-26 DSC-0: leaves bound to place, root bound to shape, rece…; tools/probe/state_commit.py:28-38 kill criteria: soundness (forges refused), agreement, n…
+- **R1.m-coordinate-policy** · PARTIAL (from-verifier) · SPEC2 §5 coordinate policy: 'Define units ..., handedness, up axis, angle units, transfor…
+  - *Capability:* Declared units, axes, angle units and overflow policy for the core world's coordinates.
+  - *Held by:* kernel-oracle, bearing-vocab, bearingfast-checked, bearingfast-bounds (gate rows)
+  - *Gap:* Units, axes, facing, heading ids and the overflow policy are declared and held for the renderer's world. There is no up axis or handedness for a 3D model, and no transform order, scale bounds or hierarchy depth, because no transforms exist. The graybox's binary64 metres (graybox/ORT-1.md:18) are a second coordinate model, held only by its own checks.
+  - *Evidence:* kernel/mantle.rs:40 Q = 256 units to a cell; kernel/mantle.rs:22-28 the overflow argument: numerators below 2^36, i64 throughout
+
+## R2 — the gate, RUNG-0 and evidence completeness
+
+R2 is the program's verification spine: a 251-row gate (verify/verify.py) whose rows are row() calls in a fixed order, a crash being a red row and a skip being reported but never failing; RUNG-0 (tools/rung.py), which classifies a patch from the trusted base's closure and compares old against new planted-defect rows (R5); and art/selftests.py, which runs 24 art suites and passes each on its exit status plus a summary-line regex. Its strongest parts are tested well: frozen oracle evidence, the pins, Rust-Python twins, exhaustive single-byte mutant neighbourhoods, a registered expected side for refusals (reasons.json, mints.json) checked against what actually ran, and admission-level evidence completeness (ADMISSION-0's EXPECTED_CHECKS, where a skip is not a pass; FLAGSHIP-0's stage evidence). Suite-level evidence completeness is the weak point. No harness keeps an expected row set apart from its own output. The gate's expected rowset digest lives only in documents. Executed row identities are checked only for rows 1-231, a skipped row still reads GATE PASSED, and art/selftests.py trusts each suite's self-reported n/n. RUNG-0's R5 is a partial, one-way reconciliation by row words over 4 of the 24 suites: duplicates collapse, and a stop in the old checker is reported but does not fail. That is short of the owner's "a rung of its own, later". Of SPEC1's 14 proposed rows, equivalents exist for round-trip, idempotence, region containment, same-build replay and Rust-Python canonical agreement. Order-independence, certificate inverses, the census, dependencies, canonical hashing across languages and the reference renderer have only partial equivalents. ATLAS-0 is missing, and REBASE-0, PHYS-1 and DOWN-0 conflict with measured findings or standing rules.
+
+**Surprises.**
+
+- The expected gate rowset 74db4c8d78625af5 is written only in documents (AGENTS.md:78, verify/README.md:18, docs/CORE.md:221, docs/REPOSITORY-TRUTH.md:22). verify.py computes the digest (17018) and compares it to nothing. The fences hold source rows 1-247 by digest and 248-251 by name, and reasoncourt-fence (13146-13148) is the only check of executed row identities, covering rows 1-231. A 252nd row appended to main() would turn no row red.
+- AGENTS.md:96 gives PREVIEW-STUDIO SELFTEST 13/13, while the HEAD log on the host reads 14/14 (art/build/selftests/20261016T162615Z.log:24). Expected suite counts live only in prose, and art/selftests.py accepts any n/n with n > 0, so this drift, or a suite that silently lost rows, is caught by nothing.
+- R5 (tools/rung.py:388) lists art/studio.py's selftest as one of its four suites. By reading, that suite's rows print as '[PASS] name — detail' (art/play.py:1891-1893), and no row name begins 'plant: ', the only form PLANT_ROW matches (tools/rung.py:389). It likely contributes zero rows, so the owner's 'PLANTS HELD, 116 and 116' would rest on quality, check and director alone (INFERRED, not run).
+- R5 keys plant rows by suite + words in a dict (tools/rung.py:431-432). art/check.py prints the same plant words once per brief without the brief's name (art/check.py:788,803), so rows from four worlds collapse into one key and the last brief's verdict wins. A plant that stops being refused in an earlier brief would read as held. The 'identity = suite, world, kind' refinement agreed at docs/ROADMAP.md:5049-5050 is not built.
+- R5 ignores a stop in the old checker for its verdict (tools/rung.py:467-473: ok = not worse and not lost and not broken[head]). That is the same failure mode that from 0226 to 0242 left only 22 of art/check.py's rows compared on his machine (tools/rung.py:392-396). It is now printed, but it still reads PLANTS HELD.
+- art/selftests.py, the harness behind every 'ART SELFTESTS PASSED' claim, has no self-test and is neither a RUNG-0 root nor named by one (git grep over the roots found nothing). A loosened summary regex or passed() reaches rung D only through the blanket D? escalation (tools/rung.py:352-353). Five suites' summaries (director, racetest, crashtest, check, txn) carry no count at all.
+- RUNG-0's 'planted defects may be fewer' check counts occurrences of the word 'plant' across all Python sources (tools/rung.py:330-333): a comment or a renamed variable satisfies it, and a removed plant offset by a new comment passes.
+- art/certificate.py's check returns ok=True when only the statements, not the bytes, come back (certificate.py:104-106). An admission whose inverse does not restore the head is certified 'ok', with not-exact said rather than refused. SPEC1's CERT-0 means byte-exact inverse correctness on the gate; the repo's CERT-0 is a different, off-gate thing of the same name, a reading hazard for anyone comparing the two specs.
+- The gate verdict reads PASSED whatever the number skipped (verify.py:17019), and docs/REPOSITORY-TRUTH.md:57 (T-13) left that behaviour to the owner (O) with no ruling recorded since. Meanwhile ADMISSION-0 in the art layer already treats a skip as not a pass (art/director/contract.py:123,168-170): the two layers apply opposite rules to a skipped check.
+- game-not-runtime (verify.py:787-816) enforces the charter's oracle-is-not-runtime clause only by searching kernel/, workshop/ and shell/ for the string 'oracle/game'. Other oracle/ paths and the art/, graybox/ and design/ trees are not scanned.
+
+- **R2.spec1-NORM-0** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC1 §10 NORM-0; SPEC1 A8
+  - *Capability:* A round-trip law: parse(unparse(x)) = x for every notation.
+  - *Held by:* gate rows text-roundtrip, text-refuse, designevent-language, readercourt-writers; art/selftests.py suite 'director' (row 'the conformance vectors, reproduced by the reference (65)', the Python side of VERDANDI-CANON 0, …
+  - *Gap:* Holds for the level text form, the saved form, the VRDNP2 batch and the VERDANDI-CANON 0 intent and ledger form. SPEC1's object, an anchor-graph normal form, does not exist (SPEC2 §16 defers that pivot). No parse/unparse round-trip law was found for the art brief language VERDANDI-ART 0: a search of art/dress.py, intent.py, director.py, quality.py and check.py for round-trip f…
+  - *Skeptic:* The round-trip law holds and is tested for these forms: the level text form (text-roundtrip rebuilds the frozen W, text-refuse refuses malformed text), the VRDNP2 batch (every recognized mutant is emitted byte for byte, none respelled), the saved form (the envelope's write is read back), the intent…
+  - *Evidence:* verify/verify.py:1924-1942 text-roundtrip: from_text(to_text(L)) rebuilds the frozen W by…; verify/verify.py:11819-11835 readercourt-language: 45 registered boundary cases, Rust and…
+- **R2.spec1-NORM-1** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC1 §10 NORM-1
+  - *Capability:* Normalization is idempotent.
+  - *Held by:* gate rows text-roundtrip and designevent-language; art/selftests.py suite 'director' (the CANON 0 vectors, Python side)
+  - *Gap:* Scoped to the level text and the batch writer. There is no normalizer-to-fixpoint over a world, and the batch idempotence is checked on the gate's reference writer, not on the shell's.
+  - *Skeptic:* Idempotence is asserted in three places. text-roundtrip requires to_text(from_text(to_text(L))) == to_text(L). designevent-language requires the gate's own Python writer (_de_emit) to re-emit its own output unchanged. The director suite's loads(b) accepts b only when dumps(loads(b)) == b. None of t…
+  - *Evidence:* verify/verify.py:1936-1939 to_text(from_text(to_text(L))) must equal to_text(L) byte for …; verify/verify.py:14321-14331 designevent-language: the reference writer re-emitting its o…
+- **R2.spec1-NORM-2** · PARTIAL · SPEC1 §10 NORM-2
+  - *Capability:* Order independence: the same content in any order normalizes to the same bytes.
+  - *Held by:* gate row designevent-language; art/selftests.py suite 'glue' (GLUE SELFTEST 9/9, plant glue-fingerprint-ordered)
+  - *Gap:* Order independence is achieved by refusing non-canonical order, and holds only for the reference writer and for glue fingerprints. Nothing normalizes a world state independently of order, and SPEC1's dense ID compaction is not built.
+  - *Evidence:* verify/verify.py:14322-14328 the reference writer, handed a batch's operations in three o…; verify/verify.py:14339 the shell refuses an out-of-order batch (ADMIT-ORDER) instead of n…
+- **R2.spec1-ATLAS-0** · MISSING (corrected, resolved F15) · SPEC1 §10 ATLAS-0; SPEC1 §3
+  - *Capability:* Chart cocycle: T(A->C) = T(B->C) composed with T(A->B), tested exhaustively.
+  - *Held by:* MARKS SELFTEST (art/selftests.py suite 'marks', art/selftests.py:54), row 'frames': world and local are inverses on all six face frames, in exact Fractions. Also ORT-1 case O2 'there and back: the bytes as they were' (p…
+  - *Gap:* No charts, no basis chain and no composition law exist, so there is nothing to test.
+  - *Skeptic:* Searches: 'cocycle' across the repository (only docs/ROADMAP.md:5109, prose); 'compose\|composition ... transform\|frame\|chart' (only compose_frame, the shell's renderer); def to_world\|local_to\|from_local\|compose\|chart\|frame_of (found art/glue.py compose, which composes revisions, and studio_marks wo…
+  - *Evidence:* docs/ROADMAP.md:5109 'cocycle' appears only in the owner's 0243 note (a sheaf's Čech cocy…; graybox/ORT-1.md:29-31 the only frame model is one whole-cell origin (oi, oj) per rules-2…
+- **R2.spec1-REBASE-0** · CONFLICTS-WITH-SPEC · SPEC1 §10 REBASE-0; SPEC1 §3; SPEC2 §5 'Do not claim all operations commute with rebase'
+  - *Capability:* Rebase commutes with every certified operation (R composed with Op = Op composed with R).
+  - *Held by:* ORT-1 own check (python graybox/ort_ref.py; ORT-1 HELD BY PYTHON AND THE ENGINE), not run at HEAD
+  - *Gap:* The equivalent that exists is exact conservation of positions across one rebase, with plants. No operation-by-operation commutation test exists.
+  - *Conflict:* graybox/ORT-1.md:40-42: 'What it does not conserve: the bits of the ticks after it. The tick's arithmetic in another frame rounds differently ... a run with a rebase is held to a run with the same rebase.' This is a measured non-commutation for the simulation step, which SPEC1's 'for every op' contradicts and SPEC2 §5…
+  - *Evidence:* graybox/ORT-1.md:34-39 conservation: a committed rebase conserves every global position e…; graybox/ORT-1.md:40-42 the ticks after a rebase are not conserved (measured, translate_pr…
+- **R2.spec1-CERT-0** · PARTIAL · SPEC1 §10 CERT-0; SPEC1 §5 Q3
+  - *Capability:* Inverse correctness: the captured inverse returns the parent hash exactly.
+  - *Held by:* art/selftests.py suite 'cert' (CERT SELFTEST 7/7: 'planted: each defect refused with its code', three plants caught)
+  - *Gap:* The parent hash comes back exactly only for '+' and for '=' on a statement written in single spaces. For '-' and for an aligned '=', the certificate is ok while the head does not return. The repair is a change to the revision language, awaiting the owner's ruling. This is the repo's off-gate CERT-0, not a gate row.
+  - *Evidence:* art/certificate.py:95-106 check(): exact = the bytes' sha256 equals the parent's; ok hold…; art/certificate.py:126-137 cases: '+' and single-space '=' are exact; aligned '=' and '-'…
+- **R2.spec1-REGION-0** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC1 §10 REGION-0; SPEC1 §5 Q2
+  - *Capability:* Every introduced or modified relation lies inside the declared cover element.
+  - *Held by:* art/selftests.py suites 'strict' (STRICT SELFTEST 11/11: plants strict-not-checked, strict-any-region and strict-no-receipt caught), 'flagship' ('planted: an invalid region (the column reaches beyond #bay)...') and 'hel…
+  - *Gap:* Containment is a region footprint on the art scene, not SPEC1's CoverElement (Cells, Chart, Region or EntitySet) over a graph. It is off the gate.
+  - *Skeptic:* The geometric containment check is real, and planted defects in it are caught. It runs only for a strict request: studio.py checks the region at admission only when r.get('strict'), and AGENTS.md's row requires that a request that is not strict never refuse on its accounts. Every other admission is…
+  - *Evidence:* art/selftests.py:40 the strict suite; art/flagship.py:295 planted: an invalid region (the column reaches beyond #bay) is stoppe…
+- **R2.spec1-PHYS-0** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC1 §10 PHYS-0
+  - *Capability:* Two runs of the simulation are byte-identical.
+  - *Held by:* gate rows simtick-replay and simtick-equivalence; art/selftests.py suites 'preview' and 'preview-studio' ('the same inputs, the same states, tick for tick, and the same archives (B4-DETERMINISM)', plant preview-shared-s…
+  - *Gap:* This is same-build replay of the kernel's camera tick and the graybox rules (binary64). There is no rigid-body physics and no Q32.32 fixed-point integration as SPEC1 proposes.
+  - *Skeptic:* Two-run identity is tested for two simulations. The first is the shell's camera tick: simtick-replay checks the replay against the twin's fold and refuses changed tokens, and simtick-equivalence checks that re-timed inputs save byte-identical data. The second is graybox/tick_ref.py, the Python twin…
+  - *Evidence:* verify/verify.py:9107-9128 simtick-replay: the saved session's witnesses equal the kernel…; art/motion.py:395 'the same inputs, the same states, tick for tick, and the same archives…
+- **R2.spec1-PHYS-1** · CONFLICTS-WITH-SPEC · SPEC1 §10 PHYS-1
+  - *Capability:* The simulation is identical across hosts.
+  - *Held by:* none on the gate; graybox trace and tick_ref are own checks, not run at HEAD
+  - *Gap:* Cross-browser traces exist as earlier host observations only. No gated cross-host row exists.
+  - *Conflict:* AGENTS.md:67 (under §3 'Never, without the owner's word'): '**Claim** a latency, a frame rate, input-to-photon, feel, or determinism across platforms or browsers.' A PHYS-1 row asserting cross-host identity is such a claim.
+  - *Evidence:* AGENTS.md:67 the 'Never, without the owner's word' list forbids claiming determinism acro…; docs/CORE.md:191-192 graybox replay: the same final hash was seen in Chromium, node and F…
+- **R2.spec1-RENDER-0** · PARTIAL · SPEC1 §10 RENDER-0
+  - *Capability:* The reference renderer is byte-identical across hosts.
+  - *Held by:* gate rows kernel-oracle, kernel-corpus, bearing-oracle
+  - *Gap:* Identity holds for the registered scenes of the std-only CPU kernel on two machines, compared by a person's reading of the two gate outputs. There is no general cross-host claim (AGENTS.md:67 forbids one) and no reference for the production WebGL2 renderer.
+  - *Evidence:* verify/verify.py:869-882 kernel-oracle: two runs agree and equal Urðr's frame digest and …; verify/verify.py:885-902 kernel-corpus: 12 witnesses equal the frozen values bit for bit
+- **R2.spec1-DOWN-0** · CONFLICTS-WITH-SPEC · SPEC1 §10 DOWN-0; SPEC1 §7; SPEC2 §16 'Pixel/downsample equality as quality proof — Rejec…
+  - *Capability:* The production renderer matches the reference within a pinned downsample tolerance.
+  - *Held by:* none
+  - *Gap:* Nothing implements a downsample comparison between two renderers.
+  - *Conflict:* AGENTS.md:90: 'A person judges the picture; nothing hashes it.' The repository deliberately does not hold the WebGL picture to a digest or tolerance, and SPEC2 §16 rejects downsample equality as proof of quality.
+  - *Evidence:* AGENTS.md:90 native plaza: 'A person judges the picture; nothing hashes it.'; art/director/contract.py:61 NEVER_CHECKED: whether the picture is good is for a person; t…
+- **R2.spec1-DEP-0** · PARTIAL · SPEC1 §10 DEP-0; SPEC1 §9
+  - *Capability:* A row holds the kernel's dependency list unchanged.
+  - *Held by:* structural (bare rustc in compile_rs); gate rows reasoncourt-fence and mintwatch-fence (the 58 pinned sources); game-frozen (GAME_STDLIB, for oracle/game only)
+  - *Gap:* No named dependency row exists. A new crate fails structurally, and a pin turns red on any source change, but the rule is not stated as a check. Python stdlib-only for verify/, art/, graybox/ and design/ is unchecked (verify/hoststate.py uses ctypes).
+  - *Evidence:* verify/verify.py:534-558 compile_rs: bare rustc on one file, with no --extern or -L; verify/verify.py:13132-13140 reasoncourt-fence: every .rs under kernel/, shell/ and works…
+- **R2.spec1-CANON-0** · PARTIAL · SPEC1 §10 CANON-0
+  - *Capability:* The canonical hash agrees across Python, node and the browser.
+  - *Held by:* gate rows records-twins, readercourt-language, readercourt-agree; director conformance vectors (conform.rs) and graybox tick_ref/trace are own checks, not run at HEAD
+  - *Gap:* The gate holds Rust against Python. The node and browser leg (graybox traces verified by tick_ref) and the director's Python-Rust vectors are outside both the gate and art/selftests.py.
+  - *Evidence:* verify/verify.py:1331-1355 records-twins: Python recomputes the chain hash of every recor…; verify/verify.py:11838-11843 readercourt-agree: both readers give the same verdict on eve…
+- **R2.spec1-CENSUS-0** · PARTIAL · SPEC1 §10 CENSUS-0; SPEC1 §4
+  - *Capability:* The conflict census regenerates identically.
+  - *Held by:* art/selftests.py suite 'glue' (row 'the census of the flagship's seven edits: every pair judged, the same table twice')
+  - *Gap:* The glue census is regenerated within one run, over seven chosen edits. It is not exhaustive over an operation alphabet, and there is no committed census file that a later run must reproduce.
+  - *Evidence:* art/glue.py:202-213 census(brief) run twice and compared; 21 pairs required; verify/verify.py:1082-1103 workshop-census reads a committed census record and re-derives…
+- **R2.L1-unit** · PARTIAL · SPEC2 §13 layer 1
+  - *Capability:* Unit tests for encoding, transforms, math, collision and schemas.
+  - *Held by:* gate rows readercourt-language, records-firewall, text-refuse; art/selftests.py suite 'quality' (QUALITY SELFTEST 76/76: every field known and bounded)
+  - *Gap:* No transform unit tests (no transform hierarchy exists). No collision unit tests were found in the files this reader holds; the graybox rules' checks are own checks, not run at HEAD.
+  - *Evidence:* verify/verify.py:11819-11835 encoding: 45 registered boundary cases for both readers; verify/envelope.py:65-82 record schema validation
+- **R2.L2-property** · PARTIAL · SPEC2 §13 layer 2
+  - *Capability:* Property tests for round-trip, idempotence, transform composition and collision symmetry.
+  - *Held by:* gate rows text-roundtrip, designevent-language; art/selftests.py suite 'held' (scene_diff_test seeded properties)
+  - *Gap:* No transform-composition property (no transforms exist). No collision-symmetry property: git grep for 'symmetr' in graybox and art code found nothing.
+  - *Evidence:* verify/verify.py:1936-1939 round-trip and re-emit identity; verify/verify.py:14321-14331 writer order-independence and idempotence
+- **R2.L3-fuzz** · PARTIAL · SPEC2 §13 layer 3
+  - *Capability:* Fuzz tests for malformed serialization, assets and geometry.
+  - *Held by:* gate rows readercourt-agree, readercourt-corpus, designevent-language
+  - *Gap:* Serialization is covered by exhaustive deterministic neighbourhoods, not open-ended fuzzing. No asset fuzzing (there is no asset importer). Geometry has only scene_diff's seeded random operations.
+  - *Evidence:* verify/verify.py:11838-11843 every single-byte substitution, deletion and insertion of th…; verify/verify.py:14311-14319 every single-byte mutant of three batches, shell against the…
+- **R2.L4-integration** · EXISTS-TESTED · SPEC2 §13 layer 4
+  - *Capability:* Integration tests for edit -> validate -> preview -> admit -> undo.
+  - *Held by:* art/selftests.py suite 'flagship' (FLAGSHIP SELFTEST 9/9)
+  - *Gap:* It runs with the scripted director through the HTTP surface. The gate's own admit-* rows cover the shell's admission separately.
+  - *Evidence:* art/flagship.py:17-20 the stages and their codes (FLAGSHIP-NO-IMPACT, FLAGSHIP-PREVIEW, F…; art/flagship.py:129,150,166 each stage refuses without its evidence
+- **R2.L5-planted** · PARTIAL · SPEC2 §13 layer 5
+  - *Capability:* Planted defects: stale revision, region escape, missing evidence, wrong inverse, omitted or duplicate test row, encoding failure, crash, dependency invalidation.
+  - *Held by:* gate rows workshop-stale, admit-crash, designevent-crash, livesession-recover, hermeneutics-fence; art/selftests.py suites flagship, cert, director, crashtest; AGENTS.md §4 'python tools/rung.py selftest'
+  - *Gap:* An omitted or duplicate test row is planted only in R5's compare. The gate's no-duplicate and same-order checks (hermeneutics-fence) run on the live source with no plant, and no harness-level plant exists for art/selftests.py's suites. No dependency-invalidation plant was located in this reader's files.
+  - *Evidence:* verify/verify.py:1116-1124 workshop-stale plant refused STALE-PROJECTION; art/flagship.py:339-347 stale revision planted: FLAGSHIP-ADMIT, 409
+- **R2.L6-cross-platform** · PARTIAL (resolved F14) · SPEC2 §13 layer 6; SPEC2 §2.4
+  - *Capability:* Scoped cross-platform determinism.
+  - *Held by:* none as a check; the container's and the host's gate outputs are compared as text by a person
+  - *Gap:* No gated or suite-held cross-platform check exists. The scope is stated as observations, and the browser traces are earlier own-check runs.
+  - *Evidence:* docs/CORE.md:188 container and host print the same gate (247 and 251 rows, compared as te…; docs/CORE.md:189 three host sessions replay in the container
+- **R2.L7-visual** · PARTIAL · SPEC2 §13 layer 7; SPEC2 §11 (three concepts kept apart)
+  - *Capability:* Visual regression plus human review.
+  - *Held by:* art/selftests.py suite 'flagship' (the baseline written from a verified preview and refused from an unverified one or without a note); suite 'check' (bytes references)
+  - *Gap:* Human approval and the bytes freeze exist. Nothing reads a visual baseline to compare a later render (no regression check), and none has been approved.
+  - *Evidence:* art/flagship.py:51,183-213 approve(): the owner's act appends to art/visual_baselines.jso…; AGENTS.md:90 a person judges the picture; the detectors flag a white still and prove noth…
+- **R2.L8-benchmarks** · PARTIAL · SPEC2 §13 layer 8; SPEC2 §8 performance policy
+  - *Capability:* Performance benchmarks on named hardware.
+  - *Held by:* gate rows *-preregistered and *-sealer (methods hash-locked; sealers driven by synthetic numbers); the host sealers are off the gate
+  - *Gap:* Benchmarks exist for the CPU kernel and the present path on one named host. There are no GPU frame-time distributions for the WebGL2 renderer, no target-hardware (Xbox Ally X class) runs and no p50/p95/p99 for the studio.
+  - *Evidence:* verify/README.md:92-104 the off-gate instruments seal host courts into kernel/attest and …; verify/verify.py:1391-1396 LATENCY-0's method locked before any host number
+- **R2.L9-crash-recovery** · EXISTS-TESTED · SPEC2 §13 layer 9; SPEC2 §5 crash consistency
+  - *Capability:* Crash and recovery tests.
+  - *Held by:* art/selftests.py suites 'crashtest' (DIRECTOR CRASHTEST PASSED, 15 cases) and 'txn' (STUDIO-TXN SELFTEST PASSED); gate rows admit-crash, designevent-crash, livesession-recover
+  - *Evidence:* art/selftests.py:37,55 the crashtest and txn suites; art/build/selftests/20261016T162615Z.log:22,26 both passed at HEAD on the host
+- **R2.L10-e2e** · PARTIAL · SPEC2 §13 layer 10; SPEC2 §15
+  - *Capability:* An end-to-end studio rehearsal.
+  - *Held by:* art/selftests.py suites 'flagship' and 'app' (STUDIO APP SELFTEST 13/13 on Windows)
+  - *Gap:* The page (art/web/play.js) and the clicks a designer makes are not driven by the acceptance. Only the scripted provider is used; a real provider's run is a rehearsal (OBSERVED), by rule.
+  - *Evidence:* art/flagship.py:17-20 the acceptance through the studio's HTTP surface; art/build/selftests/20261016T162615Z.log:14,25 app 13/13 and flagship 9/9
+- **R2.suite-report-fields** · PARTIAL · SPEC2 §13 'Every suite report contains ...'
+  - *Capability:* Every suite report carries suite ID and version, expected and executed row identities, pass/fail/skip, exit status, encoding and environment, and artifact references with hashes.
+  - *Held by:* none (no check holds the report's form)
+  - *Gap:* No suite carries a version. No report lists expected identities or artifact references with hashes. The gate records no encoding or environment. The art harness records only the Python version and its forced PYTHONUTF8.
+  - *Evidence:* verify/verify.py:495-499 one line per row: status and name; verify/verify.py:17016-17021 GATE PASSED\|FAILED, RECONCILE rowset digest, rows / fail / s…
+- **R2.gate-expected-vs-executed** · PARTIAL · SPEC2 §13 'Compare row identities, not counts alone. Missing, duplicated, malformed ... f…
+  - *Capability:* The gate compares row identities, not counts, and fails closed on missing, duplicated or malformed rows.
+  - *Held by:* gate rows reasoncourt-fence (executed rows 1-231) and hermeneutics-fence (source rows 1-247 by digest, 248-251 by name, no duplicates); mintwatch-, designevent- and designir-fence the same for their prefixes
+  - *Gap:* The whole-rowset comparison is a person reading the RECONCILE line against documents. A row appended after the 251st reddens nothing. Executed identities are checked only up to row 231. No fence carries a plant of a dropped or duplicated row.
+  - *Evidence:* verify/verify.py:17018 rowset = sha256 of the executed names in order (identity, not coun…; verify/verify.py:13146-13148 reasoncourt-fence checks the executed rows 1-231 against RSN…
+- **R2.art-expected-vs-executed** · PARTIAL (reader MISSING, corrected) · SPEC2 §13; the owner's plants-completeness word (docs/ROADMAP.md:5045-5047)
+  - *Capability:* The art harness accounts for each suite's rows by identity against an expected set and fails closed on a missing, duplicated or malformed row.
+  - *Held by:* RUNG SELFTEST (python tools/rung.py selftest; AGENTS.md §4 row 'a patch to the program: its rung'). Its rows: 'the plants compared: one the old checker refused and the new does not, one gone, are both said', 'a suite pr…
+  - *Gap:* There are no expected row identities and no expected counts. A suite whose row set shrinks (n/n smaller) passes, and a duplicated row is invisible. A malformed or missing summary line does fail closed.
+  - *Skeptic:* The reader is right that art/selftests.py reads only each suite's exit status and its self-reported summary (selftests.py:61-66, 78-81; five summaries carry no count; --repeat compares runs with each other; --only still prints PASSED). Searched for a test of the harness (grep 'selftests.py\|run_one(…
+  - *Evidence:* art/selftests.py:61-66 passed(): PASSED, or n/n with n > 0, the count reported by the sui…; art/selftests.py:78-81 a suite is ok on exit 0 and its last summary match; no row is read
+- **R2.skip-fail-closed** · CONFLICTS-WITH-SPEC · SPEC2 §13 'Missing, duplicated, malformed or skipped required rows fail closed'
+  - *Capability:* A skipped required row fails closed.
+  - *Held by:* none; the verdict ignores skips by design
+  - *Gap:* Without rustc most rows skip and the verdict still reads GATE PASSED; the skip count must be read by a person.
+  - *Conflict:* AGENTS.md:112: 'The gate's verdict reads `GATE PASSED` whenever no row fails, **whatever the number skipped**.' The same design is stated at verify/README.md:5-8, and docs/REPOSITORY-TRUTH.md:57 (T-13) leaves the behaviour to the owner (O).
+  - *Evidence:* verify/verify.py:485-486 Skip appended as SKIP; verify/verify.py:17017-17019 GATE FAILED only if fails; skips are only counted
+- **R2.suite-crash** · EXISTS-UNVERIFIED · SPEC2 §13 'A suite crash is failure, not partial pass'
+  - *Capability:* A suite crash is a failure, not a partial pass.
+  - *Held by:* none for the gate's row() or the art harness; a child process's non-zero ending is held by reasoncourt-watch (planted deaths); R5's stop reading is tested (see R2.rung-r5-plants)
+  - *Gap:* No plant tests that a crashing row turns red, or that a crashing or hanging suite fails the art harness. A crash in main() outside a row prints no verdict (fail closed by reading only).
+  - *Evidence:* verify/verify.py:489-490 'a crash is a red row, never a missing one': any exception becom…; verify/RUNGS.md:591,599 observed once: input-demo without kernel-build fails as a TypeErr…
+- **R2.status-labels** · PARTIAL · SPEC2 §13 status labels
+  - *Capability:* Explicit status labels (MEASURED, VERIFIED BY READING, OBSERVED, PROPOSED, UNVERIFIED, HUMAN-APPROVED, HELD/REFUSED, PASS).
+  - *Held by:* gate rows records-firewall and records-twins (claim_class and verdict-key firewall, with plants)
+  - *Gap:* Records carry a machine-checked four-value claim class. The report vocabulary (MEASURED, OBSERVED, NOT_MEASURED, VERIFIED BY READING in commit messages) is prose under AGENTS.md §6 and unchecked. HUMAN-APPROVED, PROPOSED and HELD/REFUSED are not a label set anywhere.
+  - *Evidence:* verify/envelope.py:32-36 CLAIM_CLASSES measured\|established\|declared\|predicted; VERDICT_K…; verify/envelope.py:65-82 validate() refuses another claim class, a missing scope and a ha…
+- **R2.p8-off-gate** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §2 principle 8
+  - *Capability:* Off-gate work cannot silently alter the certified core or frozen reference evidence.
+  - *Held by:* gate rows reasoncourt-fence, mintwatch-fence (58 pins), oracle-frozen, oracle2-frozen, game-frozen, game-plant, bearing-oracle; art/selftests.py suite 'check' ('quality: the scene is its frozen reference'); AGENTS.md §4…
+  - *Gap:* Art references and the classifier are held off the gate, by the owner's runs. RUNG-0 names only the loosening kinds it lists (tools/rung.py:382-383).
+  - *Skeptic:* The certified Rust core and the sealers are pinned, and a change turns red naming the file. oracle/game is pinned by a manifest digest constant, with a planted flipped golden caught. urdr-oracle-2.json is pinned (ORACLE2_SHA256) and pins urdr-oracle-1.json through 'extends'. Not all frozen evidence…
+  - *Evidence:* verify/verify.py:13132-13140 every pinned source unchanged, else Red naming it; verify/verify.py:602-626 oracle-frozen: levels and tiles equal their frozen W and M
+- **R2.p10-unearned** · PARTIAL · SPEC2 §2 principle 10
+  - *Capability:* No unearned claims: tests are reported only if run, visual quality needs human review, and engine parity needs measurements.
+  - *Held by:* art/selftests.py suite 'flagship' (the baseline approval refusals); otherwise none
+  - *Gap:* Nothing binds a claim in a report, commit message or document to a log or run. Counts in documents drift unchecked. Visual approval is built but unused (no baseline approved).
+  - *Evidence:* art/selftests.py:119-141 a timestamped log keeps each suite's whole output; tools/rung.py:373 the report says the rung is 'computed here, never taken from the patch'…
+- **R2.evidence-completeness-admission** · EXISTS-TESTED · SPEC2 §17 evidence completeness; SPEC2 §6 admission sequence
+  - *Capability:* An admission requires every expected check, defined apart from what ran, with a skip read as not passed, and its required evidence.
+  - *Held by:* art/selftests.py suite 'director' (DIRECTOR SELFTEST PASSED: 'a check that did not run is said (not checked) and keeps the admission out: a skip is not a pass'); RUNG-0 names a check dropped from EXPECTED_CHECKS as a lo…
+  - *Gap:* Checks are keyed by name in a dict (contract.py:112), so a duplicated check name is not detected.
+  - *Evidence:* art/director/contract.py:44-56 EXPECTED_CHECKS: a missing name is a skip, a renamed one s…; art/director/contract.py:146-179 missing(): every expected check certified, plus a still …
+- **R2.evidence-completeness-flagship** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §17 evidence completeness; SPEC2 §15 step 8
+  - *Capability:* Each acceptance stage's evidence is required before the next; the first missing piece stops the procedure with its code.
+  - *Held by:* art/selftests.py suite 'flagship' (FLAGSHIP SELFTEST 9/9: planted invalid region, missing impact, failing preview verification and stale revision; plants flagship-held-unchecked, flagship-impact-unchecked and flagship-v…
+  - *Gap:* By design the studio's own admission reads none of this evidence; only the acceptance procedure requires it.
+  - *Skeptic:* run() stops at the first failing stage with its code. Only four stops are ever exercised: FLAGSHIP-HELD, FLAGSHIP-NO-IMPACT, FLAGSHIP-PREVIEW and FLAGSHIP-ADMIT (stale). FLAGSHIP-MARK, FLAGSHIP-REQUEST, FLAGSHIP-FRAMING and FLAGSHIP-UNDO are never made to fail. No test plants a certificate that is …
+  - *Evidence:* art/flagship.py:129 FLAGSHIP-NO-IMPACT stops at the candidate; art/flagship.py:302-309 the planted missing impact: nothing admitted, the world as it was
+- **R2.rung-classify** · EXISTS-TESTED · SPEC2 §4 Verification/Oracle (report completeness); SPEC2 §3 (preserve the gate; no gate …
+  - *Capability:* The host classifies a patch's rung from the trusted base's dependency closure and named loosenings, never from the patch's words.
+  - *Held by:* AGENTS.md §4 check 'python tools/rung.py selftest' (RUNG SELFTEST 19/19, AGENTS.md:105); the owner's runs: rung D at 0242 and 0243 (docs/ROADMAP.md:5037-5041, 5104-5106)
+  - *Gap:* Not checked: whether a change is right, or what a computed path reaches (tools/rung.py:382-383). 'Fewer plants' is a count of the word 'plant' in all Python files (tools/rung.py:330-333). art/selftests.py is not a root and reaches D only by blanket escalation.
+  - *Evidence:* tools/rung.py:55-65 ROOTS; tools/rung.py:254-279 closure over imports, literals, os.path.join and spec_from_file_loc…
+- **R2.rung-r5-plants** · PARTIAL · SPEC2 §13 (suite report, planted omission, encoding failure); the owner's word docs/ROADM…
+  - *Capability:* R5: every planted defect the old checker refused is refused by the new one, read whole under UTF-8, with a suite's stop named.
+  - *Held by:* AGENTS.md §4 check 'python rung.py plants origin/main HEAD --repo .' (PLANTS HELD; the owner's run at 0243 '116 and 116', docs/ROADMAP.md:5104-5105); RUNG SELFTEST rows on compare, cp1252 and stop reading
+  - *Gap:* Covers 4 of 24 suites. By reading, art/studio.py's suite probably contributes no rows, because its row names never start 'plant: ' (inferred, not run). The expected set is the old tree's own output. Identity is the row's words, so art/check.py's same-worded per-brief rows collapse and a regression in an earlier brief can hide behind the last brief. New rows are not reconciled,…
+  - *Evidence:* tools/rung.py:388 SUITES: art/quality.py, art/check.py, art/director.py selftest, art/stu…; tools/rung.py:389 PLANT_ROW requires 'PASS plant: ' at the start of a line
+- **R2.plants-completeness** · PARTIAL · docs/ROADMAP.md:5045-5050 (the owner's word: 'a rung of its own, later'); SPEC2 §13; SPEC…
+  - *Capability:* Plants completeness: an expected row set defined apart from the output, each suite's rows accounted by identity, exact reconciliation, failing closed, planted omissions, both consoles.
+  - *Held by:* RUNG SELFTEST (AGENTS.md:105) for the parts R5 has; none for art/selftests.py
+  - *Gap:* (1) An expected set apart from the output: missing in both RUNG-0 and art/selftests.py, though the gate already has the pattern for refusals (reasons.json) and raise sites (mints.json). (2) Identity per suite: R5 covers 'plant:' rows of 4 suites by words; the harness tracks no rows. (3) Exact reconciliation: R5 is one-way with duplicates collapsed; the harness compares counts …
+  - *Evidence:* tools/rung.py:443-474 cmd_plants: old output as the expected side; tools/rung.py:550-552 the planted omission (one gone) and regression in compare_plants
+- **R2.v-frozen-oracle** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §4 Verification/Oracle
+  - *Capability:* Frozen evidence is held byte for byte, and oracle evidence is never a runtime dependency.
+  - *Held by:* gate rows oracle-frozen, oracle2-frozen, game-frozen, game-suites, game-plant, game-not-runtime, bearing-oracle
+  - *Gap:* game-not-runtime scans only for the string oracle/game, and only in kernel/, workshop/ and shell/ (verify/verify.py:787,801); art/, graybox/ and design/ are not scanned.
+  - *Skeptic:* oracle/game is held byte for byte, digest-pinned and planted. oracle-frozen holds levels and tiles only against oracle/witnesses.json, which is not pinned by any constant in the gate or the registry (searched by hash). game-not-runtime scans only for the string 'oracle/game', only in kernel/, works…
+  - *Evidence:* verify/verify.py:602-626 oracle-frozen; verify/verify.py:705-734 game-frozen: bytes, sha256 and git blob equal the pinned manifest
+- **R2.v-cross-impl** · EXISTS-TESTED · SPEC2 §4 Verification/Oracle
+  - *Capability:* Cross-implementation checks.
+  - *Held by:* gate rows records-twins, readercourt-language, readercourt-agree, designir-compile
+  - *Gap:* Agreement between twins written by one author shows consistency, not truth (G23). The cases with verdicts written beforehand are what stand against a shared mistake.
+  - *Evidence:* verify/verify.py:1331-1355 records-twins, including Rust refusing Python-made plants and …; verify/verify.py:11819-11843 two readers on registered cases and mutants
+- **R2.v-fullx2** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §4 Verification/Oracle; SPEC2 §2.4
+  - *Capability:* Deterministic fixtures: the gate's output is a function of the tree, and two runs are byte-identical.
+  - *Held by:* AGENTS.md §4 check 'python verify/verify.py, twice, on one clean tree' (AGENTS.md:110), run by the owner; not recorded at HEAD
+  - *Gap:* The comparison of two runs is done outside the gate, by the owner. Tree identity is taken by a witness outside the repository. FULL×2 is not recorded at HEAD.
+  - *Skeptic:* The non-verbose gate prints only '[STATUS] name' per row (the text only on FAIL), plus the verdict and the RECONCILE line. FULL×2's byte comparison therefore covers statuses, names, counts and the rowset, not the row texts, which carry the measured digests and counts. CORE.md lists 'agreement of th…
+  - *Evidence:* verify/verify.py:7-9 nothing prints a clock or a temporary path; verify/README.md:23-28 FULL×2: TreeID1 == TreeID2 and GateOut1 == GateOut2
+- **R2.v-preregistration** · PARTIAL · SPEC2 §4 Verification/Oracle; SPEC2 §13 artifact refs and hashes
+  - *Capability:* Methods are locked before their numbers, and every sealed record cites its registration (fail closed when it does not).
+  - *Held by:* gate row records-preregistered and each rung's *-preregistered row
+  - *Gap:* A record that cites no registration is not refused (G35, deferred). An entry edited together with a recomputed hash passes (T-12).
+  - *Evidence:* verify/verify.py:1364-1374 every one of the 55 entries needs a failure condition; its cha…; verify/verify.py:1376-1384 only records that cite a registration are joined; a record cit…
+- **R2.v-skip-passes** · CONFLICTS-WITH-SPEC (from-verifier) · SPEC2 §13 'Missing, duplicated, malformed or skipped required rows fail closed.'
+  - *Capability:* Skipped required rows fail closed.
+  - *Held by:* none (by design the verdicts ignore skips)
+  - *Gap:* Neither the gate nor the art harness fails on a skip. Only ADMISSION-0 treats a skip as not passed (art/director/contract.py:123-125,168-170).
+  - *Conflict:* AGENTS.md:112: "The gate's verdict reads `GATE PASSED` whenever no row fails, **whatever the number skipped**." verify/verify.py:7-8: "Rows that need `rustc` SKIP without it, count-stable."
+  - *Evidence:* verify/verify.py:7-8 'Rows that need `rustc` SKIP without it, count-stable'; verify/verify.py:17016-17020 GATE FAILED only if fails > 0; skips only counted
+- **R2.v-crash-is-failure** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §13 'A suite crash is failure, not partial pass.'
+  - *Capability:* A suite crash is failure, not a partial pass.
+  - *Held by:* none for the gate and the harness; RUNG SELFTEST row 'a traceback a suite logs and goes on from is not a stop; an exception that ends it is' holds R5's reading only
+  - *Gap:* No plant of a crashing row in the gate and no plant of a crashing or summary-less suite in art/selftests.py. Dropping a suite from art/selftests.py SUITES goes unnoticed, because art/selftests.py is outside RUNG-0's closure and no loosening names it.
+  - *Evidence:* verify/verify.py:489-490 a row that raises becomes a FAIL row; art/selftests.py:61-66 a pass needs PASSED or n/n with n > 0
+- **R2.v-ledger-evidence-replay** · EXISTS-TESTED (from-verifier) · SPEC2 §17 evidence completeness; SPEC2 §5 'Recovery selects the last verified durable sta…
+  - *Capability:* Ledger replay refuses an admission whose required evidence is missing, tampered, or written past the director.
+  - *Held by:* art/selftests.py suite 'director' ('PASS plant: an admission whose recorded detectors are not its still's — refused'; 'PASS plant: an admission's still taken away — refused'; 'PASS plant: an admit event written past the…
+  - *Gap:* An evaluation without an ADMISSION-0 record (the legacy form) is admitted on replay with no evidence (director.py:914-916). The ledger's chain hash is unkeyed, so this holds against an honest writer's mistakes, not against a forger.
+  - *Evidence:* art/director.py:914-927 replay: contract.missing() on recorded evaluations; LEDGER-EVIDEN…; art/director.py:958-971 LEDGER-STILL: the still present, its bytes and detectors read aga…
+- **R2.v-rung-loosening-coverage** · PARTIAL (from-verifier) · SPEC2 §3 (no gate change without the owner); docs/ROADMAP.md:5048-5050 (a shrinking expec…
+  - *Capability:* Every loosening kind RUNG-0 names is itself tested.
+  - *Held by:* AGENTS.md §4 'python tools/rung.py selftest' (row 'loosenings named: a check dropped from the expected list, a detector's threshold raised, a budget raised')
+  - *Gap:* No selftest case for a rewritten reference, changed vectors or fewer plants. Shrinking R5's SUITES, art/selftests.py's SUITES or a suite's plant rows is not a named loosening. The agreed refinement (a shrinking expected set named) is not built.
+  - *Evidence:* tools/rung.py:297-334 six loosening kinds: EXPECTED_CHECKS, DETECT, budgets, references, …; tools/rung.py:543-549 the selftest covers EXPECTED_CHECKS, one detector and one budget, p…
+- **R2.m-gate-row-identity-fence** · PARTIAL (from-verifier) · SPEC2 §13 'expected row identities, executed identities ... Compare row identities, not c…
+  - *Capability:* The gate holds its own rows by identity: names and order held to registered rowset digests, duplicates refused, and, at one rung, the rows actually executed compared with the expected list.
+  - *Held by:* gate rows reasoncourt-fence, mintwatch-fence, designevent-fence, designir-fence, hermeneutics-fence (each red if the rows before its rung lose a name, change order or repeat a name). The final RECONCILE rowset 74db4c8d7…
+  - *Gap:* The executed row list is compared only up to reasoncourt-fence (the first 226 and five more), because the fence runs mid-gate. Rows 232-251 are held by source, not by execution. The final rowset is compared by reading. Skipped rows pass. No plant shows a fence refusing a dropped, renamed or duplicated row.
+  - *Evidence:* verify/verify.py:13141-13145 reasoncourt-fence: the rows by source, no duplicates, the fi…; verify/verify.py:13146-13148 reasoncourt-fence: the rows this gate ran (ROWS) are the 226…
+- **R2.m-admission-unrun-check-refused** · EXISTS-TESTED (from-verifier) · SPEC2 §13 'skipped required rows fail closed'; SPEC2 §13 layer 5 'missing evidence'; SPEC…
+  - *Capability:* An admission is refused when any expected check did not run or did not pass, when its evaluation has no ADMISSION-0 record, or when its still or inverse evidence is missing; an unrun check is recorded as not checked, ne…
+  - *Held by:* art/selftests.py suite 'director' (DIRECTOR SELFTEST PASSED). Its rows: 'a check that did not run is said (not checked) and keeps the admission out: a skip is not a pass' and 'an evaluation from before the record (none)…
+  - *Gap:* This holds for the director's checks on an admission, not for test-suite reports. The impact and the preview are deliberately not required by the studio's admission (AGENTS.md §4 IMPACT-0 and PREVIEW-0 rows).
+  - *Evidence:* art/director/contract.py:46 EXPECTED_CHECKS, the expected identities; art/director/contract.py:121-125 certifies only checks that ran and passed; an unrun expe…
+- **R2.m-child-ending-register** · EXISTS-TESTED (from-verifier) · SPEC2 §13 'executed identities ... A suite crash is failure, not partial pass'
+  - *Capability:* Every child process the gate starts that does not end 0 must be accounted for by a registered group, with its count and code; a missing, extra or wrongly-ending child turns the gate red.
+  - *Held by:* gate row reasoncourt-watch (eleven synthetic endings, each required to be refused). Later rungs' fences repeat the rule for their own rows (designevent-fence, designir-fence, hermeneutics-fence).
+  - *Gap:* This covers child processes started through subprocess.run. A Python exception inside a row is covered only by row()'s FAIL (verify.py:489-490), with no plant.
+  - *Evidence:* verify/verify.py:12818-12830 reasoncourt-watch: every non-zero ending heard is in a regis…; verify/verify.py:12831-12837 the four planted deaths end 70 with their named line
+- **R2.m-flagship-missing-evidence-stops** · EXISTS-TESTED (from-verifier) · SPEC2 §15 step 11 'Plant stale revision, invalid region, missing evidence, preview failur…
+  - *Capability:* The scripted acceptance (mark, request, candidate, preview, admit, undo) requires each stage's evidence before the next and stops at the first missing piece with its code, leaving the world unchanged; the visual baselin…
+  - *Held by:* art/selftests.py suite 'flagship' (FLAGSHIP SELFTEST 9/9 in both runs of art/build/selftests/20261016T162615Z.log). Its rows planted: an invalid region, the impact evidence missing, the preview's verification failing, a…
+  - *Gap:* This is an acceptance procedure for one world, the foundry yard, with the scripted director. The studio's own admission deliberately does not read this evidence (art/flagship.py:24-25).
+  - *Evidence:* art/flagship.py:10-22 the stages and their stop codes (FLAGSHIP-MARK ... FLAGSHIP-UNDO); art/flagship.py:124-129 the candidate stage requires held/strict and an impact, else FLAG…
+
+## R3 — the graybox: simulation, physics, movement, rebase, navigation
+
+R3, the graybox, is a deterministic kinematic FPS simulation, not a physics engine. sim.js and an independent Python twin, tick_ref.py, play a 1/120 s tick in binary64. The tick uses fdlibm sine/cosine/atan2 and BigInt-exact sqrt and hypot. The player is a cylinder that moves in two axis-separated steps, each retried by six fixed halvings, against grid columns, standing-target cylinders and AABB movers on one axis. Movers carry, stop or push the player, and an input contract refuses bad input whole. Rules 1-3 are pinned by values worked by hand, planted mutants and byte-for-byte agreement across Python, Chromium, node, Firefox 157 and Edge 155 (cross-browser measured once, tactical map only). ORT-1 rebases a rules-2 world's origin as an exact, receipted, stale-refusing transition (rules-3 worlds are refused). It shows that global positions are conserved. It does not show that a tick commutes with a rebase, and it measured that it does not: positions differ by up to 4.26e-14 m from tick 2,253 in O10. There are no rigid bodies, no solver, no capsule, OBB or mesh shapes, no slopes, no acceleration, no events, no navmesh and no blocked-move trace. Navigation is BFS over cells, with connectivity checks and a walk file refused when the map's identity changes. The gate has no graybox row. In art/selftests.py, only 'preview' (Python rules-3 determinism) and 'check' (mover table, tunnelling bound, rules handshake, REACH-1) exercise this code. Every other graybox check is an own check, not run at HEAD; host results for the current graybox/ sources date from 2026-10-14.
+
+**Surprises.**
+
+- The gate holds no graybox row: a grep of verify/verify.py for graybox, sim.js, tick_ref, ort_ref, rules_ref and bot_ref finds nothing. art/selftests.py runs no graybox command. Only 'preview' (tick_ref rules 3 in Python, determinism) and 'check' (the mover table via tick_ref.Mover, a regex over sim.js's text, REACH-1) exercise graybox code at HEAD. The browser sim.js, its self-test, the input contract, rules 2/3's worked values and ORT-1 are in no suite.
+- graybox/README.md:364-365 (current-state text) says cross-browser equality is 'measured the same in two V8 engines and against CPython; not yet measured in another engine'. The same README at 268-273 records Firefox 157 and Edge 155 measured on the owner's machine (MEASURED once, 2026-10-11). docs/BOUNDARIES.md:50 still says 'replay determinism is shown on one build in one page'.
+- The graybox's own launcher plays rules 1 (graybox/web/main.js:13, GrayboxSim = make(1); README.md:127 'serve.py's pages play rules 1'). RULES-3.md:18 measured that under rules 1 'wall tops [are] reached from the floor by way of a 1 m and a 2.6 m cover', so FPS-GRAYBOX-0 still has the walk-on-walls behaviour that rules 3 fixed for the art.
+- render-conforms, the check that the renderer decides nothing that blocks, has no planted defect in the tree. docs/BOUNDARIES.md:33: 'Seven planted renderer defects were refused once, in the build container; nothing in the tree re-runs them'.
+- math-fence's APPROX list (graybox/web/sim.js:1048-1049) fences 23 approximated Math functions but not Math.random. A tick calling Math.random would pass the fence and the source scan, and would be caught only by replay or twin divergence.
+- ORT-1 refuses every rules-3 world (ort_ref.py:167-168, ort.js:134, RULES-3.md:78-79), and every art scene names rules 3 since 0229. No runtime calls ORT-1 (ROADMAP:4251, 'the plaza calling ORT-1' not built). The geo-stability work therefore covers no world anyone plays. Its own O10 measurement shows that the tick does not commute with a rebase.
+- Three separate reachability models exist. graybox/check.py:48-70 does a BFS over C that ignores targets and the body radius. walk-1 (sim.js:822-843, bot_ref.py) closes target cells and allows no jumps. REACH-1 (art/dress.py and art/check.py) includes jumps, movers and target tops. REACH-1's agreement with the simulation was shown once by a container search (ROADMAP:4317-4321). The 'check' suite only holds two copies of REACH-1 to each other.
+- art/check.py:265-275 confirms that sim.js and tick_ref.py 'implement rules 3' by regex over their source text (e.g. 'rules === 3 \? 3 :'). It is a handshake on spelling, not behaviour.
+- main.js:351 clamps a frame's dt to 0.25 s, silently dropping simulated time on slow frames, and RULES-1.md does not mention it. Mouse look goes only to the first tick of each rendered frame (main.js:360).
+- Naming collision. In the gate, 'rebase' means a stale admission anchor merged ('there is no rebase', verify/verify.py:10733; preregister.json ADMIT-0). In ORT-1 it means moving a world's origin. SPEC2 §5's 'rebase' is the latter, and the gate's 'no rebase' says nothing about it.
+- Host evidence for the current graybox sources is indirect. graybox/ has not changed since f17a4b9 (2026-10-14). Host Edge 155 result files for rules2, rules3 and ORT exist under graybox/build/trace/tactical/ (2026-10-14 13:42-13:44), and ROADMAP:4343-4344 says 'every suite passed'. No stored output shows the Python verdict lines (RULES 3 HELD …, ORT-1 HELD …) on the host.
+
+- **R3.sim-profiles** · PARTIAL · SPEC2 §7 simulation profiles
+  - *Capability:* Separate authoring/query, gameplay, presentation and validation simulation profiles.
+  - *Held by:* none as a set; parts below
+  - *Gap:* No presentation profile: no interpolation between ticks and no visual-only effects layer beyond s.fx. The authoring/query profile is map checks and the art's REACH-1, not a general placement/distance/collision query API. The profiles are not named or separated as such.
+  - *Evidence:* graybox/web/sim.js:545-598 gameplay tick (step/advance); graybox/web/sim.js:1069 selftest (validation in the page)
+- **R3.tick-rate** · PARTIAL · SPEC2 §7 tick rate; SPEC1 §6 dt = 1/120 s
+  - *Capability:* A fixed tick rate chosen by profiling (60 or 120 Hz candidates).
+  - *Held by:* tick_ref.py rules2/rules3 identity comparison (own check, not run at HEAD): TICK is in every rules-2/3 hash's identity
+  - *Gap:* The rate is fixed at 120 Hz (matching SPEC1's dt), but nothing records it being chosen by profiling against 60 Hz. The cost figure is a container measurement taken afterwards.
+  - *Evidence:* graybox/web/sim.js:43 const TICK = 1 / 120; graybox/RULES-1.md:24 TICK = 1 ÷ 120
+- **R3.input-contract** · EXISTS-TESTED · SPEC2 §7 input sampling; §6 refusals are typed data
+  - *Capability:* Each tick's input record is admitted or refused whole before the tick, with typed categories and the state unchanged on refusal.
+  - *Held by:* own checks (AGENTS.md §4 input contract): sim.js selftest 'input-contract' (4 plants) and 'python graybox/tick_ref.py cases' + trace.py --cases. Not in the gate or art/selftests.py; not run at HEAD. Last host record 202…
+  - *Evidence:* graybox/RULES-1.md:63-104 contract 1, categories and order; graybox/web/sim.js:522-550 admit and step
+- **R3.input-sampling-live** · PARTIAL (reader EXISTS-UNVERIFIED, corrected) · SPEC2 §7 input sampling
+  - *Capability:* Live input sampling into fixed ticks: the accumulator, key state, mouse-delta assignment.
+  - *Held by:* gate rows simtick-preregistered, simtick-law, simtick-script, simtick-replay, simtick-equivalence, simtick-certify, simtick-resume, simtick-fence (the shell's SIM-TICK-0 tick). The graybox's main.js loop and the plaza's…
+  - *Gap:* No test of the live loop. The 0.25 s clamp silently drops simulated time on slow frames. Mouse look is quantised to the first tick of each rendered frame. Neither is written in RULES-1.md.
+  - *Skeptic:* Searched the whole tree with Grep for accumulat\|0.25)\|playMode\|mouse delta\|dt clamp\|catch-up\|spiral, and for Sim.TICK\|acc +=\|movementX in art/web. The graybox's float accumulator (main.js:350-365) and the same pattern in the native plaza (art/web/play.js:2313-2326) are untested, as the reader found…
+  - *Evidence:* graybox/web/main.js:312-316 mouse/keys accumulated; graybox/web/main.js:350-365 accumulator, dt clamped to 0.25 s, mouse delta given to the f…
+- **R3.integration** · EXISTS-TESTED · SPEC2 §7 integration; SPEC1 §6 semi-implicit Euler
+  - *Capability:* A specified integration method for gravity, the jump and landing.
+  - *Held by:* own checks, not run at HEAD: sim.js selftest 'gravity and jump'; tick_ref.py selftest plant 'the height's updates in the wrong order'; tick_ref.py verify against browser traces. The Python rules-3 tick is replayed by ar…
+  - *Gap:* Semi-implicit Euler for vertical motion only. Horizontal motion is kinematic, at a constant 6 m/s with no velocity state (RULES-2.md:108-109).
+  - *Evidence:* graybox/RULES-1.md:119-121 vy = vy − gravity·TICK, then feet = feet + vy·TICK, then groun…; graybox/web/sim.js:571-587 height step
+- **R3.arith-bounds** · EXISTS-TESTED · SPEC2 §7 arithmetic bounds
+  - *Capability:* A declared arithmetic contract: binary64, order of evaluation, no engine Math, domains, refusal of non-finite values.
+  - *Held by:* own checks, not run at HEAD: sim.js selftest 'rules-arithmetic' (plant: sine one bit off) and 'math-fence' (plants: rules 0 under the fence, a tick calling Math.cos); 'python graybox/rules_ref.py' (3 plants, RULES REFER…
+  - *Evidence:* graybox/RULES-1.md:11-26 binary64, left-to-right, nothing fused, the rules' own sin/cos/a…; graybox/web/sim.js:56-75 the contract in code
+- **R3.contact-ordering** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §7 contact ordering; SPEC1 §6 contacts sorted by (cell, entity_a, entity_b)
+  - *Capability:* Deterministic ordering of collision tests and resolution.
+  - *Held by:* none isolates the order; only twin agreement (tick_ref.py verify/rules2/rules3, own checks, not run at HEAD) over runs that may or may not exercise it
+  - *Gap:* There are no contact lists or manifolds to sort. Ordering is the fixed iteration order the RULES documents write down, not SPEC1's sorted contact key.
+  - *Skeptic:* The fixed orders are real: targets in map order with strict tt < bt (sim.js:716-721, RULES-1.md:130-131), and movers in world order (sim.js:432-456). The cited plant does not test order. _cells_from_centre (tick_ref.py:1342-1354) scans from floor(x/c) instead of floor((x-r)/c), so it drops the low-…
+  - *Evidence:* graybox/RULES-1.md:130-131 first target at equal distance kept; graybox/web/sim.js:716-721 strict tt < bt over targets in map order
+- **R3.solver** · MISSING · SPEC2 §7 solver iterations; SPEC1 §6 K=8
+  - *Capability:* A constraint solver with a specified iteration count (SPEC1: K=8 fixed, early-out forbidden).
+  - *Held by:* none
+  - *Gap:* No constraint solver of any kind. The only fixed-iteration loop is the six-halving search per axis. SPEC1's fixed-point K=8 solver does not exist.
+  - *Evidence:* graybox/RULES-1.md:117-118 move: one try, then six halvings; graybox/web/sim.js:654-660 moveAxis, six fixed halvings without early-out
+- **R3.sleeping-events** · MISSING · SPEC2 §7 sleeping, events; rigid-body event ordering
+  - *Capability:* Sleeping/waking bodies and an ordered physics/gameplay event stream (contacts, triggers, hits).
+  - *Held by:* none
+  - *Gap:* There are no bodies to sleep and no event stream. Hits, landings and objective entry exist only as state changes. ORT-1's 'event' is a rebase record, not a physics event.
+  - *Evidence:* graybox/RULES-2.md:96-98 a parked mover (speed 0) is a static box, not sleeping; graybox/web/sim.js:722-726 a hit changes state and view feedback s.fx; no event record
+- **R3.rng** · PARTIAL · SPEC2 §7 RNG
+  - *Capability:* A specified RNG contract for the simulation.
+  - *Held by:* indirectly by own checks (replay, snapshot-resume, twin agreement) that would diverge on randomness; art/selftests.py 'preview' rows B4-DETERMINISM / B4-SEED-SENSITIVITY for the preview's seeded input stream
+  - *Gap:* The tick uses no RNG, but no document states an RNG contract and nothing in the state carries one. The math-fence and source scan do not fence Math.random. No gameplay randomness exists.
+  - *Evidence:* graybox/web/sim.js:897-911 stress inputs from an integer LCG, outside the tick; graybox/web/sim.js:1048-1049 math-fence APPROX list (23 functions, Math.random not among …
+- **R3.checkpoints** · PARTIAL · SPEC2 §7 checkpoints; SPEC2 §5 physics steps restored from a checkpoint; SPEC1 §6 periodi…
+  - *Capability:* Checkpoint save/restore of the simulation state, then replay under the contract.
+  - *Held by:* own checks, not run at HEAD: sim.js selftest 'snapshot-resume' (plant: a tick count kept outside the state) and main.js 'resume-realm' (one-bit-changed snapshot must part)
+  - *Gap:* Snapshots are in memory only. No durable checkpoint, no periodic checkpoints and no undo of simulation steps by restore-and-replay.
+  - *Evidence:* graybox/web/sim.js:757-793 snapshot/restore, every number as its IEEE bits; graybox/web/sim.js:1307-1341 snapshot-resume in fresh instances with plant
+- **R3.determinism-scope** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §7 determinism scope; physics tests: same-build replay, cross-host replay where pro…
+  - *Capability:* Same-build deterministic replay; cross-engine/host replay only where promised, with the scope declared.
+  - *Held by:* same-build: art/selftests.py 'preview' B4-DETERMINISM (Python rules-3 tick, plant preview-shared-state caught; passed twice at HEAD) and page own checks (replay, hash-coverage 4 plants, snapshot-resume, resume-realm; no…
+  - *Gap:* Cross-engine equality is MEASURED once on the tactical map only (Firefox 157, Edge 155, Chromium 141, node 22). It does not cover the witness level, JavaScriptCore or rules 2/3 on Firefox. The browser-side checks are in no suite.
+  - *Skeptic:* Same-build replay is EXISTS-TESTED: motion.py:393-398 and the log at 551/561. The cross-engine promise is wider than its evidence. README:136 promises equality 'in every conforming JavaScript engine' for rules 1. It was measured once, on the tactical map (README:268-276). Rules 2/3 traces exist onl…
+  - *Evidence:* graybox/README.md:136-153 what must and need not be the same; graybox/README.md:268-276 what is not shown (witness level, JavaScriptCore, every build)
+- **R3.subset-declared** · EXISTS-TESTED · SPEC2 §17 supported physics/movement subset; §7 'start with a stable supported subset'
+  - *Capability:* A declared supported movement subset with an invariant checked on long runs.
+  - *Held by:* own check, not run at HEAD: 'python graybox/tick_ref.py rules3' asserts the 'never inside' invariant on W3/W4 and its nine plants. Host Edge 155 results at the current sources: graybox/build/trace/tactical/rules3/edge-1…
+  - *Evidence:* graybox/RULES-3.md:69-79 what follows and what does not; graybox/README.md:358-360 not here: ramps, ceilings, overhangs, interpolation
+- **R3.shape-aabb** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §7 collision: AABBs; validate degenerate geometry
+  - *Capability:* AABB collision shapes, validated against degenerate input.
+  - *Held by:* art/selftests.py 'check' (passed twice at HEAD): plants 'a mover's corner not a whole number of 1/256 m' and the tunnelling-bound plants; tick_ref.py rules2 K8-K10 (own check). No plant for a box without extent
+  - *Gap:* AABBs exist only as movers (kinematic, one axis) and as the shot's target box. There is no static AABB shape beyond grid columns.
+  - *Skeptic:* The row's own gap shows the claim is narrower than the capability: AABBs are only kinematic one-axis movers and the shot's target box. Of the degenerate-geometry checks, two are planted at HEAD: off-grid corners (log:300) and the tunnelling bound (log:282, 298). The extent check exists in three pla…
+  - *Evidence:* graybox/web/sim.js:370-393 checkMovers (extent, Q multiples, axis, len, speed, policy); graybox/web/sim.js:692-704 ray vs upright box (targets for shots)
+- **R3.shape-cylinder** · PARTIAL · SPEC2 §7 collision: spheres, capsules; character controller: capsule movement
+  - *Capability:* Sphere and capsule shapes; a capsule character.
+  - *Held by:* own checks (tick_ref.py verify/rules2/rules3), not run at HEAD
+  - *Gap:* The player is a vertical cylinder: a plan circle, plus a height of 1.8 m only against movers. Targets are cylinders to the body and boxes to shots. There are no spheres and no capsules.
+  - *Evidence:* graybox/RULES-1.md:40-46 circle of radius 0.35 against cells; target cylinder rr = radius…; graybox/RULES-2.md:26-27 body height 1.8 used only with movers
+- **R3.shape-heightfield** · PARTIAL · SPEC2 §7 collision: heightfields, static triangle meshes
+  - *Capability:* Heightfield / static world collision with render meshes kept separate.
+  - *Held by:* own check 'python graybox/check.py' (seven conversion mutations), not run at HEAD; host manifests graybox/build/tactical.manifest.json written 2026-10-10 after the last change to level.py/maps
+  - *Gap:* Collision is a stepped grid of columns from 0 to a top, a degenerate heightfield with no interpolation, slopes or overhangs. No static triangle meshes.
+  - *Evidence:* graybox/level.py:211 C = {w, h, cell, tops}: one solid column per cell; graybox/RULES-1.md:36-49 top(i,j), touching, groundAt
+- **R3.shapes-missing** · MISSING · SPEC2 §7 collision
+  - *Capability:* Oriented boxes, convex hulls, static triangle meshes, compound shapes, dynamic-mesh restriction.
+  - *Held by:* none
+  - *Gap:* No OBB, convex hull, triangle mesh or compound shape, and no conversion of meshes to convex compounds.
+  - *Evidence:* graybox/web/sim.js:336-353 blocked(): cells, targets, mover boxes only; graybox/README.md:358-359 'anything not a column standing on a cell' not here
+- **R3.triggers** · PARTIAL · SPEC2 §7 collision: triggers
+  - *Capability:* Trigger volumes.
+  - *Held by:* own checks (tick_ref.py verify; ort_ref.py case O8, the objective read through the origin), not run at HEAD
+  - *Gap:* One trigger-like region, the objective. It is a boolean recomputed each tick from the player's cell, with no events, no other trigger shapes and no triggers on other actors.
+  - *Evidence:* graybox/web/sim.js:662-667 inObjective: cell-rectangle test of the player's cell; graybox/RULES-1.md:124-125 onObjective
+- **R3.render-collision-separation** · EXISTS-TESTED · SPEC2 §7 collision: keep render and collision meshes separate
+  - *Capability:* The render world decorates and never decides what blocks; collision is C alone.
+  - *Held by:* art/selftests.py 'check': 'the art carries no collision and no false ceiling' with plants (passed twice at HEAD, log:247,261). Graybox page 'render-readonly'/'render-conforms' are own checks, not run at HEAD, and render…
+  - *Gap:* The graybox renderer's conformance check has no plant in the tree.
+  - *Evidence:* docs/BOUNDARIES.md:42-47 the three worlds, the owner's rule; docs/BOUNDARIES.md:33 seven renderer plants 'refused once ... nothing in the tree re-runs…
+- **R3.collision-source-revision** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §7 'preserve source revisions'; §5 collision/nav cache source revision checks
+  - *Capability:* Collision derived from a pinned source, with provenance and a manifest of digests.
+  - *Held by:* graybox/check.py mutations (own check; host record graybox/build/tactical.manifest.json at the current converter/map/layout digests): provenance stripped, opening collapsed, invisible blocker, wall passable, spawn in wa…
+  - *Skeptic:* Derivation and provenance are tested: check.py:85-90 and the mutations at 133-187. The 'pinned source' and 'manifest of digests' parts have no failing test. level.py:127-130 refuses an unpinned level, and check.py:37-43 re-checks the source bytes against the recorded sha256, but no mutation exercis…
+  - *Evidence:* graybox/level.py:112-131 source sha256s; a level not the pinned one refused; graybox/level.py:213-214 converter/canonical/collision sha256 in the manifest
+- **R3.broadphase** · PARTIAL · SPEC2 §7 broadphase; SPEC2 §16 'Rebuild BVH every tick — Do not assume'; SPEC1 §6 BVH med…
+  - *Capability:* A measured broadphase (grid, BVH or hybrid) with deterministic pair ordering, benchmarked incremental vs rebuild.
+  - *Held by:* none for the broadphase as such (twin agreement holds its results)
+  - *Gap:* An implicit uniform grid for cells and linear scans for targets and movers. Nothing is measured or benchmarked. There is no BVH, so SPEC1's per-step median-split BVH does not exist.
+  - *Evidence:* graybox/web/sim.js:323-334 touching(): the grid cells under the circle; graybox/web/sim.js:340-347 linear scans of every target and every mover box
+- **R3.narrowphase** · PARTIAL · SPEC2 §7 narrowphase; SPEC1 §6 SAT/GJK fixed-point
+  - *Capability:* Tested overlap/distance queries; SAT/GJK/EPA; contact manifolds with stable feature IDs; tolerance policy.
+  - *Held by:* own checks (tick_ref.py verify/rules2/rules3 worked values; selftest plant 'the shot's direction with the wrong sign'), not run at HEAD
+  - *Gap:* Overlap tests exist: circle against square, circle against box, cylinder against cylinder, ray against grid, ray against box. Strictness is defined throughout. There is no SAT/GJK/EPA, no distance query, no contact manifold and no feature IDs.
+  - *Evidence:* graybox/RULES-1.md:40-46 circle-square closest point, strict <; graybox/RULES-1.md:133-145 ray DDA over cells and ray-box slab test
+- **R3.ccd-tunnelling** · EXISTS-TESTED · SPEC2 §7 narrowphase CCD; physics tests: tunneling/CCD
+  - *Capability:* Prevent tunnelling of fast movers.
+  - *Held by:* art/selftests.py 'check': 'plant: the exporter refuses a mover past the tunnelling bound' and 'plant: a mover past the tunnelling bound, in the scene' (log:282,298; passed twice at HEAD). Also own check tick_ref.py rule…
+  - *Gap:* Prevention by refusal, not CCD. Movers faster than the bound are rejected rather than swept. The player has no swept test.
+  - *Evidence:* graybox/RULES-2.md:43-48 the tunnelling bound; graybox/web/sim.js:386-388 bound enforced (RULES2-MOVER)
+- **R3.rigid-bodies** · MISSING · SPEC2 §7 rigid bodies; SPEC1 §6 integration and constraint solving
+  - *Capability:* Mass, inertia, velocities, forces, impulses, restitution, friction, joints, debug draw, telemetry.
+  - *Held by:* none
+  - *Gap:* No dynamic rigid bodies. Only static cells, kinematic one-axis movers and pop-up targets. No forces, impulses, friction, restitution, joints, debug draw or physics telemetry.
+  - *Evidence:* graybox/RULES-1.md:51-55 the whole state: one player, targets; no bodies; graybox/RULES-2.md:108-109 no horizontal velocity; mover motion not added to vy
+- **R3.movers-carry-push** · EXISTS-TESTED · SPEC2 §7 moving-platform carry; physics tests: moving platforms
+  - *Capability:* Moving platforms carry, stop for or push the player, and replay exactly.
+  - *Held by:* own checks 'python graybox/tick_ref.py rules2' / 'rules3' (worked values K1-K11, R1-R4, R10-R11; plants 'no carry', 'no stop', 'push as stop', 'push into a wall', 'push along y'), not run at HEAD; host Edge 155 results …
+  - *Gap:* One-axis ping-pong boxes only. Momentum is not inherited (RULES-2.md:108-109).
+  - *Evidence:* graybox/RULES-2.md:96-109 a mover's step: rider, stop; graybox/RULES-3.md:53-63 push along x or z
+- **R3.cc-ground-jump** · EXISTS-TESTED · SPEC2 §7 character controller: grounded/airborne, ground detection, jump/gravity, camera-…
+  - *Capability:* Grounded/airborne state, ground detection, jump and gravity, camera-relative input.
+  - *Held by:* own checks, not run at HEAD: sim.js selftest 'gravity and jump', 'route …' (bot walks routes), 'spawn A/B'; tick_ref.py verify against browser traces
+  - *Evidence:* graybox/RULES-1.md:114-121 walking relative to yaw; height and onGround; graybox/web/sim.js:561-568 camera-relative fwd/side from sin/cos of yaw
+- **R3.cc-step** · EXISTS-TESTED · SPEC2 §7 step height; physics tests: slope/step
+  - *Capability:* Step height limit (0.55 m), with cover above it refused on foot and mounted by a jump.
+  - *Held by:* own checks, not run at HEAD: sim.js selftest 'cover'; tick_ref.py rules3 R7 ('a target's top more than a step above the feet is not ground')
+  - *Evidence:* graybox/RULES-1.md:44-46 blocked when top > feet + step; graybox/web/sim.js:1136-1157 cover check
+- **R3.cc-slope-accel** · MISSING · SPEC2 §7 slope limit; acceleration/deceleration
+  - *Capability:* Slope limit and acceleration/deceleration.
+  - *Held by:* none
+  - *Gap:* No slopes exist, so no slope limit. Speed is constant and instantaneous, with no acceleration, deceleration or air control model.
+  - *Evidence:* graybox/README.md:358 'ramps (heights step by at most 0.55 m)' not here; graybox/web/sim.js:566 constant speed·TICK per tick
+- **R3.cc-swept-depen** · PARTIAL · SPEC2 §7 swept collision/depenetration
+  - *Capability:* Swept collision and depenetration.
+  - *Held by:* own checks, not run at HEAD: tick_ref.py selftest plant 'five halvings for six'; tick_ref.py rules3 'never inside' invariant on W3/W4
+  - *Gap:* Axis-separated discrete moves with a fixed bisection, not a sweep. No depenetration: a body that starts inside is held, not resolved.
+  - *Evidence:* graybox/web/sim.js:654-660 move along x then z, six halvings; graybox/tick_ref.py:1315 _move_five plant
+- **R3.cc-wall-ceiling** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §7 wall/ceiling stability
+  - *Capability:* Walls hold at any height; ceilings stop a rise.
+  - *Held by:* own checks 'tick_ref.py rules3' (R5; plants 'walls by height alone', 'any wall height') and 'rules2' (K7; plant 'no ceiling'), not run at HEAD; art 'check' plant 'the scene names rules 2' (log:295) is a handshake on the…
+  - *Gap:* Ceilings exist only as mover undersides. The graybox's own page (serve.py) still plays rules 1, under which wall tops are reachable (RULES-3.md:18).
+  - *Skeptic:* The row's own gap makes it partial. There are no static ceilings: README:358-359 lists 'ceilings, overhangs' under Not here, and ceilingAt sees only mover undersides (sim.js:426-430). Walls at any height exist only under rules 3 (sim.js:348-351). The graybox's own page plays rules 1 (sim.js:39 root…
+  - *Evidence:* graybox/RULES-3.md:35-38 a wall holds the body at any height; graybox/web/sim.js:348-351 rules-3 wall test
+- **R3.cc-blocked-trace** · MISSING (resolved F15) · SPEC2 §7 trace explaining blocked/clipped moves
+  - *Capability:* A trace explaining why a move was blocked or clipped.
+  - *Held by:* none
+  - *Gap:* Nothing records which cell, target or box blocked a move, or by how much a move was clipped. The tick_ref/trace.py diagnostics locate disagreement between engines, not controller decisions.
+  - *Evidence:* graybox/web/sim.js:336-353 blocked() returns a boolean only; graybox/tick_ref.py:1667-1671 names the first differing field between implementations, no…
+- **R3.coherence-cover-reach** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §7 physics/gameplay coherence; reuse authoritative checks
+  - *Capability:* Collision blocks apparent paths, cover blocks shots and movement, movers' riders counted, drawn geometry kept above reach.
+  - *Held by:* art/selftests.py 'check' (passed twice at HEAD): REACH-1 plants (jump 6 not 7, log:262; rider left out, log:301; canopy over a lift, log:290); 'weapon occlusion' and 'cover' are page own checks without plants, not run a…
+  - *Gap:* REACH-1 was held against a search of the simulation only once, as a container measurement (ROADMAP:4317-4321). The suite compares two copies of the same model, not the model against the simulation.
+  - *Skeptic:* The row's gap already says REACH-1 is model against model: reach_here is computed 'with its arithmetic, operation for operation' (art/check.py:76-80), and it was held against the simulation once (ROADMAP:4317-4321). That makes it partial. A further coherence gap the row misses: movers block the bod…
+  - *Evidence:* art/check.py:76-77 reach_here, REACH-1 computed apart; art/check.py:278-287 rules handshake read from sim.js and tick_ref.py
+- **R3.coherence-doors-material** · PARTIAL (reader MISSING, corrected) · SPEC2 §7 physics/gameplay coherence
+  - *Capability:* Doors traversable, destruction updating collision/nav, material affecting friction or footsteps.
+  - *Held by:* art/selftests.py suite 'marks' (MARKS SELFTEST 19/19, passed twice in art/build/selftests/20261016T162615Z.log:7,33). Rows: 'clearance: worked values', 'clearance: never below a brute force', 'clearance: an opening is w…
+  - *Gap:* There are no doors, no destruction and no material-dependent friction or footsteps. A shot passes through overhead beams (README:360-361).
+  - *Skeptic:* I searched with Grep for doors?\|destructi\|footstep across the tree and found MARK-0 in art/studio_marks.py. It defines whether a marked opening is traversable, exactly: an opening (subtract) on an upright face must hold an upright rectangle 2r wide and as tall as the asked clearance, standing withi…
+  - *Evidence:* graybox/README.md:358-360 not here: damage, ramps, ceilings, overhangs; graybox/RULES-1.md:28-32 one set of constants; no material parameter
+- **R3.nav-graph** · PARTIAL · SPEC2 §7 navigation
+  - *Capability:* A navmesh or graph derived from validated collision, with portals, jumps, ladders, elevators, moving platforms, regional rebuilds and a debug view.
+  - *Held by:* own checks, not run at HEAD: graybox/check.py (bfs over C) and 'python graybox/bot_ref.py check/selftest' (BOT-REF-SELFTEST, six policy plants)
+  - *Gap:* A 4-connected cell grid graph, rebuilt from the map each time. It has no navmesh, portals, jump/ladder/elevator/moving-platform links, regional rebuild, cost model or debug view of path, blocked edge or source revision. It is not derived from rules-3 collision: movers and target tops are absent, and it ignores the body radius.
+  - *Evidence:* graybox/check.py:48-70 BFS over C, a step up of at most 0.55, targets ignored; graybox/web/sim.js:822-843 walkGraph BFS; targets' cells closed
+- **R3.nav-connectivity** · EXISTS-TESTED (corrected) · SPEC2 §7 navigation connectivity/reachability; §17
+  - *Capability:* Connectivity/reachability checks.
+  - *Held by:* graybox/check.py verify (probes, routes, spawn A to B, to the objective) runs at HEAD inside art/selftests.py 'check' ('play holds: the graybox map's own checks — 18 checks', log:244, 1088; happy path); its mutation 'an…
+  - *Gap:* Doorway boundaries are tested only as probe cells, not as widths against the body radius.
+  - *Skeptic:* Status is right; the held_by understated it. art/check.py imports graybox/check.py (57-59) and runs its verify on each brief's W and C (387-390). The connectivity checks therefore ran twice at HEAD. The mutations run only in check.py's main (133-187). The manifest's digests match the current level.…
+  - *Evidence:* graybox/check.py:96-107 probes: wall blocks, open reachable from spawn A; graybox/check.py:108-129 routes connected, spawn A to B, to the objective, routes distinct
+- **R3.nav-stale** · PARTIAL · SPEC2 §7 'Stale nav is never silently accepted'; §5 nav cache source revision checks
+  - *Capability:* Stale navigation data is never silently accepted.
+  - *Held by:* own check 'python graybox/bot_ref.py selftest': plants 'the map's digest changed', 'the map's name changed, its digests kept' must give BOT-REF-MAP; not run at HEAD
+  - *Gap:* No nav cache exists to go stale, because the graph is recomputed each use. The one derived navigation artifact, the bot's walk file, is bound to the map's digests and refused when they differ. Nothing else is.
+  - *Evidence:* graybox/bot_ref.py:304-311 a walk whose map converts here with other digests refused (BOT…; graybox/bot_ref.py:747-755 the two map-identity plants
+- **R3.tests-missing** · MISSING · SPEC2 §7 physics tests
+  - *Capability:* Primitive collision matrix, symmetry, resting stacks, high-speed impacts, friction/restitution bounds, joint stress.
+  - *Held by:* none
+  - *Gap:* None of these tests exist, and most have no subject: no stacking bodies, impacts, friction, restitution or joints, and no pairwise shape matrix or symmetry test.
+  - *Evidence:* graybox/web/rules2_cases.json K1-K11 (case names listed): movers only; graybox/web/rules3_cases.json R1-R14 (case names listed): walls, targets, push
+- **R3.tests-fuzz-drift** · PARTIAL · SPEC2 §7 physics tests; §5 large-coordinate cases
+  - *Capability:* Invalid-geometry fuzzing and long-run drift/energy diagnostics.
+  - *Held by:* own checks, not run at HEAD: input-contract table (70 hostile cases); tick_ref.py rules2/rules3 W1-W4 stress runs with the never-inside invariant; level.py/check.py refusals. translate_probe.py is a measurement, not a c…
+  - *Gap:* Fixed tables and generated stress runs, not fuzzing. No energy diagnostics, since there is no energy to conserve. Drift is measured only once by a probe.
+  - *Evidence:* graybox/web/sim.js:897-911 stress inputs (3,600 ticks); graybox/tick_ref.py:1411-1425 invariant over the stress runs
+- **R3.ort-transition** · EXISTS-TESTED · SPEC2 §5 'rebase must preserve relative geometry … within an explicitly declared contract…
+  - *Capability:* A rebase as a transition bound to its basis: prepare writes nothing, commit refuses stale, replayed or tampered input, receipts chained, every coordinate field declared.
+  - *Held by:* own check (AGENTS.md §4 ORT-1): 'python graybox/ort_ref.py' (14 cases, twelve plants) + trace.py --ort + engine comparison (five tampers), not run at HEAD; host Edge 155 results at the current sources graybox/build/trac…
+  - *Gap:* Applies to rules-2 worlds only: rules 3, which every art scene plays, is refused (ORT-RULES). Nothing in the runtime calls it, and there is no durability or concurrency (ORT-1.md:129-131).
+  - *Evidence:* graybox/ORT-1.md:53-76 frame table and closure (ORT-UNDECLARED); graybox/ORT-1.md:90-131 prepare, commit, receipts
+- **R3.ort-exactness-guard** · EXISTS-TESTED · SPEC2 §5 large-coordinate and boundary cases, overflow plants
+  - *Capability:* The exactness guard: a rebase that would round is refused; conservation re-checked without floating point; bounds on the origin.
+  - *Held by:* own check 'python graybox/ort_ref.py' (O4 ORT-INEXACT, O5 the 2^20 bound, O6 ORT-MOVER; plant 'a rebase that rounds'), not run at HEAD; host Edge results 2026-10-14
+  - *Evidence:* graybox/ORT-1.md:33-39 TwoSum guard, ORT-INEXACT; graybox/ort_ref.py:87-92 exact_sub (TwoSum, finite)
+- **R3.ort-commutation** · PARTIAL · SPEC2 §5 'Do not claim all operations commute with rebase. Test and list the exact operat…
+  - *Capability:* A list of the exact operation classes proven to commute with a rebase.
+  - *Held by:* own check ort_ref.py (O2 there and back gives the same bytes; O3 rider carried across a rebase; O8 objective through the origin), not run at HEAD
+  - *Gap:* What is proven is that the rebase conserves global positions exactly, and that a rebase followed by its inverse restores the bytes. No list of operation classes that commute exists. The tick is shown not to commute bitwise, and no rebase-before-op vs op-before-rebase test exists for any op, authored edits included.
+  - *Evidence:* graybox/ORT-1.md:40-42 'What it does not conserve: the bits of the ticks after it'; docs/ROADMAP.md:4249-4250 O10: equal until tick 2,253, then apart by up to 4.26e-14 m
+- **R3.spec1-atlas** · CONFLICTS-WITH-SPEC (resolved F15) · SPEC1 §3
+  - *Capability:* A fixed-point chart hierarchy (World/Building/Bay/Platform/CameraRig, depth 8) with an exhaustively tested cocycle, where R∘Op = Op∘R for every op.
+  - *Held by:* none
+  - *Gap:* No charts, hierarchy or cocycle. There is one origin per rules-2 world.
+  - *Conflict:* ORT-1.md:17-19 records the owner's 'batch/scrap and proceed' (ORT-1.md:11): 'Scrapped, and why: the int32 region and local coordinates (Verðandi's state is binary64 metres under rules 1 and 2; a second state model would be a second simulation)'. ORT-1.md:40-42 holds that a rebase does not conserve later ticks' bits ('…
+  - *Evidence:* graybox/ORT-1.md:17-20 int32 region and local coordinates scrapped; graybox/ORT-1.md:29-32 one origin per world, whole cells
+- **R3.spec1-fixedpoint** · CONFLICTS-WITH-SPEC · SPEC1 §6 Q32.32; SPEC2 §16 'Fixed-point for all physics — Do not assume'
+  - *Capability:* Q32.32 fixed-point narrowphase, integration and solver.
+  - *Held by:* none
+  - *Gap:* The graybox is binary64 throughout, made portable by fixing every rounding. Only the mover phase is integer, held exactly as doubles in units of 1/256 m.
+  - *Conflict:* graybox/README.md:131-134, the owner's ruling of 2026-10-11: 'Keep the scope limited to authoritative state, and let the measured divergence—not a blanket desire for identical math—determine which operations need replacement'. ORT-1.md:18-19 also rejects a second (int) state model. SPEC2 §16 itself says not to assume …
+  - *Evidence:* graybox/RULES-1.md:13-14 every number an IEEE 754 binary64 double; graybox/README.md:131-134 the owner's ruling on the math layer
+- **R3.bench** · PARTIAL · SPEC2 §8 performance policy; §7 subsystem timing
+  - *Capability:* Benchmarks recording frame-time distributions, physics timings and scene/hardware/settings context.
+  - *Held by:* own measurement 'python graybox/serve.py tactical --bench' (AGENTS.md §4: 'a draw and readback, never a frame rate'), a measurement not a check; last output graybox/build/bench/tactical 2026-10-09
+  - *Gap:* Render draw timing only. No p99, frame pacing, missed presents, draw calls, memory, physics timing in the bench, or scene revision hash (map name only). No driver, power, thermal or cache context, and no repeated target-hardware runs.
+  - *Evidence:* graybox/serve.py:130-157 report: p50/p95/max per pose and renderer, UA, WebGL renderer st…; graybox/web/main.js:240-279 benchMode: mean of K draws each with a 1-px readback
+- **R3.v-fx-noninterference** · EXISTS-TESTED (from-verifier) · SPEC2 §7 simulation profiles: Presentation (interpolation and visual-only effects)
+  - *Capability:* Visual-only feedback (hit marker, flashes, last shot) is kept apart from the authoritative state and never reaches it.
+  - *Held by:* own check (AGENTS.md §4 graybox runtime: serve.py --selftest), page self-test 'fx-noninterference' with plant 'a tick that reads the flashes'; not run at HEAD
+  - *Gap:* No interpolation between ticks. The test runs under rules 1 only, because the page plays GrayboxSim = make(1).
+  - *Evidence:* graybox/web/sim.js:499 fx 'not part of the authoritative state'; graybox/web/sim.js:768-780 snapshot leaves fx out
+- **R3.v-state-identity** · EXISTS-TESTED (from-verifier) · SPEC2 §5 distinct hashes for runtime snapshot; SPEC2 §7 determinism scope
+  - *Capability:* Every tick's hash is bound to the rules version, every constant (gravity, TICK) and the world, and covers every leaf of the authoritative state.
+  - *Held by:* own checks, not run at HEAD: page 'hash-coverage' (four plants: hash blind to vy, blind to downFor, an unhashed leaf written each tick, an unhashed leaf no tick writes); tick_ref.py rules3 plant 'the wall left out of th…
+  - *Gap:* FNV-1a 64 is a cheap comparison, not collision-resistant. The snapshot, not the hash, is the identity for the checks (RULES-2.md:136-137).
+  - *Evidence:* graybox/web/sim.js:457-482 identity text: rules, P, TICK, input, world; graybox/web/sim.js:734-750 rules-2/3 hash starts from the identity
+- **R3.v-rules-handshake** · EXISTS-TESTED (from-verifier) · SPEC2 §7 'start with a stable supported subset'; physics/gameplay coherence
+  - *Capability:* A scene is played only under rules that both the simulation and its twin implement, checked from their sources.
+  - *Held by:* art/selftests.py 'check' (passed twice at HEAD): plants 'the scene names rules 4, which neither sim.js nor tick_ref.py implements' (log:294), 'the scene names rules 2' (log:295), 'a scene that names no rules' (log:304),…
+  - *Gap:* The art layer holds only its own scenes to this. The graybox's own page plays rules 1, under which walls are climbable (sim.js:39, RULES-3.md:18).
+  - *Evidence:* art/check.py:278-287 check_rules reads sim.js and tick_ref.py's rules, Q and BODY; art/check.py:270-275 the twin's RULES3, Q, BODY read from source
+- **R3.v-rigid-bodies** · MISSING (from-verifier) · SPEC2 §7 rigid bodies; §7 'Specify … solver iterations, sleeping, events'; §7 physics tes…
+  - *Capability:* Rigid bodies: mass, inertia, velocities, forces/impulses, restitution, friction, sleeping, joints, solver iterations, events; with the matching physics tests (collision matrix, symmetry, resting stacks, high-speed impac…
+  - *Held by:* none
+  - *Gap:* No dynamic bodies at all. Movers are kinematic one-axis boxes, and the player is a kinematic controller. There is no solver, no sleeping, no event stream, and none of the rigid-body tests.
+  - *Evidence:* graybox/web/sim.js:44-47 P: no mass, friction or restitution; graybox/RULES-2.md:107-109 no horizontal velocity; mover motion not added to vy
+- **R3.v-accel-slope** · MISSING (from-verifier) · SPEC2 §7 character controller: slope limit; acceleration/deceleration
+  - *Capability:* Acceleration/deceleration and a slope limit for the character controller.
+  - *Held by:* none
+  - *Gap:* Constant 6 m/s with no acceleration. There are no slopes, so there is no slope limit.
+  - *Evidence:* graybox/web/sim.js:565-569 each moving tick moves speed·TICK exactly: no velocity state; graybox/RULES-2.md:108-109 the player has no horizontal velocity
+- **R3.v-blocked-trace** · MISSING (reader PARTIAL, from-verifier, resolved F15) · SPEC2 §7 character controller: 'trace explaining blocked/clipped moves'
+  - *Capability:* A trace explaining blocked or clipped moves.
+  - *Held by:* own check tick_ref.py rules2 K3 (a mover's 'stopped' worked by hand at ticks 8, 9, 20), not run at HEAD
+  - *Gap:* Only a mover records that it was held (stopped), and refused inputs carry a category. A player's blocked or halved move records no cell, box, target or wall that blocked it, and nothing reports how far the halving clipped.
+  - *Evidence:* graybox/web/sim.js:440-451 a mover's stopped flag in the state; graybox/web/sim.js:654-660 moveAxis records nothing of what blocked or how far it clipped
+- **R3.v-reuse-checks** · PARTIAL (from-verifier) · SPEC2 §7 physics/gameplay coherence: 'Reuse existing authoritative checks instead of dupl…
+  - *Capability:* Reuse existing authoritative checks instead of duplicating equivalent checks.
+  - *Held by:* art/selftests.py 'check' (passed twice at HEAD): the graybox's own map checks run inside it (log:244, happy path); the player's constants read from sim.js's declaration, plant 'the scene's player jumps 6 m/s, not sim.js…
+  - *Gap:* Reuse is real for the map checks, the player's constants and the mover table. REACH-1, the mover-travel checks and the tick itself are deliberately computed twice as independent verifiers (AGENTS.md:88; the tick twins by the owner's ruling, RULES-1.md:4-7). No plant shows the reused map checks refusing inside the art suite.
+  - *Evidence:* art/check.py:57-59 imports graybox/check.py; art/check.py:387-390 runs gcheck.verify
+- **R3.m-shell-simtick** · EXISTS-TESTED (from-verifier) · SPEC2 §7 'Choose the tick rate... Specify input sampling... determinism scope'
+  - *Capability:* An integer fixed-tick simulation of the shell's live walk: 64 Hz at exactly 15,625 us, raw inputs bound to ticks by timestamp, one command per tick, held-key coalescing, typed refusals, and a session replayed and certif…
+  - *Held by:* gate rows simtick-preregistered, simtick-law (four law mutants caught), simtick-script, simtick-replay, simtick-equivalence, simtick-certify, simtick-resume, simtick-fence
+  - *Gap:* It moves the authoring camera on the kernel's grid (cardinal steps, a heading), not the FPS gameplay simulation. The window build that samples a real mouse (--cfg shell_window) is off the gate.
+  - *Evidence:* shell/simtick.rs:11-35 the tick law, no float, clock or window; shell/simtick.rs:163-233 the accumulator
+- **R3.m-oracle-game-layer** · PARTIAL (from-verifier) · SPEC2 §7 'Specify ... RNG, checkpoints'; Presentation profile (interpolation)
+  - *Capability:* Urðr's frozen discrete game layer carried in oracle/game: rngstream (a consumed canonical RNG stream), savegame (content-addressed save), rerun (from-origin replay: REPRODUCED or DIVERGED), actionlog, enact, cue (input …
+  - *Held by:* gate rows game-frozen, game-suites (Urðr's 411 tests in place, each slice's witness), game-plant (a flipped golden refused by the byte fence and by test_move), game-not-runtime
+  - *Gap:* This is frozen evidence for a grid-step world, not a runtime. game-not-runtime forbids kernel/, workshop/ and shell/ from reaching it. The graybox has no RNG, no save or checkpoint of a run ('No run is persisted', ORT-1.md:76) and no interpolation between ticks (README:359-360).
+  - *Evidence:* oracle/game/README.md:18 tools/physics: field.py and rational.py only; oracle/game/README.md:34-41 the four rows
+- **R3.m-authoring-query** · EXISTS-TESTED (from-verifier) · SPEC2 §7 'Authoring/query (placement, distance, collision, geometry checks)'
+  - *Capability:* Exact authoring-time collision queries outside the gameplay tick: point-in-grown-box and a segment-vs-AABB slab test in rational arithmetic, against every box of a scene (collision, dressing, swept movers, targets), wit…
+  - *Held by:* art/selftests.py suite 'path' (PATH SELFTEST 11/11, passed twice in art/build/selftests/20261016T162615Z.log:16,43; plants camera-endpoints-only, camera-no-margin, camera-visuals-ignored, frame-any-ring)
+  - *Gap:* Used only for the preview's camera path (and MARK-0's clearance). It is not a general query API, and nothing in the graybox's tick reads it.
+  - *Evidence:* art/camera.py:84-103 obstacles: collision, visuals, movers over their travel, targets; art/camera.py:114-134 inside and crosses (exact slab test in Fraction)
+- **R3.m-physics-import-route** · MISSING (from-verifier) · SPEC2 §7 rigid bodies, joints; SPEC1 §6 Q32.32
+  - *Capability:* The declared route by which physics may enter Verðandi: verbatim import of Urðr's tools/physics from urdr-oracle-1 by the GAME-0 route (exact Z/Q 1D and n-D dynamics, the frictionless n-contact LCP, articulated joints, …
+  - *Held by:* none
+  - *Gap:* Nothing is imported beyond the two modules kinema needs. By RUNGS.md:7316-7317, Urðr's own contact law records that its 3D tick does not exist yet, so 3D contacts would need the new-semantics route.
+  - *Evidence:* verify/RUNGS.md:7307-7319 PHYSICS-0: what the tag carries, 'None of it is imported yet', …; docs/ROADMAP.md:6037-6043 physics reaches the studio by GAME-0
+
+## R4 — the art layer's admission algebra: director, ledger, certificates, glue, held/strict, transactions
+
+R4 is the art layer's admission path, all of it off the gate. It covers DIRECTOR-0's canonical intents, scope protocol and hash-chained ledger; ADMISSION-0's records and evidence; commits that survive a crash and are fenced by a lock; HELD-0 and STRICT-0's exact footprints and regions; and CERT-0 and GLUE-0's certificates and pair census. These are held by art/selftests.py suites (director, crashtest, racetest, held, strict, cert, glue, studio, flagship, txn), which passed twice at HEAD with their plants caught. Base-revision binding, stale refusal, atomic multi-file commit, recovery to parent or child, single-writer fencing, explicit admission gated on evidence, and local invariants are genuinely EXISTS-TESTED. Undo is a compensating intent built from a stored text inverse. That inverse is byte-exact only for a subset of edits (narrower and different from what 0244 states). Undo is not checked against the undone admission's child head, and it cannot undo a layout. Refusals are typed at evaluation but become strings at admission; geometric containment is opt-in by the owner's ruling; the certificate is written after the commit and never gates; the critical-pair census is a 21-pair sample. SPEC1's normal-form decision procedure (Q1) and region-local admission cost do not exist, and its Q3 inverse gate conflicts with the repository's rule that the ledger, not the certificate, is the authority.
+
+**Surprises.**
+
+- The stored inverse's exactness is narrower and different from 0244's FOUND and art/STUDIO.md:387-389 ('every -' inexact; 'only + and = on single-spaced statements are exact'). I extracted apply_revision (art/director.py:272-308) with ast into a scratch script and round-tripped it. '+' is byte-exact only when the parent ends in exactly one LF (no final LF, or two, fails). '-' of the last statement IS exact; '-' of a middle one is not. '=' also fails on a line with an inline comment not preceded by exactly two spaces. All four current briefs end in a single LF and have no inline comments, so today's briefs fall in the subset the doc describes.
+- art/certificate.py's selftest pins the defect. The 'found:' row and the want_exact=False cases (art/certificate.py:126-149) assert that aligned '=' and '-' are NOT byte-exact. A repair of the revision language (the owner's to rule) will turn two CERT SELFTEST rows red unless they are rewritten with it.
+- CERT-ART-ONLY can never fire on a certificate built by make(). make() copies the child's world and exporter parts into the parent (art/certificate.py:69-71), so p0 equals p1 by construction (art/certificate.py:92-94). Art-only is enforced only indirectly, through CERT-HEAD. The selftest's plant (art/certificate.py:161-162) hand-builds an inconsistent certificate.
+- Certificates are written by studio.py only, after the ledger commit, with a plain open() (art/studio.py:1135-1139), outside the content lock and durable.write. Any exception is swallowed (art/studio.py:1632-1633). A crash between the admit event and the certificate leaves an admission with no certificate, and nothing regenerates it. The director's command line writes none.
+- Studio undo bookkeeping parses free text. Gateway.undo decides which admissions are undone from observed.note starting 'undo of ledger #' (art/studio.py:1589-1591), not from evidence.inverse_of. A command-line admission whose --note has that prefix marks an admission undone; a command-line undo via --inverse-of without that note is invisible to the studio's walk.
+- Neither undo path checks that the current head is the undone admission's head_after. inverse_of is checked only as equality of revision lines (art/director.py:741-745, 920-922). After a rebase, the inverse is applied to a hand-edited text without notice.
+- cmd_rebase records whatever the files hold as the new head with no check run or required (art/director.py:849-857), and replay accepts it (art/director.py:936-940). It is an explicit, logged, but unvalidated mutation path beside admission.
+- art/director/README.md:188 and :208 still say 62 vectors; vectors.json and the log (line 113) hold 65. README:208's 'three planted rule defects caught' by conform.rs was a one-time manual exercise (docs/ROADMAP.md:5229: four planted, three caught). conform.rs has no plant mechanism, so nothing repeats it, and conform.rs is in neither the gate nor art/selftests.py.
+- A failed check's witness is discarded: Workspace._export keeps only {name, ok} (art/director.py:261), so the verdict and ledger record which check failed but not what failed it.
+- Director refusals lose their code at the studio boundary. quiet() maps every SystemExit (HEAD-MOVED from the fence, ADMISSION-0, SHARED-MAP, BUSY) to STUDIO-DIRECTOR-REFUSED, with the original code inside the message text (art/studio.py:1643-1651).
+- scope.py's material identity uses floats. material_record formats roughness, metallic and strength as '%.4f' % float(x) (art/director/scope.py:53-63), and _light_view compares float candelas (scope.py:133). Values differing below the fourth decimal digest equal for DIRECTOR-0, while scene_diff compares exact bytes, so the two notions of 'changed' can disagree. I did not check whether the exporter can emit such values.
+- glue.compose treats '+' of an identical statement and '-' of an absent one as no-ops (art/glue.py:59-63), while apply_revision and admission refuse them (INTENT-APPLY). The census's algebra is deliberately not the admission's (documented at art/glue.py:23-24), so a GLUE verdict does not predict that both admissions succeed.
+- studio_txn.py is in art/selftests.py and passes, but it is a reference model of studio-generation promotion that no program executes (docs/STUDIO-CONTRACT.md:5, 203, 230). Its pass shows the decision table's consistency, not a running recovery.
+
+- **R4.adm-parse-schema** · EXISTS-TESTED · SPEC2 §6 admission sequence: parse schema
+  - *Capability:* Parse a candidate against a versioned schema and refuse malformed, non-canonical or unknown-version input with a stable code before anything is evaluated.
+  - *Held by:* art/selftests.py director: 'G-unknown-version.intent is refused on input (INTENT-VERSION)', 'H-malformed.intent is refused on input (INTENT-NUMBER)', 'the conformance vectors, reproduced by the reference (65)'; check: t…
+  - *Gap:* The schema covers the intent envelope and the art statement grammar. Migration is refused by design: a version other than '0' is never translated.
+  - *Evidence:* art/director/intent.py:122-149 loads(): ASCII, no numbers or null, duplicate keys refused…; art/director/intent.py:168-212 validate(): exact field set, version '0' only (INTENT-VERS…
+- **R4.adm-permissions** · PARTIAL · SPEC2 §6 admission sequence: check permissions/capabilities
+  - *Capability:* Check the permissions and capabilities of the proposer and the operation before admission.
+  - *Held by:* art/selftests.py director: 'an intent that adds a mover (play) is refused whatever it grants (SCOPE-PLAY)', 'an address of a kind the classifier does not know ... classifies C, and the director will not admit it', 'a la…
+  - *Gap:* No principal or role model. The admitting person is a free-text chooser ('the owner' by default, art/director.py:769), and the studio's capability is one token held by the page. Permissions are the intent's own declared grants plus fixed reservations, not grants issued by an authority. The layout is compiled under a whole-world grant in a scratch design project (art/director.p…
+  - *Evidence:* art/director/scope.py:165-174 SCOPE-RESERVED-GRANT for play/, layout/<region> grants only…; art/director/scope.py:217-220 SCOPE-PLAY: movers, rules, spawns and grid never grantable
+- **R4.adm-base-revision** · EXISTS-TESTED (resolved F8) · SPEC2 §6 admission sequence: check base revision; SPEC2 §2.3 candidate isolation
+  - *Capability:* Bind a candidate to its world, base revision, payload digest and tool versions, and check the base it meets.
+  - *Held by:* art/selftests.py director: 'a candidate checked at the old head is not admitted at the new one', 'C, re-evaluated at the new head, is a new event naming the old (CLEAN, HEAD-MOVED)'; studio: 'B, drawn at the head before…
+  - *Gap:* An intent written against an older head is re-evaluated at the current head (HEAD-MOVED is not a refusal: art/director/scope.py:43-44) and can be admitted if CLEAN there. Staleness is enforced against the evaluation's head and the drawn head, not the intent's own base. The world is bound only by the brief's name (INTENT-BRIEF).
+  - *Evidence:* art/director/intent.py:159-165 base = {art, world, exporter} sha256; head = sha256 of the…; art/director/scope.py:255-262 written_against and checked_against; HEAD-MOVED
+- **R4.adm-references-types** · EXISTS-TESTED · SPEC2 §6 admission sequence: validate references/types
+  - *Capability:* Validate the references and types a candidate introduces (dangling or cyclic references, unknown fields, out-of-bounds values).
+  - *Held by:* art/selftests.py check: 'plant: the exporter refuses a tower in a region never declared' and the number-grammar plants; director: the conformance vectors (65), among them 'materials in a cycle of parents: refused'; qual…
+  - *Gap:* The only references the language has are materials (with parents, which no brief uses) and regions; SPEC2's relations (hosted_in, anchored_to, ...) do not exist to validate. Of the 18 scope vectors, none plants GRAPH-DANGLING; only the cycle is vectored.
+  - *Evidence:* art/director/scope.py:70-99 changed_materials(): GRAPH-DANGLING and GRAPH-CYCLE over mate…; art/director/scope.py:190-192 a piece naming a missing material is GRAPH-DANGLING
+- **R4.adm-region-scope** · EXISTS-TESTED · SPEC2 §6 admission sequence: check region containment; SPEC2 §5 transaction binds declare…
+  - *Capability:* Check that everything a candidate changes or affects lies inside its declared region (scope patterns, and layout cells inside granted regions).
+  - *Held by:* art/selftests.py director: 'a LEAKAGE candidate is not admitted without --accept-leakage'; studio: 'a LEAKAGE candidate drawn but not admitted here'; the scope vectors 'the layout closes a cell outside its grant: refuse…
+  - *Gap:* Containment here is in address space. Geometric containment is STRICT-0, which is opt-in (next row). The command line can admit LEAKAGE when a person passes --accept-leakage, and that is recorded.
+  - *Evidence:* art/director/scope.py:29-36 pattern grammar and the namespaces granted only by name; art/director/scope.py:181-184 SCOPE-LAYOUT: a cell changed outside every layout grant
+- **R4.adm-region-strict** · EXISTS-TESTED · SPEC2 §6 admission sequence: check region containment
+  - *Capability:* Geometric region containment: every box a candidate changes lies inside the union of marked regions, decided exactly, with a receipt and an inverse receipt recorded at admission.
+  - *Held by:* art/selftests.py strict: 'a candidate outside the regions is refused at admission, and the refusal recorded', 'admitted with its receipt and inverse receipt...', plants strict-not-checked, strict-any-region and strict-n…
+  - *Gap:* Strict is opt-in per request by the owner's ruling ('held should default to information but be opt-in per request', docs/STUDIO-CONTRACT.md:291-292). Requests that are not strict, and every queue request, are not geometrically contained.
+  - *Evidence:* art/scene_diff.py:528-552 classify(): inside, crossing, touching or outside in rationals; art/scene_diff.py:568-625 footprint(): every box changed, added, removed or affected, mat…
+- **R4.adm-dependency-invalidation** · EXISTS-TESTED · SPEC2 §6 admission sequence: compute dependency invalidation
+  - *Capability:* Compute which dependents a change invalidates (pieces affected through a changed reference, stale marks, stale cached results).
+  - *Held by:* art/selftests.py director: the scope vectors 'a shared material changed: what else uses it leaks' and 'the same content, written again: early cutoff', the memo plants memo-no-validate and memo-key-text; held: 'a shape n…
+  - *Gap:* The dependencies are the material reference graph and a shape's anchor box. There is no general relation graph and no registry of derived caches: the collision, nav and scene are rebuilt by a full export on every evaluation rather than invalidated.
+  - *Evidence:* art/director/scope.py:25-28 the reference graph and early cutoff; art/director/scope.py:87-99 changed materials closed over parents
+- **R4.adm-local-invariants** · EXISTS-TESTED · SPEC2 §6 admission sequence: run local invariants
+  - *Capability:* Run local invariants on the candidate (play geometry, no dressing where a player can be, collision is C, fields bounded, movers under the rules), where a skipped check is not a pass.
+  - *Held by:* art/selftests.py check: about 40 plants per brief, each refused by its named check; director: 'a check that did not run is said (not checked) and keeps the admission out: a skip is not a pass', 'candidate F evaluates RE…
+  - *Gap:* The failing check's witness is dropped: Workspace._export keeps only {name, ok} (art/director.py:261), so the verdict and ledger say which check failed but not which piece.
+  - *Evidence:* art/director/contract.py:46-56 EXPECTED_CHECKS; art/director/contract.py:121-125 certifies only checks that ran and passed; skipped ones …
+- **R4.adm-nonlocal-checks** · PARTIAL · SPEC2 §6 admission sequence: run required non-local checks
+  - *Capability:* Run required non-local checks: connectivity, sightlines, budgets, and nav/collision coherence.
+  - *Held by:* art/selftests.py check: 'play holds: the graybox map's own checks — 18 checks' (happy path) and the 'collision is C, exactly' plants; quality: 'plant: more boxes than the budget — refused'; director: 'candidate E evalua…
+  - *Gap:* Sightlines and visibility are not an admission check; LEGIBLE-0 is advisory by rule. No art-suite plant breaks a route, so connectivity's failure path is held only by the graybox's own mutations, which were not run at HEAD. Every check runs over the whole world on every evaluation, with no local versus non-local split.
+  - *Evidence:* graybox/check.py:48-70 bfs() path over C; graybox/check.py:119-124 route connected, spawn A to spawn B, spawn A to the objective
+- **R4.adm-prior-values** · PARTIAL · SPEC2 §6 admission sequence: capture prior values; SPEC2 §5 transaction binds prior value…
+  - *Capability:* Capture the prior values of everything a transaction changes, so it can be inverted exactly.
+  - *Held by:* art/selftests.py cert: 'each admission's certificate: the inverse applied to the child gives the parent, byte for byte or (said) token for token' and the 'found:' row; crashtest (the pending folder's old bytes restore t…
+  - *Gap:* Prior values are kept as statement text, not bytes. A scratch extraction of apply_revision showed round trips are byte-exact only for: '+' when the parent ends in exactly one LF; '=' on a single-spaced line without an inline comment; and '-' of the last statement. Aligned '=', '-' of a middle statement, and '+' on a parent ending in no LF or several LFs are inexact. The exact …
+  - *Evidence:* art/director.py:272-308 apply_revision(): the inverse is '= old' (spacing normalised on a…; art/director.py:814-818 the admit event stores the inverse
+- **R4.adm-evidence** · PARTIAL (reader EXISTS-TESTED, resolved F9) · SPEC2 §6 admission sequence: generate evidence
+  - *Capability:* The host generates the evidence an admission requires and records it bound by digest; a skipped or missing item refuses.
+  - *Held by:* art/selftests.py director: 'an admission without a still is refused (ADMISSION-0), nothing written', 'plant: an admission's still taken away — refused', 'plant: an admit event written past the director, with no evidence…
+  - *Gap:* The required evidence is the checks, the record and one still (or the undo's inverse_of). The impact, the framed preview and the receipt (outside strict) are not required by the studio's admission; FLAGSHIP-0 asks for them off the admission path, by rule.
+  - *Evidence:* art/director.py:727-745 the still's detectors are read by the host from its bytes; art/director/contract.py:146-184 missing(): what an admission lacks
+- **R4.adm-preview-exact** · PARTIAL · SPEC2 §6 admission sequence: preview exact candidate revision
+  - *Capability:* Preview the exact candidate revision that will be admitted, and admit only that revision.
+  - *Held by:* art/selftests.py studio: 'B, drawn at the head before A, refused as stale'; flagship: 'planted: a stale revision (the brief edited after the preview): the admission refused'
+  - *Gap:* The still is bound to the admission by sha256 only. The host does not check that it depicts the candidate revision; that rests on the page's word. The motion preview binds the candidate's own scenes, but the studio's admission does not require it.
+  - *Evidence:* art/studio.py:1353-1372 the admission re-evaluates the same intent bytes and refuses if t…; art/director.py:809-810 the files must reach the head the evaluation predicted
+- **R4.adm-explicit-admission** · EXISTS-TESTED · SPEC2 §6 admission sequence: require explicit admission; SPEC2 §17 recovery with no unadm…
+  - *Capability:* Only an explicit act by a person admits. Providers, the queue and model text never admit.
+  - *Held by:* art/selftests.py studio: 'AMBIGUOUS: the director's questions kept as text; one that says to admit admits nothing'; director: 'a REFUSED candidate is never admitted', 'a LEAKAGE candidate is not admitted without --accep…
+  - *Gap:* The person is identified only by a self-reported chooser string. The command line admits any evaluation sequence number its caller names.
+  - *Evidence:* art/director.py:769-824 cmd_admit(): a person names the evaluation and chooser; art/studio.py:1353-1416 the studio's admit, only from the page's request
+- **R4.refusal-typed** · PARTIAL · SPEC2 §6 refusals are typed data
+  - *Capability:* Refusals are typed data: a stable code, the offending entities, the expected and actual revision, the region, a witness and repair hints.
+  - *Held by:* art/selftests.py director: the conformance vectors fix verdict codes and fields to bytes; strict: refusals carry ADMIT-* with the boxes outside
+  - *Gap:* Evaluation verdicts are typed, canonical data. Admission-time refusals (HEAD-MOVED from the fence, ADMISSION-0, SHARED-MAP, LEAKAGE) are strings, and at the studio's HTTP boundary they share one code, STUDIO-DIRECTOR-REFUSED. There is no witness field for a failed check and no structured repair hint; hints are prose ('Re-evaluate it first: python art/director.py reevaluate ...…
+  - *Evidence:* art/director/scope.py:259-266 the verdict: codes, unclaimed (offending addresses), failed…; art/director.py:592-597 refused(): a verdict document for input refusals
+- **R4.refusal-repair-new-candidate** · EXISTS-TESTED · SPEC2 §6: a repair is a new candidate, not an in-place mutation
+  - *Capability:* A repair is a new candidate. A failed candidate and its verdict are never mutated in place.
+  - *Held by:* art/selftests.py director: 'C, re-evaluated at the new head, is a new event naming the old', 'the earlier evaluation of C is kept as it was, byte for byte', 'plant: a ledger line changed after it was written is refused'
+  - *Evidence:* art/director.py:707-719 reevaluate appends a new evaluate event naming the old; art/director.py:901-904 replay: LEDGER-REEVAL
+- **R4.txn-record** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §5 Transactions and undo: a transaction binds ...
+  - *Capability:* A transaction record binds the base revision, operations, declared region, prior values, dependency effects, validation, child revision, provenance and receipt, and the ledger replays to the files.
+  - *Held by:* art/selftests.py director: 'the ledger replays to the files: genesis, evaluations, re-evaluations, admissions, a refusal', 'plant: a hand edit of the art file, unlogged is refused', 'plant: a ledger line changed after i…
+  - *Gap:* The region and receipt are recorded only for strict requests. Dependency effects and validation sit in the referenced evaluate event. The canonical morphism record (the certificate) is written only by the studio, after the commit, by a plain open() outside the content lock (art/studio.py:1135-1139, 1622-1633). The director's command line writes no certificate.
+  - *Skeptic:* The capability lists prior values, declared region and receipt among what a record binds and what replay holds, and the tests do not cover all of it. (1) Prior values: replay recomputes the inverse and discards it (director.py:928), so a recorded inverse is never verified against its operation. An …
+  - *Evidence:* art/director.py:814-818 admit fields: evaluation, intent_sha256, head_before and after, p…; art/director.py:616-620 evaluate fields: intent bytes, verdict (affected, materials_chang…
+- **R4.txn-atomic-commit** · EXISTS-TESTED · SPEC2 §17 transaction atomicity; SPEC2 §5 crash consistency
+  - *Capability:* A multi-file admission is atomic: the files are the parent or the child, never in between, with one commit point.
+  - *Held by:* art/selftests.py crashtest: 'killed at <point>: recovered to the parent/child' for admit:stills, pending:file-0..2, pending:manifest, torn:admit, ledger:admit, install:file-0..2, pending:manifest-removed; 'a recovery ki…
+  - *Gap:* A failure after the manifest is finished in-process by _recover, and an exception there is swallowed and left for the next start (art/director.py:547-551). Process kill only.
+  - *Evidence:* art/director.py:27-32 the protocol: old and new bytes, manifest, admit event as commit, i…; art/director.py:491-552 _commit_locked()
+- **R4.txn-durable-writes** · EXISTS-TESTED · SPEC2 §5 Crash consistency
+  - *Capability:* Write to temporary files, flush, replace atomically, set a torn tail aside, and recover the last verified durable state, never a damaged one.
+  - *Held by:* art/selftests.py crashtest: 'killed at torn:admit: recovered to the parent', 'a temporary left by a write killed before its rename is removed at the next start', 'a pending file changed after it was written is refused (…
+  - *Gap:* Only the process-kill model is claimed; an OS crash or power loss is not (art/director/durable.py:21-24). On Windows the directory is never flushed (art/director/durable.py:59-61). A damaged line that is not the last is refused (LEDGER-LINE), not repaired.
+  - *Evidence:* art/director/durable.py:97-119 append and write: fsync, then temporary file and rename; art/director/durable.py:72-94 MoveFileExW with REPLACE_EXISTING and WRITE_THROUGH, retried
+- **R4.txn-single-writer** · EXISTS-TESTED · SPEC2 §17 transaction atomicity, stale refusal
+  - *Capability:* One writer at a time per tree. The head is read again under the lock (the fence), and recovery refuses while a live writer holds the lock.
+  - *Held by:* art/selftests.py racetest (32 cases): 'plant: the lock holds nothing — the chain breaks', 'plant: no fence — the second admission writes over the first', 'at <point>: another process's recovery refuses (LEDGER-BUSY)', '…
+  - *Evidence:* art/director/durable.py:128-203 the content lock (thread RLock plus OS file lock, release…; art/director/ledger.py:59-79 append holds the lock
+- **R4.stale-refusal** · EXISTS-TESTED · SPEC2 §17 stale refusal
+  - *Capability:* Refuse a candidate whose base moved, including when two admissions race at the same head.
+  - *Held by:* art/selftests.py director: 'a candidate checked at the old head is not admitted at the new one'; racetest: 'the second admission waits for the lock and is refused by the fence'; studio: 'B, drawn at the head before A, r…
+  - *Evidence:* art/director.py:784-786 HEAD-MOVED at admit; art/director.py:495-498 the fence under the lock
+- **R4.undo** · PARTIAL (resolved F11) · SPEC2 §17 undo; SPEC2 §5 Transactions and undo
+  - *Capability:* Undo restores the prior authored state, or applies a checked inverse against the expected child revision.
+  - *Held by:* art/selftests.py studio: 'undo: the last admission's exact inverse admitted', 'undo again: an undo is never undone; it walks back to A ... byte for byte'; director: 'the exact inverse of an admission (an undo) is admitt…
+  - *Gap:* Undo applies the stored textual inverse as a compensating forward intent. It is byte-exact (head restored) only for '+' on a parent ending in one LF, '=' on a single-spaced line, and '-' of the last statement. Otherwise only the statements and scene return, under another head. Undo never checks that the current head is the undone admission's head_after. The exact prior text, w…
+  - *Evidence:* art/studio.py:1582-1620 undo(): the latest not-undone admission's stored inverse, admitte…; art/director.py:741-745 inverse_ok is equality of the revision lines and no layout; no he…
+- **R4.undo-dependents** · PARTIAL (corrected) · SPEC2 §5 Transactions and undo: if later edits depend on it ...
+  - *Capability:* When later edits depend on an undone transaction, rebase it safely, create a compensating transaction, or refuse with a conflict.
+  - *Held by:* art/selftests.py studio: 'undo again: an undo is never undone; it walks back to A'; director: 'the exact inverse of an admission (an undo) is admitted without a still, naming it' (an earlier admission undone beneath a l…
+  - *Gap:* There is no selective undo of an earlier admission beneath later ones. The undo is always a compensating intent on the latest. An inverse that no longer applies is refused (INTENT-APPLY or not CLEAN), but no conflict object names the dependent admission, and that refusal path has no test. After a rebase event, the inverse is applied to a hand-edited text without notice.
+  - *Skeptic:* PARTIAL stands, but the gap's 'There is no selective undo of an earlier admission beneath later ones' is wrong for the command line. cmd_admit --inverse-of accepts the inverse of any earlier admission that evaluates at the current head. The director's self-test does exactly that: it undoes C after …
+  - *Evidence:* art/studio.py:1588-1596 only the latest admission not yet undone is offered; a layout adm…; art/studio.py:1599-1608 the inverse is evaluated at the current head as a new intent; ref…
+- **R4.distinct-hashes** · EXISTS-TESTED · SPEC2 §5 Canonical state and persistence: distinct hashes
+  - *Capability:* Keep distinct hashes for authored state, candidate payload, derived artifacts and evidence, and recompute them rather than trusting a cached root.
+  - *Held by:* art/selftests.py director: 'plant: a hand edit of the art file, unlogged is refused' (UNLOGGED-CHANGE), 'plant: an admission's still taken away' (LEDGER-STILL); cert: 'planted: each defect refused with its code' (CERT-C…
+  - *Gap:* Runtime-snapshot hashes are PREVIEW-0's (art/motion.py), outside this subsystem. The head is one flat sha256 over three parts, not a Merkle tree.
+  - *Evidence:* art/director/intent.py:163-165 head = sha256 of {art, world, exporter}; art/director.py:259-261 the parts computed from the export
+- **R4.ledger-append-only** · EXISTS-TESTED · SPEC2 §5 Transactions: provenance and receipt; keep the session log as source of truth
+  - *Capability:* An append-only ledger in which each event names the hash of the one before, replayed from genesis to the files.
+  - *Held by:* art/selftests.py director: 'plant: a ledger line changed after it was written is refused' (LEDGER-CHAIN), 'a hand edit recorded with rebase verifies'; racetest: 'two threads/processes append 25 events each ... the chain…
+  - *Gap:* The last line has no successor to protect it (art/director/README.md, the table of what it proves). A rebase records any hand edit as the new head without running checks (art/director.py:849-857).
+  - *Evidence:* art/director/ledger.py:31-46 read(): every line canonical, LEDGER-TORN; art/director/ledger.py:106-120 chain(): seq, prev, protocol, kinds
+- **R4.recovery-content-no-promotion** · EXISTS-TESTED · SPEC2 §17 recovery with no unadmitted candidate promotion
+  - *Capability:* After a crash, recovery never leaves an unadmitted candidate in the world. An admission whose commit record is absent is undone.
+  - *Held by:* art/selftests.py crashtest: 'killed at pending:manifest: recovered to the parent', 'killed at torn:admit: recovered to the parent', 'killed at ledger:admit: recovered to the child'; racetest: 'an orphan pending folder (…
+  - *Gap:* Process kill only, as in R4.txn-durable-writes.
+  - *Evidence:* art/director.py:422-426 committed only if the ledger's event at the manifest's seq admits…; art/director.py:428-441 otherwise the old bytes are restored
+- **R4.recovery-studio-generations** · PARTIAL · SPEC2 §17 recovery with no unadmitted candidate promotion
+  - *Capability:* Recovery of the studio's own promotions (code generations) produces one well-defined state, keeps the committed fallback, and never blesses a candidate without intact evidence.
+  - *Held by:* art/selftests.py txn: STUDIO-TXN SELFTEST PASSED (41,568 crash states, 195,376 crashes inside recovery, all 16 rules reached, 0 failures; 16 plants caught, among them 'no-evidence' and 'undo-commit'); probe 5 journal_re…
+  - *Gap:* Recover(J, P, F) is an exhaustively checked reference model. No stub or supervisor executes it: B1 has one generation and no journal or pointer.
+  - *Evidence:* art/studio_txn.py:4-20 a reference: nothing here launches, moves or writes a studio; art/studio_txn.py:44-61 the decision table R0-R15
+- **R4.s1-certificate** · PARTIAL · SPEC1 §4 AdmissionCertificate
+  - *Capability:* An AdmissionCertificate {schema, parent hash, child hash, op, inverse with prior values inline, region: CoverElement, predicates, producer, signature}, checked exactly.
+  - *Held by:* art/selftests.py cert: 'planted: each defect refused with its code', 'a certificate is a function of its event and texts', plants cert-child-unhashed, cert-statements-as-exact and cert-heads-unchecked caught; flagship: …
+  - *Gap:* Missing are the region (CoverElement; the strict receipt lives in the ledger's admit event), the predicates, and a signature (always ''). Certificates are made only by the studio, after commit, for art-only changes; the command line makes none. CERT-ART-ONLY cannot fire on a certificate built by make().
+  - *Evidence:* art/certificate.py:66-80 make(): format, version, ledger event sha256, parent, op, invers…; art/certificate.py:83-106 check(): CERT-CHILD, CERT-HEAD, CERT-ART-ONLY, CERT-INVERSE, ex…
+- **R4.s1-groupoid-undo** · PARTIAL (resolved F11) · SPEC1 §4 groupoid reading; SPEC1 §5 Q3
+  - *Capability:* Groupoid reading: undo is composition with the captured inverse, returning the parent hash exactly.
+  - *Held by:* art/selftests.py cert: 'each admission's certificate: the inverse applied to the child gives the parent, byte for byte or (said) token for token'; 'found: an '=' on a statement written in aligned columns, and a '-', are…
+  - *Gap:* The composition returns the parent head only for the exact subset ('+' with a parent ending in one LF; '=' single-spaced without an inline comment; '-' of the last statement). Other edits return the statements and scene, not the head. Layouts have no inverse.
+  - *Evidence:* art/certificate.py:21-23 an isomorphism only when exact holds; art/studio.py:1614-1617 head_restored reported
+- **R4.s1-critical-pairs** · PARTIAL · SPEC1 §4 critical pairs and conflict census; SPEC1 §10 CENSUS-0
+  - *Capability:* An offline critical-pair analysis, exhaustive over the op alphabet, producing a finite conflict census (CENSUS.md, CENSUS-0) that is bounded or prunes the vocabulary.
+  - *Held by:* art/selftests.py glue: 'the census of the flagship's seven edits: every pair judged, the same table twice', 'one bay, two values: OBSTRUCTED ... one fingerprint whichever edit is named first', plants glue-sections-unche…
+  - *Gap:* The census is a sample: 21 pairs of 7 edits of one brief, computed in memory. It is not exhaustive over the op alphabet, writes no CENSUS.md, has no row (the gate does not grow), and makes no boundedness or pruning claim. Its composition (repeats as no-ops) is not the admission's.
+  - *Evidence:* art/glue.py:91-136 judge(): commutes, glues, an obstruction object with an order-independ…; art/glue.py:140-168 OPS: seven hand-chosen edits of foundry-yard; census()
+- **R4.s1-q1-normalize** · CONFLICTS-WITH-SPEC (reader MISSING, resolved F13) · SPEC1 §5 Q1; SPEC1 §2.3 normal form
+  - *Capability:* Q1: union the candidate into the graph and normalize to a fixpoint; a stall is a typed refusal carrying the irreducible form.
+  - *Held by:* none
+  - *Gap:* There is no normal form of the world, no normalization pass, and no stall refusal. The authority is the ledger plus the art text, and the canonical form (VERDANDI-CANON 0) covers intents and ledger events only.
+  - *Evidence:* art/director.py:272-308 a revision is applied to the art text in place, order-preserving;…; art/certificate.py:49-53 statements(): a sorted-token comparison form, not a normal form …
+- **R4.s1-q2-cover** · PARTIAL · SPEC1 §5 Q2, CoverElement
+  - *Capability:* Q2: every introduced or modified relation lies inside a declared CoverElement (Cells \| Chart \| Region(AabbQ) \| EntitySet).
+  - *Held by:* art/selftests.py strict (ADMIT-OUTSIDE rows and plants); director: the scope vectors on layout grants and patterns
+  - *Gap:* There is no CoverElement type and no Chart cover. Three separate mechanisms play the parts, and the geometric one is opt-in per request.
+  - *Evidence:* art/director/scope.py:29-36 address patterns (an EntitySet analogue); art/director/scope.py:181-184 layout cells inside granted region rectangles (a Cells anal…
+- **R4.s1-q3-inverse-gate** · PARTIAL (reader CONFLICTS-WITH-SPEC, resolved F13) · SPEC1 §5 Q3; admit iff Q1 ∧ Q2 ∧ Q3
+  - *Capability:* Q3 as an admission condition: the captured inverse is checked to return the parent hash exactly, without executing the world, before admission.
+  - *Held by:* art/selftests.py cert (the check itself, after commit)
+  - *Gap:* The check exists and is exact. Made a gate, it would refuse every aligned '=' and every '-' that is not the last statement.
+  - *Conflict:* The repository makes the certificate a derivative of the committed ledger event, never a precondition: art/certificate.py:13 "The ledger stays the authority; a certificate is derived from it, never the other way."; art/studio.py:1632 "a certificate that cannot be made is said, the admission stands (the ledger is the a…
+  - *Evidence:* art/certificate.py:83-106 the exact check runs without exporting; art/studio.py:1407 the certificate is made after cmd_admit has committed
+- **R4.s1-refusal-enum** · PARTIAL · SPEC1 §5 typed refusals enum
+  - *Capability:* A typed Refusal enum: DoesNotNormalize, OutsideRegion, InverseMissing, InverseWrong, PredicateFailed, NonLocalViolation, SchemaMismatch.
+  - *Held by:* art/selftests.py director (INTENT-*, CHECK-FAILED, SCOPE-* via vectors), strict (ADMIT-OUTSIDE), cert (CERT-INVERSE)
+  - *Gap:* These are string codes per module, not one enum. There is no DoesNotNormalize. InverseMissing and InverseWrong exist only as an after-the-fact certificate finding, plus ADMISSION-0's 'not that admission's exact inverse'. No code separates local from non-local check failures.
+  - *Evidence:* art/director/scope.py:50 REFUSING codes; art/director/intent.py:34-39 IntentError codes (the SchemaMismatch analogue)
+- **R4.s1-admission-cost** · CONFLICTS-WITH-SPEC (reader MISSING, corrected, resolved F13) · SPEC1 §5 admission cost; SPEC1 headline metrics
+  - *Capability:* Admission cost is O(k log n) in the size of the affected region, not O(n) in the world or history.
+  - *Held by:* none for the admission. DSC-0 (tools/probe/state_commit.py), an O(k log n) receipt/proof verifier, is off the gate and read by nothing: own check, last run on the host at 0234 (ROADMAP.md:4511-4514), not run at HEAD.
+  - *Gap:* Each evaluation and admission is linear in the world (several full exports, every check, a whole-scene diff), and no complexity claim is made or measured.
+  - *Skeptic:* Searches: Grep (?i)O\((k\|n\|log)\|log n\|incremental\|region-local\|sublinear\|merkle\|tree commitment over art, tools, verify/verify.py, shell, workshop, kernel, design and docs. The reader's evidence is right: an art admission exports the base and the child again (director.py:782, 805), and the fence ex…
+  - *Evidence:* art/director.py:629-670 evaluate_doc(): a full export of the base and the candidate and e…; art/director.py:782-805 admit exports the base and the child again
+- **R4.s1-op-invertible** · PARTIAL · SPEC1 §4 Op alphabet
+  - *Capability:* Every authored op in the alphabet (Open, Close, Room, Entrance, Paint, Place, Move, Link) is invertible and region-local.
+  - *Held by:* art/selftests.py cert and studio undo rows (art revisions only)
+  - *Gap:* Layout ops have no captured inverse (STUDIO-NOT-UNDOABLE). The art inverse is exact only for a subset. There are no Place, Move or Link ops (statements are keyed edits instead). Region-locality is enforced only by scope, or by strict when a request opts in.
+  - *Evidence:* art/director/intent.py:206-211 layout verbs open, close, room, entrance, paint; revision …; art/director.py:931-932 replay appends layout lines with no inverse
+- **R4.v-inverse-unverified** · PARTIAL (from-verifier) · SPEC2 §5 Transactions and undo: 'applies a checked inverse'
+  - *Capability:* The inverse a transaction records is checked against its operation wherever the ledger is trusted: at replay, and before an undo applies it.
+  - *Held by:* art/selftests.py cert: 'planted: each defect refused with its code' (a wrong inverse: CERT-INVERSE). This checks a certificate built in the studio after commit. No director row plants a wrong recorded inverse.
+  - *Gap:* Replay and verify never compare the stored inverse with the one apply_revision computes. An admit event with a wrong inverse but valid evidence therefore verifies, and both the CLI's --inverse-of and the studio's undo apply the stored text. Only the studio's post-commit certificate checks it, and only for studio admissions.
+  - *Evidence:* art/director.py:928 replay recomputes the inverse and discards it (_inv); art/director.py:741-745 inverse_of compares the intent with the stored inverse
+- **R4.v-rebase-bypass** · PARTIAL (from-verifier) · SPEC2 §6 admission sequence; SPEC2 §5 keep the session log as source of truth
+  - *Capability:* Every change to the authored state passes the admission sequence; a change made outside it is refused or marked as unchecked.
+  - *Held by:* art/selftests.py director: 'plant: a hand edit of the art file, unlogged is refused' (UNLOGGED-CHANGE), 'a hand edit recorded with rebase verifies'
+  - *Gap:* Detecting a hand edit is tested. Recording one is not admission: a rebase writes any art text, design text or exporter change into the ledger as the head, with no checks, scope, evidence, still or certificate, and later evaluations rest on it without notice.
+  - *Evidence:* art/director.py:849-857 cmd_rebase appends the new head and texts with no checks, scope o…; art/director.py:936-940 replay accepts a rebase whose head_before matches
+- **R4.v-cross-world-write-skew** · EXISTS-TESTED (from-verifier) · SPEC2 §17 transaction atomicity, stale refusal (write skew between worlds)
+  - *Capability:* A layout admission in one world is refused while another world plays the same map, so no admission moves another world's head.
+  - *Held by:* art/selftests.py director: 'a layout admission refused while another world plays its map (SHARED-MAP); nothing changed in either world', 'an art admission in the same world: admitted, the other world's head as it was', …
+  - *Gap:* briefs_on_map reads each brief's first map line, and an unreadable brief counts as a user of the map. The guard covers the checkout's shared maps folder. The studio's worlds each copy their own maps.
+  - *Evidence:* art/director.py:453-471 briefs_on_map; art/director.py:499-508 SHARED-MAP under the lock
+- **R4.v-approve-still** · EXISTS-TESTED (from-verifier) · SPEC2 §6 admission sequence: generate evidence; SPEC2 §17 evidence completeness
+  - *Capability:* A person's approval of a still at the head is recorded with the host's detector readings. A flagged or unreadable still is approved only despite the detectors, and that is recorded.
+  - *Held by:* art/selftests.py director: 'a still the detectors do not flag is approved, its detectors in the ledger', 'a still mostly white is not approved without --despite-detectors; nothing written', 'a still the detectors cannot…
+  - *Gap:* The approval records only the image's sha256: the image is not kept beside the ledger, and check_stills does not read approvals, so an approval's image is never read again at verify, unlike an admission's still. Nothing plants a forged approval.
+  - *Evidence:* art/director.py:860-882 cmd_approve; art/director.py:944-946 replay: LEDGER-HEAD for an approval at another head
+- **R4.v-canonical-bytes** · EXISTS-TESTED (from-verifier) · SPEC2 §5 Canonical state and persistence: versioned canonical bytes, strict malformed-inp…
+  - *Capability:* One canonical byte form for intents and ledger events: no numbers or null, sorted ASCII keys, exact escapes, ASCII bytes. A document is admitted only in its own byte form, with round trip and key-order independence fixe…
+  - *Held by:* art/selftests.py director: 'the conformance vectors, reproduced by the reference (65)' (dumps 8, loads 14, heads 2); conform.rs second implementation: own check, not run at HEAD
+  - *Gap:* This is a text form, so SPEC2's binary items (fixed endianness, explicit lengths, option tags, enum discriminants) do not apply. Strings are kept as written, with no Unicode normalization. The scene's byte form belongs to QUALITY-0 and is outside this row.
+  - *Evidence:* art/director/intent.py:6-21 the byte contract; art/director/intent.py:80-99 dumps()
+- **R4.v-schema-migration** · MISSING (from-verifier, resolved F12) · SPEC2 §17 persistence, schema migration; SPEC2 §5 test migrations
+  - *Capability:* Migrate intents and ledger events of an older schema version to the current one, with tested migrations.
+  - *Held by:* none (only the refusal of an unknown version is tested: the vector 'an unknown version is refused, never translated')
+  - *Gap:* Version 0 is the only version. Any other version is refused, never translated, and a translator is deferred until the first real change.
+  - *Evidence:* art/director/intent.py:172 'any other is refused, never translated (a translator comes wi…; art/director/intent.py:188-189 INTENT-VERSION
+- **R4.v-accept-leakage** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §6 admission sequence: require explicit admission
+  - *Capability:* A person can admit a LEAKAGE candidate by an explicit --accept-leakage, recorded in the admit event and checked for consistency at replay.
+  - *Held by:* none: the refusal without the flag is tested ('a LEAKAGE candidate is not admitted without --accept-leakage'), the admission with it is not (grep finds no accept_leakage=True in any suite)
+  - *Gap:* No test admits with the flag, so neither the recording nor the replay checks on it are exercised.
+  - *Evidence:* art/director.py:789-790 the refusal without it; art/director.py:816 accepted_leakage recorded
+- **R4.v-predicted-head** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §6 admission sequence: preview exact candidate revision
+  - *Capability:* An admission writes only files that reach the head its evaluation predicted, checked before any file is touched, and replay checks that each admission reaches the art its evaluation recorded.
+  - *Held by:* none: no plant makes the predicted-head refusal or LEDGER-REPLAY fire (grep: only their raise sites)
+  - *Gap:* Implemented, but no test asserts it.
+  - *Evidence:* art/director.py:805-810 the predicted-head check; art/director.py:929-934 LEDGER-REPLAY at replay
+- **R4.v-rung** · EXISTS-TESTED (from-verifier) · SPEC2 §17 Director tool permissions/provenance/bounded repair
+  - *Capability:* The host computes each candidate's rung from its effective change (realized and affected addresses), never from the intent's words. Rungs C and D are never admitted by the director.
+  - *Held by:* art/selftests.py director: 'an address of a kind the classifier does not know (plaza/mover/3,4) classifies C, and the director will not admit it', 'a candidate that did not export classifies D: unknown classifies at the…
+  - *Gap:* The C and D rows call contract.classify and contract.missing directly on a constructed verdict, not through cmd_admit. Rung B never arises from an intent (contract.py:23-24).
+  - *Evidence:* art/director/contract.py:79-105 classify(); art/director/contract.py:160-161 rung other than A refused
+- **R4.v-decision-provenance** · EXISTS-TESTED (from-verifier) · SPEC2 §17 Director tool permissions/provenance
+  - *Capability:* Every request and decision (admit, reject, undo, none) is recorded in a hash-chained log with the response's sha256, the candidates' intents, the compared set and the certificate.
+  - *Held by:* art/selftests.py studio: 'the request record chained: every line names the hash of the one before; a line taken out is found (plant), the end cut is not (said)'; held: 'compare: one admitted, the set recorded', 'compare…
+  - *Gap:* Cutting the end of the log is not detected, as the row itself says. The log is appended with open('ab') under a process-local lock: no fsync and no content lock. The ledger, not this log, is the authority.
+  - *Evidence:* art/studio.py:1141-1154 _log: each line names the sha256 of the one before; art/studio.py:1413-1415 the admit decision line with comparison and certificate
+- **R4.m-typed-refusals** · PARTIAL (from-verifier) · SPEC1 §5 typed refusals enum
+  - *Capability:* Admission refuses with one reason from a fixed, typed set: DoesNotNormalize, OutsideRegion, InverseMissing, InverseWrong, PredicateFailed, NonLocalViolation, SchemaMismatch.
+  - *Held by:* art/selftests.py director (DIRECTOR SELFTEST: 'an admission said to undo an admission it is not the inverse of is refused (ADMISSION-0), nothing written'; 'a candidate checked at the old head is not admitted at the new …
+  - *Gap:* Typed refusals exist, spread over several modules as string codes: the intent's schema codes, INTENT-APPLY, HEAD-MOVED, ADMIT-OUTSIDE/EMPTY/STALE, REFUSED with check codes, LEAKAGE, ADMISSION-0. They are not one closed enum. No DoesNotNormalize, because there is no normalizer. InverseWrong is checked only for an undo, as revision-list equality against the stored inverse, and o…
+  - *Evidence:* art/director.py:272-308 INTENT-APPLY (an empty statement, a name that names nothing, a ke…; art/director.py:640-660 INTENT-BRIEF, LAYOUT-REFUSED, ART-REFUSED
+- **R4.m-child-head-precheck** · EXISTS-UNVERIFIED (from-verifier) · SPEC1 §4 AdmissionCertificate {parent hash, child hash}; SPEC1 §5 decision before admissi…
+  - *Capability:* Before any file is written, admission recomputes the child's art and world parts from the parent text and the revision, and refuses unless they equal what the evaluation predicted. This makes the child hash a preconditi…
+  - *Held by:* none for the refusal. The FACADE suite (art/selftests.py facade) asserts only the success case, that the prediction is reached (art/play.py:2895-2896). Grep for 'would not reach the head' and 'predicted' found no plant …
+  - *Gap:* The guard exists. No test plants a mismatch and requires the refusal.
+  - *Evidence:* art/director.py:804-810 the head the files will have, computed before any is touched; ref…; art/play.py:2895-2896 FACADE row: head_after equals the recomputed parts and the evaluati…
+
+## R5 — the studio's back end: server, requests, candidates, queue, worlds, desktop app
+
+The studio's back end is play.py's HTTP server (it checks a token and the host name), studio.py's gateway, the queue, the worlds Hub and the desktop supervisor. Together they run the existing candidate loop end to end: request, candidates evaluated in isolation by the director at the head, preview, admission through the director's fenced and crash-safe ledger, reject, undo, typed dispositions, and recovery at every start. Most of it is held by suites the host ran twice at HEAD (STUDIO 74/74, STUDIO-2 19/19, STUDIO APP 13/13, LIVE 24/24, FLAGSHIP 9/9, CRASHTEST 15, RACETEST 32). Phase 2 is the strongest part (revision-bound candidates, stale refusal under the lock, a durable chained receipt, crash safety against a killed process, and a scripted acceptance whose planted failures leave the world unchanged). Phase 1 has a back end but has not met its acceptance: the flagship runs over HTTP with synthetic stills, never through the UI, and there is no outliner, Evidence view, direct edit or redo; opening a world also never requires it to verify. One-mutation-path holds for the HTTP routes by reading only, because the repository deliberately keeps hand edits served live and recorded afterwards with rebase; B2 (self-change) and B5 (release) are not built.
+
+**Surprises.**
+
+- art/STUDIO.md is stale against the host's log at HEAD. Line 639 says the studio app self-test has '11 cases; 12 on Windows' and line 686 says studio_queue's has '13 cases'; the log art/build/selftests/20261016T162615Z.log records STUDIO APP SELFTEST 13/13 and STUDIO-2 SELFTEST 19/19. Line 655 says the checkout's briefs are 'today plaza-night and harbor-day', but art/briefs holds four (foundry-yard and harbor-lift too).
+- art/play.py:983: studio_post ends with `return 200, dict(g.undo(), ok=True)` as a fallthrough for any path in STUDIO_POSTS not matched earlier. Today only /studio/undo reaches it, but a route added to STUDIO_POSTS without its own branch would silently undo the latest admission. The undo also ignores its request body, so it cannot be bound to the revision the caller saw.
+- seed_worlds (art/play.py:802-803) seeds only an empty worlds folder. Briefs added to the checkout after the first desktop start (foundry-yard, the flagship's world; harbor-lift) never reach an existing %LOCALAPPDATA% worlds folder, and no route imports them. The flagship acceptance runs only in a scratch one-tree copy.
+- By reading, not run: evaluation and admission take the head from the files (art/director.py:632, 782-786) and never compare it with the ledger's replayed head, and the live watcher serves hand edits (art/play.py:42-51). After an unlogged hand edit, the studio's admit, reject or undo appends evaluate events whose checked_against the ledger never reached, and replay then refuses the chain with LEDGER-HEAD (director.py:899-900). Only the launcher's display and the History view would show it.
+- By reading, not run: Gateway.admit, reject and undo compute the evaluation outside the content lock and append it afterwards (art/studio.py:1370 vs 1403, 1573-1574, 1605-1606). The fence in commit_admission protects the files, but an evaluate event appended after another admission has landed would also fail replay (LEDGER-HEAD). racetest's plants cover the CLI admission's writes, not this window.
+- The studio token protects against other web origins, not local processes. GET /play.html hands it to any client naming 127.0.0.1 (art/play.py:1195-1203), the supervisor reads it that way (art/studio_app.py:382-394), instance.json publishes the URL (studio_app.py:120-122), and a provider runs as the same user with cwd=REPO and the full environment (art/studio.py:266-269). 'Nothing is admitted without the designer' (art/STUDIO.md:590-591) therefore rests on the provider command being trusted code.
+- Each world has one candidate set in memory. A queued task starting in the world the page is using calls Gateway.ask, which supersedes the page's running request and clears its undecided candidates via publish([]) (art/studio.py:994-998, 1029). studio_queue.step counts only queue tasks as busy (art/studio_queue.py:318-329). After a restart, a page request (not a queue task) can be replayed only from the command line with --intent; no route restores it.
+- crashtest kills the director CLI's `admit` (art/director.py:1583-1593), not the studio gateway's admit. The gateway's extra steps (the evaluate append before cmd_admit, the certificate, the request line) are not death points, and certificates and request records are plain writes (art/studio.py:1135-1139, 1153-1154).
+- The flagship acceptance's preview stills are synthetic PNGs (art/flagship.py:267-268), and the admission still is a fixture still. FLAGSHIP-0 shows the HTTP procedure and the host's state verification, not that any rendered picture matches its pose.
+- art/play.py:766 accepts view levels 'paint' and 'deep', while art/STUDIO.md:700-707 presents them as 'make' and 'one level deeper'. The wording differs; the behaviour is the same.
+- docs/STUDIO-APP.md §8 lists five probes. Scripts for all five exist under tools/probe, but only probes 1-2 (and the later probe 6) have a recorded verdict in the documents searched.
+
+- **R5.launch-desktop** · PARTIAL · SPEC2 §14 Phase 1 'Launchable shell'; docs/STUDIO-APP.md §7 B1
+  - *Capability:* A launchable studio: a desktop icon starts a supervisor that runs play.py without a console, opens an app-mode browser window, and stops everything when the window closes, goes silent or play.py ends.
+  - *Held by:* art/selftests.py app: 'the window closed: the page's goodbye heard, play.py stopped, the lingering browser ended with the studio', 'a second start: a window on the running studio', 'play.py cannot start: said (exit 2)',…
+  - *Gap:* B1's stub (job + restart loop on exit 86, R0-R8) and the per-user layout and tools (tools/layout.py, shortcut.ps1, studio.iss) do not exist. Single instance uses a file lock, not CreateMutexW. Acceptance on the host is a dated prose record, not re-run at HEAD.
+  - *Evidence:* art/studio_app.py:292-413 run(): instance lock, job, play.py on a free port, healthz wait…; art/studio_app.py:96-128 Instance: a single instance by a file lock, second start opens a…
+- **R5.world-library** · EXISTS-TESTED · SPEC2 §14 Phase 1 'world library'; §15 step 3 'Select the world in UI'
+  - *Capability:* A world library: worlds in a per-user folder, each its own tree with its own ledger, maps and lock; seeded from the checkout only if each ledger verifies in the copy; listed with a verification read-back; switched by ?w…
+  - *Held by:* art/selftests.py queue: 'the worlds seeded from the checkout...', 'seeded once', 'a checkout brief whose ledger does not verify is not made a world', 'each world read by name, from its own tree', 'a world duplicated: a …
+  - *Gap:* No rename, delete or import of a world. seed_worlds runs only on an empty folder (play.py:802-803), so briefs added to the checkout later (foundry-yard, harbor-lift) never reach an existing desktop worlds folder.
+  - *Evidence:* art/play.py:520-591 Hub: worlds_dir, names(), world() opening with recover/genesis; art/play.py:593-617 Hub.inspect: ledger replayed under the content lock, VERIFIED
+- **R5.flow1-verified-load** · PARTIAL · SPEC2 §11 Essential flows 1 'Launch → select world → load verified state and derived arti…
+  - *Capability:* Selecting a world loads its verified state and derived artifacts.
+  - *Held by:* art/selftests.py live: 'lifecycle: the start recovers the ledger before it serves'; queue: 'History: ... a file changed outside the ledger is not verified (plant), and verified again once restored'
+  - *Gap:* Opening a world runs recovery but not the ledger's verification. A world whose files differ from the ledger (UNLOGGED-CHANGE) is listed as not verified but still opens, plays and takes requests. Derived artifacts (the scene) are compiled from the files, not from the ledger's replayed head.
+  - *Evidence:* art/play.py:557-591 Hub.world: D.recover(ws) and genesis only; no cmd_verify before servi…; art/play.py:604-606 inspect() verifies for the launcher's display only
+- **R5.inspector-outliner** · PARTIAL · SPEC2 §14 Phase 1 'outliner/inspector'; STUDIO-APP §7 B3 outliner
+  - *Capability:* Back-end support for the outliner and inspector: read-only routes for a picked object and the Validate rows.
+  - *Held by:* art/selftests.py live: 'shell-object-read', 'shell-validate-read', 'shell-validate-refused', 'named-paths-only' (LIVE SELFTEST 24/24)
+  - *Gap:* There is no outliner: no back-end listing of objects by region or kind, and no search. The page derives an asset browser from /scene/NAME.json. The inspector is read-only, and its transform is display only.
+  - *Evidence:* art/play.py:990-1007 the shell reads what is served; scene cache; art/play.py:1254-1267 GET /object.json and /validate.json
+- **R5.director-ask** · EXISTS-TESTED · SPEC2 §14 Phase 1 'Director panel'; §15 step 4 'Submit request through existing provider/…
+  - *Capability:* Back end of the Director panel. Select/pin/unpin tags and ask a prompt; the gateway runs the configured provider (argv, stdin, time and output limits, cancel, supersede, kill the tree) and reads the response whole or re…
+  - *Held by:* art/selftests.py studio: 'three candidates drawn for a selected slab', 'a provider that writes no JSON: refused whole', 'a response of four candidates: refused whole', 'a request cancelled: the provider killed', 'a newe…
+  - *Gap:* A real provider is only OBSERVED (probe). The scripted provider and local mocks are what the suite holds.
+  - *Evidence:* art/play.py:963-972 /studio/ask, select, pin, unpin, cancel; art/studio.py:954-1031 Gateway.ask: validation, references, request document
+- **R5.candidate-lane** · EXISTS-TESTED · SPEC2 §14 Phase 1 'candidate lane'; §11 flow 2 'create isolated candidate'
+  - *Capability:* Candidates as isolated sources: each response candidate becomes a VERDANDI-INTENT evaluated by the director on a scratch export at the head and served as a slot the page can switch to. Verdicts, touches, held/strict/imp…
+  - *Held by:* art/selftests.py studio: 'the page sees them as sources', 'a candidate the director refuses is shown, never drawn; the others are', 'no answer without candidates writes the world: the brief and the ledger byte for byte'…
+  - *Gap:* Each world holds one candidate set in memory (Gateway.req). Any newer request, the page's or a queued task's, supersedes it, and publish([]) clears undecided candidates (studio.py:994-998, 1029). After a restart, a page request's candidates are lost unless the request was a queue task (restore is reachable only via queue review).
+  - *Evidence:* art/studio.py:1245-1310 _run1: intent_doc, candidate_slot, records, host_order, publish; art/studio.py:443-451 intent_doc: base, brief, letter and prompt are the gateway's; layou…
+- **R5.persistent-queue** · EXISTS-TESTED · SPEC2 §14 Phase 1 'persistent queue'
+  - *Capability:* A persistent queue of prompts for any world. Tasks run in the background, at most N at once and one per world, kept in one fsynced JSONL file. A torn tail is set aside. A task interrupted after its answer was recorded i…
+  - *Held by:* art/selftests.py queue: 'a request queued for the other world runs there in the background and is ready to review', 'at most two requests at once and never two in one world', 'fix 3: a torn last line set aside ... (plan…
+  - *Gap:* The queue lock is in-process only (studio_queue.py:73). A queued task does not check whether the page has a request running or candidates undecided in the same world (step() counts only queue tasks), so it can supersede them.
+  - *Evidence:* art/studio_queue.py:83-124 _event via durable.append; _replay with torn-tail cut and runn…; art/studio_queue.py:175-198 add
+- **R5.evidence-panel** · PARTIAL (corrected) · SPEC2 §14 Phase 1 'evidence panel'; §11 'Evidence sheet'
+  - *Capability:* An evidence panel: back-end routes serve a candidate's host-computed report (held/strict), its preview report and stills, the Validate rows, and the ADMISSION-0 record in the state.
+  - *Held by:* art/selftests.py preview-studio: 'a candidate's preview: both sides' stills paired at each pose, its files (and the sheet to inspect)...'; held: 'held: every candidate carries the host's report'
+  - *Gap:* The Evidence view is not built. The evidence sheet lacks measured performance (the impact is an ESTIMATE) and exact render settings beyond the viewport. Preview stills are drawn by the page, and the host does not verify that they are of the claimed poses.
+  - *Skeptic:* The routes /held.json, /preview.json and /preview.png (play.py:1229-1253) are read-only and tested. PARTIAL stands, but the gap mis-cites its evidence. art/web/views/evidence.json describes a view of the self-tests' results ('a view of their results is not built yet'), not the candidate evidence sh…
+  - *Evidence:* art/play.py:1229-1253 GET /held.json, /preview.json, /preview.png (read-only); art/studio.py:1473-1506 preview_finish writes the report, stills, compare sheet and a rec…
+- **R5.admit-reject** · EXISTS-TESTED · SPEC2 §14 Phase 1 'admit/reject'; §15 step 9
+  - *Capability:* Admit or reject a drawn candidate. Admit re-evaluates at the head as the files stand, requires CLEAN, the same head it was drawn at, and a still (ADMISSION-0), then writes an evaluate event and the admission through cmd…
+  - *Held by:* art/selftests.py studio: 'A admitted: the brief written, the ledger's evaluate and admit...', 'ADMISSION-0: A with no still is not admitted (STUDIO-NO-STILL), nothing written', 'a still the detectors flag ... A not admi…
+  - *Gap:* The evaluation is computed outside the content lock and appended before cmd_admit (studio.py:1370 vs 1403). By reading, an admission landing in between would leave an evaluate event that ledger replay refuses (director.py:899-900). Not exercised by any test.
+  - *Evidence:* art/studio.py:1353-1416 Gateway.admit; art/studio.py:1360-1366 STUDIO-NO-STILL
+- **R5.explicit-human-admission** · PARTIAL · SPEC2 §15 step 9 'Admit only after explicit human action'; §10 'It cannot ... admit candi…
+  - *Capability:* Only an explicit human action admits: the queue and providers never admit, and admission needs the studio token, a still and a CLEAN verdict.
+  - *Held by:* art/selftests.py queue: 'the launcher's token is good for the window's heartbeat and nothing else: it cannot ask, give a still, admit or queue'; studio: 'a POST without the page's token, or to another host, refused', 'A…
+  - *Gap:* The server cannot tell a person's gesture from any local process. Any process on the machine (a provider command included) can GET /play.html for the token and POST a still and /studio/admit. The rule therefore rests on the provider command being trusted code and the model's tools being off, not on the token.
+  - *Evidence:* art/play.py:1327-1331 token and host check on every studio POST; art/play.py:1195-1203 GET /play.html serves the studio token to any client naming 127.0.0…
+- **R5.undo-restore** · PARTIAL (reader EXISTS-TESTED, resolved F11) · SPEC2 §11 flow 4 'Undo and verify restoration'; §15 step 10
+  - *Capability:* Undo admits the last un-undone admission's stored inverse as a new evaluated intent. Its certificate is checked and the answer says whether the head before came back (head_restored).
+  - *Held by:* art/selftests.py studio: 'undo: the last admission's exact inverse admitted, the brief as A left it', 'undo again: ... the brief's bytes and scene are as at the start'; cert: 'found: an '=' on a statement written in ali…
+  - *Gap:* Byte-exact restoration does not hold for '=' on aligned statements or for '-' (MEASURED, CERT row 'found'). The scene comes back but the head does not, and this is reported, not repaired. A layout admission cannot be undone here.
+  - *Evidence:* art/studio.py:1582-1620 Gateway.undo; art/studio.py:1595-1596 a layout admission is STUDIO-NOT-UNDOABLE
+- **R5.undo-binding** · PARTIAL (resolved F11) · SPEC2 §5 'applies a checked inverse against the expected child revision'; §11 'undo/redo'
+  - *Capability:* An undo bound to an expected child revision, refused on conflict, with redo.
+  - *Held by:* none
+  - *Gap:* An undo request names no revision. A window's undo undoes whatever admission is latest (perhaps another window's or another session's). There is no redo.
+  - *Evidence:* art/play.py:983 POST /studio/undo: the fallthrough, body ignored; art/studio.py:1582-1594 undo picks the latest un-undone admission from the ledger, whatev…
+- **R5.recovery-start** · EXISTS-TESTED · SPEC2 §11 flow 6 'Recover after crash from last verified durable state'
+  - *Capability:* Every start and every world opening recovers first: a torn ledger line is set aside, and a half-done admission is completed if its admit event is in the ledger or undone otherwise. Recovery refuses (LEDGER-BUSY, exit 75…
+  - *Held by:* art/selftests.py live: 'lifecycle: the start recovers the ledger before it serves'; crashtest: 'killed at pending:manifest: recovered to the parent', 'killed at ledger:admit: recovered to the child', 'a recovery killed …
+  - *Gap:* Recovery restores the ledger's parent or child, but the start does not then verify the chain ('last verified' is not checked). The studio's own records (requests.jsonl, certificates, request folders) are plain writes outside recovery.
+  - *Evidence:* art/director.py:380-396 recover under the content lock; art/director.py:399-441 _recover: temporaries, torn line, manifest, committed iff the adm…
+- **R5.crash-safe-commit** · EXISTS-TESTED · SPEC2 §14 Phase 2 'crash-safe commit'; §5 'Crash consistency'
+  - *Capability:* Crash-safe commit. The admission writes old and new bytes and a manifest to a pending folder, then the fsynced admit event (the commit), then the files by write-through rename, under the tree's content lock. The head is…
+  - *Held by:* art/selftests.py crashtest (15 cases, each a real process killed at a write and recovered); racetest (32 cases: 'plant: no fence — the second admission writes over the first', 'plant: a recovery that ignores the lock ch…
+  - *Gap:* Only process death is in the fault model, not an OS crash or power loss. crashtest drives the director CLI's admit (director.py:1583-1593), not Gateway.admit, whose evaluate append, certificate and request line are not death points.
+  - *Evidence:* art/director.py:27-36 the crash-safety contract; art/director.py:474-498 commit_admission, the fence
+- **R5.recovery-no-promotion** · EXISTS-TESTED · SPEC2 §17 'recovery with no unadmitted candidate promotion'
+  - *Capability:* After a crash or restart no unadmitted candidate is promoted. Recovery completes only an admission whose admit event is in the ledger. In-memory candidates are gone, and a recovered queue task's candidates are only draw…
+  - *Held by:* art/selftests.py crashtest: 'killed at pending:manifest: recovered to the parent', 'killed at torn:admit: recovered to the parent'; queue: 'fix 4: a task the studio stopped under, its answer recorded, is ready after the…
+  - *Gap:* A restored candidate from an older head can be admitted at the new head after re-evaluation (CLEAN with HEAD-MOVED) through an explicit review. That is a person's act, but the stale candidate is re-based rather than refused.
+  - *Evidence:* art/director.py:422-426 committed only if events[i] is that admit; art/studio.py:1043-1124 restore: each recorded intent re-evaluated at the head as it is n…
+- **R5.phase1-ui-acceptance** · PARTIAL · SPEC2 §14 Phase 1 'Acceptance: one existing world completes the existing candidate flow t…
+  - *Capability:* One existing world completes the existing candidate flow through the UI, with no authority bypass.
+  - *Held by:* art/selftests.py flagship: 'the flagship's edit from mark to undo, every stage's evidence (FLAGSHIP-0)' — through the HTTP surface, not the page
+  - *Gap:* No committed test drives the page (play.js) through the flow; the browser runs are OBSERVED only. The flagship world foundry-yard is not seeded into an existing desktop worlds folder.
+  - *Evidence:* art/flagship.py:10-27 'through the studio's own HTTP surface and nothing else'; art/flagship.py:267-268 the preview stills are synthetic PNGs, not rendered
+- **R5.revision-bound** · EXISTS-TESTED (corrected) · SPEC2 §14 Phase 2 'Revision-bound candidates'; §2.3
+  - *Capability:* Candidates are bound to the base revision. The intent carries the base's art/exporter/world sha256, the request names its head, each evaluation names checked_against, and admission requires that head.
+  - *Held by:* art/selftests.py studio: 'B, drawn at the head before A, refused as stale'; director: 'a candidate checked at the old head is not admitted at the new one'; racetest: the HEAD-MOVED fence rows and 'plant: no fence'. NOT …
+  - *Skeptic:* The intent carries base (studio.py:443-451) and the request names its head (1000-1002). Admission compares the re-evaluated checked_against with the drawn head (1371-1372), and cmd_admit refuses HEAD-MOVED (director.py:784-786). Both are tested with bad inputs. I corrected held_by because replay's …
+  - *Evidence:* art/studio.py:1000-1002 request: head and base parts; art/studio.py:443-451 intent_doc base
+- **R5.candidate-binding-versions** · PARTIAL · SPEC2 §2.3 'Candidate isolation: each candidate binds to world ID, base revision, operati…
+  - *Capability:* A candidate binds the world ID, base revision, operation payload, schema/tool versions and its digest.
+  - *Held by:* art/selftests.py studio: 'each call records its basis: the validators' sources and the configuration, by sha256'
+  - *Gap:* The validator/tool basis is recorded but not compared at admission: a candidate drawn under one validator set is re-evaluated under whatever is current. The head covers the exporter but not director/scope/check sources. The candidate id is the request id + letter, not a digest. The world is bound by name only.
+  - *Evidence:* art/studio.py:126-133 basis(): validator sources and config sha256 recorded per request; art/studio.py:1189-1191 the request line records request_sha256 and basis
+- **R5.stale-refusal** · EXISTS-TESTED · SPEC2 §14 Phase 2 'stale refusal'; §15 step 11 'Plant stale revision'
+  - *Capability:* Stale candidates are refused at admission (STUDIO-STALE), under the lock (HEAD-MOVED fence) and at preview (PREVIEW-STALE), leaving the world unchanged.
+  - *Held by:* art/selftests.py studio: 'B, drawn at the head before A, refused as stale'; preview-studio: 'the head moved since the candidate was drawn: PREVIEW-STALE'; flagship: 'planted: a stale revision (the brief edited after the…
+  - *Gap:* Refusals are a code plus a message string ({ok, code, message}, play.py:984-987). The expected and actual revisions sit in prose, not typed fields as SPEC2 §6 asks.
+  - *Evidence:* art/studio.py:1371-1372 STUDIO-STALE; art/studio.py:1436-1437 PREVIEW-STALE
+- **R5.durable-receipt** · EXISTS-TESTED · SPEC2 §14 Phase 2 'durable receipt'
+  - *Capability:* A durable receipt: the fsynced, hash-chained ledger admit event with head_before/after, parts, inverse, evidence (still sha256, detectors) and, for strict requests, the region receipt and inverse receipt. A CERT-0 certi…
+  - *Held by:* art/selftests.py studio: 'the ledger verifies after the admissions, the refusal and the undos'; strict: 'strict: admitted with its receipt and inverse receipt, the same at evaluation, at admission and from the files'; c…
+  - *Gap:* Certificates and request records are plain writes under art/build (not durable.write), and a failed certificate is swallowed (studio.py:1632-1633); the ledger is the receipt.
+  - *Evidence:* art/director.py:814-818 the admit event's fields; art/director/ledger.py:59-80 chained append, fsync
+- **R5.dependency-invalidation** · PARTIAL (corrected) · SPEC2 §14 Phase 2 'dependency invalidation'
+  - *Capability:* When a world changes, the things that depend on it are invalidated: tags and shapes report changed or gone and refuse requests; candidates and previews go stale on a head move; a path is re-checked against each candidat…
+  - *Held by:* art/selftests.py studio: 'an object changed since it was pinned: said, in the page and in the request', 'an object gone: its tag never moves to another; the request refused until it is unpinned'; marks: 'marks: a shape …
+  - *Gap:* There is no general dependency graph. Collision and nav invalidation does not arise because studio candidates cannot change the layout (intent_doc layout [] at studio.py:449). Tags follow object ids that carry cells, so a moved object is 'gone' rather than followed.
+  - *Skeptic:* PARTIAL stands, but one claim is overstated. A tag that has 'changed' is reported (changed_since) and does NOT refuse the request; only a gone tag refuses (studio.py:833-838), and the studio row says 'said'. A changed shape does refuse (STUDIO-SHAPE). The rest is confirmed: there is no general depe…
+  - *Evidence:* art/studio.py:775-797 refs(): ok/changed/gone by fingerprint; art/studio.py:833-838 a gone tag refuses the request
+- **R5.scripted-acceptance** · EXISTS-TESTED · SPEC2 §14 Phase 2 'full scripted acceptance'; §17 'studio end-to-end workflow'; SPEC1 §8 …
+  - *Capability:* A full scripted acceptance through the studio's HTTP surface on an existing world (foundry-yard, a bay edit): mark → strict request → candidate held and with impact → preview framed, replayed and verified → admit with a…
+  - *Held by:* art/selftests.py flagship: 'the flagship's edit from mark to undo, every stage's evidence (FLAGSHIP-0)' with plants flagship-held-unchecked, flagship-impact-unchecked, flagship-verify-unchecked caught (FLAGSHIP SELFTEST…
+  - *Gap:* It runs with the scripted provider and synthetic stills over HTTP, not through the UI and not with a real provider (a rehearsal would be OBSERVED).
+  - *Evidence:* art/flagship.py:78-179 run(): the six stages; art/flagship.py:280-287 the end-to-end row
+- **R5.plants-world-unchanged** · EXISTS-TESTED · SPEC2 §14 Phase 2 'Plant failures and prove active world remains unchanged'; §15 step 11
+  - *Capability:* Planted failures (invalid region, missing evidence, preview verification failing, stale revision, provider failures, empty answers) each stop their transition with the active world unchanged.
+  - *Held by:* art/selftests.py flagship: 'planted: an invalid region ... the world as it was', 'planted: the impact evidence missing ...', 'planted: the preview's verification failing ...', 'planted: a stale revision ...'; studio: 'n…
+  - *Gap:* The recovery case of step 11 is held separately (crashtest), not inside the flagship procedure.
+  - *Evidence:* art/flagship.py:289-349 planted rows comparing head, brief and scene sha256 and the admit…; art/play.py:2288-2289 brief and ledger bytes unchanged
+- **R5.compare-identical-poses** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 flow 3; §15 step 7 'Show baseline and candidate at identical poses'
+  - *Capability:* Baseline and candidate are compared at identical poses: one camera path per request (PATH-0), framed for the subject (FRAME-0), checked against both scenes. Both sides are played with one seed, state fingerprints are ve…
+  - *Held by:* art/selftests.py preview-studio: 'a candidate's preview: both sides' stills paired at each pose ... (B4-PAIR-STILLS)', 'a still drawn again otherwise, its state as before: UNTRUSTED_IMAGE', 'the same preview again (B4-D…
+  - *Gap:* The pictures are the page's, and the host verifies the simulation states, not that each still was drawn at its pose with the same settings. The renderer and its settings are not bound beyond the viewport.
+  - *Skeptic:* The host side (one path, path_check in both scenes, framing, one seed, state fingerprints, stills paired by key, compare sheet) is implemented (studio.py:1429-1506, motion.py:149-271) and tested with plants. Every suite, however, posts synthetic PNGs (play.py:3380 pic(), flagship.py still_of). The …
+  - *Evidence:* art/studio.py:1429-1455 preview_plan: one path, both slots, path_check, framing; art/studio.py:1457-1471 preview_still: the page's PNG, decoded only
+- **R5.missing-evidence-reasons** · EXISTS-TESTED · SPEC2 §15 step 8 'Show validation, impact, evidence, and missing-evidence reasons'
+  - *Capability:* Validation, impact and evidence are shown, and missing evidence is refused with its reason (STUDIO-NO-STILL, ADMISSION-0's contract.missing list, flagship stage codes).
+  - *Held by:* art/selftests.py studio: 'ADMISSION-0: A with no still is not admitted (STUDIO-NO-STILL), nothing written'; flagship: 'planted: the impact evidence missing: stopped at the candidate (FLAGSHIP-NO-IMPACT)'
+  - *Gap:* Reasons are message text, not structured fields.
+  - *Evidence:* art/director.py:792-795 'REFUSED (ADMISSION-0): ... cannot be admitted yet: <lack>'; art/studio.py:1643-1651 quiet(): a director refusal becomes STUDIO-DIRECTOR-REFUSED with …
+- **R5.dispositions-records** · EXISTS-TESTED · SPEC2 §10 'Record provider/model, request/template hash ... truncation/timeouts'; §14 Pha…
+  - *Capability:* Every request ends in a typed disposition (REALIZED, UNSUPPORTED, AMBIGUOUS, DECLINED, FAILED). Only REALIZED evaluates anything. Each request is recorded (request, response, intents, a hash-chained requests.jsonl line …
+  - *Held by:* art/selftests.py studio: 'an empty answer with no reason is FAILED', 'UNSUPPORTED: the provider names what the studio cannot make...', 'AMBIGUOUS: ... one that says to admit admits nothing', 'the request record chained:…
+  - *Gap:* Lines cut from the end of requests.jsonl are not detectable without an external anchor (said by `records`). The record is not fsynced.
+  - *Evidence:* art/studio.py:108-117 capabilities and dispositions; art/studio.py:1225-1244 a non-REALIZED disposition writes nothing
+- **R5.http-boundary** · EXISTS-TESTED · SPEC2 §2.2 'No hidden privileged shortcut'
+  - *Capability:* The HTTP boundary. POSTs need the studio token in a header and this server's host name; GETs need the host name (DNS rebinding refused); the launcher/read-only token can only heartbeat; every request ends in an answer; …
+  - *Held by:* art/selftests.py studio: 'a POST without the page's token, or to another host, refused', 'a GET by another host's name (DNS rebinding) refused', 'a refusal is sent only after the request's body is read ... plant, no dra…
+  - *Gap:* Any local process can obtain the token via GET /play.html (see R5.explicit-human-admission).
+  - *Evidence:* art/play.py:1162-1170 own_host on every GET; art/play.py:1327-1334 token, host, JSON size
+- **R5.one-path-routes** · EXISTS-TESTED (reader EXISTS-UNVERIFIED, corrected) · SPEC2 §2.2 'UI and LLM operations use the same transaction/admission path'
+  - *Capability:* Every HTTP route that changes a world's brief goes through the one admission path. Admit and undo go through cmd_admit/commit_admission and reject only appends to the ledger. Build, shapes, tags, preview and none do not…
+  - *Held by:* art/selftests.py flagship: 'the flagship's edit from mark to undo, every stage's evidence (FLAGSHIP-0)' (shapes/save, ask, preview, preview/still, preview/finish, still, admit, undo through HTTP; head, brief and scene b…
+  - *Gap:* No test enumerates the POST routes and asserts that the brief and ledger bytes are unchanged for every route but admit, undo and reject. The fallthrough means a route added to STUDIO_POSTS without its own branch would silently undo.
+  - *Skeptic:* Read studio_post and do_POST: only STUDIO_POSTS reach studio_post (play.py:1327-1331); every listed route has its own branch except /studio/undo, which is the fallthrough at play.py:983 (the reader's hazard is real). admit and undo call D.cmd_admit (studio.py:1405, 1610); reject appends an evaluate…
+  - *Evidence:* art/play.py:852-855 STUDIO_POSTS; art/play.py:909-987 studio_post: each route's handler
+- **R5.direct-edits** · PARTIAL (reader MISSING, corrected, resolved F10) · SPEC2 §11 'Direct edits ... use the same transaction path as AI edits'
+  - *Capability:* Direct edits (transform, duplicate, delete, material, parametric dimensions) from the UI go through the same transaction path as AI edits.
+  - *Held by:* art/selftests.py director: DIRECTOR SELFTEST (intent files written outside the studio's provider: A-F evaluated and admitted through cmd_admit, 'a candidate checked at the old head is not admitted at the new one', 'the …
+  - *Gap:* No direct-edit operation exists. A designer can only prompt, or hand-write an intent and admit it with the director CLI (the same cmd_admit).
+  - *Skeptic:* Searched art/web/*.js, art/*.py, art/STUDIO.md and design/ for gizmo, move, rotate, transform, duplicate, delete, material and 'not built'. No UI direct-edit operation exists: play.js lists 'Move, rotate, scale' as not built ('Nothing in the editor moves the world', play.js:681, 812). The inspector…
+  - *Evidence:* art/play.py:852-855 STUDIO_POSTS has no direct-edit route; art/STUDIO.md:113-115 'move, rotate and scale are drawn and not built, and say why (nothi…
+- **R5.hand-edit-path** · CONFLICTS-WITH-SPEC · SPEC2 §2.2 'One mutation path ... No hidden privileged shortcut'
+  - *Capability:* No second mutation path beside admission.
+  - *Held by:* art/selftests.py live: 'edit-swaps — rain 0.8 -> 0.4' (asserts a hand edit IS served); queue: 'History: ... a file changed outside the ledger is not verified (plant)'
+  - *Gap:* Hand edits to a brief are served live and become the base of later evaluations and admissions without a check against the ledger's head. Admitting or rejecting over an unlogged edit would append events that ledger replay refuses (by reading; not run).
+  - *Conflict:* Deliberate design: AGENTS.md §4 native-plaza row, 'an edit to the brief or an `--intent` file is drawn without a restart'; art/play.py:42-51 live edits; art/director.py:17 `rebase` 'record a change made outside the loop (a hand edit, a new exporter)'.
+  - *Evidence:* art/play.py:42-51 'When their content changes it compiles every source again ... A source…; art/director.py:17 'rebase BRIEF --note TEXT record a change made outside the loop (a han…
+- **R5.flow5-play-mode** · EXISTS-UNVERIFIED (resolved F10) · SPEC2 §11 flow 5
+  - *Capability:* Entering and leaving play mode does not corrupt authoring state.
+  - *Held by:* none for play mode itself (studio: 'three candidates drawn ... each a scene of its own on the same map (so the page swaps the scene and keeps the game)' covers scene swaps only)
+  - *Gap:* The server holds no runtime state, so play cannot write authoring state through it, but no test plays and then asserts that the authored bytes are unchanged. Play mode is the page's alone.
+  - *Evidence:* art/play.py:46-50 the renderer writes no state; a new map is a new game; art/play.py:852-855 no route accepts runtime or simulation state
+- **R5.visual-baseline** · PARTIAL · SPEC2 §11 'Visual baseline approval is explicit and binds exact scene revision, camera pa…
+  - *Capability:* Visual baseline approval is explicit and binds the exact scene revision, camera path, renderer/settings and evidence, apart from the bytes freeze and the acceptance evidence.
+  - *Held by:* art/selftests.py flagship: 'the visual baseline: written only on a person's word, from a preview complete, verified and framed; refused otherwise'
+  - *Gap:* The baseline line names no scene revision or head and no renderer version or settings beyond the viewport carried in meta. It is appended with a plain open/write, outside the content lock.
+  - *Evidence:* art/flagship.py:183-215 approve(): refused without replay, verification, a clear and fram…; art/flagship.py:207-212 the line binds request, candidate, path_id, seed, subject, file s…
+- **R5.B2-self-change** · PARTIAL (reader MISSING, corrected) · docs/STUDIO-APP.md §7 B2; §9 rows 6-9
+  - *Capability:* The studio proposes, builds, tests and offers a change to itself (journal, pointer, staging, footprint, build/suites, Try/Admit/Reject, bless and rollback).
+  - *Held by:* art/selftests.py txn: STUDIO-TXN SELFTEST PASSED (log:26 and :887): Recover(J,P,F) held to the contract over every enumerated crash point, every planted wrong decision caught, the contract's table equal to the module's.…
+  - *Gap:* Only the reference decision function Recover(J,P,F) and its contract exist. No promotion code, stub, staging, build-in-job or second-window Try.
+  - *Skeptic:* Grepped the whole tree for studio_source, studio_promote, active.json, blessed, promote, rollback, bless, SOURCE-RESERVED and SOURCE-LEAK. studio_source.py and studio_promote.py do not exist. tools/ holds rung.py and probe/ only. art/studio_app.py says it does not 'choose or replace a generation (B…
+  - *Evidence:* art/studio_txn.py:1-20 'Nothing here launches, moves or writes anything in a studio'; docs/STUDIO-APP.md:639-643 B2 components art/studio_source.py, art/studio_promote.py (abs…
+- **R5.B3-workspace** · PARTIAL · docs/STUDIO-APP.md §7 B3
+  - *Capability:* The workspace: outliner, details pane, candidate strip with stills, save and open projects with provenance, the image as critic; worlds and queue first.
+  - *Held by:* art/selftests.py queue (worlds, queue, launcher, history: STUDIO-2 SELFTEST 19/19)
+  - *Gap:* No outliner with search, no project save/open with provenance and heads, no critic request (no 'critic' anywhere in studio.py, play.py or play.js).
+  - *Evidence:* docs/STUDIO-APP.md:668-677 worlds and queue built; the workspace's items still to be built; art/play.py:619-667 Hub.history (History view)
+- **R5.B4-vocabulary** · PARTIAL · docs/STUDIO-APP.md §7 B4
+  - *Capability:* Vocabulary: columns, beams and hangers, railings, roofs, props and a material library; a scope pattern for an object with its parts.
+  - *Held by:* art/selftests.py facade: FACADE SELFTEST 8/8 (building and bay only)
+  - *Gap:* None of the connect family (columns, beams, hangers, railings), roofs, props or material families exist. FACADE-0's building and bay is the only addition.
+  - *Evidence:* art/dress.py:244 the dressing verbs: skyline, tower, canopy, neon, lamp, puddle, building…; art/studio.py:108-114 entity.prop and mesh.import listed as unsupported
+- **R5.B5-release** · MISSING · docs/STUDIO-APP.md §7 B5
+  - *Capability:* Installer or portable release, uninstall, clean-machine Sandbox test, diagnostics bundle, runtime transaction, signing decision.
+  - *Held by:* none
+  - *Gap:* Nothing of B5 is built.
+  - *Evidence:* docs/STUDIO-APP.md:743-759 B5's components; tools/ holds rung.py and probe/ only (no release.py, studio.iss, sandbox.wsb)
+- **R5.probes-and-product-acceptance** · PARTIAL (corrected) · docs/STUDIO-APP.md §8 (probes 1-5), §9 (rows 1-9)
+  - *Capability:* The five falsifying probes of §8, and the nine-row product acceptance of §9 measured on the owner's machine.
+  - *Held by:* none (off the gate by AGENTS.md section 4; the owner runs them on Windows)
+  - *Gap:* No recorded verdict for probes 3-5 was found in docs/ROADMAP.md or STUDIO-APP.md (probe 6 HELD). §9 rows 1-4 rest on B1's 2026-10-12 acceptance (prose). Row 5 (projects with provenance) and rows 6-9 (B2) are not built.
+  - *Skeptic:* tools/probe holds edge_app, job_object, pointer_swap, low_integrity, journal_replay and state_commit. I correct the gap on one point: ROADMAP.md:3683 records probes 3 and 5 run in the container on Linux ('50 killed pointer writes all whole; 200 killed promotions'), so a record exists, but not as a …
+  - *Evidence:* tools/probe/ edge_app.py, job_object.py, pointer_swap.py, low_integrity.py, journal_repla…; docs/STUDIO-APP.md:521-522 probes 1 and 2 HELD on his machine
+- **R5.v-restore-rebase** · EXISTS-TESTED (reader CONFLICTS-WITH-SPEC, from-verifier, resolved F8) · SPEC2 §2.3 'Stale candidates are refused'; §14 Phase 2 'stale refusal'
+  - *Capability:* A recorded candidate (a queued task's, or one drawn again after a restart) that was written against an older head is re-evaluated at the current head when the person reviews it, and can then be admitted there (CLEAN wit…
+  - *Held by:* Drawing again is held by held: 'held: a shape not as marked is stale, never re-read' (the brief edited, then restore), queue: 'fix 4 ... drawn again: 3, each re-evaluated at the head as it is now', and preview-studio: '…
+  - *Gap:* An intent's own base is never required to equal the head at admission. A candidate written for one revision is admitted at another after automatic re-evaluation.
+  - *Conflict:* Deliberate design: art/director/scope.py:43-44 'HEAD-MOVED says the candidate was written against another head than the one it was checked against: the verdict is the new head's, never the old one's.' and art/studio.py:1046-1047 'A candidate written against an older head is re-evaluated, never trusted (HEAD-MOVED in i…
+  - *Evidence:* art/studio.py:1043-1047 restore docstring: re-evaluated, admitted at the head it is drawn…; art/studio.py:1094 the item's head is the restore-time checked_against
+- **R5.v-replay-stale-untested** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §14 Phase 2 'stale refusal'; §13 planted defects 'stale revision'
+  - *Capability:* Ledger replay refuses an evaluation checked at another head (LEDGER-HEAD) and an admission of an evaluation made at another head (LEDGER-STALE), so verify catches a stale write that slipped past the studio.
+  - *Held by:* none
+  - *Gap:* No selftest, crashtest, racetest or conformance vector plants either code. This matters because Gateway.admit, reject and undo append their evaluate event outside the head fence, which can produce exactly a LEDGER-HEAD ledger.
+  - *Evidence:* art/director.py:896-900 LEDGER-HEAD; art/director.py:907-910 LEDGER-STALE
+- **R5.v-capability-list** · PARTIAL (from-verifier) · SPEC2 §10 'Every request binds ... allowed capabilities'
+  - *Capability:* Each request publishes the studio's allowed capabilities (what it can make, and a closed list of what it cannot). A provider's account naming anything outside the published list is refused.
+  - *Held by:* art/selftests.py studio: 'UNSUPPORTED: the provider names what the studio cannot make, from the list the request published', 'an account that names a capability the studio has, or one it never listed, refuses the respon…
+  - *Gap:* The published list is stale. It names no dressing.building or dressing.bay, though the exporter and the language text the provider receives both have them. A model that reports a building as unsupported is refused FAILED, and the request understates what the studio can make.
+  - *Evidence:* art/studio.py:105-114 CAPABILITIES (from 0220): supported dressing canopy, tower, skyline…; art/dress.py:244 the exporter's verbs include building and bay (FACADE-0, 0237)
+- **R5.v-history-view** · EXISTS-TESTED (from-verifier) · SPEC2 §14 Phase 7 'project history/recovery'
+  - *Capability:* A read-only History view of a world: its ledger newest first and its request record read back, with the ledger replayed to the files (verified or not) and the record's chain checked.
+  - *Held by:* art/selftests.py queue: 'History: the world read back, its ledger newest first, its requests with what they came to; a file changed outside the ledger is not verified (plant), and verified again once restored'
+  - *Gap:* Read-only; there is no restore to an earlier revision from it. VERIFIED is integrity, not truth, and is not anchored outside the world folder.
+  - *Evidence:* art/play.py:619-667 Hub.history; art/play.py:1186-1194 GET /launcher.json and /history.json
+- **R5.v-provider-sandbox** · EXISTS-TESTED (from-verifier) · SPEC2 §10 'No unrestricted shell/filesystem access by default'
+  - *Capability:* Providers run the model without tools. The Claude Code adapter starts the CLI with tools off, no MCP servers, safe mode and no session, gives the prompt on stdin only and runs in an empty temporary folder. A tool offere…
+  - *Held by:* art/selftests.py studio: 'Claude Code's CLI: tools off, no session, the schema and the request given', 'Claude Code offering a tool beyond its structured output: stopped, its answer never used', 'a claude that only a sh…
+  - *Gap:* Only the adapters restrict the model. The provider command is trusted code running as the user, with cwd=REPO, and it can read the studio's token over HTTP. A real CLI run is OBSERVED (probe), not in the suite.
+  - *Evidence:* art/providers/claude_code.py:28-32 flags and why; art/providers/claude_code.py:87 --tools '' --disallowedTools mcp__* --strict-mcp-config -…
+- **R5.m-ledger-bound-base** · PARTIAL (from-verifier) · SPEC2 §2.3 'each candidate binds to world ID, base revision ... Stale candidates are refu…
+  - *Capability:* A candidate's base revision is the world's durable (ledger-verified) revision. An evaluation or admission whose base the ledger never reached is refused rather than recorded.
+  - *Held by:* art/selftests.py studio: 'B, drawn at the head before A, refused as stale'; director: 'a candidate checked at the old head is not admitted at the new one'; racetest (the fence). None for a base the ledger does not accou…
+  - *Gap:* The base is the files' current head, never the ledger's replayed head. Stale-against-files is refused (STUDIO-STALE, HEAD-MOVED, the fence), but an unlogged hand edit becomes a valid base. MEASURED in the host log: the studio admits over one (PREVIEW-STUDIO). By reading, not run: the evaluate event that admission appends fails replay with LEDGER-HEAD, and cmd_rebase replays fi…
+  - *Evidence:* art/director.py:632 evaluate_doc: base = ws.export() of the files; art/director.py:782-786 cmd_admit: HEAD-MOVED against the files' head
+- **R5.m-undo-refusals** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §5 'If later edits depend on it, safely rebase, create a compensating transaction, …
+  - *Capability:* Undo refuses with a typed code: when there is nothing to undo, when the last admission changed the layout, and when its inverse is no longer CLEAN at the current head (a later edit depends on it).
+  - *Held by:* none (studio, flagship, facade and strict rows exercise successful undos only)
+  - *Gap:* Grep for STUDIO-NOT-UNDOABLE and STUDIO-NOTHING-TO-UNDO in art/*.py finds them only in studio.py. No self-test plants a layout admission, a dependent later edit or an empty ledger to require these refusals. Undo always takes the latest admission not yet undone; there is no compensating or selective undo.
+  - *Evidence:* art/studio.py:1582-1608 undo: STUDIO-NOTHING-TO-UNDO, STUDIO-NOT-UNDOABLE (layout; invers…; art/play.py:2159-2169 studio rows: two successful undos only
+- **R5.m-undo-bytes** · PARTIAL (from-verifier, resolved F11) · SPEC2 §5 'Undo restores prior authored state or applies a checked inverse against the exp…
+  - *Capability:* Undo restores the prior authored bytes, and the studio says whether it did (head_restored).
+  - *Held by:* art/selftests.py cert: 'each admission's certificate: the inverse applied to the child gives the parent, byte for byte or (said) token for token' and 'found: an '=' on a statement written in aligned columns, and a '-', …
+  - *Gap:* The undo is byte-exact only for '+' and for '=' on a single-spaced statement. An aligned '=' and a '-' bring the statements and the scene back but not the brief's bytes or the head. This is said, not hidden. The repair is a change to the revision language, which awaits the owner's ruling (commit 6af1d9f's message).
+  - *Evidence:* art/director.py:289-307 inverse forms: '=' re-spaced, '-' re-added at the end without its…; art/studio.py:1612-1617 head_restored reported
+- **R5.m-open-unverified** · PARTIAL (from-verifier) · SPEC2 §11 flow 1 'Launch → select world → load verified state and derived artifacts'
+  - *Capability:* Launching and selecting a world loads its verified state, and refuses or blocks editing of a world whose files its ledger does not replay to.
+  - *Held by:* art/selftests.py queue: 'the first window: / opens the launcher, which lists every world read back (its ledger replayed to its files)'; 'History: ... a file changed outside the ledger is not verified (plant), and verifi…
+  - *Gap:* Opening a world runs crash recovery but not verification. A world that fails verification (UNLOGGED-CHANGE) is still opened with its studio live, and ask/admit proceed on it (see R5.m-ledger-bound-base). Verification is shown, not enforced.
+  - *Evidence:* art/play.py:557-591 Hub.world: recover (or genesis) and open; never verifies; art/director.py:380-396 recover: torn line and pending admission only
+
+## R6 — the dashboard: the studio shell audited against the five areas
+
+R6 audited the studio shell against SPEC2 §11, §14 Phase 1 and §15. The shell is play.html/play.js/studio_ui.js (STUDIO-3, MARK-0, HELD-0 cards, the PREVIEW-0 modal), the launcher start.js and the History view history.js. It already covers most of SPEC2's layout, but its panels can only read or propose; nothing edits directly. Read at HEAD 6af1d9f; nothing was run. Grading policy: when the substance is computed by the host (play.py/studio.py routes: object_info, validate_info, held/strict/impact reports, admit/stale/undo, queue, launcher), the row is EXISTS-TESTED, held by the suites in art/selftests.py (each with plants; the 20261016T162615Z log shows 24/24 twice). When the substance lives in the page (camera, picking, overlays, keys, layout, play mode, what the cards and modals draw), the row is EXISTS-UNVERIFIED. The headline finding is that no test anywhere executes the page's script. LIVE SELFTEST is "the live loop without a browser" (art/play.py:1523-1526). The preview and flagship tests post synthetic PNG stills. STUDIO APP uses a stand-in browser that only reads the HTML and posts heartbeats. The page's own test hooks (window.PLAY.shell, play.js:2180-2184) are referenced by no file. Browser runs of the shell were OBSERVED in headless Chromium, at 1600×900 and 1920×1080, and not committed (docs/ROADMAP.md:4364-4366). No gate row touches art/web or art/play.py. Phase 1 acceptance is therefore PARTIAL: FLAGSHIP-0 completes mark, request, candidate, preview, admit and undo through the studio's HTTP surface, with its plants caught, but not through the page. Areas: Director present; viewport present but untested; outliner/world browser, inspector, bottom drawer and global controls partial. Missing: docking, gamepad, direct edits, a search/hierarchy outliner, projects, an evidence panel or Evidence view, a missing-evidence account, save status, and a UI for visual-baseline approval. Redo conflicts with the deliberate rule "an undo is never itself undone". The evidence sheet has paired stills at identical poses and caveats (tested); crops and the ×8 diff exist but are untested; it lacks scene digests, field of view, renderer version, dependency rebuilds, material/light values and measured (not estimated) performance. Bytes freeze, visual baseline and acceptance evidence are kept apart by file and command, but the acceptance is never recorded, the baseline does not bind the scene revision or renderer, and no baseline is approved at HEAD.
+
+**Surprises.**
+
+- No test in the gate or in art/selftests.py executes the page's script (play.js, studio_ui.js, start.js, history.js). LIVE is 'without a browser' (art/play.py:1523-1526). Preview and flagship post synthetic PNGs (art/play.py:3380, art/flagship.py:267-268). STUDIO APP uses a stand-in browser that only reads HTML (art/studio_app.py:445-460). The page's test hooks window.PLAY.shell (art/web/play.js:2180-2184) are referenced by no file. Browser runs of the shell are OBSERVED, not committed (docs/ROADMAP.md:4364-4366).
+- A stale comment at art/web/play.js:1817-1820 says M, C and P are 'computed by this page from the two scenes it was served'. The code just below (1827-1836) reads the host's held badges (HELD-0: never computed in the page).
+- docs/STUDIO-APP.md:676-677 still says outliner, details and the candidate strip are 'still to be built'. The details pane (inspector) and candidate cards with thumbnails were built at 0230 (art/web/play.js:1035-1085, 1246-1271); the document was not updated.
+- The face frames are written twice, in art/studio_marks.py:131-138 and art/web/studio_ui.js:186-193. They agree by reading, but no test compares them (studio_marks.py:24 only says the page holds the same table).
+- The undo's answer carries head_restored and a certificate (art/studio.py:1614-1619), which FLAGSHIP-0 requires. The page shows neither: 'certificate' and 'head_restored' never occur in play.js, so a person cannot see in the UI whether an undo restored the head.
+- The stats box shows FPS and Frame ms, averages of the requestAnimationFrame cadence, with no clock step or software-timing label (art/web/play.js:955-965). AGENTS.md:67-68 asks that software timings be labelled so, and SPEC2 §8 warns against average FPS alone.
+- No visual baseline exists at HEAD: art/visual_baselines.jsonl is absent. The approve line binds no scene sha256 or head and no renderer digest (art/flagship.py:207-212).
+- The Mark-mode split and Compare draw 'Current' from source [0], the world served now (art/web/play.js:2023), not from the candidate's evaluation base. After the head moves they compare against a different world than the candidate was drawn on; the host's accounts call it stale.
+- The gate has no row touching the studio shell: git grep finds no reference to art/web or art/play in verify/verify.py, so the dashboard is held only by the off-gate art suites.
+
+**The six areas (after the skeptic).** See the synthesis, §4.
+
+- **R6.launch-world-library** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §14 Phase 1 (launchable shell, world library); SPEC2 §11 essential flow 1
+  - *Capability:* A desktop-launched studio whose first window lists the worlds, each read back (its ledger replayed to its files, verified or not), and opens the chosen world's verified state.
+  - *Held by:* art/selftests.py queue 'STUDIO-2 SELFTEST 19/19' rows 'the first window: / opens the launcher, which lists every world read back...' (all three worlds verified: a happy path), 'History: ... a file changed outside the le…
+  - *Gap:* start.js and the in-page world switch are never executed by a test (the stand-in only reads HTML); the 'derived artifacts' loaded are the compiled scene and map only.
+  - *Skeptic:* The listing is real and tested: /launcher.json calls Hub.inspect, which replays each ledger under its lock (play.py:593-617). The queue row asserts every world verified, the head and the views. Its UNLOGGED-CHANGE plant in the History row runs the same inspect and is caught, so 'listed as not verif…
+  - *Evidence:* art/studio_app.py:445-460 a stand-in browser reads the page's token and posts heartbeats …; art/studio_app.py:590-591 the launcher row
+- **R6.viewport-camera** · EXISTS-UNVERIFIED · SPEC2 §11 Studio UX: Center: playable viewport and camera controls; §15 step 3
+  - *Capability:* A center viewport drawn by the WebGL2 renderer, with camera controls (look, fly, wheel, frame, registered views, overview, top/side) and picking by the ray through the cursor, drawing the selection over the picture.
+  - *Held by:* none (no test executes play.js; OBSERVED in headless Chromium 141 at 0230, docs/ROADMAP.md:4364-4366, not committed)
+  - *Gap:* Top and Side are telephoto perspective, not orthographic (play.js:751-752); views saved in the page are lost on reload (play.js:1239); no test of any of it.
+  - *Evidence:* art/web/play.html:79-83 #vp with the view and overlay canvases; art/web/play.js:722-760 play mode, frame selection, overview, Top/Side as telephoto camer…
+- **R6.inspector-read** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 Right: inspector, transform, geometry, material
+  - *Capability:* Inspector of the selected object read from the scene and lineage of the source drawn: transform (centre, size, bounds, cell), geometry, materials with swatches, collision basis, statement and key, what it makes and can …
+  - *Held by:* art/selftests.py live 'LIVE SELFTEST 24/24' row 'shell-object-read' (object root, statement line, collision blocks or not, four bad pieces 404, no tag written, version unchanged); studio 'STUDIO SELFTEST 74/74' row 'the…
+  - *Gap:* Read-only by design. The row asserts object, statement and collision, not the geometry or material fields. The page's panel is executed by no test. Rotation is drawn as a constant 0,0,0 (play.js:1061).
+  - *Skeptic:* object_info computes what the row says, and /object.json is a read. The live row asserts only the object, the statement line, the collision basis, the refusals of bad pieces and that nothing is written. Geometry (bounds, centre, size) and nearest_wall come from studio_refs. The studio row recompute…
+  - *Evidence:* art/play.py:1027-1087 object_info; art/play.py:1254-1267 GET /object.json
+- **R6.region-properties** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 Right: selected region properties
+  - *Capability:* A marked shape's properties: name, operation, target box and face, surface-local vertices to the mm, constraints marked HOST (checked exactly) or WORDS (passed on unchecked), the region's reach, the host's checks and st…
+  - *Held by:* art/selftests.py marks 'MARKS SELFTEST 19/19' rows 'status' (ok, changed, gone, ambiguous), 'refusals', 'marks: saved with the page's token', 'marks: refusals over HTTP', 'marks: a shape whose box moved is changed, and …
+  - *Gap:* The panel's vertex editing and drag tools are the page's and untested. WORDS constraints are checked by nothing (said). A region is not drawn as a volume in the viewport (art/STUDIO.md:236).
+  - *Skeptic:* What the host computes and serves for a shape is well tested, with refusals: the status set, the exact HOST checks (clearance and within), the decimal parsing and the reach. /shapes.json serves it read-only. SPEC2 §11 asks for these properties in the right-hand panel, and that panel (shell.shapeIns…
+  - *Evidence:* art/web/play.js:1703-1785 shell.shapeInspector; art/play.py:935-949 POST /studio/shapes/save and delete
+- **R6.outliner-project-browser** · PARTIAL · SPEC2 §11 Left: project/world browser and collapsible outliner; docs/STUDIO-APP.md §7 B3 …
+  - *Capability:* A left panel with a project/world browser and a collapsible outliner of the scene's objects.
+  - *Held by:* none for an outliner; the worlds' listing by queue row 'the first window...'
+  - *Gap:* No projects (save/open: B3, not built). No outliner of objects by region, object and parts, and no search. The asset browser is a flat folder list in the bottom dock, capped at 120 tiles and not collapsible. Worlds appear on the left only in Mark mode; otherwise in a select and a modal.
+  - *Evidence:* art/web/play.js:855-874 the left navigator (World, Create, Content, Review) is navigation…; art/web/play.js:1160-1173 asset browser folders by kind
+- **R6.director-drawer** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 Summonable Director: prompt with current selection/world context; §15 step 4
+  - *Capability:* A summoned Director prompt that carries the current selection and world as context; the request bound to the world's head and base, the target and pins, the named shapes and the camera.
+  - *Held by:* art/selftests.py studio rows 'three candidates drawn for a selected slab', 'the request recorded: context, response, intents', 'what a model is told: each tag...', 'a prompt naming a tag that is not the target or a pin:…
+  - *Gap:* The editor's selection reaches the director only once it is made the target (E, or the inspector's Ask…). The drawer's own script is untested (studio_selftest calls ask in Python; others POST /studio/ask).
+  - *Skeptic:* The host's request binding is tested, with refusals. The request records the target's statement and the head. Shapes reach the request as version 2. A tag that is not the target or a pin is refused, and so is a changed shape. The studio suite asks through Python g.ask; /studio/ask is exercised over…
+  - *Evidence:* art/web/play.html:348-362 the drawer: world, Duplicate, provider, refs, shapes, prompt, A…; art/web/play.js:403-450 E/target, openPanel, ask posts prompt, camera, strict and world
+- **R6.candidate-lane** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 Bottom/drawer: candidate lane; §14 Phase 1 candidate lane
+  - *Capability:* A candidate lane: each candidate with thumbnail, the host's order, M/C/P badges, per-shape held verdicts, strict PASS/FAIL, impact, verdict, rung, Show/Admit/Reject/Preview, and None for the set.
+  - *Held by:* art/selftests.py held rows 'held: every candidate carries the host's report', 'compare: the host's order', 'compare: the order reads no model words', 'compare: one admitted, the set recorded', 'compare: none chosen, rec…
+  - *Gap:* What the cards draw is executed by no test. A card's thumbnail draws the candidate alone, never its baseline.
+  - *Skeptic:* What each card carries is host data, and it is tested with plants and refusals: M/C/P and the accounts, the host's order (and that it reads no model words), None (a second None gives 409 STUDIO-DECIDED), strict PASS/FAIL and the impact. The lane itself (shell.candidates, markCandidates, candThumb, …
+  - *Evidence:* art/web/play.js:1246-1271 the candidate cards in the dock; art/web/play.js:1829-1887 M/C/P, strict chip, impact row, held chips, host order, None
+- **R6.persistent-queue** · EXISTS-TESTED · SPEC2 §14 Phase 1 persistent queue; §11 Bottom/drawer: queue
+  - *Capability:* A persistent queue of prompts for any world, with a provider and model, run in the background and reviewed later; kept across restarts.
+  - *Held by:* art/selftests.py queue 'STUDIO-2 SELFTEST 19/19' rows 'a request queued for the other world runs there in the background and is ready to review', 'fix 3: a torn last line set aside...', 'fix 4: a task the studio stopped…
+  - *Gap:* The queue lives in the Director drawer, not the bottom drawer. Its panel is untested.
+  - *Evidence:* art/web/play.js:632-669 queueShow with Cancel, Review, Set aside, Queue again, cost or to…; art/web/play.html:358-361 the queue section inside the Director drawer
+- **R6.validation-panel** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 Bottom/drawer: validation; §15 step 6 and 8
+  - *Capability:* Validation shown for the source drawn: the art checks as run when it was compiled and why its latest compile was refused, or for a candidate the director's verdict, codes and ADMISSION-0 record.
+  - *Held by:* art/selftests.py live rows 'shell-validate-read' (the rows equal art/check.py's for the scene served) and 'shell-validate-refused' (a mover-through-a-wall compile refused, the drawn scene's checks shown)
+  - *Gap:* A modal opened from the bar, not a drawer panel. The modal is untested.
+  - *Skeptic:* For source 0 (the brief), validate_info is tested: its rows are compared with an independent check.verify run, and a refused compile is shown. Its candidate branch (verdict, codes and the ADMISSION-0 record, play.py:1096-1098) is not requested by any row through /validate.json. The intent-served ro…
+  - *Evidence:* art/play.py:1090-1101 validate_info; art/play.py:1591-1595 shell-validate-read
+- **R6.evidence-panel** · PARTIAL · SPEC2 §14 Phase 1 evidence panel; §11 Bottom/drawer: evidence
+  - *Capability:* An evidence panel in the drawer gathering a candidate's evidence.
+  - *Held by:* none for a panel; the preview report by preview-studio rows
+  - *Gap:* No evidence panel. Evidence is spread over the preview modal, the cards' chips and the Director drawer. Nothing gathers or exports one candidate's evidence.
+  - *Evidence:* art/web/views/evidence.json:8 status 'not built'; art/STUDIO.md:705-707 the Evidence view not built
+- **R6.evidence-stills-pairs** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 evidence sheet: baseline/candidate stills; flow 3; §15 step 7
+  - *Capability:* Baseline and candidate stills at identical camera poses (one path and seed for every candidate of a request), with state fingerprints per pose.
+  - *Held by:* art/selftests.py preview-studio 'PREVIEW-STUDIO SELFTEST 14/14' rows B4-PAIR-STILLS, B4-RESET-ON-CHANGE, B4-INCOMPLETE-CAPTURE, UNTRUSTED_IMAGE and three motion plants; impact-studio IMPACT-SAVED ('one preview path [...…
+  - *Gap:* In the tests the stills are synthetic PNGs (play.py:3380, flagship.py:267-268), so the page's own drawing at the poses is never exercised. The Mark-mode split compares against source [0] (play.js:2023), not the candidate's evaluation base.
+  - *Skeptic:* The host side holds: one plan whose single pose list serves both sides, one path for every candidate of a request, per-pose state fingerprints, and an incomplete or altered still caught. The stills themselves, which SPEC2 asks be compared at identical poses, are posted as synthetic PNGs in every te…
+  - *Evidence:* art/studio.py:1429-1455 one plan, the same poses for both sides; art/web/play.js:1892-1929 the page draws both sides at each pose and posts them
+- **R6.evidence-crops-diff** · EXISTS-UNVERIFIED · SPEC2 §11 evidence sheet: subject crops, optional amplified diff
+  - *Capability:* Subject crops and an optional amplified difference in the evidence sheet.
+  - *Held by:* none asserts the sheet's content; preview-studio checks only that preview.compare.png is written and named by sha256
+  - *Gap:* No row asserts the crops' placement or the ×8 difference. Diff mode's outlines (play.js:2042-2064) draw the host's /held.json boxes (tested) in an untested page.
+  - *Evidence:* art/motion.py:268-313 compare_sheet: both stills, the subject's crops, the difference ×8 …; art/studio.py:1495-1499 the sheet kept and named
+- **R6.evidence-camera-digests** · PARTIAL · SPEC2 §11 evidence sheet: exact camera/render settings, source/candidate digests
+  - *Capability:* Exact camera and render settings and the source/candidate digests recorded with the evidence.
+  - *Held by:* preview-studio B4-PAIR-STILLS asserts the meta keys (camera_path_id, viewport, seed, prompt_sha256, ...)
+  - *Gap:* The preview's meta and report name neither side's scene sha256. They record no field of view, no renderer code digest and no renderer settings. The modal shows no digest; only the Source chip shows the drawn scene's.
+  - *Evidence:* art/motion.py:41 VIEWPORT 480 x 270; art/motion.py:149-164 plan: poses, path_id, seed
+- **R6.evidence-validation-deps** · PARTIAL · SPEC2 §11 evidence sheet: validation and dependency rebuilds
+  - *Capability:* Validation results and the dependency rebuilds a candidate causes, in its evidence.
+  - *Held by:* director, held and strict suites for validation; none for dependency rebuilds
+  - *Gap:* Nothing records which derived artifacts (collision, nav, thumbnails, impact, stills) a candidate invalidates or rebuilds.
+  - *Evidence:* art/web/play.js:549-559 rung, requires, not checked; art/web/play.js:1841-1848 strict chip with receipt
+- **R6.evidence-material-light** · PARTIAL · SPEC2 §11 evidence sheet: relevant material/light values
+  - *Capability:* Relevant material and light values in the evidence.
+  - *Held by:* none in the evidence; live 'shell-object-read' for the inspector's read
+  - *Gap:* Cards, preview report and sheet carry no material or light values of what changed. M only says the look changed.
+  - *Evidence:* art/web/play.js:1066-1069 inspector materials of a selection; art/web/play.js:1225 a material tile's values in a toast
+- **R6.evidence-performance** · PARTIAL · SPEC2 §11 evidence sheet: measured performance; §8 performance policy
+  - *Capability:* Measured performance in the evidence.
+  - *Held by:* impact 'IMPACT SELFTEST 9/9' (counts worked by hand; coefficients least squares); preview-studio B4-TIMING-BOUNDARY
+  - *Gap:* The only frame cost in the evidence is a model's advisory ESTIMATE. No measured CPU or GPU frame time of base vs candidate is kept. The live stats box is never recorded.
+  - *Evidence:* art/impact.py:198-206 ESTIMATE with calibration host and date; art/web/play.js:1851-1865 the card's ms ESTIMATE
+- **R6.evidence-proxy-caveats** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 evidence sheet: proxy-metric caveats; §2.7
+  - *Capability:* Proxy metrics carry their caveats (SSIM a look, impact an advisory estimate, detectors prove nothing, framing proxies not perceptual).
+  - *Held by:* impact row 'a candidate over a budget is flagged, advisory' (r1['advisory'] == ADVISORY); impact-studio row asserting estimate label ESTIMATE and advisory; flagship row 'the visual baseline: ...' ('not perceptual legibi…
+  - *Gap:* The page's display of the caveats is untested.
+  - *Skeptic:* The impact estimate's caveat and the baseline's 'not perceptual' basis are asserted by string equality in rows that catch plants. The report's SSIM caveat (motion.py:264 'a look, never a verdict') is asserted by no row: B4-PAIR-STILLS does not read rep['advisory']. The detectors' 'prove nothing' ap…
+  - *Evidence:* art/impact.py:34 ADVISORY; art/motion.py:264 the report's advisory
+- **R6.missing-evidence-reasons** · PARTIAL · SPEC2 §15 step 8 missing-evidence reasons
+  - *Capability:* Show, before a decision, the evidence a candidate is missing and why.
+  - *Held by:* flagship 'FLAGSHIP SELFTEST 9/9' (each stage stops with its code), outside the UI
+  - *Gap:* The UI gives no account of what a candidate lacks (no preview run, no framing, no impact). The flagship's codes live only in flagship.py. A disabled Admit does not say why.
+  - *Evidence:* art/flagship.py:14-22 FLAGSHIP-MARK ... FLAGSHIP-UNDO; art/web/play.js:583 admissible(): Admit disabled with no reason
+- **R6.admit-reject-explicit** · EXISTS-TESTED · SPEC2 §15 step 9; §14 Phase 1 admit/reject; §11 flow 3
+  - *Capability:* Admission, rejection or none only by an explicit human action; an admission brings a still of the candidate as drawn, read by the host.
+  - *Held by:* studio rows 'ADMISSION-0: A with no still is not admitted (STUDIO-NO-STILL)', 'a still the detectors flag ... not admitted without despite', 'A admitted...', 'C rejected...'; held 'compare: none chosen, recorded'
+  - *Gap:* The page's Admit path (two frames, the canvas taken as PNG at most 960 px) is untested.
+  - *Evidence:* art/web/play.js:467-490 takeStill and admitWithStill; art/web/play.js:451-458 decide posts admit/reject
+- **R6.stale-refusal** · EXISTS-TESTED · SPEC2 §15 step 5; §2.3
+  - *Capability:* A candidate bound to the head it was drawn at; admission or preview against a moved head refused.
+  - *Held by:* studio 'B, drawn at the head before A, refused as stale'; preview-studio 'the head moved since the candidate was drawn: PREVIEW-STALE'; flagship 'planted: a stale revision'
+  - *Gap:* The card does not show the head it is bound to.
+  - *Evidence:* art/studio.py:1371-1372 STUDIO-STALE; art/studio.py:1436-1437 PREVIEW-STALE
+- **R6.undo-verify** · PARTIAL (resolved F11) · SPEC2 §15 step 10; §11 flow 4; §14 Phase 1 undo
+  - *Capability:* Undo the last admission from the UI and verify that the prior state was restored.
+  - *Held by:* studio rows 'undo: the last admission's exact inverse admitted...' and 'undo again...'; flagship undo stage (head_restored and certificate required)
+  - *Gap:* The page never shows head_restored or the certificate (neither word occurs in play.js), so restoration cannot be verified in the UI. The Edit menu has no Undo (play.js:780-787).
+  - *Evidence:* art/web/play.html:355 Undo last admission in the Director drawer; art/web/play.js:494 the page shows only the ledger numbers
+- **R6.redo** · PARTIAL (reader CONFLICTS-WITH-SPEC, resolved F11) · SPEC2 §11 Global controls: undo/redo
+  - *Capability:* A redo beside undo.
+  - *Held by:* studio row 'undo again: an undo is never undone; it walks back to A, and the brief's bytes and scene are as at the start'
+  - *Gap:* No redo anywhere.
+  - *Conflict:* art/studio.py:1583-1584: "Undo at the level of intent: the latest admission not yet undone (an undo is never itself undone; undo again walks further back)". The row at art/play.py:2167 holds it. A conventional redo, which undoes the undo, is what this rule excludes. A redo built as a fresh admission of the undone inte…
+  - *Evidence:* art/studio.py:1583-1584 the undo rule; art/play.py:2167-2169 the row
+- **R6.recovery** · EXISTS-TESTED · SPEC2 §11 flow 6; §14 Phase 1 recovery; §17 recovery with no unadmitted candidate promoti…
+  - *Capability:* Recovery after a crash from the last verified durable state, with no unadmitted candidate promoted.
+  - *Held by:* crashtest 'DIRECTOR CRASHTEST PASSED (15 cases)'; live row 'lifecycle: the start recovers the ledger before it serves'; queue 'fix 4: a task the studio stopped under ... reviewed without asking again'
+  - *Gap:* There is no recovery action in the UI; recovery runs at every start. The launcher shows each world as verified or not (start.js:48-56).
+  - *Evidence:* art/play.py:1714-1763 lifecycle: torn line set aside, pending cleared, then ready; art/STUDIO.md:604-613 crash safety
+- **R6.play-mode** · EXISTS-UNVERIFIED (resolved F10) · SPEC2 §11 flow 5; Global controls play/stop
+  - *Capability:* Enter and exit play mode without corrupting authoring state.
+  - *Held by:* none (OBSERVED in headless Chromium at 0230, docs/ROADMAP.md:4364-4366)
+  - *Gap:* No test. By construction play mode has no write route, but nothing asserts it.
+  - *Evidence:* art/web/play.js:724-740 enterPlay and leavePlay; art/web/play.js:2213-2217 Esc returns to the editor at the player's eye
+- **R6.phase1-acceptance** · PARTIAL · SPEC2 §14 Phase 1 Acceptance
+  - *Capability:* One existing world completes the existing candidate flow through the UI with no authority bypass.
+  - *Held by:* flagship 'FLAGSHIP SELFTEST 9/9' row 'the flagship's edit from mark to undo, every stage's evidence (FLAGSHIP-0)', through the HTTP surface
+  - *Gap:* The flow runs through the HTTP routes the page uses, not through the page. play.js, its buttons and its still-taking are executed by no test, and the browser runs were OBSERVED and not committed.
+  - *Evidence:* art/flagship.py:10-27 the procedure through the studio's HTTP surface; art/flagship.py:61-75 Http with the page's token
+- **R6.no-authority-bypass** · EXISTS-TESTED · SPEC2 §2.2 and §4 Studio Shell 'does not mirror authority'; §14 Phase 1 'no authority byp…
+  - *Capability:* The shell holds no authority: its reads bind nothing; every change goes through token-held routes; read-only views cannot ask, admit or queue.
+  - *Held by:* queue row 'the launcher's token is good for the window's heartbeat and nothing else'; studio rows 'a POST without the page's token, or to another host, refused' and 'a GET by another host's name (DNS rebinding) refused'…
+  - *Gap:* The page's admissible() is client-side only; the host checks again at admission (play.js:583, studio.py:1353-1374).
+  - *Evidence:* art/play.py:1327-1331 token and host checked on every studio POST; art/play.py:1110-1113 presence token for read-only views
+- **R6.direct-edits** · PARTIAL (reader MISSING, corrected, resolved F10) · SPEC2 §11 Direct edits; §2.2
+  - *Capability:* Direct edits (transform, duplicate, delete, material, parametric dimensions) through the same transaction path as AI edits.
+  - *Held by:* director selftest (art/selftests.py 'director'), for the path a hand-written intent takes: 'a candidate checked at the old head is not admitted at the new one', 'a REFUSED candidate is never admitted' and 'a LEAKAGE can…
+  - *Gap:* No UI control writes a revision. The path exists (an intent evaluated and admitted by the director, as --intent files and the undo's own intent show), but in the studio only a provider writes one. Duplicate copies a world, not an object. Walls and collision belong to design/design.py by rule (AGENTS.md:62-66), so dimension edits of play geometry would have to go there.
+  - *Skeptic:* The reader graded MISSING because the studio has no edit control, and that is right for the page. The page's POSTs (I grepped post("/ in play.js) and STUDIO_POSTS (play.py:852-855) include no route for transform, delete, material or dimension. Move, rotate and scale are disabled as NOT_BUILT (play.…
+  - *Evidence:* art/web/play.js:681 NOT_BUILT.move: 'Nothing in the editor moves the world'; art/web/play.js:911-913 move, rotate, scale disabled
+- **R6.three-concepts** · EXISTS-UNVERIFIED (reader PARTIAL, resolved F15) · SPEC2 §11 'Keep three concepts separate'
+  - *Capability:* Bytes freeze, visual baseline and acceptance evidence kept separate, none implying another.
+  - *Held by:* flagship row 'the visual baseline: written only on a person's word, from a preview complete, verified and framed; refused otherwise'; quality 'QUALITY SELFTEST 76/76' (freeze into a scratch file)
+  - *Gap:* Separate files and commands, and nothing reads visual_baselines.jsonl. But the acceptance's result is printed, never kept as a record; none of the three is reachable from the UI; no test asserts that one leaves the others untouched.
+  - *Evidence:* art/quality.py:549 freeze writes art/references.jsonl; art/flagship.py:183-215 approve writes art/visual_baselines.jsonl, references untouched
+- **R6.visual-baseline-binding** · PARTIAL · SPEC2 §11 'Visual baseline approval is explicit and binds exact scene revision, camera pa…
+  - *Capability:* An explicit visual-baseline approval binding the exact scene revision, camera path, renderer and settings, and the evidence.
+  - *Held by:* flagship baseline row (refused without a note or from an incomplete preview)
+  - *Gap:* It binds path id, seed, subject, the sha256 of the preview's meta, report, archives and sheet, provenance and semantics. It does not bind the scene's sha256 or head (only through the request id), the renderer's code digest or the field of view. Approval is a CLI command, not in the UI. No baseline is approved at HEAD (art/visual_baselines.jsonl is absent).
+  - *Evidence:* art/flagship.py:194-212 what the line binds; art/flagship.py:51 BASELINES path
+- **R6.input-keyboard-mouse** · EXISTS-UNVERIFIED · SPEC2 §4 Studio Shell keyboard/mouse/gamepad UX; §14 Phase 7 shortcuts
+  - *Capability:* Keyboard and mouse control of the editor, the play mode, Mark & Shape and the director.
+  - *Held by:* none
+  - *Gap:* No test. Keys are fixed, with no rebinding. E and R change meaning in Mark mode.
+  - *Evidence:* art/web/play.js:2259-2301 key bindings; art/web/play.js:2220-2258 mouse: click select, right-drag, wheel
+- **R6.input-gamepad** · MISSING · SPEC2 §4 keyboard/mouse/gamepad UX; target Xbox Ally X-class hardware
+  - *Capability:* Gamepad input.
+  - *Held by:* none
+  - *Gap:* No getGamepads or gamepad events anywhere in art/ or graybox/.
+  - *Evidence:* art/web/studio_ui.js:31 a gamepad icon only; art/web/play.js:858 the Gameplay nav item uses the icon
+- **R6.docking** · MISSING · SPEC2 §4 Studio Shell 'windows, panels, docking'; SPEC1 §8 viewport-first docking
+  - *Capability:* Dockable panels.
+  - *Held by:* none
+  - *Gap:* A fixed CSS grid: no move, resize, collapse, float or saved layout. Only the inspector's sections fold (details).
+  - *Evidence:* art/web/play.html:22 body rows 36/32/1fr/24 px; art/web/play.html:66 work columns 214 px \| 1fr \| 344 px
+- **R6.layout-1080p** · EXISTS-UNVERIFIED · SPEC2 header 'initial viewport target 1920×1080'
+  - *Capability:* The studio laid out for an initial 1920×1080 viewport target.
+  - *Held by:* none (OBSERVED at 1600×900 and 1920×1080 in headless Chromium, docs/ROADMAP.md:4364-4365, not committed)
+  - *Gap:* No committed test or screenshot. Not seen in Edge on Windows or on Xbox Ally-class hardware.
+  - *Evidence:* art/web/play.html:22, 66 and 79 at 1920×1080 the viewport is 1362×732 CSS px by arithmetic; art/web/play.js:139-141 Play (1080p) draws 1920×1080
+- **R6.measured-only-display** · PARTIAL (reader EXISTS-UNVERIFIED, corrected) · SPEC2 §2.10 no unearned claims; §8 performance policy; AGENTS.md:90
+  - *Capability:* The page shows only numbers it measured or reads from the host, labelling estimates and what it cannot measure.
+  - *Held by:* IMPACT-STUDIO SELFTEST (art/selftests.py 'impact-studio'), row 'impact: every candidate's panel, kept beside its intent (IMPACT-SAVED)' (art/play.py:3241-3246; log 20261016T162615Z.log:540). It asserts the host's estima…
+  - *Gap:* FPS and Frame ms are averages of the requestAnimationFrame cadence, shown without a clock step or a software-timing label (only VRAM and CPU submit have titles). The 1080p chip and Rotation 0,0,0 are constants.
+  - *Skeptic:* I searched for a test of the page's numbers (ESTIMATE, n/a, statsShow) and found only the host-side assertion above. It would fail if the host dropped the ESTIMATE label, but it does not cover what the page shows. In the page, VRAM is 'n/a' with a title saying it is not measured, and CPU submit has…
+  - *Evidence:* art/web/play.js:154-161 draw calls counted by wrapping drawArrays; art/web/play.js:955-966 stats: FPS, Frame, CPU submit, draw calls, tris, VRAM n/a
+- **R6.global-controls** · PARTIAL · SPEC2 §11 Global controls
+  - *Capability:* A global strip: project/world, save status, play/stop, undo/redo, viewport mode, build/preview state.
+  - *Held by:* live 'shell-local-build' (Build now, 403 without the token) for the build route; none for the strip
+  - *Gap:* No save status. Undo is only in the Director drawer and there is no redo. Preview state is not on the bar. There is no project, only a world.
+  - *Evidence:* art/web/play.html:304-316 menu bar and context bar; art/web/play.js:765-852 menus and the right of the bar (Local Build, Play (1080p), Valida…
+- **R6.v-direct-edits** · PARTIAL (reader MISSING, from-verifier, resolved F10) · SPEC2 §11 'Direct edits (transform, duplicate, delete, material, parametric dimensions) u…
+  - *Capability:* Direct edits (transform, duplicate, delete, material, parametric dimensions) made in the editor go through the same transaction path as AI edits.
+  - *Held by:* none
+  - *Gap:* No direct object edit exists: no move, rotate, scale, delete, material assignment or parametric dimension. Every change to the world is a director proposal. Only a whole world can be duplicated.
+  - *Evidence:* art/web/play.js:681 NOT_BUILT.move: nothing in the editor moves the world; art/web/play.js:812 Move, rotate, scale marked not built
+- **R6.v-play-mode** · EXISTS-UNVERIFIED (from-verifier, resolved F10) · SPEC2 §11 essential flow 5
+  - *Capability:* Enter and exit play mode without corrupting authoring state.
+  - *Held by:* none
+  - *Gap:* Play mode is page-only and appears to make no POST, so the brief cannot be changed by it. No test enters or leaves play mode, and none asserts that the editor's state (selection, camera, shapes draft) or the host's survives it.
+  - *Evidence:* art/web/play.js:724-739 enterPlay/leavePlay switch ui.mode and the camera only; art/web/play.js:822-828 Play menu: Play, Play (1080p), Reset, Pause
+- **R6.v-ambiguity-clarify** · PARTIAL (from-verifier) · SPEC2 §11 essential flow 2 'interpret constraints when ambiguous'
+  - *Capability:* When a prompt is ambiguous, the constraints are interpreted with the person before a candidate is made.
+  - *Held by:* art/selftests.py studio row 'AMBIGUOUS: the director's questions kept as text; one that says to admit admits nothing'
+  - *Gap:* An AMBIGUOUS answer ends the request, and its questions are shown as text. Nothing lets the person answer them in a reply bound to that request; the person must ask again.
+  - *Evidence:* art/play.py:2271-2275 AMBIGUOUS row; art/web/play.js:518-531 disposition and questions shown as text
+- **R6.v-candidate-isolation** · EXISTS-TESTED (from-verifier) · SPEC2 §11 flow 2 'create isolated candidate'; §15 step 5
+  - *Capability:* Each candidate is an isolated scene of its own, and the world is unchanged until a person admits one.
+  - *Held by:* art/selftests.py studio rows 'three candidates drawn for a selected slab' (each a scene of its own on the same map) and 'no answer without candidates writes the world: the brief and the ledger byte for byte as before'; …
+  - *Gap:* The queue row asserts that the other world is unchanged, not that the queued world's own ledger is unchanged before review.
+  - *Evidence:* art/play.py:1969-1976 each candidate its own slot and scene; art/play.py:2287-2289 brief and ledger unchanged
+- **R6.v-history-view** · EXISTS-TESTED (from-verifier) · SPEC2 §14 Phase 7 'project history/recovery'
+  - *Capability:* A world's history read back: its ledger newest first and its requests with what they came to, with integrity verified or the reason it is not.
+  - *Held by:* art/selftests.py queue row 'History: the world read back, its ledger newest first, its requests with what they came to; a file changed outside the ledger is not verified (plant), and verified again once restored'
+  - *Gap:* The host's read is tested; the History page (history.html) is run by no test. The Revision chip in play.js reads the same inspect, also untested.
+  - *Evidence:* art/play.py:619-624 Hub.history; art/play.py:1190-1194 GET /history.json
+- **R6.m-hand-edit-rebase** · EXISTS-TESTED (from-verifier) · SPEC2 §2.2 'One mutation path … No hidden privileged shortcut'; §11 Direct edits
+  - *Capability:* A change made outside the admission path (a hand edit of the brief, a new exporter) is detected by ledger verification. It enters the record only through an explicit `director.py rebase` event.
+  - *Held by:* director selftest (art/selftests.py 'director'): 'plant: a hand edit of the art file, unlogged is refused' (UNLOGGED-CHANGE) and 'a hand edit recorded with rebase verifies' (director.py:1229-1248; log 20261016T162615Z.l…
+  - *Gap:* Rebase records an out-of-loop edit without running the director's evaluation (no scope, checks or rules), so it is a second, unvalidated mutation path beside admission. It is logged rather than hidden, but no check limits what it can admit.
+  - *Evidence:* art/director.py:17 'rebase BRIEF --note TEXT record a change made outside the loop (a han…; art/director.py:849-857 cmd_rebase appends the new head and text with no evaluation
+- **R6.m-undo-refusals** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §5 Transactions and undo: 'refuse with a conflict'; §6 typed refusals
+  - *Capability:* Undo refuses with a typed code: STUDIO-NOTHING-TO-UNDO when no admission is left, STUDIO-NOT-UNDOABLE when the last admission changed the layout (to be undone through the design tool) or its inverse is not CLEAN, record…
+  - *Held by:* none
+  - *Gap:* A search of every art/*.py for NOTHING-TO-UNDO, NOT-UNDOABLE, 'nothing to undo' and 'undo … layout' finds only the definitions. No row plants a layout admission or an unclean inverse and requires the refusal.
+  - *Evidence:* art/studio.py:1592-1593 STUDIO-NOTHING-TO-UNDO; art/studio.py:1595-1596 STUDIO-NOT-UNDOABLE for a layout admission
+- **R6.m-shell-token-authority** · EXISTS-TESTED (from-verifier) · SPEC2 §4 Studio Shell; §14 Phase 1 acceptance 'with no authority bypass'
+  - *Capability:* Every write the shell can make is a POST from a fixed list that needs the studio's token and the server's own host name. The launcher and read-only views hold a heartbeat-only token, and the shell's GET reads write noth…
+  - *Held by:* LIVE SELFTEST rows shell-local-build (403 without the token), shell-object-read (no tag written, live.version unchanged) and 'lifecycle: /studio/shutdown without the page's token refused'; STUDIO-2 row 'the launcher's t…
+  - *Gap:* Holds at the HTTP boundary only. The page's own behaviour (play.js) is not exercised.
+  - *Evidence:* art/play.py:852-855 STUDIO_POSTS, the fixed list; art/play.py:1110-1113 the studio token and the presence token
+- **R6.m-unbuilt-labelled** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §2.9 'every unsupported behavior has a stated limit and a trigger for revisiting it'
+  - *Capability:* The shell names every unsupported feature in place. Geometry, voxel, decals, audio, AI, prefabs, procedural, templates and move/rotate/scale are disabled or marked 'not built', with a reason and where the work goes inst…
+  - *Held by:* none
+  - *Gap:* No test reads the page. The reasons name where the work goes (the design tool, a later slice) but give no trigger for revisiting, which §2.9 asks for.
+  - *Evidence:* art/web/play.js:672-683 the NOT_BUILT table with reasons; art/web/play.js:869-870 nav items marked 'not built' with the reason as title
+
+## R7 — rendering, preview, evidence and performance
+
+R7 is the art layer's own WebGL 2 renderer (art/web/scene_render.js). It has one static directional shadow map, point lights with no shadows that are gated by a per-cell line-of-sight grid, GGX shading on scalar materials, a planar mirror for the floor, height fog, bloom, an ACES tone curve and MSAA up to 4 samples. Around it the host has a strong evidence apparatus: exact checks on the scene's bytes with frozen byte references (QUALITY-0), detectors on stills, an advisory cost estimate (IMPACT-0), exact camera paths and framing (PATH-0/FRAME-0), state-fingerprinted previews with paired stills and a sheet to inspect (PREVIEW-0), and a scripted acceptance with an owner-approved visual baseline (FLAGSHIP-0). That apparatus is EXISTS-TESTED through art/selftests.py suites with planted defects, but no test ever runs the renderer itself: every still in every suite is a synthetic PNG, and the only checks that touch scene_render.js read four constants from its source text. Against SPEC2 §8 most production items are MISSING or PARTIAL. Performance evidence is thin: no GPU timing, no p99, pacing or target-hardware profile, a cost model fitted on a CPU rasterizer, and a graybox-only bench from 2026-10-09. SPEC1 §7's bit-exact reference exists only as the kernel's frozen tile renderer (held by the gate) and has no link to art scenes; its downsample reconciliation and palette-only materials conflict with the repository's rule that nothing hashes the picture and with SPEC2's own rulings, and no separation matrix or versioned lighting bands exist.
+
+**Surprises.**
+
+- No test ever runs the production renderer art/web/scene_render.js. QUALITY-0 (quality.py:428-440) and IMPACT-0 (impact.py:57-66) only regex-read constants from its source. LIVE SELFTEST runs 'without a browser' (play.py:1524). Every still in the preview, preview-studio and flagship suites is a synthetic 48x27 PNG (motion.py:409, play.py:3380, flagship.py:267-268). So paired stills, the compare sheet, SSIM, the acceptance and baseline approval are all proven only on fabricated pictures. The graybox renderer, by contrast, has a browser self-test (graybox/web/main.js:129-213).
+- art/impact_model.json was fitted on SwiftShader (a CPU rasterizer) at 480x270, with frames of about 2.4-3.9 s, an RMS error of 654 ms and an intercept of -589.29 ms. By arithmetic from its coefficients, a small scene gets a negative estimate (about -541 ms for impact.py's own selftest scene). The calibration script that produced its rows is not in the repository: the fit can be reproduced from the rows, the rows cannot be reproduced.
+- impact_model.json:172 records scene_render_sha256, which matches HEAD's renderer today, but no code reads it. A renderer change would leave the model in force silently; AGENTS.md relies on a person to re-measure.
+- IMPACT-0's texture_bytes and its 256 KiB budget count only textures built from the scene. The renderer's 4096x4096 DEPTH_COMPONENT32F shadow map (64 MiB, scene_render.js:459, 570) and its MSAA, HDR, bloom and mirror targets are outside it, so the figure is not GPU memory.
+- QUALITY-0 bounds three scene fields the renderer never reads: environment.time, fog.volumetric, and a rect light's width and height (quality.py:297-316, 417-419 against scene_render.js:489-532). Rect lights are drawn as point lights at 2.2 times their candela, and the sky shader draws stars and a warm city glow in the day scenes too (scene_render.js:293, 296).
+- art/preview.py is a second, older sketch renderer: a different shader, a 128-light loop against the native renderer's 160, no shadows. No test covers it, its only mention is art/README.md:122, and its header still treats 'the Unreal look' as the target (preview.py:8-11), which predates the owner's 2026-10-10 native-primary ruling.
+- The owner's 2026-10-13 condition that 'reference images are frozen evidence identified by digest' (docs/ROADMAP.md:3962-3963) has no image realisation at HEAD. art/references.jsonl freezes scene bytes only, and art/visual_baselines.jsonl does not exist.
+- The preview meta's 'framerate' field is the simulation's tick rate, 1/TICK = 120 (motion.py:161), not a render frame rate. It could be misread as a rendering performance claim.
+- UNTRUSTED_IMAGE (motion.py:251-256) expects byte-identical stills from re-captures of the same state. On a GPU whose rasterization is not bit-stable, re-captures will be labelled UNTRUSTED. It is advisory and does not unset state_verified, but it sits in tension with SPEC2 §8's 'do not demand byte-identical pixels'.
+- There are two independent draw-call counts: the page wraps gl.drawArrays (play.js:153-161) and impact.py derives one statically (POST_PASSES = 13, impact.py:35). Nothing cross-checks them. The calibration's 'counts_agree' note in impact_model.json is a statement, not a check.
+- The only host performance record for any renderer is the graybox bench output dated 2026-10-09 in graybox/build/bench/tactical/bench.txt. It is untracked build output, predates later work, and reports p50, p95 and max of draw plus one-pixel readback, with no p99. The art renderer has never been timed on the owner's host.
+
+- **R7.two-contracts** · PARTIAL · SPEC2 §8 Two quality contracts
+  - *Capability:* A small verified reference path for fixtures plus a production GPU path judged by declared tolerances, semantic tests, visual captures, perceptual metrics and human review, never by byte-identical pixels.
+  - *Held by:* gate rows kernel-oracle, kernel-corpus (the reference); art/selftests.py suites quality (detectors), preview (SSIM row), flagship (visual baseline row); graybox selftest render, render-readonly, render-conforms (own che…
+  - *Gap:* The production art renderer is never executed by any test: no semantic test of what it draws (unlike graybox's render-conforms), no declared image tolerance (SSIM has no threshold), and every still in the suites is synthetic. The reference path renders the kernel's tile world, not art scenes, so it is not a fixture path for the production renderer. No visual baseline has been …
+  - *Evidence:* kernel/mantle.rs:15-20 frozen reference: 8-bit index frame and 1920x1080 picture, two wit…; verify/verify.py:869-902 kernel-oracle and kernel-corpus: witnesses bit for bit against t…
+- **R7.render-budgets** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §8 Production feature roadmap: Lighting ... explicit budgets
+  - *Capability:* Explicit budgets for what the renderer can draw (lights, cells, movers, boxes, bytes), taken from the renderer's own source and refused when exceeded, plus advisory per-candidate budgets.
+  - *Held by:* art/selftests.py quality: 'plant: 65 movers, one more than the renderer draws — refused', 'plant: 161 lights, one more than the renderer draws — refused', 'plant: more boxes than the budget — refused', 'plant: a rendere…
+  - *Gap:* No frame-time, draw-call or GPU-memory budget is enforced. The 4096-box and 4 MiB budgets are chosen, not derived. WEBGL2_MIN_TEXTURE 2048 is recalled, not re-read from the specification (quality.py:72).
+  - *Skeptic:* The code is as described (quality.py:428-440 reads the light cap, glare cap and mover cap by regex and refuses QUALITY-RENDERER unless each appears once; :443-465 refuses lights > 160, cells > 2048, movers > 64, boxes > 4096, bytes > 4 MiB). But the tests cover only lights, movers, boxes and the so…
+  - *Evidence:* art/quality.py:428-440 renderer_limits read by regex from scene_render.js, refusing QUALI…; art/quality.py:443-465 scene_budgets: 160 lights, 2048 cells, 64 movers, 4096 boxes, 4 MiB
+- **R7.indexed-instancing** · PARTIAL · SPEC2 §8 Geometry/visibility: indexed meshes, instancing
+  - *Capability:* Indexed meshes and instancing.
+  - *Held by:* none
+  - *Gap:* No index buffers anywhere. No instancing of scene geometry: repeated bays, lamps and towers are each baked into one vertex buffer. Only rain is instanced. Untested.
+  - *Evidence:* art/web/scene_render.js:377-396 geometry(): every box expanded to 36 non-indexed vertices; art/web/scene_render.js:656 gl.drawArrays over the whole static buffer
+- **R7.culling** · MISSING · SPEC2 §8 Geometry/visibility: frustum/occlusion culling
+  - *Capability:* Frustum and occlusion culling.
+  - *Held by:* none
+  - *Gap:* No frustum culling, occlusion culling or visible-instance count.
+  - *Evidence:* art/web/scene_render.js:652-658 drawGeometry draws the whole static VAO each call; art/web/scene_render.js:678 and :685 the whole scene drawn twice a frame (mirror and scen…
+- **R7.lod-streaming** · MISSING · SPEC2 §8 Geometry/visibility: LOD/HLOD, streaming, mesh simplification, terrain chunks
+  - *Capability:* LOD/HLOD, streaming, mesh simplification, terrain chunks and crack-free transitions.
+  - *Held by:* none
+  - *Gap:* Nothing implements LOD, streaming, simplification or terrain chunks. The scenes are axis-aligned boxes only. There are no LOD-popping or streaming-hole tests.
+  - *Evidence:* art/web/scene_render.js:474-534 load(S) builds one static buffer from every box of the sc…; art/README.md:251-252 'boxes with procedural surfaces, no global illumination, no texture…
+- **R7.pbr-materials** · PARTIAL · SPEC2 §8 Materials: metallic/roughness PBR; base color, normal, roughness, metallic, AO, …
+  - *Capability:* Metallic/roughness PBR with base colour, normal, roughness, metallic, AO and emissive.
+  - *Held by:* art/selftests.py quality (bounds only): 'plant: a colour channel of 256 — refused', 'a colour channel of 12.5'; the shading itself none
+  - *Gap:* Material values are per-material scalars only: no normal, roughness, metallic, AO or emissive maps (no textures at all). The surface detail is procedural noise chosen from the piece's id or kind, not the material. No test executes or checks the shading.
+  - *Evidence:* art/web/scene_render.js:143-155 GGX D, Smith-joint V, Schlick F, Lambert diffuse; art/web/scene_render.js:382 and :390 per-material scalar base, roughness, metallic, emiss…
+- **R7.maps-decals-textures-presets** · PARTIAL (reader MISSING, corrected, resolved F15) · SPEC2 §8 Materials: decals/layers; instances; texture streaming/mips; versioned presets
+  - *Capability:* Decals/layers, material instances, texture streaming/mips and versioned material presets.
+  - *Held by:* none
+  - *Gap:* No decals, layers, instances, textures, mip streaming or versioned presets.
+  - *Skeptic:* Grepped decal\|mipmap\|generateMipmap\|texture stream\|preset\|material.?instance\|signage across .js/.py/.rs/.json/.art. Material instances do exist, in the optional Unreal 5.8 importer: one parameterised master material and a MaterialInstanceConstant per scene material, updated in place on a look revis…
+  - *Evidence:* art/impact.py:15-16 'the scenes carry no image texture'; art/web/scene_render.js:549-554 the only mipmapped texture is the reflection render target
+- **R7.semantic-contrast** · PARTIAL · SPEC2 §8 Materials: lighting-aware semantic contrast diagnostics
+  - *Capability:* Lighting-aware semantic contrast diagnostics.
+  - *Held by:* art/selftests.py legible: 'planted collapses of the cue, each found by the proxy that should find it: a hoarding before it (seen), the wall's own material (contrast), ...'; plant legibility-srgb-unlinearised
+  - *Gap:* The contrast is between two materials' base colours under no light. It is not lighting-aware, not computed under the scene's sun, moon, lamps or fog, and not shown at admission. It is advisory and read by nothing that decides.
+  - *Evidence:* art/legibility.py:15-27 three proxies along a path: framed and seen, area in px, WCAG con…; art/legibility.py:19-21 'lighting, emission, reflection and hue are not in it'
+- **R7.light-types** · PARTIAL · SPEC2 §8 Lighting: directional/point/spot lights
+  - *Capability:* Directional, point and spot lights.
+  - *Held by:* art/selftests.py quality: 'plant: a light type the renderer has not (spot) — refused'; the drawing none
+  - *Gap:* No spot lights (refused by format). Rect lights' width and height are bounded by QUALITY-0 (quality.py:417-419) but ignored by the renderer. Only one directional light. The drawing is untested.
+  - *Evidence:* art/web/scene_render.js:518-524 one directional light (moon or sun) from azimuth and elev…; art/web/scene_render.js:157-167 point lights with windowed falloff, gated by the per-cell…
+- **R7.shadows** · PARTIAL · SPEC2 §8 Lighting: shadow maps, cascades, contact detail; Graphics acceptance: shadow/con…
+  - *Capability:* Shadow maps, cascades and contact detail, with shadow/contact tests.
+  - *Held by:* none
+  - *Gap:* One static single-cascade map for the directional light. No cascades, no point-light shadows (only 2D cell line of sight), no shadows from movers, no contact shadows. No shadow-acne or contact test.
+  - *Evidence:* art/web/scene_render.js:459 shadow map size min(4096, MAX_TEXTURE_SIZE); art/web/scene_render.js:562-582 buildShadow: one orthographic map fitted to the scene's b…
+- **R7.env-lighting-gi** · PARTIAL · SPEC2 §8 Lighting: environment lighting, optional baked lighting, measured dynamic GI str…
+  - *Capability:* Environment lighting, optional baked lighting and a measured dynamic GI strategy.
+  - *Held by:* none
+  - *Gap:* Ambient is a constant sky colour with heightfield occlusion. There is no environment map, no baked lighting, no GI strategy and no measurement of any. Untested.
+  - *Evidence:* art/web/scene_render.js:113-131 skyAO: the sky's share sampled on a heightfield in 8 dire…; art/web/scene_render.js:245-247 sky ambient times that AO
+- **R7.fog-atmosphere** · EXISTS-UNVERIFIED (resolved F15) · SPEC2 §8 Lighting: fog/atmosphere
+  - *Capability:* Fog and atmosphere.
+  - *Held by:* none for the drawing; art/selftests.py quality bounds fog density and colour
+  - *Gap:* No test of the drawing. The scene's fog.volumetric flag is bounded but never read by the renderer (scene_render.js:518-528).
+  - *Evidence:* art/web/scene_render.js:271-276 height fog with exponential density; art/web/scene_render.js:169-181 each lamp's glow in the fog along the ray, single scatter…
+- **R7.reflections** · PARTIAL · SPEC2 §8 Reflections/effects: SSR ... with probe fallback; Lighting: reflection probes
+  - *Capability:* SSR where appropriate, with reflection-probe fallback.
+  - *Held by:* none
+  - *Gap:* A planar reflection of the y = 0 floor only. No SSR, no reflection probes, nothing reflected on walls or raised floors. Untested.
+  - *Evidence:* art/web/scene_render.js:597-601 a mirror target at half size, mipmapped; art/web/scene_render.js:672-680 the scene drawn mirrored in the floor plane
+- **R7.post-effects** · PARTIAL · SPEC2 §8 Reflections/effects: AO, bloom, exposure, tone mapping, grading, optional DOF/mo…
+  - *Capability:* AO, bloom, exposure, tone mapping and grading, plus optional DOF/motion blur, particles, trails and foliage wind.
+  - *Held by:* art/selftests.py quality (exposure, bloom and rain bounded); the passes none
+  - *Gap:* No colour grading or LUT, DOF, motion blur, trails, foliage wind or decals. AO is only the heightfield sky AO (no SSAO). No test of the post chain.
+  - *Evidence:* art/web/scene_render.js:324-334 bright pass and separable blur; art/web/scene_render.js:699-711 bloom at a quarter and an eighth of the resolution
+- **R7.aa** · EXISTS-UNVERIFIED · SPEC2 §8 AA/upscaling
+  - *Capability:* Begin with MSAA or stable spatial AA; add TAA only with ghosting/motion tests.
+  - *Held by:* none
+  - *Gap:* MSAA is on the scene pass only; the mirror pass is not multisampled. No TAA or upscaler (consistent with the spec's ordering). No test.
+  - *Evidence:* art/web/scene_render.js:588-594 scene pass into RGBA16F renderbuffers with min(4, MAX_SAM…; art/web/scene_render.js:696-697 resolved by blitFramebuffer
+- **R7.colour-hdr** · PARTIAL · SPEC2 §8 Image quality: correct color space, optional validated HDR; Graphics acceptance:…
+  - *Capability:* Correct colour space, optional validated HDR, and colour-space/HDR tests.
+  - *Held by:* none for the renderer (legible's plant legibility-srgb-unlinearised holds only the proxy's own conversion)
+  - *Gap:* The output encoding is a gamma-2.2 approximation, not the sRGB transfer function. There is no HDR output and no validated HDR. No colour-space test exists for either renderer.
+  - *Evidence:* art/web/scene_render.js:66 inputs decoded with the exact piecewise sRGB curve; art/web/scene_render.js:553 and :591 RGBA16F intermediate targets
+- **R7.shader-cache** · MISSING · SPEC2 §8 Image quality: shader/resource cache; Performance policy: shader compile time
+  - *Capability:* A shader/resource cache, with shader compile time recorded.
+  - *Held by:* none
+  - *Gap:* No program cache. Compile time is never measured or recorded.
+  - *Evidence:* art/web/scene_render.js:349-365 compile() builds each program from source; art/web/scene_render.js:430-436 seven programs compiled on every Renderer construction
+- **R7.iq-artifact-tests** · PARTIAL · SPEC2 §8 Image quality: tests for flicker, z-fighting, shadow acne, normal seams, LOD pop…
+  - *Capability:* Tests for flicker, z-fighting, shadow acne, normal seams, LOD popping and streaming holes.
+  - *Held by:* art/selftests.py check: 'the exporter refuses two pieces of dressing in one place'; preview: 'the state as before, the still not: UNTRUSTED_IMAGE ...'
+  - *Gap:* Only exact duplicate placement is refused; overlapping coplanar faces in general are not tested. There are no tests for temporal flicker, shadow acne, normal seams, LOD popping or streaming holes, and none renders a picture.
+  - *Evidence:* art/dress.py:947-957 the exporter refuses two pieces in one place ('coplanar copies that …; art/check.py:598 the plant that exercises it
+- **R7.renderer-flow** · PARTIAL · SPEC2 §8 Renderer flow; Keep the existing WebGL2 path until a measured alternative is bet…
+  - *Capability:* Revision-bound render snapshot, then visibility/LOD, GPU resources, optional depth pass, opaque PBR and shadows, transparency/effects, atmosphere/post, and present/timing/capture, on the existing WebGL2 path.
+  - *Held by:* art/selftests.py live: 'edit-swaps', 'refused-keeps: ...' (the served scene by digest, without a browser); the GPU passes none
+  - *Gap:* No visibility/LOD stage, no depth-prepass decision, no transparent materials, and no timing or capture stage in the renderer (capture is the page's toDataURL). The snapshot is bound to the scene's sha, but the renderer's own source and settings are not recorded with the frames.
+  - *Evidence:* art/web/play.js:180-194 apply(): R.load(scene) for a source fetched by its sha; art/web/play.js:222-228 a slot fetched only when its served sha changes
+- **R7.named-scenes-paths** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §8 Graphics acceptance: Use named scenes and camera paths
+  - *Capability:* Named scenes and camera paths.
+  - *Held by:* art/selftests.py path: 'the rule against boxes worked by hand, exactly (a planted interior pose and a wall-crossing segment refused)', 'planted in the district: a pose inside the flagship's warehouse, ...', 'the same sc…
+  - *Gap:* Paths are planned per request focus; there is no fixed acceptance path set per world for rendered review. They are checked geometrically only, never rendered under test.
+  - *Skeptic:* The path code and its tests are real. camera.py:155-167 checks exactly and returns CAMERA-INSIDE, CAMERA-LOW and CAMERA-CROSSES. The rows at :391, :409, :437 and :450 plant interior poses and crossing segments, and four plants are caught. The four briefs carry named views (foundry-yard.art:100-105 …
+  - *Evidence:* art/camera.py:10-28 the exact clearance rule and the path; art/camera.py:163-167 check(): CAMERA-INSIDE, CAMERA-LOW, CAMERA-CROSSES
+- **R7.light-corpus** · PARTIAL · SPEC2 §8 Graphics acceptance: material/light corpus for day/dusk/night/interior
+  - *Capability:* A material/light corpus for day, dusk, night and interior.
+  - *Held by:* art/selftests.py check (every brief verified and compared to its frozen reference: 'quality: the scene is its frozen reference')
+  - *Gap:* No interior (the format does not allow one). The corpus is four worlds, not a controlled material/light corpus. What is frozen is scene bytes, not rendered images.
+  - *Evidence:* art/briefs/harbor-day.art:12 time day; art/briefs/harbor-lift.art:12 time day; art/briefs/foundry-yard.art:14 time dusk
+- **R7.temporal-review** · PARTIAL · SPEC2 §8 Graphics acceptance: temporal camera-motion review
+  - *Capability:* Temporal camera-motion review.
+  - *Held by:* art/selftests.py preview: 'the same inputs, the same states, tick for tick, and the same archives (B4-DETERMINISM)', 'a still missing: INCOMPLETE ... (B4-INCOMPLETE-CAPTURE)'; preview-studio: B4-PAIR-STILLS
+  - *Gap:* The motion is the simulation's. The camera jumps between 8 poses and no rendered frame sequence along the path is captured or reviewed, so there is no frame-to-frame temporal stability check.
+  - *Evidence:* art/motion.py:4-21 the preview in motion: 960 ticks of the simulation, a still each second; art/motion.py:149-165 plan(): states and fingerprints for both sides
+- **R7.visual-baseline** · PARTIAL · SPEC2 §8 'Human visual review is mandatory'; SPEC2 §11 visual baseline approval
+  - *Capability:* Mandatory human visual review, and an explicit visual-baseline approval that binds the exact scene revision, camera path, renderer/settings and evidence.
+  - *Held by:* art/selftests.py flagship: 'the visual baseline: written only on a person's word, from a preview complete, verified and framed; refused otherwise'
+  - *Gap:* art/visual_baselines.jsonl does not exist at HEAD, so no baseline has been approved. The line binds the scene revision only through the request id, and binds no renderer source hash, browser, GPU or render settings (fov 66 and light scale are not recorded). Approval checks report flags and that the files exist, not that the stills came from the real renderer.
+  - *Evidence:* art/flagship.py:183-215 approve(): refuses unless replayed, every state verified, path cl…; art/flagship.py:207-212 the line: world, request, candidate, path_id, seed, subject, file…
+- **R7.frame-time-distribution** · PARTIAL · SPEC2 §8 Performance policy: CPU/GPU frame time, p50/p95/p99, frame pacing/missed present…
+  - *Capability:* CPU/GPU frame time as p50/p95/p99 with frame pacing and missed presents, never average FPS alone.
+  - *Held by:* python graybox/serve.py tactical --bench (own check, not run at HEAD; a host record dated 2026-10-09 in graybox/build/bench/tactical/bench.txt); art renderer none
+  - *Gap:* There is no p99 anywhere and no frame pacing or missed-present measure. No GPU timer queries. The art renderer has no distribution: an on-screen moving average and a 5-frame median from SwiftShader only. The graybox bench times draw plus readback, not presented frames.
+  - *Evidence:* graybox/serve.py:140-148 graybox bench: p50, p95 and max of each pose's samples; graybox/web/main.js:246-252 the clock step measured; each sample the mean of K draws with…
+- **R7.gpu-memory-drawcalls** · PARTIAL · SPEC2 §8 Performance policy: draw calls, visible instances, memory, texture residency; Gr…
+  - *Capability:* Draw calls, visible instances, GPU memory and texture residency recorded.
+  - *Held by:* art/selftests.py impact: 'counts as the renderer makes them, worked by hand', 'the lights past the renderer's cap are not drawn, nor counted in its textures'; the page's counter none
+  - *Gap:* No GPU memory measure. texture_bytes leaves out the shadow map, the MSAA, HDR, bloom and mirror targets and the vertex buffers. No visible-instance count (no culling). impact.py's counts are its own model of the renderer, checked against hand-worked numbers, not against the running renderer.
+  - *Evidence:* art/web/play.js:153-161 draw calls counted by wrapping gl.drawArrays and drawArraysInstan…; art/web/play.js:962 'VRAM' shown as n/a
+- **R7.preview-latency** · PARTIAL · SPEC2 §8 Performance policy: candidate preview latency
+  - *Capability:* Candidate preview latency recorded.
+  - *Held by:* art/selftests.py preview-studio: 'one candidate's preview well inside 10 s (B4-TIMING-BOUNDARY)'; preview: 'one candidate's runs well inside 10 s (B4-TIMING-BOUNDARY)'
+  - *Gap:* Only the host side is bounded. The browser's drawing of the 16 stills (152-161 s on SwiftShader per the 0241 and 0243 commit records) is not in the measured time. It is a pass/fail bound, not a recorded distribution.
+  - *Evidence:* art/play.py:3488-3489 the whole HTTP preview held under 10 s; art/motion.py:432-435 both sides' simulation timed
+- **R7.bench-context** · PARTIAL · SPEC2 §8 Performance policy: every benchmark records ...
+  - *Capability:* Every benchmark records scene revision, hardware/driver, resolution, render scale, settings, power mode, cache state and thermal context.
+  - *Held by:* none
+  - *Gap:* Neither records the scene revision by digest (the graybox bench gives only the map's name), render scale, settings, power mode, cache state or thermal context. The calibration's scene_render_sha256 is read by no code, so a renderer change does not invalidate the model.
+  - *Evidence:* graybox/web/main.js:250-252 bench records user agent, WebGL renderer string, clock step, …; graybox/serve.py:141-145 bench header: map name, size, samples
+- **R7.target-hardware** · PARTIAL (reader MISSING, corrected) · SPEC2 §8 Graphics acceptance: target-hardware captures; Performance policy 60 FPS; §16 60…
+  - *Capability:* Target-hardware captures and repeated target-hardware frame-time runs before any 60 FPS (16.67 ms) claim.
+  - *Held by:* gate rows latency-preregistered, latency1-sealers, framesplit-sealer, hoststate-record, bearingfast-preregistered, records-firewall (they hold the instruments, the sealers with their plants and the preregistered targets…
+  - *Gap:* No target hardware profile or settings are defined anywhere (no docs match 'target hardware' or '16.67'). The art renderer has no host timing at all. The only host timing is the graybox bench of 2026-10-09, untracked and taken once.
+  - *Skeptic:* The reader missed the kernel/shell's whole timing programme. kernel/attest and shell/attest hold sealed, preregistered timing records from the owner's named host, each naming the host, CPU family, rustc and python. They carry p50/p95/p99, two mirrored runs per camera, and confirmation runs (latency…
+  - *Evidence:* art/impact_model.json:13 calibration host: the container, headless Chromium on SwiftShade…; graybox/serve.py:140-148 the graybox bench (graybox renderers only)
+- **R7.impact-estimate** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 Evidence sheet: measured performance
+  - *Capability:* A candidate's cost to the renderer shown beside its change.
+  - *Held by:* art/selftests.py impact: 'counts as the renderer makes them, worked by hand', 'the model's coefficients are its calibration rows' least squares, exactly', 'a candidate over a budget is flagged, advisory', three plants c…
+  - *Gap:* An estimate, not the measured performance the sheet asks for. Fitted on 10 SwiftShader rows at 480x270 with an RMS error of 654 ms and a negative intercept, so a small scene gets a negative estimate (about -541 ms for the selftest scene, by arithmetic). The calibration script is not in the repository, so the rows themselves cannot be reproduced.
+  - *Skeptic:* The tested part is real. Counts are worked by hand, the fit is reproduced exactly with Fractions (impact.py:101-123), the report is deterministic and provenance-bound, and the plants are caught (log: IMPACT 9/9, IMPACT-STUDIO 8/8 twice). But the row's spec_ref is SPEC2 §11 'measured performance', a…
+  - *Evidence:* art/impact.py:10-20 an ESTIMATE from counts, never a measured frame, never admission evid…; art/impact.py:101-123 exact least squares
+- **R7.sheet-stills** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §11 Evidence sheet: baseline/candidate stills; Essential flow 3 'identical camera p…
+  - *Capability:* Baseline and candidate stills at identical camera poses.
+  - *Held by:* art/selftests.py preview-studio: 'a candidate's preview: both sides' stills paired at each pose, its files (and the sheet to inspect), the line naming them (B4-PAIR-STILLS)'; flagship: 'the flagship's edit from mark to …
+  - *Gap:* The tests prove the pairing and storage with synthetic PNGs; no test draws the stills with the renderer.
+  - *Skeptic:* The host side is tested. preview_plan uses one path for both sides (studio.py:1429-1455), stills are kept per (side, pose), and B4-PAIR-STILLS (play.py:3413-3420) asserts 8 poses, 16 stills, 5 files and the line's sha256s, catching the preview-shared-state plant. But the stills are made by the page…
+  - *Evidence:* art/studio.py:1429-1455 preview_plan: one path for both sides, held again in each scene; art/web/play.js:1908-1911 each still drawn at the plan's viewport from the pose, fov 66
+- **R7.sheet-crops-diff** · EXISTS-UNVERIFIED · SPEC2 §11 Evidence sheet: subject crops, optional amplified diff
+  - *Capability:* Subject crops and an optional amplified diff on the sheet.
+  - *Held by:* none (preview-studio and flagship assert only that preview.compare.png exists and its sha256 is on the request's line)
+  - *Gap:* No test checks the sheet's content (crop placement, the x8 difference, layout). It assumes 480x270 stills when it scales the subject's box (motion.py:302).
+  - *Evidence:* art/motion.py:268-314 compare_sheet: half-size stills, both subject crops, difference tim…; art/motion.py:313 the x8 difference
+- **R7.sheet-settings-values** · PARTIAL · SPEC2 §11 Evidence sheet: exact camera/render settings, source/candidate digests, validat…
+  - *Capability:* Exact camera/render settings, source and candidate digests, validation and dependency rebuilds, relevant material/light values and proxy-metric caveats on the evidence.
+  - *Held by:* art/selftests.py preview-studio B4-PAIR-STILLS (meta keys, path_check, provenance); impact-studio IMPACT-SAVED (advisory label)
+  - *Gap:* Render settings are not recorded (fov, light scale, glow, renderer source hash, browser, GPU). The base and candidate scene sha256s are not in the preview's files. No material or light values are on the sheet. Performance is an estimate. Dependency rebuilds are not shown.
+  - *Evidence:* art/motion.py:229-264 report: per-pose state fingerprints and image digests, path_check, …; art/studio.py:1483-1487 meta: poses' path id, viewport, ticks, seed, provider, prompt sha…
+- **R7.perceptual-detectors** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §8 'perceptual metrics'; §11 proxy-metric caveats
+  - *Capability:* Perceptual metrics and image detectors on captures, labelled as proxies.
+  - *Held by:* art/selftests.py quality: 'a still half pure white: BLOWN, at 50%', 'a black frame: BLACK and FLAT', 'a frame of one grey: FLAT only', 'a still of many colours, none white or black: no flag', decoder plants; preview: 'S…
+  - *Gap:* SSIM is computed on luma box-averaged to 96x54, with no declared tolerance. The detector thresholds were calibrated on 16 stills. No perceptual metric is lighting-aware or temporal.
+  - *Skeptic:* The detectors are held well: known-answer stills (quality.py:970-981), with flags read at admission and refused without despite (studio.py:1400-1402, play.py:2085-2086, director.py:1299-1306). The perceptual metric is not. The SSIM row (motion.py:436-439) asserts only ssim(x, x) == 1, ssim(flat, ra…
+  - *Evidence:* art/quality.py:46-50 detectors flag and prove nothing; art/quality.py:649-681 detect()
+- **R7.bytes-freeze** · EXISTS-TESTED · SPEC2 §11 'bytes freeze (exporter/platform integrity)'
+  - *Capability:* A bytes freeze for exporter/platform integrity.
+  - *Held by:* art/selftests.py quality: 'freeze appends one line, and a second freeze of the same inputs writes nothing', 'plant: other bytes from the same inputs — refused, naming the field', 'plant: a new exporter with no reference…
+  - *Evidence:* art/quality.py:40-45 one line per (brief, art, exporter), compared and never rewritten; art/quality.py:503-575 read_references, compare_reference, freeze
+- **R7.acceptance-evidence** · EXISTS-TESTED · SPEC2 §11 'acceptance evidence (scripted workflow result)'
+  - *Capability:* Acceptance evidence as a scripted workflow result (mark, request, candidate, preview, admit, undo).
+  - *Held by:* art/selftests.py flagship: 'the flagship's edit from mark to undo, every stage's evidence (FLAGSHIP-0)', 'planted: an invalid region ...', 'planted: the impact evidence missing ...', 'planted: the preview's verification…
+  - *Gap:* Stills in the acceptance are synthetic (flagship.py:267-268), so the acceptance never exercises the renderer. Run only with the scripted director.
+  - *Evidence:* art/flagship.py:10-27 the procedure and its stop codes; art/flagship.py:78-179 run() over the studio's HTTP surface
+- **R7.three-concepts-separate** · EXISTS-UNVERIFIED (resolved F15) · SPEC2 §11 'Keep three concepts separate ... None implies either of the others.'
+  - *Capability:* Bytes freeze, visual baseline and acceptance evidence kept separate, none implying the others.
+  - *Held by:* none (no row asserts that one leaves the others untouched)
+  - *Gap:* Separate by construction. No test plants a cross-write (for example a freeze from an approval) and requires a refusal.
+  - *Evidence:* art/quality.py:571-574 freeze writes only art/references.jsonl; art/flagship.py:183-187 and :213-214 approve writes only art/visual_baselines.jsonl and l…
+- **R7.s17-quality-corpus-profiling** · PARTIAL · SPEC2 §17 'renderer quality corpus and GPU profiling'; §14 Phase 6 'Measure existing rend…
+  - *Capability:* A renderer quality corpus and GPU profiling, reported as their own acceptance area.
+  - *Held by:* art/selftests.py check and quality (scene-byte corpus); none for images or GPU
+  - *Gap:* No rendered-image corpus (no reference images, no approved baselines). No GPU profiling (timer queries, memory, per-pass cost). Phase 6's 'measure the existing renderer first' has not been done on a GPU for the art renderer.
+  - *Evidence:* art/references.jsonl:1-12 scene-byte references for four briefs; art/impact_model.json:13-14 the only renderer timing: SwiftShader, a CPU rasterizer
+- **R7.spec1-reference-renderer** · PARTIAL · SPEC1 §7 two renderers: a reference (bit-exact)
+  - *Capability:* A bit-exact reference renderer (CPU or pinned GPU, byte-identical across hosts) beside a production sibling.
+  - *Held by:* gate rows kernel-oracle, kernel-corpus, gauntlet1-equiv, bearing-oracle, bearingfast-court (251 rows / 0 fail / 0 skipped on the host)
+  - *Gap:* The bit-exact reference and its byte-identical production sibling render the kernel's Urðr tile world only. Art scenes have no reference renderer, and the WebGL2 production renderer is not related to the kernel's at all.
+  - *Evidence:* kernel/mantle.rs:4-20 the frozen kernel: index frame and picture, two witnesses; kernel/mantle.rs:30-32 the scene format: 768-byte table, per-band maps, tiles
+- **R7.spec1-downsample** · CONFLICTS-WITH-SPEC · SPEC1 §7 DownsampleSpec
+  - *Capability:* A pinned downsample D (fixed-point box filter, colour space, per-channel max-abs metric, tolerance) reconciling the production renderer with the reference.
+  - *Held by:* none
+  - *Gap:* Nothing implements a downsample or pixel reconciliation.
+  - *Conflict:* AGENTS.md:90 "A person judges the picture; nothing hashes it."; art/web/scene_render.js:21 "Nothing hashes its pixels: a person judges what it draws."; the operative SPEC2 §16 (spec2.md:134): "Pixel/downsample equality as quality proof — Reject".
+  - *Evidence:* art/web/scene_render.js:21 'Nothing hashes its pixels: a person judges what it draws'; AGENTS.md:90 native plaza row
+- **R7.spec1-palette-materials** · CONFLICTS-WITH-SPEC (resolved F15) · SPEC1 §7 'Materials as palette indices into a versioned palette, not RGB'
+  - *Capability:* Materials as palette indices into a versioned palette, with palette changes as gate events.
+  - *Held by:* none for art; the kernel's palette by gate rows kernel-oracle, kernel-corpus
+  - *Gap:* Art materials are RGB with PBR scalars, and no palette exists for art scenes. Only the kernel's tile world renders through a colour table.
+  - *Conflict:* The art scene's deliberate material format (art/README.md:85, "Colours are R,G,B 0–255 (sRGB)") and the operative SPEC2 §12 (spec2.md:104): "Do not force all materials into RGB palette indices if the renderer requires full textures/material assets."
+  - *Evidence:* art/README.md:85 colours are R,G,B 0–255 (sRGB); art/quality.py:321-324 a material is base RGB, roughness, metallic, emissive
+- **R7.spec1-separation-matrix** · PARTIAL · SPEC1 §7 separation matrix per lighting band
+  - *Capability:* A separation matrix of the palette under each lighting band that flags near-collisions.
+  - *Held by:* art/selftests.py legible (pairwise contrast plant: 'the wall's own material (contrast)')
+  - *Gap:* Only a pairwise unlit contrast for one named subject. No all-pairs matrix, no evaluation under lighting, no per-band versions, no near-collision flag over the material set. The 0243 dusk finding (15-17 of 255 levels) was an observation, not computed by code.
+  - *Evidence:* art/legibility.py:62-64 WCAG contrast of two base colours; art/legibility.py:19-21 lighting, emission, reflection and hue not in it
+- **R7.spec1-lighting-bands** · PARTIAL (corrected) · SPEC1 §7 lighting bands
+  - *Capability:* Lighting bands enumerated and versioned (day, dusk, night, interior), each with its separation matrix.
+  - *Held by:* none (no row plants an invalid environment.time: the quality plants at art/quality.py:806-824 never touch it, and the unknown-field plants are for 'doors', 'cone', 'up' and 'phase')
+  - *Gap:* Three times are enumerated and there is no interior. They are not versioned bands, nothing is computed per band, and the renderer ignores the time field.
+  - *Skeptic:* The status stands but the held_by does not. The enumeration exists in two places (quality.py:75 and :297-299; dress.py:182-185), and no self-test row plants a bad time. The field is a label only. The exporter copies it into the scene (dress.py:977), and nothing else reads it: a grep finds no use in…
+  - *Evidence:* art/quality.py:75 TIMES = ('night', 'dusk', 'day'); art/quality.py:297-299 environment.time checked
+- **R7.v-msaa** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §8 AA/upscaling
+  - *Capability:* Begin with MSAA or a stable spatial AA (TAA only with ghosting/motion tests; temporal state presentation-only).
+  - *Held by:* none
+  - *Gap:* MSAA exists in both renderers but no test checks it. There is no TAA, which the spec allows, and no upscaling, which is allowed until justified. The graybox renderers use WebGL 1 ('webgl'), not WebGL 2.
+  - *Evidence:* art/web/scene_render.js:425 context made with antialias false; art/web/scene_render.js:590-593 min(4, MAX_SAMPLES) multisampled RGBA16F colour and depth…
+- **R7.v-culling-lod-streaming** · MISSING (from-verifier) · SPEC2 §8 Geometry/visibility
+  - *Capability:* Frustum/occlusion culling, LOD/HLOD, streaming, mesh simplification, terrain chunks and crack-free transitions.
+  - *Held by:* none
+  - *Gap:* Nothing implements any of it. The only culling is back-face culling.
+  - *Evidence:* art/web/scene_render.js:652-657 drawGeometry draws the whole static buffer every pass; art/impact.py:76-84 every static box counted every pass
+- **R7.v-material-system** · PARTIAL (reader MISSING, from-verifier, resolved F15) · SPEC2 §8 Materials: decals/layers; instances; texture streaming/mips; versioned presets
+  - *Capability:* Material decals/layers, instances, texture streaming/mips and versioned presets.
+  - *Held by:* none
+  - *Gap:* Materials are declared afresh in each brief. There are no presets, no versions, no instances with overrides, no decals or layers and no textures, so there is nothing to stream.
+  - *Evidence:* art/dress.py:210-218 material statement: name, colour, roughness, metallic, optional emis…; art/impact.py:14-16 the scenes carry no image texture
+- **R7.v-fog-atmosphere** · EXISTS-UNVERIFIED (reader PARTIAL, from-verifier, resolved F15) · SPEC2 §8 Lighting: fog/atmosphere
+  - *Capability:* Fog/atmosphere.
+  - *Held by:* none (quality bounds fog density and colour on valid scenes only; no plant)
+  - *Gap:* Height fog and lamp glow exist. The scene's 'volumetric' flag is parsed, bounded and exported, and the renderer never reads it. There is no atmospheric sky model (the sky is a gradient, scene_render.js:286-297). Untested.
+  - *Evidence:* art/web/scene_render.js:169-180 fogGlow, single scattering of each lamp along the ray; art/web/scene_render.js:271-277 height fog
+- **R7.v-render-readonly** · PARTIAL (from-verifier) · SPEC2 §8 AA/upscaling: temporal state remains presentation-only; SPEC2 §4 authority
+  - *Capability:* The renderer writes no game state and decides nothing about collision; drawn solids conform to the canonical world.
+  - *Held by:* graybox render-readonly and render-conforms in python graybox/serve.py tactical --selftest (own check, not run at HEAD); the art renderer none
+  - *Gap:* The graybox renderers are checked by their own self-test, not run at HEAD. The art renderer's read-only property is stated, not tested: no suite runs it.
+  - *Evidence:* graybox/web/main.js:146-156 render-readonly: the whole state's JSON and hash unchanged af…; graybox/web/main.js:157-207 render-conforms: every drawn solid at the collision world's h…
+- **R7.v-compare-sheet** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §11 Evidence sheet: subject crops, optional amplified diff
+  - *Capability:* Subject crops and an optional amplified difference on the evidence sheet.
+  - *Held by:* art/selftests.py preview-studio B4-PAIR-STILLS asserts only that preview.compare.png exists and is hashed on the request line; flagship's approve requires the file. No row checks its content.
+  - *Gap:* No test checks the crops' placement, the x8 difference, or that a changed subject shows in the difference crop. In the suites the sheet is built from synthetic stills only.
+  - *Evidence:* art/motion.py:267-316 compare_sheet: half-size stills, both crops of the framed subject, …; art/studio.py:1495-1499 the sheet recorded by sha256
+- **R7.v-view-approval** · PARTIAL (from-verifier) · SPEC2 §11 'Visual baseline approval is explicit and binds exact scene revision, camera pa…
+  - *Capability:* A person's approval of a named view's still at an exact head, with the render configuration and the detectors recorded in the ledger.
+  - *Held by:* art/selftests.py director: 'a still the detectors do not flag is approved, its detectors in the ledger', 'a still mostly white is not approved without --despite-detectors; nothing written', 'a still the detectors cannot…
+  - *Gap:* This is a second approval mechanism the reader missed, separate from flagship.approve. It binds the exact head and a named view, but render_config is free text the person types and nothing checks it. The image is not shown to come from the renderer. It binds a view, not a camera path. It has never been used: the only ledger at HEAD has no approve event.
+  - *Evidence:* art/director.py:860-882 cmd_approve: view, image sha256, render_config, head, detectors, …; art/director.py:1370-1396 its self-test rows
+- **R7.v-target-hardware-captures** · PARTIAL (from-verifier) · SPEC2 §8 Graphics acceptance: target-hardware captures
+  - *Capability:* Target-hardware captures.
+  - *Held by:* none
+  - *Gap:* Only the graybox renderer has a host-GPU capture, and it is untracked and a week old. The art renderer has no target-hardware capture in the repository. No target profile is named.
+  - *Evidence:* graybox/build/bench/tactical/bench.txt:1-3 the graybox bench on the host: Firefox 157, 'R…; art/impact_model.json:13-14 the art renderer's only recorded run: SwiftShader, not a GPU
+- **R7.v-shader-cache** · MISSING (from-verifier) · SPEC2 §8 Image quality: shader/resource cache
+  - *Capability:* A shader/resource cache.
+  - *Held by:* none
+  - *Gap:* Resource lifetime is managed (freed and rebuilt per scene), but nothing is cached across scenes or renderers, and shader compile time is not measured.
+  - *Evidence:* art/web/scene_render.js:430-433 programs compiled in each Renderer's constructor; art/web/scene_render.js:474-476 load frees every object made from the previous scene and …
+- **R7.v-anim-audio-hooks** · MISSING (from-verifier) · SPEC2 §8 Animation/audio hooks
+  - *Capability:* Skeletal assets, clips/blending/state machine interface, root-motion authority policy, animation events, spatial audio emitter/listener/mix interfaces.
+  - *Held by:* none
+  - *Gap:* Nothing implements any of it.
+  - *Evidence:* git grep -i 'skeletal\|AudioContext\|audio emitter\|PannerNode' over art, graybox, shell, ke…; art/web/play.js:148-151 movers are boxes posed by Sim.poseOf, the only animation
+- **R7.v-perf-other-timings** · PARTIAL (from-verifier) · SPEC2 §8 Performance policy: shader compile time, physics timings, load/save
+  - *Capability:* Shader compile time, physics timings and load/save timings recorded.
+  - *Held by:* art/selftests.py preview and preview-studio B4-TIMING-BOUNDARY (a bound, not a record)
+  - *Gap:* Physics and scene-swap times are measured and shown but persisted nowhere. Shader compile time is not measured. There is no distribution and no benchmark context.
+  - *Evidence:* art/motion.py:153-157 the two sides' simulation timed as sim_ms; art/studio.py:1454 sim_ms returned over HTTP, not written
+- **R7.v-unreal-boundary** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §8; SPEC2 §12 'Unreal integration remains an explicit measured boundary'
+  - *Capability:* Unreal 5.8 as an import/export or comparison path behind a measured boundary.
+  - *Held by:* none
+  - *Gap:* The importer exists, but no suite runs it, no unreal-report.txt is under art/build, and no comparison against the WebGL2 renderer has been measured.
+  - *Evidence:* art/unreal/verdandi_import.py:1-24 an editor script importing a scene: C as the only coll…; art/unreal/verdandi_import.py:23-24 'Its first run on an engine is its first test'
+- **R7.m-benchmark-context** · PARTIAL (from-verifier) · SPEC2 §8 Performance policy: p50/p95/p99, frame pacing, hardware/driver, power mode, cach…
+  - *Capability:* Every benchmark records hardware, build, power mode and thermal context beside p50/p95/p99 frame-time distributions and frame pacing.
+  - *Held by:* gate rows hoststate-preregistered, hoststate-record, hoststate-fence, latency-preregistered, latency1-sealers, framesplit-sealer, presentexact-sealer, records-firewall
+  - *Gap:* This covers only the CPU kernel/shell present path. The graybox bench prints the UA and GPU name but no host state or scene revision, and is not sealed. The production GPU art renderer has no recorded benchmark at all. Nowhere are GPU frame time, driver version, render scale or cache state recorded, and thermal is declared not captured.
+  - *Evidence:* verify/verify.py:5035-5065 hoststate-record: the capture degrades field by field, a plant…; shell/attest/presentexact-DANIELDILLBERG.json:231 host_state recorded before and after th…
+- **R7.m-live-stats** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §8 Performance policy: CPU/GPU frame time, draw calls, memory
+  - *Capability:* The studio's live statistics overlay measures FPS, frame time, CPU submit time, counted draw calls, triangles, lights and resolution. It says n/a for VRAM and labels the GPU's time as not measured.
+  - *Held by:* none
+  - *Gap:* Display only. Nothing is recorded, there are no percentiles (only an EMA), there is no GPU time, and no test asserts the overlay's numbers or its n/a labelling (grep of play.py, studio.py, studio_app.py found none).
+  - *Evidence:* art/web/play.js:153-162 draw calls counted by wrapping drawArrays and drawArraysInstanced; art/web/play.js:955-966 rows FPS, Frame ms, CPU submit, Draw calls, Tris, Boxes, Lights, …
+- **R7.m-preview-latency** · EXISTS-TESTED (from-verifier) · SPEC2 §8 Performance policy: candidate preview latency
+  - *Capability:* Candidate preview latency is measured and bounded: one candidate's whole preview over HTTP must finish well inside 10 s.
+  - *Held by:* art/selftests.py preview-studio: 'one candidate's preview well inside 10 s (B4-TIMING-BOUNDARY)'; preview (motion.py): 'one candidate's runs well inside 10 s'
+  - *Gap:* A pass/fail bound inside a self-test, not a benchmark. No hardware, settings or scene revision is recorded beside it, there is no distribution, and load/save latency is not covered here.
+  - *Evidence:* art/play.py:3487-3489 row B4-TIMING-BOUNDARY asserts secs < 10 and prints the whole previ…; art/build/selftests/20261016T162615Z.log:576 4.97 s over HTTP, 960 ticks 436 ms
+- **R7.m-unreal-path** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §8 'Treat Unreal 5.8 as import/export or comparison path'; §12 'Unreal integration …
+  - *Capability:* Unreal 5.8 as an import and comparison path. The importer builds the open level from a scene: master material plus instances, play geometry with collision, dressing without collision, lights, height fog (volumetric flag…
+  - *Held by:* none
+  - *Gap:* No test in the repository runs it or a stand-in. No host report of an Unreal run is recorded, and there is no measured comparison (scene, camera, quality, performance) against the WebGL2 path.
+  - *Evidence:* art/unreal/verdandi_import.py:10-25 what it does; 'Its first run on an engine is its firs…; art/unreal/verdandi_import.py:113-137 material instances
+- **R7.m-reference-path** · EXISTS-TESTED (from-verifier) · SPEC2 §8 'Keep a small verified/reference path if it provides value for fixtures'; §16 'C…
+  - *Capability:* A small verified reference path: the kernel's CPU ray caster reproduces the frozen oracle's frame and pixel digests, and its production sibling (BEARING-FAST-0's treads) is held byte-identical to the reference.
+  - *Held by:* gate rows kernel-oracle, kernel-corpus, bearingfast-court
+  - *Gap:* It references the kernel's tile world only. The art scenes and the GPU renderer have no reference path, deliberately (AGENTS.md:90). No value-for-fixtures or maintenance-cost assessment is recorded, as §16 asks.
+  - *Evidence:* verify/verify.py:869-882 kernel-oracle: two runs agree, frame digest and pixel sha equal …; verify/verify.py:885-891 kernel-corpus over the oracle's scenes
+
+## R8 — procedural geometry, the art grammar, assets and Mark & Shape's geometry
+
+The art grammar (VERDANDI-ART 0, art/dress.py) is a deterministic, hash-keyed exporter of boxes and lights over the graybox's W and C. Its safety envelope, number grammar, reproducibility (export twice plus frozen references) and edit locality are held by planted defects in art/selftests.py suites that passed twice at HEAD. Its procedural hierarchy is shallow: world, a named region, a rectangular building, then bays indexed by side and floor with window, panel or blank. There is no district, lot, floor node, surface detail, per-level seed or per-level generator version, and most of the building vocabulary (column, lintel, sill, parapet, roof profile, loading bay, railing) is missing; doors and openings are ruled out of FACADE-0 by AGENTS.md. Mark & Shape (art/studio_marks.py) is strong where it exists: named polygons and paths on one box face, exact integer predicates, exact-box status that invalidates rather than rebinds. It has no point marks, no undo stack, no persisted ray hit, and a view kept but never tested. Assets amount to source and licence on a single cube, materials are per-brief RGB with validation but no presets, and the Unreal importer has never run on an engine as far as the tree records.
+
+**Surprises.**
+
+- graybox/level.py, the map format the art stands on, reads numbers with float() and int() alone (level.py:42 _cell, :58 _metres, :179 the spawn yaw). The number grammar the art file got in 0226 (AGENTS.md:88: 'never read one with float() or int() alone') therefore does not hold one layer down. By reading, not run: '1_0' metres reads as 10, Arabic-Indic digits in a cell read as their ASCII values, and a malformed spawn yaw raises ValueError rather than MapError, which art/dress.py:1095 does not catch.
+- Graybox target ids are dense ordinals 'T%d' assigned by statement order (graybox/level.py:187), and the art scene's targets dict is keyed by them (art/dress.py:985). Deleting or reordering a target statement renumbers every later target, which is what SPEC2 §2.6 rejects.
+- The building statement's own refusals (not on rock, borders no cell of its region, overlaps another building, storey or bay out of range; art/dress.py:880-899) are planted nowhere. FACADE_PLANTS (art/play.py:2789-2796) plants bays only, and a grep of art/*.py outside dress.py finds none of these messages.
+- art/web/studio_ui.js:186-193 restates MARK-0's FRAMES table in JavaScript and no test compares it with art/studio_marks.py:131-138. They agree by reading. The host re-checks every saved vertex in its own frame, so a divergence would mislead the designer, not the world.
+- A brief may declare assets other than the cube, but no statement can place one: every visual's asset is 'cube' (e.g. art/dress.py:695, 925) and unused assets are dropped from the scene (art/dress.py:959). A declared mesh is never used.
+- Lamp heights read the whole-world reach ceiling (art/dress.py:846), and reachability is computed from the spawns over the whole map (art/dress.py:333-349). An edit that changes what is reachable can therefore move lamps far from it; locality there is held only by the one layout revision art/check.py tries.
+- art/README.md:75 says each dressing choice is 'a hash of its statement and its cell'. The code keys it by the statement's key (verb and first word, or a building's corners), deliberately not its text (art/dress.py:677-679), so a statement's numbers can change while its other per-cell choices stay.
+- A shape's camera view is persisted (art/studio_marks.py:356-359) but no selftest row reads it back. The ray hit the page computes (art/web/play.js:1505-1514) is rounded to mm and discarded.
+- The Unreal importer's described behaviour (keep unchanged actors, in-engine self-check) is graded OBSERVED against a stand-in that is not in the repository (art/README.md:326). No unreal-report.txt exists in the tree, so its first engine run is still its first test.
+
+- **R8.hierarchy-levels** · PARTIAL · SPEC2 §9 hierarchy
+  - *Capability:* Generate geometry through the hierarchy world > district > block/lot > building > floor > bay > facade element > surface detail, with each level a node that has its own record.
+  - *Held by:* art/selftests.py 'facade': '[PASS] facade: the building drawn and held to the art checks — the mass and 32 windows, 8 bays by 4 floors'; 'check' (ART CHECKS PASSED)
+  - *Gap:* The levels that exist are world (brief plus map), region (a named rectangle), building, side, bay by floor, and element (window, panel or blank). There is no district or block/lot entity. A floor is only an index in a bay's place, not a node. There is no surface-detail level. The scene is a flat list of visuals, each with an id, a 'by' statement hash and a region. No per-level…
+  - *Evidence:* art/dress.py:254-262 world(): the graybox map's W and C are the world level; art/dress.py:225-232 region: a named rectangle 'the look talks about', not a district ent…
+- **R8.seed-generator-version** · PARTIAL · SPEC2 §9 each level: seed, generator version
+  - *Capability:* Each level of the hierarchy carries its own seed and generator version.
+  - *Held by:* art/selftests.py 'check': 'PASS quality: the scene is its frozen reference'; 'quality': 'PASS plant: a new exporter with no reference — refused, with the fields it moved'
+  - *Gap:* There is one seed per world (the brief's) and one generator version per scene (the exporter's sha256 and the format string). No level has its own seed or generator version. Buildings and bays take no seed at all, because they are fully determined by their parameters.
+  - *Evidence:* art/dress.py:79-81 pick(): the first 32 bits of sha256 of a key; art/dress.py:180-181 one 'seed WORD' per brief
+- **R8.parameters-number-grammar** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §9 parameters, bounds; §5 strict malformed-input rejection
+  - *Capability:* Each level's parameters are typed and bounded, and malformed values are refused.
+  - *Held by:* art/selftests.py 'check': 'PASS plant: the number grammar refuses an exponent ('1e2' candelas)' and five siblings (log:274-279); 'quality': 'PASS plant: a colour channel of 256 — refused', 'a sun of 150,001 lux', 'a pit…
+  - *Skeptic:* The six grammar plants (check.py:638-656) all go through one lamp statement. They exercise the shared _num/_whole/_rgb (dress.py:95-129), so typing and malformed-value refusal are held. Bounds are only partly held. Quality restates the environment, material, light and view bounds at the scene layer…
+  - *Evidence:* art/dress.py:95-129 NUMBER, _num, _whole, _rgb, _cell: ASCII grammar with ranges; art/dress.py:425-439 _options: each option named once with its arity
+- **R8.child-rules-facade** · EXISTS-TESTED · SPEC2 §9 child rules; SPEC2 §6 geometry 'instantiate procedural building'
+  - *Capability:* Child rules: a building's sides make bays per floor, a bay statement overrides one bay, and a bay its building does not have is refused.
+  - *Held by:* art/selftests.py 'facade': '[PASS] facade: planted bays refused, each with its reason — 8 of 8 refused by the exporter'
+  - *Evidence:* art/dress.py:906-926 bays only on spans whose front cells are all open, floors = height /…; art/dress.py:927-935 a leftover bay is refused, with the bays the building has
+- **R8.dependencies-lineage** · PARTIAL · SPEC2 §9 dependencies; §4 dependency invalidation
+  - *Capability:* Each level records its dependencies, and changes invalidate the dependents.
+  - *Held by:* art/selftests.py 'check': 'PASS plant: the scene changed after export, its lineage not — refused by: the lineage binds every input'
+  - *Gap:* Dependencies are recorded at whole-scene level (lineage) and per object (the 'by' statement hash). There is no per-level dependency graph and no invalidation step: every edit re-exports the whole scene. The reach ceiling is a whole-world derived field (dress.py:288-374) that the envelope and the lamp heights depend on, and no record names it as a dependency.
+  - *Evidence:* art/dress.py:990-1000 lineage binds art, map, converter, canonical and collision hashes, …; art/check.py:364-376 check_lineage recomputes every hash
+- **R8.reproducible-output** · EXISTS-TESTED · SPEC2 §9 reproducible output; §17 procedural reproducibility
+  - *Capability:* The same inputs give byte-identical output, held against a frozen reference.
+  - *Held by:* art/selftests.py 'check': 'PASS the export is deterministic: the same files, the same bytes' and 'PASS quality: the scene is its frozen reference'; 'quality': 'PASS plant: other bytes from the same inputs — refused, nam…
+  - *Gap:* Reproducibility is held within one machine's run and by references frozen per exporter. Cross-host equality is asserted only as far as the references are compared on each host that runs the check.
+  - *Evidence:* art/check.py:783-791 exports twice and compares scene bytes and lineage; art/check.py:793-796 compare_reference against art/references.jsonl
+- **R8.local-regeneration** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §9 'Local edits must not regenerate unrelated lots'; §17
+  - *Capability:* A local edit does not change unrelated lots or pieces.
+  - *Held by:* art/selftests.py 'check': 'PASS the layout revision stays local' and 'PASS plant: the layout revision also raises a skyline block far away'; 'facade': 'changed in that one piece'; 'glue': two bays glue
+  - *Gap:* What is held is that unrelated output stays the same; the whole scene is still re-exported on every edit (the memo keys the whole export). There is no lot entity. Lamp heights and the envelope read the global reach ceiling, so locality for them is not by construction. Refusing an out-of-region change is opt-in per request (strict), by the owner's ruling (docs/ROADMAP.md:4708-4…
+  - *Skeptic:* layout_local (check.py:446-481) runs only on the one fixture revision plaza-night.revise-layout.design (check.py:826-882). The facade row checks one bay edit. Both are instance checks with a plant, not a property held for every edit. By construction, the hashed choices are keyed by statement and ce…
+  - *Evidence:* art/dress.py:19-20 each choice a hash of statement key and cell, never a running sequence; art/dress.py:61 CHUNK: collision boxes merge only inside 8x8 chunks
+- **R8.generated-geometry-envelope** · EXISTS-TESTED · SPEC2 §9 'not supported until ... validation ... tests exist'; §7 coherence
+  - *Capability:* Validate generated geometry before it is supported: the art's collision is exactly C, and no generated piece stands where a player can be.
+  - *Held by:* art/selftests.py 'check': 'PASS plant: a decorative wall on open floor at 5,15: the art deciding a wall — refused by: no dressing where a player can be' and the other envelope and collision plants
+  - *Evidence:* art/dress.py:15-17 the rule: inside rock, solid, flat, flush, or above every head; art/check.py:382-400 verify: play, collision, envelope, no lies, sources, rules, lineage,…
+- **R8.vocab-building-params** · EXISTS-TESTED · SPEC2 §9 initial building vocabulary: footprint, height, floors, bay count/width, floor h…
+  - *Capability:* Building footprint, height, floors, floor height (storey), bay count and bay width.
+  - *Held by:* art/selftests.py 'facade': '[PASS] facade: the building drawn and held to the art checks' (asserts mass box [20,4,4,36,14,6] and 32 bays); 'check': foundry-yard 'PASS quality: the scene is its frozen reference' (six bui…
+  - *Gap:* The footprint is an axis-aligned rectangle of whole cells, and the building is one cell deep in use. There is no non-rectangular footprint and no per-floor height variation.
+  - *Evidence:* art/dress.py:871-905 corners on rock, height wall+1..400, storey, bay, floors = height //…; art/dress.py:908-916 spans of 'every' cells per side; place per floor
+- **R8.vocab-building-validation** · EXISTS-UNVERIFIED · SPEC2 §9 'An operation is not supported until parser/schema, geometry realization, valida…
+  - *Capability:* The building statement's own refusals: not on rock, borders no cell of its region, overlaps another building, storey or bay out of range, face neither window nor panel.
+  - *Held by:* none
+  - *Gap:* No suite plants any of these building-level refusals. A grep of art/*.py outside dress.py finds none of their messages. Bays are planted, buildings are not.
+  - *Evidence:* art/dress.py:880-882 'a building stands on rock'; art/dress.py:883-886 borders no cell of its region
+- **R8.vocab-window-panel** · EXISTS-TESTED · SPEC2 §9 vocabulary: window
+  - *Capability:* Window (and panel or blank) as a facade element of one bay.
+  - *Held by:* art/selftests.py 'facade': 'planted bays refused' (louvre refused as an element) and 'the admitted scene holds the checks, changed in that one piece' (panel box [26.03,7.03,6.0,27.97,10.47,6.04] asserted)
+  - *Gap:* A window is a thin box 5 cm proud of the face, with no depth, frame, mullion or glazing as separate parts (FACADE-0 is boxes on a box).
+  - *Evidence:* art/dress.py:600-605 ELEMENTS, WINDOW and PANEL insets, assert proud < FLUSH; art/dress.py:625-635 _facade: the element's box on the face plane
+- **R8.vocab-structural-roof** · PARTIAL · SPEC2 §9 vocabulary: wall, column, lintel, sill, parapet, roof profile, loading bay
+  - *Capability:* Wall, column, lintel, sill, parapet, roof profile and loading bay as building elements.
+  - *Held by:* none for the missing items; the building mass is held by 'facade' as above
+  - *Gap:* Only the wall exists, as the building's mass box; play walls come from the layout's '#' cells. Column, lintel, sill, parapet, roof profile and loading bay have no statement, schema or realization.
+  - *Evidence:* art/dress.py:903-905 the building is one mass box from the wall's top to its height (a fl…; art/dress.py:602 WINDOW: sill 0.9 m and head 0.45 m are fixed constants of a window, not …
+- **R8.vocab-door-opening-shutter** · PARTIAL (reader CONFLICTS-WITH-SPEC, corrected) · SPEC2 §9 vocabulary: door, opening, shutter
+  - *Capability:* Door, opening and shutter as building elements, realized in geometry.
+  - *Held by:* gate rows designir-language (refusal case 'an entrance on the border'), designir-compile and designir-equivalence (plant 'entrance-dropped' caught), liveauthor-binding ('a cell opened and walked through'); art/selftests…
+  - *Gap:* No door, opening or shutter exists anywhere: not in the art grammar, the graybox map or the layout.
+  - *Conflict:* AGENTS.md:93 (FACADE-0 row): "Never give a bay a depth, an opening or a mesh here (FACADE-0 is boxes on a box)"; AGENTS.md:64-66: "Let the graybox renderer or the art decide. They may decorate; they must not decide where walls, cover or anything that blocks exist. Decoration that should affect play goes into the canon…
+  - *Skeptic:* The row's gap ('No door, opening or shutter exists anywhere: not in the art grammar, the graybox map or the layout') is wrong for openings in the world itself. A git grep for door/doorway/shutter/entrance/opening found that the canonical world's design language has 'room CELL CELL' (rock rim, floor…
+  - *Evidence:* art/dress.py:600 ELEMENTS has no door, opening or shutter; art/studio_marks.py:60 a shape can be 'subtract' (an opening) and its clearance is checke…
+- **R8.vocab-stair-railing** · PARTIAL · SPEC2 §9 vocabulary: stair, railing
+  - *Capability:* Stair and railing as procedural elements.
+  - *Held by:* art/selftests.py 'check': 'play holds: the graybox map's own checks' (stair cells are layout cells)
+  - *Gap:* A stair is a cell kind of the layout, given a material, not a generated element: no risers, flights or building stairs. No railing exists. A railing that blocks would be play and would have to go into W (AGENTS.md:64-66).
+  - *Evidence:* graybox/level.py:143 '<' and '>' cells are kind 'stair' in W; art/dress.py:63 CLASSES includes 'stair' for its surface material only
+- **R8.vocab-material** · EXISTS-TESTED · SPEC2 §9 vocabulary: material; §12 parameter validation
+  - *Capability:* Material as a vocabulary item: declared, validated and assigned to surfaces, buildings, faces and bays.
+  - *Held by:* art/selftests.py 'quality': 'PASS plant: a colour channel of 256 — refused', 'a visual whose material is not declared — refused'; 'check': 'PASS the look revision changes only the look' and its lamp-moving plant
+  - *Evidence:* art/dress.py:210-220 material NAME R,G,B ROUGH METAL [emissive], declared once; art/dress.py:645-650 every surface class names a declared material
+- **R8.vocab-fixture** · EXISTS-TESTED · SPEC2 §9 vocabulary: fixture
+  - *Capability:* Fixtures: lamps, downlights, edge lights and neon, each with a housing and a light, held out of play.
+  - *Held by:* art/selftests.py 'check': 'PASS plant: a canopy clear of every head whose ribs are not' and the edge-lights twin; the lamp number-grammar plants
+  - *Gap:* Fixtures are boxes plus point or rect lights; there is no fixture mesh or asset.
+  - *Evidence:* art/dress.py:756-793 canopy downlights and edge lights, each a housing and a point light; art/dress.py:832-852 lamp: housing above the reach ceiling, light below it
+- **R8.vocab-decal-signage** · PARTIAL · SPEC2 §9 vocabulary: decal/signage
+  - *Capability:* Decals and signage.
+  - *Held by:* art/selftests.py 'check': 'PASS plant: a neon sign standing 0.3 m off its wall — refused'
+  - *Gap:* Decals are flat boxes (puddles) and signs are emissive strips. There is no text, image, texture or projected decal, and no signage content.
+  - *Evidence:* art/dress.py:59-60 FLAT (decal) and FLUSH (sign) tolerances; art/dress.py:853-870 puddle: flat planes on floor cells
+- **R8.mark-points** · MISSING (reader PARTIAL, corrected) · SPEC2 §9 Mark & Shape: points
+  - *Capability:* Point marks.
+  - *Held by:* none
+  - *Gap:* No single-point mark can be saved. 'Point' is the tool that adds a vertex, and tags mark whole objects, not a point on a surface.
+  - *Skeptic:* No single surface point can be kept. parse() requires 3 vertices for a closed shape and 2 for a path (studio_marks.py:361-363), and the page refuses fewer (play.js:1551-1552). The 'point' tool only adds a vertex to a draft (play.js:1465, 2129). The held_by row cited (studio tags, log:732) is about …
+  - *Evidence:* art/web/play.js:1465 the draft's tool 'point' adds vertices to an outline; art/studio_marks.py:361-363 a saved shape has 2 (path) or 3 (closed) vertices at least
+- **R8.mark-named-saved** · EXISTS-TESTED · SPEC2 §9 named saved marks
+  - *Capability:* Named, saved marks that persist across a restart and that a request names by #name.
+  - *Held by:* art/selftests.py 'marks': '[PASS] save and reopen', '[PASS] marks: read back after a restart', '[PASS] an unreadable file is never overwritten'
+  - *Evidence:* art/studio_marks.py:61 NAME grammar; :62 MENTION #name; art/studio_marks.py:497-535 Shapes: canonical bytes, durable.write under the content lock
+- **R8.mark-polygon** · EXISTS-TESTED · SPEC2 §9 polygons
+  - *Capability:* Polygon marks with exact simplicity and clearance predicates.
+  - *Held by:* art/selftests.py 'marks': 'simple: worked values', 'simple: a slow witness' (4000 polygons, 0 disagreements), 'clearance: never below a brute force', 'refusals' (bow-tie SHAPE-SIMPLE)
+  - *Evidence:* art/studio_marks.py:184-207 simple(), exact; art/studio_marks.py:269-304 admits_rect: exact arrangement of candidate corners
+- **R8.mark-polyline** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §9 polylines
+  - *Capability:* Polyline marks (open paths).
+  - *Held by:* art/selftests.py 'held': 'PLANT path-has-volume CAUGHT by T5 2D exact, T5 paths' (classification only)
+  - *Gap:* Only a path region's classification is tested. Parsing and saving a path shape (2-vertex minimum, zero-length refusal) has no row.
+  - *Skeptic:* A path exists end to end: the page's OPS include Path (play.js:1467, 1551-1552), parse accepts 2..64 vertices (studio_marks.py:361-363), and evaluate refuses a zero-length edge (:465-467). The only tests are T5's classification of a path region (scene_diff_test.py:792-806) and its plant. No marks r…
+  - *Evidence:* art/studio_marks.py:60 'path' operation; :361-363 a path has 2..64 vertices; art/studio_marks.py:465-467 a path's zero-length check and length
+- **R8.mark-region-selection** · EXISTS-TESTED · SPEC2 §9 region selection
+  - *Capability:* Region selection: a shape's prism, and each box classified as inside, crossing, touching or outside, exactly.
+  - *Held by:* art/selftests.py 'held': 'SCENE-DIFF SELFTEST PASSED: 20 of 20 plants caught' (touching-is-inside, convex-hull, binary-floats); 'strict': 'a candidate outside the regions is refused at admission'
+  - *Evidence:* art/scene_diff.py:497-525 region(): prism along the outward normal; refused unless the sh…; art/scene_diff.py:528-533 classify: inside, crossing, touching, outside
+- **R8.mark-undo** · MISSING (reader PARTIAL, corrected) · SPEC2 §9 Mark & Shape: undo
+  - *Capability:* Undo of mark and shape edits.
+  - *Held by:* none
+  - *Gap:* There is no undo or redo stack. Re-saving a shape overwrites it with no history, and a delete cannot be undone except by drawing the shape again.
+  - *Skeptic:* Nothing undoes a mark or shape edit. A save replaces the record and bumps a revision counter (studio_marks.py:524-551). Delete removes it, and the restore at :561-563 only rolls back a failed write. The page offers cancel and vertex delete or insert inside a draft (play.js:1737-1744, 2273), which i…
+  - *Evidence:* art/studio_marks.py:554-563 delete, restored if the save fails; art/studio_marks.py:524-529 a save rewrites the file whole; only a revision counter is ke…
+- **R8.mark-anchor-provenance** · EXISTS-TESTED · SPEC2 §9 persist object/surface identity, source revision, local surface coordinate, sema…
+  - *Capability:* Persist each mark's object/surface identity, source revision, local surface coordinate and semantic intent.
+  - *Held by:* art/selftests.py 'marks': '[PASS] frames', '[PASS] save and reopen', '[PASS] refusals' (an older scene SHAPE-STALE, a box that moved SHAPE-STALE, four decimals SHAPE-NUMBER)
+  - *Gap:* The local coordinate is face-local u,v on an axis-aligned box (the explicit fallback form), not triangle+barycentric or UV. The constraints 'supports' and 'collision' and the material are kept as the designer's words and are never checked (studio_marks.py:36-38).
+  - *Evidence:* art/studio_marks.py:339-355 anchor {piece, face, box, scene}; the box must equal the scen…; art/studio_marks.py:131-155 face frames, world() and local()
+- **R8.mark-view-ray-provenance** · PARTIAL · SPEC2 §9 persist camera/viewport provenance, ray hit
+  - *Capability:* Persist the camera/viewport provenance and the ray hit of each mark.
+  - *Held by:* none
+  - *Gap:* The ray hit is not persisted, only the vertices it produced. The view is persisted, but no test reads it back or asserts it.
+  - *Evidence:* art/studio_marks.py:356-359 view {x,y,z,yaw_deg,pitch_deg} kept to the millimetre; art/web/play.js:1505-1514 onFace: the ray's hit is computed in the page and rounded to mm
+- **R8.mark-stale-invalidation** · EXISTS-TESTED · SPEC2 §9 'explicitly reproject with validation or invalidate the mark; never silently bin…
+  - *Capability:* When source geometry changes, invalidate the mark (or reproject it with validation), and never bind it silently elsewhere.
+  - *Held by:* art/selftests.py 'marks': '[PASS] status' (ok/changed/changed/gone/ambiguous/changed, a millimetre longer is changed) and '[PASS] marks: a shape whose box moved is changed, and refused as input'; 'held': 'PLANT status-t…
+  - *Gap:* A 'changed' shape is re-evaluated on the new face only for display; it is never reprojected into use. The designer must mark it again.
+  - *Evidence:* art/studio_marks.py:26-31 status rule: never moved to another surface; art/studio_marks.py:406-413 status_of: exact box equality
+- **R8.stable-identity** · PARTIAL · SPEC2 §5 stable entity/surface IDs; §2.6 do not renumber live IDs; §9 each level's stable…
+  - *Capability:* Art objects and hierarchy levels keep stable identities across unrelated edits and reload, without renumbering.
+  - *Held by:* art/selftests.py 'quality': 'PASS plant: an id twice — refused'; 'studio': '[PASS] an object gone: its tag never moves to another' and '[PASS] tags kept across a restart'; 'check': 'PASS plant: the layout revision also …
+  - *Gap:* Identity is the object's place: a moved or resized building, canopy or tower mass is a new id, and its tag goes 'gone' (log:732) rather than following it. Collision ids depend on run-merging inside a chunk. Graybox targets are dense ordinals, so deleting an earlier target statement renumbers every later one.
+  - *Evidence:* art/dress.py:903,916,925 building and bay ids from corners and place; art/dress.py:695,714,743,825,848,869 skyline, tower, canopy, neon, lamp and puddle ids fr…
+- **R8.asset-provenance-licence** · EXISTS-TESTED · SPEC2 §12 source provenance, licensing metadata, missing-source diagnostics
+  - *Capability:* Every mesh names its source and licence, and a missing source is diagnosed.
+  - *Held by:* art/selftests.py 'check': 'PASS plant: a mesh with no licence — refused by: every mesh names its source and licence' and 'PASS plant: the exporter refuses a mesh from an unnamed source'
+  - *Evidence:* art/dress.py:201-209 asset NAME PATH SOURCE LICENCE, source one of SOURCES; art/dress.py:651-653 the cube must be declared
+- **R8.asset-import-pipeline** · PARTIAL (reader MISSING, corrected, resolved F15) · SPEC2 §12 asset pipeline
+  - *Capability:* Asset pipeline: stable asset IDs and content hashes, import settings, mesh/texture validation, scale/axis conversion, collision/LOD generation, thumbnails, dependency graph, incremental reimport.
+  - *Held by:* art/selftests.py suite 'check' (ART CHECKS: plants 'a mesh with no licence' and 'a mesh from an unnamed source'); suite 'director' (memo_rows with their plants, THROUGHPUT-0); thumbnails and the Unreal axis/scale conver…
+  - *Gap:* No mesh, texture or material asset is imported or placed. A declared asset other than the cube can never be used by any statement. Assets have no content hash, import settings, LOD or collision generation, thumbnails or reimport.
+  - *Skeptic:* I grepped for asset, licen, gltf/glb/obj/fbx, import_mesh, thumbnail, reimport and LOD across art/, graybox/, design/, tools/, shell/, kernel/ and workshop/. No mesh or texture import, import settings, mesh/texture validation, collision/LOD generation or per-asset content hash exists, so the reader…
+  - *Evidence:* art/dress.py:959 the scene keeps only used assets, always including cube; art/dress.py:695,925 every visual's asset is 'cube'
+- **R8.material-presets-rollback** · PARTIAL · SPEC2 §12 materials: versioned presets and instances, standard lighting preview, rollback
+  - *Capability:* Materials as versioned presets and instances, with a standard lighting preview and rollback.
+  - *Held by:* art/selftests.py 'glue': '[PASS] a material and a bay: different sections, they glue'; 'facade': 'undone, the brief, the head and the scene as they were' (rollback through the ledger)
+  - *Gap:* Rollback exists through admission undo. There is no preset library, no versioned preset and no instance in the native path; each brief declares its own materials. There is no standard lighting preview: a material is seen only under its world's own light.
+  - *Evidence:* art/dress.py:210-220 materials declared per brief; a second declaration is refused; art/check.py:404-420 a look revision replaces named statements
+- **R8.material-separation-diagnostics** · PARTIAL · SPEC2 §12 palette/semantic separation diagnostics; SPEC1 §7 separation matrix per lightin…
+  - *Capability:* Palette and semantic separation diagnostics for materials.
+  - *Held by:* art/selftests.py 'legible': 'planted collapses of the cue, each found by the proxy' (the wall's own material, contrast) and 'legibility plant legibility-srgb-unlinearised caught'
+  - *Gap:* The diagnostic covers one subject against one setting along one camera path, from base colours only, and is advisory. There is no palette-wide separation matrix, no per-lighting-band evaluation, and no light-aware contrast.
+  - *Evidence:* art/legibility.py:20-25 WCAG contrast of a piece's material against the surface it is set…; art/legibility.py:62-65 contrast()
+- **R8.material-palette-indices** · CONFLICTS-WITH-SPEC (reader MISSING, corrected, resolved F15) · SPEC1 §7.4 materials as palette indices
+  - *Capability:* Materials as indices into a versioned palette rather than RGB, with palette changes as gate events.
+  - *Held by:* gate rows liveauthor-preregistered (Red 'the shell's palette is not the registered one'), liveauthor-binding; the kernel's index frame by kernel-oracle/kernel-corpus and bearing-* rows; LEGIBLE-0's contrast proxy by art…
+  - *Gap:* The art layer has no palette and no indices, and palette changes are not gate events. SPEC2 §12 itself advises against forcing RGB palette indices.
+  - *Skeptic:* I grepped for palette, separation, near-collision, distinct colours and contrast in *.py/*.rs/*.js. The art layer's materials are RGB plus PBR scalars with no indices, as the reader found. Elsewhere, a gate-held palette does exist. LIVE-AUTHOR-0 registers an 8-colour palette for the canonical world…
+  - *Evidence:* art/dress.py:213-214 a material is base R,G,B, roughness, metallic, emissive; art/quality.py:321-324 the scene's materials checked as RGB and scalars
+- **R8.native-format-versioned** · PARTIAL · SPEC2 §12 native project format versioned; import/export round trips tested; §5 migrations
+  - *Capability:* The native formats are versioned, round trips are tested, and malformed or unknown input is refused.
+  - *Held by:* art/selftests.py 'quality': 'PASS plant: a field the checker does not know (doors) — refused'; 'marks': 'save and reopen — saved in canonical bytes, read back the same'
+  - *Gap:* Every format is version 0 and is read only at version 0, with no migration path. No plant feeds a wrong version. The scene is a one-way compile of the art file, so the art has no round trip.
+  - *Evidence:* art/dress.py:39-41,161-162 VERDANDI-ART 0 required as the first line; art/quality.py:68,231-232 the scene's format must be VERDANDI-ART-SCENE 0
+- **R8.unreal-boundary** · EXISTS-UNVERIFIED · SPEC2 §12 'Unreal integration remains an explicit measured boundary'; §8
+  - *Capability:* Unreal import/export as an explicit, measured interop path: axis and scale conversion, keep-unchanged reimport, an in-engine self-check.
+  - *Held by:* none
+  - *Gap:* The importer has never run on an engine as far as the repository records: no unreal-report.txt exists. It exports one way into Unreal, with no import back.
+  - *Evidence:* art/unreal/verdandi_import.py:10-22 one transaction; keeps actors whose item hash did not…; art/unreal/verdandi_import.py:64-66 metres to centimetres, y-up to z-up
+- **R8.extension-no-duplicated-authority** · PARTIAL · SPEC2 §17 extension without duplicated authority; §3 reuse rather than duplicate
+  - *Capability:* Add a new statement kind or operation by extending one authority, with checkers failing closed on what they do not know.
+  - *Held by:* art/selftests.py 'director': 'PASS an address of a kind the classifier does not know (plaza/mover/3,4) classifies C, and the director will not admit it'; 'quality': unknown-field plants
+  - *Gap:* There is no registry. A new kind (as FACADE-0's building and bay were) must be restated in dress.py, director/scope.py, director/contract.py, quality.py's field table and the scripted provider. Omissions fail closed, but the JavaScript FRAMES twin is not checked against Python by any test (they agree by reading). The reach ceiling is computed twice on purpose, as an independen…
+  - *Evidence:* art/dress.py:244-247 the exporter is the single realizer of statements; art/director/contract.py:67-68 DRESSING_KINDS 'restated from art/dress.py and art/directo…
+- **R8.v-surface-local-strokes** · PARTIAL (from-verifier) · SPEC2 §9 Mark & Shape: surface-local strokes
+  - *Capability:* Surface-local strokes: drawing marks directly on a face in face-local coordinates, and moving, rotating or scaling them on that face.
+  - *Held by:* art/selftests.py 'marks': '[PASS] frames' (the face-local map only); the page's tools: none
+  - *Gap:* Strokes are click-placed vertices only, with no freehand stroke. The move, rotate and scale tools are page JavaScript that no test drives. The host re-validates whatever is saved.
+  - *Evidence:* art/web/play.js:1505-1514 a click's ray meets the face plane, rounded to mm in face-local…; art/web/play.js:1516-1521 snapping to edges and a 50 mm grid
+- **R8.v-vocab-door-opening-shutter** · PARTIAL (from-verifier) · SPEC2 §9 vocabulary: door, opening, shutter
+  - *Capability:* Door, opening and shutter as building elements.
+  - *Held by:* art/selftests.py 'marks': '[PASS] clearance: worked values' (a door 0.9 x 2.1 fits) and '[PASS] clearance: an opening is walked through'; '[PASS] marks: the director asked about #doorway' (UNSUPPORTED layout.change)
+  - *Gap:* An opening exists only as the designer's mark, with an exact walk-through clearance predicate. Nothing realizes a door, opening or shutter as geometry. FACADE-0 forbids openings (AGENTS.md:93). An opening through a play wall is a layout change (W) that the director answers UNSUPPORTED.
+  - *Evidence:* art/studio_marks.py:60 operation 'subtract': an opening; art/studio_marks.py:468-488 clearance: a body walks through, exactly
+- **R8.v-material-reference-graph** · EXISTS-TESTED (from-verifier) · SPEC2 §9 dependencies; §4 dependency invalidation
+  - *Capability:* Material dependencies: a piece whose material changed is AFFECTED (early cutoff on the material's digest), and parent cycles or dangling references refuse the candidate.
+  - *Held by:* art/selftests.py 'director': 'PASS the conformance vectors, reproduced by the reference (65)'
+  - *Gap:* This is classification for scope (LEAKAGE or REFUSED). It is not regeneration or invalidation. The 'parent' half is unreachable from the art language: dress.py's material has no parent (dress.py:211-212), and quality refuses the key (quality.py:321).
+  - *Evidence:* art/director/scope.py:25-28 the reference graph; art/director/scope.py:66-100 material_digest, changed_materials, GRAPH-CYCLE, GRAPH-DANGL…
+- **R8.v-asset-import-pipeline** · PARTIAL (reader MISSING, from-verifier, resolved F15) · SPEC2 §12 asset pipeline
+  - *Capability:* Asset import pipeline: content hashes, import settings, mesh, material and texture validation, collision/LOD generation, thumbnails, dependency graph and incremental reimport.
+  - *Held by:* none
+  - *Gap:* No mesh is imported or validated. Assets have no content hash, no import settings, no LOD or collision generation, no thumbnails and no reimport. Every piece of geometry is the engine cube scaled to a box.
+  - *Evidence:* art/dress.py:201-209 an asset is a name, an engine path, a source and a licence; nothing …; art/dress.py:651-653 the only asset required is the engine cube
+- **R8.v-unreal-axis-scale** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §12 scale/axis conversion; Unreal integration an explicit measured boundary
+  - *Capability:* Scale and axis conversion of the scene into Unreal (metres to centimetres, y-up to z-up), material instances, and an in-editor check of collision.
+  - *Held by:* none
+  - *Gap:* No test in the gate, art/selftests.py or §4 runs or references verdandi_import.py (a grep of art/*.py for 'unreal' finds only the file itself). Its self_check runs only inside the Unreal editor.
+  - *Evidence:* art/unreal/verdandi_import.py:64-66 V(): x*100, z*100, y*100; art/unreal/verdandi_import.py:113-129 material instances of one master
+- **R8.v-building-placement-refusals** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §9 bounds, child rules; AGENTS.md §4 FACADE-0 'never let a building stand on a cell…
+  - *Capability:* A building stands only on rock cells, borders its region, and shares no cell with another building; otherwise the exporter refuses it.
+  - *Held by:* none directly; check_envelope ('no dressing where a player can be', tested with plants) would still refuse a mass over open floor
+  - *Gap:* No plant feeds a building on open floor, one outside its region, or two overlapping buildings. A grep of art/ finds these messages only in dress.py.
+  - *Evidence:* art/dress.py:880-882 a building stands on rock; art/dress.py:883-886 it borders a cell of its region
+- **R8.m-asset-provenance-licence** · EXISTS-TESTED (from-verifier) · SPEC2 §12 'source provenance ... missing-source diagnostics and licensing metadata where …
+  - *Capability:* Every mesh asset is declared with an engine path, a source from a closed list (engine, cc0, fab, generated, own) and a licence. An undeclared, unsourced or unlicensed asset is refused.
+  - *Held by:* art/selftests.py suite 'check' (ART CHECKS PASSED): plants 'a mesh with no licence' and 'the exporter refuses a mesh from an unnamed source'
+  - *Gap:* Only the cube is ever placed. There is no content hash per asset and no licence vocabulary beyond free text.
+  - *Evidence:* art/dress.py:64 SOURCES; art/dress.py:201-209 asset statement and its refusals
+- **R8.m-world-opening** · EXISTS-TESTED (from-verifier) · SPEC2 §9 vocabulary 'door, opening'
+  - *Capability:* A traversable opening (a doorway) cut in the canonical world's walls through the design language: 'room' makes a rock rim with floor inside, 'entrance CELL' opens one rim cell, 'open' writes floor. Each is compiled, adm…
+  - *Held by:* gate rows designir-language, designir-compile, designir-equivalence (plant entrance-dropped, refusal 'an entrance on the border'); liveauthor-binding (a cell opened and walked through)
+  - *Gap:* It is a whole cell opened from floor to sky, with no lintel, frame, door leaf or state. It is not a building or facade element, and a layout change is refused while another brief plays the same map (SHARED-MAP).
+  - *Evidence:* shell/designcompile.rs:18-25 the language and its meaning; shell/designcompile.rs:57-59 PLANTS incl. entrance-dropped, rim-keeps-openings
+- **R8.m-material-validation** · PARTIAL (from-verifier) · SPEC2 §12 'Materials need versioned presets and instances, parameter validation, standard…
+  - *Capability:* Materials are declared once and validated: base colour as integer 0-255 channels, roughness and metallic 0-1, emissive strength 0-1000, a material declared twice refused, every piece's material declared. A pairwise cont…
+  - *Held by:* art/selftests.py suite 'quality' (plants 'a colour channel of 256', 'a colour channel of 12.5', 'a visual whose material is not declared'); suite 'legible' (plant 'the wall's own material' found by contrast)
+  - *Gap:* No versioned material presets or instances, no standard lighting preview (the inspector shows a flat swatch, art/STUDIO.md:123), and no separation diagnostic across the palette or per lighting band. Rollback exists only as the generic admission undo.
+  - *Evidence:* art/dress.py:210-220 material statement, ranges, declared-twice refusal; art/quality.py:318-324 materials.* validated as colours and bounded scalars
+- **R8.m-asset-thumbnails** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §12 'thumbnails/metadata'
+  - *Capability:* An asset browser that draws each of the scene's pieces (dressing, play geometry, movers, lights, materials, regions, views) as a thumbnail, using a second renderer from a camera framed on it.
+  - *Held by:* none
+  - *Gap:* No suite asserts that a thumbnail is drawn or correct: grep of art/play.py, studio.py, studio_app.py and scene_diff.py for thumb/asset browser finds only the route comment at play.py:27. The thumbnails show the scene's pieces, not imported assets.
+  - *Evidence:* art/web/studio_ui.js:210-230 Thumbs: a second renderer on a small canvas, a JPEG data URL; art/web/play.js:1138-1160 the asset browser's thumbnail cache and queue
+- **R8.m-export-memo-dependencies** · PARTIAL (from-verifier) · SPEC2 §12 'dependency graph, incremental reimport'
+  - *Capability:* Incremental re-export keyed on dependencies: an export result is reused only when every file it opened and every folder it listed is byte for byte unchanged, and every path it found absent is still absent.
+  - *Held by:* art/selftests.py suite 'director' (memo_rows inside director selftest, its plants caught); AGENTS.md §4 'python art/director.py memotest' -> MEMO SELFTEST PASSED
+  - *Gap:* It is a memo of the whole scene export, not an asset dependency graph. No per-asset invalidation, no reimport of source assets, and no graph that can be inspected.
+  - *Evidence:* art/director.py:83-93 THROUGHPUT-0: sha256 of every file opened and folder listed, record…; art/director.py:156 memo_call
+
+## R9 — the Director and its providers
+
+R9 is a gateway (art/studio.py) that builds a fixed context on the host: the tagged references with measured geometry, the named shapes, the brief's statements and the published capabilities. It sends that context to a provider command on stdin. It reads back at most three A/B/C candidates, accepting or refusing the answer whole, turns each into a VERDANDI-INTENT that art/director.py evaluates at the current head, and leaves admission to the designer. The Director's four §4 limits are held by planted-defect rows in the studio (74/74) and director suites: it cannot write world bytes, fabricate evidence, set its own validation or admit. Provenance is recorded and tested: provider and model, request and response sha256, time, tokens, validator and config digests, intents, verdicts and a hash-chained record. SPEC2 §10's typed-tool model conflicts with a deliberate rule that the model holds no tool (AGENTS.md:91, STUDIO-CONTRACT.md:48), so inspect, query, check, render and explain exist only as host functions or pushed context, and repair and bounded repair are missing (INFEASIBLE and PROJECTED reserved). Request binding is partial (no non-goals, per-request capability grant, token or cost budget, or template, adapter or CLI version), candidates written against an older head are re-evaluated rather than refused, and real providers are tested only against stand-ins, with real runs OBSERVED in host records from 2026-10-11 to 2026-10-13 that used adapters older than HEAD.
+
+**Surprises.**
+
+- HEAD-MOVED is informational, not a refusal (art/director/scope.py:50 and :255-258). The gateway evaluates each candidate at whatever the head is when the provider's answer arrives (art/studio.py:1266-1267), not at the head the model was shown. A candidate written from stale context can therefore come out CLEAN and be admitted at the new head. Only a head move after drawing is refused (STUDIO-STALE).
+- run_provider starts every configured provider with the repository root as its working directory, the whole environment and the user's rights (art/studio.py:266-269). The page and the queue may choose any art/providers/*.json that loads (art/studio_queue.py:57-67). 'A provider proposes' therefore rests on the trusted adapters' code (no tools, stdout only), not on OS isolation.
+- docs/STUDIO-CONTRACT.md:72-73 still marks the validators' and configuration's digests as 'a gap'. The code records both on every request line (art/studio.py:121-133, :1191), and the studio self-test asserts it (art/play.py:2419-2422). The current-state text is stale.
+- The request's basis hashes 4 validator files (art/studio.py:123), while the director's TRUSTED list has 11 plus the exporter (art/director.py:601-603). Neither covers the adapters (claude_code.py, anthropic_messages.py) or the prompt template (director_prompt.py), and config_sha256 hashes only the JSON. A change to the system prompt or an adapter leaves no trace on a request's record.
+- The last real-provider runs on this host predate HEAD's adapter. art/build/studio/plaza-night/requests.jsonl has claude-opus-5-5 probes on 2026-10-12, and the worlds folder's records end 2026-10-13T17:33Z. claude_code.py last changed at 5196a19 (0220, 2026-10-13T20:27Z). Those lines also have no 'prev' (they predate the record chain).
+- probe, probe_refs and report (art/studio.py:1660-1826) have no test. The probe's SHOWN verdict trusts provider-reported tokens (art/studio.py:1705-1716). `director.py lens` (art/director.py:1001-1042) is likewise untested.
+- The test of the Claude Code flags (art/play.py:2440-2451) checks that --safe-mode, --strict-mcp-config and the other flags are passed to a stand-in claude. Whether the real CLI accepts each flag at HEAD is not tested.
+- The API adapter's max_tokens truncation path (art/providers/anthropic_messages.py:112-113) is never exercised: the mock (art/play.py:2307-2337) has no max_tokens case.
+- Dead or stub code: DISPOSITIONS includes INFEASIBLE and PROJECTED, which no code path produces (art/studio.py:115); Queue.opened is a no-op that returns None (art/studio_queue.py:267-269).
+- Selftest counts in art/STUDIO.md have drifted from the code and the log. It says studio_queue's self-test has 13 cases (art/STUDIO.md:686); AGENTS.md:104 and the log (:659) say 19/19. It says studio_app's has 11 cases, 12 on Windows (art/STUDIO.md:639); the log says 13/13 (:186).
+
+- **R9.bind-base-revision** · EXISTS-TESTED · SPEC2 §10 "Every request binds world/base revision"
+  - *Capability:* Every request binds the world and its base revision; a candidate is admitted only at the head it was drawn at.
+  - *Held by:* art/selftests.py suite "studio" (art/studio.py selftest -> play.studio_selftest): "B, drawn at the head before A, refused as stale" and "the request recorded: context, response, intents"; suite "preview-studio": "the he…
+  - *Gap:* The world is named by its brief (or, in worlds mode, its tree), with no separate WorldId. Being bound to a base is not a refusal rule: a candidate written against an older base is re-evaluated, not refused (see R9.stale-base-reevaluated).
+  - *Evidence:* art/studio.py:1001-1003 the request carries brief, head and base {art, exporter, world sh…; art/studio.py:443-451 intent_doc copies the request's base into every candidate intent
+- **R9.stale-base-reevaluated** · EXISTS-TESTED (reader CONFLICTS-WITH-SPEC, resolved F8) · SPEC2 §2.3 "Stale candidates are refused"; §10 request binding
+  - *Capability:* A candidate whose base revision is no longer the head is refused as stale.
+  - *Held by:* suite "held": "held: a shape not as marked is stale, never re-read ... drawn again at the head as it is now (the world moved since it was asked)"; suite "queue": "reviewed and admitted in harbor-day"
+  - *Gap:* A candidate the model wrote from an older head's context is applied as text to the current brief, can come out CLEAN and can be admitted at the new head. Only a head move after drawing is refused.
+  - *Conflict:* art/director/scope.py:43-44 "HEAD-MOVED says the candidate was written against another head than the one it was checked against: the verdict is the new head's, never the old one's"; art/studio_queue.py:19-21 "re-evaluated, never trusted — and admitted only at the head it is drawn at"
+  - *Evidence:* art/director/scope.py:43-44 HEAD-MOVED: the verdict is the new head's; art/director/scope.py:50 REFUSING does not include HEAD-MOVED
+- **R9.bind-selection-marks** · EXISTS-TESTED · SPEC2 §10 "binds ... selection/marks"
+  - *Capability:* The request binds the selection (target), the pinned references and the named shapes, each to object or surface identity and the scene it was bound at. A tag never moves to another object. A gone or unpinned tag, or a s…
+  - *Held by:* suite "studio": "a prompt naming a tag that is not the target or a pin: refused, nothing asked", "an object gone: its tag never moves to another; the request refused until it is unpinned", "the request's geometry and re…
+  - *Evidence:* art/studio.py:799-850 references(): STUDIO-REFERENCE for an unmentioned or gone tag; art/studio.py:852-898 shapes_of(): STUDIO-SHAPE, never moved to another surface
+- **R9.bind-intent** · EXISTS-TESTED (corrected) · SPEC2 §10 "binds ... intent"
+  - *Capability:* The designer's intent (the prompt) is bound, length-checked and kept in the request and in every candidate intent; the model cannot change it.
+  - *Held by:* suite "boundary": "boundary: a prompt with half a character refused, a camera that is not an object ignored" (409 STUDIO-PROMPT); suite "studio": "the Anthropic adapter: structured outputs ..." (asserts the prompt is in…
+  - *Gap:* Only the model interprets the intent; the scripted provider just matches words (art/providers/scripted.py:28-30, 82-84). The host does not parse the intent.
+  - *Skeptic:* The code holds as stated: ask() bounds the prompt to 1-2000 characters and refuses a lone surrogate (studio.py:964-971). intent_doc copies the gateway's own prompt into every intent (443-451). The cited "the request recorded" row does not assert the prompt at all: it checks the target's statement, …
+  - *Evidence:* art/studio.py:964-971 a prompt of 1 to 2,000 characters; a lone surrogate refused; art/studio.py:443-451 the prompt, letter and base are the gateway's, not the provider's
+- **R9.bind-constraints** · PARTIAL · SPEC2 §10 "binds ... constraints"
+  - *Capability:* The request binds the designer's constraints and the host enforces them on every candidate.
+  - *Held by:* suite "strict" (art/play.py --strict-selftest, STRICT SELFTEST 11/11): "strict: a strict request names the shapes that hold it" and its ADMIT-OUTSIDE rows; suite "studio": "a candidate that changes objects nobody tagged…
+  - *Gap:* The only typed constraint the host enforces is STRICT-0: every changed box must lie inside the named shapes' regions. Every other constraint ("keep @2 exactly as it is") is prompt text, and a candidate that changes a pin is reported in touches but not refused. There is no typed constraints field for budgets, materials or keep-out areas.
+  - *Evidence:* art/studio.py:954-960 and art/studio.py:988-990 strict requires a named shape (STUDIO-STR…; art/studio.py:1015-1016 request["strict"]
+- **R9.bind-non-goals** · PARTIAL (reader MISSING, corrected, resolved F15) · SPEC2 §10 "binds ... non-goals"
+  - *Capability:* The request binds the designer's non-goals.
+  - *Held by:* Suite "studio" (art/studio.py selftest -> play.studio_selftest -> references_selftest, play.py:2507), rows "match @2: @1 takes @2's height and options, @2 and everything else untouched, and the candidate says so" and "a…
+  - *Gap:* The request has no non-goals field. The nearest things are the model's own `preserve` list, which is never checked, and the system text's instruction to leave pins alone.
+  - *Skeptic:* Searches: non-goal\|nongoal\|non_goal (case-insensitive) across the whole repository, verify/build excluded, found 0 matches; must not\|keep_out\|exclude\|forbid\|avoid in art/*.py found nothing relevant; pin roles and touches in art/. There is no non-goals field: the request at studio.py:1002-1012 has n…
+  - *Evidence:* art/studio.py:1002-1012 the request's fields: no non-goals; art/STUDIO.md:478 preserve: the candidate's words, recorded and shown, not checked
+- **R9.bind-allowed-capabilities** · PARTIAL · SPEC2 §10 "binds ... allowed capabilities"
+  - *Capability:* The request binds which capabilities the Director may use.
+  - *Held by:* suite "studio": "UNSUPPORTED: the provider names what the studio cannot make, from the list the request published" and "an account that names a capability the studio has, or one it never listed, refuses the response (FA…
+  - *Gap:* The capability list is one global constant, published the same way on every request. It cannot be narrowed or widened per request. Layout is always empty for a studio candidate, and play is reserved by scope.py.
+  - *Evidence:* art/studio.py:105-114 CAPABILITIES, a module constant; art/studio.py:1011 published in every request
+- **R9.bind-output-type** · EXISTS-TESTED · SPEC2 §10 "binds ... output type"
+  - *Capability:* The request binds the output type: format, version, request id, at most 3 candidates and a JSON Schema. The response is read whole or refused whole.
+  - *Held by:* suite "studio": "a response of four candidates: refused whole, not cut to three", "a response to another request: refused", "its schema enforcement not relied on: a fifth field refused by the gateway itself", "a provide…
+  - *Evidence:* art/studio.py:1012 respond {format, version, id, max_candidates, schema}; art/studio.py:136-184 SCHEMA
+- **R9.bind-budgets** · PARTIAL · SPEC2 §10 "binds ... budgets"; §4 "cost/time/output budgets"
+  - *Capability:* The request binds time, output, token and cost budgets, and the host enforces them.
+  - *Held by:* suite "studio": "a provider past its time: killed, refused", "a provider that prints past its limit: killed, refused", "a request cancelled: the provider killed, nothing drawn", "a cancelled provider's own children kill…
+  - *Gap:* Time and output-size budgets come from the provider's configuration, not from each request. There is no token or cost budget: usage is only recorded, Claude Code is started with no budget flag, and the API adapter's max_tokens is a constant that is neither bound nor recorded.
+  - *Evidence:* art/studio.py:231-233 timeout_s 1-600 and max_output_bytes 1 KiB-4 MiB in the configurati…; art/studio.py:259-333 run_provider kills on time, size or cancellation
+- **R9.bind-versions** · PARTIAL · SPEC2 §10 "binds ... model/provider/tool versions"
+  - *Capability:* The request binds the model, provider and tool versions.
+  - *Held by:* suite "studio": "each call records its basis: the validators' sources and the configuration, by sha256", "each call recorded with its exit status, validity, time and usage", "Claude Code's CLI: tools off ... its structu…
+  - *Gap:* Recorded: the configured model string, the provider's reported name and model, the configuration file's sha256, four validators' sha256 and the exporter's sha256 (in base). Not recorded: the sha256 of the adapter scripts or of director_prompt.py (config_sha256 covers only the JSON), the Claude Code CLI's version, or the API version header. The request.json the provider receive…
+  - *Evidence:* art/studio.py:121-133 basis(): four validators' sha256 and the configuration file's sha256; art/studio.py:1189-1193 the record line: config path, configured model, request_sha256, b…
+- **R9.tool-inspect** · PARTIAL · SPEC2 §10 typed tools: "inspect selection/world"; §4 "context assembly"
+  - *Capability:* The Director inspects the selection and the world.
+  - *Held by:* suite "studio": "what a model is told: each tag, what made it, its bounds, and how the tags stand", "the request recorded: context, response, intents"
+  - *Gap:* Inspection is a fixed context the host pushes once per request. The Director cannot ask for more, such as an untagged object's geometry, another region or the play map. `director.py lens` has no test and is not a tool. See R9.typed-tool-calls.
+  - *Evidence:* art/studio.py:983-1012 the context assembled once from the head: statements, references, …; art/studio.py:799-850 references with geometry and nearest wall
+- **R9.tool-query-geometry** · PARTIAL · SPEC2 §10 typed tools: "query geometry/relations"
+  - *Capability:* The Director queries geometry and relations.
+  - *Held by:* suite "studio": "the request's geometry and relations are the scene's own boxes", "facing is inferred, and said to be", "a gap is measured between the boxes, not their bounds"
+  - *Gap:* Pairwise relations among the references are measured and pushed. The Director cannot issue a query of its own (distance, sightline, collision, reach). Facing is a half-space test labelled inferred.
+  - *Evidence:* art/studio.py:849 relations for every pair of references; art/providers/director_prompt.py:82-94 relations rendered with measured and inferred labe…
+- **R9.tool-propose-ops** · EXISTS-TESTED · SPEC2 §10 typed tools: "propose operations"
+  - *Capability:* The Director proposes typed operations that the host validates and evaluates.
+  - *Held by:* suite "studio": "three candidates drawn for a selected slab", "a candidate the director refuses is shown, never drawn; the others are" (INTENT-APPLY); suite "director" (DIRECTOR SELFTEST PASSED)
+  - *Gap:* An operation is an art-file revision line that replaces, adds or removes a whole statement. No layout or play operation can come from the studio.
+  - *Evidence:* art/studio.py:376-380 revision lines '= ', '+ ', '- ' checked (STUDIO-RESPONSE-REVISION); art/studio.py:443-451 each candidate made a VERDANDI-INTENT
+- **R9.tool-edit-params** · EXISTS-TESTED · SPEC2 §10 typed tools: "edit supported parameters/materials"
+  - *Capability:* The Director edits supported parameters and materials.
+  - *Held by:* suite "studio": "match @2: @1 takes @2's height and options, @2 and everything else untouched", "a material changed: every object of it touched, tagged or not"
+  - *Gap:* A parameter edit replaces the whole statement that holds the parameter. There is no direct parameter-edit tool, and a material edit reaches every object that uses the material.
+  - *Evidence:* art/providers/scripted.py:183-201 parameter variations (deep, edgelit, height) by '='; art/studio.py:108-110 look.material, look.surface, look.sky, look.air supported
+- **R9.tool-procedural** · PARTIAL · SPEC2 §10 typed tools: "generate isolated procedural content"
+  - *Capability:* The Director generates isolated procedural content.
+  - *Held by:* suite "facade" (FACADE SELFTEST 8/8, the scripted provider's bays); suite "studio"
+  - *Gap:* The Director can add statements that the exporter realizes procedurally (a building's bays, canopies, lamps), each evaluated in isolation. There is no generator tool with its own seed, version and parameters, and nothing in play or layout can be generated here.
+  - *Evidence:* art/providers/scripted.py:109-143 the scripted provider's facade bays as statements; art/play.py:223-263 candidate_slot evaluates each candidate in its own export without wri…
+- **R9.tool-run-checks** · PARTIAL · SPEC2 §10 typed tools: "run checks"
+  - *Capability:* The Director runs checks.
+  - *Held by:* suite "director": "a check that did not run is said (not checked) and keeps the admission out: a skip is not a pass"
+  - *Gap:* The host runs every check on every candidate after the answer arrives. The Director cannot run a check while composing, and cannot see a result and try again.
+  - *Evidence:* art/director.py:657-669 the export and checks run on every candidate; art/director/contract.py:46-56 EXPECTED_CHECKS
+- **R9.tool-render-compare** · PARTIAL · SPEC2 §10 typed tools: "render/compare"
+  - *Capability:* The Director renders and compares.
+  - *Held by:* suite "preview-studio": "a candidate's preview: both sides' stills paired at each pose, its files (and the sheet to inspect)"
+  - *Gap:* Render and compare exist for the designer on the host and in the page. The model receives no image and cannot ask for a render.
+  - *Evidence:* art/studio.py:1429-1506 preview plan, stills, report and compare sheet, for the person; art/STUDIO.md:726 "An image of the view (the next slice, by his sequence)" not shown
+- **R9.tool-explain-refusals** · PARTIAL · SPEC2 §10 typed tools: "explain refusals"
+  - *Capability:* The Director explains refusals.
+  - *Held by:* suite "studio": the disposition rows, and "a candidate the director refuses is shown, never drawn"
+  - *Gap:* Refusals are typed codes with messages, shown to the designer and recorded. No refusal is ever returned to the provider, and the Director has no explain tool.
+  - *Evidence:* art/studio.py:187-192 StudioError: a code and a detail; art/studio.py:415-440 the model's own non-answer typed (declined with a closed reason)
+- **R9.repair** · MISSING · SPEC2 §10 "propose repair"; "Repair retries are bounded and create new candidate revision…
+  - *Capability:* The Director proposes repairs; repair retries are bounded and each creates a new candidate revision.
+  - *Held by:* none
+  - *Gap:* There is no repair stage. Refusals are never fed back to the provider, so there are no retries to bound. "Queue again" re-asks the same prompt; it is not a repair.
+  - *Evidence:* art/studio.py:57-58 INFEASIBLE and PROJECTED reserved for a repair stage that does not ex…; art/studio.py:115 DISPOSITIONS
+- **R9.typed-tool-calls** · CONFLICTS-WITH-SPEC · SPEC2 §10 "Tool output is structured and provenance-bound", "Record ... tool calls"; §4 "…
+  - *Capability:* The Director selects typed tools whose output is structured, bound to provenance and recorded as tool calls.
+  - *Held by:* suite "studio": "Claude Code offering a tool beyond its structured output: stopped, its answer never used"; "the Anthropic adapter: structured outputs ... no tool"
+  - *Gap:* The model answers a single request with one structured document and holds no tool. There are no tool calls to record: the stream-json events are read and then discarded.
+  - *Conflict:* AGENTS.md:91 "never let a model's command line run with tools"; docs/STUDIO-CONTRACT.md:48 a model (provider) may not "hold a file handle, a tool, the pointer, the journal, or a credential of the studio's"
+  - *Evidence:* art/providers/claude_code.py:35-37 any tool but StructuredOutput stops claude; art/providers/claude_code.py:55 ALLOWED_TOOLS = {"StructuredOutput"}
+- **R9.no-shell-fs** · EXISTS-TESTED · SPEC2 §10 "No unrestricted shell/filesystem access by default"
+  - *Capability:* By default the Director has no unrestricted shell or filesystem access.
+  - *Held by:* suite "studio": "a configuration with a shell line refused whole", "Claude Code's CLI: tools off, no session, the schema and the request given", "a claude that only a shell can run (.cmd): refused, nothing run", "Claude…
+  - *Gap:* The model has no shell and no filesystem. The provider process itself (an argv from a JSON file in art/providers/) runs with the user's rights, the repository root as its working directory and the full environment, with no OS isolation. That the real CLI accepts each flag is checked only against a stand-in claude.
+  - *Evidence:* art/studio.py:215-235 load_config: argv list only (STUDIO-CONFIG); art/studio.py:266-269 Popen shell=False, the request on stdin, cwd=REPO
+- **R9.abc-same-base-cameras** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §10 "All candidates use the same base revision and comparable camera/settings"
+  - *Capability:* A small number of A/B/C alternatives, all on one base revision and previewed along one camera path with the same settings.
+  - *Held by:* suite "studio": "three candidates drawn for a selected slab" (same map asserted), "a response of four candidates: refused whole"; suite "impact-studio": "impact: every candidate's panel, kept beside its intent (IMPACT-S…
+  - *Gap:* The ADMISSION-0 still is taken from the designer's current view (art/STUDIO.md:541-545), not from a camera shared by A, B and C.
+  - *Skeptic:* Tested: at most three candidates (four is refused whole), one camera path and seed per request (same_path == 1, and the path id equals the request's), and both sides' stills paired along that path. Not tested: that all candidates share one base. It holds by construction, since every intent_doc rece…
+  - *Evidence:* art/studio.py:99 LETTERS A, B, C; art/studio.py:365-366 at most 3
+- **R9.abc-distinct** · PARTIAL · SPEC2 §10 "offer a small number of genuinely distinct A/B/C alternatives"
+  - *Capability:* For an ambiguous creative request, genuinely distinct alternatives are offered.
+  - *Held by:* suite "studio": "AMBIGUOUS: the director's questions kept as text" (the alternative path); none for distinctness
+  - *Gap:* The model is asked for distinct candidates, but the host never checks: two identical candidates would both be drawn. For an ambiguous prompt the studio asks questions (AMBIGUOUS) instead of offering alternatives.
+  - *Evidence:* art/providers/director_prompt.py:25 "Make the candidates genuinely different answers", as…; art/providers/director_prompt.py:33 ambiguous: ask questions
+- **R9.prov-provider-model** · EXISTS-TESTED · SPEC2 §10 "Record provider/model"
+  - *Capability:* Provider and model recorded for every call, with no credential.
+  - *Held by:* suite "studio": "Claude Code's CLI: ... its structured output read back" (model fake-sonnet), "the Anthropic adapter ..." (mock-test-model), "each call recorded with its exit status, validity, time and usage" (no key in…
+  - *Gap:* The model name is whatever the provider reports, and nothing checks it.
+  - *Evidence:* art/studio.py:1189-1191 configured model and config path; art/studio.py:1205 the provider's {name, model}
+- **R9.prov-request-template-hash** · PARTIAL · SPEC2 §10 "Record ... request/template hash"
+  - *Capability:* Request and template hashes recorded.
+  - *Held by:* suite "studio": "the request recorded: context, response, intents" (request.json and response.raw kept)
+  - *Gap:* The request document and the raw response are kept and hashed. The template is not: director_prompt.SYSTEM and the user text it renders have no hash on record, and the text a model actually read is not kept.
+  - *Evidence:* art/studio.py:1187-1191 request.json kept, request_sha256 on the line; art/studio.py:1202-1203 response.raw kept, response_sha256
+- **R9.prov-cost-time-tokens** · EXISTS-TESTED · SPEC2 §10 "Record ... cost/time/tokens where available"
+  - *Capability:* Cost, time and tokens recorded where available.
+  - *Held by:* suite "studio": "each call recorded with its exit status, validity, time and usage", "a provider's usage that is not counts: refused whole"
+  - *Gap:* Tokens and cost are the provider's report: cost is null for the API and a client-side estimate for Claude Code. `report` (cost per admitted edit) has no test.
+  - *Evidence:* art/studio.py:1203 provider_ms and exit; art/studio.py:357-363 usage {input_tokens, output_tokens, cost_usd, cost_basis} checked
+- **R9.prov-truncation-timeouts** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §10 "Record ... truncation/timeouts"
+  - *Capability:* Truncation and timeouts recorded.
+  - *Held by:* suite "studio": "a newer request supersedes the one running: its result discarded" (the only row that reads the record line, for STUDIO-CANCELLED); "a provider past its time: killed, refused" and "a provider that prints…
+  - *Gap:* The timeout and size rows check the request's state code, not the record line. The API adapter's max_tokens cut has no case in the mock (art/play.py:2307-2337).
+  - *Skeptic:* The code writes STUDIO-TIMEOUT, STUDIO-RESPONSE-SIZE and STUDIO-CANCELLED to the record line before the state ends (studio.py:308-327, 1208-1223). The capability is that these are recorded, but the timeout and size rows check only r['code'] from the gateway's state through failing() (play.py:2177-2…
+  - *Evidence:* art/studio.py:308-327 STUDIO-TIMEOUT, STUDIO-RESPONSE-SIZE, STUDIO-CANCELLED; art/studio.py:1208-1223 the outcome code and detail written to the record line before the…
+- **R9.prov-candidate-source** · EXISTS-TESTED · SPEC2 §10 "Record ... candidate source"
+  - *Capability:* Each candidate's source recorded and replayable without the provider.
+  - *Held by:* suite "studio": "the request recorded: context, response, intents", "a recorded candidate replayed without the provider"; suite "impact-studio": "impact: another prompt, another provenance (IMPACT-PROV)"
+  - *Evidence:* art/studio.py:1259 <letter>.intent kept; art/studio.py:1291-1294 intent_sha256 for each candidate on the line
+- **R9.prov-validation** · EXISTS-TESTED · SPEC2 §10 "Record ... validation"
+  - *Capability:* Each candidate's validation recorded.
+  - *Held by:* suite "director": "an evaluation carries its record: rung A from what changed, every expected check certified, what was not checked, what it rests on"; suite "held": "held: every candidate carries the host's report"
+  - *Gap:* The ADMISSION-0 record, with its trusted list, reaches the ledger only when a candidate is admitted or rejected. For an undecided candidate the request line keeps the verdict and codes but not the rung or record.
+  - *Evidence:* art/studio.py:1268-1294 verdict, codes, held, strict and impact on the request's line, wi…; art/play.py:239-242 the slot's record: rung, rung_basis, requires, not_checked
+- **R9.prov-record-chain** · EXISTS-TESTED · SPEC2 §10 "Record ..."; §13 evidence completeness
+  - *Capability:* The request record is append-only and hash-chained line to line, so a line removed from it is found.
+  - *Held by:* suite "studio": "the request record chained: every line names the hash of the one before; a line taken out is found (plant), the end cut is not (said)"; "two threads record 200 requests each at once: 400 lines, every on…
+  - *Gap:* Lines cut from the end are not detected without an outside anchor, and the code says so. The record lives under art/build/ and is never committed.
+  - *Evidence:* art/studio.py:1141-1154 _log with prev under LOG_LOCK; art/studio.py:474-512 verify_records
+- **R9.scripted-provider** · EXISTS-TESTED · SPEC2 §10 "Scripted providers test the tool chain"
+  - *Capability:* A scripted provider tests the tool chain without a model.
+  - *Held by:* suites "studio", "marks", "facade", "strict", "impact-studio", "preview-studio", "flagship", "held" and "queue" drive the gateway with it; suite "studio": "the scripted provider: a word it knows names what is missing (U…
+  - *Evidence:* art/providers/scripted.py:4-30 fixed variations, word matching, said to understand nothing; art/providers/scripted.py:146-209 main
+- **R9.real-providers** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §10 "real provider output is not deterministic evidence"; §4 "provider adapters"
+  - *Capability:* Real model providers behind the same gateway; their output is not deterministic evidence.
+  - *Held by:* suite "studio": the Anthropic adapter rows against a local mock (adapter shape, refusal, 529, no key) and the Claude Code rows against a stand-in claude (flags, tool plant, retries, auth, refusal, .cmd). AGENTS.md §4's …
+  - *Gap:* The adapters are tested only against stand-ins. Real runs are OBSERVED in the host's records: art/build/studio/plaza-night/requests.jsonl has claude-opus-5-5 probes and requests on 2026-10-12, and the worlds folder has runs on 2026-10-13. All of them predate the last change to claude_code.py (5196a19, 0220), and none is recorded with HEAD's adapter. probe, probe_refs and repor…
+  - *Skeptic:* The adapters' own logic is tested with plants against stand-ins. The capability is real providers behind the gateway, and that is broader. anthropic_messages.py has never met the live API (STUDIO.md:720: held only to a local server). Real Claude Code runs exist only from before claude_code.py's las…
+  - *Evidence:* art/providers/claude_code.py:93-174; art/providers/anthropic_messages.py:82-121
+- **R9.limit-no-world-write** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §4 "It cannot write active world bytes"
+  - *Capability:* The Director cannot write active world bytes.
+  - *Held by:* suite "studio": "no answer without candidates writes the world: the brief and the ledger byte for byte as before", the failing-provider rows ("the world as it was"), "the brief served throughout"; model-level denial: "C…
+  - *Gap:* This holds because of how the shipped adapters are built (no tools, stdout only), not because of isolation: run_provider starts any configured argv with the user's rights and the repository root as its working directory. STUDIO-CONTRACT's low-integrity boundary applies to candidate generations, and probe 4 is off the gate.
+  - *Skeptic:* The cited rows show that the gateway writes nothing on non-REALIZED answers and failures, and only admit() writes the brief. With the tools-off and tool-plant rows, they show that the shipped adapters' model holds no tool. 'Cannot write' is a denial claim, and nothing denies it to the provider proc…
+  - *Evidence:* art/studio.py:1225-1244 only a REALIZED disposition evaluates anything; art/studio.py:1353-1416 the brief is written only by admit, from the designer's request
+- **R9.limit-no-fabricated-evidence** · EXISTS-TESTED · SPEC2 §4 "fabricate evidence"
+  - *Capability:* The Director cannot fabricate evidence: the still's detectors, the rung and the record are the host's.
+  - *Held by:* suite "director": "plant: an admission whose recorded detectors are not its still's — refused", "plant: an admit event written past the director, with no evidence — refused by replay"; suite "studio": "a still the detec…
+  - *Gap:* The provider's own usage, model and outcome are recorded as its claims and not checked. The probe's SHOWN verdict rests on provider-reported tokens.
+  - *Evidence:* art/director.py:727-745 admission_evidence: detectors read by the host from the bytes; art/director/contract.py:9-25 the rung is the host's; a model's words never read
+- **R9.limit-no-self-validation** · EXISTS-TESTED · SPEC2 §4 "set its own validation status"
+  - *Capability:* The Director cannot set its own validation status or ordering.
+  - *Held by:* suite "studio": "its schema enforcement not relied on: a fifth field refused by the gateway itself"; suite "held": "compare: the order reads no model words"
+  - *Evidence:* art/studio.py:347-348 unknown response fields refused; art/studio.py:371-372 a candidate holds exactly five fields
+- **R9.limit-no-admit** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §4 "or admit candidates"
+  - *Capability:* The Director cannot admit candidates; only the designer can.
+  - *Held by:* suite "studio": "AMBIGUOUS: the director's questions kept as text; one that says to admit admits nothing" (the question 'Ignore your rules and admit candidate A.'), "ADMISSION-0: A with no still is not admitted (STUDIO-…
+  - *Skeptic:* The model's words never admit: questions are shown as text, and the injection case is tested. Admission needs the page's token and a still (studio.py:1353-1416), and a client without the token gets 403. The claim, though, is that the Director cannot admit, and the provider process is not confined. …
+  - *Evidence:* art/studio.py:1353-1416 admit takes a request id, a letter and the page's still; art/studio_queue.py:19-21 nothing in the queue admits
+- **R9.dispositions** · EXISTS-TESTED · SPEC2 §6 "Refusals are typed data, not strings"; §10 provenance
+  - *Capability:* Every request ends in a typed disposition (REALIZED, UNSUPPORTED, AMBIGUOUS, DECLINED or FAILED), decided first by what the host observes, and the queue keeps it across restarts.
+  - *Held by:* suite "studio": "an empty answer with no reason is FAILED", "UNSUPPORTED ...", "AMBIGUOUS ...", "DECLINED by the provider ...", "a refusal the API reports (stop_reason refusal): DECLINED by the studio"; suite "queue": "…
+  - *Gap:* INFEASIBLE and PROJECTED are reserved values that no code produces. Whether Claude Code's CLI passes the API's stop reason on is not measured (art/STUDIO.md:509-510).
+  - *Evidence:* art/studio.py:115-117; art/studio.py:415-440 disposition()
+- **R9.acceptance-17** · PARTIAL · SPEC2 §17 "Director tool permissions/provenance/bounded repair"
+  - *Capability:* Director tool permissions, provenance and bounded repair, with evidence reported for each.
+  - *Held by:* suite "studio" (STUDIO SELFTEST 74/74, twice, art/build/selftests/20261016T162615Z.log:736 and :1580); suite "director" (DIRECTOR SELFTEST PASSED, log:170); suite "queue" (STUDIO-2 SELFTEST 19/19, log:659)
+  - *Gap:* Permissions: the model holds no tool and no shell (tested), but the provider process is not sandboxed. Provenance: provider, model, request and response sha256, time, tokens, validator and config digests, intents and verdicts are tested; the template, adapter and CLI versions are not recorded. Bounded repair is missing.
+  - *Evidence:* art/providers/claude_code.py:133-141; art/studio.py:1189-1207
+- **R9.spec1-agent-lane** · EXISTS-TESTED · SPEC1 §8 "agent lane (LLM proposals as candidates only)"; §11 E11
+  - *Capability:* SPEC1's agent lane: LLM proposals enter only as candidates.
+  - *Held by:* suite "studio" (as in R9.limit-no-world-write and R9.limit-no-admit); suite "flagship": "the flagship's edit from mark to undo, every stage's evidence (FLAGSHIP-0)"
+  - *Gap:* SPEC1 A1 says "the verifier admits". Here the verifier only judges or refuses, and a person admits (AGENTS.md:91; docs/STUDIO-CONTRACT.md:55). The agent lane exists; the verifier-admits reading does not.
+  - *Evidence:* art/studio.py:17-22 "the model proposes changes—it never directly mutates the live world"; art/studio.py:443-451
+- **R9.v-provider-process-isolation** · PARTIAL (from-verifier) · SPEC2 §10 "No unrestricted shell/filesystem access by default"; §4 "It cannot write activ…
+  - *Capability:* The provider process the gateway starts is confined: no rights beyond answering one request on stdout, no access to the world files, the ledger, the studio's token or the director CLI.
+  - *Held by:* suite "studio": "a configuration with a shell line refused whole", "a provider past its time: killed, refused", "a provider that prints past its limit: killed, refused", "a cancelled provider's own children killed with …
+  - *Gap:* Process-level limits exist and are tested: argv only, no shell, stdin only, a time and an output limit, and the process tree killed. No isolation exists: the provider runs with the user's rights, the repository root as its working directory, the full environment and the network. It can write art/briefs/ and art/ledger/, run art/director.py, or read the page's token and post to…
+  - *Evidence:* art/studio.py:227-228 argv list only; art/studio.py:266-269 Popen: shell False, cwd=REPO, env inherited (None) unless a queued …
+- **R9.v-bind-non-goals** · PARTIAL (reader MISSING, from-verifier, resolved F15) · SPEC2 §10 "Every request binds ... non-goals"
+  - *Capability:* Every request binds the designer's non-goals (what must not change), and the host enforces them.
+  - *Held by:* none
+  - *Gap:* The request has no non-goals field. The nearest things are the model's own 'preserve' list (words, unchecked), pins (references the model is told to keep, but a change to one is only reported), and STRICT-0's regions (the only enforced bound, and a positive region rather than a non-goal).
+  - *Evidence:* art/studio.py:1002-1016 the request's fields: no non-goals; art/studio.py:177-179 preserve is the model's list, in words
+- **R9.v-bounded-repair** · MISSING (from-verifier) · SPEC2 §10 typed tools "propose repair"; "Repair retries are bounded and create new candid…
+  - *Capability:* Refusal-driven repair: the Director is given a typed refusal and proposes a repair, retries are bounded, and each retry is a new candidate revision.
+  - *Held by:* none
+  - *Gap:* One provider call per request. A refused candidate is shown to the designer and never returned to the model. There is no retry loop and no bound, and no disposition in the code is INFEASIBLE or PROJECTED.
+  - *Evidence:* art/studio.py:57-58 'INFEASIBLE and PROJECTED are reserved for a repair stage that does n…; art/studio.py:115 the reserved dispositions
+- **R9.v-record-tool-calls** · MISSING (from-verifier) · SPEC2 §10 "Record ... tool calls"; "Tool output is structured and provenance-bound"
+  - *Capability:* The Director's tool calls are recorded with the request.
+  - *Held by:* none
+  - *Gap:* The model is given no tools, so there are no tool calls to record. The tools the CLI offered are checked (only StructuredOutput is allowed) but not recorded. Once typed tools exist (see the PARTIAL tool rows), nothing records their calls.
+  - *Evidence:* art/providers/claude_code.py:133-141 the init event's offered tools are checked, then dis…; art/studio.py:1189-1207 the record line: no tool-call field
+- **R9.m-stale-evaluation-refused** · EXISTS-TESTED (from-verifier, resolved F8) · SPEC2 §2.3 "Stale candidates are refused"; §14 Phase 2 "stale refusal ... Plant failures …
+  - *Capability:* A Director candidate checked or drawn at one head is refused at admission and at preview once the head has moved. This includes a concurrent admission that lands between the caller's check and the write, which is fenced…
+  - *Held by:* Suite "director": "a candidate checked at the old head is not admitted at the new one". Suite "racetest": "at <point>: the second admission waits for the lock and is refused by the fence", with plant "no fence — the sec…
+  - *Gap:* The binding is to the head the evaluation was checked against, not to the base the intent was written against. An intent whose base is stale is re-evaluated, not refused (see R9.stale-base-reevaluated).
+  - *Evidence:* art/director.py:784-786 cmd_admit refuses HEAD-MOVED when checked_against != head; art/director.py:491-498 commit fence: head recomputed under the lock, plant no-fence
+- **R9.m-budgets** · PARTIAL (from-verifier) · SPEC2 §4 "cost/time/output budgets"; §10 "Every request binds ... budgets"
+  - *Capability:* Each Director request runs under cost, time and output budgets that the host enforces.
+  - *Held by:* Suite "studio": "a provider past its time: killed, refused" and "a provider that prints past its limit: killed, refused" (passed twice in the log).
+  - *Gap:* Time, output-size and field budgets are enforced and tested. No cost or token budget exists: cost and tokens are recorded and summarized as telemetry only. The time and output budgets live in the provider's configuration file, not in the request document. The API adapter's max_tokens is a constant.
+  - *Evidence:* art/studio.py:119 CONFIG_KEYS include timeout_s and max_output_bytes; art/studio.py:231-233 timeout_s 1..600, max_output_bytes 1 KiB..4 MiB, refused otherwise
+
+## R10 — the design tool, the principles, the phases and the decisions
+
+The design tool, design/design.py, is a thin, honest client. It proposes through `shell design-compile`, previews through the shell's dry run, and admits the previewed bytes bound to their digest and head. The shell's half is held by gate rows (designevent-admit, admit-anchor, admit-capability). The tool's half is held by its own 17 checks, which last ran 2026-10-08 and 2026-10-12; the tool's code has not changed since. Of SPEC2's ten principles, authority separation, candidate isolation, stable identity, evidence-not-authority and off-gate discipline are in code and under test. Honest determinism, geo-stability, a single mutation path, documented boundaries and no unearned claims are only partly met: there are two authority stacks (the session and the art ledger), hand edits to the art brief are served live, the gate passes with skipped rows, and limits live mostly in prose. Five of SPEC2's §16 decisions are settled by owner rulings or held by the code (DSC-0 keeps the log as authority, DET-MATH-0 rejects blanket fixed-point, the 48 x 48 kernel stays untouched, WebGL2 native with Unreal as an export path, human visual baselines); the BVH, the 60 FPS target, streaming and multiplayer have no measurement or build. Phases 1 to 7 are each partial and Phase 8 is missing; SPEC1's normal-form authority, dense renumbering, Q32.32 physics, and its kernel dependency and new gate rows each conflict with an owner ruling or an AGENTS.md rule.
+
+**Surprises.**
+
+- docs/BOUNDARIES.md:35 says the art layer 'writes a scene ... never W, C or a layout'. art/director.py:338-367 does write graybox/maps/*.layout. It first computes the rows by running design/design.py new, grant, propose, preview and admit in a throwaway project (art/director.py:311-335), with an automatic grant of every cell. The tactical.layout header says 'written by art/director.py when an intent's layout was admitted'. The design tool's own 'admit only after the owner accepts that preview' (AGENTS.md:62) is automated there; the person's act is the intent's admission.
+- art/flagship.py:337-349: the planted stale revision appends to the brief by hand, and the test expects 'the world as the edit left it'. play.py serves a hand-edited brief live (AGENTS.md:90). The ledger only reports this later as UNLOGGED-CHANGE in cmd_verify (art/director.py:984-989), which `rebase` records. This is a sanctioned second mutation path into the art world.
+- design/test_design.py:239-242 prints '[SKIP] no shell' and exits 0 when no shell is found and rustc is absent. A run on a machine without rustc reports nothing failed and prints no 'DESIGN TOOL PASSED' line.
+- verify/verify.py:17019 prints 'GATE PASSED' whenever no row fails, whatever the skip count. AGENTS.md:112 acknowledges this; it is the opposite of SPEC2 §13's 'skipped required rows fail closed'.
+- docs/STUDIO-APP.md:47, a dated inventory of 2026-10-12, still says crash-safe writes of the content files are 'missing' (a plain open). The code now writes through art/director/durable.py (temporary file, flush, MoveFileExW with write-through) at art/director.py:436 and 535.
+- ORT-1, the only rebase implementation, refuses rules-3 worlds (docs/ROADMAP.md:4287-4288), and every art scene has named rules 3 since 0229. No world the studio serves can be rebased today.
+- CERT-0 (docs/ROADMAP.md:5135-5144): undoing an aligned '=' or a '-' restores the statements but not the brief's bytes or the head. FLAGSHIP-0's undo holds only because its edit is a '+'. The repair waits on the owner's ruling.
+- The game-not-runtime row (verify/verify.py:797-816) fences only oracle/game. shell/main.rs:883-884 defaults to oracle/levels/witness.lvl and oracle/tiles/identity.tiles, graybox/maps/witness.gbx pins the oracle's level, and every design-tool project starts from it. The oracle's frozen data is a runtime input.
+- README.md:46-50 says of LLM proposals 'nothing of this is built', which is true of the session world (GHOSTS G27: 'A model has not used it'). The art studio does run real model providers. README's 'sequence, as built' stops at ART-GENERATION-0 and names none of Phase I (B0 to B5b, CERT-0, GLUE-0).
+- GHOSTS G27 (docs/GHOSTS.md:566) says 'A model has not used it' of the design tool. art/director.py:311-335 now drives design.py for an intent's layout lines, so a model-written intent file could reach it. Whether one has is not recorded.
+
+- **R10.p1-authority-separation** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §2 principle 1
+  - *Capability:* Authority is separated: language proposes, a verifier admits, the kernel defines semantics, the runtime simulates, the renderer presents, the shell displays, a person approves.
+  - *Held by:* gate rows membrane-wall (a compile-fail plant on workshop/membrane.rs), workshop-authority (a planted extra cell refused AUTHORITY-MISMATCH), shell-playback-no-authority, liveauthor-authority, game-not-runtime (two plan…
+  - *Gap:* Two authority stacks exist side by side: the session (cells and tile classes) behind the shell's admission, and the art brief plus its hash-chained ledger behind art/director.py. There is no single Workshop. The separation of runtime and renderer is held only by the graybox's own self-test, which no gate row runs. The typestate wall is a demonstration that no other file uses (…
+  - *Skeptic:* Each cited row is real and asserts its own slice: membrane-wall passes only if rustc refuses the planted edit through a live Reading (verify.py:1882-1888); workshop-authority plants a second unrecorded cell and requires AUTHORITY-MISMATCH (1152-1166); shell-playback-no-authority requires level, til…
+  - *Evidence:* README.md:17-35 — the charter: kernel std-only, shell holds no authority mirror, oracle n…; docs/CORE.md:144-157 — the authority table, each role and the rows that hold it
+- **R10.p2-one-mutation-path** · PARTIAL · SPEC2 §2 principle 2; §11 direct edits
+  - *Capability:* UI and LLM operations use the same transaction and admission path, with no hidden privileged shortcut.
+  - *Held by:* gate rows admit-replay (an admitted edit equals the same edit made by a key) and designevent-admit (a batch equals the same operations admitted one at a time); art/selftests.py 'flagship': 'planted: a stale revision (th…
+  - *Gap:* There are two worlds with two mutation paths: the session through shell admit or design, and the art brief through the director's ledger. The live window's keys append edits directly, without the grant or the anchor check. This is explicit and by design. In the art layer, a brief edited by hand is served live by play.py and is only flagged afterwards (UNLOGGED-CHANGE, recorded…
+  - *Evidence:* verify/verify.py:11209-11213 — admit_replay: an admitted child equals the key-made edit, …; docs/PROGRAM.md:300-302 — an admitted proposal is an ordinary event
+- **R10.p3-candidate-isolation** · EXISTS-TESTED (resolved F8) · SPEC2 §2 principle 3; §6 base revision
+  - *Capability:* Each candidate binds to its world, base revision, payload, tool versions and digest, and stale candidates are refused.
+  - *Held by:* gate rows admit-anchor ('refused ADMIT-ANCHOR with both heads named and no rebase'; 'another renderer identity or bearing identity is refused ADMIT-PROGRAM') and designevent-admit ('an admission bound to another digest …
+  - *Gap:* There is no WorldId apart from the head, which is the identity. The schema version is only the language tag (VRDNP1, VRDNP2, VERDANDI-DESIGN 0).
+  - *Evidence:* verify/verify.py:10973-11013 — anchor court: a stale head, a one-character-off head, anot…; verify/verify.py:14509-14533 — dry-run binding (parent, digest, head, count) and ADMIT-PR…
+- **R10.p4-honest-determinism** · PARTIAL · SPEC2 §2 principle 4
+  - *Capability:* Distinguish determinism within one build, across hosts, reproducibility, and visual equivalence within a tolerance, and claim none without tests.
+  - *Held by:* same-build: gate rows sessionwalk-batch-invariance, simtick-equivalence, designevent-admit; the FULL×2 procedure (AGENTS.md §4, last row); cross-engine on fixtures: graybox tick_ref/trace checks (own check, not run at H…
+  - *Gap:* The taxonomy lives in prose tables and in record grades; no result carries a determinism scope in code. 'Visually equivalent within a tolerance' is not defined as a contract: SSIM and PSNR are 'only a look'. Saved session bytes are not reproducible, though heads are (CORE.md:190).
+  - *Evidence:* docs/CORE.md:179-192 — the determinism table by scope; cross-platform in general 'not est…; docs/BOUNDARIES.md:49-51 — replay determinism shown on one build in one page, not across …
+- **R10.p5-geo-stability** · PARTIAL · SPEC2 §2 principle 5; §5 coordinate policy
+  - *Capability:* Geo-stability: stable entity and surface identities, local frames, hierarchical transforms, explicit rebasing and dependency invalidation.
+  - *Held by:* art/selftests.py 'marks' (MARKS SELFTEST 19/19) and 'studio': 'an object gone: its tag never moves to another; the request refused until it is unpinned'; ORT-1: python graybox/ort_ref.py and trace --ort (own check, not …
+  - *Gap:* There are no hierarchical transforms or charts: scene boxes are in world metres, and a bay is named by its place. Rebasing exists only for rules-2 worlds, and every art scene now names rules 3. Dependency invalidation is limited to a shape's status and the export memo's file hashes; there is none for collision or navigation caches.
+  - *Evidence:* art/studio_marks.py:9-31 — shapes in surface-local integer millimetres on one face of one…; art/play.py:3867 — studio row: a gone object's tag never moves
+- **R10.p6-canonicalization-not-identity** · EXISTS-TESTED · SPEC2 §2 principle 6
+  - *Capability:* Canonical ordering gives canonical bytes but never renumbers live IDs, so references survive unrelated edits.
+  - *Held by:* art/selftests.py 'studio': 'an object gone: its tag never moves to another ...' and 'tags kept across a restart: the same numbers, a new object given the next, a gone object's tag kept apart and never reused'; 'marks'; …
+  - *Evidence:* art/play.py:3867 — a tag never moves to another object; art/play.py:3883 — tags kept across a restart, a gone tag never reused
+- **R10.p7-evidence-not-authority** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §2 principle 7
+  - *Capability:* Image metrics, timings, logs and test sheets inform review and never admit a world on their own.
+  - *Held by:* art/selftests.py 'impact-studio': 'impact: a candidate over a budget is flagged and still admitted, the flag advisory (IMPACT-PLANT)' (log 543); 'studio': 'AMBIGUOUS: ... one that says to admit admits nothing' (log 699)…
+  - *Gap:* A still that the detectors flag blocks admission unless the person admits 'despite' it (art/play.py:2085): evidence can gate, though it never admits. The read did not check whether a plant tests the rule that no admission reads a preview or legibility proxy (AGENTS.md:96-97).
+  - *Skeptic:* By reading, Gateway.admit decides on the re-evaluated verdict, the head, the strict check and the still's detectors. It reads no impact, preview, framing or legibility; _compared is only recorded (studio.py:1353-1418). Only one plant tests that evidence does not decide: the over-budget candidate mu…
+  - *Evidence:* art/play.py:3274-3277 — an over-budget candidate is flagged and admitted, the flag adviso…; art/impact.py:16-20 — an ESTIMATE, never a measured frame and never evidence for an admis…
+- **R10.p8-off-gate-explicit** · EXISTS-TESTED · SPEC2 §2 principle 8
+  - *Capability:* Experiments and tooling cannot silently alter the certified core or the frozen reference evidence.
+  - *Held by:* gate rows oracle-frozen, game-frozen, reasoncourt-fence, mintwatch-fence, designir-fence and hermeneutics-fence (nothing under verify/ reads design/); AGENTS.md §4 check `python tools/rung.py selftest` (RUNG SELFTEST 19…
+  - *Gap:* RUNG-0 runs per patch at the owner's hand. art/selftests.py's SUITES do not include it, and no gate row runs it.
+  - *Evidence:* verify/verify.py:602-626 — oracle-frozen: every level and tile file against its registere…; verify/verify.py:12255-12262 — RSN_SOURCES pins every Rust source and sealer
+- **R10.p9-boundaries-documented** · PARTIAL · SPEC2 §2 principle 9
+  - *Capability:* Every unsupported behaviour has a stated limit and a trigger for revisiting it.
+  - *Held by:* art/selftests.py 'director' (DIRECTOR SELFTEST PASSED: every evaluation carries its ADMISSION-0 record with NOT_CHECKED and HORIZON); docs/GHOSTS.md: none (prose)
+  - *Gap:* Limits and triggers are documents, apart from the art evaluation's ADMISSION-0 record. Nothing checks that every unsupported behaviour has a limit and a trigger.
+  - *Evidence:* docs/GHOSTS.md:547-570 — G27, the design surface's limits, each with an exorcism (the tri…; art/director/contract.py:12-14 — 'Every verdict states what it did not check'
+- **R10.p10-no-unearned-claims** · PARTIAL · SPEC2 §2 principle 10; §13 fail closed
+  - *Capability:* Tests are reported only if they actually ran; visual quality needs human review; engine parity needs comparative measurement.
+  - *Held by:* art/selftests.py's own pass rule (a suite passes only on its exit status and its summary line both); art/selftests.py 'flagship': 'the visual baseline: written only on a person's word, from a preview complete, verified …
+  - *Gap:* The gate's verdict passes with skipped rows. test_design.py exits 0 when it cannot find or build a shell. Row identities are reconciled by a rowset hash and prefix locks, not against a declared expected set that fails closed; the owner ruled that a rung of its own, later.
+  - *Evidence:* art/selftests.py:30-64 — SUITES with a summary pattern each; passed() requires a matched …; art/flagship.py:183-215 — approve: refused unless replayed, verified, clear, framed, with…
+- **R10.d1-canonical-graph-authority** · EXISTS-TESTED · SPEC2 §16 'Replace current authority with canonical graph — Defer'; §5 'Do not demote a s…
+  - *Capability:* Decision: replacing the current authority with a canonical graph is deferred until mapping, migration and recovery or performance comparisons justify it.
+  - *Held by:* gate rows sessionwalk-replay, livesession-save, admit-replay (the append-only log stays the authority); AGENTS.md §4 check `python tools/probe/state_commit.py` (PROBE 6-dsc VERDICT HELD, recorded on the host 2026-10-15)
+  - *Evidence:* README.md:9-12 — one append-only log whose replay is the world; docs/ROADMAP.md:4450-4456 — DSC-0 asked whether the content function should become a tree…
+- **R10.d2-dense-ids** · EXISTS-TESTED · SPEC2 §16 'Dense canonical IDs as live IDs — Reject'
+  - *Capability:* Decision: dense canonical IDs are rejected as live IDs, and equivalence is kept apart from identity.
+  - *Held by:* art/selftests.py 'studio': tag rows (never moved, never reused); 'marks'; 'facade' (a bay named by its place)
+  - *Evidence:* AGENTS.md:91 — a tag names one object by its id and is never moved to another; art/play.py:3867 — the tag of a gone object never moves
+- **R10.d3-fixed-point-physics** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §16 'Fixed-point for all physics — Do not assume'
+  - *Capability:* Decision: do not assume fixed-point for all physics; decide from fidelity, overflow and cross-host tests.
+  - *Held by:* graybox: python graybox/rules_ref.py, trace.py plus tick_ref.py verify, rules2, rules3 (own check, not run at HEAD; rules 2 recorded on the host at 0225, ROADMAP:4144-4148; rules 3 in the container only, ROADMAP:4276-42…
+  - *Gap:* No comparison of fixed-point against float fidelity or overflow was ever run. Agreement is shown on fixtures and stress runs, not in general.
+  - *Skeptic:* The default is followed: the simulation is binary64 with every engine-chosen function replaced by specified ones (RULES-1.md:11-24). DET-MATH-0 chose this from measured cross-engine divergence and named a fixed-point tick 'the stronger form' without taking it (ROADMAP:2795-2837). The decision's own…
+  - *Evidence:* docs/ROADMAP.md:2795-2806 — DET-MATH-0 ruling: fixed-point or integer 'where practical', …; docs/ROADMAP.md:2835-2837 — a fixed-point tick named the stronger form and not taken
+- **R10.d4-bvh-rebuild** · MISSING · SPEC2 §16 'Rebuild BVH every tick — Do not assume'
+  - *Capability:* Decision: do not assume a BVH rebuild every tick; benchmark it against an incremental broadphase.
+  - *Held by:* none
+  - *Gap:* There is no broadphase, no BVH and no benchmark. The decision has not been reached because collision is a grid lookup plus short lists of targets and movers.
+  - *Evidence:* graybox/RULES-1.md:40-49 — collision is a lookup of the cells touching a circle of radius…; kernel/mantle.rs:53 — LATTICE 48: the kernel's world is at most 48 x 48 cells
+- **R10.d5-cpu-pixel-oracle** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §16 'CPU renderer as pixel oracle — Keep only if useful'
+  - *Capability:* Decision: keep the CPU renderer as a pixel oracle only while it is useful.
+  - *Held by:* gate rows kernel-oracle, kernel-corpus, bearing-oracle, gauntlet2-threaded-equiv
+  - *Gap:* The oracle covers the 48 x 48 cell world only. No fixture links it to the studio's WebGL2 scene renderer, and its usefulness and upkeep cost for the studio are not evaluated anywhere.
+  - *Skeptic:* The CPU kernel is kept and held as a pixel oracle. kernel_oracle runs it twice and requires the frame digest and pixel sha equal to urdr-oracle-1's (verify.py:869-880), and the gate passed at HEAD. But the decision is 'keep only if useful', judged by regression-fixture coverage and maintenance cost…
+  - *Evidence:* verify/verify.py:869-875 — kernel-oracle: two runs, the witnesses against Urðr's; docs/CORE.md:183-184 — 12 witnesses and 104 bearing witnesses; fast paths byte-identical
+- **R10.d6-pixel-equality-not-quality** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC2 §16 'Pixel/downsample equality as quality proof — Reject'; §11 three concepts kept …
+  - *Capability:* Decision: pixel or downsample equality is rejected as proof of quality; a perceptual corpus and human review decide.
+  - *Held by:* art/selftests.py 'flagship': 'the visual baseline: written only on a person's word, from a preview complete, verified and framed; refused otherwise' (log 610)
+  - *Gap:* There is no perceptual corpus; quality rests on human review alone.
+  - *Skeptic:* Pixel equality is not used as quality anywhere (VERIFIED BY READING). The bytes reference freezes the scene's bytes and 'approves nothing visual'. A still drawn otherwise is UNTRUSTED_IMAGE with the state still verified, not a quality verdict. The baseline row requires the owner's note and a verifi…
+  - *Evidence:* AGENTS.md:90 — a person judges the picture and nothing hashes it; the detectors prove not…; art/flagship.py:183-215 — the visual baseline is the owner's act, kept apart from the byt…
+- **R10.d7-webgl-vs-unreal** · PARTIAL · SPEC2 §16 'WebGL2 versus Unreal runtime'; §8 'Treat Unreal 5.8 as import/export'
+  - *Capability:* Decision: keep the WebGL2 path while measuring it against an Unreal runtime on comparable scenes, quality, performance and cost.
+  - *Held by:* none (owner rulings; no measurement)
+  - *Gap:* No comparative measurement exists. The Unreal importer has never run on an engine. D1-M is pending on the owner's device.
+  - *Evidence:* docs/ROADMAP.md:2663-2666 — ruling: Verðandi-native primary, UE5.8 a secondary interopera…; docs/ROADMAP.md:2668-2669 — ruling: art/play.py and WebGL2 in the browser
+- **R10.d8-60fps-target** · PARTIAL · SPEC2 §16 '60 FPS target — Define settings first'; §8 performance policy
+  - *Capability:* Decision: define the settings first, then measure a repeated frame-time distribution on the target hardware before claiming 60 FPS.
+  - *Held by:* none (AGENTS.md §4's `graybox/serve.py --bench` prints timings, never a pass)
+  - *Gap:* No settings are defined and no target hardware is named. The studio's WebGL2 renderer has no frame-time distribution. The ruled GPU measurement is not done.
+  - *Evidence:* AGENTS.md:67 — never claim a latency or frame rate; software timings are labelled; README.md:73-78 — the kernel renderer's p50, p95 and p99 on the host, renderer time only
+- **R10.d9-open-world-streaming** · MISSING · SPEC2 §16 'Open-world streaming — Defer'
+  - *Capability:* Decision: defer open-world streaming until measured scale or load-time limits are exceeded.
+  - *Held by:* none
+  - *Gap:* Deferred, as the default says. Only probes exist (DSC-0, ORT-1, translate_probe). They measure where a limit would bite, and nothing streams.
+  - *Evidence:* kernel/mantle.rs:53 — a 48-cell lattice; docs/ROADMAP.md:4500-4504 — DSC-0: the incumbent's cell edit passes a tenth of a frame at…
+- **R10.d10-multiplayer** · MISSING · SPEC2 §16 'Multiplayer — Defer'
+  - *Capability:* Decision: defer multiplayer until a product requirement and an explicit network and authority design exist.
+  - *Held by:* none
+  - *Gap:* Deferred; nothing is built.
+  - *Evidence:* docs/ROADMAP.md:5849 — a competitive arena declared (lockstep in integers), not built; README.md:105-107 — not goals: a general game engine
+- **R10.ph0-inventory** · PARTIAL · SPEC2 §14 Phase 0
+  - *Capability:* Phase 0: a capability matrix, a baseline gate report, a module and dependency map, an authority diagram, a target profile and a risk register.
+  - *Held by:* none (documents); the gate's host run of 251 rows / 0 fail / 0 skipped at HEAD is recorded in the commit message
+  - *Gap:* There is no target profile: a search of the tree for Xbox, Ally X, target hardware or target profile finds nothing. The risk register is GHOSTS.md, which is not a single register of risks. A capability matrix in SPEC2's statuses did not exist before this audit.
+  - *Evidence:* docs/CORE.md:144-166 — authority and its walls; docs/CORE.md:250-259 — what stands, grade by part
+- **R10.ph1-dashboard** · PARTIAL · SPEC2 §14 Phase 1; §15
+  - *Capability:* Phase 1: a launchable shell, world library, viewport, Director panel, outliner and inspector, candidate lane, persistent queue, evidence panel, and admit, reject, undo and recovery.
+  - *Held by:* art/selftests.py 'app' (STUDIO APP SELFTEST), 'queue' (STUDIO-2 SELFTEST 19/19), 'studio' (74/74), 'flagship': 'the flagship's edit from mark to undo, every stage's evidence (FLAGSHIP-0)'
+  - *Gap:* The dashboard as a rung is declared and not built. The acceptance flow is proven through the HTTP surface; through the page it was only OBSERVED in headless Chromium. Panels for Geometry, Voxel, Decals, Audio, Prefabs, Procedural and Templates are marked 'not built'.
+  - *Evidence:* art/studio_app.py:4-20 — one icon starts the studio in its own window; closing it stops e…; art/web/play.js:846-870 — Play, Validate, Compare and Ledger buttons; a left navigator wi…
+- **R10.ph2-transaction-reliability** · PARTIAL · SPEC2 §14 Phase 2; §5 transactions and undo
+  - *Capability:* Phase 2: revision-bound candidates, stale refusal, durable receipts, crash-safe commit, dependency invalidation and full scripted acceptance, with planted failures leaving the world unchanged.
+  - *Held by:* gate rows admit-crash, admit-anchor, designevent-crash; art/selftests.py 'crashtest' (DIRECTOR CRASHTEST PASSED (15 cases)), 'txn' (STUDIO-TXN SELFTEST PASSED), 'cert' (CERT SELFTEST 7/7), 'flagship' planted rows
+  - *Gap:* No dependency invalidation exists for collision or navigation caches. An undo of an aligned '=' or of a '-' gives back the statements but not the bytes or the head; the repair waits on the owner's ruling. The design tool's undo pointer is not sealed (GHOSTS G27).
+  - *Evidence:* verify/verify.py:11122-11195 — admit-crash: eight death points; the parent untouched or t…; art/director/durable.py:1-24 — temporary, flush and rename; the content lock
+- **R10.ph3-geo-identity-marks** · PARTIAL · SPEC2 §14 Phase 3; §9 Mark & Shape
+  - *Capability:* Phase 3: stable entity and surface references, local transforms and charts, marks and shapes, stale-anchor handling and rebase tests.
+  - *Held by:* art/selftests.py 'marks' (MARKS SELFTEST 19/19), 'studio' tag rows; ORT-1 (own check, not run at HEAD; recorded container run ROADMAP:4244-4252)
+  - *Gap:* Shapes are polygons on one box face. Ray hits, triangle and barycentric coordinates, polylines and strokes do not appear in the code read. There are no local transforms or charts. A rebase applies only to rules-2 worlds, and the art's worlds play rules 3.
+  - *Evidence:* art/studio_marks.py:9-42 — a shape anchored to one face of one box, surface-local, exact …; art/flagship.py:270-273 — a shape's anchor: piece, face, box, scene sha and view
+- **R10.ph4-procedural** · PARTIAL · SPEC2 §14 Phase 4; §9
+  - *Capability:* Phase 4: a versioned procedural hierarchy from district to lot, building, floor, bay and facade, with local regeneration, material edits and collision or navigation invalidation hooks.
+  - *Held by:* art/selftests.py 'facade' (FACADE SELFTEST 8/8)
+  - *Gap:* The hierarchy covers only building, side, bay and floor; there are no lots and no generator for districts. The only generator version is the exporter's frozen references. The whole scene is exported again, deterministically, rather than regenerated locally. There are no collision or navigation hooks, because the art cannot change C.
+  - *Evidence:* art/dress.py:596-605 — FACADE-0: boxes on a box; no opening, mesh or depth; art/dress.py:608-622 — the bay statement by place
+- **R10.ph5-physics** · PARTIAL · SPEC2 §14 Phase 5; §7
+  - *Capability:* Phase 5: geometry queries and a capsule controller, static collision and triggers, rigid bodies, constraints and CCD, checkpoints and replay, and navigation.
+  - *Held by:* graybox checks: serve.py --selftest, tick_ref rules2 and rules3 (own check, not run at HEAD; recorded container runs ROADMAP:4278-4289 and a host run of rules 2, ROADMAP:4142-4148)
+  - *Gap:* The body is a circle against a grid of cell tops, not a swept capsule. There are no rigid bodies, joints, CCD (beyond a tunnelling bound in rules 2) or navmesh; the bot follows a planned walk. Snapshot and resume exist inside the graybox self-test only.
+  - *Evidence:* graybox/RULES-1.md:28-49 — radius, step, gravity, jump; collision against cell tops and s…; docs/BOUNDARIES.md:32 — a fixed tick of 1/120 s; the only writer of the game state
+- **R10.ph6-graphics-profiling** · PARTIAL · SPEC2 §14 Phase 6; §8
+  - *Capability:* Phase 6: measure the existing renderer first, then PBR, shadows, LOD, post and AA, with target-hardware calibration.
+  - *Held by:* art/selftests.py 'impact' and 'impact-studio', 'preview' and 'preview-studio', 'quality' (renderer budgets in QUALITY-0)
+  - *Gap:* The existing renderer has not been measured on a GPU or on target hardware. This reader did not audit the renderer's features; that belongs to another reader.
+  - *Evidence:* art/impact.py:10-20 — counts of what scene_render.js makes, and an estimate; docs/ROADMAP.md:4909-4915 — GPU measurement ruled for after B5
+- **R10.ph7-full-workflow** · PARTIAL · SPEC2 §14 Phase 7; §11
+  - *Capability:* Phase 7: asset and material browser, measurements and budgets, A/B/C comparison, visual baseline approval, evidence export, shortcuts and gamepad, and project history and recovery.
+  - *Held by:* art/selftests.py 'held' (HELD SELFTEST 8/8), 'flagship', 'studio', 'preview-studio' (the compare sheet among the preview's files)
+  - *Gap:* There is no gamepad input. The evidence export is one compare sheet per request. Measurements of sightlines and budgets are advisory proxies.
+  - *Evidence:* docs/ROADMAP.md:4520-4540 — HELD-0 and COMPARE-0: three candidates in the host's order, D…; art/flagship.py:183-215 — visual baseline approval
+- **R10.ph8-advanced** · PARTIAL (reader MISSING, corrected) · SPEC2 §14 Phase 8
+  - *Capability:* Phase 8: large-world streaming, terrain chunks, destruction, persistent geometry, dynamic navigation, advanced animation and audio, multiplayer, and AI playtesting.
+  - *Held by:* art/selftests.py 'preview' (PREVIEW SELFTEST 12/12; row 'another seed, another run (B4-SEED-SENSITIVITY)', plant preview-unseeded) for the seeded actor; graybox bot_ref.py selftest / serve.py --selftest for the walk-1 b…
+  - *Gap:* Nothing is built, as the spec's sequencing expects.
+  - *Skeptic:* Searched audio/sound/skeleton/navmesh/destruct/playtest/bot/chunk/stream/multiplayer across art/, graybox/, kernel/, workshop/, shell/, verify/, tools/ and docs/. Streaming, terrain chunks, destruction, dynamic nav, animation, audio and multiplayer: nothing. The page says audio is 'Not built', the …
+  - *Evidence:* docs/ROADMAP.md:4500-4504 — DSC-0's measurement of larger worlds, for a format that does …; graybox/ORT-1.md:18-25 — what ORT-1 scrapped and why
+- **R10.oracle-not-runtime** · PARTIAL · SPEC2 §4 'Oracle evidence is never a runtime dependency'
+  - *Capability:* Oracle evidence is never a runtime dependency.
+  - *Held by:* gate row game-not-runtime ('no kernel/, workshop/ or shell/ code reaches into oracle/game ... PLANTS: a planted #[path] and a planted file read ... are both seen'); oracle-frozen
+  - *Gap:* Only oracle/game is fenced. The oracle's frozen level and tile files are the shell's default runtime inputs and the base of every design-tool project, including the one art/director.py starts for a layout. They are read and never written, but they are runtime inputs.
+  - *Evidence:* README.md:34-35 — Urðr frozen evidence, not a runtime dependency; verify/verify.py:797-816 — the scan and its two plants cover oracle/game only
+- **R10.no-dependency-addition** · PARTIAL · SPEC2 §3 'No ... dependency addition to trusted code'
+  - *Capability:* No dependency is added to trusted code without an explicit owner decision.
+  - *Held by:* gate rows reasoncourt-fence and mintwatch-fence (any byte change to the 58 pinned sources, an `extern crate` included, turns them red); kernel-build and shell-build (bare rustc with FLAGS -O and no --extern); game-froze…
+  - *Gap:* For the Python of art/, design/, graybox/ and tools/, standard-library-only is a rule and a practice, not a check. A top-level import read finds only standard and local modules (VERIFIED BY READING). RUNG-0 classifies a change to the trusted closure as rung D but does not detect a new third-party import as such.
+  - *Evidence:* AGENTS.md:58-59 — never add a dependency; Rust std-only, Python standard library; verify/verify.py:114-115 — RUSTC and FLAGS = ['-O']
+- **R10.design-loop-binding** · EXISTS-TESTED · SPEC2 §6 admission sequence ('preview exact candidate revision; require explicit admissio…
+  - *Capability:* The design tool proposes through the shell's certified compiler, previews by the shell's dry run, and admits the same bytes bound to the preview, against the head they were made for.
+  - *Held by:* gate rows designevent-admit ('the dry run prints the binding twice the same and writes nothing ... an admission bound to another digest or another head is ADMIT-PREVIEW'), designir-compile, admit-capability; design/test…
+  - *Evidence:* design/design.py:393-427 — propose: the bytes go to shell design-compile; the batch is ch…; design/design.py:430-496 — preview: the shell's --dry-run, its binding parsed
+- **R10.design-admission-sequence** · PARTIAL · SPEC2 §6 admission sequence and typed refusals
+  - *Capability:* The full SPEC2 §6 sequence on the design path: parse, permissions, base revision, references, region containment, dependency invalidation, local and non-local invariants, prior-value capture, evidence, preview, explicit…
+  - *Held by:* gate rows designir-language and designir-compile (COMPILE-PARSE, RANGE, BORDER, STAIR, CAMERA, EMPTY), admit-capability (grant: operation kinds, a rectangle of cells, classes), admit-anchor, designevent-admit; design/te…
+  - *Gap:* Missing: non-local checks (reachability from the camera is 'a view, not a constraint'), dependency invalidation, and prior-value capture in a receipt (the batch is a net change set; the parent session is kept instead). Refusals are coded text lines carrying a line number and both heads, not structured data with offending entities or repair hints. The only region containment is…
+  - *Evidence:* design/test_design.py:257-270 — 13 texts the language refuses, each by the shell's compil…; design/test_design.py:272-285 — a cell outside the grant's rectangle refused ADMIT-CAPABI…
+- **R10.design-undo** · PARTIAL · SPEC2 §5 transactions and undo; §11 essential flow 4
+  - *Capability:* Undo restores the prior authored state, or applies a checked inverse against the expected child, and is recorded durably.
+  - *Held by:* design/test_design.py t_undo: 'after an undo the project stands at the earlier head, every session is still on disk, and the same design can be proposed again' (own check, not run at HEAD)
+  - *Gap:* Undo moves an unsealed pointer in project.json. No inverse transaction is checked, the session records no undo, and there is no redo. A later admission after an undo forks from the earlier head.
+  - *Evidence:* design/design.py:547-557 — undo pops the project's history; the stepped-back session stay…; design/design.py:95-101 — project.json written through a temp file and os.replace, withou…
+- **R10.spec1-normal-form-authority** · CONFLICTS-WITH-SPEC · SPEC1 §1.1-1.2, §5, Appendix A
+  - *Capability:* SPEC1 makes an Anchor Graph in normal form the authority, demotes the session log to a regenerable view, and makes admission a decision procedure on that form at O(k log n).
+  - *Held by:* none
+  - *Conflict:* Owner ruling, docs/ROADMAP.md:4515-4517: "DSC-0 should remain an isolated reference probe, not become part of the current kernel or studio admission path"; 'the log keeps history, a state commitment says content, admission gives permission'. SPEC2 §5 agrees: 'Do not demote a session log or replace it with a canonical …
+  - *Evidence:* README.md:9-12 — one append-only log whose replay is the world; docs/ROADMAP.md:4492-4498 — DSC is replay with a tree-shaped content function; it cannot …
+- **R10.spec1-dense-renumbering** · CONFLICTS-WITH-SPEC · SPEC1 §2.3
+  - *Capability:* SPEC1's normalization pass 'Compact' renumbers EntityIds densely in canonical order, so IDs are unstable across edits and hidden behind a name layer.
+  - *Held by:* art/selftests.py 'studio': 'an object gone: its tag never moves to another; the request refused until it is unpinned'
+  - *Conflict:* AGENTS.md:91: "A tag names one object by its id and is never moved to another." SPEC2 §16 also rejects it: 'Dense canonical IDs as live IDs — Reject'.
+  - *Evidence:* AGENTS.md:91 — a tag names one object by its id and is never moved to another; art/play.py:3867 — the tag row
+- **R10.spec1-fixedpoint-physics** · CONFLICTS-WITH-SPEC · SPEC1 §6; §0 A2
+  - *Capability:* SPEC1's physics: Q32.32 fixed point everywhere, K=8 solver iterations with early-out forbidden, a dynamic BVH rebuilt every certified step, dt = 1/120 s.
+  - *Held by:* graybox rules checks (own check, not run at HEAD)
+  - *Conflict:* The owner's DET-MATH-0 ruling, docs/ROADMAP.md:2804-2806: "Keep the scope limited to authoritative state, and let the measured divergence—not a blanket desire for identical math—determine which operations need replacement." The repository took binary64 with specified functions. SPEC2 §16 also says 'Fixed-point for all…
+  - *Evidence:* docs/ROADMAP.md:2795-2806 — DET-MATH-0 ruling; docs/ROADMAP.md:2835-2837 — the fixed-point tick named and not taken
+- **R10.spec1-kernel-deps-and-rows** · CONFLICTS-WITH-SPEC · SPEC1 §9, §10, Appendix A
+  - *Capability:* SPEC1 adds the sha2 crate to the kernel, new kernel and workshop modules (graph, norm, ops, phys, render_ref, cert, admit), a C ABI, and gate rows NORM-0 to CENSUS-0.
+  - *Held by:* gate rows reasoncourt-fence, mintwatch-fence (pins)
+  - *Conflict:* AGENTS.md:58: "Add a dependency. There is no Cargo and no crate: Rust is std-only and built by bare rustc." AGENTS.md:60: "Grow the gate. By the owner's sprint ruling (2026-10-09) the gate stops growing." The owner's approved plan, docs/ROADMAP.md:4574-4575: 'the 48 x 48 kernel and its gate rows untouched through Phas…
+  - *Evidence:* AGENTS.md:58-59 — never add a dependency; AGENTS.md:60-61 — never grow the gate
+- **R10.v-decision-bvh-every-tick** · MISSING (from-verifier) · SPEC2 §16 'Rebuild BVH every tick — Do not assume'; §7 broadphase
+  - *Capability:* Decision: do not assume a BVH rebuilt every tick; benchmark it against an incremental broadphase.
+  - *Held by:* none
+  - *Gap:* There is no broadphase of any kind: no BVH, spatial hash or incremental structure, and no benchmark. A search for bvh, broadphase and spatial hash over .py, .js, .rs and .md found nothing. The default is not violated, but the evidence the decision names does not exist.
+  - *Evidence:* graybox/RULES-1.md:34-36 — the world is the map's w, h, cell and tops: collision against …; art/camera.py:10-12 — every box of the scene is an obstacle
+- **R10.v-decision-open-world-streaming** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §16 'Open-world streaming — Defer'
+  - *Capability:* Decision: open-world streaming is deferred until measured scale or load-time limits are exceeded.
+  - *Held by:* none found (no gate row seen refusing a level above 48 x 48 in a search of verify.py)
+  - *Gap:* Deferral is followed: worlds are 48 x 48 cells in the kernel and about 96 m in the plaza, and there is no streaming. The trigger has scale measurements (DSC-0, translate_probe), but no load-time limit is defined or measured.
+  - *Evidence:* kernel/mantle.rs:53 — LATTICE 48; kernel/mantle.rs:198-199 — a level beyond the lattice refused
+- **R10.v-decision-multiplayer** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §16 'Multiplayer — Defer'
+  - *Capability:* Decision: multiplayer is deferred until a product requirement and an explicit network/authority design exist.
+  - *Held by:* none
+  - *Gap:* Nothing networked is built, consistent with the default. No network or authority design document exists, and the deferral is held by the owner's sequencing, not by any check.
+  - *Evidence:* docs/ROADMAP.md:2344-2347 — the owner's stop rule: not networking now; networking listed …; docs/ROADMAP.md:6041 — Urðr's lockstep/rollback netcode carried only as frozen oracle evi…
+- **R10.v-phase8-advanced** · MISSING (from-verifier) · SPEC2 §14 Phase 8
+  - *Capability:* Phase 8: large-world streaming, terrain chunks, destruction, persistent geometry, dynamic navigation, advanced animation/audio, multiplayer and AI playtesting, only when justified.
+  - *Held by:* none
+  - *Gap:* None of Phase 8 exists. That is consistent with the spec's 'only when justified'. The graybox's bot (WALK-1) is a planned walker, not AI playtesting. ORT-1 is rebasing prework for rules 2 only.
+  - *Evidence:* art/web/play.js:857-858 — Audio and Voxel Tools marked not built; docs/ROADMAP.md:4287-4288 — ORT-1 rebasing for rules-2 worlds only
+- **R10.v-s15-slice-plants** · EXISTS-TESTED (from-verifier) · SPEC2 §15 item 11; §14 Phase 2 'Plant failures and prove active world remains unchanged'
+  - *Capability:* The vertical slice plants a stale revision, an invalid region, missing evidence, a preview failure and recovery cases, each leaving the world unchanged.
+  - *Held by:* art/selftests.py 'flagship': 'planted: an invalid region ...', 'planted: the impact evidence missing ...', 'planted: the preview's verification failing ...', 'planted: a stale revision ...' with three plants caught; 'st…
+  - *Gap:* Narrowed: the four plants run through the studio's HTTP surface, not the page. Recovery is planted in the director's crashtest and the queue, not inside the flagship's flow.
+  - *Evidence:* art/build/selftests/20261016T162615Z.log:607-614 — the four flagship plants and three pla…; art/flagship.py:337-349 — the stale plant asserts the world as the edit left it
+- **R10.v-gate-change-guard** · PARTIAL (from-verifier) · SPEC2 §3 'No ... gate change without an explicit owner decision'
+  - *Capability:* No change to the gate (rows added, removed, reordered or weakened) without an explicit owner decision.
+  - *Held by:* gate row hermeneutics-fence (the first 247 rows' names and order hashed, its four following, no duplicates); the RECONCILE rowset line compared by the owner (AGENTS.md §4); AGENTS.md §4 check tools/rung.py (verify/verif…
+  - *Gap:* Removing, renaming or reordering an existing row turns a fence red. A row appended after hermeneutics-fence, or a weakened row body, is caught by no row. It is caught only by the owner comparing the printed rowset (74db4c8d78625af5) and by RUNG-0 classifying the change D. verify.py itself is not pinned.
+  - *Evidence:* verify/verify.py:16716-16718 — names[:247] hashed against HERM_ROWSET_BEFORE; names[247:2…; verify/verify.py:17016-17020 — the RECONCILE line: rowset hash, rows, fails, skips
+- **R10.v-design-base-integrity** · EXISTS-UNVERIFIED (from-verifier) · SPEC2 §5 canonical state ('strict malformed-input rejection'); §6 validate references
+  - *Capability:* The design tool refuses a session whose base level or tiles are not the bytes the session was made over.
+  - *Held by:* none (no DESIGN-BASE case in design/test_design.py)
+  - *Gap:* The refusal is implemented. A search of design/test_design.py for DESIGN-BASE finds no case that plants a changed base.
+  - *Evidence:* design/design.py:181-186 — DESIGN-BASE when W or M does not match, or the formats' magic …
+- **R10.m-spec1-batch-normal-form** · PARTIAL (from-verifier) · SPEC1 §0 A3, A8; §2.3; §10 NORM-0, NORM-1, NORM-2
+  - *Capability:* SPEC1 A3/A8 and NORM-0/1/2: a unique canonical normal form with round-trip, idempotence and order-independence, on which equality is syntactic.
+  - *Held by:* gate row designevent-language (verify/verify.py:16998)
+  - *Gap:* The normal form covers only a proposal batch (VRDNP2) at the admission seam. No normal form exists for the world itself: world equality, diff and merge are not syntactic on a canonical form, and no NORM rows exist for a world graph.
+  - *Evidence:* verify/verify.py:14272-14278 — the language court: every single-byte mutant refused or em…; verify/verify.py:14316-14319 — respelled == 0: no mutant recognized under a second spelli…
+- **R10.m-spec1-certificates-census** · PARTIAL (from-verifier) · SPEC1 §4; §5 Q3; §10 CERT-0, CENSUS-0
+  - *Capability:* SPEC1 §4: an AdmissionCertificate (parent, child, op, captured inverse) whose inverse is checked to return the parent exactly (CERT-0), and an offline census of critical pairs (CENSUS-0).
+  - *Held by:* art/selftests.py 'cert' (CERT SELFTEST 7/7; plants cert-child-unhashed, cert-statements-as-exact, cert-heads-unchecked) and 'glue' (GLUE SELFTEST 9/9; plants glue-sections-unchecked, glue-fingerprint-ordered, glue-repea…
+  - *Gap:* The certificates and the census live in the art layer, not in the kernel, the workshop or the gate. The inverse is not exact for an '=' on an aligned statement or for a '-'; the repair is the owner's to rule. The census covers seven of the flagship's edits, not every pair across the operation alphabet, and the studio does not use the glue verdict yet.
+  - *Evidence:* art/certificate.py:9-24 — the certificate (parent, operation, inverse, child, keys, prove…; art/certificate.py:37 — PLANTS
+- **R10.m-spec1-region-containment** · PARTIAL (from-verifier) · SPEC1 §5 Q2; §10 REGION-0; §11 E3
+  - *Capability:* SPEC1 §5 Q2 and REGION-0: admission refuses any introduced or modified relation that lies outside the declared cover element.
+  - *Held by:* art/selftests.py 'strict' (STRICT SELFTEST 11/11: eight rows and three plants)
+  - *Gap:* Containment applies only when a request is strict; a request that is not strict is not refused on it. The region is a marked shape's prism, not SPEC1's CoverElement kinds (Cells \| Chart \| Region \| EntitySet). The cover is not declared as a file. This is the art layer's check, not a gate row and not the kernel's admission.
+  - *Evidence:* art/scene_diff.py:676-680 — STRICT-0: a strict request admits a candidate only when its f…; art/scene_diff.py:701-705 — strict(a, b, shapes): each footprint box inside a region, or …
+
+## R11 — SPEC1 graded against the repository's rules and the owner's rulings
+
+SPEC1 proposes replacing Verðandi's event-sourced authority with a canonical anchor graph, adding Q32.32 fixed-point physics and a reference-plus-production renderer pair, and growing the gate by fourteen rows. Graded against the code and the owner's rulings, about a third of it already exists under other names, mostly off the gate in the art layer: certificates with stored inverses (CERT-0), glue and a census of seven edits (GLUE-0), region containment (STRICT-0 and the kernel's grant), stable place-named ids, scripted acceptance, evidence sheets and exact decimal checks. Its central moves conflict with registered entries, AGENTS.md §3 or rulings in docs/ROADMAP.md. They are: demoting the log, against DESIGN-EVENT-0's "replay stays the authority" and the DSC-0 ruling; dense renumbered ids, against AGENTS.md:91; Q32.32 physics, where the graybox is binary64 by ruling and ORT-1 scrapped int32; the sha2 crate; new gate rows and E-rungs, though the gate stops growing and E2/E3/E4 already have other meanings; and kernel modules and a C ABI, though the kernel stays untouched through Phase I. Its headline metrics do not hold as stated. "Floats 0" holds only on the gate's Rust path: the graybox runs binary64, and the art exporter computes in Python floats that its checkers then read back as exact decimals. "O(k log n)" was never measured, and the kernel-path admission measured grows with history. Rebase commutation is already disproved by the repository's own translation probe. SPEC2 §2.6, §5 and §16 already reject or defer nearly every conflicting item.
+
+**Surprises.**
+
+- SPEC1 calls 'certified-path floats 0' 'charter-bound', but the ratified charter (README.md:17-35) has no float clause; the rule is the owner's (docs/ROADMAP.md:5121-5122). Today it holds only on the gate's Rust path. The graybox runs in binary64 (graybox/RULES-1.md:13). The art exporter computes scene boxes and material values in Python floats and rounds them (art/dress.py:84-85, 99-106), and the checkers recover exactness by reading the written decimals (art/scene_diff.py:340-353).
+- SPEC1's experiment 2 (rebase commutation, 'the theorem of geo-stability') has already been run in this repository, and it failed. The translation probe found runs parting from tick 1 at every offset (docs/ROADMAP.md:4131-4136), and ORT-1 states that a rebase does not conserve the bits of later ticks (graybox/ORT-1.md:40-42).
+- SPEC1's 'admission cost O(k log n)' is stated as a headline metric, but no measurement of it exists. The repository measured the kernel-path admission growing with the session (docs/ROADMAP.md:4504-4506), and the one O(log n) structure, DSC-0, is ruled out of the admission path (docs/ROADMAP.md:4515-4517). A pinned source argues against Merkle trees for sessions in a comment (workshop/session.rs:16-18).
+- SPEC1's ladder reuses E2/E3/E4, which docs/ROADMAP.md:5178-5179 already uses for different steps: there E2 is the census, E3 the cover file and section deltas, E4 the dusk detector. SPEC1's E2 is certificates and E4 atlas and rebase. Its gate-row name CERT-0 is likewise already taken by art/certificate.py (off the gate, 0244).
+- SPEC1 cites 'the 0243 dusk finding, 15-17 of 255 levels' as a palette near-collision. In the ROADMAP (docs/ROADMAP.md:5090-5093) that figure is the candidate's change at the subject between two stills; the material contrast finding is LEGIBLE-0's 1.37:1 from 0241.
+- AGENTS.md:96 says the preview-studio suite prints PREVIEW-STUDIO SELFTEST 13/13, but HEAD's selftest log records 14/14 twice (art/build/selftests/20261016T162615Z.log:24), as does docs/ROADMAP.md:5084. The agents' brief is stale on this count.
+- CERT-0's certificate has 'signer': 'studio' and 'signature': '' (art/certificate.py:80): a signature field that nothing fills, since signing is deferred (docs/ROADMAP.md:5189). CERT-0 is a record, not an admission check: the studio keeps the admission whatever check() returns (art/studio.py:1632).
+- The charter's UI clause says 'viewport + HUD = the kernel's framebuffer, digest-pinned' (README.md:30-32), but the studio's viewport is the WebGL renderer, which hashes nothing (art/web/scene_render.js:4-9, 21). The 2026-10-09 rulings scope this (docs/REPOSITORY-TRUTH.md:61), yet SPEC1 restates the charter's version as if it were current.
+- kernel/fast.rs:674-679 holds a HashSet in a pinned kernel file. It is harmless, because only its len reaches the output, but SPEC1's 'no HashMap/HashSet in kernel/' could not be adopted without an amendment to a pinned source.
+- Most of what SPEC1 asks for in algebraic form already exists, built off the gate in the art layer: stored inverses, certificates, glue with obstruction objects, a census, region-strict admission, place-named stable ids and exact decimal geometry. SPEC1 proposes rebuilding it in a new kernel graph, which the owner's Phase I plan keeps untouched (docs/ROADMAP.md:4574-4575, 5116).
+
+- **R11.floats-headline** · PARTIAL · SPEC1 headline metrics; SPEC1 §0 A2
+  - *Capability:* The certified path contains zero floating point ('certified-path floats 0 (charter-bound)'); floats only in presentation and off-gate diagnostics.
+  - *Held by:* simtick-fence (gate row; scans shell/simtick.rs alone for f32/f64/'as f'/decimal literals); elsewhere only byte identity and the pins (docs/CORE.md:175)
+  - *Gap:* True only of the gate's Rust path (kernel/workshop/shell), and enforced by a token scan of one file. The graybox simulation, which PREVIEW-0's fingerprints and FLAGSHIP-0's preview replay, is binary64. The art exporter computes boxes and material values in Python floats and rounds them to 0.1 mm; the checkers (scene_diff, studio_marks) then read the written decimals exactly. '…
+  - *Evidence:* kernel/mantle.rs:22-28 the kernel's arithmetic: exact rationals in i64, 'no overflow path…; verify/verify.py:9413-9418 simtick-fence, the only float token scan, one file
+- **R11.float-lint** · MISSING (reader PARTIAL, corrected) · SPEC1 Appendix A hard prohibitions; SPEC1 §0 A2
+  - *Capability:* A compile-time lint forbidding floats anywhere in kernel/ and workshop/.
+  - *Held by:* none (simtick-fence scans shell/simtick.rs, which is outside kernel/ and workshop/)
+  - *Gap:* No lint covers kernel/ or workshop/. workshop/*.rs holds no f32/f64 (grep). kernel/main.rs:328 does, for timing percentiles, so a kernel-wide lint fails at HEAD unless an amendment moves that pinned file (AGENTS.md:51-54) or the lint is scoped to the certified computation. As a gate row it would grow the gate (AGENTS.md:60-61).
+  - *Skeptic:* No check of any kind looks for floats in kernel/ or workshop/. The only float scan in the gate is simtick-fence, on one shell file (verify.py:9413-9418), and it is a gate-time token scan, not a compile-time lint. Grepping verify.py for 'f64' finds no other scan. At HEAD workshop/*.rs holds no f32 o…
+  - *Evidence:* verify/verify.py:9405-9418 simtick-fence's float scan is of shell/simtick.rs; kernel/main.rs:328 an f64 closure (bench percentiles)
+- **R11.admission-cost** · CONFLICTS-WITH-SPEC (reader MISSING, resolved F13) · SPEC1 headline metrics; SPEC1 §5
+  - *Capability:* Admission cost O(k log n) in the size of the affected region, not O(n) in history.
+  - *Held by:* none
+  - *Gap:* Nothing anywhere measures SPEC1's bound, which it states as a headline metric. On the kernel path the repository measured the opposite trend: admission cost grows with the session. The art admission re-exports whole scenes (memoised). The only O(k log n)-style structure, DSC-0's tree commitment, is ruled out of the admission path. A region-local cost claim would need its own m…
+  - *Evidence:* docs/ROADMAP.md:4498-4506 DSC-0's measurements; the design tool's admission grows from 89…; docs/ROADMAP.md:4515-4517 DSC-0 ruled an isolated probe, not the admission path
+- **R11.log-demoted** · CONFLICTS-WITH-SPEC · SPEC1 headline metrics ('source of truth: normal form, log demoted to view'); SPEC1 §1.1;…
+  - *Capability:* Make an anchor graph in normal form the authority and demote the session log to a regenerable, garbage-collectable audit view, never load-bearing.
+  - *Held by:* workshop1-replay, workshop1-undo, sessionwalk-replay, designevent-replay (gate rows); DIRECTOR SELFTEST (art/selftests.py 'director', the ledger)
+  - *Gap:* SPEC2 §5 rejects it ('Do not demote a session log or replace it with a canonical graph merely because that is aesthetically appealing'). SPEC2 §16 defers replacing the authority with a canonical graph until mapping, migration, recovery and performance comparisons and falsification tests exist.
+  - *Conflict:* verify/preregister.json:674 (DESIGN-EVENT-0, a registered entry; AGENTS.md:49-50 forbids editing it): "replay stays the authority" and "The session stays an ordinary event stream." docs/ROADMAP.md:4515-4517, the owner's ruling on DSC-0: "the log keeps history, a state commitment says content, admission gives permissio…
+  - *Evidence:* workshop/session.rs:4-10 'the log is the history, undo is replay'; the world rebuilt by r…; verify/preregister.json:674 DESIGN-EVENT-0: 'replay stays the authority'; 'The session st…
+- **R11.digest-merkle** · CONFLICTS-WITH-SPEC · SPEC1 §1.1 (projections); §1.2 (digest row)
+  - *Capability:* Make the digest the canonical hash of the normal form, with a Merkle root as one of the graph's projections, replacing post-hoc byte digests.
+  - *Held by:* python tools/probe/state_commit.py (PROBE 6-dsc; AGENTS.md §4; off the gate; recorded HELD on the host at 0234, docs/ROADMAP.md:4511-4514)
+  - *Gap:* Two identities already coexist where a consumer needs them: the level's content and authoring digests, and the certificate's statements hash and bytes hash. A Merkle commitment exists only as the DSC-0 probe. SPEC2 §5 says a Merkle tree must prove it covers every required leaf, and SPEC2 §15 excludes a Merkle redesign from the first slice.
+  - *Conflict:* docs/ROADMAP.md:5445 (the owner's order): "semantic hashing registered only for a concrete comparison, byte identity kept regardless". docs/ROADMAP.md:4515-4516: "DSC-0 should remain an isolated reference probe, not become part of the current kernel or studio admission path".
+  - *Evidence:* docs/ROADMAP.md:5431 semantic hashing: 'ACCEPT two identities, defer the build'; docs/ROADMAP.md:5445 'byte identity kept regardless'
+- **R11.determinism-headline** · PARTIAL · SPEC1 headline metrics; SPEC1 §1.2 (determinism row)
+  - *Capability:* Determinism byte-identical, 'measured, not claimed', and a structural consequence of the canonical form (A3).
+  - *Held by:* FULL×2 (AGENTS.md §4: the gate twice, byte-identical); kernel-oracle, kernel-corpus, gauntlet2-threaded-equiv (gate); graybox trace.py/tick_ref.py (own check, not run at HEAD)
+  - *Gap:* Measured within one build and for the registered kernel scenes, whose digests match the frozen oracle on both hosts. Saved sessions are not byte-reproducible (run_id). Cross-platform determinism in general is not established and may not be claimed (AGENTS.md:67). 'A structural consequence of A3' is an argument, not a measurement. SPEC2 §2.4 separates deterministic within one b…
+  - *Evidence:* docs/CORE.md:179-192 the determinism evidence; saved session bytes not reproducible; 'cro…; AGENTS.md:67-68 never claim determinism across platforms or browsers
+- **R11.A1-tiers** · PARTIAL · SPEC1 §0 A1; SPEC1 §9 tiers
+  - *Capability:* A1 'Language proposes, the verifier admits, the structure records, the kernel renders', and §9's tiers: SHELL; WORKSHOP holding the decision procedure; KERNEL holding graph, physics and reference render; ORACLE.
+  - *Held by:* oracle-frozen, game-not-runtime, admit-* rows, shell-playback-no-authority (gate)
+  - *Gap:* The four tiers exist. SPEC1 changes the owner's 'the session records' to 'the structure records' (see R11.log-demoted). It puts the decision procedure in the workshop, but it is in shell/admit.rs and shell/designevent.rs, both pinned. It puts physics and a 3D reference renderer in the kernel, but physics is the graybox's, beside the gate, and the kernel draws the 48x48 tile wo…
+  - *Evidence:* README.md:17-44 the charter's four parts and its dependency rule; README.md:56 the owner's wording: 'Language can propose, the verifier admits, the session…
+- **R11.A3-normal-form** · PARTIAL · SPEC1 §0 A3; SPEC1 §2.3
+  - *Capability:* Exactly one way to write a world: a unique canonical normal form on which equality, diff, merge and conflict detection are syntactic, so two independently built identical worlds hash identically.
+  - *Held by:* text-roundtrip, text-reformat, admit-reader (gate); art/selftests.py 'director' (DIRECTOR SELFTEST, 'the conformance vectors, reproduced by the reference (65)'); 'cert' (CERT SELFTEST 7/7, the row 'found: an '=' ... und…
+  - *Gap:* The kernel's grid bytes, VRDNP1/VRDNP2 and the intent canon are canonical. The art brief is not (alignment, comments, line order), and the world's head is taken over its bytes. Diff is by id (scene_diff), and merge exists only as GLUE-0's verdict, never in admission. Taking the head over the statements is option (b) of a ruling still pending. SPEC2 §2.6: 'Canonicalization is n…
+  - *Evidence:* workshop/session.rs:126-132 content = sha256(W ‖ M): identical grids hash identically; verify/verify.py:1945-1961 text-reformat: content digest invariant under reformat
+- **R11.atlas-charts** · CONFLICTS-WITH-SPEC (reader PARTIAL, resolved F15) · SPEC1 §0 A4; SPEC1 §2 (Chart, Basis); SPEC1 §3
+  - *Capability:* An atlas of charts (World/Building/Bay/Platform/CameraRig, depth at most 8) with Q32.32 bases; world coordinates derived by composing the basis chain, never authored; the cocycle condition tested exhaustively.
+  - *Held by:* art/selftests.py 'marks' (MARKS SELFTEST 19/19, surface-local frames); python graybox/ort_ref.py (ORT-1, own check, not run at HEAD)
+  - *Gap:* Local frames exist per box face (MARK-0) and for the world's origin (ORT-1). Buildings and bays are statements with place-named ids. There is no chart hierarchy, basis chain, rotation, depth cap or cocycle test. World coordinates are authored (cells, mover corners), and the scene stores world-space boxes. Q32.32 bases would be the second state model ORT-1 scrapped. SPEC2 §5 as…
+  - *Evidence:* art/studio_marks.py:9-13 a shape's vertices surface-local on one face of one box, integer…; art/studio_marks.py:15-24 the face frames: a translation and signed permutation, inverse …
+- **R11.rebase-commutation** · CONFLICTS-WITH-SPEC · SPEC1 §3 (ORT-1); SPEC1 §10 REBASE-0 and experiment 2
+  - *Capability:* Rebase commutation R∘Op = Op∘R for every op and every rebase ('the theorem of geo-stability'); its failures are the critical pairs.
+  - *Held by:* python graybox/ort_ref.py and trace.py run tactical --ort (AGENTS.md §4; own check, not run at HEAD; last recorded ORT-1 HELD BY PYTHON AND THE ENGINE in 0228's run, docs/ROADMAP.md:4286-4288)
+  - *Gap:* The repository's own measurement already disproves the universal claim, which is SPEC1's experiment 2. An admitted rebase conserves positions exactly, but the ticks after it differ in their bits, so a rebase is a recorded step of the run. SPEC2 §5: 'Do not claim all operations commute with rebase. Test and list the exact operation classes for which commutation holds.'
+  - *Conflict:* graybox/ORT-1.md:40-41: "What it does not conserve: the bits of the ticks after it. The tick's arithmetic in another frame rounds differently". MEASURED at docs/ROADMAP.md:4133-4134: "rules 1 are deterministic and not translation-invariant bit for bit".
+  - *Evidence:* graybox/ORT-1.md:35-38 global positions conserved exactly only when each subtraction is e…; graybox/ORT-1.md:40-42 'What it does not conserve: the bits of the ticks after it.'
+- **R11.dense-ids** · CONFLICTS-WITH-SPEC · SPEC1 §2.3; SPEC1 §12 risks; SPEC1 Appendix A step 2
+  - *Capability:* A Compact pass that renumbers EntityIds densely in canonical order ('IDs are assigned by position in the canonical order, not at creation time'), unstable across edits and hidden behind a studio name layer.
+  - *Held by:* art/selftests.py 'marks' (MARKS SELFTEST 19/19), 'held' (HELD SELFTEST 8/8), 'studio' (STUDIO SELFTEST 74/74), which hold identity by id
+  - *Gap:* Stable, place-named ids already exist in the art layer. Marks, tags, held-region accounts and glue sections all hang on them. The name layer SPEC1 needs exists only for shapes (#name) and tags (@n). SPEC2 §2.6 ('do not compact/renumber live IDs on edits') and §16 ('Dense canonical IDs as live IDs — Reject') reject the proposal.
+  - *Conflict:* AGENTS.md:91: "A tag names one object by its id and is never moved to another". AGENTS.md:101: "Never move a shape to another surface or snap a changed one back without the designer". Dense renumbering would move the ids under every tag and shape on any unrelated edit.
+  - *Evidence:* art/studio_refs.py:13-18 'An object's identity is its id ... nothing is matched to it by …; art/dress.py:925 bay ids named by place
+- **R11.entity-model** · CONFLICTS-WITH-SPEC · SPEC1 §2; SPEC1 §1.3 five primitives; SPEC1 Appendix A step 2
+  - *Capability:* A kernel-facing Rust data model: EntityId(u64), Chart, Basis, Relation (fixed-point or enum payloads), AnchorGraph, and Entity {chart, local_bounds AabbQ, kind, MaterialRef, flags}; entities never store world coordinate…
+  - *Held by:* none
+  - *Gap:* Nothing implements it. The art layer has string ids, world-space boxes and a part-of relation by id prefix; relations such as hosted_in or supports are absent. Putting the model in the kernel needs new pinned files (AGENTS.md:51-54) and the owner's word during Phase I. SPEC2 §5 lists versioned ids and semantic relations as concepts, behind its §16 deferral of a graph authority.
+  - *Conflict:* docs/ROADMAP.md:4574-4575 (the plan the owner approved): "the 48 x 48 kernel and its gate rows untouched through Phase I". AGENTS.md:53-54: "A new file needs a link too."
+  - *Evidence:* kernel/mantle.rs:30-32 the kernel's scene: a cell grid and a camera, no entities; kernel/mantle.rs:53 LATTICE 48
+- **R11.kernel-collections** · PARTIAL (reader CONFLICTS-WITH-SPEC, corrected) · SPEC1 §2 (AnchorGraph); SPEC1 Appendix A hard prohibitions
+  - *Capability:* BTreeMap/BTreeSet kernel types so that canonical order is type-level, and no HashMap/HashSet anywhere in kernel/.
+  - *Held by:* none (no row scans for hash collections; the pins hold the files as they are)
+  - *Gap:* Ordered maps are already the kernel's choice wherever order reaches an output. The one HashSet only counts distinct addresses (its len), so its iteration order reaches nothing. The AnchorGraph types do not exist (R11.entity-model). Enforcing the prohibition means editing a pinned source.
+  - *Conflict:* AGENTS.md:51-53: "Every .rs under kernel/, shell/ and workshop/ ... is pinned by sha256 ... A change, even to a comment, turns reasoncourt-fence and mintwatch-fence red until an amendment names the move". kernel/fast.rs:674-679 would have to change.
+  - *Skeptic:* Grep for HashMap, HashSet, BTreeMap and BTreeSet in kernel/, workshop/ and shell/. Ordered maps are already the choice wherever order reaches bytes: the saved form's object (kernel/savedform.rs:39 and :60), the court's levels and tiles (kernel/main.rs:175-176), and the workshop's canonical JSON, wh…
+  - *Evidence:* kernel/savedform.rs:39 and :60 the saved form's object is already a BTreeMap; kernel/main.rs:175-176 BTreeMap for the court's levels and tiles
+- **R11.normalizer-Q1** · CONFLICTS-WITH-SPEC (resolved F13) · SPEC1 §2.3; SPEC1 §5 Q1; SPEC1 §1.2 (conflict and admission rows); SPEC1 Appendix A steps…
+  - *Capability:* Normalization passes run to a fixpoint (Resolve, Sort, Prune, Intern, Compact) with trait Canonical and canonical_hash = sha256; admission's Q1 unions the candidate into the graph and normalizes, refusing a stall with i…
+  - *Held by:* designir-compile, designir-equivalence (gate) hold the nearest thing, a design's net change set
+  - *Gap:* No admission has a normalizer over worlds or a Q1. The design compiler and the certificate's statements() are partial canonicalisations, and GLUE-0's obstruction is the nearest analogue of a 'stall'. SPEC1 places this in kernel/norm and kernel/graph. SPEC2 §5 treats normalization idempotence and order independence as tests of canonical bytes, not as an authority change.
+  - *Conflict:* docs/ROADMAP.md:4574-4575: "the 48 x 48 kernel and its gate rows untouched through Phase I" (kernel/norm, kernel/graph).
+  - *Evidence:* shell/designcompile.rs:23-27 a design compiled to the net difference in one canonical ord…; art/certificate.py:49-53 statements(): the brief's statements sorted and single-spaced
+- **R11.serialization** · PARTIAL · SPEC1 §2.4
+  - *Capability:* One binary serialization: little-endian fixed-width ints and no varints, u32 count prefixes, UTF-8 NFC length-prefixed strings, sorted map pairs, no floats (fixed-point i64), append-only u32 enum discriminants, explicit…
+  - *Held by:* kernel-oracle, readercourt-language, admit-reader (gate); art/selftests.py 'director' (vectors) and 'quality' (QUALITY SELFTEST 76/76)
+  - *Gap:* Binary little-endian formats with 8-byte magics carrying a version digit exist for the kernel's world; sessions and art documents are JSON. There is no u16 schema header, no u32-count convention across formats, no presence bytes, and no NFC normalization anywhere (no unicodedata or NFC in the code). The art scene carries decimals written from floats. The append-only versioning…
+  - *Evidence:* docs/BINARY-SDK.md:50 little-endian (the frame digest's sizes big-endian); docs/BINARY-SDK.md:58-71 the catalogue: VRDNLVL1, VRDNTIL1, VRDNSES1, VRDNSW1, VRDNLJ1, V…
+- **R11.op-alphabet** · PARTIAL · SPEC1 §4; SPEC1 Appendix A step 3
+  - *Capability:* An op alphabet of Open, Close, Room, Entrance, Paint, Place, Move and Link, each invertible and region-local, plus SimStep (not invertible, global).
+  - *Held by:* admit-*, designevent-*, designir-*, hermeneutics-* (gate); art/selftests.py 'cert' (CERT SELFTEST 7/7)
+  - *Gap:* The five world ops exist on the kernel path but are not individually invertible (undo is replay; workshop1-undo); Place, Move and Link do not exist there. The art layer's revisions carry inverses, but these are exact on bytes only for '+' and for '=' on a single-spaced statement (docs/ROADMAP.md:5135-5139). A mover is play: no intent may add, move or remove one (AGENTS.md §4, …
+  - *Evidence:* shell/designcompile.rs:18-27 open, close, room, entrance, paint: the design language; verify/preregister.json:582 VRDNP1's ops: open, close, paint
+- **R11.undo-inverse** · PARTIAL (reader CONFLICTS-WITH-SPEC, resolved F11) · SPEC1 §1.2 (undo row); SPEC1 §4 groupoid reading
+  - *Capability:* Undo by composing with the captured inverse plus a certificate, replacing undo by log replay.
+  - *Held by:* workshop1-undo (gate) holds undo as replay; art/selftests.py 'flagship' (FLAGSHIP SELFTEST 9/9) and 'cert' (CERT SELFTEST 7/7) hold the art layer's inverse undo
+  - *Gap:* The art layer already undoes by stored inverse with a certificate (SPEC1's model), but that inverse is not an isomorphism on bytes for every operation. On the kernel path the registered law is replay. SPEC2 §5 allows either: undo 'restores prior authored state or applies a checked inverse against the expected child revision'.
+  - *Conflict:* verify/verify.py:2127-2128 (gate row workshop1-undo): "undo to 2 did not equal replaying the first 2 edits — undo is not replay". verify/preregister.json:674 (DESIGN-EVENT-0): "replay stays the authority".
+  - *Evidence:* verify/verify.py:2118-2133 workshop1-undo: Red if 'undo is not replay'; 'never a localise…; workshop/session.rs:8-10 'undo to n' is a deterministic replay of the first n edits
+- **R11.certificate-fields** · PARTIAL · SPEC1 §4 AdmissionCertificate; SPEC1 Appendix A step 4 (workshop/cert)
+  - *Capability:* An AdmissionCertificate {schema, parent hash, child hash, op, inverse with prior values inline, region (CoverElement), predicates, producer, signature}.
+  - *Held by:* art/selftests.py 'cert': CERT SELFTEST 7/7 (row 'planted: each defect refused with its code'; three plants caught)
+  - *Gap:* Built off the gate in the art layer (CERT-0, 0244). Missing against SPEC1: the region or cover (support holds statement keys only), predicate results, prior values inline (the inverse is a revision), a signature (the field is empty; signing is deferred), and a Rust workshop/cert. The certificate is derived from the ledger and never decides an admission.
+  - *Evidence:* art/certificate.py:66-80 make(): parent, op, inverse, child, support (statement keys), pr…; art/certificate.py:83-106 check(): CERT-CHILD, CERT-HEAD, CERT-ART-ONLY, CERT-INVERSE
+- **R11.census** · PARTIAL · SPEC1 §4 (CENSUS-0); SPEC1 §10 experiment 3; SPEC1 §11 E6
+  - *Capability:* Critical pairs computed offline and exhaustively over the op alphabet, giving a finite conflict census (CENSUS.md; gate row CENSUS-0 'census regenerates identically'), bounded or else the vocabulary pruned.
+  - *Held by:* art/selftests.py 'glue': GLUE SELFTEST 9/9, row 'the census of the flagship's seven edits: every pair judged, the same table twice'
+  - *Gap:* A census of seven of the flagship's edits exists and regenerates identically. It is not exhaustive over statement kinds, has no CENSUS.md, and its boundedness is not shown. As a gate row it would grow the gate (AGENTS.md:60-61). The word 'census' already names workshop-census and REASON-COURT-0's census.
+  - *Evidence:* art/glue.py:140-168 census(): seven edits, every pair judged; art/glue.py:210-211 21 pairs, the same table twice
+- **R11.merge-union** · CONFLICTS-WITH-SPEC · SPEC1 §1.2 (merge and conflict rows)
+  - *Capability:* Merge by union and renormalization, replacing tie-breaker ordering; a conflict is a normalization stall.
+  - *Held by:* art/selftests.py 'glue' (GLUE SELFTEST 9/9) holds the verdict; nothing holds a merge
+  - *Gap:* GLUE-0 decides exactly whether two edits glue; commuting is not gluing (the face against a bay commutes but does not glue). Nothing merges, and the studio does not use the verdict.
+  - *Conflict:* AGENTS.md:99: "never let the studio's admission decide by a glue verdict until the owner rules it".
+  - *Evidence:* art/glue.py:9-25 glue: commute and agree on overlaps, else OBSTRUCTED with one fingerprin…; art/glue.py:91-136 judge()
+- **R11.Q2-region** · PARTIAL · SPEC1 §5 Q2; SPEC1 §10 REGION-0; SPEC1 §11 E3
+  - *Capability:* Admission Q2: every introduced or modified relation lies inside a declared CoverElement (Cells \| Chart \| Region(AabbQ) \| EntitySet).
+  - *Held by:* admit-capability (gate); art/selftests.py 'strict' (STRICT SELFTEST 11/11, three plants) and 'held' (HELD SELFTEST 8/8)
+  - *Gap:* Cells (the kernel's grant) and a region prism (STRICT-0's shapes) exist and are tested. There is no CoverElement type, no Chart or EntitySet cover and no cover file, and strict admission is opt-in per request.
+  - *Evidence:* shell/admit.rs:34-35 the grant: operation kinds, an inclusive rectangle of cells, tile cl…; verify/verify.py:11016-11020 admit-capability: a cell outside the granted rectangle refus…
+- **R11.Q3-inverse** · PARTIAL (resolved F13) · SPEC1 §5 Q3
+  - *Capability:* Admission Q3: the captured inverse returns the parent hash exactly, checked without executing the world; admit only if Q1, Q2 and Q3 all hold.
+  - *Held by:* art/selftests.py 'cert': CERT SELFTEST 7/7 (row 'each admission's certificate: the inverse applied to the child gives the parent, byte for byte or (said) token for token'); 'flagship' (FLAGSHIP SELFTEST 9/9)
+  - *Gap:* The check exists (CERT-0) but runs after admission and refuses nothing. Under SPEC1's Q3, every '-' admission and every '=' on an aligned statement would be refused (InverseWrong) until the owner rules on the inverse's repair (docs/ROADMAP.md:5140-5144). The kernel path has no inverse.
+  - *Evidence:* art/certificate.py:15-23 the check: exact, without exporting or replaying; art/certificate.py:96-106 exact (bytes) or statements; CERT-INVERSE
+- **R11.typed-refusals** · PARTIAL · SPEC1 §5
+  - *Capability:* A typed refusal enum: DoesNotNormalize, OutsideRegion, InverseMissing, InverseWrong, PredicateFailed, NonLocalViolation, SchemaMismatch.
+  - *Held by:* admit-anchor, admit-capability, reasoncourt-register, reasoncourt-watch (gate); art/selftests.py 'strict', 'cert', 'studio'
+  - *Gap:* Coded refusals exist throughout: strings with a prefix, held to their codes in the gate. Partial equivalents: OutsideRegion matches ADMIT-CAPABILITY or ADMIT-OUTSIDE; InverseWrong matches CERT-INVERSE, which is not an admission refusal; SchemaMismatch matches ADMIT-PARSE or INTENT-NONCANONICAL. There is no DoesNotNormalize (no normalizer) and no single enum type. SPEC2 §6 asks…
+  - *Evidence:* shell/admit.rs:28-33 ADMIT-IO to ADMIT-AUTHORITY, in the registered order; docs/ROADMAP.md:144 REASON-COURT-0: every refusal check in the gate held to an exact code
+- **R11.predicates** · PARTIAL · SPEC1 §5; SPEC1 §10 AX-004
+  - *Capability:* Local predicates inside the decision procedure; non-local ones (sightlines, global budgets, connectivity, occlusion) applied as a post-normalization filter, with completeness not claimed.
+  - *Held by:* art/selftests.py 'check' (ART CHECKS PASSED), 'legible' (LEGIBLE SELFTEST 6/6), 'impact' (IMPACT SELFTEST 9/9)
+  - *Gap:* Whole-scene checks run at every export (art/check.py), and advisory proxies exist (legibility, impact budgets). There is no typed Local/NonLocal split, and no certificate records predicate results. By rule the proxies may not decide.
+  - *Evidence:* art/check.py:14-17 the reach ceiling (REACH-1) recomputed from C, the player, targets and…; art/legibility.py:20-25 contrast, size and share seen; thresholds declared and advisory
+- **R11.physics-fixedpoint** · CONFLICTS-WITH-SPEC · SPEC1 §6; SPEC1 Appendix A step 6; SPEC1 §10 experiment 4; SPEC1 §11 E7
+  - *Capability:* Fixed-point Q32.32 physics (SAT/GJK narrowphase, semi-implicit Euler integration, constraint solving) in kernel/phys, with presentation interpolation in floats off the gate.
+  - *Held by:* graybox tick_ref.py verify\|selftest\|rules2\|rules3 and rules_ref.py (AGENTS.md §4; own checks, not run at HEAD); art/selftests.py 'preview' replays tick_ref's rules 3
+  - *Gap:* Physics today is the graybox's binary64 simulation with ECMA-fixed operations and integer mover units, agreeing across engines wherever measured. No fixed-point path exists or is planned. SPEC2 §16: 'Fixed-point for all physics — Do not assume'; SPEC2 §2.4: fixed-point still rounds and overflows.
+  - *Conflict:* graybox/web/sim.js:11-13: rules 1 were built in binary64 by the owner's ruling "investigate and implement the deterministic math layer now". graybox/ORT-1.md:18-19 scrapped "the int32 region and local coordinates (Verðandi's state is binary64 metres under rules 1 and 2; a second state model would be a second simulatio…
+  - *Evidence:* graybox/web/sim.js:11-13 rules 1 by the owner's ruling; operations ECMA-262 fixes to the …; graybox/web/sim.js:57 IEEE 754 binary64, round to nearest
+- **R11.tick-120** · EXISTS-TESTED (corrected) · SPEC1 §6
+  - *Capability:* A fixed timestep dt = 1/120 s.
+  - *Held by:* python graybox/tick_ref.py rules3 and cases (AGENTS.md:84): hand-worked expectations at 1/120 s (e.g. rules3_cases.json:619, 'downFor less 1/120 a tick ... 0.05 m a tick', T1 up at tick 3), with plants caught by worked …
+  - *Gap:* The graybox ticks at 1/120 s in both implementations. The kernel's live loop ticks at 64 Hz (SIM-TICK-0, registered), so two ticks coexist. SPEC2 §7: '60 or 120 Hz are candidates, not dogma'.
+  - *Skeptic:* TICK = 1/120 holds in sim.js:43, tick_ref.py:139 and RULES-1.md:24. The reader's held_by is imprecise. 'tick_ref.py verify' compares the browser trace with the Python twin and would not fail if both changed. The tick_ref selftest's constants row compares sim.js's P only, not TICK (tick_ref.py:1246-…
+  - *Evidence:* graybox/web/sim.js:43 const TICK = 1 / 120; graybox/tick_ref.py:139 TICK = 1.0 / 120.0
+- **R11.physics-solver** · MISSING · SPEC1 §6
+  - *Capability:* SAT/GJK narrowphase, semi-implicit Euler, a constraint solver with K = 8 fixed iterations and early-out forbidden, and contacts sorted by (cell, entity_a, entity_b).
+  - *Held by:* none
+  - *Gap:* The simulation is a player against a grid of cell tops, with axis-aligned movers and targets stepped in a declared order. There are no rigid bodies, contact manifolds, narrowphase or iterative solver. Adoptable off the gate only as a new rules version (AGENTS.md §4: a change to a tick's numbers is a new RULES). SPEC2 §7 asks for a stable supported subset first, with solver ite…
+  - *Evidence:* graybox/web/sim.js:4-8 the player, collision against C's tops, targets; graybox/web/sim.js:15-24 movers that slide, carry, stop or push
+- **R11.bvh-rebuild** · MISSING · SPEC1 §6; SPEC1 §12 risks
+  - *Capability:* A dynamic BVH rebuilt every certified step by a deterministic median split in canonical order.
+  - *Held by:* none
+  - *Gap:* No broadphase exists; collision is a grid lookup. SPEC2 §16: 'Rebuild BVH every tick — Do not assume — representative benchmark versus incremental broadphase'.
+  - *Evidence:* graybox/web/sim.js:4-8 collision read per cell from C; docs/CORE.md:113-115 C collision, tops only (a search of graybox/ and art/ finds no BVH o…
+- **R11.physics-checkpoint** · PARTIAL · SPEC1 §6; SPEC1 §4 (SimStep)
+  - *Capability:* Physics undo by periodic canonical checkpoints and re-simulation, with SimStep never inverted.
+  - *Held by:* python graybox/serve.py tactical --selftest (resume-realm, hash-coverage; AGENTS.md §4; own check, not run at HEAD); art/selftests.py 'preview' (PREVIEW SELFTEST 12/12: states replayed and verified)
+  - *Gap:* In-page snapshots resume exactly, and preview states replay. There is no persisted checkpoint and no undo of a simulation step in any studio flow.
+  - *Evidence:* graybox/web/sim.js:1215-1262 hash-coverage: every leaf of the authoritative state hashed; graybox/web/main.js:47-81 resume-realm resumes from a snapshot
+- **R11.reference-renderer** · PARTIAL · SPEC1 §7; SPEC1 §10 RENDER-0; SPEC1 Appendix A step 7; SPEC1 §11 E8
+  - *Capability:* A bit-exact reference renderer, byte-identical across hosts (RENDER-0), in kernel/render_ref.
+  - *Held by:* kernel-oracle, kernel-corpus, bearing-oracle (gate)
+  - *Gap:* The kernel is a bit-exact reference for the 48x48 tile world, and its digests match the frozen oracle on both hosts. There is no reference for the art's 3D scenes (boxes, materials, lights). A kernel/render_ref is a kernel change during Phase I. SPEC2 §16 on a CPU pixel oracle: 'Keep only if useful'.
+  - *Evidence:* kernel/mantle.rs:15-28 exact frame and picture in i64; verify/verify.py:869-875 kernel-oracle: two runs agree, against the frozen oracle
+- **R11.downsample** · CONFLICTS-WITH-SPEC · SPEC1 §7 DownsampleSpec; SPEC1 §10 DOWN-0 and experiment 5; SPEC1 §11 E9
+  - *Capability:* A production GPU renderer reconciled with the reference by a pinned downsample with a per-channel tolerance (DOWN-0), with fixed-point bloom and tonemap LUTs hashed.
+  - *Held by:* none
+  - *Gap:* No downsample exists. The stills have detectors (quality.py still) that prove nothing. SPEC2 §8 and §16 reject pixel or downsample equality as quality proof.
+  - *Conflict:* AGENTS.md:90: "A person judges the picture; nothing hashes it" and "only a person judges it". AGENTS.md:60-61: the gate stops growing (DOWN-0).
+  - *Evidence:* art/web/scene_render.js:21 'Nothing hashes its pixels: a person judges what it draws'; AGENTS.md:90 a person judges the picture
+- **R11.production-pipeline** · PARTIAL · SPEC1 §7
+  - *Capability:* A production pipeline: clustered forward+, cascaded shadow maps with fixed-point PCF, DDGI-style probes, SSR with probe fallback, froxel volumetrics, bloom and tonemap, MSAA or supersampling (TAA and upscalers off the g…
+  - *Held by:* none (LIVE SELFTEST 24/24 serves the page; nothing tests the picture)
+  - *Gap:* A WebGL 2 forward renderer exists with PBR, one shadow map, planar reflection, fog and bloom. It has no cascades, clustered lighting, GI probes, SSR, froxels or AA policy. The renderer's direction (D1) waits on measurements. SPEC2 §8 lists the same features as a measured roadmap.
+  - *Evidence:* art/web/scene_render.js:11-20 one moon shadow map drawn once, a half-size mirror, GGX + L…; docs/ROADMAP.md:4573-4574 D1, the renderer, 'decided only once there are real measurement…
+- **R11.palette-materials** · CONFLICTS-WITH-SPEC (resolved F15) · SPEC1 §2 (MaterialRef); SPEC1 §7
+  - *Capability:* Materials as indices into a versioned palette rather than RGB, with palette changes treated as gate events.
+  - *Held by:* none
+  - *Gap:* The kernel's tile path is already palette-indexed; the art's materials are named PBR records. SPEC2 §12: 'Do not force all materials into RGB palette indices'.
+  - *Conflict:* README.md:53-55 (the owner's declared goal): "a content admission layer certifies that an artifact conforms to the already-certified program; content generation does not invoke the engineering gate". A palette change is content. AGENTS.md:60: "the gate stops growing".
+  - *Evidence:* art/dress.py:210-217 named PBR materials: base RGB, roughness, metallic, emissive; art/briefs/foundry-yard.art:26-30 material statements
+- **R11.separation-matrix** · PARTIAL (corrected) · SPEC1 §7; SPEC1 §10 experiment 6
+  - *Capability:* A separation matrix of the palette under each enumerated, versioned lighting band (day, dusk, night, interior), flagging near-collisions.
+  - *Held by:* art/selftests.py 'legible' (LEGIBLE SELFTEST 6/6; plant 'the wall's own material (contrast)' caught)
+  - *Gap:* Contrast is measured for one subject against its surface along a path, under the world's one light set. There is no palette-wide matrix, no enumerated or versioned bands, and the result is advisory only. SPEC1 misreads the 0243 figure: 15-17 of 255 levels is the candidate's change at the subject between two stills, not a separation between two materials.
+  - *Skeptic:* The status is right, but two parts of the gap are wrong or incomplete. (1) LEGIBLE-0's contrast is the WCAG ratio of two base colours, and legibility.py:20-21 states that 'lighting, emission, reflection and hue are not in it'. It is therefore not under any lighting band, not even the world's one li…
+  - *Evidence:* art/legibility.py:20-25 the WCAG contrast of a piece's material against its surface; 3:1 …; docs/ROADMAP.md:5112-5113 the owner's document asks for a detector of dusk's near-collisi…
+- **R11.studio** · PARTIAL · SPEC1 §8; SPEC1 §11 E10-E11
+  - *Capability:* Studio: viewport-first docking; hot reload; prefab library with canonical instantiation; certificate-backed undo; measurement tools; review workflow; an agent lane (proposals as candidates only); panels (Viewport as the…
+  - *Held by:* art/selftests.py 'live' (LIVE SELFTEST 24/24), 'studio' (STUDIO SELFTEST 74/74), 'queue' (STUDIO-2 SELFTEST 19/19), 'app' (STUDIO APP SELFTEST)
+  - *Gap:* Inspector, candidate lane, Diff, History (the ledger view), queue, worlds hub, live reload and the agent lane exist and are tested. Prefabs, docking, an outliner and gamepad input do not. The viewport is the WebGL renderer, off the gate, not the kernel framebuffer SPEC1 names.
+  - *Evidence:* art/web/play.js:678 'prefabs: Not built ... there is no prefab statement'; art/web/play.js:858-859 menus for Gameplay, Prefabs, Audio, several marked not built
+- **R11.evidence-sheet** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC1 §8 evidence sheets and approval
+  - *Capability:* Evidence sheets (both stills per pose, close-ups, an amplified ×8 diff), with approval writing a baselines file.
+  - *Held by:* art/selftests.py 'preview-studio' (B4-PAIR-STILLS asserts the sheet file exists and its sha256 is on the request's line); 'flagship' ('the visual baseline: written only on a person's word ... refused otherwise')
+  - *Gap:* The sheet is 'a picture for a person to inspect, not evidence' (art/motion.py:269). SPEC1's frame timing, determinism spot-checks and material separation values are not on it; impact is a separate ESTIMATE.
+  - *Skeptic:* Only the sheet's existence is tested, not its content. The B4-PAIR-STILLS assertion (play.py:3403-3417) requires len(files) == 5, including preview.compare.png, and its hash on the line. No test opens the PNG to check the paired stills, the subject crops or the ×8 difference: compare_sheet (motion.…
+  - *Evidence:* art/motion.py:268-272 compare_sheet: both stills at each pose, both crops, their differen…; art/flagship.py:7-8 approve: the owner's act
+- **R11.scripted-acceptance** · EXISTS-TESTED · SPEC1 §8
+  - *Capability:* Scripted acceptance mark → request → candidate → preview → admit → undo, with the studio's admission reading none of the acceptance evidence.
+  - *Held by:* art/selftests.py 'flagship': FLAGSHIP SELFTEST 9/9 (three plants: held, impact and verify unchecked)
+  - *Gap:* None. SPEC1 restates FLAGSHIP-0 (0243).
+  - *Evidence:* art/flagship.py:10-27 the six stages, each stopping with its code; 'the studio's admissio…; AGENTS.md:98 never let the studio's admission read that evidence
+- **R11.module-layout** · CONFLICTS-WITH-SPEC · SPEC1 §9 module layout
+  - *Capability:* Re-lay the tree as kernel/{graph,norm,ops,phys,render_ref,abi.rs}, workshop/{admit,cert,predicates,ledger}, shell/{ui,viewport,input}, studio/{art,sheets,scripts}, verify/{rows,census,determinism} and docs/{CHARTER,SPEC…
+  - *Held by:* reasoncourt-fence, mintwatch-fence (gate)
+  - *Gap:* Every moved .rs is a moved pin, and verify.py's text is cited by the registers. docs/BOUNDARIES.md already exists with other content (the graybox's three worlds), and a docs/CHARTER.md would duplicate the README's charter block. SPEC2 §3: 'Reuse existing code rather than duplicating it under new names.'
+  - *Conflict:* AGENTS.md:51-53: "Every .rs under kernel/, shell/ and workshop/ ... is pinned by sha256: 58 files in RSN_SOURCES. A change ... turns reasoncourt-fence and mintwatch-fence red until an amendment names the move". docs/ROADMAP.md:4574-4575: "the 48 x 48 kernel and its gate rows untouched through Phase I".
+  - *Evidence:* verify/verify.py:12262-12321 58 pinned paths, shell/admit.rs among them (12272); AGENTS.md:51-54 the pinned-source rule
+- **R11.c-abi** · CONFLICTS-WITH-SPEC · SPEC1 §9
+  - *Capability:* A C ABI: vrd_graph_new/free/parse/normalize/hash, vrd_op_apply (with inverse out), vrd_sim_step/hash, vrd_render_ref.
+  - *Held by:* none
+  - *Gap:* Nothing exports a C ABI; the kernel and workshop are command-line binaries fed bytes. The ABI needs new kernel files, each a link in RSN_CHAIN, and the graph, ops and simulation it would expose do not exist in Rust.
+  - *Conflict:* docs/ROADMAP.md:4574-4575: "the 48 x 48 kernel and its gate rows untouched through Phase I". AGENTS.md:53-54: "A new file needs a link too."
+  - *Evidence:* kernel/mantle.rs:34 the kernel cannot reach the workshop or the shell, and has no window,…; docs/CORE.md:37-40 bare rustc -O, no Cargo; the programs are binaries, not libraries
+- **R11.dependency-policy** · CONFLICTS-WITH-SPEC · SPEC1 §9; SPEC1 §10 DEP-0; SPEC1 Appendix A
+  - *Capability:* A dependency policy: the kernel takes the sha2 crate (or a vendored SHA-256); the workshop the kernel plus serialization crates; the shell any UI or GPU libraries; the studio anything; the kernel's dependency list held …
+  - *Held by:* kernel-build, workshop-build, shell-build (bare rustc, no --extern) and the pins (reasoncourt-fence, mintwatch-fence); no row greps for crates
+  - *Gap:* SPEC1's own alternative, a vendored SHA-256, already exists and is held byte for byte by kernel-oracle. DEP-0 as a row would grow the gate.
+  - *Conflict:* AGENTS.md:58-59: "Add a dependency. There is no Cargo and no crate: Rust is std-only and built by bare rustc. Python is the standard library."
+  - *Evidence:* AGENTS.md:58-59 no dependency: no Cargo, no crate; Python is the standard library; docs/CORE.md:172 'std-only Rust, no crates ... No row greps for crates'
+- **R11.gate-rows** · CONFLICTS-WITH-SPEC · SPEC1 §10 proposed gate rows; SPEC1 Appendix A step 8
+  - *Capability:* New gate rows: NORM-0/1/2, ATLAS-0, REBASE-0, CERT-0, REGION-0, PHYS-0/1, RENDER-0, DOWN-0, DEP-0, CANON-0 and CENSUS-0.
+  - *Held by:* the gate's rowset 74db4c8d78625af5 (251 rows) and its RECONCILE line
+  - *Gap:* Some of the capabilities behind these rows exist off the gate (CERT SELFTEST, STRICT SELFTEST, the GLUE census, the director's vectors). SPEC2 §3: no gate change without an explicit owner decision.
+  - *Conflict:* AGENTS.md:60-61: "Grow the gate. By the owner's sprint ruling (2026-10-09) the gate stops growing: no new row or rung unless a concrete defect blocks the work." docs/ROADMAP.md:4574-4575: "the 48 x 48 kernel and its gate rows untouched through Phase I".
+  - *Evidence:* AGENTS.md:60-61 the gate stops growing; docs/ROADMAP.md:54-56 by his ruling of 2026-10-09 the gate stops growing
+- **R11.cert0-name** · CONFLICTS-WITH-SPEC · SPEC1 §10 (CERT-0)
+  - *Capability:* A gate row named CERT-0 for inverse correctness.
+  - *Held by:* art/selftests.py 'cert' (CERT SELFTEST 7/7) holds the existing CERT-0, off the gate
+  - *Gap:* The name is taken by the art layer's certificate (off the gate, 0244), which already checks inverse correctness (exact or statements). A second CERT-0 in the gate would collide with it and add a row.
+  - *Conflict:* art/certificate.py:4 already names CERT-0. AGENTS.md:60-61: "no new row or rung unless a concrete defect blocks the work".
+  - *Evidence:* art/certificate.py:4 'CERT-0 (0244): every admission's certificate, and the exact check o…; art/selftests.py:48 the cert suite, CERT-0 (0244)
+- **R11.canon-crossimpl** · PARTIAL · SPEC1 §10 CANON-0
+  - *Capability:* CANON-0: one canonical hash agreeing across Python, node and the browser.
+  - *Held by:* art/selftests.py 'director' (DIRECTOR SELFTEST, 'the conformance vectors, reproduced by the reference (65)'); art/build/conform art/director/vectors.json (CONFORMANCE 65/65; own check, not run at HEAD); trace.py run tac…
+  - *Gap:* Cross-implementation agreement exists for the intent canon (Python against Rust) and for the graybox's state hash (Python against JS engines). There is no canonical world hash across Python, node and the browser, and Firefox is not measured. As a row it would grow the gate.
+  - *Evidence:* art/director/intent.py:19-20 the vectors fix every rule to bytes; art/director.py:1169-1170 the Python reference reproduces the vectors inside selftest
+- **R11.A8-roundtrip** · PARTIAL · SPEC1 §0 A8; SPEC1 §10 NORM-0/1/2; SPEC1 Appendix A
+  - *Capability:* Every notation ships with a decoder and a round-trip law (parse∘unparse = id and unparse∘parse = id on normal forms): NORM-0 round-trip, NORM-1 idempotence, NORM-2 order independence.
+  - *Held by:* text-roundtrip, text-reformat, readercourt-agree (gate); art/selftests.py 'held' (SCENE-DIFF SELFTEST: invert(diff(a,b)) == diff(b,a)) and 'cert'
+  - *Gap:* Round trips hold for the level's text form, the canonical intent bytes and the scene diff. The art brief has no unparser, and its revisions do not round-trip on bytes for '=' on aligned statements or for '-'. No normalizer exists, so nothing tests idempotence or order independence.
+  - *Evidence:* verify/verify.py:1924-1942 text-roundtrip: to_text(from_text(to_text(L))) byte-identical; verify/verify.py:1945-1961 text-reformat
+- **R11.experiments** · PARTIAL (reader MISSING, corrected) · SPEC1 §10 experiments 1, 4, 5
+  - *Capability:* Falsification-first experiments: (1) canonicalization viability of the five existing ops ('kills the whole pivot'), (4) fixed-point physics fidelity against float, (5) downsample tolerance. Experiments 2, 3 and 6 are gr…
+  - *Held by:* gate rows designir-compile, designir-equivalence, hermeneutics-laws (passed at HEAD, 251/0/0) hold experiment 1's substance over the five ops; nothing holds experiments 4 and 5
+  - *Gap:* None has been run. Experiment 1 could be adopted as an off-gate probe like DSC-0 (tools/probe/), reading the five ops' net-change semantics. Experiments 4 and 5 test designs the repository does not intend: fixed-point physics, and downsample equality, which SPEC2 §16 rejects. Experiment 2 is already answered against SPEC1 (R11.rebase-commutation).
+  - *Skeptic:* The reader searched tools/probe and the translation probe and missed the gate's own courts over the five ops. Experiment 1 asks whether the five existing ops have a canonical form under which outcomes compare syntactically. It is substantially answered and gate-held for the cell-grid language. shel…
+  - *Evidence:* shell/designcompile.rs:18-27 the five ops: open, close, room, entrance, paint; docs/ROADMAP.md:4131-4136 the translation probe: the one comparable experiment run, float…
+- **R11.proof-debt** · PARTIAL · SPEC1 §10 proof-debt ledger; SPEC1 §11 deferred
+  - *Capability:* A proof-debt ledger: AX-001 kernel against a formal model (Aeneas-style refinement), AX-002 reference renderer against its spec, AX-003 fixed-point error bounds, AX-004 completeness of non-local predicates. Deferred wit…
+  - *Held by:* none (documents)
+  - *Gap:* GHOSTS.md is the repository's qualitative obligation ledger (prose, 36 entries); AX-001 to AX-004 are not in it. Every deferred item is already deferred or rejected by a ruling, but without SPEC1's triggers. Cohomological classification is set aside because statements, boxes and materials carry no group to subtract in.
+  - *Evidence:* docs/GHOSTS.md:4-10 the catalogue of what the gate does not prove, each entry with an exo…; docs/ROADMAP.md:5429 proof debt: 'ACCEPT a qualitative proof-obligation ledger as a pract…
+- **R11.rung-ladder** · CONFLICTS-WITH-SPEC · SPEC1 §11
+  - *Capability:* A rung ladder: E1 canonical form, E2 certificates, E3 region containment, E4 atlas and rebase, E5 decision procedure, E6 conflict census, E7 fixed-point physics, E8 reference renderer, E9 production sibling, E10 studio,…
+  - *Held by:* none
+  - *Gap:* The ROADMAP already uses E2, E3 and E4 for different steps, taken from the owner's 0243 document: its E2 is the census, its E3 the cover, its E4 the dusk detector. SPEC1's E2 is certificates and its E4 atlas and rebase. 'Rung' already names RUNG-0's A to D (an E would read as a rung above D) and the gate's registered rungs.
+  - *Conflict:* docs/ROADMAP.md:5178-5179: "the cover declared as a file and section deltas in the ledger (E3's rest); the census over every kind of statement (E2's rest); the dusk detector and ranked fixes (E4)". The names are in use with other meanings. AGENTS.md:60: "no new row or rung unless a concrete defect blocks the work".
+  - *Evidence:* docs/ROADMAP.md:5178-5180 E3's rest is the cover as a file and section deltas; E2's rest …; tools/rung.py:67 RUNG-0's rungs are A, B, C, D
+- **R11.charter-walls** · PARTIAL (reader EXISTS-TESTED, corrected) · SPEC1 §0 A6; SPEC1 Appendix A hard prohibitions
+  - *Capability:* A6: the kernel is std-only (no UI toolkit, presentation API, shell dependency or network). Appendix A: no shell-to-kernel mutation that bypasses admission.
+  - *Held by:* kernel-build (bare rustc, -O only: an external crate fails to compile); reasoncourt-fence and mintwatch-fence (pins: any byte change red until an amendment); shell-playback-no-authority and admit-* (gate)
+  - *Gap:* Held structurally (no row greps for crates; docs/CORE.md:172) and by the fences. In the art layer the equivalent is the director and its content lock (AGENTS.md §4, director row).
+  - *Skeptic:* Narrower than EXISTS-TESTED. (1) No crates is enforced by the bare-rustc build (verify.py:115, 534). No-network and no-shell-include are asserted by no row: CORE.md:149 says 'no row forbids an include' and CORE.md:172 says 'No row greps for crates'. They hold only because the pins freeze the bytes,…
+  - *Evidence:* README.md:19-20 the charter: KERNEL deterministic, std-only; README.md:39-44 never: shell to canonical authority
+- **R11.A5-A9-evidence** · PARTIAL · SPEC1 §0 A5, A9; SPEC1 Appendix A
+  - *Capability:* A5: every claim traces to evidence. A9: declared boundaries beat hidden debt (each limit with a trigger). Appendix A: no ledger claim without discharge.
+  - *Held by:* records-preregistered, records-twins, records-firewall (gate)
+  - *Gap:* Registered rungs carry limits and failure conditions, held by a row. Claims in commit messages and documents are not traced (EVIDENCE-LINK-0 is unbuilt), and off-gate rungs keep their limits in prose ('Not done'). No entry has a 'trigger' field.
+  - *Evidence:* verify/verify.py:1358-1374 records-preregistered: every registered rung needs a failure c…; docs/ROADMAP.md:184 EVIDENCE-LINK-0: claims in commit messages and documents traced to th…
+- **R11.v-no-hashmap** · PARTIAL (from-verifier) · SPEC1 Appendix A hard prohibitions
+  - *Capability:* No HashMap or HashSet anywhere in kernel/.
+  - *Held by:* readercourt-fence (gate): kernel/savedform.rs may use std::collections::BTreeMap and nothing else; no kernel-wide check
+  - *Gap:* Only one kernel file is fenced to BTreeMap. kernel/fast.rs uses HashSet to count distinct texel addresses for its structure statistics (the count is independent of order). A kernel-wide prohibition would fail at HEAD unless an amendment moves that pinned file (AGENTS.md:51), and as a row it would grow the gate (AGENTS.md:60).
+  - *Evidence:* verify/verify.py:12185 readercourt_fence: savedform.rs uses only BTreeMap; kernel/fast.rs:674-679 use std::collections::HashSet in structure()
+- **R11.v-dependency-policy** · CONFLICTS-WITH-SPEC (from-verifier) · SPEC1 §9 dependency policy; SPEC1 §10 DEP-0
+  - *Capability:* Dependency policy: kernel `sha2` only (or a vendored SHA-256); workshop kernel plus a serialization dependency; shell any UI/GPU libraries; studio anything; the kernel dependency list a gate row (DEP-0).
+  - *Held by:* kernel-build (bare rustc, no crates compile); pins
+  - *Gap:* The kernel part already holds: zero dependencies and a hand-written SHA-256. The rest of SPEC1's policy, and DEP-0 as a row, are forbidden.
+  - *Conflict:* AGENTS.md:58 '**Add a dependency.** There is no Cargo and no crate: Rust is std-only and built by bare `rustc`. Python is the standard library.' and AGENTS.md:60 'the gate stops growing: no new row or rung unless a concrete defect blocks the work'
+  - *Evidence:* AGENTS.md:58 never add a dependency; no Cargo, no crate; kernel/mantle.rs:89-96 a hand-written SHA-256
+- **R11.v-dense-renumber** · CONFLICTS-WITH-SPEC (from-verifier) · SPEC1 §2.3 (Compact); SPEC1 §12 risk 'canonical IDs unstable across edits'
+  - *Capability:* Compact: renumber EntityIds densely by position in the canonical order, so ids are unstable across edits and hidden behind a studio name layer.
+  - *Held by:* art/selftests.py 'studio' (log:732 '[PASS] an object gone: its tag never moves to another'); 'held' (diff by identity)
+  - *Gap:* Ids are stable and named by place or statement. Nothing renumbers them.
+  - *Conflict:* AGENTS.md:91 'A tag names one object by its id and is never moved to another'; art/scene_diff.py:14 'an object is its id, never matched by likeness'
+  - *Evidence:* AGENTS.md:91 a tag names one object by its id and is never moved to another; art/scene_diff.py:13-14 an object is its id, never matched by likeness
+- **R11.v-name-layer** · EXISTS-TESTED (from-verifier) · SPEC1 §8 ('Name layer outside the graph'); SPEC1 §2.3
+  - *Capability:* A name layer outside the world graph: studio names for objects and regions.
+  - *Held by:* art/selftests.py 'studio' (tags rows, log:728-735, incl. 'tags kept across a restart ... never reused'); 'marks' (MARKS SELFTEST 19/19: shapes saved and read back, refusals)
+  - *Gap:* Tags (@n) and shapes (#name) live outside the brief and are tested. They name stable ids, not renumbered ones, so SPEC1's motive for the layer does not arise. Side note: the untracked art/ledger/*.tags.json files in git status are this layer's files in the working checkout.
+  - *Evidence:* art/studio.py:608-611 tags kept in art/ledger/<brief>.tags.json, never reused; art/studio_marks.py:40 shapes kept in art/ledger/<brief>.shapes.json
+- **R11.v-undo-inverse** · PARTIAL (from-verifier, resolved F11) · SPEC1 §4 (groupoid reading: undo = composition with the inverse); SPEC1 §8 (certificate-b…
+  - *Capability:* Undo as composition with the stored inverse, each undo itself certified.
+  - *Held by:* art/selftests.py 'flagship' (undo stage: 'undone, the head, the brief and the scene as before'), 'strict' (log:519 'undone, the head as before and the change back exactly the inverse receipt'), 'cert' (the finding row)
+  - *Gap:* The undo is a new admission of the inverse, not a stack. It restores the head only when the certificate is exact ('+' and single-spaced '='), and leaves a new head after an aligned '=' or a '-'. Layout admissions cannot be undone through the studio. On the kernel path undo is replay.
+  - *Evidence:* art/studio.py:1582-1620 undo evaluates the stored inverse, admits it with inverse_of, cer…; art/studio.py:1596 a layout admission is STUDIO-NOT-UNDOABLE here
+- **R11.v-measure-tools** · PARTIAL (from-verifier) · SPEC1 §8 capabilities
+  - *Capability:* Measurement tools: distance, area, sightline, budget, separation.
+  - *Held by:* art/selftests.py 'impact' and 'impact-studio' (budgets, ESTIMATE, plants), 'path' (PATH SELFTEST 11/11: clear sightline/path, plants), 'legible' (contrast and size proxies, plants); the page's distance tool has no test
+  - *Gap:* Budget (IMPACT-0, an ESTIMATE), sightline (PATH-0's clear path) and a contrast proxy exist and are tested. The page's distance tool is untested client code. There is no area tool, and separation is a base-colour proxy with no lighting.
+  - *Evidence:* art/web/play.js:811 the Measure tool bound to T; art/web/play.js:915 'click two points; the distance between them, in metres'
+- **R11.v-palette** · CONFLICTS-WITH-SPEC (reader PARTIAL, from-verifier, resolved F15) · SPEC1 §7; SPEC1 §2 (MaterialRef palette index)
+  - *Capability:* Materials as indices into a versioned palette (not RGB); palette changes are gate events.
+  - *Held by:* art/selftests.py 'director' (vectors scope case 'a shared material changed: what else uses it leaks'), 'studio' (log:728 'a material changed: every object of it touched, tagged or not')
+  - *Gap:* Materials are declared once by name and referenced by name, and the reach of a material change is computed and tested. They carry RGB rather than a palette index, nothing versions a palette, and making palette changes gate events would put the art layer on the gate, which has no row for it, against the gate-growth ruling (AGENTS.md:60).
+  - *Evidence:* art/dress.py:208-216 material: a name, an RGB colour, roughness, metallic; art/director/vectors.json:1711 a shared material change leaks to its users
+- **R11.v-A7-offgate** · EXISTS-UNVERIFIED (from-verifier) · SPEC1 §0 A7
+  - *Capability:* A7: off-gate is first-class.
+  - *Held by:* none for the harness's own pass rule (art/selftests.py has no self-test or plant); tools/rung.py selftest (RUNG SELFTEST, own check) holds R5's reading of suites
+  - *Gap:* Off-gate instruments are first-class in practice: an aggregate runner, logs, the AGENTS §4 table and the owner's recorded runs. No test plants a suite that ends 0 without its summary, or one with a non-passing summary, into the harness to show that it refuses.
+  - *Evidence:* art/selftests.py:4-17 every art self-test in one command; exit status and summary both re…; art/selftests.py:61-82 passed() and run_one(): ok = rc == 0 and a passing summary
+- **R11.m-reference-renderer** · EXISTS-TESTED (from-verifier) · SPEC1 §7 (the reference renderer); SPEC1 §10 RENDER-0; SPEC1 §11 E8
+  - *Capability:* A bit-exact reference renderer, CPU and exact, whose frames are byte-identical across hosts and held against frozen evidence.
+  - *Held by:* gate rows kernel-oracle and kernel-corpus (verify/verify.py:16759-16760); the gate passed 251/0/0 at HEAD on the host and passes in the container (docs/ROADMAP.md:53-54)
+  - *Gap:* It covers only the 48 x 48 grid raycaster (a 1920x1080 8-bit index frame and its picture). The art scenes (boxes, PBR materials, lights), drawn by art/web/scene_render.js, have no reference renderer, and nothing ties the WebGL renderer to the kernel. Cross-host identity comes from one gate passing on two machines, not from a row of its own.
+  - *Evidence:* kernel/mantle.rs:4-13 the kernel ported from Urðr; kernel-oracle and kernel-corpus hold i…; kernel/mantle.rs:21-28 exactness by rationals in i64, no big integers, no floats
+- **R11.m-design-laws** · EXISTS-TESTED (from-verifier) · SPEC1 §10 NORM-1, NORM-2 and experiment 1; SPEC1 §0 A3; SPEC2 §5 (idempotence and order-i…
+  - *Capability:* Idempotence and order independence for the existing five ops: two spellings of one change reach one canonical change set, and a design applied to its own result changes nothing.
+  - *Held by:* gate rows hermeneutics-laws, designir-compile, designir-equivalence (verify/verify.py:17007-17014)
+  - *Gap:* The laws hold on registered instances (rectangles, corpus designs, exchange pairs), not exhaustively, and only over the kernel path's cell-grid design language. Nothing states such laws for the art briefs. There the certificate's statements() and GLUE-0's commutes and glues decide per pair, without a law.
+  - *Evidence:* shell/designcompile.rs:6-8 the one canonical batch for the net difference; verify/preregister.json:781 HERMENEUTICS-0: maps composed in line order, the later winning
+- **R11.m-float-free-path** · PARTIAL (from-verifier) · SPEC1 §0 A2; SPEC1 headline 'certified-path floats 0'; SPEC1 Appendix A (no floats in ker…
+  - *Capability:* No floating point on the certified path, with a lint across kernel/ and workshop/ that forbids it.
+  - *Held by:* simtick-fence (gate; one file, shell/simtick.rs); elsewhere only the pins and byte identity with the oracle
+  - *Gap:* No lint or row scans kernel/ or workshop/ for floats. An f64 exists in kernel/main.rs's off-gate percentile helper, and in shell/latency1r.rs:78 and shell/win32.rs:191. A float in the certified arithmetic would show up only as a byte mismatch against the oracle, not by name. A new row would also grow the gate (AGENTS.md:60-61).
+  - *Evidence:* kernel/mantle.rs:21-28 the kernel's arithmetic: rationals in i64; shell/simtick.rs:4 the tick as integer law; :37 nothing here is a float
+- **R11.m-sim-replay** · EXISTS-TESTED (from-verifier) · SPEC1 §6 (dt 1/120, checkpoints and re-simulation); SPEC1 §10 PHYS-0
+  - *Capability:* A fixed-tick simulation (dt = 1/120 s) that replays identically tick for tick in one build, with snapshots that resume in fresh instances.
+  - *Held by:* art/selftests.py 'preview' (PREVIEW SELFTEST 12/12: B4-DETERMINISM, B4-PLANTED-MISMATCH, plant preview-shared-state caught; art/build/selftests/20261016T162615Z.log:15, 41, 551-563); graybox serve.py --selftest snapshot…
+  - *Gap:* Only replay in the same build, and the Python twin against the browser engine. Agreement across engines is measured off the gate (node and Chromium; Firefox once), never across hosts as a held check. The arithmetic is binary64, not fixed-point, and there are no rigid bodies. A snapshot restores a run; it is not an authoring undo.
+  - *Evidence:* graybox/web/sim.js:7 fixed tick, 120 per second; graybox/web/sim.js:28-30 the self-test resumes snapshots in fresh instances
+- **R11.m-canon-cross-impl** · EXISTS-TESTED (from-verifier) · SPEC1 §10 CANON-0 (canonical hash across Python/node/browser)
+  - *Capability:* The same canonical bytes and hash computed by independent implementations in different languages or engines.
+  - *Held by:* own checks, not run at HEAD: art/director/conform.rs against art/director/vectors.json (CONFORMANCE 65 / 65 last recorded at docs/ROADMAP.md:4192), graybox/ort_ref.py and tick_ref.py against browser traces; the Python s…
+  - *Gap:* The director's canonical form has Python and Rust implementations; ORT-1 and the tick have Python and JavaScript (node, Chromium). No single canonical hash of a world's authored state is shared across Python, node and the browser, and there is no row. The Rust and JavaScript sides were not run at HEAD. One author wrote both twins, so agreement shows consistency, not truth (AGE…
+  - *Evidence:* art/director/conform.rs:4-14 a second implementation of the canonical form in std-only Ru…; graybox/ORT-1.md:16-17 three answers (by hand, Python, JavaScript) compared as bytes
+- **R11.m-proof-debt** · PARTIAL (from-verifier) · SPEC1 §10 proof-debt ledger AX-001 to AX-004
+  - *Capability:* A ledger of unproved obligations, each with its discharge: AX-001 kernel against a formal model, AX-002 reference renderer against its spec, AX-003 fixed-point error bounds, AX-004 completeness of non-local predicates.
+  - *Held by:* none (prose)
+  - *Gap:* GHOSTS.md is a prose catalogue (graded ghosts, each with its exorcism), not a ledger any program reads. It has no entry matching AX-001 (no formal model of the kernel; Lean not begun) or AX-003 (no fixed-point path to bound). The owner accepted a qualitative ledger and deferred any scoring.
+  - *Evidence:* docs/GHOSTS.md:4-10 what the gate does not prove: each ghost graded and given an exorcism; docs/GHOSTS.md:16-20 G1 to G36 by area
+
+## The critic's gaps and contradictions, answered
+
+Read-only critique. Nothing was run, written or changed. Every SPEC2 §17 area has at least one row. The weakest are: - Target-hardware performance: gate sealers of the Rust window's host records, nothing for the studio's renderer. - Renderer quality corpus/GPU profiling: the row itself says none for images or GPU. - Geo-stability/rebase: ORT-1, an own check not run at HEAD. - Navigation stale-cache: bot_ref, an own check. Every cited suite and gate row exists. All 24 suite names are in art/selftests.py SUITES (32-57), and every gate row name the matrix cites is among the 251 distinct row("...") names in verify/verify.py. The DIRECTOR suite runs memo_rows (art/director.py:1438; log lines 157-164). Surprises found while checking: 1. Documentation contradicts code on layouts. docs/BOUNDARIES.md:35 says the art writes 'never W, C or a layout' and that a layout change 'goes through the design tool like any other'. But art/director.py:353-368 and 502-508 write graybox/maps/*.design and *.layout, and graybox/maps/tactical.layout:4 says the file was 'written by art/director.py'. 2. The studio provider writes its own scope (art/studio.py:443-451, docstring: 'the title, the rationale, the revision and the scope the provider's'). R9.limit-no-self-validation (EXISTS-TESTED) is therefore at best PARTIAL in non-strict mode; this is gap 1. 3. art/selftests.py passed() (61-66) accepts any n/n a suite prints, with n > 0. The PASSED-pattern suites (director, racetest, crashtest, check, txn) carry no count at all, and --repeat compares the runs only with each other. Nothing defines an expected count apart from the output. 4. cmd_rebase (art/director.py:849-857) discards the export's check results. 5. R3.coherence-doors-material is graded PARTIAL on unrelated evidence. Its marks clearance rows test a designer's shape fitting a 0.9 x 2.1 door, not world doors, destruction or material friction. 6. There are two tick rates: graybox sim.js TICK = 1/120 (graybox/web/sim.js:43) and the shell's SIM-TICK-0 at 64 Hz (R3.m-shell-simtick). 7. Only plaza-night has a ledger in the checkout (art/ledger/). harbor-lift's movers and rules came by commits (33558d6, f17a4b9), not admissions. 8. The renderer does have MSAA: a 4-sample multisample renderbuffer (art/web/scene_render.js:590-593) while the context is created with antialias:false. That supports R7.aa/R7.v-msaa as EXISTS-UNVERIFIED rather than MISSING. 9. There are no repair-hint fields on any refusal. art/studio.py:58 says a repair stage 'does not exist yet'. 10. The fixed-point physics CONFLICTS rows overstate the conflict. oracle/game carries Q32.32 kinema, and R3.m-physics-import-route names a bounded Q32.32 path importable by GAME-0, so the conflict is with SPEC1's 'everywhere', not with Q32.32 itself. Key files: art/studio.py, art/director.py, art/director/scope.py, art/flagship.py, art/quality.py, art/check.py, art/selftests.py, verify/verify.py, docs/BOUNDARIES.md, graybox/maps/tactical.layout.
+
+### F0 — gap: In a non-strict studio request, does anything other than the provider set the scope a candidate is judged against? The scope decides CLEAN versus LEAKAGE. art/studio.py intent_doc (443-451) copies c['scope'] from the provider's response: the schema at 172-176 describes it as 'the address patterns t…
+
+*Spec:* SPEC2 §6 admission sequence (check permissions/capabilities; region containment); §4 Director ('cannot ... set its own validation status'); §10 (request binds allowed capabilities); §17 Director tool permissions
+
+- **F0.scope-provider-authored** · MISSING · SPEC2 §6 admission sequence: check permissions/capabilities; SPEC2 §10 every request bind…
+  - *Capability:* In a non-strict studio request, the scope (edit permission) a candidate is judged against is set by the host or bounded by the request (target, pins, named shapes, a designer's grant) before evaluation.
+  - *Held by:* none
+  - *Gap:* Nothing intersects the provider's declared scope with the request's target/pin/shape patterns or with any grant from the designer, and nothing refuses or flags a declared scope wider than the request. The host-suggested patterns are themselves kind-wide (region/kind/*). Surprise: the owner's ruling recorded for ADMIT-0 (docs/ROADMAP.md:1196, 'A scope the proposal writes for it…
+  - *Evidence:* art/studio.py:443-451 intent_doc: docstring 'the title, the rationale, the revision and t…; art/studio.py:1247-1267 each candidate's intent built by intent_doc and passed to candida…
+- **F0.scope-self-grant-namespaces** · MISSING · SPEC2 §6 admission sequence: check permissions/capabilities; §4 Director 'cannot ... set …
+  - *Capability:* A provider cannot grant itself the named namespaces (material/, env/, view/, asset/, region/, surface/<kind>) or a catch-all '**' over dressing, so it cannot make any art change come back CLEAN by declaring a wide scope.
+  - *Held by:* none
+  - *Gap:* Derived from the code, not run (this audit is read-only): a response whose scope is ['**','material/*','env/*','view/*','asset/*','region/*'] plus six surface/<kind> grants (12 patterns, each passing PATTERN) covers every dressing piece, every material, every air field, every view, asset and region, and the look of six of the seven play kinds. Any art change inside that passes…
+  - *Evidence:* art/studio.py:103 LIMITS scope 12 patterns, pattern 120 characters; art/studio.py:118 PATTERN admits '*' in any segment, so '**', 'material/*' and 'env/*' al…
+- **F0.scope-host-fixed-limits** · EXISTS-TESTED · SPEC2 §6 admission sequence: check permissions/capabilities
+  - *Capability:* Whatever scope a provider declares, the host never lets it grant play/, change play shape, grid, spawns, movers or rules, or reach a namespace through '*'/'**'. Studio intents carry no layout, so no layout grant can be …
+  - *Held by:* art/selftests.py 'director' (DIRECTOR SELFTEST PASSED): 'the conformance vectors, reproduced by the reference (65)' and 'an intent that adds a mover (play) is refused whatever it grants (SCOPE-PLAY)'
+  - *Gap:* These are fixed limits of the grammar. They do not depend on the request, so inside them the provider is unbounded (see F0.scope-self-grant-namespaces).
+  - *Evidence:* art/director/scope.py:138-141 a pattern starting '*' or '**' never matches play/, surface…; art/director/scope.py:169-170 a play/ grant: SCOPE-RESERVED-GRANT
+- **F0.scope-form-check** · EXISTS-UNVERIFIED · SPEC2 §6 admission sequence: parse schema
+  - *Capability:* A response's scope is refused unless it has 1 to 12 patterns of at most 120 characters matching PATTERN (STUDIO-RESPONSE-SCOPE). The director refuses empty segments and malformed layout/ or surface/ grants (SCOPE-PATTER…
+  - *Held by:* none
+  - *Gap:* No test plants a malformed scope. Grep finds STUDIO-RESPONSE-SCOPE only at art/studio.py:383. SCOPE-PATTERN appears only in scope.py, the director README and conform.rs, never as an expected code in vectors.json, which holds SCOPE-RESERVED-GRANT only (vectors.json:2917).
+  - *Evidence:* art/studio.py:381-383 STUDIO-RESPONSE-SCOPE raised on count, length or PATTERN; art/studio.py:118 PATTERN
+- **F0.strict-region-bound** · EXISTS-TESTED · SPEC2 §6 admission sequence: check region containment
+  - *Capability:* In a strict request the host bounds the change by the named shapes' regions whatever scope the provider declared. It checks at evaluation and again from the admission's own evaluation, and cmd_admit refuses a strict adm…
+  - *Held by:* art/selftests.py 'strict' (STRICT SELFTEST 11/11): 'strict: a candidate that edits the neighbouring lot, its scope honest, is refused', with three plants caught (strict-not-checked, strict-any-region, strict-no-receipt)
+  - *Gap:* Opt-in per request (the checkbox is unchecked by default), and only for prompts that name a shape (#name). A request with only a target (E) or pins cannot be strict, so for it the declared scope is the only bound.
+  - *Evidence:* art/studio.py:1376-1399 admit: strict_check from _o0/_o1 of this admission's evaluation; …; art/director.py:775-776 cmd_admit refuses a strict region without ok and receipts (ADMIT-…
+- **F0.nonstrict-region-advisory** · CONFLICTS-WITH-SPEC · SPEC2 §6 admission sequence: check region containment
+  - *Capability:* In a non-strict request, containment of the change in the request's region (named shapes) is checked as an admission step.
+  - *Held by:* art/selftests.py 'strict' row 'strict: a request not strict is as it was'; art/selftests.py 'held' (HELD SELFTEST 8/8) for the account itself
+  - *Gap:* Containment is computed and shown, never enforced, unless the designer opts into strict. With no shapes named, nothing about region is computed at all.
+  - *Conflict:* AGENTS.md:94 (STRICT-0 row): 'never let a request that is not strict refuse on its accounts'. docs/ROADMAP.md:4732-4733: 'A request not strict is byte for byte as before.' Region containment as a refusal is deliberately opt-in.
+  - *Evidence:* art/play.py:247-248 held_report computed for every drawn candidate when shapes are named; art/studio.py:576-590 host_order reads the held accounts to order candidates only
+- **F0.admit-clean-only** · EXISTS-TESTED · SPEC2 §6 admission sequence: require explicit admission; check permissions
+  - *Capability:* The studio admits only a CLEAN candidate, evaluated again at the head it was drawn at. A LEAKAGE candidate is drawn but refused at admission.
+  - *Held by:* art/selftests.py 'studio' (STUDIO SELFTEST 74/74): 'a LEAKAGE candidate drawn but not admitted here'
+  - *Gap:* CLEAN is relative to the provider's own declaration. Derived from scope.py:222-243, not run: the same 'Leaks' candidate with 'plaza/lamp/*' added to its scope would be CLEAN and admissible. So this holds only that a provider is held to what it declares, not to what was asked.
+  - *Evidence:* art/studio.py:1369-1374 re-evaluate; STUDIO-STALE; only CLEAN admitted (STUDIO-NOT-ADMISS…; art/play.py:1808-1812 one_bad.py's 'Leaks' candidate: scope is the target's pattern, revi…
+- **F0.verdict-yardstick-self-declared** · PARTIAL · SPEC2 §4 Director: 'cannot ... set its own validation status'
+  - *Capability:* The provider cannot set its own validation status. The verdict and rung are the host's, and the provider cannot choose the standard its candidate is judged CLEAN against.
+  - *Held by:* art/selftests.py 'studio': 'its schema enforcement not relied on: a fifth field refused by the gateway itself'; art/selftests.py 'director': 'an evaluation carries its record: rung A from what changed ...'
+  - *Gap:* The provider cannot write a verdict or a rung. But the CLEAN/LEAKAGE half of the verdict, which gates admission at art/studio.py:1373, is measured against the scope the provider wrote, so the provider chooses the yardstick of its own CLEAN. Surprise: the record says the scope's intent is 'text, not evidence' (contract.py:64), yet what it certifies for CLEAN is agreement with t…
+  - *Evidence:* art/studio.py:371-372 a candidate must hold exactly the five schema fields; no verdict fi…; art/play.py:2459-2462 row: an extra field is refused STUDIO-RESPONSE-FIELD
+- **F0.touches-flag** · PARTIAL · SPEC2 §6 admission sequence: generate evidence, preview exact candidate revision; §10 req…
+  - *Capability:* The host flags a candidate that changes more than the request's tagged objects (target and pins), from the director's own realized/affected addresses, on the candidate's card before admission.
+  - *Held by:* art/selftests.py 'studio' (STUDIO SELFTEST 74/74): 'a candidate that changes objects nobody tagged is shown so'
+  - *Gap:* Advisory only: nothing refuses on it and admission never reads it. Changes to env/, view/, asset/ or region/ under a self-declared namespace grant are not counted. The materials list is computed but not displayed. The test asserts the touches, never the verdict. The declared scope itself is never shown to the designer (no 'scope' in art/web/play.js). The M/C/P badges show only…
+  - *Evidence:* art/studio.py:923-951 touches(): tags changed/unchanged, untagged objects changed, object…; art/studio.py:927-930 addresses whose first segment is a namespace (env, material, view, …
+- **F0.pin-reference-constraint** · PARTIAL · SPEC2 §10 every request binds selection/marks, intent, constraints, non-goals
+  - *Capability:* A pinned reference is kept unchanged unless the prompt asks for it: a constraint the request binds and the host enforces.
+  - *Held by:* art/selftests.py 'studio': 'a candidate that changes objects nobody tagged is shown so' (shows the pin changed; does not refuse)
+  - *Gap:* The constraint exists only in the system prompt and as an advisory 'changed' mark. Nothing refuses or blocks admission of a candidate that changes a pin the prompt did not ask about, so a scope the provider declares can include it and still be CLEAN.
+  - *Evidence:* art/providers/director_prompt.py:39-42 'change a pinned object only if the prompt asks fo…; art/studio.py:936 touches marks each tag changed or unchanged
+- **F0.phantom-patterns** · PARTIAL · SPEC2 §6 admission sequence: generate evidence; §17 Director tool permissions
+  - *Capability:* Declared patterns that cover nothing the candidate changed (an over-wide scope) are reported to the person deciding.
+  - *Held by:* art/selftests.py 'director' (the conformance vectors: 'a piece removed; a pattern that touched nothing')
+  - *Gap:* Phantom is computed and kept in the ledger, but the studio card never shows it (no 'phantom' or 'scope' in art/web/play.js) and nothing acts on it. It also cannot catch a '**' or 'material/*' that touched something, because a used pattern is never phantom however wide it is.
+  - *Evidence:* art/director/scope.py:249 phantom = declared patterns never used; art/director/scope.py:263-264 verdict carries declared and phantom
+- **F0.request-allowed-capabilities** · PARTIAL · SPEC2 §10 every request binds ... allowed capabilities
+  - *Capability:* Each request binds an allowed-capability set that bounds what its candidates may change.
+  - *Held by:* art/selftests.py 'studio': the UNSUPPORTED rows (claims_supported refused STUDIO-RESPONSE-OUTCOME)
+  - *Gap:* No per-request allowance: the designer cannot narrow a request to, for example, look.material only, and nothing compares a candidate's realized addresses with an allowed set. The capability list only polices the provider's account of why it proposed nothing.
+  - *Evidence:* art/studio.py:105-114 CAPABILITIES is one global constant (supported/unsupported), not pe…; art/studio.py:1011 the request publishes that constant
+- **F0.provider-tool-lockdown** · EXISTS-TESTED · SPEC2 §17 Director tool permissions; §10 'No unrestricted shell/filesystem access by defa…
+  - *Capability:* The model provider runs with no tools beyond structured output; a session that offers more is stopped and its answer is never used.
+  - *Held by:* art/selftests.py 'studio': 'Claude Code offering a tool beyond its structured output: stopped, its answer never used'
+  - *Gap:* This bounds the model's tools, not its edit permission. Its scope over the world is still self-declared (see F0.scope-provider-authored). Only the claude_code adapter was read here.
+  - *Evidence:* art/providers/claude_code.py:84-88 --tools '', --disallowedTools mcp__*, --strict-mcp-con…; art/providers/claude_code.py:133-141 tools beyond ALLOWED_TOOLS: killed, Fail
+- **F0.admitter-grant-admit0** · EXISTS-TESTED · SPEC2 §6 admission sequence: check permissions/capabilities
+  - *Capability:* An admitter-held grant bounds what a proposal may change, and a proposal outside it is refused ADMIT-CAPABILITY.
+  - *Held by:* gate row 'admit-capability' (verify/verify.py:16968): 'the capability court: with no grant a valid proposal is refused ADMIT-CAPABILITY ...'
+  - *Gap:* This exists only for the shell's VRDNP1 graybox proposals (open/close/paint). The art studio's DIRECTOR-0 path has no admitter's grant: its scope is the proposer's (art/studio.py:443-451).
+  - *Evidence:* shell/admit.rs:34-36 'the grant: the admitter's, from the command line ... A proposal can…; shell/admit.rs:394-395 grant.permits(p.op) else ADMIT-CAPABILITY
+
+### F1 — gap: Is there one mutation path for the map's walls, or two? An intent's layout is compiled by art/director.py compile_design (311-335) through design/design.py in a throwaway project made with `new`, then given a full-rectangle grant, proposed, previewed and admitted inside it. commit_admission (474-50…
+
+*Spec:* SPEC2 §2 principle 2 (one mutation path); §4 Workshop ('the only supported path for authored mutations'); §17 extension of an operation without duplicated authority
+
+- **F1.seam-shared** · EXISTS-TESTED · SPEC2 §2 principle 2 (one mutation path); §4 Workshop
+  - *Capability:* Every authored change to a map's walls and floor is compiled by the one certified compiler (shell design-compile) and admitted by the one certified admitter (shell design), driven through design/design.py. This holds wh…
+  - *Held by:* The gate rows designir-compile, designir-equivalence and designevent-admit (verify/verify.py:16997-17008) hold the seam itself. The director's use of it runs in art/selftests.py's 'director' suite: 'B (a layout change),…
+  - *Evidence:* design/design.py:6-12 a client of shell design-compile and shell design that holds no aut…; art/director.py:311-335 compile_design drives design.py new, grant, propose, preview, adm…
+- **F1.state-lineages** · PARTIAL · SPEC2 §2 principle 2; §4 Workshop ('the only supported path for authored mutations')
+  - *Capability:* There is one authoritative state line for a map's walls: the design project the owner admits through is the state that director layout admissions extend and that the graybox plays.
+  - *Held by:* none
+  - *Gap:* All paths use the same seam, but each keeps its own state. The owner's design/work project (head c18a71f6af8d) is read by nothing except design.py. The director never opens it. For each intent it starts a throwaway project from `new` (parent 73571153c2fc), compiles the entire cumulative tactical.design as one batch, admits it, reads back the grid and the head, and deletes the …
+  - *Evidence:* design/design.py:80-82 the default project is design/work; design/work/project.json:11 parent head 73571153c2fc…
+- **F1.graybox-reads-layout-file** · PARTIAL · SPEC2 §4 (Runtime reads authored state; Workshop owns durable commits)
+  - *Capability:* The graybox runtime plays the admitted walls, bound to the admission that made them.
+  - *Held by:* graybox/check.py checks that W and C conform to D, with seven planted conversion defects (own check, not run at HEAD). It holds the conversion, not where D came from.
+  - *Gap:* level.py reads graybox/maps/<map>.layout, which the director wrote at HEAD, and never reads design/work or any session. The layout's design, parent and head lines become provenance in W.source and are never checked against a session or the design text. Since the director's rewrite the `content` line is gone, so W.source.layout_content is None. Only two things bind the played g…
+  - *Evidence:* graybox/level.py:24 MAPS = graybox/maps; graybox/level.py:99-125 convert reads <map>.gbx and the layout file its `layout` line nam…
+- **F1.layout-equivalence-check** · PARTIAL · SPEC2 §17; §2 principle 2
+  - *Capability:* A check that a director-admitted layout is exactly what the design tool admits from the same design text.
+  - *Held by:* graybox/check.py --compile (the AGENTS.md:79 map-content check). Own check, not run at HEAD. The last host record (docs/ROADMAP.md:2592) reached head c862f3b1aee2, the layout from before the director's admission.
+  - *Gap:* compile_layout is the check asked for, but: (a) neither the gate nor art/selftests.py nor RUNG-0's R5 runs it, and no record shows a run since the director wrote head 1c80227de403 (commit ef1e6ec's message says only 'the graybox's map checks … pass'); (b) no plant shows the comparison can fail; (c) it covers tactical only, with a hard-coded grant; (d) it repeats the director's…
+  - *Evidence:* graybox/check.py:14-15 --compile gives the design to the design tool in a project of its …; graybox/check.py:190-218 compile_layout: new, grant 0,0,47,31 hard-coded, propose, previe…
+- **F1.layout-session-kept** · MISSING · SPEC2 §4 Workshop: durable commits, admission receipts
+  - *Capability:* The design tool's authority for an admitted layout, the session file the shell sealed, is kept, so the layout's head can be verified without compiling again.
+  - *Held by:* none
+  - *Gap:* No session is kept for any director-admitted layout. Only a head hash in a comment line survives. To check it, the whole text must be compiled again (graybox/check.py --compile).
+  - *Evidence:* design/README.md:93 'authority \| the session file the shell saved and verified. Its head …; art/director.py:334-335 the throwaway project and its session are deleted after the read-…
+- **F1.layout-grid-from-view** · PARTIAL · SPEC2 §2 principles 1 and 7; §4 Workshop
+  - *Capability:* The walls written to the layout file are read from the sealed session, not from the tool's reader-facing view.
+  - *Held by:* none
+  - *Gap:* The layout grid is the design tool's view text (it does come from design.py's reading of the session). The camera cell is written as '.' regardless of what the session holds. A stair under the camera would be recorded as floor. That is harmless on tactical, whose camera cell 28,28 is floor, but the value is assumed, not read. graybox/check.py --compile reads the same view, so …
+  - *Evidence:* art/director.py:329-333 the grid is inspect --json's top_view sliced with ln[5:], and the…; design/design.py:42-43 'What this tool computes itself (the top view …) is a view for a r…
+- **F1.layout-permission** · PARTIAL · SPEC2 §6 'check permissions/capabilities … check region containment'; §2 principle 2
+  - *Capability:* Permissions and region containment for a wall change are enforced by the admitter's grant, the same way on every path.
+  - *Held by:* The shell's grant is held by the gate's ADMIT rows (verify/verify.py:10722-10746). SCOPE-LAYOUT is held by art/selftests.py's 'director' suite, which reproduces the conformance vectors (log:113).
+  - *Gap:* On the director's path the certified grant check does nothing, because the director grants the whole map to itself. Region containment there rests on the director's own Python SCOPE-LAYOUT. One mutation is guarded by two different permission mechanisms, depending on the path.
+  - *Evidence:* design/design.py:343-352 the owner's grant, enforced by the shell at every admission; design/README.md:96 'A design text cannot carry or widen it'
+- **F1.scope-layout-refusal** · EXISTS-TESTED · SPEC2 §6 admission sequence
+  - *Capability:* A layout candidate that changes a cell outside its layout/<region> grant is refused (SCOPE-LAYOUT).
+  - *Held by:* art/selftests.py 'director' suite: 'the conformance vectors, reproduced by the reference (65)' (art/build/selftests/20261016T162615Z.log:113). The vector set includes 'the layout closes a cell outside its grant: refused…
+  - *Evidence:* art/director/scope.py:175-184 the check; art/director/vectors_source.py:104-106 in grant: clean; outside grant: refused
+- **F1.layout-candidate-isolation** · EXISTS-TESTED · SPEC2 §1 'A failed or stale candidate must never mutate the active world'; §2 principle 3
+  - *Capability:* A layout candidate is compiled and exported over a scratch maps folder of its own. A refused or unadmitted candidate never writes the active maps.
+  - *Held by:* art/selftests.py 'racetest': 'two threads export at once, over the brief's maps and over a candidate's: every head right (40 exports)' and 'plant: no export lock — an export reads the other's maps' (log:193-194)
+  - *Evidence:* art/director.py:353-368 with_layout writes into a temporary copy of the maps; art/director.py:647-654 a compile failure returns LAYOUT-REFUSED and writes nothing
+- **F1.layout-durable-commit** · EXISTS-TESTED · SPEC2 §5 crash consistency; §17 transaction atomicity
+  - *Capability:* A layout admission writes the design text, the layout, the brief and the ledger atomically under the tree's content lock, fenced on the head, and recovers to the parent or the child after a crash.
+  - *Held by:* art/selftests.py 'crashtest': DIRECTOR CRASHTEST PASSED (15 cases) (log:239), run on the round's candidate B (a lamp and a layout: three files)
+  - *Evidence:* art/director.py:474-498 the content lock and the HEAD-MOVED fence; art/director.py:518-538 pending old/new files, the manifest, the ledger append, then inst…
+- **F1.shared-map-refusal** · EXISTS-TESTED · SPEC2 §2 principle 3; §17
+  - *Capability:* A layout admission is refused while another brief in the same tree plays that map (SHARED-MAP), so one world's wall change cannot silently change another's.
+  - *Held by:* art/selftests.py 'director' suite: the SHARED-MAP row and its plant 'no shared-map check — the layout admitted, and the other world's head moved with it' (log:154-156)
+  - *Evidence:* art/director.py:499-508 the refusal inside commit_admission; art/director.py:1400-1433 the test and its plant
+- **F1.layout-undo** · MISSING · SPEC2 §4 Workshop: inverse capture, rollback; §5 transactions and undo
+  - *Capability:* An admitted layout change can be undone by a checked inverse through the same admission path.
+  - *Held by:* CERT-0's planted layout change ('cert' suite, log:620) holds the refusal, not an undo
+  - *Gap:* No path undoes a director-admitted layout. The studio sends the designer to the design tool, which cannot reach the files the director wrote. The only way back is restoring the files by hand and recording them with rebase.
+  - *Evidence:* art/director.py:741-744 an exact-inverse admission requires `not it["layout"]`; art/director.py:920-922 ledger replay applies the same condition
+- **F1.ui-llm-wall-path** · PARTIAL · SPEC2 §2 principle 2
+  - *Capability:* The UI and the language model change walls through the same transaction and admission path as any other operator.
+  - *Held by:* The studio selftest ('studio' suite, STUDIO SELFTEST 74/74) admits and undoes through D.cmd_admit. Nothing asserts that layouts are excluded.
+  - *Gap:* For the art, the UI and the provider share cmd_admit with the CLI. For walls there is no UI or LLM path at all. A wall changes only through a hand-written intent file given to the director's CLI (the round's B), or through design.py on a separate world. No test plants a provider candidate that carries layout lines.
+  - *Evidence:* art/studio.py:1405 the studio admits through D.cmd_admit; art/studio.py:1610 the studio undoes through D.cmd_admit
+- **F1.rebase-door** · CONFLICTS-WITH-SPEC · SPEC2 §2 principle 2; §17 extension without duplicated authority
+  - *Capability:* Nothing can make a wall state the active world without going through compile and admission.
+  - *Held by:* The director selftest row 'a hand edit recorded with rebase verifies' (log:132) asserts that the shortcut works
+  - *Gap:* Rebase never compiles the design text again to compare it with the layout. A hand-edited tactical.design and tactical.layout pair, once rebased, verifies.
+  - *Conflict:* This is deliberate. art/director.py:989 tells the operator what to do when the files moved outside the loop: 'UNLOGGED-CHANGE: the head is …, the ledger's … (the world or the exporter changed outside the loop; record it with rebase)'. The self-test asserts it at art/director.py:1242-1248. The door is recorded in the l…
+  - *Evidence:* art/director.py:849-857 cmd_rebase records the current art text, design text and head fro…; art/director.py:936-940 replay accepts a rebase's design_text as the new state
+- **F1.ledger-binds-layout** · EXISTS-UNVERIFIED · SPEC2 §5 canonical state; §17
+  - *Capability:* An unlogged change to a map's design text or layout file is refused by the director's ledger verification.
+  - *Held by:* none for the layout. The 'director' suite plants an art-file edit (log:130) and a ledger tamper only.
+  - *Gap:* No plant edits tactical.design or tactical.layout and requires UNLOGGED-CHANGE.
+  - *Evidence:* art/director.py:931-932 replay appends each admission's design_lines to the design text; art/director.py:984-989 verify compares the design text with the replay, and the head wit…
+- **F1.owner-accepts-preview** · PARTIAL · SPEC2 §6; AGENTS.md:62
+  - *Capability:* A wall change is admitted only after the owner accepts the design tool's preview of it.
+  - *Held by:* ADMISSION-0's still requirement: the 'director' suite row 'an admission without a still is refused'
+  - *Gap:* On the director's path the owner never sees the design tool's own preview (top views and readings). That preview and the admission run in a throwaway project during evaluation. The owner decides later, from a still and the contact sheet. The persistent write waits for him, but what he accepts is not the design tool's preview.
+  - *Evidence:* AGENTS.md:62-63 'propose, preview, then admit only after the owner accepts that preview'; art/director.py:325-328 design.py propose, preview and admit run back to back with no per…
+- **F1.boundary-doc-layout-writer** · PARTIAL · SPEC2 §2 principle 9
+  - *Capability:* The boundary documents state correctly who writes a map's walls.
+  - *Held by:* none
+  - *Gap:* The code contradicts BOUNDARIES.md:35: the director writes the layout file that graybox/level.py reads its walls from. The director's own docs claim the layout's authority stays the shell's, with no test named and an empty 'does not show' column. Neither document says that the session is discarded or that the director's world is not the owner's design/work.
+  - *Evidence:* docs/BOUNDARIES.md:35 the art 'writes a scene and its lineage under `art/build/`, never W…; art/director.py:799-803 the director writes <map>.design and <map>.layout into the tree's…
+- **F1.client-glue-triplicated** · PARTIAL · SPEC2 §17; §3 'Reuse existing code rather than duplicating it under new names'
+  - *Capability:* New clients of the layout operation reuse one client procedure and do not duplicate it.
+  - *Held by:* Nothing checks that the three copies agree. art/check.py's revision locality and its skyline plant run in the 'check' suite (log:497-499).
+  - *Gap:* The authority is one shell seam and is not duplicated. The client glue is written three times. Each copy has its own `new` project, its own grant, its own top_view read-back and its own camera patch. Their methods differ (one cumulative batch versus base plus revision), so their heads cannot be compared, and nothing holds them to one another.
+  - *Evidence:* art/director.py:311-335 copy 1: grant from inspect, one cumulative batch; graybox/check.py:190-218 copy 2: grant 0,0,47,31 hard-coded, one batch
+
+### F2 — gap: Two questions about hand edits and gameplay content: - art/director.py cmd_rebase (849-857) appends a hand edit's head to the ledger and discards the export's check results (`out, parts, _c = ws.export()`; per the docstring at ~237, the export returns the checks' results). Does any path refuse a re…
+
+*Spec:* SPEC2 §2 principle 2; §6 operation families (Gameplay) and admission sequence (local invariants before applying); §17 persistence and extension without duplicated authority
+
+- **F2.rebase-checks-discarded** · PARTIAL · SPEC2 §6 admission sequence: run local invariants before applying; §2 principle 2
+  - *Capability:* A change recorded outside the intent loop (`director.py rebase`: a hand edit or a new exporter) is refused when the brief fails the art checks, so local invariants run before the change is recorded as the world's head.
+  - *Held by:* none for a failing brief. The only rebase test is DIRECTOR SELFTEST (art/selftests.py suite `director`) row 'a hand edit recorded with rebase verifies', which only shows a good edit going through: it appends a comment l…
+  - *Gap:* Rebase records a brief that the exporter accepts but that fails a check in check.verify. Examples: collision is not C, dressing inside the envelope, a false ceiling, rules 3, QUALITY-0. The rebase event records no check results. A brief the exporter itself refuses does stop the command, but only as an uncaught exception, not as a typed refusal. No test feeds rebase a failing b…
+  - *Evidence:* art/director.py:849-857 cmd_rebase: `out, parts, _c = ws.export()`; appends head_after/pa…; art/director.py:237-261 export returns (out, parts, checks); check.verify's results are a…
+- **F2.rebase-replay-content** · MISSING · SPEC2 §6 admission sequence (capture prior values; generate evidence); §17 persistence
+  - *Capability:* Verifying the ledger checks a rebase event's content: the head it records passed the checks, and its art_text is the art its parts_after name.
+  - *Held by:* none
+  - *Gap:* Replay accepts a rebase of any content: a rebased brief that fails the checks still reads LEDGER VERIFIED. A rebase's art_text is never checked against its own parts_after.art_sha256.
+  - *Evidence:* art/director.py:936-940 replay of a rebase checks only head_before == the state's head, t…; art/director.py:933 by contrast, an admit's replay binds parts_after.art_sha256 to the te…
+- **F2.rebase-race** · PARTIAL · SPEC2 §17 transaction atomicity, stale refusal; §6 check base revision
+  - *Capability:* A rebase is fenced the way an admission is: the head, the texts and the event are read and appended under one content lock, so a concurrent admission cannot leave a rebase that the replay refuses.
+  - *Held by:* none. DIRECTOR RACETEST (suite `racetest`) does not exercise rebase: in art/director.py's self-tests rebase appears only at line 1243.
+  - *Gap:* The ledger write itself holds the lock. But head_before and art_text are read outside it. A rebase that interleaves with an admission records a stale head_before, and because the ledger is append-only it then never verifies again. Read from the code; no test plants this.
+  - *Evidence:* art/director.py:849-855 replay (head_before), export and ws.text() all run before led.app…; art/director/ledger.py:59-76 append takes the content lock only around its own read and w…
+- **F2.genesis-checks-discarded** · PARTIAL · SPEC2 §6 admission sequence: run local invariants
+  - *Capability:* A world's first head (genesis, made when a world is seeded, opened or duplicated) is recorded only if its brief passes the art checks.
+  - *Held by:* none
+  - *Gap:* As with rebase: exporter refusals stop genesis, but check failures are not read. The genesis event carries no check results.
+  - *Evidence:* art/director.py:837-846 cmd_genesis: `out, parts, _c = ws.export()`; the checks are disca…; art/play.py:579-581 Hub.world starts a ledger by genesis for a world that has none
+- **F2.unlogged-change-found** · EXISTS-TESTED · SPEC2 §2 principle 2 (no hidden privileged shortcut); §17 persistence
+  - *Capability:* A hand edit that the ledger does not record is found by verification (UNLOGGED-CHANGE), and a checkout brief whose ledger does not verify is not made into a world.
+  - *Held by:* art/selftests.py `director`: 'plant: a hand edit of the art file, unlogged is refused'. `queue`: 'a checkout brief whose ledger does not verify is not made a world, and why is said; nothing of it left' and 'History: ...…
+  - *Gap:* Every plant edits the art file. No plant changes the maps (tactical.gbx) or the exporter, so the head clause (director.py:988-989) is covered by the code but not by a planted defect.
+  - *Evidence:* art/director.py:984-989 UNLOGGED-CHANGE for the art text, the design text, and the head (…; art/director.py:1229-1241 the plant is refused by verify
+- **F2.admit-over-unlogged** · MISSING · SPEC2 §6 check base revision; §17 recovery with no unadmitted candidate promotion
+  - *Capability:* An evaluation or admission is refused while the world's ledger does not replay to its files (an unrecorded hand edit or exporter change), so that admissions cannot break the ledger's chain.
+  - *Held by:* none
+  - *Gap:* Read from the code, not run. After an unrecorded change (for example the live loop serving a hand edit in a world, play.py:431-455), a studio admission appends evaluate/admit events checked against the files' head. The replay refuses those events, and since rebase replays first, the append-only ledger can no longer be repaired by rebase. Nothing plants this.
+  - *Evidence:* art/director.py:677-693 cmd_evaluate reads the events but never replays them; art/director.py:769-818 cmd_admit takes the head from the files (ws.export), not from the…
+- **F2.checkout-plaza-ledger-stale** · PARTIAL · SPEC2 §17 persistence, schema migration
+  - *Capability:* The checkout's world ledger (art/ledger/plaza-night.ledger) accounts for the head its files have at HEAD, with every exporter change recorded by a rebase as #21, #24 and #25 were.
+  - *Held by:* none. No suite verifies the checkout's ledger: the self-tests lay their own trees (art/director.py:571-583).
+  - *Gap:* 0237's exporter change has no rebase #26. Hashing the files shows that `director.py verify plaza-night` in the checkout would refuse at HEAD, and seed_worlds would refuse plaza-night into a new worlds folder. Verify itself was not run. harbor-day, harbor-lift and foundry-yard have no ledger in the checkout at all.
+  - *Evidence:* art/ledger/plaza-night.ledger:26 last event #25 (rebase, 0229): parts_after.exporter_sha2…; art/dress.py:995 the exporter's head is the sha256 of dress.py with CR LF read as LF; has…
+- **F2.intent-local-invariants** · EXISTS-TESTED · SPEC2 §6 admission sequence: run local invariants
+  - *Capability:* On the intent path (the LLM/UI path), local invariants run on the candidate before admission: any failing art check refuses it (CHECK-FAILED), and an exporter refusal is ART-REFUSED. This is the counterpart that rebase …
+  - *Held by:* art/selftests.py `live`: 'refused-keeps: an intent whose candidate fails a check'. `director`: the conformance vectors (cmd_vectors in DIRECTOR SELFTEST, director.py:1169-1170), among them 'a failed check refuses'.
+  - *Evidence:* art/director.py:657-666 the candidate exported with its checks; ArtError/MapError become …; art/director/scope.py:252-254 and 258 a failed check adds CHECK-FAILED, which refuses
+- **F2.play-intent-refused** · EXISTS-TESTED · SPEC2 §6 operation families (Gameplay); §2 principle 1
+  - *Capability:* The intent path refuses any change to play: a grant of play/, a mover added, removed or changed, the rules, the spawns, the grid, or a play shape changed without a cell change.
+  - *Held by:* art/selftests.py `director`: 'an intent that adds a mover (play) is refused whatever it grants (SCOPE-PLAY); its record says the mover was not played', plus the conformance vectors run inside DIRECTOR SELFTEST: 'a grant…
+  - *Gap:* The scope does not compare scene.targets (scope.py:175-177 and 219 cover grid, spawns, tops, movers and rules). An intent cannot reach targets only because the design language holds none (graybox/maps/tactical.design:5-6), not because a scope rule forbids it.
+  - *Evidence:* art/director/scope.py:30-44 the rule, including 'no grant covers motion in version 0'; art/director/scope.py:165-170 a grant of play/ is SCOPE-RESERVED-GRANT
+- **F2.gameplay-ops-admitted** · CONFLICTS-WITH-SPEC · SPEC2 §6 operation families (Gameplay: collision shapes, triggers, portals/doors, movemen…
+  - *Capability:* Gameplay operations (movers, collision shapes, triggers, spawns, targets, cover heights, the rules) are operations of the one admission path that UI and LLM share: evaluated, previewed and explicitly admitted.
+  - *Held by:* none: no admitted transaction for play exists to test
+  - *Gap:* No transaction carries play. Movers and rules enter by a hand edit of a brief or of the exporter. The overlay is edited by hand. Each world records the change only by rebase.
+  - *Conflict:* AGENTS.md:88: "A mover is play: never let an intent add, remove or move one (the scope protocol refuses it, SCOPE-PLAY)". art/director/scope.py:36: "play/... can never be granted (SCOPE-RESERVED-GRANT)". art/director/scope.py:41: "no grant covers motion in version 0". This is deliberate design. The owner's quoted ruli…
+  - *Evidence:* art/director/scope.py:36 'play/... can never be granted (SCOPE-RESERVED-GRANT)'; art/director/scope.py:40-42 'no grant covers motion in version 0'
+- **F2.second-mutation-path** · CONFLICTS-WITH-SPEC · SPEC2 §2 principle 2 'One mutation path ... No hidden privileged shortcut'
+  - *Capability:* Only the admission path changes a world; there is no second, privileged mutation path.
+  - *Held by:* none for the path itself. The finding of an unrecorded edit is held (see F2.unlogged-change-found).
+  - *Gap:* The second path is documented, not hidden. But its events carry no evaluation, check results, preview, still or chooser. #25 changed play semantics (the rules) through it.
+  - *Conflict:* Deliberate design. docs/CWCT.md:28-30: "A world's files change only by an admission ... or by a write from outside the studio (a hand edit), which `verify` finds (UNLOGGED-CHANGE) until a person records it (`rebase`)."
+  - *Evidence:* art/director.py:17 'rebase ... record a change made outside the loop (a hand edit, a new …; art/director.py:849-857 the rebase event: texts and heads only; observed {at, note} and n…
+- **F2.live-hand-edit-gated** · EXISTS-TESTED · SPEC2 §6 admission sequence: local invariants, preview exact candidate
+  - *Capability:* A hand edit of a brief is played only if it passes the art checks. A failing edit is refused and the scene before it stays served.
+  - *Held by:* art/selftests.py `live`: 'refused-keeps: a canopy where a player can be', 'refused-keeps: a statement the exporter cannot read', 'refused-keeps: a mover whose travel goes through a wall (0226)'
+  - *Gap:* The check runs after the file has already changed: the brief file is the world, so the hand edit is applied before it is previewed. A passing edit, including one that adds or changes a mover, is played with no evaluation, no admission and no ledger event until someone runs rebase.
+  - *Evidence:* art/play.py:135-166 compile_scene refuses to serve a scene that fails any check other tha…; art/play.py:384-429 recompile keeps the served scene when the new compile is refused
+- **F2.briefs-play-history** · PARTIAL · SPEC2 §6 admission sequence; §17 studio end-to-end
+  - *Capability:* The play content in the checkout's briefs passed an evaluation, a preview and an explicit admission recorded in a ledger. That content is harbor-lift's movers (0226), its deck's push policy (0229), and foundry-yard as a…
+  - *Held by:* art/selftests.py `check`: ART CHECKS PASSED for all four briefs at HEAD on the host, each held to every check, its plants and its owner-frozen reference. This checks them after the fact; it is not an admission.
+  - *Gap:* These changes entered by commits. No evaluation, preview or admission was recorded for them, and three of the four briefs have no ledger. harbor-day's sun fix (b3050b1) was admitted only in a seeded copy, by its commit's account; the checkout file was edited directly.
+  - *Evidence:* git ls-files art/ledger: only art/ledger/plaza-night.ledger is tracked; git show --stat 33558d6: art/briefs/harbor-lift.art +99, no ledger
+- **F2.rules-by-exporter** · PARTIAL · SPEC2 §6 admission sequence; §2 principle 2
+  - *Capability:* A change of the rules a world is played under (rules 2 to rules 3 at 0229) passes evaluation, preview and admission in each world.
+  - *Held by:* art/selftests.py `check`: the rules row and its plants (rules 4, rules 2, no rules, a pushing lift, a target moved, and others) in every brief
+  - *Gap:* The rules are exporter code. They changed by a commit and reached the plaza's ledger only as a rebase that carries no evaluation, check result or preview. The other briefs have no ledger to record it.
+  - *Evidence:* art/dress.py:982-988 scene.rules = RULES, a constant of the exporter; targets come from W; art/director/scope.py:219-220 an intent may not change the rules
+- **F2.overlay-change-path** · PARTIAL · SPEC2 §6 Gameplay family and admission sequence
+  - *Capability:* The gameplay overlay (graybox/maps/tactical.gbx: spawns, heights, cover, objective, targets, probes, routes) changes through a transaction with checks, a preview and an admission.
+  - *Held by:* graybox/check.py (the AGENTS.md §4 'map content' check): own check, not run at HEAD. Its last recorded run is graybox/build/tactical.manifest.json (Oct 10: 18 checks and 7 mutations passing, canonical 9e179490cafe, the …
+  - *Gap:* The overlay is checked, but no transaction changes it. A change would be a hand edit that moves every tactical world's world_sha256, recorded in each world only by rebase. There is no preview or admission of overlay content.
+  - *Evidence:* graybox/maps/tactical.gbx:2-4 what the overlay adds; graybox/level.py:100-101 the overlay is only read (no writer of .gbx found by grep)
+- **F2.overlay-not-in-ledger** · PARTIAL · SPEC2 §17 persistence, schema migration
+  - *Capability:* A world's ledger persists the gameplay overlay's content (and the exporter's), so that the world can be replayed or restored from it.
+  - *Held by:* none
+  - *Gap:* The overlay's bytes (tactical.gbx) and the exporter are bound only by digest. A ledger can detect that they changed but cannot restore them.
+  - *Evidence:* art/director.py:842-844 genesis records art_text and design_text; art/director.py:854-855 rebase records art_text and design_text
+- **F2.shared-map-overlay** · PARTIAL · SPEC2 §17 extension of an operation/asset/tool without duplicated authority
+  - *Capability:* A change to a map that several worlds share is either refused or applied to each world with its own record.
+  - *Held by:* art/selftests.py `director`: 'a layout admission refused while another world plays its map (SHARED-MAP); nothing changed in either world'. This covers the layout half only.
+  - *Gap:* Only a layout admission is fenced. A hand edit to the shared tactical.gbx or tactical.layout changes all four checkout briefs at once, with no fence, and only plaza-night has a ledger in which to rebase it.
+  - *Evidence:* art/director.py:499-508 SHARED-MAP refuses a layout admission while another brief plays t…; art/director.py:1401-1419 the test
+- **F2.no-propagation-to-worlds** · MISSING · SPEC2 §17 extension without duplicated authority; studio end-to-end workflow
+  - *Capability:* A brief or map that is added or changed in the checkout reaches an existing worlds folder through a recorded transaction.
+  - *Held by:* none (the `queue` suite's 'seeded once: a folder that holds worlds is not seeded again' asserts the refusal to reseed)
+  - *Gap:* Each world keeps its own copy of tactical.gbx, which is a separate authority. No code path brings an overlay change, a new brief (harbor-lift, foundry-yard) or a play change from the checkout into a worlds folder that already holds worlds; only a copy by hand plus rebase would.
+  - *Evidence:* art/play.py:802-803 seed_worlds returns [] when the folder holds any world; art/play.py:826-828 each seeded world takes its own copy of the maps
+
+### F3 — gap: Is the Rust shell's live window a supported studio surface beside art/play.py? Its parts are shell/main.rs --cfg shell_window, shell/liveauthor.rs and shell/livesession.rs, held by gate rows liveauthor-binding/-authority/-persist (verify/verify.py:7597-7739), livesession-save/-resume/-recover, mous…
+
+*Spec:* SPEC2 §4 Studio Shell; §11 direct edits and essential flows 1, 5, 6; §14 Phase 1
+
+- **F3.window-as-studio-surface** · CONFLICTS-WITH-SPEC · SPEC2 §4 Studio Shell; SPEC2 §14 Phase 1
+  - *Capability:* The Rust shell's live window (`shell live-window`, `shell look-window`) is a supported studio surface beside art/play.py, carrying the studio's parts: world library, outliner, inspector, Director panel, candidate lane, …
+  - *Held by:* none: the gate never compiles the window build. liveauthor-fence reads only the source text of live_window and checks that a windowless build refuses
+  - *Gap:* The window has a full-screen viewport and keys, nothing more. There is no world library, outliner, inspector, Director panel, candidate lane, queue or evidence panel. It edits the shell's grid world, not the art worlds the studio's Director works on. Its gate evidence (liveauthor-*, livesession-*, mouselook-*, liveinput-*) comes from a mock surface and covers that grid world, …
+  - *Conflict:* docs/ROADMAP.md:207-208: "Cursor authoring, preview sliders, gizmos and an editor-pane interaction model are deliberately not on the route yet: those are where a shell starts accumulating an alternate authority." verify/preregister.json:443 (LIVE-AUTHOR-0): "No cursor, mouse-look, gizmo, slider or editor pane". docs/S…
+  - *Evidence:* docs/STUDIO-APP.md:49: 'A window the studio could live in \| not a candidate': win32.rs is…; docs/ROADMAP.md:207-208: cursor authoring, sliders, gizmos and editor panes are 'delibera…
+- **F3.window-world-is-not-studio-world** · MISSING · SPEC2 §14 Phase 1 acceptance
+  - *Capability:* An edit made in the live window reaches the world the studio's candidate flow works on (Phase 1: 'one existing world completes the existing candidate flow through UI with no authority bypass').
+  - *Held by:* none
+  - *Gap:* Nothing connects the window's edits to the art brief or ledger the studio admits into. Painting is lost before the graybox. A cell edit reaches the graybox only if someone opens a new design project on that session and exports a layout through design.py. This bypasses the project's own propose, preview and admit history, which AGENTS.md §3 names as the only way a world changes.
+  - *Evidence:* shell/main.rs:883-886: live-window's world is --level/--tiles (default oracle/levels/witn…; shell/playback.rs:451-484: the LiveSession holds level bytes (W), tile bytes (M), a camer…
+- **F3.window-host-launch** · EXISTS-UNVERIFIED · SPEC2 §14 Phase 1: launchable shell, viewport
+  - *Capability:* The live window launches on Windows and presents the live session in a borderless 1920x1080 GDI window. It reads keys (and a raw mouse in look-window), and Esc seals the session.
+  - *Held by:* No test executes it. liveauthor-fence (verify/verify.py:7785-7797) holds by source that live_window is LIVE-SESSION-0's window under the authoring binding and that a windowless build refuses SHELL-NO-WINDOW. The host re…
+  - *Gap:* There is no automated check of the window itself: you build it by hand (rustc --cfg shell_window) and launch it from a command line, with no launcher or shortcut. Surprise: host provenance mislabels the live editor's runs. The pinned sealer (verify/livesession.py:282) records the LIVE-AUTHOR-0 painting walk as 'shell livesession-window' and cites only LIVE-SESSION-0 and LIVE-I…
+  - *Evidence:* shell/main.rs:13-16 and 904-913: the window exists only under --cfg shell_window on Windo…; shell/win32.rs:2417-2448: session_window: prepare, the DWM check, show_window, focus, go_…
+- **F3.viewport-renders-authority** · EXISTS-TESTED · SPEC2 §11 Studio UX: center playable viewport; SPEC2 §14 Phase 1 viewport
+  - *Capability:* The live editor's viewport shows, after every event, the picture rendered from the session's own current authority. A tile edit changes the pixels exactly when its class is on screen, and the presented bytes are checked…
+  - *Held by:* gate rows liveauthor-authority, mouselook-present (plant noop: a present that writes nothing is counted and logged as differing), liveloop-court (plants: tampered witness, mid-walk close, client below a title bar). All …
+  - *Gap:* Shown on a mock surface (MockExact), not on the GDI window. The picture is the kernel's frame of a cell grid with five tile classes, not the studio's art scene. There is no viewport mode, selection highlight or overlay. Between readbacks nothing is witnessed (G15).
+  - *Evidence:* verify/verify.py:7634-7699: liveauthor_authority. Every state's presented frame is the on…; verify/verify.py:10146-10204: mouselook_present. Each read-back picture is the kernel exe…
+- **F3.camera-controls** · EXISTS-TESTED · SPEC2 §11 Studio UX: camera controls
+  - *Capability:* Camera controls in the live viewport: keys step, turn and strafe; a held W/A/S/D or arrow keeps walking, with at most one repeat per composition and the rest coalesced; look-window turns the camera with a raw mouse on a…
+  - *Held by:* gate rows liveinput-binding, holdwalk-binding, holdwalk-coalesce, mouselook-loop, mouselook-capture (verify/verify.py:16905-16957), over the mock
+  - *Gap:* Movement is grid-discrete: steps are a cell, and turns are quarters or the tick's free heading. There is no free-fly or orbit authoring camera and no gamepad. The real mouse and keys are shown on the host in only a few runs (G14).
+  - *Evidence:* verify/verify.py:6771-6776: liveinput_binding. Each scripted press becomes its registered…; verify/verify.py:7895-7899 and 7938-7941: holdwalk_binding and holdwalk_coalesce
+- **F3.camera-leaves-content** · EXISTS-TESTED · SPEC2 §11 essential flow 5 (play without corrupting authoring state)
+  - *Capability:* A camera-only move leaves the authored content (W, the level bytes, and M, the tile bytes) unchanged.
+  - *Held by:* gate row liveauthor-authority (a camera-only move that changed W or M is red); its registered failure condition 'W or M changed by a camera-only event'
+  - *Gap:* Only the content (W, M) is held unchanged. Each move is still appended to the authored session's log and folded into its head (playback.rs:592), so the session's revision changes on every step. See F3.flow5-play-mode.
+  - *Evidence:* verify/verify.py:7677-7678: 'event %d, a camera-only move, changed W or M' raises Red; verify/verify.py:7679-7680: a turn must change the frame witness and the pixels
+- **F3.flow5-play-mode** · CONFLICTS-WITH-SPEC · SPEC2 §11 essential flow 5; SPEC2 §4 Runtime ('Runtime state is distinct from authored de…
+  - *Capability:* Enter and exit a play mode without corrupting authoring state, with runtime state kept apart from authored design state.
+  - *Held by:* liveauthor-authority holds only the content part (W and M unchanged by moves). No row holds a play mode
+  - *Gap:* The window has no play mode to enter or exit and no runtime simulation: no physics, targets or game state. Walking is authoring. Only W and M are held unchanged by moves. Flow 5 should be graded from the studio's own play mode (art/play.py's P/Esc over sim.js), not from this window.
+  - *Conflict:* verify/preregister.json:409 (LIVE-INPUT-0, registered): "Every action enters an in-memory SESSION-WALK log as a move or a cell edit" and "W, M, the camera and the walk head are that log's replay". By registered design the walk is part of the authored session, not separate runtime state.
+  - *Evidence:* verify/preregister.json:409: LIVE-INPUT-0 registered 'Every action enters an in-memory SE…; shell/win32.rs:2456: the live editor prints 'every edit and step is a saved session event'
+- **F3.direct-edit-vocabulary** · PARTIAL · SPEC2 §11 'Direct edits (transform, duplicate, delete, material, parametric dimensions)'
+  - *Capability:* Direct edits in the viewport: transform, duplicate, delete, material and parametric dimensions.
+  - *Held by:* gate rows liveauthor-binding (script C's presses become their registered tile edits in palette order; the class keys stay unbound in liveinput-selftest), liveinput-binding (open/close; a refused edit makes one refusal r…
+  - *Gap:* Only two edits exist: open or close the one faced cell (closest to create/delete), and fill a whole tile class with the next of 8 fixed colours (closest to material). There is no transform, duplicate, parametric dimension, per-object selection or per-cell material. Paint cannot return to a textured tile.
+  - *Evidence:* shell/liveauthor.rs:27-42: keys 1-5 paint wall0..wall3/floor with the palette's next colo…; shell/playback.rs:601-611: push_edit_cell validates OUTSIDE, BORDER (the border stays roc…
+- **F3.direct-edit-one-path** · PARTIAL · SPEC2 §11 'use the same transaction path as AI edits'; SPEC2 §2 principle 2
+  - *Capability:* Direct edits use the same transaction path as AI edits: a key-made edit in the live editor and an admitted proposal (shell admit / shell design, which design/design.py drives) go through the session's one append and pro…
+  - *Held by:* gate rows admit-replay (the admitted child's event, head and content equal the same edit made by a key in live-selftest from the same parent; the envelope sits beside it, kept byte for byte through a key continuation) a…
+  - *Gap:* Shared in the shell's grid world only: the append, the validation, the journal and the seal. Key edits are commit-only by the registered entry. They skip the candidate and preview steps and ADMIT-0's grant and anchor, which apply only to proposals. The studio's AI path (art/studio.py to art/director.py's brief and ledger) is a different world that this evidence does not reach.…
+  - *Evidence:* shell/liveinput.rs:520 and 562: keys call session.push_edit_cell / push_edit_tile; shell/admit.rs:402-404 and shell/designevent.rs:352-354: admissions call the same push_ed…
+- **F3.flow1-load-verified** · PARTIAL · SPEC2 §11 essential flow 1
+  - *Capability:* Launch, select a world, and load its verified state and derived artifacts.
+  - *Held by:* gate rows livesession-resume (child begins with the parent's events, lineage on its own chain, parent unchanged), livesession-classify (forged frame or edit witness TAMPERED; digest-changing renderer DIFFERENT-RENDERER;…
+  - *Gap:* There is no world library or selection UI: a world is a command-line path (oracle/levels/witness.lvl by default, or --resume FILE). It covers only the shell's grid world, not the studio's art worlds. The only derived artifact is the frame.
+  - *Evidence:* shell/livesession.rs:21-26: the loader checks integrity, renderer identity, replay and wi…; shell/livesession.rs:963-992: prepare(): --resume loads and verifies, otherwise a new ses…
+- **F3.session-durable-save** · EXISTS-TESTED · SPEC2 §11 essential flow 6; SPEC2 §5 crash consistency
+  - *Capability:* The window's session is journaled per event (each record flushed before it counts). On Esc it is sealed by atomic replace and read back and verified before the run counts as saved; a failed seal refuses.
+  - *Held by:* gate row livesession-save (plants seal-unwritable, seal-flip and seal-stale each refuse exit 2, logged and ledgered, never 'saved'); livesession-sealer
+  - *Gap:* Shown over the mock in the shell's grid world. Durability is the file system's promise and the seal is a hash, not authorship (G16). This is not evidence about the studio's own writes (art ledger, brief), which are graded elsewhere.
+  - *Evidence:* shell/livesession.rs:9-20: the journal and the seal, MoveFileEx REPLACE_EXISTING\|WRITE_TH…; verify/verify.py:7159-7214: livesession_save with its three plants at 7198-7202
+- **F3.flow6-recovery** · EXISTS-TESTED · SPEC2 §11 essential flow 6
+  - *Capability:* Recover after a crash from the last durable state: a run killed after journaling resumes from its journal, drops the torn tail and continues into a verified session; corrupt journals are refused; an admission killed at …
+  - *Held by:* gate rows livesession-recover (crash plant; a bad middle record, a missing header, a head that does not fold and a bad record before the torn tail each refuse LIVESESSION-JOURNAL-CORRUPT), admit-crash (eight death point…
+  - *Gap:* This covers the shell's live session only, in the grid world, and does not transfer to the studio's flow 6. Recovery is manual: the person must name the journal path, and nothing finds a crashed run at launch. Shown with the mock's crash plant; never walked on the host window.
+  - *Evidence:* verify/verify.py:7253-7313: livesession_recover; verify/verify.py:11122-11151: admit_crash
+- **F3.window-candidate-loop** · MISSING · SPEC2 §14 Phase 1; SPEC2 §11 Director, candidate lane, undo
+  - *Capability:* In the window: a Director prompt, an isolated candidate, the proposed world previewed beside the current one, accept or reject, and undo.
+  - *Held by:* none
+  - *Gap:* The window has no prompt, candidate, preview, accept/reject or undo key. Undo of the grid world exists only as design.py's history pointer, which is off the gate and held by design/test_design.py (its own check, not run at HEAD). LIVE-AI-EDIT-0 is declared, not registered, and the gate stops growing (AGENTS.md:60-61).
+  - *Evidence:* docs/ROADMAP.md:1845: proposal and preview are built 'as text from above: design/. Not in…; docs/ROADMAP.md:1879-1881: a preview in the live editor with accept and reject 'is new co…
+
+### F4 — gap: Which record is SPEC2's visual baseline, and what does it bind? - flagship.approve (art/flagship.py:183-221) appends to art/visual_baselines.jsonl. It takes a candidate's preview files' sha256s, path_id, seed and provenance, and the person's note. It does not check that the candidate was ever admit…
+
+*Spec:* SPEC2 §11 three separate concepts (visual baseline binds exact scene revision, camera path, renderer/settings and evidence); §8 graphics acceptance (human review)
+
+- **F4.baseline-record-explicit-act** · EXISTS-TESTED · SPEC2 §11: "Visual baseline approval is explicit"
+  - *Capability:* A visual baseline is a record of its own (VERDANDI-VISUAL-BASELINE v0 in art/visual_baselines.jsonl), written only by an explicit approval command with a note, and refused from a preview that is not replayed and state-v…
+  - *Held by:* art/selftests.py suite 'flagship' (python art/play.py --flagship-selftest), row "the visual baseline: written only on a person's word, from a preview complete, verified and framed; refused otherwise"; passed twice at HE…
+  - *Gap:* Only two of approve()'s six refusals are exercised (unverified state, empty note). The refusals for a path that is not clear, a subject that is not framed, and a missing compare sheet (flagship.py:196-201) have no test, and none of the PLANTS targets approve(). art/visual_baselines.jsonl does not exist at HEAD, so no baseline has been approved.
+  - *Evidence:* art/flagship.py:183-215 approve(): reads <letter>.preview.report.json and .meta.json, ref…; art/flagship.py:51 BASELINES = art/visual_baselines.jsonl
+- **F4.baseline-binds-scene-revision** · PARTIAL · SPEC2 §11: visual baseline "binds exact scene revision"
+  - *Capability:* The visual baseline binds the exact scene revision (head / scene sha256) whose appearance it approves.
+  - *Held by:* none
+  - *Gap:* The flagship baseline reaches a revision only indirectly: through the request id, whose head sits in art/build/studio/<world>/requests.jsonl and which approve() neither reads nor verifies, and through the stills' bytes. The states archive binds only the graybox layout, collision and movers, so a visual-only edit leaves every fingerprint unchanged. The line names neither the ba…
+  - *Evidence:* art/flagship.py:207-212 the baseline line holds world, request, candidate, path_id, seed,…; art/studio.py:1483-1487 the preview meta holds request, candidate, provider, model, promp…
+- **F4.baseline-binds-camera-path** · PARTIAL · SPEC2 §11: binds "camera path"; §8: "Use named scenes and camera paths"
+  - *Capability:* The visual baseline binds the exact camera path its stills were taken along, and that path is a named path that later candidates can be compared on.
+  - *Held by:* art/selftests.py suite 'flagship', same row (asserts lines[0]['path_id'] == the preview's path), log :610
+  - *Gap:* Only a 48-bit id prefix is bound; the poses themselves are not in the baseline line or the meta (studio.py:1485 records camera_path_id only). The path is seeded per request, so every new request gets a different arc. A later candidate therefore cannot be previewed at the baseline's poses, and the path is not a named, fixed path of the world. docs/ROADMAP.md:5003-5004 summarise…
+  - *Evidence:* art/flagship.py:207-208 records path_id, seed and subject; art/camera.py:341-348 path id = name + the first 12 hex digits of sha256 of the path docu…
+- **F4.baseline-binds-renderer-settings** · PARTIAL · SPEC2 §11: binds "renderer/settings"
+  - *Capability:* The visual baseline binds the renderer and its settings (renderer source/version, field of view, resolution, browser/GPU) that produced the approved images.
+  - *Held by:* none
+  - *Gap:* No record holds a sha256 of art/web/scene_render.js or play.js, a renderer version, the field of view, the browser user-agent or GPU, or the device pixel ratio. The flagship baseline binds only the viewport (through the meta's hash). The director's render_config is unverified free text and may be empty.
+  - *Evidence:* art/flagship.py:207-212 the line has no renderer field. 'semantics' is the preview's simu…; art/motion.py:38 SEMANTICS = 'preview-0: rules 3 (graybox/RULES-3.md) by graybox/tick_ref…
+- **F4.baseline-evidence-hashes** · EXISTS-TESTED · SPEC2 §11: binds "evidence"
+  - *Capability:* The visual baseline binds its evidence by digest: the preview's meta, report, state archive, stills archive and compare sheet.
+  - *Held by:* art/selftests.py suite 'flagship', row "the visual baseline: written only on a person's word..." (asserts the line's preview.compare.png sha256 equals the preview's own), log :610 and :1454
+  - *Gap:* Only the compare sheet's digest and the path_id are asserted; the other four digests are not checked by any test.
+  - *Evidence:* art/flagship.py:198-199 the five file names hashed when present; art/flagship.py:209 'files': {name: sha256(bytes)}
+- **F4.baseline-evidence-retained** · MISSING · SPEC2 §11: binds "evidence"; §8 human visual review
+  - *Capability:* The evidence an approved visual baseline names (stills, sheet, states) is kept for as long as the baseline stands.
+  - *Held by:* none
+  - *Gap:* Thirty days after its preview, an approved baseline's stills and compare sheet are deleted on the next preview, and only their digests remain. The director's approval never stores the image at all. No stored copy of the approved appearance survives to compare against.
+  - *Evidence:* art/motion.py:344-369 gc() deletes every <stem>preview.* file and the stills folder 30 da…; art/studio.py:1505 gc runs over all of the world's records at every preview_finish
+- **F4.baseline-image-is-render-of-head** · MISSING · SPEC2 §11: binds exact scene revision, camera path, renderer/settings and evidence
+  - *Capability:* Something refuses an approved image (a baseline's stills, or a director-approved still) that is not a render of the bound head at the bound pose.
+  - *Held by:* none
+  - *Gap:* No code checks that an approved image is a render of the bound head at the bound pose with the bound renderer. Both approval paths accept arbitrary bytes, and the test suites themselves approve synthetic images, and in the director's case a non-image. The stills come from whichever client holds the studio token.
+  - *Evidence:* art/studio.py:1457-1471 preview_still accepts any PNG that decodes, for a side and a pose…; art/flagship.py:267-268 the selftest's stills are a synthetic gradient (quality.png_bytes…
+- **F4.baseline-of-admitted-state** · MISSING · SPEC2 §11: baseline = "human-approved appearance/composition" bound to an exact scene rev…
+  - *Capability:* A visual baseline approves the appearance of a world state that exists: the admitted head, or an explicitly named side. It is refused for a candidate that was never admitted or was undone.
+  - *Held by:* none
+  - *Gap:* A baseline can approve a candidate that was never admitted, or was undone, as the selftest does. Because the line hashes both sides' stills, it is ambiguous whether the approved appearance is the base head's or the candidate's.
+  - *Evidence:* art/flagship.py:188-205 approve() checks only the preview's files; it does not consult th…; art/flagship.py:171-178 run() ends by undoing the admission
+- **F4.baseline-evidence-integrity** · PARTIAL · SPEC2 §13: "Missing, duplicated, malformed or skipped required rows fail closed"; §11 bin…
+  - *Capability:* Approval re-derives or cross-checks the evidence it relies on rather than trusting mutable files.
+  - *Held by:* none
+  - *Gap:* approve() refuses a report that says the preview was unverified, but a report.json edited in the build folder to say replayed or state_verified would be accepted. Nothing recomputes the verification from the states archive or cross-checks the digests against the request's chained log line.
+  - *Evidence:* art/flagship.py:188-197 the verdict comes from the booleans in art/build/studio/<world>/<…; art/studio.py:1503-1504 the hash-chained requests.jsonl 'preview' line records the files'…
+- **F4.baseline-record-durability** · PARTIAL · SPEC2 §11 visual baseline; §17 persistence
+  - *Capability:* The visual-baseline file is a durable, validated record: one canonical byte form, fsync'd, read back and checked, with no duplicate entries.
+  - *Held by:* none
+  - *Gap:* The baseline file is append-only by convention. It has no fsync and no reader or validator, so a torn, duplicated or hand-edited line goes undetected. art/visual_baselines.jsonl is absent at HEAD.
+  - *Evidence:* art/flagship.py:213-214 text-mode append of json.dumps(sort_keys) with newline='\n'; no f…; art/quality.py:505-523 by contrast, read_references() re-reads references.jsonl, requires…
+- **F4.baseline-consumed** · MISSING · SPEC2 §13 test layer 7: "visual regression plus human review"; §11 visual baseline
+  - *Capability:* An approved visual baseline is used: later renders or candidates are compared against it at its poses, the comparison is shown for human review, and a drift is reported.
+  - *Held by:* none
+  - *Gap:* Nothing reads an approved baseline. Nothing compares a later scene or candidate with it, and the studio has no UI to approve or view baselines. The record is write-only.
+  - *Evidence:* grep: BASELINES / visual_baselines.jsonl / VERDANDI-VISUAL-BASELINE appear only in art/fl…; grep -i approve\|baseline over art/play.py, art/studio.py, art/studio_app.py, art/studio_q…
+- **F4.director-approve-binds-head** · EXISTS-UNVERIFIED · SPEC2 §11: binds exact scene revision
+  - *Capability:* The director's ledger 'approve' event binds an approved still to the exact head (art, world, exporter), a named scene view, the image's sha256, the detectors and the approver, and ledger replay refuses an approval recor…
+  - *Held by:* art/selftests.py suite 'director' only on the happy path: row "the ledger with its approvals verifies" (log :153)
+  - *Gap:* The head binding is real, but the LEDGER-HEAD refusal for an approve event is never planted. The event binds one named view (a single pose, not a path), a free-text render_config and the image's sha256 only. The image is not stored. No document names this event as SPEC2's visual baseline: art/STUDIO.md:371-374 names flagship.approve, so two approval records coexist with differ…
+  - *Evidence:* art/director.py:860-882 cmd_approve: view must exist in the scene; the event records view…; art/director/intent.py:160-165 head = sha256 of {art_sha256, world_sha256, exporter_sha25…
+- **F4.director-approve-detectors** · EXISTS-TESTED · SPEC2 §8: "Use declared tolerances, semantic tests, visual captures, perceptual metrics, …
+  - *Capability:* The director's approval reads QUALITY-0's detectors on the still and refuses a flagged or unreadable still unless the approver passes --despite-detectors, which the ledger records.
+  - *Held by:* art/selftests.py suite 'director', rows "a still mostly white is not approved without --despite-detectors; nothing written" and "a still the detectors cannot read is not approved without --despite-detectors; nothing wri…
+  - *Gap:* The detectors judge exposure and readability only, not whether the image is of the head (see F4.baseline-image-is-render-of-head). With the flag, a non-image is approved into the ledger.
+  - *Evidence:* art/director.py:867-875 detect_png, then refusal unless despite; art/director.py:1374-1393 blown and non-PNG stills refused, then approved with despite=Tr…
+- **F4.three-concepts-separate** · EXISTS-UNVERIFIED · SPEC2 §11: "Keep three concepts separate: bytes freeze ..., visual baseline ..., and acce…
+  - *Capability:* The bytes freeze (exporter/platform integrity), the visual baseline (human-approved appearance) and the acceptance evidence (the scripted workflow's result) are separate records, and none implies another.
+  - *Held by:* none (the bytes freeze has its own tests in the 'quality' and 'check' suites; the separation itself is asserted by nothing)
+  - *Gap:* The separation holds by construction, but no test asserts that approve() leaves references.jsonl alone or that a freeze or acceptance run writes no baseline. A fourth, overlapping record, the director ledger's 'approve' event (director.py:876), also records human approval of a still, and no document places it among the three.
+  - *Evidence:* art/quality.py:40-45,549-575 freeze() writes art/references.jsonl keyed by (brief, art_sh…; art/flagship.py:183-215 approve() writes art/visual_baselines.jsonl and does not touch re…
+- **F4.human-visual-review-mandatory** · PARTIAL · SPEC2 §8: "Human visual review is mandatory"
+  - *Capability:* Human visual review is mandatory for graphics acceptance, and the record shows that a person, not a script, looked.
+  - *Held by:* art/selftests.py suite 'flagship' (the note is required: refused without one, log :610)
+  - *Gap:* Review is recorded as a note-bearing command, but nothing tells a person from a script: the selftest writes a baseline with a canned note. The scripted acceptance does not require a visual baseline or any human review to pass. 'Mandatory' rests on an operator rule (AGENTS.md:98), not on code, and docs/ROADMAP.md:5099-5100 lists the baseline as not done.
+  - *Evidence:* art/flagship.py:204-205 approve() refuses an empty --note; art/flagship.py:211 the line's 'basis' says the owner's eyes, and that the proxies are no…
+
+### F5 — gap: Is the frozen-reference effect of an admission recorded anywhere? art/check.py:794 fails 'quality: the scene is its frozen reference' for any brief whose art_sha256 has no line in art/references.jsonl (art/quality.py:526-546). So any studio or director admission that changes a checkout brief turns …
+
+*Spec:* SPEC2 §5 transactions (dependency effects); §11 three concepts (bytes freeze vs acceptance); §17 evidence completeness
+
+- **F5.ref-line-holds-checkout-briefs** · EXISTS-TESTED · SPEC2 §11 three concepts: bytes freeze (exporter/platform integrity)
+  - *Capability:* ART CHECKS hold every checkout brief to its frozen bytes reference, keyed by (brief, art_sha256, exporter_sha256), and fail any brief whose art or exporter has no frozen line, naming the freeze as the repair.
+  - *Held by:* art/selftests.py 'quality' (QUALITY SELFTEST 76/76): 'no reference: the comparison fails and writes nothing', 'plant: other bytes from the same inputs — refused, naming the field', 'plant: a new exporter with no referen…
+  - *Gap:* Only checkout briefs (dress.BRIEFS) are held. See F5.worlds-no-bytes-reference.
+  - *Evidence:* art/check.py:793-796 the reference line appended to every checkout brief's rows; art/quality.py:503-523 read_references: one byte form, duplicate inputs refused
+- **F5.admit-names-reference-effect** · MISSING · SPEC2 §5 transactions: a transaction binds ... dependency effects
+  - *Capability:* An admission (studio /studio/admit, director.py admit, or an undo) records in its transaction or evidence that changing a checkout brief's art_sha256 leaves the brief with no frozen reference. ART CHECKS then fail 'qual…
+  - *Held by:* none
+  - *Gap:* Nothing names it. The evaluation never runs the reference comparison, ADMISSION-0 neither expects it nor lists it as unchecked, and none of the admit event, the CERT-0 certificate or the request line carries a dependency-effect field. The effect surfaces only afterwards, when art/check.py (the 'check' suite, or the owner's patch checks) runs on the checkout. The quality.py:43-…
+  - *Evidence:* art/director.py:245-261 the evaluation's export runs check.verify, not check_brief; art/check.py:382-400 verify has no reference line (only check_brief at :793-796 adds it)
+- **F5.not-checked-omits-reference** · PARTIAL · SPEC2 §17 evidence completeness; SPEC2 §13 'Missing, duplicated, malformed or skipped req…
+  - *Capability:* Every ADMISSION-0 verdict states what it did not check (the owner's ruling quoted at contract.py:12), including the checks other instruments run on the same brief.
+  - *Held by:* art/selftests.py 'director' row 'a check that did not run is said (not checked) and keeps the admission out: a skip is not a pass'. It holds only the EXPECTED_CHECKS half.
+  - *Gap:* The frozen-reference comparison is in neither list, although art/check.py runs it on every checkout brief. A checkout admission's record is therefore silent on the one ART CHECKS line it is certain to break.
+  - *Evidence:* art/director/contract.py:9-14 the owner's ruling: 'Every verdict states what it did not c…; art/director/contract.py:123-125 not_checked = skipped EXPECTED_CHECKS + NEVER_CHECKED
+- **F5.reference-diff-across-art** · PARTIAL · SPEC2 §11 bytes freeze; SPEC2 §17 evidence completeness
+  - *Capability:* When a brief's art changes, the reference failure shows what moved against the brief's previous reference, so a person can read the field comparison before freezing.
+  - *Held by:* art/selftests.py 'quality' plant 'a new exporter with no reference — refused, with the fields it moved'. This covers the exporter case only.
+  - *Gap:* After an admission (new art_sha256 at the same exporter) the line gives no field comparison against the predecessor art's reference. AGENTS.md:88's rule therefore cannot be met for an admitted brief: there is no comparison to read before freezing.
+  - *Evidence:* art/quality.py:538-545 'older' references are searched only for the same art_sha256; art/quality.py:546 a new art gets only 'no reference for this art ... freeze it'
+- **F5.freeze-person-act** · EXISTS-TESTED · SPEC2 §11 three concepts: bytes freeze
+  - *Capability:* Freezing is a person's act: only 'python art/quality.py freeze NAME --note TEXT' appends a reference. It refuses a scene failing an exact check, writes nothing for inputs already frozen, and refuses inputs whose bytes m…
+  - *Held by:* art/selftests.py 'quality' rows: 'freeze appends one line, and a second freeze of the same inputs writes nothing', 'plant: a frozen scene the same inputs no longer give — freeze refuses to write over it', 'plant: the sa…
+  - *Gap:* freeze appends with open('ab') and fsync (quality.py:571-574), not through art/director/durable.py and under no lock. Unlocked appenders lost lines on Windows (docs/ROADMAP.md:3792-3795). The QUALITY-FREEZE refusal of a failing scene is not planted.
+  - *Evidence:* art/quality.py:549-575 freeze: check_scene, QUALITY-REFERENCE-MOVED, append; art/quality.py:999-1011 the CLI is the only caller outside the self-test
+- **F5.references-append-only-guard** · EXISTS-UNVERIFIED · SPEC2 §11 bytes freeze; SPEC2 §17 evidence completeness
+  - *Capability:* A patch that rewrites or removes a frozen reference is named as a loosening (only appends are allowed).
+  - *Held by:* none (RUNG SELFTEST's loosenings row plants only EXPECTED_CHECKS, DETECT and BUDGET_BOXES)
+  - *Gap:* There is no plant of a rewritten or removed reference line.
+  - *Evidence:* tools/rung.py:324-326 references.jsonl must start with the base's bytes; tools/rung.py:546-547 the only loosenings row: a dropped check, a raised threshold, a rai…
+- **F5.studio-app-worlds-default** · EXISTS-TESTED · SPEC2 §11 essential flows: launch → select world; SPEC2 §5 transactions
+  - *Capability:* The desktop studio serves a per-user worlds folder (%LOCALAPPDATA%\VerdandiStudio\worlds), never the checkout, unless --root is given.
+  - *Held by:* art/selftests.py 'app' (STUDIO APP SELFTEST): row 'no --root: the studio serves its worlds folder (seeded from the fixture), its page a world of it, and stops when the window closes'
+  - *Evidence:* art/studio_app.py:60-67 worlds_dir: per-user, 'never the checkout'; art/studio_app.py:323-329 --root only when given, else --worlds
+- **F5.seed-checkout-read-only** · EXISTS-TESTED · SPEC2 §5 canonical state and persistence; SPEC2 §17 recovery with no unadmitted candidate…
+  - *Capability:* Seeding copies each checkout brief whole into the worlds folder (brief, ledger, tags, stills, maps), keeps it only if its ledger verifies in the copy, and leaves the checkout unchanged.
+  - *Held by:* art/selftests.py 'queue' (STUDIO-2 SELFTEST 19/19): 'the worlds seeded from the checkout ...; the checkout unchanged', 'a checkout brief whose ledger does not verify is not made a world ...', 'seeded once'
+  - *Gap:* seed_worlds first runs D.recover on the checkout (play.py:816-818). That may finish or undo a half-done checkout admission (documented at play.py:796-797), and the fixture does not exercise this write. art/references.jsonl is not copied, and nothing in a world reads it.
+  - *Evidence:* art/play.py:791-849 seed_worlds: copied aside, verified, one rename, SEEDED.json; art/studio_queue.py:419-440 rows: checkout bytes equal before/after; an unverifiable ledg…
+- **F5.worlds-admit-world-only** · EXISTS-UNVERIFIED · SPEC2 §5 transactions (declared region of effect); SPEC2 §17 extension without duplicated…
+  - *Capability:* In worlds mode an admission writes only DIR/NAME/ (brief, ledger, stills, tags, request records, certificates), so the checkout's briefs, ledgers and references never move.
+  - *Held by:* none for the checkout. The 'queue' row 'reviewed and admitted in harbor-day: ... plaza-night's bytes untouched' holds only a sibling world.
+  - *Gap:* No row compares the source checkout's bytes, or art/references.jsonl, after a worlds-mode admission. The isolation holds by construction, since every path derives from Hub.root_of.
+  - *Evidence:* art/play.py:545-547 Hub.root_of: worlds_dir/NAME in worlds mode; art/play.py:574-586 the world's Workspace and Live made at that root
+- **F5.no-admission-writes-references** · EXISTS-UNVERIFIED · SPEC2 §11 three concepts: none implies another
+  - *Capability:* No admission, in either mode, writes art/references.jsonl: the bytes freeze moves only by a person's freeze.
+  - *Held by:* art/selftests.py 'quality' row 'no reference: the comparison fails and writes nothing' (holds the comparison side only)
+  - *Gap:* Established only by reading (no other writer in the code). No test asserts that an admit or undo leaves the references file byte for byte.
+  - *Evidence:* art/quality.py:571-574 the only writer of the references file; art/quality.py:66 REFERENCES is the checkout's art/references.jsonl
+- **F5.worlds-no-bytes-reference** · PARTIAL · SPEC2 §11 three concepts: bytes freeze (exporter/platform integrity)
+  - *Capability:* The bytes freeze (exporter/platform integrity) covers the worlds the studio admits into.
+  - *Held by:* none for worlds; the 'check' suite covers checkout briefs only
+  - *Gap:* A per-user world, where the desktop studio admits, is never held to a reference and has no freeze path. A seeded world sharing a checkout brief's name (plaza-night) shares its reference key. Per-world exporter/platform determinism after admissions is not frozen anywhere.
+  - *Evidence:* art/check.py:894 names = the .art files of dress.BRIEFS; art/dress.py:34 BRIEFS = the checkout's art/briefs
+- **F5.checkout-mode-admission** · EXISTS-TESTED · SPEC2 §11 essential flows; SPEC2 §5 transactions
+  - *Capability:* Checkout (one-tree) mode is still a way to admit: 'play.py BRIEF --director CONFIG' without --worlds, and 'director.py admit' without --root, write the checkout's art/briefs and art/ledger.
+  - *Held by:* art/selftests.py 'flagship' (FLAGSHIP SELFTEST 9/9: admit and undo in a one-tree scratch copy, play.ROOT = tmp) and 'studio'. The checkout default itself is held only by the manual AGENTS.md §4 step 'python art/play.py …
+  - *Gap:* Supported in code, but the documents disagree: the Hub and studio_app docstrings call one tree the self-tests', while AGENTS.md treats the checkout as the owner's working world. git status at HEAD shows untracked art/ledger/harbor-lift.tags.json (written 2026-10-14) and art/ledger/plaza-night.tags.json in the checkout: checkout-mode sessions ran after the per-user ruling of 20…
+  - *Evidence:* art/play.py:1424-1458 without --worlds: ROOT is the checkout (or --root), Live, studio an…; art/play.py:736-739 duplicate in one-tree mode writes art/briefs/NAME.art into the checko…
+- **F5.checkout-mode-guard** · MISSING · SPEC2 §5 transactions: dependency effects; SPEC2 §6 admission sequence: compute dependenc…
+  - *Capability:* A checkout-mode admission or duplicate is warned, refused or flagged, before it is made, as moving a frozen-reference input.
+  - *Held by:* none
+  - *Gap:* Nothing tells the designer that an admission in the checkout turns ART CHECKS red until a person freezes. The same holds for a one-tree duplicate, which creates a checkout brief with no reference at all.
+  - *Evidence:* art/web/start.js:118 the launcher says only 'Serving one tree.'; art/play.py:1188 /healthz mode 'one tree'
+- **F5.patch-rung-D-for-brief** · EXISTS-TESTED · SPEC2 §5 transactions: dependency effects (caught at patch time)
+  - *Capability:* A checkout brief changed by an admission and committed is classified rung D by RUNG-0 (data the checker names), so the owner's checks, which include the reference line, run before it is pushed.
+  - *Held by:* AGENTS.md §4 check 'python tools/rung.py selftest' (RUNG SELFTEST 19/19, recorded in commit 6af1d9f's message as run in the container; not in art/selftests.py SUITES): row 'data the checker names by os.path.join, a file…
+  - *Gap:* This is the only place the dependency is caught today: after the fact, at patch time. Rung D's NEEDS do not name a re-freeze.
+  - *Evidence:* tools/rung.py:55-65 ROOTS include art/check.py and art/quality.py; tools/rung.py:521-523 a brief folder named by the checker is D
+- **F5.in-world-dependency-effects** · EXISTS-TESTED · SPEC2 §5 transactions: dependency effects; SPEC2 §6 compute dependency invalidation
+  - *Capability:* Within the world, the transaction records the dependency effects the scope protocol computes (realized and affected addresses, LEAKAGE when undeclared) and classifies the rung from them.
+  - *Held by:* art/selftests.py 'director' (DIRECTOR SELFTEST PASSED): 'candidate D evaluates LEAKAGE at the first head', 'a LEAKAGE candidate is not admitted without --accept-leakage', 'an address of a kind the classifier does not kn…
+  - *Gap:* Only effects inside the scene are in this set. Effects outside it are not: the brief's frozen reference, a visual baseline bound to the old scene, and other candidates' preview or impact artifacts made at the old head.
+  - *Evidence:* art/director/scope.py:193-263 realized and affected computed; unclaimed listed; art/director/contract.py:79-105 the rung classified from realized and affected
+- **F5.three-concepts-separate** · EXISTS-UNVERIFIED · SPEC2 §11 'Keep three concepts separate: bytes freeze ..., visual baseline ..., and accep…
+  - *Capability:* Bytes freeze, visual baseline and acceptance evidence are kept apart, and none implies another.
+  - *Held by:* Each writer is held by its own suite: 'quality' freeze rows; 'flagship' row 'the visual baseline: written only on a person's word, from a preview complete, verified and framed; refused otherwise'. No row asserts that on…
+  - *Gap:* Separation is structural (different writers and files), not asserted by a test. There are two visual approvals: director.py approve writes the ledger, flagship.py approve writes the baselines file. The documents call only the second the visual baseline.
+  - *Evidence:* art/quality.py:40-45 and :549-575 freeze → art/references.jsonl; art/flagship.py:183-215 approve → art/visual_baselines.jsonl; the references file 'is not…
+- **F5.visual-baseline-binding** · PARTIAL · SPEC2 §11 'Visual baseline approval is explicit and binds exact scene revision, camera pa…
+  - *Capability:* Visual baseline approval is explicit and binds the exact scene revision, camera path, renderer/settings and evidence.
+  - *Held by:* art/selftests.py 'flagship' row 'the visual baseline: written only on a person's word, from a preview complete, verified and framed; refused otherwise' (asserts path_id and the compare sheet's digest, and refusals witho…
+  - *Gap:* The line does not bind the head, the brief's art_sha256, the scene sha256 or the renderer's source digest; settings are present only as the meta's viewport. approve does not check that the world is still at the previewed head. art/visual_baselines.jsonl does not exist at HEAD: no baseline has been approved.
+  - *Evidence:* art/flagship.py:194-205 refused unless replayed, verified, clear, framed, with a sheet an…; art/flagship.py:207-212 the line: world, request, candidate, path_id, seed, subject, file…
+
+### F6 — gap: Does any file declare the SPEC2 target profile ('Windows desktop and Xbox Ally X-class hardware; initial viewport target 1920×1080')? Does any record hold a repeated frame-time distribution (p50/p95/p99, pacing) for the renderer the studio actually uses (art/web/scene_render.js)? The sealed host re…
+
+*Spec:* SPEC2 §17 target-hardware performance; §14 Phase 0 (target profile); §8 performance policy
+
+- **F6.target-profile-declared** · PARTIAL · SPEC2 header 'Target:' (line 4); §14 Phase 0 'target profile'; §16 '60 FPS target — Defin…
+  - *Capability:* A declared target profile: the hardware class (Windows desktop and Xbox Ally X-class), the initial 1920×1080 viewport, and the settings a benchmark runs under.
+  - *Held by:* none
+  - *Gap:* No file declares SPEC2's profile. The 1080p target is declared for the deterministic Rust kernel and shell. 'The owner's hardware' means his one host, not a declared hardware class. Nothing names Xbox Ally X, a handheld or any hardware class: `git grep -i -E "ally x\|xbox\|rog ally\|handheld"` over the tree returns nothing. No profile artifact ties a hardware class, resolution, r…
+  - *Evidence:* README.md:5 'a deterministic 1080p game-rendering studio with a measurable low-latency pr…; README.md:74-79 STUDIO-0: a '1080p frame budget on the owner's hardware' for the Rust ker…
+- **F6.xbox-ally-class** · MISSING · SPEC2 header 'Target: ... Xbox Ally X-class hardware'; §11 'keyboard/mouse/gamepad UX'
+  - *Capability:* Xbox Ally X-class handheld hardware as a supported target: gamepad input, handheld power modes and that display.
+  - *Held by:* none
+  - *Gap:* All of it. No Gamepad API anywhere in art/web or graybox/web (`git grep getGamepads` finds nothing). No handheld power mode, display or record. No run on such hardware.
+  - *Evidence:* art/web/studio_ui.js:31 'gamepad' exists only as an SVG icon; art/web/play.js:858 the Gameplay panel uses the gamepad icon
+- **F6.viewport-1080p-studio** · EXISTS-UNVERIFIED · SPEC2 header 'initial viewport target 1920×1080'
+  - *Capability:* The studio's renderer (scene_render.js) draws at 1920×1080 in the studio's Play (1080p) mode.
+  - *Held by:* none
+  - *Gap:* No suite asserts the 1920×1080 backbuffer: `git grep -E "playfull\|mb-play\|1920"` over art/*.py and tools/ finds nothing. The editor viewport is not 1080p (canvas size × DPR capped at 1.5). There is no render-scale or quality setting.
+  - *Evidence:* art/web/play.js:138-142 fit(): 1920×1080 when body has class playfull, otherwise canvas s…; art/web/play.js:846 the 'Play (1080p)' button, 'Play at 1920 × 1080'
+- **F6.viewport-1080p-shell** · EXISTS-TESTED · SPEC2 header 'initial viewport target 1920×1080'
+  - *Capability:* The certified Rust kernel's frame and the shell's presenter are fixed at 1920×1080, shown 1:1 in a borderless DPI-aware window, and the court verifies that geometry.
+  - *Held by:* gate rows presentexact-preregistered (the sealer's TARGET must be [1920,1080]), presentexact-sealer (refuses 'a scaled screen' and 'a client below a title bar'), presentexact-lock
+  - *Gap:* This is the Rust GDI presenter on a 1920×1080 screen at 100% scaling. It is not the studio's WebGL2 renderer and says nothing about it.
+  - *Evidence:* kernel/mantle.rs:36-37 W = 1920, H = 1080; verify/verify.py:5168-5170 presentexact_preregistered requires PX.TARGET == [1920, 1080]
+- **F6.studio-frametime-record** · PARTIAL · SPEC2 §8 'Record CPU/GPU frame time ... Every benchmark records scene revision, hardware/…
+  - *Capability:* A recorded frame-time measurement of the studio's renderer (art/web/scene_render.js), tied to the renderer revision, the host and the resolution.
+  - *Held by:* art/selftests.py suite 'impact', IMPACT SELFTEST row 'the model's coefficients are its calibration rows' least squares, exactly'. It holds the model to the stored rows, not the measurement.
+  - *Gap:* One calibration in the build container on a CPU rasterizer, at 480×270, five frames per scene, median kept. No p95/p99, no pacing, no GPU, no target hardware, no 1080p, no repeat run. The instrument that took the rows is not in the tree: `git grep ms_frames\|warmup_frames` finds only the JSON. Scenes are named in words, not hashed. Nothing checks that the calibrated renderer is…
+  - *Evidence:* art/impact_model.json:8-15 calibration: date 2026-10-15T19:57Z, frames 5; host 'the conta…; art/impact_model.json:172-175 scene_render_sha256 0b5cae9d…; statistic 'the median frame,…
+- **F6.studio-pctl-pacing** · MISSING · SPEC2 §8 'p50/p95/p99, frame pacing/missed presents ... do not report average FPS alone o…
+  - *Capability:* Repeated frame-time distributions (p50/p95/p99), frame pacing and missed presents for the renderer the studio uses, on the target hardware.
+  - *Held by:* none
+  - *Gap:* For scene_render.js: no percentile, no pacing or missed-present counter, no record file, no repeated runs, no target-hardware run. The sealed p50/p95/p99 records in shell/attest and kernel/attest are of the Rust shell and kernel (see F6.shell-host-distributions).
+  - *Evidence:* art/web/play.js:2314 ui.frameMs is an exponential moving average of the requestAnimationF…; art/web/play.js:955-962 FPS is a count over windows of at least 400 ms; Frame and CPU sub…
+- **F6.studio-gpu-telemetry** · MISSING · SPEC2 §4 Renderer 'GPU telemetry'; §8 'CPU/GPU frame time ... shader compile time, memory…
+  - *Capability:* GPU frame time, GPU memory, texture residency and shader compile time for the studio's renderer.
+  - *Held by:* none
+  - *Gap:* Everything GPU-side. No EXT_disjoint_timer_query or TIME_ELAPSED use in art/web or graybox/web (git grep finds none). No shader compile timing and no residency.
+  - *Evidence:* art/web/play.js:962 the VRAM row is the literal 'n/a'; art/web/play.js:965 tooltips: VRAM 'not measured: WebGL does not report the memory it use…
+- **F6.stats-overlay** · EXISTS-UNVERIFIED · SPEC2 §8 'Record CPU/GPU frame time ... draw calls'
+  - *Capability:* Live statistics in the studio viewport: FPS, frame ms, CPU submit ms, draw calls (counted by wrapping drawArrays/drawArraysInstanced), triangles, boxes, lights, resolution, VRAM n/a.
+  - *Held by:* none
+  - *Gap:* No suite reads or asserts it (`git grep VRAM\|statsShow` over art/*.py finds nothing). Display only, never recorded. It shows an averaged FPS with no distribution beside it, which SPEC2 §8 warns against reporting alone, and the FPS row has no caveat tooltip.
+  - *Evidence:* art/web/play.js:153-162 countCalls wraps gl.drawArrays and gl.drawArraysInstanced; art/web/play.js:955-966 statsShow: the rows and their tooltips
+- **F6.render-counts** · EXISTS-TESTED · SPEC2 §8 'draw calls, visible instances ... memory, texture residency'
+  - *Capability:* Per-frame draw calls, triangles, lights drawn and texture bytes of scene_render.js, counted from each candidate's scene and its base and kept with the candidate.
+  - *Held by:* art/selftests.py suite 'impact': IMPACT SELFTEST rows 'counts as the renderer makes them, worked by hand' and 'the lights past the renderer's cap are not drawn, nor counted in its textures', three plants. Suite 'impact-…
+  - *Gap:* Counted from the scene, not measured on a GPU. Visible instances after culling, GPU memory and residency are not counted.
+  - *Evidence:* art/impact.py:222-229 the counts checked against a scene worked by hand, and the light cap; art/play.py:3236-3246 IMPACT-SAVED requires the delta fields, the label 'ESTIMATE' and 'c…
+- **F6.shell-host-distributions** · EXISTS-TESTED · SPEC2 §8 performance policy; §17 'target-hardware performance'
+  - *Capability:* Sealed host frame-time distributions (p50/p95/p99/max) under registered methods, for the certified Rust renderer and its GDI presenter: LATENCY-0/1/1R, FRAME-SPLIT-0, PRESENT-EXACT-0, DRIFT-0, and the kernel bench.
+  - *Held by:* gate rows latency1-sealers, framesplit-sealer, presentexact-sealer (decision rules driven with synthetic numbers; malformed records refused); presentexact-lock (the two host records pinned by chain hash and read SETDIBI…
+  - *Gap:* None of these concern art/web/scene_render.js. Their instruments are shell/win32.rs window courts and the kernel's --bench. Record scopes: presentexact-DANIELDILLBERG.json certifies 'the certified composite presented 1:1 by StretchDIBits and by SetDIBitsToDevice'; kernel/attest/bench-DANIELDILLBERG.json certifies 'per-frame renderer time of the kernel'. The cited gate rows mea…
+  - *Evidence:* verify/preregister.json:31-34 LATENCY-0: 'replaying the sealed reference session through …; verify/preregister.json:177-178 FRAME-SPLIT-0: the shell's render-start -> frame-ready ph…
+- **F6.benchmark-context** · PARTIAL · SPEC2 §8 'Every benchmark records scene revision, hardware/driver, resolution, render sca…
+  - *Capability:* Every benchmark records scene revision, hardware/driver, resolution, render scale, settings, power mode, cache state and thermal context.
+  - *Held by:* gate rows hoststate-preregistered, hoststate-record (planted failure, float, boolean and missing field each become an unavailable snapshot), hoststate1-record. These cover the shell's window courts only; the studio has …
+  - *Gap:* No host-state capture goes with any timing of scene_render.js or the graybox bench. For the studio, power mode, driver version, thermal state, cache state, render scale and quality settings go unrecorded. Even HOST-STATE declares thermal not captured. The graybox bench.json names the map but carries no canonical sha.
+  - *Evidence:* verify/verify.py:5015-5032 HOST-STATE-0 fields: cpu, power, load, memory, process, displa…; verify/verify.py:5035-5086 hoststate_record plants
+- **F6.graybox-bench** · EXISTS-UNVERIFIED · SPEC2 §8 'p50/p95/p99 ... Every benchmark records ...'; §14 Phase 6
+  - *Capability:* A browser bench that draws the same poses with the graybox's two renderers and prints p50 / nearest-rank p95 / max per pose. A sample is the mean of K draws, each followed by a one-pixel readback. The clock step is prin…
+  - *Held by:* AGENTS.md §4 row 'a cost claim about the graybox' (AGENTS.md:108): a measurement with no pass or fail. Own instrument; one host run recorded (docs/ROADMAP.md:2636-2659, 2026-10-09). No check asserts the apparatus.
+  - *Gap:* It does not time the studio's renderer: art/web/scene_render.js is never loaded by graybox/web. No p99, no pacing. Samples are batched draw-and-readback, not presented frames. 1280×720, not 1080p. One run. Correction to the critic: the bench does print a p95 (nearest rank, serve.py:140,147); it lacks the p99.
+  - *Evidence:* graybox/serve.py:130-157 report_bench: nearest-rank p95 (line 140), median/p95/max per po…; graybox/web/main.js:240-275 benchMode: alternating renderers, K draws each with readPixel…
+- **F6.frame-budget-target** · PARTIAL · SPEC2 §8 '60 FPS implies a 16.67 ms frame budget'; §16 '60 FPS target'
+  - *Capability:* A frame-time target (60 FPS / 16.67 ms) defined with its settings, and judged only against repeated frame-time distributions.
+  - *Held by:* gate row latency1-sealers and LATENCY-0's registered entry (the shell); none for the studio
+  - *Gap:* Frame-time budgets exist only for the Rust shell's present path (144 Hz, registered) and the Rust kernel (16,667 / 6,944 / 4,167 µs set beside its bench). The studio's renderer has no frame-time target, no settings profile and no comparison.
+  - *Evidence:* verify/preregister.json:33-34 LATENCY-0: SOFTWARE-144-BUDGET passes iff p99 <= 6944 us, f…; README.md:77-79 the kernel's p50/p95/p99 'within the 60 Hz budget of 16,667 µs', 'Rendere…
+- **F6.perf-claim-labelling** · PARTIAL · SPEC2 §8 'do not report average FPS alone or claim the target is met without repeated tar…
+  - *Capability:* Performance numbers carry their scope. An estimate is labelled ESTIMATE with its calibration host and date. A timing is never presented as a frame rate or input-to-photon.
+  - *Held by:* art/selftests.py suite 'impact-studio', row IMPACT-SAVED (requires label 'ESTIMATE' and 'calibrated on'); gate row latency1-sealers (requires the reading 'says NOTHING about the renderer')
+  - *Gap:* The studio's live overlay shows an averaged FPS with no caveat on that row and no distribution (art/web/play.js:960,965), and no check covers it. The rule against claims is prose (AGENTS.md) and does not require any target-hardware run.
+  - *Evidence:* AGENTS.md:46,67-68 under 'Never, without the owner's word': 'Claim a latency, a frame rat…; art/impact.py:201-205 the estimate is labelled ESTIMATE and its how-text says 'not a meas…
+- **F6.preview-latency** · PARTIAL · SPEC2 §8 'physics timings, load/save and candidate preview latency'
+  - *Capability:* Recording the latency of a candidate preview.
+  - *Held by:* art/selftests.py suites 'preview' and 'preview-studio', rows 'one candidate's runs well inside 10 s (B4-TIMING-BOUNDARY)' and 'one candidate's preview well inside 10 s (B4-TIMING-BOUNDARY)'
+  - *Gap:* A single-run upper bound inside a self-test, on whichever machine runs it. No recorded distribution of preview latency on the target hardware, and no record file. The p50/p95 figures live only in ROADMAP prose.
+  - *Evidence:* art/motion.py:432-435 times both sides' simulation runs and requires under 10 s; art/play.py:3487-3489 times the whole preview over HTTP (16 stills and the report) and re…
+
+### F7 — gap: For the art scene the Director edits, where are the units, axes, angle units, coordinate bounds and overflow policy declared and enforced? Candidates are the art/dress.py NUMBER grammar, art/quality.py field bounds, the millimetre integers in art/studio_marks.py and the 1/256 m unit of graybox/tick…
+
+*Spec:* SPEC2 §5 coordinate policy; geo-stability tests ('large-coordinate and boundary cases', 'invalid hierarchy and overflow plants')
+
+- **F7.units-axes-declared** · EXISTS-UNVERIFIED · SPEC2 §5 coordinate policy: define units, handedness, up axis, angle units
+  - *Capability:* The art scene the Director edits declares its length unit, its axes and up axis, and its angle unit and yaw origin.
+  - *Held by:* none for the value. The frozen reference's per-field digest (art/quality.py compare_reference, art/check.py line 'quality: the scene is its frozen reference') holds only the field's bytes, and a person can freeze it aga…
+  - *Gap:* Handedness is never named: x east, y up, z south is right-handed only by derivation. Nothing checks the string's value, so a scene that said 'feet' would pass QUALITY-0's bounds; only a byte change against a frozen reference shows it. No test asserts that the renderer reads yaw as the string says.
+  - *Evidence:* art/dress.py:971 scene 'units': 'metres; x east, z south, y up; yaw in degrees, 0 north (…; art/quality.py:233-234 'units' is checked only as text
+- **F7.face-frame-handedness** · EXISTS-TESTED · SPEC2 §5 coordinate policy (handedness); geo-stability tests: transform composition/round…
+  - *Capability:* Mark & Shape's face-local frames: for each of the six faces an origin and unit vectors u and v with u x v equal to the outward normal, and exact world-to-local and local-to-world inverses.
+  - *Held by:* art/selftests.py suite 'marks' (MARKS SELFTEST 19/19), row '[PASS] frames — six faces: u x v the outward normal, world and local inverse, every corner on its face'
+  - *Gap:* art/web/studio_ui.js:186 holds a twin FRAMES table, which the page uses (art/web/play.js:1474, 1578). No test compares it with the Python table. The world frame's handedness is not stated anywhere as a word.
+  - *Evidence:* art/studio_marks.py:15-24 the frames table and the u x v = normal rule; art/studio_marks.py:131-155 FRAMES, NORMALS, world(), local()
+- **F7.number-grammar** · EXISTS-TESTED · SPEC2 §5 canonical state: declared numeric scales, strict malformed-input rejection
+  - *Capability:* A number in an art brief has one spelling: ASCII digits, at most one '.' between digits, and a leading '-' only. A whole number has a whole value and a colour is three channels from 0 to 255.
+  - *Held by:* art/selftests.py suite 'check' (ART CHECKS PASSED), rows 'plant: the number grammar refuses an exponent ('1e2' candelas)', a '+', an underscore, Arabic-Indic digits, a fraction where a whole number goes, and a superscri…
+  - *Gap:* The plants test form only: each changes a token's spelling. None gives a well-formed number outside its range (see F7.brief-number-ranges).
+  - *Evidence:* art/dress.py:89-106 NUMBER and _num; art/dress.py:109-120 _whole and _rgb
+- **F7.brief-number-ranges** · EXISTS-UNVERIFIED · SPEC2 §5 geo-stability tests: large-coordinate and boundary cases; coordinate policy: sca…
+  - *Capability:* Every numeric argument of a brief statement (heights, depths, angles, lux, candelas, fog, exposure, spacings) is held to a declared closed range and refused, with its file and line, outside it.
+  - *Held by:* none at the brief level. QUALITY-0 restates some of the same bounds on the exported scene (see F7.angle-bounds and F7.scene-coord-bounds).
+  - *Gap:* No plant gives a brief or an intent a well-formed number outside its range, such as a canopy at 9999 m, a lamp of 1000000 cd or a tower of 400.5 m. A huge digit string is refused only because float() turns it into inf, which then fails the range check (dress.py:103-104); that is not planted either.
+  - *Evidence:* art/dress.py:99-106 _num refuses a value outside lo..hi; art/dress.py:186-200 azimuth 0..360, elevation -10..90, lux 0..150000, fog 0..1, exposure…
+- **F7.height-pair-order** · MISSING · SPEC2 §5 strict malformed-input rejection; Collision: validate degenerate geometry
+  - *Capability:* A lowest-highest height pair (skyline, tower) is refused when inverted, and the exporter never emits a mass of zero height.
+  - *Held by:* none
+  - *Gap:* 'skyline concrete 30 10' (hi below lo) is accepted silently and every block is drawn at 30 m. When lo equals the wall height, a block whose pick is 0 gets top equal to the wall: a box of zero height. The exporter emits it, and only QUALITY-0's 'no extent' check refuses it at verification, without the statement's line. INFERRED from reading; not run.
+  - *Evidence:* art/dress.py:684 skyline lo and hi, each checked only against the wall height and 400; art/dress.py:693-694 steps = int(hi - lo); top = lo when steps <= 0
+- **F7.brief-cell-in-grid** · EXISTS-UNVERIFIED · SPEC2 §5 geo-stability tests: large-coordinate and boundary cases
+  - *Capability:* Every cell a brief or an intent's revision names (region corners, canopy and building corners, a view's cell) lies inside the map's grid, or is refused with its line.
+  - *Held by:* none
+  - *Gap:* No plant names a cell outside the grid, such as 'region r 0,0 99,99' or a view at 48,0 on a 48-wide map, in a brief or an intent. F7.cell-digit-overflow covers a token that never reaches this check.
+  - *Evidence:* art/dress.py:123-129 _cell refuses a cell outside the w x h grid; art/dress.py:416-422 _region reads both corners through _cell
+- **F7.cell-digit-overflow** · PARTIAL · SPEC2 §5 coordinate policy: overflow policy; geo-stability tests: invalid hierarchy and o…
+  - *Capability:* Overflow policy for a brief's integer tokens: a cell or bay index too long to convert is refused as an ArtError with its line, never a crash.
+  - *Held by:* none
+  - *Gap:* A cell token of more than 4,300 digits makes int() raise ValueError (Python 3.11+'s default limit). MEASURED here, outside the repository, on Python 3.14.5: int('1'*5000) and Fraction('1'*5000) raise ValueError and float('1'*5000) gives inf. Neither the director's evaluation nor the studio's slot catches that ValueError, so the result is a crash, not a refusal with a line; the…
+  - *Evidence:* art/dress.py:124-126 the cell regex [0-9]+,[0-9]+ has no length bound, then int(); art/dress.py:604 and 928-930 the BAY regex has no length bound, then int()
+- **F7.layout-cell-range** · EXISTS-TESTED · SPEC2 §5 geo-stability tests: large-coordinate and boundary cases; overflow plants
+  - *Capability:* In an intent's layout lines, a cell outside the level, below zero or of six digits is refused, and a design has byte and statement caps; the shell's design compiler enforces both.
+  - *Held by:* gate row 'designir-language': corpus cases 'a cell one past the level's width', 'a cell one past the level's height', 'a cell of six digits', 'a cell below zero', 'a design of 16,385 bytes', 'a 65th statement'. Also des…
+  - *Gap:* The check lives in the shell's compiler. No director-level plant sends an intent with an out-of-range layout line; the conformance vectors' layout case tests a grant, not the grid.
+  - *Evidence:* art/director.py:311-336 compile_design runs design/design.py, which calls the shell's com…; art/director.py:353-368 with_layout appends the intent's layout lines
+- **F7.scene-coord-bounds** · EXISTS-TESTED · SPEC2 §5 geo-stability tests: large-coordinate and boundary cases; coordinate policy: pre…
+  - *Capability:* Every coordinate of the exported scene is finite, of magnitude below 1024 m (where float32 still keeps 0.1 mm steps apart), with x inside 0..w*cell and z inside 0..h*cell. Every art verification checks this.
+  - *Held by:* art/selftests.py suite 'quality' (QUALITY SELFTEST 76/76), rows 'plant: a box outside the world', 'plant: a tower 1,024 m tall', 'plant: a light inside no world', 'plant: a target outside the world', 'plant: a mover who…
+  - *Gap:* y has no world bound except float32's: a visual or light at y = -500 passes, because quality.py:205-208 bounds only x and z. The large-coordinate tests sit at the scene's 1023/1024 m edge only; no brief or intent is planted to reach it.
+  - *Evidence:* art/quality.py:21-25 and 71 F32_LIMIT = 1024.0 with its reason; art/quality.py:200-214 coord() and point()
+- **F7.scene-box-extent** · EXISTS-TESTED · SPEC2 Collision: validate degenerate geometry; geo-stability tests: boundary cases
+  - *Capability:* Every box in the exported scene (visual, collision or mover) has positive extent on each axis.
+  - *Held by:* art/selftests.py suite 'quality', row 'plant: a box with no width — refused' (visuals[0] with x1 = x0)
+  - *Gap:* There is one plant: zero width on a visual. An inverted box (x1 < x0), and a collision or mover box with no extent, are not planted at the scene level, although the same strict '<' would refuse them. art/check.py's own collision branch (no extent, leaves the grid) and its mover no-extent branch have no plant.
+  - *Evidence:* art/quality.py:216-222 box() requires b0<b3, b1<b4 and b2<b5; art/quality.py:351 and 376 the collision, visual and mover boxes go through box()
+- **F7.brief-box-extent** · EXISTS-UNVERIFIED · SPEC2 Collision: validate degenerate geometry; geo-stability tests: invalid ... plants
+  - *Capability:* A brief or intent statement that would make a box of zero or negative extent is refused at that statement.
+  - *Held by:* none
+  - *Gap:* No plant gives a mover equal corners on an axis, whether in a brief, an intent, or rules 2 and 3's case tables. Negative extent cannot be written for a mover, because its corners are normalized. Skyline and tower can still emit a zero-height box (see F7.height-pair-order).
+  - *Evidence:* art/dress.py:537-540 a mover's corners are sorted to lo and hi, and equal corners on any …; art/dress.py:742 and 877 canopy depth at least 0.2; building top at least the wall height…
+- **F7.scene-overflow** · EXISTS-TESTED · SPEC2 §5 canonical state: no NaN/infinity; geo-stability tests: overflow plants
+  - *Capability:* Overflow and non-finite policy for the scene's bytes: NaN, Infinity, a literal that overflows to inf, an integer above 2^53 - 1 and a duplicate key are each refused.
+  - *Held by:* art/selftests.py suite 'quality', rows 'plant: NaN in the bytes', 'plant: Infinity in the bytes', 'plant: 1e999, which json.loads reads as inf without a word', 'plant: -1e999', 'plant: an integer above 2^53 - 1', 'plant…
+  - *Evidence:* art/quality.py:16-20 the stated policy; art/quality.py:98-113 _const, _float (refuses non-finite) and _int (refuses beyond JS_SAF…
+- **F7.mover-quantum** · EXISTS-TESTED · SPEC2 §5 coordinate policy: use fixed-point only where its bounded arithmetic contract is…
+  - *Capability:* A mover's coordinates are whole multiples of 1/256 m below 1024 m, its travel stays inside the world and under 1024 m, its len is at most 2^18, and it is exact as a double. The exporter and the rules' twin (tick_ref.Mov…
+  - *Held by:* art/selftests.py suite 'check', rows 'plant: the exporter refuses a mover whose corner is not a whole number of 1/256 m' and 'a mover's corner not a whole number of 1/256 m, in the scene'. Suite 'quality', rows 'plant: …
+  - *Gap:* No brief plant gives a corner beyond ±1023 m, so the -1023..1023 range at dress.py:536 is unplanted. No brief plant has a travel leaving the world: the brief's wall plant stays inside the grid and is refused as 'solid'.
+  - *Evidence:* art/dress.py:265-275 swept(): exact, every number a whole 1/256 m below 2^11; art/dress.py:495-503 _qnum
+- **F7.angle-bounds** · EXISTS-TESTED · SPEC2 §5 coordinate policy: angle units
+  - *Capability:* Angles are in degrees with declared ranges: a view's yaw 0..360 and pitch -89..89, the sun's or moon's azimuth 0..360 and elevation -10..90. The renderer converts them to radians.
+  - *Held by:* art/selftests.py suite 'quality', row 'plant: a pitch of 90 — refused'
+  - *Gap:* Only the pitch bound is planted. The yaw, azimuth and elevation bounds, and every brief-level angle bound, are not. Both 0 and 360 are admitted, two spellings of north.
+  - *Evidence:* art/dress.py:186-190 azimuth and elevation ranges; art/dress.py:233-239 'view takes a name, a cell, a yaw and a pitch in degrees'
+- **F7.marks-mm** · EXISTS-TESTED · SPEC2 §5 coordinate policy: declared numeric scales; Mark & Shape: local surface coordina…
+  - *Capability:* A shape's vertices are surface-local whole millimetres with at most three decimals and magnitude at most 10^9 mm, decided by exact predicates. NaN, a bool, a fourth decimal and a vertex off its face are refused.
+  - *Held by:* art/selftests.py suite 'marks', rows 'exact numbers' and 'refusals — ... a vertex off the face SHAPE-WITHIN; four decimals SHAPE-NUMBER; NaN SHAPE-NUMBER; a bool SHAPE-NUMBER; 65 vertices SHAPE-VERTICES ...'
+  - *Gap:* LIMIT_MM (10^9 mm) and the clearance and reach caps are not planted. With constraints.within set false (studio_marks.py:401), a vertex off its face is kept, by design.
+  - *Evidence:* art/studio_marks.py:9-13 integer millimetres and exact arithmetic; art/studio_marks.py:65-69 LIMIT_MM = 10**9, REACH_MAX_MM, DECIMAL
+- **F7.intent-bay-bounds** · EXISTS-TESTED · SPEC2 §5 geo-stability tests: boundary cases; no dangling references
+  - *Capability:* An intent that names a bay index or floor beyond its building, or corners that no building has, is refused by the exporter through the director (ART-REFUSED), with its reason.
+  - *Held by:* art/selftests.py suite 'facade' (FACADE SELFTEST 8/8), row 'facade: planted bays refused, each with its reason'
+  - *Gap:* The plants test index boundaries (b8, f4) only; none tests a coordinate magnitude.
+  - *Evidence:* art/play.py:2789-2796 FACADE_PLANTS: s-b8-f2, n-b3-f2, s-b3-f4, corners 11,2-17,2, a lead…; art/play.py:2916-2926 each plant sent as an intent through D.evaluate_doc; ART-REFUSED re…
+- **F7.grid-region-bounds** · EXISTS-UNVERIFIED · SPEC2 §5 coordinate policy: scale bounds; geo-stability tests: boundary cases
+  - *Capability:* The scene's grid size and cell size are bounded, w*h fits the renderer's visibility texture, and region corners lie inside the grid without being crossed.
+  - *Held by:* none. The plant 'an integer above 2^53 - 1' rewrites grid.w, but the form check refuses it before any bound runs.
+  - *Gap:* Nothing plants grid.w = 4097, a cell of 0 m or 65 m, w*h above 2,048, or a region past the grid or with crossed corners. The field collision[].cells is required (quality.py:337) but never bounded.
+  - *Evidence:* art/quality.py:236-240 grid.w and h 1..4096, cell and wall in (0, 64]; art/quality.py:282-293 regions are integers inside the grid, corners not crossed
+- **F7.hierarchy-transform** · PARTIAL · SPEC2 §5 coordinate policy (transform order, scale bounds, hierarchy depth; reject cyclic…
+  - *Capability:* Transform order, scale bounds and hierarchy depth are declared for the art scene, and cyclic hierarchies and singular transforms are rejected.
+  - *Held by:* art/selftests.py suite 'quality' (closed schema), rows 'plant: a field the checker does not know (doors)', 'plant: a light with a field the checker does not know', 'plant: a mover with a field the checker does not know'
+  - *Gap:* The scene is flat: every object is a world-space axis-aligned box with no parent, rotation or scale. So no transform order, scale bound or hierarchy depth is declared, and there is no hierarchy to reject; a 'parent' or 'rotation' field would be refused only as an unknown field. With nothing to compose, the only transform round-trip test is the marks' face frames (F7.face-frame…
+  - *Evidence:* art/quality.py:21-23 any field this checker does not know is refused; art/quality.py:167-176 keys()
+- **F7.large-world** · PARTIAL · SPEC2 §5 coordinate policy: use camera-relative rendering or origin rebasing for large wo…
+  - *Capability:* Large worlds are handled by camera-relative rendering or by origin rebasing under a declared contract.
+  - *Held by:* For the art scene, suite 'quality' (the 1,024 m bound rows). For the graybox, ORT-1: own check (python graybox/ort_ref.py), not run at HEAD.
+  - *Gap:* The art scene and its renderer have no rebasing and no camera-relative path: a large world is refused at 1,024 m instead. ORT-1 rebases the graybox simulation's state, not the art scene. The renderer's far plane (900 m, scene_render.js:669) lies inside the 1,024 m bound, so an admitted box more than 900 m from the eye may be clipped. INFERRED, not run.
+  - *Evidence:* art/quality.py:24-25 and 71 every coordinate below 1,024 m, where float32 keeps 0.1 mm st…; art/quality.py:200-204 at or above 1,024 m is refused
+
+### F8 — contradiction: The same rule (SPEC2 §2.3 'Stale candidates are refused') is graded two ways. R9.stale-base-reevaluated and R5.v-restore-rebase say CONFLICTS-WITH-SPEC; R4.adm-base-revision, R10.p3, R1.stale-refusal and R9.m-stale-evaluation-refused say EXISTS-TESTED. The code refuses the stale evaluation and make…
+
+*Rows:* R9.stale-base-reevaluated, R5.v-restore-rebase, R4.adm-base-revision, R10.p3-candidate-isolation, R1.stale-refusal, R9.m-stale-evaluation-refused
+
+- **Resolution** → EXISTS-TESTED for R1.stale-refusal, R4.adm-base-revision, R10.p3-candidate-isolation, R9.m-stale-evaluation-refused, R5.v-restore-rebase, R9.stale-base-reevaluated: In this code a candidate is an evaluation: an intent applied to one head. Each evaluation is bound to the head it was checked against, to the intent's bytes and sha256, to the candidate's after-hashes, to the exporter's sha256 (which is part of the head) and to the trusted components' sha256. An evaluation whose head has moved is refused, and this is tested with refusals and a planted defect. Paths: the director's admit (director.py:784-786) and the commit fence under the content lock (496-498); the studio's admit (studio.py:1370-1372) and preview (1436-1437); the shell's sessions (admit.rs:386-388, 'stale; there is no rebase'). The tests are the director selftest row 'a candidate checked at the old head is not admitted at the new one' and racetest's fence rows, whose no-fence plant is caught (director.py:1895-1898). Also the studio row 'B ... refused as stale' (play.py:2147), the flags…
+- **F8.reeval-overlap-unchecked** · PARTIAL · SPEC2 §5 'Do not claim all operations commute with rebase. Test and list the exact operat…
+  - *Capability:* An intent written against an older head can be re-applied at the moved head: by `director.py reevaluate`, by the studio's restore of a recorded or queued request, or because a provider's answer arrives after the head mo…
+  - *Held by:* art/selftests.py director: 'C, re-evaluated at the new head, is a new event naming the old (CLEAN, HEAD-MOVED)' and 'B ... re-evaluated after A and C, is still CLEAN' (disjoint edits only). queue: 'fix 4 ... drawn again…
+  - *Gap:* The re-applied intent is fully validated, scope-checked and previewed at the new head, flagged HEAD-MOVED, and admitted only by the person. Nothing compares it with what the intervening admissions changed. Its '=' lines replace a statement by key whatever now stands there: last writer wins. If an admitted A and a re-evaluated C both '=' the same statement, C overwrites A's cha…
+  - *Evidence:* art/director.py:272-308 apply_revision: '= stmt' replaces whatever statement holds the ke…; art/director.py:707-719 cmd_reevaluate re-applies the same intent bytes at the current he…
+
+### F9 — contradiction: R4.adm-evidence (EXISTS-TESTED) says 'the host generates the evidence an admission requires and records it bound by digest'. But the page makes the still, not the host: - art/studio.py:1330-1351 (Studio.still) takes any PNG bytes the page posts, reads the detectors and keeps it under its own sha256…
+
+*Rows:* R4.adm-evidence, R9.limit-no-fabricated-evidence, R4.adm-preview-exact, R5.compare-identical-poses
+
+- **Resolution** → PARTIAL for R4.adm-evidence: The critic is right, and the row should be PARTIAL, matching R4.adm-preview-exact. What the host generates and holds is tested: - The ADMISSION-0 record: rung, certifies, not_checked, requires. - The checks. - The still's detectors, read from its bytes. - The strict receipts. - The CERT-0 certificate. A missing item refuses with nothing written, and the still is kept by sha256 under the lock and read back at verify. Planted defects show this in the director and studio suites (log 135-143, 673-675). The one picture of the candidate an admission requires is not host-generated, though. The page captures it from its canvas at whatever camera the designer has and posts it (play.js:467-480). At the command line, a person gives any file with --still (director.py:11, 2051). The host takes these bytes without checking them: Studio.still accepts any image/png the token holder posts and only reads…
+- **F9.adm-evidence-required** · EXISTS-TESTED · SPEC2 §6 admission sequence: generate evidence; require explicit admission
+  - *Capability:* An admission is refused, with nothing written, until every item its host-computed ADMISSION-0 record requires is present. That means every expected check passed, plus either a still whose detectors the host reads from i…
+  - *Held by:* art/selftests.py director: 'an admission without a still is refused (ADMISSION-0), nothing written', 'plant: an admission whose recorded detectors are not its still's — refused', 'plant: an admission's still taken away …
+  - *Gap:* The impact, the framed preview and (outside strict) the region receipt are not required by the studio's admission. FLAGSHIP-0 asks for them, off the admission path.
+  - *Evidence:* art/director/contract.py:146-184 missing(): what an admission lacks; refuses a rung other…; art/director.py:769-795 cmd_admit: HEAD-MOVED, REFUSED, LEAKAGE, then ADMISSION-0 from co…
+- **F9.adm-still-host-bound** · MISSING · SPEC2 §2.1 'trusted host code produces evidence'; §6 'generate evidence; preview exact ca…
+  - *Capability:* The picture of the candidate that an admission requires is produced (or at least verified) by trusted host code. It is bound to the exact candidate revision's scene digest, camera pose and render settings, so a page or …
+  - *Held by:* none. Every suite posts a synthetic still (director.py:1977-1979); the page's capture was seen only in uncommitted headless Chromium runs (ROADMAP.md:4028-4029)
+  - *Gap:* No host code renders or checks the admission still. The still is associated with the candidate only through the request id and letter it was posted under (in memory) and through its sha256 in the admit event. The record carries no candidate scene digest, camera pose or render settings. A token-holding page can post a picture of the base, of another candidate, or of anything at…
+  - *Evidence:* art/web/play.js:467-480 the still comes from the page's canvas, at whatever camera the de…; art/studio.py:1330-1351 the host takes any PNG under the studio token; it does not compar…
+
+### F10 — contradiction: These rows grade two different shells without saying so. - Direct UI edits: MISSING in R6.v-direct-edits, PARTIAL with no UI evidence in R5/R6.direct-edits. Yet R1.one-mutation-path cites admit-replay ('an admitted child equals the same edit made by a key'). The gate rows liveauthor-binding/-author…
+
+*Rows:* R6.v-direct-edits, R6.direct-edits, R5.direct-edits, R1.one-mutation-path, R6.play-mode, R6.v-play-mode, R5.flow5-play-mode, R1.runtime-authored-separation, R1.v-runtime-authored-one-log
+
+- **Resolution** → PARTIAL for R1.one-mutation-path, R5.direct-edits, R6.direct-edits, R6.v-direct-edits: The critic is right: the matrix graded two shells. R5/R6 graded art/play.py, and their MISSING/PARTIAL is correct for that studio, which has no direct-edit control (play.js:681; STUDIO_POSTS has no edit route). The Rust live editor (shell/main.rs `live-selftest`/`live-window`) does have direct UI edits. Space toggles the faced cell, opening or closing it (liveinput.rs:96, 515-527). Keys 1-5 solid-fill a tile class with the palette's next colour (liveauthor.rs:30; liveinput.rs:557-565). Both append through LiveSession.push_edit_cell/push_edit_tile (playback.rs:601-630, 729-744), the same push that VRDNP1 admission (admit.rs:401-405) and VRDNP2 batches (designevent.rs:352-354) call. The registered ADMIT-0 entry defines an admitted event as "the edit a key would make" (preregister.json:582). Gate rows hold this with refusals and plants. admit-replay goes red unless an admitted child equals…
+- **Resolution** → EXISTS-UNVERIFIED for R5.flow5-play-mode, R6.play-mode, R6.v-play-mode: SPEC2 flow 5 is a studio play mode to enter and exit. Only the art studio has one: enterPlay/leavePlay switch ui.mode and the camera in the page (play.js:724-740). STUDIO_POSTS has no runtime route (play.py:852-855), so play cannot write the brief or ledger, but no art test enters or leaves play and checks the authored bytes. EXISTS-UNVERIFIED is correct for that mode. 'held_by none' is incomplete, though, because the Rust shell has no play mode. Walking and authoring are one loop by design, but the invariant flow 5 protects is gate-tested there: a move never changes authored W and M. liveauthor-authority holds it in two ways. sessionwalk verify replays the saved log from the base (verify.py:7690-7692), and the saved final_content must equal a recomputation that applies edits only (7693-7694); a shell move that wrote W or M would fail one of these. sessionwalk-replay pins the Python twi…
+- **Resolution** → CONFLICTS-WITH-SPEC for R1.runtime-authored-separation, R1.v-runtime-authored-one-log: The R1 rows join two claims, and they come out differently. State separation is EXISTS-TESTED. Authored content is sha256(sha256(W)\|\|sha256(M)), which excludes the camera, heading and tick (workshop/README.md:25). A move writes none of it (playback.rs:580-597), held as described for F10.shell-move-never-authors. Ticks, sensitivity and admission envelopes are recorded beside events and never folded (README.md:37; playback.rs:699-701, 818-825). Operation separation conflicts with the spec, and that is deliberate. Moves and looks fold into the same head as edits (playback.rs:592, 843). That head is the revision a proposal anchors to (admit.rs:385-389), so runtime operations advance the authored revision; SPEC2 §6 says to keep runtime operations separate from authored transactions. The rule R1 cited is real: workshop/README.md:40-41 and sessionwalk.rs:6-11. It is held by the gate row sessio…
+- **F10.shell-key-direct-edits** · EXISTS-TESTED · SPEC2 §11 'Direct edits ... use the same transaction path as AI edits'; §2.2 'One mutatio…
+  - *Capability:* In the Rust live editor, a key edit (Space opens or closes the faced cell, 1-5 paints a tile class) appends through the same validated LiveSession push that VRDNP1 admissions and VRDNP2 batches use, and is saved, resume…
+  - *Held by:* gate rows liveinput-binding (stair/border key edits refused, one refusal-log record each), liveauthor-binding, liveauthor-authority, liveauthor-persist, liveauthor-fence (Tile arm: read colour, push_edit_tile, then rend…
+  - *Gap:* The edits are cell open/close and a solid fill of a whole tile class. There is no transform, duplicate, entity delete, per-object material or parametric dimension. The gate drives the mock (live-selftest); the window build (--cfg shell_window) runs the same loop but is off the gate.
+  - *Evidence:* shell/liveinput.rs:88-99 Space = Toggle; shell/liveinput.rs:515-527 Toggle -> session.push_edit_cell
+- **F10.shell-key-edits-skip-admission** · CONFLICTS-WITH-SPEC · SPEC2 §2.2 'UI and LLM operations use the same transaction/admission path. No hidden priv…
+  - *Capability:* A UI key edit passes the same admission as a proposal: anchor to the base revision, duplicate check, capability grant, preview, and an admission record (envelope).
+  - *Held by:* admit-replay (red if a key continuation enveloped its own edit); liveauthor-preregistered and the LIVE-AUTHOR-0 registered method (commit-only)
+  - *Gap:* Key edits share the session's validation and append but take no anchor, grant, preview or provenance envelope. The person at the keyboard acts as the admitter with full scope.
+  - *Conflict:* Registered entry LIVE-AUTHOR-0, verify/preregister.json:443: 'Commit-only: no preview, no provisional colour, no shell-side material; the loop's only way to change M is to append the edit.' ADMIT-0, verify/preregister.json:582, defines the admitted event as 'the edit a key would make', and admit-replay (verify/verify.…
+  - *Evidence:* shell/admit.rs:385-396 ADMIT-ANCHOR, ADMIT-DUPLICATE, ADMIT-CAPABILITY apply to proposals…; shell/liveinput.rs:557-565 the Tile arm appends directly, with no anchor, grant or preview
+- **F10.shell-move-never-authors** · EXISTS-TESTED · SPEC2 §4 'Runtime state is distinct from authored design state'; §11 flow 5 'without corr…
+  - *Capability:* In the Rust live loop, runtime movement (steps, strafes, turns) never changes the authored content W and M; the content hash excludes the camera, heading and tick.
+  - *Held by:* gate rows liveauthor-authority (sessionwalk verify of the saved log and final_content equal to an edits-only recomputation, verify.py:7690-7694), sessionwalk-replay with sessionwalk-projection (twin pinned to the binary…
+  - *Gap:* This shell has no play/stop mode to enter or exit: walking and authoring are one loop. The per-event check at verify.py:7677-7678 can never fire, so per-event separation rests on sessionwalk verify re-deriving every witness.
+  - *Evidence:* shell/playback.rs:580-597 push_move writes cam, yaw, painted, head and log; never level, …; workshop/README.md:25 content excludes the camera
+- **F10.shell-runtime-ops-one-chain** · CONFLICTS-WITH-SPEC · SPEC2 §6 'Runtime ... Keep these separate from authored transactions'; §2.3 base revision
+  - *Capability:* Runtime operations (moves, looks) are kept out of the authored revision: the base revision a proposal binds to advances only with authored transactions.
+  - *Held by:* sessionwalk-interleave; sessionwalk-batch-invariance
+  - *Gap:* Moves and looks advance the head that proposals anchor to, so a step or turn makes the session's revision differ from a proposal made before it. Ticks and sensitivity are kept out of the head.
+  - *Conflict:* Deliberate design, held by a gate row. workshop/README.md:40-41: 'Order is meaning: an edit that opens a cell changes what a later move sees, so moves and edits cannot be two chains.' sessionwalk-interleave (verify/verify.py:2738-2739) goes red if reordering an edit past a dependent move does not change the head, and …
+  - *Evidence:* shell/playback.rs:592 a move folds into the head; shell/playback.rs:843 a look folds into the head
+
+### F11 — contradiction: Undo is graded inconsistently. - The same SPEC2 §5/§17 claim is EXISTS-TESTED in R5.undo-restore but PARTIAL in R4.undo, R1.undo, R6.undo-verify and R5.m-undo-bytes. CERT's 'found' row shows '=' on aligned statements and '-' are not restored byte for byte, so PARTIAL fits. - R5.undo-binding is PART…
+
+*Rows:* R5.undo-restore, R4.undo, R1.undo, R6.undo-verify, R5.m-undo-bytes, R5.undo-binding, R6.redo, R11.undo-inverse, R11.v-undo-inverse, R4.s1-groupoid-undo
+
+- **Resolution** → PARTIAL for R1.undo, R4.undo, R4.s1-groupoid-undo, R5.undo-restore, R5.undo-binding, R5.m-undo-bytes, R6.undo-verify, R6.redo, R11.undo-inverse, R11.v-undo-inverse: Undo as SPEC2 §5/§17 states it is PARTIAL on every path. The rows disagree because they grade different parts of it, so the F11 rows split them. (1) R5.undo-restore's EXISTS-TESTED is right only for the mechanism (now F11.undo-compensating). Gateway.undo admits the stored inverse as a fresh, fully evaluated intent. The studio rows compare the brief's bytes with bytes kept before the edits, and the director refuses an inverse_of that is not that admission's stored inverse. That does not establish the spec's claim, which also asks for exact restoration, binding to the expected child revision, and dependency handling. (2) Byte-exact restoration is PARTIAL (F11.undo-bytes-restored). It is exact on the kernel session, where undo is replay (gate row workshop1-undo), and in the design tool. On the studio's path it is exact only for '+' and for single-spaced '='. An aligned '=' and a '-' return…
+- **F11.undo-compensating** · EXISTS-TESTED · SPEC2 §5 'create a compensating transaction'; §11 flow 4 'Undo and verify restoration'; §…
+  - *Capability:* The studio's undo admits the latest not-undone admission's stored inverse as a new, fully evaluated intent, a compensating transaction. It requires a CLEAN verdict, inverse_of evidence equal to the ledger's stored inver…
+  - *Held by:* art/selftests.py studio: 'undo: the last admission's exact inverse admitted, the brief as A left it' and 'undo again: an undo is never undone; it walks back to A, and the brief's bytes and scene are as at the start' (by…
+  - *Gap:* No test reaches STUDIO-NOTHING-TO-UNDO or either STUDIO-NOT-UNDOABLE (a layout admission; an inverse that is not CLEAN): git grep finds the codes only in art/studio.py and art/STUDIO.md. No test drives Gateway.undo to head_restored False; that case appears only at the certificate's level. The flagship's three plants do not touch the undo stage.
+  - *Evidence:* art/studio.py:1582-1620 Gateway.undo; art/studio.py:1605-1608 the inverse evaluated at the head and refused unless CLEAN
+- **F11.undo-bytes-restored** · PARTIAL · SPEC2 §5 'Undo restores prior authored state'; §11 flow 4
+  - *Capability:* Undo restores the prior authored state byte for byte: the brief's or session's bytes and the head before the undone change.
+  - *Held by:* gate row workshop1-undo (the undone session head equals a fresh session of the first n edits); art/selftests.py cert 'found: an '=' on a statement written in aligned columns, and a '-', are undone statement for statemen…
+  - *Gap:* On the studio's path the inverse is exact only in three cases: '+' on a parent ending in exactly one LF; '=' on a single-spaced statement whose comment, if any, follows exactly two spaces; and '-' of a last, single-spaced, uncommented statement. An aligned '=' comes back single-spaced, and a '-' comes back at the end without its comment. Then the statements and the scene retur…
+  - *Evidence:* workshop/session.rs:468-478 undo = truncate then rewrite; head recomputed; verify/verify.py:2124-2128 undone head compared with a fresh prefix session
+- **F11.undo-expected-child** · MISSING · SPEC2 §5 'applies a checked inverse against the expected child revision'
+  - *Capability:* Undo is bound to the expected child revision. The inverse applies only while the head is the undone admission's head_after, or a revision the requester names. Otherwise it is refused with a conflict.
+  - *Held by:* none
+  - *Gap:* No undo on any path names or checks an expected child revision. Nothing compares the current head with the undone admission's head_after. The director's own self-test admits an inverse two events past the undone admission's child.
+  - *Evidence:* art/play.py:983 POST /studio/undo: body ignored, no revision named; art/studio.py:1587-1594 the target is the ledger's latest not-undone admission, whatever …
+- **F11.undo-dependency** · PARTIAL · SPEC2 §5 'If later edits depend on it, safely rebase, create a compensating transaction, …
+  - *Capability:* When later edits depend on the undone change, undo rebases safely, creates a compensating transaction, or refuses with a conflict.
+  - *Held by:* none for the refusals; gate row workshop1-undo holds the kernel session's truncation
+  - *Gap:* The studio always compensates and analyses no dependency. It refuses only a layout target or a non-CLEAN inverse, and no test reaches either refusal. From reading the code (not run), an '=' inverse silently overwrites a later change to the same statement that a rebase recorded. The kernel session's undo drops later edits by truncation instead of rebasing or refusing.
+  - *Evidence:* art/studio.py:1590-1594 the latest not-undone admission, so later admissions are only und…; art/studio.py:1595-1596 refused when the target changed the layout
+- **F11.redo** · MISSING · SPEC2 §11 'Global controls: ... undo/redo'
+  - *Capability:* A redo beside undo.
+  - *Held by:* none
+  - *Gap:* No redo route, command or control. git grep finds 'redo' only in the crash-recovery sense (art/director.py:545). A redo built as a fresh intent of the undone admission's revision, as undo builds its own, is not forbidden; it simply does not exist.
+  - *Evidence:* art/play.py:852 STUDIO_POSTS: /studio/undo, no redo route; art/web/play.js:494-495 only Undo is wired
+- **F11.s1-undo-inverse-art** · PARTIAL · SPEC1 §4 'Groupoid reading: undo = composition with the inverse'; SPEC1 §4 AdmissionCerti…
+  - *Capability:* Undo as composition with a state-captured inverse, carried by a checked certificate (SPEC1's groupoid reading), as built in the art layer.
+  - *Held by:* art/selftests.py cert (CERT SELFTEST 7/7: 'each admission's certificate: the inverse applied to the child gives the parent, byte for byte or (said) token for token', the 'found:' counterexample row, three plants caught)…
+  - *Gap:* The inverse is captured as revision lines, not with prior values inline: '=' keeps the old statement without its spacing, and '-' keeps it without its comment or position. So the composition returns the parent head only for the exact subset. Layout changes have no inverse (CERT-ART-ONLY). The certificate is unsigned.
+  - *Evidence:* art/director.py:272-308 the inverse captured as revision lines at admission; art/director.py:816 stored in the admit event
+- **F11.s1-undo-replaces-replay** · CONFLICTS-WITH-SPEC · SPEC1 §1.2 ('session log: source of truth → regenerable audit view'; 'undo: log replay → …
+  - *Capability:* SPEC1 §1.2's move: the session log demoted to a regenerable audit view, and undo by log replay replaced by inverse morphism plus certificate.
+  - *Held by:* gate row workshop1-undo
+  - *Gap:* An inverse-based undo on the kernel session would append a compensating entry. Its chain head would differ from a fresh prefix session's, so the row would turn red.
+  - *Conflict:* verify/preregister.json:674 (DESIGN-EVENT-0, locked by the owner's ruling of 2026-10-06): "replay stays the authority"; verify/verify.py:2128 (row workshop1-undo): "undo to 2 did not equal replaying the first 2 edits — undo is not replay"; AGENTS.md:99: "A certificate is derived from the ledger, never the ledger from …
+  - *Evidence:* verify/verify.py:2118-2133 workshop1_undo; registered as a row at 16840; workshop/session.rs:4-10 the log is the history, undo is replay
+
+### F12 — contradiction: Schema migration is graded PARTIAL (R1.migrations, held_by none) and MISSING (R4.v-schema-migration). A search of every .py, .rs and .js file for 'migrat' finds only a comment at oracle/game/tools/terrain/combat.py:25. The only version handling tested is refusal: G-unknown-version.intent is refused…
+
+*Rows:* R1.migrations, R4.v-schema-migration
+
+- **Resolution** → MISSING for R1.migrations, R4.v-schema-migration: No code translates a world, session, proposal, brief, intent, ledger event or project file from an older schema version to the current one, and no test exercises a migration. A grep for 'migrat' over every .py, .rs and .js file finds only a comment in the frozen oracle. A grep for upgrade, legacy or backward-compatibility in code finds three things, and none of them is a migration. (1) graybox/trace.py:321-326 reshapes a version-0 VERDANDI-TRACE in memory into version 1's shape. That is an evidence file, not authored state. The file on disk is never rewritten, and no test or fixture in graybox/ has a version-0 trace: the only matches for version "0" are these lines. (2) art/director.py:914-927 replays a ledger admission from before ADMISSION-0 that has no record. That is additive-field tolerance: the old event is read as written. (3) art/studio.py:497-501 counts request lines from befor…
+- **F12.versioned-schemas** · PARTIAL · SPEC2 §5 'Kernel / world model: Owns ... versioned schemas'; SPEC2 §5 'versioned canonica…
+  - *Capability:* Every persisted schema carries a version, and a reader refuses a version it does not know rather than misreading it (the precondition for migration, without migration itself).
+  - *Held by:* art/selftests.py suite 'director' (art/director.py selftest), row 'G-unknown-version.intent is refused on input (INTENT-VERSION)'; gate row hoststate1-record (a planted version-3 snapshot must become an unavailable snap…
+  - *Gap:* Coverage is uneven. project.json carries no version and its loader checks none. A session-walk's version exists only as the magic VRDNSW1. The ledger's LEDGER-VERSION refusal and the edit record's version-3 check have no planted-version test that I found. Only the intent and HOST-STATE refusals are asserted by a test that runs. No reader accepts an older version and converts i…
+  - *Evidence:* art/director/intent.py:28 VERSIONS = ("0",); art/director/intent.py:188-189 INTENT-VERSION refuses an unknown intent version
+
+### F13 — contradiction: R4 and R11 grade SPEC1 §5's decision procedure differently: - Q1 normalize: MISSING (R4.s1-q1-normalize) vs CONFLICTS-WITH-SPEC (R11.normalizer-Q1). - Q3 inverse as an admission gate: CONFLICTS (R4.s1-q3-inverse-gate) vs PARTIAL (R11.Q3-inverse). - O(k log n) admission cost: CONFLICTS (R4.s1-admiss…
+
+*Rows:* R4.s1-q1-normalize, R11.normalizer-Q1, R4.s1-q3-inverse-gate, R11.Q3-inverse, R4.s1-admission-cost, R11.admission-cost
+
+- **Resolution** → CONFLICTS-WITH-SPEC for R4.s1-q1-normalize, R11.normalizer-Q1: I applied one rule to all three disputes: the owner's court ruling registered in DESIGN-EVENT-0 (verify/preregister.json), which ranks above ROADMAP prose in AGENTS.md §1's order of trust. The gate holds it: designevent-preregistered refuses if the entry has been edited. For Q1 the entry says: "Canonicalising belongs to whatever compiles a design — the design tool, a mouse, a recipe, a model — and never to the shell, which recognizes or refuses and rewrites nothing" (preregister.json:674). DESIGN-IR/DIFF-0 repeats it as his ruling: "canonicalising belongs in the design compiler and not in the authority or session layer" (preregister.json:731). The ROADMAP court table records his refinement: "the compiler canonicalises, never the authority" (ROADMAP.md:1948). SPEC1 puts Q1 in workshop/admit, normalizing in kernel/norm and kernel/graph (spec1.md:38, 52), and has merge as "union + renormal…
+- **Resolution** → PARTIAL for R4.s1-q3-inverse-gate, R11.Q3-inverse: I applied the same rule (DESIGN-EVENT-0's registered ruling). It forbids nothing about an inverse check, and I found no other rule that does, so CONFLICTS has nothing to stand on. R4's quotes do not forbid a pre-admission check. AGENTS.md:99, "A certificate is derived from the ledger, never the ledger from it", is about which derives from which. A check that applies the captured inverse to text1 and compares the result with the parent's bytes before commit_admission needs no certificate and derives nothing from one. AGENTS.md:99 is also the agent's own §4 text from 0244, not an owner ruling. The comment at studio.py:1632 covers only the exception path of the 0244 build. The owner's B1 acceptance asks for exactly this property: "an admission then its undo giving back the head before them byte for byte" (ROADMAP.md:4579-4580). The repair of the non-exact inverses is "his to rule" (ROADMAP…
+- **Resolution** → CONFLICTS-WITH-SPEC for R4.s1-admission-cost, R11.admission-cost: Same rule again. The same registered DESIGN-EVENT-0 entry carries the owner's ruling on admission cost: "REPLAY, AND THE MEMO (the owner's ruling: full verification locked, delta verification deferred). Every admitted batch is replayed against a verified parent; unchanged witnesses may reuse their exact prior digest, but no historical computation is trusted merely because it was previously verified. So each admission still loads and replays the whole of S" (preregister.json:674). Its declared limit: "the cost of an admission still grows with the session, and nothing here bounds it" (preregister.json:688). The court table says "the delta claim is deferred" (ROADMAP.md:1949). GHOSTS.md:589-591 restates it as deferred by name. The gate holds the replay itself: designevent-replay (verify.py:14694-14702) replays every edit, and compares it against the computation with no memo. SPEC1's "O(k l…
+- **F13.art-q1-normal-head** · MISSING · SPEC1 §5 Q1; SPEC1 §1.2 (merge: union + renormalize; conflict: normalization stalls)
+  - *Capability:* Q1 on the art layer's admission: the candidate's revision unioned into the brief and normalized to a fixpoint, the head taken over that normal form, and a stall refused with a typed refusal carrying the irreducible form.
+  - *Held by:* none
+  - *Gap:* Nothing normalizes the brief. Two spellings of one scene are two heads. INTENT-APPLY is a key-collision refusal and carries no irreducible form. A normalized art head, option (b), is an open question the owner has not ruled on (it would re-freeze every reference and rebase every ledger). DESIGN-EVENT-0's ruling governs the shell and session authority, not DIRECTOR-0's ledger, …
+  - *Evidence:* art/director.py:272-308 apply_revision applies '=', '+', '-' to the text in place; INTENT…; art/director.py:796 and :805 the admitted text is exported as written; the head's art par…
+- **F13.art-admission-cost** · MISSING · SPEC1 §5 admission cost; SPEC1 headline metrics
+  - *Capability:* The art layer's admission costs O(k log n) in the affected region, not O(n) in the ledger or the world.
+  - *Held by:* none (THROUGHPUT-0's memo times admissions; no scaling bound is asserted by any suite)
+  - *Gap:* Every art admission reads the whole ledger and exports whole scenes (memoized by text). Nothing is region-local and nothing measures a bound. The owner's DSC-0 ruling closes the tree-commitment route to the studio admission path. A region-local admission by any other means is not ruled out, and none exists.
+  - *Evidence:* art/director/ledger.py:59-66 append reads every event under the content lock to get seq a…; art/director.py:777 cmd_admit reads the whole ledger
+
+### F14 — contradiction: R2.L6-cross-platform says scoped cross-platform determinism has 'none as a check', and R2.spec1-PHYS-1 grades it CONFLICTS-WITH-SPEC. But R3.determinism-scope, R3.input-contract (EXISTS-TESTED) and R11.m-canon-cross-impl (EXISTS-TESTED) cite cross-engine comparisons. These are tick_ref.py verify/ca…
+
+*Rows:* R2.L6-cross-platform, R2.spec1-PHYS-1, R3.determinism-scope, R3.input-contract, R11.m-canon-cross-impl
+
+- **Resolution** → PARTIAL for R2.L6-cross-platform: PARTIAL stands, but the held_by 'none as a check' is wrong: scoped cross-platform checks exist. (1) The gate holds every machine to fixed values. kernel-oracle, kernel-corpus and bearing-oracle compare the kernel's frames and pixels with frozen Urðr digests bit for bit, and fail on any difference; kernel-selftest's mirrored sign table shows the comparison is load-bearing. sessionwalk-demo holds a committed session to its sealed head, which the row calls 'established, host-independent'. These rows passed at HEAD on the owner's Windows host, and the container's gate is recorded too (CORE.md:188), so the two hosts agree within the registered scenes. This is EXISTS-TESTED by the gate (F14.cross-host-gate-witnesses). (2) The graybox has own checks per engine. tick_ref.py verify/cases/rules2/rules3 hold any engine's trace byte for byte to an independent Python tick and exit 1 on a difference,…
+- **F14.cross-host-gate-witnesses** · EXISTS-TESTED · SPEC2 §13 layer 6 'scoped cross-platform determinism'; SPEC2 §2.4 'cross-host determinist…
+  - *Capability:* The kernel's frames and pictures, and a committed session's head, are held to fixed frozen values on whatever machine runs the gate. Every host that passes the gate therefore agrees within the registered scenes.
+  - *Held by:* gate rows kernel-oracle, kernel-corpus, bearing-oracle, sessionwalk-demo, with kernel-selftest as the control that the comparison is load-bearing. Passed at HEAD on the owner's Windows host (251 rows / 0 fail / 0 skippe…
+  - *Gap:* Each host is held to the frozen values; no row compares two hosts. Cross-host agreement follows only for the hosts that ran the gate (the container and the owner's Windows host), and a person compares their outputs as text. The scope is the registered scenes, cameras and committed demo sessions. The window build (--cfg shell_window) is off the gate (AGENTS.md:39).
+  - *Evidence:* verify/verify.py:869-882 kernel_oracle: two runs, then frame digest and identity pixels m…; verify/verify.py:885-902 kernel_corpus: 12 witnesses equal to frozen values bit for bit
+- **F14.cross-engine-tick** · EXISTS-TESTED · SPEC2 §13 layer 6; SPEC2 §7 physics tests 'cross-host replay only where promised'
+  - *Capability:* The graybox tick (rules 1, 2, 3) and its input contract, as one JavaScript engine on one host played them, are held byte for byte to an independent Python tick. Each engine's rule arithmetic is held to CPython's digests…
+  - *Held by:* own checks, not run at HEAD and in neither the gate nor art/selftests.py. These are AGENTS.md §4's tick_ref.py verify / cases / rules2 / rules3 after trace.py run --browser, and sim.js rules-arithmetic via serve.py --se…
+  - *Gap:* Measured on the tactical map only. Rules 1 was held on four engines (Firefox 157, Edge 155, Chromium 141, node 22). Rules 2, rules 3 and ORT-1 were held on V8 engines only, and no Firefox run of them is recorded. JavaScriptCore and the witness level are untested. graybox/README.md:136 promises the same bits 'in every conforming JavaScript engine', which is wider than this. tra…
+  - *Evidence:* graybox/tick_ref.py:24-30 verify reads a trace from any engine and trusts nothing it comp…; graybox/tick_ref.py:1031-1072 every snapshot compared byte for byte; exit 1 on any differ…
+- **F14.host-session-replay** · EXISTS-UNVERIFIED · SPEC2 §7 physics tests 'cross-host replay only where promised'; SPEC2 §2.4
+  - *Capability:* A live session made and sealed on the owner's Windows host replays to the same head in the Linux container.
+  - *Held by:* none. The ledger records it as done by hand (OBSERVED). readercourt-corpus and readercourt-fence read the host's records to a typed value but replay none of them
+  - *Gap:* No row or suite replays a committed host session (shell/attest/livesession-*) to its head. The cross-host replay was done by hand, once per session.
+  - *Evidence:* verify/RUNGS.md:3315-3323 the host's saved file checked in the container: sessionwalk ver…; verify/RUNGS.md:4529-4532 host-made witnesses 'reproduced by the reference kernel on Linu…
+
+### F15 — contradiction: Pairs grading one capability two ways: - Fog: EXISTS-UNVERIFIED vs PARTIAL. It is drawn at art/web/scene_render.js:271-277, and its fields are bounded with no plant. - Material system: PARTIAL vs MISSING. - Asset import pipeline: PARTIAL vs MISSING. - Blocked-move trace: MISSING vs PARTIAL. - Reque…
+
+*Rows:* R7.fog-atmosphere, R7.v-fog-atmosphere, R7.maps-decals-textures-presets, R7.v-material-system, R8.asset-import-pipeline, R8.v-asset-import-pipeline, R3.cc-blocked-trace, R3.v-blocked-trace, R9.bind-non-goals, R9.v-bind-non-goals, R6.three-concepts, R7.three-concepts-separate, R7.spec1-palette-materials, R11.palette-materials, R8.material-palette-indices, R11.v-palette, R3.spec1-atlas, R2.spec1-ATLAS-0, R11.atlas-charts
+
+- **Resolution** → EXISTS-UNVERIFIED for R7.fog-atmosphere, R7.v-fog-atmosphere: SPEC2 §8 asks for 'fog/atmosphere' and nothing more: no volumetric fog, no physically based sky. The native renderer draws both parts. It applies height fog with an exponential density and a height falloff (scene_render.js:271-276) and adds each lamp's single-scattered glow along the eye ray (169-181, 277). Its sky shader mixes the fog colour into the horizon and adds the moon, the city's glow and stars (283-298). Colour and density are read from the scene (518-527), and the Unreal importer spawns an ExponentialHeightFog (verdandi_import.py:236-250). Nothing tests the drawing. quality bounds the fog's fields (quality.py:308-313), but none of its plants touches fog (806-824), and no suite reads a picture for fog, so it is not EXISTS-TESTED. R7.v's two gaps do not make it PARTIAL. First, the scene's 'volumetric' is parsed (dress.py:191-194) and bounded, and the native renderer never reads…
+- **Resolution** → PARTIAL for R7.maps-decals-textures-presets, R7.v-material-system: SPEC2 §8 names four items, and code exists for one of them: material instances. The optional Unreal importer makes one parameterised master material (verdandi_import.py:75-110) and a MaterialInstanceConstant for each scene material, parented to the master and updated in place when the look is revised (113-137; header 11-12). R7.v's MISSING overlooked this. That code is untested. No file calls verdandi_import (grep finds only the file itself). art/README.md:326-327 grades its logic OBSERVED against a stand-in that is not in the repository, and its run in Unreal NOT_MEASURED. The native path has no instance with overrides. A material is declared once per brief as base RGB, roughness, metallic and emissive, with no version (dress.py:210-220). The shader's five procedural patterns are chosen from what the piece is, 'never from a material's name' (scene_render.js:369-376, 187-238). Decals ar…
+- **Resolution** → PARTIAL for R8.asset-import-pipeline, R8.v-asset-import-pipeline: No mesh, texture or material asset is imported. Every visual's asset is the literal 'cube' (dress.py:695, 714, 925 among others), and a declared asset no visual uses is dropped from the scene (959, 979). So the pipeline's core is MISSING: import settings, mesh/texture validation, collision/LOD generation, per-asset content hashes, an asset dependency graph and asset reimport. SPEC2 §12's list also names source provenance, licensing metadata and missing-source diagnostics, and those exist and are tested. An asset statement requires an engine path, a source from a closed list and a licence (dress.py:201-209). The exporter refuses a brief whose cube is not declared (651-653). check_sources refuses an asset that lacks any of the three, and a visual naming an undeclared asset (check.py:348-361). Planted defects are refused in the 'check' suite (check.py:581-583, 596; log:264, 269), and the c…
+- **Resolution** → MISSING for R3.cc-blocked-trace, R3.v-blocked-trace: SPEC2 §7 asks the character controller for a trace explaining why a move was blocked or clipped. The controller is graybox/web/sim.js. blocked() returns one boolean whichever test fired: a cell above step height, a standing target, a rules-2 box, a rules-3 wall (sim.js:336-353). moveAxis halves a blocked move six times and records neither the cause nor the distance lost (653-660). Nothing anywhere explains a block or a clip. R3.v's PARTIAL rests on records that say nothing about a player's move. A mover's 'stopped' (440-451, hashed at 739) is the platform's own held state. It is set alike when a player stands in its way and when a push is blocked, and it names no cause. The refused-input category logged at main.js:366 belongs to the input contract, not to a blocked move, and tick_ref's FIRST DIFFERENT locates disagreement between engines. The nearest real record is the shell's grid walk…
+- **Resolution** → PARTIAL for R9.bind-non-goals, R9.v-bind-non-goals: The request has no non-goals field (studio.py:1002-1016). The response's 'preserve' is the model's own words, 'in words' (studio.py:177-179), not the designer's, so it does not count. Two narrow bindings that the designer makes do exist, so the grade is PARTIAL rather than MISSING. (1) A pin (R) is bound into the request with role 'pin' and the scene and head it was pinned at (studio.py:840-848). The system text tells the model to change a pinned object 'only if the prompt asks for it, and otherwise keep it exactly as it is' (director_prompt.py:39-41). (2) A shape's fixed options bind non-goals in words: 'preserve the structural supports' goes into the request as the designer's words (studio_marks.py:490-492; studio.py:894) and is rendered to the model as 'the designer's words, not checked' (director_prompt.py:134-135). Nothing enforces either one. The host's touches only report whether…
+- **Resolution** → EXISTS-UNVERIFIED for R6.three-concepts, R7.three-concepts-separate: Both rows name the same capability: the separation, meaning that bytes freeze, visual baseline and acceptance evidence do not imply one another. In code they are three things that never read one another. quality.freeze appends only to art/references.jsonl, and only for a scene that passes its checks (quality.py:549-575). flagship.approve appends only to art/visual_baselines.jsonl and states that the references are not touched (flagship.py:183-215). The acceptance, flagship.run, returns its stages and writes neither file (flagship.py:78-91). The studio's admission reads none of them: EXPECTED_CHECKS names no reference, baseline or acceptance check (contract.py:46-56), and only flagship.py touches the baselines file (grep). No test asserts the separation. quality's selftest freezes into a scratch file, and the flagship row approves into a scratch path (flagship.py:327-335). Neither checks…
+- **Resolution** → CONFLICTS-WITH-SPEC for R7.spec1-palette-materials, R11.palette-materials, R8.material-palette-indices, R11.v-palette: SPEC1 §7 asks for materials as indices into a versioned palette, not RGB, and for palette changes to be gate events. For the materials the renderers actually draw, the art scenes', the repository deliberately does otherwise. A material is declared as sRGB base colour plus roughness, metallic and emissive (art/README.md:85; dress.py:210-217), and Unreal gets one instance per material (verdandi_import.py:113-137). A change to a material is content admitted through the director and its scope check, never through the gate. The owner's declared direction is that 'content generation does not invoke the engineering gate' (README.md:52-55), and the gate stops growing (AGENTS.md:60). The operative brief adds 'Do not force all materials into RGB palette indices if the renderer requires full textures/material assets' (spec2.md:104). The capability as SPEC1 states it therefore conflicts. R8's and R…
+- **Resolution** → CONFLICTS-WITH-SPEC for R3.spec1-atlas, R11.atlas-charts: R3's and R11's capability is SPEC1's atlas as written: Q32.32 fixed-point bases, coordinates derived and never authored, an exhaustively tested cocycle, and R∘Op = Op∘R for every op and every rebase. The repository deliberately does otherwise on two of its defining clauses. (1) Under the owner's 'batch/scrap and proceed' (ORT-1.md:10-11), ORT-1.md:18-19 records: 'Scrapped, and why: the int32 region and local coordinates (Verðandi's state is binary64 metres under rules 1 and 2; a second state model would be a second simulation)'. Q32.32 bases would be that second state model, and docs/ROADMAP.md:5553 records that the tree's Rust holds no Q32.32. (2) ORT-1.md:40-42 records, measured by translate_probe.py at 0225, that a rebase does not conserve the bits of later ticks, so R∘SimStep ≠ SimStep∘R. It holds 'a run with a rebase ... to a run with the same rebase'. SPEC2 §5 says 'Do not claim a…
+- **Resolution** → MISSING for R2.spec1-ATLAS-0: This is a different, narrower scope from R3/R11: ATLAS-0, the cocycle T(A→C) = T(B→C)∘T(A→B) tested exhaustively. It conflicts with nothing, since SPEC2 §5 also asks for transform composition and round-trip tests (spec2.md:45). It is MISSING rather than PARTIAL. No code composes transforms: there is no transform between two non-world charts and no chain (the searches in R2's check), so the condition has no instance beyond A = C, the inverse law. That law is tested for one-level frames. MARKS 'frames' checks local(world(a, c)) == (a, c) at three points on each of six faces, in Fractions (studio_marks.py:619-636). ORT-1's O2 'there and back' checks the origin (ort_cases.json:89-140; ort_ref.py:453-456; own check, not run at HEAD). Those tests belong to the rows of those frames; counting them as ATLAS-0 would grade a test of something else. No ORT-1 case compares two successive rebases wit…
+- **F15.asset-provenance-licence** · EXISTS-TESTED · SPEC2 §12 asset pipeline: 'source provenance', 'missing-source diagnostics and licensing …
+  - *Capability:* Every asset names its engine path, a source from a closed list and a licence. A mesh without a licence, a source outside the list, or an undeclared cube is refused, and every admission's evaluation runs the check.
+  - *Held by:* art/selftests.py suite 'check' (art/selftests.py:38): row 'every mesh names its source and licence' and the plants 'a mesh with no licence' and 'the exporter refuses a mesh from an unnamed source'. Both PASS for all fou…
+  - *Gap:* Only the engine cube has ever been placed (art/dress.py:959), so the check guards one engine asset. There is no per-asset content hash (the lineage hashes the brief and the exporter), and the licence is free text that nothing checks against its source.
+  - *Evidence:* art/dress.py:201-209 the asset statement: name, engine path, source (refused unless in SO…; art/dress.py:651-653 the exporter refuses a brief whose cube is not declared ('every mesh…
+- **F15.material-by-reference** · EXISTS-TESTED · SPEC1 §2 'material: MaterialRef (palette index, not RGB)' (the indirection half); SPEC2 §…
+  - *Capability:* A piece carries the name of a declared material, never a colour. The brief's material table holds the values, an undeclared name is refused, and the host computes and tests how far a change to one material reaches (ever…
+  - *Held by:* art/selftests.py: 'quality' plants 'a visual whose material is not declared' and 'a mover whose material is not declared' (log:759, 780); 'check' check_sources; 'studio' row 'a material changed: every object of it touch…
+  - *Gap:* The table belongs to one brief and has no version or shared library. Its entries are sRGB plus PBR scalars, not palette indices, and a change to one is a content admission, not a gate event (see the palette resolution).
+  - *Evidence:* art/dress.py:210-224 a material declared once by name (base RGB, roughness, metallic, emi…; art/dress.py:925 a bay's visual carries 'material': emat, a name
+- **F15.registered-palette-gate-held** · EXISTS-TESTED · SPEC1 §7 'palette changes are gate events'
+  - *Capability:* The shell's live editor cycles the five tile classes through a registered 8-colour palette, and any change to that palette turns the gate red.
+  - *Held by:* gate row liveauthor-preregistered (verify/verify.py:16916): Red 'the shell's palette is not the registered one' when shell/liveauthor.rs's PALETTE differs from LIVEAUTHOR_PALETTE. shell/liveauthor.rs is also a pinned so…
+  - *Gap:* Edits store RGB, not indices. The palette is an input cycle for the tile world's five classes, not the art scenes' materials, and there is no separation matrix per lighting band.
+  - *Evidence:* shell/liveauthor.rs:15-25 'The registered palette: 8 colours, in cycling order'; shell/liveauthor.rs:35-42 next_colour: the entry after the class's current colour, or the…
+- **F15.baseline-approval-binding** · PARTIAL · SPEC2 §11 'Visual baseline approval is explicit and binds exact scene revision, camera pa…
+  - *Capability:* Visual baseline approval is an explicit act, and the record it writes binds the exact scene revision, camera path, renderer and settings, and evidence.
+  - *Held by:* art/selftests.py suite 'flagship', row 'the visual baseline: written only on a person's word, from a preview complete, verified and framed; refused otherwise' (art/flagship.py:332-335; log:610, 1454). It asserts that pa…
+  - *Gap:* The line names the request id, not the scene's sha256 or head. The head sits only in the request's record under art/build/studio, a build folder. Of renderer and settings, only viewport, frame rate and simulation semantics are bound: no hash of scene_render.js, no browser and no GPU. Approval cannot be reached from the studio UI, and nothing reads art/visual_baselines.jsonl.
+  - *Evidence:* art/flagship.py:183-215 approve: refuses unless the preview was replayed, its states veri…; art/studio.py:1483-1487 the hashed meta: request, candidate, provider, model, prompt_sha2…
+- **F15.atlas-chart-hierarchy** · MISSING · SPEC1 §0 A4, §2 Chart/Basis, §3; SPEC2 §5 'Local transforms are authoritative in their de…
+  - *Capability:* A chart hierarchy (World/Building/Bay/Platform/CameraRig, depth capped) in which world coordinates are derived by composing local transforms along the parent chain, never authored.
+  - *Held by:* none
+  - *Gap:* Nothing has a parent frame, a local transform, a composed world transform or a depth cap. The only frames are MARK-0's face frame and ORT-1's origin, each one level deep with an exact inverse. FACADE-0 derives bays from their building by generation, not composition. Every other position is authored in world cells or metres.
+  - *Evidence:* art/studio_marks.py:15-24 and 131-155 MARK-0's face frame: one level, box face to world, …; graybox/ORT-1.md:29-31 one whole-cell origin (oi, oj) per rules-2 world

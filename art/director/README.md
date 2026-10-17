@@ -143,7 +143,7 @@ is always the head it met: a candidate is never admitted on a verdict reached at
 | `refuse_input` | an input refused before it was an intent: its sha256 and code |
 | `admit` | the evaluation admitted, the head before and after, `accepted_leakage`, the exact inverse revision, the layout lines, who chose, and (0222) its `evidence`: the still's sha256 and its detectors as the host read them, whether it was admitted despite them, or the admission it is the exact inverse of |
 | `refuse` | an evaluation a person refused, and their words |
-| `rebase` | a change made outside the loop (a hand edit, a new exporter): the texts and heads before and after |
+| `rebase` | a change made outside the loop (a hand edit, a new exporter): the texts and heads before and after, and (0245) the art checks it passed: a rebase is refused for files that fail one (`REBASE-CHECKS`) or that the exporter refuses (`REBASE-EXPORT`), and is read, replayed and appended under the content lock |
 | `approve` | a person's acceptance of a still from a view: the image's sha256, the render configuration, and QUALITY-0's detectors read on it (0221). A still the detectors flag, or cannot read, is approved only with `--despite-detectors`, which the event records (provenance, never a gate: a detector proves nothing either way) |
 
 Re-evaluation appends a new `evaluate` event naming the old one, and the old verdict stays exactly as it was.
@@ -157,9 +157,16 @@ Verification (`director.py verify`) replays the ledger from its genesis:
   one of an evaluation from before the record carries none;
 - every admission's still is on the disk as the bytes it names, its detectors read again from them (`LEDGER-STILL`;
   the launcher's look checks the bytes only);
+- a rebase's text must be the art its parts name, and its head its parts' (`LEDGER-REPLAY`), and none may record a
+  failing check (`LEDGER-REBASE`, 0245);
 - the files must be the text and head the replay reaches.
 
-An edit outside the loop is refused (`UNLOGGED-CHANGE`) until a `rebase` records it.
+An edit outside the loop is refused (`UNLOGGED-CHANGE`) until a `rebase` records it. LEDGER-SAFE-0 (0245): no event that names a
+head is appended over it meanwhile. An evaluation, an admission or an approval is appended under the content lock, and only
+while the files are the head the ledger replays to and that is the head it was checked against; otherwise
+`LEDGER-UNLOGGED` (rebase first) or `HEAD-MOVED` (evaluate again), and nothing is appended. A `refuse`, which names no
+head, is appended as before. Before it, one evaluation over
+an unrecorded change appended an event that replay, and so rebase, refused for good (MEASURED, 2026-10-16).
 
 ## 5. Running it
 
@@ -205,9 +212,9 @@ before the admission's first write. It is bound to the admission by digest; noth
 
 | claim | shown by | does not show |
 |---|---|---|
-| the rules are written completely enough to be implemented twice | `conform.rs` reproduces all 62 vectors: verdicts field by field and canonical bytes byte for byte; three planted rule defects caught | that either implementation is right: one author wrote both, and the vectors are the contract |
+| the rules are written completely enough to be implemented twice | `conform.rs` reproduces all 65 vectors (62 when this was first written): verdicts field by field and canonical bytes byte for byte; three planted rule defects caught | that either implementation is right: one author wrote both, and the vectors are the contract |
 | a candidate's verdict belongs to the head it met | `HEAD-MOVED`; the self-test refuses an admission at a moved head and re-evaluates as a new event | — |
-| the ledger is append-only and replays to the files | `verify`; the self-test's plants (a hand edit, a changed line) refused | the last line alone has no successor to name it: it rests on the commit that holds it |
+| the ledger is append-only and replays to the files | `verify`; the self-test's plants (a hand edit, a changed line, a forged rebase) refused; LEDGER-SAFE-0's rows (0245): an evaluation over an unrecorded hand edit, a late one after the head moved, an admission over a hand change back and a rebase of failing files each refused with nothing appended, and each guard's plant shown to leave a ledger replay refuses | the last line alone has no successor to name it: it rests on the commit that holds it |
 | the layout's authority stays the shell's | a layout candidate is compiled and admitted by the design tool, and C is rebuilt by the graybox converter | — |
 | every verdict says what it certifies, what it did not check and its rung; an admission brings what its record requires | the director's self-test (17 rows: the record complete, an admission refused without a still, with a flagged still, or with an undo that is not one; the evidence and the still read back; three plants on the evidence; the classifier on a kind it does not know, a candidate that did not export, a skipped check) | that the still shows the candidate, or that the rung is right beyond the kinds the classifier lists: it is a restatement of the language, held to it by the plants |
 | the art is good | nothing here | a person judges rendered views; an approved still records acceptance, not reproducibility |

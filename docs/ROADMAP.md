@@ -5181,6 +5181,110 @@ studio (a second candidate re-evaluated or merged when it glues); Lean; the dash
 row, rung, pinned source or oracle file changed. Docs: AGENTS.md (two rows), art/STUDIO.md, docs/CORE.md (art 26,311 lines, tools
 2,063), this entry.
 
+**His run of 0244, and his word on the inventory (2026-10-16).** 0244 applied on e1fb9f4; the rung D by the classifier
+he held before the push (each file D or D?, loosening nothing); *"116 planted defects refused by the old checker; 116
+by the new"*, PLANTS HELD; RUNG SELFTEST 19/19; ART SELFTESTS PASSED, twenty-four suites, sixteen at once, 156.5 s and
+196.6 s wall; the gate 251 rows / 0 fail / 0 skipped, rowset 74db4c8d78625af5; pushed e1fb9f4..6af1d9f; his
+classifier taken again from origin/main. MEASURED on his machine. He then brought two documents: an engine and studio
+specification built on a canonical relational world, and, *"in other words"*, a corrected brief whose first step is an
+inventory (a capability matrix, a baseline, a patch plan) before broad changes, its first slice the dashboard. Taken as
+follows, in a session of the agent on his machine (not the container): the inventory read the tree and changed nothing
+(eleven readers, two skeptics each, a critic and sixteen answers to it; 704 rows; docs/CAPABILITY-MATRIX.md and its
+generated rows); the dashboard audited against his five areas, read (INFERRED) as the regions of the brief's §11
+layout with its global strip as a sixth (his five are not written in the repository); the gate run there once (§2 of
+it); and an order put to him: 0245 LEDGER-SAFE-0, 0246 the page executed by a test, 0247 the dashboard's consolidation
+held by it, then the candidate's binding and the inverse's repair on his rulings. His word: *"Agreed on the order.
+Build 0245 (LEDGER-SAFE-0) here, as a patch I apply; I'll rebase the checkout's plaza-night myself first."*
+
+### LEDGER-SAFE-0 — no event over a head the ledger does not hold · **built, off the gate** (0245, `art/director.py`, `art/studio.py`, `art/play.py`, `tools/rung.py`)
+
+**What the inventory found (MEASURED on his machine, on copies; nothing of his was written).** In a `git archive` of
+6af1d9f, `python art/director.py verify plaza-night` refused: UNLOGGED-CHANGE, the files `df8b640defd8`, the ledger
+`9e7811343bcf` (0237's exporter, `0a6ce8b`, recorded by no rebase: INFERRED, as #21, #24 and #25 recorded theirs). One
+`evaluate plaza-night art/fixtures/round/A.intent` there appended #26, checked against the files; after it `verify`
+said LEDGER-HEAD at #26, and `rebase`, the remedy `verify` names, said the same: the tools could not repair that ledger
+again (only restoring its file by hand could). On copies of his desktop studio's worlds folder, both worlds refused
+UNLOGGED-CHANGE too (harbor-day `bd321617d339` against `36686b4e6080`; plaza-night `7221f144ba1f` against
+`7017cc385db7`). So every ledgered world was one evaluation from a ledger the tools could not repair (MEASURED on the
+checkout's copy; by reading for his two worlds). By reading (two agents, and the code): the studio's admit, reject and
+undo evaluated outside the content lock and appended afterwards, so another writer landing between them did the same;
+`rebase` recorded whatever the exporter took and dropped the results of the checks its export ran.
+
+**What it changes.** An event that names the head it was checked against (an evaluation, an admission, an approval)
+is appended only under the tree's content lock, and only while the files are the head the ledger replays to and that
+head is the one it was checked against (`held_head`, `append_checked`, `append_evaluation`); otherwise it is refused
+and nothing is appended: LEDGER-UNLOGGED (its message opens with the rebase to run, with the world's `--root`) or
+HEAD-MOVED. The admission's fence holds the ledger's head as well as the files'. The guard and `rebase` first recover a
+dead writer's half-done admission they find under the lock (completed if its admit event is in the ledger, undone if
+not). `rebase` reads, replays and appends under the lock, and records only files that pass the art checks an
+evaluation runs (REBASE-CHECKS) and the exporter takes (REBASE-EXPORT, where it raised before), keeping the checks in
+its event; replay holds a rebase's text to its parts (LEDGER-REPLAY) and refuses one recorded with a failing check
+(LEDGER-REBASE). Every existing rebase event, in the checkout's ledger and in his two worlds', passes the new replay
+(checked read-only). The studio: its three evaluations appended through the guard; a director refusal reaching the
+page as STUDIO-DIRECTOR-REFUSED with the director's own code as a field (`director_code`; before, it was only in the
+message's text, and a LedgerError was not caught there at all), its message no longer cut at 300 characters; a
+certificate written whole, and every art admission the ledger holds without one given one at the start from the
+ledger alone, where its part of the ledger replays (`recover_certificates`, which skips one it cannot make and never
+stops a start); a studio route with no branch refused (STUDIO-ROUTE) where the undo was every unmatched route's last
+line. RUNG-0's R5: art/check.py's rows keyed by the world they are printed under (its 202 plant rows were 56 keys, the
+last brief's verdict standing for four: MEASURED from his log), art/studio.py's bracketed rows that name a plant read
+(R5 had read none of that suite's; the "116 and 116" was quality 54, check 56, director 6, studio 0), and two rows
+under one key one row that passes only if both do. A refuse names no head and is appended as before. Not changed: the
+live loop serves a hand edit as it always did.
+
+**Its falsifiers.** DIRECTOR SELFTEST (nine rows in `safe_rows`, each in the self-test's tree, put back after): an
+evaluation over a hand edit refused LEDGER-UNLOGGED with nothing appended; a late evaluation, the head moved by a
+recorded change, refused HEAD-MOVED; an admission over a hand change back to its own head refused at the fence; a
+rebase of files failing an art check refused REBASE-CHECKS; and five plants: four take a guard away and show the
+ledger replay then refuses (without the held head, the evaluation appended and verify, then rebase, said LEDGER-HEAD;
+the late one, LEDGER-HEAD; at the fence, LEDGER-STALE; a rebase unchecked, LEDGER-REBASE), and one forges a rebase
+line that replay refuses (LEDGER-REPLAY). STUDIO SELFTEST 78/78 (four rows): a hand edit before asking, the admission
+refused STUDIO-DIRECTOR-REFUSED with `director_code` LEDGER-UNLOGGED and the ledger's bytes unchanged; another
+writer's recorded change landing between the gateway's evaluation and its append (a hook at `studio:admit-evaluated`),
+refused HEAD-MOVED with the ledger verifying, and its plant leaving LEDGER-HEAD; a certificate taken away made again at
+the start, the same parent, operation, inverse and child. RUNG SELFTEST 22/22 (three rows: a plant no longer refused
+in one world of several said, which the keying without the world missed; a bracketed row naming a plant read; a
+repeated key keeping its FAIL). One suite asked for a repair, and it is the defect: PREVIEW-STUDIO laid its building by
+hand after the ledger's genesis and admitted over it; it now records the building with rebase, as a person would.
+
+**What the review found, and what was done.** A review of the patch (five lenses, each finding put to a skeptic, read
+only) confirmed seven distinct findings, all repaired: two of the new director plant rows shared one R5 key (renamed,
+and R5 now combines a repeated key); LEDGER-UNLOGGED's remedy fell past the studio's 300-character cut and named no
+`--root`; two studio self-test rows caught only LedgerError, which quiet() now turns into a StudioError;
+`recover_certificates` let an IndexError stop a start; the corrected inverse note said today's briefs fall where 0244
+said, which they do not (a `-` of the last statement and its undo give back the head on three of the four: MEASURED
+here); four documents called `refuse` held; and docs/CAPABILITY-MATRIX.md cited this entry before it was written.
+Three the skeptics judged not this patch's defects are said too, one of them repaired anyway: the guard took a dead
+writer's half-done admission for an unlogged change and named rebase for it (it now recovers it first, under the
+lock); `replay` judges past admissions by today's EXPECTED_CHECKS, so a later change to that list stops every
+evaluation, admission, approval and rebase of a recorded world as it already stopped `verify` (a refuse is appended as
+before; before 0245 the writes went on and broke the chain); R5 still does not read the memo's four plants
+(`PASS memo plant ...`, since 0236).
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of 6af1d9f under
+%TEMP%, never the checkout). The full check, `python art/selftests.py --repeat 2`, sixteen suites at once: twenty-three
+suites passing and then twenty-four, 402.8 s and 406.5 s wall, ART SELFTESTS FAILED on one row of PREVIEW-STUDIO, its
+10 s for a whole preview (10.28 s); a double run before the review's repairs failed the same row once (11.85 s; the
+other run 6.86 s). Under %TEMP% a full run takes about 400 s against his 156 s and 197 s; there 6af1d9f's own single
+run took 8.32 s for that preview (401.3 s wall, ART SELFTESTS PASSED), and, with the suite run alone, alternating,
+that preview took 1.70 s and 1.81 s with the patch and 1.87 s and 1.80 s without. Nothing in the timed preview
+changed. Every other suite passed in both runs, and in both of the earlier double run: DIRECTOR SELFTEST PASSED,
+CRASHTEST 15, RACETEST 32, STUDIO 78/78, the rest as at 6af1d9f. The pushed tree's classifier (`git show
+origin/main:tools/rung.py`) on the patch's eleven files: rung D, loosening nothing; its plants, on the final tree:
+"116 planted defects refused by the old checker; 122 by the new", PLANTS HELD. RUNG SELFTEST 22/22. The gate: 251 rows / 0 fail / 0 skipped, rowset 74db4c8d78625af5, row
+for row the baseline's (1,011 s; the baseline 1,074 s, with the inventory's agents beside it).
+
+**His act.** Before any evaluation in a world, record what moved outside the loop, after reading it:
+`python art/director.py rebase plaza-night --note TEXT` in the checkout, and for each world of the desktop studio
+`python art/director.py rebase NAME --root "%LOCALAPPDATA%\VerdandiStudio\worlds\NAME" --note TEXT`. Until then the
+studio refuses their admissions with LEDGER-UNLOGGED, where it would have broken their ledgers.
+
+**Not done.** 0246, the page executed by a test; 0247, the dashboard; the candidate's binding (F-3, F-4: his rulings);
+the inverse's repair (his ruling of 0244's (a) or (b)); plants completeness (its own rung). NOT_MEASURED: the full
+check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (four rows and the reading
+table), art/STUDIO.md, art/director/README.md, docs/CAPABILITY-MATRIX.md and its rows (new), docs/CORE.md (art 26,681
+lines, tools 2,103), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

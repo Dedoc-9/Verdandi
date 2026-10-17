@@ -387,6 +387,12 @@ def report(res, rung, escal, loose, base_rev="BASE", head_rev="HEAD"):
 # ------------------------------------------------------------------------------------------------ the plants (R5)
 SUITES = (("art/quality.py", "selftest"), ("art/check.py",), ("art/director.py", "selftest"), ("art/studio.py", "selftest"))
 PLANT_ROW = re.compile(r"^\[?(PASS|FAIL)\]? ?(plant: .*?)(?: — .*)?$")
+# 0245: a bracketed row whose name names a plant ("[PASS] name — detail", as art/studio.py's self-test prints its rows:
+# none of them opens "plant: ", so R5 read none of that suite's until 0245), and the world a row is printed under
+# ("== NAME ...", art/check.py's header for each brief: its plants print the same words once per brief, and keyed
+# without the brief's name the four briefs' rows were one, the last brief's verdict standing for all four)
+NAMED_PLANT = re.compile(r"^\[(PASS|FAIL)\] (.*?\bplant\b.*?)(?: — .*)?$")
+WORLD_HEAD = re.compile(r"^== (\S+)(?:\s|$)")
 
 
 def suite_output(root, suite):
@@ -426,10 +432,25 @@ def plant_rows(root, broken=None):
         why = crashed(err, rc)
         if why and broken is not None:
             broken.append((" ".join(suite), why))
-        for ln in txt.splitlines():
-            m = PLANT_ROW.match(ln.strip())
-            if m:
-                out[" ".join(suite) + " | " + m.group(2).strip()] = m.group(1) == "PASS"
+        out.update(parse_rows(" ".join(suite), txt))
+    return out
+
+
+def parse_rows(name, txt):
+    """A suite's planted-defect rows, {name | [world |] words: passed}: a row opening "plant: ", or a bracketed row whose
+    name names a plant; keyed by the world it is printed under, when the suite prints one (WORLD_HEAD). Two rows under
+    one key are one row that passes only if both do: a later PASS never hides an earlier FAIL (0245)."""
+    out, world = {}, ""
+    for ln in txt.splitlines():
+        s = ln.strip()
+        w = WORLD_HEAD.match(s)
+        if w:
+            world = w.group(1)
+            continue
+        m = PLANT_ROW.match(s) or NAMED_PLANT.match(s)
+        if m:
+            k = name + " | " + (world + " | " if world else "") + m.group(2).strip()
+            out[k] = out.get(k, True) and m.group(1) == "PASS"
     return out
 
 
@@ -582,6 +603,25 @@ def cmd_selftest():
     finally:
         import shutil as _sh
         _sh.rmtree(d, ignore_errors=True)
+    # 0245: art/check.py's rows keyed by the world they are printed under, and art/studio.py's bracketed rows that name a plant
+    two = "== harbor-day   scene x\nPASS plant: a canopy — refused\n== plaza-night   scene y\nPASS plant: a canopy — refused\n"
+    two_new = two.replace("PASS plant: a canopy — refused\n== plaza-night", "FAIL plant: a canopy — passed\n== plaza-night", 1)
+    old_r, new_r = parse_rows("art/check.py", two), parse_rows("art/check.py", two_new)
+    worse, lost = compare_plants(old_r, new_r)
+    flat = lambda txt: {"c | " + PLANT_ROW.match(ln).group(2): PLANT_ROW.match(ln).group(1) == "PASS" for ln in txt.splitlines() if PLANT_ROW.match(ln)}
+    w0, l0 = compare_plants(flat(two), flat(two_new))
+    row("a plant no longer refused in one world of several is said: rows are keyed by the world they are printed under (0245); keyed "
+        "without it, the last world's verdict stands for all and it is missed", len(old_r) == 2 and worse == ["art/check.py | harbor-day | plant: a canopy"]
+        and not lost and not w0 and not l0, "keyed by world: %s; without: %d row, nothing said" % (worse, len(flat(two))))
+    st = parse_rows("art/studio.py selftest", "[PASS] two at once: the console kept (plant: no lock leaves it redirected) — ok\n"
+                    "[PASS] a refusal after the body (a still); plant, no draining: the answer comes first — ok\n"
+                    "[PASS] three candidates drawn — ok\n[FAIL] planted bays refused — 7 of 8\n")
+    row("a bracketed row that names a plant is read (art/studio.py's form, 0245); one that names none, or says 'planted', is not", sorted(st) == [
+        "art/studio.py selftest | a refusal after the body (a still); plant, no draining: the answer comes first",
+        "art/studio.py selftest | two at once: the console kept (plant: no lock leaves it redirected)"], "; ".join(sorted(st))[:150])
+    twice = parse_rows("s", "FAIL plant: one — not refused\nPASS plant: one — refused\n")
+    row("a plant printed twice under one key keeps its FAIL: the rows are combined, never one overwritten by the other (0245)",
+        twice == {"s | plant: one": False}, repr(twice))
     m = PLANT_ROW.match("[PASS] plant: a still taken away — refused — LEDGER-STILL: #19")
     row("a plant row is read from a suite's line, its words without the detail", bool(m) and m.group(1) == "PASS" and m.group(2) == "plant: a still taken away", m.group(2) if m else "")
     msgless = report(*cls(H, [("M", "art/feature.py")]))

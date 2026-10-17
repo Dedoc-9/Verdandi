@@ -386,7 +386,12 @@ same scene, the head not). The request's line and the admission's answer carry t
 whether the head before the admission came back (`head_restored`). Found by it (0244): an `=` on a statement written in
 aligned columns, and every `-`, are undone statement for statement but not byte for byte (the line comes back in single
 spaces; a removed statement comes back at the end, without its comment), so the head after such an undo is not the head
-before, though the scene is; only `+` and `=` on single-spaced statements are exact.
+before, though the scene is; only `+` and `=` on single-spaced statements are exact. Corrected at 0245 (MEASURED on his
+machine, by round trips of `apply_revision`): the exact cases are narrower and not quite those. `+` is exact only on a
+brief that ends in exactly one LF; `=` only on a single-spaced statement whose comment, if any, follows exactly two
+spaces; and `-` of the last statement is exact too when that statement is single-spaced with no comment, the brief
+ends in exactly one LF and the line before it is not blank, while `-` of any other is not. On today's briefs: harbor-day, harbor-lift and plaza-night end in a single-spaced statement, so a `-` of their last
+statement and its undo give back the head; foundry-yard's last line is aligned, so on it no `-` does.
 
 **Glue.** `art/glue.py` judges two edits written against one head: they *commute* when both orders apply and give the
 same scene, and they *glue* when, besides, the glued scene changes exactly what each changes and both agree on every
@@ -394,6 +399,39 @@ section they both change (a section: a piece by its id, a material by its name, 
 `by` left out). Otherwise the pair is OBSTRUCTED, and its obstruction is an object with a sha256 the same whichever
 edit is named first: which orders would not apply, where the orders differ, where the two disagree. `python art/glue.py
 census` judges every pair of seven of the flagship's edits. Nothing in the studio decides by it yet.
+
+## The ledger held (LEDGER-SAFE-0), 0245
+
+**No event over a head the ledger does not hold.** An evaluation, an admission or an approval names the head it was
+checked against. Each is now appended under the tree's content lock, and only while the files are the head the
+ledger replays to and that head is the one it was checked against (`held_head`, `append_checked` in
+`art/director.py`). Otherwise it is refused and nothing is appended:
+- `LEDGER-UNLOGGED`: the files changed outside the loop (a hand edit, a new exporter). Record the change first, after
+  reading it: `python art/director.py rebase BRIEF --note TEXT` (with `--root` for a world of the desktop studio).
+- `HEAD-MOVED`: another writer's change landed between the evaluation and its append (the studio's admit, reject and
+  undo evaluate before they take the lock). Ask again.
+
+Before 0245 one such event made a ledger that replay, and therefore rebase, refuses for good (MEASURED on 2026-10-16
+on a copy of the checkout's plaza-night, whose files its ledger did not hold: UNLOGGED-CHANGE, the likely cause 0237's
+exporter recorded by no rebase, INFERRED; the owner's desktop worlds harbor-day and plaza-night were unlogged too, on
+copies). The live loop still serves a hand edit as it
+always did; only the writers of events that name a head wait for it to be recorded (a `refuse`, which names none, is
+appended as before; the studio's reject is held by the evaluation it appends first).
+
+**A rebase records only what the checks pass.** `rebase` reads, replays and appends under the lock, first recovering
+a dead writer's half-done admission it finds there (completed if its admit event is in the ledger, undone if not). It refuses files that fail any of the art checks an evaluation runs
+(`REBASE-CHECKS`, naming them; the frozen reference is not one of them, as for CHECK-FAILED) or that the exporter refuses (`REBASE-EXPORT`), and keeps the
+checks it ran in its event. Replay holds a rebase's text to the art its parts name (`LEDGER-REPLAY`), and refuses one
+recorded with a failing check (`LEDGER-REBASE`).
+
+**At the studio's boundary.** A director refusal reaches the page as `STUDIO-DIRECTOR-REFUSED` with the director's own
+code (`director_code`: `LEDGER-UNLOGGED`, `HEAD-MOVED`, `ADMISSION-0`, `SHARED-MAP`, …); before 0245 it reached the page only inside the message's text, never as a field of its own.
+A certificate is written whole (`durable.write`). Every art admission the ledger holds without a certificate is given one
+at the studio's start, from the ledger alone (`recover_certificates`): the one a crash left without (the studio writes
+it after the admit event), and those it never certified (the command line's, those from before CERT-0). Its provenance
+says it was made from the ledger, since the request's is not in it; a certificate that cannot be made is not, and the
+start goes on. An evaluation's append first recovers a dead writer's half-done admission it finds under the lock, as a rebase does. A studio route with no
+branch is refused (`STUDIO-ROUTE`); before 0245 the undo was the last line every unmatched route fell to.
 
 ## Legibility along the path (LEGIBLE-0, 0241: one test of Meaning-to-View)
 
@@ -532,7 +570,8 @@ files stand and that head is the one it was drawn at.
 | `INTENT-*`, the director's verdicts | a candidate that is not an intent, or that the director refuses (`INTENT-APPLY`, `CHECK-FAILED`, …) or finds leaking (`LEAKAGE`) |
 | `STUDIO-STALE`, `STUDIO-NOT-ADMISSIBLE`, `STUDIO-DECIDED`, `STUDIO-NO-CANDIDATE` | at admission: the head moved since it was drawn; not CLEAN; already decided; no such candidate |
 | `STUDIO-NO-STILL`, `STUDIO-STILL-FLAGGED` | at admission (ADMISSION-0, 0222): no still taken of the candidate as drawn; a still the detectors flag, admitted only with "Admit despite" |
-| `STUDIO-DIRECTOR-REFUSED` | the director itself refused the admission, refusal or undo (its own reason shown) |
+| `STUDIO-DIRECTOR-REFUSED` | the director itself refused the admission, refusal or undo (its own reason shown, and since 0245 its own code as `director_code`: `LEDGER-UNLOGGED`, `HEAD-MOVED`, …) |
+| `STUDIO-ROUTE` | a studio route with no branch (0245) |
 | `STUDIO-NOTHING-TO-UNDO`, `STUDIO-NOT-UNDOABLE` | no admission left to undo (an undo is never itself undone; undo again walks further back); one that changed the layout, or whose inverse is not CLEAN |
 
 ## The record and the still (ADMISSION-0, 0222)
@@ -636,7 +675,7 @@ the studio waits for it, then stops), or when play.py ends. A second click opens
 (`VERDANDI_CLAUDE`, `VERDANDI_DIRECTOR_MODEL`, `VERDANDI_DIRECTOR_API`); a key never: for the API provider,
 `ANTHROPIC_API_KEY` must be a user environment variable. Claude Code's native install
 (`%USERPROFILE%\.local\bin\claude.exe`) is found without any. `python art/studio_app.py selftest` holds the lifecycle
-with a stand-in browser (11 cases; 12 on Windows, where a live job's process list is read as well).
+with a stand-in browser (12 cases; 13 on Windows, where a live job's process list is read as well).
 
 ## The worlds and the queue (STUDIO-2)
 
@@ -651,8 +690,8 @@ its content lock (`art/build/content.lock`). One world's admission therefore wri
 construction, and two worlds never share a map. The desktop studio serves this folder; `--root DIR` (one tree, the
 self-tests') and the checkout itself are served as before.
 
-**The first start.** When the folder holds no world it is made from the checkout: every brief there (today
-`plaza-night` and `harbor-day`) is copied whole, with its ledger and tags if it has them and the checkout's maps, into a
+**The first start.** When the folder holds no world it is made from the checkout: every brief there (four
+today: `foundry-yard`, `harbor-day`, `harbor-lift` and `plaza-night`) is copied whole, with its ledger and tags if it has them and the checkout's maps, into a
 folder made aside; its ledger is replayed in the copy, and only if it verifies is the folder put in place, by one
 rename. A brief whose ledger does not verify is not copied, and why is said and recorded. `SEEDED.json` records what was
 copied, by sha256. The checkout is read, never written (but for its own recovery, as any start there does); after the
@@ -683,7 +722,7 @@ set aside (`queue.jsonl.torn.N`) and cut from the file, durably, before anything
 merges into it; and a task that was running when the studio stopped is *ready* if its world's records hold its answer
 (nothing is asked, or paid for, again), *interrupted* otherwise, and can be queued again.
 
-`python art/studio_queue.py selftest` (13 cases) seeds a worlds folder, refuses a brief whose ledger does not verify,
+`python art/studio_queue.py selftest` (19 cases) seeds a worlds folder, refuses a brief whose ledger does not verify,
 queues for one world from another's page and reviews and admits there (the other world's ledger unchanged), duplicates
 a world, runs two worlds at once with one request per world, cancels and queues again, compiles two worlds' scenes at
 once (and keeps the plant without the export lock), and keeps fixes 3 and 4 with their plants. The studio app's

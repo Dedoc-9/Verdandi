@@ -34,6 +34,13 @@
 # maps holds the tree's content lock (art/director/durable.py), an admission from before its first write to after its
 # last, and under it reads the head again (the fence); recovery takes the same lock and, while another writer holds
 # it, refuses and changes nothing (LEDGER-BUSY), so it never undoes an admission that is alive.
+# No event over a head the ledger does not hold (LEDGER-SAFE-0, 0245): an event that names the head it was checked
+# against (an evaluation, an admission, an approval) is appended only under the content lock, and only while the files
+# are the head the ledger replays to and that head is the one it was checked against. Otherwise it is refused and
+# nothing is appended: LEDGER-UNLOGGED (the files changed outside the loop: record them with rebase first) or
+# HEAD-MOVED (another admission landed meanwhile: evaluate again). Before it, one evaluation over a hand edit or a new
+# exporter appended an event that replay, and therefore rebase, refused for good (MEASURED, 2026-10-16, on a copy of
+# the checkout's plaza-night). A rebase is recorded only for files that pass the art checks, under the lock.
 # What each part proves, and what it does not:
 #   scope   (art/director/scope.py) is pure: the same intent, head and scenes give the same verdict, byte for byte.
 #   ledger  (art/director/ledger.py) proves recorded lineage: which text, at which head, with which verdict, chosen by
@@ -447,6 +454,65 @@ def _finish(ws):
     durable.remove_tree(ws.pending)
 
 
+# -------------------------------------------------------------------------------------------- the head the ledger holds
+class Refusal(SystemExit):
+    """A refusal with its code kept apart (LEDGER-SAFE-0, 0245): `refusal` is the code, so that the studio passes it on
+    (art/studio.py quiet()). Still a SystemExit, as every refusal of a command here is: the command line prints
+    'REFUSED (CODE): ...' and ends as before. (Not `code`: a SystemExit's code is its exit status.)"""
+
+    def __init__(self, code, detail):
+        SystemExit.__init__(self, "REFUSED (%s): %s" % (code, detail))
+        self.refusal, self.detail = code, detail
+
+
+# the self-test's planted defects of LEDGER-SAFE-0 (cmd_selftest), never set otherwise: "no-held-check" (an event is
+# appended whatever head the ledger holds), "rebase-unchecked" (a rebase is recorded whatever its checks say)
+SAFE_PLANT = ""
+
+
+def held_head(ws, events, checked=None):
+    """The ledger's state replayed (replay()), refused unless the files are the head it holds and, given `checked` (the
+    head an event about to be appended was checked against), unless that is the same head: LEDGER-UNLOGGED or
+    HEAD-MOVED, as Refusal. A ledger that does not replay raises its LedgerError: nothing is appended to a broken chain."""
+    if not events:
+        raise Refusal("LEDGER-NONE", "%s has no ledger: run genesis first" % ws.brief)
+    st = replay(ws, events)
+    if SAFE_PLANT == "no-held-check":
+        return st
+    _o, parts, _c = ws.export()
+    files = canon.head(parts)
+    if files != st["head"]:
+        root = "" if os.path.abspath(ws.root) == os.path.abspath(REPO) else ' --root "%s"' % ws.root
+        raise Refusal("LEDGER-UNLOGGED", "record the change first, after reading it: python art/director.py rebase %s%s --note TEXT. "
+                                         "Nothing was appended: the files are the head %s, the ledger's %s (the world or the exporter "
+                                         "changed outside the loop), and an event checked against them would leave a ledger that replay, "
+                                         "and so rebase, refuses for good" % (ws.brief, root, files[:12], st["head"][:12]))
+    if checked is not None and checked != st["head"]:
+        raise Refusal("HEAD-MOVED", "this was checked against %s, and the ledger's head is now %s (an admission landed meanwhile); "
+                                    "nothing was appended. Evaluate it again" % (checked[:12], st["head"][:12]))
+    return st
+
+
+def append_checked(ws, kind, fields, checked):
+    """Append an event checked against the head `checked`, under the content lock, only while held_head() holds."""
+    try:
+        with durable.locked(led.lock_path(ws.ledger)):
+            if os.path.exists(ws.pending):       # this process holds the lock: the folder's writer is dead (as _commit_locked)
+                for ln in _recover(ws):
+                    print(ln)
+            events, _l, _h = led.read(ws.ledger)
+            held_head(ws, events, checked)
+            durable.point("append:held")
+            return led.append(ws.ledger, kind, fields)
+    except durable.Busy:
+        raise Refusal("BUSY", "another writer held this tree's content lock for the whole wait (%g s); nothing was appended" % durable.WAIT)
+
+
+def append_evaluation(ws, raw, verdict, after, timings, record, re_of=""):
+    """An evaluate event, appended only at the head the ledger holds (see append_checked)."""
+    return append_checked(ws, "evaluate", evaluation_fields(raw, verdict, after, timings, record, re_of), verdict["checked_against"])
+
+
 MAP_LINE = re.compile(r"\s*map\s+(\S+)")
 
 
@@ -507,6 +573,11 @@ def _commit_locked(ws, evaluation, intent_sha256, files, fields, stills=()):
                              "map of its own (pinned revisions, to come); changes to the art are admitted as before" % (
                                  ", ".join(others), "s" if len(others) == 1 else "", out_now["scene"]["map"], "that world" if len(others) == 1 else "those worlds"))
     events, _l, _h = led.read(ws.ledger)
+    # LEDGER-SAFE-0 (0245): the fence above holds the files to the head the admission was checked against; the ledger must
+    # hold that head too, or the admit event would be one that replay refuses (a hand change back to an older head, say).
+    # Part of the fence: the race court's plant "no-fence" takes it away with the rest
+    if durable.PLANT != "no-fence":
+        held_head(ws, events, fields["head_before"])
     # the admission's still (ADMISSION-0), kept by its sha256 before anything else is written: content-addressed, so a
     # still left by an admission that then failed names nothing and harms nothing, and the event never names a still
     # that is not on the disk
@@ -678,6 +749,7 @@ def cmd_evaluate(ws, files, quiet=False):
     events, _l, _h = led.read(ws.ledger)
     if not events:
         raise SystemExit("no ledger for %s: run genesis first" % ws.brief)
+    held_head(ws, events)          # LEDGER-SAFE-0: said before anything is appended; each evaluation is held again as it is
     rows, sheet = [], []
     for f in files:
         raw = open(f, "rb").read()
@@ -689,7 +761,7 @@ def cmd_evaluate(ws, files, quiet=False):
             rows.append((os.path.basename(f), "-", "REFUSED", e.code, ev["seq"], {}))
             continue
         verdict, after, timings, out1, out0, _text1, rec = evaluate_doc(ws, it)
-        ev = led.append(ws.ledger, "evaluate", evaluation_fields(raw, verdict, after, timings, rec))
+        ev = append_evaluation(ws, raw, verdict, after, timings, rec)
         rows.append((os.path.basename(f), it["candidate"], verdict["verdict"], ",".join(verdict["codes"]) or "-", ev["seq"], timings, rec))
         sheet.append((it, verdict, out0, out1, ev["seq"], timings))
     if not quiet:
@@ -710,8 +782,9 @@ def cmd_reevaluate(ws, seq):
     if ev["kind"] != "evaluate":
         raise SystemExit("#%s is not an evaluation" % seq)
     it = canon.load_intent(ev["intent"].encode("ascii"))
+    held_head(ws, events)
     verdict, after, timings, out1, out0, _t, rec = evaluate_doc(ws, it)
-    new = led.append(ws.ledger, "evaluate", evaluation_fields(ev["intent"], verdict, after, timings, rec, re_of=seq))
+    new = append_evaluation(ws, ev["intent"], verdict, after, timings, rec, re_of=seq)
     print("candidate %s re-evaluated at the current head: %s %s (ledger #%s; it was %s at #%s)" % (
         it["candidate"], verdict["verdict"], ",".join(verdict["codes"]) or "-", new["seq"], ev["verdict"]["verdict"], seq))
     if out0 is not None:
@@ -847,13 +920,33 @@ def cmd_genesis(ws):
 
 
 def cmd_rebase(ws, note):
-    events, _l, _h = led.read(ws.ledger)
-    state = replay(ws, events)
-    out, parts, _c = ws.export()
-    dname, dtext = ws.design(out)
-    r = led.append(ws.ledger, "rebase", {"head_before": state["head"], "head_after": canon.head(parts), "parts_after": parts, "art_text": ws.text(),
-                                         "design_text": dtext or "", "observed": {"at": now(), "note": note}})
-    print("rebased: %s -> %s (ledger #%s)" % (state["head"][:12], r["head_after"][:12], r["seq"]))
+    """Record a change made outside the loop (a hand edit, a new exporter) as the head. LEDGER-SAFE-0 (0245): the ledger
+    read, replayed and appended to under the content lock, so that an admission cannot land between; and only for files
+    that pass every art check (REBASE-CHECKS) and that the exporter takes (REBASE-EXPORT), the checks kept in the event.
+    A rebase records a change; it never admits one that the checks refuse."""
+    try:
+        with durable.locked(led.lock_path(ws.ledger)):
+            if os.path.exists(ws.pending):       # a dead writer's half-done admission, finished or undone before anything is read
+                for ln in _recover(ws):
+                    print(ln)
+            events, _l, _h = led.read(ws.ledger)
+            state = replay(ws, events)
+            text = ws.text()
+            try:
+                out, parts, checks = ws.export(text)
+            except (dress.ArtError, level.MapError) as e:
+                raise Refusal("REBASE-EXPORT", "the exporter refuses %s as it stands (%s); nothing was appended" % (ws.brief, " ".join(str(e).split())[:200]))
+            failed = [c["name"] for c in checks if not c["ok"]]
+            if failed and SAFE_PLANT != "rebase-unchecked":
+                raise Refusal("REBASE-CHECKS", "%s as it stands fails %d of the art checks (%s), so it is not recorded as the head; nothing was "
+                                               "appended. Correct it, or restore it" % (ws.brief, len(failed), "; ".join(failed)[:240]))
+            dname, dtext = ws.design(out)
+            r = led.append(ws.ledger, "rebase", {"head_before": state["head"], "head_after": canon.head(parts), "parts_after": parts, "art_text": text,
+                                                 "design_text": dtext or "", "checks": [{"name": c["name"], "ok": bool(c["ok"])} for c in checks],
+                                                 "observed": {"at": now(), "note": note}})
+    except durable.Busy:
+        raise Refusal("BUSY", "another writer held this tree's content lock for the whole wait (%g s); nothing was appended" % durable.WAIT)
+    print("rebased: %s -> %s (ledger #%s; %d art checks passed)" % (state["head"][:12], r["head_after"][:12], r["seq"], len(checks)))
     return r
 
 
@@ -873,10 +966,10 @@ def cmd_approve(ws, view, image, config, approver="the owner", note="", despite=
     if why and not despite:
         raise SystemExit("REFUSED: %s. A detector proves nothing, so the still can still be approved: with --despite-detectors, "
                          "which the ledger records" % why)
-    a = led.append(ws.ledger, "approve", {"view": view, "image_sha256": hashlib.sha256(raw).hexdigest(),
-                                          "render_config": config, "head": canon.head(parts),
-                                          "detectors": det, "despite_detectors": bool(why),
-                                          "observed": {"at": now(), "approver": approver, "note": note}})
+    a = append_checked(ws, "approve", {"view": view, "image_sha256": hashlib.sha256(raw).hexdigest(),
+                                       "render_config": config, "head": canon.head(parts),
+                                       "detectors": det, "despite_detectors": bool(why),
+                                       "observed": {"at": now(), "approver": approver, "note": note}}, canon.head(parts))
     print("approved: view %s, image %s, at head %s (ledger #%s; provenance, not a reproducibility claim)%s" % (
         view, a["image_sha256"][:12], a["head"][:12], a["seq"], ("; despite the detectors: " + why) if why else "; the detectors flag nothing"))
     return a
@@ -936,6 +1029,11 @@ def replay(ws, events):
         elif k == "rebase":
             if ev["head_before"] != st["head"]:
                 raise E("LEDGER-STALE: #%s rebases from another head" % ev["seq"])
+            # LEDGER-SAFE-0 (0245): the text a rebase records is the art its parts name, and its head is its parts'
+            if canon.sha256(ev["art_text"].encode("utf-8")) != ev["parts_after"]["art_sha256"] or canon.head(ev["parts_after"]) != ev["head_after"]:
+                raise E("LEDGER-REPLAY: #%s's text or head is not its own parts'" % ev["seq"])
+            if any(not c.get("ok") for c in ev.get("checks", [])):
+                raise E("LEDGER-REBASE: #%s records a head whose art checks failed" % ev["seq"])
             st["art"], st["design"] = ev["art_text"], ev["design_text"]
             st["parts"], st["head"] = dict(ev["parts_after"]), ev["head_after"]
         elif k == "refuse":
@@ -1246,6 +1344,7 @@ def cmd_selftest():
             results.append(("a hand edit recorded with rebase verifies", True, ""))
         except led.LedgerError as e:
             results.append(("a hand edit recorded with rebase verifies", False, str(e)))
+        results += safe_rows(ws, rnd)
 
         # ADMISSION-0 (0222): every evaluation's record complete; an admission needs what its record requires
         events, _l, _h = led.read(ws.ledger)
@@ -1442,6 +1541,144 @@ def cmd_selftest():
         failed += 0 if ok else 1
     print("DIRECTOR SELFTEST %s" % ("PASSED" if not failed else "FAILED (%d)" % failed))
     return 0 if not failed else 1
+
+
+def _safe_plant(p):
+    global SAFE_PLANT
+    SAFE_PLANT = p
+
+
+def safe_rows(ws, rnd):
+    """LEDGER-SAFE-0 (0245), in the self-test's tree at a head its ledger holds: no event over a head the ledger does not
+    hold, and a rebase only of files that pass the checks; each refusal with nothing appended, and each guard's plant
+    showing what it prevents. The tree is put back as it was after each case. [(name, ok, detail)]"""
+    rows = []
+    c_intent = os.path.join(rnd, "C.intent")
+    saved_art, saved_led = open(ws.art, "rb").read(), open(ws.ledger, "rb").read()
+    saved_maps = {f: open(os.path.join(ws.maps, f), "rb").read() for f in os.listdir(ws.maps) if os.path.isfile(os.path.join(ws.maps, f))}
+    n_of = lambda: len(led.read(ws.ledger)[0])
+    flat = lambda e: " ".join(str(e).split())[:110]
+
+    def put_back():
+        _safe_plant("")
+        open(ws.art, "wb").write(saved_art)
+        open(ws.ledger, "wb").write(saved_led)
+        for f, b in saved_maps.items():
+            open(os.path.join(ws.maps, f), "wb").write(b)
+
+    def after(fns):
+        """What verify, then rebase, say of the ledger: their codes, or 'passed'."""
+        out = []
+        for fn in fns:
+            try:
+                fn()
+                out.append("passed")
+            except (led.LedgerError, SystemExit) as e:
+                out.append(getattr(e, "refusal", "") or str(e).split(":")[0])
+        return out
+    verify_then_rebase = (lambda: cmd_verify(ws, quiet=True), lambda: cmd_rebase_quiet(ws, "the repair"))
+    try:
+        # 1. an evaluation over a hand edit the ledger does not hold (the defect MEASURED on 2026-10-16)
+        open(ws.art, "ab").write(b"# a hand edit, not recorded\n")
+        n0 = n_of()
+        try:
+            cmd_evaluate(ws, [c_intent], quiet=True)
+            rows.append(("an evaluation over a hand edit the ledger does not hold is refused (LEDGER-UNLOGGED)", False, "it was appended"))
+        except Refusal as e:
+            rows.append(("an evaluation over a hand edit the ledger does not hold is refused (LEDGER-UNLOGGED), nothing appended",
+                         e.refusal == "LEDGER-UNLOGGED" and n_of() == n0 and "rebase" in str(e), flat(e)))
+        _safe_plant("no-held-check")
+        try:
+            cmd_evaluate(ws, [c_intent], quiet=True)
+            said = after(verify_then_rebase)
+            rows.append(("plant: no held-head check, over a hand edit — the evaluation appended, and the ledger refused for good after", said == ["LEDGER-HEAD", "LEDGER-HEAD"],
+                         "verify, then rebase: %s" % ", ".join(said)))
+        except SystemExit as e:
+            rows.append(("plant: no held-head check, over a hand edit — the evaluation appended", False, flat(e)))
+        put_back()
+        # 2. an evaluation made at a head the ledger then leaves before it is appended (the studio's admit, reject and undo
+        # evaluate before they take the lock): here the ledger moves by a recorded change
+        it_c = canon.load_intent(open(c_intent, "rb").read())
+        v_c, a_c, t_c, _o1, _o0, _x, r_c = evaluate_doc(ws, it_c)
+        open(ws.art, "ab").write(b"# meanwhile, a change recorded\n")
+        cmd_rebase_quiet(ws, "meanwhile")
+        n0 = n_of()
+        try:
+            append_evaluation(ws, open(c_intent, "rb").read(), v_c, a_c, t_c, r_c)
+            rows.append(("an evaluation made at a head the ledger has since left is refused (HEAD-MOVED)", False, "it was appended"))
+        except Refusal as e:
+            rows.append(("an evaluation made at a head the ledger has since left is refused (HEAD-MOVED), nothing appended", e.refusal == "HEAD-MOVED" and n_of() == n0, flat(e)))
+        _safe_plant("no-held-check")
+        try:
+            append_evaluation(ws, open(c_intent, "rb").read(), v_c, a_c, t_c, r_c)
+            said = after(verify_then_rebase[:1])
+            rows.append(("plant: no held-head check, a late evaluation — appended, and the ledger refused after", said == ["LEDGER-HEAD"], "verify: %s" % ", ".join(said)))
+        except SystemExit as e:
+            rows.append(("plant: no held-head check, a late evaluation — appended", False, flat(e)))
+        put_back()
+        # 3. an admission whose files are its head by a hand change back, the ledger holding another head
+        stmt = " ".join([ln for ln in saved_art.decode("utf-8").split("\n") if ln.startswith("material ")][0].split("#", 1)[0].split())
+        sdoc = {"base": {k: current_parts(ws)[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "brief": ws.brief, "candidate": "S",
+                "format": "VERDANDI-INTENT", "layout": [], "prompt": "a material set as it is", "rationale": "LEDGER-SAFE-0's admission case",
+                "revision": ["= " + stmt], "scope": ["material/" + stmt.split()[1]], "version": "0"}
+        s_path = os.path.join(ws.root, "S.intent")
+        with open(s_path, "wb") as fh:
+            fh.write(canon.dumps(sdoc))
+        s_row = cmd_evaluate(ws, [s_path], quiet=True)[0]
+        sv = {"seq": s_row[4], "verdict": {"verdict": s_row[2]}}
+        held_art, held_led = open(ws.art, "rb").read(), open(ws.ledger, "rb").read()
+        open(ws.art, "ab").write(b"# a change recorded, then undone by hand\n")
+        cmd_rebase_quiet(ws, "a change")
+        open(ws.art, "wb").write(held_art)
+        n0 = n_of()
+        if sv["verdict"]["verdict"] != "CLEAN":
+            rows.append(("an admission over a hand change back to its own head is refused (LEDGER-UNLOGGED)", False, "no CLEAN evaluation to admit: %s" % sv["verdict"]["verdict"]))
+        else:
+            try:
+                cmd_admit_quiet(ws, sv["seq"], chooser="selftest")
+                rows.append(("an admission over a hand change back to its own head is refused (LEDGER-UNLOGGED)", False, "it was admitted"))
+            except Refusal as e:
+                rows.append(("an admission over a hand change back to its own head is refused at the fence (LEDGER-UNLOGGED), nothing written",
+                             e.refusal == "LEDGER-UNLOGGED" and n_of() == n0 and open(ws.art, "rb").read() == held_art and not os.path.exists(ws.pending), flat(e)))
+            _safe_plant("no-held-check")
+            try:
+                cmd_admit_quiet(ws, sv["seq"], chooser="selftest")
+                said = after(verify_then_rebase[:1])
+                rows.append(("plant: no held-head check at the fence — the admission written, and the ledger refused after", said == ["LEDGER-STALE"], "verify: %s" % ", ".join(said)))
+            except SystemExit as e:
+                rows.append(("plant: no held-head check at the fence — the admission written", False, flat(e)))
+        put_back()
+        # 4. a rebase of files that fail an art check (the exporter takes them)
+        open(ws.art, "ab").write(b"canopy plaza concrete 3.0\n")
+        n0 = n_of()
+        try:
+            cmd_rebase_quiet(ws, "a canopy where a player can be")
+            rows.append(("a rebase of files that fail an art check is refused (REBASE-CHECKS)", False, "it was recorded"))
+        except Refusal as e:
+            rows.append(("a rebase of files that fail an art check is refused (REBASE-CHECKS), nothing appended", e.refusal == "REBASE-CHECKS" and n_of() == n0, flat(e)))
+        _safe_plant("rebase-unchecked")
+        try:
+            cmd_rebase_quiet(ws, "a canopy where a player can be")
+            said = after(verify_then_rebase[:1])
+            rows.append(("plant: a rebase unchecked — the failing files recorded as the head, and replay refuses them after", said == ["LEDGER-REBASE"], "verify: %s" % ", ".join(said)))
+        except SystemExit as e:
+            rows.append(("plant: a rebase unchecked — the failing files recorded", False, flat(e)))
+        put_back()
+        # 5. a rebase line written past the director, its text not the art its parts name
+        events = led.read(ws.ledger)[0]
+        st = replay(ws, events)
+        led.append(ws.ledger, "rebase", {"head_before": st["head"], "head_after": st["head"], "parts_after": st["parts"],
+                                         "art_text": st["art"] + "# not the art its parts name\n", "design_text": st["design"],
+                                         "observed": {"at": "2026-10-16T00:00:00Z", "note": "a forger"}})
+        try:
+            replay(ws, led.read(ws.ledger)[0])
+            rows.append(("plant: a rebase event written past the director, its text not its parts' — refused by replay", False, "replay passed"))
+        except led.LedgerError as e:
+            rows.append(("plant: a rebase event written past the director, its text not its parts' — refused by replay", "LEDGER-REPLAY" in str(e), flat(e)))
+        put_back()
+    finally:
+        put_back()
+    return rows
 
 
 MEMO_PLANTS = ("memo-shares", "memo-no-validate", "memo-key-text", "memo-keeps-writes")

@@ -878,7 +878,7 @@ def studio_still(hub, world, rid, letter, png):
             return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
         return 200, dict(g.still(rid, letter, png), ok=True)
     except studio.StudioError as e:
-        return 409, {"ok": False, "code": e.code, "message": e.detail}
+        return 409, e.answer()
     except OSError as e:
         return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
@@ -893,7 +893,7 @@ def studio_preview_still(hub, world, rid, letter, side, k, png):
         kk = int(k) if re.fullmatch(r"[0-9]{1,3}", k or "") else -1
         return 200, dict(g.preview_still(rid, letter, side, kk, png), ok=True)
     except studio.StudioError as e:
-        return 409, {"ok": False, "code": e.code, "message": e.detail}
+        return 409, e.answer()
 
 
 def internal(hub, path, e):
@@ -931,7 +931,7 @@ def studio_post(hub, path, body):
             return 200, dict(getattr(q, op)(body.get("id")), ok=True)
         live = hub.world(body.get("world"))
     except studio.StudioError as e:
-        return 409, {"ok": False, "code": e.code, "message": e.detail}
+        return 409, e.answer()
     if path in ("/studio/shapes/save", "/studio/shapes/delete"):
         # MARK-0 (0231): a shape saved against the brief's scene as it is served now (its anchor must name that scene and a
         # box of it exactly as it stands), or deleted; the shapes are the designer's markup, not the world, and need no
@@ -980,9 +980,13 @@ def studio_post(hub, path, body):
             return 200, dict(g.preview_plan(body.get("id"), body.get("candidate")), ok=True)
         if path == "/studio/preview/finish":
             return 200, dict(g.preview_finish(body.get("id"), body.get("candidate")), ok=True)
-        return 200, dict(g.undo(), ok=True)
+        if path == "/studio/undo":
+            return 200, dict(g.undo(), ok=True)
+        # LEDGER-SAFE-0 (0245): a route of STUDIO_POSTS with no branch above is refused, never taken for an undo (before,
+        # the undo was this function's last line, which any such route would have reached)
+        raise studio.StudioError("STUDIO-ROUTE", "no studio route %s" % path[:60])
     except studio.StudioError as e:
-        return 409, {"ok": False, "code": e.code, "message": e.detail}
+        return 409, e.answer()
     except (dress.ArtError, level.MapError, OSError, ValueError, KeyError, TypeError) as e:
         return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
@@ -1385,6 +1389,10 @@ def start_studio(live, config, say=print):
         cfg, err = None, "the studio edits %s; --art plays another file" % own
     live.studio = studio.Gateway(Host(live), live.brief, cfg, live.root, say=say)
     live.studio.error = err
+    made = live.studio.recover_certificates()      # LEDGER-SAFE-0 (0245): a certificate the ledger implies, and that is missing
+    if made:
+        say("studio: %d certificate%s made from the ledger (#%s): the admission%s had none" % (
+            len(made), "" if len(made) == 1 else "s", ", #".join(made), "" if len(made) == 1 else "s"))
     if config or err:
         say("studio: %s" % (err or "the director %s (%s); Enter in the page summons it, E selects" % (cfg["model"], os.path.relpath(cfg["path"], REPO))))
     return live.studio
@@ -2137,7 +2145,7 @@ def studio_selftest():
         try:
             quiet_verify = studio.quiet(director().cmd_verify, workspace(brief), quiet=True)
             verified = True
-        except director().led.LedgerError as e:
+        except (director().led.LedgerError, studio.StudioError) as e:   # quiet() makes a LedgerError a StudioError since 0245
             verified = str(e)
         row("A admitted: the brief written, the ledger's evaluate and admit, the page's source 0 the candidate", code == 200 and body.get("ok") and len(events) == n0 + 2
             and [e["kind"] for e in events[-2:]] == ["evaluate", "admit"] and events[-1]["observed"]["chooser"] == "the designer (studio)"
@@ -2170,8 +2178,72 @@ def studio_selftest():
         try:
             studio.quiet(director().cmd_verify, workspace(brief), quiet=True)
             row("the ledger verifies after the admissions, the refusal and the undos", True, "%d events" % len(director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0]))
-        except director().led.LedgerError as e:
+        except (director().led.LedgerError, studio.StudioError) as e:
             row("the ledger verifies after the admissions, the refusal and the undos", False, str(e)[:120])
+
+        # LEDGER-SAFE-0 (0245): the gateway's ledger writes, held to the head the ledger holds; its certificates made again
+        D_ = director()
+        led_path = os.path.join(tmp, "art", "ledger", brief + ".ledger")
+        held_led = open(led_path, "rb").read()
+
+        def verifies():
+            try:
+                studio.quiet(D_.cmd_verify, workspace(brief), quiet=True)
+                return "verifies"
+            except studio.StudioError as e:
+                return e.director or e.code
+        open(art, "ab").write(b"# a hand edit, not recorded\n")
+        rid5 = g.ask("heavier", piece, cam)
+        wait(g, rid5)
+        code, body = admit_with_still(srv, rid5, "A", tok)
+        row("a hand edit the ledger does not hold: the admission refused with the director's own code (LEDGER-UNLOGGED), nothing appended",
+            code == 409 and body.get("code") == "STUDIO-DIRECTOR-REFUSED" and body.get("director_code") == "LEDGER-UNLOGGED"
+            and open(led_path, "rb").read() == held_led, "%s %s: %s" % (body.get("code"), body.get("director_code"), body.get("message", "")[:80]))
+        open(art, "wb").write(original)
+        hooked = []
+
+        def meanwhile(name):
+            # another writer between the gateway's evaluation and its append: a change recorded by rebase
+            if name == "studio:admit-evaluated" and not hooked:
+                hooked.append(name)
+                open(art, "ab").write(b"# meanwhile, a change recorded\n")
+                studio.quiet(D_.cmd_rebase, workspace(brief), "meanwhile")
+        for plant in ("", "no-held-check"):
+            open(art, "wb").write(original)
+            open(led_path, "wb").write(held_led)
+            rid6 = g.ask("heavier", piece, cam)
+            wait(g, rid6)
+            del hooked[:]
+            D_.durable.HOOK, D_.SAFE_PLANT = meanwhile, plant
+            try:
+                code, body = admit_with_still(srv, rid6, "A", tok)
+            finally:
+                D_.durable.HOOK, D_.SAFE_PLANT = None, ""
+            n_now = len(D_.led.read(led_path)[0])
+            if not plant:
+                row("the gateway's evaluation, made before another writer's change landed, refused at its append (HEAD-MOVED); the ledger verifies",
+                    hooked and code == 409 and body.get("director_code") == "HEAD-MOVED" and verifies() == "verifies",
+                    "%s %s; ledger %d events, %s" % (body.get("code"), body.get("director_code"), n_now, verifies()))
+            else:
+                row("plant: no held-head check at the gateway — its late evaluation appended, and the ledger refused after", hooked and verifies() == "LEDGER-HEAD",
+                    "%s %s; the ledger: %s" % (body.get("code"), body.get("director_code"), verifies()))
+        open(art, "wb").write(original)
+        open(led_path, "wb").write(held_led)
+        certs = os.path.join(g.records, "certificates")
+        kept = sorted(os.listdir(certs), key=lambda f: int(f.split(".")[0])) if os.path.isdir(certs) else []
+        if kept:
+            gone = os.path.join(certs, kept[0])
+            was = json.loads(open(gone, "rb").read())
+            os.remove(gone)
+            made = start_studio(live, os.path.join(REPO, "art", "providers", "scripted.json"), say=lambda s: None)   # a start: it recovers them
+            again = json.loads(open(gone, "rb").read()) if os.path.exists(gone) else {}
+            same = all(again.get(k) == was.get(k) for k in ("parent", "op", "inverse", "child", "support", "world"))
+            row("a certificate taken away (plant: the process ended before it was written) is made again from the ledger at the start, the same morphism",
+                bool(again) and same and again.get("provenance", {}).get("producer", "").startswith("made from the ledger"),
+                "#%s: parent, operation, inverse and child as before; provenance %s" % (kept[0].split(".")[0], again.get("provenance")))
+            g = made
+        else:
+            row("a certificate taken away is made again from the ledger at the start", False, "no certificate was kept to take away")
 
         # the ways a provider fails: each refused, the world as it was
         def failing(label, name, argv, want, timeout=30, size=65536, cancel_after=None, then=None):
@@ -2929,7 +3001,7 @@ def facade_selftest():
         rec = live.shapes.records(["bay"])
         held = held_report(o0["scene"], o1["scene"], rec) if o1 is not None else {}
         hv = ((held.get("accounts") or [{}])[0]).get("verdict")
-        ev2 = D.led.append(ws.ledger, "evaluate", D.evaluation_fields(D.canon.dumps(intent(["+ bay %s panel concrete_dark" % other], [addr])), v, _a, _t, _r))
+        ev2 = D.append_evaluation(ws, D.canon.dumps(intent(["+ bay %s panel concrete_dark" % other], [addr])), v, _a, _t, _r)   # held (0245)
         try:
             D._quiet(D.cmd_admit, ws, ev2["seq"], chooser="facade-selftest", still=D.selftest_still())
             refused = ""
@@ -3345,6 +3417,9 @@ def preview_selftest(plant=""):
         ws = D.selftest_tree(tmp)
         art = os.path.join(tmp, "art", "briefs", brief + ".art")
         open(art, "ab").write(("\n".join(FACADE_LINES) + "\n").encode("ascii"))
+        # LEDGER-SAFE-0 (0245): the building added by hand is recorded, as a person records a hand edit; before 0245 this
+        # suite admitted over it and left its scratch ledger one that replay refuses
+        D.cmd_rebase_quiet(ws, "the facade's building, laid by the self-test")
         mass = next(v for v in ws.export()[0]["scene"]["visuals"] if v["id"] == "building:10,2-17,2")
         ROOT = tmp
         live = Live(brief, art, [], poll=0.15, root=tmp)
