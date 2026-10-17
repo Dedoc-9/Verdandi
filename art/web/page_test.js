@@ -38,6 +38,8 @@
   // is not pressed (a click on it does nothing, which is what a person meets too)
   const press = function (el, what) {
     if (!el) throw new Error("no " + what + " in the page");
+    // 0248: a control found before the page redrew it is no longer in the page; it is said, never pressed
+    if (!el.isConnected) throw new Error(what + " was replaced as the page redrew it, and is not pressed");
     if (el.scrollIntoView) el.scrollIntoView({ block: "nearest", inline: "nearest" });
     const r = el.getBoundingClientRect();
     if (r.width < 1 || r.height < 1) throw new Error(what + " is not shown (" + Math.round(r.width) + " x " + Math.round(r.height) + ")");
@@ -184,13 +186,22 @@
       // drawn: the slot chosen and the scene served in it applied; and, when the host names the scene it serves there
       // (0247), that scene: the page's own list of slots is as old as its last read of /live, and may lag the host's
       const drawn = function (k, want) { const s = live.slots && live.slots[k]; return live.k === k && s && s.served && live.sha === s.served.sha && (!want || live.sha === want); };
-      const c = await until(function () { return cardOf(st.title); }, 10000, "the card " + st.title);
-      const k = ((req() || {}).candidates || []).filter(function (x) { return x.letter === c.getAttribute("data-letter"); }).map(function (x) { return x.slot; })[0];
-      if (k === undefined || k === null || k === 0) throw new Error("the card " + st.title + " has no slot of its own");
+      const held = await until(function () { return cardOf(st.title); }, 10000, "the card " + st.title);
       // 0247: when the host names them, the world it serves drawn first (the page's own may be older), so that Show must
       // draw a scene other than the one standing; and each press must make the view apply a scene (its count of swaps
       // grows), never only choose a slot whose scene happens to be the one already drawn
       if (st.want_world) await until(function () { return drawn(0, st.want_world); }, st.timeout_ms, "the world the host serves to be drawn first");
+      // 0248: the page builds its cards again on every sync of its slots (shell.candidates empties the list). His run of
+      // 0247 failed at this press, its error cut to "Show on Pane"; a Show found before such a sync (detached, 0 x 0) is
+      // INFERRED, and a forced sync reproduced it. The cards are now drawn again on purpose here, after every wait, by a
+      // hook (PLAY.slot(0), the function Original's button calls), so that the redraw is met in every run; the card is
+      // found after it, in the same step as the press, where nothing can redraw between
+      const first0 = doc.querySelector("#c-list div.card[data-letter]"), swr = live.swaps;
+      win.PLAY.slot(0);
+      await until(function () { const f = doc.querySelector("#c-list div.card[data-letter]"); return f && f !== first0 && live.swaps > swr && drawn(0, st.want_world); }, 10000, "the cards to be drawn again");
+      const c = st.plant_card_held ? held : cardOf(st.title);     // the plant presses the card found before the redraw
+      const k = ((req() || {}).candidates || []).filter(function (x) { return x.letter === (c && c.getAttribute("data-letter")); }).map(function (x) { return x.slot; })[0];
+      if (k === undefined || k === null || k === 0) throw new Error("the card " + st.title + " has no slot of its own");
       const sw0 = live.swaps;
       const show = press(buttonOf(c, "Show"), "Show on " + st.title);
       await until(function () { return drawn(k, st.want_cand) && (!st.want_cand || live.swaps > sw0); }, st.timeout_ms, "the candidate's scene to be drawn");

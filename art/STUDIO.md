@@ -462,7 +462,7 @@ buttons and chips, the preview's badge, the scene the view drew. It decides noth
 preview's report, the scenes it serves and the stills the page gave it, read as PNG. The one exception is the opening,
 which rests on what the page reports: its title (held against the brief's own), its director, its canvas and its slot.
 A run ends at once when its page is lost: a step not answered, a browser that has ended, or the run's deadline passed
-(900 s for the honest run and 200 s for each plant's since 0247, 1,500 s inside the full check's 1800 s). Its rows are printed as they are
+(700 s for the honest run and 200 s for each of the four plants' since 0248, 1,500 s inside the full check's 1800 s). Its rows are printed as they are
 made. The preview's sixteen stills
 (480 × 270) and the admission's still (the canvas, 960 × 540) are drawn by the native renderer: the first stills in any
 suite that are not synthetic. Their detectors are read and printed, OBSERVED; a detector proves nothing.
@@ -479,8 +479,19 @@ Of the harness itself, each a whole run with its rows silenced:
 - the page's Admit unwired, and a page that skips its still. Each is a served copy of `play.js` with one line changed,
   caught only when the admission's row fails; a plant whose line is not in `play.js` exactly once is not planted, and
   the suite fails;
+- the driver pressing the Show of a card found before the page drew its cards again (0248), caught only when the Show
+  and Original row fails with the admission and the undo passed, the world read fresh and the press refused as a
+  control the page had replaced;
 - the host's wait for the live loop taken away (0247), caught only when the Show and Original row fails with the
   admission and the undo passed, the hold met and the world read stale; the suite prints that row's detail.
+
+**A control is pressed as the page stands (0248).** The page builds its cards again on every sync of its slots
+(`shell.candidates` empties the list). The owner's run of 0247 failed at the press of Show, its error cut to "Show on
+Pane". That the driver had found the Show before such a sync (no longer in the page, 0 x 0) is INFERRED, from reading
+`press` and from a reproduction that gave the same words with a sync forced between the find and the press. `press` now
+refuses a control no longer in the page by name. Before Show, the driver draws the cards again on purpose, by a hook
+(`PLAY.slot(0)`, the function Original's button calls), so the redraw is met in every run, and it finds the card after
+it, in the same step as the press, where nothing can redraw between.
 
 **The live loop is eventually the files' (0247).** `play.py`'s live loop serves a write of the files one compile after
 it sees it, a compile in a fresh process. Read too soon after a write, the world it serves is the one before it. The

@@ -14,8 +14,9 @@
 # studio page in a frame, takes the host's steps one at a time and does each with the page's own controls — Enter summons
 # the director, the shape's tag goes into the prompt, Strict is ticked, Ask is pressed, the card's Preview, Admit and Show,
 # the drawer's Undo and Original — each pressed where it is (the point hit-tested first: a control something covers is
-# said, never clicked through). The key and the click are synthetic events, not a person's hand, and the camera for the
-# admission's still is put on the request's path by a hook (PLAY.cam).
+# said, never clicked through). The key and the click are synthetic events, not a person's hand; the camera for the
+# admission's still is put on the request's path by a hook (PLAY.cam), and before Show the cards are drawn again by a hook
+# too (PLAY.slot(0), the function Original's button calls, 0248).
 #
 # The page decides nothing here, as it decides nothing in the studio. After each step the host reads its own state —
 # the request, the ledger, the certificate, the preview's report, the scenes it serves, the stills the page gave it, read
@@ -30,9 +31,10 @@
 # into the next: the page's window says the states differ); a still the host never received (the page says
 # STUDIO-NO-STILL); a stale head (the brief edited after the preview: STUDIO-STALE). Of the harness itself, each a whole run
 # with its rows silenced, caught when the row it breaks fails: the page's Admit unwired (a control whose handler is gone)
-# and a page that skips its still, each caught by the admission's row; and (0247) the host's wait for the live loop taken
-# away, caught by the Show and Original row. The browser's name and its GPU as the browser reports them are printed as OBSERVED
-# context, never as a claim. Standard library only.
+# and a page that skips its still, each caught by the admission's row; (0247) the host's wait for the live loop taken
+# away; and (0248) the driver pressing the Show of a card found before the page drew its cards again, each caught by the
+# Show and Original row. The browser's name and its GPU as the browser reports them are printed as OBSERVED context, never
+# as a claim. Standard library only.
 
 import json
 import os
@@ -54,16 +56,17 @@ sys.path.insert(0, HERE)
 WINDOWS = os.name == "nt"
 PLANT = ""
 LAST = {}                            # what the last run met at the Show and Original row (the live plant's count reads it)
-PLANTS = ("page-admit-unwired", "page-still-skipped", "page-live-unwaited")
+PLANTS = ("page-admit-unwired", "page-still-skipped", "page-live-unwaited", "page-card-held")
 # the planted copies of play.js: (the text replaced, its replacement); each must occur exactly once. page-live-unwaited
-# (0247) is the harness's own: the host's wait for the live loop taken away, nothing of the page changed
+# (0247) is the harness's own: the host's wait for the live loop taken away, nothing of the page changed; page-card-held
+# (0248) too: the driver presses the Show of a card found before the page drew its cards again
 PLANT_EDITS = {
     "page-admit-unwired": ("const admitWithStill = function (rid, c) {", "const admitWithStill = function (rid, c) { return;"),
     "page-still-skipped": (".then(function () { return takeStill(rid, c.letter); })", ".then(function () { return { ok: true, still: \"\", flags: [] }; })"),
 }
 # the row each harness plant must fail
 PLANT_ROWS = {"page-admit-unwired": "page: Admit pressed", "page-still-skipped": "page: Admit pressed",
-              "page-live-unwaited": "page: Show pressed"}
+              "page-live-unwaited": "page: Show pressed", "page-card-held": "page: Show pressed"}
 VIEW = (960, 540)                    # the page's canvas (?w=&h=): the admission's still is this size
 WINDOW = (1700, 1000)                # the browser's window; the page under test is a 1600 x 900 frame in it
 
@@ -327,10 +330,10 @@ def run(browser, headed, argv_plant="", say=None):
             c_u, r_u = http.post("/studio/page-test", {"result": None})
             row("page: unarmed, the studio serves no driver (/page_test.html 404) and its channel is refused (STUDIO-ROUTE)",
                 unarmed_page == 404 and c_u == 404 and r_u.get("code") == "STUDIO-ROUTE", "the driver %s; the channel %s %s" % (unarmed_page, c_u, r_u.get("code")))
-        # the honest run's 900 s and each of the three plants' 200 s, 1,500 s, inside the full check's 1800 s for the whole
+        # the honest run's 700 s and each of the four plants' 200 s, 1,500 s, inside the full check's 1800 s for the whole
         # suite with room for each run's start and end (alone the honest run takes about a minute; under sixteen suites at
-        # once it took up to about three)
-        ch = Channel(time.time() + (200 if argv_plant else 900), alive=lambda: proc is not None and proc.poll() is None)
+        # once it took up to about four)
+        ch = Channel(time.time() + (200 if argv_plant else 700), alive=lambda: proc is not None and proc.poll() is None)
         live.hub.page_test = ch
 
         def snapshot():
@@ -489,7 +492,7 @@ def run(browser, headed, argv_plant="", say=None):
                 at_pose(r.get("cam_before")), at_pose(r.get("cam_after")), len(new), "" if len(new) == 1 else "s",
                 (" #%s %s -> %s" % (a.get("seq"), (a.get("head_before") or "")[:12], (a.get("head_after") or "")[:12])) if a else "", still[:12], size,
                 "exact" if cert.get("exact") else cert))
-        full = argv_plant in ("", "page-live-unwaited")     # a run that goes on past the undo
+        full = argv_plant in ("", "page-live-unwaited", "page-card-held")     # a run that goes on past the undo
         if full:
             # the admission's scene served first, then the loop held behind what the undo will write
             served_admitted, _w = served_head(120)
@@ -521,16 +524,21 @@ def run(browser, headed, argv_plant="", say=None):
                          else "OBSERVED page: the live loop, let go, did not serve the files' head in %.0f s") % waited)
         s_world, s_cand = (live.slot(0) or {}).get("sha"), (live.slot(c2["slot"]) or {}).get("sha") if c2 and c2.get("slot") else None
         wants = {} if argv_plant == "page-live-unwaited" else {"want_cand": s_cand, "want_world": s_world}
+        if argv_plant == "page-card-held":
+            wants["plant_card_held"] = True
         r = ch.do(dict({"do": "original", "title": "Panelled bay"}, **wants), 120)
         row("page: Show pressed on a card, then Original: the view drew the candidate's scene, then the world's own, the files' head; the live loop, held behind the undo, served the admitted scene until let go, then the head",
             r.get("ok") and r.get("show") == "pressed" and r.get("original") == "pressed" and s_cand and s_world and s_cand != s_world
             and served_admitted and held_sha == after["scene_sha256"] != head_sha and caught_up and s_world == head_sha
             and (r.get("shown") or {}).get("sha") == s_cand and (r.get("back") or {}).get("k") == 0 and (r.get("back") or {}).get("sha") == s_world
             and (r.get("shown") or {}).get("swapped") and (r.get("back") or {}).get("swapped"),
-            "held: the loop served %s, the files %s; let go: %s; the page drew %s then %s; the host serves %s in the candidate's slot and %s in the world's" % (
+            "held: the loop served %s, the files %s; let go: %s; %s; the host serves %s in the candidate's slot and %s in the world's" % (
                 (held_sha or "")[:12], (head_sha or "")[:12], "not waited for (the plant)" if waited is None else "the head in %.1f s" % waited if caught_up else "NOT the head in %.0f s" % waited,
-                ((r.get("shown") or {}).get("sha") or r.get("error", ""))[:12], ((r.get("back") or {}).get("sha") or "")[:12], (s_cand or "")[:12], (s_world or "")[:12]))
-        LAST.update(hold_met=bool(served_admitted and held_sha == after["scene_sha256"] != head_sha), stale_read=bool(s_world and s_world != head_sha))
+                ("the step failed: %s" % r.get("error", "?")) if not r.get("ok") else
+                "the page drew %s then %s" % (((r.get("shown") or {}).get("sha") or "")[:12], ((r.get("back") or {}).get("sha") or "")[:12]),
+                (s_cand or "")[:12], (s_world or "")[:12]))
+        LAST.update(hold_met=bool(served_admitted and held_sha == after["scene_sha256"] != head_sha), stale_read=bool(s_world and s_world != head_sha),
+                    show_error=r.get("error", ""))
         if argv_plant:
             return rows, seen
         w0 = snapshot()
@@ -669,9 +677,12 @@ def selftest(argv=()):
         # does not catch it); the live plant only when its admission and undo passed, the hold was met and the world was
         # read stale, so that it is caught by the wait taken away and by nothing else
         by_row = any(n.startswith(PLANT_ROWS[p]) for n in failed)
+        passed = {n.split(":")[1].strip().split(" ")[0] for n, ok, _d in prow if ok and n.startswith("page: ")}
         if p == "page-live-unwaited":
-            passed = {n.split(":")[1].strip().split(" ")[0] for n, ok, _d in prow if ok and n.startswith("page: ")}
             by_row = by_row and {"Admit", "Undo"} <= passed and LAST.get("hold_met") is True and LAST.get("stale_read") is True
+        if p == "page-card-held":
+            # caught only by the press of a control the page had replaced, the world read fresh
+            by_row = by_row and {"Admit", "Undo"} <= passed and LAST.get("stale_read") is False and "was replaced as the page redrew it" in (LAST.get("show_error") or "")
         caught.append(browser is not None and by_row)
         print("[%s] page plant %s caught — %s" % ("PASS" if caught[-1] else "FAIL", p, ("by: " + "; ".join(f[:70] for f in failed)) if failed else "NOT CAUGHT"), flush=True)
         for n, ok, d in prow:

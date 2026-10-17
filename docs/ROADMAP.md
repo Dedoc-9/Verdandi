@@ -5677,6 +5677,104 @@ completeness, and BLENDER-VIEW-0 where he places it.
 NOT_MEASURED: the full check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (the
 PAGE-0 row), art/STUDIO.md, docs/CORE.md (art 27,701 lines), this entry.
 
+**His run of 0247 (2026-10-17), and the text he brought.** 0247 applied on 6178026:
+- the classifier the pushed tree held: rung D on eleven files, loosening nothing; *"272 planted defects refused by the
+  old checker; 272 by the new"*, PLANTS HELD;
+- `PAGE SELFTEST 16/17` alone. The Show and Original row failed: *"the page drew Show on Pane then ; the host serves
+  1c9fa9bc90f1 in the candidate's slot and 9743e35c7303 in the world's"*;
+- ART SELFTESTS PASSED, twenty-five suites, 188.8 s and 218.7 s wall, PAGE SELFTEST 17/17 in both runs;
+- the gate `GATE PASSED`, `RECONCILE  rowset 74db4c8d78625af5  251 rows / 0 fail / 0 skipped`;
+- pushed 603ae63..e51e7ef.
+
+MEASURED on his machine, by him. He also brought a text agreeing to the order: *"I agree: apply 0247, then do 0248
+DASHBOARD-0 before BLENDER-VIEW-0."* It sets five acceptance conditions for the dashboard:
+- *"The host owns truth."*
+- *"Every panel is revision-bound."*
+- *"Admission is a host decision."*
+- *"Undo proves restoration, not merely success."*
+- *"Import is transactional."*
+
+It also sets seven adversarial cases for its page test and one invariant: *"At the time a panel claims to represent host
+revision H, its displayed facts must be derivable from H—or the panel must identify itself as stale."* Of the Blender
+rulings it says to resolve them *"explicitly rather than inferred from the recommended defaults."* The dashboard's
+entry will quote the text whole. That patch is now 0249, because this repair took 0248; the order is unchanged.
+
+### PAGE-0's press after a redraw · **repaired, off the gate** (0248, `art/page_test.py`, `art/web/page_test.js`)
+
+**What failed, and why.** The detail *"the page drew Show on Pane then"* is the driver's own error, cut to twelve
+characters by the row's formatting. The page builds its cards again on every sync of its slots: `shell.candidates`
+empties `#c-list` and builds every card again (VERIFIED BY READING `art/web/play.js`). 0247 had the driver do three
+things in order:
+1. find the card;
+2. wait until the page drew the world the host serves, which is a sync;
+3. press the card's Show.
+
+When the page synced between steps 1 and 3, the Show found at step 1 was no longer in the page. Detached, it measures
+0 x 0 and `press` refuses it as not shown (VERIFIED BY READING `press`). His output shows only the error's first twelve
+characters, *"Show on Pane"*, and `press` begins every refusal with the control's name, so it cannot tell "not shown"
+from "covered by". That his press met a control the page had replaced is INFERRED, on three grounds:
+- the drawer is closed first and is `display: none`, and the toasts take no pointer events, so nothing covers the card;
+- the failure was intermittent: 17/17 in both runs of his full check;
+- a forced redraw gives the same words.
+
+The forced redraw was a run on his machine, by the agent, with only a redraw added between the find and the press. The
+row gave his detail word for word: *"the page drew Show on Pane then ; the host serves 1c9fa9bc90f1 in the candidate's
+slot and 9743e35c7303 in the world's"* (MEASURED once, in a check made for it; not kept). Nothing printed his run's full
+error. The product is as it was: the harness pressed a card the page had replaced.
+
+**What it changes.** Only the test.
+- `press` refuses a control no longer in the page by name: *"… was replaced as the page redrew it, and is not
+  pressed"*.
+- Before Show, the driver draws the cards again on purpose, by a hook: `PLAY.slot(0)`, the function Original's button
+  calls, not a control pressed. It waits until the card list is new and the scene applied, so the redraw is met in every
+  run.
+- The driver finds the card after that redraw, in the same step as the press. JavaScript runs that step to its end
+  before any redraw, so nothing can redraw between.
+- When the step failed, the row prints the driver's error whole, never cut, and says the step failed rather than what
+  was drawn.
+- A fourth plant of the harness, `page-card-held`, presses the card found before the redraw. It is counted caught only
+  when the Show and Original row fails, with the plant run's admission and undo passed, the world read fresh, and the
+  press refused as a replaced control.
+- The honest run's deadline is now 700 s and each of the four plants' 200 s: 1,500 s inside the full check's 1800 s.
+
+**Its falsifiers.** `PAGE SELFTEST 18/18`: the fourteen rows and the harness's four plants. The suite prints the new
+plant's row: *"… the step failed: Show on Panelled bay was replaced as the page redrew it, and is not pressed; the
+host serves 1c9fa9bc90f1 in the candidate's slot and 9743e35c7303 in the world's"* (MEASURED).
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of e51e7ef under
+%TEMP%, never the checkout):
+- PAGE SELFTEST 18/18 alone, in 123 s.
+- The full check of the final tree, `python art/selftests.py --repeat 2`, sixteen suites at once
+  (`20261017T205158Z`): 426.3 s and 434.2 s wall, ART SELFTESTS FAILED. PAGE SELFTEST was 18/18 in both runs. Two
+  timing rows of suites this patch does not change failed:
+  - STUDIO APP 12/13 in both runs: its plant of a silence taken as a close (the page silent for 4 s and 5 s);
+  - PREVIEW-STUDIO 13/14 in the second: its 10 s for a whole preview (17.92 s).
+- The same check on the base tree, e51e7ef, without this patch, run straight after under the same conditions
+  (`20261017T212636Z`): 419.1 s and 423.4 s wall, ART SELFTESTS FAILED on the same two rows (STUDIO APP 12/13 in the
+  first run, PREVIEW-STUDIO 13/14 in the second), PAGE SELFTEST 17/17 in both. The same tree had taken 147.5 s to 233 s
+  earlier that day. So the machine was slower, not the patch (INFERRED). The patch's page suite took 298 s and 308 s
+  against the base's 266 s and 278 s.
+- The classifier his pushed tree holds (e51e7ef's, the same bytes as 0245's): rung D on six files, loosening nothing;
+  "272 planted defects refused by the old checker; 272 by the new", PLANTS HELD.
+- The gate: 251 rows / 0 fail / 0 skipped, rowset 74db4c8d78625af5, row for row as before (828 s; rustc 1.96.1).
+
+The full check, the plants and the gate each ran on the tree as committed, but for this block's own figures and the
+commit message, which none of them reads; the classifier's rung was taken again after them.
+
+**What it does not show.**
+- That no other step of the driver presses a control found before an await. The other steps find and press in one step
+  with no await between (VERIFIED BY READING `art/web/page_test.js`); the new guard in `press` names any that does.
+- Anything of the dashboard. That is the next patch.
+
+**Not done.**
+- DASHBOARD-0, now 0249. Its design is settled, read from the tree and critiqued, but nothing of it is built: it waits
+  on his rulings.
+- Then the candidate's binding (F-3, F-4) and the inverse's repair, their numbers after the dashboard's.
+- BLENDER-VIEW-0 after the dashboard, by the text he brought, with its rulings made explicitly.
+
+NOT_MEASURED: the full check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (the
+PAGE-0 row), art/STUDIO.md, docs/CORE.md (art 27,723 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another
