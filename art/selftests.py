@@ -45,6 +45,7 @@ SUITES = (
     ("path", ["art/camera.py", "selftest"], r"^PATH SELFTEST (\d+)/(\d+)$", 35),                     # PATH-0 (0241)
     ("legible", ["art/legibility.py", "selftest"], r"^LEGIBLE SELFTEST (\d+)/(\d+)$", 15),            # LEGIBLE-0 (0241)
     ("flagship", ["art/play.py", "--flagship-selftest"], r"^FLAGSHIP SELFTEST (\d+)/(\d+)$", 90),      # FLAGSHIP-0 (0243)
+    ("page", ["art/play.py", "--page-selftest"], r"^PAGE SELFTEST (\d+)/(\d+)$", 110),              # PAGE-0 (0246): a browser
     ("cert", ["art/certificate.py", "selftest"], r"^CERT SELFTEST (\d+)/(\d+)$", 5),                  # CERT-0 (0244)
     ("glue", ["art/glue.py", "selftest"], r"^GLUE SELFTEST (\d+)/(\d+)$", 40),                        # GLUE-0 (0244)
     ("queue", ["art/studio_queue.py", "selftest"], r"^STUDIO-2 SELFTEST (\d+)/(\d+)$", 37),

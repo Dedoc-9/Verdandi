@@ -5285,6 +5285,278 @@ check in his checkout. No row, rung, pinned source or oracle file changed. Docs:
 table), art/STUDIO.md, art/director/README.md, docs/CAPABILITY-MATRIX.md and its rows (new), docs/CORE.md (art 26,681
 lines, tools 2,103), this entry.
 
+**His word on 0245 (2026-10-16).** *"0245 is applied and pushed. Build 0246 (PAGE-0, the page executed by a test) as
+the next patch."* His run of 0245 is not in what the agent can read. While 0246 was built, `git ls-remote origin main`
+and his checkout's HEAD both read 6af1d9f (read twice on his machine by the agent). 0246 is therefore made on 0245's
+commit and applies after it. NOT_MEASURED: his run of 0245, its classifier, its full check and its gate.
+
+### PAGE-0 — the page executed by a test · **built, off the gate** (0246, `art/page_test.py`, `art/web/page_test.html`, `art/web/page_test.js`, `art/play.py`, `art/selftests.py`; a plant's repair in `art/director.py`, a count's in `art/studio_queue.py`)
+
+**What was missing (F-5, docs/CAPABILITY-MATRIX.md).** No test ran the studio page's own script. The suites called the
+studio's routes from Python and gave it synthetic stills. Whatever the page does itself was held by nothing: its keys,
+its buttons, the still it takes of its canvas, and the preview it draws with the native renderer.
+
+**What it changes.** `python art/play.py --page-selftest` makes the flagship's edit (FLAGSHIP-0) through the page, in a
+real browser, headless, with a throwaway profile: on Windows Edge, then Chrome; elsewhere the first of `microsoft-edge`,
+`google-chrome`, `chromium` and `chromium-browser` on PATH. `--browser EXE` or `VERDANDI_BROWSER` names another, and
+`--headed` shows it.
+
+The host lays the foundry yard in a scratch tree, serves it with the scripted director, and arms a page test on its own
+server. Only then does the server serve a driver page (`/page_test.html`, `/page_test.js`) and answer its channel
+(`POST /studio/page-test`, the studio's token). Unarmed, it serves neither: 404, and STUDIO-ROUTE.
+
+The driver holds `/play.html`, unchanged, in a frame of the same origin. It does the host's steps one at a time with
+the page's own controls: Enter, the shape's tag, Strict, Ask, the card's Preview, Admit and Show, and the drawer's Undo
+and Original. Each control's centre is hit-tested before it is pressed, and a covered control is said, never clicked
+through (lesson 75). The events are synthetic. The camera for the admission's still is put on the request's framed path
+through `PLAY.cam`, a hook.
+
+The driver reports what the page showed and decides nothing. Each row but one is held by the host's own state: the
+request, the ledger, the certificate, the preview's report, the scenes it serves, and the stills the page gave it, read
+as PNG. Most rows hold the page's words as well; the unarmed row and the browser's end are the host's alone. The
+exception is the opening, which rests on what the page reports: its title, held against the brief's own; its director;
+its canvas; and the slot it shows. The camera step is held at the admission: the view stands at the path's first pose
+before Admit is pressed and after the page's word.
+
+A run ends at once when its page is lost, rather than letting every later step wait out its time (PageLost):
+- a step the page does not answer;
+- a browser that has ended;
+- a run past its deadline: 900 s for the honest run and 300 s for each plant's, inside the full check's 1800 s.
+
+The rows are printed as they are made, so a run killed at the limit keeps what it learned.
+
+**Its falsifiers.** PAGE SELFTEST 16/16:
+- unarmed, no driver and no channel;
+- the page opened, its title the brief's, its shell built and its director read;
+- the shape listed in the drawer;
+- the request asked through the page: strict, at the head, its candidates drawn;
+- the Panelled bay's card: strict PASS and Admit enabled, the host holding it with its impact;
+- the preview: sixteen stills of 480 × 270 drawn by the page's native renderer, unlike the window's at every pose;
+  replayed, verified and framed; the page's window saying state verified;
+- Admit: a 960 × 540 still from the canvas, the view at the request's first pose before and after; admitted, with the
+  ledger's admit from the request's head, its receipt and an exact certificate; the page's line and its toast saying
+  so;
+- Undo: the world as before, the head restored;
+- Show, then Original: the view drew the scene the host serves in the candidate's slot, then the world's;
+- four plants through the page, each showing its code with the world as it was:
+  - a region refused: the host's strict check refuses the column (ADMIT-OUTSIDE, boxes outside), its card shows
+    strict FAIL, and Admit cannot be pressed;
+  - a failing preview: the host's verification fails, and the page's window says "states differ";
+  - a still never received: STUDIO-NO-STILL;
+  - a stale head: STUDIO-STALE;
+- the browser ended and nothing of it left, the query that says so having found the browser's own processes while it
+  ran (not the holder's alone);
+- two plants of the harness: Admit unwired, and the still skipped. Each is a served copy of `play.js` with one line
+  changed, caught only by the admission's row.
+
+They are the first stills in any suite drawn by the native renderer and not synthetic.
+
+**Three repairs the full check asked for.** The first full check of the work in progress (`--repeat 2`, twenty-five
+suites, sixteen at once; its log `20261017T060335Z`) failed once in each run, each time on a row that passed alone. A
+later one (`20261017T095118Z`) failed a third such row.
+
+STUDIO 77/78. The row on two director commands at once through `quiet()` checks a plant that takes the lock away. That
+plant left the console redirected in 0 of 5 trials. The row's two commands overlapped by sleeps (0.02 s and 0.05 s,
+started 0.005 s apart), and under that load the overlap did not happen. They now overlap by events:
+- the second starts once the first is inside;
+- the first waits for the second to be inside (0.2 s at most), and ends first.
+
+With the lock the console is left redirected in 0 of 5 trials. Without it, it is left redirected in every trial where
+the second command is inside within the first's 0.2 s. That was 5 of 5 in a run alone (0 and 5, in 1.0 s; a snippet,
+not logged), and in every run of every full check after. The row's verdict is unchanged; its mechanism changed.
+
+PAGE 14/15. One process of the browser's tree was still standing 20 s after `taskkill /T`; the row named its pid only.
+On Windows the browser is now started by a holder in a job of its own (KILL_ON_JOB_CLOSE, the desktop studio's `Job`),
+and ending the holder ends it. The holder also ends by itself once nothing but itself is left in its job: the browser
+ended on its own. That needed the job, because Edge's first process hands off to another and ends within 0.1 s (OBSERVED
+once, in a check made for it; not kept). What is left is waited for 60 s and named by pid and name; what stood at the
+first look is printed.
+
+In both runs of the first full check after the repair (`20261017T062625Z`), four of the browser's processes
+(`msedge.exe`) still stood at the first look after its job closed. All were gone by 14.5 s and 15.2 s after the ending
+began (MEASURED). These are upper bounds: each is the time of the first look that found none, and the looks are a 1 s
+pause plus a query apart.
+
+Alone, the browser ended in 0.5 s to 0.9 s in three runs, and in 3.8 s once (MEASURED; upper bounds, as above). That
+once was a run whose other timings were several times slower (its stills 33.0 s against 5.0 s to 6.3 s), most likely
+under load from outside the check (INFERRED; a load reading taken after it, OBSERVED once, not kept). So the failure was
+most likely the same slow ending under load against a 20 s window, not a process that escaped (INFERRED). Two passing
+runs cannot say which part of the repair answered it, the job or the 60 s wait. The job makes the ending the kernel's,
+whatever a process's parent.
+
+DIRECTOR RACETEST, one case of 32. Its plant without the export lock (two exports at once, one over the brief's maps
+and one over a candidate's) went unmet: 0 of 40. A 20 ms sleep had held its window open since 0241, and chance had
+missed it before that too, at 0239 and 0241. The plant's two exports now meet twice (`PLANT_MEET`, under that plant
+only): once both have pointed `level.MAPS` at their folders, and once both have exported, before either is put back.
+Both are then inside the window in every pair. Whether one reads the other's folder is still the interleaving's,
+since the exporter (`dress.world`) points `level.MAPS` at its own folder again just before the converter reads it.
+Alone, the row read 40 of 40 wrong or failed in each of three runs. Under sixteen suites at once it read 39 and 33 of
+40 in the full check `20261017T102139Z`, 37 and 39 (36 and 38 of them refused) in `20261017T105239Z`, and 38 and 38
+(38 and 37 refused) in the final one, `20261017T113320Z` (MEASURED). In a
+fourth run alone, with a spy on `_export`, every one of the 40 was refused by the map check that reads the layout
+again apart from the converter (`source_rows` in graybox/check.py): "the layout's bytes are not the ones the converter
+read" (OBSERVED once; not kept). The row now counts refusals apart from wrong heads, so its log carries the kind.
+
+Its counts are now kept under a lock. The two threads added to one count without one, and the first full check that
+counted refusals read "35 of 40 wrong or failed (36 refused)" (MEASURED in `20261017T104447Z`): an addition was lost.
+In the honest trial a lost addition could have hidden a wrong head. STUDIO-2's two worlds compiled at once
+(`art/studio_queue.py`) counted the same way since STUDIO-2, and are repaired the same way.
+
+The race test's honest trial made no export since 0236. Its two memo keys were made just before it, so its 40 exports
+were 40 kept results (THROUGHPUT-0's memo). The lock its plant takes away was never what it held, and removing that
+lock from `_export` would have left both rows passing. Both trials now run with the memo off, and every export is
+counted: the honest row asks for 40 computed under the lock and none wrong, so the memo is no longer a difference
+between the two trials. The honest one holds the lock; the plant's takes it away and makes its two exports meet inside
+the window the lock closes (`PLANT_MEET`, above). The honest trial has no meeting, so its pass alone does not show the
+lock is needed; the plant's row does. This is a repair of a control, in new words here; 0236's and 0241's records
+stand as written.
+
+The full check between them (`20261017T071619Z`) showed two more rows of that kind, and they are said, not repaired. Its
+first run was most likely made under load from outside the check (INFERRED from its timings: 387.1 s wall against 159.2
+s for its second run, every suite slower; a load reading taken just before it, OBSERVED once, not kept). It failed two
+timing rows in suites this patch does not change:
+- STUDIO APP's plant of a silence taken as a close (its 4 s);
+- PREVIEW-STUDIO's 10 s for a whole preview (29.85 s).
+
+Its second run passed all twenty-five suites. The next (`20261017T095118Z`), its load reading low just before it
+(OBSERVED once, not kept), passed all twenty-five in its first run and failed only the race plant above in its
+second.
+
+**What the review found, and what was done.** A review of the work in progress (five lenses, each finding put to a
+skeptic; 27 agents, read only) gave 22 findings. The skeptics confirmed ten, seven of them distinct, and all seven are
+repaired, the one about POSIX on Linux only:
+- A harness plant was counted caught by any failed row, the run's own stop included, even when its line could not be
+  planted (three lenses). It is now caught only by the admission's row, and a plant whose line is not in `play.js`
+  exactly once is NOT PLANTED, and fails.
+- The preview's row asked only one pose of eight to differ. It now asks all eight.
+- On POSIX, nothing ended the browser if the suite's process was killed. On Linux the browser's first process now
+  has PR_SET_PDEATHSIG. Its other processes are not signalled, a launcher that runs a set-user-ID helper (a snap)
+  clears the setting, and elsewhere off Windows a browser can still outlive a killed suite; the driver lets the page
+  go after a minute without its host (NOT_MEASURED: there is no Linux here).
+- Leftovers were killed by pids read seconds before. The kill no longer passes the row, and what is left is ended in
+  the same query that finds it.
+- A failed query of what is left read as nothing left (two lenses). It now reads as unknown, and the row requires the
+  query to have found the browser's processes while it ran.
+- The admission's and the plants' rows read the drawer's status line, closed by then, and no toast. The toasts are
+  now required.
+- The Original step could not fail. It is now Show, then Original, each held against the scene the host serves.
+
+The skeptics rejected twelve. Among them was the charge that the camera hook and the synthetic events were presented as
+a person's acts; the comments and the docs now say what they are.
+
+**What a check of the claims found.** One more agent then read every claim of this entry, art/STUDIO.md's section, the
+AGENTS.md row, the commit message and the code's comments against the code and the logs. It found eleven wrong or
+overstated, and each is repaired. Three were repaired by making a row check what its words said:
+- the region plant's row reads the host's own strict verdict for the column, not only the page's chip (its words were
+  repaired too: every row but the opening is held by the host);
+- the failing preview's row asks the page's window for "states differ", where it took any badge but "state verified";
+- the browser row's query has to find one of the browser's own processes; the holder's command line names the profile
+  too, and once satisfied it alone.
+
+The other eight were repaired in words:
+- a line count one short;
+- "25 suites at once" for sixteen at once;
+- "by construction" where a 0.2 s wait stands;
+- the 60 s wait called the repair;
+- two timings of one kind graded two ways;
+- the header's "as a person makes it";
+- "Chromium elsewhere" where the finder tries Edge and Chrome first;
+- "all seven are repaired" where the one about POSIX is repaired on Linux only.
+
+**What the last check found.** A final adversarial check (five lenses, each finding put to a skeptic; 30 agents, read
+only) read the tree after those repairs. Of its 25 findings, the skeptics confirmed sixteen, nine of them distinct, all
+low and all repaired:
+- docs/CORE.md's line count, still the stale one where this entry said it was repaired: now counted on the committed
+  tree;
+- the claims check's eleven listed with one twice and one missing: the list above;
+- the opening said to rest on the page's title, which the row never read: the title is now held against the brief's
+  own, and AGENTS.md's "each step" now excepts the opening;
+- the camera step held by nothing: now held before and after the admission;
+- the region plant's host check passing any strict failure: it now asks for ADMIT-OUTSIDE with boxes outside, the
+  column drawn;
+- the bounds on the browser's ending described backwards in a comment: corrected;
+- the Linux claim ungraded and wider than the code: now the first process only, NOT_MEASURED;
+- a page that stopped answering made every later step wait out its time, past the full check's 1800 s: now the run
+  ends at once;
+- a browser that could not start read as "no answer from the page in 210 s", three times, its cause removed with the
+  run's folder: now the run ends at once when the browser has ended, the plants are NOT RUN when the honest run's page
+  never opened, and the browser log's last lines are printed on a failure (a `--browser` path is still not checked
+  before it is started).
+
+For that last one, the holder sees a browser that ended on its own. The check made for it killed the browser during
+the honest run's preview; the run ended at once with "the browser ended before the page answered step 5 (press)", and
+nothing of it was left (MEASURED once, in a check made for it and not kept in the repository).
+
+The skeptics rejected nine, among them that the plants' catch cannot tell a plant from an admission slower than 45 s.
+The honest run's own admission row stands against that.
+
+**What the check of the last changes found.** A last adversarial check of the changes since (three lenses, each finding
+put to a skeptic; 14 agents, read only) gave eleven findings. The skeptics confirmed ten, seven of them distinct, all
+low and all repaired:
+- the race test's honest trial made only kept results (since 0236): repaired above;
+- the race's refusal given to the converter and graded MEASURED from output not kept: it is the map check's, OBSERVED;
+- "the race is then met in every trial", where the full check `20261017T102139Z` counted 39 and 33 of 40: said as
+  counted;
+- "the same full check" named for another: each is now named by its log;
+- the sentence on what holds each row garbled: rewritten;
+- 0.4 s for the browser's ending, taken from a run whose browser the check had already killed: the three runs alone;
+- "eight distinct" where nine were: the browser that could not start, listed.
+
+The skeptics rejected one: Edge's hand-off graded MEASURED with nothing on file. It is now graded OBSERVED, as it is.
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of 0245 under
+%TEMP%, never the checkout):
+- PAGE SELFTEST 16/16 alone on the final page code, in 89 s. The page opened in 1.7 s, the preview's sixteen stills
+  took 5.0 s with nothing flagged by their detectors, the admission's still was 960 × 540, and the browser ended in
+  0.5 s.
+- OBSERVED: headless Edge drew on the machine's GPU through ANGLE. The browser's own report is printed by the suite
+  and not recorded here.
+- DIRECTOR RACETEST alone after its last repair: the honest trial 0 wrong with 40 computed; the plant 40 of 40 with
+  40 refused.
+- The full check of the final tree, `python art/selftests.py --repeat 2`, sixteen suites at once
+  (`20261017T113320Z`): twenty-five suites passing in both runs, 146.4 s and 145.8 s wall, ART SELFTESTS PASSED.
+  - PAGE SELFTEST 16/16 in both, in 133.2 s and 130.7 s.
+  - The race plant: 38 and 38 of 40 wrong or failed (38 and 37 refused).
+  - The preview's stills took 12.2 s and 12.6 s.
+- The full checks before it, each of the tree as it then stood:
+  - `20261017T060335Z`: FAILED (STUDIO 77/78, then PAGE 14/15), 253.9 s and 257.1 s.
+  - `20261017T062625Z`: PASSED, 234.2 s and 242.7 s.
+  - `20261017T071619Z`: FAILED in its first run (STUDIO APP 12/13 and PREVIEW-STUDIO 13/14, 387.1 s, most likely
+    under load from outside the check, INFERRED); its second passed (159.2 s).
+  - `20261017T095118Z`: its first run passed (160.6 s); its second FAILED (DIRECTOR RACETEST, one case, 161.6 s).
+  - `20261017T102139Z`: PASSED, 154.7 s and 158.9 s.
+  - `20261017T104447Z`: PASSED, 147.9 s and 151.4 s, with the race's count losing an addition.
+  - `20261017T105239Z`: PASSED, 147.5 s and 150.0 s (the race plant 37 and 39 of 40, 36 and 38 refused); the tree
+    after it changed in two comments and in words only.
+- The classifier 0245 holds (`git show da8214f:tools/rung.py`, outside the clone), on the patch's eleven files: rung D,
+  loosening nothing. Its plants: "272 planted defects refused by the old checker; 272 by the new", PLANTS HELD.
+- The gate: 251 rows / 0 fail / 0 skipped, rowset 74db4c8d78625af5, row for row as before (772 s; rustc 1.96.1).
+
+The final full check, the classifier's plants and the gate each ran on the tree as committed, but for this block's own
+figures and the commit message, which none of them reads; the classifier's rung was taken again after them.
+
+**What it does not show.**
+- A person's judgement of the picture.
+- The page's look.
+- A real provider.
+- Mouse look and play mode: pointer lock needs a person's gesture.
+- Mark & Shape's drawing of a region: the host saves the shape, as FLAGSHIP-0 does.
+- Whether a person's own click reaches the control: the events are synthetic, and only the hit test is a person's.
+- Timings: they are printed, never checked.
+- The browser's ending off Windows: never run here.
+
+R5 reads none of this suite's plants (it reads quality, check, director and studio). Without a browser the suite
+fails; there is no skip.
+
+**Not done.**
+- 0247, the dashboard, held by this harness.
+- The candidate's binding (F-3, F-4: his rulings).
+- The inverse's repair (his ruling).
+- Plants completeness (its own rung, where this suite's plants would join R5).
+
+NOT_MEASURED: the full check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (a
+row), art/STUDIO.md, docs/CORE.md (art 27,630 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

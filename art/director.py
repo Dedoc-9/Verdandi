@@ -85,6 +85,18 @@ level = dress.level
 import threading  # noqa: E402
 EXPORT_LOCK = threading.RLock()      # every swap of level.MAPS in this process holds it (art/play.py's compile_scene too)
 NO_LOCK = __import__("contextlib").nullcontext()       # the race court's plant "no-export-lock" only
+# that plant's two exports meet twice (0246): once both have pointed level.MAPS at their folders, and once both have
+# exported, so that both are inside the window the lock closes at once, whatever else the machine runs (whether one then
+# reads the other's folder is still the interleaving's). A sleep held the window open from 0241, and the race still went
+# unmet once, 0 of 40, with twenty-five suites run sixteen at once.
+PLANT_MEET = threading.Barrier(2)
+
+
+def _plant_meet():
+    try:
+        PLANT_MEET.wait(30)
+    except threading.BrokenBarrierError:      # its partner never came: an export alone goes on, and the next pair meets
+        PLANT_MEET.reset()
 
 
 # THROUGHPUT-0 (0236): an exact memo of Workspace.export. An export is a function of its text, its brief's name, the maps folder it
@@ -255,13 +267,16 @@ class Workspace:
         with EXPORT_LOCK if durable.PLANT != "no-export-lock" else NO_LOCK:   # level.MAPS is one global
             saved = level.MAPS
             level.MAPS = maps
-            if durable.PLANT == "no-export-lock":
-                time.sleep(0.02)    # the race court's plant only: the window the lock closes held open, so that the race is met, not hoped for
+            planted = durable.PLANT == "no-export-lock"
+            if planted:
+                _plant_meet()       # the race court's plant only: both folders pointed at before either export reads
             try:
                 out = dress.export(A, maps_dir=maps)
                 D = check.gcheck.source_rows(out["W"])
                 res = check.verify(out, None, D=D)
             finally:
+                if planted:
+                    _plant_meet()   # and both exports read before either folder is put back
                 level.MAPS = saved
         L = out["lineage"]
         parts = {"art_sha256": A["sha256"], "world_sha256": L["canonical_sha256"], "exporter_sha256": L["exporter_sha256"]}
@@ -1990,20 +2005,36 @@ def cmd_racetest():
         _o, b_parts, _c = ws.export(None, maps_b)
 
         def export_trials(plant, n=20):
-            # the two threads start together and switch finely, and under the plant each holds the window the lock closes open
-            # for 20 ms (_export), so that the race is met whatever else the machine runs (with chance alone it was missed:
-            # 0 of 40 once at 0239, under two suites at once, and again at 0241 after the 0239 repair: OBSERVED)
-            wrong, gate, si = [0], threading.Barrier(2), sys.getswitchinterval()
-            durable.PLANT = plant
+            # the two threads start together and switch finely, and under the plant their exports meet (_export, PLANT_MEET):
+            # both folders pointed at before either reads, and both read before either is put back, so that both are inside
+            # the window whatever else the machine runs (with chance alone the race was missed: 0 of 40 once at 0239, under
+            # two suites at once; again at 0241 after the 0239 repair; and at 0246 after 0241's 20 ms window: OBSERVED).
+            # The memo off for both trials, and every export counted (0246): with it on, both keys were kept just above and
+            # the honest trial's 40 exports were 40 kept results, so the lock it pairs with the plant was never what it held,
+            # from 0236 to 0246. Now the trials differ only by the plant: the lock taken away, and the two exports made to
+            # meet in the window it leaves open (the honest trial has no meeting, so its pass alone does not show the lock
+            # is needed; the plant's row does).
+            wrong, refused, done, done_lock = [0], [0], [0], threading.Lock()
+            gate, si, maps0, memo0 = threading.Barrier(2), sys.getswitchinterval(), level.MAPS, MEMO["on"]
+            real = ws._export
+
+            def counted(text, maps):
+                with done_lock:
+                    done[0] += 1
+                return real(text, maps)
+            durable.PLANT, MEMO["on"], ws._export = plant, False, counted
             sys.setswitchinterval(1e-5)
 
             def one(maps, want):
                 gate.wait()
                 for _i in range(n):
                     try:
-                        wrong[0] += ws.export(None, maps)[1] != want
-                    except Exception:                    # noqa: BLE001 — the converter read the other folder
-                        wrong[0] += 1
+                        bad, refusal = ws.export(None, maps)[1] != want, 0
+                    except Exception:                    # noqa: BLE001 — refused: the layout read again is not what the converter read
+                        bad, refusal = True, 1
+                    with done_lock:                      # 0246: two threads add to one count; without a lock an addition was lost
+                        wrong[0] += bad
+                        refused[0] += refusal
             try:
                 th = [threading.Thread(target=one, args=(None, base_parts)), threading.Thread(target=one, args=(maps_b, b_parts))]
                 for t in th:
@@ -2011,13 +2042,16 @@ def cmd_racetest():
                 for t in th:
                     t.join()
             finally:
-                durable.PLANT = saved_plant
+                durable.PLANT, MEMO["on"] = saved_plant, memo0
+                del ws._export
                 sys.setswitchinterval(si)
-            return wrong[0]
-        e0, e1 = export_trials(""), export_trials("no-export-lock")
+                level.MAPS = maps0          # the plant's crossed restores leave the global wherever the last one put it
+            return wrong[0], refused[0], done[0]
+        (e0, _r0, d0), (e1, r1, d1) = export_trials(""), export_trials("no-export-lock")
         shutil.rmtree(maps_b, ignore_errors=True)
-        res("two threads export at once, over the brief's maps and over a candidate's: every head right (40 exports)", e0 == 0, "%d wrong" % e0)
-        res("plant: no export lock — an export reads the other's maps", e1 > 0, "%d of 40 wrong or failed" % e1)
+        res("two threads export at once, over the brief's maps and over a candidate's: every head right (40 exports, each computed under the lock)",
+            e0 == 0 and d0 == 40, "%d wrong; %d computed" % (e0, d0))
+        res("plant: no export lock — an export reads the other's maps", e1 > 0 and d1 == 40, "%d of 40 wrong or failed (%d refused); %d computed" % (e1, r1, d1))
 
         # 3. an admission with a second writer at each of its points
         watched = [ws.art, ws.ledger] + [os.path.join(ws.maps, f) for f in ("tactical.design", "tactical.layout")]

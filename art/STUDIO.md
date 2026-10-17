@@ -433,6 +433,73 @@ says it was made from the ledger, since the request's is not in it; a certificat
 start goes on. An evaluation's append first recovers a dead writer's half-done admission it finds under the lock, as a rebase does. A studio route with no
 branch is refused (`STUDIO-ROUTE`); before 0245 the undo was the last line every unmatched route fell to.
 
+## The page executed by a test (PAGE-0), 0246
+
+Before 0246 no test ran the page's own script: the suites called the studio's routes from Python and gave it synthetic
+stills. `python art/play.py --page-selftest` (also `python art/page_test.py selftest`) makes the flagship's edit
+through the page, in a real browser, headless, with a throwaway profile: on Windows Edge, then Chrome; elsewhere the
+first of `microsoft-edge`, `google-chrome`, `chromium` and `chromium-browser` on PATH. `--browser EXE` or
+`VERDANDI_BROWSER` names another, and `--headed` shows the window.
+
+**How it is driven.** The host lays the foundry yard in a scratch tree, serves it with the scripted director, and arms
+a page test on its own server (`hub.page_test`). Only while one is armed does the server serve the driver
+(`/page_test.html`, `/page_test.js`) and answer its channel (`POST /studio/page-test`, the studio's token); unarmed,
+the driver is 404 and the channel is refused `STUDIO-ROUTE`. The driver holds `/play.html` as it always is, in a frame
+of the same origin. It takes the host's steps one at a time and does each with the page's own controls:
+- Enter summons the director;
+- the shape's tag puts `#bay` into the prompt;
+- Strict is ticked and Ask pressed;
+- the card's Preview, Admit and Show are pressed;
+- the drawer's Undo and Original are pressed.
+
+Each control is pressed where it is: its centre is hit-tested first, and a control something covers is said, never
+clicked through (lesson 75). The press itself is the control's `click()`, a synthetic event; the keys are synthetic too.
+The camera for the admission's still is put where the request's own framed path begins, through `PLAY.cam`: a hook,
+not a person's mouse; the view is held at that pose before Admit is pressed and after the page's word. The driver reports what the page showed: its status line, the toasts a person sees, a card's
+buttons and chips, the preview's badge, the scene the view drew. It decides nothing.
+
+**What holds each step is the host's.** After each step the host reads the request, the ledger, the certificate, the
+preview's report, the scenes it serves and the stills the page gave it, read as PNG. The one exception is the opening,
+which rests on what the page reports: its title (held against the brief's own), its director, its canvas and its slot.
+A run ends at once when its page is lost: a step not answered, a browser that has ended, or the run's deadline passed
+(900 s for the honest run, 300 s for each plant's, inside the full check's 1800 s). Its rows are printed as they are
+made. The preview's sixteen stills
+(480 × 270) and the admission's still (the canvas, 960 × 540) are drawn by the native renderer: the first stills in any
+suite that are not synthetic. Their detectors are read and printed, OBSERVED; a detector proves nothing.
+
+**The plants.** Through the page, each showing its code in the page with the world as it was:
+- a region refused: the host's strict check refuses the column (ADMIT-OUTSIDE, boxes outside), its card shows
+  strict FAIL, and its Admit cannot be pressed;
+- a failing preview (one run's state carried into the next): the host's verification fails, and the page's window says
+  "states differ";
+- a still the host never received: the page says `STUDIO-NO-STILL`, in its status line and its toast;
+- a stale head (the brief edited after the preview): the page says `STUDIO-STALE`, in both.
+
+Of the harness itself, each a whole run with its rows silenced: the page's Admit unwired, and a page that skips its
+still. Each is a served copy of `play.js` with one line changed. A plant is caught only when the admission's row fails;
+a plant whose line is not in `play.js` exactly once is not planted, and the suite fails.
+
+**The browser's end.** On Windows the browser is started by a holder in a job of its own (KILL_ON_JOB_CLOSE, the desktop
+studio's `Job`), and the run ends the holder. The holder also ends by itself when nothing but itself is left in its job,
+so a browser that ended on its own is seen. Elsewhere the browser runs in a session of its own, ended as a group. On
+Linux its first process also has PR_SET_PDEATHSIG, so the kernel kills that one process if the test's process dies
+first (its other processes are not signalled; NOT_MEASURED, never run off Windows). The row then asks that nothing whose command line
+names the run's profile is left. The query that says so must have found the browser's own processes while it ran (the
+holder's command line names the profile too, so it does not count), and a query that fails reads as unknown, never as
+nothing.
+
+**What it does not show.**
+- A person's judgement of the picture. The stills are held as PNG of the right size, unlike the window's at every
+  pose, with their detectors read, and nothing more.
+- The page's look: layout, colours, legibility.
+- A real provider: this is the scripted director.
+- The page's mouse look and play mode: pointer lock needs a person's gesture.
+- Mark & Shape's drawing of a region: the host saves the shape, as FLAGSHIP-0 does, and MARK-0 holds the shapes.
+- Timings: they are printed and never checked.
+- The browser's ending off Windows: never run here.
+
+Without a browser the suite fails: `art/selftests.py` has no skip.
+
 ## Legibility along the path (LEGIBLE-0, 0241: one test of Meaning-to-View)
 
 `art/legibility.py` asks whether the evidence for a piece survives the view: along a path, at each pose, the share of

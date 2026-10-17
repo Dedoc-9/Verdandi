@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+<!-- PAGE-0 (0246): the page under test, held in a frame of its own origin, driven through its own controls by
+     page_test.js, which takes each step from the host and gives back what the page showed. Served only while a page test
+     is armed (art/page_test.py); the studio page itself is served as it always is. -->
+<html><head><meta charset="utf-8"><title>Verðandi — the page test</title>
+<style>
+  html, body { margin: 0; background: #101114; color: #c8c8c8; font: 12px system-ui, sans-serif; }
+  #app { width: 1600px; height: 900px; border: 0; display: block; }
+  #log { position: fixed; left: 0; bottom: 0; max-width: 60%; max-height: 24%; overflow: auto; background: rgba(0, 0, 0, 0.8);
+         padding: 4px 6px; white-space: pre-wrap; pointer-events: none; }
+</style>
+</head><body data-studio="%STUDIO%">
+<iframe id="app" title="the studio page under test"></iframe>
+<div id="log"></div>
+<script src="/page_test.js"></script>
+</body></html>

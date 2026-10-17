@@ -649,15 +649,17 @@ def selftest():
         want = {mine: play.compile_scene("plaza-night", art, mine)[1], other: play.compile_scene("plaza-night", art, other)[1]}
 
         def compile_trials(plant):
-            wrong = [0]
+            wrong, count_lock = [0], threading.Lock()
             durable.PLANT = plant
 
             def one(m):
                 for _i in range(12):
                     try:
-                        wrong[0] += play.compile_scene("plaza-night", art, m)[1] != want[m]
+                        bad = play.compile_scene("plaza-night", art, m)[1] != want[m]
                     except (SystemExit, ValueError, OSError):           # the converter read the other world's maps
-                        wrong[0] += 1
+                        bad = True
+                    with count_lock:            # 0246: two threads add to one count; without a lock an addition can be lost
+                        wrong[0] += bad
             try:
                 th = [threading.Thread(target=one, args=(m,)) for m in (mine, other)]
                 for x in th:

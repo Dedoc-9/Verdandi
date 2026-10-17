@@ -852,7 +852,8 @@ def seed_worlds(worlds_dir, source=None, say=print):
 STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin",
                 "/studio/alive", "/studio/shutdown", "/studio/worlds/duplicate",
                 "/studio/queue/add", "/studio/queue/cancel", "/studio/queue/requeue", "/studio/queue/review", "/studio/queue/dismiss",
-                "/studio/build", "/studio/shapes/save", "/studio/shapes/delete", "/studio/none", "/studio/preview", "/studio/preview/finish")
+                "/studio/build", "/studio/shapes/save", "/studio/shapes/delete", "/studio/none", "/studio/preview", "/studio/preview/finish",
+                "/studio/page-test")
 # B1 (docs/STUDIO-APP.md; the supervisor's view of this server): GET /healthz says the server is up and which code it
 # runs; POST /studio/alive is the page's heartbeat; POST /studio/shutdown stops the server as Ctrl+C does. Exit codes:
 # 0 stopped, 1 a source not served, 2 usage, 70 could not serve (the port), 75 refused to start (recovery refused).
@@ -913,6 +914,13 @@ def studio_post(hub, path, body):
     if path == "/studio/alive":
         hub.page_seen = time.time()
         return 200, {"ok": True}
+    if path == "/studio/page-test":
+        # PAGE-0 (0246): the page test's channel (art/page_test.py): the driver gives the last step's result and is answered
+        # the next step. Only while a page test is armed on this server; otherwise refused, nothing kept
+        pt = getattr(hub, "page_test", None)
+        if pt is None:
+            return 404, {"ok": False, "code": "STUDIO-ROUTE", "message": "no page test is armed on this server"}
+        return 200, pt.exchange(body)
     if path == "/studio/shutdown":
         # HARDEN-0 (0232): the server stops once this answer is written (do_POST sets hub.stop after sending it): set here,
         # the process could end with the answer half sent, and the supervisor read IncompleteRead (OBSERVED once, 0232)
@@ -1269,6 +1277,15 @@ def server(target, port=0):
                     return self.send(404, json.dumps({"ok": False, "code": "STUDIO-OBJECT", "message": "no piece %r in source %d's scene" % (piece[:80], k)}).encode("utf-8"),
                                      "application/json")
                 return self.send(200, json.dumps(dict(got, ok=True), sort_keys=True).encode("utf-8"), "application/json")
+            if path in ("/page_test.html", "/page_test.js"):
+                # PAGE-0 (0246): the page test's driver, served only while a page test is armed (art/page_test.py)
+                if getattr(hub, "page_test", None) is None:
+                    return self.send(404, b"not found", "text/plain")
+                with open(os.path.join(WEB, path[1:]), "rb") as fh:
+                    body = fh.read()
+                if path.endswith(".html"):
+                    return self.send(200, body.replace(b"%STUDIO%", hub.token.encode("ascii")), "text/html; charset=utf-8")
+                return self.send(200, body, "text/javascript; charset=utf-8")
             if path in FILES:
                 f, ctype = FILES[path]
                 with open(f, "rb") as fh:
@@ -1418,6 +1435,9 @@ def main(argv):
     if "--flagship-selftest" in argv:
         import flagship          # FLAGSHIP-0 (0243): the flagship's acceptance
         return flagship.selftest()
+    if "--page-selftest" in argv:
+        import page_test         # PAGE-0 (0246): the page executed by a test, in a real browser
+        return page_test.selftest(argv)
     global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
     vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root")
@@ -2026,12 +2046,26 @@ def studio_selftest():
                 studio.QUIET_LOCK = contextlib.nullcontext()
             try:
                 for _t in range(5):
-                    def fn(d):
+                    # 0246: the overlap made by events, not by sleeps (with twenty-five suites run sixteen at once
+                    # the plant's race went unmet, 0 of 5, once): the second starts once the first is inside; the first
+                    # waits for the second to be inside too (0.2 s at most: with the lock it never is, and the first
+                    # ends); the second ends only after the first has, so that without the lock it puts back the first's
+                    # redirection (whenever it is inside within those 0.2 s)
+                    entered, inside, first_left = threading.Event(), threading.Event(), threading.Event()
+
+                    def first():
+                        entered.set()
                         print("a director command's line")
-                        time.sleep(d)
-                    th = [threading.Thread(target=studio.quiet, args=(fn, d)) for d in (0.02, 0.05)]
+                        inside.wait(0.2)
+
+                    def second():
+                        print("a director command's line")
+                        inside.set()
+                        first_left.wait(5)
+                    th = [threading.Thread(target=lambda: (studio.quiet(first), first_left.set())),
+                          threading.Thread(target=studio.quiet, args=(second,))]
                     th[0].start()
-                    time.sleep(0.005)
+                    entered.wait(5)
                     th[1].start()
                     for x in th:
                         x.join()
