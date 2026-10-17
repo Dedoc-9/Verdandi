@@ -5557,6 +5557,126 @@ fails; there is no skip.
 NOT_MEASURED: the full check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (a
 row), art/STUDIO.md, docs/CORE.md (art 27,630 lines), this entry.
 
+**His run of 0245 and of 0246 (2026-10-17).** 0245 applied on 6af1d9f:
+- the classifier the pushed tree held: rung D, loosening nothing; *"116 planted defects refused by the old checker;
+  122 by the new"*, PLANTS HELD;
+- RUNG SELFTEST 22/22;
+- ART SELFTESTS PASSED, twenty-four suites, 156.1 s and 156.9 s wall;
+- the gate `GATE PASSED`, `RECONCILE  rowset 74db4c8d78625af5  251 rows / 0 fail / 0 skipped`;
+- pushed 6af1d9f..603ae63.
+
+0246 applied on 603ae63:
+- the classifier the pushed tree held (0245's): rung D, loosening nothing; *"272 planted defects refused by the old
+  checker; 272 by the new"*, PLANTS HELD;
+- `PAGE SELFTEST 15/16`. The Show and Original row failed: *"the page drew 1c9fa9bc90f1 then 1c9fa9bc90f1; the host
+  serves 1c9fa9bc90f1 in the candidate's slot and 1c9fa9bc90f1 in the world's"*;
+- not pushed.
+
+MEASURED on his machine, by him. His word: *"from now on when you give me a next step tell me what it entails and the
+theorem or design behind each path. before that we have a failure to address"*.
+
+### PAGE-0's read of the world after an undo · **repaired, off the gate** (0247, `art/page_test.py`, `art/web/page_test.js`)
+
+**What failed, and why.** The world the host served in slot 0 was still the admitted scene, 1c9fa9bc90f1, after the
+undo had put the files back to 9743e35c7303; the undo's own row had passed on the files. `play.py`'s live loop serves
+a write of the files one compile after it sees it, a compile in a fresh process. It is eventually the files'. The row
+compared against slot 0 without waiting for it.
+
+A trace on his machine, by the agent (a scratch clone under %TEMP%), caught the same race in an ordinary run, with only
+the trace added (MEASURED once, after passing in every run before it):
+- the admission's write was compiled from 13.85 s to 14.48 s, and slot 0 served the admitted scene;
+- the undo wrote the files back between 14.06 s and 14.50 s, while that compile ran;
+- the second request ran from 14.52 s to 16.23 s;
+- the loop began compiling the undo's write at 15.69 s;
+- the row read slot 0 at about 16.24 s;
+- the loop served the files' head at 16.37 s.
+
+The read came 0.13 s too soon. Two attempts to reproduce it by slowing the compiles (8 s each) passed (MEASURED).
+Slowed, the admission's own compile can begin after the undo has written, and then slot 0 never serves the admitted
+scene at all (INFERRED). The third harness plant below makes the race certain, and its row's detail ends in his
+row's own words.
+
+Not the cause, by reading: the live compile takes no lock of the director's.
+
+**What it changes.** Only the test; the product is as it was.
+- The live loop's recompiles in the run pass through a gate. The honest run waits until the loop serves the admitted
+  scene, then holds the gate closed from before the undo until it has read the world served. That read is the admitted
+  scene still, behind the files, so the race his run met is met in every run.
+- It then lets the loop go and waits, at most 120 s, until the loop serves the files' own head. Only then does it
+  compare.
+- The page is told the scenes the host serves in the candidate's slot and in the world's, because its own list of
+  slots is as old as its last read of `/live`. It draws the world the host serves first, then presses Show and
+  Original, and each press must make it apply a scene (its count of swaps grows). Otherwise the stale world, being the
+  candidate's own scene, would let Show pass with nothing drawn.
+- The row now asks four things:
+  - the held loop served the admitted scene while the files were the head;
+  - let go, it served the head;
+  - the page drew the candidate's scene, then the head, applying a scene at each press;
+  - the host serves exactly those.
+- A third plant of the harness, `page-live-unwaited`, takes the host's wait away. It is counted caught only when that
+  row fails with the plant run's admission and undo passed, the hold met and the world read stale. The suite prints
+  each plant's breaking row.
+- The plant runs' deadline is 200 s, so that the honest run's 900 s and three plants' come to 1,500 s inside the full
+  check's 1800 s (0246's entry, which gave the plants 300 s, stands as written). A wait for the loop never runs past
+  its run's deadline.
+- The gate is always opened again when a run ends.
+
+**Its falsifiers.** `PAGE SELFTEST 17/17`: the fourteen rows, with the Show and Original row as above, and the
+harness's three plants each caught by the row it breaks. In the honest run the row reads: held, the loop served
+1c9fa9bc90f1 and the files 9743e35c7303; let go, the head (MEASURED). The wait for it was 0.6 s and 1.0 s alone, and
+2.8 s and 1.9 s in a full check (OBSERVED: polled every 0.2 s, not a measurement of the loop). The suite prints the
+plant's row: *"held: the loop served 1c9fa9bc90f1, the files 9743e35c7303; let go: not waited for (the plant); the page
+drew 1c9fa9bc90f1 then 1c9fa9bc90f1; the host serves 1c9fa9bc90f1 in the candidate's slot and 1c9fa9bc90f1 in the
+world's"* (MEASURED). It ends in the words of his failing row.
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of 0246's tree
+under %TEMP%, never the checkout):
+- PAGE SELFTEST 17/17 alone, in 106 s. The plant runs printed their rows; the live plant's is the one quoted above.
+- The full check of the final tree, `python art/selftests.py --repeat 2`, sixteen suites at once
+  (`20261017T173820Z`): twenty-five suites passing in both runs, 225.6 s and 233.0 s wall, ART SELFTESTS PASSED, PAGE
+  SELFTEST 17/17 in both. A full check before the review's repairs (`20261017T133705Z`) passed too, 164.0 s and 167.2 s.
+- The classifier 0245 holds, which is the one his pushed tree (603ae63) holds, byte for byte: `git show
+  da8214f:tools/rung.py`, outside the clone. It ran over 0246 and 0247 together, as his `origin/main..HEAD` will read
+  them: rung D on eleven files, loosening nothing; "272 planted defects refused by the old checker; 272 by the new",
+  PLANTS HELD.
+- The gate: 251 rows / 0 fail / 0 skipped, rowset 74db4c8d78625af5, row for row as before (818 s; rustc 1.96.1).
+
+The full check, the plants and the gate each ran on the tree as committed, but for this block's own figures and the
+commit message, which none of them reads; the classifier's rung was taken again after them.
+
+**What it does not show.**
+- The live loop's own timing. The honest run holds the loop and then waits for it; a test that holds a loop does not
+  measure how soon the loop catches up.
+- What a person sees after an undo. The page's Original may show the world before the undo for a compile's time, until
+  its next read of `/live` (VERIFIED BY READING `art/web/play.js`). That is the loop's eventual consistency, and this
+  patch does not change it.
+- That no other row reads the live loop too soon. Every other read of it in the run waits for a new version
+  (`wait_version`), waits until it serves the files' own scene (`served_head`), reads the files themselves, or, as the
+  shape's anchor does before the first request, reads it before anything is written, as `Live` compiled it at the
+  start (VERIFIED BY READING).
+
+**What the review found, and what was done.** A review of the repair (two lenses, code and claims, each finding put to
+a skeptic; 15 agents, read only) gave thirteen findings. The skeptics confirmed all thirteen, seven of them distinct,
+and all seven are repaired:
+- The Show half could pass with nothing drawn: the stale world was the candidate's own scene, so choosing its slot
+  drew nothing new. Now the world is drawn first and each press must apply a scene.
+- The live plant was counted caught on any failure of its row, with the 45 s limits the page plants use for an
+  admission and an undo it needs to succeed. Now it has the honest run's limits and the narrower count above.
+- The three plants' deadlines made the runs' total the full check's whole 1800 s. Now they are 200 s each, and the wait
+  for the loop is capped by its run's deadline.
+- The 0.13 s was credited to his run. It was the agent's trace, on his machine.
+- The plant's quoted words were graded MEASURED with no output that printed them. The suite now prints them.
+- The wait's 0.6 s was graded MEASURED. It is OBSERVED.
+- An OBSERVED line said the loop served the head even when the wait ran out; the list of the run's other reads of the
+  loop missed one. Both are corrected.
+
+**Not done.** DASHBOARD-0, held by this harness, is now 0248: it was 0247 in the agreed order, the numbers shift and
+the order does not. Then the candidate's binding (F-3, F-4: his rulings), the inverse's repair (his ruling), plants
+completeness, and BLENDER-VIEW-0 where he places it.
+
+NOT_MEASURED: the full check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (the
+PAGE-0 row), art/STUDIO.md, docs/CORE.md (art 27,701 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

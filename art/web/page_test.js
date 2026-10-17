@@ -181,17 +181,25 @@
     original: async function (st) {
       await closeDrawer();
       const live = win.PLAY.live;
-      const drawn = function (k) { const s = live.slots && live.slots[k]; return live.k === k && s && s.served && live.sha === s.served.sha; };
+      // drawn: the slot chosen and the scene served in it applied; and, when the host names the scene it serves there
+      // (0247), that scene: the page's own list of slots is as old as its last read of /live, and may lag the host's
+      const drawn = function (k, want) { const s = live.slots && live.slots[k]; return live.k === k && s && s.served && live.sha === s.served.sha && (!want || live.sha === want); };
       const c = await until(function () { return cardOf(st.title); }, 10000, "the card " + st.title);
       const k = ((req() || {}).candidates || []).filter(function (x) { return x.letter === c.getAttribute("data-letter"); }).map(function (x) { return x.slot; })[0];
       if (k === undefined || k === null || k === 0) throw new Error("the card " + st.title + " has no slot of its own");
+      // 0247: when the host names them, the world it serves drawn first (the page's own may be older), so that Show must
+      // draw a scene other than the one standing; and each press must make the view apply a scene (its count of swaps
+      // grows), never only choose a slot whose scene happens to be the one already drawn
+      if (st.want_world) await until(function () { return drawn(0, st.want_world); }, st.timeout_ms, "the world the host serves to be drawn first");
+      const sw0 = live.swaps;
       const show = press(buttonOf(c, "Show"), "Show on " + st.title);
-      await until(function () { return drawn(k); }, st.timeout_ms, "the candidate's scene to be drawn");
-      const shown = { k: live.k, sha: live.sha };
+      await until(function () { return drawn(k, st.want_cand) && (!st.want_cand || live.swaps > sw0); }, st.timeout_ms, "the candidate's scene to be drawn");
+      const shown = { k: live.k, sha: live.sha, swapped: live.swaps > sw0 };
       await openDrawer();
+      const sw1 = live.swaps;
       const original = press($("st-original"), "Original");
-      await until(function () { return drawn(0); }, st.timeout_ms, "the world's own scene to be drawn again");
-      const back = { k: live.k, sha: live.sha };
+      await until(function () { return drawn(0, st.want_world) && (!st.want_world || live.swaps > sw1); }, st.timeout_ms, "the world's own scene to be drawn again");
+      const back = { k: live.k, sha: live.sha, swapped: live.swaps > sw1 };
       await closeDrawer();
       return { show: show, shown: shown, original: original, back: back };
     },

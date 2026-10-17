@@ -29,8 +29,9 @@
 # a region refused (the column's card: strict FAIL, Admit cannot be pressed); a failing preview (one run's state carried
 # into the next: the page's window says the states differ); a still the host never received (the page says
 # STUDIO-NO-STILL); a stale head (the brief edited after the preview: STUDIO-STALE). Of the harness itself, each a whole run
-# with its rows silenced, caught when its admission's row fails: the page's Admit unwired (a control whose handler is gone),
-# and a page that skips its still. The browser's name and its GPU as the browser reports them are printed as OBSERVED
+# with its rows silenced, caught when the row it breaks fails: the page's Admit unwired (a control whose handler is gone)
+# and a page that skips its still, each caught by the admission's row; and (0247) the host's wait for the live loop taken
+# away, caught by the Show and Original row. The browser's name and its GPU as the browser reports them are printed as OBSERVED
 # context, never as a claim. Standard library only.
 
 import json
@@ -52,13 +53,17 @@ sys.path.insert(0, HERE)
 
 WINDOWS = os.name == "nt"
 PLANT = ""
-PLANTS = ("page-admit-unwired", "page-still-skipped")
-# the planted copies of play.js: (the text replaced, its replacement); each must occur exactly once
+LAST = {}                            # what the last run met at the Show and Original row (the live plant's count reads it)
+PLANTS = ("page-admit-unwired", "page-still-skipped", "page-live-unwaited")
+# the planted copies of play.js: (the text replaced, its replacement); each must occur exactly once. page-live-unwaited
+# (0247) is the harness's own: the host's wait for the live loop taken away, nothing of the page changed
 PLANT_EDITS = {
     "page-admit-unwired": ("const admitWithStill = function (rid, c) {", "const admitWithStill = function (rid, c) { return;"),
     "page-still-skipped": (".then(function () { return takeStill(rid, c.letter); })", ".then(function () { return { ok: true, still: \"\", flags: [] }; })"),
 }
-PLANT_ROW = "page: Admit pressed"     # the row each harness plant must fail
+# the row each harness plant must fail
+PLANT_ROWS = {"page-admit-unwired": "page: Admit pressed", "page-still-skipped": "page: Admit pressed",
+              "page-live-unwaited": "page: Show pressed"}
 VIEW = (960, 540)                    # the page's canvas (?w=&h=): the admission's still is this size
 WINDOW = (1700, 1000)                # the browser's window; the page under test is a 1600 x 900 frame in it
 
@@ -259,6 +264,7 @@ def run(browser, headed, argv_plant="", say=None):
     import quality
     import flagship
     rows, seen = [], []
+    LAST.clear()
 
     def row(name, ok, detail):
         rows.append((name, bool(ok), detail))
@@ -268,7 +274,7 @@ def run(browser, headed, argv_plant="", say=None):
     marker = "page-test-profile-" + os.path.basename(tmp)
     profile = os.path.join(tmp, marker)
     saved = (play.ROOT, motion.PLANT, play.studio_still, dict(play.FILES))
-    live = srv = proc = None
+    live = srv = proc = live_gate = None
     alive = []
     D = play.director()
     W = flagship.WORLD
@@ -282,7 +288,7 @@ def run(browser, headed, argv_plant="", say=None):
         open(art, "wb").write(original)
         ws = D.Workspace(W, tmp)
         D.cmd_genesis_quiet(ws)
-        if argv_plant:
+        if argv_plant in PLANT_EDITS:
             old, new = PLANT_EDITS[argv_plant]
             js = open(play.FILES["/play.js"][0], "rb").read().decode("utf-8")
             if js.count(old) != 1:
@@ -292,6 +298,19 @@ def run(browser, headed, argv_plant="", say=None):
             play.FILES["/play.js"] = (planted, play.FILES["/play.js"][1])
         play.ROOT = tmp
         live = play.Live(W, art, [], poll=0.15, root=tmp)
+        # 0247: the live loop serves a write of the files one compile after it sees it (it is eventually the files'). His
+        # run of 0246 read the world it served before the loop caught up with the undo, and the row failed; a trace on his
+        # machine, by the agent, met the same race in an ordinary run, its read 0.13 s too soon (MEASURED once). Its recompiles now pass through a gate the honest run holds closed from the
+        # undo until it has read the world served (the admitted scene still), so that the race is met in every run; then
+        # it opens the gate and waits for the loop to serve the files' head before anything is compared against it
+        live_gate = threading.Event()
+        live_gate.set()
+        real_recompile = live.recompile
+
+        def gated(only=None):
+            live_gate.wait(600)
+            return real_recompile(only)
+        live.recompile = gated
         threading.Thread(target=live.watch, kwargs={"say": lambda s_: None}, daemon=True).start()
         play.start_studio(live, os.path.join(HERE, "providers", "scripted.json"), say=lambda s_: None)
         srv = play.server(live)
@@ -308,9 +327,10 @@ def run(browser, headed, argv_plant="", say=None):
             c_u, r_u = http.post("/studio/page-test", {"result": None})
             row("page: unarmed, the studio serves no driver (/page_test.html 404) and its channel is refused (STUDIO-ROUTE)",
                 unarmed_page == 404 and c_u == 404 and r_u.get("code") == "STUDIO-ROUTE", "the driver %s; the channel %s %s" % (unarmed_page, c_u, r_u.get("code")))
-        # the honest run's time, and each plant's, inside the full check's 1800 s for the whole suite (alone the honest
-        # run takes about a minute; under sixteen suites at once it took up to about three)
-        ch = Channel(time.time() + (300 if argv_plant else 900), alive=lambda: proc is not None and proc.poll() is None)
+        # the honest run's 900 s and each of the three plants' 200 s, 1,500 s, inside the full check's 1800 s for the whole
+        # suite with room for each run's start and end (alone the honest run takes about a minute; under sixteen suites at
+        # once it took up to about three)
+        ch = Channel(time.time() + (200 if argv_plant else 900), alive=lambda: proc is not None and proc.poll() is None)
         live.hub.page_test = ch
 
         def snapshot():
@@ -318,6 +338,18 @@ def run(browser, headed, argv_plant="", say=None):
             return {"head": D.canon.head(parts), "brief_sha256": flagship.sha256(open(art, "rb").read()), "scene_sha256": flagship.sha256(out["scene_bytes"]),
                     "admits": [e for e in D.led.read(ws.ledger)[0] if e["kind"] == "admit"], "ledger_bytes": len(open(ws.ledger, "rb").read())}
         world = lambda w: {k: w[k] for k in ("head", "brief_sha256", "scene_sha256")} if w else {}
+
+        def served_head(limit):
+            """(whether the live loop serves the files' own scene in slot 0 within `limit` s, the seconds waited); never past
+            the run's own deadline"""
+            limit = min(limit, max(0.0, ch.deadline - time.time()))
+            t0 = time.time()
+            while True:
+                if (live.slot(0) or {}).get("sha") == snapshot()["scene_sha256"]:
+                    return True, time.time() - t0
+                if time.time() - t0 > limit:
+                    return False, time.time() - t0
+                time.sleep(0.2)
 
         def get(path):
             try:
@@ -436,7 +468,7 @@ def run(browser, headed, argv_plant="", say=None):
             except (KeyError, TypeError):
                 return False
         before = snapshot()
-        r = ch.do({"do": "press", "title": "Panelled bay", "button": "Admit"}, 45 if argv_plant else 240)
+        r = ch.do({"do": "press", "title": "Panelled bay", "button": "Admit"}, 45 if argv_plant in PLANT_EDITS else 240)
         after = snapshot()
         last = live.studio.state().get("last") or {}
         new = after["admits"][len(before["admits"]):]
@@ -457,14 +489,19 @@ def run(browser, headed, argv_plant="", say=None):
                 at_pose(r.get("cam_before")), at_pose(r.get("cam_after")), len(new), "" if len(new) == 1 else "s",
                 (" #%s %s -> %s" % (a.get("seq"), (a.get("head_before") or "")[:12], (a.get("head_after") or "")[:12])) if a else "", still[:12], size,
                 "exact" if cert.get("exact") else cert))
-        r = ch.do({"do": "undo"}, 45 if argv_plant else 240)
+        full = argv_plant in ("", "page-live-unwaited")     # a run that goes on past the undo
+        if full:
+            # the admission's scene served first, then the loop held behind what the undo will write
+            served_admitted, _w = served_head(120)
+            live_gate.clear()
+        r = ch.do({"do": "undo"}, 45 if argv_plant in PLANT_EDITS else 240)
         u = snapshot()
         last = live.studio.state().get("last") or {}
         row("page: Undo pressed: the head, the brief and the scene as before the admission, the head restored, its certificate ok; the page says undone, and its toast",
             r.get("ok") and (r.get("status") or {}).get("good") and (r.get("status") or {}).get("text", "").startswith("undone:") and toasted(r, False, "Undone") and world(u) == world(before)
             and last.get("what") == "undone" and last.get("head_restored") is True and (last.get("certificate") or {}).get("ok") is True,
             "the page: %s; the host: the world as before %s, head restored %s" % ((r.get("status") or {}).get("text", r.get("error", "")), world(u) == world(before), last.get("head_restored")))
-        if argv_plant:
+        if not full:
             return rows, seen
 
         # ---- the plants through the page: a second request, at the head the undo gave back
@@ -474,13 +511,28 @@ def run(browser, headed, argv_plant="", say=None):
         if not r.get("ok") or st.get("state") != "done" or not rid2 or rid2 == rid or (r.get("request") or {}).get("id") != rid2:
             raise RuntimeError("the second request, for the plants, did not end done: %s %s (the page: %s)" % (rid2, st.get("state"), r.get("error", "")))
         c2, _st = cand("Panelled bay")
+        held_sha, head_sha = (live.slot(0) or {}).get("sha"), snapshot()["scene_sha256"]   # read while the loop is held
+        live_gate.set()
+        if argv_plant == "page-live-unwaited":
+            caught_up, waited = True, None    # the plant: the world read the moment the loop is let go, nothing waited for
+        else:
+            caught_up, waited = served_head(120)
+            seen.append(("OBSERVED page: the live loop, let go, served the files' head %.1f s later (polled every 0.2 s)" if caught_up
+                         else "OBSERVED page: the live loop, let go, did not serve the files' head in %.0f s") % waited)
         s_world, s_cand = (live.slot(0) or {}).get("sha"), (live.slot(c2["slot"]) or {}).get("sha") if c2 and c2.get("slot") else None
-        r = ch.do({"do": "original", "title": "Panelled bay"}, 120)
-        row("page: Show pressed on a card, then Original: the view drew the candidate's scene, then the world's own (the scenes the host serves in those slots)",
+        wants = {} if argv_plant == "page-live-unwaited" else {"want_cand": s_cand, "want_world": s_world}
+        r = ch.do(dict({"do": "original", "title": "Panelled bay"}, **wants), 120)
+        row("page: Show pressed on a card, then Original: the view drew the candidate's scene, then the world's own, the files' head; the live loop, held behind the undo, served the admitted scene until let go, then the head",
             r.get("ok") and r.get("show") == "pressed" and r.get("original") == "pressed" and s_cand and s_world and s_cand != s_world
-            and (r.get("shown") or {}).get("sha") == s_cand and (r.get("back") or {}).get("k") == 0 and (r.get("back") or {}).get("sha") == s_world,
-            "the page drew %s then %s; the host serves %s in the candidate's slot and %s in the world's" % (
+            and served_admitted and held_sha == after["scene_sha256"] != head_sha and caught_up and s_world == head_sha
+            and (r.get("shown") or {}).get("sha") == s_cand and (r.get("back") or {}).get("k") == 0 and (r.get("back") or {}).get("sha") == s_world
+            and (r.get("shown") or {}).get("swapped") and (r.get("back") or {}).get("swapped"),
+            "held: the loop served %s, the files %s; let go: %s; the page drew %s then %s; the host serves %s in the candidate's slot and %s in the world's" % (
+                (held_sha or "")[:12], (head_sha or "")[:12], "not waited for (the plant)" if waited is None else "the head in %.1f s" % waited if caught_up else "NOT the head in %.0f s" % waited,
                 ((r.get("shown") or {}).get("sha") or r.get("error", ""))[:12], ((r.get("back") or {}).get("sha") or "")[:12], (s_cand or "")[:12], (s_world or "")[:12]))
+        LAST.update(hold_met=bool(served_admitted and held_sha == after["scene_sha256"] != head_sha), stale_read=bool(s_world and s_world != head_sha))
+        if argv_plant:
+            return rows, seen
         w0 = snapshot()
         r = ch.do({"do": "press", "title": "Panelled column", "button": "Admit"}, 30)
         chips = [x["text"] for x in (r.get("card") or {}).get("chips", [])]
@@ -541,6 +593,8 @@ def run(browser, headed, argv_plant="", say=None):
         if isinstance(e, PageLost):
             seen.append("OBSERVED page: the run ended early: %s" % e)
     finally:
+        if live_gate is not None:
+            live_gate.set()                   # never leave the live loop held
         try:
             if live is not None and getattr(live, "hub", None) is not None and getattr(live.hub, "page_test", None) is not None:
                 live.hub.page_test.steps.put({"do": "end"})
@@ -578,7 +632,7 @@ def run(browser, headed, argv_plant="", say=None):
 
 def selftest(argv=()):
     """PAGE SELFTEST n/n: the honest run's rows (the page's flow and its plants through the page), then each harness
-    plant's run, caught when its admission's row fails (a plant whose text is not in play.js once is not planted, and fails)."""
+    plant's run, caught when the row it breaks fails (a plant whose text is not in play.js once is not planted, and fails)."""
     if WINDOWS:
         try:
             import studio_app
@@ -601,7 +655,7 @@ def selftest(argv=()):
             caught.append(False)
             print("[FAIL] page plant %s caught — NOT RUN: the page did not open in the honest run" % p, flush=True)
             continue
-        if js.count(PLANT_EDITS[p][0]) != 1:
+        if p in PLANT_EDITS and js.count(PLANT_EDITS[p][0]) != 1:
             caught.append(False)
             print("[FAIL] page plant %s caught — NOT PLANTED: its text occurs %d times in play.js, not once" % (p, js.count(PLANT_EDITS[p][0])))
             continue
@@ -611,10 +665,19 @@ def selftest(argv=()):
         finally:
             globals()["PLANT"] = ""
         failed = [n for n, ok, _d in prow if not ok]
-        # caught by the row the plant breaks, the admission's (a run that failed elsewhere, its browser left standing or
-        # the run stopped, does not catch it)
-        caught.append(browser is not None and any(n.startswith(PLANT_ROW) for n in failed))
+        # caught by the row the plant breaks (a run that failed elsewhere, its browser left standing or the run stopped,
+        # does not catch it); the live plant only when its admission and undo passed, the hold was met and the world was
+        # read stale, so that it is caught by the wait taken away and by nothing else
+        by_row = any(n.startswith(PLANT_ROWS[p]) for n in failed)
+        if p == "page-live-unwaited":
+            passed = {n.split(":")[1].strip().split(" ")[0] for n, ok, _d in prow if ok and n.startswith("page: ")}
+            by_row = by_row and {"Admit", "Undo"} <= passed and LAST.get("hold_met") is True and LAST.get("stale_read") is True
+        caught.append(browser is not None and by_row)
         print("[%s] page plant %s caught — %s" % ("PASS" if caught[-1] else "FAIL", p, ("by: " + "; ".join(f[:70] for f in failed)) if failed else "NOT CAUGHT"), flush=True)
+        for n, ok, d in prow:
+            if not ok and n.startswith(PLANT_ROWS[p]):
+                print("  its row's detail — %s" % d, flush=True)
+                break
     ok = all(o for _n, o, _d in rows) and all(caught)
     print("PAGE SELFTEST %d/%d" % (sum(o for _n, o, _d in rows) + sum(caught), len(rows) + len(caught)))
     return 0 if ok else 1

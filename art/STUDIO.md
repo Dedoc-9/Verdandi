@@ -462,7 +462,7 @@ buttons and chips, the preview's badge, the scene the view drew. It decides noth
 preview's report, the scenes it serves and the stills the page gave it, read as PNG. The one exception is the opening,
 which rests on what the page reports: its title (held against the brief's own), its director, its canvas and its slot.
 A run ends at once when its page is lost: a step not answered, a browser that has ended, or the run's deadline passed
-(900 s for the honest run, 300 s for each plant's, inside the full check's 1800 s). Its rows are printed as they are
+(900 s for the honest run and 200 s for each plant's since 0247, 1,500 s inside the full check's 1800 s). Its rows are printed as they are
 made. The preview's sixteen stills
 (480 × 270) and the admission's still (the canvas, 960 × 540) are drawn by the native renderer: the first stills in any
 suite that are not synthetic. Their detectors are read and printed, OBSERVED; a detector proves nothing.
@@ -475,9 +475,21 @@ suite that are not synthetic. Their detectors are read and printed, OBSERVED; a 
 - a still the host never received: the page says `STUDIO-NO-STILL`, in its status line and its toast;
 - a stale head (the brief edited after the preview): the page says `STUDIO-STALE`, in both.
 
-Of the harness itself, each a whole run with its rows silenced: the page's Admit unwired, and a page that skips its
-still. Each is a served copy of `play.js` with one line changed. A plant is caught only when the admission's row fails;
-a plant whose line is not in `play.js` exactly once is not planted, and the suite fails.
+Of the harness itself, each a whole run with its rows silenced:
+- the page's Admit unwired, and a page that skips its still. Each is a served copy of `play.js` with one line changed,
+  caught only when the admission's row fails; a plant whose line is not in `play.js` exactly once is not planted, and
+  the suite fails;
+- the host's wait for the live loop taken away (0247), caught only when the Show and Original row fails with the
+  admission and the undo passed, the hold met and the world read stale; the suite prints that row's detail.
+
+**The live loop is eventually the files' (0247).** `play.py`'s live loop serves a write of the files one compile after
+it sees it, a compile in a fresh process. Read too soon after a write, the world it serves is the one before it. The
+owner's run of 0246 read it too soon after the undo, and its Show and Original row failed; a trace on his machine, by
+the agent, met the same race in an ordinary run, its read 0.13 s too soon (MEASURED once). The honest run now holds the loop's recompiles closed from the undo until it has read the world served (the
+admitted scene still), so the race is met in every run. It then lets the loop go, waits until the loop serves the
+files' own head, and only then compares. The page is told the scenes the host serves: it draws the world first, then
+presses Show and Original, and each press must make it apply a scene (its count of swaps grows), so that a press that
+only chose a slot whose scene was already drawn does not pass.
 
 **The browser's end.** On Windows the browser is started by a holder in a job of its own (KILL_ON_JOB_CLOSE, the desktop
 studio's `Job`), and the run ends the holder. The holder also ends by itself when nothing but itself is left in its job,
