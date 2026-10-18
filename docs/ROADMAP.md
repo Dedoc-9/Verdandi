@@ -7111,8 +7111,10 @@ under %TEMP%, never the checkout):
   16/16 in 20 s (its four plants caught, each at once); PAGE-CARDS SELFTEST 30/30 in 87 s; STUDIO APP SELFTEST 13/13.
 - The full check of the final tree, `python art/selftests.py --repeat 2`, twice: twenty-seven suites, 534.1 s and 545.6 s,
   then 531.6 s and 538.1 s wall, ART SELFTESTS FAILED each time. What failed: the row that the browser ended and nothing
-  of it is left, PAGE-WORLDS' in all four runs (Edge's processes gone 62.3, 66.1, 68.9 and 62.2 s after it was ended,
-  against the row's 60 s) and PAGE's in one (63.2 s); PREVIEW-STUDIO's 10 s for a whole preview in three (16.05, 11.04,
+  of it is left, PAGE-WORLDS' in all four runs (Edge's processes still standing at the last look, 62.3, 66.1, 68.9 and
+  62.2 s after it was ended, against the row's 60 s, and then ended by the test) and PAGE's in one (63.2 s) *(corrected
+  2026-10-18, 0251: written "gone"; `end_browser` stops looking at 60 s and ends what is left, so these are the last
+  look's times, and that the processes would have ended by themselves is not measured)*; PREVIEW-STUDIO's 10 s for a whole preview in three (16.05, 11.04,
   14.56 s); STUDIO APP's plant of a silence taken as a close in one. Every other suite passed in every run, PAGE-WORLDS'
   other fifteen rows among them, PAGE-CARDS 30/30 in all four.
 - The base, 0249's tree (b5e75e7), run straight after the first under the same conditions: twenty-six suites, 310.0 s and
@@ -7120,8 +7122,9 @@ under %TEMP%, never the checkout):
   (PAGE), 0.9 and 1.0 s (PAGE-CARDS). The patch's run is slower than the base's under the same conditions: its own
   suites load the machine (STUDIO-2 237 s against 111 s in the full check, with its nine processes ended and its
   exports; PAGE-WORLDS a third browser), and the CPU-bound suites beside them take longer (the race test 519 s
-  against 229 s). That the browsers' ending past 60 s is that load, Edge's processes outside the job ending on their own,
-  is INFERRED from the next line.
+  against 229 s). That the browsers' standing past 60 s is that load is INFERRED from the next line; that Edge's processes
+  left the job, or would have ended on their own, is not measured *(corrected 2026-10-18, 0251: written as one
+  inference)*.
 - The design's fallback for this (§4.6: the browser suites one at a time in `art/selftests.py`), measured in a scratch
   copy and not in this patch, since it is his to accept: twenty-seven suites, 512.0 s and 522.3 s, every browser suite
   passing in both runs, each browser gone 0.8 to 3.1 s after it was ended; failing STUDIO APP's silence plant in both
@@ -7150,3 +7153,220 @@ desktop studio through the page (OBSERVED, never a test).
 NOT_MEASURED: the full check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (the
 dashboard's and the worlds' rows), art/STUDIO.md (a section, and the first start), docs/CAPABILITY-MATRIX.md (a dated
 note), docs/CORE.md (art 32,338 lines), this entry.
+
+### BROWSER-SERIALIZATION-0 — the browser suites one at a time, a law of the full check · **built, off the gate** (0251: `art/selftests.py`, `art/page_test.py`, `art/page_dash.py`)
+
+**His ruling.** *"LOCK: `PAGE`, `PAGE-CARDS`, and `PAGE-WORLDS` are mutually exclusive in the full check. All other
+suites remain parallel. The 60-second browser-end bound is unchanged."* (2026-10-18, in the brief he brought,
+"BROWSER-SERIALIZATION-0 — Turn the observed race into a scheduling law", whose contract is, for B the three suites,
+∀ i≠j ∈ B, lifetime(i) ∩ lifetime(j) = ∅: *"The browser suites must execute in the registered order, one at a time.
+Non-browser work must retain existing parallelism."*; its decision boundary *"REJECT: timeout inflation as the first
+remedy, blanket serialization, broad process killing, invented runner paths, and a log-order-only sentinel. DEFER:
+cross-platform claims, root-cause claims about Edge process ownership, and broader scheduler redesign unless
+measurements make them necessary."*) His word with it: *"prepare to give me the push sincew last"*. Built on 0250
+(c24ea8d; his runs of 0249 and 0250 not seen), so 0249, 0250 and 0251 are one sequence for him to apply. The binding is
+now 0252 and the inverse's repair 0253; BLENDER-VIEW-0 after.
+
+**Measured before it was built.**
+- The full check's one scheduler is `run_all` in `art/selftests.py`: one process, `--jobs` worker threads (the machine's
+  processor count by default), each suite a process of its own (`run_one`, `subprocess.run`, its 1800 s TIMEOUT), the
+  longest estimate first, no suite stopping another. The three browser suites are three entries of SUITES, flags of
+  `art/play.py` (`--page-selftest` to `page_test.selftest`, `--cards-selftest` and `--worlds-selftest` to `page_dash`'s),
+  none nested in another and nothing else in the tree starting them (VERIFIED BY READING; SCHEDULE's register row now
+  reads it from the code in every full check). Their estimates (150, 120 and 110 s) were among the longest, so with
+  sixteen workers all three started with the run (VERIFIED BY READING).
+- A browser suite starts Edge through `page_test.launch` (on Windows by a holder in a job of its own, KILL_ON_JOB_CLOSE,
+  no flag that lets a process break away) and ends it through `end_browser`: the holder's input closed, then a look every
+  second for 60 s for the processes whose command line names the test's profile, then what is left ended by that marker,
+  the row having failed (`page_test.py`, `end_browser`).
+- The failure, in 0250's full check, four runs: PAGE-WORLDS' row that the browser ended failed in all four, Edge's
+  processes still standing at the last look 62.3, 66.1, 68.9 and 62.2 s after the browser was ended, and then ended by
+  the test; PAGE's once (63.2 s) (MEASURED). That they would have ended by themselves, and when, is not measured. With the
+  browser suites one at a time (a scratch variant, two runs): every browser gone 0.8 to 3.1 s after it was ended, every
+  browser suite passing (MEASURED).
+- Not separated by these runs: whether three browsers at once, or the load of the whole check at their closing, held the
+  processes; the variant changed both. That Edge's processes leave the holder's job and end on their own: a hypothesis,
+  not measured, and nothing here rests on it (DEFER, his brief).
+
+**The alternatives, against that evidence.**
+- The three serialized at the runner's own seam (`run_all`): chosen. It is where all three start in the full check;
+  every other suite keeps `--jobs`.
+- A browser lock across processes (a file lock in `launch`): it would also hold two full checks at once, and a suite run
+  by hand beside one. Not built: inside the full check all three are started by one process, and his brief says not to
+  invent cross-process machinery then; what that leaves is said below.
+- The 60 s raised: refused by his ruling, and it would hide the measured standing processes.
+- Edge's processes killed after each suite: `end_browser` already ends what its marker names, after its row has failed;
+  any wider kill (every msedge.exe) would end processes that are not the test's (refused, his brief).
+- Every suite serialized: refused (twenty-five other suites would run one after another).
+
+**What it is.**
+- *The enforcement point.* `run_all`: the browser suites (BROWSER, the register: page-cards, page-worlds, page, the
+  order the estimates started them in before 0251, now written down; the order the variant ran them in, OBSERVED in its
+  log's lines in both runs) are one lane: one at a time, in that order, each taken first by the next free worker
+  whenever none runs; every other suite as before, longest first; at most `--jobs` at once, the browser suite counted.
+  A suite's failure stops no other, the browser suites' as before (the existing semantics his brief's requirement 4
+  names), and its exit status and whole output stay in the log.
+- *Why it covers every launch path.* SUITES is the full check's only list. At the point a browser starts:
+  `art/selftests.py` tells every suite it runs in the full check (VERDANDI_FULL_CHECK) and gives the run's token
+  (VERDANDI_LANE_TOKEN) only to the registered browser suites; `launch` refuses a page test's browser inside the full
+  check to a suite without it (BROWSER-OUTSIDE-LANE), whatever route reached it, a process of its own included, and a
+  profile not made by `page_test.scratch` and `profile_of` (BROWSER-UNTOKENED: its name must be
+  `page-test-profile-<its scratch folder>` and carry the token), so that every page test's browser is one the lane's
+  look can see. By hand, neither is set and nothing is refused. And before anything runs: SCHEDULE's register row reads,
+  from the code, the entries that reach `launch` and fails when that is not BROWSER, or an entry cannot be read (an
+  entry's every branch of its module's dispatcher that names its argument, or its whole module; every reference
+  followed through the art modules' top-level functions, classes and variables, never into a name a function binds for
+  itself, imports and aliases resolved, a main() called with constants read but for the branches that name only other
+  strings; what it does not follow is said in `browser_suites`, and the guard holds it).
+- *What remains parallel.* Every other suite, at `--jobs`, in the order it had.
+- *The law's record* (`Lane`): its own lock and state, entered by the worker just before every registered browser
+  suite's process starts, whatever the scheduler decided, and left just after it ends. A run fails when a browser suite
+  enters while another holds the lane, and when two spans meet (one fact read twice: from the holding, from the spans);
+  when this run's page-test browser processes stand at an entry or after the last browser suite (the look: a CIM query,
+  read only, for a page test's profile carrying the run's token, which `page_test.scratch` puts in the test's scratch
+  folder and so in its browser's profile); when a look cannot be made, twice (never nothing); when the order is not the
+  register's or a suite runs twice; or when a suite outside the lane prints that it ended a browser (the witness). Each
+  run's line names the spans (`the browser lane held, one at a time in order: page-cards 0.0-… s, …`), or `BROKEN` and
+  why; the last line names a run whose law broke.
+- *Its falsifier.* A full check whose log shows two browser suites' spans meeting, this run's page-test browser standing
+  at an entry or after the last, or the browser suites in another order, and that says `ART SELFTESTS PASSED`; an
+  entry that starts a page test's browser and is not registered, with SCHEDULE passing; a page test's browser started
+  inside the full check by a suite outside the lane, or with a profile without the run's token.
+
+**SCHEDULE SELFTEST 43/43** (`python art/selftests.py --schedule-selftest`, a suite of the full check): stand-ins
+through `run_all`'s and `main`'s own code, no suite of the full check and no browser; four rows use real processes of
+this machine. Browser stand-ins each hold until another is inside or 2 s pass, so that two dispatched together are
+certainly inside at once: the overlap induced, never read from a log's order. Three other stand-ins meet the same way
+(for up to 15 s), so that a scheduler that serialized them is seen. The rows:
+- the honest lane (one at a time, in order, others beside them, at most `--jobs`);
+- through `main`, the honest lane passing, and the browser suites run together failing (exit 1, FAILED, the law named,
+  seen both as one entering while another held and as spans that overlapped);
+- a failing browser suite (its status and output kept, the next run); a raising one (a failed result, the lane let go);
+  through `main`, `--only` with the suites listed out of the lane's order (the stand-ins are listed page, page-cards,
+  page-worlds, neither the lane's order nor its reverse, so that no row passes on the list's order); `--jobs 1`;
+- the register's reader on a fixture: the shapes an entry can take (an assignment, a wrapped call, `sys.exit`, a lambda,
+  a call across modules, an aliased import, a thread's target, `getattr`, a class's methods, a backslashed path, another
+  module's command, a command in `if __name__ == "__main__":`, a name bound at module level to launch or a partial of it,
+  the module named again, a delegated `main(argv[1:])` as art/scene_diff.py hands HELD on, `page_test.main(["selftest"] +
+  argv)`, a setup branch before the dispatch, a main whose command is its default path called with `["--quick"]` and
+  with `[]`, another module's `main(["page"])`), shapes that must not count (a method named as a builtin, a parameter
+  named as another function's nested def, a function's local named as a module-level binding, a call of play's
+  `main([])`, a module's other command, another module's `main(["selftest"])`), a flag with no branch reported as not
+  read; and on the tree, its answer required to be the register;
+- the witness; the look at an entry, after the last, and unmade;
+- in real processes: `run_one` giving every suite the full check's word and only a browser suite the run's token; the
+  guard (`launch` with a suite's environment: outside the lane BROWSER-OUTSIDE-LANE; a browser suite with a profile
+  `page_test` made let through; a browser suite with a profile made by hand, and with its scratch folder itself as the
+  profile, BROWSER-UNTOKENED; nothing started); the real look, the profile made by `page_test`'s own `scratch` and
+  `profile_of` in a process with a browser suite's environment, against three decoys (another run's token, a search
+  naming the prefix, this run's token without a profile).
+
+Twenty-seven plants, each in the code the full check runs (three in `art/page_test.py`, reached by VERDANDI_PLANT), each
+caught only by its own row, for its own reason (the words its row's detail must hold), with every row before it passed:
+the browser suites run as any other; the order reversed; the lane in the order the suites are listed in; every worker
+held while a browser runs; the verdict blind; the record blinded (its holding check and the spans' overlap, one fact
+read twice, so one plant); the lane stopped at a failure; the lane not let go on a raise; the reader inside one module;
+the reader's flat table (a name resolved to any function or method so named); the reader taking the first branch only;
+the reader skipping every main(); the reader blind to module-level bindings; the reader blind to `__main__` dispatch;
+the reader resolving a function's own local to a module-level binding; the reader reading of a main() called with
+constants only the branches they name; a suite left out of the register; the witness blinded; the look ignored; an
+unmade look read as nothing; the closing look skipped; a suite given this process's environment; the token given to
+every suite; launch's guard taken away; launch's check of the profile taken away; the look by the profile's prefix
+alone; a scratch folder made without the token.
+
+**Four reviews of the patch** (each finding put to a skeptic who tried to refute it): 17, 11, 13 and 5 agents; 14, 9, 11
+and 4 findings; 4, 0, 2 and 0 refuted, the rest confirmed in whole or in part, every one repaired. In short:
+- a look that could not be made counted as the lane held (now a failure, after one retry);
+- the look matched any process naming the profile's prefix, a search or another clone's page test (now only this run's
+  token in a page test's profile);
+- the register's reader missed ordinary shapes; then it counted wrongly through a flat table of names, walked every
+  branch of a reached main(), read whole modules where a dispatcher names the command, resolved a function's local to a
+  module-level binding of its name, and read nothing of a main()'s default path (each rule now with a fixture case and a
+  plant of its own);
+- a plant counted caught on any failure of its row (now only for its own reason), and two plants that blinded one fact
+  read twice (now one);
+- nothing held the token's producer: the environment `run_one` gives, the profile a page test makes (now a row each, and
+  `launch` refusing a profile not made by `scratch` and `profile_of`);
+- the lane's order held in the rows only because the stand-ins were listed in it (now listed otherwise, and `--only`
+  through `main`);
+- a row printed a claim its own data refuted; comments said more than the code.
+The fourth round's repairs were not reviewed again.
+
+**Evidence ledger** (his brief's list):
+- *The enforcement point and the files.* `run_all` in `art/selftests.py`; `art/page_test.py` (`lane_refusal`,
+  `lane_token`, `scratch`, `profile_of`, the guard in `launch`); `art/page_dash.py` (its two scratch folders and
+  profiles through `page_test`).
+- *The invariant, where it is registered.* No entry in verify/preregister.json and no row: the art layer has none, and
+  his sprint ruling stops the gate growing. The law is written where the art layer keeps its checks: BROWSER and `Lane`
+  in `art/selftests.py`, AGENTS.md's row for the full check, and SCHEDULE's rows, which every full check runs.
+- *The planted defects and their observed failures.* SCHEDULE's twenty-seven, each printed with the words its row failed
+  with (MEASURED, below); among them the brief's own, browser suites launched together, caught as "page-cards entered
+  while page held the browser lane; … page and page-cards overlapped".
+- *The browser suites one by one; the full check; host and scope.* Below.
+- *The gate.* Its two runs on this patch's own tree, the tree's identity and the sha256 of each compact output, are in
+  this patch's commit message: a record of them in the tree would change the tree they ran on.
+- *What is unresolved.* Below, under what it does not show, and the base's two timing rows, said with their rows.
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of 0250's commit
+under %TEMP%, never the checkout; Edge headless):
+- SCHEDULE SELFTEST 43/43 alone, 254 s: its sixteen rows, and its twenty-seven plants each caught by its own row for its
+  own reason. The brief's own plant, the browser suites launched together, printed "the law BROKEN: page-cards entered
+  while page held the browser lane; page-worlds entered while page held the browser lane; page and page-cards overlapped
+  …"; the honest lane, "page-cards 0.0-2.0 s, page-worlds 2.0-4.0 s, page 4.0-6.0 s; the browsers met False; three others
+  met True; at most 4 at once (jobs 4); another beside a browser True".
+- The three browser suites alone, the final tree: PAGE SELFTEST 19/19 in 133 s, PAGE-CARDS SELFTEST 30/30 in 85 s,
+  PAGE-WORLDS SELFTEST 16/16 in 20 s, each browser gone 0.5 or 0.6 s after it was ended; and alone on each of the
+  patch's four earlier states, the same three summaries every time, the browsers gone in 0.5 to 0.7 s.
+- The full check of the final tree, `python art/selftests.py --repeat 2`: twenty-eight suites, 515.1 s and 511.9 s wall.
+  In both runs the browser lane held, one at a time in order: "page-cards 1.1-272.2 s, page-worlds 273.0-310.1 s, page
+  312.8-514.6 s" and "page-cards 1.0-268.2 s, page-worlds 270.0-308.6 s, page 309.3-511.4 s". Every browser suite passed in
+  both runs (PAGE-CARDS 30/30, PAGE-WORLDS 16/16, PAGE 19/19), each row that the browser ended passing with the browser
+  gone 0.6 to 2.2 s after it was ended; SCHEDULE 43/43 in both. ART SELFTESTS FAILED, on the base's two timing rows only,
+  each in one run, in suites this patch does not change:
+  - STUDIO APP 12/13 in the first: "[FAIL] plant: silence taken as a close while a request runs — the studio stops with
+    the request still running — the page has not spoken for 5 s";
+  - PREVIEW-STUDIO 13/14 in the second: "[FAIL] one candidate's preview well inside 10 s (B4-TIMING-BOUNDARY) — the whole
+    preview over HTTP 11.93 s (16 stills and the report); both sides' 960 ticks 613 ms".
+  Every other suite passed in both runs.
+- The base, 0250's tree (c24ea8d), the three browser suites at once, run straight after the same way: twenty-seven
+  suites, 512.6 s and 523.2 s wall, ART SELFTESTS FAILED: the row that the browser ended, PAGE-WORLDS' in both runs (one
+  msedge.exe still standing at the last look, 61.8 s and 64.9 s after the browser was ended, then ended by the test) and
+  PAGE's in the first (61.2 s); PREVIEW-STUDIO's 10 s in the second (20.51 s); STUDIO APP passing in both. Under the same
+  conditions the lane took the browser-end rows from three failures in six to none in six (MEASURED; two runs each, a
+  small sample).
+- Alone on the final tree, the two timing rows' suites: STUDIO APP SELFTEST 13/13 three times (its plant: "the page has
+  not spoken for 4 s; a request was still running"), PREVIEW-STUDIO SELFTEST 14/14 twice (the whole preview in 1.73 s and
+  1.74 s). That their failures in the full check are the load's is INFERRED: their code is the base's, the base failed
+  PREVIEW-STUDIO's row under the same conditions, and STUDIO APP's plant failed on base trees in 0248's, 0249's and 0250's
+  records.
+- With the lane, the browser suites are the run's longest path: 514.6 s and 511.4 s of 515.1 s and 511.9 s (MEASURED).
+  The walls are 0250's own order of size (531.6 to 545.6 s with the three at once, on another day: not a comparison).
+- The classifier his pushed tree holds (2c70a71's `tools/rung.py`), run from outside the checkout over 0249, 0250
+  and 0251 together, applied to a fresh clone of his checkout: the rung D on sixteen files, loosening nothing;
+  *"272 planted defects refused by the old checker; 277 by the new"*, PLANTS HELD, no checker said to have stopped
+  early.
+- The gate: in the commit message (above, in the evidence ledger).
+
+**What it does not show.**
+- Exclusion across processes: two full checks at once on one machine, or a browser suite run by hand beside a full check,
+  are not kept apart (the look sees only this run's token). NOT_MEASURED, and not built (his brief).
+- A browser that is not a page test's (the desktop studio's own window, `studio_app.py`, whose self-test uses a stand-in
+  browser), a process of the browser whose command line does not name its profile, or one started without `launch`: the
+  look and the guard see none of them. The register's reader does not follow a process started by a command line, a name
+  computed at run time or a method called on an object; the guard at `launch` is what holds those.
+- The cause of the processes outliving 60 s (Edge leaving the job, the load, or both): a hypothesis, untested (DEFER).
+- That the base's timing rows (STUDIO APP's plant of a silence taken as a close, PREVIEW-STUDIO's 10 s) pass under the
+  full check's load: they are said with their rows, not repaired here.
+- SCHEDULE's stand-ins hold the scheduler's logic and the record's, not a browser's behaviour under load; the full check's
+  own runs above are what show the lane with real browsers.
+- Linux, and browsers other than Edge: never run.
+- tools/rung.py's R5 reads four suites' plants, and SCHEDULE's is not one of them.
+
+**Not done.** The binding (0252: the still's, the preview's and the undo's, refused on if he so rules) and the inverse's
+repair (0253); BLENDER-VIEW-0 after, its rulings made explicitly. His acts: apply 0249, 0250 and 0251 in that order, run
+the full check and the gate in his checkout, push.
+
+NOT_MEASURED: the full check and the gate in his checkout. No row, rung, pinned source or oracle file changed. Docs:
+AGENTS.md (the full check's and PAGE-0's rows), art/STUDIO.md (the full check's lane), docs/CAPABILITY-MATRIX.md (two
+dated notes), docs/CORE.md (art 33,322 lines), this entry, and 0250's entry corrected in place (its browsers "gone"
+62 to 69 s after: still standing at the last look, then ended by the test), with a note.

@@ -35,6 +35,13 @@
 # away; and (0248) the driver pressing the Show of a card found before the page drew its cards again, each caught by the
 # Show and Original row. The browser's name and its GPU as the browser reports them are printed as OBSERVED context, never
 # as a claim. Standard library only.
+#
+# In the full check (art/selftests.py, BROWSER-SERIALIZATION-0, 0251) every suite is told it runs there
+# (VERDANDI_FULL_CHECK), and only the browser suite holding the check's browser lane is given the run's token
+# (VERDANDI_LANE_TOKEN): launch refuses a page test's browser there to a suite without it (BROWSER-OUTSIDE-LANE), whatever
+# route led to launch, and a profile not made by scratch and profile_of (BROWSER-UNTOKENED); a test's scratch folder, and so its
+# browser's profile and every process that names it, carries the token, by which the lane's look finds this run's
+# browsers and nothing else. Run by hand, neither is set and nothing is refused.
 
 import collections
 import json
@@ -55,6 +62,7 @@ REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 WINDOWS = os.name == "nt"
+FULL_CHECK, LANE_TOKEN = "VERDANDI_FULL_CHECK", "VERDANDI_LANE_TOKEN"     # art/selftests.py's (0251)
 PLANT = ""
 LAST = {}                            # what the last run met at the Show and Original row (the live plant's count reads it)
 PLANTS = ("page-admit-unwired", "page-still-skipped", "page-live-unwaited", "page-card-held")
@@ -143,7 +151,48 @@ def find_browser(argv=()):
     return studio_app.find_browser()
 
 
+def lane_token():
+    """The full check's browser lane token as this process was given it (its hex digits), or ""."""
+    return "".join(c for c in os.environ.get(LANE_TOKEN, "") if c in "0123456789abcdef")[:32]
+
+
+def lane_refusal(profile=None):
+    """BROWSER-SERIALIZATION-0 (0251): None, or why a page test's browser may not start here: inside the full check, a suite
+    the check did not give its browser lane's token, or a profile not made by scratch and profile_of (one the lane's look,
+    which matches page-test-profile-*-<token>-, would not see)."""
+    plant = os.environ.get("VERDANDI_PLANT")                       # SCHEDULE's plants (art/selftests.py), never set otherwise
+    if plant == "guard-off" or not os.environ.get(FULL_CHECK):
+        return None
+    if not os.environ.get(LANE_TOKEN):
+        return ("BROWSER-OUTSIDE-LANE: a page test's browser started inside the full check by a suite outside its browser lane"
+                " (art/selftests.py: BROWSER, the suites that start one, one at a time)")
+    base = os.path.basename(profile or "")
+    if (profile is not None and plant != "launch-untokened"
+            and (base != profile_of(os.path.dirname(profile))[0] or ("-%s-" % lane_token()) not in base)):
+        return ("BROWSER-UNTOKENED: a page test's browser started inside the full check with a profile not made by"
+                " page_test.scratch and profile_of (the lane's look finds page-test-profile-*-<the run's token>-)")
+    return None
+
+
+def scratch(prefix):
+    """A page test's scratch folder; in the full check's browser lane its name carries the run's token (its hex digits)."""
+    token = lane_token()
+    if os.environ.get("VERDANDI_PLANT") == "scratch-untokened":     # SCHEDULE's plant (art/selftests.py), never set otherwise
+        token = ""
+    return tempfile.mkdtemp(prefix=prefix + (token + "-" if token else ""))
+
+
+def profile_of(tmp):
+    """(the marker, the profile folder) of the page test whose scratch folder is tmp: the marker names the profile, and so
+    every process of its browser, which is how leftovers and the full check's lane find them."""
+    marker = "page-test-profile-" + os.path.basename(tmp)
+    return marker, os.path.join(tmp, marker)
+
+
 def launch(browser, url, profile, headed, log_path):
+    why = lane_refusal(profile)
+    if why:
+        raise RuntimeError(why)
     argv = [browser, "--user-data-dir=%s" % profile, "--no-first-run", "--no-default-browser-check", "--disable-extensions",
             "--disable-background-networking", "--disable-sync", "--disable-component-update", "--window-size=%d,%d" % WINDOW,
             "--enable-logging=stderr", "--log-level=0"]
@@ -283,9 +332,8 @@ def run(browser, headed, argv_plant="", say=None):
         rows.append((name, bool(ok), detail))
         if say:
             say("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
-    tmp = tempfile.mkdtemp(prefix="page-selftest-")
-    marker = "page-test-profile-" + os.path.basename(tmp)
-    profile = os.path.join(tmp, marker)
+    tmp = scratch("page-selftest-")
+    marker, profile = profile_of(tmp)
     saved = (play.ROOT, motion.PLANT, play.studio_still, dict(play.FILES))
     live = srv = proc = live_gate = None
     alive = []

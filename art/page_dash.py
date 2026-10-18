@@ -30,7 +30,6 @@ import os
 import re
 import shutil
 import sys
-import tempfile
 import threading
 import time
 import urllib.error
@@ -637,9 +636,8 @@ def cards_run(browser, headed, say=None):
     import impact
     rows, caught, seen = [], [], []
     END = time.time() + CARDS_LIMITS["suite"]
-    tmp = tempfile.mkdtemp(prefix="page-cards-")
-    marker = "page-test-profile-" + os.path.basename(tmp)
-    profile = os.path.join(tmp, marker)
+    tmp = PT.scratch("page-cards-")
+    marker, profile = PT.profile_of(tmp)
     saved = (play.ROOT, dict(play.FILES), play.validate_info, play.dash_get, impact.report)
     live = srv = proc = gate = None
     alive = []
@@ -1226,9 +1224,8 @@ def worlds_run(browser, headed, say=None):
     import studio_refs
     rows, caught, seen = [], [], []
     END = time.time() + WORLDS_LIMITS["suite"]
-    tmp = tempfile.mkdtemp(prefix="page-worlds-")
-    marker = "page-test-profile-" + os.path.basename(tmp)
-    profile = os.path.join(tmp, marker)
+    tmp = PT.scratch("page-worlds-")
+    marker, profile = PT.profile_of(tmp)
     saved = (play.ROOT, dict(play.FILES), play.validate_info, play.outline)
     hub = srv = proc = None
     gates, alive = [], []

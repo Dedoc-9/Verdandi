@@ -528,6 +528,15 @@ nothing.
 
 Without a browser the suite fails: `art/selftests.py` has no skip.
 
+In the full check (BROWSER-SERIALIZATION-0, 0251) the suites that start a page test's browser, PAGE-CARDS, PAGE-WORLDS
+and PAGE, run one at a time in that order, beside the others. `art/selftests.py` tells every suite it runs there
+(`VERDANDI_FULL_CHECK`) and gives only the browser suite holding the lane the run's token (`VERDANDI_LANE_TOKEN`):
+`page_test.launch` refuses a browser to a suite without it (BROWSER-OUTSIDE-LANE) and a profile not made by
+`page_test.scratch` and `profile_of` (BROWSER-UNTOKENED), and `page_test.scratch` puts it in
+the test's scratch folder, so in its browser's profile and in every process that names it, which is how the lane's look
+before each browser suite and after the last finds this run's browsers and nothing else. Run by hand, neither is set,
+and nothing is refused.
+
 ## The dashboard (DASHBOARD-0), 0249: every panel says what it is of
 
 The owner's conditions for the dashboard (2026-10-17, quoted in `docs/ROADMAP.md`) and his invariant: *"At the time a

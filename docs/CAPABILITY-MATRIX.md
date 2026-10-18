@@ -417,6 +417,8 @@ again, with the harness.
 *Note (2026-10-17): now 0251, after the dashboard's two halves; the still's and the preview's scene, recorded since 0249,
 are refused on there, if he so rules.*
 
+*Note (2026-10-18): now 0252, BROWSER-SERIALIZATION-0 having taken 0251.*
+
 - The provider's scope is bounded by the request. Either the host intersects it with the target's, the pins' and the
   shapes' patterns, or a namespace-wide pattern needs the designer's grant. The card shows the declared scope and the
   phantom patterns.
@@ -428,6 +430,8 @@ are refused on there, if he so rules.*
 ### 0249 · the inverse's repair (his (a) or (b) from 0244), with F-8's narrower subset and CERT SELFTEST's rows rewritten with it.
 
 *Note (2026-10-17): now 0252.*
+
+*Note (2026-10-18): now 0253.*
 
 ### Later, measured before decided
 
