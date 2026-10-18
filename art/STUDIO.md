@@ -533,7 +533,8 @@ Without a browser the suite fails: `art/selftests.py` has no skip.
 The owner's conditions for the dashboard (2026-10-17, quoted in `docs/ROADMAP.md`) and his invariant: *"At the time a
 panel claims to represent host revision H, its displayed facts must be derivable from H—or the panel must identify
 itself as stale."* This is the cards half: the revision, the cards and their accounts, the dock's tabs (Candidates,
-Queue, Validation, Evidence), Undo's proof and the wrong-world guard. The worlds and import are 0250's.
+Queue, Validation, Evidence), Undo's proof and the wrong-world guard. The worlds, the outline and import are 0250's
+(the next section).
 
 **The revision.** `/live` carries `rev` (VERDANDI-REV 0), read so that its halves agree (`Live._read`: the gateway's
 state before and after the slots, equal, the live version unchanged and no request publishing; read up to four times
@@ -644,11 +645,144 @@ machine, its `play.js` failed by a network error the second time, the cause not 
   layer's own code, the files the art checks read: `graybox/web/sim.js`, `graybox/tick_ref.py`, `art/web/scene_render.js`).
 - That the stills are bound to their scene by the host: recorded and said only, until the binding's patch.
 - A person's reading of the page; its look; timings (printed, never checked).
-- The worlds, the outliner and import (0250), Linux, browsers other than Edge (Chrome is in the finder and never ran).
+- Linux, browsers other than Edge (Chrome is in the finder and never ran); the worlds, the outline and import are 0250's
+  (the next section).
 - Three paths no row exercises, VERIFIED BY READING only: an account, or Undo's, with an admission half written by a
   writer that ended (`not_foreseen`, Undo's `can` null); a restoration that could not be read (`unknown`); the press
   naming an admission other than the one undone (`page_saw.matched` false).
 - The repair of the server's traceback on a hung-up idle connection: VERIFIED BY READING; no row exercises it.
+
+## The worlds, the outline and import (DASHBOARD-0), 0250: the left panel, and import transactional
+
+The second half of the dashboard, after his word of 2026-10-17 ("then build 0250 with the separate worlds-mode test
+rig"): his fifth condition, *"Import is transactional. 'Import from the checkout' must not silently overwrite the
+desktop studio's active world. It should identify the source, validate it, create or update an isolated candidate, and
+preserve recoverability if validation or import fails."*, his first for the worlds, and his cases 6 (*"import fails
+partway through"*) and 7 across two worlds. The design is the settled one, read with its recommended answers: import
+makes a new world and never writes over one (R3); a brief's tags go with it and the stage lists them (R7); the first
+seeding refuses a brief with an admission half written in the checkout, and runs the art checks (R9).
+
+**The left panel.** Above the navigator, three panels, each marked as 0249's are (with why), and a toggle (**«**) that
+folds the panel to a strip and opens it again (in Mark mode, which has its own navigator, the fold waits):
+- **Worlds**: every world as the host reads it back (`GET /worlds.json`: `Hub.inspect`, its ledger replayed to its
+  files under its content lock; integrity, not truth), verified with its events and head, or not verified with the
+  director's code (`UNLOGGED-CHANGE`), busy, or with no ledger yet; and what an import recorded of it ("started at
+  import: no history from the checkout"). Read again on **Refresh**, every 10 s while the panel is open, and when this
+  world's ledger or files move; kept per world by a key of its files' stamps (its brief, its ledger and last line, its
+  maps, each still, and the exporter and the code the checks read). Its mark holds this world's row against its own
+  ledger's last line and its files as last compiled (the head served, the latest compile's head and its refusal, so that
+  files the loop refuses move it at once): current, stale, settling, unknown, or refused when the read failed; the other
+  worlds are as of the read, which the mark says (the worlds are no one world's revision). A read the page asked for
+  (Refresh's, the expand's, a commit's) is never overtaken by the periodic one; one the files moved during is drawn stale
+  and read again.
+- **Outline**: the objects of the scene this page's slot serves, by region and kind, by the host's object rule
+  (`GET /outline.json?world=W&slot=K`: `studio_refs.objects` and `address`, the rule a tag and a candidate's touches
+  use), with the revision read before and after; it never opens a world. The outline's list is the host's: the page
+  builds none of its own, though its own copy of the same rule (`objects()` in `play.js`, unchanged) still picks,
+  highlights and frames a selection. Its header names the world (`data-world`), the source and the scene; **find an
+  object** keeps the objects whose name or address holds the words; a press selects the object and frames it, and the
+  inspector reads the host's account of it (`/object.json`). Stale when the slot serves another scene, and read again.
+- **Import**: the briefs of the source that are no world here (`GET /importable.json`: each with the files a world made
+  of it would hold, by sha256, its ledger as it stands, its tags, and whether an admission of it is half written there;
+  read only), each with **Stage** (a brief whose files cannot be listed is said so, with none). A staged import shows its
+  record (the files by sha256, the ledger copied or started at
+  import, the checks, the tags, the shapes not copied) with **Commit** and **Discard**; each of the three is pressed once
+  at a time, and Stage not while a staged import is shown (commit or discard it first). A commit offers **Open** and
+  never opens or switches a world by itself. Every refusal says its code, the source and the name. The briefs are no
+  part of a world's revision, so the panel's mark is current, unknown or refused, never stale nor settling: it says when
+  they were read, and they are read again on Refresh, after a commit, when the worlds' names change, and after a read
+  that never reached the host; the host's refusal stands until Refresh.
+
+**Import's transaction** (`art/play.py`: `stage_import`, `Hub.import_stage`, `import_commit`, `import_discard`,
+`recover_worlds`; the POSTs `/studio/worlds/import/stage`, `/commit` and `/discard`, with the studio's token). The worlds
+folder's lock (`worlds.lock`, 5 s, then `IMPORT-BUSY`) is held by every writer that makes, renames or removes a folder at
+its top level, and by the writers of `IMPORTS.jsonl` and `SEEDED.json`: an import's three steps, a duplicate, the first
+seeding, and recovery. Not by the queue (`queue.jsonl` holds the queue's own lock), nor by a world's own writers (its
+content lock).
+- *Stage*, in order: the name a brief of the source (`IMPORT-NAME`) and nothing of that name in the worlds folder, an
+  empty folder included (`IMPORT-EXISTS`); no admission of it half written in the source (`IMPORT-SOURCE-PENDING`:
+  nothing of the source is recovered or locked, for a lock file is a write); each file copied into a folder of its own
+  beside the worlds (`.import-NAME-XXXXXXXX`, which no world's name matches: never listed, never opened) and its sha256
+  kept; the source read again whole (`IMPORT-SOURCE-BUSY` when its ledger was written, or came, while it was copied, or an
+  admission of it began there, as the design has it, each said as it is; `IMPORT-SOURCE-MOVED` for any other file
+  changed, come or gone, or that cannot be read); its ledger, when it has one, replayed in the copy, deep
+  (`IMPORT-LEDGER`, with the director's code; a ledger ending in a torn line is refused so, its remedy a start in the
+  source; one of no line, `LEDGER-EMPTY`, its remedy the empty file removed there and the director's genesis run); the
+  exporter and the art checks over the copy
+  (`IMPORT-ART`, `IMPORT-CHECKS`); with no ledger, one started in the copy after the checks, its bytes kept by sha256; the
+  record written last (`IMPORTED.json`). What the stage did not expect is `IMPORT-FAILED`. On any refusal the staging is
+  removed and its absence checked by listing the folder; still there, `IMPORT-LEFTOVER`, and the next start removes it.
+- *Commit*: the staging there (`IMPORT-STAGE-GONE`); its record the one the page was shown, every file its record's
+  sha256, the ledger started at the stage its recorded bytes, nothing in it its record does not name (no file added, of
+  its build folder exactly its content lock, no admission half written), its ledger verifying (`IMPORT-STAGE-CHANGED`); no world of the name (`IMPORT-EXISTS`, the
+  staging kept); then one rename, the commit point (retried while Windows holds a handle inside: `IMPORT-RENAME-BUSY`, the
+  staging kept), and a line in `IMPORTS.jsonl`. A log that cannot be written after the rename is said (`logged` false)
+  and the commit answered as made; the next start writes the line. It never writes `SEEDED.json` and never opens a world.
+- *Recovery at the start* (`recover_worlds`, before the first seeding): every folder made aside and never put in place
+  removed (an import's staging, a duplicate's `.dup-NAME-XXXXXXXX`, a seeding's `NAME.making` from before 0250), its
+  absence checked; a world an import put in place whose line the log lacks given its line from its own record; a first
+  seeding cut off part-way said, and finished by the seeding that follows. What it cannot do (a folder it cannot remove,
+  an imports log it cannot read, a record that is not one) is said, and never ends the start. A stage never committed
+  does not outlive a restart, and its answer says so.
+- *Privacy*: the source's absolute path is kept in the worlds folder's own records only (`IMPORTED.json`, `IMPORTS.jsonl`,
+  as `SEEDED.json` keeps it); every answer to the page names the source by its label ("the checkout (play.py's own
+  tree)"), and a text bound for the page that would carry the path carries the label.
+
+**What else changed.** The first seeding goes through the same staging, its ledger not started (`seed_worlds`): a brief
+the checkout holds an admission of half written is refused rather than the checkout recovered, and so is one whose
+ledger ends in a torn line (both were recovered in the checkout before 0250, and so written); the art checks run on each
+brief; and a seeding cut off between two briefs (worlds it made, no `SEEDED.json`) is finished at the next start, where
+before the rest were never seeded and nothing said so. A duplicate is made under the worlds folder's lock in a folder of
+its own (two duplicates of one name shared `NAME.making`, removed with no lock), its name checked under the lock, its
+rename retried while Windows holds a handle inside. A world's first ledger is started with the console swapped under
+`QUIET_LOCK` (it was swapped without), its refusal `STUDIO-WORLD` as before. `Hub.inspect` says a ledger of no line
+(`LEDGER-EMPTY`: a first line that did not finish, its bytes set aside beside it) where it raised, and opening the world
+starts it again; `/worlds.json` reads every other world when one cannot be read (`INSPECT-FAILED`). `cmd_verify`'s
+docstring said the launcher's look was not deep; it is.
+
+**The tests.** STUDIO-2 (`python art/studio_queue.py selftest`, `STUDIO-2 SELFTEST 46/46`) holds the transaction on the
+host: the routes (the source by its label alone, `/outline.json` opening no world; a source whose briefs cannot be
+listed refused, `IMPORT-SOURCE-UNREAD`, by its label), a stage and a commit, the refusals
+(every code but `IMPORT-RENAME-BUSY` and, honestly, `IMPORT-LEFTOVER`; the checks named), case 6 at the second file, a
+source changed while copied (its brief: `IMPORT-SOURCE-MOVED`; its ledger: `IMPORT-SOURCE-BUSY`), a staging changed
+before its commit four ways (a file of its record, the ledger started at the stage given another valid line, a file it
+does not name, a file of its build folder that is not its lock), two commits of one name at once (the loser's staging
+kept, then discarded), a log that cannot be written at the commit, a duplicate while the lock is held, a ledger of no
+line (said, and started again when its world is opened; a source's refused), an import's genesis meeting a command
+inside `quiet()` (the genesis paused inside its own console swap: `QUIET_LOCK` holds it out), the crash loop (a process
+ended at each of nine points of the stage and the commit, then the start's recovery: before the rename nothing listed and
+nothing aside, after it the world listed, verified and logged; every other world byte for byte), recovery of a
+duplicate's and a seeding's folders made aside (by their literal names) and of an imports log it cannot read and a
+record that is not one, the pending checkout at seeding (its files byte for byte, its content lock not taken), a seeding
+cut off between two briefs and finished, and six plants (`import-recover-source`, `import-rename-first`, `import-keep-staging`,
+`import-no-exists-check`, `import-quiet-unlocked`, `seed-names-guard`), each caught by the row it breaks.
+**PAGE-WORLDS** (`python art/play.py --worlds-selftest`, `art/page_dash.py`, a browser as PAGE's) runs in worlds mode: a
+worlds folder seeded from a scratch source, a second world made by duplicating the first and shown by the page (not the
+default), and a scratch checkout as the import's source. Its rows: the worlds panel against `Hub.inspect`; another world
+changed by hand, not verified, then verified, each read by Refresh's own read (the page counts them); this world's files
+refused by the loop, the panel stale or not verified at the moment the page sees the refusal, never current over
+verified (the periodic read held off, so that only the mark can ask); the collapse; the
+outline against the host's rule, its search and a selection; the importable briefs; case 6 (the host stops the stage at
+its second file: the page says `IMPORT-FAILED`, the source and the name; nothing aside; every world byte for byte); a
+stage and a commit through the page (the page neither begins a navigation nor leaves its world); a refused stage
+(`IMPORT-LEDGER`, `UNLOGGED-CHANGE`); case 7 across two worlds (the host's own answers for the other world given to this
+page: refused, nothing of that world's scene in the page as the page prints a scene, no `data-world` but this world's;
+given its own again, current); nothing of the browser left. Four plants, copies of `play.js` with one line changed (a
+stage's refusal drawn without its code; Validation's read without its world; the other world's outline drawn; the
+worlds panel's mark without the files' refusal), are caught by the row each names.
+
+**What it does not show.**
+- That a directory's rename is atomic for a reader that lists the folder: INFERRED; the crash loop holds the states at
+  its nine points on his Windows, by the agent, not between them.
+- A writer of the worlds folder's folders that does not take its lock: only `play.py`'s writers take it.
+- `IMPORT-RENAME-BUSY` and the duplicate's held handle, `IMPORT-LEFTOVER` outside its plant, a commit refusing a staging
+  that holds an empty pending folder, `Hub.world`'s genesis under `QUIET_LOCK` (the plant is the stage's),
+  `INSPECT-FAILED`, a brief of the source whose files cannot be listed, and a forced read of the worlds that the files
+  moved during (drawn stale): VERIFIED BY READING; no row.
+- The other worlds' rows of the worlds panel at any moment but their read; that "verified" means right (integrity, not
+  truth).
+- The world selects and Mark mode's rows: they read the names `/live` lists, as before, not `/worlds.json`.
+- Linux; browsers other than Edge; a person's reading of the page.
 
 ## Legibility along the path (LEGIBLE-0, 0241: one test of Meaning-to-View)
 
@@ -911,11 +1045,15 @@ construction, and two worlds never share a map. The desktop studio serves this f
 self-tests') and the checkout itself are served as before.
 
 **The first start.** When the folder holds no world it is made from the checkout: every brief there (four
-today: `foundry-yard`, `harbor-day`, `harbor-lift` and `plaza-night`) is copied whole, with its ledger and tags if it has them and the checkout's maps, into a
-folder made aside; its ledger is replayed in the copy, and only if it verifies is the folder put in place, by one
-rename. A brief whose ledger does not verify is not copied, and why is said and recorded. `SEEDED.json` records what was
-copied, by sha256. The checkout is read, never written (but for its own recovery, as any start there does); after the
-first start it is a template, and the studio's worlds change only through their own ledgers.
+today: `foundry-yard`, `harbor-day`, `harbor-lift` and `plaza-night`) is copied whole, with its ledger and tags if it
+has them and the checkout's maps, into a folder made aside (since 0250 the import's staging, under the worlds folder's
+lock); its ledger is replayed in the copy and the exporter and the art checks run over it, and only if all pass is the
+folder put in place, by one rename. A brief that does not pass is not copied, and why is said and recorded; so is one
+the checkout holds an admission of half written, or whose ledger ends in a torn line (since 0250: before, the checkout
+was recovered, and so written). A seeding cut off between two briefs is finished at the next start (since 0250).
+`SEEDED.json` records what was copied, by sha256. The checkout is read, never written; after the first start it is a
+template, and the studio's worlds change only through their own ledgers, or by an import, which makes a new world
+(DASHBOARD-0, 0250, above). Every start first removes what an import, a duplicate or a seeding left aside.
 
 **In the page.** The panel (**Enter**) names the world played and lists the others: choosing one loads its page.
 **Duplicate as** makes a new world from this one (its brief, its title marked as a copy, a ledger of its own and, in the

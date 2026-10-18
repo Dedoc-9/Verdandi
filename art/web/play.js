@@ -406,6 +406,15 @@
       let state, why = "";
       if (!ui.connected || !r) { state = "unknown"; why = "play.py does not answer, or has not said its revision"; }
       else if (dash.restarted) { state = "unknown"; why = "play.py restarted (another process serves this page now): reload the page"; }
+      else if (p.revless) {
+        // DASHBOARD-0 (0250): a panel of no world's revision (the briefs to import) is never stale and never settling: read,
+        // refused, or not read yet
+        const sh = p.shown();
+        node.dataset.revless = "1";
+        if (node.dataset.refused) { state = "refused"; why = node.dataset.refused; }
+        else if (sh === null || sh === undefined) { state = "unknown"; why = "not read yet"; }
+        else { state = "current"; why = "as read; no part of any world's revision (Stage reads the source again)"; }
+      }
       else if (!r.read || !r.read.consistent) { state = "unknown"; why = "the host's state was changing as it was read: read again"; }
       else if (r.settled === null) { state = "unknown"; why = "the host's watcher has not looked at the files: whether they are compiled is not known"; }
       else if (node.dataset.refused) { state = "refused"; why = node.dataset.refused; }
@@ -476,8 +485,10 @@
       if (c.written_against && c.written_against !== c.head) parts.push("written against " + short(c.written_against));
       return parts.join(" · ");
     };
+    let lpTick = function () {};          // DASHBOARD-0 (0250): the left panel's reads (set below, once the panel is built)
     const dashTick = function () {
       for (const n of Object.keys(PANELS)) panelState(n);
+      lpTick();
       accountsApply();
       undoPoll();
       if (ui.dtab === "validation") validationLoad(false);
@@ -800,6 +811,221 @@
       const name = $("st-newname").value.trim();
       post("/studio/worlds/duplicate", { from: brief, name: name }).then(function (r) { note(r, "made world " + (r.world || "")); if (r.ok) go(r.world); });
     };
+    // ---------------------------------------------------------------- DASHBOARD-0 (0250): the left panel
+    // the worlds as the host reads them back (GET /worlds.json: Hub.inspect, its ledger replayed to its files), the outline
+    // of the scene a slot serves by the host's own object rule (GET /outline.json), and import, transactional (GET
+    // /importable.json; POST stage, then commit or discard). The page decides nothing of them: it shows the host's answers,
+    // and says what each panel is of
+    ui.worlds = null; ui.worldsKey = ""; ui.worldsAt = 0; ui.outline = null; ui.outlineKey = ""; ui.imp = null; ui.impShown = ""; ui.impLatest = "";
+    ui.staged = null; ui.impSaid = null; ui.imported = ""; ui.worldsHead = ""; ui.worldsForced = 0; ui.impAt = 0; ui.worldNames = "";
+    ui.worldsEvery = 10000; ui.stageBusy = false;      // the worlds' periodic read, in ms (a test may lengthen it: PLAY.shell.ui)
+    let wReq = 0, oReq = 0, iReq = 0, sReq = 0, wForcing = 0, wMissed = false, iBusy = false;
+    // this world's files as the worlds' read is of them: slot 0's served head, its latest compile's head and its refusal (a
+    // write the loop refuses moves the last two, and the served head not at all)
+    const filesOf = function (r) { const s0 = (r && (r.slots || [])[0]) || {}; return JSON.stringify([s0.head || "", s0.latest_head || "", s0.refused_sha256 || ""]); };
+    const lpCollapsed = function () { return document.body.classList.contains("leftcollapsed"); };
+    const lpClear = function (box) { Array.prototype.slice.call(box.childNodes).forEach(function (x) { if (!(x.classList && x.classList.contains("pstate"))) x.remove(); }); };
+    $("lp-toggle").onclick = function () {
+      const c = !lpCollapsed();
+      document.body.classList.toggle("leftcollapsed", c);
+      $("lp-toggle").textContent = c ? "»" : "«";
+      $("lp-toggle").title = c ? "Expand the left panel" : "Collapse the left panel";
+      if (!c) lpTick(true);
+    };
+    // the worlds: read when the page opens, on Refresh, every 10 s while the panel is open, and when this world's ledger moves
+    const worldsLoad = function (force, refresh) {
+      const r = dash.rev, at = r ? filesOf(r) : "";
+      const key = (r ? (r.ledger || {}).line_sha256 : "") + "|" + at + "|" + Math.floor(Date.now() / ui.worldsEvery);
+      // a read the page did not ask for never overtakes one it did (Refresh's, the expand's, a commit's): that one is drawn
+      if (!force && wForcing) { if (key !== ui.worldsKey) wMissed = true; return; }
+      if (!force && (key === ui.worldsKey || lpCollapsed())) return;
+      ui.worldsKey = key;
+      const n = ++wReq;
+      if (force) { wForcing = n; wMissed = false; }
+      getJSON("/worlds.json").then(function (a) {
+        const missed = n === wForcing && wMissed;
+        if (n === wForcing) { wForcing = 0; wMissed = false; }
+        if (n !== wReq) return;
+        // the read is of this world's files as they were when it was asked (its mark holds them); one the files moved
+        // during is drawn with a mark no files have (stale), and the next tick reads again
+        ui.worlds = a; ui.worldsAt = Date.now(); ui.worldsHead = missed ? "moved while it was read" : at;
+        if (missed) ui.worldsKey = "";
+        if (refresh) $("lp-worlds").dataset.forced = String(++ui.worldsForced);       // Refresh's own reads, counted
+        worldsPanelShow();
+      }).catch(function (e) { if (n === wForcing) { wForcing = 0; wMissed = false; } if (n === wReq) { ui.worldsKey = ""; ui.worlds = { ok: false, code: "UNREAD", message: String(e && e.message || e) }; worldsPanelShow(); } });
+    };
+    const worldsPanelShow = function () {
+      const a = ui.worlds, box = $("lp-worlds");
+      lpClear(box);
+      if (!a || !a.ok) {
+        box.dataset.refused = "the worlds were not read: " + (a ? (a.code || "") + ": " + (a.message || "") : "not read");
+        box.appendChild(el("div.empty.bad", {}, box.dataset.refused)); panelState("worlds"); return;
+      }
+      delete box.dataset.refused;
+      // the briefs to import are read again when the worlds' names change (another page's commit, a duplicate)
+      const names = (a.worlds || []).map(function (w) { return w.world; }).join(",");
+      if (ui.worldNames && names !== ui.worldNames) importLoad();
+      ui.worldNames = names;
+      for (const w of a.worlds || []) {
+        const said = w.state === "verified" ? "verified · " + w.events + " event" + (w.events === 1 ? "" : "s") + " · head " + short(w.head)
+          : w.state === "fresh" ? "no ledger yet: it is started when the world is first opened"
+          : w.state === "busy" ? "unknown (busy): an admission is being written; read again"
+          : "not verified: " + (w.code || "") + (w.error ? (w.code ? " · " : "") + w.error.slice(0, 160) : "");
+        const im = w.imported, imp = !im ? "" : im.error ? "its import record: " + im.error
+          : im.via === "import" ? (im.ledger === "started-at-import" ? "started at import: no history from " + im.source_label : "imported from " + im.source_label + " with its ledger") + " (" + im.at + ")"
+          : "made from " + im.source_label + " at the first seeding";
+        box.appendChild(el("div.lpw", { dataset: { wname: w.world, wstate: w.state, wcode: w.code || "", wevents: String(w.events), whead: w.head || "" } },
+          el("a", { href: "/play.html?world=" + encodeURIComponent(w.world), title: "open " + w.world + " (another page)" }, w.world), w.world === brief ? el("span.dim", {}, " · this page") : null,
+          el("div.d" + (w.state === "verified" ? ".good" : w.state === "not-verified" ? ".bad" : ""), {}, said), imp ? el("div.d", {}, imp) : null));
+      }
+      panelState("worlds");
+    };
+    $("lp-wrefresh").onclick = function () { worldsLoad(true, true); };
+    // the outline: of the scene the slot this page draws serves, read again when that scene changes
+    const outlineLoad = function (force) {
+      const sv = (cur.slots[cur.k] || {}).served, key = (sv ? sv.sha : "") + "|" + cur.k;
+      if (!force && (key === ui.outlineKey || lpCollapsed())) return;
+      ui.outlineKey = key;
+      const n = ++oReq;
+      getJSON("/outline.json?world=" + W + "&slot=" + cur.k).then(function (o) {
+        if (n !== oReq) return;
+        $("lp-outline").dataset.answers = String((+$("lp-outline").dataset.answers || 0) + 1);
+        if (!answerFor(o, $("lp-outline"), "Outline")) { ui.outline = null; panelState("outline"); return; }
+        ui.outline = o.ok ? o : null;
+        if (!o.ok) { lpClear($("lp-outline")); $("lp-outline").dataset.refused = (o.code || "") + ": " + (o.message || ""); $("lp-outline").appendChild(el("div.empty.bad", {}, $("lp-outline").dataset.refused)); panelState("outline"); return; }
+        outlineShow();
+      }).catch(function (e) { if (n === oReq) { ui.outlineKey = ""; ui.outline = null; lpClear($("lp-outline")); $("lp-outline").appendChild(el("div.empty.bad", {}, "Outline: " + (e && e.message || e))); panelState("outline"); } });
+    };
+    const outlineShow = function () {
+      const o = ui.outline, box = $("lp-outline"), q = ($("lp-search").value || "").trim().toLowerCase();
+      if (!o) { panelState("outline"); return; }       // a refusal or a failure drawn stays drawn while the search is typed
+      lpClear(box);
+      box.appendChild(el("p.dim", { dataset: { world: o.world } }, o.world + " · source [" + o.slot + "] · scene " + short(o.sha) + (o.slot >= 1 ? " (a candidate's scene)" : "")));
+      let shown = 0;
+      for (const rg of o.regions || []) {
+        const rows = [];
+        for (const kd of rg.kinds) {
+          const objs = kd.objects.filter(function (x) { return !q || x.id.toLowerCase().indexOf(q) >= 0 || x.address.toLowerCase().indexOf(q) >= 0; });
+          if (!objs.length) continue;
+          rows.push(el("div.lpk", {}, kd.kind + " (" + objs.length + ")"));
+          for (const x of objs) {
+            rows.push(el("button.lpo", { dataset: { oid: x.id }, title: x.address + " · " + x.boxes + " box" + (x.boxes === 1 ? "" : "es") + (x.material ? " · " + x.material : ""),
+                                         onclick: function () { setSel(x.id); frameSelection(); } }, x.id));
+            shown++;
+          }
+        }
+        if (rows.length) box.appendChild(el("div.lpr", { dataset: { region: rg.region } }, el("div.lph", {}, rg.region), rows));
+      }
+      box.appendChild(el("p.dim.lpcount", { dataset: { shown: String(shown) } }, shown + " object" + (shown === 1 ? "" : "s") + (q ? " matching " + JSON.stringify(q) : "") +
+        " · movers " + (o.movers || []).length + " · targets " + (o.targets || []).length + " · play boxes " + o.play));
+      panelState("outline");
+    };
+    $("lp-search").oninput = outlineShow;
+    // import: the briefs of the source that are no world here; Stage makes an isolated candidate the host checks; Commit puts
+    // it in place by one rename (and never opens it: Open is offered); Discard removes it. Every refusal says its code, the
+    // source and the name
+    const importLoad = function () {
+      const n = ++iReq;
+      iBusy = true;
+      const took = function (a) {
+        if (n !== iReq) return;
+        iBusy = false;
+        const box = $("lp-import");
+        if (a.ok) delete box.dataset.refused; else box.dataset.refused = "the briefs to import were not read: " + (a.code || "") + ": " + (a.message || "");
+        ui.imp = a; ui.impAt = Date.now(); ui.impLatest = JSON.stringify([a.mode, a.briefs || []]); importShow();
+      };
+      getJSON("/importable.json").then(took).catch(function (e) { took({ ok: false, code: "UNREAD", message: String(e && e.message || e) }); });
+    };
+    const impRefusal = function (r, name) {
+      const said = (r.code || "IMPORT-FAILED") + (r.director_code ? " (" + r.director_code + ")" : "") + " · " + (r.source_label || "the source") + " · " + (r.name || name || "") + ": " + (r.message || "");
+      return el("div.lpsaid.bad", { dataset: { code: r.code || "" } }, said);
+    };
+    const importShow = function () {
+      const a = ui.imp, box = $("lp-import");
+      lpClear(box);
+      if (!a) { panelState("import"); return; }
+      ui.impShown = ui.impLatest;
+      if (!a.ok) box.appendChild(el("div.empty.bad", {}, "Import: " + (a.code || "") + ": " + (a.message || "")));
+      else if (a.mode !== "worlds") box.appendChild(el("div.empty", {}, a.why || "import is into a worlds folder"));
+      else {
+        box.appendChild(el("p.dim", {}, "from " + a.source_label + ": a brief becomes a new world, staged and checked apart, then put in place by one rename; never over a world"));
+        for (const b of a.briefs || []) {
+          if (b.error) { box.appendChild(el("div.lpi", { dataset: { iname: b.name, error: "1" } }, el("b", {}, b.name), el("div.d.bad", {}, b.error))); continue; }
+          box.appendChild(el("div.lpi", { dataset: { iname: b.name } }, el("b", {}, b.name), el("div.d", {}, (b.title ? b.title.slice(0, 50) + " · " : "") + b.files.length + " files · " +
+            (b.ledger.present ? "its ledger, " + (b.ledger.events === undefined ? "not read" : b.ledger.events + " events") : "no ledger: one is started at import") + (b.tags ? " · its tags" : "") +
+            (b.pending ? " · an admission of it half written there" : "") + (b.exists ? " · a folder of this name is in the worlds folder" : "")),
+            el("button.btn.small", { dataset: { act: "stage" }, disabled: !!(ui.stageBusy || ui.staged), title: ui.staged ? "commit or discard the staged import first" : "",
+                                     onclick: function () { stage(b.name); } }, "Stage")));
+        }
+        if (!(a.briefs || []).length) box.appendChild(el("div.empty", {}, "every brief of " + a.source_label + " is a world here"));
+      }
+      const s = ui.staged;
+      if (s) {
+        const rec = s.record || {}, lg = rec.ledger || {};
+        box.appendChild(el("div.lpstaged", { dataset: { staging: s.staging, sha: s.record_sha256 } }, el("b", {}, "Staged: " + s.name), " from " + s.source_label,
+          el("div.d", {}, Object.keys(rec.files || {}).length + " files, each by sha256 · " + (lg.copied ? "its ledger copied, " + lg.events + " events, verified in the copy" : lg.started_at_import ? "a ledger started at import (head " + short(lg.started_at_import) + "): no history from " + s.source_label : "no ledger")),
+          el("div.d", {}, "checks passed: " + (rec.checks || []).length + " · " + (rec.tags ? "its tags copied · " : "") + "its shapes " + (rec.shapes || "") + " · " + (s.survives || "")),
+          el("div.d.mono", {}, Object.keys(rec.files || {}).sort().map(function (f) { return f + " " + short(rec.files[f]); }).join("\n")),
+          el("button.btn.small", { dataset: { act: "commit" }, disabled: !!s.busy, onclick: commit }, "Commit"), el("button.btn.small", { dataset: { act: "discard" }, disabled: !!s.busy, onclick: discard }, "Discard")));
+      }
+      if (ui.impSaid) box.appendChild(ui.impSaid);
+      panelState("import");
+    };
+    const stage = function (name) {
+      // one stage at a time, and none while a staged import is shown (commit or discard it first): a staging the page no
+      // longer showed could not be discarded from it
+      if (ui.stageBusy || ui.staged) return;
+      const n = ++sReq;
+      ui.stageBusy = true; ui.impSaid = el("div.lpsaid", {}, "staging " + name + "…"); importShow();
+      post("/studio/worlds/import/stage", { name: name }).then(function (r) {
+        ui.stageBusy = false;
+        if (n !== sReq) return;
+        ui.impSaid = r.ok ? null : impRefusal(r, name);
+        ui.staged = r.ok ? r : null;
+        importShow();
+      });
+    };
+    const commit = function () {
+      const s = ui.staged;
+      if (!s || s.busy) return;
+      s.busy = true; importShow();
+      post("/studio/worlds/import/commit", { staging: s.staging, record_sha256: s.record_sha256 }).then(function (r) {
+        if (ui.staged !== s) return;                   // a staging the page no longer shows: its late answer changes nothing
+        if (!r.ok) { s.busy = false; ui.impSaid = impRefusal(r, s.name); importShow(); return; }
+        // the commit never opens or switches a world: Open is offered
+        ui.staged = null; ui.imported = r.world;
+        ui.impSaid = el("div.lpsaid.good", { dataset: { committed: r.world } }, "imported " + r.world + " from " + r.source_label + (r.logged === false ? " (" + r.note + ")" : "") + " · ",
+          el("button.btn.small", { dataset: { act: "open" }, onclick: function () { go(r.world); } }, "Open " + r.world));
+        importLoad(); worldsLoad(true);
+      });
+    };
+    const discard = function () {
+      const s = ui.staged;
+      if (!s || s.busy) return;
+      s.busy = true; importShow();
+      post("/studio/worlds/import/discard", { staging: s.staging }).then(function (r) {
+        if (ui.staged !== s) return;
+        // the staging is dropped from the page only when the host says it is gone; otherwise it stays, to discard again
+        if (r.ok || r.code === "IMPORT-STAGE-GONE") ui.staged = null; else s.busy = false;
+        ui.impSaid = r.ok ? el("div.lpsaid", {}, "discarded the staged " + s.name + ": nothing of it is left") : impRefusal(r, s.name);
+        importShow();
+      });
+    };
+    $("lp-irefresh").onclick = importLoad;
+    // the worlds panel: this world's row against its ledger's last line and its files' head (both in the revision); the
+    // other worlds are as of the read, which the badge says
+    PANELS.worlds = { shown: function () { const a = ui.worlds; if (!a || !a.ok) return null; const me = (a.worlds || []).filter(function (w) { return w.world === brief; })[0]; return me ? [me.last_line_sha256 || "", ui.worldsHead] : null; },
+                      host: function (r) { return [(r.ledger || {}).line_sha256 || "", filesOf(r)]; },
+                      stale: function () { return "this world's ledger or files moved since the worlds were read: they are read again"; },
+                      label: function (state) { return state + " · this world's row against its ledger and files; the worlds as read at " + (ui.worldsAt ? new Date(ui.worldsAt).toLocaleTimeString() : "—") + " (no one world's revision)"; } };
+    PANELS.outline = { shown: function () { return ui.outline ? [ui.outline.sha, ui.outline.slot] : null; }, host: function (r) { return [((r.slots || [])[cur.k] || {}).sha || "", cur.k]; },
+                       stale: function () { return "the outline is of a scene the host no longer serves in this slot: it is read again"; } };
+    // import: the briefs are no part of the host's revision, so the panel is never stale; it says when they were read, and
+    // is read again on Refresh, after a commit, and when the worlds' names change
+    PANELS.import = { revless: true, shown: function () { return ui.imp ? [ui.impShown] : null; }, host: function () { return [ui.impLatest]; },
+                      label: function (state) { return state + " · the briefs as read at " + (ui.impAt ? new Date(ui.impAt).toLocaleTimeString() : "—") + " (no part of this world's revision)"; } };
+    // the briefs are read once, and again after a read that never reached the host (a host's refusal stands until Refresh)
+    lpTick = function (force) { if (lpCollapsed() && !force) return; worldsLoad(!!force); outlineLoad(!!force); if (!iBusy && (!ui.imp || ui.imp.code === "UNREAD")) importLoad(); };
     let queueKey = "", seenNotice = performance.timeOrigin / 1000, optsKey = "";
     toast = function (text, bad) {
       const e = document.createElement("div");
@@ -1059,7 +1285,7 @@
       ["Review", [["candidates", "Candidates", "candidates"], ["compare", "Compare", "compare"], ["history", "History / Ledger", "history"], ["validation", "Validation", "shield"]]],
     ];
     const buildNav = function () {
-      const host = $("leftnav");
+      const host = $("lp-nav");           // DASHBOARD-0 (0250): below the left panel's worlds, outline and import
       host.innerHTML = "";
       for (const [title, items] of NAV) {
         const sec = el("div.navsec", {}, el("h4", {}, title));

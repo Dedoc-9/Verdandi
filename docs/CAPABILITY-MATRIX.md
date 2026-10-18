@@ -384,6 +384,9 @@ read otherwise now: the account that disables Admit is the admission's own check
 logic (FLAGSHIP-0's predicates give an advisory checklist, EVIDENCE-0, which gates nothing); and the page is held by a
 suite of its own, PAGE-CARDS, beside PAGE, not by rows grown in PAGE alone.*
 
+*Note (2026-10-17): the left panel below is built as 0250 (the worlds read back, the outline by the host's object rule,
+import staged, checked and committed by one rename), held by STUDIO-2 and PAGE-WORLDS (`docs/ROADMAP.md`, the 0250 entry).*
+
 **Left.** A collapsible panel holding:
 - the worlds, each verified or not, from the launcher's tested read-back;
 - an outliner by region, kind and object, with search, built from the scene the page already holds;

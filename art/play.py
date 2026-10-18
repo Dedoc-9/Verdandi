@@ -62,9 +62,12 @@
 #
 # The worlds (STUDIO-2; class Hub, seed_worlds, art/studio_queue.py, art/STUDIO.md). With --worlds DIR the server serves
 # every world in DIR, each a tree of its own (DIR/NAME/), opened when the page or the queue first asks for it; a DIR
-# with no world is first seeded from the checkout, every brief of it copied whole and kept only if its ledger verifies
-# in the copy (SEEDED.json). The page switches worlds, duplicates one, and queues a prompt for any world; the queue
-# (DIR/queue.jsonl) runs at most --jobs requests at once, one per world, while every world plays on.
+# with no world (or one whose first seeding was cut off part-way) is first seeded from the checkout, each brief through
+# the import's staging and kept only if its ledger verifies in the copy, the exporter and the art checks pass, and no
+# admission of it is half written there (SEEDED.json). The page switches worlds, duplicates one, queues a prompt for any
+# world, and imports a brief of the source tree as a new world, staged beside the worlds and committed by one rename
+# (DASHBOARD-0, 0250: GET /worlds.json, /outline.json and /importable.json; POST /studio/worlds/import/stage, /commit and
+# /discard); the queue (DIR/queue.jsonl) runs at most --jobs requests at once, one per world, while every world plays on.
 
 import decimal
 import hashlib
@@ -697,8 +700,12 @@ class Hub:
       one tree (--root DIR, or the checkout; the self-tests'): every brief of the tree is a world, and they share its
       maps (a layout admitted on a map another brief plays is refused: SHARED-MAP)."""
 
-    def __init__(self, live=None, config=None, say=print, watch=True, worlds_dir=None, default=None):
+    def __init__(self, live=None, config=None, say=print, watch=True, worlds_dir=None, default=None, source=None, source_label=None):
         self.worlds_dir = os.path.abspath(worlds_dir) if worlds_dir else None
+        # DASHBOARD-0 (0250): the tree briefs are imported from (the checkout by default), and how the page names it: its
+        # absolute path is kept in the worlds folder's own records only, never in an answer to the page
+        self.source = os.path.abspath(source or REPO)
+        self.source_label = source_label or (CHECKOUT_LABEL if self.source == os.path.abspath(REPO) else "the source tree")
         self.worlds = {live.brief: live} if live is not None else {}
         self.default = live.brief if live is not None else default
         self.config, self.say, self.watch = config, say, watch
@@ -747,8 +754,25 @@ class Hub:
             try:
                 for ln in D.recover(ws):
                     self.say(ln)
+                # DASHBOARD-0 (0250): a ledger with no line (a first line that did not finish, its bytes set aside beside it by
+                # the recovery as NAME.ledger.torn.0) is taken away under the world's content lock, and started again below
+                if os.path.isfile(ws.ledger) and os.path.getsize(ws.ledger) == 0:
+                    try:
+                        with D.durable.locked(D.led.lock_path(ws.ledger)):           # the recovery's own wait
+                            if os.path.isfile(ws.ledger) and os.path.getsize(ws.ledger) == 0:
+                                os.remove(ws.ledger)
+                                self.say("world %s: its empty ledger taken away, and started again" % name)
+                    except D.durable.Busy:
+                        raise studio.StudioError("STUDIO-WORLD", "world %s cannot be opened: LEDGER-BUSY: another writer held its content lock for "
+                                                                 "the whole wait; try again" % name)
+                    except OSError as e:
+                        raise studio.StudioError("STUDIO-WORLD", "world %s cannot be opened: its empty ledger could not be taken away (%s): try "
+                                                                 "again" % (name, e.strerror or type(e).__name__))
                 if not os.path.exists(ws.ledger):
-                    D._quiet(D.cmd_genesis, ws)
+                    # DASHBOARD-0 (0250): its console swapped under QUIET_LOCK (D._quiet swapped it without), its refusal
+                    # answered STUDIO-WORLD as before
+                    with studio.QUIET_LOCK:
+                        D._quiet(D.cmd_genesis, ws)
                     self.say("world %s: its ledger started" % name)
             except D.led.LedgerError as e:
                 raise studio.StudioError("STUDIO-WORLD", "world %s cannot be opened: %s" % (name, e))
@@ -772,6 +796,11 @@ class Hub:
         if not os.path.exists(ws.ledger):
             info.update(fresh=True, error="no ledger yet: it is started when the world is first opened")
             return info
+        if os.path.getsize(ws.ledger) == 0:
+            # DASHBOARD-0 (0250): a ledger with no line (a first line that did not finish, set aside) raised out of the replay
+            info["error"] = ("LEDGER-EMPTY: the ledger has no line (a first line that did not finish, set aside beside it); it is started again when "
+                             "the world is next opened from a worlds folder (in one tree: remove the empty file and run the director's genesis)")
+            return info
         try:
             with D.durable.locked(D.led.lock_path(ws.ledger), wait=5):
                 # DASHBOARD-0 (0249): the line the verification is of, read under the same lock, whether it then verifies
@@ -786,11 +815,11 @@ class Hub:
         except D.durable.Busy:
             info["error"] = "busy: an admission is being written; it is verified at the next look"
         except (D.led.LedgerError, OSError, ValueError, KeyError) as e:
-            info["error"] = str(e)[:240]
+            info["error"] = _unsourced(" ".join(str(e).split()), self.source, self.source_label)[:240]
         except (D.dress.ArtError, D.dress.level.MapError) as e:
             # DASHBOARD-0 (0249, FOUND): files the exporter refuses are not verified, and said; before, the exception left the
             # route (GET /history.json answered nothing, its traceback on the console), which case 3 of PAGE-CARDS met
-            info["error"] = "FILES-REFUSED: the exporter refuses the files: %s" % str(e)[:200]
+            info["error"] = "FILES-REFUSED: the exporter refuses the files: %s" % _unsourced(" ".join(str(e).split()), self.source, self.source_label)[:200]
         return info
 
     def history(self, name):
@@ -900,21 +929,147 @@ class Hub:
         brief_bytes = "\n".join(lines).encode("utf-8")
         if self.worlds_dir:
             dst = self.root_of(name)
-            making = dst + ".making"                 # made aside, then put in place whole by one rename
-            shutil.rmtree(making, ignore_errors=True)
-            os.makedirs(os.path.join(making, "art", "briefs"))
-            D.durable.write(os.path.join(making, "art", "briefs", name + ".art"), brief_bytes)
-            src_maps = maps_of(src_root)
-            os.makedirs(maps_of(making))
-            for f in sorted(os.listdir(src_maps)):
-                if os.path.isfile(os.path.join(src_maps, f)):
-                    D.durable.write(os.path.join(maps_of(making), f), open(os.path.join(src_maps, f), "rb").read())
-            os.rename(making, dst)
+            # DASHBOARD-0 (0250): under the worlds folder's lock, made aside in a folder of its own (two duplicates of one
+            # name once shared NAME.making, removed with no lock), the name checked under the lock, put in place by one rename
+            try:
+                with worlds_locked(self.worlds_dir):
+                    if os.path.lexists(dst):
+                        raise studio.StudioError("STUDIO-WORLD", "a world %r exists" % name)
+                    making = os.path.join(self.worlds_dir, ".dup-%s-%s" % (name, secrets.token_hex(4)))
+                    try:
+                        os.makedirs(os.path.join(making, "art", "briefs"))
+                        D.durable.write(os.path.join(making, "art", "briefs", name + ".art"), brief_bytes)
+                        src_maps = maps_of(src_root)
+                        os.makedirs(maps_of(making))
+                        for f in sorted(os.listdir(src_maps)):
+                            if os.path.isfile(os.path.join(src_maps, f)):
+                                D.durable.write(os.path.join(maps_of(making), f), open(os.path.join(src_maps, f), "rb").read())
+                        _rename_aside(making, dst)
+                    except BaseException as e:
+                        D.durable.remove_tree(making)
+                        if isinstance(e, PermissionError):
+                            raise studio.StudioError("STUDIO-WORLD", "the copy could not be put in place (a file in it is held open): try again")
+                        raise
+            except D.durable.Busy:
+                raise studio.StudioError("STUDIO-WORLD", "the worlds folder is being written (an import, a duplicate or the first seeding): try again")
         else:
             path = os.path.join(ROOT, "art", "briefs", name + ".art")
             with D.durable.locked(D.led.lock_path(os.path.join(ROOT, "art", "ledger", name + ".ledger"))):
                 D.durable.write(path, brief_bytes)
         return self.world(name)
+
+    # ------------------------------------------------------------------ DASHBOARD-0 (0250): import, transactional
+    def import_stage(self, name):
+        """The brief `name` of the source tree staged as an isolated candidate world (stage_import), under the worlds
+        folder's lock: nothing is listed or opened until the commit. Returns the staging's name, the record and its sha256."""
+        D = self._import_mode()
+        try:
+            with worlds_locked(self.worlds_dir):
+                try:
+                    staging, rec, rsha = stage_import(D, self.source, self.worlds_dir, name, True, self.source_label)
+                except ImportRefused:
+                    raise
+                except Exception as e:  # noqa: BLE001 — what the stage did not expect is answered, the staging removed
+                    raise ImportRefused("IMPORT-FAILED", "%s: %s" % (type(e).__name__, " ".join(str(e).split())[:280]))
+        except D.durable.Busy:
+            raise ImportRefused("IMPORT-BUSY", "the worlds folder is being written (an import, a duplicate or the first seeding): try again")
+        shown = {k: v for k, v in rec.items() if k != "source"}
+        return {"staging": os.path.basename(staging), "name": rec["name"], "record": shown, "record_sha256": rsha,
+                "survives": "a stage not committed is removed when play.py next starts"}
+
+    def import_commit(self, staging_name, record_sha256):
+        """A staged import put in place: under the worlds folder's lock, the staging and its record as staged (every file
+        its record's sha256; its ledger verifying), no world of the name, then one rename — the commit point — and a line in
+        the imports log. Never opens a world, never switches one, never writes SEEDED.json. A refusal keeps the staging."""
+        D = self._import_mode()
+        m = STAGING.match(staging_name) if isinstance(staging_name, str) else None
+        if not m:
+            raise ImportRefused("IMPORT-STAGE-GONE", "no staged import is named %r" % (staging_name if isinstance(staging_name, str) else "")[:60])
+        name = m.group(1)
+        try:
+            with worlds_locked(self.worlds_dir):
+                staging = os.path.join(self.worlds_dir, staging_name)
+                dst = os.path.join(self.worlds_dir, name)
+                if not os.path.isfile(os.path.join(staging, "IMPORTED.json")):
+                    raise ImportRefused("IMPORT-STAGE-GONE", "the staged import %s is not here (a discard removes it, and a stage does not outlive a "
+                                                             "restart): stage it again" % staging_name)
+                where = staging
+                if IMPORT_PLANT == "import-rename-first":
+                    os.rename(staging, dst)          # the plant: put in place before its bytes are checked
+                    where = dst
+                body = open(os.path.join(where, "IMPORTED.json"), "rb").read()
+                if sha256(body) != record_sha256:
+                    raise ImportRefused("IMPORT-STAGE-CHANGED", "the staged record is not the one the page was shown (sha256 %s): stage it again" % sha256(body)[:12])
+                rec = json.loads(body)
+                changed = [rel for rel, h in sorted(rec["files"].items()) if _sha_of(os.path.join(where, rel)) != h]
+                if changed:
+                    raise ImportRefused("IMPORT-STAGE-CHANGED", "staged files are not as staged (%s): stage it again" % ", ".join(changed[:3]))
+                ws = D.Workspace(name, where)
+                lg = rec.get("ledger") or {}
+                led_rel = os.path.relpath(ws.ledger, where).replace(os.sep, "/")
+                # nothing in the staging but what its record names (its files, the ledger started at the stage, the record
+                # itself, and of the build folder exactly its content lock): a file added, or an admission half written, is a
+                # change of the staging
+                lock_rel = os.path.relpath(D.led.lock_path(ws.ledger), where).replace(os.sep, "/")
+                held = set(rec["files"]) | {"IMPORTED.json", lock_rel} | ({led_rel} if lg.get("started_at_import") else set())
+                extra = sorted(r_ for r_ in (os.path.relpath(os.path.join(dp, f), where).replace(os.sep, "/") for dp, _dn, fn in os.walk(where) for f in fn)
+                               if r_ not in held)
+                if extra or os.path.isdir(ws.pending):
+                    raise ImportRefused("IMPORT-STAGE-CHANGED", "the staging holds what its record does not name (%s): stage it again" % (
+                        ", ".join(extra[:3]) or os.path.basename(ws.pending)))
+                if lg.get("started_at_import") and _sha_of(ws.ledger) != lg.get("sha256"):
+                    raise ImportRefused("IMPORT-STAGE-CHANGED", "the ledger started at the stage is not as started (or is gone): stage it again")
+                if os.path.exists(ws.ledger):
+                    try:
+                        D.cmd_verify(ws, quiet=True, deep=False)
+                    except (D.led.LedgerError, SystemExit, dress.ArtError, level.MapError) as e:
+                        raise ImportRefused("IMPORT-STAGE-CHANGED", "the staged ledger no longer verifies: %s" % " ".join(str(e).split())[:240])
+                if where == staging:
+                    if IMPORT_PLANT != "import-no-exists-check" and os.path.lexists(dst):
+                        raise ImportRefused("IMPORT-EXISTS", "%s is in the worlds folder now: the staging is kept, to discard" % name)
+                    try:
+                        _rename_aside(staging, dst)
+                    except PermissionError:
+                        raise ImportRefused("IMPORT-RENAME-BUSY", "the staging could not be put in place (a file in it is held open): it is kept; "
+                                                                  "commit again")
+                    except OSError as e:
+                        raise ImportRefused("IMPORT-FAILED", "the rename was refused: %s" % (e.strerror or type(e).__name__))
+                D.durable.point("import:renamed")
+                # the rename is the commit point: a log that cannot be written is said, never answered as a failed commit, and
+                # the next start's recovery writes the line from the world's own record
+                try:
+                    _log_import(D, self.worlds_dir, rec, sha256(body))
+                    logged = ""
+                except OSError as e:
+                    logged = "the imports log could not be written (%s): its line is written from the world's record at the next start" % (
+                        e.strerror or type(e).__name__)
+                D.durable.point("import:logged")
+        except D.durable.Busy:
+            raise ImportRefused("IMPORT-BUSY", "the worlds folder is being written (an import, a duplicate or the first seeding): try again")
+        return {"world": name, "record_sha256": sha256(body), "logged": not logged, "note": logged}
+
+    def import_discard(self, staging_name):
+        """A staged import removed, under the worlds folder's lock, its absence checked (IMPORT-LEFTOVER when it stands)."""
+        D = self._import_mode()
+        m = STAGING.match(staging_name) if isinstance(staging_name, str) else None
+        if not m:
+            raise ImportRefused("IMPORT-STAGE-GONE", "no staged import is named %r" % (staging_name if isinstance(staging_name, str) else "")[:60])
+        try:
+            with worlds_locked(self.worlds_dir):
+                staging = os.path.join(self.worlds_dir, staging_name)
+                if not os.path.isdir(staging):
+                    raise ImportRefused("IMPORT-STAGE-GONE", "the staged import %s is not here" % staging_name)
+                D.durable.remove_tree(staging)
+                if not _gone(self.worlds_dir, staging):
+                    raise ImportRefused("IMPORT-LEFTOVER", "the staging %s could not be removed: it is removed at the next start" % staging_name)
+        except D.durable.Busy:
+            raise ImportRefused("IMPORT-BUSY", "the worlds folder is being written (an import, a duplicate or the first seeding): try again")
+        return {"discarded": staging_name, "name": m.group(1)}
+
+    def _import_mode(self):
+        if not self.worlds_dir:
+            raise ImportRefused("IMPORT-MODE", "import is into a worlds folder (play.py --worlds DIR); this server plays one tree")
+        return director()
 
 
 VIEW_KEYS = {"id", "title", "summary", "level", "order", "open", "needs_world", "capability", "status", "why"}
@@ -963,71 +1118,559 @@ def studio_last_line(path):
 
 
 SEED_FORMAT = "VERDANDI-WORLDS-SEED"
+IMPORT_FORMAT = "VERDANDI-WORLD-IMPORT"
+IMPORTS_FORMAT = "VERDANDI-WORLD-IMPORTS"
+CHECKOUT_LABEL = "the checkout (play.py's own tree)"
+# DASHBOARD-0 (0250): a planted defect for STUDIO-2's import rows only (art/studio_queue.py selftest): the source recovered
+# (written), the staging renamed into place before it is checked, a staging left after a refusal, no check for a world
+# of the name, a genesis whose console swap holds no QUIET_LOCK, and a seeding cut off part-way never finished (the guard
+# before 0250: any world in the folder ends the seeding)
+IMPORT_PLANTS = ("import-recover-source", "import-rename-first", "import-keep-staging", "import-no-exists-check", "import-quiet-unlocked",
+                 "seed-names-guard")
+IMPORT_PLANT = ""
+# a folder made aside in the worlds folder: an import's staging, a duplicate's, a seeding's from before 0250 (NAME.making);
+# none matches WORLD, so none is ever listed or opened as a world
+STAGING = re.compile(r"\.import-([a-z][a-z0-9-]{1,39})-[0-9a-f]{8}\Z")
+ASIDE = re.compile(r"\.(?:import|dup)-[a-z][a-z0-9-]{1,39}-[0-9a-f]{8}\Z|[a-z][a-z0-9-]{1,39}\.making\Z")
 
 
-def seed_worlds(worlds_dir, source=None, say=print):
+class ImportRefused(Exception):
+    """An import refused: its code (IMPORT-*), what it says, and the director's own code when the director refused."""
+
+    def __init__(self, code, detail, director_code=""):
+        Exception.__init__(self, "%s: %s" % (code, detail))
+        self.code, self.detail, self.director_code = code, detail, director_code
+
+
+def worlds_locked(worlds_dir, wait=5):
+    """DASHBOARD-0 (0250): the worlds folder's lock, held by every writer that makes, renames or removes a folder at the
+    worlds folder's top level, and by the writers of IMPORTS.jsonl and SEEDED.json (an import's stage, commit and discard;
+    a duplicate; the first seeding; recovery at the start). Not by the queue, whose queue.jsonl holds the queue's own lock,
+    nor by a world's own writers, which hold that world's content lock. Busy after `wait` seconds."""
+    return director().durable.locked(os.path.join(worlds_dir, "worlds.lock"), wait=wait)
+
+
+def _sha_of(path):
+    try:
+        with open(path, "rb") as fh:
+            return sha256(fh.read())
+    except OSError:
+        return ""
+
+
+def _unsourced(text, source, label):
+    """Text bound for the page, the source's absolute path in any of its spellings put as its label: the path is kept in
+    the worlds folder's own records only."""
+    t = str(text)
+    for v in sorted({source, source.replace(os.sep, "/"), json.dumps(source)[1:-1], json.dumps(source, ensure_ascii=False)[1:-1], repr(source)[1:-1],
+                     os.path.normcase(source)}, key=len, reverse=True):
+        if v:
+            t = t.replace(v, label)
+    return t
+
+
+def _rename_aside(src, dst):
+    """A folder made aside put in place by one rename, retried while Windows holds a handle open inside (40 x 50 ms, as
+    durable's files are); the last PermissionError, or any other OSError, is raised."""
+    for i in range(40):
+        try:
+            os.rename(src, dst)
+            return
+        except PermissionError:
+            if i == 39:
+                raise
+            time.sleep(0.05)
+
+
+def _gone(worlds_dir, path):
+    """Whether a folder made aside is gone, by listing the worlds folder: never assumed (remove_tree ignores errors)."""
+    return os.path.basename(path) not in (os.listdir(worlds_dir) if os.path.isdir(worlds_dir) else [])
+
+
+def source_files(D, source, name):
+    """What a world made from the brief `name` of the tree `source` is made of, as paths relative to the tree, which are
+    its paths in the world too: its brief; its ledger, its tags and its admissions' stills when it has them; the tree's
+    maps (each world keeps its own copy). Its shapes are not among them."""
+    src = D.Workspace(name, source)
+    rel = lambda p: os.path.relpath(p, source).replace(os.sep, "/")
+    out = [rel(src.art)]
+    for g in (src.ledger, os.path.join(source, "art", "ledger", name + ".tags.json")):
+        if os.path.isfile(g):
+            out.append(rel(g))
+    if os.path.isdir(src.stills):           # ADMISSION-0: the admissions' stills go with the ledger that names them
+        out += [rel(os.path.join(src.stills, p)) for p in sorted(os.listdir(src.stills)) if p.endswith(".png")]
+    maps = maps_of(source)
+    if os.path.isdir(maps):
+        out += [rel(os.path.join(maps, m)) for m in sorted(os.listdir(maps)) if os.path.isfile(os.path.join(maps, m))]
+    return out
+
+
+def stage_import(D, source, worlds_dir, name, genesis=True, source_label=CHECKOUT_LABEL, via="import", say=lambda s: None):
+    """DASHBOARD-0 (0250): the brief `name` of the tree `source` made a world in a folder of its own beside the worlds,
+    never listed nor opened (.import-NAME-XXXXXXXX): the isolated candidate the owner's fifth condition asks for ("It
+    should identify the source, validate it, create or update an isolated candidate, and preserve recoverability if
+    validation or import fails"). The caller holds the worlds folder's lock. In order: the name a brief of the source
+    and no world's (IMPORT-NAME, IMPORT-EXISTS, on the path: an empty folder of the name refuses too); the source with
+    no admission half written (IMPORT-SOURCE-PENDING: nothing of the source is recovered or locked, for a lock file is
+    a write, and the worlds' code never writes the checkout); each file copied and its sha256 kept; the source read
+    again whole (IMPORT-SOURCE-MOVED, IMPORT-SOURCE-BUSY); the ledger, when it has one, replayed in the copy, deep
+    (IMPORT-LEDGER, with the director's code); the exporter and the art checks over the copy (IMPORT-ART,
+    IMPORT-CHECKS); with no ledger and `genesis`, a ledger started in the copy, after the checks; the record written
+    last (IMPORTED.json, the source's absolute path in it and nowhere the page reads). Returns (staging, record, its
+    sha256). On any failure the staging is removed and its absence checked: still there, IMPORT-LEFTOVER (removed at the
+    next start). Each step ends at a death point (import:staged, import:file-N, import:copied, import:verified,
+    import:checked, import:genesis, import:record)."""
+    import studio
+    shown = name[:40] if isinstance(name, str) else type(name).__name__
+    if not isinstance(name, str) or not WORLD.match(name) or not os.path.isfile(os.path.join(source, "art", "briefs", name + ".art")):
+        raise ImportRefused("IMPORT-NAME", "no brief %r in %s" % (shown, source_label))
+    if IMPORT_PLANT != "import-no-exists-check" and os.path.lexists(os.path.join(worlds_dir, name)):
+        raise ImportRefused("IMPORT-EXISTS", "%s is in the worlds folder already (a world, or a folder of that name): an import makes a new world and "
+                                             "never writes over one; a newer text of the source is brought into a world by an admission or a rebase" % name)
+    src = D.Workspace(name, source)
+    if IMPORT_PLANT == "import-recover-source" and (os.path.exists(src.ledger) or os.path.isdir(src.pending)):
+        for ln in D.recover(src):            # the plant: the source recovered, as the first seeding did before 0250
+            say("source: " + ln)
+    elif os.path.isdir(src.pending):
+        raise ImportRefused("IMPORT-SOURCE-PENDING", "%s holds an admission of %s half written (%s): play.py finishes or undoes it when it next "
+                                                     "starts there; an import reads the source and never writes it" % (source_label, name, os.path.basename(src.pending)))
+    staging = os.path.join(worlds_dir, ".import-%s-%s" % (name, secrets.token_hex(4)))
+    os.makedirs(staging)
+    def unread(where, e):
+        return ImportRefused("IMPORT-SOURCE-MOVED", "%s: %s could not be read (%s): nothing is kept; stage it again" % (
+            source_label, where, e.strerror or type(e).__name__))
+    try:
+        D.durable.point("import:staged")
+        try:
+            files, copied = source_files(D, source, name), {}
+        except OSError as e:
+            raise unread("its list of files", e)
+        for i, rel in enumerate(files, 1):
+            try:
+                with open(os.path.join(source, rel), "rb") as fh:
+                    data = fh.read()
+            except OSError as e:
+                raise unread(rel, e)
+            D.durable.write(os.path.join(staging, rel), data)
+            copied[rel] = sha256(data)
+            D.durable.point("import:file-%d" % i)
+        # the source read again, whole: what was copied is what stands there now
+        moved = [rel for rel in files if _sha_of(os.path.join(source, rel)) != copied[rel]]
+        try:
+            listed = source_files(D, source, name)
+        except OSError as e:
+            raise unread("its list of files", e)
+        # the source busy (the design's IMPORT-SOURCE-BUSY): an admission half written there now, or its ledger written
+        # while it was copied (an evaluation, an admission); anything else that moved is IMPORT-SOURCE-MOVED
+        led_rel = os.path.relpath(src.ledger, source).replace(os.sep, "/")
+        if led_rel in moved or ((led_rel in listed) != (led_rel in files)):
+            raise ImportRefused("IMPORT-SOURCE-BUSY", "%s's ledger in %s was written while it was copied (an evaluation, an admission or its "
+                                                      "start): nothing is kept; stage it again" % (name, source_label))
+        if os.path.isdir(src.pending):
+            raise ImportRefused("IMPORT-SOURCE-BUSY", "an admission of %s began in %s while it was copied: nothing is kept; stage it again" % (
+                name, source_label))
+        if moved or listed != files:
+            raise ImportRefused("IMPORT-SOURCE-MOVED", "%s changed while it was copied (%s): nothing is kept; stage it again" % (
+                source_label, ", ".join(moved[:3]) or "a file came or went"))
+        D.durable.point("import:copied")
+        ws = D.Workspace(name, staging)
+        ledger = None
+        if os.path.exists(ws.ledger) and os.path.getsize(ws.ledger) == 0:
+            raise ImportRefused("IMPORT-LEDGER", "its ledger has no line (a first line that did not finish, set aside beside it): remove the empty "
+                                                 "file there and run the director's genesis, then stage it again; an import never writes its source",
+                                "LEDGER-EMPTY")
+        if os.path.exists(ws.ledger):
+            try:
+                events, _st = D.cmd_verify(ws, quiet=True)
+            except (D.led.LedgerError, SystemExit) as e:
+                code = studio.director_code(e)
+                if code == "LEDGER-TORN":            # the remedy is the source's own start; an import never writes it
+                    raise ImportRefused("IMPORT-LEDGER", "its ledger ends in a torn line: play.py, or the director, started there sets it aside "
+                                                         "(an import never writes its source): %s" % " ".join(str(e).split())[:200], code)
+                raise ImportRefused("IMPORT-LEDGER", "its ledger, replayed in the copy, does not verify: %s" % " ".join(str(e).split())[:300], code)
+            except (dress.ArtError, level.MapError) as e:
+                raise ImportRefused("IMPORT-ART", "the exporter refuses it: %s" % " ".join(str(e).split())[:300])
+            last, _torn = studio.last_line(ws.ledger)
+            ledger = {"copied": True, "events": len(events), "line_sha256": hashlib.sha256(last).hexdigest() if last is not None else ""}
+        D.durable.point("import:verified")
+        try:
+            _out, parts, checks = ws.export()
+        except (dress.ArtError, level.MapError) as e:
+            raise ImportRefused("IMPORT-ART", "the exporter refuses it: %s" % " ".join(str(e).split())[:300])
+        failed = [c["name"] for c in checks if not c["ok"]]
+        if failed:
+            raise ImportRefused("IMPORT-CHECKS", "the art checks refuse it: %s" % "; ".join(failed)[:300])
+        D.durable.point("import:checked")
+        head = D.canon.head(parts)
+        if ledger is None and genesis:
+            if IMPORT_PLANT == "import-quiet-unlocked":
+                D._quiet(D.cmd_genesis, ws)
+            else:
+                studio.quiet(D.cmd_genesis, ws)
+            # the ledger started here is bound by its bytes, as the copied files are by theirs: the commit checks it
+            ledger = {"copied": False, "events": 1, "started_at_import": head, "sha256": _sha_of(ws.ledger)}
+            D.durable.point("import:genesis")
+        rec = {"format": IMPORT_FORMAT, "version": "0", "name": name, "via": via, "source": source, "source_label": source_label,
+               "source_head": head, "files": copied,
+               "ledger": ledger or {"copied": False, "events": 0, "started": "when the world is first opened"},
+               "checks": [c["name"] for c in checks], "tags": any(r_.endswith(".tags.json") for r_ in files), "shapes": "not copied",
+               "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "by": "the designer (studio)" if via == "import" else "the first seeding"}
+        body = json.dumps(rec, sort_keys=True, indent=1).encode("utf-8") + b"\n"
+        D.durable.write(os.path.join(staging, "IMPORTED.json"), body)
+        D.durable.point("import:record")
+        return staging, rec, sha256(body)
+    except BaseException as e:
+        if IMPORT_PLANT != "import-keep-staging":
+            D.durable.remove_tree(staging)
+        if isinstance(e, Exception) and not _gone(worlds_dir, staging):
+            raise ImportRefused("IMPORT-LEFTOVER", "%s; and its staging %s is still in the worlds folder: it is removed at the next start" % (
+                " ".join(str(e).split())[:300], os.path.basename(staging)), getattr(e, "director_code", ""))
+        raise
+
+
+def _log_import(D, worlds_dir, rec, rec_sha, recovered=False):
+    """One line of the worlds folder's imports log (IMPORTS.jsonl), on a line of its own even after a torn one."""
+    log = os.path.join(worlds_dir, "IMPORTS.jsonl")
+    line = json.dumps({"format": IMPORTS_FORMAT, "version": "0", "name": rec["name"], "record_sha256": rec_sha, "at": rec["at"],
+                       "source": rec["source"], "source_label": rec["source_label"], "source_head": rec["source_head"],
+                       "ledger": rec["ledger"], "recovered": recovered}, sort_keys=True)
+    lead = b""
+    if os.path.exists(log) and os.path.getsize(log):
+        with open(log, "rb") as fh:
+            fh.seek(-1, os.SEEK_END)
+            lead = b"" if fh.read(1) == b"\n" else b"\n"
+    D.durable.append(log, lead + line.encode("utf-8") + b"\n")
+
+
+def _via(worlds_dir, n):
+    """How a world came to the folder, by its own record: "import", "seed", or "" (no record, or one that does not read)."""
+    try:
+        rec = json.loads(open(os.path.join(worlds_dir, n, "IMPORTED.json"), "rb").read())
+    except (OSError, ValueError):
+        return ""
+    return rec.get("via", "") if isinstance(rec, dict) else ""
+
+
+def recover_worlds(worlds_dir, say=print):
+    """DASHBOARD-0 (0250): the worlds folder brought, at the start and under its lock, to a state every reader accounts
+    for: each folder made aside and never put in place (an import's staging, a duplicate's, a seeding's) removed and its
+    absence checked; a world an import put in place whose line the imports log does not have given its line, from its
+    own record (the death between the rename and the log). A stage never committed does not survive it. When the lock is
+    held for 5 s, nothing is done, and that is said. Returns what was done, as lines."""
+    D = director()
+    done = []
+    if not os.path.isdir(worlds_dir):
+        return done
+    try:
+        with worlds_locked(worlds_dir):
+            for n in sorted(os.listdir(worlds_dir)):
+                p = os.path.join(worlds_dir, n)
+                if os.path.isdir(p) and ASIDE.match(n):
+                    D.durable.remove_tree(p)
+                    done.append(("removed %s, a folder made aside and never put in place" if _gone(worlds_dir, p)
+                                 else "COULD NOT REMOVE %s, a folder made aside: it is tried again at the next start") % n)
+            seeded = [n for n in Hub(worlds_dir=worlds_dir).names() if _via(worlds_dir, n) == "seed"]
+            if seeded and not os.path.exists(os.path.join(worlds_dir, "SEEDED.json")):
+                done.append("the first seeding ended part-way (%s made, no SEEDED.json): it is finished now" % ", ".join(seeded))
+            log = os.path.join(worlds_dir, "IMPORTS.jsonl")
+            logged, lines = set(), []
+            try:
+                if os.path.exists(log):
+                    lines = open(log, "rb").read().splitlines()
+            except OSError as e:
+                # a log that cannot be read is never taken for empty (each world's line would be written twice)
+                lines = None
+                done.append("COULD NOT READ the imports log (%s): no import is logged from its record at this start; it is tried again at "
+                            "the next start" % (e.strerror or type(e).__name__))
+            for ln in lines or []:
+                try:
+                    v = json.loads(ln).get("record_sha256")
+                    if isinstance(v, str):
+                        logged.add(v)
+                except (ValueError, AttributeError):
+                    pass
+            for n in Hub(worlds_dir=worlds_dir).names() if lines is not None else []:
+                rp = os.path.join(worlds_dir, n, "IMPORTED.json")
+                if not os.path.isfile(rp):
+                    continue
+                try:
+                    body = open(rp, "rb").read()
+                    rec = json.loads(body)
+                except (OSError, ValueError) as e:
+                    done.append("COULD NOT READ the import record of %s (%s): it is tried again at the next start" % (n, getattr(e, "strerror", None) or type(e).__name__))
+                    continue
+                if not isinstance(rec, dict):
+                    done.append("COULD NOT READ the import record of %s (not a record): it is tried again at the next start" % n)
+                    continue
+                if rec.get("via") == "import" and sha256(body) not in logged:
+                    try:
+                        _log_import(D, worlds_dir, rec, sha256(body), recovered=True)
+                        done.append("the import of %s logged from its own record (its log was not written after its rename)" % n)
+                    except (OSError, KeyError, TypeError) as e:
+                        done.append("COULD NOT LOG the import of %s (%s): it is tried again at the next start" % (
+                            n, getattr(e, "strerror", None) or "%s %s" % (type(e).__name__, e)))
+    except D.durable.Busy:
+        done.append("the worlds folder's lock was held for 5 s: nothing recovered at this start")
+    except OSError as e:
+        done.append("COULD NOT finish recovering the worlds folder (%s): it is tried again at the next start" % (e.strerror or type(e).__name__))
+    finally:
+        for ln in done:
+            say("worlds: " + ln)
+    return done
+
+
+def seed_worlds(worlds_dir, source=None, say=print, source_label=None):
     """The first worlds of a worlds folder (the owner's choice of 2026-10-13: his plaza moved to a per-user folder as the
     first world, the checkout's plaza the template): when the folder holds no world, every brief of the checkout becomes
-    one, copied whole — its brief, its ledger and tags if it has them, and the checkout's maps — into a folder made
-    aside and put in place by one rename, and only after its ledger, replayed in the copy, verifies. A brief whose
-    ledger does not verify is not copied, and why is said; the checkout's files are read, never written, but for its
-    own recovery (a half-done admission finished or undone, as any start there does). What was copied is recorded, by
-    sha256, in SEEDED.json. Returns the names made; nothing when the folder holds worlds already."""
+    one, each through the import's staging (stage_import, DASHBOARD-0, 0250) with no ledger started, and put in place by
+    one rename. A brief is refused, and why is said, when its ledger does not verify in the copy, when the exporter or
+    the art checks refuse it (since 0250), or when the checkout holds an admission of it half written (since 0250: before,
+    the checkout was recovered, and so written; the worlds' code never writes the checkout). Under the worlds folder's
+    lock. What was copied is recorded, by sha256, in SEEDED.json. Returns the names made; nothing when the folder holds
+    worlds already."""
     source = os.path.abspath(source or REPO)
+    label = source_label or (CHECKOUT_LABEL if source == os.path.abspath(REPO) else "the source tree")
     worlds_dir = os.path.abspath(worlds_dir)
     os.makedirs(worlds_dir, exist_ok=True)
-    if Hub(worlds_dir=worlds_dir).names():
+    def done_before():
+        # a folder holding a world the first seeding did not make (or a seeding that ended, SEEDED.json written) is not
+        # seeded; one whose every world the seeding made and that has no SEEDED.json was cut off part-way, and is finished
+        names = Hub(worlds_dir=worlds_dir).names()
+        if IMPORT_PLANT == "seed-names-guard":
+            return bool(names)
+        return bool(names) and (os.path.exists(os.path.join(worlds_dir, "SEEDED.json")) or any(_via(worlds_dir, n) != "seed" for n in names))
+    if done_before():
         return []
     D = director()
     made, record = [], {}
-    briefs = os.path.join(source, "art", "briefs")
-    for f in sorted(os.listdir(briefs)) if os.path.isdir(briefs) else []:
-        name = f[:-4]
-        if not f.endswith(".art") or not WORLD.match(name):
-            continue
-        src = D.Workspace(name, source)
-        making = os.path.join(worlds_dir, name + ".making")
-        shutil.rmtree(making, ignore_errors=True)
-        entry = {}
-        try:
-            if os.path.exists(src.ledger) or os.path.isdir(src.pending):
-                for ln in D.recover(src):
-                    say("checkout: " + ln)
-            files = [(src.art, os.path.join(making, "art", "briefs", f))]
-            for g in (src.ledger, os.path.join(source, "art", "ledger", name + ".tags.json")):
-                if os.path.exists(g):
-                    files.append((g, os.path.join(making, "art", "ledger", os.path.basename(g))))
-            if os.path.isdir(src.stills):           # ADMISSION-0: the admissions' stills go with the ledger that names them
-                files += [(os.path.join(src.stills, p_), os.path.join(making, "art", "ledger", os.path.basename(src.stills), p_))
-                          for p_ in sorted(os.listdir(src.stills)) if p_.endswith(".png")]
-            src_maps = maps_of(source)
-            files += [(os.path.join(src_maps, m), os.path.join(making, "graybox", "maps", m)) for m in sorted(os.listdir(src_maps))
-                      if os.path.isfile(os.path.join(src_maps, m))]
-            for a, b in files:
-                os.makedirs(os.path.dirname(b), exist_ok=True)
-                data = open(a, "rb").read()
-                D.durable.write(b, data)
-                entry[os.path.relpath(a, source).replace(os.sep, "/")] = sha256(data)
-            if os.path.exists(src.ledger):
-                events, _st = D._quiet(D.cmd_verify, D.Workspace(name, making), quiet=True)
-                entry["ledger_events"] = str(len(events))
-            os.rename(making, os.path.join(worlds_dir, name))
-            made.append(name)
-            say("world %s made from the checkout%s" % (name, " (its ledger, %s events, verified in the copy)" % entry["ledger_events"]
-                                                       if "ledger_events" in entry else " (a new ledger will be started)"))
-        except (D.led.LedgerError, SystemExit, OSError, ValueError, dress.ArtError, level.MapError) as e:
-            shutil.rmtree(making, ignore_errors=True)
-            entry = {"refused": " ".join(str(e).split())[:300]}
-            say("world %s NOT made from the checkout: %s" % (name, entry["refused"]))
-        record[name] = entry
-    D.durable.write(os.path.join(worlds_dir, "SEEDED.json"), json.dumps(
-        {"format": SEED_FORMAT, "version": "0", "from": source, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "worlds": record},
-        sort_keys=True, indent=1).encode("utf-8") + b"\n")
+    try:
+        with worlds_locked(worlds_dir):
+            if done_before():
+                return []
+            briefs = os.path.join(source, "art", "briefs")
+            for f in sorted(os.listdir(briefs)) if os.path.isdir(briefs) else []:
+                name = f[:-4]
+                if not f.endswith(".art") or not WORLD.match(name):
+                    continue
+                if name in Hub(worlds_dir=worlds_dir).names():
+                    # made by the first seeding before it was cut off: its own record says what was copied
+                    try:
+                        entry = dict(json.loads(open(os.path.join(worlds_dir, name, "IMPORTED.json"), "rb").read())["files"])
+                    except (OSError, ValueError, KeyError, TypeError):
+                        entry = {}
+                    entry["resumed"] = "made by the first seeding before it was cut off"
+                    record[name] = entry
+                    say("world %s made by the first seeding before it was cut off" % name)
+                    continue
+                try:
+                    staging, rec, _s = stage_import(D, source, worlds_dir, name, genesis=False, source_label=label, via="seed",
+                                                    say=lambda s: say("checkout: " + s))
+                    try:
+                        _rename_aside(staging, os.path.join(worlds_dir, name))
+                    except OSError:
+                        D.durable.remove_tree(staging)
+                        raise
+                    D.durable.point("seed:placed-%d" % (len(made) + 1))
+                    entry = dict(rec["files"])
+                    if rec["ledger"].get("copied"):
+                        entry["ledger_events"] = str(rec["ledger"]["events"])
+                    made.append(name)
+                    say("world %s made from the checkout%s" % (name, " (its ledger, %s events, verified in the copy)" % entry["ledger_events"]
+                                                               if "ledger_events" in entry else " (a new ledger will be started)"))
+                except ImportRefused as e:
+                    entry = {"refused": "%s: %s" % (e.code, " ".join(e.detail.split())[:300])}
+                    say("world %s NOT made from the checkout: %s" % (name, entry["refused"]))
+                except Exception as e:  # noqa: BLE001 — one brief refused never stops the others
+                    entry = {"refused": "IMPORT-FAILED: %s: %s" % (type(e).__name__, " ".join(str(e).split())[:280])}
+                    say("world %s NOT made from the checkout: %s" % (name, entry["refused"]))
+                record[name] = entry
+            D.durable.write(os.path.join(worlds_dir, "SEEDED.json"), json.dumps(
+                {"format": SEED_FORMAT, "version": "0", "from": source, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "worlds": record},
+                sort_keys=True, indent=1).encode("utf-8") + b"\n")
+    except D.durable.Busy:
+        say("the worlds folder's lock was held for 5 s: it is not seeded now")
+        return []
     return made
+
+
+def _world_key(root, name):
+    """What a world's read-back depends on, by stamps (cheap): the exporter and the code the checks read (a change to them
+    changes every world's head), its brief, its maps, its ledger and its last line, its stills."""
+    def st(p):
+        try:
+            s = os.stat(p)
+            return [s.st_mtime_ns, s.st_size]
+        except OSError:
+            return None
+    led_ = os.path.join(root, "art", "ledger", name + ".ledger")
+    maps = maps_of(root)
+    stills = led_ + ".stills"
+    import studio
+    last, _t = studio.last_line(led_)
+    doc = [[st(f) for f in CODE], st(os.path.join(root, "art", "briefs", name + ".art")), st(led_), hashlib.sha256(last).hexdigest() if last is not None else "",
+           sorted([m, st(os.path.join(maps, m))] for m in (os.listdir(maps) if os.path.isdir(maps) else [])),
+           sorted([p, st(os.path.join(stills, p))] for p in os.listdir(stills)) if os.path.isdir(stills) else [], os.path.isdir(led_ + ".pending")]
+    return sha256(json.dumps(doc, separators=(",", ":")).encode("utf-8"))[:16]
+
+
+CODE_OF = re.compile(r"([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)")
+
+
+def worlds_info(hub):
+    """DASHBOARD-0 (0250): GET /worlds.json. Every world of this server as Hub.inspect reads it back (its ledger replayed
+    to its files under its content lock: integrity, not truth), kept per world by a key of its files' stamps and read
+    again when the key moves; with what an import recorded of it. Hub-level: of no one world's revision."""
+    out = []
+    cache = hub.__dict__.setdefault("_inspected", {})
+    for n in hub.names():
+        root = hub.root_of(n)
+        key = _world_key(root, n)
+        got = cache.get(n)
+        if got is None or got[0] != key or got[1].get("error", "").startswith(("busy", "INSPECT-FAILED")):
+            try:
+                info_ = hub.inspect(n)
+            except Exception as e:  # noqa: BLE001 — one world that cannot be read is said, and the others are read
+                info_ = {"world": n, "title": "", "events": 0, "head": "", "verified": False, "last_line_sha256": "",
+                         "error": "INSPECT-FAILED: %s: %s" % (type(e).__name__, _unsourced(" ".join(str(e).split()), hub.source, hub.source_label)[:200])}
+            got = (key, info_, time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+            cache[n] = got
+        info = got[1]
+        err = info.get("error") or ""
+        state = ("verified" if info.get("verified") else "fresh" if info.get("fresh") else "busy" if err.startswith("busy")
+                 else "not-verified")
+        m = CODE_OF.match(err)
+        imported = None
+        rp = os.path.join(root, "IMPORTED.json")
+        if os.path.isfile(rp):
+            try:
+                rec = json.loads(open(rp, "rb").read())
+                lg = rec.get("ledger") or {}
+                imported = {"via": rec.get("via", ""), "at": rec.get("at", ""), "source_label": rec.get("source_label", ""),
+                            "source_head": rec.get("source_head", ""),
+                            "ledger": "copied" if lg.get("copied") else "started-at-import" if lg.get("started_at_import") else "none"}
+            except (OSError, ValueError, AttributeError):
+                imported = {"error": "its import record does not read"}
+        out.append({"world": n, "title": info.get("title", ""), "open": n in hub.worlds, "default": n == hub.default, "state": state,
+                    "code": m.group(1) if (m and state == "not-verified") else "", "error": err, "events": info.get("events", 0),
+                    "head": info.get("head", ""), "last_line_sha256": info.get("last_line_sha256", ""), "kinds": info.get("kinds", {}),
+                    "imported": imported, "key": key, "read_at": got[2]})
+    return {"format": "VERDANDI-WORLDS", "version": "0", "mode": "worlds" if hub.worlds_dir else "one tree", "worlds": out}
+
+
+def importable(hub):
+    """DASHBOARD-0 (0250): GET /importable.json. Each brief of the source tree that is no world here, with the files a
+    world made of it would hold (by sha256), its ledger as it stands, and whether an admission of it is half written
+    there; read only (nothing of the source is locked, recovered or written). The source is named by its label alone."""
+    import studio
+    base = {"format": "VERDANDI-IMPORTABLE", "version": "0", "source_label": hub.source_label, "briefs": []}
+    if not hub.worlds_dir:
+        return dict(base, mode="one tree", why="import is into a worlds folder (play.py --worlds DIR); this server plays one tree")
+    D = director()
+    names = set(hub.names())
+    briefs = os.path.join(hub.source, "art", "briefs")
+    try:
+        listing = sorted(os.listdir(briefs)) if os.path.isdir(briefs) else []
+    except OSError as e:
+        return dict(base, ok=False, mode="worlds", code="IMPORT-SOURCE-UNREAD", message="%s cannot be listed (%s)" % (hub.source_label, e.strerror or type(e).__name__))
+    for f in listing:
+        name = f[:-4]
+        if not f.endswith(".art") or not WORLD.match(name) or name in names:
+            continue
+        src = D.Workspace(name, hub.source)
+        files, ferr = [], ""
+        try:
+            rels = source_files(D, hub.source, name)
+        except OSError as e:
+            rels, ferr = [], "its files cannot be listed (%s)" % (e.strerror or type(e).__name__)
+        for rel in rels:
+            try:
+                data = open(os.path.join(hub.source, rel), "rb").read()
+            except OSError:
+                continue
+            files.append({"path": rel, "sha256": sha256(data), "bytes": len(data)})
+        ledger = {"present": os.path.isfile(src.ledger)}
+        if ledger["present"]:
+            last, _t = studio.last_line(src.ledger)
+            ledger["line_sha256"] = hashlib.sha256(last).hexdigest() if last is not None else ""
+            try:
+                ledger["events"] = len(D.led.read(src.ledger)[0])
+            except OSError as e:
+                ledger["error"] = e.strerror or type(e).__name__
+            except (D.led.LedgerError, ValueError) as e:
+                ledger["error"] = _unsourced(" ".join(str(e).split())[:200], hub.source, hub.source_label)
+        title = ""
+        try:
+            with open(src.art, encoding="utf-8") as fh:
+                title = next((ln[6:].strip() for ln in fh if ln.startswith("title ")), "")
+        except (OSError, UnicodeDecodeError):
+            pass
+        base["briefs"].append(dict({"name": name, "title": title, "files": files, "ledger": ledger, "pending": os.path.isdir(src.pending),
+                                    "tags": os.path.isfile(os.path.join(hub.source, "art", "ledger", name + ".tags.json")),
+                                    "exists": os.path.lexists(os.path.join(hub.worlds_dir, name))}, **({"error": ferr} if ferr else {})))
+    return dict(base, mode="worlds")
+
+
+def outline(hub, q):
+    """DASHBOARD-0 (0250): GET /outline.json?world=W&slot=K. The objects of the scene a world serves in slot K, by region
+    and kind, by the host's own rule (studio_refs.objects and address, the rule a tag and a candidate's touches use), with
+    the revision read before and after; never opens a world. (status, answer)."""
+    import studio
+    import studio_refs as R
+    name = q.get("world")
+    w = before = None
+    named = lambda a: dict(a, **({"world": w.brief} if w is not None else {}), **({"rev_before": before} if before is not None else {}))
+    try:
+        if not name:
+            raise studio.StudioError("STUDIO-WORLD", "this route names its world (world=NAME); it has no default")
+        w = hub.worlds.get(name)
+        if w is None:
+            raise studio.StudioError("STUDIO-WORLD", "world %r is not open here (play.html?world=NAME opens it); nothing was read" % str(name)[:40])
+        k = q.get("slot", "0")
+        if not re.fullmatch(r"[0-9]{1,3}", k):
+            raise studio.StudioError("STUDIO-SLOT", "a slot is a number")
+        before = w._read()[1]
+        s = w.slot(int(k))
+        if s is None:
+            raise studio.StudioError("STUDIO-SLOT", "source %s of world %s is not served" % (k, w.brief))
+        cache = hub.__dict__.setdefault("_outlines", {})
+        tree = cache.get(s["sha"])
+        if tree is None:
+            S = scene_of(s)
+            regions = {}
+            for o in R.objects(S).values():
+                regions.setdefault(o["region"], {}).setdefault(o["kind"], []).append(
+                    {"id": o["id"], "address": R.address(o), "boxes": len(o["boxes"]), "by": o["by"], "material": o["material"]})
+            tree = {"regions": [{"region": rg, "kinds": [{"kind": kd, "objects": sorted(objs, key=lambda x: x["id"])} for kd, objs in sorted(ks.items())]}
+                                for rg, ks in sorted(regions.items())],
+                    "play": len(S.get("collision") or []), "movers": sorted(m.get("id", "") for m in (S.get("movers") or [])),
+                    "targets": sorted(S.get("targets") or {})}          # a scene's targets are keyed by their names
+            if len(cache) >= 16:
+                cache.pop(next(iter(cache)))
+            cache[s["sha"]] = tree
+        after = w._read()[1]
+    except studio.StudioError as e:
+        return 404, named(e.answer())
+    except Exception as e:  # noqa: BLE001 — HARDEN-0: a request always ends in an answer
+        return internal(hub, "/outline.json", e)
+    return 200, dict(tree, ok=True, world=w.brief, slot=int(k), sha=s["sha"], rev_before=before, rev_after=after, moved=before["id"] != after["id"])
+
+
+def worlds_get(hub, path, q):
+    """The worlds' hub-level GETs (DASHBOARD-0, 0250), (status, answer): every answer ended (HARDEN-0)."""
+    try:
+        if path == "/worlds.json":
+            return 200, dict(worlds_info(hub), ok=True)
+        if path == "/importable.json":
+            return 200, dict({"ok": True}, **importable(hub))
+        return outline(hub, q)
+    except Exception as e:  # noqa: BLE001 — HARDEN-0: a request always ends in an answer
+        st_, a_ = internal(hub, path, e)
+        return st_, dict(a_, message=_unsourced(a_.get("message", ""), hub.source, hub.source_label))
 
 
 STUDIO_POSTS = ("/studio/ask", "/studio/cancel", "/studio/admit", "/studio/reject", "/studio/undo", "/studio/select", "/studio/pin", "/studio/unpin",
                 "/studio/alive", "/studio/shutdown", "/studio/worlds/duplicate",
+                "/studio/worlds/import/stage", "/studio/worlds/import/commit", "/studio/worlds/import/discard",
                 "/studio/queue/add", "/studio/queue/cancel", "/studio/queue/requeue", "/studio/queue/review", "/studio/queue/dismiss",
                 "/studio/build", "/studio/shapes/save", "/studio/shapes/delete", "/studio/none", "/studio/preview", "/studio/preview/finish",
                 "/studio/page-test")
@@ -1151,6 +1794,26 @@ def studio_post(hub, path, body):
         # HARDEN-0 (0232): the server stops once this answer is written (do_POST sets hub.stop after sending it): set here,
         # the process could end with the answer half sent, and the supervisor read IncompleteRead (OBSERVED once, 0232)
         return 200, {"ok": True, "message": "stopping"}
+    if path.startswith("/studio/worlds/import/"):
+        # DASHBOARD-0 (0250): import, transactional: stage (an isolated candidate), then commit (one rename) or discard.
+        # Its answers name the source by its label only; a refusal says its code, the source and the name
+        op = path.rsplit("/", 1)[1]
+        m = STAGING.match(body.get("staging") or "") if isinstance(body.get("staging"), str) else None
+        name = body.get("name") if op == "stage" else (m.group(1) if m else "")
+        try:
+            if op == "stage":
+                got = hub.import_stage(body.get("name"))
+            elif op == "commit":
+                got = hub.import_commit(body.get("staging"), body.get("record_sha256"))
+            else:
+                got = hub.import_discard(body.get("staging"))
+        except ImportRefused as e:
+            return 409, {"ok": False, "code": e.code, "message": _unsourced(e.detail, hub.source, hub.source_label), "director_code": e.director_code,
+                         "name": name if isinstance(name, str) else "", "source_label": hub.source_label}
+        except Exception as e:  # noqa: BLE001 — HARDEN-0: a request always ends in an answer
+            st_, a_ = internal(hub, path, e)
+            return st_, dict(a_, message=_unsourced(a_.get("message", ""), hub.source, hub.source_label))
+        return 200, dict(got, ok=True, source_label=hub.source_label)
     try:
         if path == "/studio/worlds/duplicate":
             return 200, {"ok": True, "world": hub.duplicate(body.get("from"), body.get("name")).brief}
@@ -1495,6 +2158,12 @@ def server(target, port=0):
                 except studio.StudioError as e:
                     return self.send(404, json.dumps({"ok": False, "code": e.code, "message": e.detail}).encode("utf-8"), "application/json")
                 return self.send(200, json.dumps(dict(got, ok=True, world=w.brief), sort_keys=True).encode("utf-8"), "application/json")
+            if path in ("/worlds.json", "/importable.json", "/outline.json"):
+                # DASHBOARD-0 (0250): the worlds read back, the briefs that can be imported (hub-level), and a world's
+                # outline by the host's object rule (its world required); read, nothing written
+                qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
+                code, got = worlds_get(hub, path, qq)
+                return self.send(code, json.dumps(got, sort_keys=True).encode("utf-8"), "application/json")
             if path in ("/evidence.json", "/undo.json"):
                 # DASHBOARD-0 (0249): a candidate's admission account and its evidence, and what Undo would undo, as the
                 # host holds them; read, nothing written. The world is required (no default: an answer is of a world)
@@ -1715,6 +2384,9 @@ def main(argv):
     if "--cards-selftest" in argv:
         import page_dash         # DASHBOARD-0 (0249): the dashboard's cards half, executed in a real browser (PAGE-CARDS)
         return page_dash.cards_selftest(argv)
+    if "--worlds-selftest" in argv:
+        import page_dash         # DASHBOARD-0 (0250): the worlds, the outliner and import, in a real browser (PAGE-WORLDS)
+        return page_dash.worlds_selftest(argv)
     global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
     vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root")
@@ -1766,6 +2438,7 @@ def main(argv):
 def main_worlds(name, worlds_dir, one, argv):
     """--worlds DIR (STUDIO-2, the desktop studio): the worlds folder seeded from the checkout if it holds none, the world
     `name` opened (or the first there is), every other one opened when the page or the queue asks for it."""
+    recover_worlds(worlds_dir, say=print)    # DASHBOARD-0 (0250): what an import, a duplicate or a seeding left aside
     made = seed_worlds(worlds_dir, say=print)
     hub = Hub(config=one("--director"), say=print, watch="--no-watch" not in argv, worlds_dir=worlds_dir)
     names = hub.names()

@@ -6952,3 +6952,201 @@ its more interesting test: proving that a *living, editable world* can be as hon
   [SoK: Automated Software Diversity (Larsen et al.)](https://ics.uci.edu/~perl/publication/diversity_sok).
   The review's own citations, not opened here: the LangSec workshop page, SLSA provenance v1.2 and OWASP's AI Agent
   Security cheat sheet.
+
+### DASHBOARD-0, the worlds half · **built, off the gate** (0250: `art/play.py`, `art/studio_queue.py`, `art/web/play.js`, `art/web/play.html`, `art/web/page_test.js`, `art/page_dash.py`, `art/selftests.py`; `art/director.py`, a docstring)
+
+**His word.** *"then build 0250 with the separate worlds-mode test rig."* (2026-10-17, the order he gave with 0249.)
+Built on 0249 (b5e75e7, his run of it not seen), so it applies after 0249. "As specified" is read as the settled design's
+recommended answers for this half: import makes a new world and never writes over one (R3: an existing name is
+`IMPORT-EXISTS`); a brief's tags go with it, and the stage lists them (R7); the first seeding refuses a checkout brief
+with an admission half written rather than recover the checkout, and runs the art checks (R9).
+
+**What it holds.** His fifth condition, *"Import is transactional. 'Import from the checkout' must not silently
+overwrite the desktop studio's active world. It should identify the source, validate it, create or update an isolated
+candidate, and preserve recoverability if validation or import fails."*; his first for the worlds (each world's state the
+host's read-back, never the page's); his case 6, *"import fails partway through"*; and his case 7 across two worlds.
+
+**What it changes.**
+- *The left panel* (`art/web/play.js`, `play.html`): Worlds (`GET /worlds.json`: `Hub.inspect` per world, kept per world
+  by a key of its files' stamps; verified with events and head, or not verified with the director's code, busy, fresh;
+  what an import recorded), Outline (`GET /outline.json`: the host's object rule over the scene a slot serves; search;
+  a press selects and frames, the inspector reads `/object.json`), Import (`GET /importable.json`; Stage, Commit,
+  Discard; every refusal with its code, the source and the name; Open offered after a commit, never taken), and a
+  collapse. Each panel is marked as 0249's are: the worlds panel by this world's ledger line and its files as last
+  compiled (the head served, the latest compile's head and its refusal), the outline by the scene its slot serves; the
+  worlds and import panels say they are of no one world's revision, and import's mark is current, unknown or refused,
+  never stale nor settling, with the time of its read.
+- *Import, transactional* (`art/play.py`): `stage_import` copies the brief's files into a folder of its own beside the
+  worlds (`.import-NAME-XXXXXXXX`, never listed nor opened), reads the source again, replays the ledger in the copy, runs
+  the exporter and the art checks, starts a ledger when there is none (its bytes recorded), and writes the record last; a
+  refusal removes the staging and checks its absence by a listing. `Hub.import_commit` checks the staging against its
+  record (every file, the started ledger, nothing the record does not name, of the build folder exactly its content
+  lock) and puts it in place by one rename, then logs
+  it (`IMPORTS.jsonl`; a log that cannot be written is said, never answered as a failed commit); `import_discard` removes
+  it. The worlds folder's lock (`worlds.lock`) is held by every writer that makes, renames or removes its folders, and by
+  the writers of `IMPORTS.jsonl` and `SEEDED.json`. Codes: `IMPORT-MODE`, `IMPORT-NAME`, `IMPORT-EXISTS`,
+  `IMPORT-SOURCE-PENDING`, `IMPORT-SOURCE-MOVED`, `IMPORT-SOURCE-BUSY`, `IMPORT-SOURCE-UNREAD`, `IMPORT-LEDGER`, `IMPORT-ART`, `IMPORT-CHECKS`,
+  `IMPORT-FAILED`, `IMPORT-LEFTOVER`, `IMPORT-BUSY`, `IMPORT-STAGE-GONE`, `IMPORT-STAGE-CHANGED`, `IMPORT-RENAME-BUSY`.
+- *Recovery at the start* (`recover_worlds`, before the first seeding): folders made aside and never put in place
+  removed, absence checked; a world put in place whose log line is missing given it from its record; a first seeding cut
+  off part-way said. What it cannot do is said, and never ends the start.
+- *Privacy*: the source's absolute path in the worlds folder's own records only; answers to the page carry its label, and
+  a text bound for the page that would carry the path carries the label instead.
+
+**Changed expectations, said.**
+- The first seeding (`seed_worlds`) now goes through the import's staging: a brief whose checkout holds an admission
+  half written is refused (`IMPORT-SOURCE-PENDING`), and so is one whose checkout ledger ends in a torn line
+  (`IMPORT-LEDGER`, `LEDGER-TORN`), where before the checkout was recovered, and so written; a brief the exporter or the
+  art checks refuse is refused at seeding; and a seeding cut off between two briefs (worlds it made, no `SEEDED.json`) is
+  finished at the next start, where before the rest were never seeded and nothing said so. Its STUDIO-2 rows assert no
+  folder made aside of any form left, where they asserted no `NAME.making`; no row was otherwise reworded.
+- A duplicate is made under the worlds folder's lock, in a folder of its own, its name checked under the lock; a
+  duplicate while the lock is held for 5 s is refused (`STUDIO-WORLD`, "being written").
+- `Hub.world` starts a ledger with the console swapped under `QUIET_LOCK` (found by reading: it swapped it without), its
+  refusal `STUDIO-WORLD` as before.
+- `Hub.inspect` says a ledger of no line (`LEDGER-EMPTY`: a first line that did not finish, its bytes set aside beside
+  it) where it raised, and `Hub.world` takes such a ledger away under the world's content lock and starts it again (it
+  was never started again: `cmd_genesis` refuses a ledger file that exists); `/worlds.json` reads the other worlds when one
+  cannot be read (`INSPECT-FAILED`), and its key holds the exporter and the code the checks read.
+- A duplicate's rename is retried while Windows holds a handle inside, as the commit's is.
+- `cmd_verify`'s docstring said the launcher's look was not deep; it is (`Hub.inspect` calls it deep). Nothing else in
+  `art/director.py` changed.
+- Each world made by an import or by the first seeding keeps its record (`IMPORTED.json`, `via` import or seed).
+
+**Decided here, said.** The world selects and Mark mode's world rows read the names `/live` lists, as before (the
+design had them read `/worlds.json`; the names are one list, `Hub.names`). An import's staging, a duplicate's and a
+seeding's are recovered by one rule (`ASIDE`). The collapse does not apply in Mark mode, whose navigator is its own.
+Stage is not pressed while a staged import is shown (commit or discard it first). The source busy follows the design:
+its ledger written, or come, while it was copied, or an admission of it begun there (`IMPORT-SOURCE-BUSY`, each said as
+it is); any other file changed is `IMPORT-SOURCE-MOVED`. PAGE-CARDS' case 1 (0249's) now leaves out a panel of no
+revision, the briefs to import, which is never settling, and requires it to say it is of none: its words read "every
+panel of the host's revision".
+
+**The tests.**
+- STUDIO-2 (`STUDIO-2 SELFTEST 46/46`, twenty-seven rows added): the routes; a source whose briefs cannot be listed
+  (`IMPORT-SOURCE-UNREAD`); a stage and a commit; `IMPORT-EXISTS` for a
+  world and for an empty folder; `IMPORT-SOURCE-PENDING` with the source's files byte for byte and its content lock not
+  taken; `IMPORT-LEDGER` (`UNLOGGED-CHANGE`); `IMPORT-CHECKS`, the check named; a ledger copied, then discarded;
+  `IMPORT-MODE`, `IMPORT-NAME`, `IMPORT-ART`, `IMPORT-STAGE-GONE` and `IMPORT-BUSY`; case 6 at the second file;
+  `IMPORT-SOURCE-MOVED` (the brief) and `IMPORT-SOURCE-BUSY` (the ledger); `IMPORT-STAGE-CHANGED` four ways (a file of
+  the record, the started ledger given another valid line, a file not named, a build file not the lock); two commits of
+  one name at once; a log that cannot be written at the commit; a duplicate while the lock is held; a ledger of no line,
+  said and started again at the world's opening, and a source's refused; an import's genesis and a command inside
+  `quiet()` meeting, the genesis paused inside its own console swap; the crash loop at nine points with the start's
+  recovery; recovery of a duplicate's and a seeding's folders made aside (by their literal names), an unreadable log and
+  a record that is not one; the pending checkout at seeding; a seeding cut off and finished; six plants (`import-recover-source`, `import-rename-first`, `import-keep-staging`, `import-no-exists-check`,
+  `import-quiet-unlocked`, `seed-names-guard`) each caught by the row it breaks.
+- PAGE-WORLDS (`python art/play.py --worlds-selftest`, `PAGE-WORLDS SELFTEST 16/16`), in worlds mode on its own rig:
+  twelve rows and four plants (a stage's refusal drawn without its code, caught by case 6's row; Validation read without
+  its world, and the other world's outline drawn, each caught by case 7's; the worlds panel's mark without the files'
+  refusal, caught by the row of this world's files refused), each caught with every row before it in its scenario passed,
+  at once (never by a wait running out).
+
+**A review of the patch** (three lenses read it, the host, the page and its tests, the claims against the code and the
+rules; each of their 32 findings was then put to a skeptic who tried to refute it from the code: 35 agents). None was
+refuted; 32 were confirmed in whole or in part, 25 of them distinct, and all are repaired:
+- *The host*: the commit checked the record's files only, not the ledger started at the stage nor a file added (now
+  both, and a staging holding an admission half written); a failed log after the rename was answered as a failed commit
+  (now said, and the next start writes it); the read-back's key held the stills' names, not their stamps; an exception's
+  text could carry the source's absolute path to the page (now its label, and a source file that cannot be read is
+  `IMPORT-SOURCE-MOVED` by its path in the source); one empty ledger made `/worlds.json` fail for every world; the
+  seeding's rename had no Windows retry; a seeding cut off part-way was never finished; a torn checkout ledger at
+  seeding was unsaid.
+- *The page*: the worlds panel's mark left out this world's files; import's mark could never be stale and drew a failed
+  read as current (now refused, and the time of its read said); Stage, Commit and Discard had no guard against a late
+  answer or a second press; the collapse squeezed Mark mode's navigator.
+- *The tests*: case 7's marker was a full sha the page never prints (now the twelve characters `short()` prints, with a
+  plant that draws the other world's outline); case 7 read its outline count before the first answer; the Refresh row
+  passed with Refresh unwired (now Refresh's own reads are counted by the page); "the page stays on its world" read a
+  document a navigation would not replace (now a navigation begun is counted); the quiet() row passed with the console
+  swapped unlocked (now the genesis pauses inside its own swap, with a plant); the commit race's loser was said kept and
+  never checked; the pending rows could not see a recovery or a lock (now a file in the pending folder and the lock's
+  absence checked).
+- *The docs*: the lock's holders (the queue's log holds its own lock); "no second copy of the object rule" (the page's
+  own copy still picks and frames); the codes no row reached (now rows reach all but three, named); the quiet() row's
+  words; the genesis's refusal code (kept); placeholders.
+
+**A second round** (the same three lenses over the patch as repaired, each finding put to a skeptic: 27 agents, the run
+cut off by the usage limit and resumed, the agents done before it kept) found 24, all confirmed in whole or in part,
+none refuted, about eighteen distinct, and all are repaired:
+- *The host*: the read-back's key left out the exporter (a change to it left a world verified); `LEDGER-EMPTY` promised
+  a start that never came (now made, under the world's content lock); the commit let in anything under the build folder
+  (now exactly its content lock); `/importable.json`'s unexpected answers, and two spellings of a path, could carry the
+  source's path; recovery could still raise out of the start on a log or a record it could not read; the duplicate's
+  rename had no retry; a ledger written during the copy was `IMPORT-SOURCE-MOVED`, where the design has it busy.
+- *The page*: the periodic read could overtake Refresh's, so Refresh's own read went uncounted; the worlds panel's mark
+  held the head served, which a refused compile does not move (now the latest compile's head and its refusal too); import's
+  read was never tried again after a failure, and its mark followed a revision it is no part of (now outside it); Stage
+  had no guard against a second press; the outline's search wiped a refusal's reason.
+- *The tests*: `IMPORT-CHECKS` did not hold the check's name; the codes, paths and recoveries no row reached (now rows for
+  `IMPORT-SOURCE-BUSY`, a build file, a ledger of no line, recovery's folders by their names, an unreadable log and a bad
+  record; a row and a plant for this world's refused files).
+- *The docs*: stale counts and lines in comments and docstrings; the second round's counts; the paths still read only
+  (below).
+
+**A third round** (the same lenses over the second round's repairs, each finding put to a skeptic: 21 agents) found 18:
+one refuted (that code the verification reads outside the exporter could leave a world verified: it is loaded once in
+the server's own process), 17 confirmed in whole or in part, about eleven distinct, and all are repaired:
+- *The host*: `/importable.json`'s new refusal (`IMPORT-SOURCE-UNREAD`) had its `ok` overwritten to true, so the page drew
+  "every brief is a world here"; a brief whose files could not be listed was answered with facts never read (now read,
+  and the page says it with no Stage); `Hub.world` took the content lock at every opening, and its Busy carried a path
+  (now only for an empty ledger, with the recovery's wait, naming none); `LEDGER-EMPTY`'s remedy was false in one tree
+  (now the one that holds); `/worlds.json`'s errors could carry the source's path in one tree; `IMPORT-SOURCE-BUSY`'s one
+  message said a ledger was written when an admission had begun (now each its own), and a ledger that came was MOVED.
+- *The page*: round two's revless import panel made PAGE-CARDS' case 1 fail in an honest run (said above); a forced read
+  of the worlds swallowed a change seen while it was out (now drawn stale, and read again); a record that is not one was
+  skipped in silence (now said, and the row holds it).
+- *The docs*: the measured block and line count; the binding's patch "his ruling", which no record holds.
+
+**Its falsifiers.**
+- A crash point after which recovery lists a half world, leaves a folder aside, or changes another world's bytes.
+- An import that writes, locks or recovers its source; a staging listed or opened before its commit; a commit of a
+  staging holding what its record does not name.
+- An answer to the page that carries the source's absolute path.
+- The worlds panel saying verified for a world `Hub.inspect` does not verify; an outline of another world drawn.
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of 0249's commit
+under %TEMP%, never the checkout):
+- Alone: STUDIO-2 SELFTEST 46/46 in 61 s (its crash loop at nine points, its six plants caught); PAGE-WORLDS SELFTEST
+  16/16 in 20 s (its four plants caught, each at once); PAGE-CARDS SELFTEST 30/30 in 87 s; STUDIO APP SELFTEST 13/13.
+- The full check of the final tree, `python art/selftests.py --repeat 2`, twice: twenty-seven suites, 534.1 s and 545.6 s,
+  then 531.6 s and 538.1 s wall, ART SELFTESTS FAILED each time. What failed: the row that the browser ended and nothing
+  of it is left, PAGE-WORLDS' in all four runs (Edge's processes gone 62.3, 66.1, 68.9 and 62.2 s after it was ended,
+  against the row's 60 s) and PAGE's in one (63.2 s); PREVIEW-STUDIO's 10 s for a whole preview in three (16.05, 11.04,
+  14.56 s); STUDIO APP's plant of a silence taken as a close in one. Every other suite passed in every run, PAGE-WORLDS'
+  other fifteen rows among them, PAGE-CARDS 30/30 in all four.
+- The base, 0249's tree (b5e75e7), run straight after the first under the same conditions: twenty-six suites, 310.0 s and
+  324.0 s, ART SELFTESTS FAILED on PREVIEW-STUDIO's 10 s once (10.69 s); its browsers gone 17.3 and 34.0 s after
+  (PAGE), 0.9 and 1.0 s (PAGE-CARDS). The patch's run is slower than the base's under the same conditions: its own
+  suites load the machine (STUDIO-2 237 s against 111 s in the full check, with its nine processes ended and its
+  exports; PAGE-WORLDS a third browser), and the CPU-bound suites beside them take longer (the race test 519 s
+  against 229 s). That the browsers' ending past 60 s is that load, Edge's processes outside the job ending on their own,
+  is INFERRED from the next line.
+- The design's fallback for this (§4.6: the browser suites one at a time in `art/selftests.py`), measured in a scratch
+  copy and not in this patch, since it is his to accept: twenty-seven suites, 512.0 s and 522.3 s, every browser suite
+  passing in both runs, each browser gone 0.8 to 3.1 s after it was ended; failing STUDIO APP's silence plant in both
+  runs and PREVIEW-STUDIO's 10 s in one (15.45 s), the rows the base fails too.
+- The classifier his pushed tree holds (2c70a71's `tools/rung.py`), over 0249 and 0250 together from his pushed tree:
+  the rung D on sixteen files, loosening nothing; *"272 planted defects refused by the old checker; 277 by the new"*, PLANTS HELD, no checker stopped early (and over 0250 alone, from 0249's tree: the rung D on
+  thirteen files, loosening nothing).
+- The gate: `GATE PASSED`, `RECONCILE  rowset 74db4c8d78625af5  251 rows / 0 fail / 0 skipped`, row for row as before
+  (834 s).
+
+**What it does not show.**
+- That a directory's rename is atomic for a reader that lists the folder: INFERRED; the crash loop holds the states at
+  its nine points, not between them.
+- A writer of the worlds folder's folders that does not take its lock (only `play.py`'s writers take it).
+- `IMPORT-RENAME-BUSY` and the duplicate's held handle, `IMPORT-LEFTOVER` outside its plant, a commit refusing a staging
+  that holds an empty pending folder, `Hub.world`'s genesis under `QUIET_LOCK` (the plant is the stage's),
+  `INSPECT-FAILED`, a brief of the source whose files cannot be listed, and a forced read of the worlds that the files
+  moved during: VERIFIED BY READING, no row.
+- Linux; browsers other than Edge; a person's reading of the page.
+
+**Not done.** His ruling on the design's fallback for browser suites under load (§4.6: run them one at a time), which
+the full check above measures; the binding (0251: the still's, the preview's and the undo's, refused on if he so rules:
+the design's R8) and the inverse's repair (0252); BLENDER-VIEW-0 after, its rulings made explicitly. His act after this patch: importing a brief into his
+desktop studio through the page (OBSERVED, never a test).
+
+NOT_MEASURED: the full check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (the
+dashboard's and the worlds' rows), art/STUDIO.md (a section, and the first start), docs/CAPABILITY-MATRIX.md (a dated
+note), docs/CORE.md (art 32,338 lines), this entry.

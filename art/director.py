@@ -1128,7 +1128,8 @@ def check_stills(ws, events, deep=True):
 
 def cmd_verify(ws, quiet=False, deep=True):
     """The ledger's chain, replayed to the files as they stand, and every admission's still (deep: its detectors read
-    again; the launcher's look is not deep, the command is)."""
+    again). Deep by default: the command, and the launcher's look and /worlds.json (play.py's Hub.inspect) too; the
+    import's commit checks the chain again not deep (corrected 0250: this said the launcher's look was not deep)."""
     events, head = led.chain(ws.ledger)
     st = replay(ws, events)
     stills = check_stills(ws, events, deep)

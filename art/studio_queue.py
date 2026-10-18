@@ -370,6 +370,538 @@ class Queue:
 
 
 # ------------------------------------------------------------------------------------------------ the self-test
+IMPORT_POINTS_STAGE = ("import:staged", "import:file-1", "import:copied", "import:verified", "import:checked", "import:genesis", "import:record")
+IMPORT_POINTS_COMMIT = ("import:renamed", "import:logged")
+
+
+def import_once(worlds_dir, source, name):
+    """One import staged and committed in this process (the crash loop's child: VERDANDI_CRASH_AT ends it at a point)."""
+    import play
+    hub = play.Hub(worlds_dir=worlds_dir, watch=False, source=source, source_label="the scratch checkout", say=lambda s: None)
+    st = hub.import_stage(name)
+    hub.import_commit(st["staging"], st["record_sha256"])
+    print("COMMITTED %s" % name)
+    return 0
+
+
+def seed_once(worlds_dir, source):
+    """One first seeding in this process (the seeding's resume row: VERDANDI_CRASH_AT ends it between two briefs)."""
+    import play
+    print("SEEDED %s" % play.seed_worlds(worlds_dir, source=source, say=lambda s: None, source_label="the scratch checkout"))
+    return 0
+
+
+def import_rows(tmp, row, tree_bytes):
+    """DASHBOARD-0 (0250): STUDIO-2's rows of the import (play.Hub.import_stage, import_commit, import_discard,
+    recover_worlds, seed_worlds), in a worlds folder of their own seeded from a scratch checkout, and a source tree of
+    their own whose briefs are made for each refusal. Every row's world and source are compared where the row says so:
+    a source's comparison holds its files byte for byte and its content lock, which a recovery takes, by its absence."""
+    import play
+    import shutil
+    import studio as S_
+    import subprocess
+    import threading
+    D = play.director()
+    LABEL = "the scratch checkout"
+    src = os.path.join(tmp, "import-source")
+    D.selftest_tree(src)                                    # plaza-night, its ledger started
+    base = open(os.path.join(src, "art", "briefs", "plaza-night.art"), "rb").read().replace(b"\r\n", b"\n")
+    slab = b"canopy plaza concrete_slab 7.0 19,10 28,11"
+
+    def brief(name, text=base, ledger=False):
+        p = os.path.join(src, "art", "briefs", name + ".art")
+        with open(p, "wb") as fh:
+            fh.write(text)
+        if ledger:
+            D.cmd_genesis_quiet(D.Workspace(name, src))
+        return p
+
+    def half_written(root, name):
+        # an admission half written: its pending folder with a file in it (a recovery that ran removes it, and is seen)
+        p = os.path.join(root, "art", "ledger", name + ".ledger.pending")
+        os.makedirs(p)
+        with open(os.path.join(p, "old.0"), "wb") as fh:
+            fh.write(b"prepared, never committed")
+    for n in ("plaza-east", "plaza-west", "plaza-meet", "plaza-crash", "plaza-q", "plaza-moved", "plaza-fail", "plaza-change", "plaza-extra", "plaza-ledg",
+              "plaza-logless", "plaza-gone", "plaza-busy", "plaza-build"):
+        brief(n)
+    brief("plaza-busyled", ledger=True)
+    brief("plaza-empty")
+    open(os.path.join(src, "art", "ledger", "plaza-empty.ledger"), "wb").close()        # a ledger of no line
+    brief("plaza-led", ledger=True)
+    brief("plaza-pend", ledger=True)
+    half_written(src, "plaza-pend")
+    brief("plaza-unl", ledger=True)
+    with open(os.path.join(src, "art", "briefs", "plaza-unl.art"), "ab") as fh:
+        fh.write(b"# a hand edit, not recorded\n")
+    assert base.count(slab) == 1
+    brief("plaza-low", base.replace(slab, b"canopy plaza concrete_slab 3.0 19,10 28,11"))      # a slab the art checks refuse
+    brief("plaza-bad", base + b"bogus_statement x\n")                                       # a statement the exporter refuses
+    src_lock = os.path.join(src, "art", "build", "content.lock")
+    if os.path.exists(src_lock):
+        os.remove(src_lock)                                 # the fixture's geneses took it; a lock taken again leaves it
+    worlds = os.path.join(tmp, "worlds-import")
+    os.makedirs(worlds)
+    D.selftest_tree(os.path.join(tmp, "import-seed"))
+    play.seed_worlds(worlds, source=os.path.join(tmp, "import-seed"), say=lambda s: None, source_label=LABEL)
+    hub = play.Hub(worlds_dir=worlds, watch=False, source=src, source_label=LABEL, say=lambda s: None)
+    aside = lambda: sorted(n for n in os.listdir(worlds) if play.ASIDE.match(n))
+
+    def post(op, body, h=None):
+        return play.studio_post(h or hub, "/studio/worlds/import/" + op, body)
+
+    def refused(op, body, h=None):
+        c, a = post(op, body, h)
+        return a.get("code", "") if c != 200 else "accepted"
+
+    def log_names():
+        p = os.path.join(worlds, "IMPORTS.jsonl")
+        return [json.loads(ln)["name"] for ln in open(p, "rb").read().splitlines() if ln.strip()] if os.path.isfile(p) else []
+    night = tree_bytes(os.path.join(worlds, "plaza-night"))
+    src_before = tree_bytes(src)
+
+    # the routes the page reads: the worlds read back and the briefs to import, the source by its label alone
+    c1, wj = play.worlds_get(hub, "/worlds.json", {})
+    c2, ij = play.worlds_get(hub, "/importable.json", {})
+    insp = hub.inspect("plaza-night")
+    c4, oj = play.worlds_get(hub, "/outline.json", {"world": "plaza-night", "slot": "0"})
+    c5, on = play.worlds_get(hub, "/outline.json", {"slot": "0"})
+    wrow = {w["world"]: w for w in wj.get("worlds", [])}
+    names_i = [b["name"] for b in ij.get("briefs", [])]
+    pn = next((b for b in ij.get("briefs", []) if b["name"] == "plaza-led"), {})
+    real_listdir = os.listdir
+    briefs_dir = os.path.join(src, "art", "briefs")
+
+    def unlistable(p="."):
+        if os.path.abspath(p) == os.path.abspath(briefs_dir):
+            raise PermissionError(13, "Permission denied", p)
+        return real_listdir(p)
+    os.listdir = unlistable
+    try:
+        c8, iu = play.worlds_get(hub, "/importable.json", {})
+    finally:
+        os.listdir = real_listdir
+    row("import: a source whose briefs cannot be listed is refused by /importable.json (ok false, IMPORT-SOURCE-UNREAD), named by its label, "
+        "its path in no part of the answer", iu.get("ok") is False and iu.get("code") == "IMPORT-SOURCE-UNREAD" and LABEL in iu.get("message", "")
+        and not iu.get("briefs") and not any(v in json.dumps(iu) for v in (src, json.dumps(src)[1:-1], src.replace(os.sep, "/"))),
+        "%s ok %s %s: %s" % (c8, iu.get("ok"), iu.get("code"), iu.get("message", "")[:80]))
+    row("import: /worlds.json is each world as Hub.inspect reads it back, and /importable.json each brief of the source that is no world here, "
+        "with its files' sha256 and its ledger, the source named by its label alone (its absolute path in no answer); /outline.json opens no world",
+        c1 == 200 and c2 == 200 and wrow.get("plaza-night", {}).get("head") == insp["head"] and wrow["plaza-night"]["state"] == "verified"
+        and wrow["plaza-night"]["events"] == insp["events"] and "plaza-night" not in names_i and "plaza-east" in names_i
+        and pn.get("ledger", {}).get("events") == 1 and all(f["sha256"] == play.sha256(open(os.path.join(src, f["path"]), "rb").read()) for f in pn.get("files", []))
+        and ij.get("source_label") == LABEL and not any(v in json.dumps([wj, ij]) for v in (src, json.dumps(src)[1:-1], src.replace(os.sep, "/")))
+        and c4 == 404 and oj.get("code") == "STUDIO-WORLD" and c5 == 404 and on.get("code") == "STUDIO-WORLD" and not hub.worlds,
+        "plaza-night %s, %s events; importable %s; /outline.json of a world not open %s %s, with no world %s %s (no world opened)" % (
+            wrow.get("plaza-night", {}).get("state"), wrow.get("plaza-night", {}).get("events"), ", ".join(names_i), c4, oj.get("code"), c5, on.get("code")))
+
+    # stage, then commit: an isolated candidate, never listed until one rename puts it in place
+    c, st = post("stage", {"name": "plaza-east"})
+    staged = st.get("staging", "")
+    listed_while = "plaza-east" in hub.names()
+    rec_sha = play.sha256(open(os.path.join(worlds, staged, "IMPORTED.json"), "rb").read()) if staged and os.path.isdir(os.path.join(worlds, staged)) else ""
+    c3, cm = post("commit", {"staging": staged, "record_sha256": st.get("record_sha256")})
+    info = hub.inspect("plaza-east") if "plaza-east" in hub.names() else {}
+    row("import: staged as an isolated candidate (a folder of its own, not listed), then committed by one rename: the world listed, verified, "
+        "its ledger started at import (one event, its bytes in the record), its line in IMPORTS.jsonl; the other worlds and the source as before",
+        c == 200 and staged.startswith(".import-plaza-east-") and not listed_while and rec_sha == st.get("record_sha256") and c3 == 200
+        and cm.get("world") == "plaza-east" and cm.get("logged") is True and info.get("verified") and info.get("events") == 1 and not aside()
+        and st.get("record", {}).get("ledger", {}).get("started_at_import") == info.get("head") and len(st.get("record", {}).get("ledger", {}).get("sha256", "")) == 64
+        and log_names() == ["plaza-east"] and "source" not in st.get("record", {}) and tree_bytes(os.path.join(worlds, "plaza-night")) == night
+        and tree_bytes(src) == src_before and not os.path.exists(src_lock),
+        "staged %s (listed %s); committed %s; %s events, verified %s; log %s" % (staged, listed_while, cm.get("world", cm.get("code")), info.get("events"),
+                                                                                info.get("verified"), log_names()))
+
+    # refused before anything is copied: a world of the name, or an empty folder of the name
+    os.makedirs(os.path.join(worlds, "plaza-west"))
+    e1, e2 = refused("stage", {"name": "plaza-night"}), refused("stage", {"name": "plaza-west"})
+    row("import: IMPORT-EXISTS for the name of a world, and for an empty folder of that name; nothing staged",
+        e1 == e2 == "IMPORT-EXISTS" and not aside(), "plaza-night %s; an empty plaza-west %s; aside %s" % (e1, e2, aside()))
+    os.rmdir(os.path.join(worlds, "plaza-west"))
+
+    def pending_case():
+        before = tree_bytes(src)
+        got = refused("stage", {"name": "plaza-pend"})
+        locked = os.path.exists(src_lock)
+        if locked:
+            os.remove(src_lock)
+        return got, tree_bytes(src) == before and not locked
+    got, same = pending_case()
+    row("import: a source holding an admission half written is refused (IMPORT-SOURCE-PENDING), nothing of the source recovered, locked or "
+        "written: its files byte for byte as before, its content lock not taken", got == "IMPORT-SOURCE-PENDING" and same and not aside(),
+        "%s; the source the same and not locked %s" % (got, same))
+    c, a = post("stage", {"name": "plaza-unl"})
+    row("import: a ledger that does not verify in the copy is refused (IMPORT-LEDGER, the director's UNLOGGED-CHANGE); nothing staged",
+        a.get("code") == "IMPORT-LEDGER" and a.get("director_code") == "UNLOGGED-CHANGE" and a.get("source_label") == LABEL and a.get("name") == "plaza-unl"
+        and not aside(), "%s (%s): %s" % (a.get("code"), a.get("director_code"), a.get("message", "")[:80]))
+    c, a = post("stage", {"name": "plaza-low"})
+    row("import: a brief the art checks refuse is refused (IMPORT-CHECKS, the checks named); nothing staged",
+        a.get("code") == "IMPORT-CHECKS" and "no dressing where a player can be" in a.get("message", "") and not aside(),
+        "%s: %s" % (a.get("code"), a.get("message", "")[:120]))
+    c, a = post("stage", {"name": "plaza-led"})
+    ok_led = c == 200 and a.get("record", {}).get("ledger", {}).get("copied") is True and a.get("record", {}).get("ledger", {}).get("events") == 1
+    post("discard", {"staging": a.get("staging", "")})
+    row("import: a brief with a ledger is staged with its ledger copied and verified in the copy; discarded, nothing left",
+        ok_led and not aside() and "plaza-led" not in hub.names(), "ledger %s; aside %s" % (a.get("record", {}).get("ledger"), aside()))
+
+    # the codes no other row reaches: not in worlds mode, no such brief, the exporter's refusal, a staging gone, the lock held
+    one = play.Hub(watch=False, say=lambda s: None)
+    m_mode = refused("stage", {"name": "plaza-east"}, one)
+    m_name = refused("stage", {"name": "no-such-brief"})
+    m_art = refused("stage", {"name": "plaza-bad"})
+    _c, g_ = post("stage", {"name": "plaza-gone"})
+    post("discard", {"staging": g_.get("staging", "")})
+    m_gone = refused("commit", {"staging": g_.get("staging", ""), "record_sha256": g_.get("record_sha256")})
+    held, free = threading.Event(), threading.Event()
+
+    def holder():
+        with play.worlds_locked(worlds):
+            held.set()
+            free.wait(30)
+    th = threading.Thread(target=holder)
+    th.start()
+    held.wait(10)
+    try:
+        m_busy = refused("stage", {"name": "plaza-busy"})
+    finally:
+        free.set()
+        th.join(30)
+    row("import: the other refusals — not a worlds folder (IMPORT-MODE), no such brief (IMPORT-NAME), the exporter refusing it (IMPORT-ART), "
+        "a staging discarded before its commit (IMPORT-STAGE-GONE), the worlds folder's lock held (IMPORT-BUSY); nothing staged",
+        (m_mode, m_name, m_art, m_gone, m_busy) == ("IMPORT-MODE", "IMPORT-NAME", "IMPORT-ART", "IMPORT-STAGE-GONE", "IMPORT-BUSY") and not aside()
+        and "plaza-busy" not in hub.names(), "%s, %s, %s, %s, %s" % (m_mode, m_name, m_art, m_gone, m_busy))
+
+    def failing_case():
+        def boom(name):
+            if name == "import:file-2":
+                raise RuntimeError("planted: the import stopped at its second file")
+        names0 = hub.names()
+        D.durable.HOOK = boom
+        try:
+            c_, a_ = post("stage", {"name": "plaza-fail"})
+        finally:
+            D.durable.HOOK = None
+        return a_, hub.names() == names0
+    a, same_list = failing_case()
+    row("import: case 6, an import that fails partway (at its second file) — IMPORT-FAILED with the source and the name; no staging by a listing "
+        "of the folder; the listing as before", a.get("code") == "IMPORT-FAILED" and a.get("name") == "plaza-fail" and a.get("source_label") == LABEL
+        and not aside() and same_list, "%s: %s; aside %s" % (a.get("code"), a.get("message", "")[:80], aside()))
+
+    def moved_case(name="plaza-moved", what="art/briefs/plaza-moved.art", at="import:file-1"):
+        # the file written once it has been copied (the brief is the first file copied, the ledger the second)
+        p = os.path.join(src, *what.split("/"))
+        keep = open(p, "rb").read()
+
+        def touch(point):
+            if point == at:
+                with open(p, "ab") as fh:
+                    fh.write(b"# written while it was copied\n")
+        D.durable.HOOK = touch
+        try:
+            return refused("stage", {"name": name})
+        finally:
+            D.durable.HOOK = None
+            open(p, "wb").write(keep)
+    got = moved_case()
+    got_led = moved_case("plaza-busyled", "art/ledger/plaza-busyled.ledger", "import:file-2")
+    row("import: a source changed while it was copied is refused — its brief (IMPORT-SOURCE-MOVED), its ledger written (the source busy: "
+        "IMPORT-SOURCE-BUSY); nothing staged", got == "IMPORT-SOURCE-MOVED" and got_led == "IMPORT-SOURCE-BUSY" and not aside(), "%s; %s" % (got, got_led))
+
+    def changed_case(name="plaza-change", how="brief"):
+        c_, s_ = post("stage", {"name": name})
+        stg = os.path.join(worlds, s_.get("staging", "") or "-")
+        if how == "brief":                                  # a staged file of the record changed
+            with open(os.path.join(stg, "art", "briefs", name + ".art"), "ab") as fh:
+                fh.write(b"# changed after the stage\n")
+        elif how == "build":                                # a file of the build folder that is not its content lock
+            os.makedirs(os.path.join(stg, "art", "build", "studio", name))
+            with open(os.path.join(stg, "art", "build", "studio", name, "requests.jsonl"), "wb") as fh:
+                fh.write(b"{}\n")
+        elif how == "ledger":                               # the ledger started at the stage given another valid line
+            D.led.append(os.path.join(stg, "art", "ledger", name + ".ledger"), "refuse_input",
+                         {"code": "PLANTED", "detail": "a line added after the stage", "observed": {"at": "2026-10-18T00:00:00Z"}})
+        else:                                               # a file the record does not name
+            with open(os.path.join(stg, "art", "ledger", name + ".tags.json"), "wb") as fh:
+                fh.write(b"{}\n")
+        got_ = refused("commit", {"staging": s_.get("staging", ""), "record_sha256": s_.get("record_sha256")})
+        kept = os.path.isdir(stg)
+        listed = name in hub.names()
+        if listed:                                           # the plant put it in place: taken away again for the next rows
+            D.durable.remove_tree(os.path.join(worlds, name))
+        dis = refused("discard", {"staging": s_.get("staging", "")}) if kept else "nothing to discard"
+        return got_, kept, listed, dis
+    outs = [changed_case(n, h) for n, h in (("plaza-change", "brief"), ("plaza-ledg", "ledger"), ("plaza-extra", "extra"), ("plaza-build", "build"))]
+    row("import: a staging changed before its commit is refused (IMPORT-STAGE-CHANGED), nothing put in place, the staging kept, then discarded "
+        "to nothing — a file of its record changed, the ledger started at the stage given another valid line, a file its record does not name, "
+        "a file of its build folder that is not its content lock",
+        all(o_[0] == "IMPORT-STAGE-CHANGED" and o_[1] and not o_[2] and o_[3] == "accepted" for o_ in outs) and not aside(),
+        "; ".join("%s: %s, kept %s, listed %s, discard %s" % (h, *o_) for h, o_ in zip(("a file of the record", "the started ledger", "a file not named",
+                                                                                         "a build file"), outs)))
+
+    def meeting_case():
+        a1 = post("stage", {"name": "plaza-meet"})[1]
+        a2 = post("stage", {"name": "plaza-meet"})[1]
+        bar, out = threading.Barrier(2), {}
+
+        def commit(k, s_):
+            bar.wait()
+            out[k] = refused("commit", {"staging": s_.get("staging", ""), "record_sha256": s_.get("record_sha256")})
+        th_ = [threading.Thread(target=commit, args=(k, s_)) for k, s_ in (("a", a1), ("b", a2))]
+        for t_ in th_:
+            t_.start()
+        for t_ in th_:
+            t_.join(60)
+        worlds_of = [n for n in os.listdir(worlds) if n == "plaza-meet"]
+        left = {k: os.path.isdir(os.path.join(worlds, s_.get("staging", "") or "-")) for k, s_ in (("a", a1), ("b", a2))}
+        loser = [k for k in ("a", "b") if out.get(k) != "accepted"]
+        kept_ok = len(loser) == 1 and left[loser[0]] and not left["b" if loser[0] == "a" else "a"]
+        dis = refused("discard", {"staging": (a1 if loser and loser[0] == "a" else a2).get("staging", "")}) if loser and left.get(loser[0]) else "nothing to discard"
+        for s_ in (a1, a2):
+            if os.path.isdir(os.path.join(worlds, s_.get("staging", "") or "-")):
+                post("discard", {"staging": s_["staging"]})
+        return sorted(out.values(), key=lambda v: v != "accepted"), worlds_of, kept_ok, dis
+    outs, wl, kept_ok, dis = meeting_case()
+    row("import: two staged imports of one name committed at once — one world, the other IMPORT-EXISTS (or IMPORT-BUSY), its staging kept "
+        "and then discarded, the winner's gone",
+        len(wl) == 1 and outs[0] == "accepted" and outs[1] in ("IMPORT-EXISTS", "IMPORT-BUSY") and kept_ok and dis == "accepted" and not aside()
+        and hub.inspect("plaza-meet").get("verified"), "the commits: %s; worlds of the name %d; the loser's staging kept %s, discard %s" % (outs, len(wl), kept_ok, dis))
+
+    # the commit point: a log that cannot be written is said, the commit answered as made, and the next start writes the line
+    log = os.path.join(worlds, "IMPORTS.jsonl")
+    log_keep = open(log, "rb").read()
+    os.remove(log)
+    os.makedirs(log)                                        # a log that cannot be written (a folder of its name)
+    try:
+        c, s_ = post("stage", {"name": "plaza-logless"})
+        c6, cm6 = post("commit", {"staging": s_.get("staging", ""), "record_sha256": s_.get("record_sha256")})
+    finally:
+        os.rmdir(log)
+        D.durable.write(log, log_keep)
+    lines6 = play.recover_worlds(worlds, say=lambda s: None)
+    row("import: a commit whose imports log cannot be written is answered committed (logged false, why said), the world in place; the next "
+        "start's recovery writes its line from the world's own record", c6 == 200 and cm6.get("world") == "plaza-logless" and cm6.get("logged") is False
+        and "next start" in cm6.get("note", "") and "plaza-logless" in hub.names() and log_names().count("plaza-logless") == 1
+        and any("plaza-logless" in ln for ln in lines6), "%s logged %s (%s); recovery: %s" % (c6, cm6.get("logged"), cm6.get("note", "")[:60], lines6))
+
+    # a duplicate under the worlds folder's lock: refused while another writer holds it, made once it is free
+    held, free = threading.Event(), threading.Event()
+    t = threading.Thread(target=holder)
+    t.start()
+    held.wait(10)
+    try:
+        hub.duplicate("plaza-night", "plaza-dup")
+        busy = "made"
+    except S_.StudioError as e:
+        busy = e.code + ": " + e.detail[:60]
+    free.set()
+    t.join(30)
+    hub.duplicate("plaza-night", "plaza-dup")
+    for w in list(hub.worlds.values()):
+        w.stopping = True
+        if w.studio:
+            w.studio.shutdown()
+    row("import: a duplicate takes the worlds folder's lock: refused while another writer holds it, made once it is free, nothing left aside",
+        "being written" in busy and "plaza-dup" in hub.names() and not aside(), "while held: %s; then %s" % (busy, "made" if "plaza-dup" in hub.names() else "not made"))
+
+    # a ledger of no line (a first line that did not finish, set aside): said, and started again when its world is opened;
+    # in a source, refused by its name
+    east_led = os.path.join(worlds, "plaza-east", "art", "ledger", "plaza-east.ledger")
+    keep_led = open(east_led, "rb").read()
+    open(east_led, "wb").close()
+    _c, wj2 = play.worlds_get(hub, "/worlds.json", {})
+    erow = {w["world"]: w for w in wj2.get("worlds", [])}.get("plaza-east", {})
+    try:
+        hub.world("plaza-east")
+        reopened = hub.inspect("plaza-east")
+    finally:
+        for w in list(hub.worlds.values()):
+            w.stopping = True
+            if w.studio:
+                w.studio.shutdown()
+        hub.worlds.clear()
+    c7, a7 = post("stage", {"name": "plaza-empty"})
+    row("import: a ledger of no line is said (LEDGER-EMPTY, not verified) and started again when its world is opened (one event, verified); a "
+        "source's is refused (IMPORT-LEDGER, LEDGER-EMPTY), nothing staged", erow.get("code") == "LEDGER-EMPTY" and erow.get("state") == "not-verified"
+        and reopened.get("verified") and reopened.get("events") == 1 and a7.get("code") == "IMPORT-LEDGER" and a7.get("director_code") == "LEDGER-EMPTY"
+        and not aside(), "the row %s %s; opened: verified %s, %s events; the source's %s (%s)" % (erow.get("state"), erow.get("code"), reopened.get("verified"),
+                                                                                                     reopened.get("events"), a7.get("code"), a7.get("director_code")))
+    del keep_led
+
+    # an import's genesis and a command inside quiet() meeting, the genesis paused inside its own console swap when it can
+    # enter it: with QUIET_LOCK it cannot until the command's quiet() has ended, and the console is the console after; the
+    # plant (the genesis's swap without the lock) puts the command's buffer back as the console
+    def quiet_case():
+        saved_out = sys.stdout
+        at, go_on, in_gen, returned = threading.Event(), threading.Event(), threading.Event(), threading.Event()
+
+        def pause(name):
+            if name == "import:checked":
+                at.set()
+                go_on.wait(30)
+            elif name == "ledger:genesis":
+                in_gen.set()
+                returned.wait(30)
+        D.durable.HOOK = pause
+        res = {}
+        th_ = threading.Thread(target=lambda: res.setdefault("r", post("stage", {"name": "plaza-q"})))
+        th_.start()
+        try:
+            at.wait(30)
+
+            def inside():
+                go_on.set()
+                in_gen.wait(2)                               # the genesis inside its swap now, unless the lock holds it out
+                print("inside quiet()")
+                return "done"
+            q = S_.quiet(inside)
+            returned.set()
+            th_.join(60)
+        finally:
+            D.durable.HOOK = None
+        restored = sys.stdout is saved_out
+        sys.stdout = saved_out
+        r = res.get("r") or (0, {})
+        if r[0] == 200:
+            post("discard", {"staging": r[1].get("staging", "")})
+        return q, r, restored
+    q, r, restored = quiet_case()
+    row("import: an import's genesis and a command inside quiet() meeting, the genesis paused inside its own console swap: both end, and the "
+        "console is the console after (QUIET_LOCK holds the genesis out until the command's quiet() ends)",
+        q == "done" and r[0] == 200 and r[1].get("record", {}).get("ledger", {}).get("started_at_import") and restored and not aside(),
+        "quiet() %s; the stage %s; the console restored %s" % (q, r[0], restored))
+
+    # the crash loop: a process ended at each point of the stage and the commit, then the start's recovery
+    crash = []
+    for point in IMPORT_POINTS_STAGE + IMPORT_POINTS_COMMIT:
+        others = {n: tree_bytes(os.path.join(worlds, n)) for n in hub.names()}
+        env = dict(os.environ, VERDANDI_CRASH_AT=point, PYTHONHASHSEED="0")
+        cp = subprocess.run([sys.executable, "-B", os.path.join(HERE, "studio_queue.py"), "import-once", worlds, src, "plaza-crash"],
+                            capture_output=True, env=env, timeout=300)
+        lines = play.recover_worlds(worlds, say=lambda s: None)
+        listed = "plaza-crash" in hub.names()
+        mine = [json.loads(ln) for ln in open(log, "rb").read().splitlines() if ln.strip() and json.loads(ln)["name"] == "plaza-crash"]
+        if point in IMPORT_POINTS_STAGE:
+            ok = cp.returncode == 77 and not listed and not aside() and not mine
+        else:
+            ok = (cp.returncode == 77 and listed and hub.inspect("plaza-crash").get("verified") and len(mine) == 1 and not aside()
+                  and mine[0]["recovered"] is (point == "import:renamed"))
+        ok = ok and all(tree_bytes(os.path.join(worlds, n)) == b for n, b in others.items() if n != "plaza-crash")
+        crash.append((point, ok, cp.returncode, listed, len(mine), len(lines)))
+        if listed:
+            D.durable.remove_tree(os.path.join(worlds, "plaza-crash"))
+            keep = [ln for ln in open(log, "rb").read().splitlines() if ln.strip() and json.loads(ln)["name"] != "plaza-crash"]
+            D.durable.write(log, b"".join(ln + b"\n" for ln in keep))
+    row("import: the crash loop — a process ended at each of %d points of the stage and the commit, then the start's recovery: before the rename "
+        "nothing listed and nothing left aside; after it the world listed and verified with its one line in the log (restored from its record "
+        "when the process ended before the log); every other world byte for byte as before" % len(crash), all(c_[1] for c_ in crash),
+        "; ".join("%s %s (exit %s, listed %s, lines %s)" % (p_, "ok" if o_ else "WRONG", rc_, l_, m_) for p_, o_, rc_, l_, m_, _n in crash))
+
+    # recovery: a duplicate's and a seeding's folders made aside removed, named by their literal paths (not by the rule they
+    # test); an imports log that cannot be read and a record that is not one said, the start not ended
+    others = {n: tree_bytes(os.path.join(worlds, n)) for n in hub.names()}
+    dup_aside, seed_aside = os.path.join(worlds, ".dup-plaza-x-0000abcd"), os.path.join(worlds, "plaza-x.making")
+    os.makedirs(os.path.join(dup_aside, "art"))
+    os.makedirs(os.path.join(seed_aside, "art"))
+    lines8 = play.recover_worlds(worlds, say=lambda s: None)
+    rec_east = os.path.join(worlds, "plaza-east", "IMPORTED.json")
+    keep_rec, keep_log = open(rec_east, "rb").read(), open(log, "rb").read()
+    open(rec_east, "wb").write(b"[]\n")
+    try:
+        lines9 = play.recover_worlds(worlds, say=lambda s: None)                         # a record that is not one
+        os.remove(log)
+        os.makedirs(log)
+        lines10 = play.recover_worlds(worlds, say=lambda s: None)                        # a log that cannot be read
+        raised = ""
+    except Exception as e:  # noqa: BLE001 — the row's own failure: recovery raised
+        raised = "%s: %s" % (type(e).__name__, str(e)[:80])
+        lines9 = lines10 = []
+    finally:
+        if os.path.isdir(log):
+            os.rmdir(log)
+        D.durable.write(log, keep_log)
+        D.durable.write(rec_east, keep_rec)
+    row("recovery: a duplicate's and a seeding's folders made aside removed (by their names, each said); an imports log that cannot be read and a "
+        "record that is not one said, the start not ended; every world byte for byte as before",
+        not os.path.exists(dup_aside) and not os.path.exists(seed_aside) and sum(1 for ln in lines8 if "removed" in ln) == 2 and not raised
+        and any("COULD NOT READ the imports log" in ln for ln in lines10) and any("import record of plaza-east" in ln for ln in lines9)
+        and all(tree_bytes(os.path.join(worlds, n)) == b for n, b in others.items()),
+        "removed: %s; a record []: %s; a log not read: %s%s" % (lines8, lines9, lines10[:1], "; raised " + raised if raised else ""))
+
+    # the first seeding: a checkout brief holding an admission half written is refused, and nothing of the checkout written
+    def seeding_pending_case():
+        w3 = os.path.join(tmp, "worlds-pending-%d" % len(os.listdir(tmp)))
+        seed_src = os.path.join(tmp, "seed-pending-%d" % len(os.listdir(tmp)))
+        D.selftest_tree(seed_src)
+        half_written(seed_src, "plaza-night")
+        lock = os.path.join(seed_src, "art", "build", "content.lock")
+        if os.path.exists(lock):
+            os.remove(lock)
+        sb = tree_bytes(seed_src)
+        made3 = play.seed_worlds(w3, source=seed_src, say=lambda s: None, source_label=LABEL)
+        refusal = json.load(open(os.path.join(w3, "SEEDED.json")))["worlds"].get("plaza-night", {}).get("refused", "")
+        return made3, refusal, tree_bytes(seed_src) == sb and not os.path.exists(lock), [n for n in os.listdir(w3) if play.ASIDE.match(n)]
+    made3, refusal, same3, left3 = seeding_pending_case()
+    row("seeding: a checkout brief holding an admission half written is not made a world (IMPORT-SOURCE-PENDING) and the checkout is not recovered: "
+        "its files byte for byte as before, its content lock not taken (before 0250 seeding recovered it, and so wrote it)",
+        made3 == [] and refusal.startswith("IMPORT-SOURCE-PENDING") and same3 and not left3, refusal[:120])
+
+    # the first seeding cut off between two briefs is finished at the next start, never left part-made in silence
+    def seeding_resume_case():
+        w4 = os.path.join(tmp, "worlds-resume-%d" % len(os.listdir(tmp)))
+        s4 = os.path.join(tmp, "seed-two-%d" % len(os.listdir(tmp)))
+        D.selftest_tree(s4)
+        shutil.copy(os.path.join(REPO, "art", "briefs", "harbor-day.art"), os.path.join(s4, "art", "briefs", "harbor-day.art"))
+        env = dict(os.environ, VERDANDI_CRASH_AT="seed:placed-1", PYTHONHASHSEED="0")
+        cp = subprocess.run([sys.executable, "-B", os.path.join(HERE, "studio_queue.py"), "seed-once", w4, s4], capture_output=True, env=env, timeout=300)
+        part = play.Hub(worlds_dir=w4).names()
+        lines4 = play.recover_worlds(w4, say=lambda s: None)
+        made4 = play.seed_worlds(w4, source=s4, say=lambda s: None, source_label=LABEL)
+        seeded = json.load(open(os.path.join(w4, "SEEDED.json")))["worlds"] if os.path.exists(os.path.join(w4, "SEEDED.json")) else {}
+        return cp.returncode, part, lines4, made4, seeded, play.Hub(worlds_dir=w4).names()
+    rc4, part, lines4, made4, seeded4, names4 = seeding_resume_case()
+    row("seeding: a first seeding ended between two briefs (one world made, no SEEDED.json) is said at the next start and finished there: every "
+        "brief a world, SEEDED.json listing both", rc4 == 77 and part == ["harbor-day"] and any("ended part-way" in ln for ln in lines4)
+        and made4 == ["plaza-night"] and names4 == ["harbor-day", "plaza-night"] and sorted(seeded4) == ["harbor-day", "plaza-night"]
+        and "resumed" in seeded4.get("harbor-day", {}), "cut off: exit %s, made %s; recovery %s; then made %s; worlds %s" % (rc4, part, lines4, made4, names4))
+
+    # the plants: each a defect of the import, caught by the row it breaks (its scenario run again, from where it began)
+    D.durable.remove_tree(os.path.join(worlds, "plaza-meet"))
+    caught = {}
+    for plant in play.IMPORT_PLANTS:
+        play.IMPORT_PLANT = plant
+        try:
+            if plant == "import-recover-source":
+                got, same = pending_case()
+                caught[plant] = (got != "IMPORT-SOURCE-PENDING" or not same, "%s; the source the same and not locked %s" % (got, same))
+                # the row's byte and lock half catches it too, not its code alone
+                caught[plant] = (caught[plant][0] and not same, caught[plant][1])
+            elif plant == "import-keep-staging":
+                a, _same = failing_case()
+                caught[plant] = (bool(aside()) or a.get("code") != "IMPORT-FAILED", "%s; aside %s" % (a.get("code"), aside()))
+            elif plant == "import-rename-first":
+                got, kept, listed, dis = changed_case()
+                caught[plant] = (listed or not kept, "%s; kept %s; listed %s" % (got, kept, listed))
+            elif plant == "import-no-exists-check":
+                outs, wl, kept_ok, dis = meeting_case()
+                caught[plant] = (not (outs[1] in ("IMPORT-EXISTS", "IMPORT-BUSY")), "the commits: %s" % outs)
+                D.durable.remove_tree(os.path.join(worlds, "plaza-meet"))
+            elif plant == "import-quiet-unlocked":
+                q, r, restored = quiet_case()
+                caught[plant] = (r[0] == 200 and not restored, "the stage %s; the console restored %s" % (r[0], restored))
+            elif plant == "seed-names-guard":
+                rc4, part, lines4, made4, seeded4, names4 = seeding_resume_case()
+                caught[plant] = (names4 != ["harbor-day", "plaza-night"], "after the cut: made %s; worlds %s" % (made4, names4))
+        except Exception as e:  # noqa: BLE001 — a plant whose scenario raises is said, and not counted caught
+            caught[plant] = (False, "raised %s: %s" % (type(e).__name__, str(e)[:80]))
+        finally:
+            play.IMPORT_PLANT = ""
+            for n in aside():
+                D.durable.remove_tree(os.path.join(worlds, n))
+    for plant in play.IMPORT_PLANTS:
+        ok, detail = caught.get(plant, (False, "not run"))
+        row("import plant %s caught" % plant, ok is True, detail)
+
+
 def selftest():
     """STUDIO-2 end to end, off the gate, in a scratch folder: the worlds folder seeded from a checkout of its own (the
     fixture's plaza with a ledger and tags, and harbor-day), a checkout whose ledger does not verify refused; the worlds
@@ -377,7 +909,8 @@ def selftest():
     run, reviewed and admitted there, the other world's bytes untouched; a world duplicated with maps of its own; at
     most two requests at once and one per world; the studio busy while work waits; two worlds compiled at once over
     different maps; and fixes 3 and 4 of 2026-10-13 with their plants (a torn tail cut durably; a task the studio
-    stopped under, whose answer was recorded, ready without asking again)."""
+    stopped under, whose answer was recorded, ready without asking again); and the import, transactional (DASHBOARD-0,
+    0250: import_rows), with its crash loop and its six plants."""
     import shutil
     import tempfile
     import urllib.error
@@ -427,7 +960,8 @@ def selftest():
         seeded = json.load(open(os.path.join(worlds, "SEEDED.json")))
         row("the worlds seeded from the checkout: each brief a world of its own tree, the plaza's ledger and tags copied byte for byte and "
             "verified in the copy; the checkout unchanged", made == ["harbor-day", "plaza-night"] and same and tree_bytes(src) == before
-            and seeded["worlds"]["plaza-night"]["ledger_events"] == "2" and not os.path.exists(os.path.join(worlds, "harbor-day", "art", "ledger")),
+            and seeded["worlds"]["plaza-night"]["ledger_events"] == "2" and not os.path.exists(os.path.join(worlds, "harbor-day", "art", "ledger"))
+            and not [n for n in os.listdir(worlds) if play.ASIDE.match(n)],
             "; ".join(said)[:200])
         again = play.seed_worlds(worlds, source=src, say=said.append)
         row("seeded once: a folder that holds worlds is not seeded again", again == [] and json.load(open(os.path.join(worlds, "SEEDED.json"))) == seeded, "made %s" % again)
@@ -435,7 +969,7 @@ def selftest():
         w2, said2 = os.path.join(tmp, "worlds-2"), []
         made2 = play.seed_worlds(w2, source=bad, say=said2.append)
         row("a checkout brief whose ledger does not verify is not made a world, and why is said; nothing of it left", made2 == ["harbor-day"]
-            and not os.path.exists(os.path.join(w2, "plaza-night")) and not os.path.exists(os.path.join(w2, "plaza-night.making"))
+            and not os.path.exists(os.path.join(w2, "plaza-night")) and not [n for n in os.listdir(w2) if play.ASIDE.match(n)]
             and "UNLOGGED-CHANGE" in json.load(open(os.path.join(w2, "SEEDED.json")))["worlds"]["plaza-night"]["refused"],
             [ln for ln in said2 if "NOT" in ln][0][:160] if any("NOT" in ln for ln in said2) else "nothing said")
 
@@ -740,6 +1274,8 @@ def selftest():
         row("the queue read back after a restart: every task as it stood", q9._task(tid)["status"] == "reviewed"
             and q9._task(r["id"])["status"] == "cancelled" and len(q9.tasks) == len(hub.queue.tasks),
             "%d tasks; %s reviewed, %s cancelled" % (len(q9.tasks), tid, r["id"]))
+        # 5. DASHBOARD-0 (0250): import, transactional, in a worlds folder of its own
+        import_rows(tmp, row, tree_bytes)
     except Exception as e:  # noqa: BLE001 — the self-test says what stopped it
         import traceback
         traceback.print_exc()
@@ -764,5 +1300,9 @@ def selftest():
 if __name__ == "__main__":
     if sys.argv[1:2] == ["selftest"]:
         sys.exit(selftest())
+    if sys.argv[1:2] == ["import-once"] and len(sys.argv) == 5:
+        sys.exit(import_once(*sys.argv[2:5]))
+    if sys.argv[1:2] == ["seed-once"] and len(sys.argv) == 4:
+        sys.exit(seed_once(*sys.argv[2:4]))
     print("usage: python art/studio_queue.py selftest", file=sys.stderr)
     sys.exit(2)

@@ -28,8 +28,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 
 # (name, arguments after the Python, the summary line's pattern, the seconds expected: measured in the container at 0236
-# for the suites then, estimated for those added since (page and page-cards need a browser and never ran there) — only an
-# order: the longest start first)
+# for the suites then, estimated for those added since (page, page-cards and page-worlds need a browser and never ran
+# there) — only an order: the longest start first)
 SUITES = (
     ("held", ["art/scene_diff.py", "selftest"], r"^HELD SELFTEST (\d+)/(\d+)$", 72),
     ("director", ["art/director.py", "selftest"], r"^DIRECTOR SELFTEST (PASSED|FAILED)\b.*$", 70),
@@ -48,6 +48,7 @@ SUITES = (
     ("flagship", ["art/play.py", "--flagship-selftest"], r"^FLAGSHIP SELFTEST (\d+)/(\d+)$", 90),      # FLAGSHIP-0 (0243)
     ("page", ["art/play.py", "--page-selftest"], r"^PAGE SELFTEST (\d+)/(\d+)$", 110),              # PAGE-0 (0246): a browser
     ("page-cards", ["art/play.py", "--cards-selftest"], r"^PAGE-CARDS SELFTEST (\d+)/(\d+)$", 150),  # DASHBOARD-0 (0249): a browser
+    ("page-worlds", ["art/play.py", "--worlds-selftest"], r"^PAGE-WORLDS SELFTEST (\d+)/(\d+)$", 120),  # DASHBOARD-0 (0250): a browser
     ("cert", ["art/certificate.py", "selftest"], r"^CERT SELFTEST (\d+)/(\d+)$", 5),                  # CERT-0 (0244)
     ("glue", ["art/glue.py", "selftest"], r"^GLUE SELFTEST (\d+)/(\d+)$", 40),                        # GLUE-0 (0244)
     ("queue", ["art/studio_queue.py", "selftest"], r"^STUDIO-2 SELFTEST (\d+)/(\d+)$", 37),

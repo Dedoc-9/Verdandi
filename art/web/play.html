@@ -75,6 +75,25 @@
   .navit .nb { margin-left: auto; font-size: 9.5px; color: var(--faint); border: 1px solid var(--line2); border-radius: 8px; padding: 0 5px; }
   .navit .count { margin-left: auto; font: 10.5px var(--mono); color: var(--faint); }
   .navit.notbuilt { color: #7f8ca2; }
+  /* DASHBOARD-0 (0250): the left panel's worlds, outline and import, and its collapse */
+  #lp-head { display: flex; align-items: center; gap: 6px; padding: 0 8px 4px; }
+  #lp-head .dim { font-size: 10px; }
+  body.leftcollapsed:not(.mark) #work { grid-template-columns: 28px minmax(0, 1fr) 344px; }
+  body.leftcollapsed #lp-body, body.leftcollapsed #lp-head .dim { display: none; }
+  body.leftcollapsed #lp-head { padding: 0 2px; }
+  .lpsec { padding: 2px 8px 6px; border-bottom: 1px solid var(--line); }
+  .lpsec h4 { display: flex; align-items: center; justify-content: space-between; margin: 4px 0; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); font-weight: 650; }
+  #lp-search { width: 100%; box-sizing: border-box; margin: 0 0 4px; }
+  .lpw, .lpi, .lpstaged, .lpsaid { margin: 4px 0; font-size: 11px; overflow-wrap: anywhere; }
+  .lpw a { color: #cfe0ff; }
+  .lpw .d, .lpi .d, .lpstaged .d { color: var(--dim); font-size: 10.5px; }
+  .lpw .d.good { color: var(--good); } .lpw .d.bad, .lpsaid.bad { color: var(--bad); } .lpsaid.good { color: var(--good); }
+  .lpstaged .d.mono { font: 9.5px/1.35 var(--mono); white-space: pre-wrap; max-height: 120px; overflow: auto; }
+  .lph { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+  .lpk { font-size: 10.5px; color: var(--dim); margin: 2px 0 0 4px; }
+  .lpo { display: block; width: 100%; text-align: left; background: none; border: 0; color: #c4cfdf; font: 10.5px var(--mono); padding: 1px 8px; cursor: pointer; overflow-wrap: anywhere; }
+  .lpo:hover { background: var(--raise); color: #fff; }
+  #lp-worlds > .pstate, #lp-outline > .pstate, #lp-import > .pstate { margin: 2px 0; }
 
   #center { display: grid; grid-template-rows: minmax(0, 1fr) 256px; min-width: 0; min-height: 0; }
   #vp { position: relative; overflow: hidden; background: #000; min-height: 0; }
@@ -338,7 +357,15 @@
   <span id="cx-chips" data-panel="chips"></span>
 </div>
 <main id="work">
-  <aside id="leftnav"></aside>
+  <aside id="leftnav">
+    <div id="lp-head"><button id="lp-toggle" class="btn small" title="Collapse the left panel">«</button><span class="dim">the worlds · the outline · import</span></div>
+    <div id="lp-body">
+      <section class="lpsec"><h4>Worlds <button id="lp-wrefresh" class="btn small" title="Read every world back again (GET /worlds.json)">Refresh</button></h4><div id="lp-worlds" data-panel="worlds"></div></section>
+      <section class="lpsec"><h4>Outline</h4><input id="lp-search" type="search" placeholder="find an object" autocomplete="off"><div id="lp-outline" data-panel="outline"></div></section>
+      <section class="lpsec"><h4>Import <button id="lp-irefresh" class="btn small" title="Read the briefs to import again (GET /importable.json)">Refresh</button></h4><div id="lp-import" data-panel="import"></div></section>
+      <div id="lp-nav"></div>
+    </div>
+  </aside>
   <aside id="marknav"></aside>
   <section id="center">
     <div id="vp">

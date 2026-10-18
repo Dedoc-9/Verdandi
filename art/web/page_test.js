@@ -15,7 +15,7 @@
 (function () {
   const token = document.body.getAttribute("data-studio") || "";
   const frame = document.getElementById("app"), logEl = document.getElementById("log");
-  let win = null, doc = null, toasts = [], observer = null;
+  let win = null, doc = null, toasts = [], observer = null, left = 0;
   const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   const say = function (s) { logEl.textContent = (logEl.textContent + "\n" + s).split("\n").slice(-14).join("\n"); };
   const text = function (el) { return el ? (el.textContent || "").replace(/\s+/g, " ").trim() : ""; };
@@ -130,6 +130,10 @@
       try {
         await until(function () { win = frame.contentWindow; doc = frame.contentDocument; return doc !== old && win && win.PLAY && doc.getElementById("toasts"); }, st.timeout_ms, "the studio page to build its shell");
       } catch (e) { throw new Error(e.message + " (" + seen() + ")"); }
+      // DASHBOARD-0 (0250): a navigation the page itself begins away from the document opened here is counted
+      left = 0;
+      win.addEventListener("beforeunload", function () { left++; });
+      win.addEventListener("pagehide", function () { left++; });
       for (const k in held) delete held[k];
       toasts = [];
       if (observer) observer.disconnect();
@@ -272,7 +276,8 @@
         const out = {};
         Array.prototype.slice.call(doc.querySelectorAll("[data-panel]")).forEach(function (n) {
           const b = n.querySelector(":scope > .pstate");
-          out[n.getAttribute("data-panel")] = { state: n.getAttribute("data-state") || "", why: n.getAttribute("data-state-why") || "", badge: text(b), shown: !n.hidden && n.getBoundingClientRect().width > 0 };
+          out[n.getAttribute("data-panel")] = { state: n.getAttribute("data-state") || "", why: n.getAttribute("data-state-why") || "", badge: text(b), shown: !n.hidden && n.getBoundingClientRect().width > 0,
+                                               revless: n.getAttribute("data-revless") === "1" };
         });
         return out;
       };
@@ -393,6 +398,67 @@
       await until(function () { const s = status(); return s.text !== s0 && (s.good || s.bad) ? s : null; }, st.timeout_ms, "the page's word on the undo");
       await sleep(300);
       return { label: label, pressed: outcome, status: status(), toasts: toasts.slice(t0), chip: text($("cx-undo")) };
+    },
+    // DASHBOARD-0 (0250): the left panel as the page shows it — the worlds' rows, the outline's objects, import's briefs, its
+    // staged record and its last word, the collapse, the three panels' marks, every data-world in the page — once the
+    // named conditions hold (each a fact of the page, never a host's value: a plant fails its row, not a wait)
+    lp: async function (st) {
+      const attr = function (n, a) { return n ? n.getAttribute(a) || "" : ""; };
+      const read = function () {
+        const panel = function (id) { const n = $(id); return n ? { state: attr(n, "data-state"), why: attr(n, "data-state-why"), refused: attr(n, "data-refused"), answers: +(attr(n, "data-answers") || 0),
+                                                           forced: +(attr(n, "data-forced") || 0), text: text(n).slice(0, 3000) } : null; };
+        const said = doc.querySelector("#lp-import .lpsaid"), stg = doc.querySelector("#lp-import .lpstaged"), u = win.PLAY.shell.ui;
+        return { worlds: Array.prototype.slice.call(doc.querySelectorAll("#lp-worlds .lpw")).map(function (r) {
+                   return { name: attr(r, "data-wname"), state: attr(r, "data-wstate"), code: attr(r, "data-wcode"), events: +attr(r, "data-wevents"), head: attr(r, "data-whead"), text: text(r) }; }),
+                 outline: Array.prototype.slice.call(doc.querySelectorAll("#lp-outline .lpo")).map(function (b) { return attr(b, "data-oid"); }),
+                 outline_head: text(doc.querySelector("#lp-outline > p.dim")), outline_shown: attr(doc.querySelector("#lp-outline .lpcount"), "data-shown"),
+                 importable: Array.prototype.slice.call(doc.querySelectorAll("#lp-import .lpi")).map(function (b) { return attr(b, "data-iname"); }),
+                 staged: stg ? { staging: attr(stg, "data-staging"), sha: attr(stg, "data-sha"), text: text(stg) } : null,
+                 said: said ? text(said) : "", said_code: attr(said, "data-code"), committed: attr(said, "data-committed"),
+                 open_offered: !!doc.querySelector("#lp-import button[data-act=open]"),
+                 panels: { worlds: panel("lp-worlds"), outline: panel("lp-outline"), import: panel("lp-import"), validation: panel("v-body") },
+                 collapsed: doc.body.classList.contains("leftcollapsed"), columns: win.getComputedStyle($("work")).gridTemplateColumns,
+                 data_worlds: Array.prototype.slice.call(doc.querySelectorAll("[data-world]")).map(function (n) { return attr(n, "data-world"); }),
+                 html_has: st.marker ? doc.body.innerHTML.indexOf(st.marker) >= 0 : null, brief: attr(doc.body, "data-brief"),
+                 left: left, same_doc: frame.contentDocument === doc, href: String((frame.contentWindow || {}).location && frame.contentWindow.location.search || ""),
+                 sel: (u && u.sel) || "", info: u && u.info ? { piece: u.info.piece || u.info.id || "", world: u.info.world || "" } : null };
+      };
+      // the worlds' periodic read, set for a row that must see what the mark alone asks for (PLAY.shell.ui, a hook)
+      if (st.set_every !== undefined) win.PLAY.shell.ui.worldsEvery = st.set_every;
+      const c = st.until || {};
+      const holds = function (x) {
+        if (c.worlds_any && !x.worlds.length) return false;
+        if (c.forced_gt !== undefined && !((x.panels.worlds || {}).forced > c.forced_gt)) return false;
+        if (c.rev_refused && !((((win.PLAY.dash || {}).rev || {}).slots || [])[0] || {}).refused_sha256) return false;
+        if (c.world_state && !x.worlds.some(function (w) { return w.name === c.world_state[0] && w.state === c.world_state[1]; })) return false;
+        if (c.outline_any && !x.outline.length) return false;
+        if (c.outline_answers_gt !== undefined && !((x.panels.outline || {}).answers > c.outline_answers_gt)) return false;
+        if (c.importable_any && !x.importable.length) return false;
+        if (c.staged && !x.staged) return false;
+        if (c.said_code && !x.said_code) return false;
+        if (c.committed && !x.committed) return false;
+        if (c.sel && x.sel !== c.sel) return false;
+        if (c.info && !(x.info && x.info.piece)) return false;
+        if (c.panel_state && !c.panel_state[1].some(function (s) { return ((x.panels[c.panel_state[0]] || {}).state || "") === s; })) return false;
+        return true;
+      };
+      if (Object.keys(c).length) await until(function () { const x = read(); return holds(x) ? x : null; }, st.timeout_ms, "the left panel: " + JSON.stringify(c));
+      return read();
+    },
+    // a control of the left panel pressed as a person does (its centre hit-tested first: collapsed, it is not shown)
+    lp_press: async function (st) {
+      const q = { toggle: "#lp-toggle", wrefresh: "#lp-wrefresh", irefresh: "#lp-irefresh", commit: "#lp-import button[data-act=commit]",
+                  discard: "#lp-import button[data-act=discard]" }[st.what];
+      const b = q ? doc.querySelector(q) : st.what === "stage" ? doc.querySelector('#lp-import .lpi[data-iname="' + st.name + '"] button[data-act=stage]')
+        : st.what === "object" ? Array.prototype.slice.call(doc.querySelectorAll("#lp-outline .lpo")).filter(function (x) { return x.getAttribute("data-oid") === st.name; })[0] : null;
+      return { pressed: press(b, "the left panel's " + st.what + (st.name ? " " + st.name : "")) };
+    },
+    // the outline's search, typed
+    lp_search: async function (st) {
+      const i = $("lp-search");
+      i.value = st.text;
+      i.dispatchEvent(new win.Event("input", { bubbles: true }));
+      return { shown: Array.prototype.slice.call(doc.querySelectorAll("#lp-outline .lpo")).map(function (b) { return b.getAttribute("data-oid"); }) };
     },
     // the restoration chip, once it says (or no longer says) a phrase
     chip: async function (st) {

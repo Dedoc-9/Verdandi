@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright (C) 2026 Daniel J. Dillberg
 #
-# art/page_dash.py — DASHBOARD-0 (0249): the dashboard's checks, the host's and the page's.
+# art/page_dash.py — DASHBOARD-0 (0249, 0250): the dashboard's checks, the host's and the page's.
 #
 #   python art/play.py --cards-selftest       PAGE-CARDS: the cards half of the dashboard executed in a real browser
+#   python art/play.py --worlds-selftest      PAGE-WORLDS (0250): the worlds, the outline and import, in worlds mode
 #   (and, called from art/play.py's own self-tests, the host's rows: STUDIO's, studio_rows; LIVE's, live_rows)
 #
 # THE RULE THE CHECKS HOLD (the owner's text, 2026-10-17): "At the time a panel claims to represent host revision H, its
@@ -772,9 +773,11 @@ def cards_run(browser, headed, say=None):
             r1 = rev()
             P = p.get("panels") or {}
             said = {k: (P.get(k) or {}).get("state") for k in ("chips", "cards", "validation")}
-            row("cards: case 1, the page renders before the host settles — every panel says settling (or stale), none current, while the host's revision says the files are not compiled",
+            # (0250: a panel of no revision, the briefs to import, is never settling: it is left out, and must say it is so)
+            row("cards: case 1, the page renders before the host settles — every panel of the host's revision says settling (or stale), none current, while the host's revision says the files are not compiled",
                 r0.get("ok") and held and r1.get("settled") is False and r1.get("compiling") == [0] and all(v in ("settling", "stale") for v in said.values())
-                and "current" not in [x.get("state") for x in P.values()] and t.get("state") in ("settling", "stale"),
+                and "current" not in [x.get("state") for x in P.values() if not x.get("revless")] and P.get("import", {}).get("revless") is True
+                and t.get("state") in ("settling", "stale"),
                 "the host: settled %s, compiling %s; the page: %s" % (r1.get("settled"), r1.get("compiling"), said))
             gate.open()
             served_head()
@@ -1164,6 +1167,442 @@ def cards_run(browser, headed, say=None):
             live.stopping = True
             if live.studio:
                 live.studio.shutdown()
+        if srv:
+            srv.shutdown()
+        shutil.rmtree(tmp, ignore_errors=True)
+    return rows, caught, seen
+
+
+# ================================================================================================ PAGE-WORLDS (0250)
+# DASHBOARD-0's second half, executed in a real browser in worlds mode (the desktop studio's): a worlds folder seeded from
+# a scratch source (foundry-yard), a second world made by duplicating it (foundry-copy, which the page shows: not the
+# default), and the import's source a scratch checkout holding foundry-yard (a world already), harbor-day (no ledger) and
+# plaza-night (its ledger left unlogged). Its rows: the worlds panel against Hub.inspect, another world unverified and
+# verified again, this world's files refused by the loop, the collapse, the outline against the host's object rule with its search and a selection, the
+# importable briefs, the owner's case 6 (an import that fails partway), a stage and a commit, a refused stage, his case 7
+# across two worlds, and nothing of the browser left. Four plants, copies of play.js with one line changed, are caught by
+# the row each names with every row before it in its scenario passed.
+WORLDS_LABEL = "the scratch checkout"
+WORLDS_PLANTS = {
+    "worlds-import-unsaid": ("import", "worlds: case 6", ('const said = (r.code || "IMPORT-FAILED") + (r.director_code ? " (" + r.director_code + ")" : "") + " · " + (r.source_label || "the source") + " · " + (r.name || name || "") + ": " + (r.message || "");',
+                                                         'const said = (r.message || "");')),
+    "worlds-world-dropped": ("world", "worlds: case 7", ('getJSON("/validate.json?world=" + W + "&slot=" + k)', 'getJSON("/validate.json?slot=" + k)')),
+    "worlds-other-drawn": ("world", "worlds: case 7", ('if (!answerFor(o, $("lp-outline"), "Outline")) { ui.outline = null; panelState("outline"); return; }',
+                                                      'answerFor(o, $("lp-outline"), "Outline");')),
+    "worlds-mark-unrefused": ("worlds", "worlds: this world's files refused", ('return JSON.stringify([s0.head || "", s0.latest_head || "", s0.refused_sha256 || ""]);',
+                                                                            'return JSON.stringify([s0.head || ""]);')),
+}
+WORLDS_SCENARIOS = ("worlds", "outline", "import", "world")
+WORLDS_LIMITS = {"honest": 480, "plant": 150, "suite": 1100}
+
+
+def worlds_selftest(argv=()):
+    """PAGE-WORLDS SELFTEST n/n (python art/play.py --worlds-selftest): DASHBOARD-0's worlds, outline and import, executed
+    in a real browser in worlds mode."""
+    import page_test as PT
+    if PT.WINDOWS:
+        try:
+            import studio_app
+            studio_app.Job()
+        except (OSError, ImportError, AttributeError):
+            pass
+    try:
+        sys.stdout.reconfigure(errors="backslashreplace")
+    except (AttributeError, ValueError):
+        pass
+    browser, headed = PT.find_browser(argv), "--headed" in argv
+    rows, caught, seen = worlds_run(browser, headed, say=lambda s_: print(s_, flush=True))
+    for ln in seen:
+        print(ln)
+    ok = all(o for _n, o, _d in rows) and all(caught) and len(caught) == len(WORLDS_PLANTS)
+    print("PAGE-WORLDS SELFTEST %d/%d" % (sum(o for _n, o, _d in rows) + sum(caught), len(rows) + len(WORLDS_PLANTS)))
+    return 0 if ok else 1
+
+
+def worlds_run(browser, headed, say=None):
+    """The honest run (every scenario), then each plant's run in its scenario; one browser and one worlds folder."""
+    import page_test as PT
+    import play
+    import studio_refs
+    rows, caught, seen = [], [], []
+    END = time.time() + WORLDS_LIMITS["suite"]
+    tmp = tempfile.mkdtemp(prefix="page-worlds-")
+    marker = "page-test-profile-" + os.path.basename(tmp)
+    profile = os.path.join(tmp, marker)
+    saved = (play.ROOT, dict(play.FILES), play.validate_info, play.outline)
+    hub = srv = proc = None
+    gates, alive = [], []
+    D = play.director()
+    PAGE, OTHER = "foundry-copy", "foundry-yard"
+    mode = {"out": rows, "say": say, "stop": ""}
+
+    def row(name, ok, detail):
+        mode["out"].append((name, bool(ok), detail))
+        if mode["say"]:
+            mode["say"]("[%s] %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+        if mode["stop"] and name.startswith(mode["stop"]):
+            raise Stop()
+
+    def tree_bytes(root):
+        out = {}
+        for dp, _dn, fn in os.walk(root):
+            for f in fn:
+                rel = os.path.relpath(os.path.join(dp, f), root).replace(os.sep, "/")
+                if not rel.startswith("art/build/") and not rel.endswith(".lock"):
+                    out[rel] = open(os.path.join(dp, f), "rb").read()
+        return out
+    try:
+        maps = os.path.join(REPO, "graybox", "maps")
+        seed = os.path.join(tmp, "seed")                    # the worlds' first source: foundry-yard alone
+        os.makedirs(os.path.join(seed, "art", "briefs"))
+        shutil.copytree(maps, os.path.join(seed, "graybox", "maps"))
+        shutil.copy(os.path.join(HERE, "briefs", OTHER + ".art"), os.path.join(seed, "art", "briefs", OTHER + ".art"))
+        src = os.path.join(tmp, "source")                   # the import's source: a scratch checkout
+        D.selftest_tree(src)                                # plaza-night, its ledger started (the fixture's maps are the checkout's)
+        with open(os.path.join(src, "art", "briefs", "plaza-night.art"), "ab") as fh:
+            fh.write(b"# a hand edit, not recorded\n")    # its ledger left unlogged
+        for b in (OTHER, "harbor-day"):
+            shutil.copy(os.path.join(HERE, "briefs", b + ".art"), os.path.join(src, "art", "briefs", b + ".art"))
+        src_before = tree_bytes(src)
+        worlds = os.path.join(tmp, "worlds")
+        play.seed_worlds(worlds, source=seed, say=lambda s_: None, source_label=WORLDS_LABEL)
+        scripted = os.path.join(HERE, "providers", "scripted.json")
+        hub = play.Hub(config=scripted, say=lambda s_: None, watch=False, worlds_dir=worlds, source=src, source_label=WORLDS_LABEL)
+        hub.default = OTHER
+        hub.world(OTHER)
+        hub.duplicate(OTHER, PAGE)
+        for lv in hub.worlds.values():                     # the gate on each Live before its watcher starts (0247's)
+            gates.append(Gate(lv))
+            lv.poll = 0.15
+            threading.Thread(target=lv.watch, kwargs={"say": lambda s_: None}, daemon=True).start()
+        srv = play.server(hub)
+        base = "http://127.0.0.1:%d" % srv.server_address[1]
+        port = srv.server_address[1]
+        ch = PT.Channel(min(time.time() + WORLDS_LIMITS["honest"], END), alive=lambda: proc is not None and proc.poll() is None)
+        hub.page_test = ch
+        get = lambda path: _get(port, path)[1]
+        aside = lambda: sorted(n for n in os.listdir(worlds) if play.ASIDE.match(n))
+        other_art = os.path.join(worlds, OTHER, "art", "briefs", OTHER + ".art")
+        other_text = open(other_art, "rb").read()
+        page_art = os.path.join(worlds, PAGE, "art", "briefs", PAGE + ".art")
+        page_text = open(page_art, "rb").read()
+
+        def until(fn, limit, step=0.1):
+            limit = min(limit, max(0.0, ch.deadline - time.time()))
+            t0 = time.time()
+            while True:
+                v = fn()
+                if v or time.time() - t0 > limit:
+                    return v
+                time.sleep(step)
+
+        def settled(lv):
+            return until(lambda: lv.settled()[0] is True and not lv.compiling, 120, 0.2)
+
+        def open_page():
+            m0 = time.monotonic()
+            r_ = ch.do({"do": "open", "url": "/play.html?world=%s&slot=0&w=%d&h=%d" % (PAGE, PT.VIEW[0], PT.VIEW[1])}, 120)
+            if not r_.get("ok"):
+                raise RuntimeError("the page did not open: %s; the server answered: %s" % (r_.get("error"), ch.answered(m0)))
+            return r_
+
+        def reset():
+            """the worlds folder as the run began: no imported world, nothing aside, foundry-yard's brief as seeded, no
+            route wrapped; then the page opened again"""
+            play.validate_info, play.outline = saved[2], saved[3]
+            D.durable.HOOK = None
+            if open(other_art, "rb").read() != other_text:
+                open(other_art, "wb").write(other_text)
+            if open(page_art, "rb").read() != page_text:
+                open(page_art, "wb").write(page_text)
+            for n in hub.names():
+                if n not in (OTHER, PAGE):
+                    D.durable.remove_tree(os.path.join(worlds, n))
+            for n in aside():
+                D.durable.remove_tree(os.path.join(worlds, n))
+            log = os.path.join(worlds, "IMPORTS.jsonl")
+            if os.path.exists(log):
+                os.remove(log)
+            for lv in hub.worlds.values():
+                settled(lv)
+            return open_page()
+
+        # ============================================================ the scenarios
+        def sc_worlds():
+            w = ch.do({"do": "lp", "until": {"worlds_any": True, "panel_state": ["worlds", ["current"]]}}, 60)
+            host = {n: hub.inspect(n) for n in hub.names()}
+            _c, wj = _get(port, "/worlds.json")
+            shown = {x["name"]: x for x in w.get("worlds", [])}
+            same = sorted(shown) == sorted(host) and all(shown[n]["head"] == host[n]["head"] and shown[n]["events"] == host[n]["events"]
+                                                         and shown[n]["state"] == ("verified" if host[n]["verified"] else "not-verified") for n in host)
+            row("worlds: the worlds panel is each world as the host reads it back (Hub.inspect: its ledger replayed to its files), current, "
+                "this page's world (not the default) among them", same and w.get("brief") == PAGE and PAGE != hub.default
+                and [x["world"] for x in wj.get("worlds", [])] == sorted(host),
+                "the panel %s; the host %s; the page shows %s" % ({n: (x["state"], x["events"], x["head"][:8]) for n, x in shown.items()},
+                                                                  {n: (h["verified"], h["events"], h["head"][:8]) for n, h in host.items()}, w.get("brief")))
+            # another world changed by hand: not verified, then verified again once its brief is put back, each read by
+            # Refresh's own read (the page counts them: the 10 s read does not count)
+            f0 = ((w.get("panels") or {}).get("worlds") or {}).get("forced", 0)
+            with open(other_art, "ab") as fh:
+                fh.write(b"# a hand edit in another world\n")
+            ch.do({"do": "lp_press", "what": "wrefresh"}, 30)
+            a = ch.do({"do": "lp", "until": {"forced_gt": f0}}, 60)
+            f1 = ((a.get("panels") or {}).get("worlds") or {}).get("forced", f0)
+            open(other_art, "wb").write(other_text)
+            ch.do({"do": "lp_press", "what": "wrefresh"}, 30)
+            b = ch.do({"do": "lp", "until": {"forced_gt": f1}}, 60)
+            ra = next((x for x in a.get("worlds", []) if x["name"] == OTHER), {})
+            rb = next((x for x in b.get("worlds", []) if x["name"] == OTHER), {})
+            row("worlds: another world changed by hand reads not verified (UNLOGGED-CHANGE), its brief put back verified again, each read by Refresh",
+                ra.get("code") == "UNLOGGED-CHANGE" and "not verified" in ra.get("text", "") and rb.get("state") == "verified",
+                "changed: %r; put back: %s" % (ra.get("text", a.get("error", ""))[:100], rb.get("state", b.get("error", ""))))
+            # the collapse: the panel folds to a strip; a control inside cannot be pressed (not shown); it opens again
+            t1 = ch.do({"do": "lp_press", "what": "toggle"}, 30)
+            c1 = ch.do({"do": "lp"}, 30)
+            inside = ch.do({"do": "lp_press", "what": "wrefresh"}, 30)
+            ch.do({"do": "lp_press", "what": "toggle"}, 30)
+            c2 = ch.do({"do": "lp"}, 30)
+            # this world's files refused by the loop: the panel's mark moves at once (it holds the files' compile, not only the
+            # head served), so its row is never shown current as verified over them; the periodic read held off so that only
+            # the mark can ask
+            # the periodic read held off, and its key settled by one read Refresh makes, so that only the mark can ask
+            s0 = ch.do({"do": "lp", "set_every": 1e12, "until": {"world_state": [PAGE, "verified"], "panel_state": ["worlds", ["current"]]}}, 60)
+            ch.do({"do": "lp_press", "what": "wrefresh"}, 30)
+            ch.do({"do": "lp", "until": {"forced_gt": ((s0.get("panels") or {}).get("worlds") or {}).get("forced", 0), "panel_state": ["worlds", ["current"]]}}, 60)
+            open(page_art, "wb").write(page_text + b"bogus_statement x\n")
+            x = ch.do({"do": "lp", "until": {"rev_refused": True}}, 90)
+            me = next((r_ for r_ in x.get("worlds", []) if r_["name"] == PAGE), {})
+            pst = ((x.get("panels") or {}).get("worlds") or {}).get("state")
+            at_once = bool(x.get("worlds")) and not (pst == "current" and me.get("state") == "verified")
+            y = z = {"error": "not waited for: the row failed at the refusal"}
+            if at_once:
+                y = ch.do({"do": "lp", "until": {"world_state": [PAGE, "not-verified"], "panel_state": ["worlds", ["current"]]}}, 60)
+            me2 = next((r_ for r_ in y.get("worlds", []) if r_["name"] == PAGE), {})
+            open(page_art, "wb").write(page_text)
+            if at_once:
+                z = ch.do({"do": "lp", "until": {"world_state": [PAGE, "verified"], "panel_state": ["worlds", ["current"]]}}, 90)
+            ch.do({"do": "lp", "set_every": 10000}, 30)
+            row("worlds: this world's files refused by the loop — the moment the page sees the refusal its worlds panel is stale or shows this world "
+                "not verified, never current over verified; then not verified (FILES-REFUSED), current; the files put back, verified again",
+                at_once and me2.get("code") == "FILES-REFUSED" and not z.get("error"), "at the refusal: the panel %s, the row %s; then %s %s; put back: %s" % (
+                    pst, me.get("state", x.get("error", "")), me2.get("state"), me2.get("code", y.get("error", "")), "verified" if not z.get("error") else z.get("error")))
+            row("worlds: the left panel collapses to a strip (its controls not shown, a press refused) and opens again",
+                t1.get("pressed") == "pressed" and c1.get("collapsed") and c1.get("columns", "").startswith("28px") and "not shown" in inside.get("error", "")
+                and not c2.get("collapsed") and c2.get("columns", "").startswith("214px"),
+                "collapsed %s (%s); a press inside: %r; open %s (%s)" % (c1.get("collapsed"), c1.get("columns", "")[:20], inside.get("error", inside.get("pressed")),
+                                                                       not c2.get("collapsed"), c2.get("columns", "")[:20]))
+
+        def sc_outline():
+            o = ch.do({"do": "lp", "until": {"outline_any": True, "panel_state": ["outline", ["current"]]}}, 60)
+            lv = hub.worlds[PAGE]
+            _c, oj = _get(port, "/outline.json?world=%s&slot=0" % PAGE)
+            host_ids = [x["id"] for rg in oj.get("regions", []) for kd in rg["kinds"] for x in kd["objects"]]
+            S = play.scene_of(lv.slot(0))
+            rule = studio_refs.objects(S)
+            row("worlds: the outline is the host's (GET /outline.json, by the host's object rule over the scene slot 0 serves), current, its header "
+                "naming the world, the source and the scene", o.get("outline") == host_ids and sorted(host_ids) == sorted(rule) and oj.get("sha") == lv.slot(0)["sha"]
+                and PAGE in o.get("outline_head", "") and lv.slot(0)["sha"][:12] in o.get("outline_head", ""),
+                "%d objects in the page, %d by the rule; %r" % (len(o.get("outline", [])), len(rule), o.get("outline_head", "")[:80]))
+            term = host_ids[len(host_ids) // 2].split(":")[0] if host_ids else "x"
+            want = [x["id"] for rg in oj.get("regions", []) for kd in rg["kinds"] for x in kd["objects"] if term in x["id"].lower() or term in x["address"].lower()]
+            s1 = ch.do({"do": "lp_search", "text": term}, 30)
+            ch.do({"do": "lp_search", "text": ""}, 30)
+            pick = want[0] if want else ""
+            ch.do({"do": "lp_press", "what": "object", "name": pick}, 30)
+            sel = ch.do({"do": "lp", "until": {"sel": pick, "info": True}}, 30)
+            row("worlds: the outline's search keeps the objects whose name or address holds the words; an object pressed is selected and the "
+                "inspector reads the host's account of it (GET /object.json)", s1.get("shown") == want and bool(want) and sel.get("sel") == pick
+                and (sel.get("info") or {}).get("piece") == pick and (sel.get("info") or {}).get("world") == PAGE,
+                "%r: %d shown of %d; selected %s, the inspector %s" % (term, len(s1.get("shown", [])), len(host_ids), sel.get("sel", sel.get("error", "")), sel.get("info")))
+
+        def sc_import():
+            i = ch.do({"do": "lp", "until": {"importable_any": True}}, 60)
+            _c, ij = _get(port, "/importable.json")
+            names = [b["name"] for b in ij.get("briefs", [])]
+            row("worlds: the importable briefs are the host's (GET /importable.json): the source's briefs that are no world here, the source by its label",
+                i.get("importable") == names == ["harbor-day", "plaza-night"] and ij.get("source_label") == WORLDS_LABEL and WORLDS_LABEL in (i.get("panels", {}).get("import") or {}).get("text", ""),
+                "the page %s; the host %s" % (i.get("importable"), names))
+            # the owner's case 6: an import that fails partway (the host stops it at its second file)
+            before = {n: tree_bytes(os.path.join(worlds, n)) for n in hub.names()}
+            names0 = hub.names()
+
+            def boom(name):
+                if name == "import:file-2":
+                    raise RuntimeError("planted: the import stopped at its second file")
+            D.durable.HOOK = boom
+            try:
+                ch.do({"do": "lp_press", "what": "stage", "name": "harbor-day"}, 30)
+                f = ch.do({"do": "lp", "until": {"said_code": True}}, 60)
+            finally:
+                D.durable.HOOK = None
+            row("worlds: case 6, an import that fails partway — the page says IMPORT-FAILED with the source and the name; no staging by a listing "
+                "of the worlds folder; the worlds listed as before, each byte for byte",
+                "IMPORT-FAILED" in f.get("said", "") and WORLDS_LABEL in f.get("said", "") and "harbor-day" in f.get("said", "") and not aside()
+                and hub.names() == names0 and all(tree_bytes(os.path.join(worlds, n)) == b for n, b in before.items()),
+                "the page: %r; aside %s; listed %s" % (f.get("said", f.get("error", ""))[:140], aside(), hub.names()))
+            # stage, then commit: the record the page shows is the host's; after the commit the world is listed, verified, its
+            # ledger started at import; the page stays where it is and offers Open
+            page_before = tree_bytes(os.path.join(worlds, PAGE))
+            ch.do({"do": "lp_press", "what": "stage", "name": "harbor-day"}, 30)
+            s = ch.do({"do": "lp", "until": {"staged": True}}, 120)
+            st = s.get("staged") or {}
+            rec_path = os.path.join(worlds, st.get("staging", "") or "-", "IMPORTED.json")
+            rec_sha = play.sha256(open(rec_path, "rb").read()) if os.path.isfile(rec_path) else ""
+            rec = json.loads(open(rec_path, "rb").read()) if rec_path and os.path.isfile(rec_path) else {}
+            listed_while = "harbor-day" in hub.names()
+            ch.do({"do": "lp_press", "what": "commit"}, 30)
+            c = ch.do({"do": "lp", "until": {"committed": True}}, 120)
+            ch.do({"do": "lp_press", "what": "wrefresh"}, 30)
+            v = ch.do({"do": "lp", "until": {"world_state": ["harbor-day", "verified"]}}, 120)
+            hrow = next((x for x in v.get("worlds", []) if x["name"] == "harbor-day"), {})
+            insp = hub.inspect("harbor-day") if "harbor-day" in hub.names() else {}
+            log = [json.loads(ln) for ln in open(os.path.join(worlds, "IMPORTS.jsonl"), "rb").read().splitlines()] if os.path.exists(os.path.join(worlds, "IMPORTS.jsonl")) else []
+            row("worlds: a stage and a commit through the page — the staged record it shows is the host's (sha256), not listed while staged; committed, "
+                "harbor-day is listed and verified, one event started at import, its line in the imports log; the page stays on its world and offers Open",
+                st.get("sha") == rec_sha and bool(rec_sha) and len(rec.get("files", {})) and str(len(rec.get("files", {}))) + " files" in st.get("text", "")
+                and not listed_while and c.get("committed") == "harbor-day" and c.get("open_offered") and hrow.get("events") == 1 == insp.get("events")
+                and hrow.get("head") == insp.get("head") and "started at import" in hrow.get("text", "") and [x["name"] for x in log] == ["harbor-day"]
+                and v.get("brief") == PAGE and v.get("same_doc") is True and v.get("left") == 0 and "world=" + PAGE in v.get("href", "")
+                and tree_bytes(os.path.join(worlds, PAGE)) == page_before and not aside() and tree_bytes(src) == src_before,
+                "staged %s (sha %s, the host's %s); committed %r; the row %r; log %s" % (st.get("staging"), st.get("sha", "")[:12], rec_sha[:12],
+                                                                                        c.get("committed", c.get("error", "")), hrow.get("text", v.get("error", ""))[:90], [x["name"] for x in log]))
+            # a refused stage: the source's plaza-night, whose ledger does not verify
+            ch.do({"do": "lp_press", "what": "irefresh"}, 30)
+            ch.do({"do": "lp", "until": {"importable_any": True}}, 60)
+            ch.do({"do": "lp_press", "what": "stage", "name": "plaza-night"}, 30)
+            r = ch.do({"do": "lp", "until": {"said_code": True}}, 120)
+            row("worlds: a stage refused — plaza-night's ledger does not verify in the copy: the page says IMPORT-LEDGER (UNLOGGED-CHANGE); nothing left",
+                "IMPORT-LEDGER" in r.get("said", "") and "UNLOGGED-CHANGE" in r.get("said", "") and not aside() and "plaza-night" not in hub.names(),
+                "the page: %r" % r.get("said", r.get("error", ""))[:140])
+
+        def sc_world():
+            # the owner's case 7 across two worlds: the host's own answers for the other world, given to this page
+            # the other world's scene as the page would print it (its first twelve characters, short()), never this world's
+            other_sha = hub.worlds[OTHER].slot(0)["sha"][:12]
+            assert not hub.worlds[PAGE].slot(0)["sha"].startswith(other_sha)
+            vi, ol = saved[2], saved[3]
+
+            def other_v(live_, k):
+                return dict(vi(hub.worlds[OTHER], k), world=OTHER) if live_.brief == PAGE else vi(live_, k)
+
+            def other_o(hub_, q_):
+                return ol(hub_, dict(q_, world=OTHER)) if q_.get("world") == PAGE else ol(hub_, q_)
+            o0 = ch.do({"do": "lp", "until": {"outline_any": True, "panel_state": ["outline", ["current"]]}}, 60)
+            n0 = (o0.get("panels", {}).get("outline") or {}).get("answers", 0)
+            play.validate_info, play.outline = other_v, other_o
+            try:
+                t = ch.do({"do": "tab", "tab": "validation"}, 60)
+                ch.do({"do": "lp_press", "what": "toggle"}, 30)
+                ch.do({"do": "lp_press", "what": "toggle"}, 30)            # opened again, the panel reads its outline again
+                p = ch.do({"do": "lp", "until": {"outline_answers_gt": n0}, "marker": other_sha}, 60)
+            finally:
+                play.validate_info, play.outline = vi, ol
+            n1 = (p.get("panels", {}).get("outline") or {}).get("answers", 0)
+            t2 = ch.do({"do": "tab", "tab": "validation"}, 60)
+            ch.do({"do": "lp_press", "what": "toggle"}, 30)
+            ch.do({"do": "lp_press", "what": "toggle"}, 30)
+            p2 = ch.do({"do": "lp", "until": {"outline_answers_gt": n1}}, 60)
+            row("worlds: case 7 across two worlds — the host's own answers for %s given to the page of %s: Validation and the outline say refused, nothing "
+                "of %s's scene in the page, every data-world %s; given their own again, current" % (OTHER, PAGE, OTHER, PAGE),
+                OTHER in t.get("refused", "") and OTHER in (p.get("panels", {}).get("outline") or {}).get("refused", "") and p.get("html_has") is False
+                and set(p.get("data_worlds") or []) <= {PAGE} and t2.get("state") == "current" and not t2.get("refused")
+                and (p2.get("panels", {}).get("outline") or {}).get("state") == "current" and bool(p2.get("data_worlds")) and set(p2.get("data_worlds")) == {PAGE},
+                "validation %r, outline %r; %s's scene in the page %s; data-world %s; then validation %s, outline %s, data-world %s" % (
+                    t.get("refused", t.get("error", ""))[:50], (p.get("panels", {}).get("outline") or {}).get("refused", p.get("error", ""))[:50], OTHER,
+                    p.get("html_has"), sorted(set(p.get("data_worlds") or [])), t2.get("state"), (p2.get("panels", {}).get("outline") or {}).get("state"),
+                    sorted(set(p2.get("data_worlds") or []))))
+
+        RUN = {"worlds": sc_worlds, "outline": sc_outline, "import": sc_import, "world": sc_world}
+        if not browser:
+            row("worlds: a browser to drive the page (Edge or Chrome; elsewhere Edge, Chrome or Chromium on PATH; --browser EXE)", False, "none found")
+            return rows, caught, seen
+        proc = PT.launch(browser, base + "/page_test.html", profile, headed, os.path.join(tmp, "browser.log"))
+        t_run = time.time()
+        for name in WORLDS_SCENARIOS:
+            try:
+                reset()
+                if not alive:
+                    alive = [x for x in PT.leftovers(marker) if x == "unknown" or not x.split()[-1].lower().startswith("python")]
+                RUN[name]()
+            except PT.PageLost as e:
+                row("worlds: the scenario %s ran to its end" % name, False, "the page was lost: %s" % e)
+                break
+            except Exception as e:  # noqa: BLE001 — the self-test says what stopped a scenario, and goes on to the next
+                import traceback
+                traceback.print_exc()
+                row("worlds: the scenario %s ran to its end" % name, False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+        seen.append("OBSERVED worlds: the honest run's four scenarios in %.0f s (a software timing)" % (time.time() - t_run))
+        js = open(saved[1]["/play.js"][0], "rb").read().decode("utf-8")
+        for plant, (scen, want, (old, new)) in WORLDS_PLANTS.items():
+            if ch.lost and not (proc is not None and proc.poll() is None):
+                caught.append(False)
+                print("[FAIL] worlds plant %s caught — NOT RUN: the page was lost (%s)" % (plant, ch.lost), flush=True)
+                continue
+            if js.count(old) != 1:
+                caught.append(False)
+                print("[FAIL] worlds plant %s caught — NOT PLANTED: its text occurs %d times in play.js, not once" % (plant, js.count(old)), flush=True)
+                continue
+            if END - time.time() < 60:
+                caught.append(False)
+                print("[FAIL] worlds plant %s caught — NOT RUN: the suite's time was spent" % plant, flush=True)
+                continue
+            planted = os.path.join(tmp, "play-%s.js" % plant)
+            open(planted, "wb").write(js.replace(old, new).encode("utf-8"))
+            play.FILES["/play.js"] = (planted, saved[1]["/play.js"][1])
+            got = []
+            mode.update(out=got, say=None, stop=want)
+            ch.deadline = min(time.time() + WORLDS_LIMITS["plant"], END)
+            if proc is not None and proc.poll() is None:
+                ch.lost = ""
+            stopped = ""
+            try:
+                reset()
+                RUN[scen]()
+            except Stop:
+                pass
+            except Exception as e:  # noqa: BLE001
+                stopped = "%s: %s" % (type(e).__name__, str(e)[:160])
+            finally:
+                play.FILES["/play.js"] = saved[1]["/play.js"]
+                mode.update(out=rows, say=say, stop="")
+            mine = [x for x in got if x[0].startswith(want)]
+            ok = not stopped and bool(mine) and not mine[0][1] and all(x[1] for x in got[:got.index(mine[0])])
+            caught.append(ok)
+            print("[%s] worlds plant %s caught — %s" % ("PASS" if ok else "FAIL", plant,
+                                                      ("by: " + mine[0][0][:90] + " — " + mine[0][2][:240]) if ok else ("the run stopped: " + stopped) if stopped
+                                                      else "NOT CAUGHT: " + ("; ".join("%s %s" % ("PASS" if x[1] else "FAIL", x[0][:60]) for x in got) or "no row")), flush=True)
+            if ch.lost and not (proc is not None and proc.poll() is None):
+                break
+    except Exception as e:  # noqa: BLE001 — the self-test says what stopped it
+        import traceback
+        traceback.print_exc()
+        row("worlds: the self-test ran to its end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+    finally:
+        mode.update(out=rows, say=say, stop="")
+        D.durable.HOOK = None
+        for g in gates:
+            g.remove()
+        try:
+            if hub is not None and getattr(hub, "page_test", None) is not None:
+                hub.page_test.steps.put({"do": "end"})
+                time.sleep(1.0)
+        except Exception:  # noqa: BLE001
+            pass
+        if proc is not None:
+            left, first, took = PT.end_browser(proc, marker)
+            row("worlds: the browser ended, and nothing of it is left (the query that says so found the browser's processes while it ran)",
+                not left and bool(alive) and alive != ["unknown"], "while it ran: %d process%s; left: %s" % (
+                    len(alive) if alive != ["unknown"] else 0, "" if len(alive) == 1 else "es", left or "nothing"))
+            seen.append("OBSERVED worlds: the browser ended in %.1f s%s" % (took, ("; standing at the first look: %s" % first) if first else ""))
+        play.ROOT = saved[0]
+        play.FILES.clear()
+        play.FILES.update(saved[1])
+        play.validate_info, play.outline = saved[2], saved[3]
+        if hub is not None:
+            for lv in list(hub.worlds.values()):
+                lv.stopping = True
+                if lv.studio:
+                    lv.studio.shutdown()
         if srv:
             srv.shutdown()
         shutil.rmtree(tmp, ignore_errors=True)
