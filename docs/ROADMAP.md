@@ -7370,3 +7370,115 @@ NOT_MEASURED: the full check and the gate in his checkout. No row, rung, pinned 
 AGENTS.md (the full check's and PAGE-0's rows), art/STUDIO.md (the full check's lane), docs/CAPABILITY-MATRIX.md (two
 dated notes), docs/CORE.md (art 33,322 lines), this entry, and 0250's entry corrected in place (its browsers "gone"
 62 to 69 s after: still standing at the last look, then ended by the test), with a note.
+
+### BINDING-0 — the scene binding, registered before it is enforced · **registered, off the gate** (0252: `art/director/bindings/`, `art/director/binding.py`, `art/play.py`'s STUDIO rows)
+
+**His run of 0251** (2026-10-18, in his checkout, from his output): 0249, 0250 and 0251 applied, the tree
+`82ec9ee269033aab75ca60735b04285b4249cd0b`; SCHEDULE SELFTEST 43/43; `python art/selftests.py --repeat 2`: ART
+SELFTESTS PASSED, twenty-eight of twenty-eight suites in both runs, 328.9 s and 373.0 s wall, the browser lane held in
+both ("page-cards 1.9-166.8 s, page-worlds 167.4-188.9 s, page 189.4-328.5 s"; "page-cards 1.3-193.1 s, page-worlds
+193.7-218.3 s, page 219.1-372.6 s"), STUDIO APP 13/13 and PREVIEW-STUDIO 14/14 in both; the classifier his pushed tree
+held: the rung D on sixteen files, loosening nothing, *"272 planted defects refused by the old checker; 277 by the
+new"*, PLANTS HELD; the gate: `GATE PASSED`, `RECONCILE  rowset 74db4c8d78625af5  251 rows / 0 fail / 0 skipped`; his
+status listing his two untracked `art/ledger/*.tags.json` and nothing else; pushed `2c70a71..8902aa3`. What 0251 left
+NOT_MEASURED in his checkout, its full check and its gate, his run measured there.
+
+**His ruling** (2026-10-18), in his words: *"Ruling: LOCK — REFUSE on a scene-binding mismatch for 0252."* *"The reason
+is an authority boundary, not a UI preference: if an admission relies on a still, preview, or undo account tied to a
+different scene from the exact candidate being admitted, the evidence does not establish what was actually shown for
+that admission. Merely recording the mismatch leaves that gap unenforced."* The contract's five lines (still, preview,
+undo, mismatch or unknown, exact match), *"Keep the host authoritative. The dashboard reports the host's result; it must
+not implement a second admission policy."*, *"Before implementation, preregister the candidate-scene identity and the
+comparison rule. Then plant at least these failures:"* and his five cases; *"Decision boundary: LOCK refusal on
+mismatch; DEFER any broader freshness or authority rules not required to enforce this contract."* Then, asked where to
+register: *"My ruling: choose “Art-layer register first.” Keep 0252 registration-only, 0253 enforcement-only, and 0254
+repair-only."*, with RBAP, the Robust Binding Admission Principle, which he graded himself: *"This is a proposed
+engineering invariant, not an established mathematical theorem."* Asked about PREVIEW-0: *"Ruling: LOCK bound when relied
+upon; DEFER mandatory previews, global preview freshness, and broader admission-policy changes. Register that
+distinction in 0252 before implementing 0253."* Asked about case 2: *"- LOCK: STALE-first ordering; independent,
+binding-specific causal plant."* Of the options then put to him, he chose the undo bound to the world's scene it was
+shown over (`of` and `scene`), and the director's command line outside version 0, said. Every ruling is quoted whole in
+the contract, taken from his text by the generator, never retyped.
+
+**What it is.**
+- *The contract*, BINDING-0 version 0, `art/director/bindings/BINDING-0.v0.json` (34,941 bytes, sha256
+  `cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85`): his rulings; RBAP and its four requirements
+  (precedence, fail-closed, determinism, auditability); its scope (the studio's admission and undo through the host, and
+  the accounts of them; outside, the director's command line and the dashboard); the identities (the candidate scene at
+  admission: the scene the admission's own evaluation exports, never the card's, a slot's or the page's; the undo target
+  and the scene at the undo); the evidence (the still, always relied on; a preview, only when the admission names it by
+  its id, its recorded candidate scene and the scenes named for its candidate-side stills compared, its content never
+  read; the undo's `of` and `scene`); the comparison (exact string equality, well formed or unknown, MATCH, MISMATCH and
+  UNKNOWN, their precedence, what is never done); the order (the binding check after every existing check, the commit's
+  own under the content lock included, before the admission's first write: every existing refusal keeps its code, and
+  0249's displayed account equals the press's first refusal under 0249's conditions; the account reports no binding as
+  checked or matched); his five cases word for word, each with its state, its expected result per kind and its
+  attribution (B2: STUDIO-STALE first, the binding's own refusal shown with STALE's comparison skipped by a plant, the
+  limitation said); the order states; the decision record, its fields and bytes defined; the plants 0253 must catch at
+  least; his acceptance gates and DEFER lines verbatim; what it does not show; its compatibility rule.
+- *Its register*, `art/director/bindings/register.jsonl`: one line, BINDING-0 version 0, the file, the sha256, patch
+  0252, 2026-10-18.
+- *Its reader*, `art/director/binding.py`: `python art/director/binding.py check` holds the files to the register (every
+  registered file present in its one byte form with its line's sha256; every line well formed; a version and a file
+  registered once; versions from 0 without a gap; no contract file unregistered; his five cases first, each with his
+  words, every case with an explicit expected result; the outcomes MATCH, MISMATCH and UNKNOWN). It reads and decides no
+  admission: until 0253 nothing in the program reads the contract.
+- *STUDIO's rows* (`binding_selftest` in `art/play.py`): the registration as it stands, and five plants, each refused with
+  its own code in a copy: a contract changed and its line not (BINDING-STALE), the same contract in another byte form
+  (BINDING-NOT-CANONICAL), a case left without an expected result (BINDING-CASES), a version registered twice
+  (BINDING-TWICE), a contract file no line registers (BINDING-UNREGISTERED).
+
+His acceptance gates against this patch: the registration committed before the implementation (this patch, before
+0253: history shows it); the self-test detects a modified contract or a stale digest (BINDING-STALE's row); each of the
+five cases with an explicit expected result (the reader requires it); repeated runs' identical decision records and
+Windows and Linux agreeing are 0253's, where records are first made (Linux NOT_MEASURED); the gate at its registered size
+(below).
+
+**Two reviews of the contract before it was frozen** (each finding put to a skeptic who tried to refute it): 55 and 23
+agents; 52 and 21 findings; 7 and 2 refuted; the rest confirmed in whole or in part and taken. In short: PREVIEW-0 had
+been written as amended in his name, where he said it survives; the preview's binding had gained a head, a base scene
+and base-side stills he did not rule (cut to his words); the undo's `from_head` bound the operation only (two choices put
+to him); the order rule could not be met as written (now after the commit's own checks, before the first write) and its
+0249 clause held only under 0249's conditions (now said); a plant no case could catch (now the order states, and a plant
+of a matched binding taken as sufficient); a preview named by its report's sha256, which two previews can share (now an
+id that commits to what it declared), and a blank `preview` read either way (now unknown); the decision record carrying
+the request's id, a clock (now without it, its fields fixed to the byte); his acceptance and DEFER lines paraphrased (now
+verbatim). The second round's repairs were not reviewed again; a defect found in version 0 now is a version 1,
+registered before the code it governs.
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of 8902aa3 under
+%TEMP%, never the checkout):
+- `python art/director/binding.py check`: `BINDING-0 REGISTERED version 0 sha256
+  cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85 (BINDING-0.v0.json)`, exit 0.
+- STUDIO SELFTEST 101/101 alone in 112 s: the 95 rows before, and BINDING-0's registration row and its five plants, each
+  refused with its own code ("BINDING-STALE: BINDING-0.v0.json is not the contract registered on line 1 …",
+  "BINDING-NOT-CANONICAL …", "BINDING-CASES: … case B4 has no explicit expected result", "BINDING-TWICE: line 2 registers
+  BINDING-0 version 0 … again", "BINDING-UNREGISTERED: BINDING-0.v1.json is in the folder and no line registers it").
+- The full check, `python art/selftests.py --repeat 2`: twenty-eight suites, 507.1 s and 514.7 s wall, the browser lane
+  held in both, STUDIO 101/101 in both; the first run twenty-eight of twenty-eight; ART SELFTESTS FAILED on one row of the
+  second, in a suite this patch does not change (no line of `art/play.py`'s diff is the preview's): PREVIEW-STUDIO 13/14,
+  "[FAIL] one candidate's preview well inside 10 s (B4-TIMING-BOUNDARY) — the whole preview over HTTP 15.21 s (16 stills
+  and the report); both sides' 960 ticks 1966 ms". Alone on this tree PREVIEW-STUDIO SELFTEST 14/14 twice (the whole
+  preview 1.74 s and 1.79 s). That the load fails that row is INFERRED: the base was not run again here; its row failed
+  under load in 0248's, 0249's, 0250's and 0251's records, and passed in both runs of his own full check of 0251.
+- The classifier his pushed tree holds (8902aa3's `tools/rung.py`, byte for byte 2c70a71's), run from outside the
+  checkout over 0252 applied to a fresh clone of his checkout: the rung D on nine files, loosening nothing;
+  *"277 planted defects refused by the old checker; 282 by the new"*, PLANTS HELD (the five more are BINDING-0's
+  plants, which R5 reads in STUDIO's rows).
+- The gate: its two runs on this patch's own tree, the tree's identity and the sha256 of each compact output, are in
+  this patch's commit message: a record of them in the tree would change the tree they ran on.
+
+**What it does not show.**
+- That the contract is right, or that 0253 will enforce it: a finite set of cases can only falsify an implementation, and
+  enforcement is 0253's.
+- That the pixels of a still or a preview are of the scene the page declared: the binding binds what the page says.
+- A register line rewritten together with its file: the files alone cannot show it; history does.
+- Linux.
+
+**Not done.** 0253, the enforcement (the five cases and the order states through the host, the plants the contract
+lists, the decision records, PREVIEW-0's row and art/STUDIO.md brought into agreement with his ruling); 0254, the
+inverse's repair against the same contract; BLENDER-VIEW-0 after, its rulings made explicitly.
+
+NOT_MEASURED: the full check and the gate in his checkout. No row, rung, pinned source or oracle file changed. Docs:
+AGENTS.md (a row for BINDING-0, the studio's count), art/director/README.md (§8), docs/CAPABILITY-MATRIX.md (two dated
+notes), docs/CORE.md (art 33,553 lines), this entry.

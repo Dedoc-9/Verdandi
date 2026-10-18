@@ -419,6 +419,12 @@ are refused on there, if he so rules.*
 
 *Note (2026-10-18): now 0252, BROWSER-SERIALIZATION-0 having taken 0251.*
 
+*Note (2026-10-18, later): his ruling of that day settled the binding otherwise than this plan: BINDING-0, registered in
+0252 (`art/director/bindings/BINDING-0.v0.json`) and enforced in 0253 (the still, a preview the admission names, and the
+undo's operation and the world's scene it was shown over, each refused on a mismatch or an unknown, after every existing
+check). Of the items below, the provider's scope bounded by the request and a provider's answer at another head are not
+BINDING-0's and wait on his word; the undo's binding is BINDING-0's, as he chose it.*
+
 - The provider's scope is bounded by the request. Either the host intersects it with the target's, the pins' and the
   shapes' patterns, or a namespace-wide pattern needs the designer's grant. The card shows the declared scope and the
   phantom patterns.
@@ -432,6 +438,8 @@ are refused on there, if he so rules.*
 *Note (2026-10-17): now 0252.*
 
 *Note (2026-10-18): now 0253.*
+
+*Note (2026-10-18, later): now 0254.*
 
 ### Later, measured before decided
 

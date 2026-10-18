@@ -3582,6 +3582,7 @@ def studio_selftest():
             srv.shutdown()
         shutil.rmtree(tmp, ignore_errors=True)
     references_selftest(row, cfg_dir=None)
+    binding_selftest(row)
     print("STUDIO SELFTEST %d/%d" % (sum(rows), len(rows)))
     return 0 if all(rows) else 1
 
@@ -4761,6 +4762,77 @@ def boundary_selftest():
         shutil.rmtree(tmp, ignore_errors=True)
     print("BOUNDARY SELFTEST %d/%d" % (sum(rows), len(rows)))
     return 0 if all(rows) else 1
+
+
+def binding_selftest(row):
+    """BINDING-0 (0252): the binding contract registered before the code that enforces it (art/director/binding.py, the
+    register art/director/bindings/register.jsonl). The tree's register holds as it stands, and each way a register can
+    be wrong is refused with its own code in a copy: a contract changed and its line not (a stale digest), the same
+    contract in another byte form, a case left without an expected result, a version registered twice, and a contract
+    file no line registers. Nothing here enforces the contract: no admission reads it until 0253."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("binding_register", os.path.join(HERE, "director", "binding.py"))
+    B = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(B)
+    seen, problems = B.check()
+    row("BINDING-0 registered (art/director/bindings): every registered contract in its one byte form with its line's sha256, "
+        "its five cases each with his words and an explicit expected result, its outcomes MATCH, MISMATCH and UNKNOWN",
+        not problems and [(x["contract"], x["version"]) for x in seen] == [("BINDING-0", 0)],
+        "; ".join(problems) or ", ".join("%s version %d sha256 %s" % (x["contract"], x["version"], x["sha256"][:16]) for x in seen))
+    tmp = tempfile.mkdtemp(prefix="binding-selftest-")
+    v0 = "BINDING-0.v0.json"
+
+    def doc_of(d):
+        with open(os.path.join(d, v0), "rb") as fh:
+            return json.loads(fh.read().decode("utf-8"))
+
+    def write(d, body, register_too):
+        with open(os.path.join(d, v0), "wb") as fh:
+            fh.write(body)
+        if register_too:                                   # the line made to name the new bytes, as one would to pass
+            reg = os.path.join(d, B.REGISTER)
+            recs = [json.loads(x) for x in open(reg, "rb").read().decode("ascii").splitlines()]
+            recs[0]["sha256"] = B.sha256(body)
+            with open(reg, "wb") as fh:
+                fh.write("".join(B.register_line(r) + "\n" for r in recs).encode("ascii"))
+
+    def stale(d):
+        doc = doc_of(d)
+        doc["cases"][0]["expected"]["still"] = "ADMIT"
+        write(d, B.canonical(doc), False)
+
+    def other_form(d):
+        write(d, (json.dumps(doc_of(d), indent=2, ensure_ascii=False) + "\n").encode("utf-8"), True)
+
+    def no_expected(d):
+        doc = doc_of(d)
+        doc["cases"][3]["expected"] = {}
+        write(d, B.canonical(doc), True)
+
+    def twice(d):
+        reg = os.path.join(d, B.REGISTER)
+        line = open(reg, "rb").read().decode("ascii").splitlines()[0]
+        with open(reg, "ab") as fh:
+            fh.write((line + "\n").encode("ascii"))
+
+    def unregistered(d):
+        doc = dict(doc_of(d), version=1)
+        with open(os.path.join(d, "BINDING-0.v1.json"), "wb") as fh:
+            fh.write(B.canonical(doc))
+    try:
+        for name, edit, code in (("a contract changed and its line not (a stale digest)", stale, "BINDING-STALE"),
+                                 ("the same contract in another byte form, its line made to name it", other_form, "BINDING-NOT-CANONICAL"),
+                                 ("a case left without an expected result, its line made to name it", no_expected, "BINDING-CASES"),
+                                 ("a version registered twice", twice, "BINDING-TWICE"),
+                                 ("a contract file no line registers", unregistered, "BINDING-UNREGISTERED")):
+            d = os.path.join(tmp, code.lower())
+            shutil.copytree(B.FOLDER, d)
+            edit(d)
+            got = B.check(d)[1]
+            mine = [p for p in got if p.startswith(code + ":")]
+            row("BINDING-0 plant: %s, refused %s" % (name, code), bool(mine), "; ".join(mine or got or ["nothing refused"])[:220])
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def references_selftest(row, cfg_dir=None):

@@ -208,6 +208,19 @@ The still is kept beside the ledger by its sha256 (`art/ledger/<brief>.ledger.st
 before the admission's first write. It is bound to the admission by digest; nothing here proves it shows the candidate
 (the studio's page takes it from the canvas as it draws the candidate; at the command line a person gives it).
 
+## 8. The scene binding's contract (BINDING-0, 0252)
+
+His ruling (2026-10-18): *"Ruling: LOCK — REFUSE on a scene-binding mismatch for 0252."* An admission that relies on a
+still, a preview or an undo account bound to another scene than the exact candidate admitted is refused, and an unknown
+binding with it. The contract that makes his ruling exact is registered here before any code enforces it: one file per
+version under `bindings/` (`BINDING-0.v0.json`: the identities, the comparison rule, the outcomes, the order, the five
+cases in his words with their expected results, the decision record, what is deferred, in his words where it quotes
+him), and `bindings/register.jsonl`, one line per version naming its file and sha256, appended and never rewritten.
+`python art/director/binding.py check` holds the files to the register (`BINDING-0 REGISTERED version 0 sha256 …`);
+it reads, and decides no admission. Its enforcement is 0253's (the studio's admission and undo, the host authoritative);
+the inverse's repair is 0254's, against the same contract. The director's command line is outside version 0 (his choice:
+it declares no scene). RBAP, the principle the contract states, is a proposed engineering invariant, not a theorem.
+
 ## 6. What it proves, and what it does not
 
 | claim | shown by | does not show |

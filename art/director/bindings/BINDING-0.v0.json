@@ -1,0 +1,213 @@
+{
+ "acceptance": {
+  "his words": "Before calling the fork robust, require all of the following:\n\n1. The registration is committed before implementation.\n2. The self-test detects a modified contract or stale digest.\n3. Each of the five cases has an explicit expected result, including refusal cases.\n4. Repeated runs produce identical canonical decision records.\n5. Windows and Linux agree on those records.\n6. The existing gate remains at its current registered size, with no new rows or silently altered baselines.",
+  "note": "Linux NOT_MEASURED until a Linux host runs it"
+ },
+ "cases": [
+  {
+   "attribution": "every other check passes in the state; with the binding check planted away the same state is admitted (or undone). A mismatch in the host's own record of a preview (its plan's candidate scene, computed from the evaluation at the candidate's head) is not a state the honest host reaches where STUDIO-STALE passes: a test that shows it plants that record and says so",
+   "expected": {
+    "preview": "REFUSE BINDING-MISMATCH, its message naming that still of the preview's candidate side (the record's still entry MATCH)",
+    "still": "REFUSE BINDING-MISMATCH",
+    "undo": "REFUSE BINDING-MISMATCH"
+   },
+   "his words": "Evidence from the previous scene is presented for the current candidate.",
+   "id": "B1",
+   "state": "every existing check passes: the candidate current (drawn at the files' head, which the ledger holds), CLEAN, its still present and unflagged, a strict request's regions holding it, the director's checks passing; the evidence declares the scene before it: for the still, the base scene; for a named preview, a still drawn on its candidate's side sent naming the base scene; for an undo, `of` naming the admission before the target (the world's scene as shown). In each sub-case every piece of evidence relied on, and every field, is bound except the one the sub-case names: in the still sub-case no preview is named, or a named one is bound; in the preview sub-case the admission's still names the candidate scene at admission, the preview's recorded candidate scene is the host's own and every other still drawn on its candidate's side names the candidate scene at admission, so that the one still naming the base scene alone mismatches; in the undo sub-case `scene` is the world's scene as shown, so that `of` alone mismatches"
+  },
+  {
+   "attribution": "every check but STUDIO-STALE passes in the admission's state; the binding check's own refusal is shown with STUDIO-STALE's comparison skipped by a plant at the press, the admission's evaluation left as computed (its checked_against the moved head); never one that rewrites the evaluation's checked_against to the candidate's head, as ACCOUNT_PLANT 'account-drops-stale' does in the dry account, which append_evaluation's held_head would then refuse HEAD-MOVED (STUDIO-DIRECTOR-REFUSED), another guard, which is not a state the honest host reaches (his caveat, under rulings: here the two conditions are inseparable, and that is said, never a claim of independent enforcement in the honest host); with the stale check neutralized and the binding check planted away, the same state is admitted: no other guard refuses it. The honest stale-first answer is kept by its own row (his step 4); for the undo, every existing check passes in its state, and with the binding check planted away the same state is undone",
+   "expected": {
+    "preview": "honest: REFUSE STUDIO-STALE; stale neutralized: REFUSE BINDING-MISMATCH",
+    "still": "honest: REFUSE STUDIO-STALE; stale neutralized: REFUSE BINDING-MISMATCH",
+    "undo": "REFUSE BINDING-MISMATCH (the undo has no stale check; the binding answers it)"
+   },
+   "his words": "The scene changes between evidence capture and admission.",
+   "id": "B2",
+   "state": "for an admission (its still, and a named preview): the evidence declared the candidate's scene when it was captured; then another admission through the studio's ledger, of statements the candidate does not touch, moved the files and the ledger to another head, so that the candidate stays CLEAN, its still unflagged, held by a strict request's regions, and every director's check passes at the new head, while the admission's own evaluation exports another scene (a hand edit of the files is not this case: the director refuses it LEDGER-UNLOGGED before the binding check). For an undo: /undo.json read (of, scene); then a rebase recorded through the director, of statements the target's inverse does not restore or remove, moved the world to another scene, the target unchanged, so that every existing check of the undo passes at the new head (the target's inverse, evaluated over the rebased files, CLEAN, and the director's checks passing)"
+  },
+  {
+   "attribution": "every other check passes in the state; with the binding check planted away the same state is admitted (or undone). A malformed field in the host's own record of a preview is reached only by a plant of that record, and said so",
+   "expected": {
+    "preview": "REFUSE BINDING-UNKNOWN",
+    "still": "REFUSE BINDING-UNKNOWN",
+    "undo": "REFUSE BINDING-UNKNOWN"
+   },
+   "his words": "One of the three bindings is missing or unreadable.",
+   "id": "B3",
+   "state": "as B1's, with one binding absent or not well formed: the still sent with no scene, a blank one or a malformed one; a named preview whose `preview` is blank, null, malformed or names no finished preview of the candidate, or a still drawn on its candidate's side sent with no scene or a malformed one; an undo without `of` or `scene`, or with one not well formed"
+  },
+  {
+   "attribution": "with the binding check planted away the refusal is the same, code for code; and a plant that lets a matched binding stand in for the existing checks (skipping one once every binding matches) is caught here, the state admitted or answered otherwise: the binding check is no replacement admission policy (his words, under rulings)",
+   "expected": {
+    "each": "REFUSE with that check's own code and director code, never BINDING-MISMATCH or BINDING-UNKNOWN"
+   },
+   "his words": "The evidence matches, but an unrelated host admission check refuses.",
+   "id": "B4",
+   "state": "every piece of evidence the admission (or the undo) relies on bound; one existing check fails. Admission: STUDIO-STALE (the head moved after the still was taken by a change that leaves the candidate's scene unchanged, such as a comment line of the art, so that the still still declares the candidate scene at admission; no preview named), ADMIT-OUTSIDE (a strict request's regions not holding it), STUDIO-STILL-FLAGGED (its still flagged and not admitted despite), or a director's check that names its code (STUDIO-DIRECTOR-REFUSED with LEDGER-UNLOGGED: the candidate drawn at the files' head, which is not the head the ledger replays to). Undo, with of and scene bound: the inverse not CLEAN, or a layout admission (STUDIO-NOT-UNDOABLE), or a director's check (STUDIO-DIRECTOR-REFUSED with LEDGER-UNLOGGED)"
+  },
+  {
+   "attribution": "the same state with any one binding declared otherwise is refused (B1, B3)",
+   "expected": {
+    "admission": "ADMIT",
+    "undo bound to its target": "UNDONE"
+   },
+   "his words": "A valid, same-scene admission still succeeds.",
+   "id": "B5",
+   "state": "every piece of evidence bound, every existing check passing; for an admission with and without a named preview"
+  }
+ ],
+ "comparison": {
+  "never": [
+   "refresh, re-take or rewrite a piece of evidence's binding at admission to make it current",
+   "substitute a newer scene, head or target for the one the evidence declared",
+   "proceed on a stale account",
+   "read the evidence's content (pixels, fingerprints, verdicts) to decide its binding"
+  ],
+  "outcomes": {
+   "MATCH": "the binding adds no refusal; whether the admission (or the undo) is written is decided by the host's existing checks, every one of them made before the binding check (order): necessary, not sufficient",
+   "MISMATCH": "refused: BINDING-MISMATCH, naming the evidence, the field, the value it declared and the value expected; the press is answered with the code BINDING-MISMATCH and no director code, wherever the check is made (inside the director's commit under the content lock included), never STUDIO-DIRECTOR-REFUSED",
+   "UNKNOWN": "refused: BINDING-UNKNOWN, naming the evidence, the field, and that its value is absent or not well formed; the press is answered with the code BINDING-UNKNOWN and no director code, wherever the check is made, never STUDIO-DIRECTOR-REFUSED"
+  },
+  "precedence": "an admission's pieces of evidence are compared in the order still, then the named preview (its name, `preview`; then its recorded candidate scene; then its candidate-side stills by pose number as an integer; when the name is UNKNOWN, not well formed or naming no finished preview of the candidate, it is the piece's only field); an undo's fields in the order of, then scene. Every field of every piece relied on is compared and recorded; none is skipped. A piece's outcome is UNKNOWN if any of its fields is, else MISMATCH if any is, else MATCH. The press is refused BINDING-UNKNOWN if any piece is UNKNOWN, else BINDING-MISMATCH if any is MISMATCH, its message naming the first such field in this order",
+  "rule": "exact equality of the declared value and the expected one, as strings: no case folding, no trimming, no prefix or partial match, no conversion, and nothing refreshed, re-taken or recomputed from the evidence",
+  "well formed": "a declared scene is a JSON string of exactly 64 characters, each 0-9 or a-f, and an operation a JSON string in identity.form.operation's form; a value of any other JSON type (a number among them), any other string, or none, is unknown"
+ },
+ "compatibility": "a fork implements BINDING-0 version 0 exactly or names a new contract version. A version is its file's exact bytes: any change to them, in any field, is a new version (version + 1), and a contract's version is registered once. A contract file's one byte form is json.dumps(contract, sort_keys=True, indent=1, ensure_ascii=False) + '\\n' in UTF-8 with LF line ends; its sha256, the one the register and every decision record carry, is the sha256 of exactly those bytes. Each version has a file of its own, art/director/bindings/BINDING-0.vN.json, written once and never changed or removed; the register art/director/bindings/register.jsonl holds one line per version naming its file and sha256, appended in order from version 0 without a gap, never rewritten. The five cases are his floor (\"at least these failures\"): a case added beyond them, a changed identity, rule or outcome is a new version, registered before the code it governs; a plant 0253 adds to those listed is not",
+ "contract": "BINDING-0",
+ "decision record": {
+  "content": "{\"contract\": \"BINDING-0\", \"version\": 0, \"sha256\": the sha256 of this contract file's exact bytes, \"operation\": \"admit\" or \"undo\", \"candidate\": the candidate's letter (\"\" for an undo), \"intent_sha256\": the sha256 of the candidate's intent bytes as the gateway keeps them (\"\" for an undo), \"of\": the undo target's sequence number (\"\" for an admission, and for an undo with none), \"evidence\": [{\"kind\", \"field\", \"declared\", \"expected\", \"outcome\"}] in comparison.precedence's order, \"decision\": \"ADMIT\", \"UNDONE\" or the code the press answers (STUDIO-DIRECTOR-REFUSED for a director's refusal; BINDING-MISMATCH or BINDING-UNKNOWN for the binding check's, which is never a director's refusal), \"director_code\": the director's own code, or \"\" (\"\" for a binding refusal)}. kind is \"still\", \"preview\" or \"undo\"; field is \"scene\" for the still; for a named preview \"preview\" (its name), then \"candidate_sha\" (its recorded candidate scene), then \"candidate-K\" for each still drawn on its candidate's side (K the pose in decimal, as the host keys it), the name alone when it is UNKNOWN; for the undo \"of\" then \"scene\". declared is, for the still and the preview's stills, the value the host kept by the still's rule (\"\" when no still the admission names is kept), for candidate_sha the value recorded at the plan, and for the preview's name and the undo's of and scene the request's value when it is a JSON string, else \"\" (absent, null or any other type). For the name, expected is the name itself when it names a finished preview of the candidate (outcome MATCH), else \"\" (outcome UNKNOWN). candidate is the request's `candidate` when it is a JSON string, else \"\"; intent_sha256 is \"\" when no candidate is found or it has no intent. Where an earlier check refused, each piece relied on is listed with what it declared, \"expected\" \"\" and \"outcome\" \"not reached\", never a comparison made after the first refusal",
+  "form": "json.dumps(record, sort_keys=True, separators=(',', ':'), ensure_ascii=True) as bytes, with no trailing newline; no clock, no request id (which carries the UTC second: it stays on the request's log line, beside the record and outside it); the same state and request give the same bytes",
+  "self-test": "a self-test's record of a case is the host's decision record, unchanged, beside the case's id (B1 to B5) and its sub-case (still, preview or undo; honest or stale neutralized; the existing check B4 fails), written by the self-test and never by the host; the host's own record carries no case id and is the same bytes whether a self-test or a person pressed",
+  "where": "the answer to the press and the request's log line (0253)"
+ },
+ "defer": {
+  "his words": [
+   "Decision boundary: LOCK refusal on mismatch; DEFER any broader freshness or authority rules not required to enforce this contract.",
+   "DEFER mandatory previews, global preview freshness, and broader admission-policy changes.",
+   "- DEFER: Two-phase admission, mandatory previews, and broader freshness-policy changes."
+  ]
+ },
+ "does not show": [
+  "that the pixels of a still or a preview are of the scene the page declared: the binding binds what the page says it drew, and the host cannot see the drawing",
+  "anything of the evidence's content: a bound still or preview may still be wrong, incomplete or flagged",
+  "an implementation's correctness: a finite set of cases can only falsify one",
+  "a register line rewritten together with its file: the files alone cannot show it; history does"
+ ],
+ "evidence": {
+  "preview": {
+   "content": "never read: the preview's fingerprints, its stills' pixels, its report's content and its verdict stay outside this check. PREVIEW-0 survives, his words under rulings: no admission needs a preview, and none reads a preview's content; of a preview an admission names, it reads what `declared` names and nothing else, from 0253. 0253 brings AGENTS.md's PREVIEW-0 row (\"never let a verdict, the order or an admission read a preview\") and art/STUDIO.md into agreement with this, citing this contract: that rewording is this contract's reading of his ruling",
+   "contract": "Preview: its binding must match that same candidate scene.",
+   "declared": "the candidate scene the host recorded in the preview's binding when it planned the preview (its candidate_sha), and the scene the page named for each still it drew on the candidate's side for that preview, kept by Gateway.preview_still by the still's rule (as it is when it is exactly 64 characters, each 0-9 or a-f, else \"\")",
+   "expected": "the recorded candidate scene equals the candidate scene at admission, and each still drawn on the candidate's side names the candidate scene at admission",
+   "recorded and not compared": "the preview's recorded head and base scene and the scenes named for its base-side stills (binding them is a new version, on his word)",
+   "relied on": "only when the admission's request names the preview it relies on, by `preview`: that preview's id as its finish answered it (0253 adds `preview_id` to the answer to POST /studio/preview/finish and to the request's preview log line). A preview's id is the sha256 of the canonical form (sorted keys, separators ',' and ':', ASCII) of {\"binding\": {\"head\", \"base_sha\", \"candidate_sha\"} as recorded at its plan, \"drawn\": the scene kept for each still drawn for it, keyed \"side-k\" as Gateway.preview_still keys it (\"\" where none was kept), \"report_sha256\": the sha256 of its preview.report.json}; two finishes that differ in anything declared have two ids. The host keeps each finished preview's recorded binding and the scenes named for its stills under its id, never overwritten by a later plan or finish; finishes with one id hold the same binding and the same named scenes, so which of them is kept decides nothing. Only a request whose JSON body has no key `preview` names none, and then no preview is relied on; no admission needs a preview. A key `preview` present with any value (null and \"\" included) that is not a JSON string of exactly 64 characters, each 0-9 or a-f is UNKNOWN, never taken as naming none; a well-formed `preview` that names by that id no finished preview of the candidate is UNKNOWN too",
+   "stills relied on": "the stills drawn on the candidate's side of the preview the admission names: no still of the base's side, no still of another preview, no still the admission does not rely on; a named preview with no still drawn on the candidate's side is held to its recorded candidate scene alone: no still of it is relied on, and that is not unknown"
+  },
+  "still": {
+   "contract": "Still: its binding must match the exact candidate scene at admission.",
+   "declared": "the scene the page named when it sent the still, as the host keeps it with that still: the first value of POST /studio/still's scene query parameter, kept by Gateway.still as it is when it is exactly 64 characters, each 0-9 or a-f, and as \"\" otherwise; taken from the send that made the still the admission names (each send replaces the one before). Absent, blank and malformed are one case: UNKNOWN, declared \"\". Nothing kept is refreshed afterwards",
+   "expected": "the candidate scene at admission",
+   "relied on": "always, for a candidate's admission: every admission names its still by its sha256 (ADMISSION-0); never for an undo"
+  },
+  "undo": {
+   "contract": "Undo: its binding must match the scene and operation whose reversal is being claimed.",
+   "declared": "`of`, the admission the page showed Undo as undoing, and `scene`, the world's scene /undo.json was computed at (the scene its dry run laid the inverse over, which 0253 adds to undo_target's answer), both as /undo.json gave them",
+   "expected": "`of` equals the undo target's sequence number, and `scene` equals the scene at the undo",
+   "relied on": "always, from 0253: every undo through the host names the admission it reverses (`of`) and the scene it was shown as reversing (`scene`). Today it need not: undo() takes `of` as optional and records it, and the self-tests post {}; from 0253 an undo that leaves either out, or gives one not well formed, is BINDING-UNKNOWN (B3), answered after every existing refusal (order)"
+  }
+ },
+ "identity": {
+  "candidate scene at admission": "the scene the admission's own evaluation exports for the candidate (its lineage.scene_sha256): never the card's kept value, never the scene a slot serves, never the page's",
+  "form": {
+   "head": "a JSON string of exactly 64 characters, each 0-9 or a-f: the world head (art/director/intent.py head(): the sha256 of the art's, the exporter's and the world's identities together)",
+   "operation": "a JSON string in the form art/director/ledger.py writes a sequence number: \"0\", or a digit 1-9 followed by digits, the whole string and nothing else (\\A(0|[1-9][0-9]*)\\Z)",
+   "scene": "a JSON string of exactly 64 characters, each 0-9 or a-f: the sha256 the exporter writes as lineage.scene_sha256"
+  },
+  "note": "a candidate's scene is a function of its intent and the files the head names (the exporter is deterministic and the head names it); so wherever STUDIO-STALE does not refuse, the candidate scene at admission is the scene the candidate was drawn with, and a changed scene comes with a moved head",
+  "scene at the undo": "the scene the undo's own evaluation at the press lays the inverse over: the scene it exports for the files as they stand (its base's lineage.scene_sha256)",
+  "undo target": "the admission undo() would undo at the press (Gateway._undo_target over the ledger as undo() reads it then: the latest admit event that is not itself an undo and that no undo names; when there is none undo() refuses STUDIO-NOTHING-TO-UNDO, and when that admission changed the layout STUDIO-NOT-UNDOABLE, each before the binding check): its sequence number"
+ },
+ "order": {
+  "account": "the account the host gives before the press (Gateway.account and what reads it; Gateway.undo_target) does not check a binding whose evidence is declared only with the press (the still's scene, whether a preview is named, the undo's of and scene), and never reports such a binding as checked or matched (his words, under rulings); this contract adds nothing to the account's shape but `scene` in Gateway.undo_target's answer (evidence.undo.declared): the value the undo will declare, never a binding checked or matched; it is \"\" where undo_target answers before its dry run lays the inverse over the world (no target, a layout target, a pending folder); and it does not set whether, or where, such a binding is said to be pending",
+  "case 2": "STUDIO-STALE answers first when the head has moved (his ruling, under rulings); the binding check's own refusal of a changed scene is shown with STUDIO-STALE's comparison skipped by a plant at the press, the admission's evaluation left as computed (its checked_against the moved head); never one that rewrites the evaluation's checked_against to the candidate's head, as ACCOUNT_PLANT 'account-drops-stale' does in the dry account, which append_evaluation's held_head would then refuse HEAD-MOVED (STUDIO-DIRECTOR-REFUSED), another guard (B2)",
+  "rule": "at the press the host's existing checks run as they run today, in their order, with their codes and their effects (the evaluation appended before cmd_admit included, as before every refusal after it today); the binding check comes after all of them, after cmd_admit's checks and the commit's own under the content lock, and before the admission's first write (its still in the ledger's stills folder, the pending folder, the admit event, the files). The values it compares are those fixed before: the scene kept with the still when it was sent, the scenes kept with the named preview, the undo's of and scene as the request gave them, and the identities of the admission's (or the undo's) own evaluation; nothing is re-read from the evidence. So every existing refusal keeps its code and its effect, and wherever the account names a first refusal, a press made at the same revision that brings the still the host holds (its sha256 the one kept, its bytes unchanged), unflagged or admitted despite its flags, and meets no writer holding the content lock for the whole wait (BUSY, which the account does not foresee), answers that refusal first (0249's comparison, under its conditions: a clean still posted first, the revision read again before the press); the press-only still checks keep their places as today (STUDIO-NO-STILL after the not-drawn check and before STUDIO-STALE, STUDIO-STILL-FLAGGED after the strict check and before the director's checks); a binding refusal leaves what the checks before it left, and nothing of the admission written"
+ },
+ "order states": "the witnesses of the order rule (the contract's, beyond his five cases, which are his floor): for each existing refusal, its state with a binding failing too (the still's scene declared otherwise, or for an undo its of declared otherwise); expected that check's own code and director code, never BINDING-*: STUDIO-STALE (B2's honest state); STUDIO-NO-STILL (no still sent: never BINDING-UNKNOWN); STUDIO-NOT-ADMISSIBLE (a drawn candidate not CLEAN at admission); ADMIT-OUTSIDE; STUDIO-STILL-FLAGGED; a director's check (STUDIO-DIRECTOR-REFUSED, LEDGER-UNLOGGED); for an undo, STUDIO-NOT-UNDOABLE and STUDIO-NOTHING-TO-UNDO",
+ "plants 0253 must catch, at least": [
+  "the binding check removed (B1, B2's stale-neutralized run and B3 admitted or undone)",
+  "a mismatch read as a match (B1 admitted)",
+  "unknown read as a match (B3 admitted)",
+  "the evidence refreshed at the press (B1 admitted on the refreshed binding)",
+  "the binding check placed before an existing check (an order state answered BINDING-*: B2's honest state BINDING-MISMATCH where STUDIO-STALE is expected, and the order states)",
+  "a matched binding taken as sufficient: an existing check skipped once every binding matches (B4 admitted, or answered with a code other than its own check's)",
+  "the card's account claiming a binding checked or matched before the press"
+ ],
+ "principle": {
+  "grade": "a proposed engineering invariant, not a theorem",
+  "his words": [
+   "Working name: RBAP — Robust Binding Admission Principle. This is a proposed engineering invariant, not an established mathematical theorem.",
+   "One important distinction: RBAP is a useful proposed engineering principle, but the equation alone is not a proof of correctness. The proof obligation comes from showing that the identity and comparison rules are well-defined, the host enforces them on every admission path, and the registered cases actually falsify implementations that violate the contract. That gives the fork a defensible, extensible foundation without pretending the name itself establishes a theorem."
+  ],
+  "name": "RBAP, the Robust Binding Admission Principle",
+  "requirements": {
+   "auditability": "every decision records the contract, its version and sha256, each piece of evidence relied on with what it declared, and, where the binding check was reached, what was expected and the outcome, and the decision (the decision record)",
+   "determinism": "the same contract, the same state and the same request give the same decision and the same decision record, byte for byte",
+   "fail-closed": "an identity absent or not well formed is unknown, and unknown is refused, never taken as a match",
+   "precedence": "this registration is committed before the code that enforces it (0252 before 0253)"
+  },
+  "statement": "an admission (or an undo) that relies on a piece of evidence is written only if that evidence's declared identity is known and equals, exactly, the identity this contract names for it, and the host's existing checks pass; otherwise it is refused, a binding refusal saying which evidence, what it declared and what was expected. The binding is necessary, never sufficient (his: \"Exact match: continue through the host's existing admission checks. Matching evidence is necessary, not sufficient for admission.\")"
+ },
+ "rulings": {
+  "case 2, his words": [
+   "- LOCK: STALE-first ordering; independent, binding-specific causal plant.",
+   "1. Plant a scene-binding mismatch while neutralizing the STALE condition.\n2. Require the binding check itself to refuse with `BINDING-MISMATCH`.\n3. Verify that the test cannot pass because a different guard refused.\n4. Keep the existing stale-first test to prove the live ordering remains unchanged.",
+   "- REJECT: Treating any refusal as proof that the binding guard works.",
+   "- DEFER: Two-phase admission, mandatory previews, and broader freshness-policy changes.",
+   "This ruling works only if the host can construct a test case where the candidate remains current while the evidence binding is wrong. If the implementation makes those conditions inseparable, the plant must expose that limitation rather than claim independent binding enforcement.",
+   "Also, preserve the distinction between the card’s dry account and the press-time admission result: the former must not claim to have checked evidence that does not exist until Admit is pressed."
+  ],
+  "his choices": {
+   "the director's command line (2026-10-18), the option he chose of those put to him": "Outside v0, said: the command line declares no scene, so there is nothing for BINDING-0 to compare; its --still is the operator's own (AGENTS.md: never give it a picture that is not of the candidate), and its undo is held by the director's exact-inverse check; the contract names it as outside, and bringing it in is a version 1 registered before its code.",
+   "the undo's scene (2026-10-18), the option he chose of those put to him": "World's scene shown: the undo declares `of` and `scene`, the world's scene that /undo.json was computed at (its dry run lays the inverse over it); expected: `of` equals the target's sequence number, and `scene` equals the scene the undo's own evaluation lays the inverse over at the press. It binds both the operation and the scene being reversed: a target that changed since (another admission landed) or a world that moved (a rebase) refuses BINDING-MISMATCH; the undo has no STALE check, so the binding answers first there."
+  },
+  "the contract, his words": {
+   "exact match": "Exact match: continue through the host's existing admission checks. Matching evidence is necessary, not sufficient for admission.",
+   "mismatch or unknown": "Mismatch or unknown: refuse admission; do not silently refresh the evidence, substitute a newer scene, or proceed on a stale account.",
+   "preview": "Preview: its binding must match that same candidate scene.",
+   "still": "Still: its binding must match the exact candidate scene at admission.",
+   "undo": "Undo: its binding must match the scene and operation whose reversal is being claimed."
+  },
+  "the inverse's repair, his words": "Repair the inverse operation against the same frozen contract. It must not weaken the refusal rule or introduce a second definition of identity.",
+  "the owner's ruling (2026-10-18), his words": [
+   "Ruling: LOCK — REFUSE on a scene-binding mismatch for 0252.",
+   "The reason is an authority boundary, not a UI preference: if an admission relies on a still, preview, or undo account tied to a different scene from the exact candidate being admitted, the evidence does not establish what was actually shown for that admission. Merely recording the mismatch leaves that gap unenforced.",
+   "Keep the host authoritative. The dashboard reports the host's result; it must not implement a second admission policy.",
+   "Before implementation, preregister the candidate-scene identity and the comparison rule. Then plant at least these failures:",
+   "Each refusal must be attributable to the binding check, not accidentally caught by another guard. The fourth case is especially important: it proves the binding check hasn't become a replacement admission policy.",
+   "Decision boundary: LOCK refusal on mismatch; DEFER any broader freshness or authority rules not required to enforce this contract."
+  ],
+  "the preview, his words": [
+   "It preserves PREVIEW-0, avoids making preview mandatory, and still enforces the scene-binding rule wherever preview evidence actually participates in admission.",
+   "The key distinction is between a preview existing and an admission relying on that preview. Those are not the same condition.\n\n| Admission situation                                    | Rule                                                                                |\n| ------------------------------------------------------ | ----------------------------------------------------------------------------------- |\n| No preview exists                                      | Admission proceeds under existing rules; no new preview requirement.                |\n| Preview exists but admission does not rely on it       | Its binding does not become a new admission prerequisite.                           |\n| Admission relies on a preview                          | The preview’s declared binding must match the exact candidate scene.                |\n| Required binding is missing, unreadable, or mismatched | Refuse with a binding-specific reason.                                              |\n| Binding matches                                        | Continue existing admission checks; binding agreement is necessary, not sufficient. |",
+   "- PREVIEW-0 survives: admission still does not require a preview.",
+   "Ruling: LOCK bound when relied upon; DEFER mandatory previews, global preview freshness, and broader admission-policy changes. Register that distinction in 0252 before implementing 0253.",
+   "One refinement: do not require every drawn still to match the candidate scene merely because a preview is present. Require that for every still actually relied upon as evidence.",
+   "A preview’s binding must not be refreshed or rewritten at admission time to make stale evidence appear current. Compare the recorded evidence identity with the exact candidate identity being admitted. If the evidence was captured against a different scene, refuse when that evidence is relied upon.",
+   "I would also keep the preview’s content and verdict outside this check. The binding check establishes which scene the evidence concerns; it does not establish that the preview is correct, complete, or authoritative."
+  ],
+  "where it is registered, his words": [
+   "My ruling: choose “Art-layer register first.” Keep 0252 registration-only, 0253 enforcement-only, and 0254 repair-only.",
+   "The five cases should be copied from the actual preregistration proposal, not reconstructed from memory. That avoids accidentally changing the criterion while supposedly freezing it."
+  ]
+ },
+ "scope": {
+  "governs": "the studio's admission and undo through the host (art/studio.py: Gateway.admit, Gateway.undo), and the accounts the host gives of them before the press (Gateway.account and what reads it, Gateway.undo_target)",
+  "outside": [
+   "the director's command line (art/director.py admit, with --still, or with --inverse-of SEQ for an undo; it has no undo command): it declares no scene, so there is nothing to compare; its --still is the operator's own (AGENTS.md: \"never give the command line's `--still` a picture that is not of the candidate\"), and its undo is held by the director's exact-inverse check; in scope only by a version registered before its code (his choice, under rulings)",
+   "the dashboard: it reports the host's answer and decides no admission; the host never relies on a comparison the page makes (0249)"
+  ]
+ },
+ "status": "registered before its enforcement (0252: this file, its register line and the self-test that holds them; no code reads it); enforced in 0253; the inverse's repair is 0254's, against this contract as frozen: it never weakens the refusal rule, registers no new version to do so, and never introduces a second definition of identity (his words, under rulings)",
+ "version": 0
+}
