@@ -58,6 +58,41 @@ def sha256(b):
     return hashlib.sha256(b).hexdigest()
 
 
+# ------------------------------------------------------------------------------------------------ the stages' predicates
+# DASHBOARD-0 (0249): the predicates run() holds a candidate and its preview to, factored out unchanged so that the
+# studio's EVIDENCE-0 checklist (art/studio.py, evidence_checklist) applies the same ones; pure, on the studio's state.
+# The plants stay in run(): they plant a defect of this procedure, not of the predicates.
+def held_ok(cand):
+    """FLAGSHIP-HELD, the region's half: the candidate's account against the request's first shape is "held"."""
+    return ((cand.get("held") or {}).get("accounts") or [{}])[0].get("verdict") == "held"
+
+
+def strict_ok(cand):
+    """FLAGSHIP-HELD, the strict half: the candidate's strict check passed."""
+    return (cand.get("strict") or {}).get("ok") is True
+
+
+def impact_ok(cand):
+    """FLAGSHIP-NO-IMPACT: the candidate's impact is present and computed (a delta, no error)."""
+    imp = cand.get("impact") or {}
+    return bool(imp) and "error" not in imp and "delta" in imp
+
+
+def clear_ok(pc):
+    """FLAGSHIP-FRAMING, the path's half: no pose of the path breached in either scene (its path_check)."""
+    return (pc or {}).get("base") == [] and (pc or {}).get("candidate") == []
+
+
+def framed_ok(fr):
+    """FLAGSHIP-FRAMING, the subject's half: the subject framed in both scenes (its framing)."""
+    return bool((fr or {}).get("base", {}).get("met") and (fr or {}).get("candidate", {}).get("met"))
+
+
+def preview_ok(rep):
+    """FLAGSHIP-PREVIEW: the preview replayed and every state verified (its report)."""
+    return bool((rep or {}).get("replayed")) and bool((rep or {}).get("state_verified"))
+
+
 class Http:
     """The studio's HTTP surface, with its token."""
 
@@ -121,12 +156,12 @@ def run(http, shape, prompt, choose, wait, snapshot, still_of, admission_still, 
         return result()
     acc = ((cand.get("held") or {}).get("accounts") or [{}])[0]
     strict = cand.get("strict") or {}
-    held_ok = (acc.get("verdict") == "held" and strict.get("ok") is True) or PLANT == "flagship-held-unchecked"
+    held_ok_ = (held_ok(cand) and strict_ok(cand)) or PLANT == "flagship-held-unchecked"
     imp = cand.get("impact") or {}
-    imp_ok = (bool(imp) and "error" not in imp and "delta" in imp) or PLANT == "flagship-impact-unchecked"
+    imp_ok = impact_ok(cand) or PLANT == "flagship-impact-unchecked"
     ev = {"letter": cand["letter"], "title": cand["title"], "held": acc.get("verdict"), "strict": strict.get("ok"), "strict_code": strict.get("code"),
           "impact": {k: imp.get(k) for k in ("delta", "flag")} if imp and "error" not in imp else (imp.get("error") or "none")}
-    if not done("candidate", held_ok and imp_ok, "FLAGSHIP-HELD" if not held_ok else "FLAGSHIP-NO-IMPACT", ev):
+    if not done("candidate", held_ok_ and imp_ok, "FLAGSHIP-HELD" if not held_ok_ else "FLAGSHIP-NO-IMPACT", ev):
         return result()
     letter = cand["letter"]
     # preview
@@ -135,8 +170,8 @@ def run(http, shape, prompt, choose, wait, snapshot, still_of, admission_still, 
     fr = (pl or {}).get("framing") or {}
     pc = (pl or {}).get("path_check") or {}
     paths = {((x.get("impact") or {}).get("preview") or {}).get("path_id") for x in cands}
-    framed = c == 200 and fr.get("base", {}).get("met") and fr.get("candidate", {}).get("met")
-    clear = c == 200 and pc.get("base") == [] and pc.get("candidate") == [] and paths == {pl.get("path_id")}
+    framed = c == 200 and framed_ok(fr)
+    clear = c == 200 and clear_ok(pc) and paths == {pl.get("path_id")}
     if not framed or not clear:
         done("preview", False, "FLAGSHIP-FRAMING", {"code": pl.get("code"), "path": pl.get("path_id"), "paths_of_candidates": sorted(p_ or "" for p_ in paths),
                                                     "framed": [fr.get("base", {}).get("met"), fr.get("candidate", {}).get("met")],
@@ -146,7 +181,7 @@ def run(http, shape, prompt, choose, wait, snapshot, still_of, admission_still, 
         for side in ("base", "candidate"):
             http.post("/studio/preview/still?id=%s&candidate=%s&side=%s&k=%d" % (rid, letter, side, k), still_of(side, k), "image/png")
     c, rep = http.post("/studio/preview/finish", {"id": rid, "candidate": letter})
-    verified = c == 200 and rep.get("replayed") and (rep.get("state_verified") or PLANT == "flagship-verify-unchecked")
+    verified = c == 200 and (preview_ok(rep) or (bool(rep.get("replayed")) and PLANT == "flagship-verify-unchecked"))
     if not done("preview", verified, "FLAGSHIP-PREVIEW",
                 {"path": pl.get("path_id"), "subject": (fr.get("subject") or {}).get("shape"),
                  "smallest_px": [fr["base"]["smallest_px"], fr["candidate"]["smallest_px"]], "replayed": rep.get("replayed"),

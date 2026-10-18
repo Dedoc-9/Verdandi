@@ -73,6 +73,7 @@ import importlib.util
 import json
 import os
 import re
+import secrets
 import shutil
 import signal
 import subprocess
@@ -107,7 +108,10 @@ FILES = {
     "/sim.js": (os.path.join(REPO, "graybox", "web", "sim.js"), "text/javascript; charset=utf-8"),
 }
 CODE = [os.path.join(HERE, "dress.py"), os.path.join(HERE, "check.py"), os.path.join(HERE, "director.py"),
-        os.path.join(REPO, "graybox", "level.py"), os.path.join(REPO, "graybox", "check.py")]
+        os.path.join(REPO, "graybox", "level.py"), os.path.join(REPO, "graybox", "check.py"),
+        # DASHBOARD-0 (0249): what the art checks read on every export (check.py's simulation and rules checks, QUALITY-0's
+        # renderer budgets), so that an edit to them compiles again and moves the revision the accounts are kept with
+        os.path.join(REPO, "graybox", "web", "sim.js"), os.path.join(REPO, "graybox", "tick_ref.py"), os.path.join(HERE, "web", "scene_render.js")]
 SERVED = "the art checks passed; movement and collision are the graybox simulation's, against C"
 _director = None
 ROOT = REPO     # the tree whose brief and ledger the director and the studio use (--root)
@@ -158,7 +162,8 @@ def compile_scene(brief, art_path=None, maps_dir=None):
             out["checks"] = [[c, bool(ok), str(d)[:400]] for c, ok, d in res]
             bad = [(c, d) for c, ok, d in res if not ok and c != "the lineage binds every input"]
             if bad:
-                raise SystemExit("PLAY: the scene is not served; it fails the art checks:\n" + "\n".join("  FAIL %s — %s" % b for b in bad))
+                raise Refused("PLAY: the scene is not served; it fails the art checks:\n" + "\n".join("  FAIL %s — %s" % b for b in bad),
+                              head_of(out["lineage"]))
             scene = out["scene"]
             m = level.convert(scene["map"])
         finally:
@@ -166,11 +171,27 @@ def compile_scene(brief, art_path=None, maps_dir=None):
     return out, level.canon(m), m["manifest"]
 
 
+class Refused(SystemExit):
+    """DASHBOARD-0 (0249): a brief that exported and failed the art checks, refused as before (a SystemExit), with the
+    head its files have (the exporter's lineage), which the slot keeps as the head its latest compile is of."""
+
+    def __init__(self, message, head):
+        SystemExit.__init__(self, message)
+        self.head = head
+
+
+def head_of(lineage):
+    """The world head of an export (DIRECTOR-0's: the sha256 of its three parts' canonical bytes), from its lineage: the
+    art file's sha256, the canonical world's and the exporter's (as Workspace.export makes the parts)."""
+    return director().canon.head({"art_sha256": lineage["art_sha256"], "world_sha256": lineage["canonical_sha256"],
+                                  "exporter_sha256": lineage["exporter_sha256"]})
+
+
 def _slot(label, source, out=None, map_bytes=None, message="", **extra):
-    s = {"label": label, "source": source, "ok": out is not None, "message": message, "verdict": "", "codes": []}
+    s = {"label": label, "source": source, "ok": out is not None, "message": message, "verdict": "", "codes": [], "head": ""}
     if out is not None:
         c = out["lineage"]["counts"]
-        s.update({"scene_bytes": out["scene_bytes"], "sha": out["lineage"]["scene_sha256"], "map": out["scene"]["map"],
+        s.update({"scene_bytes": out["scene_bytes"], "sha": out["lineage"]["scene_sha256"], "map": out["scene"]["map"], "head": head_of(out["lineage"]),
                   "map_bytes": map_bytes, "map_sha": sha256(map_bytes), "counts": c,
                   # STUDIO-3 (0230): what the inspector names (the statement that made a piece) and what Validate shows
                   "statements": [{k: x[k] for k in ("line", "text", "key", "hash")} for x in out["lineage"]["statements"]],
@@ -184,7 +205,7 @@ def brief_slot(brief, art_path=None, root=None):
     try:
         out, map_bytes, _m = compile_scene(brief, art_path, maps_of(root))
     except SystemExit as e:
-        return _slot(label, art_path or "art/briefs/%s.art" % brief, message=str(e))
+        return dict(_slot(label, art_path or "art/briefs/%s.art" % brief, message=str(e)), head=getattr(e, "head", ""))
     return _slot(label, art_path or "art/briefs/%s.art" % brief, out, map_bytes)
 
 
@@ -238,6 +259,8 @@ def candidate_slot(ws, it, label, source="studio", shapes=(), strict=False, impa
         return _slot(label, path, message="PLAY: the head cannot be compiled: %s" % e)
     extra = {"verdict": verdict["verdict"], "codes": verdict["codes"], "written_against": verdict["written_against"],
              "checked_against": verdict["checked_against"],
+             # DASHBOARD-0 (0249): the scene the candidate's own evaluation is against (Compare names it)
+             "base_sha": out0["lineage"]["scene_sha256"] if out0 is not None else "",
              # ADMISSION-0 (0222): the rung the host computed and why, what an admission needs, what was not checked
              "record": {k: rec[k] for k in ("rung", "rung_basis", "requires", "not_checked")}}
     # what the director found the candidate changed: the studio's account of which objects a candidate touched (STUDIO-1)
@@ -316,6 +339,18 @@ class Live:
         self.studio = None       # art/studio.py's gateway, with --director
         self.studio_error = ""
         self.shapes = studio_marks.Shapes(self.root, brief)   # MARK-0 (0231): this world's shapes, art/ledger/BRIEF.shapes.json
+        # DASHBOARD-0 (0249): what the revision the page's panels are bound to is read from (rev, VERDANDI-REV 0)
+        self.seen = None         # the inputs' stamps the watcher's last cycle compiled, or found unchanged; None until it runs
+        self.compiling = []      # the sources being compiled again now (the watcher's, /studio/build's)
+        self._watched = (None, [], None)
+        self._ledger = (None, None)
+        # the accounts (Gateway.accounts), computed by a worker while the page reads /live, kept with the revision they are of
+        self.acc = {"rev": "", "request": "", "by_letter": {}, "ms": 0}
+        self.acc_seen = 0.0
+        self.acc_thread = None
+        self.acc_lock = threading.Lock()
+        self.acc_run = threading.Event()     # cleared by a test to hold the worker (it computes nothing while held)
+        self.acc_run.set()
 
     def publish(self, slots):
         """The studio's candidates, served after the given sources; returns their indices."""
@@ -419,9 +454,11 @@ class Live:
                     served[i] = s
                 elif s["message"] != self.latest[i].get("message") or self.latest[i]["ok"]:
                     lines.append("LIVE  [%d] refused; %s stands\n%s" % (i, ("scene " + old["sha"][:12]) if old else "nothing", s["message"]))
-            changed = [(a and a["sha"], a and a["map_sha"]) for a in served] != [(a and a["sha"], a and a["map_sha"]) for a in self.served] or \
-                [(s["ok"], s["message"], s.get("verdict"), s.get("codes")) for s in slots] != \
-                [(s["ok"], s["message"], s.get("verdict"), s.get("codes")) for s in self.latest]
+            # DASHBOARD-0 (0249): the heads too: a comment changes the brief's head and not its scene
+            changed = [(a and a["sha"], a and a["map_sha"], a and a.get("head")) for a in served] != \
+                [(a and a["sha"], a and a["map_sha"], a and a.get("head")) for a in self.served] or \
+                [(s["ok"], s["message"], s.get("verdict"), s.get("codes"), s.get("head")) for s in slots] != \
+                [(s["ok"], s["message"], s.get("verdict"), s.get("codes"), s.get("head")) for s in self.latest]
             self.served, self.latest = served, slots
             self.compiled_ms = int((time.perf_counter() - t0) * 1000)
             if changed:
@@ -431,6 +468,7 @@ class Live:
     def watch(self, say=print):
         files = self.watched()
         seen = self.stamp(files)
+        self.seen = seen
         while not self.stopping:
             time.sleep(self.poll)
             files = self.watched()
@@ -448,30 +486,160 @@ class Live:
             d = [self.digest(self.inputs_of(k)) for k in range(len(self.served))]
             changed = [k for k in range(len(d)) if d[k] != self.inputs[k]]
             if not changed:
+                self.seen = seen
                 continue
             self.inputs = d
-            for ln in self.recompile(changed):
-                self.log.append(ln)
-                say(ln)
+            # DASHBOARD-0: the sources compiling are said while they compile, and the stamps compiled from kept after
+            self.compiling = list(changed)
+            try:
+                for ln in self.recompile(changed):
+                    self.log.append(ln)
+                    say(ln)
+            finally:
+                self.compiling = []
+                self.seen = seen
 
     # ------------------------------------------------------------------ what the page reads
     def state(self):
-        with self.lock:
-            slots = []
-            for s, last in zip(self.served, self.latest):
-                slots.append({"label": last["label"], "ok": last["ok"], "message": last["message"],
-                              "verdict": last.get("verdict", ""), "codes": last.get("codes", []),
-                              "served": {"sha": s["sha"], "map": s["map"], "map_sha": s["map_sha"], "counts": s["counts"],
-                                         "verdict": s.get("verdict", ""), "codes": s.get("codes", [])} if s else None})
-            for s in self.extra:
-                slots.append({"label": s["label"], "ok": True, "message": "", "verdict": s.get("verdict", ""), "codes": s.get("codes", []),
-                              "studio": True, "served": {"sha": s["sha"], "map": s["map"], "map_sha": s["map_sha"], "counts": s["counts"],
-                                                         "verdict": s.get("verdict", ""), "codes": s.get("codes", [])}})
-            out = {"format": "VERDANDI-PLAY-LIVE 0", "brief": self.brief, "version": self.version, "compiled_ms": self.compiled_ms,
-                   "slots": slots, "code": self.code(), "shapes_revision": self.shapes.revision}
-        out["studio"] = self.studio.state() if self.studio else {"provider": {"configured": False, "model": "", "config": "", "error": self.studio_error},
-                                                                   "request": None, "last": {}}
+        out, rev = self._read()
+        out["code"] = self.code()
+        out["rev"] = rev
+        # DASHBOARD-0 (0249): the cards' accounts, as the worker last computed them, with the revision they are of; the
+        # page compares that revision with `rev` and says which (it computes no account and no head)
+        out["accounts"] = dict(self.acc)
         return out
+
+    def _read(self):
+        """DASHBOARD-0 (0249): what the page is shown, and its revision (VERDANDI-REV 0), read so that the two halves agree:
+        the gateway's state before and after the slots, equal, the live version unchanged and no request publishing; read
+        up to four times in all, and said (read.consistent) when they did not agree. Returns (state, rev)."""
+        g = self.studio
+        default = {"provider": {"configured": False, "model": "", "config": "", "error": self.studio_error}, "request": None, "last": {}}
+        tries = 0
+        while True:
+            tries += 1
+            g1 = g.state() if g else default
+            with self.lock:
+                v1 = self.version
+                slots, rslots = [], []
+                for k, (s, last) in enumerate(zip(self.served, self.latest)):
+                    slots.append({"label": last["label"], "ok": last["ok"], "message": last["message"],
+                                  "verdict": last.get("verdict", ""), "codes": last.get("codes", []),
+                                  "served": {"sha": s["sha"], "map": s["map"], "map_sha": s["map_sha"], "counts": s["counts"],
+                                             "verdict": s.get("verdict", ""), "codes": s.get("codes", [])} if s else None})
+                    rslots.append({"k": k, "sha": s["sha"] if s else "", "head": (s.get("head") or "") if s else "", "ok": bool(last["ok"]),
+                                   "latest_head": last.get("head") or "", "refused_sha256": "" if last["ok"] else sha256(last["message"].encode("utf-8"))})
+                n = len(slots)
+                for j, s in enumerate(self.extra):
+                    slots.append({"label": s["label"], "ok": True, "message": "", "verdict": s.get("verdict", ""), "codes": s.get("codes", []),
+                                  "studio": True, "served": {"sha": s["sha"], "map": s["map"], "map_sha": s["map_sha"], "counts": s["counts"],
+                                                             "verdict": s.get("verdict", ""), "codes": s.get("codes", [])}})
+                    rslots.append({"k": n + j, "sha": s["sha"], "head": s.get("head") or "", "drawn_at": s.get("checked_against", "")})
+                out = {"format": "VERDANDI-PLAY-LIVE 0", "brief": self.brief, "version": self.version, "compiled_ms": self.compiled_ms,
+                       "slots": slots, "shapes_revision": self.shapes.revision}
+                compiling = list(self.compiling)
+            g2 = g.state() if g else default
+            d2 = state_sha256(g2)
+            publishing = bool(g2.get("publishing"))
+            consistent = v1 == self.version and state_sha256(g1) == d2 and not publishing
+            if consistent or tries >= 4:
+                break
+        out["studio"] = g2
+        settled, files = self.settled(compiling)
+        req = g2.get("request") or {}
+        rev = {"format": "VERDANDI-REV", "version": "0", "world": self.brief,
+               "process": getattr(getattr(self, "hub", None), "instance", ""), "live": v1, "slots": rslots,
+               "settled": settled, "compiling": compiling, "files": files, "ledger": self.ledger_line(),
+               "request": {"id": req.get("id", ""), "state": req.get("state", ""), "sha256": d2, "publishing": publishing},
+               "shapes": str(self.shapes.revision)}
+        rev["id"] = sha256(json.dumps(rev, sort_keys=True, separators=(",", ":")).encode("utf-8"))[:16]
+        rev["read"] = {"consistent": consistent, "tries": tries}
+        return out, rev
+
+    def watched_now(self):
+        """watched(), kept per live version and per cycle of the watcher (it lists three folders and reads every served
+        map): what settled() stamps. Listed again when the watcher keeps new stamps (a file come or gone in a watched folder
+        moves no version), so that settled() compares the files the watcher's last cycle saw."""
+        v, s = self.version, self.seen
+        if self._watched[0] != v or self._watched[2] is not s:
+            self._watched = (v, self.watched(), s)
+        return self._watched[1]
+
+    def settled(self, compiling=None):
+        """DASHBOARD-0 (0249): (settled, files): whether what is served is compiled from the inputs as they stand — no
+        compile running and every watched file's stamp (mtime, size) as the watcher's last cycle saw it — and a digest of
+        those stamps. settled is None while no watcher has run: unknown, never taken for settled. A write that keeps a
+        file's mtime and size is not seen, as the watcher does not see it."""
+        now = self.stamp(self.watched_now())
+        files = sha256(json.dumps(sorted(now.items()), separators=(",", ":")).encode("utf-8"))[:16]
+        if self.seen is None:
+            return None, files
+        if DASH_PLANT == "settled-ignores-stamps":
+            return not (self.compiling if compiling is None else compiling), files
+        return (not (self.compiling if compiling is None else compiling) and now == self.seen), files
+
+    def ledger_line(self):
+        """The ledger's last line (its sequence number and sha256) and whether an admission is half written (its pending
+        folder), read again only when the file's stamp changes."""
+        p = os.path.join(self.root, "art", "ledger", self.brief + ".ledger")
+        try:
+            st = os.stat(p)
+            key = (st.st_mtime_ns, st.st_size)
+        except OSError:
+            key = None
+        if key is None or self._ledger[0] != key:
+            import studio
+            last, torn = studio.last_line(p)
+            seq = ""
+            try:
+                seq = str(json.loads(last.decode("utf-8")).get("seq", "")) if last else ""
+            except (ValueError, UnicodeDecodeError, AttributeError):
+                seq = ""
+            self._ledger = (key, {"seq": seq, "line_sha256": hashlib.sha256(last).hexdigest() if last is not None else "", "torn": torn})
+        return dict(self._ledger[1], pending=os.path.isdir(p + ".pending"))
+
+    # ------------------------------------------------------------------ the accounts' worker
+    def want_accounts(self):
+        """The page read /live: the accounts' worker runs (started if it is not), and stops a while after the page stops
+        reading (ACCOUNTS_IDLE): it costs nothing where no page looks."""
+        self.acc_seen = time.monotonic()
+        if self.studio is None:
+            return
+        with self.acc_lock:
+            if self.acc_thread is None or not self.acc_thread.is_alive():
+                self.acc_thread = threading.Thread(target=self.accounts_loop, daemon=True)
+                self.acc_thread.start()
+
+    def accounts_loop(self):
+        while not self.stopping and not self.stop.is_set() and time.monotonic() - self.acc_seen < ACCOUNTS_IDLE:
+            self.acc_run.wait(1.0)
+            if not self.acc_run.is_set():
+                continue
+            try:
+                kept = self.accounts_once()
+            except Exception as e:  # noqa: BLE001 — the worker never ends on an error; the page is told it
+                kept = False
+                self.acc = dict(self.acc, error="%s: %s" % (type(e).__name__, str(e)[:200]))
+            time.sleep(0.05 if kept else 0.2)
+
+    def accounts_once(self):
+        """One pass of the worker: when the revision moved since the accounts were computed, they are computed again
+        (Gateway.accounts: admit()'s own predicate, run dry) and kept with the revision they are of — only if the
+        revision did not move while they were computed and no admission was half written meanwhile (the ledger's
+        pending folder, inside the revision). Otherwise nothing is kept, and the next pass tries again. True if kept."""
+        g = self.studio
+        if g is None:
+            return False
+        _o, r1 = self._read()
+        if not r1["read"]["consistent"] or r1["ledger"]["pending"] or self.acc.get("rev") == r1["id"]:
+            return False
+        t = time.perf_counter()
+        acc = g.accounts()
+        _o, r2 = self._read()
+        if r2["id"] != r1["id"] or r2["ledger"]["pending"]:
+            return False
+        self.acc = dict(acc, rev=r1["id"], ms=int((time.perf_counter() - t) * 1000))
+        return True
 
     def slot(self, k):
         with self.lock:
@@ -539,6 +707,9 @@ class Hub:
         self.stop = live.stop if live is not None else threading.Event()
         self.page_seen = self.page_bye = None
         self.queue = None
+        # DASHBOARD-0 (0249): this server's instance, in every revision: a page that sees it change was served by another
+        # process (play.py restarted), and holds nothing it drew as current
+        self.instance = secrets.token_hex(8)
         if live is not None:
             live.hub = self
 
@@ -603,17 +774,23 @@ class Hub:
             return info
         try:
             with D.durable.locked(D.led.lock_path(ws.ledger), wait=5):
+                # DASHBOARD-0 (0249): the line the verification is of, read under the same lock, whether it then verifies
+                # or not (a page binds what it shows of it to the ledger's last line)
+                last, _torn = studio_last_line(ws.ledger)
+                info["last_line_sha256"] = hashlib.sha256(last).hexdigest() if last is not None else ""
                 events, st = D.cmd_verify(ws, quiet=True)
             kinds = {}
             for e in events:
                 kinds[e["kind"]] = kinds.get(e["kind"], 0) + 1
-            last, _torn = studio_last_line(ws.ledger)
-            info.update(verified=True, events=len(events), kinds=kinds, head=st["head"],
-                        last_line_sha256=hashlib.sha256(last).hexdigest() if last is not None else "")
+            info.update(verified=True, events=len(events), kinds=kinds, head=st["head"])
         except D.durable.Busy:
             info["error"] = "busy: an admission is being written; it is verified at the next look"
         except (D.led.LedgerError, OSError, ValueError, KeyError) as e:
             info["error"] = str(e)[:240]
+        except (D.dress.ArtError, D.dress.level.MapError) as e:
+            # DASHBOARD-0 (0249, FOUND): files the exporter refuses are not verified, and said; before, the exception left the
+            # route (GET /history.json answered nothing, its traceback on the console), which case 3 of PAGE-CARDS met
+            info["error"] = "FILES-REFUSED: the exporter refuses the files: %s" % str(e)[:200]
         return info
 
     def history(self, name):
@@ -869,22 +1046,23 @@ SOCKET_TIMEOUT = 60       # HARDEN-0: seconds a connection may stay silent (the 
 DRAIN = True
 
 
-def studio_still(hub, world, rid, letter, png):
-    """A candidate's still, as the page drew it (ADMISSION-0): kept, and its detectors read by the host."""
+def studio_still(hub, world, rid, letter, png, scene=""):
+    """A candidate's still, as the page drew it (ADMISSION-0): kept, and its detectors read by the host; the scene the
+    page says it drew recorded (DASHBOARD-0, never refused on)."""
     import studio
     try:
         live = hub.world(world)
         g = live.studio
         if g is None:
             return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
-        return 200, dict(g.still(rid, letter, png), ok=True)
+        return 200, dict(g.still(rid, letter, png, scene), ok=True)
     except studio.StudioError as e:
         return 409, e.answer()
     except OSError as e:
         return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
-def studio_preview_still(hub, world, rid, letter, side, k, png):
+def studio_preview_still(hub, world, rid, letter, side, k, png, scene=""):
     """PREVIEW-0 (0240): one still of the preview, as the page drew it at a pose of the plan; kept until the report."""
     import studio
     try:
@@ -892,9 +1070,57 @@ def studio_preview_still(hub, world, rid, letter, side, k, png):
         if g is None:
             return 409, {"ok": False, "code": "STUDIO-NO-PROVIDER", "message": "the studio is not running"}
         kk = int(k) if re.fullmatch(r"[0-9]{1,3}", k or "") else -1
-        return 200, dict(g.preview_still(rid, letter, side, kk, png), ok=True)
+        return 200, dict(g.preview_still(rid, letter, side, kk, png, scene), ok=True)
     except studio.StudioError as e:
         return 409, e.answer()
+
+
+ACCOUNTS_IDLE = 30.0     # seconds without a read of /live after which a world's accounts' worker stops (it starts again)
+DASH_PLANT = ""          # LIVE's plant of DASHBOARD-0 (art/page_dash.py live_rows): "settled-ignores-stamps"
+
+
+def state_sha256(g):
+    """The gateway's state's identity: its canonical JSON, without the running request's elapsed time (which changes at
+    every read while it runs and is not a change of anything shown)."""
+    g = dict(g)
+    if g.get("request"):
+        g["request"] = {k: v for k, v in g["request"].items() if k != "elapsed_ms"}
+    return sha256(json.dumps(g, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8"))
+
+
+def dash_get(hub, path, q):
+    """DASHBOARD-0 (0249): GET /evidence.json?world=W&id=R&candidate=L and GET /undo.json?world=W, (status, answer).
+    The revision is read before and after (rev_before, rev_after): the facts are of rev_before, and `moved` says the
+    host changed while they were computed (the page then shows them stale and reads again)."""
+    import studio
+    name = q.get("world")
+    w = before = None
+    # its refusals name the world they answer for, when it is one this server has open, and the revision read before
+    named = lambda a: dict(a, **({"world": w.brief} if w is not None else {}), **({"rev_before": before} if before is not None else {}))
+    try:
+        if not name:
+            raise studio.StudioError("STUDIO-WORLD", "this route names its world (world=NAME); it has no default")
+        # a world is never opened here (opening one recovers its ledger, starts it, makes its certificates): only one the
+        # page's own /live has opened is read
+        w = hub.worlds.get(name)
+        if w is None:
+            raise studio.StudioError("STUDIO-WORLD", "world %r is not open here (play.html?world=NAME opens it); nothing was read" % str(name)[:40])
+        if w.studio is None:
+            raise studio.StudioError("STUDIO-NO-PROVIDER", "the studio is not running")
+        before = w._read()[1]
+        if path == "/evidence.json":
+            got = w.studio.evidence(q.get("id", ""), q.get("candidate", ""))
+        else:
+            got = w.studio.undo_target()
+        director().durable.point("evidence:computed")
+        after = w._read()[1]
+    except studio.StudioError as e:
+        return 404, named(e.answer())
+    except studio.failures(director()) as e:
+        return 409, named(studio.failed_answer(e))
+    except Exception as e:  # noqa: BLE001 — HARDEN-0: a request always ends in an answer
+        return internal(hub, path, e)
+    return 200, dict(got, ok=True, world=w.brief, rev_before=before, rev_after=after, moved=before["id"] != after["id"])
 
 
 def internal(hub, path, e):
@@ -958,7 +1184,11 @@ def studio_post(hub, path, body):
     if path == "/studio/build":
         # STUDIO-3 (0230), Local Build: every source of this world compiled again now, as the watcher does on an edit (a
         # fresh process; what passes replaces what was served, what fails leaves it served and says why). Writes nothing.
-        lines = live.recompile()
+        live.compiling = list(range(len(live.served)))
+        try:
+            lines = live.recompile()
+        finally:
+            live.compiling = []
         for ln in lines:
             live.log.append(ln)
         st = live.state()["slots"]
@@ -989,14 +1219,14 @@ def studio_post(hub, path, body):
         if path == "/studio/preview/finish":
             return 200, dict(g.preview_finish(body.get("id"), body.get("candidate")), ok=True)
         if path == "/studio/undo":
-            return 200, dict(g.undo(), ok=True)
+            return 200, dict(g.undo(body.get("of")), ok=True)
         # LEDGER-SAFE-0 (0245): a route of STUDIO_POSTS with no branch above is refused, never taken for an undo (before,
         # the undo was this function's last line, which any such route would have reached)
         raise studio.StudioError("STUDIO-ROUTE", "no studio route %s" % path[:60])
     except studio.StudioError as e:
         return 409, e.answer()
-    except (dress.ArtError, level.MapError, OSError, ValueError, KeyError, TypeError) as e:
-        return 409, {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
+    except studio.failures(director()) as e:
+        return 409, studio.failed_answer(e)
 
 
 # ------------------------------------------------------------------------------- STUDIO-3 (0230): what the shell reads
@@ -1101,9 +1331,17 @@ def object_info(slot, piece):
 
 def validate_info(live, k):
     """Validate (0230): the art checks' rows as they were run when source k was compiled, and why it is refused if its
-    latest compile was; read back, not run again."""
-    s, latest = live.slot(k), (live.latest[k] if 0 <= k < len(live.latest) else None)
-    out = {"world": live.brief, "slot": k, "version": live.version, "served": s is not None}
+    latest compile was; read back, not run again. DASHBOARD-0 (0249): the slot, its latest compile and the version read
+    under the live loop's lock, together (never a slot of one compile beside the refusal of another), with the identities
+    the page compares against its revision: the served scene, and the latest compile's head and refusal's sha256."""
+    with live.lock:
+        n = len(live.served)
+        s = live.served[k] if 0 <= k < n else (live.extra[k - n] if 0 <= k - n < len(live.extra) else None)
+        latest = live.latest[k] if 0 <= k < len(live.latest) else None
+        version = live.version
+    out = {"world": live.brief, "slot": k, "version": version, "served": s is not None,
+           "latest": {"ok": latest["ok"], "head": latest.get("head") or "",
+                      "refused_sha256": "" if latest["ok"] else sha256(latest["message"].encode("utf-8"))} if latest is not None else None}
     if s is not None:
         out.update(sha=s["sha"], label=s["label"], checks=s.get("checks"), verdict=s.get("verdict", ""), codes=s.get("codes", []),
                    record=s.get("record"), basis="the art checks (art/check.py) as run when this scene was compiled; a candidate's are the "
@@ -1144,6 +1382,7 @@ def server(target, port=0):
         def send(self, code, body, ctype):
             # 0244: a client that hung up before its answer (a refused request's sender often does) is let go quietly:
             # the socket server printed its reset as a traceback, which RUNG-0 read as a suite stopping early
+            outcome = "sent"
             try:
                 self.send_response(code)
                 for k, v in (("Content-Type", ctype), ("Content-Length", str(len(body))), ("Cache-Control", "no-store"),
@@ -1151,8 +1390,13 @@ def server(target, port=0):
                     self.send_header(k, v)
                 self.end_headers()
                 self.wfile.write(body)
-            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError) as e:
                 self.close_connection = True
+                outcome = type(e).__name__
+            # DASHBOARD-0 (0249): while a page test is armed, what was answered is kept for it (art/page_test.py, Channel)
+            pt = getattr(hub, "page_test", None)
+            if pt is not None and hasattr(pt, "served"):
+                pt.served.append((time.monotonic(), self.path.partition("?")[0], code, len(body), outcome))
 
         def refuse(self, code, msg, cap):
             """Answer a refusal only after reading what was sent, up to `cap` bytes (see DRAIN)."""
@@ -1213,6 +1457,7 @@ def server(target, port=0):
                     s0 = w.slot(0)
                     page = page_t.replace("%BRIEF%", w.brief).replace("%SHA%", s0["sha"] if s0 else "").replace("%STUDIO%", hub.token)
                     return self.send(200, page.encode("utf-8"), "text/html; charset=utf-8")
+                w.want_accounts()
                 st = w.state()
                 st["worlds"] = hub.listing()
                 st["queue"] = hub.queue.state() if hub.queue is not None else None
@@ -1237,7 +1482,7 @@ def server(target, port=0):
                     return self.send(404, json.dumps({"ok": False, "code": e.code, "message": e.detail}).encode("utf-8"), "application/json")
                 s0 = w.slot(0)
                 st = w.shapes.state(scene_of(s0) if s0 is not None else None)
-                return self.send(200, json.dumps(dict(st, ok=True, scene=s0["sha"] if s0 else ""), sort_keys=True).encode("utf-8"), "application/json")
+                return self.send(200, json.dumps(dict(st, ok=True, world=w.brief, scene=s0["sha"] if s0 else ""), sort_keys=True).encode("utf-8"), "application/json")
             if path == "/held.json":
                 # HELD-0 (0235): a candidate's report as the host computed it (its diff's summary, M, C and P, its accounts
                 # against the request's shapes and the boxes Diff mode outlines). Read; nothing written.
@@ -1249,7 +1494,13 @@ def server(target, port=0):
                     got = w.studio.held(qq.get("id", ""), qq.get("candidate", ""))
                 except studio.StudioError as e:
                     return self.send(404, json.dumps({"ok": False, "code": e.code, "message": e.detail}).encode("utf-8"), "application/json")
-                return self.send(200, json.dumps(dict(got, ok=True), sort_keys=True).encode("utf-8"), "application/json")
+                return self.send(200, json.dumps(dict(got, ok=True, world=w.brief), sort_keys=True).encode("utf-8"), "application/json")
+            if path in ("/evidence.json", "/undo.json"):
+                # DASHBOARD-0 (0249): a candidate's admission account and its evidence, and what Undo would undo, as the
+                # host holds them; read, nothing written. The world is required (no default: an answer is of a world)
+                qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
+                code, got = dash_get(hub, path, qq)
+                return self.send(code, json.dumps(got, sort_keys=True).encode("utf-8"), "application/json")
             if path in ("/preview.json", "/preview.png"):
                 # PREVIEW-0 (0240): a candidate's preview report, or one of its stills, as kept. Read; nothing written.
                 qq = {a: b[0] for a, b in urllib.parse.parse_qs(query).items()}
@@ -1276,7 +1527,7 @@ def server(target, port=0):
                 if got is None:
                     return self.send(404, json.dumps({"ok": False, "code": "STUDIO-OBJECT", "message": "no piece %r in source %d's scene" % (piece[:80], k)}).encode("utf-8"),
                                      "application/json")
-                return self.send(200, json.dumps(dict(got, ok=True), sort_keys=True).encode("utf-8"), "application/json")
+                return self.send(200, json.dumps(dict(got, ok=True, world=w.brief), sort_keys=True).encode("utf-8"), "application/json")
             if path in ("/page_test.html", "/page_test.js"):
                 # PAGE-0 (0246): the page test's driver, served only while a page test is armed (art/page_test.py)
                 if getattr(hub, "page_test", None) is None:
@@ -1327,7 +1578,7 @@ def server(target, port=0):
                 q = urllib.parse.parse_qs(self.path.partition("?")[2])
                 one = lambda k: (q.get(k) or [""])[0]
                 try:
-                    code, reply = studio_preview_still(hub, one("world") or None, one("id"), one("candidate"), one("side"), one("k"), self.rfile.read(n))
+                    code, reply = studio_preview_still(hub, one("world") or None, one("id"), one("candidate"), one("side"), one("k"), self.rfile.read(n), one("scene"))
                 except Exception as e:  # noqa: BLE001 — HARDEN-0: the boundary is total
                     code, reply = internal(hub, path, e)
                 return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
@@ -1341,7 +1592,8 @@ def server(target, port=0):
                     return self.refuse(400, b"a still is image/png of at most 32 MiB", STILL_MAX)
                 q = urllib.parse.parse_qs(self.path.partition("?")[2])
                 try:
-                    code, reply = studio_still(hub, (q.get("world") or [None])[0], (q.get("id") or [""])[0], (q.get("candidate") or [""])[0], self.rfile.read(n))
+                    code, reply = studio_still(hub, (q.get("world") or [None])[0], (q.get("id") or [""])[0], (q.get("candidate") or [""])[0], self.rfile.read(n),
+                                               (q.get("scene") or [""])[0])
                 except Exception as e:  # noqa: BLE001 — HARDEN-0: the boundary is total (see below)
                     code, reply = internal(hub, path, e)
                 return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
@@ -1374,6 +1626,7 @@ def server(target, port=0):
                 hub.stop.set()            # after the answer is written: the main thread then stops the server and ends
 
     srv = Server(("127.0.0.1", port), Handler)
+    srv.hub = hub
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
 
@@ -1383,12 +1636,33 @@ class Server(http.server.ThreadingHTTPServer):
     a port in use by another socket" (VERIFIED, Microsoft Learn, "Using SO_REUSEADDR and SO_EXCLUSIVEADDRUSE"), so a
     second studio would take the first one's port instead of being refused (exit 70)."""
     allow_reuse_address = os.name != "nt"
+    # DASHBOARD-0 (0249): the listen backlog. Python's default is 5, and on Windows a connection that finds the backlog full
+    # is refused, not queued: twenty connections to a server accepting none were 5 connected and 15 refused, and with 128
+    # all 20 (MEASURED on the owner's machine, by the agent). A page asks for its four scripts at once, and a loaded host
+    # accepts slowly: a PAGE-CARDS page in a full check there was answered sim.js, scene_render.js and studio_ui.js and
+    # play.js by a network error (status 0), and never started (MEASURED once; that the backlog refused it is INFERRED
+    # from the probe). BOUNDARY's row holds the burst, its plant at 5
+    request_queue_size = 128
 
     def server_bind(self):
         import socket
         if os.name == "nt" and hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
         http.server.ThreadingHTTPServer.server_bind(self)
+
+    def handle_error(self, request, client_address):
+        # DASHBOARD-0 (0249): a client that hung up while the server waited for its next request on a connection kept open
+        # is let go quietly, as Handler.send lets one go that hung up before its answer (0244); anything else is printed as
+        # the socket server prints it. Seen once, in a PAGE run on the owner's machine by the agent, after a plant's browser
+        # ended (OBSERVED; that the client was the ending browser is INFERRED); no row exercises this
+        import sys as _sys
+        e = _sys.exc_info()[1]
+        pt = getattr(getattr(self, "hub", None), "page_test", None)
+        if pt is not None and hasattr(pt, "served"):
+            pt.served.append((time.monotonic(), "(a request not answered)", 0, 0, type(e).__name__))
+        if isinstance(e, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError)):
+            return
+        http.server.ThreadingHTTPServer.handle_error(self, request, client_address)
 
 
 def start_studio(live, config, say=print):
@@ -1438,6 +1712,9 @@ def main(argv):
     if "--page-selftest" in argv:
         import page_test         # PAGE-0 (0246): the page executed by a test, in a real browser
         return page_test.selftest(argv)
+    if "--cards-selftest" in argv:
+        import page_dash         # DASHBOARD-0 (0249): the dashboard's cards half, executed in a real browser (PAGE-CARDS)
+        return page_dash.cards_selftest(argv)
     global ROOT
     one = lambda k, d=None: (opts(argv, k) or [d])[0]
     vals = set(opts(argv, "--port") + opts(argv, "--art") + opts(argv, "--intent") + opts(argv, "--only") + opts(argv, "--director") + opts(argv, "--root")
@@ -1718,6 +1995,10 @@ def selftest():
         st = live.state()["slots"][1]
         row("refused-keeps: an intent whose candidate fails a check", ok and not st["ok"] and "CHECK-FAILED" in st["message"] and sha(1) == a_sha,
             "a slab lowered to 3.0 m: the director's verdict REFUSED (CHECK-FAILED), not served; candidate A still served")
+
+        # DASHBOARD-0 (0249): the revision's heads, settled, and the request's identity (art/page_dash.py)
+        import page_dash
+        page_dash.live_rows(row, {"play": sys.modules[__name__], "live": live, "brief": brief, "art": art, "tmp": tmp, "until": until})
 
         # the compiler itself failing (an exporter half-written, say) leaves everything served as it was
         cmd, live.cmd = live.cmd, [sys.executable, "-c", "import sys; sys.stderr.write('SyntaxError: planted\\n'); sys.exit(3)"]
@@ -2278,6 +2559,23 @@ def studio_selftest():
             g = made
         else:
             row("a certificate taken away is made again from the ledger at the start", False, "no certificate was kept to take away")
+
+        # DASHBOARD-0 (0249): the admission's account against the press, Undo's proof, the new routes (art/page_dash.py)
+        import page_dash
+        try:
+            g = page_dash.studio_rows(row, {"play": sys.modules[__name__], "live": live, "srv": srv, "tok": tok, "tmp": tmp, "brief": brief, "art": art,
+                                        "original": original, "held_led": open(led_path, "rb").read(), "piece": piece, "cam": cam, "wait": wait,
+                                        "post": post, "post_still": post_still,
+                                        "scripted": lambda: start_studio(live, os.path.join(REPO, "art", "providers", "scripted.json"), say=lambda s: None),
+                                        "provider": lambda n: start_studio(live, cfg(n, [sys.executable, os.path.join(tmp, n + ".py")]), say=lambda s: None)})
+        except Exception as e:  # noqa: BLE001 — a row that raised fails, and the rows after it run
+            import traceback
+            traceback.print_exc()
+            row("DASHBOARD-0's rows ran to their end", False, "%s: %s" % (type(e).__name__, str(e)[:200]))
+            D_.durable.HOOK, studio.ACCOUNT_PLANT = None, ""
+            open(art, "wb").write(original)
+            open(led_path, "wb").write(held_led)
+            g = start_studio(live, os.path.join(REPO, "art", "providers", "scripted.json"), say=lambda s: None)
 
         # the ways a provider fails: each refused, the world as it was
         def failing(label, name, argv, want, timeout=30, size=65536, cancel_after=None, then=None):
@@ -3726,6 +4024,37 @@ def boundary_selftest():
             closed = False
         s.close()
         row("boundary: a silent client let go", closed and time.time() - t0 < 20, "half a request line, then silence: closed after %.1f s (the timeout set to %d s here)" % (time.time() - t0, SOCKET_TIMEOUT))
+
+        # DASHBOARD-0 (0249): a burst of connections while the server accepts none is queued, never refused (the listen
+        # backlog, Server.request_queue_size); its plant, Python's default of 5, refuses some of it on Windows
+        def burst(cls, n=32):
+            s_ = cls(("127.0.0.1", 0), http.server.BaseHTTPRequestHandler)        # listening, and nothing accepted
+            got_, socks = {"connected": 0, "refused": 0, "other": 0}, []
+            try:
+                for _i in range(n):
+                    c_ = socket.socket()
+                    c_.settimeout(1)
+                    socks.append(c_)
+                    try:
+                        c_.connect(s_.server_address)
+                        got_["connected"] += 1
+                    except ConnectionRefusedError:
+                        got_["refused"] += 1
+                    except OSError:
+                        got_["other"] += 1
+            finally:
+                for c_ in socks:
+                    c_.close()
+                s_.server_close()
+            return got_
+
+        class DefaultBacklog(Server):
+            request_queue_size = 5
+        b_honest, b_plant = burst(Server), burst(DefaultBacklog)
+        row("boundary: a burst of connections queued while the server accepts none, never refused (the listen backlog %d)" % Server.request_queue_size,
+            b_honest["connected"] == 32, "32 at once: %(connected)d connected, %(refused)d refused, %(other)d failed otherwise" % b_honest)
+        row("boundary plant: a backlog at Python's default of 5 does not take the burst, and is caught",
+            b_plant["connected"] < 32, "32 at once: %(connected)d connected, %(refused)d refused, %(other)d failed otherwise" % b_plant)
         # a tag read back after a restart is as it was (the fingerprint kept); one from a file before 0232 is unknown
         g = live.studio
         g.select("canopy:19,10-28,11")

@@ -5775,6 +5775,249 @@ commit message, which none of them reads; the classifier's rung was taken again 
 NOT_MEASURED: the full check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (the
 PAGE-0 row), art/STUDIO.md, docs/CORE.md (art 27,723 lines), this entry.
 
+**His run of 0248 (2026-10-17), and his word.** 0248 applied on e51e7ef:
+- the classifier the pushed tree held: rung D on six files, loosening nothing; *"272 planted defects refused by the old
+  checker; 272 by the new"*, PLANTS HELD;
+- `PAGE SELFTEST 18/18` alone;
+- ART SELFTESTS PASSED, twenty-five suites, 202.0 s and 218.4 s wall, PAGE SELFTEST 18/18 in both runs;
+- the gate `GATE PASSED`, `RECONCILE  rowset 74db4c8d78625af5  251 rows / 0 fail / 0 skipped`;
+- pushed e51e7ef..2c70a71.
+
+MEASURED on his machine, by him. His word with it: *"build 0249 as specified; One nuance: the first-blocker test should
+compare the host’s displayed admission account with the host’s actual refusal under the same revision and conditions.
+It must not create a second, dashboard-owned admission policy."* And: *"Execution order: apply 0248 and confirm its
+reported PAGE 18/18 result in the actual checkout; build 0249 and run its new suite plus the full check; then build 0250
+with the separate worlds-mode test rig. Keep the dashboard’s “current” status strictly observational throughout."*
+
+"As specified" is read as the settled design's recommended answers: the split into 0249 (the revision, the cards and
+their accounts, the drawer's tabs, Evidence, Undo's proof, the wrong-world guard) and 0250 (the worlds, the outliner,
+import); Admit gated by the host's admission account alone; EVIDENCE-0 advisory and not FLAGSHIP-0's name for an
+acceptance; the new suites PAGE-CARDS and PAGE-WORLDS; the still's, the preview's and the undo's binding recorded, never
+refused on, until the binding's patch (now 0251; the inverse's repair 0252). The order is his.
+
+### DASHBOARD-0, the cards half · **built, off the gate** (0249: `art/play.py`, `art/studio.py`, `art/director.py`, `art/flagship.py`, `art/web/play.js`, `art/web/play.html`, `art/web/page_test.js`, `art/page_test.py`, `art/page_dash.py` (new), `art/selftests.py`)
+
+**The text he brought (2026-10-17), whole as the rule it is held to.** His five conditions: *"The host owns truth."*,
+*"Every panel is revision-bound."*, *"Admission is a host decision."*, *"Undo proves restoration, not merely
+success."*, *"Import is transactional."* (the last is 0250's). His seven adversarial cases, of which this patch holds
+the first five and the seventh in one tree (the sixth, import, is 0250's): *"the page renders before compilation or host
+state settles; the host head changes after a card is drawn; validation fails while an old successful result remains
+visible; evidence is missing even though the page looks ready; Undo restores files but not the expected ledger head;
+import fails partway through; a panel renders correctly but displays data from the wrong world."* His invariant: *"At
+the time a panel claims to represent host revision H, its displayed facts must be derivable from H—or the panel must
+identify itself as stale."*
+
+**One predicate, his nuance.** The account that enables Admit is admit()'s own checks, run dry:
+- `Gateway._admission` (art/studio.py) holds an admission's checks in admit()'s order; `admit()` runs it before it
+  writes, and `Gateway.account` runs it with `dry`, writing and logging nothing, the still pending (the page takes it as
+  Admit is pressed);
+- the director's checks are made as at the press, by the director's own code: `admit_dry` (art/director.py) runs
+  append_evaluation's guard (`held_head`), `cmd_admit`'s checks (now `admit_checks`, which `cmd_admit` itself calls) and
+  the commit's shared map (`shared_map`, which the commit calls), on the evaluation admit() would append, with a stand-in
+  still the detectors flag nothing in;
+- its answer is the first refusal, admit()'s code and the director's, or none; a failure the press would answer
+  STUDIO-FAILED (or STUDIO-INTERNAL) is answered the same, by one mapping (`studio.failures`, `failed_answer`) that
+  `studio_post` now uses too.
+
+No check of the account is the page's or the dashboard's. A worker per world (`Live.accounts_loop`) computes the
+accounts again when the revision moves, and keeps them only if it did not move while they were computed and no admission
+was half written; `/live` carries them with the revision they are of. The page enables Admit only by an account of the
+revision it last read that says admissible. Undo's account is held the same way: whether Undo would be refused is
+undo()'s own checks run dry (`Gateway._undoing`, which `undo()` runs before it writes), not a rule of its own.
+
+**The comparison, three ways.**
+- STUDIO (host only): in nine planted states the account `/live` displays is the refusal admit() answers, a clean still
+  given first, the revision read again just before the press, and each is the answer its state must give. Two plants make
+  the dry run differ from the press (`account-drops-stale`, `account-director-skipped`); each is caught by its own
+  divergence. In three states what `/undo.json` says Undo would do is undo()'s own answer at the same revision; its plant
+  (`undo-dry-skipped`) is caught.
+- PAGE: the refusal the column's card and the stale bay's card display (ADMIT-OUTSIDE, STUDIO-STALE) is the host's own
+  answer to Admit under the same revision and conditions: the clean still given first, the card read once the page shows
+  the host's account at the revision that makes, the revision read again before and after the press.
+- PAGE-CARDS: the same, in that order, for cases 2a, 2b, 3 (STUDIO-FAILED) and 5c (STUDIO-DIRECTOR-REFUSED,
+  LEDGER-UNLOGGED).
+
+**"Current" is an observation.** The page compares identities and computes none: a panel is `current` when the identities
+it was drawn from equal the host's at the page's last read of `/live`, and says so as of that revision; otherwise
+`stale`, `settling`, `unknown` or `refused`. It authorizes nothing: the host checks every press again, under the content
+lock.
+
+**What it changes.**
+- *The revision* (`/live`'s `rev`, VERDANDI-REV 0, `Live._read`): the world, the process, the live version, each slot's
+  scene and head and latest head and refusal's sha256, `settled` and `compiling`, the files' stamps, the ledger's last
+  line and pending folder, the request's identity and whether it is publishing, read consistently (`read.consistent`).
+  `Live.seen` and `compiling` are the watcher's; the live version now moves on a head too (a comment changes the head,
+  not the scene); `Refused` keeps the head of a compile the checks refuse.
+- *The gateway*: `publishing` while a request's candidates are published (a card never points at a slot that serves
+  another scene); the items name `written_against`, `base_sha` and `scene`; `evidence()`, `undo_target()`, `undo()`'s
+  `restoration` (from two replays: exact, statements-not-bytes or not-restored; unknown, and said, when the undo is in
+  the ledger and its proof could not be read), a certificate made from the ledger and kept by the POST where none was; the still and the preview's stills record the scene the page drew, and the undo's
+  press the admission the page showed (`page_saw`, and whether it is the one undone), each recorded and never refused on.
+- *The live loop's inputs*: it now watches what the art checks read on every export (`graybox/web/sim.js`,
+  `graybox/tick_ref.py`, `art/web/scene_render.js`), so that an edit to them compiles again and moves the revision.
+- *Routes*: `GET /evidence.json` and `GET /undo.json`, read-only, the world required and never opened (`STUDIO-WORLD`
+  for one this server has not open), every answer ended (HARDEN-0), a refusal naming its world; `validate_info` read
+  under the live loop's lock; `/object.json`, `/held.json` and `/shapes.json` name their world.
+- *FLAGSHIP-0*: its predicates factored out of `run()`, unchanged (`held_ok`, `strict_ok`, `impact_ok`, `clear_ok`,
+  `framed_ok`, `preview_ok`). EVIDENCE-0 applies them and run()'s conditions on a preview (framed when the request names
+  a shape; the candidate's path the plan's), advisory.
+- *The page*: panel marks; cards that name world, head, request and scene, with the host's account (its badge, why
+  Admit cannot be pressed, the evidence missing; "Ready" is gone); the dock's tabs; the static Undo and its restoration
+  chip; the Edit menu's Undo; Compare outside Mark mode; the stats labelled a software timing with the clock's step; the
+  Source chip; `answerFor`; the page's world from `data-brief` only.
+- *PAGE*: a card read, and Admit pressed, once the host's account of it is of the page's revision; one row added (the
+  first-blocker comparison).
+
+**FOUND, and repaired.**
+- `Hub.inspect` let the exporter's refusal out: `GET /history.json` for a world whose files do not export answered
+  nothing, its traceback on the console (MEASURED on his machine, by the agent: PAGE-CARDS' case 3 met it). Now not
+  verified, and said (`FILES-REFUSED`); case 3's row reads it.
+- The page's server printed a traceback once, in a PAGE run on his machine by the agent, after a plant's browser ended:
+  a ConnectionResetError on the first read of a request line (OBSERVED; none in the eleven earlier PAGE logs kept by the
+  agent there). That the client was the ending browser is INFERRED. Such a hang-up is now let go quietly, as 0244 did for
+  a refused client (VERIFIED BY READING; no row exercises it).
+- The page's server listened with Python's default backlog of 5, and on Windows a connection that finds the backlog
+  full is refused, not queued (MEASURED on his machine, by the agent: twenty connections to a server accepting none, 5
+  connected and 15 refused, each refusal after 2,021 to 2,035 ms; with 128, all 20). A page asks for its scripts at once,
+  and a loaded host accepts slowly. Now 128 (`Server.request_queue_size`); BOUNDARY's new row holds a burst of 32 to a
+  server accepting none, and its plant, a backlog of 5, is caught (BOUNDARY SELFTEST 9/9). It was looked at as the cause
+  of the page below that did not open, and is not that cause: a refusal takes two seconds, and that load failed in 64 ms.
+
+**FOUND, its cause not known.** In two full checks on his machine by the agent, one of PAGE-CARDS' thirteen openings of
+the page did not build its shell in 120 s (the validation scenario's, then the world scenario's; MEASURED). The second
+time the open step said what the page held: the document complete, `sim.js`, `scene_render.js` and `studio_ui.js`
+answered 200 in about 0.8 s each, and `play.js` a network error (status 0) after 64 ms, so the page never started; its
+overlay kept its first words, for the page says nothing when a script does not load. Four runs of PAGE-CARDS alone under
+load, one of them beside another browser, did not meet it; the third full check met it in neither run (MEASURED). That
+the browser, not the server, failed the load is not known: the server now keeps what it answered while a page test is
+armed (`Channel.served`, from `Handler.send` and the server's errors), and a page that does not open prints it beside the
+page's own account, so that its next occurrence says whether the server answered `play.js` and how. Not repaired: a page
+that says when its scripts did not load, and a page test that opens the page again, wait on knowing which side failed.
+
+**Changed expectations, said.** PAGE's stale-head plant row: the card now shows the host's own STUDIO-STALE and its Admit
+cannot be pressed (before, the page said STUDIO-STALE after the press); its Undo row requires "restored exactly"; its
+region row requires the card to name ADMIT-OUTSIDE; its Panelled bay row reads the card once the host's account of it
+is current and requires that account admissible and the badge to say so (before, the badge was not read and Admit was
+enabled by the page's own "Ready"). No STUDIO, LIVE or FLAGSHIP row was reworded.
+
+**A review of the patch** (three lenses read it, the host's account and revision, the page and its tests, the claims
+against the code and the rules; each of their 27 findings was then put to a skeptic who tried to refute it from the
+code: 30 agents). One was refuted: that another brief, outside the revision, could make an account read current and be
+refused SHARED-MAP. The studio's candidates carry no layout, so the shared map cannot refuse one; the doc of `admit_dry`
+now says so. 26 were confirmed in whole or in part, and all are repaired:
+- *A second rule*: `/undo.json`'s "can undo" ran only the choice of a target; it is now undo()'s own checks run dry
+  (above), with a row and a plant.
+- *GETs*: they could open (and so write) a world not yet open; a ledger that did not read left `/undo.json` without an
+  answer; a host refusal was drawn as another world's answer.
+- *The comparisons*: in PAGE and PAGE-CARDS the press came after the still had moved the revision; STUDIO's states did not
+  assert the answer each must give; plants could count as caught by a timeout or a moved revision. Each plant is now
+  required to show its own divergence, and each step deciding a plant's row waits only for what the plant does not
+  change (the host's revision, its new answer).
+- *The page*: the restoration chip claimed a lag after the world had moved on; the Queue panel claimed a revision it is
+  not part of; the chips were not bound to the files' head the ledger's verification was read at; the clock's step could
+  read 0; a failed read kept an old answer marked current; Compare's window did not turn stale; three answers were not
+  checked for their world.
+- *The host*: `settled` could stay false after a file came or went in a watched folder; the undo's `held_after` read the
+  files without the lock; a kept certificate was taken by its number alone; EVIDENCE-0 left out run()'s framing and
+  one-path conditions.
+- *The docs*: grades and place (results stated before they were measured, "here" for runs on his machine), a quote
+  not exact, wording.
+
+**A second round** (the same three lenses over the repaired patch, each finding again put to a skeptic: 26 agents)
+found 23 more, all confirmed in whole or in part, none refuted, and all are repaired:
+- *The host*: the revision left out three files the art checks read on every export (sim.js, tick_ref.py,
+  scene_render.js), so an account could stay current after the press would refuse; the undo's proof could raise after
+  the undo was in the ledger, answering a committed undo as failed (now a proof that cannot be read is said); the undo's
+  ledger read was mapped on one path only; a dry run could foresee a refusal where the press first recovers a dead
+  writer's half-done admission (now not foreseen, said); EVIDENCE-0's one path checked this candidate only, not run()'s
+  every drawn candidate; undo's CLEAN rule was written twice (now one place, `_undoing` with the press's `record`).
+- *The page*: Undo's account was read again only when the ledger moved, though it depends on the files (now on the whole
+  revision, its reads in order); the press did not name the admission the page showed (now recorded, `page_saw`); the
+  chips stayed stale with a false reason when the ledger did not verify (the line now read with every verification);
+  the restoration chip said "moved since" just after each undo; Compare's window gave one attribute two meanings; a
+  driver step could outlast the host's wait (one deadline per step now).
+- *The tests*: PAGE-CARDS' first-blocker helper compared a card's "admissible" with the host's "admitted", so it could
+  never agree for an admissible card; latent, for its four comparisons (2a, 2b, 3, 5c) are all refusals and an
+  admissible state is compared by STUDIO and by PAGE's flow; mapped now, for a regression that shows a card admissible
+  there. Its worst case did not fit the full check's 1800 s (now one budget of 1,500 s for the suite).
+- *The docs*: the undo's binding said recorded and not built (built now, as recorded); the answers' world claimed for
+  the POSTs too; the deciding steps' wording; the PAGE bay row unsaid; the queue's text; the plants' comment; the
+  selftests' "measured" for an estimate.
+
+**A third round** (the same lenses over the patch as repaired, each finding put to a skeptic: 15 agents) found 13, all
+confirmed in whole or in part, none refuted, and all are repaired:
+- *The page*: an answer of Undo's account read before a press could land after it and enable Undo again (a press now
+  cancels the read); a restoration the host could not read (`unknown`) was drawn as NOT restored (now said as not known);
+  the restoration chip's lag compared the world with the admission's head after, not the head the undo was made at (now
+  `undone_at`, given by the host); the Edit menu said an Undo not foreseen as a code it does not have.
+- *The host*: the account's reason for not foreseeing (a half-written admission) and the Evidence answer's still list
+  shared one key, `pending`, the second overwriting the first (now `not_foreseen`).
+- *The tests*: the Edit menu's Undo was pressed without waiting for the page to read Undo's account at the host's
+  revision, and a disabled one waited out its step (now the revision first, and a disabled item said at once); case 5c
+  read the Revision chip without waiting for it; the undo plant changed a line the repaired page no longer decides by;
+  the PAGE-CARDS first-blocker mapping's wording (above).
+- *The docs*: three paths no row exercises, now graded VERIFIED BY READING (STUDIO.md); when Undo's account is read.
+
+Found while measuring the repairs: STUDIO's plant of a request drawn again over another went uncaught in one run
+(94/95, MEASURED on his machine, by the agent), the scene drawn again being the second request's. A request's id is its
+second and its gateway's count; the row's fixture makes two gateways of one world, and when both asked in one second the
+second was given the first's id and its record written over the first's (INFERRED from the scenes; a studio keeps one
+gateway per world, so the collision is the fixture's). The fixture now asks the second in the next second, and both rows
+require the two ids to differ and print them. And STUDIO's nine-state comparison failed in both runs of a full check
+(94/95, MEASURED): in its state of refused files the account and the press named the same refusal, but the revision moved
+between them, for the state was compared while the loop still compiled the refused files. The fixture now lets the host
+settle after each state's write (the refused files, the hand edit, the broken ledger): the same revision and conditions
+at the read and the press, as his nuance asks.
+
+**Its falsifiers.**
+- A planted state where the displayed account and admit()'s answer differ at one revision.
+- A panel that says current while its identities differ from the host's at the page's last read.
+- An undo shown as success without its restoration, or a restoration whose verdict another certificate decides.
+- A GET that writes; an answer for another world drawn.
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of 2c70a71 under
+%TEMP%, never the checkout):
+- Alone: PAGE-CARDS SELFTEST 30/30 in 94 s (the owner's cases 1 to 5 and 7 through the page, its seven plants each caught
+  by the row it names, nothing of the browser left); PAGE SELFTEST 19/19 in 131 s; STUDIO SELFTEST 95/95; LIVE SELFTEST
+  30/30; BOUNDARY SELFTEST 9/9; PREVIEW-STUDIO 14/14, its whole preview in 1.73 s and 1.96 s against the base tree's
+  1.71 s and 1.73 s, run alternately.
+- The full check of the final tree, `python art/selftests.py --repeat 2`: twenty-six suites, 506.1 s and 516.5 s wall,
+  ART SELFTESTS FAILED on one timing row, PREVIEW-STUDIO's 10 s for a whole preview (10.20 s and 14.79 s); every other
+  suite passed in both runs, PAGE-CARDS 30/30 and PAGE 19/19 among them. The base tree 2c70a71, run straight after under
+  the same conditions (twenty-five suites, 425.1 s and 430.0 s), failed the same row in its second run (15.14 s; 8.73 s
+  in its first) and STUDIO APP's plant of a silence taken as a close in its first. That the load fails the row, not the
+  patch, is INFERRED from the timings alone above.
+- Two full checks of the tree before its last repairs failed besides on the timing rows (STUDIO APP's silence plant in
+  one run of each), and what they met is said above: PAGE-CARDS' page that did not open (27/28, then 29/30), and
+  STUDIO's comparison of the refused files at a moving revision (94/95 in both runs of the second). STUDIO alone met the
+  fixture's two requests of one id once (94/95).
+- The classifier his pushed tree holds (2c70a71's `tools/rung.py`, run from outside the checkout): the rung D on fifteen
+  files, loosening nothing; *"272 planted defects refused by the old checker; 277 by the new"*, PLANTS HELD, no checker
+  stopped early.
+- The gate: `GATE PASSED`, `RECONCILE  rowset 74db4c8d78625af5  251 rows / 0 fail / 0 skipped`, row for row as before
+  (819 s).
+
+**What it does not show.**
+- That an account holds at the press: it is of its revision, and the press checks again under the content lock. A
+  writer holding the lock (BUSY) is not foreseen by the account.
+- That `settled` sees a write that keeps a file's mtime and size, or one before the watcher's first look.
+- That the stills are bound to their scene by the host: recorded and said, not refused (0251).
+- A person's reading of the page, its look, timings (printed, never checked); Linux; browsers other than Edge (Chrome
+  is in the finder and never ran).
+- The Undo account's agreement with the press beyond its three states, and the admission account's beyond its nine.
+- An account or Undo not foreseen (a half-written admission), a restoration that could not be read, and the press naming
+  another admission than the one undone: VERIFIED BY READING, no row.
+- Why one opening of the page in thirteen did not build its shell in each of two full checks (above): not known.
+- Anything of the worlds, the outliner or import: 0250.
+
+**Not done.**
+- 0250: the worlds, the outliner and transactional import, with its own worlds-mode rig (PAGE-WORLDS), as he ordered.
+- Then the binding (0251) and the inverse's repair (0252); BLENDER-VIEW-0 after, its rulings made explicitly.
+
+NOT_MEASURED: the full check in his checkout. No row, rung, pinned source or oracle file changed. Docs: AGENTS.md (the
+native plaza's, the studio's and PAGE-0's rows, and a DASHBOARD-0 row), art/STUDIO.md (a section, and notes on the cards and PAGE's stale
+plant), docs/CAPABILITY-MATRIX.md (dated notes on the numbers), docs/CORE.md (art 30,365 lines), this entry.
+
 ### DIRECTOR-0 — the operator loop: scope declared, verdicts head-specific, intent kept · **the owner's ruling** (2026-10-10); outside the certified gate · **built** (`art/director.py`, `art/director/`)
 
 **His ruling.** *"The goal is now a prompt-driven art director with a trustworthy, editable change loop—not another

@@ -129,7 +129,9 @@ browser: the scene's own pieces by folder (the dressing by kind, the play geomet
 targets, the lights, the materials, the regions, the views, and the views saved in the page, each with the art
 statement it would be), each drawn as a thumbnail by a second renderer from a camera framed on it: the scene as it
 stands, from there. The candidates: the request's, each drawn the same way from the target's frame, with its verdict
-(*Ready* when CLEAN and undecided), its rung, and Show, Admit and Reject, which do what the director's drawer does (an
+(until 0249 *Ready* when CLEAN and undecided, the page's own judgement; since 0249 the host's account, admissible or its
+first refusal, or *account pending* until it is given: DASHBOARD-0, below), its rung, and Show, Admit (since 0249 enabled
+only by an admissible account of the revision the page last read) and Reject, which do what the director's drawer does (an
 admission brings its still, as ADMISSION-0 requires). The ledger: `/history.json`, newest first, ADMITTED, CANDIDATE,
 REJECTED, REFUSED, REBASED. The director's panel is a drawer over the inspector (Enter). A footer keeps the roadmap
 in view: Sprint 1, the shell; then Mark & Shape, the candidate loop, a world-generation slice, the dynamic world,
@@ -473,7 +475,10 @@ suite that are not synthetic. Their detectors are read and printed, OBSERVED; a 
 - a failing preview (one run's state carried into the next): the host's verification fails, and the page's window says
   "states differ";
 - a still the host never received: the page says `STUDIO-NO-STILL`, in its status line and its toast;
-- a stale head (the brief edited after the preview): the page says `STUDIO-STALE`, in both.
+- a stale head (the brief edited after the preview): until 0249 the page said `STUDIO-STALE` after the press, in both;
+  since 0249 the card shows the host's own `STUDIO-STALE` and its Admit cannot be pressed (a changed expectation: Admit is
+  the host's account), and a row holds the refusal each card displayed (this one, and the column's ADMIT-OUTSIDE) against
+  the host's own answer to Admit at the same revision.
 
 Of the harness itself, each a whole run with its rows silenced:
 - the page's Admit unwired, and a page that skips its still. Each is a served copy of `play.js` with one line changed,
@@ -522,6 +527,128 @@ nothing.
 - The browser's ending off Windows: never run here.
 
 Without a browser the suite fails: `art/selftests.py` has no skip.
+
+## The dashboard (DASHBOARD-0), 0249: every panel says what it is of
+
+The owner's conditions for the dashboard (2026-10-17, quoted in `docs/ROADMAP.md`) and his invariant: *"At the time a
+panel claims to represent host revision H, its displayed facts must be derivable from H—or the panel must identify
+itself as stale."* This is the cards half: the revision, the cards and their accounts, the dock's tabs (Candidates,
+Queue, Validation, Evidence), Undo's proof and the wrong-world guard. The worlds and import are 0250's.
+
+**The revision.** `/live` carries `rev` (VERDANDI-REV 0), read so that its halves agree (`Live._read`: the gateway's
+state before and after the slots, equal, the live version unchanged and no request publishing; read up to four times
+in all, and `read.consistent` false when they never agreed):
+- the world and the server's process (`Hub.instance`, new at every start);
+- the live version and each slot's scene, its head (from the exporter's lineage) and its latest compile's head, and for a
+  refused compile the sha256 of its refusal;
+- whether the files are compiled as they stand (`settled`: no compile running and every watched file's stamp as the
+  watcher's last cycle saw it; `None` until a watcher has looked) and what is compiling;
+- a digest of the files' stamps; the ledger's last line and whether an admission is half written (its pending folder);
+- the request's identity (`state_sha256`: the gateway's state without a running request's elapsed time) and whether its
+  candidates are being published;
+- `id`, a sha256 prefix over all of it.
+
+A comment changes the brief's head and not its scene: the live version now moves on a head too.
+
+**How a panel says what it is of.** Each panel keeps the identities it was drawn from and, at each read of `/live`,
+compares them with the host's: `current`, `stale`, `settling` (the host has not compiled the files as they stand),
+`unknown` (play.py does not answer, restarted, its state was changing as it was read, or its watcher has not looked) or
+`refused` (an answer for another world). The words are on the panel (`.pstate`) and in `data-state`. **Current is an
+observation**: the identities were equal when the page last read them. It authorizes nothing; the host checks every press
+again. The page computes no head and no account.
+
+**A card's Admit is the host's account.** The account is admit()'s own predicate run dry, never a second policy (his
+nuance of 2026-10-17): `Gateway._admission` holds the checks of an admission in admit()'s order, and `admit()` runs it
+before it writes; `Gateway.account` runs it with `dry`, writing nothing, the still pending (the page takes it as Admit is
+pressed; its presence and detectors are checked then) and the director's checks made as at the press
+(`director.admit_dry`: append_evaluation's guard `held_head`, `cmd_admit`'s checks, now `admit_checks`, shared with
+`cmd_admit`, and the commit's shared map), with a stand-in still the detectors flag nothing in. Its answer is the first
+refusal, admit()'s code and the director's, or none: the checks after the first refusal are not reached, as at the press.
+A worker per world (`Live.accounts_loop`, started when the page reads `/live` and stopped a while after it stops)
+computes the accounts again whenever the revision moves, keeps them only if the revision did not move while they were
+computed and no admission was half written, and `/live` carries them with the revision they are of. The page enables
+Admit only by an account of the revision it last read that says admissible; otherwise the card says why (the host's code
+and words, or that the account is being computed again). The "Ready" badge, the page's own judgement, is gone.
+
+STUDIO's row holds the comparison: for nine planted states (admissible; decided; stale; the files ahead of slot 0 with a
+candidate drawn at them; the files the exporter refuses; a hand edit the ledger does not hold; a ledger that does not
+read; not drawn; LEAKAGE) the account `/live` displays is the refusal admit() answers at the same revision, with a clean
+still given first, and each is the answer its state must give; two plants make the dry run differ from the press and are
+caught by their own divergence. PAGE and PAGE-CARDS hold it through the page, in the same order: the clean still given
+first, the card read once the page shows the host's account at the revision that makes, the revision read again just
+before the press and after it.
+
+**Evidence and EVIDENCE-0.** `GET /evidence.json?world=W&id=R&candidate=L` gives the admission's account (the same
+dry run `/live` carries for the card, whose answer there enables its Admit; this one enables nothing), EVIDENCE-0's
+checklist and the evidence itself, and writes nothing; it never opens a world (one not open is STUDIO-WORLD), and its
+refusals name their world. EVIDENCE-0 version 0 applies FLAGSHIP-0's own predicates (factored out of `flagship.run`,
+unchanged: `held_ok`, `strict_ok`, `impact_ok`, `clear_ok`, `framed_ok`, `preview_ok`) and its run's conditions on a
+preview (framed in both scenes when the request names a shape, the path's subject; the candidate's path the plan's) item
+by item over what the host keeps of the candidate; what does not apply to a request (no shape, not strict) is said so. It
+is advisory: Admit reads none of it, it never says "accepted", and it is not FLAGSHIP-0's acceptance (AGENTS.md:
+IMPACT-0, PREVIEW-0, FLAGSHIP-0). A card's line says how many items are missing. The answer carries the revision before
+and after it was computed, and `moved` when they differ.
+
+**Undo proves restoration.** The strip's Undo (`#mb-undo`, static: never rebuilt with the menus) and the Edit menu's
+"Undo admission #N" name what the host would undo (`GET /undo.json?world=W`; its certificate the kept one checked, when
+it is that event's own, else one made from the ledger and not kept: a GET writes nothing). Whether Undo would be refused
+is undo()'s own checks run dry (`Gateway._undoing`, as the admission's account): the target's (nothing to undo; a layout
+admission), the director's guard and the inverse's evaluation, and `cmd_admit`'s checks with the inverse it names; a
+STUDIO row holds what it says against the press at the same revision. It is read again whenever the host's revision
+moves (the ledger or the files), and says nothing it cannot foresee (a dead writer's half-done admission, which the
+press recovers first). The press names the admission the page showed it as undoing; the host records that and whether it
+is the one undone, and refuses nothing on it (the binding is a later patch's). The POST's answer carries `restoration`,
+from the ledger alone (two replays): the head before the admission against the head after the undo, the art's bytes and
+its statements, the parts that differ, the undone admission's certificate (made from the ledger and kept by the POST
+when there was none). Its verdict is `exact`, `statements-not-bytes` or `not-restored`; or `unknown` when the undo is in
+the ledger and its proof could not be read, which is said with the reason and never answered as a failed undo. The page
+says `undone: … · restored exactly` only for `exact`; for `unknown`, that whether it restored is NOT KNOWN; otherwise
+NOT restored, with both heads and what differs, in its status line and its toast. The restoration chip says so too:
+while no event has been appended since and the loop still serves the head the undo was made at (`undone_at`), that the
+world drawn is still the admitted scene; once the ledger or the files moved on, that the world has moved since the undo.
+The undo's own certificate (a redo's inverse) is another thing, never shown as the restoration.
+
+**Validation, Queue, Compare, the preview's binding, the stats.** Validation is a tab, read again whenever what is served
+changes, and it leads with the latest compile's refusal (its rows labelled as the scene before's). The Queue's list moved
+into its tab. Compare is in the bar in every mode and says whether Current is the candidate's own base scene, from the
+host's identities. The admission's still and each preview still name the scene the page drew; the host records it and
+says whether it was the candidate's (or the plan's); nothing is refused on it (binding is a later patch's, his ruling).
+The stats say they are a software timing of the page's clock, with the clock's step; VRAM stays `n/a`.
+
+**Another world's answer is refused.** The reads the page draws name their world (`/live`, `/validate.json`,
+`/evidence.json`, `/undo.json`, `/history.json`, `/object.json`, `/held.json`, `/shapes.json`); one for another is
+refused, said and not drawn (`answerFor`). The new routes require their world (`STUDIO-WORLD` without it, or for one this
+server has not open). The answers to the page's own POSTs name none: the page posts them with its world, and they are
+held by the host's own checks, not by `answerFor`. The page's world is the one it was served for (`data-brief`), never a
+query's.
+
+**PAGE-CARDS** (`python art/play.py --cards-selftest`, `art/page_dash.py`) executes this in a real browser, as PAGE does,
+in six scenarios on one tree and one browser: the page opened before the host settled (case 1); the cards, their names and
+accounts, the head moved after a card was drawn with the loop held and then let go (case 2), Compare; Validation failing
+while an old pass stood (case 3); evidence missing though the card is admissible (case 4) and the Queue tab; Undo after a
+command line's admission of an aligned statement (case 5a), after a change recorded between (5b), and the files restored
+by hand but not the ledger's head (5c); another world's answer (case 7). Seven plants, each a copy of `play.js` with one
+line changed, are run in their scenario and caught only by the row each names (two of them case 2a's), with every row
+before it passed. Each step that decides a plant's row waits only for what that plant does not change (the host's
+revision, the host's new answer), so that the plant fails its row at once, not by a wait running out; other steps wait for
+an expected value, and a regression there fails its row when the wait runs out, inside the step's limit and the run's
+deadline (720 s honest, 150 s a plant, 1,500 s the whole suite). A page that does not open says what it held (its
+scripts' globals, and what its document was answered, from its resource timing) and what the server answered while the
+test was armed (`Channel.served`, PAGE's open too): one opening of thirteen did not, in each of two full checks on his
+machine, its `play.js` failed by a network error the second time, the cause not known (docs/ROADMAP.md, 0249).
+
+**What it does not show.**
+- That an account holds at the press: it is of its revision, and the press checks again under the content lock.
+- That `settled` sees a write that keeps a file's mtime and size, or a write before the watcher's first look; or an
+  input the export reads that the watcher does not watch (since 0249 it watches, besides the brief, the maps and the art
+  layer's own code, the files the art checks read: `graybox/web/sim.js`, `graybox/tick_ref.py`, `art/web/scene_render.js`).
+- That the stills are bound to their scene by the host: recorded and said only, until the binding's patch.
+- A person's reading of the page; its look; timings (printed, never checked).
+- The worlds, the outliner and import (0250), Linux, browsers other than Edge (Chrome is in the finder and never ran).
+- Three paths no row exercises, VERIFIED BY READING only: an account, or Undo's, with an admission half written by a
+  writer that ended (`not_foreseen`, Undo's `can` null); a restoration that could not be read (`unknown`); the press
+  naming an admission other than the one undone (`page_saw.matched` false).
+- The repair of the server's traceback on a hung-up idle connection: VERIFIED BY READING; no row exercises it.
 
 ## Legibility along the path (LEGIBLE-0, 0241: one test of Meaning-to-View)
 
@@ -728,7 +855,10 @@ kind, its traceback on the console; a connection that stays silent is let go aft
 prompt holding half of a character (a lone surrogate, as half an emoji pasted) is refused before it runs
 (`STUDIO-PROMPT`), and a request's thread that raises anything ends the request failed (`STUDIO-FAILED`), recorded:
 before 0232 that prompt left the request running for ever and the server busy. A camera that is not an object, or one
-of 10^400 metres, is no camera. `python art/play.py --boundary-selftest` holds it (BOUNDARY SELFTEST 7/7).
+of 10^400 metres, is no camera. Since 0249 the server's listen backlog is 128, not Python's default of 5: on Windows a
+connection that finds the backlog full is refused (after about 2 s), not queued, and a page asks for its scripts at once.
+`python art/play.py --boundary-selftest` holds it (BOUNDARY SELFTEST 9/9: a burst of 32 connections to a server accepting
+none all queued, and its plant, a backlog of 5, caught).
 
 ## Crash safety, and what a supervisor reads (B1)
 
@@ -799,8 +929,9 @@ it was queued with, the head when it was queued and when it ran, the provider's 
 in the order they were queued, at most two at once (`--jobs N`) and at most one per world, so that a world's requests
 meet the head the one before left. A task is *queued*, *running*, then *ready* (its candidates recorded), *failed* or
 *cancelled*; *interrupted* if the studio stopped while it ran and nothing of its answer was recorded; *reviewed* once
-decided. The panel lists every task with its state, its world and prompt, its model, and the tokens or cost its
-provider reported, with **Cancel**, **Review**, **Set aside** and **Queue again** as the state allows; a toast says when
+decided. The dock's **Queue** tab (the director's panel until 0249) lists every task with its state, its world and
+prompt, its model, and the tokens or cost its provider reported, with **Cancel**, **Review**, **Set aside** and **Queue
+again** as the state allows; a toast says when
 one is ready or failed, in whatever world's page is open. **Review** opens the task's world (another world's page loads,
 with `&review=ID`) and draws the task's recorded candidates again at the head as it is now, each evaluated again, never
 trusted: a candidate made against an older head says so (`HEAD-MOVED` in its codes) and is admitted, as every

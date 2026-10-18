@@ -539,6 +539,14 @@ def held_line(item):
 STRICT_PLANT = ""
 STRICT_PLANTS = ("strict-not-checked", "strict-any-region", "strict-no-receipt")
 
+# DASHBOARD-0's plants of the host (0249), each set by the studio self-test alone and caught by one of its rows: the
+# account's dry run taking the candidate as drawn at the files' head (its stale check gone), the account skipping the
+# director's checks, the restoration's verdict read from the undo's own certificate, the gateway's state not saying it is
+# publishing while a request's candidates are given new slots, and Undo's dry run (_undoing) skipping the director's
+# checks, so that Undo's account says it would undo a hand edit the press refuses
+ACCOUNT_PLANT = ""
+ACCOUNT_PLANTS = ("account-drops-stale", "account-director-skipped", "restoration-from-own-certificate", "publishing-unflagged", "undo-dry-skipped")
+
 
 def bounds_of(O, piece):
     """IMPACT-0: the box around an object's boxes ({"box": [...]}), the object found by a piece of it; None if none."""
@@ -610,6 +618,10 @@ class Gateway:
         self.records = os.path.join(root, "art", "build", "studio", brief)
         self.error = ""          # why there is no provider, when a configuration was refused
         self.running = {}        # the provider's process while it runs (run_provider's holder)
+        # DASHBOARD-0 (0249): set while a request's candidates are published and their slots not yet given them (the
+        # slots serve the new scenes, the request the old indices): a reader of the state is told, never shown a card
+        # that points at a slot serving another scene
+        self.publishing = False
         # the references (STUDIO-1): a tag names one object, by its id; it is bound to the scene and head it was last
         # selected or pinned at, and never moved to another object. B1 (docs/STUDIO-CONTRACT.md §9): the studio's tags
         # are kept in <root>/art/ledger/<brief>.tags.json, so a restart keeps them; the counter only grows, a tag is
@@ -685,16 +697,24 @@ class Gateway:
                 req["disposition"] = r.get("disposition")
                 req["elapsed_ms"] = int(((r["ended"] or time.monotonic()) - r["started"]) * 1000)
                 req["candidates"] = [dict({k: c[k] for k in ("letter", "title", "verdict", "codes", "message", "slot", "decided", "head", "touches")}, compared=c.get("compared", ""),
-                                          record=c.get("record"), still={k: c["still"][k] for k in ("sha256", "detectors", "flags")} if c.get("still") else None,
+                                          record=c.get("record"), still={k: c["still"].get(k, "") for k in ("sha256", "detectors", "flags", "scene")} if c.get("still") else None,
                                           held={k: v for k, v in c["held"].items() if k != "boxes"} if c.get("held") else None,
                                           strict=c.get("strict"), impact=c.get("impact"),
-                                          preview={k: c["preview_report"][k] for k in ("replayed", "state_verified", "code", "path_id")} if c.get("preview_report") else None)
+                                          preview=dict({k: c["preview_report"][k] for k in ("replayed", "state_verified", "code", "path_id")},
+                                                       binding=c.get("preview_binding"), drawn_ok=drawn_ok(c.get("preview_binding"), c.get("preview_drawn"))) if c.get("preview_report") else None,
+                                          # DASHBOARD-0 (0249): what the card names: the head its intent was written against, the
+                                          # base scene of its own evaluation, and the scene its slot served when it was published
+                                          written_against=c.get("written_against", ""), base_sha=c.get("base_sha", ""), scene=c.get("scene", ""))
                                      for c in r["candidates"]]
+                if self.publishing and ACCOUNT_PLANT != "publishing-unflagged":
+                    for x in req["candidates"]:
+                        x["slot"] = None
                 req["strict"] = bool(r.get("strict"))
                 req["path"] = {k: r["path"][k] for k in ("id", "name", "seed")} if r.get("path") else None
                 req["order"] = r.get("order", [])
             last = dict(self.last)
-        return {"provider": prov, "request": req, "last": last, "refs": self.refs()}
+            publishing = self.publishing and ACCOUNT_PLANT != "publishing-unflagged"
+        return {"provider": prov, "request": req, "last": last, "refs": self.refs(), "publishing": publishing}
 
     # ------------------------------------------------------------------ the references (STUDIO-1)
     def _head(self):
@@ -1097,12 +1117,24 @@ class Gateway:
             slot = self.play.candidate_slot(ws, it, "studio %s %s: %s (drawn again)" % (rid, letter, item["title"]), shapes=shape_recs, impact_ctx=ctx)
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
                          "head": slot.get("checked_against", ""), "touches": self.touches(slot, refs, O) if "realized" in slot else None,
-                         "record": slot.get("record"), "held": slot.get("held")})
+                         "record": slot.get("record"), "held": slot.get("held"), "written_against": slot.get("written_against", ""),
+                         "base_sha": slot.get("base_sha", ""), "scene": slot.get("sha", "") if slot["ok"] else ""})
             if slot.get("impact") is not None:
                 item["impact"] = dict(slot["impact"], sha256=sha256((json.dumps(slot["impact"], sort_keys=True, indent=1, ensure_ascii=True) + "\n").encode("ascii")))
             made.append((item, slot if slot["ok"] else None))
         drawn = [(i, s) for i, s in made if s is not None]
+        with self.lock:
+            self.publishing = True
+        try:
+            return self._restored(rid, request, head, parts, O, made, drawn, path, shape_recs, out)
+        finally:
+            with self.lock:
+                self.publishing = False
+
+    def _restored(self, rid, request, head, parts, O, made, drawn, path, shape_recs, out):
+        """restore()'s second half: the candidates published, then the request replaced (publishing meanwhile)."""
         slots = self.play.publish([s for _i, s in drawn])
+        durable.point("studio:published")
         for (item, _s), k in zip(drawn, slots):
             item["slot"] = k
         # MARK-0: a recorded request's shapes are read again against the head: one that is not as it was marked is said
@@ -1126,6 +1158,7 @@ class Gateway:
                         "candidates": [i for i, _s in made], "started": time.monotonic(), "ended": time.monotonic(),
                         "base": {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "objects": O, "cfg": self.cfg,
                         "shape_recs": shape_recs, "order": host_order([i for i, _s in made]), "path": path}
+            self.publishing = False
         return rid
 
     def cancel_request(self, rid):
@@ -1272,6 +1305,8 @@ class Gateway:
                                             shapes=req.get("shape_recs", ()), strict=req.get("strict", False), impact_ctx=ctx)
             item.update({"verdict": slot.get("verdict", "") or "REFUSED", "codes": slot.get("codes", []), "message": slot["message"],
                          "head": slot.get("checked_against", ""), "record": slot.get("record"), "held": slot.get("held"),
+                         "written_against": slot.get("written_against", ""), "base_sha": slot.get("base_sha", ""),
+                         "scene": slot.get("sha", "") if slot["ok"] else "",
                          "touches": self.touches(slot, {t: r["piece"] for t, r in req["references"].items()}, req["objects"]) if "realized" in slot else None})
             if item["held"] is not None:
                 # HELD-0: the whole report kept beside the intent; the record's line names it by its sha256
@@ -1303,12 +1338,20 @@ class Gateway:
                 self._log(entry)
                 return
         drawn = [(i, s) for i, s in made if s is not None]
-        slots = self.play.publish([s for _i, s in drawn])
         with self.lock:
-            for (item, _s), k in zip(drawn, slots):
-                item["slot"] = k
-            req["candidates"] = [i for i, _s in made]
-            req["order"] = order
+            self.publishing = True
+        try:
+            slots = self.play.publish([s for _i, s in drawn])
+            durable.point("studio:published")
+            with self.lock:
+                for (item, _s), k in zip(drawn, slots):
+                    item["slot"] = k
+                req["candidates"] = [i for i, _s in made]
+                req["order"] = order
+                self.publishing = False
+        finally:
+            with self.lock:
+                self.publishing = False
         n_ok = sum(1 for i, s in made if s is not None)
         entry["outcome"] = "DONE"
         self._log(entry)
@@ -1332,9 +1375,11 @@ class Gateway:
                 raise StudioError("STUDIO-DECIDED", "candidate %s is already %s" % (letter, c[0]["decided"]))
             return r, c[0]
 
-    def still(self, rid, letter, png):
+    def still(self, rid, letter, png, scene=""):
         """A drawn candidate's still, as the page drew it (ADMISSION-0, 0222): kept in the world's build folder by its
-        sha256, its detectors read here from the bytes. It flags; it decides nothing. Admit names it."""
+        sha256, its detectors read here from the bytes. It flags; it decides nothing. Admit names it. DASHBOARD-0 (0249):
+        `scene`, the scene the page says it drew, is recorded and compared with the candidate's, never refused on (the
+        binding's refusal is a later patch's, his ruling R8)."""
         r, c = self._candidate(rid, letter)
         if c["slot"] is None or c["intent"] is None:
             raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s was not drawn (%s)" % (letter, c["verdict"]))
@@ -1351,60 +1396,18 @@ class Gateway:
         path = os.path.join(d, h + ".png")
         with open(path, "wb") as fh:
             fh.write(png)
+        scene = scene if isinstance(scene, str) and re.fullmatch(r"[0-9a-f]{64}", scene or "") else ""
         with self.lock:
-            c["still"] = {"sha256": h, "path": path, "detectors": det, "flags": said}
-        return {"still": h, "detectors": det, "flags": said}
+            c["still"] = {"sha256": h, "path": path, "detectors": det, "flags": said, "scene": scene}
+        return {"still": h, "detectors": det, "flags": said, "scene": scene, "scene_is_candidate": bool(scene) and scene == c.get("scene")}
 
     def admit(self, rid, letter, still="", despite=False):
         """Admit a drawn candidate: evaluated again at the head as the files stand, and admitted through the ledger only
         if that is the head it was drawn at, its verdict is CLEAN, and (ADMISSION-0) it brings the still the page took of
         it as drawn — a still the detectors flag only when the designer admits despite them."""
-        r, c = self._candidate(rid, letter)
-        if c["slot"] is None or c["intent"] is None:
-            raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s was not drawn (%s)" % (letter, c["verdict"]))
-        st = c.get("still")
-        if not st or not still or st["sha256"] != still:
-            raise StudioError("STUDIO-NO-STILL", "candidate %s has no still taken as it was drawn: the page takes one as you admit, and an "
-                                                 "admission needs it (ADMISSION-0)" % letter)
-        png = open(st["path"], "rb").read()
-        if sha256(png) != still:
-            raise StudioError("STUDIO-NO-STILL", "candidate %s's still is no longer the bytes the page sent: take it again" % letter)
         D = self.play.director()
         ws = self.play.workspace()
-        it = D.canon.load_intent(c["intent"])
-        verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
-        if verdict["checked_against"] != c["head"]:
-            raise StudioError("STUDIO-STALE", "the head moved since candidate %s was drawn (%s, now %s): ask again" % (letter, c["head"][:12], verdict["checked_against"][:12]))
-        if verdict["verdict"] != "CLEAN":
-            raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s is %s (%s); only a CLEAN candidate is admitted here" % (letter, verdict["verdict"], ",".join(verdict["codes"])))
-        region = None
-        if r.get("strict"):
-            # STRICT-0 (0238): checked again here, from this admission's own evaluation (never the card's), against the
-            # shapes as the request kept them; refused, and the refusal recorded with its reason, unless every box the
-            # candidate changes lies within their regions
-            rep = strict_check(_o0["scene"], _o1["scene"], r.get("shape_recs", ())) if _o0 is not None and _o1 is not None else \
-                {"ok": False, "code": "ADMIT-STALE", "error": "the candidate did not export"}
-            if STRICT_PLANT == "strict-any-region" and rep.get("count"):
-                rep = dict(rep, ok=any(x["inside"] for x in rep["receipt"]), code="")
-            if STRICT_PLANT == "strict-not-checked":
-                rep = dict(rep, ok=True, code="")
-            if not rep["ok"]:
-                self._log({"id": rid, "at": now(), "decision": "admit-refused", "candidate": letter, "code": rep["code"],
-                           "strict": strict_line(rep, "")})
-                raise StudioError(rep["code"], "candidate %s is not held by the request's regions (strict): %s" % (letter, (
-                    "%d of its %d boxes outside every region: %s" % (rep["outside_count"], rep["count"], ", ".join(rep["outside"][:6])) if rep.get("outside_count")
-                    else "it changes the whole world: " + ", ".join(rep["global"][:6]) if rep.get("global")
-                    else rep.get("error") or ("its shapes are not as marked: " + ", ".join("#" + n for n in rep.get("stale", []))) if rep["code"] == "ADMIT-STALE"
-                    else "it changes nothing a region could hold")))
-            region = {"strict": True, "ok": rep["ok"], "shapes": rep["shapes"],
-                      "support_sha256": sha256(json.dumps(r.get("shape_recs", []), sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")),
-                      "count": str(rep["count"]), "receipt": rep["receipt"], "receipt_sha256": rep["receipt_sha256"],
-                      "inverse_receipt": rep["inverse_receipt"], "inverse_receipt_sha256": rep["inverse_receipt_sha256"]}
-            if STRICT_PLANT == "strict-no-receipt":
-                region = {k: v for k, v in region.items() if k not in ("receipt", "inverse_receipt")}
-        if st["flags"] and not despite:
-            raise StudioError("STUDIO-STILL-FLAGGED", "candidate %s's still: %s. A detector proves nothing: admit despite it, which the ledger "
-                                                      "records, or reject the candidate" % (letter, "; ".join(st["flags"])))
+        r, c, st, png, it, verdict, after, timings, rec, region = self._admission(rid, letter, still, despite)
         # LEDGER-SAFE-0 (0245): the evaluation was made outside the content lock; it is appended under it, and only at the
         # head the ledger holds (another admission may have landed meanwhile, or the files changed outside the loop)
         durable.point("studio:admit-evaluated")
@@ -1422,6 +1425,154 @@ class Gateway:
                         "still_sha256": still, "despite_detectors": bool(st["flags"]), "comparison": comparison, "certificate": cert},
                        **({"strict": {k: region[k] for k in ("count", "receipt_sha256", "inverse_receipt_sha256", "support_sha256")}} if region else {})))
         return self.last
+
+    def _admission(self, rid, letter, still="", despite=False, dry=False):
+        """DASHBOARD-0 (0249): the checks of an admission, in admit()'s order, raising admit()'s refusal at the first that
+        fails. One predicate: admit() runs it before it writes, and account() runs it dry, writing nothing, with the still
+        pending (the page takes it as Admit is pressed: its presence and its detectors are checked then) and the
+        director's own checks made as they would be made at the press (D.admit_dry: append_evaluation's guard, cmd_admit's
+        checks and the commit's shared map), with a stand-in still the detectors flag nothing in. Returns what admit()
+        goes on with."""
+        r, c = self._candidate(rid, letter)
+        if c["slot"] is None or c["intent"] is None:
+            raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s was not drawn (%s)" % (letter, c["verdict"]))
+        st, png = c.get("still"), None
+        if not dry:
+            if not st or not still or st["sha256"] != still:
+                raise StudioError("STUDIO-NO-STILL", "candidate %s has no still taken as it was drawn: the page takes one as you admit, and an "
+                                                     "admission needs it (ADMISSION-0)" % letter)
+            png = open(st["path"], "rb").read()
+            if sha256(png) != still:
+                raise StudioError("STUDIO-NO-STILL", "candidate %s's still is no longer the bytes the page sent: take it again" % letter)
+        D = self.play.director()
+        ws = self.play.workspace()
+        it = D.canon.load_intent(c["intent"])
+        verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
+        if ACCOUNT_PLANT == "account-drops-stale" and dry:
+            verdict = dict(verdict, checked_against=c["head"])
+        if verdict["checked_against"] != c["head"]:
+            raise StudioError("STUDIO-STALE", "the head moved since candidate %s was drawn (%s, now %s): ask again" % (letter, c["head"][:12], verdict["checked_against"][:12]))
+        if verdict["verdict"] != "CLEAN":
+            raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s is %s (%s); only a CLEAN candidate is admitted here" % (letter, verdict["verdict"], ",".join(verdict["codes"])))
+        region = None
+        if r.get("strict"):
+            # STRICT-0 (0238): checked again here, from this admission's own evaluation (never the card's), against the
+            # shapes as the request kept them; refused, and the refusal recorded with its reason, unless every box the
+            # candidate changes lies within their regions
+            rep = strict_check(_o0["scene"], _o1["scene"], r.get("shape_recs", ())) if _o0 is not None and _o1 is not None else \
+                {"ok": False, "code": "ADMIT-STALE", "error": "the candidate did not export"}
+            if STRICT_PLANT == "strict-any-region" and rep.get("count"):
+                rep = dict(rep, ok=any(x["inside"] for x in rep["receipt"]), code="")
+            if STRICT_PLANT == "strict-not-checked":
+                rep = dict(rep, ok=True, code="")
+            if not rep["ok"]:
+                if not dry:
+                    self._log({"id": rid, "at": now(), "decision": "admit-refused", "candidate": letter, "code": rep["code"],
+                               "strict": strict_line(rep, "")})
+                raise StudioError(rep["code"], "candidate %s is not held by the request's regions (strict): %s" % (letter, (
+                    "%d of its %d boxes outside every region: %s" % (rep["outside_count"], rep["count"], ", ".join(rep["outside"][:6])) if rep.get("outside_count")
+                    else "it changes the whole world: " + ", ".join(rep["global"][:6]) if rep.get("global")
+                    else rep.get("error") or ("its shapes are not as marked: " + ", ".join("#" + n for n in rep.get("stale", []))) if rep["code"] == "ADMIT-STALE"
+                    else "it changes nothing a region could hold")))
+            region = {"strict": True, "ok": rep["ok"], "shapes": rep["shapes"],
+                      "support_sha256": sha256(json.dumps(r.get("shape_recs", []), sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")),
+                      "count": str(rep["count"]), "receipt": rep["receipt"], "receipt_sha256": rep["receipt_sha256"],
+                      "inverse_receipt": rep["inverse_receipt"], "inverse_receipt_sha256": rep["inverse_receipt_sha256"]}
+            if STRICT_PLANT == "strict-no-receipt":
+                region = {k: v for k, v in region.items() if k not in ("receipt", "inverse_receipt")}
+        if not dry and st["flags"] and not despite:
+            raise StudioError("STUDIO-STILL-FLAGGED", "candidate %s's still: %s. A detector proves nothing: admit despite it, which the ledger "
+                                                      "records, or reject the candidate" % (letter, "; ".join(st["flags"])))
+        if dry:
+            # the director's checks at the press, made now and nothing appended: what quiet() makes of their refusals
+            try:
+                events = D.led.read(ws.ledger)[0]
+                if ACCOUNT_PLANT != "account-director-skipped":
+                    D.admit_dry(ws, events, D.evaluation_fields(c["intent"], verdict, after, timings, rec),
+                                still=D.selftest_still(), despite=bool(despite), region=region)
+            except (SystemExit, led.LedgerError) as e:
+                raise director_refusal(e)
+        return r, c, st, png, it, verdict, after, timings, rec, region
+
+    def account(self, rid, letter, despite=False):
+        """DASHBOARD-0 (0249): the host's account of admitting candidate `letter` of request `rid` now. It is admit()'s
+        own predicate run dry (_admission): its first refusal, with admit()'s code and the director's, or none; the
+        still is pending (taken by the page as Admit is pressed, its detectors read then), and the checks after the first
+        refusal are not reached, as at the press. It writes nothing, and decides nothing: the press checks again."""
+        D = self.play.director()
+        ws = self.play.workspace()
+        if os.path.isdir(ws.pending):
+            # a dead writer's half-done admission: the press recovers it under the content lock before its checks, so its
+            # refusal is not foreseen here; nothing is said that the press might not say
+            return {"ok": False, "first": None, "not_foreseen": "an admission half written by a writer that ended: the press recovers it first, so its answer is not foreseen"}
+        try:
+            self._admission(rid, letter, despite=despite, dry=True)
+        except StudioError as e:
+            return {"ok": False, "first": {"code": e.code, "director_code": e.director, "why": e.detail[:600]}}
+        except failures(self.play.director()) as e:
+            a = failed_answer(e)
+            return {"ok": False, "first": {"code": a["code"], "director_code": "", "why": a["message"]}}
+        except Exception as e:  # noqa: BLE001 — what the press is answered for anything else (art/play.py, internal)
+            return {"ok": False, "first": {"code": "STUDIO-INTERNAL", "director_code": "", "why": "%s: %s" % (type(e).__name__, str(e)[:200])}}
+        return {"ok": True, "first": None}
+
+    def accounts(self):
+        """DASHBOARD-0 (0249): every candidate's account (account()) of the request shown now, and its EVIDENCE-0
+        checklist's missing items; what /live carries for the cards. Computed by the host's worker (art/play.py,
+        Live.accounts_loop), never by the page."""
+        with self.lock:
+            r = self.req
+            if not r or r["state"] != "done":
+                return {"request": r["id"] if r else "", "by_letter": {}}
+            rid, cands = r["id"], [(c["letter"], c) for c in r["candidates"]]
+            shapes, strict = list(r.get("shapes", [])), bool(r.get("strict"))
+            paths = drawn_paths(r)
+        out = {}
+        for letter, c in cands:
+            acc = self.account(rid, letter)
+            chk = evidence_checklist({"shapes": shapes, "strict": strict, "paths": paths}, c)
+            despite = self.account(rid, letter, despite=True) if acc["ok"] and (c.get("still") or {}).get("flags") else None
+            out[letter] = dict(acc, evidence={"missing": chk["missing"], "of": chk["of"], "next": chk["next"]},
+                               despite={"ok": bool(despite and despite["ok"]), "flags": list((c.get("still") or {}).get("flags") or [])} if despite else None)
+        return {"request": rid, "by_letter": out}
+
+    def evidence(self, rid, letter):
+        """DASHBOARD-0 (0249): what the host holds of a candidate's admission and its evidence, read and never written:
+        the admission's account (account(): admit()'s own checks, run dry), EVIDENCE-0's checklist (advisory: the
+        studio's admission reads none of it), and the evidence itself (the record, the held and strict reports, the
+        impact as an ESTIMATE, the preview's report with its binding, the still with the scene the page named, the
+        certificate)."""
+        with self.lock:
+            r = self.req
+            if not r or r["id"] != rid:
+                raise StudioError("STUDIO-NO-CANDIDATE", "no request %s is shown" % (rid if isinstance(rid, str) else "")[:40])
+            got = [x for x in r["candidates"] if x["letter"] == letter]
+            if not got:
+                raise StudioError("STUDIO-NO-CANDIDATE", "request %s has no candidate %s" % (rid, letter if isinstance(letter, str) else ""))
+            c = dict(got[0])
+            shapes, strict, state = list(r.get("shapes", [])), bool(r.get("strict")), r["state"]
+            paths = drawn_paths(r)
+        acc = self.account(rid, letter) if state == "done" else {"ok": False, "first": {"code": "STUDIO-NO-CANDIDATE", "director_code": "",
+                                                                                         "why": "the request is %s" % state}}
+        imp = c.get("impact") or {}
+        rep = c.get("preview_report") or {}
+        st = c.get("still") or {}
+        return {"request": rid, "candidate": letter,
+                "admission": dict(acc, pending=[{"what": "still", "why": "taken from the canvas as Admit is pressed; its presence and its "
+                                                                        "detectors are checked then (ADMISSION-0)"}],
+                                  rule="the admission's own checks, run dry (Gateway._admission; the director's admit_dry): its first refusal"),
+                "checklist": evidence_checklist({"shapes": shapes, "strict": strict, "paths": paths}, c),
+                "items": {"verdict": c.get("verdict", ""), "codes": c.get("codes", []), "record": c.get("record"), "head": c.get("head", ""),
+                          "written_against": c.get("written_against", ""), "base_sha": c.get("base_sha", ""), "scene": c.get("scene", ""),
+                          "held": {k: v for k, v in c["held"].items() if k != "boxes"} if c.get("held") else None, "strict": c.get("strict"),
+                          "impact": {"label": "ESTIMATE", "advisory": imp.get("advisory", ""), "delta": imp.get("delta"), "estimate": imp.get("estimate"),
+                                     "flag": imp.get("flag", ""), "error": imp.get("error", "")} if imp else None,
+                          "preview": {"replayed": rep.get("replayed"), "state_verified": rep.get("state_verified"), "code": rep.get("code", ""),
+                                      "path_id": rep.get("path_id", ""), "binding": c.get("preview_binding"), "drawn": c.get("preview_drawn"),
+                                      "drawn_ok": drawn_ok(c.get("preview_binding"), c.get("preview_drawn"))} if rep else None,
+                          "still": {"sha256": st.get("sha256", ""), "flags": st.get("flags", []), "scene": st.get("scene", ""),
+                                    "scene_is_candidate": bool(st.get("scene")) and st.get("scene") == c.get("scene")} if st else None,
+                          "certificate": c.get("certificate"), "decided": c.get("decided", "")}}
 
     # ------------------------------------------------------------------ PREVIEW-0 (0240): the preview in motion
     def _drawn(self, rid, letter):
@@ -1456,13 +1607,17 @@ class Gateway:
             # FRAME-0: the subject framed in each scene along the one path (a candidate may hide or move what it frames)
             p["framing"] = {"subject": path["subject"], "rule": camera.FRAME_RULE,
                             "base": camera.framing(o0["scene"], path, path["subject"]), "candidate": camera.framing(o1["scene"], path, path["subject"])}
+        # DASHBOARD-0 (0249): the scenes the plan is of (the base and the candidate of this evaluation), so that the page
+        # draws its stills from them and says when it did not; recorded, never refused on (R8)
+        binding = {"head": verdict["checked_against"], "base_sha": o0["lineage"]["scene_sha256"], "candidate_sha": o1["lineage"]["scene_sha256"]}
         with self.lock:
-            c["preview"] = {"plan": p, "stills": {}}
+            c["preview"] = {"plan": p, "stills": {}, "drawn": {}}
+            c["preview_binding"] = binding
         return {"path_id": p["path_id"], "path_check": p["path_check"], "framing": p.get("framing"), "seed": p["seed"], "spawn": p["spawn"], "poses": p["poses"], "still_ticks": p["still_ticks"], "ticks": p["ticks"],
                 "viewport": p["viewport"], "frames": p["frames"], "first_difference": p["first_difference"], "sim_ms": p["sim_ms"],
-                "slots": {"base": 0, "candidate": c["slot"]}}
+                "slots": {"base": 0, "candidate": c["slot"]}, "binding": binding}
 
-    def preview_still(self, rid, letter, side, k, png):
+    def preview_still(self, rid, letter, side, k, png, scene=""):
         r, c = self._drawn(rid, letter)
         pv = c.get("preview")
         if not pv:
@@ -1474,9 +1629,11 @@ class Gateway:
             quality.decode_png(png)
         except Exception as e:  # noqa: BLE001 — a still the host cannot read is refused, never kept
             raise StudioError("PREVIEW-STILL", "the still is not an 8-bit RGB or RGBA PNG: %s" % str(e)[:120])
+        scene = scene if isinstance(scene, str) and re.fullmatch(r"[0-9a-f]{64}", scene or "") else ""
         with self.lock:
             pv["stills"][(side, k)] = png
-        return {"side": side, "pose": k, "sha256": sha256(png)}
+            pv.setdefault("drawn", {})["%s-%d" % (side, k)] = scene
+        return {"side": side, "pose": k, "sha256": sha256(png), "scene": scene}
 
     def preview_finish(self, rid, letter):
         """The preview's report (art/motion.py report), its four files kept beside the intent and its stills in a folder
@@ -1505,13 +1662,17 @@ class Gateway:
             # FRAME-0: the sheet a person inspects (both stills at each pose and the subject's crops), named by its sha256
             self._record(rid, "%s.preview.compare.png" % letter, sheet)
             shas["preview.compare.png"] = sha256(sheet)
+        drawn = dict(pv.get("drawn") or {})
         with self.lock:
             c["preview_report"] = rep
+            c["preview_drawn"] = drawn
             c.pop("preview", None)
         self._log({"id": rid, "at": now(), "decision": "preview", "candidate": letter, "replayed": rep["replayed"], "state_verified": rep["state_verified"],
-                   "code": rep["code"], "path_id": p["path_id"], "seed": p["seed"], "files": shas})
+                   "code": rep["code"], "path_id": p["path_id"], "seed": p["seed"], "files": shas,
+                   "binding": c.get("preview_binding"), "drawn": drawn, "drawn_ok": drawn_ok(c.get("preview_binding"), drawn)})
         motion.gc(self.records, motion.RETENTION_DAYS)          # the previews past their retention; their sha256 stay on their lines
-        return dict(rep, files=shas)
+        # DASHBOARD-0: the answer (never the report's file) names the plan's scenes and whether the stills were drawn from them
+        return dict(rep, files=shas, binding=c.get("preview_binding"), drawn_ok=drawn_ok(c.get("preview_binding"), drawn))
 
     def preview_report(self, rid, letter):
         r, c = self._drawn(rid, letter)
@@ -1587,12 +1748,10 @@ class Gateway:
         self._log({"id": rid, "at": now(), "decision": "reject", "candidate": letter, "ledger": [ev["seq"], x["seq"]]})
         return self.last
 
-    def undo(self):
-        """Undo at the level of intent: the latest admission not yet undone (an undo is never itself undone; undo again
-        walks further back), its exact inverse admitted as an intent of its own."""
-        D = self.play.director()
-        ws = self.play.workspace()
-        events, _l, _h = D.led.read(ws.ledger)
+    @staticmethod
+    def _undo_target(events):
+        """The admission Undo undoes: the latest not yet undone (an undo is never itself undone); refused as undo()'s choice
+        of a target is (STUDIO-NOTHING-TO-UNDO; STUDIO-NOT-UNDOABLE for a layout admission)."""
         admits = [e for e in events if e["kind"] == "admit"]
         undo_of = lambda e: e.get("observed", {}).get("note", "")[len(UNDO_NOTE):] if e.get("observed", {}).get("note", "").startswith(UNDO_NOTE) else None
         undone = {undo_of(e) for e in admits if undo_of(e) is not None}
@@ -1602,6 +1761,64 @@ class Gateway:
         a = left[-1]
         if a.get("design_lines"):
             raise StudioError("STUDIO-NOT-UNDOABLE", "the last admission (#%s) changed the layout; undo it through the design tool" % a["seq"])
+        return a
+
+    def undo_target(self):
+        """DASHBOARD-0 (0249): what Undo would undo now, read and never written: the admission (its sequence number, the
+        request and candidate its note names), the head it moved the world from (the head an exact restoration gives
+        back) and to, and that admission's certificate (the kept one, checked; else one made from the ledger now and not
+        kept). Whether Undo would be refused is undo()'s own checks run dry (_undoing), never a second rule: `can` false
+        with its first refusal's code (and the director's) when the press would be refused, as of the ledger and the files
+        read now; the press reads them again."""
+        D = self.play.director()
+        ws = self.play.workspace()
+        try:
+            events = D.led.read(ws.ledger)[0]
+        except (SystemExit, led.LedgerError) as e:
+            raise director_refusal(e)
+        try:
+            a = self._undo_target(events)
+        except StudioError as e:
+            return {"can": False, "code": e.code, "director_code": e.director, "message": e.detail}
+        note = a.get("observed", {}).get("note", "")
+        m = re.match(r"request (\S+), candidate ([A-Z])\Z", note)
+        out = {"can": True, "code": "", "director_code": "", "message": "", "of": a["seq"], "request": m.group(1) if m else "",
+               "candidate": m.group(2) if m else "", "note": note[:160], "from_head": a["head_after"], "would_restore": a["head_before"],
+               "undone_certificate": self._certificate_of(D, ws, events, int(a["seq"]), keep=False)}
+        if os.path.isdir(ws.pending):
+            out.update(can=None, message="an admission half written by a writer that ended: the press recovers it first, so its answer is not foreseen")
+            return out
+        try:
+            self._undoing(dry=True)
+        except StudioError as e:
+            out.update(can=False, code=e.code, director_code=e.director, message=e.detail[:600])
+        except failures(D) as e:
+            out.update(can=False, code="STUDIO-FAILED", message=failed_answer(e)["message"])
+        return out
+
+    @staticmethod
+    def _inverse_clean(a, verdict, recorded=""):
+        """undo()'s rule for its inverse: admitted only when its verdict is CLEAN (the press says where it recorded it)."""
+        if verdict["verdict"] != "CLEAN":
+            raise StudioError("STUDIO-NOT-UNDOABLE", "the inverse of #%s is %s (%s), %s" % (
+                a["seq"], verdict["verdict"], ",".join(verdict["codes"]),
+                ("recorded as #%s and not admitted" % recorded) if recorded else "which the press records and does not admit"))
+
+    def _undoing(self, dry=False, record=None):
+        """DASHBOARD-0 (0249): an undo's checks, in undo()'s order and in this one place, raising its refusal at the first
+        that fails: the target (_undo_target); the inverse evaluated at the files' head; append_evaluation's guard (the
+        press: `record`, which appends the evaluation under it; dry: held_head at that head, nothing appended); the
+        inverse's verdict (_inverse_clean); cmd_admit's checks with the inverse it names (dry: D.admit_dry; the press runs
+        cmd_admit itself). undo() runs it and goes on to write; undo_target() runs it dry. Returns (the admission undone,
+        the inverse's bytes, its intent, the evaluation appended or None). A ledger that does not read is the director's
+        refusal on both paths."""
+        D = self.play.director()
+        ws = self.play.workspace()
+        try:
+            events, _l, _h = D.led.read(ws.ledger)
+        except (SystemExit, led.LedgerError) as e:
+            raise director_refusal(e)
+        a = self._undo_target(events)
         src = D.canon.load_intent(events[int(a["evaluation"])]["intent"].encode("ascii"))
         _o, parts, _c = ws.export()
         doc = {"base": {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "brief": self.brief, "candidate": "U",
@@ -1611,21 +1828,141 @@ class Gateway:
         raw = D.canon.dumps(doc)
         it = D.canon.load_intent(raw)
         verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
-        ev = quiet(D.append_evaluation, ws, raw, verdict, after, timings, rec)
-        if verdict["verdict"] != "CLEAN":
-            raise StudioError("STUDIO-NOT-UNDOABLE", "the inverse of #%s is %s (%s), recorded as #%s and not admitted" % (a["seq"], verdict["verdict"], ",".join(verdict["codes"]), ev["seq"]))
+        if dry and ACCOUNT_PLANT == "undo-dry-skipped":
+            return a, raw, it, None
+        ev = None
+        if dry:
+            try:
+                D.held_head(ws, events, verdict["checked_against"])
+            except (SystemExit, led.LedgerError) as e:
+                raise director_refusal(e)
+        else:
+            ev = record(raw, verdict, after, timings, rec)
+        self._inverse_clean(a, verdict, ev["seq"] if ev else "")
+        if dry:
+            try:
+                D.admit_dry(ws, events, D.evaluation_fields(raw, verdict, after, timings, rec), inverse_of=a["seq"])
+            except (SystemExit, led.LedgerError) as e:
+                raise director_refusal(e)
+        return a, raw, it, ev
+
+    def undo(self, of=None):
+        """Undo at the level of intent: the latest admission not yet undone (an undo is never itself undone; undo again
+        walks further back), its exact inverse admitted as an intent of its own. DASHBOARD-0 (0249): the answer proves
+        what came back (`restoration`), from the ledger: the head before the admission against the head after the undo,
+        the art's bytes and its statements, the parts that differ, and the undone admission's certificate. `of`, the
+        admission the page showed Undo as undoing, is recorded with whether it is the one undone, never refused on (the
+        undo's binding is a later patch's, his ruling)."""
+        D = self.play.director()
+        ws = self.play.workspace()
+        a, raw, it, ev = self._undoing(record=lambda raw_, v_, af_, t_, r_: quiet(D.append_evaluation, ws, raw_, v_, af_, t_, r_))
         parent_text = ws.text()
         u = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note=UNDO_NOTE + a["seq"], inverse_of=a["seq"])
         cert = self._certify(ws, u, list(a["inverse"]), parent_text, {"producer": "undo", "of": a["seq"]})
         # CERT-0: whether the undo gave back the head before the admission it undoes (exactly when that admission's
         # certificate is exact; otherwise its statements and its scene, under another head: said, never hidden)
         restored = {"head": u["head_after"] == a["head_before"]}
+        try:
+            restoration = self._restoration(D, ws, a, u, cert)
+        except Exception as e:  # noqa: BLE001 — the undo is in the ledger; a proof that cannot be read is said, never an undo answered as failed
+            restoration = {"of": a["seq"], "verdict": "unknown", "head": None, "art_bytes": None, "statements": None, "parts_differ": [],
+                           "expected_head": a["head_before"], "from_head": a["head_after"], "undone_at": u["head_before"], "head_after": u["head_after"], "undone_certificate": {},
+                           "ledger": {"seq": u["seq"], "held_after": "unknown"},
+                           "said": "the restoration could not be read: %s: %s" % (type(e).__name__, str(e)[:200])}
+        page_saw = {"of": str(of) if of not in (None, "") else "", "matched": None if of in (None, "") else str(of) == str(a["seq"])}
         with self.lock:
             self.last = {"what": "undone", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head": u["head_after"], "certificate": cert,
-                         "head_restored": u["head_after"] == a["head_before"]}
+                         "head_restored": u["head_after"] == a["head_before"], "restoration": restoration, "page_saw": page_saw}
         self._log({"at": now(), "decision": "undo", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head_after": u["head_after"], "certificate": cert,
-                   "head_restored": restored["head"]})
+                   "head_restored": restored["head"], "page_saw": page_saw,
+                   "restoration": {k: restoration[k] for k in ("verdict", "head", "art_bytes", "statements", "parts_differ")}})
         return self.last
+
+    def _restoration(self, D, ws, a, u, own_cert):
+        """DASHBOARD-0 (0249): what the undo `u` of the admission `a` gave back, from the ledger alone (two replays; the
+        files are read only for held_after, under the content lock): the head before `a` against the head after `u`, the art's bytes, its statements
+        (certificate.statements: what the exporter reads), the parts that differ, and `a`'s own certificate (the kept one
+        checked, or one made from the ledger and kept now). Its verdict: exact (the head came back, and so every part and
+        byte), statements-not-bytes (the art's statements came back and nothing but its bytes differs), or not-restored
+        (naming what differs). The undo's own certificate (`own_cert`, a redo's inverse) is another thing, and never this."""
+        events = D.led.read(ws.ledger)[0]
+        i_a, i_u = int(a["seq"]), int(u["seq"])
+        parent, after = D.replay(ws, events[:i_a]), D.replay(ws, events[:i_u + 1])
+        differ = [p[:-len("_sha256")] for p in ("art_sha256", "world_sha256", "exporter_sha256") if after["parts"].get(p) != parent["parts"].get(p)]
+        head = after["head"] == parent["head"]
+        art_bytes = after["art"].encode("utf-8") == parent["art"].encode("utf-8")
+        same_statements = certificate.statements(after["art"]) == certificate.statements(parent["art"])
+        verdict = "exact" if head else "statements-not-bytes" if same_statements and differ == ["art"] else "not-restored"
+        if ACCOUNT_PLANT == "restoration-from-own-certificate":
+            verdict = "exact" if own_cert.get("exact") else "not-restored"
+        # held_after: the ledger and the files read again under the content lock (a reader of both, as the launcher's
+        # inspect), so that no admission stands between its append and its files when they are compared
+        try:
+            with durable.locked(led.lock_path(ws.ledger), wait=5):
+                D.held_head(ws, D.led.read(ws.ledger)[0])
+            held_after = "held"
+        except durable.Busy:
+            held_after = "BUSY"
+        except Exception as e:  # noqa: BLE001 — a reading after the undo is in the ledger: named, never raised (SystemExit is caught below)
+            held_after = director_code(e) or type(e).__name__
+        except SystemExit as e:
+            held_after = director_code(e) or type(e).__name__
+        said = {"exact": "restored exactly: the head before the admission came back",
+                "statements-not-bytes": "the statements came back, the bytes did not: the head before the admission did not come back",
+                "not-restored": "NOT restored: %s differ%s; the statements %s back" % (
+                    " and ".join(differ) or "nothing", "s" if len(differ) == 1 else "", "came" if same_statements else "did not come")}[verdict]
+        return {"of": a["seq"], "expected_head": parent["head"], "from_head": a["head_after"], "undone_at": u["head_before"], "head_after": after["head"], "head": head,
+                "art_bytes": art_bytes, "statements": same_statements, "parts_differ": differ,
+                "undone_certificate": self._certificate_of(D, ws, events, i_a, keep=True),
+                "ledger": {"seq": u["seq"], "held_after": held_after}, "verdict": verdict, "said": said}
+
+    def _kept_is_own(self, D, ev):
+        """Whether the kept certificates/<seq>.json is this admit event's own (it names this event's sequence number and the
+        sha256 of its bytes): a ledger started again keeps old numbers, and an old file is never taken for a new event's.
+        DASHBOARD-0 (0249)."""
+        path = os.path.join(self.records, "certificates", "%s.json" % ev["seq"])
+        try:
+            cert = json.loads(open(path, "rb").read().decode("utf-8"))
+        except (OSError, ValueError):
+            return False
+        return (cert.get("ledger") or {}).get("seq") == ev["seq"] and (cert.get("ledger") or {}).get("event_sha256") == sha256(D.canon.dumps(ev))
+
+    def _ledger_certificate(self, D, ws, events, i, producer):
+        """The certificate of the art admission events[i], made from the ledger alone (recover_certificates'): the
+        parent's and the child's texts replayed, the operation the admitted evaluation's revision. (cert, child text)."""
+        ev = events[i]
+        parent = D.replay(ws, events[:i])["art"]
+        src = D.canon.load_intent(events[int(ev["evaluation"])]["intent"].encode("ascii"))
+        child = D.replay(ws, events[:i + 1])["art"]
+        return certificate.make(self.brief, ev, src["revision"], parent, child, {"producer": producer, "note": ev.get("observed", {}).get("note", "")},
+                                "", src["candidate"]), child
+
+    def _certificate_of(self, D, ws, events, i, keep):
+        """DASHBOARD-0 (0249): the certificate of the admission events[i], as the host holds it: the kept file checked
+        against the child's text replayed; else one made from the ledger now, kept only when `keep` (a POST; a GET writes
+        nothing). What a page is shown of it, with `made` saying which."""
+        ev = events[i]
+        path = os.path.join(self.records, "certificates", "%s.json" % ev["seq"])
+        try:
+            other = ""
+            if os.path.exists(path):
+                cert = json.loads(open(path, "rb").read().decode("utf-8"))
+                # the kept file is this event's only if it names this event's bytes (a ledger started again keeps old numbers)
+                if self._kept_is_own(D, ev):
+                    child = D.replay(ws, events[:i + 1])["art"]
+                    res = certificate.check(cert, child)
+                    return {"seq": ev["seq"], "ok": res["ok"], "exact": res["exact"], "statements": res["statements"], "codes": res["codes"], "made": "kept"}
+                other = " (the kept file was another event's)"
+            cert, child = self._ledger_certificate(D, ws, events, i, "made from the ledger for the undo's proof (0249)")
+            if keep:
+                kept = self._keep_certificate(cert, child)
+                return dict({k: kept[k] for k in ("seq", "ok", "exact", "statements", "codes")}, made="from the ledger, kept now" + other)
+            res = certificate.check(cert, child)
+            return {"seq": ev["seq"], "ok": res["ok"], "exact": res["exact"], "statements": res["statements"], "codes": res["codes"],
+                    "made": "from the ledger now; not kept" + other}
+        except Exception as e:  # noqa: BLE001 — a certificate that cannot be read or made is said, the answer stands
+            return {"seq": ev.get("seq"), "ok": False, "exact": False, "statements": False, "codes": [], "made": "none",
+                    "error": "%s: %s" % (type(e).__name__, str(e)[:200])}
 
     def _certify(self, ws, event, revision, parent_text, provenance, rid="", letter=""):
         """CERT-0 (0244): the admission's certificate (art/certificate.py), kept by its ledger sequence number in the
@@ -1662,14 +1999,9 @@ class Gateway:
         made = []
         for i, ev in enumerate(events):
             try:
-                if ev.get("kind") != "admit" or ev.get("design_lines") or os.path.exists(os.path.join(self.records, "certificates", "%s.json" % ev["seq"])):
+                if ev.get("kind") != "admit" or ev.get("design_lines") or self._kept_is_own(D, ev):
                     continue
-                parent = D.replay(ws, events[:i])["art"]
-                src = D.canon.load_intent(events[int(ev["evaluation"])]["intent"].encode("ascii"))
-                child = D.replay(ws, events[:i + 1])["art"]
-                cert = certificate.make(self.brief, ev, src["revision"], parent, child,
-                                        {"producer": "made from the ledger at the start (0245)", "note": ev.get("observed", {}).get("note", "")},
-                                        "", src["candidate"])
+                cert, child = self._ledger_certificate(D, ws, events, i, "made from the ledger at the start (0245)")
                 self._keep_certificate(cert, child)
                 made.append(ev["seq"])
             except Exception:  # noqa: BLE001 — a certificate that cannot be made is not made; the start goes on
@@ -1705,8 +2037,97 @@ def quiet(fn, *a, **k):
         with QUIET_LOCK, contextlib.redirect_stdout(io.StringIO()):
             return fn(*a, **k)
     except (SystemExit, led.LedgerError) as e:
-        # 600, not 300 (0245): a refusal's remedy (LEDGER-UNLOGGED's rebase command, a world's --root) is not cut away
-        raise StudioError("STUDIO-DIRECTOR-REFUSED", " ".join(str(e).split())[:600], director_code(e))
+        raise director_refusal(e)
+
+
+def director_refusal(e):
+    """What the gateway makes of a director command's refusal (SystemExit, or the ledger's LedgerError): its own
+    STUDIO-DIRECTOR-REFUSED, with the director's code kept (quiet(), and an account's dry run: one mapping)."""
+    # 600, not 300 (0245): a refusal's remedy (LEDGER-UNLOGGED's rebase command, a world's --root) is not cut away
+    return StudioError("STUDIO-DIRECTOR-REFUSED", " ".join(str(e).split())[:600], director_code(e))
+
+
+def failures(D):
+    """DASHBOARD-0 (0249): what a studio request is answered STUDIO-FAILED for when it raises it (art/play.py,
+    studio_post), and an account likewise (Gateway.account): one list."""
+    return (D.dress.ArtError, D.dress.level.MapError, OSError, ValueError, KeyError, TypeError)
+
+
+def failed_answer(e):
+    """The answer to one of failures(): STUDIO-FAILED and the exception's kind and words."""
+    return {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
+
+
+def drawn_paths(r):
+    """The preview paths of a request's drawn candidates (their impacts'), as FLAGSHIP-0's run() collects them. Holds the
+    lock (it reads the request)."""
+    return {((x.get("impact") or {}).get("preview") or {}).get("path_id") for x in r["candidates"] if x.get("slot") is not None}
+
+
+def drawn_ok(binding, drawn):
+    """DASHBOARD-0 (0249): whether the preview's stills were drawn from the plan's scenes, as the page named them: every
+    base still from the plan's base, every candidate still from its candidate (None when there is nothing to say)."""
+    if not binding or not drawn:
+        return None
+    want = {"base": binding.get("base_sha"), "candidate": binding.get("candidate_sha")}
+    return all(v == want.get(k.split("-", 1)[0]) for k, v in drawn.items())
+
+
+EVIDENCE_NOTE = ("advisory: the studio's admission reads none of this (AGENTS.md: IMPACT-0, PREVIEW-0, FLAGSHIP-0); it applies "
+                 "FLAGSHIP-0's predicates item by item and is not FLAGSHIP-0's acceptance")
+
+
+def evidence_checklist(r, c):
+    """EVIDENCE-0 version 0 (0249): a candidate's evidence, item by item, held to FLAGSHIP-0's own predicates
+    (art/flagship.py: held_ok, strict_ok, impact_ok, preview_ok, clear_ok, framed_ok) and its run's conditions on a
+    preview (framed when there is a subject; one path, the candidate's own), over what the host keeps of the candidate;
+    what is not applicable to a request (no shape, not strict) is said so. Advisory: it gates nothing, it never says
+    "accepted", and its `next` is the first item missing."""
+    import flagship as F
+    items = []
+
+    def add(item, status, predicate, needs, evidence):
+        items.append({"item": item, "status": status, "predicate": predicate, "needs": needs, "evidence": evidence})
+
+    acc = ((c.get("held") or {}).get("accounts") or [{}])[0]
+    if not r.get("shapes"):
+        add("held", "not-applicable", "FLAGSHIP-HELD", "a request that names a shape (#name)", {})
+    else:
+        add("held", "met" if F.held_ok(c) else "missing", "FLAGSHIP-HELD", "the candidate held in the request's first shape",
+            {"shape": acc.get("shape", ""), "verdict": acc.get("verdict", "")})
+    if not r.get("strict"):
+        add("strict", "not-applicable", "FLAGSHIP-HELD", "a strict request", {})
+    else:
+        add("strict", "met" if F.strict_ok(c) else "missing", "FLAGSHIP-HELD", "its strict check passed",
+            {"ok": (c.get("strict") or {}).get("ok"), "code": (c.get("strict") or {}).get("code", "")})
+    imp = c.get("impact") or {}
+    add("impact", "met" if F.impact_ok(c) else "missing", "FLAGSHIP-NO-IMPACT", "its impact computed (an ESTIMATE)",
+        {"error": imp.get("error", "")} if imp.get("error") else {"present": bool(imp)})
+    rep = c.get("preview_report")
+    if not rep:
+        add("preview", "missing", "FLAGSHIP-PREVIEW", "a preview, replayed and verified (Preview on the card)", {})
+    else:
+        # as FLAGSHIP-0's run holds it: framed in both scenes (required when the request names a shape, the path's subject;
+        # a request that names none has no subject to frame), the path clear in both, the candidate's own path the plan's,
+        # replayed and every state verified
+        framed = F.framed_ok(rep.get("framing")) if r.get("shapes") else None
+        # run()'s own condition: every drawn candidate's preview path is the plan's (paths == {path_id})
+        one_path = set(r.get("paths") if r.get("paths") is not None else [(imp.get("preview") or {}).get("path_id")]) == {rep.get("path_id")}
+        ok = F.preview_ok(rep) and F.clear_ok(rep.get("path_check")) and framed is not False and one_path
+        add("preview", "met" if ok else "missing", "FLAGSHIP-PREVIEW", "replayed, every state verified, its path clear in both scenes and the "
+            "candidate's own, and, when the request names a shape, its subject framed in both",
+            {"replayed": rep.get("replayed"), "state_verified": rep.get("state_verified"), "clear": F.clear_ok(rep.get("path_check")),
+             "one_path": one_path, "paths_of_candidates": sorted(p_ or "" for p_ in (r.get("paths") or [])),
+             "framed": "no subject (the request names no shape)" if framed is None else framed})
+    cert = c.get("certificate")
+    if c.get("decided") != "admitted":
+        add("certificate", "not-reached", "FLAGSHIP-ADMIT", "an admission (its certificate exact)", {})
+    else:
+        add("certificate", "met" if (cert or {}).get("ok") is True and (cert or {}).get("exact") is True else "missing", "FLAGSHIP-ADMIT",
+            "its certificate checked and exact", {k: (cert or {}).get(k) for k in ("seq", "ok", "exact", "statements")})
+    missing = [x["item"] for x in items if x["status"] == "missing"]
+    return {"name": "EVIDENCE-0", "version": "0", "advisory": True, "note": EVIDENCE_NOTE, "items": items, "missing": missing,
+            "next": missing[0] if missing else "", "of": len([x for x in items if x["status"] in ("met", "missing")])}
 
 
 # ------------------------------------------------------------------------------------------------ the probe and the report

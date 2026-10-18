@@ -569,6 +569,21 @@ def commit_admission(ws, evaluation, intent_sha256, files, fields, stills=()):
                          "changed. Admit again when it ends" % durable.WAIT)
 
 
+def shared_map(ws, out_now, files):
+    """SHARED-MAP, raised as SystemExit when `files` change the maps and another brief plays the map (the commit's check,
+    and admit_dry's)."""
+    # fix 2 of the review of 2026-10-13: briefs share the graybox's maps, so a layout admitted in one world would change
+    # every world that plays its map (write skew between worlds). Until each world has a map of its own (pinned
+    # revisions, later), a layout change is refused while another brief plays the map; art changes are not affected
+    if any(os.path.dirname(os.path.abspath(f)) == os.path.abspath(ws.maps) for f, _b in files):
+        others = briefs_on_map(ws, out_now["scene"]["map"])
+        if others:
+            raise SystemExit("REFUSED (SHARED-MAP): %s also play%s the map %s, so this layout change would change %s too; nothing was "
+                             "changed. A layout is changed only in a world whose map no other world plays, until each world keeps a "
+                             "map of its own (pinned revisions, to come); changes to the art are admitted as before" % (
+                                 ", ".join(others), "s" if len(others) == 1 else "", out_now["scene"]["map"], "that world" if len(others) == 1 else "those worlds"))
+
+
 def _commit_locked(ws, evaluation, intent_sha256, files, fields, stills=()):
     if os.path.exists(ws.pending):               # this process holds the lock: the folder's writer is dead
         for ln in _recover(ws):
@@ -577,16 +592,8 @@ def _commit_locked(ws, evaluation, intent_sha256, files, fields, stills=()):
     if durable.PLANT != "no-fence" and canon.head(cur) != fields["head_before"]:
         raise SystemExit("REFUSED (HEAD-MOVED): the head moved to %s while this admission waited for the lock (it was checked "
                          "against %s); nothing was changed. Re-evaluate it first" % (canon.head(cur)[:12], fields["head_before"][:12]))
-    # fix 2 of the review of 2026-10-13: briefs share the graybox's maps, so a layout admitted in one world would change
-    # every world that plays its map (write skew between worlds). Until each world has a map of its own (pinned
-    # revisions, later), a layout change is refused while another brief plays the map; art changes are not affected
-    if durable.PLANT != "no-shared-map" and any(os.path.dirname(os.path.abspath(f)) == os.path.abspath(ws.maps) for f, _b in files):
-        others = briefs_on_map(ws, out_now["scene"]["map"])
-        if others:
-            raise SystemExit("REFUSED (SHARED-MAP): %s also play%s the map %s, so this layout change would change %s too; nothing was "
-                             "changed. A layout is changed only in a world whose map no other world plays, until each world keeps a "
-                             "map of its own (pinned revisions, to come); changes to the art are admitted as before" % (
-                                 ", ".join(others), "s" if len(others) == 1 else "", out_now["scene"]["map"], "that world" if len(others) == 1 else "those worlds"))
+    if durable.PLANT != "no-shared-map":
+        shared_map(ws, out_now, files)
     events, _l, _h = led.read(ws.ledger)
     # LEDGER-SAFE-0 (0245): the fence above holds the files to the head the admission was checked against; the ledger must
     # hold that head too, or the admit event would be one that replay refuses (a hand change back to an older head, say).
@@ -860,10 +867,36 @@ def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note="", still
     or, for an undo, inverse_of naming the admission it is the exact inverse of. STRICT-0 (0238): `region`, from a
     strict request (art/studio.py), is refused unless its check passed, and is recorded with the admission: the shapes'
     sha256, the receipt (every box the change touches, each with the regions that hold it) and the inverse receipt."""
-    if region is not None and region.get("strict") and not (region.get("ok") is True and "receipt" in region and "inverse_receipt" in region):
-        raise SystemExit("REFUSED (ADMIT-OUTSIDE): #%s comes from a strict request whose check did not pass, or brings no receipt" % seq)
+    region_refusal(seq, region)
     events, _l, _h = led.read(ws.ledger)
     ev = events[int(seq)]
+    p = admit_checks(ws, events, ev, seq, accept_leakage, still, despite, inverse_of)
+    head, it, evidence, still_bytes, files, parts1, inverse = (p[k] for k in ("head", "it", "evidence", "still_bytes", "files", "parts1", "inverse"))
+    stills = [(os.path.join(ws.stills, evidence["still_sha256"] + ".png"), still_bytes)] if still_bytes is not None else []
+    a = commit_admission(ws, seq, ev["intent_sha256"], files, {
+        "evaluation": seq, "intent_sha256": ev["intent_sha256"], "head_before": head, "head_after": canon.head(parts1),
+        "parts_after": parts1, "accepted_leakage": bool(accept_leakage), "inverse": inverse,
+        "design_lines": list(it["layout"]), "evidence": evidence, "observed": {"at": now(), "chooser": chooser, "note": note},
+        **({"region": region} if region is not None else {})}, stills)
+    det = evidence["detectors"]
+    print("ADMITTED candidate %s (#%s) at head %s -> %s (ledger #%s; %s)" % (
+        it["candidate"], seq, head[:12], canon.head(parts1)[:12], a["seq"],
+        ("the exact inverse of #%s" % evidence["inverse_of"]) if evidence["inverse_of"] else
+        "still %s, %s" % (evidence["still_sha256"][:12], ("despite the detectors: " + ", ".join(det.get("flags") or [det.get("not_checked", "")])) if evidence["despite_detectors"] else "the detectors flag nothing")))
+    return a
+
+
+def region_refusal(seq, region):
+    """STRICT-0: a strict request's region that did not pass, or brings no receipt, is refused (cmd_admit's first check)."""
+    if region is not None and region.get("strict") and not (region.get("ok") is True and "receipt" in region and "inverse_receipt" in region):
+        raise SystemExit("REFUSED (ADMIT-OUTSIDE): #%s comes from a strict request whose check did not pass, or brings no receipt" % seq)
+
+
+def admit_checks(ws, events, ev, seq, accept_leakage=False, still=None, despite=False, inverse_of=""):
+    """The checks cmd_admit makes before it writes, in its order and with its refusals (SystemExit); returns what the
+    commit goes on with. DASHBOARD-0 (0249): one predicate, run by cmd_admit on an evaluation the ledger holds and by
+    admit_dry on one not yet appended, so that the studio's account of a candidate's admission (art/studio.py) is the
+    director's own checks, never a second policy."""
     if ev["kind"] != "evaluate":
         raise SystemExit("REFUSED: #%s is not an evaluation" % seq)
     v = ev["verdict"]
@@ -898,18 +931,25 @@ def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note="", still
         raise SystemExit("the admitted files would not reach the head the evaluation predicted: stop and read the ledger")
     files.append((ws.art, text1.encode("utf-8")))
     files = [(f, b) for f, b in files if open(f, "rb").read() != b]
-    stills = [(os.path.join(ws.stills, evidence["still_sha256"] + ".png"), still_bytes)] if still_bytes is not None else []
-    a = commit_admission(ws, seq, ev["intent_sha256"], files, {
-        "evaluation": seq, "intent_sha256": ev["intent_sha256"], "head_before": head, "head_after": canon.head(parts1),
-        "parts_after": parts1, "accepted_leakage": bool(accept_leakage), "inverse": inverse,
-        "design_lines": list(it["layout"]), "evidence": evidence, "observed": {"at": now(), "chooser": chooser, "note": note},
-        **({"region": region} if region is not None else {})}, stills)
-    det = evidence["detectors"]
-    print("ADMITTED candidate %s (#%s) at head %s -> %s (ledger #%s; %s)" % (
-        it["candidate"], seq, head[:12], canon.head(parts1)[:12], a["seq"],
-        ("the exact inverse of #%s" % evidence["inverse_of"]) if evidence["inverse_of"] else
-        "still %s, %s" % (evidence["still_sha256"][:12], ("despite the detectors: " + ", ".join(det.get("flags") or [det.get("not_checked", "")])) if evidence["despite_detectors"] else "the detectors flag nothing")))
-    return a
+    return {"out0": out0, "head": head, "it": it, "evidence": evidence, "still_bytes": still_bytes, "files": files, "parts1": parts1, "inverse": inverse}
+
+
+def admit_dry(ws, events, fields, still=None, despite=False, region=None, inverse_of=""):
+    """DASHBOARD-0 (0249): the refusal an admission of the evaluation `fields` (evaluation_fields(): what
+    append_evaluation would append) would meet now, nothing written: append_evaluation's guard (held_head at the head it
+    was checked against), cmd_admit's checks (region_refusal and admit_checks, the evaluation taken as the ledger's next
+    event) and the commit's shared map, in that order. Raises as they raise (SystemExit, Refusal, LedgerError); returns
+    None when none refuses. It is of the files and the ledger as read now, without the content lock: an admission is
+    checked again under it (the commit's fence), and a writer that holds it (BUSY) is not foreseen. The shared map reads
+    the other briefs of the tree, which the studio's revision does not watch; it cannot refuse a studio candidate, whose
+    layout is always empty (art/studio.py intent_doc), and a layout candidate would need them in the revision."""
+    held_head(ws, events, fields["verdict"]["checked_against"])
+    seq = str(len(events))
+    ev = dict(fields, kind="evaluate", seq=seq)
+    region_refusal(seq, region)
+    p = admit_checks(ws, events + [ev], ev, seq, still=still, despite=despite, inverse_of=inverse_of)
+    shared_map(ws, p["out0"], p["files"])
+    return None
 
 
 def cmd_refuse(ws, seq, chooser="the owner", note=""):

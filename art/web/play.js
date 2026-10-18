@@ -38,6 +38,16 @@
 // from the scene served, nothing bound), the layers, the world's settings, an asset browser with thumbnails drawn by a
 // second renderer, the candidates, and the world's ledger (GET /history.json). What is not built says so, and why.
 // Everything the shell shows is read from what play.py serves; everything it changes goes through play.py's routes.
+//
+// The dashboard (DASHBOARD-0, 0249; art/STUDIO.md, "The dashboard"): every panel says what it is of. /live carries the
+// host's revision (rev, VERDANDI-REV 0: the world, the server's process, the live version, each slot's scene and head,
+// whether the files are compiled as they stand, the ledger's last line, the request); a panel keeps the identities it was
+// drawn from and, at each read of /live, says current, stale, settling, unknown or refused. "Current" is an observation —
+// the panel's identities equalled the host's when the page last read them — never an authority. A card's Admit is
+// enabled only by the host's account of that card at the revision the page last read (admit()'s own checks, run dry by
+// the host), its first refusal shown when it is not; the press is checked again by the host. Undo shows what the host
+// proved came back. An answer the page draws that names another world is refused, and nothing of it drawn (/live,
+// /validate.json, /evidence.json, /undo.json, /history.json, /object.json, /held.json, /shapes.json).
 
 (function () {
   "use strict";
@@ -62,7 +72,8 @@
   };
   const worldOf = function (S, map) { return new Sim.World(S.movers ? Object.assign({}, map, { movers: moversOf(S) }) : map); };
   const gameKey = function (S, mapSha) { return mapSha + "|" + JSON.stringify([S.rules === undefined ? 1 : S.rules, moversOf(S)]); };
-  const brief = q.get("brief") || document.body.getAttribute("data-brief");
+  // DASHBOARD-0 (0249): the page's world is the one play.py served it for (data-brief), never a query's
+  const brief = document.body.getAttribute("data-brief");
   const deg = Math.PI / 180;
   // STUDIO-2: the page shows one world; every read and every request names it (play.html?world=NAME)
   const W = encodeURIComponent(brief);
@@ -93,6 +104,7 @@
   const fail = function (e) { const o = $("overlay"); o.textContent = String(e && e.message || e); o.style.display = "flex"; };
 
   get(live_url).then(json).then(function (live) {
+    if (live.brief !== brief) throw new Error("play.py answered for world " + live.brief + "; this page shows " + brief + ": not drawn");
     const n = live.slots.length;
     let k = q.get("slot") !== null ? parseInt(q.get("slot"), 10) : (n > 1 && live.slots[1].served ? 1 : 0);
     if (!(k >= 0 && k < n && live.slots[k].served)) k = 0;
@@ -234,12 +246,23 @@
       get(live_url).then(json).then(function (live) {
         busy = false;
         ui.connected = true;
+        if (!answerFor(live)) { ui.connected = false; say("play.py answered for another world (" + live.brief + "); nothing of it is drawn"); dashTick(); return; }
+        // DASHBOARD-0: the revision and the accounts first; a new process is said (nothing drawn before it is current)
+        if (live.rev && dash.process && live.rev.process !== dash.process) dash.restarted = true;
+        if (live.rev && !dash.process) dash.process = live.rev.process;
+        dash.rev = live.rev || null;
+        dash.acc = live.accounts || null;
+        // the slots before the request: a card is drawn from the slots of the same answer, never from older ones
+        const moved = live.version !== cur.version || JSON.stringify(live.code) !== JSON.stringify(cur.code);
+        if (moved) cur.slots = live.slots;
         studioShow(live.studio);
         if (live.shapes_revision !== undefined && live.shapes_revision !== mk.rev) shapesLoad();
         worldsShow(live.worlds);
         queueShow(live.queue);
-        if (live.version !== cur.version || JSON.stringify(live.code) !== JSON.stringify(cur.code)) return sync(live, false);
-      }).catch(function () { busy = false; ui.connected = false; say("play.py does not answer; the last scene stays"); });
+        const done = moved ? sync(live, false) : Promise.resolve();
+        dashTick();
+        return done;
+      }).catch(function () { busy = false; ui.connected = false; say("play.py does not answer; the last scene stays"); dashTick(); });
     };
     const pick = function (k) { cur.k = k; return sync({ version: cur.version, code: cur.code, slots: cur.slots }, true); };
     const step = function (d) {
@@ -338,6 +361,128 @@
       return fetch(path, { method: "POST", headers: { "Content-Type": "application/json", "X-Studio-Token": token }, body: JSON.stringify(body) })
         .then(function (r) { return r.json().catch(function () { return { ok: false, message: "HTTP " + r.status }; }); })
         .catch(function (e) { return { ok: false, message: "play.py does not answer (" + (e && e.message || e) + ")" }; });
+    };
+    // ---------------------------------------------------------------- DASHBOARD-0 (0249): what each panel is of
+    const dash = { rev: null, acc: null, process: "", restarted: false };
+    const short = function (h) { return (h || "").slice(0, 12); };
+    // an answer is drawn only in the world this page shows: one for another world is refused, said, and nothing of it drawn
+    const answerFor = function (a, node, what) {
+      const w = a ? (a.world !== undefined ? a.world : a.brief) : undefined;
+      if (w === brief) { if (node) delete node.dataset.refused; return true; }
+      if (node) {
+        node.dataset.refused = "an answer for world " + (w === undefined ? "(none named)" : w) + "; this page shows " + brief + ": not shown";
+        node.innerHTML = "";
+        node.appendChild(el("div.empty.bad", {}, (what ? what + ": " : "") + node.dataset.refused));
+      }
+      return false;
+    };
+    // each panel: the identities it shows (null: none read yet), and the host's identities for the same things
+    const PANELS = {
+      // the chips: the scene drawn against the one served, and the ledger's verification (the Revision chip) against the
+      // ledger's last line and the files' head it was read at
+      chips: { shown: function () { const h = ui.history && ui.history.inspect; return h ? [cur.sha, h.last_line_sha256 || "", ui.historyHead || ""] : null; },
+               host: function (r) { return [((r.slots || [])[cur.k] || {}).sha || "", (r.ledger || {}).line_sha256 || "", ((r.slots || [])[0] || {}).head || ""]; },
+               stale: function (s, h) { return s[0] !== h[0] ? "the scene drawn is " + short(s[0]) + "; the host serves " + short(h[0]) + " in this slot" : "the ledger's verification was read at an earlier state of the ledger or the files"; } },
+      cards: { shown: function () { return ui.cardsOf; }, host: function (r) { return [(r.request || {}).sha256 || "", (r.slots || []).map(function (s) { return s.sha; })]; },
+               stale: function () { return "drawn from an earlier state of the request or the slots"; } },
+      validation: { shown: function () { const v = ui.vAnswer; return v ? [v.version, v.slot, v.sha || "", (v.latest || {}).refused_sha256 || ""] : null; },
+                    host: function (r) { const s = (r.slots || [])[ui.vAnswer ? ui.vAnswer.slot : cur.k] || {}; return [r.live, ui.vAnswer ? ui.vAnswer.slot : cur.k, s.sha || "", s.refused_sha256 || ""]; },
+                    stale: function () { return "read at an earlier version of what is served: read again"; } },
+      evidence: { shown: function () { const e = ui.eAnswer; return e && e.rev_before ? [e.moved ? "moved" : e.rev_before.id] : null; }, host: function (r) { return [r.id]; },
+                  stale: function () { return "computed at an earlier revision of the host (or while it moved): read again"; } },
+      // the queue is not in the host's revision: its panel says whether it is the list /live last gave, and no more
+      queue: { shown: function () { return ui.queueLatest === undefined ? null : [ui.queueShown]; }, host: function () { return [ui.queueLatest]; },
+               label: function (state) { return state + " · the queue as /live last gave it (not part of the host's revision)"; } },
+      // Undo's account is undo()'s own checks run dry: of the ledger and the files both, so of the whole revision
+      undo: { shown: function () { const u = ui.undo; return u && u.rev_before ? [u.moved ? "moved" : u.rev_before.id] : null; }, host: function (r) { return [r.id]; },
+              stale: function () { return "read at an earlier revision of the host (the ledger or the files): it is read again"; } },
+      // Compare's window: Current as it was drawn against the scene the host serves in slot 0 now
+      compare: { shown: function () { return ui.cmpS0 === undefined ? null : [ui.cmpS0]; }, host: function (r) { return [((r.slots || [])[0] || {}).sha || ""]; },
+                 stale: function () { return "the host serves another scene in slot 0 than the one this window drew as Current"; } },
+    };
+    const panelState = function (name) {
+      const r = dash.rev, node = document.querySelector('[data-panel="' + name + '"]'), p = PANELS[name];
+      if (!node || !p) return null;
+      let state, why = "";
+      if (!ui.connected || !r) { state = "unknown"; why = "play.py does not answer, or has not said its revision"; }
+      else if (dash.restarted) { state = "unknown"; why = "play.py restarted (another process serves this page now): reload the page"; }
+      else if (!r.read || !r.read.consistent) { state = "unknown"; why = "the host's state was changing as it was read: read again"; }
+      else if (r.settled === null) { state = "unknown"; why = "the host's watcher has not looked at the files: whether they are compiled is not known"; }
+      else if (node.dataset.refused) { state = "refused"; why = node.dataset.refused; }
+      else {
+        const shown = p.shown(), host = p.host(r);
+        if (shown === null || shown === undefined) { state = "unknown"; why = "not read yet"; }
+        else if (JSON.stringify(shown) !== JSON.stringify(host)) { state = "stale"; why = p.stale ? p.stale(shown, host) : "drawn from an earlier revision of the host"; }
+        else if (r.settled === false) { state = "settling"; why = "the host has not compiled the files as they stand" + ((r.compiling || []).length ? " (compiling " + r.compiling.join(", ") + ")" : "") + ": what is served is older than the files"; }
+        else { state = "current"; why = "as of the host's revision " + r.id + ": an observation at the last read, not a guarantee (the host checks every press again)"; }
+      }
+      node.dataset.state = state;
+      node.dataset.stateWhy = why;
+      if (!node.dataset.nobadge) {
+        let b = node.querySelector(":scope > .pstate");
+        if (!b) { b = el("span.pstate"); node.prepend(b); }
+        // the revision on the badge is the host's, as the page last read it (a stale panel was drawn at an earlier one)
+        b.textContent = p.label ? p.label(state) : state + (r ? (state === "current" || state === "settling" ? " · v" : " · the host is at v") + r.live + " · " + r.id.slice(0, 8) : "");
+        b.title = why;
+      }
+      return state;
+    };
+    // DASHBOARD-0: a card's account, the host's (Gateway.account: admit()'s own checks, run dry), and whether it is of the
+    // revision the page last read. Admit is enabled only by such an account that says admissible; the page computes none
+    const acctOf = function (c) {
+      const r = dash.rev, A = dash.acc, req = studio.req;
+      const a = A && req && A.request === req.id ? (A.by_letter || {})[c.letter] || null : null;
+      const current = !!(a && r && r.read && r.read.consistent && A.rev === r.id && !dash.restarted && ui.connected);
+      return { a: a, current: current, ok: current && a.ok && !c.decided, despite: !!(current && a.despite && a.despite.ok && !c.decided),
+               state: !a ? "unknown" : current ? "current" : "stale",
+               why: c.decided ? "" : !a ? "the host has not given this card's account yet" : !current ? "the host's account is of an earlier revision; it is being computed again"
+                 : a.ok ? "" : !a.first ? "not foreseen: " + (a.not_foreseen || "the host gave no account") : a.first.code + (a.first.director_code ? " (" + a.first.director_code + ")" : "") + ": " + a.first.why };
+    };
+    // a card's account drawn in place (the card is not built again): its badge, its Admit, why it cannot be pressed, its evidence
+    const accountApply = function (card, c) {
+      const x = acctOf(c), a = x.a;
+      // what the card says of the account, one value for its badge, its line and its data-admit: admissible, or the host's
+      // first refusal (its code and why), or that the account is pending
+      const said = x.why;
+      const code = x.ok ? "admissible" : x.current && a && a.first && said ? a.first.code : "";
+      card.dataset.acc = x.state;
+      card.dataset.admit = code;
+      const badge = card.querySelector(".st .badge");
+      if (badge && !c.decided && !c.compared) {
+        badge.className = "badge " + (x.ok ? "candidate" : code ? "refused" : "neutral");
+        badge.textContent = code || "account pending";
+      }
+      for (const b of card.querySelectorAll("button[data-act=admit]")) b.disabled = !x.ok;
+      for (const b of card.querySelectorAll("button[data-act=despite]")) b.disabled = !x.despite;
+      const w = card.querySelector(".why");
+      if (w) { w.textContent = said; w.title = said; w.hidden = !said; }
+      const ev = card.querySelector(".ev");
+      if (ev) {
+        const e = a && a.evidence;
+        ev.textContent = e ? "evidence: " + e.missing.length + " of " + e.of + " missing" + (e.missing.length ? " (" + e.missing.join(", ") + ")" : "") + " · advisory: Admit reads none of it" : "";
+        ev.title = "EVIDENCE-0, the host's checklist with FLAGSHIP-0's predicates: advisory, it gates nothing" + (e && e.next ? "; next: " + e.next : "");
+      }
+    };
+    const accountsApply = function () {
+      const req = studio.req;
+      for (const card of document.querySelectorAll("[data-letter][data-request]")) {
+        const c = req && card.dataset.request === req.id ? (req.candidates || []).find(function (x) { return x.letter === card.dataset.letter; }) : null;
+        if (c) accountApply(card, c);
+      }
+    };
+    // a card's names: the world, the head it was drawn at, the request, the scene its slot served when it was published
+    const cardNames = function (r, c) {
+      const parts = [brief, "drawn at " + short(c.head), "request " + r.id, "scene " + short(c.scene)];
+      if (c.written_against && c.written_against !== c.head) parts.push("written against " + short(c.written_against));
+      return parts.join(" · ");
+    };
+    const dashTick = function () {
+      for (const n of Object.keys(PANELS)) panelState(n);
+      accountsApply();
+      undoPoll();
+      if (ui.dtab === "validation") validationLoad(false);
+      if (ui.dtab === "evidence") evidenceLoad(false);
+      restorationShow();
     };
     // a box's frame on the canvas (CSS pixels), or null when it is behind the eye (the view's own arithmetic)
     const frameOf = function (b) {
@@ -471,13 +616,29 @@
         c2.getContext("2d").drawImage(canvas, 0, 0, c2.width, c2.height);
         const u = c2.toDataURL("image/png"), bin = atob(u.slice(u.indexOf(",") + 1)), a = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
-        return fetch("/studio/still?world=" + encodeURIComponent(brief) + "&id=" + encodeURIComponent(rid) + "&candidate=" + encodeURIComponent(letter),
+        // DASHBOARD-0: the still names the scene the page drew (recorded by the host, its equality with the candidate's said)
+        return fetch("/studio/still?world=" + encodeURIComponent(brief) + "&id=" + encodeURIComponent(rid) + "&candidate=" + encodeURIComponent(letter) + "&scene=" + cur.sha,
           { method: "POST", headers: { "Content-Type": "image/png", "X-Studio-Token": token }, body: a }).then(function (r) { return r.json(); });
+      });
+    };
+    // DASHBOARD-0: the candidate's own scene drawn before its still is taken (its slot chosen, and the scene the card names
+    // applied: bounded, and said when it is not; the page withholds a wrong still, and authorizes nothing)
+    const drawnScene = function (c) {
+      return (c.slot !== cur.k ? pick(c.slot) : Promise.resolve()).then(function () {
+        const t0 = performance.now();
+        return new Promise(function (res, rej) {
+          const look = function () {
+            if (cur.k === c.slot && (!c.scene || cur.sha === c.scene)) { res(); return; }
+            if (performance.now() - t0 > 10000) { rej(new Error("the scene of " + c.letter + " (" + short(c.scene) + ") is not drawn; nothing sent")); return; }
+            setTimeout(look, 100);
+          };
+          look();
+        });
       });
     };
     const admitWithStill = function (rid, c) {
       $("st-status").textContent = "taking a still of " + c.letter + " as drawn…";
-      (c.slot !== cur.k ? pick(c.slot) : Promise.resolve()).then(function () { return takeStill(rid, c.letter); }).then(function (st) {
+      drawnScene(c).then(function () { return takeStill(rid, c.letter); }).then(function (st) {
         if (!st.ok) { note(st, ""); toast((st.code || "") + " " + (st.message || ""), true); return; }
         if (st.flags && st.flags.length) {
           note({ ok: false, code: "THE STILL IS FLAGGED", message: st.flags.join("; ") + ". A detector proves nothing: look, then Admit despite, or Reject" }, "");
@@ -491,8 +652,38 @@
     $("st-ask").onclick = ask;
     $("st-cancel").onclick = function () { if (studio.req) post("/studio/cancel", { id: studio.req.id }).then(function (r) { note({ ok: true }, r.ok ? "cancelled" : "nothing to cancel"); }); };
     $("st-original").onclick = function () { pick(0); };
-    const undo = function () { post("/studio/undo", {}).then(function (r) { note(r, "undone: ledger #" + (r.ledger || []).join(", #")); toast(r.ok ? "Undone · ledger #" + (r.ledger || []).join(", #") : (r.code || "") + " " + (r.message || ""), !r.ok); if (r.ok) pick(0); ui.histKey = ""; }); };
+    // DASHBOARD-0 (0249): what an undo gave back is the host's proof from the ledger (its restoration): exact, or said NOT
+    // restored with both heads and what differs; never a success toast alone
+    const undoLine = function (r) {
+      if (!r.ok) return { bad: true, text: (r.code ? r.code + ": " : "") + (r.message || "failed"), toast: (r.code || "") + " " + (r.message || "") };
+      const x = r.restoration || {}, led = "ledger #" + (r.ledger || []).join(", #");
+      const ps = r.page_saw || {};
+      const which = ps.matched === false ? " · the host undid #" + r.of + ", not the #" + ps.of + " the page showed" : "";
+      if (x.verdict === "exact" && !which) return { bad: false, text: "undone: " + led + " · restored exactly (head " + short(x.head_after) + ")", toast: "Undone · " + led + " · restored exactly" };
+      if (x.verdict === "exact") return { bad: true, text: "undone: " + led + " · restored exactly (head " + short(x.head_after) + ")" + which, toast: "Undone · " + led + " · restored exactly" + which };
+      if (x.verdict === "unknown") return { bad: true, text: "undone: " + led + " · whether it restored is NOT KNOWN: " + (x.said || "the host gave no proof") + which,
+                                            toast: "Undone · " + led + " · whether it restored is NOT KNOWN" + which };
+      const why = (x.said || x.verdict || "no restoration given") + " (head " + short(x.head_after) + ", expected " + short(x.expected_head) + ((x.parts_differ || []).length ? "; differ: " + x.parts_differ.join(", ") : "") + ")";
+      return { bad: true, text: "Undone, NOT restored" + (x.verdict === "statements-not-bytes" ? " exactly" : "") + ": " + why, toast: "Undone, NOT restored" + (x.verdict === "statements-not-bytes" ? " exactly" : "") + " · " + led + " · " + why };
+    };
+    const undo = function () {
+      if (ui.undoing) return;
+      // the press names the admission the page showed Undo as undoing (the host records whether it is the one undone; the
+      // binding's refusal is a later patch's); until what Undo undoes is read again, the strip says nothing of it
+      const of = ui.undo && ui.undo.can ? ui.undo.of : "";
+      ui.undoing = true; ui.undo = null; ui.undoKey = ""; ++uReq; undoShow();
+      post("/studio/undo", { of: of }).then(function (r) {
+        ui.undoing = false;
+        const u = undoLine(r);
+        $("st-status").innerHTML = ""; $("st-status").appendChild(el("span." + (u.bad ? "bad" : "good"), {}, u.text));
+        toast(u.toast, u.bad);
+        if (r.ok) { ui.restoration = r.restoration || null; ui.restorationLedger = (r.ledger || []).slice(); pick(0); }
+        ui.histKey = ""; ui.undoKey = "";
+        dashTick();
+      });
+    };
     $("st-undo").onclick = undo;
+    $("mb-undo").onclick = undo;
     const studioShow = function (st) {
       if (!st) return;
       const key = JSON.stringify([st, cur.k]);
@@ -544,7 +735,8 @@
             if (tt.added_count) parts.push(tt.added_count + " new (" + tt.added.slice(0, 3).join(", ") + (tt.added_count > 3 ? ", …" : "") + ")");
             m.className = tt.others_count ? "bad" : "dim"; m.textContent = "touches: " + parts.join(" · "); e.appendChild(m);
           }
-          const btn = function (lab, fn, on) { const b = document.createElement("button"); b.textContent = lab; b.disabled = !on; b.onclick = fn; e.appendChild(b); };
+          const btn = function (lab, fn, on) { const b = document.createElement("button"); b.textContent = lab; b.disabled = !on; b.onclick = fn; e.appendChild(b); return b; };
+          e.dataset.letter = c.letter; e.dataset.request = r.id;
           // ADMISSION-0 (0222): the rung the host computed, what an admission needs, what was not checked, and the still
           if (c.record) {
             const rr = document.createElement("div");
@@ -563,12 +755,14 @@
             sv.textContent = "still " + c.still.sha256.slice(0, 12) + ": " + (c.still.flags.length ? c.still.flags.join("; ") : "the detectors flag nothing (they prove nothing either)");
             e.appendChild(sv);
           }
-          const flagged = !!(c.still && c.still.flags.length);
+          const flagged = !!(c.still && c.still.flags.length), x = acctOf(c);
           btn("Show", function () { pick(c.slot); }, c.slot !== null);
-          btn("Admit", function () { admitWithStill(r.id, c); }, admissible(c));
+          btn("Admit", function () { admitWithStill(r.id, c); }, x.ok).dataset.act = "admit";
           if (flagged) btn("Admit despite: " + c.still.flags.map(function (f) { return f.split(":")[0]; }).join(", "),
-            function () { decide("admit", r.id, c.letter, { still: c.still.sha256, despite: true }); }, c.slot !== null && c.verdict === "CLEAN" && !c.decided);
+            function () { decide("admit", r.id, c.letter, { still: c.still.sha256, despite: true }); }, x.despite).dataset.act = "despite";
           btn("Reject", function () { decide("reject", r.id, c.letter); }, !c.decided);
+          const wy = document.createElement("div"); wy.className = "why bad"; e.appendChild(wy);
+          accountApply(e, c);
           box.appendChild(e);
         }
       }
@@ -580,7 +774,6 @@
       shell.candidates();
       if (mk.on) { markCandidates(); splitShow(); }
     };
-    const admissible = function (c) { return c.slot !== null && c.verdict === "CLEAN" && !c.decided && (!c.record || c.record.rung === "A") && !(c.strict && !c.strict.ok); };
 
     // ---------------------------------------------------------------- STUDIO-2: the worlds, the queue, the toasts
     const go = function (wname, extra) { location.href = "/play.html?world=" + encodeURIComponent(wname) + (extra || ""); };
@@ -632,13 +825,15 @@
     const queueShow = function (qs) {
       if (!qs) return;
       queueOpts(qs);
+      ui.queueLatest = JSON.stringify(qs.tasks);
       for (const n of qs.notices || []) {
         if (n[0] > seenNotice) { seenNotice = n[0]; toast(n[1] + (n[4] === "ready" ? "  (review it in the queue)" : ""), n[4] !== "ready" && n[4] !== "answered"); }
       }
       const key = JSON.stringify(qs.tasks);
       if (key === queueKey) return;
       queueKey = key;
-      const box = $("st-qlist");
+      ui.queueShown = key;
+      const box = $("q-list");
       box.innerHTML = "";
       const c = qs.counts || {};
       const head = document.createElement("div"); head.className = "dim";
@@ -784,6 +979,10 @@
         "-",
         ["Copy the selection's address", function () { copy(nameOf(ui.sel), "the address"); }, { disabled: !ui.sel }],
         ["Copy the camera as a view statement", function () { copy(viewStatement(eye()), "a view statement"); }],
+        "-",
+        // DASHBOARD-0: what Undo undoes, as the host says (GET /undo.json), read again whenever the host's revision moves
+        [ui.undo && ui.undo.can ? "Undo admission #" + ui.undo.of + (ui.undo.candidate ? " (candidate " + ui.undo.candidate + " of request " + ui.undo.request + ")" : " (" + (ui.undo.note || "an admission") + ")")
+          : "Undo admission (" + (!ui.undo ? "not read yet" : ui.undo.ok && ui.undo.can === null ? "not foreseen" : ui.undo.code || "not read") + ")", undo, { disabled: !(ui.undo && ui.undo.can), icon: "refresh" }],
       ]; });
       M("View", function () { return [
         ["Perspective", function () { projection("perspective"); }, { on: ui.projection === "perspective" }],
@@ -845,10 +1044,9 @@
       });
       right.appendChild(el("button.btn.primary#mb-play", { title: "Play at 1920 × 1080, the window filled (Esc returns to the editor)", onclick: function () { enterPlay(true); } }, icon("play"), "Play (1080p)"));
       right.appendChild(el("button.btn#mb-validate", { title: "The art checks as they were run for this source", onclick: validate }, icon("shield"), "Validate"));
-      if (mk.on) {
-        right.appendChild(el("button.btn", { title: "Current vs a candidate, side by side under a slider", onclick: compareModal }, icon("compare"), "Compare"));
-        right.appendChild(el("a.btn", { href: "/history.html?world=" + W, style: { textDecoration: "none" }, title: "the world's ledger, read back" }, icon("book"), "Ledger"));
-      }
+      // DASHBOARD-0: Compare in every mode (it was Mark mode's alone)
+      right.appendChild(el("button.btn#mb-compare", { title: "Current vs a candidate, side by side under a slider; whether Current is the candidate's own base is the host's", onclick: compareModal }, icon("compare"), "Compare"));
+      if (mk.on) right.appendChild(el("a.btn", { href: "/history.html?world=" + W, style: { textDecoration: "none" }, title: "the world's ledger, read back" }, icon("book"), "Ledger"));
     };
 
     // ---- the left navigator
@@ -962,7 +1160,21 @@
         ["Res", canvas.width + "×" + canvas.height], ["VRAM", "n/a"]];
       const host = $("stats");
       host.innerHTML = "";
-      for (const [k, v] of rows) host.append(el("span", { title: k === "VRAM" ? "not measured: WebGL does not report the memory it uses" : k === "CPU submit" ? "the time to issue the frame's work, measured; the GPU's time is not" : "" }, k), el("span", {}, v));
+      const TITLE = { FPS: "frames this page drew per second of its own clock (requestAnimationFrame): a software timing, not a frame-time measurement",
+                      Frame: "the interval between this page's frames, smoothed: a software timing", "CPU submit": "the time to issue the frame's work, measured; the GPU's time is not",
+                      "Draw calls": "the renderer's draw calls, counted", Tris: "the renderer's triangles, counted", Boxes: "the scene's boxes", Lights: "the lights the renderer draws",
+                      Res: "the canvas's size", VRAM: "not measured: WebGL does not report the memory it uses" };
+      for (const [k, v] of rows) host.append(el("span", { title: TITLE[k] || "" }, k), el("span", { title: TITLE[k] || "" }, v));
+      if (ui.step === undefined) {
+        // the smallest step the clock showed in five ticks, read for at most 50 ms (graybox/web/main.js's way); none seen, none said
+        let a = performance.now(), d = Infinity, seen = 0;
+        const t0 = a;
+        while (seen < 5 && performance.now() - t0 < 50) { const b = performance.now(); if (b > a) { d = Math.min(d, b - a); seen++; a = b; } }
+        ui.step = seen ? d : null;
+      }
+      host.append(el("div.stitle", { title: "the smallest step this page's clock showed, measured once: a timing smaller than it is not a measurement" },
+        "software timing, this page's clock (requestAnimationFrame, performance.now): not GPU time, not a frame-time measurement · " +
+        (ui.step === null ? "its step not measured (the clock did not move in 50 ms)" : "step ≈ " + (ui.step * 1000 >= 10 ? Math.round(ui.step * 1000) : (ui.step * 1000).toFixed(2)) + " µs (this page)")));
     };
 
     // ---- the context bar and the roadmap
@@ -975,11 +1187,17 @@
         el("span.chip" + (ui.connected ? ".on" : ".off"), { title: ui.connected ? "play.py answers" : "play.py does not answer" }, icon("dot"), ui.connected ? "Connected" : "Disconnected"), " ",
         el("span.chip", {}, "World ", el("b", {}, brief)), " ",
         el("span.chip", { title: insp ? "the ledger's head " + (insp.head || "") + (insp.verified ? ", verified (integrity, not truth)" : "") : "the ledger is read with the history" },
-          "Revision ", el("b", {}, insp ? "#" + insp.events + (insp.head ? " · " + insp.head.slice(0, 8) : "") : "—")), " ",
-        el("span.chip", { title: "the source drawn and its scene's digest" }, "Source ", el("b", {}, "[" + cur.k + "] " + cur.sha.slice(0, 8)), sv.verdict ? " " + sv.verdict : ""), " ",
+          "Revision ", el("b", {}, insp ? (insp.verified ? "#" + insp.events + (insp.head ? " · " + insp.head.slice(0, 8) : "") : "not verified: " + ((insp.error || "").split(":")[0] || "?")) : "—")), " ",
+        el("span.chip", { title: "the source drawn and its scene's digest" }, "Source ", el("b", {}, "[" + cur.k + "] " + cur.sha.slice(0, 8)), sv.verdict ? " " + sv.verdict : "", sourceSaid()), " ",
         el("span.chip", { title: "the simulation's rules (graybox/RULES-3.md)" }, "Rules ", el("b", {}, String(Sim.RULES))), " ",
         el("span.chip", { title: "Play (1080p) draws at 1920 × 1080" }, el("b", {}, "1080p")));
       $("mb-src").textContent = "[" + cur.k + "]";
+    };
+    // DASHBOARD-0: a candidate's slot drawn is said to be a candidate, never the world
+    const sourceSaid = function () {
+      if (cur.k === 0) return "";
+      const r = studio.req, c = r && (r.candidates || []).find(function (x) { return x.slot === cur.k; });
+      return c ? " · candidate " + c.letter + " of request " + r.id + " (not the world)" : " · not the world";
     };
     const ROADMAP = [["done", "Sprint 1", "Core studio shell"], ["done", "Sprint 2", "Mark & Shape"], ["done", "Sprint 3", "Candidate loop"],
                      ["next", "Sprint 4", "World generation slice"], ["next", "Sprint 5", "Dynamic world"], ["next", "Sprint 6", "Scale"]];
@@ -1006,6 +1224,7 @@
         const n = ++infoReq;
         getJSON("/object.json?world=" + W + "&slot=" + cur.k + "&piece=" + encodeURIComponent(piece)).then(function (d) {
           if (n !== infoReq) return;
+          if (d.ok && !answerFor(d, null)) { ui.info = null; ui.infoErr = "STUDIO-WORLD: an answer for world " + d.world + "; this page shows " + brief + ": not shown"; shell.inspector(); return; }
           if (d.ok) ui.info = d; else ui.infoErr = (d.code || "") + ": " + (d.message || "");
           shell.inspector();
         }).catch(function (e) { if (n === infoReq) { ui.infoErr = String(e && e.message || e); shell.inspector(); } });
@@ -1254,20 +1473,168 @@
         const badges = el("div.badges");
         const th = el("div.th", {}, el("span.letter", {}, c.letter), rank !== undefined && (r.order || []).length > 1 ? el("span.rank", { title: "the host's order: " + (r.order[rank].key || []).join(" · ") }, "#" + (rank + 1)) : null, badges);
         paintMcp(badges, c);
+        // DASHBOARD-0: the badge is the host's account (admissible, or its first refusal), drawn by accountApply; "Ready",
+        // the page's own judgement, is gone
         const st = c.decided ? el("span.badge." + (c.decided.indexOf("admit") === 0 ? "admitted" : "rejected"), {}, c.decided)
           : c.compared ? el("span.badge.neutral", { title: "recorded with the set it was compared in; it can still be rejected (the ledger records that)" }, c.compared)
-          : c.verdict === "CLEAN" ? el("span.badge.candidate", {}, "Ready") : el("span.badge.refused", {}, c.verdict || "?");
+          : el("span.badge.neutral", {}, "account pending");
         const sv = c.slot !== null ? (cur.slots[c.slot] || {}).served : null;
-        const card = el("div.card" + (c.slot !== null && c.slot === cur.k ? ".shown" : ""), { title: (c.message || c.title || ""), dataset: { sha: sv ? sv.sha : "", letter: c.letter } },
-          th, el("div.tt", {}, c.title), heldChips(c), impactRow(c), el("div.st", {}, st, c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
+        const flagged = !!(c.still && c.still.flags.length);
+        const card = el("div.card" + (c.slot !== null && c.slot === cur.k ? ".shown" : ""), { title: (c.message || c.title || ""),
+                                                                                          dataset: { sha: sv ? sv.sha : "", letter: c.letter, world: brief, head: c.head || "", request: r.id, scene: c.scene || "" } },
+          th, el("div.tt", {}, c.title), el("div.drawn", { title: cardNames(r, c) }, cardNames(r, c)),
+          (c.codes || []).indexOf("HEAD-MOVED") >= 0 ? el("div.hm", { title: "the director's code: its intent was written against another head (" + short(c.written_against) + "). Marked only: whether such a candidate is refused is the owner's ruling (F-4)" }, "HEAD-MOVED") : null,
+          heldChips(c), impactRow(c), el("div.st", {}, st, c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
+          el("div.why", { hidden: true }), el("div.ev"),
           el("div.acts", {}, el("button.btn.small", { disabled: c.slot === null, onclick: function () { pick(c.slot); } }, "Show"),
-            el("button.btn.small", { disabled: !admissible(c), onclick: function () { admitWithStill(r.id, c); } }, "Admit"),
+            el("button.btn.small", { disabled: true, dataset: { act: "admit" }, onclick: function () { admitWithStill(r.id, c); } }, "Admit"),
             el("button.btn.small", { disabled: !!c.decided, onclick: function () { decide("reject", r.id, c.letter); } }, "Reject"),
-            el("button.btn.small", { disabled: c.slot === null, title: "Preview in motion: both sides along the request's path, the same seed; the host's states are the evidence", onclick: function () { previewRun(r, c); } }, "Preview")));
+            el("button.btn.small", { disabled: c.slot === null, title: "Preview in motion: both sides along the request's path, the same seed; the host's states are the evidence", onclick: function () { previewRun(r, c); } }, "Preview"),
+            el("button.btn.small", { title: "Evidence (this candidate): the host's account of its admission, and EVIDENCE-0's advisory checklist", onclick: function () { evidenceFor(r, c); } }, "Evidence"),
+            flagged ? el("button.btn.small", { disabled: true, dataset: { act: "despite" }, title: "the still's detectors flag " + c.still.flags.join("; ") + "; a detector proves nothing",
+                                              onclick: function () { decide("admit", r.id, c.letter, { still: c.still.sha256, despite: true }); } }, "Admit despite") : null));
+        accountApply(card, c);
         host.appendChild(card);
         if (c.slot !== null) candThumb(c, th);
       }
       host.appendChild(el("div.card.new", { onclick: openPanel, title: "Describe a change to the director" }, icon("plus"), "New"));
+      ui.cardsOf = dash.rev ? [(dash.rev.request || {}).sha256 || "", (dash.rev.slots || []).map(function (s) { return s.sha; })] : null;
+      panelState("cards");
+    };
+    // ---- DASHBOARD-0 (0249): the dock's tabs (Candidates, Queue, Validation, Evidence); a hidden one's controls are not pressed
+    ui.dtab = "candidates";
+    const dtab = function (t) {
+      ui.dtab = t;
+      document.querySelectorAll("#d-tabs button").forEach(function (b) { b.classList.toggle("on", b.dataset.dtab === t); });
+      for (const [id, k] of [["c-list", "candidates"], ["q-list", "queue"], ["v-body", "validation"], ["e-body", "evidence"]]) $(id).hidden = k !== t;
+      if (t === "validation") validationLoad(true);
+      if (t === "evidence") evidenceLoad(true);
+      dashTick();
+    };
+    document.querySelectorAll("#d-tabs button").forEach(function (b) { b.onclick = function () { dtab(b.dataset.dtab); }; });
+    // the Validation tab: the art checks as they were run for the source shown, and its latest compile's refusal first
+    let vReq = 0;
+    ui.vKey = ""; ui.vAnswer = null;
+    const validationLoad = function (force) {
+      const r = dash.rev, key = (r ? r.live : "") + "|" + cur.k;
+      if (!force && key === ui.vKey) return;
+      ui.vKey = key;
+      const n = ++vReq, k = cur.k;
+      getJSON("/validate.json?world=" + W + "&slot=" + k).then(function (v) {
+        if (n !== vReq) return;
+        $("v-body").dataset.answers = String((+$("v-body").dataset.answers || 0) + 1);      // the answers drawn, counted (a reader waits for a new one)
+        if (!answerFor(v, $("v-body"), "Validation")) { ui.vAnswer = null; panelState("validation"); return; }
+        ui.vAnswer = v;
+        validationShow();
+      }).catch(function (e) { if (n === vReq) { ui.vKey = ""; ui.vAnswer = null; $("v-body").textContent = "Validate: " + (e && e.message || e); panelState("validation"); } });
+    };
+    const validationShow = function () {
+      const v = ui.vAnswer, body = $("v-body");
+      body.innerHTML = "";
+      if (!v) return;
+      const of = " of scene " + short(v.sha);
+      body.appendChild(el("p.dim", {}, "Source [" + v.slot + "] " + (v.label || "") + " · scene " + (v.sha || "").slice(0, 16) + " · v" + v.version + " · " + (v.basis || "")));
+      if (v.refused) {
+        body.appendChild(el("div.vrow.refused", {}, el("span.bad", {}, "✗"), el("div", {}, el("b", {}, "The files are refused (v" + v.version + "). The rows below are of the scene before (" + short(v.sha) + "), not of the files"),
+          el("div.d", {}, v.refused))));
+      }
+      if (v.checks) {
+        for (const [name, ok, detail] of v.checks) body.appendChild(el("div.vrow", {}, el("span", { class: ok ? "good" : "bad" }, ok ? "✓" : "✗"), el("div", {}, el("div", {}, name + (v.refused ? of : "")), el("div.d", {}, detail))));
+        const n = v.checks.filter(function (r) { return r[1]; }).length;
+        body.appendChild(el("p.vsum." + (n === v.checks.length ? "good" : "bad"), {}, n + " of " + v.checks.length + " checks passed" + (v.refused ? of + " (the scene before the refused files)" : "") + ". Integrity, not truth: a check says what it checks and nothing more."));
+      } else body.appendChild(el("p.vsum", {}, "A candidate's checks are the director's: verdict " + (v.verdict || "?") + (v.codes && v.codes.length ? " (" + v.codes.join(", ") + ")" : "") + (v.record ? "; rung " + v.record.rung + ", an admission needs: " + v.record.requires.join("; ") : "") + "."));
+      panelState("validation");
+    };
+    // the Evidence tab: what the host holds of a candidate's admission (the account that gates Admit) and EVIDENCE-0's
+    // checklist (advisory: Admit reads none of it), and the evidence itself
+    let eReq = 0;
+    ui.ev = null; ui.eKey = ""; ui.eAnswer = null;
+    const evidenceFor = function (r, c) { ui.ev = { rid: r.id, letter: c.letter }; ui.eKey = ""; dtab("evidence"); };
+    const evidenceLoad = function (force) {
+      const body = $("e-body");
+      if (!ui.ev) { if (!body.firstChild || force) { body.innerHTML = ""; body.appendChild(el("div.empty", {}, "Press Evidence on a card: the host's account of its admission and its evidence.")); } return; }
+      const r = dash.rev, key = ui.ev.rid + "|" + ui.ev.letter + "|" + (r ? r.id : "");
+      if (!force && key === ui.eKey) return;
+      ui.eKey = key;
+      const n = ++eReq;
+      getJSON("/evidence.json?world=" + W + "&id=" + encodeURIComponent(ui.ev.rid) + "&candidate=" + encodeURIComponent(ui.ev.letter)).then(function (e) {
+        if (n !== eReq) return;
+        body.dataset.answers = String((+body.dataset.answers || 0) + 1);
+        if (!answerFor(e, body, "Evidence")) { ui.eAnswer = null; panelState("evidence"); return; }
+        ui.eAnswer = e;
+        if (e.moved) ui.eKey = "";                 // computed while the host moved: shown stale, read again at the next look
+        evidenceShow();
+      }).catch(function (x) { if (n === eReq) { ui.eKey = ""; ui.eAnswer = null; body.textContent = "Evidence: " + (x && x.message || x); panelState("evidence"); } });
+    };
+    const evidenceShow = function () {
+      const e = ui.eAnswer, body = $("e-body");
+      body.innerHTML = "";
+      if (!e) return;
+      if (!e.ok) { body.appendChild(el("div.empty.bad", {}, (e.code || "") + ": " + (e.message || ""))); panelState("evidence"); return; }
+      const a = e.admission || {}, k = e.checklist || {}, it = e.items || {};
+      body.appendChild(el("p.dim", {}, "candidate " + e.candidate + " of request " + e.request + " · the host's revision " + (e.rev_before || {}).id + (e.moved ? " (the host moved while this was read: stale)" : "")));
+      body.appendChild(el("h5", {}, "Admission — the host's own checks, run dry (the same account /live gives the card enables its Admit; this one is for reading)"));
+      body.appendChild(el("div.vrow.adm", {}, el("span", { class: a.ok ? "good" : "bad" }, a.ok ? "✓" : "✗"),
+        el("div", {}, el("div", {}, a.ok ? "admissible: no check of the admission refuses it now" : !a.first ? "not foreseen" : (a.first.code + (a.first.director_code ? " (" + a.first.director_code + ")" : ""))),
+          el("div.d", {}, a.ok ? "" : !a.first ? (a.not_foreseen || "") : a.first.why), el("div.d", {}, (a.pending || []).map(function (p) { return "pending: the " + p.what + ", " + p.why; }).join("; ")), el("div.d", {}, a.rule || ""))));
+      body.appendChild(el("h5", {}, "EVIDENCE-0 (advisory: Admit does not read it)"));
+      for (const x of k.items || []) body.appendChild(el("div.vrow.chk", { dataset: { item: x.item, status: x.status } }, el("span", { class: x.status === "met" ? "good" : x.status === "missing" ? "bad" : "dim" }, x.status === "met" ? "✓" : x.status === "missing" ? "✗" : "·"),
+        el("div", {}, el("div", {}, x.item + ": " + x.status), el("div.d", {}, x.needs + " (" + x.predicate + ")"))));
+      body.appendChild(el("p.chknext." + ((k.missing || []).length ? "bad" : "good"), {}, (k.missing || []).length ? "missing: " + k.missing.join(", ") + " · next: " + k.next : "nothing missing", " · ", el("span.dim", {}, k.note || "")));
+      body.appendChild(el("h5", {}, "The evidence"));
+      const imp = it.impact, pv = it.preview, sl = it.still, ce = it.certificate;
+      const rows = [["verdict", (it.verdict || "?") + ((it.codes || []).length ? " " + it.codes.join(",") : "") + (it.record ? " · rung " + it.record.rung : "")],
+        ["drawn at", short(it.head) + (it.written_against && it.written_against !== it.head ? " · written against " + short(it.written_against) : "") + " · scene " + short(it.scene) + " · base " + short(it.base_sha)],
+        ["impact", imp ? (imp.error ? "not computed: " + imp.error : "ESTIMATE " + ((imp.estimate || {}).delta_ms) + " ms · " + ((imp.estimate || {}).how || "")) : "none"],
+        ["preview", pv ? (pv.replayed ? "replayed" : "not replayed") + " · " + (pv.state_verified ? "state verified" : "states differ") + (pv.drawn_ok === false ? " · its stills were not all drawn from the plan's scenes" : pv.drawn_ok ? " · drawn from the plan's scenes" : "") : "none"],
+        ["still", sl ? short(sl.sha256) + (sl.scene ? (sl.scene_is_candidate ? " · drawn from the candidate's scene" : " · drawn from scene " + short(sl.scene) + ", not the candidate's") : " · its scene not named") : "none yet (taken as Admit is pressed)"],
+        ["certificate", ce ? "#" + ce.seq + " " + (ce.ok ? "checked" : "NOT checked") + (ce.exact ? ", exact" : ", not exact") : "none (no admission)"]];
+      for (const [kk, vv] of rows) body.appendChild(el("div.vrow", {}, el("span"), el("div", {}, el("div", {}, kk), el("div.d", {}, vv))));
+      panelState("evidence");
+    };
+    // ---- DASHBOARD-0: Undo in the strip and the Edit menu: what it undoes is the host's (GET /undo.json, read again
+    // whenever the host's revision moves); what came back is the host's proof (the POST's restoration)
+    ui.undo = null; ui.undoKey = ""; ui.restoration = null;
+    let uReq = 0;
+    const undoPoll = function () {
+      const r = dash.rev;
+      if (!r || !r.read || !r.read.consistent || ui.undoing) return;
+      const key = r.id;
+      if (key === ui.undoKey) return;
+      ui.undoKey = key;
+      const n = ++uReq;
+      getJSON("/undo.json?world=" + W).then(function (u) {
+        if (n !== uReq || ui.undoing) return;         // a later read, or a press, came after it: this answer is older
+        if (!answerFor(u, null)) { ui.undo = null; undoShow(); return; }
+        ui.undo = u; undoShow();
+        if (u.moved) ui.undoKey = "";                 // made while the host moved: read again
+      }).catch(function () { if (n === uReq) ui.undoKey = ""; });
+    };
+    const undoShow = function () {
+      const u = ui.undo, b = $("mb-undo");
+      b.disabled = !(u && u.ok && u.can === true);
+      b.textContent = u && u.can ? "Undo #" + u.of : "Undo";
+      b.title = !u ? "what Undo would undo is not read yet" : !u.ok ? (u.code || "") + ": " + (u.message || "") : u.can === null ? "not foreseen: " + (u.message || "") : u.can ? "Undo admission #" + u.of +
+        (u.candidate ? " (candidate " + u.candidate + " of request " + u.request + ")" : "") + ": its exact inverse admitted; it would give back the head " + short(u.would_restore) +
+        "; what came back is proved from the ledger after" : u.code + ": " + u.message;
+      panelState("undo");
+    };
+    const restorationShow = function () {
+      const x = ui.restoration, n = $("cx-undo");
+      if (!x) { n.textContent = ""; n.className = "chip"; return; }
+      // the lag is said only while it holds: no event in the ledger since the undo, and slot 0 still serving the admitted
+      // head; once the ledger or the files moved on, the chip says the world has moved since, and nothing of the lag
+      const r = dash.rev, s0 = ((r && r.slots) || [])[0] || {};
+      const rs = r ? parseInt((r.ledger || {}).seq, 10) : NaN, us = parseInt((x.ledger || {}).seq, 10);
+      const read = !!r && rs >= us;                   // a revision read at or after the undo's own line
+      const since = read && rs === us;
+      const lag = since && s0.head === x.undone_at && s0.head !== x.head_after;
+      const moved = read && (!since || (s0.head !== x.head_after && s0.head !== x.undone_at));
+      n.className = "chip" + (x.verdict === "exact" ? "" : " bad");
+      n.textContent = "Undo #" + x.of + ": " + (x.verdict === "exact" ? "restored exactly" : x.verdict === "statements-not-bytes" ? "NOT restored exactly (the statements, not the bytes)"
+        : x.verdict === "unknown" ? "whether it restored is NOT KNOWN" : "NOT restored (" + (x.parts_differ || []).join(", ") + ")") +
+        (lag ? " · the world drawn is still the admitted scene; the host has not compiled the restored files yet" : moved ? " · the world has moved since this undo" : "");
+      n.title = (x.said || "") + " · expected " + short(x.expected_head) + ", after " + short(x.head_after) + " · the undone admission's certificate: " + ((x.undone_certificate || {}).made || "");
     };
     // a candidate drawn from where the target is framed (or where the eye is), in the thumbnailer: its scene fetched
     const candThumb = function (c, node) {
@@ -1314,10 +1681,15 @@
       }
     };
     const historyPoll = function () {
-      const key = cur.version + "|" + (studio.lastDecision || "");
+      // DASHBOARD-0: keyed on the ledger's last line too (an append alone, another window's, is read)
+      const at = dash.rev ? ((dash.rev.slots || [])[0] || {}).head || "" : "";
+      const key = cur.version + "|" + (dash.rev ? (dash.rev.ledger || {}).line_sha256 : "") + "|" + at + "|" + (studio.lastDecision || "");
       if (key === ui.histKey) return;
       ui.histKey = key;
-      getJSON("/history.json?world=" + W).then(function (h) { ui.history = h; ledgerShow(); chips(); }).catch(function () { ui.histKey = ""; });
+      getJSON("/history.json?world=" + W).then(function (h) {
+        if (!answerFor(h, $("l-list"), "History")) { ui.history = null; return; }
+        ui.history = h; ui.historyHead = at; ledgerShow(); chips(); dashTick();
+      }).catch(function () { ui.histKey = ""; });
     };
 
     // ---- modals: validate, worlds, keys, about
@@ -1327,19 +1699,8 @@
       $("modal").classList.add("open");
     };
     $("modal").addEventListener("mousedown", function (e) { if (e.target === $("modal")) $("modal").classList.remove("open"); });
-    const validate = function () {
-      getJSON("/validate.json?world=" + W + "&slot=" + cur.k).then(function (v) {
-        const body = el("div");
-        body.appendChild(el("p.dim", {}, "Source [" + v.slot + "] " + (v.label || "") + " · scene " + (v.sha || "").slice(0, 16) + " · " + (v.basis || "")));
-        if (v.refused) body.appendChild(el("div.vrow", {}, el("span.bad", {}, "✗"), el("div", {}, el("b", {}, "The latest compile of this source was refused; the scene before it is the one drawn"), el("div.d", {}, v.refused))));
-        if (v.checks) {
-          for (const [name, ok, detail] of v.checks) body.appendChild(el("div.vrow", {}, el("span", { class: ok ? "good" : "bad" }, ok ? "✓" : "✗"), el("div", {}, el("div", {}, name), el("div.d", {}, detail))));
-          const n = v.checks.filter(function (r) { return r[1]; }).length;
-          body.appendChild(el("p", { class: n === v.checks.length ? "good" : "bad" }, n + " of " + v.checks.length + " checks passed. Integrity, not truth: a check says what it checks and nothing more."));
-        } else body.appendChild(el("p", {}, "A candidate's checks are the director's: verdict " + (v.verdict || "?") + (v.codes && v.codes.length ? " (" + v.codes.join(", ") + ")" : "") + (v.record ? "; rung " + v.record.rung + ", an admission needs: " + v.record.requires.join("; ") : "") + "."));
-        modal(el("span", {}, icon("shield"), " Validation"), body);
-      }).catch(function (e) { toast("Validate: " + (e && e.message || e), true); });
-    };
+    // DASHBOARD-0: Validate selects the dock's Validation tab (read again whenever what is served changes)
+    const validate = function () { dtab("validation"); };
     const buildNow = function () {
       toast("Building every source of " + brief + "…");
       post("/studio/build", {}).then(function (r) {
@@ -1478,7 +1839,7 @@
     const shapeNamed = function (n) { return mk.shapes.find(function (x) { return x.name === n; }) || null; };
     const shapesLoad = function () {
       getJSON("/shapes.json?world=" + W).then(function (d) {
-        if (!d.ok) return;
+        if (!d.ok || !answerFor(d, null)) return;
         mk.shapes = d.shapes || []; mk.rev = d.revision; mk.err = d.error || "";
         if (mk.sel && !shapeNamed(mk.sel) && !(mk.draft && mk.draft.name === mk.sel)) mk.sel = null;
         if (mk.on) { markNav(); shell.inspector(); }
@@ -1916,7 +2277,8 @@
                 if (u.indexOf("data:image/png") !== 0) return;
                 const bin = atob(u.slice(u.indexOf(",") + 1)), a = new Uint8Array(bin.length);
                 for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
-                return fetch("/studio/preview/still?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter + "&side=" + j[0] + "&k=" + j[3],
+                // DASHBOARD-0: each still names the scene it was drawn from (the host records it beside the plan's binding)
+                return fetch("/studio/preview/still?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter + "&side=" + j[0] + "&k=" + j[3] + "&scene=" + j[1].sha,
                   { method: "POST", headers: { "Content-Type": "image/png", "X-Studio-Token": token }, body: a });
               });
             });
@@ -1966,6 +2328,8 @@
           info, el("p.dim", {}, "path " + rep.path_id + " · seed " + rep.seed + " · " + (rep.replayed ? "replayed" : "not replayed") + " · " + rep.advisory),
           el("p.dim", {}, "provenance: " + [(rep.provenance || {}).provider, (rep.provenance || {}).model, "prompt sha256 " + ((rep.provenance || {}).prompt_sha256 || "").slice(0, 12)].join(" · ") + " · " + rep.semantics),
           el("p.dim", { title: (rep.path_check || {}).rule || "" }, pathSaid(rep.path_check)),
+          el("p.dim", {}, rep.drawn_ok === false ? "the stills were not all drawn from the plan's scenes (" + short((rep.binding || {}).base_sha) + ", " + short((rep.binding || {}).candidate_sha) + "): the look is stale; the states are the host's and unaffected"
+            : rep.drawn_ok ? "drawn from the plan's scenes (" + short((rep.binding || {}).base_sha) + ", " + short((rep.binding || {}).candidate_sha) + ")" : "the stills' scenes not named"),
           framedSaid(rep.framing),
           el("details", {}, el("summary", {}, "Inspect: both stills at every pose, and the subject's crops"),
             el("img", { src: "/preview.png?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter + "&side=compare&k=0",
@@ -1986,11 +2350,14 @@
         const badges = el("div.badges"), th = el("div.th", {}, el("span.letter", {}, c.letter), rank !== undefined && (r.order || []).length > 1 ? el("span.rank", { title: "the host's order: " + (r.order[rank].key || []).join(" · ") }, "#" + (rank + 1)) : null, badges);
         const icon2 = c.decided ? (c.decided.indexOf("admit") === 0 ? el("span.good", {}, "●") : el("span.bad", {}, "✗")) : c.verdict === "CLEAN" ? el("span.good", {}, "✓") : el("span.warn", {}, "!");
         const card = el("div.card" + (mk.diffWith === c.letter ? ".shown" : ""), { dataset: { sha: sv ? sv.sha : "", letter: c.letter }, title: c.message || "", onclick: function () { mk.diffWith = c.letter; markCandidates(); splitShow(); } },
-          th, el("div.tt", {}, c.title), heldChips(c), impactRow(c), el("div.st", {}, icon2, el("span", {}, c.decided || c.compared || (c.verdict === "CLEAN" ? "Ready" : c.verdict || "?")), c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
+          th, el("div.tt", {}, c.title), heldChips(c), impactRow(c), el("div.st", {}, icon2, el("span", {}, c.decided || c.compared || (c.verdict === "CLEAN" ? "drawn" : c.verdict || "?")), c.record ? el("span.faint", {}, "rung " + c.record.rung) : null),
+          el("div.why", { hidden: true }),
           el("div.acts", {}, el("button.btn.small", { disabled: c.slot === null, onclick: function (e) { e.stopPropagation(); pick(c.slot); } }, "Show"),
-            el("button.btn.small", { disabled: !admissible(c), onclick: function (e) { e.stopPropagation(); admitWithStill(r.id, c); } }, "Admit"),
+            el("button.btn.small", { disabled: true, dataset: { act: "admit" }, onclick: function (e) { e.stopPropagation(); admitWithStill(r.id, c); } }, "Admit"),
             el("button.btn.small", { disabled: !!c.decided, onclick: function (e) { e.stopPropagation(); decide("reject", r.id, c.letter); } }, "Reject"),
             el("button.btn.small", { disabled: c.slot === null, title: "Preview in motion: both sides along the request's path, the same seed; the host's states are the evidence", onclick: function (e) { e.stopPropagation(); previewRun(r, c); } }, "Preview")));
+        card.dataset.request = r.id;
+        accountApply(card, c);
         host.appendChild(card);
         if (c.slot !== null) candThumb(c, th);
         paintMcp(badges, c);
@@ -2012,7 +2379,7 @@
       // framed on the request's first shape (else the one selected), from the side its face looks to
       const named = (r.shapes || []).length ? shapeNamed(r.shapes[0]) : null, sd = named && named.status === "ok" ? named : (mk.draft || shapeNamed(mk.sel));
       const b = shapeBox(sd), cam = b ? shapeCam(b, sd, 60) : Object.assign({}, eye(), { fov: 66 });
-      const key = cur.sha + "|" + JSON.stringify(cam).slice(0, 90) + "|" + c.letter;
+      const key = cur.sha + "|" + JSON.stringify(cam).slice(0, 90) + "|" + c.letter + "|" + r.id + "|" + (((cur.slots[c.slot] || {}).served || {}).sha || "") + "|" + (((cur.slots[0] || {}).served || {}).sha || "");
       const imA = el("img.cur"), imB = el("img"), bar = el("div.bar"), knob = el("div.knob", {}, "⇔");
       host.append(imB, imA, bar, knob, el("span.lab.l", {}, "Current"), el("span.lab.r", {}, "Candidate " + c.letter));
       const place = function () { const pc = Math.round(mk.diffAt * 1000) / 10; imA.style.clipPath = "inset(0 " + (100 - pc) + "% 0 0)"; bar.style.left = pc + "%"; knob.style.left = pc + "%"; };
@@ -2043,6 +2410,7 @@
       if (!mk.diffMode) return;
       getJSON("/held.json?world=" + W + "&id=" + encodeURIComponent(r.id) + "&candidate=" + c.letter).then(function (h) {
         if (!(turn === mk.splitTurn || big)) return;
+        if (h.ok && !answerFor(h, null)) { host.appendChild(el("div.legend", {}, "Diff: an answer for world " + h.world + "; this page shows " + brief + ": not shown")); return; }
         const cv = document.createElement("canvas");
         cv.width = 640; cv.height = 360;
         const g2 = cv.getContext("2d");
@@ -2063,9 +2431,21 @@
       }).catch(function (e) { if (turn === mk.splitTurn || big) host.appendChild(el("div.legend", {}, "Diff: " + String(e && e.message || e))); });
     };
     const compareModal = function () {
-      const box = el("div.split", { style: { position: "relative", height: "min(60vh, 520px)", background: "#050a12", overflow: "hidden", borderRadius: "6px" } });
-      modal(el("span", {}, icon("compare"), " Compare · Current vs Candidate " + (mk.diffWith || "")), el("div", {}, box, el("p.dim", {}, "Drag the slider. The two pictures are the thumbnailer's, from one camera: the world as served (source [0]) and the candidate as drawn.")));
+      // DASHBOARD-0: outside Mark mode too; the candidate shown (its slot drawn), else the first drawn in the host's order
+      const r = studio.req, drawn = ordered(r).map(function (x) { return x[0]; }).filter(function (c) { return c.slot !== null; });
+      const shownC = drawn.find(function (c) { return c.slot === cur.k; });
+      if (!mk.diffWith || mk.diffReq !== (r && r.id) || !drawn.some(function (c) { return c.letter === mk.diffWith; })) { mk.diffWith = (shownC || drawn[0] || {}).letter || null; mk.diffReq = r ? r.id : null; }
+      const c = drawn.find(function (x) { return x.letter === mk.diffWith; });
+      const s0 = ((dash.rev && dash.rev.slots) || [])[0] || {};
+      const base = !c ? null : s0.sha === c.base_sha;
+      ui.cmpS0 = s0.sha;
+      const box = el("div.split", { dataset: { panel: "compare", nobadge: "1", base: base === null ? "unknown" : base ? "yes" : "no" }, style: { position: "relative", height: "min(60vh, 520px)", background: "#050a12", overflow: "hidden", borderRadius: "6px" } });
+      const said = !c ? "no candidate drawn to compare" : base ? "Current = this candidate's base (" + short(s0.sha) + "), the scene its evaluation is against"
+        : "Current = the world as served now (" + short(s0.sha) + "), NOT this candidate's base (" + short(c.base_sha) + "): the host moved since it was drawn";
+      modal(el("span", {}, icon("compare"), " Compare · Current vs Candidate " + (c ? c.letter + " of request " + r.id : "")), el("div", {}, el("p.cmpbase." + (base ? "good" : "bad"), {}, said), box,
+        el("p.dim", {}, "Drag the slider. The two pictures are the thumbnailer's, from one camera: the world as served (source [0]) and the candidate as drawn.")));
       splitShow(box);
+      panelState("compare");
     };
 
     // ---- the overlay: every shape on its face, the draft with its rubber band
@@ -2165,6 +2545,8 @@
     window.PLAY = {
       get renderer() { return R; }, get scene() { return S; }, get state() { return s; }, get world() { return world; },
       live: cur, get sim() { return Sim; }, studio: studio, select: select, pin: pin, hover: function () { return studio.hover; },
+      // DASHBOARD-0: what the page holds of the host's revision and accounts (read-only), and its tabs
+      dash: { get rev() { return dash.rev; }, get acc() { return dash.acc; }, get restarted() { return dash.restarted; }, tab: function (t) { dtab(t); }, get ui() { return ui; } },
       pause: function (on) { paused = !!on; },
       slot: pick,
       view: function (name, time) { goView(name); render(ecam, time || 0, s); },
@@ -2202,7 +2584,7 @@
     if (q.get("mode") === "mark") setTimeout(function () { setMark(true); }, 0);
     shapesLoad();
     // 0220: the launcher's "Queue prompts" view: this world with the director's queue open
-    if (q.get("panel") === "queue") setTimeout(function () { openPanel(); const ql = $("st-qlist"); if (ql && ql.scrollIntoView) ql.scrollIntoView(); }, 300);
+    if (q.get("panel") === "queue") setTimeout(function () { openPanel(); dtab("queue"); }, 300);
 
     // ---------------------------------------------------------------- input: the editor and play
     const keys = {}, pending = { reset: false, jump: false }, refusals = {};

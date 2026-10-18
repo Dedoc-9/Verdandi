@@ -136,6 +136,27 @@
   .tile .th canvas { width: 46px; height: 46px; }
   .tile .nm { padding: 3px 6px 4px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tile .sub { padding: 0 6px 5px; font-size: 10px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  [hidden] { display: none !important; }
+  /* DASHBOARD-0 (0249): what each panel is of, said; the drawer's tabs; the cards' host accounts */
+  .pstate { display: inline-block; font: 600 9.5px/15px var(--mono); padding: 0 6px; border-radius: 3px; margin: 2px 4px; border: 1px solid var(--line2); color: var(--dim); white-space: nowrap; }
+  [data-state="current"] > .pstate { color: var(--good); border-color: rgba(60,207,145,.4); }
+  [data-state="stale"] > .pstate, [data-state="refused"] > .pstate { color: var(--bad); border-color: rgba(242,113,107,.45); }
+  [data-state="settling"] > .pstate, [data-state="unknown"] > .pstate { color: var(--warn); border-color: rgba(242,184,75,.4); }
+  #c-list > .pstate, #q-list > .pstate, #v-body > .pstate, #e-body > .pstate { grid-column: 1 / -1; justify-self: start; }
+  #d-tabs { display: flex; gap: 2px; padding: 3px 6px 0; border-bottom: 1px solid var(--line); }
+  #d-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--dim); padding: 3px 8px; cursor: pointer; font: inherit; }
+  #d-tabs button.on { color: var(--text); border-bottom-color: var(--accent2); }
+  #q-list, #v-body, #e-body { padding: 8px 10px; font-size: 11.5px; }
+  #v-body .vrow, #e-body .vrow { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+  #v-body .d, #e-body .d { color: var(--dim); font-size: 10.5px; word-break: break-word; }
+  #e-body h5 { margin: 8px 0 3px; font-size: 11px; color: var(--text); }
+  .card .drawn, .card .why, .card .ev, .card .hm { padding: 0 7px 3px; font-size: 10px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card .why { color: var(--warn); white-space: normal; }
+  .card .hm { color: var(--warn); }
+  #bar-undo .btn:disabled { opacity: .45; }
+  #cx-undo:empty { display: none; }
+  #cx-undo.bad { color: var(--bad); border-color: rgba(242,113,107,.45); }
+  #stats div.stitle { grid-column: 1 / -1; color: var(--dim); font-size: 9.5px; max-width: 220px; white-space: normal; margin-top: 3px; }
   #c-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; padding: 8px; align-content: start; grid-auto-rows: max-content; }
   .card { background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; overflow: hidden; display: flex; flex-direction: column; }
   .card.shown { border-color: var(--sel); box-shadow: 0 0 0 1px var(--sel); }
@@ -305,6 +326,7 @@
   <div class="brand" id="brand"><b>Verðandi</b> <span>Studio</span></div>
   <nav id="menus"></nav>
   <div class="spacer"></div>
+  <div id="bar-undo"><button id="mb-undo" class="btn" data-panel="undo" data-nobadge="1" disabled title="Undo the last admission: what it undoes is the host's (GET /undo.json)">Undo</button></div>
   <div id="bar-right"></div>
 </header>
 <div id="ctxbar">
@@ -312,7 +334,8 @@
   <label>Layer <select id="cx-layer"></select></label>
   <label>Selection <span class="sel" id="cx-sel">none</span></label>
   <span class="spacer"></span>
-  <span id="cx-chips"></span>
+  <span id="cx-undo" class="chip" data-nobadge="1" title="the last undo's restoration, as the host proved it from the ledger"></span>
+  <span id="cx-chips" data-panel="chips"></span>
 </div>
 <main id="work">
   <aside id="leftnav"></aside>
@@ -334,7 +357,9 @@
     </div>
     <div id="dock">
       <div class="dpanel" id="assets"><div class="dhead" id="a-head"></div><div class="dbody"><div id="a-tree"></div><div id="a-grid"></div></div></div>
-      <div class="dpanel" id="cands"><div class="dhead" id="c-head"></div><div class="dbody"><div id="c-list"></div></div></div>
+      <div class="dpanel" id="cands"><div class="dhead" id="c-head"></div>
+        <div id="d-tabs"><button data-dtab="candidates" class="on">Candidates</button><button data-dtab="queue">Queue</button><button data-dtab="validation">Validation</button><button data-dtab="evidence" title="Evidence (this candidate): the host's account of its admission, and EVIDENCE-0's advisory checklist">Evidence</button></div>
+        <div class="dbody"><div id="c-list" data-panel="cards"></div><div id="q-list" data-panel="queue" hidden></div><div id="v-body" data-panel="validation" hidden></div><div id="e-body" data-panel="evidence" hidden></div></div></div>
       <div class="dpanel" id="ledger"><div class="dhead" id="l-head"></div><div class="dbody"><div id="l-list"></div></div></div>
     </div>
     <div id="markdock">
@@ -358,7 +383,6 @@
   <h3>Queue</h3>
   <div class="row">for <select id="st-qworld"></select> <select id="st-qprov"></select> <select id="st-qmodel"></select></div>
   <div class="row"><button id="st-queue">Queue the prompt</button> <span class="dim">it runs in the background; play on</span></div>
-  <div id="st-qlist"></div>
 </div>
 <div id="modal"><div class="box"><h3 id="m-title"></h3><div class="mb" id="m-body"></div></div></div>
 <div id="toasts"></div>

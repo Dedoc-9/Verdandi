@@ -377,6 +377,13 @@ the browser reports it, are recorded as OBSERVED context, never as a claim.
 
 ### 0247 · DASHBOARD-0: the consolidation, held by 0246's harness
 
+*Note (2026-10-17): the numbers moved. 0247 and 0248 were PAGE-0's repairs; the dashboard is built as 0249 (the
+revision, the cards and their accounts, the drawer's tabs, Evidence, Undo's proof, the wrong-world guard) and 0250 (the
+worlds, the outliner, import), after a settled design and his word (`docs/ROADMAP.md`, the 0249 entry). Two things below
+read otherwise now: the account that disables Admit is the admission's own checks run dry, never FLAGSHIP-0's stage
+logic (FLAGSHIP-0's predicates give an advisory checklist, EVIDENCE-0, which gates nothing); and the page is held by a
+suite of its own, PAGE-CARDS, beside PAGE, not by rows grown in PAGE alone.*
+
 **Left.** A collapsible panel holding:
 - the worlds, each verified or not, from the launcher's tested read-back;
 - an outliner by region, kind and object, with search, built from the scene the page already holds;
@@ -404,6 +411,9 @@ again, with the harness.
 
 ### 0248 · candidate binding (after his rulings on F-3 and F-4)
 
+*Note (2026-10-17): now 0251, after the dashboard's two halves; the still's and the preview's scene, recorded since 0249,
+are refused on there, if he so rules.*
+
 - The provider's scope is bounded by the request. Either the host intersects it with the target's, the pins' and the
   shapes' patterns, or a namespace-wide pattern needs the designer's grant. The card shows the declared scope and the
   phantom patterns.
@@ -413,6 +423,8 @@ again, with the harness.
   `head_after`.
 
 ### 0249 · the inverse's repair (his (a) or (b) from 0244), with F-8's narrower subset and CERT SELFTEST's rows rewritten with it.
+
+*Note (2026-10-17): now 0252.*
 
 ### Later, measured before decided
 

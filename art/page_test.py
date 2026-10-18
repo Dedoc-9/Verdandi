@@ -36,6 +36,7 @@
 # Show and Original row. The browser's name and its GPU as the browser reports them are printed as OBSERVED context, never
 # as a claim. Standard library only.
 
+import collections
 import json
 import os
 import queue
@@ -85,6 +86,15 @@ class Channel:
     def __init__(self, deadline, alive=None):
         self.steps, self.results, self.n = queue.Queue(), queue.Queue(), 0
         self.deadline, self.alive, self.lost = deadline, alive or (lambda: True), ""
+        # DASHBOARD-0 (0249): what the page's server answered while this test is armed (art/play.py, Handler.send):
+        # (time.monotonic(), path, status, bytes, "sent" or the error that ended the write)
+        self.served = collections.deque(maxlen=1000)
+
+    def answered(self, since, paths=("/play.html", "/sim.js", "/scene_render.js", "/studio_ui.js", "/play.js", "/live", "/scene/", "/map/", "(")):
+        """What the server answered since `since` (time.monotonic()) of what a page opens with, said when a page did not
+        open: a load the browser failed is told from one the server did not answer, or did not finish."""
+        out = ["%s %s %d %s +%d ms" % (p, c, n, o, int((t - since) * 1000)) for t, p, c, n, o in list(self.served) if t >= since and p.startswith(paths)]
+        return "; ".join(out) or "nothing"
 
     def exchange(self, body):
         r = body.get("result") if isinstance(body, dict) else None
@@ -374,8 +384,10 @@ def run(browser, headed, argv_plant="", say=None):
             row("page: a browser to drive the page (Edge or Chrome; elsewhere Edge, Chrome or Chromium on PATH; --browser EXE)", False, "none found")
             return rows, seen
         proc = launch(browser, base + "/page_test.html", profile, headed, os.path.join(tmp, "browser.log"))
-        t_open = time.time()
+        t_open, m_open = time.time(), time.monotonic()
         r = ch.do({"do": "open", "url": "/play.html?world=%s&slot=0&w=%d&h=%d" % (W, VIEW[0], VIEW[1])}, 180)
+        if not r.get("ok"):
+            r["error"] = "%s; the server answered: %s" % (r.get("error", ""), ch.answered(m_open))
         seen.append("OBSERVED page: the browser %s" % r.get("ua", "?"))
         seen.append("OBSERVED page: WebGL as the browser reports it: %s" % r.get("gpu", "?"))
         seen.append("OBSERVED page: opened and its shell built in %.1f s" % (time.time() - t_open))
@@ -419,6 +431,7 @@ def run(browser, headed, argv_plant="", say=None):
         held = ((c1.get("held") or {}).get("accounts") or [{}])[0].get("verdict")
         row("page: the Panelled bay's card shows strict PASS and its Admit can be pressed; the host holds it in the region, strict, with its impact",
             r.get("ok") and "strict PASS" in chips and not r.get("buttons", {}).get("Admit", {}).get("disabled", True)
+            and r.get("acc") == "current" and r.get("admit") == "admissible" and r.get("badge", "").lower() == "admissible"
             and held == "held" and (c1.get("strict") or {}).get("ok") is True and "delta" in imp and not imp.get("error"),
             "the card: %s, %s, Admit %s; the host: %s, strict %s, impact %s" % (r.get("badge", r.get("error", "")), chips,
                                                                              "disabled" if r.get("buttons", {}).get("Admit", {}).get("disabled", True) else "enabled",
@@ -500,8 +513,11 @@ def run(browser, headed, argv_plant="", say=None):
         r = ch.do({"do": "undo"}, 45 if argv_plant in PLANT_EDITS else 240)
         u = snapshot()
         last = live.studio.state().get("last") or {}
+        # DASHBOARD-0 (0249): and the page names the restoration the host proved from the ledger (exact), never success alone
         row("page: Undo pressed: the head, the brief and the scene as before the admission, the head restored, its certificate ok; the page says undone, and its toast",
             r.get("ok") and (r.get("status") or {}).get("good") and (r.get("status") or {}).get("text", "").startswith("undone:") and toasted(r, False, "Undone") and world(u) == world(before)
+            and "restored exactly" in (r.get("status") or {}).get("text", "") and toasted(r, False, "restored exactly")
+            and (last.get("restoration") or {}).get("verdict") == "exact"
             and last.get("what") == "undone" and last.get("head_restored") is True and (last.get("certificate") or {}).get("ok") is True,
             "the page: %s; the host: the world as before %s, head restored %s" % ((r.get("status") or {}).get("text", r.get("error", "")), world(u) == world(before), last.get("head_restored")))
         if not full:
@@ -542,17 +558,33 @@ def run(browser, headed, argv_plant="", say=None):
         if argv_plant:
             return rows, seen
         w0 = snapshot()
-        r = ch.do({"do": "press", "title": "Panelled column", "button": "Admit"}, 30)
+        firsts = []
+
+        def first_blocker(what, title, L):
+            """DASHBOARD-0 (0249), the owner's first-blocker test through the page: the refusal a card displays and the host's
+            own answer to Admit for it, under the same revision and conditions. The clean still the press brings is given
+            first (the account's pending condition, met, and the revision it makes); the card is read once the page shows
+            the host's account at that revision; the revision is read again just before the press, and after it (a refusal
+            writes nothing)"""
+            _c, s_ = http.post("/studio/still?id=%s&candidate=%s" % (rid2, L), D.selftest_still(), "image/png")
+            r1 = (get("/live?world=%s" % W).get("rev") or {}).get("id")
+            card = ch.do({"do": "card", "title": title, "rev": r1}, 90)
+            r2 = (get("/live?world=%s" % W).get("rev") or {}).get("id")
+            c_a, a_a = http.post("/studio/admit", {"id": rid2, "candidate": L, "still": s_.get("still", "")})
+            r3 = (get("/live?world=%s" % W).get("rev") or {}).get("id")
+            firsts.append((what, card.get("admit"), a_a.get("code") if c_a != 200 else "admitted", bool(r1) and card.get("rev") == r1 == r2 == r3))
+        r = ch.do({"do": "press", "title": "Panelled column", "button": "Admit"}, 120)
         chips = [x["text"] for x in (r.get("card") or {}).get("chips", [])]
         w1 = snapshot()
         col, _st = cand("Panelled column")
         col_s = (col or {}).get("strict") or {}
         refused = col is not None and col.get("slot") is not None and col_s.get("ok") is False and col_s.get("code") == "ADMIT-OUTSIDE" and (col_s.get("outside_count") or 0) >= 1
         row("page plant: a region refused — the host's strict check refuses the column (ADMIT-OUTSIDE), its card shows strict FAIL and its Admit cannot be pressed; nothing reached the host",
-            r.get("ok") and r.get("pressed") == "disabled" and "strict FAIL" in chips and refused
+            r.get("ok") and r.get("pressed") == "disabled" and "strict FAIL" in chips and refused and (r.get("card") or {}).get("admit") == "ADMIT-OUTSIDE"
             and w1["ledger_bytes"] == w0["ledger_bytes"] and world(w1) == world(w0),
             "the card: %s, Admit %s; the host: %s, %s outside; the ledger %s" % (chips, r.get("pressed", r.get("error")), col_s.get("code", col_s.get("ok")),
                                                                               col_s.get("outside_count"), "unchanged" if w1["ledger_bytes"] == w0["ledger_bytes"] else "CHANGED"))
+        first_blocker("the column", "Panelled column", col["letter"] if col else "")
         motion.PLANT = "preview-shared-state"
         motion._SHARED.clear()
         try:
@@ -586,10 +618,19 @@ def run(browser, headed, argv_plant="", say=None):
         w4 = snapshot()
         r = ch.do({"do": "press", "title": "Panelled bay", "button": "Admit"}, 240)
         w5 = snapshot()
-        row("page plant: a stale head (the brief edited after the preview) — the page says STUDIO-STALE, in its toast too, and admits nothing; the world as the edit left it",
-            r.get("ok") and (r.get("status") or {}).get("bad") and "STUDIO-STALE" in (r.get("status") or {}).get("text", "") and toasted(r, True, "STUDIO-STALE")
+        # DASHBOARD-0 (0249): a changed expectation, said: Admit is enabled only by the host's account of the card, which
+        # names the stale head itself; the page never presses it, and the host is asked by the harness below (its refusal,
+        # equal to the card's, is the comparison's row)
+        row("page plant: a stale head (the brief edited after the preview) — the card shows the host's own STUDIO-STALE and its Admit cannot be pressed (0249); nothing admitted; the world as the edit left it",
+            r.get("ok") and r.get("pressed") == "disabled" and (r.get("card") or {}).get("admit") == "STUDIO-STALE" and "STUDIO-STALE" in (r.get("card") or {}).get("why", "")
             and world(w5) == world(w4) and len(w5["admits"]) == len(w4["admits"]) and w5["ledger_bytes"] == w4["ledger_bytes"],
-            "the page: %s; nothing appended %s" % ((r.get("status") or {}).get("text", r.get("error", "")), w5["ledger_bytes"] == w4["ledger_bytes"]))
+            "the card: %s (%s), Admit %s; nothing appended %s" % ((r.get("card") or {}).get("admit"), (r.get("card") or {}).get("why", r.get("error", ""))[:90],
+                                                                  r.get("pressed", r.get("error")), w5["ledger_bytes"] == w4["ledger_bytes"]))
+        first_blocker("the bay, stale", "Panelled bay", c2["letter"] if c2 else "")
+        w6 = snapshot()
+        row("page: the refusal a card displays is the host's own answer to Admit at the same revision (one predicate: admit()'s checks, run dry)",
+            len(firsts) == 2 and all(s == a and same for _w, s, a, same in firsts) and w6["ledger_bytes"] == w4["ledger_bytes"],
+            "; ".join("%s: displayed %s, the host answered %s%s" % (w_, s, a, "" if same else " (NOT at the same revision)") for w_, s, a, same in firsts))
         v = live.version
         open(art, "wb").write(original)              # the brief as the ledger holds it again
         wait_version(v)
