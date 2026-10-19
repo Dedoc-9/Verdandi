@@ -1,0 +1,1736 @@
+{
+ "cites": {
+  "contract": "BINDING-0",
+  "file": "art/director/bindings/BINDING-0.v0.json",
+  "rulings": [
+   {
+    "file": "ruling-0253.txt",
+    "sha256": "8552666a1e3903f18ec9241feee63518388b54175cf7c901b3bcc44dc34795e0",
+    "status": "governing: his ruling of 2026-10-18 on 0253 (BIND-CAUSAL-0, BIND-NOTSUFFICIENT-0, BIND-ORDER-0, BIND-COUNT-0, the two safeguards, the terminology correction, the 0253 -> 0254 window)"
+   },
+   {
+    "file": "ruling-0253-questions-2026-10-19.txt",
+    "sha256": "df5429a951c2e25507e178e9fb71a87a236e4251688fa1b7f2dbc13bbcacef8e",
+    "status": "governing: his rulings of 2026-10-19 on the spec's three open questions (§12), each the drafted, first option; confirmed as governing by ruling-0253-confirmation-2026-10-19.txt; recorded as his rulings on 0253, never as a change to BINDING-0 v0 itself"
+   },
+   {
+    "file": "ruling-0253-confirmation-2026-10-19.txt",
+    "sha256": "45990ee6dbd814f5f9c17de8b55402b09f0e25e89904e71ba7942a64dfff821f",
+    "status": "governing, cited beside the questions' rulings: asked whether those rulings govern 0253, he answered \"Yes, they govern (Recommended)\""
+   },
+   {
+    "file": "ruling-0253-correction-2026-10-19.txt",
+    "sha256": "9692ac8fea4e2e447e799362a3a63644e22c42ae6e3b8e8d5f4123a95582da82",
+    "status": "recorded and SUPERSEDED as to the three questions: his message of 2026-10-19 rested on a misreading (that the drafted options had been ruled out) and the confirmation supersedes it; its execution order (0253, then 0254, then the subsequent repairs) stands"
+   }
+  ],
+  "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+  "spec": {
+   "file": "spec-0253-v2.md",
+   "sha256": "da9b4a883faa6d1b717d6723b7b97ee7b5e5bea5933634cdfc8a4cdf2f7c8211",
+   "status": "the accepted spec (draft v2); where it and v0 disagree, v0 wins and that is said"
+  },
+  "version": 0
+ },
+ "facts": {
+  "H0": {
+   "label": "B2: the head A and its preview were planned at, before the other admission moved the files",
+   "value": "77a430c1fc87a547d572c09eea9262dc30852bb7bea571d8cc5ce215eb3486ee"
+  },
+  "H_A": {
+   "label": "the head A's preview was planned at (its binding's head: the evaluation's checked_against), where nothing moved since",
+   "value": "d6b336b1cc1baab344d57c5aaa0cafa075c4aef4102845f0d714930d8e44e3cc"
+  },
+  "I_A": {
+   "label": "the sha256 of A's intent bytes as the gateway keeps them",
+   "value": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020"
+  },
+  "P_A": {
+   "label": "vector ID1's preview id: v0's id rule over ID1's stand-in object (in a live row, P_A is the preview_id its own finish answers)",
+   "value": "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c"
+  },
+  "P_A0": {
+   "label": "vector ID3's preview id: v0's id rule over ID3's stand-in object (in a live row, P_A0 is the preview_id of A's preview planned at H0 as its finish answers it)",
+   "value": "5e0db32b109bf812f0cd978f6a8fd95bb13462d5dfce0b933a96e7c0d3b881ad"
+  },
+  "P_B": {
+   "label": "the id of a finished preview of another candidate (B): well formed, naming no finished preview of A",
+   "value": "be31f23c36bcfc632f8d621fe3fdc015d40d45cc07e5ac512848a8d5bbc78c7c"
+  },
+  "R_A": {
+   "label": "the sha256 of the preview.report.json of A's finished preview in R-M4's state",
+   "value": "f0c122d6b59d22cb55257dafb0f51ed1263e32cf6010c1cb5fed0129b2c75a3b"
+  },
+  "R_A0": {
+   "label": "B2: the sha256 of the preview.report.json of A's finished preview at H0",
+   "value": "ff42fc926b11255445614233c502c839e56f3642d7564f67b5e5ea2d75f62b33"
+  },
+  "S_A": {
+   "label": "A's scene at admission: the scene the admission's own evaluation exports (lineage.scene_sha256); at a head that has not moved, the scene A was drawn with",
+   "value": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0"
+  },
+  "S_A0": {
+   "label": "B2: A's scene as drawn at head H0, which its still declared",
+   "value": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b"
+  },
+  "S_A1": {
+   "label": "B2: the admission's own evaluation's scene at H1, after another admission moved the files (the row requires S_A1 != S_A0)",
+   "value": "e42ac615a9128d240094175f265d5ce4c34c20c9b91201ea14a7b0e85623743e"
+  },
+  "S_base": {
+   "label": "the base scene: the world's scene as the files stand, A not applied",
+   "value": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40"
+  },
+  "S_w": {
+   "label": "the world's scene GET /undo.json was computed at; where nothing moved since, the scene at the undo",
+   "value": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef"
+  },
+  "S_w0": {
+   "label": "B2-undo: the world's scene GET /undo.json gave before the rebase",
+   "value": "951e5a1d703953cfa6a7f4799a541b4d17f35daca0fb75f00176f5cd711243bb"
+  },
+  "S_w1": {
+   "label": "B2-undo: the scene at the undo, after a rebase recorded through the director",
+   "value": "247a67ac40f19f33fba545d9b1fdc2b8d4a941464eb96c92eb6d0eebf922b7a9"
+  },
+  "S_wL": {
+   "label": "B4-UNDO-LAYOUT: the scene the files export as they stand after the layout admission #N (lineage.scene_sha256 of the world's export): the scene at the undo by v0's identity; GET /undo.json gives \"\" there (it answers before its dry run)",
+   "value": "8aab5b13014e739ef36d215938559e0467cea626460ebd3d8f9fc385b20620f4"
+  }
+ },
+ "field": {
+  "rule": "v0 comparison.rule and well formed, evidence.*.declared and decision record.content: declared {present, value} is the request's or the kept value; an entry's declared is the value when it is a JSON string, else \"\"",
+  "vectors": [
+   {
+    "declared": {
+     "present": true,
+     "value": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0"
+    },
+    "entry": {
+     "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+     "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+     "field": "scene",
+     "kind": "still",
+     "outcome": "MATCH"
+    },
+    "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "field": "scene",
+    "id": "F1",
+    "kind": "still",
+    "outcome": "MATCH",
+    "what": "the still declares A's scene"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40"
+    },
+    "entry": {
+     "declared": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+     "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+     "field": "scene",
+     "kind": "still",
+     "outcome": "MISMATCH"
+    },
+    "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "field": "scene",
+    "id": "F2",
+    "kind": "still",
+    "outcome": "MISMATCH",
+    "what": "the still declares the base scene"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": ""
+    },
+    "entry": {
+     "declared": "",
+     "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+     "field": "scene",
+     "kind": "still",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "field": "scene",
+    "id": "F3",
+    "kind": "still",
+    "outcome": "UNKNOWN",
+    "what": "the still's scene kept as \"\" (absent, blank or malformed: one case)"
+   },
+   {
+    "declared": {
+     "present": false
+    },
+    "entry": null,
+    "field": "preview",
+    "finished_previews_of_candidate": [
+     "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c"
+    ],
+    "id": "F4",
+    "kind": "preview",
+    "outcome": "no entry",
+    "what": "the admission's body has no key `preview`: no preview relied on, no entry"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": null
+    },
+    "entry": {
+     "declared": "",
+     "expected": "",
+     "field": "preview",
+     "kind": "preview",
+     "outcome": "UNKNOWN"
+    },
+    "field": "preview",
+    "finished_previews_of_candidate": [
+     "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c"
+    ],
+    "id": "F5",
+    "kind": "preview",
+    "outcome": "UNKNOWN",
+    "what": "`preview`: null"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": ""
+    },
+    "entry": {
+     "declared": "",
+     "expected": "",
+     "field": "preview",
+     "kind": "preview",
+     "outcome": "UNKNOWN"
+    },
+    "field": "preview",
+    "finished_previews_of_candidate": [
+     "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c"
+    ],
+    "id": "F6",
+    "kind": "preview",
+    "outcome": "UNKNOWN",
+    "what": "`preview`: \"\""
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "be31f23c36bcfc632f8d621fe3fdc015d40d45cc07e5ac512848a8d5bbc78c7c"
+    },
+    "entry": {
+     "declared": "be31f23c36bcfc632f8d621fe3fdc015d40d45cc07e5ac512848a8d5bbc78c7c",
+     "expected": "",
+     "field": "preview",
+     "kind": "preview",
+     "outcome": "UNKNOWN"
+    },
+    "field": "preview",
+    "finished_previews_of_candidate": [
+     "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c"
+    ],
+    "id": "F7",
+    "kind": "preview",
+    "outcome": "UNKNOWN",
+    "what": "`preview`: 64 lower hex naming no finished preview of A (a finished preview of B)"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c"
+    },
+    "entry": {
+     "declared": "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c",
+     "expected": "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c",
+     "field": "preview",
+     "kind": "preview",
+     "outcome": "MATCH"
+    },
+    "field": "preview",
+    "finished_previews_of_candidate": [
+     "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c"
+    ],
+    "id": "F8",
+    "kind": "preview",
+    "outcome": "MATCH",
+    "what": "`preview`: the id of A's finished preview"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0"
+    },
+    "entry": {
+     "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+     "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+     "field": "candidate_sha",
+     "kind": "preview",
+     "outcome": "MATCH"
+    },
+    "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "field": "candidate_sha",
+    "id": "F9",
+    "kind": "preview",
+    "outcome": "MATCH",
+    "what": "the preview's recorded candidate scene is A's scene at admission"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40"
+    },
+    "entry": {
+     "declared": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+     "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+     "field": "candidate-1",
+     "kind": "preview",
+     "outcome": "MISMATCH"
+    },
+    "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "field": "candidate-1",
+    "id": "F10",
+    "kind": "preview",
+    "outcome": "MISMATCH",
+    "what": "a still drawn on the candidate's side (pose 1) kept naming the base scene"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "12"
+    },
+    "entry": {
+     "declared": "12",
+     "expected": "12",
+     "field": "of",
+     "kind": "undo",
+     "outcome": "MATCH"
+    },
+    "expected": "12",
+    "field": "of",
+    "id": "F11",
+    "kind": "undo",
+    "outcome": "MATCH",
+    "what": "of \"12\", the target 12"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "012"
+    },
+    "entry": {
+     "declared": "012",
+     "expected": "12",
+     "field": "of",
+     "kind": "undo",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "12",
+    "field": "of",
+    "id": "F12",
+    "kind": "undo",
+    "outcome": "UNKNOWN",
+    "what": "of \"012\": a leading zero, not a sequence number's form"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": 12
+    },
+    "entry": {
+     "declared": "",
+     "expected": "12",
+     "field": "of",
+     "kind": "undo",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "12",
+    "field": "of",
+    "id": "F13",
+    "kind": "undo",
+    "outcome": "UNKNOWN",
+    "what": "of 12, a JSON number: not a string"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "10"
+    },
+    "entry": {
+     "declared": "10",
+     "expected": "12",
+     "field": "of",
+     "kind": "undo",
+     "outcome": "MISMATCH"
+    },
+    "expected": "12",
+    "field": "of",
+    "id": "F14",
+    "kind": "undo",
+    "outcome": "MISMATCH",
+    "what": "of \"10\", an earlier admission's admit seq, the target 12"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef"
+    },
+    "entry": {
+     "declared": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+     "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+     "field": "scene",
+     "kind": "undo",
+     "outcome": "MATCH"
+    },
+    "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+    "field": "scene",
+    "id": "F15",
+    "kind": "undo",
+    "outcome": "MATCH",
+    "what": "scene: the world's scene as shown, the scene at the undo"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "951e5a1d703953cfa6a7f4799a541b4d17f35daca0fb75f00176f5cd711243bb"
+    },
+    "entry": {
+     "declared": "951e5a1d703953cfa6a7f4799a541b4d17f35daca0fb75f00176f5cd711243bb",
+     "expected": "247a67ac40f19f33fba545d9b1fdc2b8d4a941464eb96c92eb6d0eebf922b7a9",
+     "field": "scene",
+     "kind": "undo",
+     "outcome": "MISMATCH"
+    },
+    "expected": "247a67ac40f19f33fba545d9b1fdc2b8d4a941464eb96c92eb6d0eebf922b7a9",
+    "field": "scene",
+    "id": "F16",
+    "kind": "undo",
+    "outcome": "MISMATCH",
+    "what": "scene: the scene before a rebase"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "479BACA07AB88BA54AE5573AC0FA105A3051B70FB370DA4AA496830374A3E5EF"
+    },
+    "entry": {
+     "declared": "479BACA07AB88BA54AE5573AC0FA105A3051B70FB370DA4AA496830374A3E5EF",
+     "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+     "field": "scene",
+     "kind": "undo",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+    "field": "scene",
+    "id": "F17",
+    "kind": "undo",
+    "outcome": "UNKNOWN",
+    "what": "scene: S_w in upper case, a raw request string, declared as sent"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5e"
+    },
+    "entry": {
+     "declared": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5e",
+     "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+     "field": "scene",
+     "kind": "undo",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+    "field": "scene",
+    "id": "F18a",
+    "kind": "undo",
+    "outcome": "UNKNOWN",
+    "what": "scene: 63 characters, declared as sent"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": null
+    },
+    "entry": {
+     "declared": "",
+     "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+     "field": "scene",
+     "kind": "undo",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+    "field": "scene",
+    "id": "F18b",
+    "kind": "undo",
+    "outcome": "UNKNOWN",
+    "what": "scene: null, declared \"\""
+   },
+   {
+    "declared": {
+     "present": false
+    },
+    "entry": {
+     "declared": "",
+     "expected": "12",
+     "field": "of",
+     "kind": "undo",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "12",
+    "field": "of",
+    "id": "F19",
+    "kind": "undo",
+    "outcome": "UNKNOWN",
+    "what": "the undo's body has no key `of`: declared \"\""
+   },
+   {
+    "declared": {
+     "present": false
+    },
+    "entry": {
+     "declared": "",
+     "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+     "field": "scene",
+     "kind": "undo",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+    "field": "scene",
+    "id": "F20",
+    "kind": "undo",
+    "outcome": "UNKNOWN",
+    "what": "the undo's body has no key `scene`: declared \"\""
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": ""
+    },
+    "entry": {
+     "declared": "",
+     "expected": "12",
+     "field": "of",
+     "kind": "undo",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "12",
+    "field": "of",
+    "id": "F21",
+    "kind": "undo",
+    "outcome": "UNKNOWN",
+    "what": "of \"\""
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "12 "
+    },
+    "entry": {
+     "declared": "12 ",
+     "expected": "12",
+     "field": "of",
+     "kind": "undo",
+     "outcome": "UNKNOWN"
+    },
+    "expected": "12",
+    "field": "of",
+    "id": "F22",
+    "kind": "undo",
+    "outcome": "UNKNOWN",
+    "what": "of \"12 \": a trailing space, never trimmed"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": "0F39CE932D52FE12FE836FA1B66418926A96D5C3E7ACF2EF6104715F4E39FE6C"
+    },
+    "entry": {
+     "declared": "0F39CE932D52FE12FE836FA1B66418926A96D5C3E7ACF2EF6104715F4E39FE6C",
+     "expected": "",
+     "field": "preview",
+     "kind": "preview",
+     "outcome": "UNKNOWN"
+    },
+    "field": "preview",
+    "finished_previews_of_candidate": [
+     "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c"
+    ],
+    "id": "F23",
+    "kind": "preview",
+    "outcome": "UNKNOWN",
+    "what": "`preview`: P_A in upper case, declared as sent (no case folding)"
+   },
+   {
+    "declared": {
+     "present": true,
+     "value": 64
+    },
+    "entry": {
+     "declared": "",
+     "expected": "",
+     "field": "preview",
+     "kind": "preview",
+     "outcome": "UNKNOWN"
+    },
+    "field": "preview",
+    "finished_previews_of_candidate": [
+     "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c"
+    ],
+    "id": "F24",
+    "kind": "preview",
+    "outcome": "UNKNOWN",
+    "what": "`preview`: 64, a JSON number: declared \"\""
+   }
+  ]
+ },
+ "his words": {
+  "the registered rule the authority": "The registered rule must remain the authority for comparison semantics. Before duplicating the comparison in production code, establish how conformance to the registered bytes is tested. The implementation must not quietly become the definition of what counts as a match."
+ },
+ "keeping": {
+  "held by": "the scene in the route's answer, and declared in the record of an admission relying on that still",
+  "kept on 1381b31": "computed by 1381b31's own expression read from its code (its routes' parse_qs without keep_blank_values and Gateway.still's and Gateway.preview_still's fullmatch), an observation of the base and never the rule; it parts from the rule on K12 and K15, where a blank first value (scene=, or a bare scene) is dropped and the second value kept",
+  "routes": [
+   "POST /studio/still?id=R&candidate=A&<scene_query>",
+   "POST /studio/preview/still?id=R&candidate=A&side=candidate&k=0&<scene_query>"
+  ],
+  "rule": "v0 evidence.still.declared: the first value of the scene query parameter, kept as it is when it is exactly 64 characters, each 0-9 or a-f, else \"\"; a query parameter as application/x-www-form-urlencoded defines it: the query's parts split on '&', each a name and a value split at its first '=' (a name with no '=' has the empty value), '+' a space and percent escapes decoded in both the name and the value (OPEN-1, OPEN-2, OPEN-7: read from v0's text). Applied to POST /studio/preview/still as well: v0 keeps a preview's still 'by the still's rule', read as the whole of evidence.still.declared's keeping (spec v2 §3(a)). An implementation conforms when it keeps what every vector keeps; no library call is the rule",
+  "vectors": [
+   {
+    "id": "K1",
+    "kept": "",
+    "kept on 1381b31": "",
+    "scene_query": "scene=D61421B92236A449C44DD86AEB74AFF3CF3A2B6C93877767F2D023FF14E97CE0",
+    "what": "A's scene in upper case"
+   },
+   {
+    "id": "K2",
+    "kept": "",
+    "kept on 1381b31": "",
+    "scene_query": "scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce",
+    "what": "63 characters"
+   },
+   {
+    "id": "K3",
+    "kept": "",
+    "kept on 1381b31": "",
+    "scene_query": "scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce00",
+    "what": "65 characters"
+   },
+   {
+    "id": "K4",
+    "kept": "",
+    "kept on 1381b31": "",
+    "scene_query": "scene=",
+    "what": "scene= blank"
+   },
+   {
+    "id": "K5",
+    "kept": "",
+    "kept on 1381b31": "",
+    "scene_query": "",
+    "what": "no scene parameter"
+   },
+   {
+    "id": "K6",
+    "kept": "",
+    "kept on 1381b31": "",
+    "scene_query": "scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce%47",
+    "what": "percent-encoded, decoding to a text that is not 64 lower hex (a final 'G')"
+   },
+   {
+    "id": "K7",
+    "kept": "",
+    "kept on 1381b31": "",
+    "scene_query": "scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce+",
+    "what": "plus-encoded, decoding to 63 lower hex and a space"
+   },
+   {
+    "id": "K8",
+    "kept": "",
+    "kept on 1381b31": "",
+    "scene_query": "scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce&scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "what": "repeated: malformed first (63 characters), well formed second"
+   },
+   {
+    "id": "K9",
+    "kept": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "kept on 1381b31": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "scene_query": "scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0&scene=9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+    "what": "repeated: well formed first, kept as sent"
+   },
+   {
+    "id": "K10",
+    "kept": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "kept on 1381b31": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "scene_query": "scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "what": "well formed, kept as sent"
+   },
+   {
+    "id": "K11",
+    "kept": "",
+    "kept on 1381b31": "",
+    "scene_query": "scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce%41",
+    "what": "percent-encoded, decoding to 63 lower hex and an upper-case 'A'"
+   },
+   {
+    "id": "K12",
+    "kept": "",
+    "kept on 1381b31": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "scene_query": "scene=&scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "what": "repeated: blank first (scene=), well formed second: the blank is the first value, kept \"\" (OPEN-1, read from v0's text)"
+   },
+   {
+    "id": "K13",
+    "kept": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "kept on 1381b31": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "scene_query": "scene=%6461421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "what": "its first character percent-encoded, decoding to exactly 64 lower hex: kept as the decoded text (OPEN-2, read from v0's text)"
+   },
+   {
+    "id": "K14",
+    "kept": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "kept on 1381b31": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "scene_query": "scene=%64%36%31%34%32%31%62%39%32%32%33%36%61%34%34%39%63%34%34%64%64%38%36%61%65%62%37%34%61%66%66%33%63%66%33%61%32%62%36%63%39%33%38%37%37%37%36%37%66%32%64%30%32%33%66%66%31%34%65%39%37%63%65%30",
+    "what": "every character percent-encoded (upper-case escape digits), decoding to exactly 64 lower hex: kept as the decoded text (OPEN-2, read from v0's text)"
+   },
+   {
+    "id": "K15",
+    "kept": "",
+    "kept on 1381b31": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "scene_query": "scene&scene=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "what": "repeated: a bare name first (scene, no '='), well formed second: a name with no '=' has the empty value, so the first value is blank, kept \"\" (OPEN-7, read from v0's text)"
+   },
+   {
+    "id": "K16",
+    "kept": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "kept on 1381b31": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "scene_query": "sc%65ne=d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+    "what": "the name percent-encoded (sc%65ne), decoding to scene: the scene parameter, its value well formed, kept as sent (OPEN-7, read from v0's text)"
+   }
+  ]
+ },
+ "piece": {
+  "order": [
+   {
+    "drawn": [
+     "base-1",
+     "candidate-10",
+     "candidate-2",
+     "candidate-0",
+     "base-0"
+    ],
+    "fields": [
+     "preview",
+     "candidate_sha",
+     "candidate-0",
+     "candidate-2",
+     "candidate-10"
+    ],
+    "id": "C-ORDER",
+    "what": "a named preview (its name well formed and naming a finished preview of the candidate): its fields in v0's precedence, the candidate-side stills by pose as an integer (2 before 10), no base-side still relied on"
+   }
+  ],
+  "rule": "v0 comparison.precedence: a piece is UNKNOWN if any of its fields is, else MISMATCH if any is, else MATCH",
+  "vectors": [
+   {
+    "fields": [
+     {
+      "field": "scene",
+      "outcome": "MATCH"
+     }
+    ],
+    "id": "C1",
+    "kind": "still",
+    "piece": "MATCH"
+   },
+   {
+    "fields": [
+     {
+      "field": "scene",
+      "outcome": "MISMATCH"
+     }
+    ],
+    "id": "C2",
+    "kind": "still",
+    "piece": "MISMATCH"
+   },
+   {
+    "fields": [
+     {
+      "field": "scene",
+      "outcome": "UNKNOWN"
+     }
+    ],
+    "id": "C3",
+    "kind": "still",
+    "piece": "UNKNOWN"
+   },
+   {
+    "fields": [
+     {
+      "field": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate_sha",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate-0",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate-1",
+      "outcome": "MISMATCH"
+     }
+    ],
+    "id": "C4",
+    "kind": "preview",
+    "piece": "MISMATCH"
+   },
+   {
+    "fields": [
+     {
+      "field": "preview",
+      "outcome": "UNKNOWN"
+     }
+    ],
+    "id": "C5",
+    "kind": "preview",
+    "piece": "UNKNOWN",
+    "what": "a named preview whose name is UNKNOWN: the name is the piece's only field"
+   },
+   {
+    "fields": [
+     {
+      "field": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate_sha",
+      "outcome": "MATCH"
+     }
+    ],
+    "id": "C6",
+    "kind": "preview",
+    "piece": "MATCH",
+    "what": "a named preview with no still drawn on its candidate's side: held to its recorded candidate scene alone (MATCH, not UNKNOWN)"
+   },
+   {
+    "fields": [
+     {
+      "field": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate_sha",
+      "outcome": "MISMATCH"
+     },
+     {
+      "field": "candidate-0",
+      "outcome": "UNKNOWN"
+     }
+    ],
+    "id": "C7",
+    "kind": "preview",
+    "piece": "UNKNOWN"
+   },
+   {
+    "fields": [
+     {
+      "field": "of",
+      "outcome": "MISMATCH"
+     },
+     {
+      "field": "scene",
+      "outcome": "UNKNOWN"
+     }
+    ],
+    "id": "C8",
+    "kind": "undo",
+    "piece": "UNKNOWN"
+   },
+   {
+    "fields": [
+     {
+      "field": "of",
+      "outcome": "MISMATCH"
+     },
+     {
+      "field": "scene",
+      "outcome": "MATCH"
+     }
+    ],
+    "id": "C9",
+    "kind": "undo",
+    "piece": "MISMATCH"
+   },
+   {
+    "fields": [
+     {
+      "field": "of",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "scene",
+      "outcome": "MATCH"
+     }
+    ],
+    "id": "C10",
+    "kind": "undo",
+    "piece": "MATCH"
+   }
+  ]
+ },
+ "press": {
+  "rule": "v0 comparison.precedence: BINDING-UNKNOWN if any piece is UNKNOWN, else BINDING-MISMATCH if any is MISMATCH, naming the first such field in precedence order",
+  "vectors": [
+   {
+    "answer": "BINDING-UNKNOWN",
+    "entries": [
+     {
+      "field": "scene",
+      "kind": "still",
+      "outcome": "MISMATCH"
+     },
+     {
+      "field": "preview",
+      "kind": "preview",
+      "outcome": "UNKNOWN"
+     }
+    ],
+    "id": "P1",
+    "names": "preview.preview"
+   },
+   {
+    "answer": "BINDING-UNKNOWN",
+    "entries": [
+     {
+      "field": "of",
+      "kind": "undo",
+      "outcome": "MISMATCH"
+     },
+     {
+      "field": "scene",
+      "kind": "undo",
+      "outcome": "UNKNOWN"
+     }
+    ],
+    "id": "P2",
+    "names": "undo.scene"
+   },
+   {
+    "answer": "BINDING-MISMATCH",
+    "entries": [
+     {
+      "field": "scene",
+      "kind": "still",
+      "outcome": "MISMATCH"
+     },
+     {
+      "field": "preview",
+      "kind": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate_sha",
+      "kind": "preview",
+      "outcome": "MATCH"
+     }
+    ],
+    "id": "P3",
+    "names": "still.scene"
+   },
+   {
+    "answer": "none: no binding refusal",
+    "entries": [
+     {
+      "field": "scene",
+      "kind": "still",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "preview",
+      "kind": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate_sha",
+      "kind": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate-0",
+      "kind": "preview",
+      "outcome": "MATCH"
+     }
+    ],
+    "id": "P4",
+    "names": ""
+   },
+   {
+    "answer": "BINDING-MISMATCH",
+    "entries": [
+     {
+      "field": "scene",
+      "kind": "still",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "preview",
+      "kind": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate_sha",
+      "kind": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate-2",
+      "kind": "preview",
+      "outcome": "MISMATCH"
+     },
+     {
+      "field": "candidate-10",
+      "kind": "preview",
+      "outcome": "MISMATCH"
+     }
+    ],
+    "id": "P5",
+    "names": "preview.candidate-2"
+   },
+   {
+    "answer": "BINDING-UNKNOWN",
+    "entries": [
+     {
+      "field": "scene",
+      "kind": "still",
+      "outcome": "UNKNOWN"
+     },
+     {
+      "field": "preview",
+      "kind": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate_sha",
+      "kind": "preview",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "candidate-1",
+      "kind": "preview",
+      "outcome": "UNKNOWN"
+     }
+    ],
+    "id": "P6",
+    "names": "still.scene"
+   },
+   {
+    "answer": "none: no binding refusal",
+    "entries": [
+     {
+      "field": "of",
+      "kind": "undo",
+      "outcome": "MATCH"
+     },
+     {
+      "field": "scene",
+      "kind": "undo",
+      "outcome": "MATCH"
+     }
+    ],
+    "id": "P7",
+    "names": ""
+   },
+   {
+    "answer": "BINDING-MISMATCH",
+    "entries": [
+     {
+      "field": "of",
+      "kind": "undo",
+      "outcome": "MISMATCH"
+     },
+     {
+      "field": "scene",
+      "kind": "undo",
+      "outcome": "MATCH"
+     }
+    ],
+    "id": "P8",
+    "names": "undo.of"
+   }
+  ]
+ },
+ "preview id": {
+  "rule": "v0 evidence.preview.relied on: the sha256 of the canonical form (sorted keys, separators ',' and ':', ASCII) of {binding: {head, base_sha, candidate_sha} as recorded at its plan, drawn: the scene kept for each still drawn for it, keyed side-k (\"\" where none was kept), report_sha256}; the bytes json.dumps(obj, sort_keys=True, separators=(',', ':'), ensure_ascii=True), nothing added (OPEN-4, read from v0's text)",
+  "vectors": [
+   {
+    "bytes": "{\"binding\":{\"base_sha\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"candidate_sha\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"head\":\"d6b336b1cc1baab344d57c5aaa0cafa075c4aef4102845f0d714930d8e44e3cc\"},\"drawn\":{\"base-0\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"base-1\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"base-2\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"candidate-0\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"candidate-1\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"candidate-2\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\"},\"report_sha256\":\"f0c122d6b59d22cb55257dafb0f51ed1263e32cf6010c1cb5fed0129b2c75a3b\"}",
+    "id": "ID1",
+    "object": {
+     "binding": {
+      "base_sha": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "candidate_sha": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+      "head": "d6b336b1cc1baab344d57c5aaa0cafa075c4aef4102845f0d714930d8e44e3cc"
+     },
+     "drawn": {
+      "base-0": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "base-1": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "base-2": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "candidate-0": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+      "candidate-1": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "candidate-2": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0"
+     },
+     "report_sha256": "f0c122d6b59d22cb55257dafb0f51ed1263e32cf6010c1cb5fed0129b2c75a3b"
+    },
+    "preview_id": "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c",
+    "what": "A's finished preview in R-M4's state: planned at H_A over the base scene, three poses; its candidate-side still at pose 1 kept naming the base scene, every other still kept naming its side's scene"
+   },
+   {
+    "bytes": "{\"binding\":{\"base_sha\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"candidate_sha\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"head\":\"d6b336b1cc1baab344d57c5aaa0cafa075c4aef4102845f0d714930d8e44e3cc\"},\"drawn\":{\"base-0\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"base-1\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"base-2\":\"\",\"candidate-0\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"candidate-1\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"candidate-2\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\"},\"report_sha256\":\"f0c122d6b59d22cb55257dafb0f51ed1263e32cf6010c1cb5fed0129b2c75a3b\"}",
+    "id": "ID2",
+    "object": {
+     "binding": {
+      "base_sha": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "candidate_sha": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+      "head": "d6b336b1cc1baab344d57c5aaa0cafa075c4aef4102845f0d714930d8e44e3cc"
+     },
+     "drawn": {
+      "base-0": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "base-1": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "base-2": "",
+      "candidate-0": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+      "candidate-1": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "candidate-2": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0"
+     },
+     "report_sha256": "f0c122d6b59d22cb55257dafb0f51ed1263e32cf6010c1cb5fed0129b2c75a3b"
+    },
+    "preview_id": "d5d05d45a4d8b7c7442243d4c3859cfbe71f5ad86d8ca7e49091896d574b1102",
+    "what": "ID1's preview but its base-side still at pose 2 sent with no scene (kept \"\"): \"\" where none was kept, and an id of its own (two finishes that differ in anything declared have two ids)"
+   },
+   {
+    "bytes": "{\"binding\":{\"base_sha\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"candidate_sha\":\"084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b\",\"head\":\"77a430c1fc87a547d572c09eea9262dc30852bb7bea571d8cc5ce215eb3486ee\"},\"drawn\":{\"base-0\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"base-1\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"candidate-0\":\"084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b\",\"candidate-1\":\"084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b\"},\"report_sha256\":\"ff42fc926b11255445614233c502c839e56f3642d7564f67b5e5ea2d75f62b33\"}",
+    "id": "ID3",
+    "object": {
+     "binding": {
+      "base_sha": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "candidate_sha": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b",
+      "head": "77a430c1fc87a547d572c09eea9262dc30852bb7bea571d8cc5ce215eb3486ee"
+     },
+     "drawn": {
+      "base-0": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "base-1": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+      "candidate-0": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b",
+      "candidate-1": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b"
+     },
+     "report_sha256": "ff42fc926b11255445614233c502c839e56f3642d7564f67b5e5ea2d75f62b33"
+    },
+    "preview_id": "5e0db32b109bf812f0cd978f6a8fd95bb13462d5dfce0b933a96e7c0d3b881ad",
+    "what": "B2: A's finished preview planned at H0, two poses, every still kept naming its side's scene at H0"
+   }
+  ]
+ },
+ "record": {
+  "form": "json.dumps(record, sort_keys=True, separators=(',', ':'), ensure_ascii=True) as bytes, with no trailing newline; no clock, no request id (which carries the UTC second: it stays on the request's log line, beside the record and outside it); the same state and request give the same bytes",
+  "rule": "v0 decision record.content",
+  "vectors": [
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"BINDING-MISMATCH\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"expected\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"MISMATCH\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "admission of A, no preview named; the still declares the base scene; every existing check passes",
+    "id": "R-M1",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "BINDING-MISMATCH",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+       "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "MISMATCH"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M1",
+    "sha256": "30c4441a9a117fe13496f541ea9924de0df5e09bc9103a8b971b59ce02430afa"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"ADMIT\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"expected\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"MATCH\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "admission of A, no preview named; the still declares A's scene; every existing check passes",
+    "id": "R-M3",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "ADMIT",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "MATCH"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M3",
+    "sha256": "be39ab2f3de6cba2b1876216b38e4dfba75f6868c02be2b9f2b745d8aaffcc02"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"BINDING-MISMATCH\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"expected\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"MATCH\"},{\"declared\":\"0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c\",\"expected\":\"0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c\",\"field\":\"preview\",\"kind\":\"preview\",\"outcome\":\"MATCH\"},{\"declared\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"expected\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"field\":\"candidate_sha\",\"kind\":\"preview\",\"outcome\":\"MATCH\"},{\"declared\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"expected\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"field\":\"candidate-0\",\"kind\":\"preview\",\"outcome\":\"MATCH\"},{\"declared\":\"9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40\",\"expected\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"field\":\"candidate-1\",\"kind\":\"preview\",\"outcome\":\"MISMATCH\"},{\"declared\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"expected\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"field\":\"candidate-2\",\"kind\":\"preview\",\"outcome\":\"MATCH\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "admission of A naming its finished preview P_A; the still declares A's scene; the preview's recorded candidate scene A's; its candidate-side stills at poses 0, 1 and 2, pose 1 kept naming the base scene, poses 0 and 2 A's scene",
+    "id": "R-M4",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "BINDING-MISMATCH",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "MATCH"
+      },
+      {
+       "declared": "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c",
+       "expected": "0f39ce932d52fe12fe836fa1b66418926a96d5c3e7acf2ef6104715f4e39fe6c",
+       "field": "preview",
+       "kind": "preview",
+       "outcome": "MATCH"
+      },
+      {
+       "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "field": "candidate_sha",
+       "kind": "preview",
+       "outcome": "MATCH"
+      },
+      {
+       "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "field": "candidate-0",
+       "kind": "preview",
+       "outcome": "MATCH"
+      },
+      {
+       "declared": "9ea07b5b886bff3933e01a93c8ea19824f4ca40661ff7327a66b77330ee96b40",
+       "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "field": "candidate-1",
+       "kind": "preview",
+       "outcome": "MISMATCH"
+      },
+      {
+       "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "field": "candidate-2",
+       "kind": "preview",
+       "outcome": "MATCH"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M4",
+    "sha256": "27474a7805e0540a5a576263cbb651b36c6affe5bda7cbcddadeff054793d050"
+   },
+   {
+    "bytes": "{\"candidate\":\"\",\"contract\":\"BINDING-0\",\"decision\":\"BINDING-MISMATCH\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"10\",\"expected\":\"12\",\"field\":\"of\",\"kind\":\"undo\",\"outcome\":\"MISMATCH\"},{\"declared\":\"479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef\",\"expected\":\"479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef\",\"field\":\"scene\",\"kind\":\"undo\",\"outcome\":\"MATCH\"}],\"intent_sha256\":\"\",\"of\":\"12\",\"operation\":\"undo\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "undo; the target #12, declared of \"10\" (an earlier admission), scene S_w as shown and at the undo; every existing check passes",
+    "id": "R-M6",
+    "record": {
+     "candidate": "",
+     "contract": "BINDING-0",
+     "decision": "BINDING-MISMATCH",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "10",
+       "expected": "12",
+       "field": "of",
+       "kind": "undo",
+       "outcome": "MISMATCH"
+      },
+      {
+       "declared": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+       "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+       "field": "scene",
+       "kind": "undo",
+       "outcome": "MATCH"
+      }
+     ],
+     "intent_sha256": "",
+     "of": "12",
+     "operation": "undo",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M6",
+    "sha256": "51659a8b3706777320fb357e7527989c17aef5272979b3ade7799113c0496707"
+   },
+   {
+    "bytes": "{\"candidate\":\"\",\"contract\":\"BINDING-0\",\"decision\":\"UNDONE\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"12\",\"expected\":\"12\",\"field\":\"of\",\"kind\":\"undo\",\"outcome\":\"MATCH\"},{\"declared\":\"479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef\",\"expected\":\"479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef\",\"field\":\"scene\",\"kind\":\"undo\",\"outcome\":\"MATCH\"}],\"intent_sha256\":\"\",\"of\":\"12\",\"operation\":\"undo\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "undo; the target #12, declared of \"12\", scene S_w as shown and at the undo; every existing check passes",
+    "id": "R-M6b",
+    "record": {
+     "candidate": "",
+     "contract": "BINDING-0",
+     "decision": "UNDONE",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "12",
+       "expected": "12",
+       "field": "of",
+       "kind": "undo",
+       "outcome": "MATCH"
+      },
+      {
+       "declared": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+       "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+       "field": "scene",
+       "kind": "undo",
+       "outcome": "MATCH"
+      }
+     ],
+     "intent_sha256": "",
+     "of": "12",
+     "operation": "undo",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M6b",
+    "sha256": "9889c6deb4905c8c635bfa1fce069a127434e7f28ab1420291b23c263a1b2436"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"BINDING-UNKNOWN\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"\",\"expected\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"UNKNOWN\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "admission of A, no preview named; the still sent with no scene (kept \"\"); every existing check passes",
+    "id": "R-M8",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "BINDING-UNKNOWN",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "",
+       "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "UNKNOWN"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M8",
+    "sha256": "06a3345c2464dcaa40aed8834f492be85787378100f16cf32660f3678592036d"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"BINDING-UNKNOWN\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"expected\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"MATCH\"},{\"declared\":\"\",\"expected\":\"\",\"field\":\"preview\",\"kind\":\"preview\",\"outcome\":\"UNKNOWN\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "admission of A with `preview`: null; the still declares A's scene; every existing check passes",
+    "id": "R-M9",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "BINDING-UNKNOWN",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "expected": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "MATCH"
+      },
+      {
+       "declared": "",
+       "expected": "",
+       "field": "preview",
+       "kind": "preview",
+       "outcome": "UNKNOWN"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M9",
+    "sha256": "d817c91293cd05c61d42378a2aa39ae3c95c880891113715ad48355cda34992a"
+   },
+   {
+    "bytes": "{\"candidate\":\"\",\"contract\":\"BINDING-0\",\"decision\":\"BINDING-UNKNOWN\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"\",\"expected\":\"12\",\"field\":\"of\",\"kind\":\"undo\",\"outcome\":\"UNKNOWN\"},{\"declared\":\"479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef\",\"expected\":\"479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef\",\"field\":\"scene\",\"kind\":\"undo\",\"outcome\":\"MATCH\"}],\"intent_sha256\":\"\",\"of\":\"12\",\"operation\":\"undo\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "undo without `of`; the target #12; scene S_w as shown and at the undo; every existing check passes",
+    "id": "R-M10",
+    "record": {
+     "candidate": "",
+     "contract": "BINDING-0",
+     "decision": "BINDING-UNKNOWN",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "",
+       "expected": "12",
+       "field": "of",
+       "kind": "undo",
+       "outcome": "UNKNOWN"
+      },
+      {
+       "declared": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+       "expected": "479baca07ab88ba54ae5573ac0fa105a3051b70fb370da4aa496830374a3e5ef",
+       "field": "scene",
+       "kind": "undo",
+       "outcome": "MATCH"
+      }
+     ],
+     "intent_sha256": "",
+     "of": "12",
+     "operation": "undo",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M10",
+    "sha256": "c393a32a6774fa5684b60675d80d5a49e8fa345dc429b56314afc90dae534364"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"STUDIO-STALE\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b\",\"expected\":\"\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"not reached\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "B2 honest: admission of A, no preview named; the still declared S_A0 at H0; the head moved to H1; STUDIO-STALE refuses first",
+    "id": "R-M13",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "STUDIO-STALE",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b",
+       "expected": "",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "not reached"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M13",
+    "sha256": "309a30cc5afbb15f107ddba222728f0720353ce1d44f561b24719c62223fecd2"
+   },
+   {
+    "bytes": "{\"candidate\":\"\",\"contract\":\"BINDING-0\",\"decision\":\"BINDING-MISMATCH\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"12\",\"expected\":\"12\",\"field\":\"of\",\"kind\":\"undo\",\"outcome\":\"MATCH\"},{\"declared\":\"951e5a1d703953cfa6a7f4799a541b4d17f35daca0fb75f00176f5cd711243bb\",\"expected\":\"247a67ac40f19f33fba545d9b1fdc2b8d4a941464eb96c92eb6d0eebf922b7a9\",\"field\":\"scene\",\"kind\":\"undo\",\"outcome\":\"MISMATCH\"}],\"intent_sha256\":\"\",\"of\":\"12\",\"operation\":\"undo\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "B2-undo: the target #12; /undo.json read (of \"12\", scene S_w0); a rebase recorded through the director moved the world to S_w1, the target unchanged; Undo with of \"12\" and scene S_w0",
+    "id": "R-B2U",
+    "record": {
+     "candidate": "",
+     "contract": "BINDING-0",
+     "decision": "BINDING-MISMATCH",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "12",
+       "expected": "12",
+       "field": "of",
+       "kind": "undo",
+       "outcome": "MATCH"
+      },
+      {
+       "declared": "951e5a1d703953cfa6a7f4799a541b4d17f35daca0fb75f00176f5cd711243bb",
+       "expected": "247a67ac40f19f33fba545d9b1fdc2b8d4a941464eb96c92eb6d0eebf922b7a9",
+       "field": "scene",
+       "kind": "undo",
+       "outcome": "MISMATCH"
+      }
+     ],
+     "intent_sha256": "",
+     "of": "12",
+     "operation": "undo",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M13u",
+    "sha256": "87aed9398872632ff758b45aca21a09019e5297dce9c03e46a26cdea059caee4"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"STUDIO-FAILED\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"expected\":\"\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"not reached\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "admission of A, no preview named, the still declaring A's scene; the press's handler raises one of failures() before the binding check is reached: answered STUDIO-FAILED",
+    "id": "R-FAILED",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "STUDIO-FAILED",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "expected": "",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "not reached"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "(spec §5)",
+    "sha256": "0d929eab3018f53185b741b547c4403c3993b5a730c04feee885108bf539f89c"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"STUDIO-STALE\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b\",\"expected\":\"\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"not reached\"},{\"declared\":\"5e0db32b109bf812f0cd978f6a8fd95bb13462d5dfce0b933a96e7c0d3b881ad\",\"expected\":\"\",\"field\":\"preview\",\"kind\":\"preview\",\"outcome\":\"not reached\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "B2-preview honest: admission of A naming P_A0, its finished preview planned at H0 (vector ID3: recorded candidate scene S_A0, candidate-side stills at poses 0 and 1 kept naming S_A0); the still declared S_A0; the head moved to H1; STUDIO-STALE refuses first. The name alone is listed, though it names a finished preview of A: listing its recorded candidate scene or its stills would need the name's own comparison (whether it names a finished preview of the candidate), made after the first refusal (OPEN-3, read from v0's text)",
+    "id": "R-M13p",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "STUDIO-STALE",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b",
+       "expected": "",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "not reached"
+      },
+      {
+       "declared": "5e0db32b109bf812f0cd978f6a8fd95bb13462d5dfce0b933a96e7c0d3b881ad",
+       "expected": "",
+       "field": "preview",
+       "kind": "preview",
+       "outcome": "not reached"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M13p",
+    "sha256": "0bca8b20237d53cabe7c27d8c69e3185e66e957ab0c852ebe2aa397157532b97"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"BINDING-MISMATCH\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b\",\"expected\":\"e42ac615a9128d240094175f265d5ce4c34c20c9b91201ea14a7b0e85623743e\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"MISMATCH\"},{\"declared\":\"5e0db32b109bf812f0cd978f6a8fd95bb13462d5dfce0b933a96e7c0d3b881ad\",\"expected\":\"5e0db32b109bf812f0cd978f6a8fd95bb13462d5dfce0b933a96e7c0d3b881ad\",\"field\":\"preview\",\"kind\":\"preview\",\"outcome\":\"MATCH\"},{\"declared\":\"084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b\",\"expected\":\"e42ac615a9128d240094175f265d5ce4c34c20c9b91201ea14a7b0e85623743e\",\"field\":\"candidate_sha\",\"kind\":\"preview\",\"outcome\":\"MISMATCH\"},{\"declared\":\"084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b\",\"expected\":\"e42ac615a9128d240094175f265d5ce4c34c20c9b91201ea14a7b0e85623743e\",\"field\":\"candidate-0\",\"kind\":\"preview\",\"outcome\":\"MISMATCH\"},{\"declared\":\"084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b\",\"expected\":\"e42ac615a9128d240094175f265d5ce4c34c20c9b91201ea14a7b0e85623743e\",\"field\":\"candidate-1\",\"kind\":\"preview\",\"outcome\":\"MISMATCH\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "R-M13p's state with STUDIO-STALE's comparison skipped (stale-skipped): every field compared against the admission's own evaluation's scene at H1, S_A1; BINDING-MISMATCH naming still.scene first",
+    "id": "R-M13p-S",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "BINDING-MISMATCH",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b",
+       "expected": "e42ac615a9128d240094175f265d5ce4c34c20c9b91201ea14a7b0e85623743e",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "MISMATCH"
+      },
+      {
+       "declared": "5e0db32b109bf812f0cd978f6a8fd95bb13462d5dfce0b933a96e7c0d3b881ad",
+       "expected": "5e0db32b109bf812f0cd978f6a8fd95bb13462d5dfce0b933a96e7c0d3b881ad",
+       "field": "preview",
+       "kind": "preview",
+       "outcome": "MATCH"
+      },
+      {
+       "declared": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b",
+       "expected": "e42ac615a9128d240094175f265d5ce4c34c20c9b91201ea14a7b0e85623743e",
+       "field": "candidate_sha",
+       "kind": "preview",
+       "outcome": "MISMATCH"
+      },
+      {
+       "declared": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b",
+       "expected": "e42ac615a9128d240094175f265d5ce4c34c20c9b91201ea14a7b0e85623743e",
+       "field": "candidate-0",
+       "kind": "preview",
+       "outcome": "MISMATCH"
+      },
+      {
+       "declared": "084fecdd4d9039c3e33eaf6c0268d93c996f4ac814495ee6716b535e85edcf3b",
+       "expected": "e42ac615a9128d240094175f265d5ce4c34c20c9b91201ea14a7b0e85623743e",
+       "field": "candidate-1",
+       "kind": "preview",
+       "outcome": "MISMATCH"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M13p",
+    "sha256": "1d7f9b1366e2b48b23bbbc909288ed1fc45a7d5dba669ead7c1f51da2260790a"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"STUDIO-STILL-FLAGGED\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"expected\":\"\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"not reached\"},{\"declared\":\"\",\"expected\":\"\",\"field\":\"preview\",\"kind\":\"preview\",\"outcome\":\"not reached\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "admission of A, its still flagged and not admitted despite, the still declaring A's scene, `preview`: null: STUDIO-STILL-FLAGGED refuses first; the name alone is listed, whatever it names, declared \"\" (not a JSON string) (OPEN-3, read from v0's text)",
+    "id": "R-NR-NULL",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "STUDIO-STILL-FLAGGED",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "expected": "",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "not reached"
+      },
+      {
+       "declared": "",
+       "expected": "",
+       "field": "preview",
+       "kind": "preview",
+       "outcome": "not reached"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "(spec §5; OPEN-3)",
+    "sha256": "cf73e700fd296fab154b7a9f1b53187fa7d8094cac87db38d85fdae8a50703f0"
+   },
+   {
+    "bytes": "{\"candidate\":\"A\",\"contract\":\"BINDING-0\",\"decision\":\"STUDIO-STILL-FLAGGED\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0\",\"expected\":\"\",\"field\":\"scene\",\"kind\":\"still\",\"outcome\":\"not reached\"},{\"declared\":\"be31f23c36bcfc632f8d621fe3fdc015d40d45cc07e5ac512848a8d5bbc78c7c\",\"expected\":\"\",\"field\":\"preview\",\"kind\":\"preview\",\"outcome\":\"not reached\"}],\"intent_sha256\":\"febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020\",\"of\":\"\",\"operation\":\"admit\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "as R-NR-NULL, `preview`: P_B (well formed): the name alone is listed, whatever it names, declared as sent (OPEN-3, read from v0's text)",
+    "id": "R-NR-OTHER",
+    "record": {
+     "candidate": "A",
+     "contract": "BINDING-0",
+     "decision": "STUDIO-STILL-FLAGGED",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "d61421b92236a449c44dd86aeb74aff3cf3a2b6c93877767f2d023ff14e97ce0",
+       "expected": "",
+       "field": "scene",
+       "kind": "still",
+       "outcome": "not reached"
+      },
+      {
+       "declared": "be31f23c36bcfc632f8d621fe3fdc015d40d45cc07e5ac512848a8d5bbc78c7c",
+       "expected": "",
+       "field": "preview",
+       "kind": "preview",
+       "outcome": "not reached"
+      }
+     ],
+     "intent_sha256": "febcefbe8041b14f8d2c4e67ea562a7bd6e023c77091f329dcffd7ee3b580020",
+     "of": "",
+     "operation": "admit",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "(spec §5; OPEN-3)",
+    "sha256": "25eb661fc3ff642ccdcbf6b4b04c1489958383a422478f7a12cb50657a8cc285"
+   },
+   {
+    "bytes": "{\"candidate\":\"\",\"contract\":\"BINDING-0\",\"decision\":\"STUDIO-NOT-UNDOABLE\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"12\",\"expected\":\"\",\"field\":\"of\",\"kind\":\"undo\",\"outcome\":\"not reached\"},{\"declared\":\"8aab5b13014e739ef36d215938559e0467cea626460ebd3d8f9fc385b20620f4\",\"expected\":\"\",\"field\":\"scene\",\"kind\":\"undo\",\"outcome\":\"not reached\"}],\"intent_sha256\":\"\",\"of\":\"12\",\"operation\":\"undo\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "undo; the target #12 a layout admission; of \"12\" and scene S_wL (the scene the files export as they stand after #12, the scene at the undo by v0's identity), both bound and posted directly (GET /undo.json gives no of and scene \"\" there): STUDIO-NOT-UNDOABLE refuses first, the binding not reached (OPEN-5, read from v0's text)",
+    "id": "R-B4-UNDO-LAYOUT",
+    "record": {
+     "candidate": "",
+     "contract": "BINDING-0",
+     "decision": "STUDIO-NOT-UNDOABLE",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "12",
+       "expected": "",
+       "field": "of",
+       "kind": "undo",
+       "outcome": "not reached"
+      },
+      {
+       "declared": "8aab5b13014e739ef36d215938559e0467cea626460ebd3d8f9fc385b20620f4",
+       "expected": "",
+       "field": "scene",
+       "kind": "undo",
+       "outcome": "not reached"
+      }
+     ],
+     "intent_sha256": "",
+     "of": "12",
+     "operation": "undo",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M11",
+    "sha256": "d5d9137a3a97b400da7469bbbb67fda463af97f0dca238f48f011d311237ee77"
+   },
+   {
+    "bytes": "{\"candidate\":\"\",\"contract\":\"BINDING-0\",\"decision\":\"STUDIO-NOTHING-TO-UNDO\",\"director_code\":\"\",\"evidence\":[{\"declared\":\"10\",\"expected\":\"\",\"field\":\"of\",\"kind\":\"undo\",\"outcome\":\"not reached\"},{\"declared\":\"\",\"expected\":\"\",\"field\":\"scene\",\"kind\":\"undo\",\"outcome\":\"not reached\"}],\"intent_sha256\":\"\",\"of\":\"\",\"operation\":\"undo\",\"sha256\":\"cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85\",\"version\":0}",
+    "facts": "undo with no target (every admission undone, or an undo): of \"10\" declared, scene \"\" as GET /undo.json gives it there; STUDIO-NOTHING-TO-UNDO refuses first; the record's of \"\" (an undo with none)",
+    "id": "R-NOTHING",
+    "record": {
+     "candidate": "",
+     "contract": "BINDING-0",
+     "decision": "STUDIO-NOTHING-TO-UNDO",
+     "director_code": "",
+     "evidence": [
+      {
+       "declared": "10",
+       "expected": "",
+       "field": "of",
+       "kind": "undo",
+       "outcome": "not reached"
+      },
+      {
+       "declared": "",
+       "expected": "",
+       "field": "scene",
+       "kind": "undo",
+       "outcome": "not reached"
+      }
+     ],
+     "intent_sha256": "",
+     "of": "",
+     "operation": "undo",
+     "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+     "version": 0
+    },
+    "row": "M16",
+    "sha256": "989671313d5dcf18ed06771639c2dc7e3f9ac7c216824b062402b7fd7ac995ea"
+   }
+  ]
+ },
+ "stand-ins": "every fact's value is a stand-in, sha256(\"BINDING-0 0253 vector fact: \" + its name) in ASCII, and never a value of any live state; P_A and P_A0 are the ids vectors ID1 and ID3 compute over those stand-ins; the undo's sequence numbers in the vectors, N = \"12\" and M = \"10\", are stand-ins too; the id vectors' pose counts (three and two) are the vectors' own (a live preview has four to eight poses: art/camera.py MIN_POSES and POSES); each label says what the symbol stands for in a live row",
+ "status": "FROZEN: OPEN-1, OPEN-2, OPEN-3, OPEN-4, OPEN-5 and OPEN-7 read from v0's text (0253-matrix.json 'resolved'); nothing open",
+ "what": "BINDING-0's 0253 conformance vectors (spec v2 §3 a-e, and v0's preview id), frozen before the guard is built: v0's prose made executable, held only by the host's pure compare, piece, press, record and id functions (STUDIO's M20 rows) and, for the keeping, through the routes (where keeping is syntactic and takes the stand-ins as they are); a live row is never held to a vector's bytes (0253-matrix.json 'record')"
+}

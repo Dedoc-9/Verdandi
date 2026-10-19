@@ -1,0 +1,2896 @@
+{
+ "R5 census on 1381b31": {
+  "keys": 282,
+  "measured": "MEASURED here, on his machine by the agent, in a clone of 1381b31: tools/rung.py plant_rows over its four suites",
+  "passing": 282,
+  "sorted keys sha256": "9aad6cfde3a8cc7389ed165247a719f561914d5b3447d9c66c7ded1285580d7c",
+  "studio keys R5 reads as plant rows": 15,
+  "studio keys beginning 'BINDING plant: '": 0,
+  "this matrix's plant keys among them": 0
+ },
+ "answer when not reached": "spec §5: where an earlier check refuses, the answer carries binding {\"checked\": false, \"why\": <the earlier code>} and the record lists each piece relied on with its declared value, \"expected\" \"\" and \"outcome\" \"not reached\"",
+ "cites": {
+  "contract": "BINDING-0",
+  "file": "art/director/bindings/BINDING-0.v0.json",
+  "rulings": [
+   {
+    "file": "ruling-0253.txt",
+    "sha256": "8552666a1e3903f18ec9241feee63518388b54175cf7c901b3bcc44dc34795e0",
+    "status": "governing: his ruling of 2026-10-18 on 0253 (BIND-CAUSAL-0, BIND-NOTSUFFICIENT-0, BIND-ORDER-0, BIND-COUNT-0, the two safeguards, the terminology correction, the 0253 -> 0254 window)"
+   },
+   {
+    "file": "ruling-0253-questions-2026-10-19.txt",
+    "sha256": "df5429a951c2e25507e178e9fb71a87a236e4251688fa1b7f2dbc13bbcacef8e",
+    "status": "governing: his rulings of 2026-10-19 on the spec's three open questions (§12), each the drafted, first option; confirmed as governing by ruling-0253-confirmation-2026-10-19.txt; recorded as his rulings on 0253, never as a change to BINDING-0 v0 itself"
+   },
+   {
+    "file": "ruling-0253-confirmation-2026-10-19.txt",
+    "sha256": "45990ee6dbd814f5f9c17de8b55402b09f0e25e89904e71ba7942a64dfff821f",
+    "status": "governing, cited beside the questions' rulings: asked whether those rulings govern 0253, he answered \"Yes, they govern (Recommended)\""
+   },
+   {
+    "file": "ruling-0253-correction-2026-10-19.txt",
+    "sha256": "9692ac8fea4e2e447e799362a3a63644e22c42ae6e3b8e8d5f4123a95582da82",
+    "status": "recorded and SUPERSEDED as to the three questions: his message of 2026-10-19 rested on a misreading (that the drafted options had been ruled out) and the confirmation supersedes it; its execution order (0253, then 0254, then the subsequent repairs) stands"
+   }
+  ],
+  "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+  "spec": {
+   "file": "spec-0253-v2.md",
+   "sha256": "da9b4a883faa6d1b717d6723b7b97ee7b5e5bea5933634cdfc8a4cdf2f7c8211",
+   "status": "the accepted spec (draft v2); where it and v0 disagree, v0 wins and that is said"
+  },
+  "version": 0
+ },
+ "every run": {
+  "the log line": "on every honest run whose record is a record (M1, M3, M3s, M4, M4b, M4k, M6, M6b, M8, M9, M10, M10b, M11's honest runs, M13, M13p, M13u, M14, M16, M23, M24): exactly one line appended to the request's records/requests.jsonl for the press (for a refusal that writes no line today, STUDIO-STALE, STUDIO-NO-STILL and the director's refusals among them, a new line), carrying the decision record; the line's record re-serialized in v0's form (json.dumps sort_keys, separators ',' and ':', ensure_ascii) is byte for byte the answer's record in the same form; the request id and the clock beside the record on that line, never inside it; the account and the dry runs write no line",
+  "the message": "on every run that names a field (M1, M3s's refusal, M4, M4k's refusal, M6, M8, M9, M10, M10b, M13p's stale-skipped run, M13u, M14, M23): the answer's message contains the named kind.field; for BINDING-MISMATCH also that field's declared value and its expected value, exactly as the record's entry gives them; for BINDING-UNKNOWN it says the value is absent or not well formed (M20's press vectors carry no values and stay as they are)",
+  "the preview id": "POST /studio/preview/finish's answer carries preview_id, and the request's preview log line (decision \"preview\") written by that finish carries the same preview_id; both equal the host's pure id function over that preview's own declared values (its recorded binding, its drawn scenes, the sha256 of its preview.report.json), held as M20's id run holds the vectors (M4, M4b and M4k's states)"
+ },
+ "his confirmation that they govern": {
+  "his answer": "Yes, they govern (Recommended)",
+  "the question put to him (the agent's words, verbatim)": "There's a misreading in the last note. I never said the drafted options were ruled out. What I wrote was \"He ruled the drafted option on all three questions\", meaning you chose them. Your recorded rulings are: (1) no runtime register read at the press; host pin checked against the register's v0 line; planted mismatched pin refused. (2) The page never names a preview in 0253; STUDIO's own rows cover the named-preview path. (3) FLAGSHIP-0 never names its preview. Do these rulings govern 0253, so I freeze the matrix and build the guard on them?"
+ },
+ "his message of 2026-10-19 (superseded as to the three questions; its order stands)": {
+  "the correction": "One correction, though: I previously ruled for the first option in all three questions, but you've now said those drafted options were ruled out. So my previous rulings should not be treated as the governing decisions.",
+  "the distinction": "The governing distinction: preparation can happen in parallel; the committed repair sequence remains 0253 → 0254 → subsequent repairs.",
+  "the order, 0253": "1. 0253: resolve the three questions using your actual rulings, then freeze the matrix and implement the guard in the agreed commit order."
+ },
+ "his rulings on the three questions (governing)": {
+  "1": "1. Register mismatch at Admit or Undo: LOCK the draft.\nDo not add a runtime register-file read or a new refusal outcome at the press. Pin BINDING-0 v0 in the host, verify that the host pin matches the registered v0 line, and require the planted mismatched-pin case to refuse. Run `binding.py check` in the full check as proposed.\nThe boundary is important: this establishes agreement between the host's declared pin and the register. It does not establish that every runtime decision independently re-reads the register. That stronger behavior would change the contract and require BINDING-0 v1.",
+  "2": "2. Should the page name a preview on Admit? LOCK the draft: never in 0253.\nKeep the existing rule: preview binding is checked when the admission names a preview by ID. Do not change `play.js` to automatically name the preview merely because a card displays one.\nA preview being visible is not, by itself, proof that the designer intends to rely on that preview as admission evidence. Automatically binding it could create new refusals without establishing that the preview was part of the admission decision.\nThe named-preview path must still have direct row coverage. STUDIO-owned tests can exercise it without changing the normal page workflow.",
+  "3": "3. Should FLAGSHIP-0 name the preview it verified? LOCK the draft: never.\nKeep FLAGSHIP-0's rule that studio admission does not read its evidence. Do not amend the row to name the preview.\nThis preserves the distinction between an external procedure's evidence and the authority decision made by the studio. If a future workflow deliberately makes admission depend on a preview, that should be a separately specified contract—not an implicit change to FLAGSHIP-0.",
+  "all three": "My rulings are the first option in all three cases, with one important qualification on the preview path.",
+  "how they are recorded": "1. Record these three rulings exactly, without treating them as changes to BINDING-0 v0 itself."
+ },
+ "his words": {
+  "BIND-CAUSAL-0": "With enforcement removed, the motivating wrong-scene admission must reproduce. With enforcement restored, the same case must refuse for the binding-specific reason. A positive-only plant proves execution, not causality.",
+  "BIND-COUNT-0": "Measure the classifier count before and after adding the registered binding plants. Require the expected increase and verify that every new plant is actually counted—not merely executed.",
+  "BIND-NOTSUFFICIENT-0": "A correctly matched binding must not bypass existing admission checks. Use a concrete candidate that still fails an independent, registered requirement.",
+  "BIND-ORDER-0": "Define the relevant refusal precedence and plant a candidate that violates two checks at once. Require the earlier check’s result, preserving STALE-first behavior.",
+  "not_checked explicit": "`not_checked` must be explicit. If STALE refuses first, the verdict should record that the binding check was not reached. Otherwise, downstream evidence can mistake an unexamined binding for a verified match.",
+  "the freeze": "Then freeze the 0253 test matrix before implementing the guard.",
+  "the registered rule the authority": "The registered rule must remain the authority for comparison semantics. Before duplicating the comparison in production code, establish how conformance to the registered bytes is tested. The implementation must not quietly become the definition of what counts as a match.",
+  "the window": "I agree with declaring the temporary cost in advance: if 0253 correctly refuses an inverse whose binding does not satisfy BINDING-0, the flagship undo path may refuse until 0254 repairs it. Measure the affected legitimate routes and document the expected temporary refusal. Do not weaken 0253 to keep the chain green.",
+  "the window, 0254": "0254 must repair the inverse against the existing registered v0 contract. If the repair exposes a genuine contract defect, register v1 before code governed by that new version; do not edit v0 in place.",
+  "three layers": "The 0253 specification should distinguish registration errors, binding states (`MATCH`, `MISMATCH`, `UNKNOWN`), and host admission refusals before defining its enforcement matrix."
+ },
+ "layers": {
+  "binding state": "MATCH, MISMATCH, UNKNOWN; in the decision record also \"not reached\" (no comparison was made)",
+  "host answer": "the existing codes and v0's two, BINDING-MISMATCH and BINDING-UNKNOWN (no director code; never STUDIO-DIRECTOR-REFUSED)",
+  "registration": "the reader's codes (BINDING-REGISTER, BINDING-TWICE, BINDING-ABSENT, BINDING-STALE, BINDING-UNREADABLE, BINDING-NOT-CANONICAL, BINDING-CASES, BINDING-OUTCOMES, BINDING-UNREGISTERED): art/director/binding.py check; never an admission answer"
+ },
+ "ledger column": "ledger: the ledger's line count after the press's answer minus before the POST, every line counted, the fixture's own writers included (a row holds the new lines' kinds where it names them); brief: the art brief's bytes after the answer against before the POST",
+ "open": [],
+ "plant rows": {
+  "R5 key": "'art/studio.py selftest | ' + the name (tools/rung.py NAMED_PLANT: a bracketed row naming a plant, up to its first ' — '; no world prefix: no '== NAME' header line is printed before these rows in STUDIO's output)",
+  "R5 key holds": "the key is 'art/studio.py selftest | ' + the name only while the rule's detail clause holds",
+  "k": 34,
+  "names": [
+   "BINDING plant: the binding check removed, B1 still (the motivating wrong-scene admission reproduced)",
+   "BINDING plant: the binding check removed, B1 preview",
+   "BINDING plant: the binding check removed, B1 undo (#N undone while #M was declared)",
+   "BINDING plant: the binding check removed, B3 still",
+   "BINDING plant: the binding check removed, B3 preview",
+   "BINDING plant: the binding check removed, B3 undo",
+   "BINDING plant: a matched binding taken as sufficient, B4-OUTSIDE",
+   "BINDING plant: a matched binding taken as sufficient, B4-FLAGGED",
+   "BINDING plant: a matched binding taken as sufficient, B4-STALE",
+   "BINDING plant: STUDIO-STALE's comparison skipped, B2 still (the binding check itself refuses BINDING-MISMATCH)",
+   "BINDING plant: STUDIO-STALE's comparison skipped and the binding check removed, B2 still (admitted: no other guard refuses it)",
+   "BINDING plant: STUDIO-STALE's comparison skipped, B2 preview (BINDING-MISMATCH naming still.scene first)",
+   "BINDING plant: STUDIO-STALE's comparison skipped and the binding check removed, B2 preview (admitted: no other guard refuses it)",
+   "BINDING plant: the binding check removed, B2 undo (undone over a moved world)",
+   "BINDING plant: the binding check placed first, STUDIO-NO-STILL",
+   "BINDING plant: the binding check placed first, STUDIO-NOT-ADMISSIBLE",
+   "BINDING plant: the binding check placed first, ADMIT-OUTSIDE",
+   "BINDING plant: the binding check placed first, STUDIO-STILL-FLAGGED",
+   "BINDING plant: the binding check placed first, LEDGER-UNLOGGED",
+   "BINDING plant: the binding check placed first, STUDIO-STALE",
+   "BINDING plant: the binding check placed first, STUDIO-NOT-UNDOABLE layout",
+   "BINDING plant: the binding check placed first, STUDIO-NOT-UNDOABLE inverse",
+   "BINDING plant: the binding check placed first, STUDIO-NOTHING-TO-UNDO",
+   "BINDING plant: the binding check placed first, HEAD-MOVED at the commit",
+   "BINDING plant: the binding check placed first, B2 still (stale first)",
+   "BINDING plant: a binding not reached recorded as a match (B2 still, stale first)",
+   "BINDING plant: the account claims a binding checked or matched before the press",
+   "BINDING plant: a mismatch read as a match (M1)",
+   "BINDING plant: unknown read as a match, B3 still (M8)",
+   "BINDING plant: unknown read as a match, B3 preview (M9)",
+   "BINDING plant: unknown read as a match, B3 undo (M10)",
+   "BINDING plant: the evidence refreshed at the press (M1)",
+   "BINDING plant: the kept scene case-folded (K1)",
+   "BINDING plant: the host's pinned sha256 differs from the register's"
+  ],
+  "rule": "every plant row's printed name begins 'BINDING plant: '; no other row the matrix names, and no row that 0253 adds to any suite, is read by R5 as a plant row (tools/rung.py PLANT_ROW, a row opening 'plant: ', or NAMED_PLANT, a bracketed row containing \\bplant\\b, up to its first ' — '); every row R5 reads on 1381b31 (the census's keys, STUDIO's fifteen among them) keeps its printed key unchanged, whatever 0253 changes in its code (M21: nothing gone); every plant row prints a detail after ' — ' whose first line, stripped, is not empty (tools/rung.py parse_rows strips the line, and a detail blank there leaves ' —' in the key: commit 2 refuses such a detail at run time in the BINDING rows' wrapper); a name contains no ' — ' and no newline and neither starts nor ends with whitespace; every matrix row runs in STUDIO (play.studio_selftest, which runs page_dash.studio_rows), never in PAGE-CARDS"
+ },
+ "record": "each run's record is v0's decision record without its constant fields (contract BINDING-0, version 0, sha256 cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85); \"none\" where the switch removes the check that makes it. A live row is held to its matrix record with its own live values substituted for the symbols (S_*, I_A, H_*, P_*, N, M, and n and K as the live preview has them); its bytes are held to the host's pure record function applied to those values, and its preview id to the pure id function applied to that preview's own declared values (binding, drawn, report_sha256). A row's 'vector' names the record vector that gives its form ('form: R-...'); live bytes are never compared to a vector's bytes, whose facts are stand-ins",
+ "resolved": [
+  {
+   "his words": {
+    "1": "1. Register mismatch at Admit or Undo: LOCK the draft.\nDo not add a runtime register-file read or a new refusal outcome at the press. Pin BINDING-0 v0 in the host, verify that the host pin matches the registered v0 line, and require the planted mismatched-pin case to refuse. Run `binding.py check` in the full check as proposed.\nThe boundary is important: this establishes agreement between the host's declared pin and the register. It does not establish that every runtime decision independently re-reads the register. That stronger behavior would change the contract and require BINDING-0 v1.",
+    "2": "2. Should the page name a preview on Admit? LOCK the draft: never in 0253.\nKeep the existing rule: preview binding is checked when the admission names a preview by ID. Do not change `play.js` to automatically name the preview merely because a card displays one.\nA preview being visible is not, by itself, proof that the designer intends to rely on that preview as admission evidence. Automatically binding it could create new refusals without establishing that the preview was part of the admission decision.\nThe named-preview path must still have direct row coverage. STUDIO-owned tests can exercise it without changing the normal page workflow.",
+    "3": "3. Should FLAGSHIP-0 name the preview it verified? LOCK the draft: never.\nKeep FLAGSHIP-0's rule that studio admission does not read its evidence. Do not amend the row to name the preview.\nThis preserves the distinction between an external procedure's evidence and the authority decision made by the studio. If a future workflow deliberately makes admission depend on a preview, that should be a separately specified contract—not an implicit change to FLAGSHIP-0.",
+    "confirmation": "Yes, they govern (Recommended)"
+   },
+   "id": "OPEN-Q",
+   "resolved": "by his rulings (ruling-0253-questions-2026-10-19.txt), each the drafted, first option, confirmed as governing (ruling-0253-confirmation-2026-10-19.txt); his message that they should not be treated as the governing decisions (ruling-0253-correction-2026-10-19.txt) rested on a misreading and is superseded",
+   "so": [
+    "M20p stands as drafted, both rows: the host pins BINDING-0 version 0 and its sha256; no register read at a press and no new refusal outcome; the pin held against the register's version-0 line, its plant (a mismatched pin) refused; k counts its plant row",
+    "M22: no route names a preview in 0253 but STUDIO's own rows (M4, M4b, M5, M9, M13p), which hold the named-preview path; PAGE, PAGE-CARDS, PAGE-WORLDS and the desktop page (art/web/play.js) name none; FLAGSHIP-0 names none, its procedure and its self-test unchanged in that"
+   ],
+   "v0 agrees": [
+    {
+     "v0": "evidence/preview/relied on",
+     "words": "Only a request whose JSON body has no key `preview` names none, and then no preview is relied on; no admission needs a preview"
+    },
+    {
+     "v0": "evidence/preview/content",
+     "words": "PREVIEW-0 survives"
+    },
+    {
+     "v0": "compatibility",
+     "words": "a fork implements BINDING-0 version 0 exactly or names a new contract version"
+    }
+   ],
+   "what": "the spec's three open questions (§12): a refusal at runtime when the register does not hold v0 as the host pins it; whether the page names a card's preview with Admit; whether FLAGSHIP-0 names the preview it verified"
+  },
+  {
+   "id": "OPEN-1",
+   "resolved": "v0's 'query parameter' is read as application/x-www-form-urlencoded defines one: the query's parts split on '&', each a name and a value split at its first '=', '+' a space and percent escapes decoded in both; v0 keeps the first value, so a blank first value (scene=) is the first value and \"\" is kept (vector K12). The same reading decides OPEN-2 (values decoded) and OPEN-7 (names decoded; a name with no '=' has the empty value), so the three are one rule, frozen as vectors K1 to K16. An implementation conforms when it keeps what every keeping vector keeps; no library call is the rule (the generator derives the vectors twice: the format written out, and the standard library's reader of it, urllib.parse.parse_qsl with keep_blank_values=True, asserted equal on each). 1381b31 (parse_qs without keep_blank_values, which drops a blank occurrence) keeps the second value on K12 and on K15, the two keeping vectors where the base and the rule part, recorded as 'kept on 1381b31', an observation and never the rule; commit 2 keeps the first value, blanks included, in both routes. The keeping vectors are applied to POST /studio/preview/still too: v0 keeps a preview's still 'by the still's rule', read as the whole of evidence.still.declared's keeping, the first value included (spec v2 §3(a))",
+   "status": "read from v0's text, never a new rule",
+   "v0's words": [
+    {
+     "v0": "evidence/still/declared",
+     "words": "the first value of POST /studio/still's scene query parameter"
+    },
+    {
+     "v0": "evidence/still/declared",
+     "words": "as the host keeps it with that still"
+    },
+    {
+     "v0": "evidence/still/declared",
+     "words": "Absent, blank and malformed are one case: UNKNOWN, declared \"\""
+    },
+    {
+     "v0": "evidence/preview/declared",
+     "words": "kept by Gateway.preview_still by the still's rule"
+    }
+   ],
+   "what": "the keeping rule when the scene parameter is repeated with a blank first value and a well-formed second (scene=&scene=<64 lower hex>)"
+  },
+  {
+   "id": "OPEN-2",
+   "resolved": "by OPEN-1's reading, a query parameter's value is its decoded value (application/x-www-form-urlencoded): a percent-encoded text that decodes to exactly 64 characters, each 0-9 or a-f, is kept as the decoded text (K13, K14); anything else \"\" (K6, K7, K11)",
+   "status": "read from v0's text, never a new rule",
+   "v0's words": [
+    {
+     "v0": "evidence/still/declared",
+     "words": "the first value of POST /studio/still's scene query parameter"
+    },
+    {
+     "v0": "evidence/still/declared",
+     "words": "kept by Gateway.still as it is when it is exactly 64 characters, each 0-9 or a-f, and as \"\" otherwise"
+    }
+   ],
+   "what": "the keeping rule for a percent-encoded text"
+  },
+  {
+   "id": "OPEN-3",
+   "resolved": "the named preview is listed by its name alone, whatever it names: declared the request's `preview` when it is a JSON string, else \"\"; expected \"\"; outcome \"not reached\" (R-M13p, R-NR-NULL, R-NR-OTHER). v0's words pull two ways here. On one side, 'each piece relied on is listed with what it declared', and 'Every field of every piece relied on is compared and recorded; none is skipped'. On the other, the record is 'never a comparison made after the first refusal', and what the name names is the name's own binding: its expected value is 'the name itself when it names a finished preview of the candidate (outcome MATCH), else \"\" (outcome UNKNOWN)', and B3 counts a name that 'names no finished preview of the candidate' as a binding missing or unreadable. The preview's further fields (its recorded candidate scene, its candidate-side stills) are its fields only when the name names a finished preview of the candidate, and its candidate_sha is declared as 'the value recorded at the plan', reached only by that lookup; so listing them after a refusal would make, and carry in the record, the name's comparison after the first refusal, which v0 forbids. The prohibition decides: the piece relied on is listed with what it declared (its name), and the host never consults its preview store after the first refusal. Where the check runs (R-M13p-S, stale skipped), every field is compared and recorded, none skipped",
+   "status": "read from v0's text, never a new rule",
+   "v0's words": [
+    {
+     "v0": "decision record/content",
+     "words": "Where an earlier check refused, each piece relied on is listed with what it declared, \"expected\" \"\" and \"outcome\" \"not reached\", never a comparison made after the first refusal"
+    },
+    {
+     "v0": "comparison/precedence",
+     "words": "Every field of every piece relied on is compared and recorded; none is skipped."
+    },
+    {
+     "v0": "decision record/content",
+     "words": "For the name, expected is the name itself when it names a finished preview of the candidate (outcome MATCH), else \"\" (outcome UNKNOWN)"
+    },
+    {
+     "v0": "cases/2/state",
+     "words": "names no finished preview of the candidate"
+    },
+    {
+     "v0": "comparison/precedence",
+     "words": "then the named preview (its name, `preview`; then its recorded candidate scene; then its candidate-side stills by pose number as an integer; when the name is UNKNOWN, not well formed or naming no finished preview of the candidate, it is the piece's only field)"
+    },
+    {
+     "v0": "decision record/content",
+     "words": "for candidate_sha the value recorded at the plan"
+    }
+   ],
+   "what": "a named preview's entries in the record where an earlier check refused"
+  },
+  {
+   "id": "OPEN-4",
+   "resolved": "json.dumps(obj, sort_keys=True, separators=(',', ':'), ensure_ascii=True) with nothing added: no closing newline; frozen as the id vectors ID1 to ID3, over stand-ins (the ids P_A and P_A0 the record vectors carry are those vectors' ids, never a live preview's); a live preview's id is held to the host's id function over that preview's own declared values (M20's id run, M4's and M4k's states)",
+   "status": "read from v0's text, never a new rule",
+   "v0's words": [
+    {
+     "v0": "evidence/preview/relied on",
+     "words": "A preview's id is the sha256 of the canonical form (sorted keys, separators ',' and ':', ASCII) of"
+    }
+   ],
+   "what": "the preview id's canonical bytes"
+  },
+  {
+   "id": "OPEN-5",
+   "resolved": "the state's undo declares both bindings bound, posted directly: of the target's sequence number N (read from the ledger) and scene S_wL, the scene the files export as they stand after #N (the exporter's lineage.scene_sha256 over the world's workspace), which v0's identity names the scene at the undo; STUDIO-NOT-UNDOABLE answers first and the binding is not reached: the record lists of and scene as declared, \"expected\" \"\", \"not reached\", its of the target's (R-B4-UNDO-LAYOUT). The reading made: v0 defines the scene at the undo as the scene the undo's own evaluation lays the inverse over, 'the scene it exports for the files as they stand'; at a layout target that evaluation does not run (STUDIO-NOT-UNDOABLE refuses first), and the files' exported scene is taken as that scene, v0's own gloss of it. A declared scene of \"\" is never bound (well formed). GET /undo.json is not the source here: it answers before its dry run (no of; scene \"\" by v0's account rule), and no page offers Undo there; the state is posted as v0's B1 undo sub-case posts an of that /undo.json does not give. Scene \"\" with the layout refusal stays M16's order state and M17's plant on it",
+   "status": "read from v0's text, never a new rule",
+   "v0's words": [
+    {
+     "v0": "cases/3/state",
+     "words": "Undo, with of and scene bound: the inverse not CLEAN, or a layout admission (STUDIO-NOT-UNDOABLE)"
+    },
+    {
+     "v0": "identity/scene at the undo",
+     "words": "the scene the undo's own evaluation at the press lays the inverse over: the scene it exports for the files as they stand (its base's lineage.scene_sha256)"
+    },
+    {
+     "v0": "comparison/well formed",
+     "words": "a declared scene is a JSON string of exactly 64 characters, each 0-9 or a-f"
+    },
+    {
+     "v0": "order/account",
+     "words": "it is \"\" where undo_target answers before its dry run lays the inverse over the world (no target, a layout target, a pending folder)"
+    },
+    {
+     "v0": "identity/undo target",
+     "words": "when that admission changed the layout STUDIO-NOT-UNDOABLE, each before the binding check"
+    },
+    {
+     "v0": "decision record/content",
+     "words": "\"of\": the undo target's sequence number (\"\" for an admission, and for an undo with none)"
+    }
+   ],
+   "what": "B4's undo state of a layout target 'with of and scene bound'"
+  },
+  {
+   "id": "OPEN-6",
+   "resolved": "frozen on the three states the spec names an outcome for (B4-OUTSIDE, B4-FLAGGED, B4-STALE) only. Not run under that plant: B4-UNLOGGED, because the plant skips only the studio's checks after the evaluation and the director's checks run as today, so LEDGER-UNLOGGED refuses as before (an equivalent mutant in that state, which could not be caught); and B4's undo states, because the plant is defined for an admission's checks and an undo has none of those it skips",
+   "status": "read from v0's text, never a new rule",
+   "v0's words": [
+    {
+     "v0": "cases/3/attribution",
+     "words": "a plant that lets a matched binding stand in for the existing checks (skipping one once every binding matches) is caught here, the state admitted or answered otherwise"
+    },
+    {
+     "v0": "plants 0253 must catch, at least",
+     "words": "a matched binding taken as sufficient: an existing check skipped once every binding matches (B4 admitted, or answered with a code other than its own check's)"
+    }
+   ],
+   "what": "the plant binding-sufficient on B4's states"
+  },
+  {
+   "id": "OPEN-7",
+   "resolved": "by OPEN-1's reading (a query parameter as application/x-www-form-urlencoded defines it): a name with no '=' is a name with the empty value, so in scene&scene=<hex> the first value of the scene parameter is blank and \"\" is kept (K15); a name is matched decoded, so sc%65ne=<hex> is the scene parameter and its well-formed value is kept (K16). 1381b31 keeps the second value on K15 (its parse_qs drops the bare name) and the value on K16 (its parse_qs decodes names), recorded as 'kept on 1381b31'",
+   "status": "read from v0's text, never a new rule",
+   "v0's words": [
+    {
+     "v0": "evidence/still/declared",
+     "words": "the first value of POST /studio/still's scene query parameter"
+    },
+    {
+     "v0": "evidence/still/declared",
+     "words": "Absent, blank and malformed are one case: UNKNOWN, declared \"\""
+    }
+   ],
+   "what": "how the query's parameter names are read: a bare `scene` with no '=' (scene&scene=<64 lower hex>), and a percent-encoded name (sc%65ne=<64 lower hex>)"
+  }
+ ],
+ "rows": [
+  {
+   "id": "M1",
+   "kind": "still",
+   "obligation": "BIND-CAUSAL-0 / B1",
+   "requires": [
+    "before either press the host's own readings equal across the two copies (never only the files): /evidence.json's items (the still's sha256 and scene, head, scene, base_sha); for a preview its id, recorded binding and drawn scenes; for an undo /undo.json's of, scene and from_head; /live's slots' sha and head (never rev.id, rev.files, rev.live or rev.process); the files' hashes listed too"
+   ],
+   "runs": [
+    {
+     "answer": "BINDING-MISMATCH",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1 (the evaluation, appended before cmd_admit as before every refusal after it today)",
+     "names": "still.scene",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "BINDING-MISMATCH",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_base",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MISMATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B1 still: a still declaring the base scene is refused BINDING-MISMATCH naming still.scene, nothing of the admission written",
+     "switches": []
+    }
+   ],
+   "state": "§4, the motivating admission, in STUDIO's fixture (art/fixtures/selftest/, the scripted provider): a request; A drawn, CLEAN, at the files' head, which the ledger holds; not strict; no preview named. The tree copied twice byte for byte; on each copy a Live and a Gateway started (ROOT set), the request restored (Gateway.restore) and the same clean still posted by POST /studio/still?id=...&candidate=A&scene=<S_base>; then POST /studio/admit {id, candidate: A, still}; copy 2, enforcement on",
+   "vector": "form: R-M1"
+  },
+  {
+   "id": "M2",
+   "kind": "still",
+   "obligation": "BIND-CAUSAL-0",
+   "requires": [
+    "before either press the host's own readings equal across the two copies (never only the files): /evidence.json's items (the still's sha256 and scene, head, scene, base_sha); for a preview its id, recorded binding and drawn scenes; for an undo /undo.json's of, scene and from_head; /live's slots' sha and head (never rev.id, rev.files, rev.live or rev.process); the files' hashes listed too"
+   ],
+   "runs": [
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "copy 1 admitted (+2, the brief changed, a certificate written) from host readings equal to copy 2's, which M1 refused",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "plant": true,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING plant: the binding check removed, B1 still (the motivating wrong-scene admission reproduced)",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "M1's state; copy 1"
+  },
+  {
+   "id": "M3",
+   "kind": "still",
+   "obligation": "BIND-CAUSAL-0 / B5",
+   "runs": [
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "ADMIT",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B5 still: a still declaring the candidate scene at admission is admitted, its record MATCH",
+     "switches": []
+    }
+   ],
+   "state": "as M1, the still declaring S_A",
+   "vector": "form: R-M3"
+  },
+  {
+   "id": "M3r",
+   "kind": "still",
+   "obligation": "BIND-CAUSAL-0",
+   "runs": [
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B5 still, the check switched off: admitted as with it on (a control)",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "M3's state"
+  },
+  {
+   "id": "M3s",
+   "kind": "still",
+   "obligation": "v0 evidence.still.declared (each send replaces the one before)",
+   "runs": [
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "note": "scene=S_base, then scene=S_A",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "ADMIT",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING each send replaces: the same still sent declaring the base scene, then the candidate scene, is admitted, its record declaring the second",
+     "switches": []
+    },
+    {
+     "answer": "BINDING-MISMATCH",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "names": "still.scene",
+     "note": "scene=S_A, then scene=S_base",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "BINDING-MISMATCH",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_base",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MISMATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING each send replaces: the same still sent declaring the candidate scene, then the base scene, is refused BINDING-MISMATCH naming still.scene",
+     "switches": []
+    }
+   ],
+   "state": "two states, each on its own byte-identical copy of M3's tree before its still is posted: the same still bytes posted twice for A, the second send replacing the first",
+   "v0's words": {
+    "v0": "evidence/still/declared",
+    "words": "taken from the send that made the still the admission names (each send replaces the one before)"
+   }
+  },
+  {
+   "id": "M4",
+   "kind": "preview",
+   "obligation": "BIND-CAUSAL-0 / B1",
+   "requires": [
+    "before either press the host's own readings equal across the two copies (never only the files): /evidence.json's items (the still's sha256 and scene, head, scene, base_sha); for a preview its id, recorded binding and drawn scenes; for an undo /undo.json's of, scene and from_head; /live's slots' sha and head (never rev.id, rev.files, rev.live or rev.process); the files' hashes listed too",
+    "POST /studio/preview/finish's answer carries preview_id, and the request's preview log line (decision \"preview\") written by that finish carries the same preview_id; both equal the host's pure id function over that preview's own declared values (its recorded binding, its drawn scenes, the sha256 of its preview.report.json), held as M20's id run holds the vectors"
+   ],
+   "runs": [
+    {
+     "answer": "BINDING-MISMATCH",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "names": "preview.candidate-K",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "BINDING-MISMATCH",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "P_A",
+        "expected": "P_A",
+        "field": "preview",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "candidate_sha",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "candidate-k, each pose k != K by integer, in its place",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_base",
+        "expected": "S_A",
+        "field": "candidate-K",
+        "kind": "preview",
+        "outcome": "MISMATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B1 preview: a candidate-side still of the named preview declaring the base scene is refused BINDING-MISMATCH naming it",
+     "switches": []
+    }
+   ],
+   "state": "§4 preview: A previewed (the request asked again with a new id until preview_plan finds a path, up to four times, said; the row fails, never skips, if none does), its preview finished (P_A, the preview_id its finish answered) and named by Admit (`preview`: P_A); the admission's still declares S_A; the preview's recorded candidate scene the host's own (S_A); its candidate-side stills at poses 0..n-1 (n from 4 to 8), each kept naming S_A but one, pose K, kept naming S_base; the tree copied twice byte for byte after A's preview is finished and its candidate-side stills kept (so that both copies hold the one preview, its preview_id the same); on each copy a Live and a Gateway started (ROOT set) and the request restored (Gateway.restore); copy 2, enforcement on",
+   "vector": "form: R-M4 (the vector's n = 3, K = 1; a live preview has n from 4 to 8, camera.MIN_POSES to camera.POSES)"
+  },
+  {
+   "id": "M4b",
+   "kind": "preview",
+   "obligation": "B5",
+   "requires": [
+    "POST /studio/preview/finish's answer carries preview_id, and the request's preview log line (decision \"preview\") written by that finish carries the same preview_id; both equal the host's pure id function over that preview's own declared values (its recorded binding, its drawn scenes, the sha256 of its preview.report.json), held as M20's id run holds the vectors"
+   ],
+   "runs": [
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "ADMIT",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "P_A",
+        "expected": "P_A",
+        "field": "preview",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "candidate_sha",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "candidate-k, each pose k in 0..n-1 by integer",
+        "kind": "preview",
+        "outcome": "MATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B5 preview: a named preview bound in every field is admitted, its record MATCH throughout",
+     "switches": []
+    }
+   ],
+   "state": "§4 preview: A previewed (the request asked again with a new id until preview_plan finds a path, up to four times, said; the row fails, never skips, if none does), its preview finished (P_A, the preview_id its finish answered) and named by Admit (`preview`: P_A); the admission's still declares S_A; the preview's recorded candidate scene the host's own (S_A); its candidate-side stills at poses 0..n-1 (n from 4 to 8), each kept naming S_A"
+  },
+  {
+   "id": "M5",
+   "kind": "preview",
+   "obligation": "BIND-CAUSAL-0",
+   "requires": [
+    "before either press the host's own readings equal across the two copies (never only the files): /evidence.json's items (the still's sha256 and scene, head, scene, base_sha); for a preview its id, recorded binding and drawn scenes; for an undo /undo.json's of, scene and from_head; /live's slots' sha and head (never rev.id, rev.files, rev.live or rev.process); the files' hashes listed too"
+   ],
+   "runs": [
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "copy 1 admitted (+2, the brief changed, a certificate written) from host readings equal to copy 2's, which M4 refused",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "plant": true,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING plant: the binding check removed, B1 preview",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "M4's state; copy 1"
+  },
+  {
+   "id": "M4br",
+   "kind": "preview",
+   "obligation": "BIND-CAUSAL-0",
+   "runs": [
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B5 preview, the check switched off: admitted as with it on (a control)",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "M4b's state"
+  },
+  {
+   "id": "M4k",
+   "kind": "preview",
+   "obligation": "v0 evidence.preview.relied on (each finished preview kept under its id)",
+   "requires": [
+    "P_A != P_A2, each read from its own finish's preview_id and each equal to the host's id function over its own declared values (POST /studio/preview/finish's answer carries preview_id, and the request's preview log line (decision \"preview\") written by that finish carries the same preview_id; both equal the host's pure id function over that preview's own declared values (its recorded binding, its drawn scenes, the sha256 of its preview.report.json), held as M20's id run holds the vectors)",
+    "the two presses in that order, P_A's first"
+   ],
+   "runs": [
+    {
+     "answer": "BINDING-MISMATCH",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "names": "preview.candidate-K",
+     "note": "the preview entry declared P_A, expected P_A, MATCH: P_A is still kept after P_A2's plan and finish",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "BINDING-MISMATCH",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "P_A",
+        "expected": "P_A",
+        "field": "preview",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "candidate_sha",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "candidate-k, each pose k != K by integer, in its place",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_base",
+        "expected": "S_A",
+        "field": "candidate-K",
+        "kind": "preview",
+        "outcome": "MISMATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING keeping by id: Admit naming the earlier of two finished previews is held to that preview's own stills, refused BINDING-MISMATCH naming preview.candidate-K",
+     "switches": []
+    },
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "ADMIT",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "P_A2",
+        "expected": "P_A2",
+        "field": "preview",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "candidate_sha",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "candidate-k, each pose k in 0..n-1 by integer",
+        "kind": "preview",
+        "outcome": "MATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING keeping by id: then Admit naming the later preview, every still naming the candidate scene, is admitted",
+     "switches": []
+    }
+   ],
+   "state": "M4's state on a tree of its own (n poses, pose K kept naming S_base): A's preview planned and finished, its id P_A from its finish's preview_id; then A's preview planned and finished again, the same still bytes sent with every candidate-side still naming S_A, its id P_A2 from its finish's preview_id; then Admit naming P_A, then (after that refusal) Admit naming P_A2",
+   "v0's words": {
+    "v0": "evidence/preview/relied on",
+    "words": "The host keeps each finished preview's recorded binding and the scenes named for its stills under its id, never overwritten by a later plan or finish"
+   }
+  },
+  {
+   "id": "M6",
+   "kind": "undo",
+   "obligation": "BIND-CAUSAL-0 / B1",
+   "requires": [
+    "before either press the host's own readings equal across the two copies (never only the files): /evidence.json's items (the still's sha256 and scene, head, scene, base_sha); for a preview its id, recorded binding and drawn scenes; for an undo /undo.json's of, scene and from_head; /live's slots' sha and head (never rev.id, rev.files, rev.live or rev.process); the files' hashes listed too"
+   ],
+   "runs": [
+    {
+     "answer": "BINDING-MISMATCH",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1 (the inverse's evaluation)",
+     "names": "undo.of",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "BINDING-MISMATCH",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "M",
+        "expected": "N",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "MISMATCH"
+       },
+       {
+        "declared": "S_w",
+        "expected": "S_w",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "MATCH"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING B1 undo: an undo declaring an admission before its target is refused BINDING-MISMATCH naming undo.of",
+     "switches": []
+    }
+   ],
+   "state": "§4 undo: two studio admissions, #M then #N (each an evaluate event then an admit event, so M <= N-2); GET /undo.json read (of N, scene S_w); the tree copied twice byte for byte after both admissions #M and #N; on each copy a Live and a Gateway started (ROOT set) and GET /undo.json read; POST /studio/undo with of \"M\" and scene S_w; copy 2, enforcement on",
+   "vector": "form: R-M6"
+  },
+  {
+   "id": "M6b",
+   "kind": "undo",
+   "obligation": "B5",
+   "runs": [
+    {
+     "answer": "undone",
+     "brief": "changed",
+     "certificate": "as today for an undo through the host: to be measured on 1381b31",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "UNDONE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "N",
+        "expected": "N",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_w",
+        "expected": "S_w",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "MATCH"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING B5 undo: an undo declaring its target and the scene as shown is undone, its record MATCH",
+     "switches": []
+    }
+   ],
+   "state": "§4 undo: two studio admissions, #M then #N (each an evaluate event then an admit event, so M <= N-2); GET /undo.json read (of N, scene S_w); POST /studio/undo with of \"N\" and scene S_w",
+   "vector": "form: R-M6b"
+  },
+  {
+   "id": "M7",
+   "kind": "undo",
+   "obligation": "BIND-CAUSAL-0",
+   "requires": [
+    "before either press the host's own readings equal across the two copies (never only the files): /evidence.json's items (the still's sha256 and scene, head, scene, base_sha); for a preview its id, recorded binding and drawn scenes; for an undo /undo.json's of, scene and from_head; /live's slots' sha and head (never rev.id, rev.files, rev.live or rev.process); the files' hashes listed too"
+   ],
+   "runs": [
+    {
+     "answer": "undone (#N, the request having declared #M)",
+     "brief": "changed",
+     "caught when": "copy 1 undid #N (+2) from host readings equal to copy 2's, which M6 refused",
+     "certificate": "as M6b",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING plant: the binding check removed, B1 undo (#N undone while #M was declared)",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "M6's state; copy 1"
+  },
+  {
+   "id": "M6br",
+   "kind": "undo",
+   "obligation": "BIND-CAUSAL-0",
+   "runs": [
+    {
+     "answer": "undone",
+     "brief": "changed",
+     "certificate": "as M6b",
+     "director_code": "",
+     "ledger": "+2",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B5 undo, the check switched off: undone as with it on (a control)",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "M6b's state"
+  },
+  {
+   "id": "M8",
+   "kind": "still",
+   "obligation": "B3",
+   "runs": [
+    {
+     "answer": "BINDING-UNKNOWN",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "names": "still.scene",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "BINDING-UNKNOWN",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "UNKNOWN"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B3 still: a still sent with no scene is refused BINDING-UNKNOWN",
+     "switches": []
+    },
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "admitted where the honest run refuses BINDING-UNKNOWN",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "plant": true,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING plant: the binding check removed, B3 still",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "as M3, the still sent with no scene parameter (kept \"\")",
+   "vector": "form: R-M8"
+  },
+  {
+   "id": "M9",
+   "kind": "preview",
+   "obligation": "B3",
+   "runs": [
+    {
+     "answer": "BINDING-UNKNOWN",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "names": "preview.preview",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "BINDING-UNKNOWN",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "S_A",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "",
+        "expected": "",
+        "field": "preview",
+        "kind": "preview",
+        "outcome": "UNKNOWN"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B3 preview: a preview named null is refused BINDING-UNKNOWN, the name its only field",
+     "switches": []
+    },
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "admitted where the honest run refuses BINDING-UNKNOWN",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "plant": true,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING plant: the binding check removed, B3 preview",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "as M4b, Admit naming `preview`: null",
+   "vector": "form: R-M9"
+  },
+  {
+   "id": "M10",
+   "kind": "undo",
+   "obligation": "B3",
+   "runs": [
+    {
+     "answer": "BINDING-UNKNOWN",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "names": "undo.of",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "BINDING-UNKNOWN",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "",
+        "expected": "N",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "UNKNOWN"
+       },
+       {
+        "declared": "S_w",
+        "expected": "S_w",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "MATCH"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING B3 undo: an undo without of is refused BINDING-UNKNOWN",
+     "switches": []
+    },
+    {
+     "answer": "undone",
+     "brief": "changed",
+     "caught when": "undone where the honest run refuses BINDING-UNKNOWN",
+     "certificate": "as M6b",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING plant: the binding check removed, B3 undo",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "as M6b, the undo sent without `of`",
+   "vector": "form: R-M10"
+  },
+  {
+   "id": "M10b",
+   "kind": "undo",
+   "obligation": "B3",
+   "runs": [
+    {
+     "answer": "BINDING-UNKNOWN",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "names": "undo.scene",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "BINDING-UNKNOWN",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "N",
+        "expected": "N",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "",
+        "expected": "S_w",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "UNKNOWN"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING B3 undo: an undo without scene is refused BINDING-UNKNOWN",
+     "switches": []
+    }
+   ],
+   "state": "as M6b, `of` as read, `scene` absent"
+  },
+  {
+   "id": "M11",
+   "kind": "each",
+   "obligation": "BIND-NOTSUFFICIENT-0 / B4",
+   "requires": [
+    "each run's code, director code and ledger delta equal with the binding check on and switched off"
+   ],
+   "runs": [
+    {
+     "answer": "ADMIT-OUTSIDE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "per today: the existing refusal's delta, to be measured on 1381b31 and held equal",
+     "note": "a strict request whose regions do not hold A; its still declares S_A; no preview named",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "ADMIT-OUTSIDE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B4 B4-OUTSIDE, every binding declared bound: ADMIT-OUTSIDE as today, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "ADMIT-OUTSIDE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "per today: the existing refusal's delta, to be measured on 1381b31 and held equal",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B4 B4-OUTSIDE, the check switched off: the same refusal, code for code",
+     "switches": [
+      "binding-removed"
+     ]
+    },
+    {
+     "answer": "STUDIO-STALE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "the head moved after the still was taken by a comment line of the art recorded through the director (cmd_rebase), so that only STUDIO-STALE fails and the still still declares A's scene; no preview named",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-STALE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B4 B4-STALE, every binding declared bound: STUDIO-STALE as today, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-STALE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B4 B4-STALE, the check switched off: the same refusal, code for code",
+     "switches": [
+      "binding-removed"
+     ]
+    },
+    {
+     "answer": "STUDIO-STILL-FLAGGED",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "A's still flagged by the detectors, Admit not despite them; the still declares S_A",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-STILL-FLAGGED",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B4 B4-FLAGGED, every binding declared bound: STUDIO-STILL-FLAGGED as today, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-STILL-FLAGGED",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B4 B4-FLAGGED, the check switched off: the same refusal, code for code",
+     "switches": [
+      "binding-removed"
+     ]
+    },
+    {
+     "answer": "STUDIO-DIRECTOR-REFUSED",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "LEDGER-UNLOGGED",
+     "ledger": "+0",
+     "note": "A drawn at a files' head the ledger does not hold; the still declares S_A",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-DIRECTOR-REFUSED",
+      "director_code": "LEDGER-UNLOGGED",
+      "evidence": [
+       {
+        "declared": "S_A",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B4 B4-UNLOGGED, every binding declared bound: STUDIO-DIRECTOR-REFUSED as today, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-DIRECTOR-REFUSED",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "LEDGER-UNLOGGED",
+     "ledger": "+0",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B4 B4-UNLOGGED, the check switched off: the same refusal, code for code",
+     "switches": [
+      "binding-removed"
+     ]
+    },
+    {
+     "answer": "STUDIO-NOT-UNDOABLE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "the target #N a layout admission (the layout target made through the director (studio candidates never carry a layout): a layout intent at the files' head (layout [\"close 24,7 24,9\"], scope [\"layout/north-flank\"], revision [], its base the fixture's current parts) evaluated by cmd_evaluate (appended through append_evaluation, never led.append) and admitted by cmd_admit with a clean still (selftest_still()): CLEAN, rung A, its design lines written to graybox/maps/tactical.design and tactical.layout (MEASURED by the review in a self-test tree); SHARED-MAP does not refuse it (the fixture lays one brief); it is the ledger's latest admission not undone (Gateway._undo_target takes the last); run in a copy of the fixture's tree of its own, or with both map files saved before the admission and written back with the brief and the ledger, the revision settled and held_head holding (no LEDGER-UNLOGGED) before the next row); of \"N\" (the target's sequence number, read from the ledger) and scene S_wL (the scene the files export as they stand after #N: the exporter's lineage.scene_sha256 over the world's workspace, ws.export(), the call _undoing makes, read by the row before the press and held equal to /live's world slot's sha once that slot serves the files' head, never /evidence.json's base_sha of a candidate drawn before #N), both bound and posted directly, as v0's B1 undo sub-case posts an of /undo.json does not give: GET /undo.json answers before its dry run there (no of; scene \"\" by v0's account rule), so the row does not take its values from it (OPEN-5, read from v0's text; vector R-B4-UNDO-LAYOUT)",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "STUDIO-NOT-UNDOABLE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "N",
+        "expected": "",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "not reached"
+       },
+       {
+        "declared": "S_wL",
+        "expected": "",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING B4 B4-UNDO-LAYOUT, every binding declared bound: STUDIO-NOT-UNDOABLE as today, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-NOT-UNDOABLE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B4 B4-UNDO-LAYOUT, the check switched off: the same refusal, code for code",
+     "switches": [
+      "binding-removed"
+     ]
+    },
+    {
+     "answer": "STUDIO-NOT-UNDOABLE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "note": "the target's inverse not CLEAN; of and scene as GET /undo.json gave them (its dry run lays the inverse over the world, so its scene is the world's, S_w)",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "STUDIO-NOT-UNDOABLE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "N",
+        "expected": "",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "not reached"
+       },
+       {
+        "declared": "S_w",
+        "expected": "",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING B4 B4-UNDO-NOT-CLEAN, every binding declared bound: STUDIO-NOT-UNDOABLE as today, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-NOT-UNDOABLE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B4 B4-UNDO-NOT-CLEAN, the check switched off: the same refusal, code for code",
+     "switches": [
+      "binding-removed"
+     ]
+    },
+    {
+     "answer": "STUDIO-DIRECTOR-REFUSED",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "LEDGER-UNLOGGED",
+     "ledger": "per today: the existing refusal's delta, to be measured on 1381b31 and held equal",
+     "note": "a ledger that does not hold the files (a hand edit); of and scene as GET /undo.json gave them: its dry run exports the files and evaluates the inverse, laying it over the world, before held_head refuses LEDGER-UNLOGGED, so by v0's account rule its scene is the world's, S_w, the scene of the files as they stand; the row computes S_w apart, as the lineage.scene_sha256 of an export of the files after the hand edit and before GET /undo.json, and requires /undo.json's scene to equal it and be non-empty before the press (never the route's answer taken as the expected value, and never read from the ledger: append_evaluation refuses and nothing is appended)",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "STUDIO-DIRECTOR-REFUSED",
+      "director_code": "LEDGER-UNLOGGED",
+      "evidence": [
+       {
+        "declared": "N",
+        "expected": "",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "not reached"
+       },
+       {
+        "declared": "S_w",
+        "expected": "",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING B4 B4-UNDO-UNLOGGED, every binding declared bound: STUDIO-DIRECTOR-REFUSED as today, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-DIRECTOR-REFUSED",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "LEDGER-UNLOGGED",
+     "ledger": "per today: the existing refusal's delta, to be measured on 1381b31 and held equal",
+     "note": "a control, not a plant row: the switch changes nothing in this state",
+     "plant": false,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING B4 B4-UNDO-UNLOGGED, the check switched off: the same refusal, code for code",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "§6's states, every binding declared bound, one existing registered requirement failing"
+  },
+  {
+   "id": "M12",
+   "kind": "still",
+   "note": "not run under this plant: B4-UNLOGGED (the director's checks run as today under it, so LEDGER-UNLOGGED refuses as before: an equivalent mutant there) and B4's undo states (the plant skips an admission's checks; an undo has none of them): OPEN-6, read from v0's text",
+   "obligation": "BIND-NOTSUFFICIENT-0",
+   "runs": [
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "admitted where ADMIT-OUTSIDE is its own check's code",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: a matched binding taken as sufficient, B4-OUTSIDE",
+     "switches": [
+      "binding-sufficient"
+     ]
+    },
+    {
+     "answer": "STUDIO-DIRECTOR-REFUSED",
+     "brief": "same",
+     "caught when": "answered with another code than STUDIO-STILL-FLAGGED, its own check's",
+     "certificate": "none",
+     "director_code": "the director's ADMISSION-0 code for a flagged still not admitted despite (measured on the 0253 tree)",
+     "ledger": "+1",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: a matched binding taken as sufficient, B4-FLAGGED",
+     "switches": [
+      "binding-sufficient"
+     ]
+    },
+    {
+     "answer": "admitted (on the rebased head)",
+     "brief": "changed",
+     "caught when": "admitted where STUDIO-STALE is its own check's code",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: a matched binding taken as sufficient, B4-STALE",
+     "switches": [
+      "binding-sufficient"
+     ]
+    }
+   ],
+   "state": "§6's states; the plant binding-sufficient: the binding compared right after the admission's evaluation, and once every binding matches the studio's checks after the evaluation skipped (STUDIO-STALE, STUDIO-NOT-ADMISSIBLE on the verdict, the strict check, STUDIO-STILL-FLAGGED) and the region passed as None; the director's checks run as today"
+  },
+  {
+   "id": "M13",
+   "kind": "still",
+   "obligation": "BIND-ORDER-0 / B2",
+   "requires": [
+    "S_A0 != S_A1, S_A1 from the admission's own evaluation of A at H1 (never the card's kept value), checked on the state before any press of M13, M14, M15, M13p (each run), M17's B2 run and M18, so that a row fails rather than passes vacuously (for M18 a state precondition only: its plant is caught without it)"
+   ],
+   "runs": [
+    {
+     "answer": "STUDIO-STALE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-STALE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A0",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B2 still, stale first: STUDIO-STALE answers, the binding not reached",
+     "switches": []
+    }
+   ],
+   "state": "§7 B2: A drawn at H0; its still sent declaring S_A0; then another admission through the studio's ledger, made the way page_dash's aligned_admission makes its own (evaluate_doc, append_evaluation, then cmd_admit with D.selftest_still()) but of a statement under a key A's revision does not name, which the exporter carries into the scene: \"= canopy plaza concrete_slab 7.0 19,20 28,21 deep 2.6\", scope [\"plaza/canopy/*\"] (the other canopy; never aligned_admission's own move, which re-spaces and admits the very statement A rewrites, so that A's scene at H1 is its scene at H0: MEASURED in a self-test tree with a stand-in A on A's piece, S_A0 = S_A1 = dde7e8100613 under that move, and f9d90bbcb823 at H1 under this one, A CLEAN with HEAD-MOVED), moving the files and the ledger to H1, where A stays CLEAN (HEAD-MOVED among its codes), unflagged, every director's check passing",
+   "vector": "form: R-M13"
+  },
+  {
+   "id": "M14",
+   "kind": "still",
+   "obligation": "B2",
+   "requires": [
+    "S_A0 != S_A1, S_A1 from the admission's own evaluation of A at H1 (never the card's kept value), checked on the state before any press of M13, M14, M15, M13p (each run), M17's B2 run and M18, so that a row fails rather than passes vacuously (for M18 a state precondition only: its plant is caught without it)"
+   ],
+   "runs": [
+    {
+     "answer": "BINDING-MISMATCH",
+     "brief": "same",
+     "caught when": "refused BINDING-MISMATCH by the binding check, its record naming S_A0 and S_A1",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "names": "still.scene",
+     "plant": true,
+     "record": {
+      "candidate": "A",
+      "decision": "BINDING-MISMATCH",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A0",
+        "expected": "S_A1",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MISMATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING plant: STUDIO-STALE's comparison skipped, B2 still (the binding check itself refuses BINDING-MISMATCH)",
+     "switches": [
+      "stale-skipped"
+     ]
+    }
+   ],
+   "state": "M13's state; stale-skipped: STUDIO-STALE's comparison skipped at the press, the evaluation left as computed (never its checked_against rewritten)"
+  },
+  {
+   "id": "M15",
+   "kind": "still",
+   "note": "the limitation said (v0 order.case 2): in this host a changed scene is a moved head, so the binding's own refusal of case 2 is shown only with STALE planted away",
+   "obligation": "B2",
+   "requires": [
+    "S_A0 != S_A1, S_A1 from the admission's own evaluation of A at H1 (never the card's kept value), checked on the state before any press of M13, M14, M15, M13p (each run), M17's B2 run and M18, so that a row fails rather than passes vacuously (for M18 a state precondition only: its plant is caught without it)"
+   ],
+   "runs": [
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "admitted where M14 refuses BINDING-MISMATCH",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "plant": true,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING plant: STUDIO-STALE's comparison skipped and the binding check removed, B2 still (admitted: no other guard refuses it)",
+     "switches": [
+      "stale-skipped",
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "M13's state"
+  },
+  {
+   "id": "M13p",
+   "kind": "preview",
+   "note": "spec v2 §10's M13p row lists only '— / stale-skipped'; v0's B2 attribution covers the admission's named preview as well as its still, so its binding-removed run is added (v0 wins, said)",
+   "obligation": "B2",
+   "requires": [
+    "S_A0 != S_A1, S_A1 from the admission's own evaluation of A at H1 (never the card's kept value), checked on the state before any press of M13, M14, M15, M13p (each run), M17's B2 run and M18, so that a row fails rather than passes vacuously (for M18 a state precondition only: its plant is caught without it)"
+   ],
+   "runs": [
+    {
+     "answer": "STUDIO-STALE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "the named preview listed by its name alone, though it names a finished preview of A: its further fields would need the name's own comparison after the first refusal (OPEN-3, read from v0's text)",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-STALE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A0",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       },
+       {
+        "declared": "P_A0",
+        "expected": "",
+        "field": "preview",
+        "kind": "preview",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING B2 preview, stale first: STUDIO-STALE answers, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "BINDING-MISMATCH",
+     "brief": "same",
+     "caught when": "refused BINDING-MISMATCH naming still.scene",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "names": "still.scene",
+     "plant": true,
+     "record": {
+      "candidate": "A",
+      "decision": "BINDING-MISMATCH",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_A0",
+        "expected": "S_A1",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "MISMATCH"
+       },
+       {
+        "declared": "P_A0",
+        "expected": "P_A0",
+        "field": "preview",
+        "kind": "preview",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_A0",
+        "expected": "S_A1",
+        "field": "candidate_sha",
+        "kind": "preview",
+        "outcome": "MISMATCH"
+       },
+       {
+        "declared": "S_A0",
+        "expected": "S_A1",
+        "field": "candidate-k, each pose k by integer",
+        "kind": "preview",
+        "outcome": "MISMATCH"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING plant: STUDIO-STALE's comparison skipped, B2 preview (BINDING-MISMATCH naming still.scene first)",
+     "switches": [
+      "stale-skipped"
+     ]
+    },
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "admitted where M13p's stale-skipped run refuses BINDING-MISMATCH",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2 (evaluate, admit)",
+     "plant": true,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING plant: STUDIO-STALE's comparison skipped and the binding check removed, B2 preview (admitted: no other guard refuses it)",
+     "switches": [
+      "stale-skipped",
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "§7 B2-preview: A previewed at H0 and named by Admit (P_A0; its recorded candidate scene and its candidate-side stills S_A0), the still declaring S_A0; the same move to H1 (M13's)",
+   "v0's words": {
+    "v0": "cases/1/attribution",
+    "words": "with the stale check neutralized and the binding check planted away, the same state is admitted: no other guard refuses it"
+   },
+   "vector": "form: R-M13p (honest), R-M13p-S (stale-skipped): the vectors' two poses; live n as the preview has it"
+  },
+  {
+   "id": "M13u",
+   "kind": "undo",
+   "obligation": "B2",
+   "runs": [
+    {
+     "answer": "BINDING-MISMATCH",
+     "brief": "same (the rebased bytes)",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1 (the inverse's evaluation)",
+     "names": "undo.scene",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "BINDING-MISMATCH",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "N",
+        "expected": "N",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "MATCH"
+       },
+       {
+        "declared": "S_w0",
+        "expected": "S_w1",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "MISMATCH"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING B2 undo: an undo shown over a world since rebased is refused BINDING-MISMATCH naming undo.scene",
+     "switches": []
+    },
+    {
+     "answer": "undone",
+     "brief": "changed",
+     "caught when": "undone where the honest run refuses BINDING-MISMATCH",
+     "certificate": "as M6b",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "none: the binding check that makes the record is removed by the switch",
+     "row": "BINDING plant: the binding check removed, B2 undo (undone over a moved world)",
+     "switches": [
+      "binding-removed"
+     ]
+    }
+   ],
+   "state": "§7 B2-undo: one admission #N; GET /undo.json read (of N, scene S_w0); a hand edit of a statement #N's inverse neither restores nor removes, passing the art checks, recorded by cmd_rebase (the target stays #N, the scene at the undo becomes S_w1); Undo with of \"N\" and scene S_w0",
+   "vector": "form: R-B2U"
+  },
+  {
+   "id": "M16",
+   "kind": "each",
+   "obligation": "BIND-ORDER-0",
+   "runs": [
+    {
+     "answer": "STUDIO-NO-STILL",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "no still sent; Admit names a still the host does not keep",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-NO-STILL",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING order STUDIO-NO-STILL: the earlier check answers STUDIO-NO-STILL, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-NOT-ADMISSIBLE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "STUDIO's drawn LEAKAGE candidate C, its still declaring the base scene",
+     "plant": false,
+     "record": {
+      "candidate": "C",
+      "decision": "STUDIO-NOT-ADMISSIBLE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_base",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_C",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING order STUDIO-NOT-ADMISSIBLE: the earlier check answers STUDIO-NOT-ADMISSIBLE, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "ADMIT-OUTSIDE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "per today: the existing refusal's delta, to be measured on 1381b31 and held equal",
+     "note": "a strict request whose regions do not hold A, its still declaring the base scene",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "ADMIT-OUTSIDE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_base",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING order ADMIT-OUTSIDE: the earlier check answers ADMIT-OUTSIDE, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-STILL-FLAGGED",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "A's still flagged, not despite, declaring the base scene",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-STILL-FLAGGED",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_base",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING order STUDIO-STILL-FLAGGED: the earlier check answers STUDIO-STILL-FLAGGED, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-DIRECTOR-REFUSED",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "LEDGER-UNLOGGED",
+     "ledger": "+0",
+     "note": "A drawn at a files' head the ledger does not hold, its still declaring the base scene",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-DIRECTOR-REFUSED",
+      "director_code": "LEDGER-UNLOGGED",
+      "evidence": [
+       {
+        "declared": "S_base",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING order LEDGER-UNLOGGED: the earlier check answers STUDIO-DIRECTOR-REFUSED, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-STALE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "a base-declared still and a moved head",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-STALE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_base",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING order STUDIO-STALE: the earlier check answers STUDIO-STALE, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-NOT-UNDOABLE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "an art admission #M, then the target #N a layout admission (B4-UNDO-LAYOUT's construction, M11); of declaring the other admission (M), scene \"\" as GET /undo.json gives it there (v0's account rule)",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "STUDIO-NOT-UNDOABLE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "M",
+        "expected": "",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "not reached"
+       },
+       {
+        "declared": "",
+        "expected": "",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING order STUDIO-NOT-UNDOABLE layout: the earlier check answers STUDIO-NOT-UNDOABLE, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-NOT-UNDOABLE",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1",
+     "note": "the target's inverse not CLEAN; of declaring another admission (M), scene as GET /undo.json gave it (S_w: its dry run lays the inverse over the world)",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "STUDIO-NOT-UNDOABLE",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "M",
+        "expected": "",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "not reached"
+       },
+       {
+        "declared": "S_w",
+        "expected": "",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING order STUDIO-NOT-UNDOABLE inverse: the earlier check answers STUDIO-NOT-UNDOABLE, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-NOTHING-TO-UNDO",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "note": "no target; of declaring a sequence number, scene \"\" as GET /undo.json gives it there (v0's account rule; vector R-NOTHING)",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "STUDIO-NOTHING-TO-UNDO",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "M_any",
+        "expected": "",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "not reached"
+       },
+       {
+        "declared": "",
+        "expected": "",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "",
+      "operation": "undo"
+     },
+     "row": "BINDING order STUDIO-NOTHING-TO-UNDO: the earlier check answers STUDIO-NOTHING-TO-UNDO, the binding not reached",
+     "switches": []
+    },
+    {
+     "answer": "STUDIO-DIRECTOR-REFUSED",
+     "brief": "the other writer's bytes: the brief before the press plus its comment line, equal to that rebase event's art_text; nothing of the admission written",
+     "certificate": "none",
+     "director_code": "HEAD-MOVED",
+     "ledger": "+2: the admission's own evaluation (an evaluate event, appended before cmd_admit as today), then the other writer's rebase recorded by the hook (a rebase event); no admit event, no pending folder left",
+     "note": "the commit fence: durable.HOOK at 'admit:lock-wait' (in commit_admission, before the content lock is taken) writes another writer's comment line into the brief and records it by cmd_rebase, once; A's still declaring the base scene; _commit_locked then refuses HEAD-MOVED before any write. The row holds the ledger's two new lines' kinds in order ([\"evaluate\", \"rebase\"]) and the rebase's head_after equal to the files' head. Spec v2 §7's '+1' and 'the brief unchanged' count the admission's own writes only; measured from before the POST, as every row is, the ledger grows by 2 and the brief by the other writer's line (MEASURED at the director level by the review's probe: delta 2, kinds ['evaluate', 'rebase'], HEAD-MOVED, no pending folder left); the spec's figure is kept as the press's own +1, never reworded to fit a row",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "STUDIO-DIRECTOR-REFUSED",
+      "director_code": "HEAD-MOVED",
+      "evidence": [
+       {
+        "declared": "S_base",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING order HEAD-MOVED at the commit: the earlier check answers STUDIO-DIRECTOR-REFUSED, the binding not reached",
+     "switches": []
+    }
+   ],
+   "state": "§7's order states, each with a binding failing too"
+  },
+  {
+   "id": "M17",
+   "kind": "each",
+   "obligation": "BIND-ORDER-0",
+   "requires": [
+    "for its B2 run: S_A0 != S_A1, S_A1 from the admission's own evaluation of A at H1 (never the card's kept value), checked on the state before any press of M13, M14, M15, M13p (each run), M17's B2 run and M18, so that a row fails rather than passes vacuously (for M18 a state precondition only: its plant is caught without it)"
+   ],
+   "runs": [
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where STUDIO-NO-STILL is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, STUDIO-NO-STILL",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where STUDIO-NOT-ADMISSIBLE is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, STUDIO-NOT-ADMISSIBLE",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where ADMIT-OUTSIDE is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, ADMIT-OUTSIDE",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where STUDIO-STILL-FLAGGED is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, STUDIO-STILL-FLAGGED",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where STUDIO-DIRECTOR-REFUSED is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, LEDGER-UNLOGGED",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where STUDIO-STALE is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, STUDIO-STALE",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where STUDIO-NOT-UNDOABLE is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, STUDIO-NOT-UNDOABLE layout",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where STUDIO-NOT-UNDOABLE is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, STUDIO-NOT-UNDOABLE inverse",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where STUDIO-NOTHING-TO-UNDO is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, STUDIO-NOTHING-TO-UNDO",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH or BINDING-UNKNOWN",
+     "brief": "",
+     "caught when": "answered BINDING-* where STUDIO-DIRECTOR-REFUSED is expected",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, HEAD-MOVED at the commit",
+     "switches": [
+      "binding-first"
+     ]
+    },
+    {
+     "answer": "BINDING-MISMATCH",
+     "brief": "",
+     "caught when": "answered BINDING-MISMATCH where STUDIO-STALE is expected (M13)",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the binding check placed first, B2 still (stale first)",
+     "switches": [
+      "binding-first"
+     ]
+    }
+   ],
+   "state": "§7's order states and M13"
+  },
+  {
+   "id": "M18",
+   "kind": "still",
+   "obligation": "not_checked explicit",
+   "requires": [
+    "S_A0 != S_A1, S_A1 from the admission's own evaluation of A at H1 (never the card's kept value), checked on the state before any press of M13, M14, M15, M13p (each run), M17's B2 run and M18, so that a row fails rather than passes vacuously (for M18 a state precondition only: its plant is caught without it)"
+   ],
+   "runs": [
+    {
+     "answer": "STUDIO-STALE",
+     "brief": "same",
+     "caught when": "the record's still.scene entry says MATCH where it must say \"not reached\" with \"expected\" \"\"",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+0",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: a binding not reached recorded as a match (B2 still, stale first)",
+     "switches": [
+      "not-reached-as-match"
+     ]
+    }
+   ],
+   "state": "M13's state"
+  },
+  {
+   "id": "M19",
+   "kind": "",
+   "obligation": "not_checked explicit",
+   "runs": [
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "BINDING account: before the press no account reports a binding checked or matched",
+     "switches": []
+    },
+    {
+     "answer": "",
+     "brief": "",
+     "caught when": "an account says a binding checked or matched",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the account claims a binding checked or matched before the press",
+     "switches": [
+      "account-claims-binding"
+     ]
+    }
+   ],
+   "state": "the account before the press (Gateway.account, /live's accounts, /evidence.json's admission, undo_target)"
+  },
+  {
+   "id": "M20",
+   "kind": "",
+   "note": "the vectors are held only by the host's pure functions (and the keeping through the routes, where it is syntactic and takes the stand-ins as they are); a live row is held to its matrix record with its own live values substituted (see 'record')",
+   "obligation": "the registered rule the authority",
+   "runs": [
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "BINDING conformance: the keeping vectors held through POST /studio/still and POST /studio/preview/still",
+     "switches": []
+    },
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "BINDING conformance: the preview id vectors held by the host's preview id, and in M4's state POST /studio/preview/finish's preview_id, and the request's preview log line's, equal to v0's rule over that preview's recorded binding, drawn scenes and report",
+     "switches": []
+    },
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "BINDING conformance: the field vectors held by the host's compare",
+     "switches": []
+    },
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "BINDING conformance: the piece and order vectors held by the host's piece",
+     "switches": []
+    },
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "BINDING conformance: the press vectors held by the host's press",
+     "switches": []
+    },
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "BINDING conformance: the record vectors held byte for byte by the host's record",
+     "switches": []
+    },
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "M1's state admitted",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: a mismatch read as a match (M1)",
+     "switches": [
+      "mismatch-as-match"
+     ]
+    },
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "M8's state admitted",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: unknown read as a match, B3 still (M8)",
+     "switches": [
+      "unknown-as-match"
+     ]
+    },
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "M9's state admitted",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: unknown read as a match, B3 preview (M9)",
+     "switches": [
+      "unknown-as-match"
+     ]
+    },
+    {
+     "answer": "undone",
+     "brief": "changed",
+     "caught when": "M10's state undone",
+     "certificate": "as M6b",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: unknown read as a match, B3 undo (M10)",
+     "switches": [
+      "unknown-as-match"
+     ]
+    },
+    {
+     "answer": "admitted",
+     "brief": "changed",
+     "caught when": "M1's state admitted on the refreshed binding",
+     "certificate": "written",
+     "director_code": "",
+     "ledger": "+2",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the evidence refreshed at the press (M1)",
+     "switches": [
+      "binding-refreshed"
+     ]
+    },
+    {
+     "answer": "",
+     "brief": "",
+     "caught when": "K1's upper-case scene kept lower-cased where \"\" is kept",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the kept scene case-folded (K1)",
+     "switches": [
+      "keeping-case-folded"
+     ]
+    }
+   ],
+   "state": "§3's vectors (0253-vectors.json), held by the host's pure compare, piece, press, record and id functions and, for the keeping and the finish's preview_id, through the routes"
+  },
+  {
+   "his ruling": "1. Register mismatch at Admit or Undo: LOCK the draft.\nDo not add a runtime register-file read or a new refusal outcome at the press. Pin BINDING-0 v0 in the host, verify that the host pin matches the registered v0 line, and require the planted mismatched-pin case to refuse. Run `binding.py check` in the full check as proposed.\nThe boundary is important: this establishes agreement between the host's declared pin and the register. It does not establish that every runtime decision independently re-reads the register. That stronger behavior would change the contract and require BINDING-0 v1.",
+   "id": "M20p",
+   "kind": "",
+   "note": "the pin is agreement between the host's declared pin and the register, held by these rows and the full check's binding.py check; no register read at a press and no new refusal outcome (his first ruling, governing)",
+   "obligation": "the registered rule the authority",
+   "runs": [
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "BINDING-0 pinned: the host's version and sha256 are the register's version-0 line",
+     "switches": []
+    },
+    {
+     "answer": "refused",
+     "brief": "",
+     "caught when": "the pin row refuses",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": true,
+     "record": "",
+     "row": "BINDING plant: the host's pinned sha256 differs from the register's",
+     "switches": [
+      "pin-differs"
+     ]
+    }
+   ],
+   "state": "the host's pin of the contract it implements"
+  },
+  {
+   "id": "M21",
+   "kind": "",
+   "obligation": "BIND-COUNT-0",
+   "requires": [
+    "R5's 'by the new' equals its 'by the old' in the same run plus k, k the number of this matrix's plant rows ('plant rows', M20p's among them)",
+    "the keys R5 reads from the new tree minus those from the old are exactly 'art/studio.py selftest | ' + each plant row's name, each passing",
+    "checked by running R5's own parser (tools/rung.py parse_rows) on both trees",
+    "PLANTS HELD, nothing gone, nothing no longer refused"
+   ],
+   "runs": [
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "(a measurement of the delivery, not a STUDIO row)",
+     "switches": []
+    }
+   ],
+   "state": "R5 (tools/rung.py plants, his pushed tree's) on 1381b31..0253"
+  },
+  {
+   "his rulings": {
+    "2": "2. Should the page name a preview on Admit? LOCK the draft: never in 0253.\nKeep the existing rule: preview binding is checked when the admission names a preview by ID. Do not change `play.js` to automatically name the preview merely because a card displays one.\nA preview being visible is not, by itself, proof that the designer intends to rely on that preview as admission evidence. Automatically binding it could create new refusals without establishing that the preview was part of the admission decision.\nThe named-preview path must still have direct row coverage. STUDIO-owned tests can exercise it without changing the normal page workflow.",
+    "3": "3. Should FLAGSHIP-0 name the preview it verified? LOCK the draft: never.\nKeep FLAGSHIP-0's rule that studio admission does not read its evidence. Do not amend the row to name the preview.\nThis preserves the distinction between an external procedure's evidence and the authority decision made by the studio. If a future workflow deliberately makes admission depend on a preview, that should be a separately specified contract—not an implicit change to FLAGSHIP-0."
+   },
+   "id": "M22",
+   "kind": "",
+   "note": "spec v2 §9 lists PAGE, PAGE-CARDS and PAGE-WORLDS as admit only: PAGE and PAGE-CARDS also undo through the page, and PAGE-WORLDS neither admits nor undoes (the code wins over the spec, said); 0254's subject, the inverse's exactness for '=' and '-' (CERT-0, 0244), is not a binding; a route that refuses is listed with its evidence and the refusal kept",
+   "obligation": "the window (0253 -> 0254)",
+   "requires": [
+    "each suite's admit answers and undo answers listed apart: PAGE's one undo; PAGE-CARDS' 5a and 5b, which undo command-line admissions whose inverses are not exact ('statements-not-bytes', 'not-restored'): no BINDING-* refusal expected, of and scene being bound whatever the inverse's exactness; any refusal listed with its evidence and kept",
+    "commit 2 changes PAGE's driver, a change to the harness and not to the product, said in its message: PAGE's undo step reads the host's revision id (GET /live's rev.id) after served_head and live_gate.clear() and passes it to the undo step, and art/web/page_test.js's undo waits, before pressing st-undo, until mb-undo's data-state is \"current\" and atRev(st.rev) holds (undo_strip's first wait; never also a wait for can true, so that PAGE's edit-plant runs, which admit nothing, still press and receive STUDIO-NOTHING-TO-UNDO); a press before that read stays M23's permanent refusal, held by STUDIO's own rows"
+   ],
+   "routes": [
+    {
+     "declares": "Admit only: its still sends scene = the candidate's scene; names no preview",
+     "route": "HELD (held_selftest)"
+    },
+    {
+     "declares": "Admit only: its still sends scene = the candidate's scene; names no preview",
+     "route": "IMPACT-STUDIO"
+    },
+    {
+     "declares": "Admit only: its still sends scene = the candidate's scene; names no preview",
+     "route": "PREVIEW-STUDIO"
+    },
+    {
+     "declares": "Admit only: its still sends scene = the candidate's scene; names no preview",
+     "route": "STUDIO-2 (a worlds-mode admit)"
+    },
+    {
+     "declares": "Admit and undo through the page (art/web/play.js): its still sends scene = the candidate's scene; its Undo, the drawer's st-undo (art/page_test.py, ch.do({\"do\": \"undo\"}) at about line 561; art/web/page_test.js's undo step), sends of, and from 0253 scene, as GET /undo.json gave them, pressed only once Undo's account has been read at the host's current revision; names no preview with Admit (his second ruling: never in 0253)",
+     "route": "PAGE"
+    },
+    {
+     "declares": "Admit and undo through the page (art/web/play.js): its still sends scene = the candidate's scene; its Undo, the strip's mb-undo in case 5a and the Edit menu's in case 5b (art/page_dash.py sc_undo, about lines 999 and 1018), pressed after Undo's account at the host's revision (undo_strip with rev), sends of, and from 0253 scene, as GET /undo.json gave them; names no preview with Admit (his second ruling: never in 0253)",
+     "route": "PAGE-CARDS"
+    },
+    {
+     "declares": "no admission and no undo through the host (art/page_dash.py's worlds run makes none): no binding to declare",
+     "route": "PAGE-WORLDS"
+    },
+    {
+     "declares": "Admit and undo: the still's scene; the undo's of and scene as GET /undo.json gave them, in place of {}; its own rows (M4, M4b, M4k, M5, M9, M13p, and M20's M9 plant) name a preview by its id: the named-preview path, held by STUDIO alone (his second ruling)",
+     "route": "STUDIO (with page_dash.studio_rows)"
+    },
+    {
+     "declares": "Admit and undo: the still's scene; the undo's of and scene as GET /undo.json gave them, in place of {}; names no preview",
+     "route": "FACADE"
+    },
+    {
+     "declares": "Admit and undo: the still's scene; the undo's of and scene as GET /undo.json gave them, in place of {}; names no preview",
+     "route": "STRICT"
+    },
+    {
+     "declares": "Admit and undo: its still (at line 193, no scene today) sends the candidate's scene; its undo (at line 208, {} today) of and scene as GET /undo.json gave them; names no preview, never the one it verified (his third ruling: FLAGSHIP-0's rule that the studio's admission does not read its evidence kept, its row not amended)",
+     "route": "FLAGSHIP (flagship.py's procedure and its self-test)"
+    },
+    {
+     "declares": "its still already names its scene; its Undo sends of and adds scene from GET /undo.json; names no preview with Admit (his second ruling: never in 0253); play.js is not changed to name the preview a card displays",
+     "route": "the desktop studio's page (art/web/play.js)"
+    }
+   ],
+   "runs": [
+    {
+     "answer": "none BINDING-* once declared",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "(a measurement of the delivery, each route's own suite: listed with its admit answer and its undo answer apart)",
+     "switches": []
+    }
+   ],
+   "state": "every route of §9 that admits or undoes through the host"
+  },
+  {
+   "id": "M23",
+   "kind": "undo",
+   "obligation": "the window: v0's permanent refusals on a studio route",
+   "runs": [
+    {
+     "answer": "BINDING-UNKNOWN; the next press after a fresh read: undone",
+     "brief": "same, then changed",
+     "certificate": "none, then as M6b",
+     "director_code": "",
+     "ledger": "+1, then +2",
+     "names": "undo.of",
+     "note": "the page sends of \"\" (play.js: ui.undo.can is not true); the control that can send it is the drawer's st-undo, never disabled (play.js undoShow disables only mb-undo); S_sent the scene it sends with it, the entry's outcome as compared (UNKNOWN when it is \"\")",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "BINDING-UNKNOWN",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "",
+        "expected": "N",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "UNKNOWN"
+       },
+       {
+        "declared": "S_sent",
+        "expected": "S_w",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "UNKNOWN or as compared"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING window: Undo pressed before GET /undo.json is read is refused BINDING-UNKNOWN, and the next press after a fresh read undoes",
+     "switches": []
+    },
+    {
+     "answer": "BINDING-UNKNOWN",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "+1 (the inverse's evaluation, appended before cmd_admit and the binding check; the recovery appends no line)",
+     "names": "undo.of",
+     "note": "the state pinned to a dead writer's pending folder whose recovery writes none of the brief's files: a folder with no manifest.json (as play.py's lifecycle row makes one), or a well-formed manifest whose ledger_seq holds no admit event (an admission killed at 'pending:manifest'; its old_sha256 values the current files, or recovery refuses PENDING-DAMAGED); the target an art admission #N (a layout target answers can false). GET /undo.json answers can null, its of N_shown and its scene \"\"; the page sends of \"\" (play.js: ui.undo.can is not true) and scene \"\"; the recovery appends no event, so the target at the press is N = N_shown. Outside this row: a folder whose admission is already in the ledger with files still to install; there the press's recovery completes the dead writer's admission (the brief changes), the inverse, evaluated over the files as they were before recovery, is refused STUDIO-DIRECTOR-REFUSED / HEAD-MOVED at append_checked's held_head, +0, the binding not reached (MEASURED at the director level by the review's probe: HEAD-MOVED, +0)",
+     "plant": false,
+     "record": {
+      "candidate": "",
+      "decision": "BINDING-UNKNOWN",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "",
+        "expected": "N",
+        "field": "of",
+        "kind": "undo",
+        "outcome": "UNKNOWN"
+       },
+       {
+        "declared": "",
+        "expected": "S_u",
+        "field": "scene",
+        "kind": "undo",
+        "outcome": "UNKNOWN"
+       }
+      ],
+      "intent_sha256": "",
+      "of": "N",
+      "operation": "undo"
+     },
+     "row": "BINDING window: Undo over a dead writer's pending folder is refused BINDING-UNKNOWN",
+     "switches": []
+    }
+   ],
+   "state": "§9's two states, posted by STUDIO as the page posts"
+  },
+  {
+   "id": "M24",
+   "kind": "still",
+   "obligation": "not_checked explicit",
+   "runs": [
+    {
+     "answer": "per today: STUDIO-NO-STILL or STUDIO-FAILED, the code 1381b31 answers (to be measured)",
+     "brief": "same",
+     "certificate": "none",
+     "director_code": "",
+     "ledger": "per today: the existing refusal's delta, to be measured on 1381b31 and held equal",
+     "plant": false,
+     "record": {
+      "candidate": "A",
+      "decision": "the code answered",
+      "director_code": "",
+      "evidence": [
+       {
+        "declared": "S_base",
+        "expected": "",
+        "field": "scene",
+        "kind": "still",
+        "outcome": "not reached"
+       }
+      ],
+      "intent_sha256": "I_A",
+      "of": "",
+      "operation": "admit"
+     },
+     "row": "BINDING order: a still's kept file removed after it was posted is answered as today, the binding not reached",
+     "switches": []
+    }
+   ],
+   "state": "A's still posted declaring the base scene, its kept file then removed"
+  },
+  {
+   "id": "M25",
+   "kind": "",
+   "obligation": "v0 acceptance 4 and 5",
+   "requires": [
+    "every decision record the runs below make, as STUDIO writes it beside its case id (v0 decision record.self-test), honest and planted runs alike, byte-identical across the two runs: M1, M3, M3s (both), M6, M6b, M8, M9, M10, M10b, M11 (its seven honest runs), M13, M13u, M14, M16 (all ten), M23 (both), M24; each sha256 to be measured and listed in the delivery's record with where it ran, never chosen here",
+    "M4's record also held within one run: a third byte-identical copy of M4's state (the tree copied twice byte for byte after A's preview is finished and its candidate-side stills kept (so that both copies hold the one preview, its preview_id the same); on each copy a Live and a Gateway started (ROOT set) and the request restored (Gateway.restore)), enforcement on, pressed as copy 2 was: its record byte-identical to copy 2's (the same state and request)",
+    "outside the cross-run set, said: the records of M4, M4b, M4k and M13p, which carry a preview id; by v0's id rule (registered, v0 wins) it hashes preview.report.json, which carries the request id (provenance.request, the camera path's seed and its id; art/studio.py preview_finish and _path, art/motion.py report), and a request id carries the UTC second; v0's form promises the same bytes only for the same state and request, so this is no v0 defect",
+    "acceptance 5 (Windows and Linux agree on those records): NOT_MEASURED until a Linux host runs it (v0's own note)"
+   ],
+   "runs": [
+    {
+     "answer": "",
+     "brief": "",
+     "certificate": "",
+     "director_code": "",
+     "ledger": "",
+     "plant": false,
+     "record": "",
+     "row": "(a measurement of the delivery, not a STUDIO row: the decision records byte for byte across runs)",
+     "switches": []
+    }
+   ],
+   "state": "the delivery's two runs of python art/selftests.py --repeat 2 on the 0253 tree",
+   "v0's words": [
+    {
+     "v0": "acceptance/his words",
+     "words": "4. Repeated runs produce identical canonical decision records."
+    },
+    {
+     "v0": "acceptance/his words",
+     "words": "5. Windows and Linux agree on those records."
+    },
+    {
+     "v0": "acceptance/note",
+     "words": "Linux NOT_MEASURED until a Linux host runs it"
+    },
+    {
+     "v0": "decision record/form",
+     "words": "the same state and request give the same bytes"
+    }
+   ]
+  }
+ ],
+ "spec departures": [
+  {
+   "matrix": "four cells for every kind: M4br and M6br added beside M3r, as controls (no plant rows); §4's bullets and §10's table list three cells for the preview and the undo",
+   "scope": "the controls show, as M3r does, that the switch alone leaves a bound press unchanged; a switch that also skips the certificate, the brief or the ledger is caught by M5 and M7, not by these controls; at 1381b31 they are near-equivalent to M5 and M7, since with the check removed nothing the host reads tells the states apart but a kept still's declared scene or the undo's of, which undo() only records (page_saw)",
+   "spec": "§4: 'The same 2 × 2 for the other kinds'"
+  },
+  {
+   "matrix": "an admission of another statement (M13's state)",
+   "scope": "aligned_admission admits the very statement A rewrites, so A's scene at H1 is its scene at H0 and v0's B2 state, 'of statements the candidate does not touch', cannot arise (MEASURED, M13's state)",
+   "spec": "§7 and §10: B2's move, 'page_dash's aligned_admission'"
+  },
+  {
+   "matrix": "+2 and the other writer's bytes (M16)",
+   "scope": "the spec counted the admission's own writes; the matrix measures every row from before the POST ('ledger column')",
+   "spec": "§7: the HEAD-MOVED at the commit state, '+1' and the brief unchanged"
+  },
+  {
+   "matrix": "PAGE and PAGE-CARDS admit and undo; PAGE-WORLDS neither (M22)",
+   "scope": "read from their code (art/page_test.py, art/web/page_test.js, art/page_dash.py)",
+   "spec": "§9: PAGE, PAGE-CARDS and PAGE-WORLDS 'Admit only'"
+  },
+  {
+   "matrix": "narrowed to a folder whose recovery writes no file (M23); where the recovery installs a dead writer's files, HEAD-MOVED answers first",
+   "scope": "v0 order.rule: the binding check comes after every existing check",
+   "spec": "§9: Undo over a dead writer's pending folder, BINDING-UNKNOWN"
+  },
+  {
+   "matrix": "M13p's binding-removed run added",
+   "scope": "v0 cases B2's attribution",
+   "spec": "§10: M13p '— / stale-skipped'"
+  },
+  {
+   "matrix": "M3s and M4k (v0's keeping of evidence over time), M20's id run (v0's id rule held), M25 (v0 acceptance 4 and 5) added",
+   "scope": "v0 governs the matrix; nothing of §10 removed",
+   "spec": "§10: M1 to M24"
+  },
+  {
+   "matrix": "scoped to the rows the matrix names and the rows 0253 adds ('plant rows' rule)",
+   "scope": "on 1381b31 STUDIO already prints fifteen rows R5 reads as plant rows without the prefix (the census)",
+   "spec": "§8: 'No row that is not a registered plant row may contain the word plant'"
+  }
+ ],
+ "status": "FROZEN: the three questions resolved by his governing rulings (OPEN-Q), OPEN-1 to OPEN-7 read from v0's text and said under 'resolved'; what v0 does not decide is under 'open' (nothing, at this freeze), no row or vector deciding it; 'to be measured' marks a value of 1381b31's behaviour (or of the director's unchanged behaviour that only the 0253 tree's plant reaches) the rows measure and hold equal, never a value chosen here and never a value 0253's new code defines",
+ "symbols": {
+  "H0": "B2: the head A and its preview were planned at, before the other admission moved the files",
+  "H_A": "the head A's preview was planned at (its binding's head: the evaluation's checked_against), where nothing moved since",
+  "I_A": "the sha256 of A's intent bytes as the gateway keeps them",
+  "I_C": "the sha256 of C's intent bytes",
+  "K": "the one candidate-side pose kept naming the base scene",
+  "M": "an earlier admission's admit sequence number, M <= N-2",
+  "M_any": "a sequence number the request declares where there is no target",
+  "N": "the undo target's sequence number",
+  "N_shown": "of as GET /undo.json gave it",
+  "P_A": "the preview_id A's finished preview's own finish answers (POST /studio/preview/finish), held to the host's id function over that preview's declared values (in the vectors, P_A is vector ID1's id over stand-ins)",
+  "P_A0": "B2: the preview_id of A's preview planned at H0, as its finish answers it (in the vectors, vector ID3's id over stand-ins)",
+  "P_A2": "M4k: the preview_id of A's second finished preview, as its finish answers it (P_A2 != P_A)",
+  "P_B": "the id of a finished preview of another candidate (B): well formed, naming no finished preview of A",
+  "R_A": "the sha256 of the preview.report.json of A's finished preview in R-M4's state",
+  "R_A0": "B2: the sha256 of the preview.report.json of A's finished preview at H0",
+  "S_A": "A's scene at admission: the scene the admission's own evaluation exports (lineage.scene_sha256); at a head that has not moved, the scene A was drawn with",
+  "S_A0": "B2: A's scene as drawn at head H0, which its still declared",
+  "S_A1": "B2: the admission's own evaluation's scene at H1, after another admission moved the files (the row requires S_A1 != S_A0)",
+  "S_base": "the base scene: the world's scene as the files stand, A not applied",
+  "S_sent": "the scene the page sends with an undo it sends before reading GET /undo.json",
+  "S_u": "M23: the scene at the undo, the scene the undo's own evaluation lays the inverse over at the press (the files as they stand)",
+  "S_w": "the world's scene GET /undo.json was computed at; where nothing moved since, the scene at the undo",
+  "S_w0": "B2-undo: the world's scene GET /undo.json gave before the rebase",
+  "S_w1": "B2-undo: the scene at the undo, after a rebase recorded through the director",
+  "S_wL": "B4-UNDO-LAYOUT: the scene the files export as they stand after the layout admission #N (lineage.scene_sha256 of the world's export): the scene at the undo by v0's identity; GET /undo.json gives \"\" there (it answers before its dry run)",
+  "n": "the preview's number of poses: in a live preview 4 to 8 (art/camera.py MIN_POSES and POSES)"
+ },
+ "v0's plants 0253 must catch, mapped": {
+  "a matched binding taken as sufficient: an existing check skipped once every binding matches (B4 admitted, or answered with a code other than its own check's)": [
+   "M12"
+  ],
+  "a mismatch read as a match (B1 admitted)": [
+   "M20 (mismatch-as-match)"
+  ],
+  "the binding check placed before an existing check (an order state answered BINDING-*: B2's honest state BINDING-MISMATCH where STUDIO-STALE is expected, and the order states)": [
+   "M17"
+  ],
+  "the binding check removed (B1, B2's stale-neutralized run and B3 admitted or undone)": [
+   "M2",
+   "M5",
+   "M7",
+   "M8",
+   "M9",
+   "M10",
+   "M13p (stale-skipped, binding removed)",
+   "M13u",
+   "M15"
+  ],
+  "the card's account claiming a binding checked or matched before the press": [
+   "M19"
+  ],
+  "the evidence refreshed at the press (B1 admitted on the refreshed binding)": [
+   "M20 (binding-refreshed)"
+  ],
+  "unknown read as a match (B3 admitted)": [
+   "M20 (unknown-as-match: M8, M9, M10)"
+  ]
+ },
+ "what": "BINDING-0's 0253 test matrix (spec v2 §10), frozen before the guard is built (0253's first commit; the guard its second): every row with its obligation, kind, state, switches, answer, director code, record (every entry in v0's precedence, symbols as below), ledger delta, brief, certificate and the exact name of its STUDIO row"
+}
