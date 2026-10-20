@@ -265,7 +265,7 @@ python art/play.py --selftest            # the live loop without a browser: LIVE
   with its own ledger and maps; `play.py NAME --worlds DIR` serves them. The page switches between worlds, duplicates
   one, and queues a prompt for any world while it plays on (`studio_queue.py`); a ready task is reviewed in its own
   world's page, its candidates drawn again at the head as it is then. `python art/studio_queue.py selftest` holds it
-  (STUDIO-2 SELFTEST 19/19); [`STUDIO.md`](STUDIO.md) says how.
+  (STUDIO-2 SELFTEST 47/47; it said 19/19, stale since 0250, corrected by 0254); [`STUDIO.md`](STUDIO.md) says how.
 - **The shell (STUDIO-3, 0230).** The play page is a studio around the play surface, after the owner's mockup: a menu
   bar, the scene, layer and selection, a navigator, the viewport with its tools, pills and measured statistics, an
   inspector (`/object.json`, read from the scene served; nothing bound), the layers and the world's settings, an asset

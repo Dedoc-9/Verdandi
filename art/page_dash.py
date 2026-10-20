@@ -237,58 +237,105 @@ def studio_rows(row, c):
         row("plant %s: the account made to differ from the press is caught by the comparison (%s)" % (plant, label),
             same_rev and not same and (shown, answered) == want, "displayed %s; the press answered %s; at the same revision %s" % (shown, answered, same_rev))
 
-    # the restoration: an admission made by the command line, of a statement written aligned; undone through the studio
-    def aligned_admission():
+    # the restoration (0254, the frozen matrix's ST1 and ST2, art/director/inverse/0254-matrix.json): an admission made
+    # by the command line since 0254, of a statement written aligned, undone exactly; and a pre-0254 admission (OPEN-2(a),
+    # his ruling: "Ruling: Option (a) — Freeze a pre-0254 verification fixture, then append a clean `5a` row."), L-ST2,
+    # written by the director's commit with its inverse verbatim from the freeze's legacy-inverses (7dee210's own record),
+    # undone statement for statement and said so
+    import inverse_freeze
+    _m, V254, _l, fz_problems = inverse_freeze.frozen()
+    lst2 = [x for x in (V254 or {}).get("legacy-inverses", {}).get("vectors", []) if x["id"] == "L-ST2"]
+    lst2 = lst2[0] if lst2 and not fz_problems else None
+    line = "canopy plaza concrete_slab 7.0 19,10 28,11"
+
+    def aligned_tree():
+        """plaza-night's canopy written aligned (L-ST2's parent) and recorded; whether the tree's art is the vector's own."""
         text = c["original"].decode("utf-8")
-        line = "canopy plaza concrete_slab 7.0 19,10 28,11"
         open(art, "wb").write(text.replace(line, line.replace(" ", "   ", 2), 1).encode("utf-8"))
         studio.quiet(D.cmd_rebase, ws(), "the canopy's statement written aligned")
         w = ws()
+        own = lst2 is not None and w.text() == V254["parents"][lst2["parent"]]["text"] and \
+            D.canon.sha256(w.text().encode("utf-8")) == lst2["parent sha256"]
+        return w, own
+
+    def evaluated(w):
         _o, parts, _c = w.export()
         doc = {"base": {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "brief": brief, "candidate": "A",
                "format": "VERDANDI-INTENT", "layout": [], "prompt": "deeper (a command line's admission)", "rationale": "deeper",
-               "revision": ["= " + line + " deep 2.6"], "scope": ["plaza/canopy/*"], "version": "0"}
+               "revision": list(lst2["revision"]) if lst2 else ["= " + line + " deep 2.6"], "scope": ["plaza/canopy/*"], "version": "0"}
         raw = D.canon.dumps(doc)
         verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(w, D.canon.load_intent(raw))
-        ev = studio.quiet(D.append_evaluation, w, raw, verdict, after, timings, rec)
+        return verdict, studio.quiet(D.append_evaluation, w, raw, verdict, after, timings, rec)
+
+    def aligned_admission():
+        w, own = aligned_tree()
+        verdict, ev = evaluated(w)
         a = studio.quiet(D.cmd_admit, w, ev["seq"], chooser="a command line (DASHBOARD-0's self-test)", still=D.selftest_still())
         settle()
-        return verdict["verdict"], a
+        return verdict["verdict"], a, own
 
-    v, a = aligned_admission()
+    def legacy_admission():
+        w, own = aligned_tree()
+        verdict, ev = evaluated(w)
+        a = D.selftest_admission(w, ev["seq"], inverse=list(lst2["inverse"]), still=D.selftest_still(),
+                                 chooser="a pre-0254 admission (0254's ST2: its inverse 7dee210's, frozen)")
+        settle()
+        return verdict["verdict"], a, own
+
+    v, a, own = aligned_admission()
     certs = os.path.join(c["tmp"], "art", "build", "studio", brief, "certificates")
     kept_before = os.path.exists(os.path.join(certs, "%s.json" % a["seq"]))
     _c, t1 = _get(port, "/undo.json?world=%s" % brief)
     kept_after_get = os.path.exists(os.path.join(certs, "%s.json" % a["seq"]))
     uc = t1.get("undone_certificate") or {}
-    row("GET /undo.json names what Undo would undo (a command line's admission) and its certificate made from the ledger, not kept: a GET writes nothing",
-        v == "CLEAN" and t1.get("can") is True and t1.get("of") == a["seq"] and t1.get("would_restore") == a["head_before"] and uc.get("made") == "from the ledger now; not kept"
-        and uc.get("exact") is False and uc.get("statements") is True and not kept_before and not kept_after_get,
-        "#%s (%s); would restore %s; its certificate: exact %s, statements %s, %s" % (t1.get("of"), v, (t1.get("would_restore") or "")[:12], uc.get("exact"),
-                                                                                     uc.get("statements"), uc.get("made")))
+    row("GET /undo.json names what Undo would undo (a command line's admission of an aligned statement) and its certificate made from the ledger, exact, not kept: a GET writes nothing",
+        own and v == "CLEAN" and t1.get("can") is True and t1.get("of") == a["seq"] and t1.get("would_restore") == a["head_before"]
+        and uc.get("made") == "from the ledger now; not kept" and uc.get("exact") is True and uc.get("statements") is True and not kept_before and not kept_after_get
+        and len(a["inverse"]) == 1 and a["inverse"][0][:3] == "@= ",
+        "#%s (%s; its inverse %s); would restore %s; its certificate: exact %s, statements %s, %s" % (
+            t1.get("of"), v, [x[:24] for x in a["inverse"]], (t1.get("would_restore") or "")[:12], uc.get("exact"), uc.get("statements"), uc.get("made")))
     code, u = post(srv, "/studio/undo", declared(), tok)
     res = u.get("restoration") or {}
     uc = res.get("undone_certificate") or {}
-    row("undone, NOT restored exactly, and said: the statements came back, the bytes did not (an aligned statement's '='); its certificate kept by the POST",
-        code == 200 and res.get("verdict") == "statements-not-bytes" and res.get("head") is False and res.get("statements") is True and res.get("art_bytes") is False
-        and res.get("parts_differ") == ["art"] and uc.get("made") == "from the ledger, kept now" and os.path.exists(os.path.join(certs, "%s.json" % a["seq"]))
-        and (u.get("certificate") or {}).get("ok") is True,
-        "%s (%s); expected %s, after %s; parts differing %s; the undone certificate %s" % (res.get("verdict"), res.get("said"), (res.get("expected_head") or "")[:12],
-                                                                                         (res.get("head_after") or "")[:12], res.get("parts_differ"), uc.get("made")))
+    row("undone and restored exactly: an aligned statement's '=' admitted since 0254 comes back byte for byte, said exact; its certificate kept by the POST",
+        code == 200 and res.get("verdict") == "exact" and res.get("head") is True and res.get("statements") is True and res.get("art_bytes") is True
+        and res.get("parts_differ") == [] and uc.get("made") == "from the ledger, kept now" and uc.get("exact") is True
+        and os.path.exists(os.path.join(certs, "%s.json" % a["seq"])) and (u.get("certificate") or {}).get("ok") is True,
+        "%s (%s); expected %s, after %s; parts differing %s; the undone certificate %s, exact %s" % (
+            res.get("verdict"), res.get("said"), (res.get("expected_head") or "")[:12], (res.get("head_after") or "")[:12], res.get("parts_differ"),
+            uc.get("made"), uc.get("exact")))
+    restore()
+    if lst2 is None:
+        row("undone, NOT restored exactly, and said, for a pre-0254 admission (its inverse 7dee210's, frozen), written by the director's commit: the statements came back, the bytes did not",
+            False, "the 0254 freeze does not read: %s" % "; ".join(fz_problems)[:200])
+    else:
+        v, a, own = legacy_admission()
+        code, u = post(srv, "/studio/undo", declared(), tok)
+        res = u.get("restoration") or {}
+        uc = res.get("undone_certificate") or {}
+        row("undone, NOT restored exactly, and said, for a pre-0254 admission (its inverse 7dee210's, frozen), written by the director's commit: the statements came back, the bytes did not",
+            own and v == "CLEAN" and a["inverse"] == lst2["inverse"] and code == 200 and res.get("verdict") == "statements-not-bytes" and res.get("head") is False
+            and res.get("statements") is True and res.get("art_bytes") is False and res.get("parts_differ") == ["art"]
+            and uc.get("made") == "from the ledger, kept now" and uc.get("exact") is False and (u.get("certificate") or {}).get("ok") is True,
+            "#%s's inverse %r (L-ST2's); %s (%s); parts differing %s; the undone certificate %s, exact %s" % (
+                a["seq"], a["inverse"][0][:44], res.get("verdict"), res.get("said"), res.get("parts_differ"), uc.get("made"), uc.get("exact")))
     restore()
     studio.ACCOUNT_PLANT = "restoration-from-own-certificate"
     try:
-        aligned_admission()
-        code, u = post(srv, "/studio/undo", declared(), tok)
+        if lst2 is not None:
+            legacy_admission()
+            code, u = post(srv, "/studio/undo", declared(), tok)
+        else:
+            code, u = 0, {}
     finally:
         studio.ACCOUNT_PLANT = ""
     res = u.get("restoration") or {}
-    # caught by the plant's own divergence: what came back is the aligned case's (the statements, not the bytes, the art
+    # caught by the plant's own divergence: what came back is the pre-0254 case's (the statements, not the bytes, the art
     # part), and only the verdict, read from the undo's own certificate (exact), says otherwise
     row("plant restoration-from-own-certificate: the verdict read from the undo's own certificate (a redo's inverse) is caught: it does not say what came back",
         code == 200 and res.get("verdict") == "exact" and res.get("statements") is True and res.get("art_bytes") is False and res.get("parts_differ") == ["art"]
         and (u.get("certificate") or {}).get("exact") is True,
-        "the plant's verdict %s over statements %s, bytes %s, parts %s; the undo's own certificate exact %s" % (
+        "over a pre-0254 admission (L-ST2): the plant's verdict %s over statements %s, bytes %s, parts %s; the undo's own certificate exact %s" % (
             res.get("verdict"), res.get("statements"), res.get("art_bytes"), res.get("parts_differ"), (u.get("certificate") or {}).get("exact")))
     restore()
 
@@ -985,11 +1032,35 @@ def cards_run(browser, headed, say=None):
                 v_, aft, tim, _o1, _o0, _t, rec = D.evaluate_doc(ws, D.canon.load_intent(raw))
                 ev = studio.quiet(D.append_evaluation, ws, raw, v_, aft, tim, rec)
                 return v_["verdict"], studio.quiet(D.cmd_admit, ws, ev["seq"], chooser="a command line (PAGE-CARDS)", still=D.selftest_still())
-            verdict, a = director_admit(["= building north-lane brick 16 10,2 17,2 face window glass_wired storey 3.5"], ["north-lane/building/*"])
+
+            # 0254 (the frozen matrix's PAGE-CARDS rows, art/director/inverse/0254-matrix.json): case 5a over a pre-0254
+            # admission (OPEN-2(a), his ruling: "Ruling: Option (a) — Freeze a pre-0254 verification fixture, then append a
+            # clean `5a` row."), L-NORTH-LANE, written by the director's commit with its stored inverse verbatim from the
+            # freeze's legacy-inverses (7dee210's own record); then 5a-exact, the same aligned statement admitted since 0254
+            import inverse_freeze
+            _m254, V254, _l254, fz = inverse_freeze.frozen()
+            if fz or V254 is None:
+                raise RuntimeError("the 0254 freeze does not read: %s" % "; ".join(fz)[:200])
+            lnl = [x for x in V254["legacy-inverses"]["vectors"] if x["id"] == "L-NORTH-LANE"][0]
+            ebr = [x for x in V254["revisions"]["vectors"] if x["id"] == "E-BRIEF"][0]
+            yard = V254["parents"][lnl["parent"]]
+
+            def legacy_admit(rev_, scope, inverse):
+                _o, parts, _x = ws.export()
+                doc = {"base": {k: parts[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "brief": W, "candidate": "A", "format": "VERDANDI-INTENT",
+                       "layout": [], "prompt": "a pre-0254 admission (PAGE-CARDS)", "rationale": "r", "revision": rev_, "scope": scope, "version": "0"}
+                raw = D.canon.dumps(doc)
+                v_, aft, tim, _o1, _o0, _t, rec = D.evaluate_doc(ws, D.canon.load_intent(raw))
+                ev = studio.quiet(D.append_evaluation, ws, raw, v_, aft, tim, rec)
+                return v_["verdict"], D.selftest_admission(ws, ev["seq"], inverse=list(inverse), still=D.selftest_still(),
+                                                           chooser="a pre-0254 admission (PAGE-CARDS: its inverse 7dee210's, frozen)")
+            own = text0.replace(b"\r\n", b"\n") == yard["text"].encode("utf-8") and D.canon.sha256(yard["text"].encode("utf-8")) == lnl["parent sha256"]
+            verdict, a = legacy_admit(list(lnl["revision"]), ["north-lane/building/*"], lnl["inverse"])
             certs = os.path.join(live.studio.records, "certificates")
             listing = lambda: sorted(os.listdir(certs)) if os.path.isdir(certs) else []
-            row("cards: a command line's admission of an aligned statement landed: CLEAN, admitted, and no certificate kept for it",
-                verdict == "CLEAN" and a.get("seq") and "%s.json" % a["seq"] not in listing(), "#%s %s; certificates kept %s" % (a.get("seq"), verdict, listing()))
+            row("cards: a pre-0254 admission of an aligned statement (its inverse 7dee210's, frozen), written by the director's commit, landed: CLEAN, and no certificate kept for it",
+                own and verdict == "CLEAN" and a.get("seq") and a.get("inverse") == lnl["inverse"] and "%s.json" % a["seq"] not in listing(),
+                "the tree's art L-NORTH-LANE's parent %s; #%s %s, its inverse %r; certificates kept %s" % (own, a.get("seq"), verdict, (a.get("inverse") or [""])[0][:50], listing()))
             served_head()
             l0 = listing()
             u = get("/undo.json?world=%s" % W)
@@ -1010,13 +1081,37 @@ def cards_run(browser, headed, say=None):
             served_head()
             gone = ch.do({"do": "chip", "phrase": "the world drawn is still the admitted scene", "has": False}, 60)
             st_ = r.get("status") or {}
-            row("cards: case 5a, Undo restores the statements but not the bytes — the page says so (NOT restored exactly, both heads), in its toast too, never success alone; while the loop is behind, the chip says the world drawn is the admitted scene",
+            row("cards: case 5a, Undo of a pre-0254 admission (its inverse 7dee210's, frozen, written by the director's commit) restores the statements but not the bytes: the page says so (NOT restored exactly, both heads), in its toast too, never success alone; while the loop is behind, the chip says the world drawn is the admitted scene",
                 r.get("ok") and st_.get("bad") and "NOT restored exactly" in st_.get("text", "") and (res.get("head_after") or "?")[:12] in st_.get("text", "")
                 and (res.get("expected_head") or "?")[:12] in st_.get("text", "") and any(t_.get("bad") and "NOT restored" in t_.get("text", "") for t_ in r.get("toasts") or [])
                 and res.get("verdict") == "statements-not-bytes" and res.get("parts_differ") == ["art"] and (res.get("undone_certificate") or {}).get("made") == "from the ledger, kept now"
                 and lag.get("ok") and gone.get("ok"),
                 "the page: %r; the host: %s %s; the chip while held %r" % (st_.get("text", r.get("error", ""))[:140], res.get("verdict"), res.get("parts_differ"),
                                                                           lag.get("chip", lag.get("error", ""))[:80]))
+            # 5a-exact: row 62, which 5a's legacy undo left collapsed, written back aligned (the parent byte for byte) and recorded;
+            # then E-BRIEF's revision admitted by the command line (cmd_admit with a still) and undone from the strip
+            rows_ = ws.text().split("\n")
+            aligned_row = yard["text"].split("\n")[62]
+            rows_[62] = aligned_row
+            open(art, "wb").write("\n".join(rows_).encode("utf-8"))
+            studio.quiet(D.cmd_rebase, ws, "the flagship's row written back aligned (0254's 5a-exact)")
+            served_head()
+            rebased = D.canon.head(D.current_parts(ws))
+            back_aligned = ws.text() == yard["text"] and aligned_row == "building north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5"
+            verdict, a3 = director_admit(list(ebr["revision"]), ["north-lane/building/*"])
+            served_head()
+            r = ch.do({"do": "undo_strip", "rev": rev().get("id")}, 120)
+            last = live.studio.state().get("last") or {}
+            res = last.get("restoration") or {}
+            served_head()
+            st_ = r.get("status") or {}
+            row("cards: the exact case, an aligned statement's admission made by the command line since 0254 (case 5a's row written back aligned and recorded first), undone from the strip: restored exactly, and the page says so",
+                back_aligned and verdict == "CLEAN" and a3.get("inverse") == ebr["inverse"] and r.get("ok") and not st_.get("bad") and "restored exactly" in st_.get("text", "")
+                and "NOT restored" not in st_.get("text", "") and res.get("verdict") == "exact" and res.get("art_bytes") is True and res.get("parts_differ") == []
+                and res.get("head_after") == rebased and ws.text() == yard["text"],
+                "the row written back aligned and recorded %s; #%s %s, its inverse %r; the page: %r; the host: %s, art bytes %s, parts %s, head after the rebased head %s" % (
+                    back_aligned, a3.get("seq"), verdict, (a3.get("inverse") or [""])[0][:60], st_.get("text", r.get("error", ""))[:120], res.get("verdict"),
+                    res.get("art_bytes"), res.get("parts_differ"), res.get("head_after") == rebased))
             # case 5b: an exact admission, a change recorded after it, then Undo from the Edit menu: NOT restored
             verdict, _a2 = director_admit(["+ bay 10,2-17,2:s-b3-f2 panel brick"], ["north-lane/building/10,2-17,2:s-b3-f2"])
             recorded("a material added after the bay", "material dash_probe 10,20,30 0.5 0.0")

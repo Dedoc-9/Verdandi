@@ -392,16 +392,21 @@ statement keys it touches, its provenance and the ledger event it is made from (
 authority. The certificate is checked at once against the brief as admitted, exactly and without exporting anything:
 the child's text is the child's, each head is its parts', the change is the art's alone, and the inverse applied to the
 child gives the parent byte for byte (`exact`) or, failing that, its statements token for token (`statements`: the
-same scene, the head not). The request's line and the admission's answer carry the summary; an undo's answer says
+same statements in another spelling of the text; not always the same scene, since the exporter keeps movers in file
+order, so that on harbor-lift a pre-0254 undo of `- mover deck` comes back statement for statement as another scene:
+corrected in place by 0254, his OPEN-6 ruling). The request's line and the admission's answer carry the summary; an undo's answer says
 whether the head before the admission came back (`head_restored`). Found by it (0244): an `=` on a statement written in
 aligned columns, and every `-`, are undone statement for statement but not byte for byte (the line comes back in single
 spaces; a removed statement comes back at the end, without its comment), so the head after such an undo is not the head
-before, though the scene is; only `+` and `=` on single-spaced statements are exact. Corrected at 0245 (MEASURED on his
+before, though the scene is (not for movers: 0254, OPEN-6); only `+` and `=` on single-spaced statements are exact. Corrected at 0245 (MEASURED on his
 machine, by round trips of `apply_revision`): the exact cases are narrower and not quite those. `+` is exact only on a
 brief that ends in exactly one LF; `=` only on a single-spaced statement whose comment, if any, follows exactly two
 spaces; and `-` of the last statement is exact too when that statement is single-spaced with no comment, the brief
 ends in exactly one LF and the line before it is not blank, while `-` of any other is not. On today's briefs: harbor-day, harbor-lift and plaza-night end in a single-spaced statement, so a `-` of their last
 statement and its undo give back the head; foundry-yard's last line is aligned, so on it no `-` does.
+*Note (2026-10-20, 0254, his ruling (a)):* every admission since records its exact inverse by position (`@=` for an `=`,
+`@+` for a `-`, and the trailing empty rows of a `+` as `@~`) and is undone byte for byte while its recorded rows stand;
+a pre-0254 admission is undone as before, and its certificate still says `statements` where that is what came back.
 
 **Glue.** `art/glue.py` judges two edits written against one head: they *commute* when both orders apply and give the
 same scene, and they *glue* when, besides, the glued scene changes exactly what each changes and both agree on every
@@ -632,6 +637,10 @@ NOT restored, with both heads and what differs, in its status line and its toast
 while no event has been appended since and the loop still serves the head the undo was made at (`undone_at`), that the
 world drawn is still the admitted scene; once the ledger or the files moved on, that the world has moved since the undo.
 The undo's own certificate (a redo's inverse) is another thing, never shown as the restoration.
+A `+` is undone by its key (`- KEY`, his OPEN-1 ruling): an edit of the added row recorded since is discarded, and the
+verdict still reads `exact`, since the head before the admission did come back (GD12; `art/director/inverse/0254-spec.md`
+§9). An undo whose recorded rows no longer stand where the admission left them is refused, never searched for (below,
+`STUDIO-NOT-UNDOABLE`).
 
 **Validation, Queue, Compare, the preview's binding, the stats.** Validation is a tab, read again whenever what is served
 changes, and it leads with the latest compile's refusal (its rows labelled as the scene before's). The Queue's list moved
@@ -653,8 +662,9 @@ query's.
 **PAGE-CARDS** (`python art/play.py --cards-selftest`, `art/page_dash.py`) executes this in a real browser, as PAGE does,
 in six scenarios on one tree and one browser: the page opened before the host settled (case 1); the cards, their names and
 accounts, the head moved after a card was drawn with the loop held and then let go (case 2), Compare; Validation failing
-while an old pass stood (case 3); evidence missing though the card is admissible (case 4) and the Queue tab; Undo after a
-command line's admission of an aligned statement (case 5a), after a change recorded between (5b), and the files restored
+while an old pass stood (case 3); evidence missing though the card is admissible (case 4) and the Queue tab; Undo of a
+pre-0254 admission of an aligned statement written by the director's own writer, its inverse 7dee210's from the 0254
+freeze (case 5a, OPEN-2(a)), and of one admitted since 0254, undone exactly (5a-exact), after a change recorded between (5b), and the files restored
 by hand but not the ledger's head (5c); another world's answer (case 7). Seven plants, each a copy of `play.js` with one
 line changed, are run in their scenario and caught only by the row each names (two of them case 2a's), with every row
 before it passed. Each step that decides a plant's row waits only for what that plant does not change (the host's
@@ -768,8 +778,9 @@ rename retried while Windows holds a handle inside. A world's first ledger is st
 starts it again; `/worlds.json` reads every other world when one cannot be read (`INSPECT-FAILED`). `cmd_verify`'s
 docstring said the launcher's look was not deep; it is.
 
-**The tests.** STUDIO-2 (`python art/studio_queue.py selftest`, `STUDIO-2 SELFTEST 46/46`) holds the transaction on the
-host: the routes (the source by its label alone, `/outline.json` opening no world; a source whose briefs cannot be
+**The tests.** STUDIO-2 (`python art/studio_queue.py selftest`, `STUDIO-2 SELFTEST 47/47`; 0254's IM1: a source
+whose ledger holds a forged positioned inverse refused `IMPORT-LEDGER` carrying the director's `LEDGER-INVERSE`, its
+staging removed) holds the transaction on the host: the routes (the source by its label alone, `/outline.json` opening no world; a source whose briefs cannot be
 listed refused, `IMPORT-SOURCE-UNREAD`, by its label), a stage and a commit, the refusals
 (every code but `IMPORT-RENAME-BUSY` and, honestly, `IMPORT-LEFTOVER`; the checks named), case 6 at the second file, a
 source changed while copied (its brief: `IMPORT-SOURCE-MOVED`; its ledger: `IMPORT-SOURCE-BUSY`), a staging changed
@@ -949,9 +960,9 @@ files stand and that head is the one it was drawn at.
 | `INTENT-*`, the director's verdicts | a candidate that is not an intent, or that the director refuses (`INTENT-APPLY`, `CHECK-FAILED`, …) or finds leaking (`LEAKAGE`) |
 | `STUDIO-STALE`, `STUDIO-NOT-ADMISSIBLE`, `STUDIO-DECIDED`, `STUDIO-NO-CANDIDATE` | at admission: the head moved since it was drawn; not CLEAN; already decided; no such candidate |
 | `STUDIO-NO-STILL`, `STUDIO-STILL-FLAGGED` | at admission (ADMISSION-0, 0222): no still taken of the candidate as drawn; a still the detectors flag, admitted only with "Admit despite" |
-| `STUDIO-DIRECTOR-REFUSED` | the director itself refused the admission, refusal or undo (its own reason shown, and since 0245 its own code as `director_code`: `LEDGER-UNLOGGED`, `HEAD-MOVED`, …) |
+| `STUDIO-DIRECTOR-REFUSED` | the director itself refused the admission, refusal or undo (its own reason shown, and since 0245 its own code as `director_code`: `LEDGER-UNLOGGED`, `HEAD-MOVED`, …; since 0254 `LEDGER-INVERSE`, an undo whose target's stored `@` inverse is not the one its revision records, refused before anything is applied) |
 | `STUDIO-ROUTE` | a studio route with no branch (0245) |
-| `STUDIO-NOTHING-TO-UNDO`, `STUDIO-NOT-UNDOABLE` | no admission left to undo (an undo is never itself undone; undo again walks further back); one that changed the layout, or whose inverse is not CLEAN |
+| `STUDIO-NOTHING-TO-UNDO`, `STUDIO-NOT-UNDOABLE` | no admission left to undo (an undo is never itself undone; undo again walks further back); one that changed the layout, or whose inverse is not CLEAN; since 0254 that includes one whose recorded positions no longer hold the rows the admission left (its inverse REFUSED `INTENT-APPLY`, with no search, his OPEN-1 ruling), undoable again only once those rows are restored and recorded by a rebase (an unrecorded hand edit is refused `LEDGER-UNLOGGED`) |
 | `BINDING-MISMATCH`, `BINDING-UNKNOWN` | at admission or undo (BINDING-0, 0253): the evidence the press relies on (the still's kept scene; a preview it names by its id; the undo's `of` and `scene`) names another identity than the candidate scene at admission (or the undo's target and the world's scene), or one absent or not well formed; checked after every other check, the director's commit's own under the content lock included, and before the first write; never through `STUDIO-DIRECTOR-REFUSED`. The answer names the field and carries `binding` and `record` |
 
 ## The record and the still (ADMISSION-0, 0222)
@@ -1042,7 +1053,7 @@ first. One writer at a time: every writer of a tree's ledgers, briefs, tags and 
 when its holder dies); an admission holds it from before its first write to after its last and reads the head again
 under it, so a second admission drawn at the same head is refused (HEAD-MOVED) instead of writing over the first; and
 recovery takes the same lock, so while an admission is alive a recovery refuses (LEDGER-BUSY) and changes nothing.
-`python art/director.py racetest` (32 cases) puts a second admission and another process's recovery at each of an
+`python art/director.py racetest` (34 cases since 0254) puts a second admission and another process's recovery at each of an
 admission's writes, and keeps the plants that break it. Briefs share the graybox's maps, so a layout admitted in one
 world would change every world that plays its map: a layout change is refused while another brief plays the map
 (SHARED-MAP), an art change admitted as before. That holds in one tree; in the studio's worlds (STUDIO-2, below) each

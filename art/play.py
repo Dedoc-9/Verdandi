@@ -3293,6 +3293,11 @@ def studio_selftest():
             open(led_path, "wb").write(held_led)
             g = start_studio(live, os.path.join(REPO, "art", "providers", "scripted.json"), say=lambda s: None)
 
+        # 0254: the frozen matrix's STUDIO rows after ST1 and ST2 (art/inverse_studio_rows.py; art/director/inverse/0254-matrix.json
+        # names each), printed before 0253's (BF1, last in that list), every state in a scratch tree of its own
+        import inverse_studio_rows
+        inverse_studio_rows.studio_rows(row, sys.modules[__name__])
+
         # BINDING-0 (0253): the frozen test matrix's rows (art/binding_rows.py; art/director/bindings/0253-matrix.json names
         # each), every state built in scratch trees of its own, never this world's
         import binding_rows

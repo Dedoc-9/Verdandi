@@ -92,7 +92,7 @@ named.
 |---|---|---|---|
 | persistence, migration, crash recovery | PARTIAL | Crash-safe commits with planted death points on both layers: the gate's `admit-crash` (8 points), `designevent-crash` (12) and `livesession-recover`; DIRECTOR CRASHTEST (15 cases) and RACETEST (32). The art layer recovers at every start. | **Migration is MISSING on every path**: an unknown version is refused, never translated, and a saved shell session carries no version member. The shell's recovery needs a person to name the journal. Plain writes remain: `workshop/session.rs:383` and `sessionwalk.rs:631` overwrite their only copy; certificates and request lines are written outside the content lock (`art/studio.py:1135-1139`, `1153-1154`); the visual-baseline file has no fsync. |
 | stable identity across edits and reload | PARTIAL | Ids are places and statement keys, never renumbered, as SPEC2 §2.6 asks. A gone object's tag never rebinds (studio suite). Shapes go `changed` or `gone`, never moved (marks suite). | A moved or resized object is a new id. Graybox targets are dense ordinals `T%d` by statement order (`graybox/level.py:187`): this is the one place §2.6's rule is broken. |
-| atomicity, stale refusal, undo | atomicity and stale refusal EXISTS-TESTED; undo PARTIAL | `designevent-admit`, `admit-anchor`; the director's fence under the content lock; STUDIO-STALE, PREVIEW-STALE | Undo is a compensating intent. It is byte-exact for a narrower subset than 0244 states (F-8), it is bound to no expected child revision, and there is no redo. The page never shows `head_restored`. |
+| atomicity, stale refusal, undo | atomicity and stale refusal EXISTS-TESTED; undo PARTIAL | `designevent-admit`, `admit-anchor`; the director's fence under the content lock; STUDIO-STALE, PREVIEW-STALE | Undo is a compensating intent. Since 0254 every admission records its exact inverse by position and is undone byte for byte while its recorded rows stand; a pre-0254 admission is undone as before, exact only on F-8's narrower subset, and a `+` is undone by its key (F-8's note). It is bound to no expected child revision (BINDING-0 v0 binds the undo to its `of` and the world's scene at the press), and there is no redo. The page never shows `head_restored`. |
 | geo-stability and rebase | PARTIAL, and it covers no world anyone plays | ORT-1 conserves global positions exactly, refuses inexact rebases, and binds a receipt (an own check, not run at HEAD). | ORT-1 refuses rules 3, which every art scene names. Its own O10 measured that a tick does not commute with a rebase. No runtime calls it. The art scene is flat (world-space boxes, no parent or transform), so charts, composition and hierarchy are MISSING. MARK-0's face frames are the one tested local frame. |
 | procedural reproducibility and local regeneration | reproducibility EXISTS-TESTED; locality PARTIAL | Export twice; frozen bytes references (check, quality) | Locality is held on one layout revision only. The whole scene is re-exported on every edit, and lamp heights read the whole world's reach ceiling. The hierarchy is world, region, building, side, then bay by floor. A building statement's own refusals are planted nowhere. |
 | physics and movement subset, determinism scope | PARTIAL | A kinematic FPS tick in binary64 with every rounding fixed, an independent Python twin, rules 1-3 worked by hand with plants, and the input contract. Cross-engine byte equality was MEASURED once on one map: rules 1 on four engines, rules 2 and 3 on V8 only. | No rigid bodies, solver, capsule, slopes, acceleration, events or blocked-move trace. The gate holds no graybox row; the art suites touch it only through `preview` and `check`. The graybox's own launcher still plays rules 1 (`graybox/web/main.js:13`). |
@@ -266,6 +266,14 @@ their last statement and its undo give back the head, which 0244's "every `-`" d
 is aligned. CERT SELFTEST pins the inexact cases as expected
 (`art/certificate.py:126-149`), so the repair (his (a) or (b) from 0244) must rewrite those rows with it.
 
+*2026-10-20, 0254 (his ruling (a)): closed for admissions made since. Each records the exact row at its position (`@=`,
+`@+`, and `@~` for a `+`'s trailing empty rows) and is undone byte for byte while its recorded rows stand (CERT SELFTEST
+11/11; the director's EX1 to EX4 and EX6; the census EX5, run in scratch). An undo whose recorded row moved or differs is
+refused `INTENT-APPLY`, never searched for (GD2a to GD6); where every guard holds over a world that moved, the undo
+applies and says what it gives (GD7). A pre-0254 inverse is undone as before, `statements-not-bytes` (CT2, ST2, PAGE-CARDS
+5a), and a `+`'s undo is still a key search: an edit of the added row recorded since is discarded and reads `exact`
+(GD12), the hazard his OPEN-1 ruling accepted.*
+
 **F-9 · Smaller defects in the art layer (VERIFIED BY READING).**
 
 - Certificates are written with a plain `open()` after the commit, outside the lock, and their exceptions are
@@ -274,7 +282,9 @@ is aligned. CERT SELFTEST pins the inexact cases as expected
   (`art/studio.py:1643-1651`). *Said more exactly (0245's review):* the code survives only inside the message's
   text, never as a field; a LedgerError is not caught there at all.
 - `CERT-ART-ONLY` can never fire on a certificate `make()` builds (`art/certificate.py:69-71`).
-- The undo's bookkeeping parses a note's text (`art/studio.py:1589-1591`).
+- The undo's bookkeeping parses a note's text (`art/studio.py:1589-1591`). *2026-10-20: 0254's OPEN-8 (the undo target
+  recognised by its note), open and deciding nothing: BINDING-0 v0 defines the target as `_undo_target`'s answer, so a
+  change is v1's, registered first.*
 - `studio_post` falls through to undo for any studio path not matched above it (`art/play.py:983`). It is safe only
   because the route whitelist refuses others first: fragile, not live.
 - `graybox/level.py` reads numbers with `float()` and `int()` alone (`:42`, `:58`, `:179`), beneath the art's number
@@ -290,6 +300,53 @@ is aligned. CERT SELFTEST pins the inexact cases as expected
 - A saved session has no version member (`shell/livesession.rs:496-500`).
 
 None of these blocks the studio, which does not use these paths. Under the sprint ruling they wait.
+
+**F-11 · Found with the exact inverse (0254), recorded and not repaired (2026-10-20).** His ruling on OPEN-6:
+*"Ruling: Record as Dated Findings, correct the single misleading comment, repair nothing else."* The first five are the census's findings outside the repair, MEASURED in scratch on 7dee210 by 0254's
+specification (`art/director/inverse/0254-spec.md` §1, §5, §9); the rest were found by the review of 0254's build,
+MEASURED by the agent on his machine in a scratch clone (Windows 11, Python 3.14.5).
+
+- *OPEN-6.* The twins disagree on U+001C in `validate`'s whitespace predicates on `prompt` and `layout` (a probe vector:
+  the Rust twin 65 of 66).
+- *OPEN-6.* The two row models: the art's rows are LF rows, its statements `splitlines()`'s, so a lone CR, VT, FF, FS,
+  NEL or LS inside a row lets a forward `=` drop a statement.
+- *OPEN-6.* A pre-0254 `- mover` inverse (harbor-lift) is undone to another scene under a `statements-not-bytes` label:
+  the exporter keeps movers in file order, and the statement comes back at the end.
+- *OPEN-6.* A child holding CR LF is written as CR LF and does not read back (`Workspace.text()` folds it), so every later
+  press is `LEDGER-UNLOGGED`.
+- *OPEN-6.* `art/certificate.py`'s comment that `statements` meant "the same scene" was false for movers; corrected in
+  place with a note (the one comment his ruling corrects).
+- *The theorem's scope.* T-0254 as the frozen specification states it (§5, "any revision of ordinary lines that
+  `apply_revision(P, r)` accepts") is falsified by its own first falsifier: given straight to `apply_revision`, a `+` of
+  a lone verb outside SINGLE, moon and sun (`+ tower`, `+ lamp`, `+ neon`) records `- V ` (its statement key keeps a
+  trailing space), whose undo names no row (`INTENT-APPLY`); and a `+` line holding `#` (`+ lamp b#c 1,2,3 100 1`,
+  `+ tower#x`), which the intent grammar refuses but `apply_revision` does not, is accepted and its undo refused too
+  (`+ lamp a#c …` over a parent holding `lamp a …` adds a second row of key `lamp a`). It holds for a revision whose
+  ordinary lines pass `intent.validate` and whose `+` lines add no lone verb; every caller passes a validated revision
+  and the exporter refuses every lone verb (`ART-REFUSED`, checked on plaza-night and harbor-lift for every verb), so no
+  admission reaches either case. A defect of the claim; no code changed. 60,000 fuzzed revisions on the built code gave
+  no undo that was not exact (seed 7).
+- *A stored inverse in the statement form is not compared.* A 0254 `@` inverse rewritten by a writer of the ledger's
+  files into the statement form (`= lamp north-lane 255,170,90 650 4`, or `- lamp south-lane`), its chain rehashed,
+  replays and verifies, is evaluated CLEAN and admitted by an undo (the studio's Undo, or `admit --inverse-of N`) as the
+  exact inverse, without a still. Inside the specification's declared limit (§9: the ledger is a keyless chain; replay
+  refuses only a stored `@` inverse that is not its revision's), as at 7dee210; the code's comments were narrowed to
+  say so. A stronger check, holding an inverse with no `@` line to the one 0254 or 7dee210 would record over the same
+  text, is his to rule, and a new freeze.
+- *OPEN-5, measured.* A malformed forged `@` inverse (`@= ["69","x"]`, the chain rehashed) escapes the studio's Undo at
+  `load_intent`, before the director's replay: `GET /undo.json` and the press are answered 500 `STUDIO-INTERNAL` with no
+  decision record; nothing is applied or appended. A well-formed forgery is refused `STUDIO-DIRECTOR-REFUSED` with
+  `LEDGER-INVERSE` and its record (ST4). A repair for his ruling, measured by a stand-in only: the replay of
+  `events[:N+1]` at the start of `Gateway._undoing`, mapped as the director's refusal; it covers an `@` forgery only.
+- *A forged `@~` count at the command line's admission.* `admit BRIEF SEQ --inverse-of N` applies the evaluation's
+  revision (`admit_checks`) before anything replays #N's stored inverse; a writer of the ledger who forges #N's inverse
+  as `@~ ["1","9000000000000000000"]` and appends a CLEAN evaluation of it by hand makes the admission raise an unmapped
+  `MemoryError` (with a count near 10^8 it would try to allocate gigabytes), not a refusal. Nothing is written. The
+  studio's Undo does not reach it (its evaluation replays first). The frozen specification's §2.4 keeps `admit_checks`'
+  order with one change, so the step (replay to #N before applying, under `inverse_of_ok`) is his to rule, and a new
+  freeze with its row and plant.
+- docs/CAPABILITY-MATRIX-ROWS.md cites `CERT SELFTEST 7/7`, which is 11/11 since 0254; it is a dated, generated audit and
+  is not edited.
 
 ## 6. SPEC1 against the rules
 
@@ -438,7 +495,9 @@ press answered and logged with its decision record. The page names no preview, a
 - A provider's answer evaluated at a head other than the one it was shown is refused, or marked on the card, as he
   rules.
 - The undo request names the head the page saw, and the inverse applies only while the head is the undone admission's
-  `head_after`.
+  `head_after`. *2026-10-20: not built so. 0253 binds the press to its `of` and the world's scene it was shown over
+  (BINDING-0 v0); 0254 refuses an undo where a recorded row moved or differs and otherwise applies it over a moved world
+  and says what it gives (GD7), never only at `head_after`.*
 
 ### 0249 · the inverse's repair (his (a) or (b) from 0244), with F-8's narrower subset and CERT SELFTEST's rows rewritten with it.
 
@@ -447,6 +506,8 @@ press answered and logged with its decision record. The page names no preview, a
 *Note (2026-10-18): now 0253.*
 
 *Note (2026-10-18, later): now 0254.*
+
+*Note (2026-10-20): built as 0254, his ruling (a), frozen first and built second (F-8's note).*
 
 ### Later, measured before decided
 
@@ -469,7 +530,7 @@ press answered and logged with its decision record. The page names no preview, a
 2. The checkout's plaza-night rebase (F-1). It is his world.
 3. F-3: whether a provider's scope is bounded by the request, as the ADMIT-0 ruling would have it.
 4. F-4: whether a provider's answer that arrives at a moved head is refused or marked.
-5. The inverse's repair, (a) or (b), pending since 0244.
+5. The inverse's repair, (a) or (b), pending since 0244. *Ruled 2026-10-20: "Ruling: (a). 0254 records the inverse of = and - as the exact row at its position (and the trailing blank lines of +), applied only by undo, frozen first and built second, against BINDING-0 v0 unchanged." Built as 0254.*
 6. F-7: whether a skipped gate row fails, and whether the gate compares its rowset with a constant.
 7. Whether direct edits, redo, projects, docking and gamepad enter the dashboard. Direct edits would be intents the
    page writes, admitted through `cmd_admit`, the one path.

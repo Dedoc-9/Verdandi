@@ -53,7 +53,7 @@ REPO = os.path.dirname(HERE)
 # order is BROWSER's)
 SUITES = (
     ("held", ["art/scene_diff.py", "selftest"], r"^HELD SELFTEST (\d+)/(\d+)$", 72),
-    ("director", ["art/director.py", "selftest"], r"^DIRECTOR SELFTEST (PASSED|FAILED)\b.*$", 70),
+    ("director", ["art/director.py", "selftest"], r"^DIRECTOR SELFTEST (PASSED|FAILED)\b.*$", 373),       # 0254: 373 s alone (its 0254 rows run once per plant; 81 s before)
     ("app", ["art/studio_app.py", "selftest"], r"^STUDIO APP SELFTEST (\d+)/(\d+)$", 55),
     ("racetest", ["art/director.py", "racetest"], r"^DIRECTOR RACETEST (PASSED|FAILED)\b.*$", 50),
     ("crashtest", ["art/director.py", "crashtest"], r"^DIRECTOR CRASHTEST (PASSED|FAILED)\b.*$", 45),

@@ -7649,3 +7649,244 @@ repairs not reviewed again):
 NOT_MEASURED: the full check and the gate in his checkout; the gate on this tree; Linux. No row, rung, pinned source or
 oracle file changed. Docs: AGENTS.md (the BINDING-0, studio, PREVIEW-0 and PAGE-0 rows), art/STUDIO.md,
 art/director/README.md (§8), docs/CAPABILITY-MATRIX.md (a dated note), docs/CORE.md (art 36,013 lines), this entry.
+
+### The exact inverse — an admission undone byte for byte, recorded by position · **built, off the gate** (0254, two commits: the freeze, `art/director/inverse/` (`0254-spec.md`, `0254-vectors.json`, `0254-matrix.json`, `legacy/plaza-night.7dee210.ledger`, `frozen-0254.jsonl`) and `art/director/inverse_freeze.py`; the repair, `art/director.py`, `art/director/intent.py`, `art/director/conform.rs`, `art/director/vectors_source.py`, `art/director/vectors.json` (appended), `art/director/inverse_rows.py` (new), `art/director/inverse_freeze.py`, `art/certificate.py`, `art/studio.py`, `art/inverse_studio_rows.py` (new), `art/page_dash.py`, `art/studio_queue.py`, `art/play.py`, `art/selftests.py`)
+
+**His ruling** (2026-10-20), between 0244's options (a) and (b): *"Ruling: (a). 0254 records the inverse of = and - as the exact row at its position (and the trailing blank lines of +), applied only by undo, frozen first and built second, against BINDING-0 v0 unchanged."* The rulings that bound it, quoted
+in the same file: *"Keep 0252 registration-only, 0253 enforcement-only, and 0254 repair-only."* and *"0254 must repair the inverse against the existing registered v0 contract. If the repair exposes a genuine contract defect, register v1 before code governed by that new version; do not edit v0 in place."* (BINDING-0 version 0 is unchanged; no defect of
+it was found).
+
+**His rulings on the specification's open items** (2026-10-20), each the option the specification recommended:
+- OPEN-1: *"Ruling: Option (a) — Refuse: `STUDIO-NOT-UNDOABLE` with no search."*; *"Sub-question for `+`: Keep `- KEY` within your current syntax definitions. The known hazard is accepted and explicitly documented in the repository record, preventing any silent divergence in `FACADE`'s pinned output."*; *"Confirmation of Identity: Confirmed. The positional byte guard functions strictly as the revision language’s local applicability rule, not a secondary definition of identity."*
+- OPEN-2: *"Ruling: Option (a) — Freeze a pre-0254 verification fixture, then append a clean `5a` row."*
+- OPEN-3: *"Ruling: Defer."*
+- OPEN-4: *"Ruling: Defer."*
+- OPEN-6: *"Ruling: Record as Dated Findings, correct the single misleading comment, repair nothing else."*
+- OPEN-7: *"Ruling: Implement `evaluate/reevaluate FILE --inverse-of N`."*
+- OPEN-9: *"Ruling: Keep `VERDANDI-INTENT 0` and append the new vectors directly to the current matrix."*; *"The tension with the README documentation is recognized; the requirement for a translator tool is deferred until the first real structural format change occurs."*
+
+Where his text paraphrases an option (OPEN-1's "until the physical line geometry is restored by hand", OPEN-4's "held in
+scratch"), the option selected governs: the agent's reading, said in the session and recorded in the freeze. OPEN-5 and
+OPEN-8 decide nothing and stay open.
+
+**His word on the landing check** (2026-10-20): *"Yes: from 0254 on, include a landing check after git am that compares HEAD's tree id with the tree the commit message records, and stop if they differ."* AGENTS.md §7 carries it, with
+his command; this patch's last commit carries the `Gated-Tree:` line it reads.
+
+**His rulings of 2026-10-19 and 2026-10-20, recorded.** His word (2026-10-20): *"Yes: record my rulings of 2026-10-19 and 2026-10-20 verbatim, dated, in 0254's ROADMAP entry (the packet ruling and its order, VARIATION-0, ruling (a), the landing check), as records, not as changes to any contract."* They are
+records here: no contract, register, frozen file or row changes because of them.
+
+- *The review packet* (2026-10-19): his ruling, whole, with its execution order:
+
+> Ruling: the reconciler, the census, and the two proposals
+> My recommendation is to repair the existing evidence-producing mechanisms before adding new certification claims or feedback loops. The packet reports several concrete defects in the current checks, and it also explicitly distinguishes scratch-clone measurements from results reproduced in your checkout. That distinction must survive every ruling.
+> Nothing in the packet establishes that a full gate passed for these proposed changes, and none of the proposals should be treated as already registered or implemented.
+> 1. Floating-point reconciler
+> LOCK
+> R64 as the graybox reference.
+> Use the specified binary64 tick as the operational reference for RULES-1/2/3. Exact rational arithmetic remains an analysis instrument, not an alternative reference. Keep rigid-body and 3D contact reconciliation deferred until a reference is specified.
+> LOCK
+> No positive event-agreement claim from a generic margin.
+> The reported exact-real ties and binary64 residues are a concrete reason not to equate a small numerical error with preservation of discrete landing decisions. A contracting or reshaped producer gets no positive reconciliation claim merely because its error appears bounded.
+> DEFER
+> SHADOW-0 and EXACT-ADMIT-0.
+> Keep them as separate candidate courts. First establish that the reference verifier has a sound input contract and measure which operations and decisions actually control admission. Exact twins for admission checks should be a scoped follow-up, not a blanket demand to replace all floating-point operations.
+> REJECT
+> Trace self-consistency as reconciliation.
+> A producer's own logged function values cannot independently establish that its calculations were correct. Likewise, a trace's claimed engine identity is not proof of which engine produced it.
+> The first implementation target should be the missing `tick_ref.py verify` door. If a zero-run trace, truncated run, renamed stress run, forged start, or NaN input can receive a success result, then downstream measurements can be misleading even if the tick arithmetic itself is correct.
+> The second target is the reported REACH-1 omission. Its synthetic counterexample needs independent reproduction before the specific numerical claim is promoted to established fact. If confirmed, repair the reachable-surface model and add a hand-worked regression case.
+> 2. Twin census and ALIKE
+> LOCK the census follow-ups, but keep the census itself off the gate initially.
+> The reported 918-mutant result is useful evidence of weakness in the four hand-worked table checks. It is not an escape rate for real defects, and it does not establish that the JavaScript twin has the same weaknesses.
+> I would authorize these three bounded tasks:
+>
+> 1. Add hand-worked targets for the witnessed escapes: pitch clamp, rising ceiling, rider direction, and a shot passing above a wall.
+> 2. Add a Python-side RULES-1 table with predictions derived from the rules document before looking at implementation output.
+> 3. Register the census as an off-gate court only after the cases and expected outcomes are frozen.
+>
+> The strongest result is not the 56% mutation-kill rate. It is the observation that many mutants change behavior despite executing lines already covered by the existing tables. That points to a missing-oracle problem: the checks execute code without pinning down enough of its behavior.
+> For the 199 mutants without a witness, preserve the status as unwitnessed, not equivalent and not escaped. ALIKE should later compare both implementations against independent predictions, not merely compare the implementations with each other.
+> 3. ESCAPE-0
+> LOCK
+> Blindness in time, owner replay, owner equivalence ruling.
+> The proposed court is strongest when its seed is committed before the run, its outcome is independently replayed, and you—not the agent that created the plant—judge whether an escape is behaviorally equivalent. Keep it off the gate.
+> LOCK
+> An append-only escape ledger.
+> Record each escape with its plant, witnessed behavior, replay status, and owner disposition. Keep real defects, generated mutants, and equivalent mutants as different categories.
+> REJECT
+> A single aggregate escape rate or secrecy claim.
+> The proposal correctly acknowledges that a local agent cannot be trusted to keep a plant location secret from its own user. Do not replace that limitation with encryption theatre or a misleading percentage.
+> One important boundary: the census is not yet the full ESCAPE-0 court. It is an unseeded Python-side mutation experiment. The blind held-out protocol should be implemented only after the independent behavioral targets improve; otherwise, it would provide disciplined blindness to an inadequate oracle.
+> 4. Symbiotic proposal
+> This is where the FP-reconciler discussion directly touches creative output.
+> I recommend the following:
+>
+> * LOCK: GLUE-0 must stay out of provider feedback.
+> * LOCK: a refusal must not be passed to the provider as an instruction that tells it how to modify its next candidate.
+> * LOCK: no agent may align the twin, table, or digest to the implementation being tested.
+> * LOCK a repair task: GLUE-0's fingerprint must be independent of edit naming order if that is what its registered contract promises.
+> * DEFER: a re-ask mechanism until refusals have typed, meaningful reasons and a measured experiment demonstrates that re-asking can be useful without changing the design's meaning.
+> * REJECT: allowing the provider to choose the scope against which its own candidate is judged.
+>
+> The provider-controlled scope finding, F-3, deserves priority. If the provider can broaden the scope until its own leaky edit appears clean, the system is not independently checking the candidate.
+> The door-to-iron-lift example is an especially useful warning: automatic repair can satisfy a superficial check while changing the user's intended design. That is precisely the wrong behavior for a system intended to generate complex, distinctive art.
+> The reconciler should certify the properties it is responsible for—not teach the generator to avoid ambitious designs. If an unusual scene cannot be certified, return a typed refusal or an explicit unknown result. Do not silently simplify it or feed the failure back as a creative instruction.
+> 5. Execution order
+> I would accept the packet's general order, with one qualification: the three questions in the separate 0253 specification genuinely come first, and I cannot responsibly resolve questions whose text is not included here. The link did not yield its contents when I attempted to open it.
+>
+> 1. 0253 — BINDING-0 enforcement. Resolve its three blocking questions and freeze the matrix before implementation. This is already the stated priority.
+> 2. 0254 — inverse repair. Keep it ahead of unrelated new courts, as the packet proposes.
+> 3. Repair `tick_ref.py verify`. Make invalid or incomplete inputs refuse, then test the reported cases and add a planted defect. This protects the credibility of later reconciliation results.
+> 4. Reproduce and repair REACH-1. Independently reproduce the synthetic landing counterexample, then lock a rule-derived regression case if confirmed.
+> 5. Repair GLUE-0 order dependence. Add a paired test that reverses edit order and checks the registered contract.
+> 6. Improve the census oracle. Add witnessed escape cases and the missing RULES-1 Python table; register the mutation court off-gate.
+> 7. Run reconciler X1, then GUARD-0 pilot. Establish the vertical-arc table and frozen predictions before building the broader decision census.
+> 8. Register and exercise ESCAPE-0. Only after the behavioral targets and owner replay procedure are ready.
+> 9. Revisit the symbiotic loop. Fix GLUE-0, document the language bounds, and measure a typed-reason re-ask before considering registration.
+>
+> Final disposition
+> LOCK: R64 as the graybox reference; no generic-margin claim for event agreement; independent oracle targets; owner-controlled escape adjudication; no provider-controlled scope or refusal-driven repair.
+> DEFER: SHADOW-0, EXACT-ADMIT-0, a gate-integrated mutation court, and automated re-asking.
+> REJECT: self-log replay as reconciliation, one aggregate escape rate, positive claims for unreferenced contact physics, and automatic repair that can change design intent.
+> The first concrete work should be a repair of the checks that currently claim success too easily, not another general theorem or a new agent workflow. That gives the later numerical and creative systems a trustworthy basis without making artistic complexity pay for deficiencies in the verifier.
+
+- *VARIATION-0 and the distinct equivalences* (2026-10-19, pasted with the first): his ruling lines and the paragraph that
+  closes them. The body he pasted after them is kept outside the repository, partly abridged, and is not quoted as his.
+
+> LOCK: Identity, behavioral equivalence, and visual/design equivalence must remain distinct concepts.
+>
+> LOCK: Uncertainty and refusal must be property-specific; inability to certify a claim must not silently mutate the proposed design.
+>
+> DEFER: A general equivalence engine, a universal perceptual metric, and automatic tolerance selection.
+>
+> EXPLORE: VARIATION-0 as a small, preregistered measurement court.
+>
+> The architectural insight is that determinism need not mean visual uniformity. Determinism belongs in the rules, provenance, and reproducibility of the guarantees. Variety belongs in the space of designs that can satisfy those guarantees. The more precisely you separate those two, the more room you have for genuinely unusual art without weakening the kernel.
+
+- *The three 0253 questions, his confirmation, and the order of 0253, 0254 and the repairs after them* (2026-10-19):
+  quoted whole in 0253's entry above; cited, not repeated.
+- *Ruling (a), his open-item rulings and the landing check* (2026-10-20): above.
+
+**What it is.**
+- *The freeze* (commit 1, before any code): `art/director/inverse/0254-spec.md` (the hardened specification put to him,
+  byte for byte, his two ruling files embedded whole; sha256 `2c5fd6c33ffbe091caeeba8e383d87411ad31c66d3b1d379a3ea189f42bc7a0b`),
+  `0254-vectors.json` (115 vectors, 40 worked by hand; `97b823770c325802762812c5f607fbaaaf020a483bcffa2df37d0c57b10fe12e`),
+  `0254-matrix.json` (55 rows in five suites, 33 plants, each one named value of one switch with the row that catches it
+  and the later rows it fails; `85cadba8b06dfdaf123d7320a8e846030df950cb08f1a2eb5e954101502f66e1`),
+  `legacy/plaza-night.7dee210.ledger` (7dee210's ledger byte for byte, replayed only;
+  `acc10c008e5c63954b7baddc38b988e05a243a82fe76948205317fe15236c149`), each held to its sha256 by a line of
+  `frozen-0254.jsonl` (`fa9715a13e8f79ec321e79ed3c4012b7eacab78a1d6a2996438341f0cc487215`); and their reader,
+  `art/director/inverse_freeze.py check`.
+- *The repair* (commit 2). `apply_revision` applies `=`, `+` and `-` byte for byte as at 7dee210 and records the exact
+  row at its position: an `=` at row I records `@= [I,W,R]` (the row as written, the old row), a `-` of row I records
+  `@+ [I,R,S]` (the row, and the row that followed it or `false`), a `+` records `- KEY` and, when the parent's rows did
+  not end in exactly one empty row, `@~ ["1","K"]`. The three forms are applied only by an undo (`undo=True`), each under
+  its guard (`INTENT-APPLY` naming the form, the position and what it found, never searched for by key: his OPEN-1), and
+  refused whole anywhere else (`INTENT-INVERSE-ONLY`). `inverse_of_ok`, one predicate for the evaluation, the admission
+  and replay; `evaluate_doc(undo_of)` replays the ledger to #N before anything is applied; `--inverse-of N` on `evaluate`
+  and `reevaluate` (his OPEN-7), and the HEAD-MOVED message naming it; replay refuses an admission applying a form that
+  is not a recorded undo (`LEDGER-INVERSE-ONLY`) and a stored `@` inverse that is not the one its revision records over
+  the text it was admitted on (`LEDGER-INVERSE`), and replays old ledgers as they are. `intent.py`'s `validate` and
+  `conform.rs` learn the forms' syntax (the Rust twin never applies them: his OPEN-4); `vectors.json` keeps its 65
+  expected outputs byte for byte and appends 32 intents under `VERDANDI-INTENT 0` (his OPEN-9). `art/certificate.py`
+  reads its keys and rows from the freeze (CT1 to CT7), its plant loop tightened, its comment on `statements` corrected
+  in place (his OPEN-6). The studio's Undo evaluates as the undo of #N and answers a `LEDGER-INVERSE` as the director's
+  refusal; a kept certificate counts as the admission's own only when its inverse is the event's (`_kept_is_own`).
+  Pre-0254 admissions are written in the self-tests by the director's own writer, `selftest_admission`, their inverse
+  7dee210's from the freeze (his OPEN-2): CT2, ST2 and PAGE-CARDS 5a; 5a-exact beside it. The rows: the director's 31
+  in `art/director/inverse_rows.py` (27 plants on `director.INVERSE_PLANT`), STUDIO's ten (`art/page_dash.py`'s ST1 and
+  ST2, `art/inverse_studio_rows.py`'s ST4 to OU5, the plant kept-inverse-unbound), STUDIO-2's IM1, PAGE-CARDS' 5a-exact.
+- *The reader changed after commit 1 recorded it*: `art/director/inverse_freeze.py` (sha256
+  `8352ce5efafc354d4e8e042eb956b49eb66466b6aff754568d425092449ff77f` at commit 1, `a0ed53bee3f8a9906faa4aa4b4c4235ee4f0f7f9ae0cb827c58f6522aad8f3ef`
+  now) gained `PLANT_OF`, read only in `frozen()` to let the plant inverse-vectors-edited past FREEZE-STALE: the matrix
+  frozen in commit 1 already names that plant (switch `director.INVERSE_PLANT`, caught by FZ1), and commit 1's reader
+  could not serve it. It is set only by `inverse_rows.set_plant`, during the director's self-test, and put back after.
+  The reader is not a frozen file (`frozen-0254.jsonl` names four others), and the hook changes nothing `check` prints
+  outside those rows; the lines that differ from commit 1's `check` come from `director.py` and `vectors.json`, as
+  spec §6.3 intends. A departure from spec §11, whose commit-2 list does not name the reader.
+
+**Repairs after a review of the build** (three lenses, exactness, authority and the repository, each finding put to a
+skeptic who tried to refute it; 21 findings, 8 confirmed and 13 confirmed in part, none refuted; the repairs not reviewed
+again):
+- *An admission read the brief twice* (confirmed): `admit_checks` took the head from one read and the application, and
+  so the stored inverse, from a second. A writer outside the content lock (an editor saving) that changed the brief
+  between the two reads, in a way that leaves the child the same (the spacing of the row a `-` deletes, the row an `=`
+  replaces, the trailing empty rows of a `+`), and changed it back before the commit's fence, left an admit event whose
+  inverse replay recomputes otherwise: every later evaluation, admission, rebase and undo refused `LEDGER-INVERSE` for
+  good (MEASURED by the reviewer and again here). At 7dee210 the same race was harmless: nothing compared a stored
+  inverse. Now the brief is read once, and the head, the application and the stored inverse are of those bytes
+  (`selftest_admission` the same). Its row is in the race court, not in a new 0254 freeze: two cases, an editor's save
+  between the admission's read and its commit, put back before the fence (the admission's stored inverse verifies), and
+  the plant `admit-reads-twice` (the second read restored: admitted, then `LEDGER-INVERSE`): `DIRECTOR RACETEST PASSED
+  (34 cases)`. This departs, for that pair, from "frozen first and built second": the race court is not frozen and holds
+  the writers' races; a new freeze with the row is his to ask for.
+- *An old ledger no longer replayed* (confirmed): `inverse_of_ok` read `--inverse-of` as ASCII digits only, where 7dee210
+  read it with `isdigit()` and `int()`, so a ledger 7dee210 wrote and verified with `--inverse-of` given in other decimal
+  digits (U+0665) was refused `LEDGER-EVIDENCE` (MEASURED). Now `isdecimal()`, exactly the strings both accept, at the
+  predicate and at `evaluate_doc`'s two replay gates; that ledger verifies again (MEASURED here); ASCII unchanged.
+- *Comments that said more than the check backs* (confirmed): `evaluate_doc`'s docstring and `Gateway._undoing`'s comment
+  said any forged stored inverse is refused `LEDGER-INVERSE`; replay compares only one holding an `@` line, and a
+  malformed one escapes the studio's Undo before it (OPEN-5). Narrowed; `apply_revision`'s docstring now states the
+  theorem's scope (below).
+- *The repository* (confirmed or in part): the counts (VECTORS and CONFORMANCE 97, CERT 11/11, STUDIO 200/200, STUDIO-2
+  47/47, PAGE-CARDS 31/31, RACETEST 34) and a row for the exact inverse in AGENTS.md, with its never-rules and the rule
+  against the word plant over every STUDIO row; his landing check in AGENTS.md §7; art/director/README.md (the forms,
+  the codes, the command line's undo, §9); art/STUDIO.md (the `statements` claim corrected, the `+` hazard, case 5a, the
+  refusal table); docs/CAPABILITY-MATRIX.md (F-8 closed for admissions since, F-11 the findings below, his ruling in §8);
+  art/README.md's STUDIO-2 count, stale since 0250; docs/CORE.md's count; this entry, its quotes generated and checked
+  against the part of each file that is his; the gate run on the tree `git am` gives and recorded in the message, with
+  the `Gated-Tree:` line.
+
+**Found and recorded, not repaired** (docs/CAPABILITY-MATRIX.md F-11, 2026-10-20): his OPEN-6's five; the theorem's
+scope; a stored inverse rewritten in the statement form is not compared (inside spec §9's limit, as at 7dee210); OPEN-5
+measured (a malformed forged `@` inverse answered 500 `STUDIO-INTERNAL` with no record, nothing written); a forged `@~`
+count at the command line's admission raises an unmapped `MemoryError` before any replay of #N, nothing written (the
+step that would refuse it changes the frozen §2.4's order: his to rule, and a new freeze).
+
+**The theorem (T-0254), as it holds.** For a parent P and a revision r whose ordinary lines pass `intent.validate` and
+whose `+` lines add no lone verb outside SINGLE, moon and sun, `apply_revision(P, r)` accepted gives a child C and an
+inverse whose undo over C returns P byte for byte; the undo's own inverse redoes C byte for byte. The frozen
+specification's §5 states it for any revision `apply_revision` accepts; its own first falsifier refutes that (`+ tower`
+records `- tower `, whose undo names no row; `+ lamp b#c 1,2,3 100 1` is accepted and its undo refused), MEASURED by the
+review. No admission reaches either case: every caller passes a validated revision and the exporter refuses every lone
+verb (`ART-REFUSED`).
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of 7dee210 under
+%TEMP%, never the checkout; `PYTHONHASHSEED=0`, `PYTHONUTF8=1`, `python -B`):
+- `python art/director/inverse_freeze.py check`, its last three lines: `legacy recomputation not reached (director.py is not 5300fb78…)`; `art/director/vectors.json cut to its intents at 7dee210 is 7dee210's byte for byte: equal; 32 intents appended after them`; `INVERSE-0254 FREEZE FROZEN: 115 vectors (40 by hand), 55 matrix rows in 5 suites, 33 plants (28 new keys for R5), against BINDING-0 version 0 sha256 cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85; children equal to director.py d399923e1a6ebbf779c0f41507cfb8ed61c4694600407bfb997a531091957dfe's: 69; nothing open that a row or a vector decides (open, deciding nothing: OPEN-5, OPEN-8)`. `python art/director/binding.py check` and `binding_freeze.py check`: their lines unchanged.
+- `VECTORS 97 / 97`; `rustc -O art/director/conform.rs`, then the runner: `CONFORMANCE 97 / 97`. The mutants of spec §6.2, in scratch copies (never the tree): the Rust twin with the forms' acceptance taken out, `CONFORMANCE 89 / 97`, failing F-A1 to F-A8; with the canonical check taken out, `94 / 97`, failing F-R1, F-R21 and F-R23; as built, `97 / 97`; the Python reference likewise, 31 of 39 intents (F-A1 to F-A8), 34 of 39 (F-R1, F-R17, F-R18, F-R21, F-R23), and 39 of 39.
+- `DIRECTOR SELFTEST PASSED` (123 rows passing and none failing, 38 of them plants; 465 s, beside STUDIO); `DIRECTOR CRASHTEST PASSED (15 cases)`; `DIRECTOR RACETEST PASSED (34 cases)` (172 s alone; its two new cases "admitted #2; verify passes" and, under the plant, "admitted #2; verify: LEDGER-INVERSE: #2's stored inverse is not the one its revision records over the text it w…"); `MEMO SELFTEST PASSED`; `CERT SELFTEST 11/11`; `STUDIO SELFTEST 200/200` (416 s, beside the director's); `STUDIO-2 SELFTEST 47/47`.
+- EX5, spec §1.2's census re-run (outside the suites, never a row: `census.py` with the one adaptation that a list holding an `@` line is applied with `undo=True`), against this tree and against a clone of 7dee210, side by side: on this tree 6,765 single-line round trips and 89,311 multi-line ones, every one exact (none statements-only, none refused on the undo), 6,765 redos each the child again, the same 7 and 185 refused on the forward step as at 7dee210; on 7dee210, 2,397 and 6,632 exact, 4,368 and 82,679 statements-only, 289 redos not the child; every forward application of the census (96,075 calls holding no `@` line) the same child, or the same refusal, on both trees (0 differing).
+- `python art/director.py verify plaza-night`, once, in the scratch clone, on 7dee210's plaza-night ledger (`art/ledger/plaza-night.ledger`, the freeze's legacy copy byte for byte): `LEDGER REFUSED: UNLOGGED-CHANGE: the head is df8b640defd8, the ledger's 9e7811343bcf` on this tree and on 7dee210 alike (F-1, the checkout's world since 0237's exporter change, his decision 2): the replay reaches the ledger's head on both; nothing written.
+- A ledger written and verified by 7dee210 with `--inverse-of` given in Arabic-Indic digits (U+0665): this tree's `verify` passes (it refused `LEDGER-EVIDENCE` before the review's repair).
+- The full check (`python art/selftests.py --repeat 2`), the classifier his pushed tree holds (`classify` and R5's `plants`) and the gate twice are run on this patch's tree once committed, and recorded in the commit message.
+
+**What R5's `PLANTS HELD` covers.** R5 reads four suites (`tools/rung.py`'s `SUITES`: QUALITY, ART CHECKS, the director's
+self-test, STUDIO). Of the 33 frozen plants it reads 29: 28 as new keys (the director's 27 and STUDIO's kept-inverse-unbound;
+its line goes from 316 to 344) and one under an old key, `art/studio.py selftest | plant restoration-from-own-certificate`,
+whose words are 7dee210's and whose fixture is now L-ST2's pre-0254 admission (R5 compares words and cannot see that).
+CERT's four (keys-misread new) are held only by `art/certificate.py selftest`'s own loop, outside R5. PAGE-CARDS' seven,
+older plants and none of the 33, only by `--cards-selftest` (cards-undo-toast-only now caught over the legacy 5a). The
+race court's admit-reads-twice only by `racetest`. The Rust twin's `@` rule has no standing plant: the mutant
+measurement above holds it. The classifier's line on `vectors.json`, *"LOOSENS: art/director/vectors.json changed: an
+expected output changed is a new protocol version, never a fix"*, fires on any change of that file's bytes, an append
+among them (`tools/rung.py`); that no existing output changed is held by `inverse_freeze.py check` ("cut to its intents
+at 7dee210 is 7dee210's byte for byte: equal; 32 intents appended after them") and by GR0. It is his to read and accept.
+
+**What it does not show.** That the repair is right beyond its frozen vectors and rows (one author wrote the
+specification, the model, the code and the rows; the 40 vectors worked by hand stand against a shared mistake); an undo
+over a moved world restores anything (refused where a recorded row moved, otherwise applied and reported); a `+`'s undo
+keeps an edit of the added row (it discards it, and reads exact); the forward ops' own defects repaired; a stored inverse
+with no `@` line authenticated (the ledger is a keyless chain); a coordinated edit of a frozen file and its line in
+`frozen-0254.jsonl` caught; his own worlds (the ledger in his checkout); Linux.
+
+**Not done.** In his order: the `tick_ref.py verify` door, then REACH-1 reproduced and repaired, then GLUE-0's order.
+His to rule, each with a new freeze where it changes one: the admission's replay of #N before it applies an undo (the
+forged `@~` count); a stronger check of a stored inverse in the statement form; OPEN-5's repair.
+
+NOT_MEASURED: the full check and the gate in his checkout; Linux; his worlds. The gate on this tree, twice, is recorded
+in the commit message beside the `Gated-Tree:` line, not here, so that the tree is the one the gate ran on. No row, rung,
+pinned source, oracle file, registered entry, BINDING-0 file, 0253 frozen file, 0254 frozen file or
+art/references.jsonl changed in commit 2. Docs: AGENTS.md (the exact inverse's row, the counts, the plant word, §7's
+landing check), art/README.md, art/STUDIO.md, art/director/README.md, docs/CAPABILITY-MATRIX.md, docs/CORE.md (art 38,132
+lines), this entry.

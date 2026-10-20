@@ -177,7 +177,10 @@ def validate(doc) -> dict:
     base       {art_sha256, world_sha256, exporter_sha256}: the head it was written against. world_sha256 is the
                graybox world W's canonical sha256: the admitted layout, the map's overlay and the converter
     scope      the addresses it declares it will touch: patterns, at least one
-    revision   art revision lines, "= <statement>", "+ <statement>" or "- <key>" (may be empty if layout is not)
+    revision   art revision lines, "= <statement>", "+ <statement>" or "- <key>" (may be empty if layout is not), no
+               LF and no '#' in them; or (0254) one of the three inverse-only forms an admission records as its exact
+               inverse, '@= [I,W,R]', '@+ [I,R,S]' or '@~ [A,B]' (inverse_form), which only an undo applies
+               (art/director.py apply_revision; validation is their syntax alone)
     layout     design text lines (VERDANDI-DESIGN 0 statements) for the layout, admitted through the design tool;
                empty for a revision of the look alone
     """
@@ -207,9 +210,65 @@ def validate(doc) -> dict:
         if not isinstance(ln, str) or not ln.strip() or "\n" in ln or ln.lstrip().startswith("#") or ln.split()[0] not in ("open", "close", "room", "entrance", "paint"):
             raise IntentError("INTENT-LAYOUT", "%r is not one statement of VERDANDI-DESIGN 0" % (ln,))
     for ln in doc["revision"]:
+        if isinstance(ln, str) and ln[:1] == "@":
+            inverse_form(ln)
+            continue
         if not isinstance(ln, str) or ln[:2] not in ("= ", "+ ", "- ") or "\n" in ln or "#" in ln:
             raise IntentError("INTENT-REVISION", "%r is not '= <statement>', '+ <statement>' or '- <key>' on one line" % (ln,))
     return doc
+
+
+# ------------------------------------------------------------------------------------------------ the inverse forms (0254)
+# His ruling (0254): "Ruling: (a). 0254 records the inverse of = and - as the exact row at its position (and the trailing
+# blank lines of +), applied only by undo, frozen first and built second, against BINDING-0 v0 unchanged." Each form is
+# its two characters, exactly one space, then the canonical bytes (above) of one array: positions are integer strings
+# 0|[1-9][0-9]{0,18} (a 0-based index into the text's rows, text.split("\n")); a row is a string holding no LF; false
+# only as '@+''s third field. Anything else that begins '@' is INTENT-REVISION, whatever the canonical reader's own code
+# would have been. Applicability (the guards, the keys, the undo flag) is apply_revision's, never this syntax's.
+INVERSE_FORMS = ("@=", "@+", "@~")
+POSITION = re.compile(r"(0|[1-9][0-9]{0,18})\Z")
+# The director's self-test's switch (0254, spec §8: art/director.py INVERSE_PLANT) as the grammar reads it: while that
+# self-test runs its 0254 rows it points PLANT_OF at its switch, and puts it back after; nothing else sets it. Read here
+# only by inverse_form, for the three plants that act inside the grammar (inverse-noncanonical, inner-code-leaks-selective
+# and rest-blanks-skipped); outside those rows it answers "" and changes nothing.
+PLANT_OF = lambda: ""  # noqa: E731
+_INNER_MAPPED = ("INTENT-NOT-JSON", "INTENT-NONCANONICAL", "INTENT-BYTES")
+
+
+def inverse_form(ln):
+    """(form, values) of an inverse-only revision line, its syntax checked: '@= [I,W,R]', '@+ [I,R,S]' (S a row or false)
+    or '@~ [A,B]'. Refuses (INTENT-REVISION) anything else."""
+    bad = "%r is not an inverse form ('@= [I,W,R]', '@+ [I,R,S]' or '@~ [A,B]', one space, its array in canonical bytes)" % (ln,)
+    plant = PLANT_OF()
+    if plant == "rest-blanks-skipped" and isinstance(ln, str) and ln[:2] in INVERSE_FORMS:
+        ln = ln[:2] + " " + ln[2:].lstrip(" \t")
+    if not isinstance(ln, str) or "\n" in ln or ln[:3] not in ("@= ", "@+ ", "@~ "):
+        raise IntentError("INTENT-REVISION", bad)
+    try:
+        v = loads(ln[3:].encode("ascii"))
+    except IntentError as e:
+        v = None
+        if plant == "inverse-noncanonical" and e.code == "INTENT-NONCANONICAL":
+            v = json.loads(ln[3:])
+        elif plant == "inner-code-leaks-selective" and e.code not in _INNER_MAPPED:
+            raise
+    except UnicodeEncodeError:
+        v = None
+    pos = lambda x: isinstance(x, str) and POSITION.match(x) is not None
+    row = lambda x: isinstance(x, str) and "\n" not in x
+    f = ln[:2]
+    ok = isinstance(v, list) and (
+        (f == "@=" and len(v) == 3 and pos(v[0]) and row(v[1]) and row(v[2]))
+        or (f == "@+" and len(v) == 3 and pos(v[0]) and row(v[1]) and (v[2] is False or row(v[2])))
+        or (f == "@~" and len(v) == 2 and pos(v[0]) and pos(v[1])))
+    if not ok:
+        raise IntentError("INTENT-REVISION", bad)
+    return f, v
+
+
+def inverse_line(form, values) -> str:
+    """The one line of an inverse form: its two characters, one space, the canonical bytes of its array."""
+    return form + " " + dumps(list(values)).decode("ascii")
 
 
 def load_intent(b: bytes) -> dict:

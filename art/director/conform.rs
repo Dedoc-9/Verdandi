@@ -543,11 +543,49 @@ fn validate(d: &V) -> R<()> {
     }
     for ln in rev {
         match ln {
+            V::Str(s) if s.starts_with('@') && inverse_form(s) => {}
             V::Str(s) if (s.starts_with("= ") || s.starts_with("+ ") || s.starts_with("- ")) && !s.contains('\n') && !s.contains('#') => {}
             _ => return Err("INTENT-REVISION"),
         }
     }
     Ok(())
+}
+
+// 0254: the three inverse-only forms an admission records as its exact inverse, written from art/director/intent.py's
+// rule (inverse_form): '@=', '@+' or '@~', exactly one space, then a rest that is its own canonical bytes (loads, above)
+// of one array. Positions are strings 0|[1-9][0-9]{0,18}; a row is a string holding no LF; false only as '@+''s third
+// field. Any refusal of the rest, by the canonical reader or by the shape, is INTENT-REVISION. Syntax only: applying them
+// (their guards, and only by an undo) is the Python reference's apply_revision, which this twin does not implement.
+fn inverse_form(s: &str) -> bool {
+    let form = if s.starts_with("@= ") {
+        '='
+    } else if s.starts_with("@+ ") {
+        '+'
+    } else if s.starts_with("@~ ") {
+        '~'
+    } else {
+        return false;
+    };
+    if s.contains('\n') {
+        return false;
+    }
+    let a = match loads(s[3..].as_bytes()) {
+        Ok(V::Arr(a)) => a,
+        _ => return false,
+    };
+    let pos = |v: &V| match v {
+        V::Str(x) => {
+            let b = x.as_bytes();
+            !b.is_empty() && b.len() <= 19 && b.iter().all(|c| c.is_ascii_digit()) && (b[0] != b'0' || b.len() == 1)
+        }
+        _ => false,
+    };
+    let row = |v: &V| matches!(v, V::Str(x) if !x.contains('\n'));
+    match form {
+        '=' => a.len() == 3 && pos(&a[0]) && row(&a[1]) && row(&a[2]),
+        '+' => a.len() == 3 && pos(&a[0]) && row(&a[1]) && (matches!(a[2], V::Bool(false)) || row(&a[2])),
+        _ => a.len() == 2 && pos(&a[0]) && pos(&a[1]),
+    }
 }
 
 fn head(parts: &V) -> String {

@@ -207,7 +207,23 @@ def intents():
     out.append(("a base hash in capitals", bad, "INTENT-FIELD"))
     bad = dict(good, layout=["widen the yard"])
     out.append(("a layout line that is not a design statement", bad, "INTENT-LAYOUT"))
+    # 0254 (his OPEN-9: "Ruling: Keep `VERDANDI-INTENT 0` and append the new vectors directly to the current matrix."):
+    # the inverse forms' grammar, appended after the seven above, which stay byte for byte. Each is the intent wrapping one
+    # revision line under version "0"; its expected validity and code are the freeze's (inverse/0254-vectors.json,
+    # 'forms', held to its sha256 by inverse_freeze.frozen()), never the code's: build() asserts the reference agrees, so
+    # --write stops on any disagreement
+    for v in frozen_forms():
+        out.append(("0254 %s: %s" % (v["id"], v["what"]), intent_doc(["yard/tower/*"], revision=(v["line"],)), None if v["ok"] else v["code"]))
     return out
+
+
+def frozen_forms():
+    """The frozen 'forms' vectors of 0254, in the freeze's order; refuses (SystemExit) a freeze that does not read."""
+    import inverse_freeze
+    _m, vectors, _l, problems = inverse_freeze.frozen()
+    if problems or vectors is None:
+        raise SystemExit("the 0254 freeze does not read: " + "; ".join(problems)[:300])
+    return vectors["forms"]["vectors"]
 
 
 PATTERNS = [

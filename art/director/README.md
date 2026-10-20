@@ -13,6 +13,7 @@ creator's intent; it is not the product. What it proves and what it does not is 
 | `vectors.json` | the conformance vectors: inputs and exact expected outputs, readable by any implementation |
 | `vectors_source.py` | the vectors' inputs, and their writer |
 | `conform.rs` | a second implementation in std-only Rust, held to the vectors without the Python |
+| `inverse/`, `inverse_freeze.py`, `inverse_rows.py` | 0254's freeze of the exact inverse (§9), its reader, and the director's rows that hold the code to it |
 | `../director.py` | the commands that run it all over a brief |
 
 ## 1. The canonical form (VERDANDI-CANON 0)
@@ -53,7 +54,11 @@ Exactly these fields, all strings or lists of strings:
 
 - **`format`** is always `"VERDANDI-INTENT"`.
 - **`version`** is `"0"`. Any other version is refused (`INTENT-VERSION`) and never translated. A translator comes with
-  the first real change of format, and stored events are never rewritten.
+  the first real change of format, and stored events are never rewritten. The inverse forms below (0254) widened the
+  grammar under version "0", by his ruling (2026-10-20): *"Ruling: Keep `VERDANDI-INTENT 0` and append the new vectors directly to the current matrix."*, and *"The tension with the README documentation is recognized; the requirement for a translator tool is deferred until the first real structural format change occurs."* No stored event and no
+  expected output changed. It is one way: a reader from before 0254 cannot read a stored inverse that holds an `@`
+  line (its `load_intent` raises `INTENT-REVISION`, its studio's Undo is answered as an internal error, and its
+  `verify` raises from the first such undo); an inverse of `- KEY` lines alone still reads.
 - **`brief`, `prompt`, `candidate`, `rationale`**
 - **`base`** holds `{art_sha256, world_sha256, exporter_sha256}`: the head the candidate was written against.
   `world_sha256` is the graybox world W's canonical sha256, which covers the admitted layout, the map's overlay and
@@ -63,6 +68,17 @@ Exactly these fields, all strings or lists of strings:
   - `= <statement>` replaces the statement with the same key;
   - `+ <statement>` adds one whose key is new;
   - `- <key>` removes one.
+
+  Three inverse-only forms (0254), each its two characters, exactly one space, then the VERDANDI-CANON 0 bytes of one
+  array: `@= [I,W,R]`, the row at 0-based position I as the admission wrote it (W) and the row to restore (R);
+  `@+ [I,R,S]`, the row R to put back at position I, S the row that then stands at I, or `false` when R was the last
+  row; `@~ [A,B]`, the count A of trailing empty rows found and the count B to leave. Positions and counts are strings
+  matching `0|[1-9][0-9]{0,18}`; a row is a string holding no LF; `false` only as `@+`'s third field; any other line
+  beginning `@` is `INTENT-REVISION`. `validate` checks their syntax only. They are applied only by an undo whose
+  `--inverse-of N` names the admission that recorded them (`inverse_of_ok`), each under its guard (`INTENT-APPLY` when
+  the recorded row does not stand where it says, never searched for by key); anywhere else the revision is refused
+  whole, `INTENT-INVERSE-ONLY`. What each forward line records: `=` an `@=`; `-` an `@+`; `+` its `- KEY`, and after it
+  `@~ ["1","K"]` when the parent's rows did not end in exactly one empty row.
 
   A statement's key is its verb (`skyline`, `fog`, `title` and the other statements that occur once), its verb and
   first word (`tower plaza`, `material concrete`), or for a canopy its verb, region and corners. A brief names each
@@ -141,7 +157,7 @@ is always the head it met: a candidate is never admitted on a verdict reached at
 | `genesis` | the brief, the head and its parts, the art text and the design text |
 | `evaluate` | the intent's canonical text and sha256, the verdict (with its base and checked heads), the head after it would be admitted, `re_evaluation_of` (the seq it re-evaluates, or ""), its ADMISSION-0 `record` (0222, §7), observed timings |
 | `refuse_input` | an input refused before it was an intent: its sha256 and code |
-| `admit` | the evaluation admitted, the head before and after, `accepted_leakage`, the exact inverse revision, the layout lines, who chose, and (0222) its `evidence`: the still's sha256 and its detectors as the host read them, whether it was admitted despite them, or the admission it is the exact inverse of |
+| `admit` | the evaluation admitted, the head before and after, `accepted_leakage`, the exact inverse revision (positional since 0254 for `=`, `-` and a `+` whose parent did not end in exactly one LF, §2; old ledgers replay as they are, and an inverse of `- KEY` lines alone does not show its era), the layout lines, who chose, and (0222) its `evidence`: the still's sha256 and its detectors as the host read them, whether it was admitted despite them, or the admission it is the exact inverse of |
 | `refuse` | an evaluation a person refused, and their words |
 | `rebase` | a change made outside the loop (a hand edit, a new exporter): the texts and heads before and after, and (0245) the art checks it passed: a rebase is refused for files that fail one (`REBASE-CHECKS`) or that the exporter refuses (`REBASE-EXPORT`), and is read, replayed and appended under the content lock |
 | `approve` | a person's acceptance of a still from a view: the image's sha256, the render configuration, and QUALITY-0's detectors read on it (0221). A still the detectors flag, or cannot read, is approved only with `--despite-detectors`, which the event records (provenance, never a gate: a detector proves nothing either way) |
@@ -159,6 +175,9 @@ Verification (`director.py verify`) replays the ledger from its genesis:
   the launcher's look checks the bytes only);
 - a rebase's text must be the art its parts name, and its head its parts' (`LEDGER-REPLAY`), and none may record a
   failing check (`LEDGER-REBASE`, 0245);
+- an admission applies an inverse form only as the recorded undo of an earlier admission (`LEDGER-INVERSE-ONLY`, 0254),
+  and a stored inverse holding an `@` line must be the one its revision records over the text it was admitted on
+  (`LEDGER-INVERSE`, 0254); one without an `@` line is not compared (§9);
 - the files must be the text and head the replay reaches.
 
 An edit outside the loop is refused (`UNLOGGED-CHANGE`) until a `rebase` records it. LEDGER-SAFE-0 (0245): no event that names a
@@ -176,6 +195,9 @@ python art/director.py evaluate plaza-night art/rounds/plaza-imposing/*.intent
 python art/director.py record plaza-night 1               # its record: rung and why, certifies, not checked, needs, rests on
 python art/director.py admit plaza-night 1 --still s.png  # a person's choice, by its ledger number, with a still of it as drawn
 python art/director.py reevaluate plaza-night 3           # after the head moved
+python art/director.py evaluate plaza-night U.intent --inverse-of 5   # an undo of admission #5 (0254): U's revision is #5's stored inverse
+python art/director.py admit plaza-night 9 --inverse-of 5  # admitted as #5's exact inverse, in place of a still (--inverse-of since 0222)
+python art/director.py reevaluate plaza-night 9 --inverse-of 5        # an undo re-evaluated after the head moved
 python art/director.py refuse plaza-night 4 --note "it reaches the bases"
 python art/director.py verify plaza-night
 python art/director.py selftest                           # the vectors and the whole lifecycle, in a scratch copy
@@ -217,7 +239,7 @@ version under `bindings/` (`BINDING-0.v0.json`: the identities, the comparison r
 cases in his words with their expected results, the decision record, what is deferred, in his words where it quotes
 him), and `bindings/register.jsonl`, one line per version naming its file and sha256, appended and never rewritten.
 `python art/director/binding.py check` holds the files to the register (`BINDING-0 REGISTERED version 0 sha256 …`);
-it reads, and decides no admission. The inverse's repair is 0254's, against the same contract. The director's command
+it reads, and decides no admission. The inverse's repair is 0254's, against the same contract (§9). The director's command
 line is outside version 0 (his choice: it declares no scene). RBAP, the principle the contract states, is a proposed
 engineering invariant, not a theorem.
 
@@ -242,11 +264,30 @@ open`); `binding.py check` and the register are unchanged. STUDIO's rows of the 
 `python art/studio.py selftest`) hold the host's pure functions to the vectors and every press to the matrix; a frozen
 file is never edited (a change is a new freeze, recorded before the code it governs).
 
+## 9. The exact inverse (0254)
+
+His ruling (2026-10-20): *"Ruling: (a). 0254 records the inverse of = and - as the exact row at its position (and the trailing blank lines of +), applied only by undo, frozen first and built second, against BINDING-0 v0 unchanged."* Built in two commits: the freeze first, then the code. The freeze is
+`inverse/0254-spec.md` (the specification as he ruled it, his ruling files embedded whole), `inverse/0254-vectors.json`
+(115 vectors, 40 of them worked by hand), `inverse/0254-matrix.json` (55 rows in five suites, 33 plants, each with the row
+that catches it) and `inverse/legacy/plaza-night.7dee210.ledger` (7dee210's ledger byte for byte, replayed only), each
+held to its sha256 by a line of `inverse/frozen-0254.jsonl`. `python art/director/inverse_freeze.py check` reads them
+(`INVERSE-0254 FREEZE FROZEN: 115 vectors (40 by hand), 55 matrix rows in 5 suites, 33 plants (28 new keys for R5), …`),
+and the director's rows in `inverse_rows.py`, run by `python art/director.py selftest`, hold the code to them. A frozen
+file is never edited: a change is a new freeze, recorded before the code it governs. BINDING-0 version 0 is unchanged.
+The command line's undo is the evaluation's and the admission's `--inverse-of N`, and there is no undo command (his
+ruling: *"Ruling: Implement `evaluate/reevaluate FILE --inverse-of N`."*).
+
+What it does not show (`inverse/0254-spec.md` §9, and docs/CAPABILITY-MATRIX.md, 2026-10-20): an undo over a moved world
+restores nothing (it is refused where a recorded row moved, and otherwise applied and reported); a `+` is undone by its
+key; the forward ops' own defects stand; a stored inverse with no `@` line (recorded before 0254, or forged in that form
+by a writer of the ledger's files) is applied as it stands; the theorem holds for a revision that passes `validate` and
+adds no lone verb, not for every revision `apply_revision` accepts.
+
 ## 6. What it proves, and what it does not
 
 | claim | shown by | does not show |
 |---|---|---|
-| the rules are written completely enough to be implemented twice | `conform.rs` reproduces all 65 vectors (62 when this was first written): verdicts field by field and canonical bytes byte for byte; three planted rule defects caught | that either implementation is right: one author wrote both, and the vectors are the contract |
+| the rules are written completely enough to be implemented twice | `conform.rs` reproduces all 97 vectors (62 when this was first written, 65 before 0254): verdicts field by field and canonical bytes byte for byte; three planted rule defects caught | that either implementation is right: one author wrote both, and the vectors are the contract; the inverse forms' application, which the Rust twin does not implement (it checks their syntax only; his ruling on OPEN-4, *"Ruling: Defer."*): the Python-judged frozen 0254 vectors hold it |
 | a candidate's verdict belongs to the head it met | `HEAD-MOVED`; the self-test refuses an admission at a moved head and re-evaluates as a new event | — |
 | the ledger is append-only and replays to the files | `verify`; the self-test's plants (a hand edit, a changed line, a forged rebase) refused; LEDGER-SAFE-0's rows (0245): an evaluation over an unrecorded hand edit, a late one after the head moved, an admission over a hand change back and a rebase of failing files each refused with nothing appended, and each guard's plant shown to leave a ledger replay refuses | the last line alone has no successor to name it: it rests on the commit that holds it |
 | the layout's authority stays the shell's | a layout candidate is compiled and admitted by the design tool, and C is rebuilt by the graybox converter | — |

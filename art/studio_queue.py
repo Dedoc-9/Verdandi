@@ -399,6 +399,7 @@ def import_rows(tmp, row, tree_bytes):
     import play
     import shutil
     import studio as S_
+    S_quiet = lambda fn, *a, **k: S_.quiet(fn, *a, **k)
     import subprocess
     import threading
     D = play.director()
@@ -434,6 +435,28 @@ def import_rows(tmp, row, tree_bytes):
     brief("plaza-unl", ledger=True)
     with open(os.path.join(src, "art", "briefs", "plaza-unl.art"), "ab") as fh:
         fh.write(b"# a hand edit, not recorded\n")
+    # 0254 (the frozen matrix's IM1): a source whose ledger holds a forged positioned inverse (OU7's): an admission by the
+    # command line, its stored '@=' inverse's restored row altered and the chain rehashed from it on
+    brief("plaza-forged", ledger=True)
+    wf = D.Workspace("plaza-forged", src)
+    _pf = D.current_parts(wf)
+    with open(os.path.join(src, "forged.intent"), "wb") as fh:
+        fh.write(D.canon.dumps({"base": {k: _pf[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "brief": "plaza-forged",
+                                "candidate": "F", "format": "VERDANDI-INTENT", "layout": [], "prompt": "0254's IM1", "rationale": "an admission",
+                                "revision": ["= lamp north-lane 255,170,90 500 4"], "scope": ["**", "env/**"], "version": "0"}))
+    _r = S_quiet(D.cmd_evaluate, wf, [os.path.join(src, "forged.intent")], quiet=True)[0]
+    _af = S_quiet(D.cmd_admit_still, wf, _r[4])
+    os.remove(os.path.join(src, "forged.intent"))
+    _evs = D.led.read(wf.ledger)[0]
+    _f, _v = D.canon.inverse_form(_evs[int(_af["seq"])]["inverse"][0])
+    _evs[int(_af["seq"])] = dict(_evs[int(_af["seq"])], inverse=[D.canon.inverse_line(_f, [_v[0], _v[1], _v[2].replace(" 600 ", " 650 ")])])
+    _prev, _lines = D.led.ZERO, []
+    for _e in _evs:
+        _b = D.canon.dumps(dict(_e, prev=_prev))
+        _lines.append(_b)
+        _prev = D.canon.sha256(_b)
+    with open(wf.ledger, "wb") as fh:
+        fh.write(b"".join(x + b"\n" for x in _lines))
     assert base.count(slab) == 1
     brief("plaza-low", base.replace(slab, b"canopy plaza concrete_slab 3.0 19,10 28,11"))      # a slab the art checks refuse
     brief("plaza-bad", base + b"bogus_statement x\n")                                       # a statement the exporter refuses
@@ -534,6 +557,10 @@ def import_rows(tmp, row, tree_bytes):
     row("import: a ledger that does not verify in the copy is refused (IMPORT-LEDGER, the director's UNLOGGED-CHANGE); nothing staged",
         a.get("code") == "IMPORT-LEDGER" and a.get("director_code") == "UNLOGGED-CHANGE" and a.get("source_label") == LABEL and a.get("name") == "plaza-unl"
         and not aside(), "%s (%s): %s" % (a.get("code"), a.get("director_code"), a.get("message", "")[:80]))
+    c, a = post("stage", {"name": "plaza-forged"})
+    row("import: a source whose ledger holds a forged positioned inverse is refused IMPORT-LEDGER carrying LEDGER-INVERSE, the staging removed",
+        a.get("code") == "IMPORT-LEDGER" and a.get("director_code") == "LEDGER-INVERSE" and a.get("name") == "plaza-forged" and not aside()
+        and "plaza-forged" not in hub.names(), "%s (%s): %s; aside %s" % (a.get("code"), a.get("director_code"), a.get("message", "")[:100], aside()))
     c, a = post("stage", {"name": "plaza-low"})
     row("import: a brief the art checks refuse is refused (IMPORT-CHECKS, the checks named); nothing staged",
         a.get("code") == "IMPORT-CHECKS" and "no dressing where a player can be" in a.get("message", "") and not aside(),

@@ -51,6 +51,10 @@ SUITE_PLANT = {"DIRECTOR SELFTEST": re.compile(r"\Aplant: [a-z0-9-]+\Z"), "STUDI
 # spec §8: each plant one named value of one switch, read only where it is named; the suites that hold no plant have none
 SUITE_SWITCH = {"DIRECTOR SELFTEST": "director.INVERSE_PLANT", "CERT SELFTEST": "certificate.PLANT", "STUDIO SELFTEST": "studio.ACCOUNT_PLANT"}
 VECTORS_JSON = os.path.join(HERE, "vectors.json")
+# The director's self-test's switch (0254, spec §8: art/director.py INVERSE_PLANT) as this reader sees it: that self-test
+# points PLANT_OF at its switch while its 0254 rows run, and puts it back after; nothing else sets it. Read only by
+# frozen(), for the plant inverse-vectors-edited (a file's bytes not held to its recorded sha256), which FZ1 catches.
+PLANT_OF = lambda: ""  # noqa: E731
 
 
 def sha256(b):
@@ -108,7 +112,7 @@ def frozen(folder=FOLDER):
             continue
         if f not in lines:
             continue
-        if sha256(body) != lines[f][1]:
+        if sha256(body) != lines[f][1] and PLANT_OF() != "inverse-vectors-edited":
             problems.append("FREEZE-STALE: %s is not the file recorded (its sha256 %s, recorded %s)" % (f, sha256(body), lines[f][1]))
             continue
         if lines[f][2] != "frozen":

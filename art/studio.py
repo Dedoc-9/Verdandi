@@ -558,7 +558,8 @@ STRICT_PLANTS = ("strict-not-checked", "strict-any-region", "strict-no-receipt")
 # publishing while a request's candidates are given new slots, and Undo's dry run (_undoing) skipping the director's
 # checks, so that Undo's account says it would undo a hand edit the press refuses
 ACCOUNT_PLANT = ""
-ACCOUNT_PLANTS = ("account-drops-stale", "account-director-skipped", "restoration-from-own-certificate", "publishing-unflagged", "undo-dry-skipped")
+ACCOUNT_PLANTS = ("account-drops-stale", "account-director-skipped", "restoration-from-own-certificate", "publishing-unflagged", "undo-dry-skipped",
+                  "kept-inverse-unbound")   # kept-inverse-unbound: 0254's (the frozen matrix's ST5), set only by its row
 
 
 # ------------------------------------------------------------------------------------------------ BINDING-0, enforced
@@ -2269,7 +2270,16 @@ class Gateway:
                "revision": list(a["inverse"]), "scope": list(src["scope"]), "version": "0"}
         raw = D.canon.dumps(doc)
         it = D.canon.load_intent(raw)
-        verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
+        # 0254: evaluated as the undo of #N (undo_of): the ledger replayed to #N first, a stored inverse holding an '@' line
+        # held to the one its revision records (a well-formed forged one, which load_intent above reads, refused
+        # LEDGER-INVERSE before anything is applied: the director's refusal, nothing appended; one with no '@' line is not
+        # compared, spec §9), then applied only as #N's exact inverse. A stored inverse load_intent refuses (a malformed '@'
+        # line; as at 7dee210, a statement line holding '#') escapes at load_intent above as an IntentError, answered
+        # STUDIO-INTERNAL with no decision record and nothing written: OPEN-5, open, deciding nothing
+        try:
+            verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it, undo_of=a["seq"])
+        except led.LedgerError as e:
+            raise director_refusal(e)
         seen["scene"] = _o0["lineage"]["scene_sha256"] if _o0 is not None else ""
         if dry and ACCOUNT_PLANT == "undo-dry-skipped":
             return a, raw, it, None
@@ -2430,7 +2440,9 @@ class Gateway:
             cert = json.loads(open(path, "rb").read().decode("utf-8"))
         except (OSError, ValueError):
             return False
-        return (cert.get("ledger") or {}).get("seq") == ev["seq"] and (cert.get("ledger") or {}).get("event_sha256") == sha256(D.canon.dumps(ev))
+        # 0254: and its inverse the event's own, line for line (a certificate's check applies that inverse)
+        return (cert.get("ledger") or {}).get("seq") == ev["seq"] and (cert.get("ledger") or {}).get("event_sha256") == sha256(D.canon.dumps(ev)) \
+            and (ACCOUNT_PLANT == "kept-inverse-unbound" or (cert.get("inverse") or {}).get("revision") == list(ev.get("inverse") or []))
 
     def _ledger_certificate(self, D, ws, events, i, producer):
         """The certificate of the art admission events[i], made from the ledger alone (recover_certificates'): the

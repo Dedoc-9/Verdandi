@@ -6,8 +6,13 @@
 #
 #   python art/director.py genesis  BRIEF                      start the brief's ledger at the current head
 #   python art/director.py lens     BRIEF REGION               what a proposer reads: the region, its pieces, their materials
-#   python art/director.py evaluate BRIEF FILE...              check candidate intents at the current head; a contact sheet
-#   python art/director.py reevaluate BRIEF SEQ                check an earlier evaluation's intent again, at the current head
+#   python art/director.py evaluate BRIEF FILE... [--inverse-of N]
+#                                                              check candidate intents at the current head; a contact sheet
+#                                                              (0254: an intent holding an inverse form, '@=', '@+' or '@~', is
+#                                                              evaluated only with --inverse-of N, its revision admission #N's
+#                                                              stored inverse; otherwise REFUSED, INTENT-INVERSE-ONLY)
+#   python art/director.py reevaluate BRIEF SEQ [--inverse-of N]
+#                                                              check an earlier evaluation's intent again, at the current head
 #   python art/director.py admit    BRIEF SEQ --still FILE.png [--despite-detectors] [--accept-leakage] [--chooser NAME] [--note TEXT]
 #                                                              (ADMISSION-0, 0222: the evaluation's record must be complete and what
 #                                                              it requires present; --inverse-of SEQ in place of a still for an undo)
@@ -291,14 +296,100 @@ class Workspace:
 
 
 # -------------------------------------------------------------------------------------------- revisions and layout
-def apply_revision(text, lines):
+# 0254's switch (spec §8, the frozen matrix's 'the rule'): one named value at a time, set only by cmd_selftest's 0254 rows
+# (inverse_rows) and put back after them; "" everywhere else. Each value is read only where it is named: in apply_revision,
+# inverse_of_ok, evaluate_doc, admit_checks and replay here, and, through the hooks those rows point at it, in
+# art/director/intent.py's inverse_form and art/director/inverse_freeze.py's frozen()
+INVERSE_PLANT = ""
+
+
+def apply_revision(text, lines, undo=False):
     """The art text with the revision applied, and its exact inverse. '= stmt' replaces the statement with the same
     key, '+ stmt' appends one whose key is new, '- key' removes the statement with that key. Refuses (INTENT-APPLY)
-    a line that names no statement, or a '+' whose key exists."""
+    a line that names no statement, or a '+' whose key exists. The three are applied byte for byte as before 0254; only
+    what they record changed (0254, his ruling: "Ruling: (a). 0254 records the inverse of = and - as the exact row at its
+    position (and the trailing blank lines of +), applied only by undo, frozen first and built second, against BINDING-0
+    v0 unchanged."). A row is an element of text.split("\n"), a position a 0-based index into the rows as they stand when
+    its line is applied. '=' at row I records '@= [I, the row as written, the old row verbatim]'; '-' of row I records
+    '@+ [I, the row verbatim, the row that followed it, or false when it was the last]'; '+' records '- key', and after it
+    '@~ ["1","K"]' when it took K != 1 trailing empty rows away. The inverse is each line's record, in reverse line order
+    (their syntax: art/director/intent.py inverse_form).
+    Exact (T-0254, narrowed by a review finding: the frozen spec's §5 says "any revision of ordinary lines that
+    apply_revision(P, r) accepts", which its own first falsifier refutes): the undo over the child returns P byte for byte
+    for a revision whose ordinary lines pass intent.validate (no '#', no LF) and whose '+' lines add no lone verb outside
+    SINGLE, moon and sun (whose statement key, 'V ', is not its own strip: its '- V ' names no row). Every revision a caller
+    passes has passed intent.validate, and the exporter refuses every such lone verb (ART-REFUSED), so no admission reaches
+    either case; given straight to this function, '+ tower' and '+ lamp b#c 1,2,3 100 1' are accepted and their undo
+    refused INTENT-APPLY (docs/CAPABILITY-MATRIX.md, 2026-10-20).
+    The '@' forms are applied only with undo=True: otherwise the revision is refused whole, INTENT-INVERSE-ONLY (the one
+    enforcement point; its callers pass undo=True only where inverse_of_ok holds, and certificate.check in memory). Each
+    is applied under its guard, refused INTENT-APPLY naming the form, the position and what it found, never retried by
+    key or in another form:
+      '@= [I,W,R]'  rows[I] is W byte for byte, W and R of one statement key: rows[I] := R; records '@= [I,R,W]'
+      '@+ [I,R,S]'  R holds a statement whose key no row holds; and S false with I the number of rows, or S false, I 0 and
+                    the rows [""] (the text "" a '-' of every row leaves: the rows become [R]), or rows[I] is S: R
+                    inserted at I; records '- key'
+      '@~ [A,B]'    the rows end in exactly A empty rows: those taken away, B appended; records '@~ [B,A]'"""
     rows = text.split("\n")
     keyed = lambda ln: dress.statement_key(ln.split("#", 1)[0].split()) if ln.split("#", 1)[0].split() else None
+    P = INVERSE_PLANT          # the 0254 rows' switch (cmd_selftest); "" everywhere else
+    parent_rows = list(rows)   # read only under the plant inverse-parent-positions
+    if not undo and P != "inverse-anywhere":
+        for ln in lines:
+            if ln[:1] == "@":
+                raise canon.IntentError("INTENT-INVERSE-ONLY", "%r is an inverse form, applied only by an undo naming the admission that "
+                                                               "recorded it (inverse_of)" % (ln[:2],))
     inverse = []
     for ln in lines:
+        if ln[:1] == "@":
+            form, v = canon.inverse_form(ln)
+            i = int(v[0])
+            if form == "@=":
+                w, r = v[1], v[2]
+                held = i < len(rows) and (keyed(rows[i]) == keyed(w) if P == "guard-key-not-bytes" else rows[i] == w)
+                if not held and P == "inverse-key-fallback":
+                    found = [j for j, x in enumerate(rows) if keyed(x) == keyed(w) and x == w]
+                    if len(found) == 1:
+                        i, held = found[0], True
+                if P != "guard-skipped-replace" and i >= len(rows):
+                    raise canon.IntentError("INTENT-APPLY", "'@=' at row %d: the text has %d rows" % (i, len(rows)))
+                if P != "guard-skipped-replace" and not held:
+                    raise canon.IntentError("INTENT-APPLY", "'@=' at row %d: found %r, not the row the admission wrote" % (i, rows[i][:120]))
+                if P != "guard-rekey-skipped" and (keyed(w) is None or keyed(w) != keyed(r)):
+                    raise canon.IntentError("INTENT-APPLY", "'@=' at row %d: the row it restores, %r, is not of the statement key of the row it "
+                                                            "replaces (%r)" % (i, r[:120], keyed(w)))
+                rows[i] = r
+                inverse.append([canon.inverse_line("@=", [v[0], r, w])])
+            elif form == "@+":
+                r, s = v[1], v[2]
+                key = keyed(r)
+                if key is None:
+                    raise canon.IntentError("INTENT-APPLY", "'@+' at row %d: the row it restores, %r, holds no statement" % (i, r[:120]))
+                if any(keyed(x) == key for x in rows):
+                    raise canon.IntentError("INTENT-APPLY", "'@+' at row %d: the brief already has a statement %r" % (i, key))
+                if s is False and i == 0 and rows == [""] and P != "empty-child-insert":
+                    rows = [r]
+                elif P == "guard-skipped-insert":
+                    rows.insert(i, r)
+                elif s is False and i == len(rows):
+                    rows.insert(i, r)
+                elif s is not False and i < len(rows) and rows[i] == s:
+                    rows.insert(i, r)
+                else:
+                    raise canon.IntentError("INTENT-APPLY", "'@+' at row %d: found %s, not %s" % (
+                        i, ("%r" % rows[i][:120]) if i < len(rows) else "the end of the text" if i == len(rows) else "no row (the text has %d)" % len(rows),
+                        ("%r" % s[:120]) if s is not False else "the end of the text"))
+                inverse.append(["- " + key])
+            else:
+                n = 0
+                while n < len(rows) and rows[len(rows) - 1 - n] == "":
+                    n += 1
+                if n != i and P != "guard-skipped-tail":
+                    raise canon.IntentError("INTENT-APPLY", "'@~': the text ends in %d empty rows, not %d" % (n, i))
+                del rows[len(rows) - i:]
+                rows += [""] * int(v[1])
+                inverse.append([canon.inverse_line("@~", [v[1], v[0]])])
+            continue
         op, body = ln[0], ln[2:].strip()
         if op in "=+":
             code = body.split()
@@ -311,23 +402,44 @@ def apply_revision(text, lines):
         if op == "=":
             if len(at) != 1:
                 raise canon.IntentError("INTENT-APPLY", "'= %s' names no statement of the brief" % key)
-            old = rows[at[0]].split("#", 1)[0].strip()
+            old = rows[at[0]]
             tail = ("  #" + rows[at[0]].split("#", 1)[1]) if "#" in rows[at[0]] else ""
-            rows[at[0]] = " ".join(body.split()) + tail
-            inverse.append("= " + old)
+            rows[at[0]] = (body if P == "legacy-spacing-kept" else " ".join(body.split())) + tail
+            if P == "inverse-statement-form":
+                inverse.append(["= " + old.split("#", 1)[0].strip()])
+            else:
+                inverse.append([canon.inverse_line("@=", [_planted_position(P, parent_rows, keyed, key, at[0]), rows[at[0]], old])])
         elif op == "+":
             if at:
                 raise canon.IntentError("INTENT-APPLY", "'+ %s': the brief already has a statement %r" % (body, key))
+            k = 0
             while rows and rows[-1] == "":
                 rows.pop()
+                k += 1
             rows += [" ".join(body.split()), ""]
-            inverse.append("- " + key)
+            tail_kept = (k != 1 and P != "plus-tail-dropped") or P == "plus-tail-always"
+            inverse.append(["- " + key] + ([canon.inverse_line("@~", ["1", str(k)])] if tail_kept else []))
         else:
             if len(at) != 1:
                 raise canon.IntentError("INTENT-APPLY", "'- %s' names no statement of the brief" % key)
-            inverse.append("+ " + rows[at[0]].split("#", 1)[0].strip())
-            del rows[at[0]]
-    return "\n".join(rows), list(reversed(inverse))
+            i = at[0]
+            r = rows[i]
+            del rows[i]
+            if P == "inverse-statement-form":
+                inverse.append(["+ " + r.split("#", 1)[0].strip()])
+            else:
+                inverse.append([canon.inverse_line("@+", [_planted_position(P, parent_rows, keyed, key, i), r, rows[i] if i < len(rows) else False])])
+    return "\n".join(rows), [x for group in reversed(inverse) for x in group]
+
+
+def _planted_position(P, parent_rows, keyed, key, i):
+    """The position an '=' or a '-' records: its row's index at the moment of its line (0254); under the 0254 rows' plant
+    inverse-parent-positions, the index the key's row had in the parent (the moment's when the parent has none)."""
+    if P == "inverse-parent-positions":
+        at = [j for j, x in enumerate(parent_rows) if keyed(x) == key]
+        if len(at) == 1:
+            return str(at[0])
+    return str(i)
 
 
 def compile_design(text):
@@ -721,12 +833,33 @@ def evaluation_fields(raw, verdict, after, timings, record, re_of=""):
             "verdict": verdict, "after": after, "record": record, "observed": {"at": now(), "ms": timings}}
 
 
-def evaluate_doc(ws, it, re_of="", on_candidate=None):
+def inverse_of_ok(events, i, it, before):
+    """Whether the intent `it` is the exact inverse of admission #i, as an undo of it (0254: one predicate, for the
+    evaluation, the admission and replay): i a sequence number before `before` (len(events) at an evaluation and an
+    admission, the admit event's own seq in replay: an undo never names a later admission, its own redo among them), of
+    an admit event whose stored inverse is the intent's revision line for line, and the intent changes no layout."""
+    i = str(i or "")
+    # the number read as 7dee210 read it (its isdigit() and int(); isdecimal() is exactly the strings both accept), so that
+    # every ledger 7dee210 wrote and verified replays as it is (spec §4.1): an ASCII-only rule had refused an --inverse-of
+    # given in other decimal digits, which 7dee210's command line accepted and wrote (a review finding)
+    return i.isdecimal() and (int(i) < int(before) or INVERSE_PLANT == "inverse-of-unbounded") and int(i) < len(events) \
+        and events[int(i)]["kind"] == "admit" and (list(events[int(i)]["inverse"]) == list(it["revision"]) or INVERSE_PLANT == "undo-flag-unchecked") \
+        and it["layout"] == []
+
+
+def evaluate_doc(ws, it, re_of="", on_candidate=None, undo_of=None):
     """One intent at the current head: its verdict, the head after it, the stage timings, the scenes and the candidate's
     text, and its ADMISSION-0 record (art/director/contract.py: rung, certifies, not_checked, horizon, trusted, requires).
     on_candidate(out1, maps),
     if given, is called with the candidate's export and the maps folder it was made over, while that folder exists
-    (art/play.py converts the candidate's map there to play it)."""
+    (art/play.py converts the candidate's map there to play it).
+    undo_of (0254), the sequence number of the admission the intent undoes (the studio's Undo, the command line's
+    --inverse-of): the ledger replayed to that admission first (events[:N+1]: a stored inverse holding an '@' line that is
+    not the one its revision records is refused there, LEDGER-INVERSE, raised as the LedgerError, before anything is
+    applied; one with no '@' line, recorded before 0254, a '- key' alone, or an '@' inverse rewritten by a writer of the
+    ledger in the statement form, is not compared, and is applied as #N's inverse as it stands: spec §9); then the
+    intent held to be its exact inverse (inverse_of_ok; otherwise REFUSED, INTENT-INVERSE-ONLY); only then its revision
+    applied with undo=True. Without it, an '@' line is refused by apply_revision (INTENT-INVERSE-ONLY)."""
     t0 = time.perf_counter()
     timings = {}
     t = time.perf_counter()
@@ -740,11 +873,22 @@ def evaluate_doc(ws, it, re_of="", on_candidate=None):
     try:
         if it["brief"] != ws.brief:
             return no(refused(it, cur, "INTENT-BRIEF", "the intent is for %r" % it["brief"]))
+        undo = undo_of not in (None, "")
+        if undo:
+            events, _l, _h = led.read(ws.ledger)
+            n = str(undo_of)
+            if events and n.isdecimal() and INVERSE_PLANT != "inverse-unverified":
+                replay(ws, events[:int(n) + 1])
+            if not inverse_of_ok(events, n, it, len(events)):
+                return no(refused(it, cur, "INTENT-INVERSE-ONLY", "the intent is said to undo #%s, and it is not that admission's stored inverse, "
+                                                                   "or #%s is no admission before it" % (n, n)))
         t = time.perf_counter()
         try:
-            text1, _inv = apply_revision(ws.text(), it["revision"])
+            text1, _inv = apply_revision(ws.text(), it["revision"], undo=undo or INVERSE_PLANT == "undo-flag-always")
         except canon.IntentError as e:
             return no(refused(it, cur, e.code, str(e)))
+        if undo and INVERSE_PLANT == "inverse-unverified" and events and n.isdecimal():
+            replay(ws, events[:int(n) + 1])
         maps = None
         if it["layout"]:
             try:
@@ -775,7 +919,7 @@ def evaluate_doc(ws, it, re_of="", on_candidate=None):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
-def cmd_evaluate(ws, files, quiet=False):
+def cmd_evaluate(ws, files, quiet=False, inverse_of=""):
     events, _l, _h = led.read(ws.ledger)
     if not events:
         raise SystemExit("no ledger for %s: run genesis first" % ws.brief)
@@ -790,7 +934,7 @@ def cmd_evaluate(ws, files, quiet=False):
                                                         "detail": str(e)[:300], "observed": {"at": now()}})
             rows.append((os.path.basename(f), "-", "REFUSED", e.code, ev["seq"], {}))
             continue
-        verdict, after, timings, out1, out0, _text1, rec = evaluate_doc(ws, it)
+        verdict, after, timings, out1, out0, _text1, rec = evaluate_doc(ws, it, undo_of=inverse_of or None)
         ev = append_evaluation(ws, raw, verdict, after, timings, rec)
         rows.append((os.path.basename(f), it["candidate"], verdict["verdict"], ",".join(verdict["codes"]) or "-", ev["seq"], timings, rec))
         sheet.append((it, verdict, out0, out1, ev["seq"], timings))
@@ -806,14 +950,14 @@ def cmd_evaluate(ws, files, quiet=False):
     return rows
 
 
-def cmd_reevaluate(ws, seq):
+def cmd_reevaluate(ws, seq, inverse_of=""):
     events, _l, _h = led.read(ws.ledger)
     ev = events[int(seq)]
     if ev["kind"] != "evaluate":
         raise SystemExit("#%s is not an evaluation" % seq)
     it = canon.load_intent(ev["intent"].encode("ascii"))
     held_head(ws, events)
-    verdict, after, timings, out1, out0, _t, rec = evaluate_doc(ws, it)
+    verdict, after, timings, out1, out0, _t, rec = evaluate_doc(ws, it, undo_of=inverse_of or None)
     new = append_evaluation(ws, ev["intent"], verdict, after, timings, rec, re_of=seq)
     print("candidate %s re-evaluated at the current head: %s %s (ledger #%s; it was %s at #%s)" % (
         it["candidate"], verdict["verdict"], ",".join(verdict["codes"]) or "-", new["seq"], ev["verdict"]["verdict"], seq))
@@ -840,11 +984,7 @@ def admission_evidence(ws, events, it, still=None, despite=False, inverse_of="",
             ev["detectors"] = quality.detector_fields(m, flags)
         except quality.QualityError as e:
             ev["detectors"] = {"not_checked": str(e)[:200]}
-    ok = False
-    if ev["inverse_of"]:
-        i = ev["inverse_of"]
-        ok = i.isdigit() and int(i) < len(events) and events[int(i)]["kind"] == "admit" and list(events[int(i)]["inverse"]) == list(it["revision"]) \
-            and not it["layout"]
+    ok = bool(ev["inverse_of"]) and inverse_of_ok(events, ev["inverse_of"], it, len(events))
     return ev, raw, ok
 
 
@@ -910,11 +1050,23 @@ def admit_checks(ws, events, ev, seq, accept_leakage=False, still=None, despite=
     if ev["kind"] != "evaluate":
         raise SystemExit("REFUSED: #%s is not an evaluation" % seq)
     v = ev["verdict"]
-    out0, cur, _c = ws.export()
+    # 0254 (a review finding): the brief read once, and the head, the application and the stored inverse all taken from
+    # those bytes. The commit's fence holds the files to this head and held_head the ledger to it, so the inverse stored is
+    # the one replay recomputes over the text the ledger holds; read twice, a writer outside the content lock that changed
+    # the brief between the reads and put it back before the fence would leave an inverse of other bytes, and a ledger that
+    # replay refuses (LEDGER-INVERSE) for good. The race court's plant "admit-reads-twice" reads it again for the application
+    text0 = ws.text()
+    out0, cur, _c = ws.export(text0)
     head = canon.head(cur)
     if v["checked_against"] != head:
+        try:
+            undoes = any(x[:1] == "@" for x in canon.load_intent(ev["intent"].encode("ascii"))["revision"])
+        except canon.IntentError:
+            undoes = False
         raise SystemExit("REFUSED (HEAD-MOVED): #%s was checked against %s; the head is now %s. Re-evaluate it first: "
-                         "python art/director.py reevaluate %s %s" % (seq, v["checked_against"][:12], head[:12], ws.brief, seq))
+                         "python art/director.py reevaluate %s %s%s" % (seq, v["checked_against"][:12], head[:12], ws.brief, seq,
+                                                                        (" --inverse-of %s" % inverse_of) if undoes and inverse_of else
+                                                                        " --inverse-of N (N the admission it undoes)" if undoes else ""))
     if v["verdict"] == "REFUSED":
         raise SystemExit("REFUSED: #%s's verdict is REFUSED (%s); a refused candidate is never admitted" % (seq, ",".join(v["codes"])))
     if v["verdict"] == "LEAKAGE" and not accept_leakage:
@@ -924,7 +1076,14 @@ def admit_checks(ws, events, ev, seq, accept_leakage=False, still=None, despite=
     lack = contract.missing(ev.get("record"), v, evidence, inverse_ok)
     if lack:
         raise SystemExit("REFUSED (ADMISSION-0): #%s cannot be admitted yet: %s" % (seq, "; ".join(lack)))
-    text1, inverse = apply_revision(ws.text(), it["revision"])
+    try:
+        text1, inverse = apply_revision(ws.text() if durable.PLANT == "admit-reads-twice" else text0, it["revision"],
+                                        undo=inverse_ok or INVERSE_PLANT == "admit-inverse-anywhere")
+    except canon.IntentError as e:
+        if e.code != "INTENT-INVERSE-ONLY":
+            raise
+        raise SystemExit("REFUSED (INTENT-INVERSE-ONLY): #%s's revision holds an inverse form, which only an undo of the admission that recorded "
+                         "it applies: admit it with --inverse-of that admission; nothing was written" % seq)
     files, maps = [], None
     try:
         if it["layout"]:
@@ -1047,6 +1206,7 @@ def replay(ws, events):
     E = led.LedgerError
     g = events[0]
     st = {"art": g["art_text"], "design": g["design_text"], "parts": dict(g["parts"]), "head": g["head"]}
+    inv_ok = False              # set afresh for every admit event below; carried over only under the plant replay-undo-carried
     if canon.head(g["parts"]) != g["head"] or canon.sha256(g["art_text"].encode("utf-8")) != g["parts"]["art_sha256"]:
         raise E("LEDGER-GENESIS: the genesis's head is not its own text's")
     for ev in events[1:]:
@@ -1069,6 +1229,9 @@ def replay(ws, events):
             if src["verdict"]["verdict"] == "REFUSED" or (src["verdict"]["verdict"] == "LEAKAGE" and not ev["accepted_leakage"]):
                 raise E("LEDGER-VERDICT: #%s admits a %s candidate" % (ev["seq"], src["verdict"]["verdict"]))
             it = canon.load_intent(src["intent"].encode("ascii"))
+            # 0254: whether this admission undoes an earlier one, set afresh for every admit event (nothing carries over)
+            if INVERSE_PLANT != "replay-undo-carried":
+                inv_ok = False
             # ADMISSION-0 (0222): an evaluation with a record is admitted only with the evidence it requires; one from
             # before the record (a legacy admission) carries none, and an admission of one carries none either
             if "record" in src:
@@ -1076,14 +1239,24 @@ def replay(ws, events):
                 if evd is None or bool(evd.get("accepted_leakage")) != bool(ev["accepted_leakage"]):
                     raise E("LEDGER-EVIDENCE: #%s admits a recorded evaluation without its evidence" % ev["seq"])
                 i = evd.get("inverse_of", "")
-                inv_ok = bool(i) and i.isdigit() and int(i) < int(ev["seq"]) and events[int(i)]["kind"] == "admit" \
-                    and list(events[int(i)]["inverse"]) == list(it["revision"]) and not it["layout"]
+                inv_ok = bool(i) and inverse_of_ok(events, i, it, int(ev["seq"]))
                 lack = contract.missing(src["record"], src["verdict"], evd, inv_ok)
                 if lack:
                     raise E("LEDGER-EVIDENCE: #%s admits #%s lacking %s" % (ev["seq"], ev["evaluation"], "; ".join(lack)))
             elif "evidence" in ev:
                 raise E("LEDGER-EVIDENCE: #%s carries evidence for an evaluation that has no record" % ev["seq"])
-            st["art"], _inv = apply_revision(st["art"], it["revision"])
+            try:
+                st["art"], _inv = apply_revision(st["art"], it["revision"], undo=inv_ok or INVERSE_PLANT == "replay-inverse-anywhere")
+            except canon.IntentError as e:
+                if e.code != "INTENT-INVERSE-ONLY":
+                    raise
+                raise E("LEDGER-INVERSE-ONLY: #%s applies an inverse form without being an undo of the admission that recorded it" % ev["seq"])
+            # 0254: a stored inverse holding an '@' line is the one its revision records over the text it was admitted on
+            # (one without, recorded before 0254 or a '- key' alone, is not compared: old ledgers replay as they are)
+            stored = list(ev.get("inverse") or [])
+            if (any(isinstance(x, str) and x[:1] == "@" for x in stored) or INVERSE_PLANT == "inverse-compared-always") and stored != list(_inv) \
+                    and INVERSE_PLANT != "replay-inverse-unchecked":
+                raise E("LEDGER-INVERSE: #%s's stored inverse is not the one its revision records over the text it was admitted on" % ev["seq"])
             if canon.sha256(st["art"].encode("utf-8")) != src["after"]["art_sha256"] != "":
                 raise E("LEDGER-REPLAY: #%s's text does not reach the art the evaluation recorded" % ev["seq"])
             if it["layout"]:
@@ -1442,7 +1615,7 @@ def cmd_selftest():
         inv_path = os.path.join(tmp, "U.intent")
         with open(inv_path, "wb") as fh:
             fh.write(canon.dumps(inv_doc))
-        su = cmd_evaluate(ws, [inv_path], quiet=True)[0][4]
+        su = cmd_evaluate(ws, [inv_path], quiet=True, inverse_of=adm["seq"])[0][4]
         n0 = len(led.read(ws.ledger)[0])
         for label, kw, want in (("without a still", {"still": None}, "no still of the candidate"),
                                 ("said to undo an admission it is not the inverse of", {"still": None, "inverse_of": rb["seq"]}, "not that admission's exact inverse")):
@@ -1499,7 +1672,7 @@ def cmd_selftest():
                     revision=list(last_adm["inverse"]), scope=list(src2["scope"]), rationale="the exact inverse of #%s" % last_adm["seq"])
         with open(inv_path, "wb") as fh:
             fh.write(canon.dumps(inv2))
-        sd = cmd_evaluate(ws, [inv_path], quiet=True)[0][4]
+        sd = cmd_evaluate(ws, [inv_path], quiet=True, inverse_of=last_adm["seq"])[0][4]
         lid = len(led.read(ws.ledger)[0])
         led.append(ws.ledger, "admit", {"evaluation": sd, "intent_sha256": led.read(ws.ledger)[0][int(sd)]["intent_sha256"],
                                         "head_before": canon.head(current_parts(ws)), "head_after": "x",
@@ -1600,6 +1773,10 @@ def cmd_selftest():
             durable.PLANT = os.environ.get("VERDANDI_PLANT", "")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    # 0254: the frozen matrix's rows (art/director/inverse/0254-matrix.json, DIRECTOR SELFTEST, FZ1 to OU9), their
+    # expectations read only through inverse_freeze.frozen(), run once honest and once per INVERSE_PLANT value
+    import inverse_rows
+    results += inverse_rows.director_rows(sys.modules[__name__])
     results += memo_rows()
     failed = 0
     for name, ok, d in results:
@@ -2272,6 +2449,64 @@ def cmd_racetest():
             rc == durable.CRASH_EXIT and orphan and outcome == "admitted" and where() == ("A", 1, "admit") and not os.path.isdir(ws.pending)
             and "RECOVERED" in sink.getvalue() and verified(), "the killed writer %d; %s; %s" % (rc, outcome, " ".join(
                 ln for ln in sink.getvalue().splitlines() if ln.startswith("RECOVERED"))[:110]))
+
+        # 7. 0254 (a review finding): an editor's save of the brief (a writer outside the content lock) between the
+        # admission's read of it and the commit, put back before the fence. The fence and held_head pass (the files and the
+        # ledger are at the head again), so the admit event is written; its stored inverse must be the one replay
+        # recomputes over the text the ledger holds, or every later evaluation, admission, rebase and undo is refused
+        # LEDGER-INVERSE for good. The save changes only spacing in the row a '-' deletes, so the child is the same
+        for plant in ("", "admit-reads-twice"):
+            rt = os.path.join(tmp, "inverse-race-%s" % (plant or "honest"))
+            with contextlib.redirect_stdout(io.StringIO()):
+                wsr = selftest_tree(rt)
+            p0 = current_parts(wsr)
+            fi = os.path.join(rt, "A.intent")
+            with open(fi, "wb") as fh:
+                fh.write(canon.dumps({"base": {k: p0[k] for k in ("art_sha256", "exporter_sha256", "world_sha256")}, "brief": wsr.brief,
+                                      "candidate": "A", "format": "VERDANDI-INTENT", "layout": [], "prompt": "the race court's",
+                                      "rationale": "a '-' whose row an editor respaces", "revision": ["- lamp north-lane"], "scope": ["**"],
+                                      "version": "0"}))
+            seq_r = _quiet(cmd_evaluate, wsr, [fi], quiet=True)[0][4]
+            t1 = open(wsr.art, "rb").read()
+            t2 = t1.replace(b"lamp north-lane 255,170,90 600 4\n", b"lamp north-lane  255,170,90 600 4\n")
+            st = {"saved": False, "reverted": False}
+            text_of = wsr.text
+
+            def text_hook(text_of=text_of, st=st, wsr=wsr, t2=t2):
+                t = text_of()
+                if not st["saved"] and sys._getframe(1).f_code.co_name == "admit_checks":
+                    with open(wsr.art, "wb") as fh:    # the editor saves after the admission's read
+                        fh.write(t2)
+                    st["saved"] = True
+                return t
+
+            def put_back(name, st=st, wsr=wsr, t1=t1):
+                if name == "admit:lock-wait" and st["saved"] and not st["reverted"]:
+                    with open(wsr.art, "wb") as fh:    # and saves it back before the commit's fence
+                        fh.write(t1)
+                    st["reverted"] = True
+            wsr.text, durable.HOOK, durable.PLANT = text_hook, put_back, plant
+            try:
+                a = _quiet(cmd_admit_still, wsr, seq_r, chooser="racetest")
+                outcome = "admitted #%s" % a["seq"]
+            except SystemExit as e:
+                outcome = "refused: %s" % str(e)[:80]
+            finally:
+                wsr.text, durable.HOOK, durable.PLANT = text_of, None, saved_plant
+            try:
+                _quiet(cmd_verify, wsr)
+                ver = "verify passes"
+            except (led.LedgerError, SystemExit) as e:
+                ver = "verify: %s" % str(e)[:90]
+            fired = st["saved"] and st["reverted"] and t2 != t1
+            if not plant:
+                res("an editor's save between the admission's read of the brief and its commit, put back before the fence: the "
+                    "admission's stored inverse the one replay recomputes (the brief read once)", fired and ver == "verify passes",
+                    "%s; %s" % (outcome, ver))
+            else:
+                res("plant: the admission reads the brief twice — its stored inverse is of other bytes than the head, and replay "
+                    "refuses the ledger LEDGER-INVERSE for good", fired and outcome.startswith("admitted") and "LEDGER-INVERSE" in ver,
+                    "%s; %s" % (outcome, ver))
     finally:
         durable.HOOK, durable.PLANT = saved_hook, saved_plant
         shutil.rmtree(tmp, ignore_errors=True)
@@ -2301,6 +2536,32 @@ def selftest_still():
     picture of the candidate, which these tests never draw: they test the admission's mechanism, not a look."""
     w, h = 32, 18
     return quality.png_bytes(w, h, bytes((x * 7 + y * 13 + c * 50) % 240 for y in range(h) for x in range(w) for c in range(3)))
+
+
+def selftest_admission(ws, seq, inverse=None, still=None, inverse_of="", undo=False, apply=True, chooser="a self-test", note=""):
+    """A self-test's admission of evaluation #seq written by the director's own writer (commit_admission) past
+    admit_checks: its revision applied with `undo` as given (or, apply False, the files left as they are), and the event's
+    stored inverse `inverse` verbatim, or the one that application records. Its evidence (a still, inverse_of) is
+    admission_evidence's, and carried only when the evaluation has a record. OPEN-2(a), his ruling ("Ruling: Option (a) —
+    Freeze a pre-0254 verification fixture, then append a clean `5a` row."): a pre-0254 admission is written this way, its
+    inverse verbatim from the 0254 freeze's legacy-inverses (7dee210's own records); 0254's rows write this way past the
+    director's checks to show replay refusing what they let through. Self-tests only: no command and no route calls it."""
+    events, _l, _h = led.read(ws.ledger)
+    ev = events[int(seq)]
+    it = canon.load_intent(ev["intent"].encode("ascii"))
+    evidence, still_bytes, _ok = admission_evidence(ws, events, it, still, False, inverse_of)
+    text0 = ws.text()
+    text1, inv = apply_revision(text0, it["revision"], undo=undo) if apply else (text0, [])
+    _o1, parts1, _c1 = ws.export(text1)
+    head = canon.head(ws.export(text0)[1])      # the head of the bytes applied, as admit_checks (read once)
+    stills = [(os.path.join(ws.stills, evidence["still_sha256"] + ".png"), still_bytes)] if still_bytes is not None and "record" in ev else []
+    files = [(ws.art, text1.encode("utf-8"))] if open(ws.art, "rb").read() != text1.encode("utf-8") else []
+    fields = {"evaluation": str(seq), "intent_sha256": ev["intent_sha256"], "head_before": head, "head_after": canon.head(parts1),
+              "parts_after": parts1, "accepted_leakage": False, "inverse": list(inv if inverse is None else inverse), "design_lines": [],
+              "observed": {"at": now(), "chooser": chooser, "note": note}}
+    if "record" in ev:
+        fields["evidence"] = evidence
+    return _quiet(commit_admission, ws, str(seq), ev["intent_sha256"], files, fields, stills)
 
 
 def selftest_still_file(root):
@@ -2363,9 +2624,9 @@ def main(argv):
         elif cmd == "lens":
             cmd_lens(ws, pos[1])
         elif cmd == "evaluate":
-            cmd_evaluate(ws, pos[1:])
+            cmd_evaluate(ws, pos[1:], inverse_of=opt(args, "--inverse-of", ""))
         elif cmd == "reevaluate":
-            cmd_reevaluate(ws, pos[1])
+            cmd_reevaluate(ws, pos[1], inverse_of=opt(args, "--inverse-of", ""))
         elif cmd == "record":
             cmd_record(ws, pos[1])
         elif cmd == "admit":
