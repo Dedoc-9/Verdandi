@@ -1,0 +1,2695 @@
+{
+ "cites": {
+  "base": "7dee210 (0253's commit 2 of 2, the pushed tree), art/director.py sha256 5300fb78826e0650bcd4a29a650a35e21955c5b3df61285da79e586828bd9f46",
+  "contract": "BINDING-0",
+  "embedded": "each ruling file is embedded whole, byte for byte, in 0254-spec.md (section 13), where inverse_freeze.py check holds it to the sha256 cited here and finds every quotation of his words in it",
+  "file": "art/director/bindings/BINDING-0.v0.json",
+  "rulings": [
+   {
+    "file": "ruling-0254-2026-10-20.txt",
+    "sha256": "4ac4f2892ca4975c83c3dc6051c242794403768a7201a7ed740f317713575381",
+    "status": "governing: his ruling of 2026-10-20 choosing 0244's option (a) for the inverse's repair (its file holds his ruling line, the option's text from docs/ROADMAP.md's 0244 entry, his earlier bounds and F-8, each said where it comes from; its first line is the agent's)"
+   },
+   {
+    "file": "ruling-0254-open-2026-10-20.txt",
+    "sha256": "5b080ffa51ee459369bc1a629fa7752f466353a59554ff542b04fc21f2db5500",
+    "status": "governing: his rulings of 2026-10-20 on the specification's open items OPEN-1, 2, 3, 4, 6, 7 and 9, pasted, each the specification's recommended option (its first line and its closing paragraph 'Reading (the agent's, said in the session)' are the agent's; where his text paraphrases an option, the option selected governs)"
+   }
+  ],
+  "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+  "version": 0
+ },
+ "cr": {
+  "vectors": [
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\r",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\r\nlamp b 1,2,3 100 2\n",
+    "class": "a '+' after a last row ending in a lone CR (no final LF)",
+    "id": "P-CR-LAST",
+    "in memory": "exact",
+    "inverse": [
+     "- lamp b",
+     "@~ [\"1\",\"0\"]"
+    ],
+    "parent": "syn:P-CR-LAST",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@~ [\"0\",\"1\"]",
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ],
+    "through the files": "LEDGER-UNLOGGED: the child holds CR LF, written as CR LF bytes and read back as LF, so the files are not the head the ledger records (spec §5 (c3); a defect of the forward write, as at 7dee210, not repaired by 0254)"
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1  # c\r\nlamp b 1,2,3 100 2\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1  # c\r\nlamp b 1,2,3 100 2\n",
+    "class": "an '=' on a row whose comment ends in CR (the child holds CR LF)",
+    "id": "E-CR-END",
+    "in memory": "exact",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1  # c\\r\",\"lamp a 1,2,3 100 1  # c\\r\"]"
+    ],
+    "parent": "syn:E-CR-END",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3 100 1  # c\\r\",\"lamp a 9,9,9 100 1  # c\\r\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ],
+    "through the files": "LEDGER-UNLOGGED: the child holds CR LF, written as CR LF bytes and read back as LF, so the files are not the head the ledger records (spec §5 (c3); a defect of the forward write, as at 7dee210, not repaired by 0254)"
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\r",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\nlamp b 1,2,3 100 2\r",
+    "class": "the control: an '=' over a parent whose last row ends in a lone CR, no final LF",
+    "id": "CR-CTRL-EQ",
+    "in memory": "exact",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a 1,2,3 100 1\"]"
+    ],
+    "parent": "syn:CR-CTRL-EQ",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3 100 1\",\"lamp a 9,9,9 100 1\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ],
+    "through the files": "reads back"
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\r",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp b 1,2,3 100 2\r",
+    "class": "the control: a '-' over the same parent",
+    "id": "CR-CTRL-MINUS",
+    "in memory": "exact",
+    "inverse": [
+     "@+ [\"2\",\"lamp a 1,2,3 100 1\",\"lamp b 1,2,3 100 2\\r\"]"
+    ],
+    "parent": "syn:CR-CTRL-MINUS",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp a"
+    ],
+    "revision": [
+     "- lamp a"
+    ],
+    "through the files": "reads back"
+   }
+  ],
+  "what": "spec §6.3 and §5 (c3): exact in memory; through the files a child holding CR LF is LEDGER-UNLOGGED (a defect of the forward write, not repaired)"
+ },
+ "forms": {
+  "vectors": [
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "",
+    "id": "F-A1",
+    "line": "@= [\"2\",\"lamp a 9,9,9 100 1  # the plaza\",\"lamp a 1,2,3 100 1 # the plaza\"]",
+    "ok": true,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an '@=' whose rows hold comments (W2's)"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "",
+    "id": "F-A2",
+    "line": "@+ [\"2\",\"lamp a 1,2,3 100 1\",false]",
+    "ok": true,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an '@+' whose successor is false (W4's)"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "",
+    "id": "F-A3",
+    "line": "@+ [\"2\",\"lamp a 1,2,3 100 1  # first\",\"lamp b 1,2,3 100 2\"]",
+    "ok": true,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an '@+' whose row holds a comment (W3's)"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "",
+    "id": "F-A4",
+    "line": "@~ [\"1\",\"2\"]",
+    "ok": true,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an '@~' (W5's)"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "",
+    "id": "F-A5",
+    "line": "@~ [\"1\",\"0\"]",
+    "ok": true,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an '@~' leaving no empty row"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "",
+    "id": "F-A6",
+    "line": "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a 1,2,3\\r100 1\"]",
+    "ok": true,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an '@=' whose row holds a CR, written \\r"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "",
+    "id": "F-A7",
+    "line": "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp\\ta 1,2,3 100 1 \"]",
+    "ok": true,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an '@=' whose row holds a tab, written \\t (W9's)"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "",
+    "id": "F-A8",
+    "line": "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a 1,2,3 100 1  # caf\\u00e9\"]",
+    "ok": true,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an '@=' whose row holds non-ASCII, written \\u00e9"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R1",
+    "line": "@= [\"2\", \"a\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "non-canonical spacing inside the array"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R2",
+    "line": "@= [\"2\",\"a\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "wrong arity for '@='"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R3",
+    "line": "@~ [\"1\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "wrong arity for '@~'"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R4",
+    "line": "@= [\"-1\",\"a\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a position \"-1\""
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R5",
+    "line": "@= [\"02\",\"a\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a position with a leading zero"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R6",
+    "line": "@= [\"12345678901234567890\",\"a\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a position of 20 digits"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R7",
+    "line": "@= [\"2\",\"a\\nb\",\"c\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a row holding LF"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R8",
+    "line": "@x [\"2\",\"a\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "the unknown form '@x'"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R9",
+    "line": "@=[\"2\",\"a\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "no space after the form"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R10",
+    "line": "@= [\"2\",\"a\",\"b\"]x",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "trailing bytes after the array"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R11",
+    "line": "@= [\"2\",\"a\",\"é\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "raw non-ASCII in the rest"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R12",
+    "line": "@+ [\"2\",\"a\",true]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "true as a successor"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R13",
+    "line": "@= [\"2\",false,\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a boolean as a row"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R14",
+    "line": "= lamp a 1,2,3 100 1  # c",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "'#' outside the forms (today's rule, now a vector)"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R15",
+    "line": "@= [2,\"a\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a number in a position"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R16",
+    "line": "@+ [\"2\",\"a\",null]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a null successor"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R17",
+    "line": "@= [\"2\",\"\\ud800\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a lone surrogate \\ud800"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R18",
+    "line": "@= [\"2\",\"\\udc00\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a lone surrogate \\udc00"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R19",
+    "line": "@= {\"A\":\"b\"}",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an object with a key outside [a-z][a-z0-9_]*"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R20",
+    "line": "@= {\"a\":\"b\",\"a\":\"c\"}",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "an object with a duplicate key"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R21",
+    "line": "@=  [\"2\",\"a\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "two spaces after the form"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R22",
+    "line": "@=\t[\"2\",\"a\",\"b\"]",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a tab after the form"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R23",
+    "line": "@= [\"2\",\"a\",\"b\"] ",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a trailing space after the array"
+   },
+   {
+    "cites": [
+     "OPEN-9"
+    ],
+    "code": "INTENT-REVISION",
+    "id": "F-R24",
+    "line": "@= [\"2\",\"a\",\"b\"]\u001c",
+    "ok": false,
+    "provenance": "by hand",
+    "version": "0",
+    "what": "a trailing U+001C after the array (where Python's strip() and Rust's trim() part)"
+   }
+  ],
+  "what": "spec §6.2: each a revision line under VERDANDI-INTENT version \"0\" (his OPEN-9), its expected validity and code; vectors.json's intents learn them, appended, the 65 before them byte for byte the same"
+ },
+ "guards": {
+  "vectors": [
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-EQ-SHIFTED",
+    "inverse": [
+     "@= [\"3\",\"lamp b 9,9,9 100 2\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "moved": "a comment row inserted above the admission's row: its position now holds lamp a",
+    "over": "VERDANDI-ART 0\nmap tactical\n# a note\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "parent": "syn:G-EQ-SHIFTED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "= lamp b 9,9,9 100 2"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-EQ-RANGE",
+    "inverse": [
+     "@= [\"3\",\"lamp b 9,9,9 100 2\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "moved": "the three rows above the admission's taken away: its position (3) is past the end of three rows, its row standing at 0",
+    "over": "lamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "parent": "syn:G-EQ-RANGE",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "= lamp b 9,9,9 100 2"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-EQ-DELETED",
+    "inverse": [
+     "@= [\"3\",\"lamp b 9,9,9 100 2\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "moved": "the admission's row deleted (B4-UNDO-NOT-CLEAN's state): its position now holds lamp c",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 3\n",
+    "parent": "syn:G-EQ-DELETED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "= lamp b 9,9,9 100 2"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-EQ-EDITED",
+    "inverse": [
+     "@= [\"3\",\"lamp b 9,9,9 100 2\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "moved": "the admission's row edited in place, its key kept",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 7\nlamp c 1,2,3 100 3\n",
+    "parent": "syn:G-EQ-EDITED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "= lamp b 9,9,9 100 2"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-EQ-REKEY",
+    "inverse": [
+     "@= [\"3\",\"lamp b 9,9,9 100 2\",\"lamp z 1,2,3 100 1\"]"
+    ],
+    "moved": "a forged record over the child: the row to restore of another key",
+    "note": "a forged record, written by hand: no admission records it; it is refused by the guard (defence in depth, spec §2.1)",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "parent": "syn:G-EQ-REKEY",
+    "provenance": "by hand",
+    "revision": [
+     "= lamp b 9,9,9 100 2"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-EQ-BLANK",
+    "inverse": [
+     "@= [\"3\",\"lamp b 9,9,9 100 2\",\"\"]"
+    ],
+    "moved": "a forged record over the child: the row to restore empty",
+    "note": "a forged record, written by hand: no admission records it; it is refused by the guard (defence in depth, spec §2.1)",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "parent": "syn:G-EQ-BLANK",
+    "provenance": "by hand",
+    "revision": [
+     "= lamp b 9,9,9 100 2"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-PLUS-KEY",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"lamp c 1,2,3 100 3\"]"
+    ],
+    "moved": "a row of the deleted statement's key added after its successor",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 3\nlamp b 5,5,5 100 2\n",
+    "parent": "syn:G-PLUS-KEY",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-PLUS-SUCC",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"lamp c 1,2,3 100 3\"]"
+    ],
+    "moved": "the successor edited in place",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 9\n",
+    "parent": "syn:G-PLUS-SUCC",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-PLUS-END",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",false]"
+    ],
+    "moved": "the deleted row was the last row (successor false); a row above taken away, so the end is no longer at its position",
+    "over": "VERDANDI-ART 0\nmap tactical",
+    "parent": "syn:G-PLUS-END",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-PLUS-RANGE",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"lamp c 1,2,3 100 3\"]"
+    ],
+    "moved": "the rows from the successor on taken away: its position (3) is past the end",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1",
+    "parent": "syn:G-PLUS-RANGE",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-PLUS-NOSTMT",
+    "inverse": [
+     "@+ [\"3\",\"# only a comment\",\"lamp c 1,2,3 100 3\"]"
+    ],
+    "moved": "a forged record over the child: the row to restore holds no statement",
+    "note": "a forged record, written by hand: no admission records it; it is refused by the guard (defence in depth, spec §2.1)",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 3\n",
+    "parent": "syn:G-PLUS-NOSTMT",
+    "provenance": "by hand",
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-PLUS-LAST-COMMENT-APPENDED",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "moved": "the last statement deleted (its successor the trailing empty row); a comment appended at the end",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n# a note\n",
+    "parent": "syn:G-PLUS-LAST-COMMENT-APPENDED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "INTENT-APPLY",
+    "id": "G-TAIL",
+    "inverse": [
+     "- lamp b",
+     "@~ [\"1\",\"2\"]"
+    ],
+    "moved": "a '+' over two final LFs; one more empty row at the end",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n\n",
+    "parent": "syn:G-TAIL",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ]
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 9\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "not the parent",
+    "id": "G-EQ-OTHER-EDITED",
+    "inverse": [
+     "@= [\"3\",\"lamp b 9,9,9 100 2\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "moved": "another statement edited in place (M13u's shape)",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 9\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "parent": "syn:G-EQ-OTHER-EDITED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "= lamp b 9,9,9 100 2"
+    ]
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n# a note\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "not the parent",
+    "id": "G-EQ-COMMENT-APPENDED",
+    "inverse": [
+     "@= [\"3\",\"lamp b 9,9,9 100 2\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "moved": "a comment appended at the end",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\nlamp c 1,2,3 100 3\n# a note\n",
+    "parent": "syn:G-EQ-COMMENT-APPENDED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "= lamp b 9,9,9 100 2"
+    ]
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n# a note\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 3\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "not the parent",
+    "id": "G-MINUS-MID-COMMENT-APPENDED",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"lamp c 1,2,3 100 3\"]"
+    ],
+    "moved": "a '-' of a statement that is not the last; a comment appended at the end",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp c 1,2,3 100 3\n# a note\n",
+    "parent": "syn:G-MINUS-MID-COMMENT-APPENDED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\n# a note\nlamp a 1,2,3 100 1\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "not the parent",
+    "id": "G-KEY-INSERTED-ABOVE",
+    "inverse": [
+     "- lamp b"
+    ],
+    "moved": "a '+'; a comment row inserted above its added row",
+    "over": "VERDANDI-ART 0\nmap tactical\n# a note\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "parent": "syn:G-KEY-INSERTED-ABOVE",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ]
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "equal to the parent",
+    "id": "G-KEY-EDITED",
+    "inverse": [
+     "- lamp b"
+    ],
+    "moved": "a '+'; its added row edited in place (the hazard his ruling keeps: undone to the parent, the edit discarded)",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 9,9,9 100 2\n",
+    "parent": "syn:G-KEY-EDITED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ]
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "cites": [
+     "OPEN-1"
+    ],
+    "expect": "equal to the parent",
+    "id": "G-KEY-MOVED",
+    "inverse": [
+     "- lamp b"
+    ],
+    "moved": "a '+'; its added row moved above lamp a",
+    "over": "VERDANDI-ART 0\nmap tactical\nlamp b 1,2,3 100 2\nlamp a 1,2,3 100 1\n",
+    "parent": "syn:G-KEY-MOVED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ]
+   }
+  ],
+  "what": "spec §6.3 and §2.5: a stored inverse applied under undo over a text that moved; refused INTENT-APPLY, or applying (to a text that is not the parent, or equal to it: the '+' hazard his OPEN-1 ruling keeps)"
+ },
+ "legacy": {
+  "director_sha256": "5300fb78826e0650bcd4a29a650a35e21955c5b3df61285da79e586828bd9f46",
+  "replay": {
+   "admissions": [
+    {
+     "inverse": [
+      "= tower plaza concrete 12 20",
+      "- material concrete_monument"
+     ],
+     "record": false,
+     "seq": "9"
+    },
+    {
+     "inverse": [
+      "= lamp north-flank 210,225,255 450 2"
+     ],
+     "record": false,
+     "seq": "11"
+    },
+    {
+     "inverse": [
+      "- canopy plaza 19,12 20,19",
+      "= canopy plaza concrete 5.2 19,20 28,21",
+      "= canopy plaza concrete 5.2 19,10 28,11",
+      "- material concrete_slab"
+     ],
+     "record": false,
+     "seq": "13"
+    }
+   ],
+   "bytes": 84584,
+   "chain head": "a55d2f5ab9aa0d93f193f08589fe7940c135b3fdeac6d1520ee5f518d98798fd",
+   "events": 26,
+   "file": "legacy/plaza-night.7dee210.ledger",
+   "how": "led.chain over the copy, then replay(None, events) (art/director.py): read only, never cmd_verify (verify exports with the current dress.py, whose sha256 is part of the head, and a frozen copy can never be rebased)",
+   "id": "LG-COPY",
+   "provenance": "computed by 7dee210",
+   "replayed art sha256": "0ece61b53654a0192d72ee642342bfa6dd92e94526a406c0d54eb9545155ad2a",
+   "replayed design sha256": "0d3e480ff5f76292da556b874773ad488e19fa15d930f7bde5eeb8f8f2e7a939",
+   "replayed files head": "9e7811343bcf99a9ff73ae00aa7e5b4796dadbef050b97da4a0034d4959beacc",
+   "sha256": "acc10c008e5c63954b7baddc38b988e05a243a82fe76948205317fe15236c149"
+  },
+  "vectors": [
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "exact": false,
+    "id": "LEG-EQ-SPACED",
+    "of": "E-ALIGN",
+    "parent": "syn:E-ALIGN",
+    "provenance": "computed by 7dee210",
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ],
+    "statements": true,
+    "stored": [
+     "= lamp a  1,2,3 100 1"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\nlamp b 1,2,3 100 2\n",
+    "what": "an old '= ' with inner spaces collapses (E-ALIGN's record at 7dee210)"
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp b 1,2,3 100 2\nlamp a 1,2,3 100 1\n",
+    "exact": false,
+    "id": "LEG-PLUS-END",
+    "of": "M-POS",
+    "parent": "syn:M-POS",
+    "provenance": "computed by 7dee210",
+    "revision": [
+     "- lamp a"
+    ],
+    "statements": true,
+    "stored": [
+     "+ lamp a 1,2,3 100 1"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp b 1,2,3 100 2\n",
+    "what": "an old '+ code' goes to the end (M-POS's record at 7dee210: the row comes back last, without its comment)"
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "exact": true,
+    "id": "LEG-MINUS-ONE-LF",
+    "of": "P-OK",
+    "parent": "syn:P-OK",
+    "provenance": "computed by 7dee210",
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ],
+    "statements": true,
+    "stored": [
+     "- lamp b"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "what": "an old '- KEY' on a one-LF parent is exact (P-OK's record at 7dee210)"
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "exact": false,
+    "id": "P-TAIL-2-legacy",
+    "of": "P-TAIL-2",
+    "parent": "syn:P-TAIL-2",
+    "provenance": "computed by 7dee210",
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ],
+    "statements": true,
+    "stored": [
+     "- lamp b"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "what": "'+ lamp b' on H + 'lamp a 1,2,3 100 1\\n\\n', stored ['- lamp b'], undone after 0254 to '...lamp a 1,2,3 100 1\\n': statements only"
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "exact": false,
+    "id": "P-TAIL-0-legacy",
+    "of": "P-TAIL-0",
+    "parent": "syn:P-TAIL-0",
+    "provenance": "computed by 7dee210",
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ],
+    "statements": true,
+    "stored": [
+     "- lamp b"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "what": "the same on a tail with no LF"
+   },
+   {
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "exact": false,
+    "id": "O-PLUS2-legacy",
+    "of": "O-PLUS2",
+    "parent": "syn:O-PLUS2",
+    "provenance": "computed by 7dee210",
+    "revision": [
+     "+ lamp b 1,2,3 100 2",
+     "+ lamp c 1,2,3 100 3"
+    ],
+    "statements": true,
+    "stored": [
+     "- lamp c",
+     "- lamp b"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n",
+    "what": "two '+' on a two-LF parent, stored ['- lamp c', '- lamp b']: statements only"
+   }
+  ],
+  "what": "spec §6.3: computed by 7dee210's apply_revision; an old ledger replays as it is, and an old inverse applies as the ordinary ops it is"
+ },
+ "legacy-inverses": {
+  "director_sha256": "5300fb78826e0650bcd4a29a650a35e21955c5b3df61285da79e586828bd9f46",
+  "vectors": [
+   {
+    "child": "VERDANDI-ART 0\n# ART-GENERATION-0, the first brief: \"a rain-soaked brutalist coastal plaza at night\", dressed on the tactical\n# graybox. The art direction is the model's; nothing here moves a wall, a floor, a cover block or a spawn — those are\n# the admitted layout's and the graybox map's. Colours are R,G,B 0-255 (sRGB), lengths metres, light in lux or\n# candelas. The direction, in one breath: monumental raw concrete under a low sea fog, everything wet; warm sodium on\n# the lanes, cold moonlight from the sea to the south-west; the plaza ringed by stepped towers and a cantilevered\n# slab; team colours in the neon — amber at base A in the west, cyan at base B in the east, magenta where they meet.\n\nmap tactical\ntitle Rain-soaked brutalist coastal plaza at night\nseed tidewater\n\ntime night\nmoon 215 24 0.35 168,186,255\nfog 0.045 38,54,74 volumetric\nexposure 1.5\nbloom 0.9\nrain 0.8\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: raw and wet concrete, black-water puddles, dark steel housings, three neons\nmaterial concrete       112,110,104 0.86 0.0\nmaterial concrete_dark   66,67,70   0.92 0.0\nmaterial concrete_wet    74,74,76   0.30 0.0\nmaterial floor_wet       46,47,50   0.16 0.0\nmaterial plaza_stone     92,90,86   0.22 0.0\nmaterial puddle          14,16,20   0.02 0.0\nmaterial housing         36,36,38   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 40\nmaterial neon_cyan        0,225,255 0.40 0.0 emissive 0,225,255 40\nmaterial neon_magenta   255,40,190  0.40 0.0 emissive 255,40,190 45\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_wet\nsurface floor  floor_wet\nsurface stair  floor_wet\nsurface raised plaza_stone\nsurface cover  concrete_wet\nsurface wall   concrete\n\n# regions: names for the places the look talks about (cells, x across and z down). The mid lane is two regions, west\n# and east of the plaza: one region crossing the plaza put two puddles in one place, which the exporter refuses.\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# massing: the city beyond the walls, and the towers that make the plaza a room\nskyline concrete_dark 8 26\ntower plaza concrete_monument 16 30\ntower base-a concrete 6 10\ntower base-b concrete 6 10\n# a cantilevered slab over the plaza's north edge, and its twin over the south edge\ncanopy plaza concrete_slab 7.0 19,10 28,11 deep 2.6\ncanopy plaza concrete_slab 7.0 19,20 28,21\n\n# light: the team colours at the bases, magenta in the plaza, sodium on the lanes, cold white in the flanks\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon plaza neon_magenta 3.1 2\nneon mid-west neon_magenta 2.6 5\nneon mid-east neon_magenta 2.6 5\nlamp north-lane 255,170,90 600 4\nlamp south-lane 255,170,90 600 4\nlamp north-flank 210,225,255 700 1\nlamp south-flank 210,225,255 450 2\nlamp plaza 225,235,255 500 3\n\n# water: black puddles that hold the neon\npuddle plaza puddle 35\npuddle mid-west puddle 25\npuddle mid-east puddle 25\npuddle north-lane puddle 20\npuddle south-lane puddle 20\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview base-a-exit    8,15  90  0\nview north-flank   23,8  180  4\nview plaza-centre  24,15  90  2\nview plaza-corner  20,21  40  6\nview south-lane    12,26  90  0\nview mid-west      13,16  90  0\nmaterial concrete_monument 84,84,88 0.88 0.0\nmaterial concrete_slab 58,58,62 0.90 0.0\ncanopy plaza concrete_slab 7.6 19,12 20,19\n",
+    "cites": [
+     "OPEN-2"
+    ],
+    "exact": false,
+    "id": "L-ST2",
+    "inverse": [
+     "= canopy   plaza   concrete_slab 7.0 19,10 28,11"
+    ],
+    "parent": "brief:plaza-night/canopy-aligned",
+    "parent sha256": "7e577b3575c49a05c1581c06f415c7e0566dbc425916c5c9db12a5c80383a7df",
+    "provenance": "computed by 7dee210",
+    "restores": "VERDANDI-ART 0\n# ART-GENERATION-0, the first brief: \"a rain-soaked brutalist coastal plaza at night\", dressed on the tactical\n# graybox. The art direction is the model's; nothing here moves a wall, a floor, a cover block or a spawn — those are\n# the admitted layout's and the graybox map's. Colours are R,G,B 0-255 (sRGB), lengths metres, light in lux or\n# candelas. The direction, in one breath: monumental raw concrete under a low sea fog, everything wet; warm sodium on\n# the lanes, cold moonlight from the sea to the south-west; the plaza ringed by stepped towers and a cantilevered\n# slab; team colours in the neon — amber at base A in the west, cyan at base B in the east, magenta where they meet.\n\nmap tactical\ntitle Rain-soaked brutalist coastal plaza at night\nseed tidewater\n\ntime night\nmoon 215 24 0.35 168,186,255\nfog 0.045 38,54,74 volumetric\nexposure 1.5\nbloom 0.9\nrain 0.8\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: raw and wet concrete, black-water puddles, dark steel housings, three neons\nmaterial concrete       112,110,104 0.86 0.0\nmaterial concrete_dark   66,67,70   0.92 0.0\nmaterial concrete_wet    74,74,76   0.30 0.0\nmaterial floor_wet       46,47,50   0.16 0.0\nmaterial plaza_stone     92,90,86   0.22 0.0\nmaterial puddle          14,16,20   0.02 0.0\nmaterial housing         36,36,38   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 40\nmaterial neon_cyan        0,225,255 0.40 0.0 emissive 0,225,255 40\nmaterial neon_magenta   255,40,190  0.40 0.0 emissive 255,40,190 45\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_wet\nsurface floor  floor_wet\nsurface stair  floor_wet\nsurface raised plaza_stone\nsurface cover  concrete_wet\nsurface wall   concrete\n\n# regions: names for the places the look talks about (cells, x across and z down). The mid lane is two regions, west\n# and east of the plaza: one region crossing the plaza put two puddles in one place, which the exporter refuses.\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# massing: the city beyond the walls, and the towers that make the plaza a room\nskyline concrete_dark 8 26\ntower plaza concrete_monument 16 30\ntower base-a concrete 6 10\ntower base-b concrete 6 10\n# a cantilevered slab over the plaza's north edge, and its twin over the south edge\ncanopy plaza concrete_slab 7.0 19,10 28,11\ncanopy plaza concrete_slab 7.0 19,20 28,21\n\n# light: the team colours at the bases, magenta in the plaza, sodium on the lanes, cold white in the flanks\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon plaza neon_magenta 3.1 2\nneon mid-west neon_magenta 2.6 5\nneon mid-east neon_magenta 2.6 5\nlamp north-lane 255,170,90 600 4\nlamp south-lane 255,170,90 600 4\nlamp north-flank 210,225,255 700 1\nlamp south-flank 210,225,255 450 2\nlamp plaza 225,235,255 500 3\n\n# water: black puddles that hold the neon\npuddle plaza puddle 35\npuddle mid-west puddle 25\npuddle mid-east puddle 25\npuddle north-lane puddle 20\npuddle south-lane puddle 20\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview base-a-exit    8,15  90  0\nview north-flank   23,8  180  4\nview plaza-centre  24,15  90  2\nview plaza-corner  20,21  40  6\nview south-lane    12,26  90  0\nview mid-west      13,16  90  0\nmaterial concrete_monument 84,84,88 0.88 0.0\nmaterial concrete_slab 58,58,62 0.90 0.0\ncanopy plaza concrete_slab 7.6 19,12 20,19\n",
+    "revision": [
+     "= canopy plaza concrete_slab 7.0 19,10 28,11 deep 2.6"
+    ],
+    "serves": [
+     "STUDIO ST2 (its plant row's fixture)"
+    ],
+    "statements": true
+   },
+   {
+    "child": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick 16 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n",
+    "cites": [
+     "OPEN-2"
+    ],
+    "exact": false,
+    "id": "L-NORTH-LANE",
+    "inverse": [
+     "= building north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5"
+    ],
+    "parent": "brief:foundry-yard",
+    "parent sha256": "4735ea905d006269f0eaeb4c117ef58ebdefa588db8effb33c12948cb2f33f88",
+    "provenance": "computed by 7dee210",
+    "restores": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick 14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n",
+    "revision": [
+     "= building north-lane brick 16 10,2 17,2 face window glass_wired storey 3.5"
+    ],
+    "serves": [
+     "PAGE-CARDS 5a-landed and 5a",
+     "CERT CT2's '=' half"
+    ],
+    "statements": true
+   },
+   {
+    "child": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\nbay 10,2-17,2:s-b3-f2 blank\n",
+    "cites": [
+     "OPEN-2"
+    ],
+    "exact": false,
+    "id": "L-CERT4",
+    "inverse": [
+     "- bay 10,2-17,2:s-b3-f2",
+     "+ lamp plaza 255,200,150 140 3"
+    ],
+    "parent": "brief:foundry-yard",
+    "parent sha256": "4735ea905d006269f0eaeb4c117ef58ebdefa588db8effb33c12948cb2f33f88",
+    "provenance": "computed by 7dee210",
+    "restores": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\nlamp plaza 255,200,150 140 3\n",
+    "revision": [
+     "- lamp plaza",
+     "+ bay 10,2-17,2:s-b3-f2 blank"
+    ],
+    "serves": [
+     "CERT CT2's '-' half"
+    ],
+    "statements": true
+   }
+  ],
+  "what": "spec §6.3 and his OPEN-2 ruling (a): every legacy inverse a pre-0254 admission fixture writes, keyed by its parent's sha256 and its revision, with the stored inverse (7dee210's, verbatim) and the text it restores"
+ },
+ "only": {
+  "vectors": [
+   {
+    "expect": "INTENT-INVERSE-ONLY",
+    "id": "OY-EQ",
+    "provenance": "by hand",
+    "revision": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a  1,2,3 100 1\"]"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\nlamp b 1,2,3 100 2\n",
+    "undo": false,
+    "what": "an '@=' (W1's) applied without undo"
+   },
+   {
+    "expect": "INTENT-INVERSE-ONLY",
+    "id": "OY-PLUS",
+    "provenance": "by hand",
+    "revision": [
+     "@+ [\"2\",\"lamp a 1,2,3 100 1  # first\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp b 1,2,3 100 2\n",
+    "undo": false,
+    "what": "an '@+' (W3's) applied without undo"
+   },
+   {
+    "expect": "INTENT-INVERSE-ONLY",
+    "id": "OY-TILDE",
+    "provenance": "by hand",
+    "revision": [
+     "@~ [\"1\",\"2\"]"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "undo": false,
+    "what": "an '@~' alone applied without undo"
+   },
+   {
+    "expect": "INTENT-INVERSE-ONLY",
+    "id": "OY-MIXED",
+    "provenance": "by hand",
+    "revision": [
+     "- lamp b",
+     "@~ [\"1\",\"2\"]"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "undo": false,
+    "what": "W5's whole inverse, '- KEY' then '@~', applied without undo: the revision refused whole"
+   },
+   {
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "expect": "applies",
+    "id": "OY-KEY",
+    "provenance": "by hand",
+    "revision": [
+     "- lamp b"
+    ],
+    "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "undo": false,
+    "what": "a '- KEY' alone (W6's inverse): ordinary, it applies without undo"
+   }
+  ],
+  "what": "spec §2.4: apply_revision raises INTENT-INVERSE-ONLY for any '@' line unless undo is True; a '- KEY' is ordinary"
+ },
+ "only 'by hand' is hand-worked": "only the provenance 'by hand' is called hand-worked; every child of revisions, cr and guards, and the child of each 'only' vector that applies, is also 7dee210's own forward child, which inverse_freeze.py check compares against the tree's apply_revision",
+ "parents": {
+  "brief:foundry-yard": {
+   "from": "art/briefs/foundry-yard.art at 7dee210, its bytes embedded (sha256 4735ea905d006269f0eaeb4c117ef58ebdefa588db8effb33c12948cb2f33f88; LF only, so Workspace.text() reads them as this text); never read from art/briefs/, the owner's world, which changes with his admissions",
+   "sha256": "4735ea905d006269f0eaeb4c117ef58ebdefa588db8effb33c12948cb2f33f88",
+   "text": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n"
+  },
+  "brief:harbor-lift": {
+   "from": "art/briefs/harbor-lift.art at 7dee210, its bytes embedded (sha256 0e3b033530470310d89e96a138c4f4333f428e90bfc0e87f7a02d1e1c3502921; LF only, so Workspace.text() reads them as this text); never read from art/briefs/, the owner's world, which changes with his admissions",
+   "sha256": "0e3b033530470310d89e96a138c4f4333f428e90bfc0e87f7a02d1e1c3502921",
+   "text": "VERDANDI-ART 0\n# 0226, the first world with movers: harbor-day as it stands, with a deck that slides along the south lane and a lift\n# beside the tall block at its west end, so that a player can ride both (graybox/RULES-2.md: a mover carries a player\n# who stands on it). Everything else is harbor-day's, statement for statement; the plaza plays it under rules 3\n# (graybox/RULES-3.md, 0229), as it plays every scene. Movers enter a world by a person's edit, recorded in its ledger, not through a prompt:\n# the director's scope protocol refuses any change to play, and a mover is play.\n\nmap tactical\ntitle Sunlit harbour terraces at midday, with a lift and a sliding deck\nseed saltwind\n\ntime day\nsun 150 62 2.5 255,246,228\nfog 0.012 214,226,236\nexposure 0\nbloom 0.3\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: limestone, whitewash, dry stone paving, tide pools, painted steel, and three team colours as painted\n# signs, lit faintly from within (a sign is a neon here, and a neon must emit)\nmaterial concrete       214,206,188 0.82 0.0\nmaterial concrete_dark  176,168,152 0.88 0.0\nmaterial concrete_wet   198,192,178 0.70 0.0\nmaterial floor_wet      188,176,152 0.78 0.0\nmaterial plaza_stone    226,218,200 0.64 0.0\nmaterial puddle          52,96,118  0.05 0.0\nmaterial housing         70,92,104  0.40 0.7\nmaterial neon_amber     214,150,52  0.55 0.0 emissive 214,150,52 4\nmaterial neon_cyan       40,120,170 0.55 0.0 emissive 40,120,170 4\nmaterial neon_magenta   232,110,92  0.55 0.0 emissive 232,110,92 4\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_wet\nsurface floor  floor_wet\nsurface stair  floor_wet\nsurface raised plaza_stone\nsurface cover  concrete_wet\nsurface wall   concrete\n\n# regions: names for the places the look talks about (cells, x across and z down). The mid lane is two regions, west\n# and east of the plaza: one region crossing the plaza put two puddles in one place, which the exporter refuses.\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# massing: the city beyond the walls, and the towers that make the plaza a room\nskyline concrete_dark 8 26\ntower plaza concrete_monument 16 30\ntower base-a concrete 6 10\ntower base-b concrete 6 10\n# a cantilevered slab over the plaza's north edge, and its twin over the south edge\ncanopy plaza concrete_slab 7.0 19,10 28,11\ncanopy plaza concrete_slab 7.0 19,20 28,21\n\n# light: the sun does the work; lamps low and warm in the shaded lanes and flanks\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon plaza neon_magenta 3.1 2\nneon mid-west neon_magenta 2.6 5\nneon mid-east neon_magenta 2.6 5\nlamp north-lane 255,214,170 120 4\nlamp south-lane 255,214,170 120 4\nlamp north-flank 255,226,190 150 1\nlamp south-flank 255,226,190 120 2\nlamp plaza 255,236,210 100 3\n\n# water: tide pools left on the paving\npuddle plaza puddle 35\npuddle mid-west puddle 25\npuddle mid-east puddle 25\npuddle north-lane puddle 20\npuddle south-lane puddle 20\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview base-a-exit    8,15  90  0\nview north-flank   23,8  180  4\nview plaza-centre  24,15  90  2\nview plaza-corner  20,21  40  6\nview south-lane    12,26  90  0\nview mid-west      13,16  90  0\nmaterial concrete_monument 232,224,206 0.80 0.0\nmaterial concrete_slab 236,214,170 0.85 0.0\ncanopy plaza concrete_slab 7.6 19,12 20,19\n\n# movers (0226): a deck of painted steel sliding 16 m east along the south lane and back at 3.75 m/s, and a lift beside\n# the 2.5 m block at the lane's west end, rising 2.25 m to the block's top and back at 0.9375 m/s. 0229, by the owner's\n# report of 2026-10-14 (\"The sliding deck doesn't move my would be character if i get in the way\"): the deck pushes a\n# player in its way (rules 3's policy push); the lift, along y, holds still for one, as before\nmaterial lift_steel 96,104,112 0.45 0.6\nmover deck lift_steel 20,0,56 24,0.5,58 along +x travel 16 speed 3.75 policy push\nmover lift lift_steel 16,0,52 18,0.25,54 along +y travel 2.25 speed 0.9375\nview lift 6,27 60 8\n"
+  },
+  "brief:plaza-night/canopy-aligned": {
+   "from": "art/briefs/plaza-night.art at 7dee210 (sha256 0ece61b53654a0192d72ee642342bfa6dd92e94526a406c0d54eb9545155ad2a), embedded, with its row 'canopy plaza concrete_slab 7.0 19,10 28,11' written 'canopy   plaza   concrete_slab 7.0 19,10 28,11' (the first two spaces tripled), as art/page_dash.py's aligned_admission writes it at 7dee210",
+   "sha256": "7e577b3575c49a05c1581c06f415c7e0566dbc425916c5c9db12a5c80383a7df",
+   "text": "VERDANDI-ART 0\n# ART-GENERATION-0, the first brief: \"a rain-soaked brutalist coastal plaza at night\", dressed on the tactical\n# graybox. The art direction is the model's; nothing here moves a wall, a floor, a cover block or a spawn — those are\n# the admitted layout's and the graybox map's. Colours are R,G,B 0-255 (sRGB), lengths metres, light in lux or\n# candelas. The direction, in one breath: monumental raw concrete under a low sea fog, everything wet; warm sodium on\n# the lanes, cold moonlight from the sea to the south-west; the plaza ringed by stepped towers and a cantilevered\n# slab; team colours in the neon — amber at base A in the west, cyan at base B in the east, magenta where they meet.\n\nmap tactical\ntitle Rain-soaked brutalist coastal plaza at night\nseed tidewater\n\ntime night\nmoon 215 24 0.35 168,186,255\nfog 0.045 38,54,74 volumetric\nexposure 1.5\nbloom 0.9\nrain 0.8\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: raw and wet concrete, black-water puddles, dark steel housings, three neons\nmaterial concrete       112,110,104 0.86 0.0\nmaterial concrete_dark   66,67,70   0.92 0.0\nmaterial concrete_wet    74,74,76   0.30 0.0\nmaterial floor_wet       46,47,50   0.16 0.0\nmaterial plaza_stone     92,90,86   0.22 0.0\nmaterial puddle          14,16,20   0.02 0.0\nmaterial housing         36,36,38   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 40\nmaterial neon_cyan        0,225,255 0.40 0.0 emissive 0,225,255 40\nmaterial neon_magenta   255,40,190  0.40 0.0 emissive 255,40,190 45\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_wet\nsurface floor  floor_wet\nsurface stair  floor_wet\nsurface raised plaza_stone\nsurface cover  concrete_wet\nsurface wall   concrete\n\n# regions: names for the places the look talks about (cells, x across and z down). The mid lane is two regions, west\n# and east of the plaza: one region crossing the plaza put two puddles in one place, which the exporter refuses.\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# massing: the city beyond the walls, and the towers that make the plaza a room\nskyline concrete_dark 8 26\ntower plaza concrete_monument 16 30\ntower base-a concrete 6 10\ntower base-b concrete 6 10\n# a cantilevered slab over the plaza's north edge, and its twin over the south edge\ncanopy   plaza   concrete_slab 7.0 19,10 28,11\ncanopy plaza concrete_slab 7.0 19,20 28,21\n\n# light: the team colours at the bases, magenta in the plaza, sodium on the lanes, cold white in the flanks\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon plaza neon_magenta 3.1 2\nneon mid-west neon_magenta 2.6 5\nneon mid-east neon_magenta 2.6 5\nlamp north-lane 255,170,90 600 4\nlamp south-lane 255,170,90 600 4\nlamp north-flank 210,225,255 700 1\nlamp south-flank 210,225,255 450 2\nlamp plaza 225,235,255 500 3\n\n# water: black puddles that hold the neon\npuddle plaza puddle 35\npuddle mid-west puddle 25\npuddle mid-east puddle 25\npuddle north-lane puddle 20\npuddle south-lane puddle 20\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview base-a-exit    8,15  90  0\nview north-flank   23,8  180  4\nview plaza-centre  24,15  90  2\nview plaza-corner  20,21  40  6\nview south-lane    12,26  90  0\nview mid-west      13,16  90  0\nmaterial concrete_monument 84,84,88 0.88 0.0\nmaterial concrete_slab 58,58,62 0.90 0.0\ncanopy plaza concrete_slab 7.6 19,12 20,19\n"
+  },
+  "syn:CR-CTRL-EQ": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "8d2668a3f8c0811264fc4b548782e399d502ce6776772a7120381ff2c0fc2494",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\r"
+  },
+  "syn:CR-CTRL-MINUS": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "8d2668a3f8c0811264fc4b548782e399d502ce6776772a7120381ff2c0fc2494",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\r"
+  },
+  "syn:E-ALIGN": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "b9f51b5cf35716d2326933d305683a9c14a18359e09a1b81daec2a1f65160d68",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a  1,2,3 100 1\nlamp b 1,2,3 100 2\n"
+  },
+  "syn:E-C0": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "ae3e2e3f08dba4fffc81f2cc8cff497ab0332252b92e1aa27ac86761be4fc63f",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1# c\n"
+  },
+  "syn:E-C1": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "62ffdec9f001bebb2ddffd22d6f0e923eb3f92e437bcd67eb89b45d2fccf94ad",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1 # the plaza\n"
+  },
+  "syn:E-C3": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "4764ff4f11268601bf3551e9d5d5c14a0b787fbbc94dd79305466bf6b05e02d3",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1   # c\n"
+  },
+  "syn:E-CR": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "661a93011f8e1a6f1d772f668f426c6f70b98293d3165a774e46655233566457",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3\r100 1\n"
+  },
+  "syn:E-CR-END": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "9d0ba672bddcd95548378080f4195c2a5635d140d734ceb7308f0b17b134769c",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1  # c\r\nlamp b 1,2,3 100 2\n"
+  },
+  "syn:E-CTAB": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "dc952fae666d15a4a76c1dd95d620b8e2463cc3f418c0c6217fc8b075502e506",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\t# c\n"
+  },
+  "syn:E-JOINED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "c34eb5cabd947bdcdfc2af09215cf7b4156f70294c2942d6c4bae74b0c5e0fc3",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\flamp b 1,2,3 100 2\n"
+  },
+  "syn:E-LEAD": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "cc7b2f95eeb98c3e1b957b78ee1065ef1278f10e8f4c91f3bc8e4b304c24e9ce",
+   "text": "VERDANDI-ART 0\nmap tactical\n  lamp a 1,2,3 100 1\n"
+  },
+  "syn:E-NBSP": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "ec4154c52879f5d923f9f7ef7a9ac092663edbc1ad6ff46f69dd6eed6c418619",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n"
+  },
+  "syn:E-OK": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "37eeff0c02f185d437827f70f4fa920bed5ea12af6035d4837ed1a42609f2d1d",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1  # c\n"
+  },
+  "syn:E-TAB": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "5be9d50ac4f333eb4b8b8ebc2dd5dd3d1cb3c20022671330861a2af162150deb",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp\ta 1,2,3 100 1\n"
+  },
+  "syn:E-TAB-TRAIL": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "7241bf8e366ff206efdacf36675a4075e5de1f88e49656db157bc8b96fcd75b4",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp\ta 1,2,3 100 1 \n"
+  },
+  "syn:E-TRAIL": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "3c8f571999a69b4b42464a576fc6febae457f2a2cb831e4813149ea602aa3733",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1 \n"
+  },
+  "syn:G-EQ-BLANK": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-EQ-COMMENT-APPENDED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-EQ-DELETED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-EQ-EDITED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-EQ-OTHER-EDITED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-EQ-RANGE": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-EQ-REKEY": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-EQ-SHIFTED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-KEY-EDITED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "162c5324c1d04c200aaa70f370f59f97b38b991f4bc53f6d315b71dabc8813ee",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n"
+  },
+  "syn:G-KEY-INSERTED-ABOVE": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "162c5324c1d04c200aaa70f370f59f97b38b991f4bc53f6d315b71dabc8813ee",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n"
+  },
+  "syn:G-KEY-MOVED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "162c5324c1d04c200aaa70f370f59f97b38b991f4bc53f6d315b71dabc8813ee",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n"
+  },
+  "syn:G-MINUS-MID-COMMENT-APPENDED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-PLUS-END": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "5161568c74e643e8655474bff33770100aba84805ad7da7e388534567ba6129e",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2"
+  },
+  "syn:G-PLUS-KEY": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-PLUS-LAST-COMMENT-APPENDED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "42efb17d7f45bb932eb6c5a5ce88e64c86b40c5fb4a829b88dbf998be48d276e",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n"
+  },
+  "syn:G-PLUS-NOSTMT": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-PLUS-RANGE": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-PLUS-SUCC": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:G-TAIL": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "0d6243e7f61adf3dd3da433ef9be1f3df25c5c3da494542938bcab5a03720ff9",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\n"
+  },
+  "syn:M-AFTER": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "96467a64110bf93b0abaf2b802dfd983228d1dacd87160f2ec1b3fb6532d5958",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n# end\n"
+  },
+  "syn:M-ALL-1": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "ff197350f959436864a78292b6bbfd7124a542176d7e255bf6c89f5f8430b01b",
+   "text": "lamp a 1,2,3 100 1"
+  },
+  "syn:M-ALL-2-AB": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "ed91b0b3a1175de0491d9497e6ce50e2d4a57e6ef5bf4ece9885a0b1a6c8b14b",
+   "text": "lamp a 1,2,3 100 1\nlamp b 1,2,3 100 2"
+  },
+  "syn:M-ALL-2-BA": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "ed91b0b3a1175de0491d9497e6ce50e2d4a57e6ef5bf4ece9885a0b1a6c8b14b",
+   "text": "lamp a 1,2,3 100 1\nlamp b 1,2,3 100 2"
+  },
+  "syn:M-ALL-HEADED": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "01cfdfe1407edaa692c5d51fa9f1aec33d00412535bab89700fc2ee707c05bb4",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1"
+  },
+  "syn:M-BLANK": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "47d99c9daacbe637bd7ed47bda253301572fa5ee0a4eee33c4815b27357dc555",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\nlamp b 1,2,3 100 2\n"
+  },
+  "syn:M-FIRST": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "98257eaac34bbc786f6a75d93e056768f02e6c6266e445476809d1e20a7e9064",
+   "text": "lamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n"
+  },
+  "syn:M-FORM": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "f3b5f539f738fc2f5ccba61cbeb5f7c5c3a2259c466058f9454f7ee67abfa1d4",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2  # c\n"
+  },
+  "syn:M-OK": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "42efb17d7f45bb932eb6c5a5ce88e64c86b40c5fb4a829b88dbf998be48d276e",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n"
+  },
+  "syn:M-POS": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "27bec1af63cc19236d914113f05a06656bfa5eed5c47fbfd424bd9a246437770",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1  # first\nlamp b 1,2,3 100 2\n"
+  },
+  "syn:M-TAIL-0": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "01cfdfe1407edaa692c5d51fa9f1aec33d00412535bab89700fc2ee707c05bb4",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1"
+  },
+  "syn:M-TAIL-2": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "bfe9156e51c7ba8255aec504d415a5a9bb5d9176e8333d82af89c85d2e6ac2d7",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n\n"
+  },
+  "syn:O-2-AB": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:O-2-BA": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "a3a1f4a962b7e318d3d56e01b82f04d4a5cfe2554f1eec52a589506bb01fb4da",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n"
+  },
+  "syn:O-ADD-DEL": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "162c5324c1d04c200aaa70f370f59f97b38b991f4bc53f6d315b71dabc8813ee",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n"
+  },
+  "syn:O-EQ-DEL": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "b2ebba46455361df1c63212d06828245cac9ca247c8e72c6fcc8f2d4b4f44291",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a  1,2,3 100 1  # c\nlamp b 1,2,3 100 2\n"
+  },
+  "syn:O-MIX": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "e33ae009bc96a07d0a0e0f3055c391c655d7e2bdc1245fb8d67a42092d8a49be",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a  1,2,3 100 1\nlamp b 1,2,3 100 2  # c\nlamp c 1,2,3 100 3\n\n"
+  },
+  "syn:O-MOVE": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "42efb17d7f45bb932eb6c5a5ce88e64c86b40c5fb4a829b88dbf998be48d276e",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n"
+  },
+  "syn:O-PLUS2": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "0d6243e7f61adf3dd3da433ef9be1f3df25c5c3da494542938bcab5a03720ff9",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\n"
+  },
+  "syn:P-CR-LAST": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "6db2605698e6af7f5f44637a7eb858a7832bed72d7d42113c824f4bf6e3a4e4d",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\r"
+  },
+  "syn:P-EMPTY": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "text": ""
+  },
+  "syn:P-LF-ONLY": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+   "text": "\n"
+  },
+  "syn:P-OK": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "162c5324c1d04c200aaa70f370f59f97b38b991f4bc53f6d315b71dabc8813ee",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n"
+  },
+  "syn:P-TAIL-0": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "01cfdfe1407edaa692c5d51fa9f1aec33d00412535bab89700fc2ee707c05bb4",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1"
+  },
+  "syn:P-TAIL-2": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "0d6243e7f61adf3dd3da433ef9be1f3df25c5c3da494542938bcab5a03720ff9",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\n"
+  },
+  "syn:P-TAIL-3": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "c321ccfa3408240c71ee0bcd81a7f33c63d916d1bd52f3da28d318b1cf25123d",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\n\n"
+  },
+  "syn:P-TAIL-WS": {
+   "from": "synthetic: written for this vector (H is \"VERDANDI-ART 0\\nmap tactical\\n\", spec §2.2)",
+   "sha256": "10c44de75ffdfe316e08e9d70b3338adbdb3111cce858aef004c7ee9a8d0f64c",
+   "text": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n   "
+  }
+ },
+ "provenances": {
+  "by hand": "worked by hand (the forms' verdicts, the guards' and the only section's outcomes, the forged records), written literally in the generator (scratchpad b254/make_freeze.py) and asserted equal to its derivation",
+  "computed by 7dee210": "computed by 7dee210's own apply_revision (art/director.py sha256 5300fb78826e0650bcd4a29a650a35e21955c5b3df61285da79e586828bd9f46)",
+  "computed by spec254/model.py, read by hand": "the 0254 inverse, back and redo computed by the specification's scratch model (scratchpad b254/spec254/model.py), read by hand at the freeze; a model, not the repair. The worked examples W1 to W10 of spec §2.2 are of this provenance (the specification's heading: 'computed by the scratch model, read by hand'). For the four arm (ii) vectors (M-ALL-1, M-ALL-2-AB, M-ALL-2-BA, M-ALL-HEADED), as each note says, the inverse is the model's and the back and redo are the generator's own derivation through arm (ii), which the model does not have"
+ },
+ "revisions": {
+  "vectors": [
+   {
+    "at 7dee210": {
+     "exact": true,
+     "inverse": [
+      "= lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1  # c\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1  # c\n",
+    "class": "E-OK: a comment after exactly two spaces (exact at 7dee210)",
+    "id": "E-OK",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1  # c\",\"lamp a 1,2,3 100 1  # c\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-OK",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3 100 1  # c\",\"lamp a 9,9,9 100 1  # c\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a  1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a  1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\nlamp b 1,2,3 100 2\n",
+    "class": "E-ALIGN: runs of spaces in the code",
+    "id": "E-ALIGN",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a  1,2,3 100 1\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-ALIGN",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a  1,2,3 100 1\",\"lamp a 9,9,9 100 1\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ],
+    "worked": "W1"
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp\ta 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp\ta 1,2,3 100 1\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\n",
+    "class": "E-TAB: a tab in the code",
+    "id": "E-TAB",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp\\ta 1,2,3 100 1\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-TAB",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp\\ta 1,2,3 100 1\",\"lamp a 9,9,9 100 1\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp\ta 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp\ta 1,2,3 100 1 \n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\n",
+    "class": "E-TAB with E-TRAIL: a tab and a trailing space (the specification's W9)",
+    "id": "E-TAB-TRAIL",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp\\ta 1,2,3 100 1 \"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-TAB-TRAIL",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp\\ta 1,2,3 100 1 \",\"lamp a 9,9,9 100 1\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ],
+    "worked": "W9"
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\n",
+    "class": "E-NBSP: U+00A0 in the code",
+    "id": "E-NBSP",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a\\u00a01,2,3 100 1\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-NBSP",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a\\u00a01,2,3 100 1\",\"lamp a 9,9,9 100 1\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\n  lamp a 1,2,3 100 1\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\n",
+    "class": "E-LEAD: leading whitespace",
+    "id": "E-LEAD",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"  lamp a 1,2,3 100 1\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-LEAD",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"  lamp a 1,2,3 100 1\",\"lamp a 9,9,9 100 1\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1 \n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\n",
+    "class": "E-TRAIL: trailing whitespace, no comment",
+    "id": "E-TRAIL",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a 1,2,3 100 1 \"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-TRAIL",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3 100 1 \",\"lamp a 9,9,9 100 1\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1# c\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1  # c\n",
+    "class": "E-C0: a comment after no space",
+    "id": "E-C0",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1  # c\",\"lamp a 1,2,3 100 1# c\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-C0",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3 100 1# c\",\"lamp a 9,9,9 100 1  # c\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1 # the plaza\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1  # the plaza\n",
+    "class": "E-C1: a comment after one space",
+    "id": "E-C1",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1  # the plaza\",\"lamp a 1,2,3 100 1 # the plaza\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-C1",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3 100 1 # the plaza\",\"lamp a 9,9,9 100 1  # the plaza\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ],
+    "worked": "W2"
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1   # c\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1  # c\n",
+    "class": "E-C3: a comment after three spaces",
+    "id": "E-C3",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1  # c\",\"lamp a 1,2,3 100 1   # c\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-C3",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3 100 1   # c\",\"lamp a 9,9,9 100 1  # c\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\t# c\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1  # c\n",
+    "class": "E-CTAB: a comment after a tab",
+    "id": "E-CTAB",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1  # c\",\"lamp a 1,2,3 100 1\\t# c\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-CTAB",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3 100 1\\t# c\",\"lamp a 9,9,9 100 1  # c\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a 1,2,3\r100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3\r100 1\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\n",
+    "class": "E-CR: a lone CR inside the row",
+    "id": "E-CR",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a 1,2,3\\r100 1\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-CR",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3\\r100 1\",\"lamp a 9,9,9 100 1\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= lamp a 1,2,3 100 1\flamp b 1,2,3 100 2"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\flamp b 1,2,3 100 2\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\n",
+    "class": "E-JOINED: an FF inside an LF row (the forward drops lamp b, as at 7dee210; the inverse restores it)",
+    "id": "E-JOINED",
+    "inverse": [
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a 1,2,3 100 1\\flamp b 1,2,3 100 2\"]"
+    ],
+    "op": "=",
+    "parent": "syn:E-JOINED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a 1,2,3 100 1\\flamp b 1,2,3 100 2\",\"lamp a 9,9,9 100 1\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "= building north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n",
+    "cert_case": 3,
+    "child": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick 16 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n",
+    "class": "E-BRIEF: foundry-yard's aligned building north-lane (CERT-0's case 3)",
+    "id": "E-BRIEF",
+    "inverse": [
+     "@= [\"62\",\"building north-lane brick 16 10,2 17,2 face window glass_wired storey 3.5\",\"building north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\"]"
+    ],
+    "op": "=",
+    "parent": "brief:foundry-yard",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"62\",\"building north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\",\"building north-lane brick 16 10,2 17,2 face window glass_wired storey 3.5\"]"
+    ],
+    "revision": [
+     "= building north-lane brick 16 10,2 17,2 face window glass_wired storey 3.5"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": true,
+     "inverse": [
+      "= lamp north-lane 255,172,96 220 4"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n",
+    "cert_case": 2,
+    "child": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 300 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n",
+    "class": "CERT-0's case 2: foundry-yard's lanes' lamps (a statement written in single spaces)",
+    "id": "E-CERT2",
+    "inverse": [
+     "@= [\"85\",\"lamp north-lane 255,172,96 300 4\",\"lamp north-lane 255,172,96 220 4\"]"
+    ],
+    "op": "=",
+    "parent": "brief:foundry-yard",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"85\",\"lamp north-lane 255,172,96 220 4\",\"lamp north-lane 255,172,96 300 4\"]"
+    ],
+    "revision": [
+     "= lamp north-lane 255,172,96 300 4"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": true,
+     "inverse": [
+      "+ lamp b 1,2,3 100 2"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "class": "M-OK: the last statement, canonical, one final LF (exact at 7dee210)",
+    "id": "M-OK",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "op": "-",
+    "parent": "syn:M-OK",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp b"
+    ],
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1  # first\nlamp b 1,2,3 100 2\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp b 1,2,3 100 2\n",
+    "class": "M-POS: a statement that is not the last, commented",
+    "id": "M-POS",
+    "inverse": [
+     "@+ [\"2\",\"lamp a 1,2,3 100 1  # first\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "op": "-",
+    "parent": "syn:M-POS",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp a"
+    ],
+    "revision": [
+     "- lamp a"
+    ],
+    "worked": "W3"
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp b 1,2,3 100 2"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2  # c\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "class": "M-FORM: the last statement, commented",
+    "id": "M-FORM",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2  # c\",\"\"]"
+    ],
+    "op": "-",
+    "parent": "syn:M-FORM",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp b"
+    ],
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ view mid-west      13,16  90  0"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n",
+    "child": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\n",
+    "class": "M-ALIGN-LAST: foundry-yard's last statement, written aligned",
+    "id": "M-ALIGN-LAST",
+    "inverse": [
+     "@+ [\"104\",\"view mid-west      13,16  90  0\",\"\"]"
+    ],
+    "op": "-",
+    "parent": "brief:foundry-yard",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- view mid-west"
+    ],
+    "revision": [
+     "- view mid-west"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp b 1,2,3 100 2"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\nlamp b 1,2,3 100 2\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\n",
+    "class": "M-BLANK: a blank row before the last statement",
+    "id": "M-BLANK",
+    "inverse": [
+     "@+ [\"4\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "op": "-",
+    "parent": "syn:M-BLANK",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp b"
+    ],
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp b 1,2,3 100 2"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n# end\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n# end\n",
+    "class": "M-AFTER: a comment row after the last statement",
+    "id": "M-AFTER",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"# end\"]"
+    ],
+    "op": "-",
+    "parent": "syn:M-AFTER",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp b"
+    ],
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1",
+    "child": "VERDANDI-ART 0\nmap tactical",
+    "class": "M-TAIL-0: the last row deleted, no final LF (its successor false)",
+    "id": "M-TAIL-0",
+    "inverse": [
+     "@+ [\"2\",\"lamp a 1,2,3 100 1\",false]"
+    ],
+    "op": "-",
+    "parent": "syn:M-TAIL-0",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp a"
+    ],
+    "revision": [
+     "- lamp a"
+    ],
+    "worked": "W4"
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp b 1,2,3 100 2"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\n",
+    "class": "M-TAIL-2: two final LFs",
+    "id": "M-TAIL-2",
+    "inverse": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "op": "-",
+    "parent": "syn:M-TAIL-2",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp b"
+    ],
+    "revision": [
+     "- lamp b"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "lamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "child": "lamp b 1,2,3 100 2\n",
+    "class": "M-FIRST: the row at position 0 deleted, a successor after it",
+    "id": "M-FIRST",
+    "inverse": [
+     "@+ [\"0\",\"lamp a 1,2,3 100 1\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "op": "-",
+    "parent": "syn:M-FIRST",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp a"
+    ],
+    "revision": [
+     "- lamp a"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ mover deck lift_steel 20,0,56 24,0.5,58 along +x travel 16 speed 3.75 policy push"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\n# 0226, the first world with movers: harbor-day as it stands, with a deck that slides along the south lane and a lift\n# beside the tall block at its west end, so that a player can ride both (graybox/RULES-2.md: a mover carries a player\n# who stands on it). Everything else is harbor-day's, statement for statement; the plaza plays it under rules 3\n# (graybox/RULES-3.md, 0229), as it plays every scene. Movers enter a world by a person's edit, recorded in its ledger, not through a prompt:\n# the director's scope protocol refuses any change to play, and a mover is play.\n\nmap tactical\ntitle Sunlit harbour terraces at midday, with a lift and a sliding deck\nseed saltwind\n\ntime day\nsun 150 62 2.5 255,246,228\nfog 0.012 214,226,236\nexposure 0\nbloom 0.3\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: limestone, whitewash, dry stone paving, tide pools, painted steel, and three team colours as painted\n# signs, lit faintly from within (a sign is a neon here, and a neon must emit)\nmaterial concrete       214,206,188 0.82 0.0\nmaterial concrete_dark  176,168,152 0.88 0.0\nmaterial concrete_wet   198,192,178 0.70 0.0\nmaterial floor_wet      188,176,152 0.78 0.0\nmaterial plaza_stone    226,218,200 0.64 0.0\nmaterial puddle          52,96,118  0.05 0.0\nmaterial housing         70,92,104  0.40 0.7\nmaterial neon_amber     214,150,52  0.55 0.0 emissive 214,150,52 4\nmaterial neon_cyan       40,120,170 0.55 0.0 emissive 40,120,170 4\nmaterial neon_magenta   232,110,92  0.55 0.0 emissive 232,110,92 4\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_wet\nsurface floor  floor_wet\nsurface stair  floor_wet\nsurface raised plaza_stone\nsurface cover  concrete_wet\nsurface wall   concrete\n\n# regions: names for the places the look talks about (cells, x across and z down). The mid lane is two regions, west\n# and east of the plaza: one region crossing the plaza put two puddles in one place, which the exporter refuses.\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# massing: the city beyond the walls, and the towers that make the plaza a room\nskyline concrete_dark 8 26\ntower plaza concrete_monument 16 30\ntower base-a concrete 6 10\ntower base-b concrete 6 10\n# a cantilevered slab over the plaza's north edge, and its twin over the south edge\ncanopy plaza concrete_slab 7.0 19,10 28,11\ncanopy plaza concrete_slab 7.0 19,20 28,21\n\n# light: the sun does the work; lamps low and warm in the shaded lanes and flanks\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon plaza neon_magenta 3.1 2\nneon mid-west neon_magenta 2.6 5\nneon mid-east neon_magenta 2.6 5\nlamp north-lane 255,214,170 120 4\nlamp south-lane 255,214,170 120 4\nlamp north-flank 255,226,190 150 1\nlamp south-flank 255,226,190 120 2\nlamp plaza 255,236,210 100 3\n\n# water: tide pools left on the paving\npuddle plaza puddle 35\npuddle mid-west puddle 25\npuddle mid-east puddle 25\npuddle north-lane puddle 20\npuddle south-lane puddle 20\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview base-a-exit    8,15  90  0\nview north-flank   23,8  180  4\nview plaza-centre  24,15  90  2\nview plaza-corner  20,21  40  6\nview south-lane    12,26  90  0\nview mid-west      13,16  90  0\nmaterial concrete_monument 232,224,206 0.80 0.0\nmaterial concrete_slab 236,214,170 0.85 0.0\ncanopy plaza concrete_slab 7.6 19,12 20,19\n\n# movers (0226): a deck of painted steel sliding 16 m east along the south lane and back at 3.75 m/s, and a lift beside\n# the 2.5 m block at the lane's west end, rising 2.25 m to the block's top and back at 0.9375 m/s. 0229, by the owner's\n# report of 2026-10-14 (\"The sliding deck doesn't move my would be character if i get in the way\"): the deck pushes a\n# player in its way (rules 3's policy push); the lift, along y, holds still for one, as before\nmaterial lift_steel 96,104,112 0.45 0.6\nmover deck lift_steel 20,0,56 24,0.5,58 along +x travel 16 speed 3.75 policy push\nmover lift lift_steel 16,0,52 18,0.25,54 along +y travel 2.25 speed 0.9375\nview lift 6,27 60 8\n",
+    "child": "VERDANDI-ART 0\n# 0226, the first world with movers: harbor-day as it stands, with a deck that slides along the south lane and a lift\n# beside the tall block at its west end, so that a player can ride both (graybox/RULES-2.md: a mover carries a player\n# who stands on it). Everything else is harbor-day's, statement for statement; the plaza plays it under rules 3\n# (graybox/RULES-3.md, 0229), as it plays every scene. Movers enter a world by a person's edit, recorded in its ledger, not through a prompt:\n# the director's scope protocol refuses any change to play, and a mover is play.\n\nmap tactical\ntitle Sunlit harbour terraces at midday, with a lift and a sliding deck\nseed saltwind\n\ntime day\nsun 150 62 2.5 255,246,228\nfog 0.012 214,226,236\nexposure 0\nbloom 0.3\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: limestone, whitewash, dry stone paving, tide pools, painted steel, and three team colours as painted\n# signs, lit faintly from within (a sign is a neon here, and a neon must emit)\nmaterial concrete       214,206,188 0.82 0.0\nmaterial concrete_dark  176,168,152 0.88 0.0\nmaterial concrete_wet   198,192,178 0.70 0.0\nmaterial floor_wet      188,176,152 0.78 0.0\nmaterial plaza_stone    226,218,200 0.64 0.0\nmaterial puddle          52,96,118  0.05 0.0\nmaterial housing         70,92,104  0.40 0.7\nmaterial neon_amber     214,150,52  0.55 0.0 emissive 214,150,52 4\nmaterial neon_cyan       40,120,170 0.55 0.0 emissive 40,120,170 4\nmaterial neon_magenta   232,110,92  0.55 0.0 emissive 232,110,92 4\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_wet\nsurface floor  floor_wet\nsurface stair  floor_wet\nsurface raised plaza_stone\nsurface cover  concrete_wet\nsurface wall   concrete\n\n# regions: names for the places the look talks about (cells, x across and z down). The mid lane is two regions, west\n# and east of the plaza: one region crossing the plaza put two puddles in one place, which the exporter refuses.\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# massing: the city beyond the walls, and the towers that make the plaza a room\nskyline concrete_dark 8 26\ntower plaza concrete_monument 16 30\ntower base-a concrete 6 10\ntower base-b concrete 6 10\n# a cantilevered slab over the plaza's north edge, and its twin over the south edge\ncanopy plaza concrete_slab 7.0 19,10 28,11\ncanopy plaza concrete_slab 7.0 19,20 28,21\n\n# light: the sun does the work; lamps low and warm in the shaded lanes and flanks\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon plaza neon_magenta 3.1 2\nneon mid-west neon_magenta 2.6 5\nneon mid-east neon_magenta 2.6 5\nlamp north-lane 255,214,170 120 4\nlamp south-lane 255,214,170 120 4\nlamp north-flank 255,226,190 150 1\nlamp south-flank 255,226,190 120 2\nlamp plaza 255,236,210 100 3\n\n# water: tide pools left on the paving\npuddle plaza puddle 35\npuddle mid-west puddle 25\npuddle mid-east puddle 25\npuddle north-lane puddle 20\npuddle south-lane puddle 20\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview base-a-exit    8,15  90  0\nview north-flank   23,8  180  4\nview plaza-centre  24,15  90  2\nview plaza-corner  20,21  40  6\nview south-lane    12,26  90  0\nview mid-west      13,16  90  0\nmaterial concrete_monument 232,224,206 0.80 0.0\nmaterial concrete_slab 236,214,170 0.85 0.0\ncanopy plaza concrete_slab 7.6 19,12 20,19\n\n# movers (0226): a deck of painted steel sliding 16 m east along the south lane and back at 3.75 m/s, and a lift beside\n# the 2.5 m block at the lane's west end, rising 2.25 m to the block's top and back at 0.9375 m/s. 0229, by the owner's\n# report of 2026-10-14 (\"The sliding deck doesn't move my would be character if i get in the way\"): the deck pushes a\n# player in its way (rules 3's policy push); the lift, along y, holds still for one, as before\nmaterial lift_steel 96,104,112 0.45 0.6\nmover lift lift_steel 16,0,52 18,0.25,54 along +y travel 2.25 speed 0.9375\nview lift 6,27 60 8\n",
+    "class": "M-MOVER: harbor-lift's '- mover deck' (at 7dee210 its undo gives another scene: the movers in another order)",
+    "id": "M-MOVER",
+    "inverse": [
+     "@+ [\"98\",\"mover deck lift_steel 20,0,56 24,0.5,58 along +x travel 16 speed 3.75 policy push\",\"mover lift lift_steel 16,0,52 18,0.25,54 along +y travel 2.25 speed 0.9375\"]"
+    ],
+    "note": "its scene comes back with its bytes: the back is the parent byte for byte, so the exporter reads the movers in their order",
+    "op": "-",
+    "parent": "brief:harbor-lift",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- mover deck"
+    ],
+    "revision": [
+     "- mover deck"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "lamp a 1,2,3 100 1",
+    "child": "",
+    "class": "M-ALL-1: every row deleted, one statement, no header, no LF (the specification's W10; undone by arm (ii))",
+    "id": "M-ALL-1",
+    "inverse": [
+     "@+ [\"0\",\"lamp a 1,2,3 100 1\",false]"
+    ],
+    "note": "the child is \"\", read back as [\"\"]: the first '@+' applies by arm (ii) (spec §2.1), which spec254/model.py does not have (it refuses this undo, INTENT-APPLY '@+ successor'); its inverse is the model's forward record; its back and redo are the generator's own derivation through arm (ii) (undo_by_hand, scratchpad b254/make_freeze.py), read by hand and checked against literals transcribed from it, and its redo applied forward by the model gives the child again (its inverse equals spec §2.2's W10, which the specification itself says was computed by the scratch model)",
+    "op": "-",
+    "parent": "syn:M-ALL-1",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp a"
+    ],
+    "revision": [
+     "- lamp a"
+    ],
+    "worked": "W10"
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp b 1,2,3 100 2",
+      "+ lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "lamp a 1,2,3 100 1\nlamp b 1,2,3 100 2",
+    "child": "",
+    "class": "M-ALL-2: every row deleted, two statements, first to last (arm (ii))",
+    "id": "M-ALL-2-AB",
+    "inverse": [
+     "@+ [\"0\",\"lamp b 1,2,3 100 2\",false]",
+     "@+ [\"0\",\"lamp a 1,2,3 100 1\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "note": "the child is \"\", read back as [\"\"]: the first '@+' applies by arm (ii) (spec §2.1), which spec254/model.py does not have (it refuses this undo, INTENT-APPLY '@+ successor'); its inverse is the model's forward record; its back and redo are the generator's own derivation through arm (ii) (undo_by_hand, scratchpad b254/make_freeze.py), read by hand and checked against literals transcribed from it, and its redo applied forward by the model gives the child again",
+    "op": "-",
+    "parent": "syn:M-ALL-2-AB",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp a",
+     "- lamp b"
+    ],
+    "revision": [
+     "- lamp a",
+     "- lamp b"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp a 1,2,3 100 1",
+      "+ lamp b 1,2,3 100 2"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "lamp a 1,2,3 100 1\nlamp b 1,2,3 100 2",
+    "child": "",
+    "class": "M-ALL-2: every row deleted, two statements, last to first (arm (ii))",
+    "id": "M-ALL-2-BA",
+    "inverse": [
+     "@+ [\"0\",\"lamp a 1,2,3 100 1\",false]",
+     "@+ [\"1\",\"lamp b 1,2,3 100 2\",false]"
+    ],
+    "note": "the child is \"\", read back as [\"\"]: the first '@+' applies by arm (ii) (spec §2.1), which spec254/model.py does not have (it refuses this undo, INTENT-APPLY '@+ successor'); its inverse is the model's forward record; its back and redo are the generator's own derivation through arm (ii) (undo_by_hand, scratchpad b254/make_freeze.py), read by hand and checked against literals transcribed from it, and its redo applied forward by the model gives the child again",
+    "op": "-",
+    "parent": "syn:M-ALL-2-BA",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp b",
+     "- lamp a"
+    ],
+    "revision": [
+     "- lamp b",
+     "- lamp a"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp a 1,2,3 100 1",
+      "+ map tactical",
+      "+ VERDANDI-ART 0"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1",
+    "child": "",
+    "class": "M-ALL-HEADED: a headed brief with no final LF, every row deleted (arm (ii))",
+    "id": "M-ALL-HEADED",
+    "inverse": [
+     "@+ [\"0\",\"lamp a 1,2,3 100 1\",false]",
+     "@+ [\"0\",\"map tactical\",\"lamp a 1,2,3 100 1\"]",
+     "@+ [\"0\",\"VERDANDI-ART 0\",\"map tactical\"]"
+    ],
+    "note": "the child is \"\", read back as [\"\"]: the first '@+' applies by arm (ii) (spec §2.1), which spec254/model.py does not have (it refuses this undo, INTENT-APPLY '@+ successor'); its inverse is the model's forward record; its back and redo are the generator's own derivation through arm (ii) (undo_by_hand, scratchpad b254/make_freeze.py), read by hand and checked against literals transcribed from it, and its redo applied forward by the model gives the child again",
+    "op": "-",
+    "parent": "syn:M-ALL-HEADED",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- VERDANDI-ART 0",
+     "- map",
+     "- lamp a"
+    ],
+    "revision": [
+     "- VERDANDI-ART 0",
+     "- map",
+     "- lamp a"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": true,
+     "inverse": [
+      "- lamp b"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "class": "P-OK: one final LF (its inverse exactly '- KEY', today's record)",
+    "id": "P-OK",
+    "inverse": [
+     "- lamp b"
+    ],
+    "op": "+",
+    "parent": "syn:P-OK",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ],
+    "worked": "W6"
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "- lamp b"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "class": "P-TAIL-0: no final LF",
+    "id": "P-TAIL-0",
+    "inverse": [
+     "- lamp b",
+     "@~ [\"1\",\"0\"]"
+    ],
+    "op": "+",
+    "parent": "syn:P-TAIL-0",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@~ [\"0\",\"1\"]",
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "- lamp b"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "class": "P-TAIL-2: two final LFs",
+    "id": "P-TAIL-2",
+    "inverse": [
+     "- lamp b",
+     "@~ [\"1\",\"2\"]"
+    ],
+    "op": "+",
+    "parent": "syn:P-TAIL-2",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@~ [\"2\",\"1\"]",
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ],
+    "worked": "W5"
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "- lamp b"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\n\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "class": "P-TAIL-3: three final LFs",
+    "id": "P-TAIL-3",
+    "inverse": [
+     "- lamp b",
+     "@~ [\"1\",\"3\"]"
+    ],
+    "op": "+",
+    "parent": "syn:P-TAIL-3",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@~ [\"3\",\"1\"]",
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "- lamp b"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n   ",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n   \nlamp b 1,2,3 100 2\n",
+    "class": "P-TAIL-WS: a whitespace-only last row",
+    "id": "P-TAIL-WS",
+    "inverse": [
+     "- lamp b",
+     "@~ [\"1\",\"0\"]"
+    ],
+    "op": "+",
+    "parent": "syn:P-TAIL-WS",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@~ [\"0\",\"1\"]",
+     "@+ [\"4\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": true,
+     "inverse": [
+      "- lamp b"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "",
+    "child": "lamp b 1,2,3 100 2\n",
+    "class": "P-EMPTY: the empty text",
+    "id": "P-EMPTY",
+    "inverse": [
+     "- lamp b"
+    ],
+    "op": "+",
+    "parent": "syn:P-EMPTY",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@+ [\"0\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "- lamp b"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "\n",
+    "child": "lamp b 1,2,3 100 2\n",
+    "class": "P-LF-ONLY: a text of one LF",
+    "id": "P-LF-ONLY",
+    "inverse": [
+     "- lamp b",
+     "@~ [\"1\",\"2\"]"
+    ],
+    "op": "+",
+    "parent": "syn:P-LF-ONLY",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@~ [\"2\",\"1\"]",
+     "@+ [\"0\",\"lamp b 1,2,3 100 2\",\"\"]"
+    ],
+    "revision": [
+     "+ lamp b 1,2,3 100 2"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": true,
+     "inverse": [
+      "- bay 10,2-17,2:s-b3-f2"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n",
+    "cert_case": 1,
+    "child": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\nbay 10,2-17,2:s-b3-f2 panel brick\n",
+    "class": "CERT-0's case 1: a bay panelled on foundry-yard",
+    "id": "P-CERT1",
+    "inverse": [
+     "- bay 10,2-17,2:s-b3-f2"
+    ],
+    "op": "+",
+    "parent": "brief:foundry-yard",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@+ [\"105\",\"bay 10,2-17,2:s-b3-f2 panel brick\",\"\"]"
+    ],
+    "revision": [
+     "+ bay 10,2-17,2:s-b3-f2 panel brick"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp b 1,2,3 100 2",
+      "+ lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp c 1,2,3 100 3\n",
+    "class": "O-2: two '-', first to last (the specification's W7)",
+    "id": "O-2-AB",
+    "inverse": [
+     "@+ [\"2\",\"lamp b 1,2,3 100 2\",\"lamp c 1,2,3 100 3\"]",
+     "@+ [\"2\",\"lamp a 1,2,3 100 1\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "op": "multi",
+    "parent": "syn:O-2-AB",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp a",
+     "- lamp b"
+    ],
+    "revision": [
+     "- lamp a",
+     "- lamp b"
+    ],
+    "worked": "W7"
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp a 1,2,3 100 1",
+      "+ lamp b 1,2,3 100 2"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp c 1,2,3 100 3\n",
+    "class": "O-2: two '-', last to first",
+    "id": "O-2-BA",
+    "inverse": [
+     "@+ [\"2\",\"lamp a 1,2,3 100 1\",\"lamp c 1,2,3 100 3\"]",
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"lamp c 1,2,3 100 3\"]"
+    ],
+    "op": "multi",
+    "parent": "syn:O-2-BA",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp b",
+     "- lamp a"
+    ],
+    "revision": [
+     "- lamp b",
+     "- lamp a"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "- lamp a",
+      "+ lamp a 1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp b 1,2,3 100 2\nlamp a 1,2,3 100 1\n",
+    "class": "O-MOVE: '- a' then '+ a'",
+    "id": "O-MOVE",
+    "inverse": [
+     "- lamp a",
+     "@+ [\"2\",\"lamp a 1,2,3 100 1\",\"lamp b 1,2,3 100 2\"]"
+    ],
+    "op": "multi",
+    "parent": "syn:O-MOVE",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp a",
+     "@+ [\"3\",\"lamp a 1,2,3 100 1\",\"\"]"
+    ],
+    "revision": [
+     "- lamp a",
+     "+ lamp a 1,2,3 100 1"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "- lamp d",
+      "+ lamp b 1,2,3 100 2",
+      "= lamp a  1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a  1,2,3 100 1\nlamp b 1,2,3 100 2  # c\nlamp c 1,2,3 100 3\n\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 9,9,9 100 1\nlamp c 1,2,3 100 3\nlamp d 1,2,3 100 4\n",
+    "class": "O-MIX: '=', '-' and '+' on a two-LF parent",
+    "id": "O-MIX",
+    "inverse": [
+     "- lamp d",
+     "@~ [\"1\",\"2\"]",
+     "@+ [\"3\",\"lamp b 1,2,3 100 2  # c\",\"lamp c 1,2,3 100 3\"]",
+     "@= [\"2\",\"lamp a 9,9,9 100 1\",\"lamp a  1,2,3 100 1\"]"
+    ],
+    "op": "multi",
+    "parent": "syn:O-MIX",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a  1,2,3 100 1\",\"lamp a 9,9,9 100 1\"]",
+     "- lamp b",
+     "@~ [\"2\",\"1\"]",
+     "@+ [\"4\",\"lamp d 1,2,3 100 4\",\"\"]"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1",
+     "- lamp b",
+     "+ lamp d 1,2,3 100 4"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "- lamp c",
+      "- lamp b"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\nlamp b 1,2,3 100 2\nlamp c 1,2,3 100 3\n",
+    "class": "O-PLUS2: two '+' on a two-LF parent",
+    "id": "O-PLUS2",
+    "inverse": [
+     "- lamp c",
+     "- lamp b",
+     "@~ [\"1\",\"2\"]"
+    ],
+    "op": "multi",
+    "parent": "syn:O-PLUS2",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@~ [\"2\",\"1\"]",
+     "@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]",
+     "@+ [\"4\",\"lamp c 1,2,3 100 3\",\"\"]"
+    ],
+    "revision": [
+     "+ lamp b 1,2,3 100 2",
+     "+ lamp c 1,2,3 100 3"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "+ lamp a 9,9,9 100 1",
+      "= lamp a  1,2,3 100 1"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a  1,2,3 100 1  # c\nlamp b 1,2,3 100 2\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp b 1,2,3 100 2\n",
+    "class": "'= a' then '- a'",
+    "id": "O-EQ-DEL",
+    "inverse": [
+     "@+ [\"2\",\"lamp a 9,9,9 100 1  # c\",\"lamp b 1,2,3 100 2\"]",
+     "@= [\"2\",\"lamp a 9,9,9 100 1  # c\",\"lamp a  1,2,3 100 1  # c\"]"
+    ],
+    "op": "multi",
+    "parent": "syn:O-EQ-DEL",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@= [\"2\",\"lamp a  1,2,3 100 1  # c\",\"lamp a 9,9,9 100 1  # c\"]",
+     "- lamp a"
+    ],
+    "revision": [
+     "= lamp a 9,9,9 100 1",
+     "- lamp a"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": true,
+     "inverse": [
+      "+ lamp n 1,2,3 100 9",
+      "- lamp n"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "child": "VERDANDI-ART 0\nmap tactical\nlamp a 1,2,3 100 1\n",
+    "class": "'+ new' then '- new'",
+    "id": "O-ADD-DEL",
+    "inverse": [
+     "@+ [\"3\",\"lamp n 1,2,3 100 9\",\"\"]",
+     "- lamp n"
+    ],
+    "op": "multi",
+    "parent": "syn:O-ADD-DEL",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "@+ [\"3\",\"lamp n 1,2,3 100 9\",\"\"]",
+     "- lamp n"
+    ],
+    "revision": [
+     "+ lamp n 1,2,3 100 9",
+     "- lamp n"
+    ]
+   },
+   {
+    "at 7dee210": {
+     "exact": false,
+     "inverse": [
+      "- bay 10,2-17,2:s-b3-f2",
+      "+ lamp plaza 255,200,150 140 3"
+     ],
+     "provenance": "computed by 7dee210"
+    },
+    "back": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\nlamp plaza 255,200,150 140 3\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\n",
+    "cert_case": 4,
+    "child": "VERDANDI-ART 0\n# B5a (0241), the fourth world: \"an industrial district at dusk\", dressed on the tactical graybox like the other three,\n# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:\n# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed\n# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the\n# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's\n# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is\n# the long brick one at the north lane's west end, building:10,2-17,2.\n\nmap tactical\ntitle Foundry yard at dusk\nseed cinder\n\ntime dusk\nsun 255 9 0.9 255,168,112\nfog 0.022 96,82,74\nexposure 0.6\nbloom 0.5\nrain 0.0\n\n# every mesh names where it came from and under what licence\nasset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)\n\n# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its\n# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within\nmaterial brick          128,64,48   0.86 0.0\nmaterial brick_dark      86,48,40   0.90 0.0\nmaterial steel_corr     112,118,120 0.48 0.7\nmaterial steel_rust     128,74,46   0.78 0.3\nmaterial glass_wired     52,64,70   0.10 0.0\nmaterial concrete       118,112,104 0.88 0.0\nmaterial concrete_dark   72,70,68   0.92 0.0\nmaterial floor_yard      74,70,64   0.62 0.0\nmaterial plaza_stone     98,92,84   0.55 0.0\nmaterial puddle          18,16,14   0.03 0.0\nmaterial housing         40,40,42   0.45 0.8\nmaterial neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24\nmaterial neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24\nmaterial neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28\n\n# the play geometry: what C holds, in the look's materials\nsurface ground floor_yard\nsurface floor  floor_yard\nsurface stair  floor_yard\nsurface raised plaza_stone\nsurface cover  steel_rust\nsurface wall   brick_dark\n\n# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map\nregion base-a      2,9  8,22\nregion base-b     39,9 45,22\nregion north-lane  5,3 42,6\nregion south-lane  5,25 42,28\nregion mid-west    9,14 18,17\nregion mid-east   29,14 38,17\nregion plaza      19,10 28,21\nregion north-flank 23,7 24,9\nregion south-flank 23,22 24,24\n\n# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the\n# yard (the skyline) behind them.\n# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.\nbuilding north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5\nbuilding north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2\nbuilding north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4\n# South lane, east to west: the north lane's turned about the centre, so each base meets the same street\nbuilding south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5\nbuilding south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2\nbuilding south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4\n\n# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline\ntower base-a brick_dark 6 9\ntower base-b brick_dark 6 9\ntower plaza concrete 12 20 mass\nskyline concrete_dark 6 16\n\n# a loading canopy over the plaza's north edge, and its twin over the south\ncanopy plaza steel_corr 7.0 19,10 28,11\ncanopy plaza steel_corr 7.0 19,20 28,21\n\n# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane\nneon base-a neon_amber 2.9 3\nneon base-b neon_cyan 2.9 3\nneon mid-west neon_signal 2.6 5\nneon mid-east neon_signal 2.6 5\nlamp north-lane 255,172,96 220 4\nlamp south-lane 255,172,96 220 4\nlamp north-flank 255,186,120 160 1\nlamp south-flank 255,186,120 160 2\n\n# oil and rainwater standing on the paving\npuddle north-lane puddle 18\npuddle south-lane puddle 18\npuddle plaza puddle 22\npuddle mid-west puddle 15\npuddle mid-east puddle 15\n\n# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)\nview north-lane    14,5    0  6\nview south-lane    33,26 180  6\nview base-a-exit    8,15  90  0\nview plaza-centre  24,15  90  2\nview north-flank   23,8  180  4\nview mid-west      13,16  90  0\nbay 10,2-17,2:s-b3-f2 blank\n",
+    "class": "CERT-0's case 4: a lamp removed and a bay added on foundry-yard",
+    "id": "O-CERT4",
+    "inverse": [
+     "- bay 10,2-17,2:s-b3-f2",
+     "@+ [\"89\",\"lamp plaza 255,200,150 140 3\",\"\"]"
+    ],
+    "op": "multi",
+    "parent": "brief:foundry-yard",
+    "provenance": "computed by spec254/model.py, read by hand",
+    "redo": [
+     "- lamp plaza",
+     "@+ [\"104\",\"bay 10,2-17,2:s-b3-f2 blank\",\"\"]"
+    ],
+    "revision": [
+     "- lamp plaza",
+     "+ bay 10,2-17,2:s-b3-f2 blank"
+    ]
+   }
+  ],
+  "what": "spec §6.3: each with parent, revision, child (7dee210's forward), inverse (0254's), back (= parent) and redo; 'at 7dee210' gives that tree's record and whether it restored the parent"
+ },
+ "status": "frozen (0254, commit 1 of 2), against BINDING-0 version 0 unchanged",
+ "terms": {
+  "H": "VERDANDI-ART 0\nmap tactical\n",
+  "back": "apply_revision(child, inverse, undo=True)'s text: the parent, byte for byte (T-0254, spec §5)",
+  "parent": "an id of 'parents', whose text is embedded with its sha256; no vector reads a path under art/briefs/",
+  "position": "a 0-based index into those rows, taken at the moment of the revision line that records it (spec §2.1)",
+  "redo": "the inverse that undo records: apply_revision(parent, redo, undo=True) gives the child",
+  "row": "one element of text.split(\"\\n\"), where text is Workspace.text(): the brief's UTF-8 bytes with CR LF read as LF (spec §2.1)"
+ },
+ "what": "0254's conformance vectors of the exact inverse (his ruling (a)): the grammar of the three inverse-only forms, the revisions and their positioned inverses, the carriage-return cases, the guards, the one enforcement point of 'only by undo', and the legacy (7dee210's own records), every expected value frozen before the code it governs (his words: \"frozen first and built second\"). Read only through art/director/inverse_freeze.py (frozen()); nothing in the program reads it at commit 1."
+}

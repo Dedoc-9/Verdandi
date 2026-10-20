@@ -1,0 +1,1664 @@
+{
+ "R5 census on 7dee210": {
+  "R5's predicted keys": "at the build, tools/rung.py plant_rows over the built tree's suites gives exactly this census's 316 keys (sorted keys sha256 above) plus this matrix's 28 'plant rows' 'R5 keys', 344, every one passing, and the same keys on a second run; a surplus or a missing key is repaired in the row's printed line, never by editing this prediction or the matrix",
+  "R5's predicted line": "RUNG-0 PLANTS  316 planted defects refused by the old checker; 344 by the new (316 + k, k = 28); PLANTS HELD, no DIRECTOR row GONE",
+  "by suite": {
+   "art/check.py": 202,
+   "art/director.py selftest": 11,
+   "art/quality.py selftest": 54,
+   "art/studio.py selftest": 49
+  },
+  "keys": 316,
+  "keys this matrix keeps, by design, among them": [
+   "art/director.py selftest | plant: an admit event written past the director, with no evidence",
+   "art/studio.py selftest | plant restoration-from-own-certificate: the verdict read from the undo's own certificate (a redo's inverse) is caught: it does not say what came back"
+  ],
+  "measured": "MEASURED here, on his machine by the agent, in a fresh clone of 7dee210 (scratchpad b254/r5tree254): tools/rung.py plant_rows over its four suites (scratchpad b254/r5keys.py, the same reader 0253's freeze used)",
+  "passing": 316,
+  "sorted keys sha256": "3505476f5c214c15fca805de33517090c9561689a4b654188794aeba67c39bde",
+  "this matrix's new plant keys": 28,
+  "this matrix's new plant keys among them": 0
+ },
+ "cites": {
+  "base": "7dee210 (0253's commit 2 of 2, the pushed tree), art/director.py sha256 5300fb78826e0650bcd4a29a650a35e21955c5b3df61285da79e586828bd9f46",
+  "contract": "BINDING-0",
+  "embedded": "each ruling file is embedded whole, byte for byte, in 0254-spec.md (section 13), where inverse_freeze.py check holds it to the sha256 cited here and finds every quotation of his words in it",
+  "file": "art/director/bindings/BINDING-0.v0.json",
+  "rulings": [
+   {
+    "file": "ruling-0254-2026-10-20.txt",
+    "sha256": "4ac4f2892ca4975c83c3dc6051c242794403768a7201a7ed740f317713575381",
+    "status": "governing: his ruling of 2026-10-20 choosing 0244's option (a) for the inverse's repair (its file holds his ruling line, the option's text from docs/ROADMAP.md's 0244 entry, his earlier bounds and F-8, each said where it comes from; its first line is the agent's)"
+   },
+   {
+    "file": "ruling-0254-open-2026-10-20.txt",
+    "sha256": "5b080ffa51ee459369bc1a629fa7752f466353a59554ff542b04fc21f2db5500",
+    "status": "governing: his rulings of 2026-10-20 on the specification's open items OPEN-1, 2, 3, 4, 6, 7 and 9, pasted, each the specification's recommended option (its first line and its closing paragraph 'Reading (the agent's, said in the session)' are the agent's; where his text paraphrases an option, the option selected governs)"
+   }
+  ],
+  "sha256": "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85",
+  "version": 0
+ },
+ "departures from the draft lists, worked by hand at the freeze": [
+  "inverse-statement-form's later failures: the draft listed EX2, EX4, FW1, OU7. Worked by hand at the freeze: EX6 fails too (E-CR-END and the controls are '=' and '-'); FW1 does not (it compares children and backs, which a change of what '=' and '-' record leaves alone); OU3, OU4 and OU6 fail too, their #N being an admission of a '-' (N_TREE), whose stored inverse would hold no '@' line and whose 7dee210 form does not restore it. EX3 fails too (a review finding, repaired before commit 1 was delivered): a '+' vector's redo is recorded by the undo's ordinary '- KEY', which under the plant records '+ code' (P-OK's redo ['+ lamp b 1,2,3 100 2'], frozen ['@+ [\"3\",\"lamp b 1,2,3 100 2\",\"\"]']; all eight '+' vectors, on the redo only; P-CR-LAST's redo in EX6 the same way). OU3b fails too: #N's inverse would be '+ code', holding no '@' line, so the reevaluate without the flag comes back CLEAN",
+  "inverse-parent-positions' catching row: the draft listed EX4. Worked by hand at the freeze (a review finding, repaired before commit 1 was delivered): EX2 catches it, since its M-ALL-2-AB and M-ALL-HEADED are revisions of several '-' lines whose recorded positions differ when taken in the parent (M-ALL-2-AB's '- lamp b' stands at 0 at its moment and at 1 in the parent; M-ALL-HEADED's '- map' and '- lamp a' at 0, and at 1 and 2). EX4 fails after it (O-2-AB), so spec §5's 'must fail EX4' holds as a later failure. The M-ALL vectors stay in EX2 and the rows keep their order (spec §6.3 and §8)",
+  "vectors-from-code's value: the draft's 'a forms entry given the code's verdict' is an equivalent mutant (a review finding): in any build where GR1 and GR0 pass, the code, vectors.json and the freeze agree on all 32 lines, so the value changes nothing. Made precise: GR0 reads a copy whose F-R21 and F-R22 take a blank-skipping validator's verdict, vectors_source.py's assertion not made; caught by GR0's own comparison, GR1 unaffected (k and R5's line unchanged)",
+  "GR0's state and expected: widened to hold vectors.json's 65 existing expected outputs byte for byte (a review finding: nothing frozen held them; spec §11's 'the existing 65 byte-identical, checked' and his OPEN-9): the cut-and-rewrite test against 'vectors.json at 7dee210', exactly the forms appended after the seven intents, and a two-sided step (a copy with an existing output altered, refused), with no new plant",
+  "OU3b: a row the draft does not list (a review finding: no frozen row held the reevaluate half of his OPEN-7, 'Implement `evaluate/reevaluate FILE --inverse-of N`', nor spec §11's HEAD-MOVED message). Its own tree, so OU3 and OU6c keep their states; no plant; inverse-anywhere, undo-flag-always and inverse-statement-form each fail it later (each would bring the reevaluate without the flag back CLEAN); every plant caught after it passes it (its ledger and inverses honest)",
+  "OU8's state: spec §8's 'evaluate FILE --inverse-of N' cannot catch inverse-unverified (a review finding): cmd_evaluate's held_head, LEDGER-SAFE-0's guard before anything is appended, replays the whole ledger and refuses LEDGER-INVERSE before evaluate_doc runs. The row calls D.evaluate_doc(ws, it, undo_of=N) directly, as Gateway._undoing calls it; the command line kept as a second assertion, said not to catch the plant. ST4's 'OU8 holds the order' is then accurate",
+  "EX5: spec §8 drafted it as an opt-in DIRECTOR SELFTEST row (--census). Moved outside the suites (a review finding): its code (scratchpad b254/census) is outside the tree, it reads a tree's art/briefs and art/ledger (the owner's world), and its 'no forward differing from 7dee210's' needs 7dee210's apply_revision beside the built one, which the tree will not hold; spec §12 already runs it in scratch. Its id kept, so that the specification's §8 and §12 still resolve; the DIRECTOR rows number 31 with OU3b",
+  "PAGE-CARDS 5a-exact's state: the draft's 'the same aligned =' after 5a runs on a row 5a's legacy undo collapsed, where 7dee210's record is exact too (a review finding): the row would pass with or without the repair. Its state now writes row 62 back aligned (the parent byte for byte), records it by a rebase and asserts it before the admission; its printed name no longer starts with 'cards: case 5a', the stop prefix of the page's cards-undo-toast-only plant (art/page_dash.py)",
+  "plus-tail-dropped's later failures: the draft listed none; EX4 (O-PLUS2's '@~') and EX6 (P-CR-LAST's '@~ [\"1\",\"0\"]') fail too",
+  "inverse-compared-always's later failures: the draft listed none; OU7 fails too (its control, a legacy inverse, would be compared)",
+  "replay-inverse-anywhere's later failures: the draft listed none; OU6b and OU6c fail too (each expects LEDGER-INVERSE-ONLY from replay)",
+  "replay-inverse-unchecked's later failures: the draft listed none; OU8 fails too (its LEDGER-INVERSE comes from that comparison)",
+  "inverse-key-fallback's later failure GD2b: the draft's 'where the target survives' is made G-EQ-RANGE's state (its target standing at 0, its position past the end); G-EQ-DELETED's target does not survive",
+  "CERT CT3: the draft's 'the three existing' read as the existing plant row's catch of cert-child-unhashed and cert-heads-unchecked; the third existing plant, cert-statements-as-exact, is CT2's, as the same table says"
+ ],
+ "his closing": "The System State and Immutable Token Blocks\nThe new data layout for the positioned inverse information (\\(r\\)) is now officially bound to the three explicit, non-narrative bytecode blocks discovered by the census:\n\n* `@= [I, W, R]`: Line modification check at precise array index.\n* `@+ [I, R, S]`: Line insertion verification relative to the succeeding statement boundary.\n* `@~ [A, B]`: Terminal whitespace and empty line count tracking.\n\nEvery stored `@` inverse sequence will be verified against the exact template its current revision generates via `LEDGER-INVERSE`. Any attempt to trigger these byte forms outside of a verified undo context is hard-blocked by `INTENT-INVERSE-ONLY`.\nThe bookkeeping handles the line; these rulings are now an unalterable matter of record.\nThe seven architectural coordinates are locked. You are clear to freeze the 0254 validation matrix and its conformance vectors in your workspace. Let me know the moment the guard code is fully built and ready to face the `Gated-Tree:` landing checks.",
+ "his preamble": "These seven rulings establish the unyielding administrative baseline for patch `0254`, locking down its contract vectors before the specification freeze. Every ruling selects the narrowest, zero-trust path of structural containment, enforcing strict historical accounting and refusing any hidden runtime heuristics.\nThe Seven Operational Rulings",
+ "his ruling": "Ruling: (a). 0254 records the inverse of = and - as the exact row at its position (and the trailing blank lines of +), applied only by undo, frozen first and built second, against BINDING-0 v0 unchanged.",
+ "open": [
+  {
+   "id": "OPEN-5",
+   "what": "the undo's IntentError escape: load_intent refusing a stored inverse would escape the press without a decision record, because IntentError is not in failures(D) (spec §10)",
+   "why": "it decides no row or vector: after 0254 no host-built inverse reaches it, and widening failures(D) would change every press's mapping; recorded as a finding, not repaired in 0254"
+  },
+  {
+   "id": "OPEN-8",
+   "what": "the undo target recognised by its note (C1/C2, MEASURED; spec §10)",
+   "why": "it decides no row or vector: BINDING-0 v0 defines the target as _undo_target's answer, so any change is a version 1, registered first; recorded, nothing changed"
+  }
+ ],
+ "outside the suites": [
+  "python art/director/binding.py check and python art/director/binding_freeze.py check: their lines unchanged",
+  "VECTORS and CONFORMANCE 97 / 97: GR1's Rust side, a check without a plant; the Rust mutant measured at the build in scratch (spec §6.2), recorded in commit 2's message",
+  "EX5 (no printed name, never a row): the census of spec §1.2 re-run in scratch (scratchpad b254/census/census.py) against a clone of 7dee210 and against the built tree, each tree's forward children compared; expected 0 not exact, 0 forward differs, 0 redo differs; its counts recorded in commit 2's message. Never a row: it imports a tree's code, reads that tree's art/briefs and art/ledger (the owner's world), and needs 7dee210's apply_revision beside the built one"
+ ],
+ "plant rows": {
+  "R5 keys": [
+   "art/director.py selftest | plant: inverse-vectors-edited",
+   "art/director.py selftest | plant: vectors-from-code",
+   "art/director.py selftest | plant: inverse-noncanonical",
+   "art/director.py selftest | plant: inner-code-leaks-selective",
+   "art/director.py selftest | plant: rest-blanks-skipped",
+   "art/director.py selftest | plant: inverse-anywhere",
+   "art/director.py selftest | plant: inverse-statement-form",
+   "art/director.py selftest | plant: empty-child-insert",
+   "art/director.py selftest | plant: plus-tail-dropped",
+   "art/director.py selftest | plant: plus-tail-always",
+   "art/director.py selftest | plant: inverse-parent-positions",
+   "art/director.py selftest | plant: legacy-spacing-kept",
+   "art/director.py selftest | plant: inverse-compared-always",
+   "art/director.py selftest | plant: guard-skipped-replace",
+   "art/director.py selftest | plant: inverse-key-fallback",
+   "art/director.py selftest | plant: guard-key-not-bytes",
+   "art/director.py selftest | plant: guard-rekey-skipped",
+   "art/director.py selftest | plant: guard-skipped-insert",
+   "art/director.py selftest | plant: guard-skipped-tail",
+   "art/director.py selftest | plant: undo-flag-always",
+   "art/director.py selftest | plant: undo-flag-unchecked",
+   "art/director.py selftest | plant: admit-inverse-anywhere",
+   "art/director.py selftest | plant: replay-inverse-anywhere",
+   "art/director.py selftest | plant: replay-undo-carried",
+   "art/director.py selftest | plant: inverse-of-unbounded",
+   "art/director.py selftest | plant: replay-inverse-unchecked",
+   "art/director.py selftest | plant: inverse-unverified",
+   "art/studio.py selftest | plant kept-inverse-unbound: a kept certificate taken as its own by its sequence number and event sha256 alone, its inverse another, is caught: the certificate given is not the ledger's"
+  ],
+  "k": 28,
+  "names": [
+   "plant: inverse-vectors-edited",
+   "plant: vectors-from-code",
+   "plant: inverse-noncanonical",
+   "plant: inner-code-leaks-selective",
+   "plant: rest-blanks-skipped",
+   "plant: inverse-anywhere",
+   "plant: inverse-statement-form",
+   "plant: empty-child-insert",
+   "plant: plus-tail-dropped",
+   "plant: plus-tail-always",
+   "plant: inverse-parent-positions",
+   "plant: legacy-spacing-kept",
+   "plant: inverse-compared-always",
+   "plant: guard-skipped-replace",
+   "plant: inverse-key-fallback",
+   "plant: guard-key-not-bytes",
+   "plant: guard-rekey-skipped",
+   "plant: guard-skipped-insert",
+   "plant: guard-skipped-tail",
+   "plant: undo-flag-always",
+   "plant: undo-flag-unchecked",
+   "plant: admit-inverse-anywhere",
+   "plant: replay-inverse-anywhere",
+   "plant: replay-undo-carried",
+   "plant: inverse-of-unbounded",
+   "plant: replay-inverse-unchecked",
+   "plant: inverse-unverified",
+   "plant kept-inverse-unbound: a kept certificate taken as its own by its sequence number and event sha256 alone, its inverse another, is caught: the certificate given is not the ledger's"
+  ]
+ },
+ "plants": [
+  {
+   "caught_by": "FZ1",
+   "fails_later": [],
+   "id": "inverse-vectors-edited",
+   "new in 0254": true,
+   "printed": "plant: inverse-vectors-edited",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inverse-vectors-edited",
+   "what": "frozen() does not hold a file's bytes to its recorded sha256"
+  },
+  {
+   "caught_by": "GR0",
+   "fails_later": [],
+   "id": "vectors-from-code",
+   "new in 0254": true,
+   "printed": "plant: vectors-from-code",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "vectors-from-code",
+   "what": "GR0 reads, in place of art/director/vectors.json, an in-memory copy whose intents entries for F-R21 and F-R22 take their expect from a validator that skips the blanks between the form and its array, the verdict taken from that validator and not from the freeze (vectors_source.py's assertion against the frozen code not made): the copy says ok where the freeze says INTENT-REVISION. Read only in GR0; GR1 reads the real file with the honest grammar. GR0 fails on its own comparison, naming F-R21 and F-R22, never on an AssertionError"
+  },
+  {
+   "caught_by": "GR1",
+   "fails_later": [],
+   "id": "inverse-noncanonical",
+   "new in 0254": true,
+   "printed": "plant: inverse-noncanonical",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inverse-noncanonical",
+   "what": "the rest of an '@' line accepted without its canonical check"
+  },
+  {
+   "caught_by": "GR1",
+   "fails_later": [],
+   "id": "inner-code-leaks-selective",
+   "new in 0254": true,
+   "printed": "plant: inner-code-leaks-selective",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inner-code-leaks-selective",
+   "what": "of the canonical reader's refusals only INTENT-NOT-JSON, -NONCANONICAL and -BYTES mapped to INTENT-REVISION; the others answered with their inner code"
+  },
+  {
+   "caught_by": "GR1",
+   "fails_later": [],
+   "id": "rest-blanks-skipped",
+   "new in 0254": true,
+   "printed": "plant: rest-blanks-skipped",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "rest-blanks-skipped",
+   "what": "blanks between the form and its array skipped"
+  },
+  {
+   "caught_by": "OU0",
+   "fails_later": [
+    "OU1",
+    "OU3b",
+    "OU4",
+    "OU6",
+    "OU6b",
+    "OU6c"
+   ],
+   "id": "inverse-anywhere",
+   "new in 0254": true,
+   "printed": "plant: inverse-anywhere",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inverse-anywhere",
+   "what": "apply_revision ignores undo: an '@' line applied always"
+  },
+  {
+   "caught_by": "EX1",
+   "fails_later": [
+    "EX2",
+    "EX3",
+    "EX4",
+    "EX6",
+    "OU3",
+    "OU3b",
+    "OU4",
+    "OU6",
+    "OU7"
+   ],
+   "id": "inverse-statement-form",
+   "new in 0254": true,
+   "printed": "plant: inverse-statement-form",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inverse-statement-form",
+   "what": "'=' and '-' record 7dee210's statement form ('= old code', '+ code')"
+  },
+  {
+   "caught_by": "EX2",
+   "fails_later": [],
+   "id": "empty-child-insert",
+   "new in 0254": true,
+   "printed": "plant: empty-child-insert",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "empty-child-insert",
+   "what": "arm (ii) of '@+' removed"
+  },
+  {
+   "caught_by": "EX3",
+   "fails_later": [
+    "EX4",
+    "EX6"
+   ],
+   "id": "plus-tail-dropped",
+   "new in 0254": true,
+   "printed": "plant: plus-tail-dropped",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "plus-tail-dropped",
+   "what": "'+' records no '@~' whatever the parent's tail"
+  },
+  {
+   "caught_by": "EX3",
+   "fails_later": [
+    "EX4"
+   ],
+   "id": "plus-tail-always",
+   "new in 0254": true,
+   "printed": "plant: plus-tail-always",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "plus-tail-always",
+   "what": "'+' records '@~ [\"1\",\"K\"]' even when K is 1 ('@~ [\"1\",\"1\"]' written)"
+  },
+  {
+   "caught_by": "EX2",
+   "fails_later": [
+    "EX4"
+   ],
+   "id": "inverse-parent-positions",
+   "new in 0254": true,
+   "printed": "plant: inverse-parent-positions",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inverse-parent-positions",
+   "what": "positions taken in the parent, not at the moment of the line that records them"
+  },
+  {
+   "caught_by": "LG1",
+   "fails_later": [
+    "FW1"
+   ],
+   "id": "legacy-spacing-kept",
+   "new in 0254": true,
+   "printed": "plant: legacy-spacing-kept",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "legacy-spacing-kept",
+   "what": "an old '= ' line applied without its collapse (the row written as its body, not ' '.join(body.split()))"
+  },
+  {
+   "caught_by": "LG1",
+   "fails_later": [
+    "OU7"
+   ],
+   "id": "inverse-compared-always",
+   "new in 0254": true,
+   "printed": "plant: inverse-compared-always",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inverse-compared-always",
+   "what": "LEDGER-INVERSE's comparison applied to inverses with no '@' line too"
+  },
+  {
+   "caught_by": "GD2a",
+   "fails_later": [
+    "GD2b",
+    "GD3"
+   ],
+   "id": "guard-skipped-replace",
+   "new in 0254": true,
+   "printed": "plant: guard-skipped-replace",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "guard-skipped-replace",
+   "what": "'@=' writes rows[I] := R without its positional guard (I < len(rows) and rows[I] == W); the key check as written"
+  },
+  {
+   "caught_by": "GD2a",
+   "fails_later": [
+    "GD2b"
+   ],
+   "id": "inverse-key-fallback",
+   "new in 0254": true,
+   "printed": "plant: inverse-key-fallback",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inverse-key-fallback",
+   "what": "exactly OPEN-1(b): on a failed positional guard, the one row whose key is W's and whose bytes equal W; the key check then as written"
+  },
+  {
+   "caught_by": "GD3",
+   "fails_later": [],
+   "id": "guard-key-not-bytes",
+   "new in 0254": true,
+   "printed": "plant: guard-key-not-bytes",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "guard-key-not-bytes",
+   "what": "'@=' compares rows[I]'s statement key with W's, not its bytes"
+  },
+  {
+   "caught_by": "GD3",
+   "fails_later": [],
+   "id": "guard-rekey-skipped",
+   "new in 0254": true,
+   "printed": "plant: guard-rekey-skipped",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "guard-rekey-skipped",
+   "what": "'@=''s key check skipped"
+  },
+  {
+   "caught_by": "GD4",
+   "fails_later": [],
+   "id": "guard-skipped-insert",
+   "new in 0254": true,
+   "printed": "plant: guard-skipped-insert",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "guard-skipped-insert",
+   "what": "'@+' inserts without its successor or end guard (arms (i) and (iii)); arm (ii), the key's absence and the statement check as written"
+  },
+  {
+   "caught_by": "GD6",
+   "fails_later": [],
+   "id": "guard-skipped-tail",
+   "new in 0254": true,
+   "printed": "plant: guard-skipped-tail",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "guard-skipped-tail",
+   "what": "'@~' without its count of trailing empty rows"
+  },
+  {
+   "caught_by": "OU1",
+   "fails_later": [
+    "OU3b"
+   ],
+   "id": "undo-flag-always",
+   "new in 0254": true,
+   "printed": "plant: undo-flag-always",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "undo-flag-always",
+   "what": "evaluate_doc applies with undo=True when there is no undo_of"
+  },
+  {
+   "caught_by": "OU2",
+   "fails_later": [],
+   "id": "undo-flag-unchecked",
+   "new in 0254": true,
+   "printed": "plant: undo-flag-unchecked",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "undo-flag-unchecked",
+   "what": "inverse_of_ok drops the comparison of the named admission's inverse with the revision"
+  },
+  {
+   "caught_by": "OU4",
+   "fails_later": [],
+   "id": "admit-inverse-anywhere",
+   "new in 0254": true,
+   "printed": "plant: admit-inverse-anywhere",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "admit-inverse-anywhere",
+   "what": "admit_checks applies with undo=True: an admission is written"
+  },
+  {
+   "caught_by": "OU6",
+   "fails_later": [
+    "OU6b",
+    "OU6c"
+   ],
+   "id": "replay-inverse-anywhere",
+   "new in 0254": true,
+   "printed": "plant: replay-inverse-anywhere",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "replay-inverse-anywhere",
+   "what": "replay applies with undo=True: verify passes"
+  },
+  {
+   "caught_by": "OU6c",
+   "fails_later": [],
+   "id": "replay-undo-carried",
+   "new in 0254": true,
+   "printed": "plant: replay-undo-carried",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "replay-undo-carried",
+   "what": "replay's inv_ok set only in the record branch, initialised False before the loop, so that a record-less admission carries the last recorded admission's value"
+  },
+  {
+   "caught_by": "OU6d",
+   "fails_later": [],
+   "id": "inverse-of-unbounded",
+   "new in 0254": true,
+   "printed": "plant: inverse-of-unbounded",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inverse-of-unbounded",
+   "what": "inverse_of_ok without its bound int(i) < before"
+  },
+  {
+   "caught_by": "OU7",
+   "fails_later": [
+    "OU8"
+   ],
+   "id": "replay-inverse-unchecked",
+   "new in 0254": true,
+   "printed": "plant: replay-inverse-unchecked",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "replay-inverse-unchecked",
+   "what": "replay's LEDGER-INVERSE comparison removed"
+  },
+  {
+   "caught_by": "OU8",
+   "fails_later": [],
+   "id": "inverse-unverified",
+   "new in 0254": true,
+   "printed": "plant: inverse-unverified",
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT",
+   "value": "inverse-unverified",
+   "what": "evaluate_doc(undo_of) applies the inverse before it replays the ledger (inverse_of_ok still before the application)"
+  },
+  {
+   "caught_by": "ST5",
+   "fails_later": [],
+   "id": "kept-inverse-unbound",
+   "new in 0254": true,
+   "printed": "plant kept-inverse-unbound: a kept certificate taken as its own by its sequence number and event sha256 alone, its inverse another, is caught: the certificate given is not the ledger's",
+   "suite": "STUDIO SELFTEST",
+   "switch": "studio.ACCOUNT_PLANT",
+   "value": "kept-inverse-unbound",
+   "what": "_kept_is_own binds a kept certificate by seq and event_sha256 alone, not its inverse"
+  },
+  {
+   "caught_by": "ST2",
+   "fails_later": [],
+   "id": "restoration-from-own-certificate",
+   "new in 0254": false,
+   "printed": "plant restoration-from-own-certificate: the verdict read from the undo's own certificate (a redo's inverse) is caught: it does not say what came back",
+   "suite": "STUDIO SELFTEST",
+   "switch": "studio.ACCOUNT_PLANT",
+   "value": "restoration-from-own-certificate",
+   "what": "the restoration's verdict read from the undo's own certificate (a redo's inverse): the plant of 7dee210, kept, its row's name byte for byte, its fixture now L-ST2's pre-0254 admission"
+  },
+  {
+   "caught_by": "CT3",
+   "fails_later": [],
+   "id": "cert-child-unhashed",
+   "new in 0254": false,
+   "printed": "certificate plant cert-child-unhashed caught",
+   "suite": "CERT SELFTEST",
+   "switch": "certificate.PLANT",
+   "value": "cert-child-unhashed",
+   "what": "the child's text not held to the child's art part (CERT-0's, unchanged)"
+  },
+  {
+   "caught_by": "CT2",
+   "fails_later": [],
+   "id": "cert-statements-as-exact",
+   "new in 0254": false,
+   "printed": "certificate plant cert-statements-as-exact caught",
+   "suite": "CERT SELFTEST",
+   "switch": "certificate.PLANT",
+   "value": "cert-statements-as-exact",
+   "what": "exact read as the statements' equality (CERT-0's, unchanged)"
+  },
+  {
+   "caught_by": "CT3",
+   "fails_later": [],
+   "id": "cert-heads-unchecked",
+   "new in 0254": false,
+   "printed": "certificate plant cert-heads-unchecked caught",
+   "suite": "CERT SELFTEST",
+   "switch": "certificate.PLANT",
+   "value": "cert-heads-unchecked",
+   "what": "the heads not held to their parts (CERT-0's, unchanged)"
+  },
+  {
+   "caught_by": "CT5",
+   "fails_later": [],
+   "id": "keys-misread",
+   "new in 0254": true,
+   "printed": "certificate plant keys-misread caught",
+   "suite": "CERT SELFTEST",
+   "switch": "certificate.PLANT",
+   "value": "keys-misread",
+   "what": "keys() reads an '@' line as an ordinary one ('@=' keyed by its whole rest)"
+  }
+ ],
+ "readings at the freeze": [
+  "DS1 runs once, in the lifecycle, before the 0254 rows, and never under a plant: spec §8's loop runs 'the ordered 0254 rows'; DS1's rows are the lifecycle's own (under undo-flag-unchecked its second row would fail)",
+  "N_TREE: the OU rows' #N is an admission of '-' of a statement that is not the last (its inverse one '@+'); OU7's last admission is an '=' of an aligned statement (its inverse one '@='), as OU7's state needs; OU1, OU6b and OU6c take their '@' line from the frozen OY-EQ vector, since their refusal comes before any application",
+  "M-FIRST is read as the row at position 0 deleted with a successor after it (a text with no header)",
+  "OU2 holds both cases of spec §3's table row ('with or without @ lines')",
+  "OU6d's two events are written past the director (led.append), #X carrying no still, so that only inverse_of_ok's bound decides",
+  "the forms vectors add none beyond spec §6.2's list: 32 (8 accepted, 24 refused); vectors.json grows from 65 to 97",
+  "the worked examples W1 to W10 of spec §2.2 are vectors of 'revisions' (field 'worked'); W9 is its own vector, E-TAB-TRAIL",
+  "CERT-0's four cases are vectors of 'revisions' (field 'cert_case'), so that CT1 reads them from the freeze",
+  "OU1 runs evaluate FILE (cmd_evaluate) only; spec §8's 'play.py --intent / evaluate FILE' is read as the one evaluate_doc both routes reach. play.py --intent's route (art/play.py intent_slot → candidate_slot → D.evaluate_doc(ws, it, on_candidate=keep), lines 219-260 at 7dee210, no undo_of) is DECLARED, read from the code, not checked by a row. Commit 2 leaves intent_slot and candidate_slot's call unchanged; a change to them is outside OU1. Running it here would make the director's self-test import play.py, and a STUDIO or LIVE row would be a row beyond spec §8",
+  "OPEN-3: his 'They remain benched until `0254` is frozen' is read with his 'Ruling: Defer.', his 'denied for this patch cycle' and the option selected (spec §10 OPEN-3, 'defer to a later patch'): neither inverse_form nor on_child in 0254, commit 2 included; no ST3 row, no plant. Read 'frozen' as 0254's close or as commit 1, the option selected governs",
+  "the four arm (ii) vectors (M-ALL-1, M-ALL-2-AB, M-ALL-2-BA, M-ALL-HEADED) are of the provenance 'computed by spec254/model.py, read by hand', never 'by hand' (a review finding, after spec §5 and its finding 34): their inverse is the model's (M-ALL-1's equals W10, which spec §2.2 says the model computed), their back and redo the generator's own derivation through arm (ii); 40 vectors are by hand (the 32 forms, the three forged guards, the five only vectors). A reviewer read the other way (all four 'by hand', its definition widened, 44); the narrower reading is taken, since spec §5 rests on the 'by hand' vectors standing against a mistake the model and the specification share, and these inverses are the model's",
+  "the rule 'names' read whole: no STUDIO row that is not a plant row prints the word plant anywhere in its line, detail and FAIL text included, since tools/rung.py's NAMED_PLANT reads a bracketed row's whole line and would make such a row an R5 key with its detail; this covers every STUDIO row, not only 0254's; the director prints its rows unbracketed ('PASS name — detail'), where only 'PASS plant: ' makes a key"
+ ],
+ "resolved": [
+  {
+   "his words": "OPEN-1: Position Violations After a Base Move (Rebase/Edit)\n\n* Ruling: Option (a) — Refuse: `STUDIO-NOT-UNDOABLE` with no search.\n* The Enforcement: If a recorded position index no longer holds the exact text block the admission left behind, the host runtime must instantly sever execution and return `STUDIO-NOT-UNDOABLE`. The system will never attempt a fuzzy textual search or a key-based re-alignment, and it will never overwrite a position blindly. If the base moves under an in-flight patch, that specific admission loses undoability until the physical line geometry is restored by hand.\n* Sub-question for `+`: Keep `- KEY` within your current syntax definitions. The known hazard is accepted and explicitly documented in the repository record, preventing any silent divergence in `FACADE`'s pinned output.\n* Confirmation of Identity: Confirmed. The positional byte guard functions strictly as the revision language’s local applicability rule, not a secondary definition of identity. The fact that it narrows the entry window by refusing certain legacy undos that v0’s binding would have loosely let through is a correct, design-enforced reduction of system margin.",
+   "id": "OPEN-1",
+   "option chosen": "(a) refuse, STUDIO-NOT-UNDOABLE with no search; for '+', (i) keep '- KEY'; the positional guard confirmed as the revision language's applicability rule, not a second definition of identity",
+   "reading": "where his text paraphrases the option, the option selected governs (the agent's reading, said in the session, quoted under 'the agent's reading')",
+   "ruling file": "ruling-0254-open-2026-10-20.txt",
+   "ruling sha256": "5b080ffa51ee459369bc1a629fa7752f466353a59554ff542b04fc21f2db5500",
+   "so": [
+    "GD2a, GD2b, GD3 and their plants (inverse-key-fallback is exactly option (b), a plant, never the behaviour)",
+    "GD4, GD5, GD6, GD7",
+    "STUDIO GD9-fresh, GD9-stale, GD10, GD11, GD12 (GD12 pins the hazard of '+' his sub-question ruling keeps)",
+    "DIRECTOR OU9",
+    "the guards vectors; P-OK's inverse exactly ['- KEY'] (FACADE's pinned ['- bay …'] unchanged)"
+   ]
+  },
+  {
+   "his words": "OPEN-2: Legacy Inexact Undo Hand-Off inside Self-Tests\n\n* Ruling: Option (a) — Freeze a pre-0254 verification fixture, then append a clean `5a` row.\n* The Enforcement: You will inject a pre-0254 historical admission fixture directly into the self-test tree using the director’s native writer, freezing its inverse string verbatim from `7dee210`'s old text-manipulation logic. A brand-new, exact `PAGE-CARDS 5a` scenario row will be constructed directly alongside it. This preserves full historical test coverage for legacy boundaries without polluting your production code with temporary execution switches or runtime seams.",
+   "id": "OPEN-2",
+   "option chosen": "(a) a pre-0254 admission written in a self-test tree through the director's own writer (commit_admission), its inverse verbatim from 7dee210's code (legacy-inverses), and a new exact 5a row",
+   "reading": "where his text paraphrases the option, the option selected governs (the agent's reading, said in the session, quoted under 'the agent's reading')",
+   "ruling file": "ruling-0254-open-2026-10-20.txt",
+   "ruling sha256": "5b080ffa51ee459369bc1a629fa7752f466353a59554ff542b04fc21f2db5500",
+   "so": [
+    "CERT CT2",
+    "STUDIO ST2 and its plant row (its name byte for byte)",
+    "PAGE-CARDS 5a-landed, 5a-menu and 5a over L-NORTH-LANE; the new 5a-exact",
+    "the legacy-inverses section (L-ST2, L-NORTH-LANE, L-CERT4)",
+    "DIRECTOR LG1 and OU7's control"
+   ]
+  },
+  {
+   "his words": "OPEN-3: Extra Evaluation Fields in the Undo Payload\n\n* Ruling: Defer.\n* The Enforcement: The introduction of `inverse_form` and `on_child` to the host’s network response payload is denied for this patch cycle. These fields represent an architectural feature expansion that goes beyond the strict boundaries of a repair-only pass. They remain benched until `0254` is frozen.",
+   "id": "OPEN-3",
+   "option chosen": "defer: /studio/undo's restoration gains no inverse_form and no on_child in 0254",
+   "reading": "where his text paraphrases the option, the option selected governs (the agent's reading, said in the session, quoted under 'the agent's reading')",
+   "ruling file": "ruling-0254-open-2026-10-20.txt",
+   "ruling sha256": "5b080ffa51ee459369bc1a629fa7752f466353a59554ff542b04fc21f2db5500",
+   "so": [
+    "no ST3 row and no plant for it; /studio/undo's answer unchanged in shape"
+   ]
+  },
+  {
+   "his words": "OPEN-4: Rust Systems Translation of `apply_revision`\n\n* Ruling: Defer.\n* The Enforcement: Porting the core string manipulation passes to a native Rust twin adds immediate testing complexity without changing the underlying mathematical contract of the python-side validation pass. The task remains held in scratch.",
+   "id": "OPEN-4",
+   "option chosen": "defer: no Rust twin of apply_revision, no 'revisions' section in vectors.json",
+   "reading": "where his text paraphrases the option, the option selected governs (the agent's reading, said in the session, quoted under 'the agent's reading')",
+   "ruling file": "ruling-0254-open-2026-10-20.txt",
+   "ruling sha256": "5b080ffa51ee459369bc1a629fa7752f466353a59554ff542b04fc21f2db5500",
+   "so": [
+    "GR1 is the Python reference over vectors.json; CONFORMANCE N / N is a check without a plant; the application held by these Python-judged frozen vectors"
+   ]
+  },
+  {
+   "his words": "OPEN-6: Outside Census Divergences (Line Feeds vs. Splitlines)\n\n* Ruling: Record as Dated Findings, correct the single misleading comment, repair nothing else.\n* The Enforcement: The underlying engine implementation will not be refactored to accommodate wide-scope census edge cases. The discrepancies are cleanly logged as bounded structural findings in your append-only ledger, the single faulty documentation comment is corrected in place, and the code remains untouched.",
+   "id": "OPEN-6",
+   "option chosen": "record the census findings outside the repair as dated findings in docs/CAPABILITY-MATRIX.md, correct the one misleading comment (certificate.py's 'the same scene, another spelling of the text') in place with a note, repair nothing else",
+   "reading": "where his text paraphrases the option, the option selected governs (the agent's reading, said in the session, quoted under 'the agent's reading')",
+   "ruling file": "ruling-0254-open-2026-10-20.txt",
+   "ruling sha256": "5b080ffa51ee459369bc1a629fa7752f466353a59554ff542b04fc21f2db5500",
+   "so": [
+    "no row or vector: commit 2's docs and certificate.py's comment"
+   ]
+  },
+  {
+   "his words": "OPEN-7: Command-Line Interfacing for Retrospective Undos\n\n* Ruling: Implement `evaluate/reevaluate FILE --inverse-of N`.\n* The Enforcement: This option is locked. By routing the inverse calculation through the existing evaluation arguments, your historical architectural constraint remains perfectly intact: the system possesses no standalone `undo` command line. The tool interface remains clean, tracking the inverse strictly as an analytical property of an evaluation pass.",
+   "id": "OPEN-7",
+   "option chosen": "(a) evaluate / reevaluate FILE --inverse-of N; no undo command",
+   "reading": "where his text paraphrases the option, the option selected governs (the agent's reading, said in the session, quoted under 'the agent's reading')",
+   "ruling file": "ruling-0254-open-2026-10-20.txt",
+   "ruling sha256": "5b080ffa51ee459369bc1a629fa7752f466353a59554ff542b04fc21f2db5500",
+   "so": [
+    "DIRECTOR OU1, OU2, OU3, OU3b (reevaluate with and without --inverse-of, and the HEAD-MOVED message naming it), OU4, OU8, OU9; DS1 through evaluate(inverse_of)"
+   ]
+  },
+  {
+   "his words": "OPEN-9: Protocol Protocol Version Elevation\n\n* Ruling: Keep `VERDANDI-INTENT 0` and append the new vectors directly to the current matrix.\n* The Enforcement: This aligns perfectly with your original instruction: the validation runtime and the Rust conformance vectors must actively learn the new physical forms (`@=`, `@+`, `@~`) without shifting the baseline protocol envelope. Elevating the engine to `VERDANDI-INTENT 1` would represent an illegal leap out of the repair-only lane. The tension with the README documentation is recognized; the requirement for a translator tool is deferred until the first real structural format change occurs.",
+   "id": "OPEN-9",
+   "option chosen": "(a) keep VERDANDI-INTENT \"0\" and append the vectors to vectors.json's existing 'intents' section",
+   "reading": "where his text paraphrases the option, the option selected governs (the agent's reading, said in the session, quoted under 'the agent's reading')",
+   "ruling file": "ruling-0254-open-2026-10-20.txt",
+   "ruling sha256": "5b080ffa51ee459369bc1a629fa7752f466353a59554ff542b04fc21f2db5500",
+   "so": [
+    "the forms vectors, each under version \"0\"; GR0 and GR1; no existing expected output changed, held by 'vectors.json at 7dee210' (its sha256, its bytes and the writer's form) through GR0 and inverse_freeze.py check"
+   ]
+  }
+ ],
+ "status": "frozen (0254, commit 1 of 2), against BINDING-0 version 0 unchanged",
+ "suites": [
+  {
+   "R5": true,
+   "R5 key prefix": "art/director.py selftest | ",
+   "command": "python art/director.py selftest",
+   "prints": "PASS <name> — <detail> (FAIL likewise); a plant 'PASS plant: <id> — caught by <row id>; …', never the 'memo plant X caught' style R5 cannot read (director.py:1836)",
+   "rows": [
+    {
+     "cites": [],
+     "expected": "the four rows pass with their words byte for byte as at 7dee210 and their expected codes unchanged: 'no still of the candidate'; 'not that admission's exact inverse'; admitted naming the admission; LEDGER-EVIDENCE (replay checks evidence before the application where LEDGER-INVERSE-ONLY is raised). Run once, in the lifecycle, before the 0254 rows; never under a plant",
+     "id": "DS1",
+     "printed": [
+      "an admission without a still is refused (ADMISSION-0), nothing written",
+      "an admission said to undo an admission it is not the inverse of is refused (ADMISSION-0), nothing written",
+      "the exact inverse of an admission (an undo) is admitted without a still, naming it",
+      "plant: an admit event written past the director, with no evidence — refused by replay (#N)"
+     ],
+     "state": "spec §7.1: cmd_selftest's two command-line undos (C's inverse, director.py:1445-1446, and inv2, 1502-1503) evaluated through evaluate(inverse_of=adm[\"seq\"]) and evaluate(inverse_of=last_adm[\"seq\"]), the in-code form of --inverse-of; C's undo runs over a world that moved (B's in-place '=' and a comment rebased at the end), where no recorded position shifts",
+     "vectors": []
+    },
+    {
+     "cites": [],
+     "expected": "the freeze: no problem; the copy: a problem naming 0254-vectors.json, its sha256 and the one recorded",
+     "id": "FZ1",
+     "printed": [
+      "0254 FZ1: the freeze read through frozen() is the one recorded, and a copy with one expected inverse altered is refused naming its file"
+     ],
+     "state": "frozen() over art/director/inverse/ as committed; then its files copied to a scratch folder, one expected inverse in the copy of 0254-vectors.json altered, and frozen() over the copy",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-9"
+     ],
+     "expected": "the cut file's bytes exactly 7dee210's (sha256 5b47e025653a91e5e24a1aa1c737b96a4e1e26ee5c59286e09332d27dade8e60: every section, the top-level fields and the first seven intents byte for byte); intents[7:] exactly the 32 forms vectors in the freeze's order (F-A1 to F-A8, then F-R1 to F-R24), each the intent wrapping its line under version \"0\", with the freeze's ok and code, the total 97; no 'intents' entry holding an '@' line that is not a forms vector; the altered copy refused, naming the pin and the two hashes",
+     "id": "GR0",
+     "printed": [
+      "0254 GR0: every frozen form is an entry of vectors.json's intents with the freeze's own verdict, none missing and none added"
+     ],
+     "state": "art/director/vectors.json held to the matrix's 'vectors.json at 7dee210': its intents cut to intents[:7] and written in the writer's form, then every 'forms' vector against the entry of intents[7:] whose intent's revision is that line alone. Then, two-sided (as FZ1): a scratch copy of vectors.json with one existing expected output altered (a material's digest), regenerated so that cmd_vectors still reproduces it, held to the same pin",
+     "vectors": [
+      "F-A1",
+      "F-A2",
+      "F-A3",
+      "F-A4",
+      "F-A5",
+      "F-A6",
+      "F-A7",
+      "F-A8",
+      "F-R1",
+      "F-R2",
+      "F-R3",
+      "F-R4",
+      "F-R5",
+      "F-R6",
+      "F-R7",
+      "F-R8",
+      "F-R9",
+      "F-R10",
+      "F-R11",
+      "F-R12",
+      "F-R13",
+      "F-R14",
+      "F-R15",
+      "F-R16",
+      "F-R17",
+      "F-R18",
+      "F-R19",
+      "F-R20",
+      "F-R21",
+      "F-R22",
+      "F-R23",
+      "F-R24"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-4",
+      "OPEN-9"
+     ],
+     "expected": "97 / 97 (VECTORS 97 / 97); the Rust twin's CONFORMANCE 97 / 97 is a check without a plant, outside this row",
+     "id": "GR1",
+     "printed": [
+      "0254 GR1: the reference reproduces vectors.json, the inverse forms among them"
+     ],
+     "state": "cmd_vectors over art/director/vectors.json (the Python reference): its 65 vectors and the 32 forms appended to 'intents'",
+     "vectors": [
+      "F-A1",
+      "F-A2",
+      "F-A3",
+      "F-A4",
+      "F-A5",
+      "F-A6",
+      "F-A7",
+      "F-A8",
+      "F-R1",
+      "F-R2",
+      "F-R3",
+      "F-R4",
+      "F-R5",
+      "F-R6",
+      "F-R7",
+      "F-R8",
+      "F-R9",
+      "F-R10",
+      "F-R11",
+      "F-R12",
+      "F-R13",
+      "F-R14",
+      "F-R15",
+      "F-R16",
+      "F-R17",
+      "F-R18",
+      "F-R19",
+      "F-R20",
+      "F-R21",
+      "F-R22",
+      "F-R23",
+      "F-R24"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "INTENT-INVERSE-ONLY for the four holding an '@' line, the revision refused whole; OY-KEY applies, its child the frozen one",
+     "id": "OU0",
+     "printed": [
+      "0254 OU0: an inverse form applied but by an undo is refused INTENT-INVERSE-ONLY; a '- KEY' alone is ordinary and applies"
+     ],
+     "state": "each 'only' vector's revision applied by apply_revision(text, revision) without undo",
+     "vectors": [
+      "OY-EQ",
+      "OY-PLUS",
+      "OY-TILDE",
+      "OY-MIXED",
+      "OY-KEY"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "the frozen child and inverse; the parent byte for byte and the frozen redo; the child again",
+     "id": "EX1",
+     "printed": [
+      "0254 EX1: every '=' vector undone to its parent byte for byte, its inverse and its redo the frozen ones"
+     ],
+     "state": "each '=' vector of 'revisions': apply_revision(parent, revision); apply_revision(child, inverse, undo=True); apply_revision(parent, redo, undo=True)",
+     "vectors": [
+      "E-OK",
+      "E-ALIGN",
+      "E-TAB",
+      "E-TAB-TRAIL",
+      "E-NBSP",
+      "E-LEAD",
+      "E-TRAIL",
+      "E-C0",
+      "E-C1",
+      "E-C3",
+      "E-CTAB",
+      "E-CR",
+      "E-JOINED",
+      "E-BRIEF",
+      "E-CERT2"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "as EX1",
+     "id": "EX2",
+     "printed": [
+      "0254 EX2: every '-' vector undone to its parent byte for byte, every row deleted included"
+     ],
+     "state": "as EX1, over each '-' vector (M-ALL-1, M-ALL-2-AB, M-ALL-2-BA and M-ALL-HEADED undone over the child \"\" by arm (ii))",
+     "vectors": [
+      "M-OK",
+      "M-POS",
+      "M-FORM",
+      "M-ALIGN-LAST",
+      "M-BLANK",
+      "M-AFTER",
+      "M-TAIL-0",
+      "M-TAIL-2",
+      "M-FIRST",
+      "M-MOVER",
+      "M-ALL-1",
+      "M-ALL-2-AB",
+      "M-ALL-2-BA",
+      "M-ALL-HEADED"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "as EX1; P-OK's inverse exactly [\"- lamp b\"]",
+     "id": "EX3",
+     "printed": [
+      "0254 EX3: every '+' vector undone to its parent byte for byte, a parent ending in one empty row recording exactly '- KEY'"
+     ],
+     "state": "as EX1, over each '+' vector",
+     "vectors": [
+      "P-OK",
+      "P-TAIL-0",
+      "P-TAIL-2",
+      "P-TAIL-3",
+      "P-TAIL-WS",
+      "P-EMPTY",
+      "P-LF-ONLY",
+      "P-CERT1"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "as EX1",
+     "id": "EX4",
+     "printed": [
+      "0254 EX4: every revision of several lines undone to its parent byte for byte"
+     ],
+     "state": "as EX1, over each revision of several lines",
+     "vectors": [
+      "O-2-AB",
+      "O-2-BA",
+      "O-MOVE",
+      "O-MIX",
+      "O-PLUS2",
+      "O-EQ-DEL",
+      "O-ADD-DEL",
+      "O-CERT4"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "as EX1; 'through the files' is said, not run",
+     "id": "EX6",
+     "printed": [
+      "0254 EX6: the carriage-return vectors undone exactly in memory"
+     ],
+     "state": "as EX1, over each 'cr' vector, in memory (no file written)",
+     "vectors": [
+      "P-CR-LAST",
+      "E-CR-END",
+      "CR-CTRL-EQ",
+      "CR-CTRL-MINUS"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-2"
+     ],
+     "expected": "7dee210's bytes: each back and each 'restores' the frozen one; 26 events and the frozen chain head, replayed files head, art and design sha256",
+     "id": "LG1",
+     "printed": [
+      "0254 LG1: the legacy inverses applied as 7dee210 applied them, and the frozen copy of its plaza-night ledger replayed to its pinned heads"
+     ],
+     "state": "each 'legacy' vector's stored inverse applied by apply_revision (ordinary lines) to its text; each 'legacy-inverses' vector's revision applied to its parent and its stored inverse to the child; legacy/plaza-night.7dee210.ledger held to its sha256, chained (led.chain) and replayed (replay(None, events)), never cmd_verify",
+     "vectors": [
+      "LEG-EQ-SPACED",
+      "LEG-PLUS-END",
+      "LEG-MINUS-ONE-LF",
+      "P-TAIL-2-legacy",
+      "P-TAIL-0-legacy",
+      "O-PLUS2-legacy",
+      "LG-COPY",
+      "L-ST2",
+      "L-NORTH-LANE",
+      "L-CERT4"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "each equal to the frozen one, which is 7dee210's (the forward ops unchanged byte for byte, spec §4.1)",
+     "id": "FW1",
+     "printed": [
+      "0254 FW1: every vector's child is the frozen child, 7dee210's"
+     ],
+     "state": "apply_revision(parent, revision)[0] for every vector of revisions, cr, guards and legacy-inverses and for OY-KEY; and each legacy vector's back (its stored lines applied, the ordinary ops)",
+     "vectors": [
+      "E-OK",
+      "E-ALIGN",
+      "E-TAB",
+      "E-TAB-TRAIL",
+      "E-NBSP",
+      "E-LEAD",
+      "E-TRAIL",
+      "E-C0",
+      "E-C1",
+      "E-C3",
+      "E-CTAB",
+      "E-CR",
+      "E-JOINED",
+      "E-BRIEF",
+      "E-CERT2",
+      "M-OK",
+      "M-POS",
+      "M-FORM",
+      "M-ALIGN-LAST",
+      "M-BLANK",
+      "M-AFTER",
+      "M-TAIL-0",
+      "M-TAIL-2",
+      "M-FIRST",
+      "M-MOVER",
+      "M-ALL-1",
+      "M-ALL-2-AB",
+      "M-ALL-2-BA",
+      "M-ALL-HEADED",
+      "P-OK",
+      "P-TAIL-0",
+      "P-TAIL-2",
+      "P-TAIL-3",
+      "P-TAIL-WS",
+      "P-EMPTY",
+      "P-LF-ONLY",
+      "P-CERT1",
+      "O-2-AB",
+      "O-2-BA",
+      "O-MOVE",
+      "O-MIX",
+      "O-PLUS2",
+      "O-EQ-DEL",
+      "O-ADD-DEL",
+      "O-CERT4",
+      "P-CR-LAST",
+      "E-CR-END",
+      "CR-CTRL-EQ",
+      "CR-CTRL-MINUS",
+      "G-EQ-SHIFTED",
+      "G-EQ-RANGE",
+      "G-EQ-DELETED",
+      "G-EQ-EDITED",
+      "G-EQ-REKEY",
+      "G-EQ-BLANK",
+      "G-PLUS-KEY",
+      "G-PLUS-SUCC",
+      "G-PLUS-END",
+      "G-PLUS-RANGE",
+      "G-PLUS-NOSTMT",
+      "G-PLUS-LAST-COMMENT-APPENDED",
+      "G-TAIL",
+      "G-EQ-OTHER-EDITED",
+      "G-EQ-COMMENT-APPENDED",
+      "G-MINUS-MID-COMMENT-APPENDED",
+      "G-KEY-INSERTED-ABOVE",
+      "G-KEY-EDITED",
+      "G-KEY-MOVED",
+      "OY-KEY",
+      "LEG-EQ-SPACED",
+      "LEG-PLUS-END",
+      "LEG-MINUS-ONE-LF",
+      "P-TAIL-2-legacy",
+      "P-TAIL-0-legacy",
+      "O-PLUS2-legacy",
+      "L-ST2",
+      "L-NORTH-LANE",
+      "L-CERT4"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "INTENT-APPLY naming the form, the position and what it found; no fallback",
+     "id": "GD2a",
+     "printed": [
+      "0254 GD2a: an '@=' over a row shifted from its position is refused INTENT-APPLY"
+     ],
+     "state": "G-EQ-SHIFTED: its stored inverse applied under undo over its 'over' text",
+     "vectors": [
+      "G-EQ-SHIFTED"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "INTENT-APPLY each",
+     "id": "GD2b",
+     "printed": [
+      "0254 GD2b: an '@=' past the end of the rows, or over its row deleted, is refused INTENT-APPLY"
+     ],
+     "state": "G-EQ-RANGE (its target standing at 0, its position past the end) and G-EQ-DELETED, as GD2a",
+     "vectors": [
+      "G-EQ-RANGE",
+      "G-EQ-DELETED"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "INTENT-APPLY each",
+     "id": "GD3",
+     "printed": [
+      "0254 GD3: an '@=' over its row edited, or restoring a row of another key or none, is refused INTENT-APPLY"
+     ],
+     "state": "G-EQ-EDITED, and the forged G-EQ-REKEY and G-EQ-BLANK over the child, as GD2a",
+     "vectors": [
+      "G-EQ-EDITED",
+      "G-EQ-REKEY",
+      "G-EQ-BLANK"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "INTENT-APPLY each",
+     "id": "GD4",
+     "printed": [
+      "0254 GD4: an '@+' whose successor or end moved is refused INTENT-APPLY"
+     ],
+     "state": "G-PLUS-SUCC, G-PLUS-END, G-PLUS-RANGE and G-PLUS-LAST-COMMENT-APPENDED, as GD2a",
+     "vectors": [
+      "G-PLUS-SUCC",
+      "G-PLUS-END",
+      "G-PLUS-RANGE",
+      "G-PLUS-LAST-COMMENT-APPENDED"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "INTENT-APPLY each",
+     "id": "GD5",
+     "printed": [
+      "0254 GD5: an '@+' whose key is present, or whose row holds no statement, is refused INTENT-APPLY"
+     ],
+     "state": "G-PLUS-KEY and the forged G-PLUS-NOSTMT, as GD2a",
+     "vectors": [
+      "G-PLUS-KEY",
+      "G-PLUS-NOSTMT"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "INTENT-APPLY",
+     "id": "GD6",
+     "printed": [
+      "0254 GD6: an '@~' over another count of trailing empty rows is refused INTENT-APPLY"
+     ],
+     "state": "G-TAIL, as GD2a",
+     "vectors": [
+      "G-TAIL"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "each applies: the first four to a text that is not the parent (the frozen back); G-KEY-EDITED and G-KEY-MOVED to the parent byte for byte (the '+' hazard his OPEN-1 ruling keeps, pinned and said)",
+     "id": "GD7",
+     "printed": [
+      "0254 GD7: where every guard holds over a world that moved, the inverse applies and is said for what it gives"
+     ],
+     "state": "G-EQ-OTHER-EDITED, G-EQ-COMMENT-APPENDED, G-MINUS-MID-COMMENT-APPENDED, G-KEY-INSERTED-ABOVE, G-KEY-EDITED and G-KEY-MOVED, as GD2a",
+     "vectors": [
+      "G-EQ-OTHER-EDITED",
+      "G-EQ-COMMENT-APPENDED",
+      "G-MINUS-MID-COMMENT-APPENDED",
+      "G-KEY-INSERTED-ABOVE",
+      "G-KEY-EDITED",
+      "G-KEY-MOVED"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-7"
+     ],
+     "expected": "the verdict REFUSED with the code INTENT-INVERSE-ONLY",
+     "id": "OU1",
+     "printed": [
+      "0254 OU1: an intent holding an inverse form, evaluated without --inverse-of, is refused INTENT-INVERSE-ONLY"
+     ],
+     "state": "the row's tree; an intent whose revision is OY-EQ's line (W1's '@='), written to a file and evaluated by cmd_evaluate without inverse_of (evaluate BRIEF FILE). play.py --intent's route (intent_slot → candidate_slot → evaluate_doc without undo_of) is DECLARED, read from the code, and not run by this row",
+     "vectors": [
+      "OY-EQ"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-7"
+     ],
+     "expected": "REFUSED INTENT-INVERSE-ONLY, each",
+     "id": "OU2",
+     "printed": [
+      "0254 OU2: evaluated with --inverse-of N, a revision that is not N's inverse is refused INTENT-INVERSE-ONLY"
+     ],
+     "state": "#N: an admission made in the row's own tree (a scratch copy as cmd_selftest makes, never the working brief, ledger or tags) by cmd_admit with a still, of '- KEY' of a statement that is not the last, so that its stored inverse is one '@+' line; two intents, neither #N's inverse, each evaluated with inverse_of N (evaluate BRIEF FILE --inverse-of N): one holding OY-EQ's line, one of ordinary lines ('- ' of another statement)",
+     "vectors": [
+      "OY-EQ"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-7"
+     ],
+     "expected": "CLEAN; admitted, its evidence naming #N; the files' art #N's parent byte for byte (its sha256 the art part of #N's head before)",
+     "id": "OU3",
+     "printed": [
+      "0254 OU3: the command line's undo, evaluate --inverse-of N then admit --inverse-of N, admitted and N's parent restored byte for byte"
+     ],
+     "state": "#N: an admission made in the row's own tree (a scratch copy as cmd_selftest makes, never the working brief, ledger or tags) by cmd_admit with a still, of '- KEY' of a statement that is not the last, so that its stored inverse is one '@+' line; an intent whose revision is #N's stored inverse verbatim (written as cmd_selftest writes C's), evaluated with inverse_of N, then admitted with inverse_of N (admit BRIEF SEQ --inverse-of N)",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-7"
+     ],
+     "expected": "the admit: SystemExit 'REFUSED (HEAD-MOVED): …' whose text names 'reevaluate BRIEF SEQ --inverse-of N' with the real brief, SEQ and N, nothing written; the reevaluate without the flag: a new evaluation, REFUSED with INTENT-INVERSE-ONLY; the reevaluate with it: a new evaluation, CLEAN, its codes HEAD-MOVED (scope.py's base differing), its re_evaluation_of SEQ, admitted with its evidence naming #N; the files' art #N's parent with the rebased comment row kept at the end (worked by hand); verify passes",
+     "id": "OU3b",
+     "printed": [
+      "0254 OU3b: the command line's undo after the head moved: admit refused HEAD-MOVED naming reevaluate --inverse-of N, reevaluate without the flag refused INTENT-INVERSE-ONLY, reevaluate --inverse-of N admitted"
+     ],
+     "state": "#N: an admission made in the row's own tree (a scratch copy as cmd_selftest makes, never the working brief, ledger or tags) by cmd_admit with a still, of '- KEY' of a statement that is not the last, so that its stored inverse is one '@+' line (the row's own tree, never OU3's); #N's stored inverse written verbatim to an intent and evaluated with inverse_of N (CLEAN, its sequence SEQ); a comment row '# rebased' appended at the end and recorded by a rebase; then, in order, admit BRIEF SEQ --inverse-of N; reevaluate BRIEF SEQ without the flag; reevaluate BRIEF SEQ --inverse-of N, its new evaluation admitted with inverse_of N; then verify",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-7"
+     ],
+     "expected": "SystemExit whose text begins 'REFUSED (INTENT-INVERSE-ONLY): ', from admit_checks' application after contract.missing; the ledger, the files and the stills unchanged",
+     "id": "OU4",
+     "printed": [
+      "0254 OU4: an inverse form evaluated with --inverse-of N and admitted without it is refused INTENT-INVERSE-ONLY, nothing written"
+     ],
+     "state": "#N: an admission made in the row's own tree (a scratch copy as cmd_selftest makes, never the working brief, ledger or tags) by cmd_admit with a still, of '- KEY' of a statement that is not the last, so that its stored inverse is one '@+' line; #N's inverse evaluated with inverse_of N (CLEAN), then admitted without inverse_of, with a still of the candidate",
+     "vectors": []
+    },
+    {
+     "cites": [],
+     "expected": "LedgerError LEDGER-INVERSE-ONLY; never an IntentError, never LEDGER-EVIDENCE",
+     "id": "OU6",
+     "printed": [
+      "0254 OU6: an admission applying inverse forms without naming what it undoes, written by the director's commit, refused by replay"
+     ],
+     "state": "#N: an admission made in the row's own tree (a scratch copy as cmd_selftest makes, never the working brief, ledger or tags) by cmd_admit with a still, of '- KEY' of a statement that is not the last, so that its stored inverse is one '@+' line; #N's inverse evaluated with inverse_of N (its rung-A record), then written as an admission by commit_admission with a kept still and evidence that names no inverse_of, its stored inverse the one apply_revision(..., undo=True) recomputes; then verify",
+     "vectors": []
+    },
+    {
+     "cites": [],
+     "expected": "LedgerError LEDGER-INVERSE-ONLY",
+     "id": "OU6b",
+     "printed": [
+      "0254 OU6b: a record-less admission holding an inverse form refused by replay LEDGER-INVERSE-ONLY"
+     ],
+     "state": "the row's tree; a record-less evaluation of an intent holding OY-EQ's line appended with led.append at the files' head, its verdict CLEAN, then an admission of it carrying no evidence written by commit_admission; then verify",
+     "vectors": [
+      "OY-EQ"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "LedgerError LEDGER-INVERSE-ONLY",
+     "id": "OU6c",
+     "printed": [
+      "0254 OU6c: after a recorded undo, a record-less admission holding an inverse form refused by replay LEDGER-INVERSE-ONLY"
+     ],
+     "state": "OU3's tree after its recorded undo admission; then OU6b's record-less admission after it; then verify",
+     "vectors": [
+      "OY-EQ"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "LedgerError LEDGER-EVIDENCE (inverse_of_ok's bound: #Y is not before #X)",
+     "id": "OU6d",
+     "printed": [
+      "0254 OU6d: an admission naming a later admission's equal inverse refused by replay LEDGER-EVIDENCE"
+     ],
+     "state": "#N: an admission made in the row's own tree (a scratch copy as cmd_selftest makes, never the working brief, ledger or tags) by cmd_admit with a still, of '- KEY' of a statement that is not the last, so that its stored inverse is one '@+' line; two admit events written past the director (led.append): #X, an admission of a recorded evaluation of #N's inverse (evaluated with inverse_of N) whose evidence names as inverse_of a later admission #Y and carries no still; #Y, an admission whose stored inverse equals #X's revision (its redo); then verify",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-2"
+     ],
+     "expected": "LedgerError LEDGER-INVERSE (\"#N's stored inverse is not the one its revision records over the text it was admitted on\"); the control verifies",
+     "id": "OU7",
+     "printed": [
+      "0254 OU7: a stored positioned inverse that is not its revision's refused by replay LEDGER-INVERSE; a legacy inverse still verifies"
+     ],
+     "state": "the row's tree whose last admission (cmd_admit with a still) is an '=' of a statement written aligned, its stored inverse one '@=' line; that line's restored row altered, the chain rehashed from it on; then verify. The control: a tree whose brief is L-ST2's parent (recorded by a rebase), its admission of L-ST2's revision written by commit_admission with L-ST2's stored inverse verbatim from legacy-inverses; then verify",
+     "vectors": [
+      "L-ST2"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-7"
+     ],
+     "expected": "LedgerError LEDGER-INVERSE raised by evaluate_doc's own replay of events[:N+1], before any application: the spy counts zero; the ledger's bytes unchanged. The second assertion: LEDGER-INVERSE from cmd_evaluate's held_head (LEDGER-SAFE-0's guard, before evaluate_doc), the spy at zero, nothing appended; it does not catch inverse-unverified, which only the direct call does",
+     "id": "OU8",
+     "printed": [
+      "0254 OU8: an undo of a forged stored inverse refused LEDGER-INVERSE before any application, nothing appended"
+     ],
+     "state": "#N: an admission made in the row's own tree (a scratch copy as cmd_selftest makes, never the working brief, ledger or tags) by cmd_admit with a still, of '- KEY' of a statement that is not the last, so that its stored inverse is one '@+' line; #N's stored inverse replaced by the forged ['@~ [\"1\",\"3\"]'], the chain rehashed; an intent of that line, loaded by canon.load_intent, passed to D.evaluate_doc(ws, it, undo_of=N) directly, as Gateway._undoing calls it, with no held_head and no cmd_evaluate before it; a spy on apply_revision counting calls whose revision holds the forged line. Then, a second assertion of its own: the same intent written to a file and evaluated by the command line (evaluate BRIEF FILE --inverse-of N)",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-1",
+      "OPEN-7"
+     ],
+     "expected": "CLEAN; admitted, naming #M, out of order",
+     "id": "OU9",
+     "printed": [
+      "0254 OU9: the command line undoes an earlier admission whose positions hold while a later one cannot be undone"
+     ],
+     "state": "the row's tree: an admission #M, then #N (each as N_TREE's), a comment row inserted between #M's row and #N's and recorded by a rebase (GD10's state: #N's undo refused, #M's positions intact); #M's inverse evaluated with inverse_of M, then admitted with inverse_of M",
+     "vectors": []
+    }
+   ],
+   "suite": "DIRECTOR SELFTEST",
+   "switch": "director.INVERSE_PLANT"
+  },
+  {
+   "R5": false,
+   "command": "python art/certificate.py selftest",
+   "prints": "[PASS] <name> — <detail>; a plant '[PASS] certificate plant <id> caught — by: …'; outside R5 (art/certificate.py is not in tools/rung.py's SUITES)",
+   "rows": [
+    {
+     "cites": [],
+     "expected": "every case exact",
+     "id": "CT1",
+     "printed": [
+      "each admission's certificate: the inverse applied to the child gives the parent, byte for byte, in every case"
+     ],
+     "state": "spec §7.2 row 1 rewritten: the certificate of each case made from its frozen vector (embedded parents), each row first asserting its parent's bytes are the vector's own",
+     "vectors": [
+      "P-CERT1",
+      "E-CERT2",
+      "E-BRIEF",
+      "O-CERT4",
+      "M-POS",
+      "P-TAIL-2"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-2"
+     ],
+     "expected": "statements only for both, the head not; both scenes the same bytes as the parent's",
+     "id": "CT2",
+     "printed": [
+      "found: a pre-0254 inverse is undone statement for statement, not byte for byte"
+     ],
+     "state": "spec §7.2 row 2 rewritten: L-NORTH-LANE's and L-CERT4's stored inverses (7dee210's, frozen) applied to their children, the scene comparison kept; the row first asserts its parents' bytes are the vectors' own",
+     "vectors": [
+      "L-NORTH-LANE",
+      "L-CERT4"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "unchanged",
+     "id": "CT3",
+     "printed": [
+      "planted: each defect refused with its code"
+     ],
+     "state": "unchanged (the four defects, each refused with its code)",
+     "vectors": []
+    },
+    {
+     "cites": [],
+     "expected": "unchanged",
+     "id": "CT4",
+     "printed": [
+      "a certificate is a function of its event and texts (canonical bytes)"
+     ],
+     "state": "unchanged",
+     "vectors": []
+    },
+    {
+     "cites": [],
+     "expected": "['lamp a'], ['lamp a'], ['lamp b']; the undo's support the admission's",
+     "id": "CT5",
+     "printed": [
+      "keys(): an '@=' and an '@+' keyed by their row's statement key, an '@~' by none; an undo's certificate names the admission's support"
+     ],
+     "state": "keys() over the inverses of E-ALIGN ('@='), M-POS ('@+') and P-TAIL-2 ('- KEY' and '@~'), and over an undo's operation",
+     "vectors": [
+      "E-ALIGN",
+      "M-POS",
+      "P-TAIL-2"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "exact, every one",
+     "id": "CT6",
+     "printed": [
+      "the redo: an undo's own certificate is exact for every census class"
+     ],
+     "state": "for every 'revisions' vector, the undo's certificate (its operation the inverse, its inverse the frozen redo) checked over the back",
+     "vectors": [
+      "E-OK",
+      "E-ALIGN",
+      "E-TAB",
+      "E-TAB-TRAIL",
+      "E-NBSP",
+      "E-LEAD",
+      "E-TRAIL",
+      "E-C0",
+      "E-C1",
+      "E-C3",
+      "E-CTAB",
+      "E-CR",
+      "E-JOINED",
+      "E-BRIEF",
+      "E-CERT2",
+      "M-OK",
+      "M-POS",
+      "M-FORM",
+      "M-ALIGN-LAST",
+      "M-BLANK",
+      "M-AFTER",
+      "M-TAIL-0",
+      "M-TAIL-2",
+      "M-FIRST",
+      "M-MOVER",
+      "M-ALL-1",
+      "M-ALL-2-AB",
+      "M-ALL-2-BA",
+      "M-ALL-HEADED",
+      "P-OK",
+      "P-TAIL-0",
+      "P-TAIL-2",
+      "P-TAIL-3",
+      "P-TAIL-WS",
+      "P-EMPTY",
+      "P-LF-ONLY",
+      "P-CERT1",
+      "O-2-AB",
+      "O-2-BA",
+      "O-MOVE",
+      "O-MIX",
+      "O-PLUS2",
+      "O-EQ-DEL",
+      "O-ADD-DEL",
+      "O-CERT4"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "the brief read as open(path, \"rb\").read().replace(b\"\\r\\n\", b\"\\n\").decode(\"utf-8\"), never in text mode; exact",
+     "id": "CT7",
+     "printed": [
+      "the command line's check reads the brief by Workspace.text()'s rule"
+     ],
+     "state": "python art/certificate.py check over a brief written with CR LF line endings and a row ending in a lone CR",
+     "vectors": []
+    }
+   ],
+   "suite": "CERT SELFTEST",
+   "switch": "certificate.PLANT"
+  },
+  {
+   "R5": true,
+   "R5 key prefix": "art/studio.py selftest | ",
+   "command": "python art/studio.py selftest",
+   "prints": "[PASS] <name> — <detail>; a plant '[PASS] plant <id>: … — <detail>', with no ' — ' inside the name",
+   "rows": [
+    {
+     "cites": [],
+     "expected": "/undo.json: can, of the admission, its certificate exact True; the press: restoration exact, art_bytes True, the certificate exact True",
+     "id": "ST1",
+     "printed": [
+      "GET /undo.json names what Undo would undo (a command line's admission of an aligned statement) and its certificate made from the ledger, exact, not kept: a GET writes nothing",
+      "undone and restored exactly: an aligned statement's '=' admitted since 0254 comes back byte for byte, said exact; its certificate kept by the POST"
+     ],
+     "state": "aligned_admission (art/page_dash.py), a new admission by the built director: plaza-night's canopy written aligned and recorded, then '= canopy plaza concrete_slab 7.0 19,10 28,11 deep 2.6' admitted by the command line; GET /undo.json; Undo",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-2"
+     ],
+     "expected": "statements-not-bytes, parts_differ ['art']; the plant row's name byte for byte as at 7dee210, only its fixture and detail changed",
+     "id": "ST2",
+     "printed": [
+      "undone, NOT restored exactly, and said, for a pre-0254 admission (its inverse 7dee210's, frozen), written by the director's commit: the statements came back, the bytes did not",
+      "plant restoration-from-own-certificate: the verdict read from the undo's own certificate (a redo's inverse) is caught: it does not say what came back"
+     ],
+     "state": "a pre-0254 admission: L-ST2 (plaza-night's canopy written aligned, its revision '= canopy plaza concrete_slab 7.0 19,10 28,11 deep 2.6'), written by commit_admission with its stored inverse verbatim from legacy-inverses, the row first asserting its tree's row is the vector's own; undone through the studio; then again under ACCOUNT_PLANT 'restoration-from-own-certificate'",
+     "vectors": [
+      "L-ST2"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "both STUDIO-DIRECTOR-REFUSED, director code LEDGER-INVERSE; ledger +0; the files unchanged",
+     "id": "ST4",
+     "printed": [
+      "a world whose ledger holds a forged positioned inverse: GET /undo.json and the Undo press answered STUDIO-DIRECTOR-REFUSED with the director's LEDGER-INVERSE, the ledger and the files unchanged"
+     ],
+     "state": "a self-test world whose last admission's stored '@' inverse is forged (its chain rehashed); GET /undo.json; Undo",
+     "vectors": []
+    },
+    {
+     "cites": [],
+     "expected": "not its own (_kept_is_own); remade from the ledger",
+     "id": "ST5",
+     "printed": [
+      "a kept certificate whose inverse is not its ledger event's is not taken as its own: it is made again from the ledger",
+      "plant kept-inverse-unbound: a kept certificate taken as its own by its sequence number and event sha256 alone, its inverse another, is caught: the certificate given is not the ledger's"
+     ],
+     "state": "a kept certificate of an admission whose inverse.revision differs from the ledger event's inverse (seq and event_sha256 its own); then again under ACCOUNT_PLANT 'kept-inverse-unbound'",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "STUDIO-NOT-UNDOABLE, ledger +1 (the inverse's evaluation, REFUSED INTENT-APPLY). A changed expectation, said: at 7dee210 undone, statements-not-bytes",
+     "id": "GD9-fresh",
+     "printed": [
+      "Undo after a comment row was inserted above the admission's row and recorded: STUDIO-NOT-UNDOABLE, the inverse's evaluation refused INTENT-APPLY, nothing undone"
+     ],
+     "state": "one admission #N (its inverse positioned); a comment row inserted above its row and recorded by a rebase; GET /undo.json read after; Undo",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "STUDIO-NOT-UNDOABLE, ledger +1, the binding not reached, the decision record saying so. A changed expectation, said: at 7dee210 BINDING-MISMATCH +1. BINDING-0 v0's order state (spec §4.4)",
+     "id": "GD9-stale",
+     "printed": [
+      "Undo declaring the scene read before a statement was inserted above the admission's row and recorded: STUDIO-NOT-UNDOABLE, the binding not reached"
+     ],
+     "state": "one admission #N; GET /undo.json read (of N, S_w0); a lamp statement inserted above its row and recorded by a rebase (S_w1 != S_w0); Undo declaring S_w0",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "/undo.json and a second press name of #N: STUDIO-NOT-UNDOABLE +1, never #M",
+     "id": "GD10",
+     "printed": [
+      "while the latest admission cannot be undone, Undo and its account still name it, never an earlier one"
+     ],
+     "state": "GD9-fresh's state with an earlier admission #M untouched",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "#N's undo applies; its art restored byte for byte",
+     "id": "GD11",
+     "printed": [
+      "once a rebase takes the inserted row away again, the admission's undo applies and its art comes back byte for byte"
+     ],
+     "state": "then a rebase removing the inserted row; Undo",
+     "vectors": []
+    },
+    {
+     "cites": [
+      "OPEN-1"
+     ],
+     "expected": "the verdict exact; the rebase's edit gone (the hazard his OPEN-1 ruling keeps, pinned and said)",
+     "id": "GD12",
+     "printed": [
+      "a '+' whose added row was edited and recorded, then undone: the verdict reads exact and the recorded edit is gone, as his ruling keeps it"
+     ],
+     "state": "a '+' admitted, its added row edited and recorded by a rebase, then Undo",
+     "vectors": [
+      "G-KEY-EDITED"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "STUDIO-RESPONSE-REVISION",
+     "id": "OU5",
+     "printed": [
+      "a provider's answer holding an inverse form is refused STUDIO-RESPONSE-REVISION"
+     ],
+     "state": "a provider's answer whose revision holds an '@=' line (read_response, art/studio.py)",
+     "vectors": []
+    },
+    {
+     "cites": [],
+     "expected": "answers byte for byte as at 7dee210",
+     "id": "BF1",
+     "printed": [],
+     "printed by reference": "the 89 rows of BINDING-0's frozen 0253 matrix (art/director/bindings/0253-matrix.json, sha256 1eef856df803b038bd00b385b3f1fef4823baa4f7a851ee6df7513c4e9e50589), M11, M13u and M16 among them",
+     "state": "STUDIO's 0253 matrix rows as they stand",
+     "vectors": []
+    }
+   ],
+   "suite": "STUDIO SELFTEST",
+   "switch": "studio.ACCOUNT_PLANT"
+  },
+  {
+   "R5": false,
+   "command": "python art/studio_queue.py selftest",
+   "prints": "[PASS] <name> — <detail>",
+   "rows": [
+    {
+     "cites": [],
+     "expected": "refused IMPORT-LEDGER carrying LEDGER-INVERSE; the staging removed, its absence checked by a listing",
+     "id": "IM1",
+     "printed": [
+      "import: a source whose ledger holds a forged positioned inverse is refused IMPORT-LEDGER carrying LEDGER-INVERSE, the staging removed"
+     ],
+     "state": "Import's staging of a source whose ledger has OU7's forged inverse (through cmd_verify, its code unchanged)",
+     "vectors": []
+    }
+   ],
+   "suite": "STUDIO-2 SELFTEST",
+   "switch": null
+  },
+  {
+   "R5": false,
+   "command": "python art/play.py --cards-selftest",
+   "prints": "[PASS] <name> — <detail>",
+   "rows": [
+    {
+     "cites": [
+      "OPEN-2"
+     ],
+     "expected": "CLEAN, admitted, no certificate kept",
+     "id": "5a-landed",
+     "printed": [
+      "cards: a pre-0254 admission of an aligned statement (its inverse 7dee210's, frozen), written by the director's commit, landed: CLEAN, and no certificate kept for it"
+     ],
+     "state": "sc_undo (art/page_dash.py): L-NORTH-LANE (foundry-yard's aligned building north-lane) written by commit_admission with its stored inverse verbatim from legacy-inverses, the row first asserting its tree's row is the vector's own",
+     "vectors": [
+      "L-NORTH-LANE"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-2"
+     ],
+     "expected": "unchanged (its certificate exact False, statements True)",
+     "id": "5a-menu",
+     "kept byte for byte from 7dee210": true,
+     "printed": [
+      "cards: the Edit menu's Undo names what the host would undo (GET /undo.json), its certificate made from the ledger and not kept: a GET writes nothing"
+     ],
+     "state": "unchanged, over 5a-landed's admission",
+     "vectors": [
+      "L-NORTH-LANE"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-2"
+     ],
+     "expected": "as at 7dee210: statements-not-bytes, parts_differ ['art'], the page's NOT restored exactly with both heads, the toast, the chip",
+     "id": "5a",
+     "printed": [
+      "cards: case 5a, Undo of a pre-0254 admission (its inverse 7dee210's, frozen, written by the director's commit) restores the statements but not the bytes: the page says so (NOT restored exactly, both heads), in its toast too, never success alone; while the loop is behind, the chip says the world drawn is the admitted scene"
+     ],
+     "state": "Undo of 5a-landed's admission from the strip",
+     "vectors": [
+      "L-NORTH-LANE"
+     ]
+    },
+    {
+     "cites": [
+      "OPEN-2"
+     ],
+     "expected": "the admission's stored inverse exactly E-BRIEF's frozen inverse (one '@=' line, position \"62\", the aligned row restored); the restoration verdict exact, art_bytes True, parts_differ [], head_after the rebased head; the page says restored exactly, never NOT restored. 7dee210's code over the same tree gives statements-not-bytes (E-BRIEF's record at 7dee210, exact False), so the row tells the repair from the base",
+     "id": "5a-exact",
+     "printed": [
+      "cards: the exact case, an aligned statement's admission made by the command line since 0254 (case 5a's row written back aligned and recorded first), undone from the strip: restored exactly, and the page says so"
+     ],
+     "state": "after 5a, whose legacy undo leaves row 62 collapsed (L-NORTH-LANE's 'restores'): row 62 written back aligned, so that the tree's art is L-NORTH-LANE's parent byte for byte (foundry-yard, sha256 4735ea905d006269f0eaeb4c117ef58ebdefa588db8effb33c12948cb2f33f88; sc_undo's text0), and recorded by D.cmd_rebase, the page waiting for the served head; the row first asserts the tree's art is that parent byte for byte, its row 62 'building north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5'; then E-BRIEF's revision ('= building north-lane brick 16 10,2 17,2 face window glass_wired storey 3.5') admitted by the built director's command line (cmd_admit with a still), then Undo from the strip",
+     "vectors": [
+      "E-BRIEF",
+      "L-NORTH-LANE"
+     ]
+    },
+    {
+     "cites": [],
+     "expected": "unchanged: not-restored",
+     "id": "5b",
+     "kept byte for byte from 7dee210": true,
+     "printed": [
+      "cards: case 5b, undone and NOT restored (a change recorded between) — the host's verdict names the art part, the statements not back; the page says NOT restored and the part"
+     ],
+     "state": "unchanged: its '+' inverse is today's '- KEY'",
+     "vectors": []
+    }
+   ],
+   "suite": "PAGE-CARDS SELFTEST",
+   "switch": null
+  }
+ ],
+ "the agent's reading": "Reading (the agent's, said in the session): where the text paraphrases an option, the option selected governs. OPEN-6's dated findings go to docs/CAPABILITY-MATRIX.md (the option's words), never into a world's ledger; OPEN-9's vectors are appended to art/director/vectors.json's existing `intents` section (spec §6.2); OPEN-1's block lasts until a rebase or hand edit restores the recorded rows; OPEN-4 is deferred (nothing held in scratch).",
+ "the rule": {
+  "a mismatch at the build": "the lists of later failures are worked by hand here; a mismatch found at the build is a new freeze, recorded before the code; the frozen list is never edited to fit",
+  "a plant": "one named value of one switch (director.INVERSE_PLANT in DIRECTOR SELFTEST, certificate.PLANT in CERT, studio.ACCOUNT_PLANT in STUDIO), read only where it is named; only the 0254 rows set a switch",
+  "enforcement": "the director's self-test runs its ordered 0254 rows (FZ1 to OU9) once per INVERSE_PLANT value, and CERT's tightened loop does the same: the named row fails, every earlier row passes, and the listed later rows, and only those, fail",
+  "exceptions": "every row catches any exception and reports one that is not an IntentError or a LedgerError as that row's FAIL, naming its type, so that a plant never ends the suite",
+  "k": "the 0254 plants printed in the director and STUDIO suites, new keys for R5: 28",
+  "names": "a director plant prints 'PASS plant: <id> — caught by <row id>; …'; a STUDIO plant '[PASS] plant <id>: …' with no ' — ' inside its name; no new 0254 row that is not a plant contains the word plant, and no STUDIO row that is not a plant row prints it anywhere in its line, detail and FAIL text included (tools/rung.py's NAMED_PLANT reads a bracketed row's whole line); held at the build by 'R5's predicted keys'",
+  "per suite": "each list is ordered as its suite prints it; the rule applies within that list only"
+ },
+ "vectors.json at 7dee210": {
+  "bytes": 214472,
+  "cites": [
+   "OPEN-9"
+  ],
+  "file": "art/director/vectors.json",
+  "intents before the append": 7,
+  "measured": "MEASURED here: 7dee210's file re-dumps byte for byte in the writer's form, and a 32-entry append truncated to intents[:7] gives this sha256 again",
+  "sha256": "5b47e025653a91e5e24a1aa1c737b96a4e1e26ee5c59286e09332d27dade8e60",
+  "the test": "load the tree's art/director/vectors.json; set its 'intents' to intents[:7]; write it in the writer's form: the bytes are exactly 7dee210's (this sha256), so that every section, the top-level fields and the first seven intents are byte for byte the same; then intents[7:] is nothing (commit 1) or exactly the forms vectors in the freeze's order (commit 2, GR0)",
+  "vectors": 65,
+  "why": "his OPEN-9 (\"Keep `VERDANDI-INTENT 0` and append the new vectors directly\") and AGENTS.md (\"A change to an expected output in `vectors.json` is a new protocol version, never a fix\", of art/director/vectors.json): the classifier's 'vectors.json changed' line fires on any byte difference and cannot tell an append from a rewrite; this pin is what shows the change is an append only",
+  "writer's form": "json.dumps(doc, indent=1, sort_keys=True, ensure_ascii=False) + \"\\n\", UTF-8 (art/director/vectors_source.py main)"
+ },
+ "what": "0254's test matrix (spec §8): per suite, its ordered rows with the exact names they print, each plant one named value of one switch with its catching row and the later rows of its suite it fails; frozen before the code it governs"
+}
