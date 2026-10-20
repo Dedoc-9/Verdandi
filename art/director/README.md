@@ -208,7 +208,7 @@ The still is kept beside the ledger by its sha256 (`art/ledger/<brief>.ledger.st
 before the admission's first write. It is bound to the admission by digest; nothing here proves it shows the candidate
 (the studio's page takes it from the canvas as it draws the candidate; at the command line a person gives it).
 
-## 8. The scene binding's contract (BINDING-0, 0252)
+## 8. The scene binding's contract (BINDING-0, 0252) and its enforcement (0253)
 
 His ruling (2026-10-18): *"Ruling: LOCK — REFUSE on a scene-binding mismatch for 0252."* An admission that relies on a
 still, a preview or an undo account bound to another scene than the exact candidate admitted is refused, and an unknown
@@ -217,9 +217,30 @@ version under `bindings/` (`BINDING-0.v0.json`: the identities, the comparison r
 cases in his words with their expected results, the decision record, what is deferred, in his words where it quotes
 him), and `bindings/register.jsonl`, one line per version naming its file and sha256, appended and never rewritten.
 `python art/director/binding.py check` holds the files to the register (`BINDING-0 REGISTERED version 0 sha256 …`);
-it reads, and decides no admission. Its enforcement is 0253's (the studio's admission and undo, the host authoritative);
-the inverse's repair is 0254's, against the same contract. The director's command line is outside version 0 (his choice:
-it declares no scene). RBAP, the principle the contract states, is a proposed engineering invariant, not a theorem.
+it reads, and decides no admission. The inverse's repair is 0254's, against the same contract. The director's command
+line is outside version 0 (his choice: it declares no scene). RBAP, the principle the contract states, is a proposed
+engineering invariant, not a theorem.
+
+**Its enforcement (0253).** The studio's admission and undo through the host (art/studio.py, `Gateway.admit` and
+`Gateway.undo`) enforce version 0, the host authoritative: the evidence a press relies on (the still's kept scene; a
+preview the admission names by its id; the undo's `of` and `scene`) is compared, exactly, with the identity v0 names
+(the scene the admission's own evaluation exports; the undo's target and the world's scene at the undo), and a press
+whose evidence names another is refused `BINDING-MISMATCH`, one absent or not well formed `BINDING-UNKNOWN`. The check
+is the `gate` that `cmd_admit` passes to `commit_admission`: the commit calls it under the content lock after every check
+it makes (`held_head` the last) and before its first write (the still into `<brief>.ledger.stills/`, the pending folder,
+the admit event, the files), and a gate that raises leaves nothing of the admission written. The command line passes
+none. The host pins version 0 and its sha256 (`BINDING_SHA256` in art/studio.py) and never reads the register at a
+press; STUDIO's rows hold the pin to the register's version-0 line.
+
+Before the check was built its test matrix and its conformance vectors were frozen, files of their own beside the
+contract and never in `register.jsonl`: `bindings/0253-matrix.json` (every row's state, switches, answer, director's
+code, decision record, ledger delta, brief and certificate) and `bindings/0253-vectors.json` (keeping, the still's rule;
+field, the comparison of one field; piece; press; record, the record's bytes; the preview's id), each held to its sha256 by a
+line of `bindings/frozen-0253.jsonl`. `python art/director/binding_freeze.py check` reads them (`BINDING-0 0253 FREEZE
+FROZEN: 80 vectors, 36 matrix entries naming 92 rows (34 plant rows) against BINDING-0 version 0 sha256 …; nothing
+open`); `binding.py check` and the register are unchanged. STUDIO's rows of the matrix (art/binding_rows.py, run by
+`python art/studio.py selftest`) hold the host's pure functions to the vectors and every press to the matrix; a frozen
+file is never edited (a change is a new freeze, recorded before the code it governs).
 
 ## 6. What it proves, and what it does not
 

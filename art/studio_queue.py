@@ -1031,8 +1031,10 @@ def selftest():
         c, r = post("/studio/queue/review", {"id": tid})
         led_h = os.path.join(worlds, "harbor-day", "art", "ledger", "harbor-day.ledger")
         n0 = len(D.led.read(led_h)[0])
-        # ADMISSION-0 (0222): the still the page takes of the candidate as drawn, given with the studio's token
-        qs = urllib.request.Request(base + "/studio/still?world=harbor-day&id=%s&candidate=A" % t["rid"], data=D.selftest_still(), method="POST",
+        # ADMISSION-0 (0222): the still the page takes of the candidate as drawn, given with the studio's token; BINDING-0
+        # (0253): it declares the scene it is of, as the page's does (the candidate's, as harbor-day's host names it)
+        qs = urllib.request.Request(base + "/studio/still?world=harbor-day&id=%s&candidate=A&scene=%s" % (
+            t["rid"], play.declared_scene(hub.worlds["harbor-day"].studio, t["rid"], "A")), data=D.selftest_still(), method="POST",
                                     headers={"Content-Type": "image/png", "X-Studio-Token": tok})
         with urllib.request.urlopen(qs, timeout=60) as r_:
             still = json.loads(r_.read()).get("still", "")

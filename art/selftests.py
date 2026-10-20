@@ -49,7 +49,8 @@ REPO = os.path.dirname(HERE)
 
 # (name, arguments after the Python, the summary line's pattern, the seconds expected: measured in the container at 0236
 # for the suites then, estimated for those added since (page, page-cards and page-worlds need a browser and never ran
-# there) — only an order: the longest start first; the browser suites' order is BROWSER's)
+# there), STUDIO's measured again on his machine at 0253 — only an order: the longest start first; the browser suites'
+# order is BROWSER's)
 SUITES = (
     ("held", ["art/scene_diff.py", "selftest"], r"^HELD SELFTEST (\d+)/(\d+)$", 72),
     ("director", ["art/director.py", "selftest"], r"^DIRECTOR SELFTEST (PASSED|FAILED)\b.*$", 70),
@@ -72,7 +73,7 @@ SUITES = (
     ("cert", ["art/certificate.py", "selftest"], r"^CERT SELFTEST (\d+)/(\d+)$", 5),                  # CERT-0 (0244)
     ("glue", ["art/glue.py", "selftest"], r"^GLUE SELFTEST (\d+)/(\d+)$", 40),                        # GLUE-0 (0244)
     ("queue", ["art/studio_queue.py", "selftest"], r"^STUDIO-2 SELFTEST (\d+)/(\d+)$", 37),
-    ("studio", ["art/studio.py", "selftest"], r"^STUDIO SELFTEST (\d+)/(\d+)$", 30),
+    ("studio", ["art/studio.py", "selftest"], r"^STUDIO SELFTEST (\d+)/(\d+)$", 315),     # 0253: 314 s alone on his machine (190 rows)
     ("quality", ["art/quality.py", "selftest"], r"^QUALITY SELFTEST (\d+)/(\d+)$", 20),
     ("live", ["art/play.py", "--selftest"], r"^LIVE SELFTEST (\d+)/(\d+)$", 17),
     ("marks", ["art/studio_marks.py", "selftest"], r"^MARKS SELFTEST (\d+)/(\d+)$", 12),

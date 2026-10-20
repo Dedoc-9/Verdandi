@@ -1872,7 +1872,9 @@ def studio_post(hub, path, body):
         if path == "/studio/cancel":
             return 200, {"ok": g.cancel_request(body.get("id"))}
         if path == "/studio/admit":
-            return 200, dict(g.admit(body.get("id"), body.get("candidate"), body.get("still") or "", body.get("despite") is True), ok=True)
+            # BINDING-0 (0253): a preview is relied on only when the body has the key `preview` (any value, null included)
+            return 200, dict(g.admit(body.get("id"), body.get("candidate"), body.get("still") or "", body.get("despite") is True,
+                                     body["preview"] if "preview" in body else studio.ABSENT), ok=True)
         if path == "/studio/reject":
             return 200, dict(g.reject(body.get("id"), body.get("candidate")), ok=True)
         if path == "/studio/none":
@@ -1882,7 +1884,8 @@ def studio_post(hub, path, body):
         if path == "/studio/preview/finish":
             return 200, dict(g.preview_finish(body.get("id"), body.get("candidate")), ok=True)
         if path == "/studio/undo":
-            return 200, dict(g.undo(body.get("of")), ok=True)
+            # BINDING-0 (0253): the undo declares `of` and `scene` as GET /undo.json gave them; a key not in the body declares none
+            return 200, dict(g.undo(body["of"] if "of" in body else studio.ABSENT, body["scene"] if "scene" in body else studio.ABSENT), ok=True)
         # LEDGER-SAFE-0 (0245): a route of STUDIO_POSTS with no branch above is refused, never taken for an undo (before,
         # the undo was this function's last line, which any such route would have reached)
         raise studio.StudioError("STUDIO-ROUTE", "no studio route %s" % path[:60])
@@ -2246,8 +2249,13 @@ def server(target, port=0):
                     return self.refuse(400, b"a still is image/png of at most 32 MiB", STILL_MAX)
                 q = urllib.parse.parse_qs(self.path.partition("?")[2])
                 one = lambda k: (q.get(k) or [""])[0]
+                import studio
+                # BINDING-0 (0253): the still's scene by the still's rule, its first value as the query states it (a blank
+                # first value is the first value: studio.first_scene), kept by Gateway.preview_still
+                scene_ = studio.first_scene(self.path.partition("?")[2])
                 try:
-                    code, reply = studio_preview_still(hub, one("world") or None, one("id"), one("candidate"), one("side"), one("k"), self.rfile.read(n), one("scene"))
+                    code, reply = studio_preview_still(hub, one("world") or None, one("id"), one("candidate"), one("side"), one("k"), self.rfile.read(n),
+                                                       "" if scene_ is None else scene_)
                 except Exception as e:  # noqa: BLE001 — HARDEN-0: the boundary is total
                     code, reply = internal(hub, path, e)
                 return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
@@ -2260,9 +2268,13 @@ def server(target, port=0):
                 if not (0 < n <= STILL_MAX) or self.headers.get("Content-Type", "") != "image/png":
                     return self.refuse(400, b"a still is image/png of at most 32 MiB", STILL_MAX)
                 q = urllib.parse.parse_qs(self.path.partition("?")[2])
+                import studio
+                # BINDING-0 (0253, v0 evidence.still.declared): "the first value of POST /studio/still's scene query
+                # parameter", a blank first value the first value (studio.first_scene); kept by Gateway.still (studio.keep)
+                scene_ = studio.first_scene(self.path.partition("?")[2])
                 try:
                     code, reply = studio_still(hub, (q.get("world") or [None])[0], (q.get("id") or [""])[0], (q.get("candidate") or [""])[0], self.rfile.read(n),
-                                               (q.get("scene") or [""])[0])
+                                               "" if scene_ is None else scene_)
                 except Exception as e:  # noqa: BLE001 — HARDEN-0: the boundary is total (see below)
                     code, reply = internal(hub, path, e)
                 return self.send(code, json.dumps(reply, sort_keys=True).encode("utf-8"), "application/json")
@@ -2859,6 +2871,29 @@ TEST_PROVIDERS = {
 }
 
 
+def declared_scene(g, rid, letter):
+    """BINDING-0 (0253, the callers of the 0253 -> 0254 window): the scene a self-test's still declares, as the page's
+    does: the candidate's scene as the host's state names it (the scene its slot served), "" when the request is not the
+    host's current one or has no such candidate (the guard then answers what an undeclared still is answered). A caller,
+    never the host: the host keeps what is sent by the still's rule and holds the admission to it at the press."""
+    r = (g.state() if g is not None else {}).get("request") or {}
+    if r.get("id") != rid:
+        return ""
+    return next((c.get("scene") or "" for c in r.get("candidates", []) if c.get("letter") == letter), "")
+
+
+def declared_undo(base, world):
+    """BINDING-0 (0253, the callers of the window): what an undo declares, as the page's Undo does: `of` and `scene` as
+    GET /undo.json?world=W gave them (a key it did not give is not declared; nothing when it could not be read, which the
+    guard answers BINDING-UNKNOWN). Read, never written; the press reads the ledger and the files again."""
+    try:
+        with urllib.request.urlopen("%s/undo.json?world=%s" % (base, urllib.parse.quote(world)), timeout=120) as r:
+            u = json.loads(r.read())
+    except (urllib.error.URLError, OSError, ValueError):
+        return {}
+    return {k: u[k] for k in ("of", "scene") if k in u} if u.get("ok") else {}
+
+
 def studio_selftest():
     """The gateway end to end in a scratch copy of the brief, its ledger and the maps, served by this launcher: the
     scripted provider's candidates drawn, replayed from their records, admitted, rejected and undone through the
@@ -2900,10 +2935,14 @@ def studio_selftest():
             except ValueError:
                 return e.code, {}
 
-    def post_still(srv, rid, letter, token, png=None, ctype="image/png"):
-        """ADMISSION-0: a still given for a candidate, as the page gives it (PNG bytes, the studio's token)."""
+    def post_still(srv, rid, letter, token, png=None, ctype="image/png", scene=None):
+        """ADMISSION-0: a still given for a candidate, as the page gives it (PNG bytes, the studio's token). BINDING-0
+        (0253): it declares the scene it is of, as the page does: the candidate's scene by default (declared_scene), or
+        `scene` as given."""
         png = director().selftest_still() if png is None else png
-        req = urllib.request.Request("http://127.0.0.1:%d/studio/still?id=%s&candidate=%s" % (srv.server_address[1], rid, letter), data=png, method="POST",
+        scene = declared_scene(live.studio, rid, letter) if scene is None else scene
+        req = urllib.request.Request("http://127.0.0.1:%d/studio/still?id=%s&candidate=%s&scene=%s" % (srv.server_address[1], rid, letter, urllib.parse.quote(scene, safe="")),
+                                     data=png, method="POST",
                                      headers={"Content-Type": ctype, "X-Studio-Token": token})
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
@@ -2917,6 +2956,10 @@ def studio_selftest():
     def admit_with_still(srv, rid, letter, token):
         c, s_ = post_still(srv, rid, letter, token)
         return post(srv, "/studio/admit", {"id": rid, "candidate": letter, "still": s_.get("still", "")}, token)
+
+    def post_undo(srv, token):
+        """An undo as the page's Undo makes it (BINDING-0, 0253): `of` and `scene` as GET /undo.json gave them."""
+        return post(srv, "/studio/undo", declared_undo("http://127.0.0.1:%d" % srv.server_address[1], brief), token)
 
     live = srv = None
     try:
@@ -3152,11 +3195,11 @@ def studio_selftest():
         code, body = admit_with_still(srv, rid2, "C", tok)
         row("a second request, on the head A made: its C admitted", r2["state"] == "done" and r2["head"] != r["head"] and c3["verdict"] == "CLEAN" and code == 200,
             "request %s at head %s; ledger #%s" % (rid2, r2["head"][:12], ", #".join(body.get("ledger", []))))
-        code, body = post(srv, "/studio/undo", {}, tok)
+        code, body = post_undo(srv, tok)
         undo1 = body
         row("undo: the last admission's exact inverse admitted, the brief as A left it", code == 200 and body.get("ok") and open(art, "rb").read() == after_a,
             "ledger #%s, the inverse of #%s" % (", #".join(body.get("ledger", [])), body.get("of")))
-        code, body = post(srv, "/studio/undo", {}, tok)
+        code, body = post_undo(srv, tok)
         t = time.time()
         while live.slot(0)["sha"] != s0 and time.time() - t < 30:
             time.sleep(0.1)
@@ -3249,6 +3292,11 @@ def studio_selftest():
             open(art, "wb").write(original)
             open(led_path, "wb").write(held_led)
             g = start_studio(live, os.path.join(REPO, "art", "providers", "scripted.json"), say=lambda s: None)
+
+        # BINDING-0 (0253): the frozen test matrix's rows (art/binding_rows.py; art/director/bindings/0253-matrix.json names
+        # each), every state built in scratch trees of its own, never this world's
+        import binding_rows
+        binding_rows.studio_rows(row, sys.modules[__name__])
 
         # the ways a provider fails: each refused, the world as it was
         def failing(label, name, argv, want, timeout=30, size=65536, cancel_after=None, then=None):
@@ -3810,7 +3858,7 @@ def held_selftest(row):
             "two candidates alike but for their titles and rationale: %s and %s, one key" % ([o["letter"] for o in o1], [o["letter"] for o in o2]))
         # admit the first: the set it was chosen from recorded, its siblings not chosen
         L0 = order[0] if order else "A"
-        c_p, s_p = post("/studio/still?id=%s&candidate=%s" % (st["id"], L0), director().selftest_still(), "image/png")
+        c_p, s_p = post("/studio/still?id=%s&candidate=%s&scene=%s" % (st["id"], L0, declared_scene(live.studio, st["id"], L0)), director().selftest_still(), "image/png")
         c_m, r_m = post("/studio/admit", {"id": st["id"], "candidate": L0, "still": s_p.get("still", "")})
         st2 = live.studio.state()["request"]
         dec = {c["letter"]: (c["decided"], c.get("compared", "")) for c in st2["candidates"]}
@@ -3962,7 +4010,7 @@ def facade_selftest():
             and verd.get("Panelled column", ("", ""))[0] == "CLEAN" and verd.get("Panelled column", ("", "held"))[1] != "held"
             and sorted(order[:2]) == ["A", "B"] and order[2:] == ["C"],
             "#bay on %s; %s; the host's order %s" % (FACADE_BAY, "; ".join("%s %s %s" % (k, v[0], v[1]) for k, v in sorted(verd.items())), order))
-        c_p, s_p = post("/studio/still?id=%s&candidate=A" % st["id"], D.selftest_still(), "image/png")
+        c_p, s_p = post("/studio/still?id=%s&candidate=A&scene=%s" % (st["id"], declared_scene(live.studio, st["id"], "A")), D.selftest_still(), "image/png")
         c_m, r_m = post("/studio/admit", {"id": st["id"], "candidate": "A", "still": s_p.get("still", "")})
         events, _l, _h = D.led.read(ws.ledger)
         adm = events[-1]
@@ -3983,7 +4031,7 @@ def facade_selftest():
         row("facade: the admitted scene holds the checks, changed in that one piece", all(ok for _c, ok, _d in res1) and piece.get("material") == "concrete_dark"
             and piece.get("box") == [26.03, 7.03, 6.0, 27.97, 10.47, 6.04] and sm["objects"] == {"added": 0, "removed": 0, "changed": 1},
             "%d checks pass; building:%s a panel in concrete_dark %s; the diff: %s" % (len(res1), FACADE_BAY, piece.get("box"), sm))
-        c_u, r_u = post("/studio/undo", {})
+        c_u, r_u = post("/studio/undo", declared_undo(base, brief))
         _o2, parts2, _c2 = ws.export()
         row("facade: undone, the brief, the head and the scene as they were", c_u == 200 and open(art, "rb").read() == original
             and D.canon.head(parts2) == head0 and _o2["scene_bytes"] == out0["scene_bytes"],
@@ -4120,7 +4168,7 @@ def strict_selftest(plant=""):
             return c, r, st
 
         def admit(st, letter):
-            c_p, s_p = post("/studio/still?id=%s&candidate=%s" % (st["id"], letter), D.selftest_still(), "image/png")
+            c_p, s_p = post("/studio/still?id=%s&candidate=%s&scene=%s" % (st["id"], letter, declared_scene(live.studio, st["id"], letter)), D.selftest_still(), "image/png")
             return post("/studio/admit", {"id": st["id"], "candidate": letter, "still": s_p.get("still", "")})
 
         def lines():
@@ -4178,7 +4226,7 @@ def strict_selftest(plant=""):
             "admit %s; ledger #%s: receipt %s (%s boxes: the window before, the panel after), card %s, from the files %s; inverse %s; the check took %.0f ms" % (
                 c_a, ad.get("seq"), (reg.get("receipt_sha256") or "")[:12], reg.get("count"), (card.get("receipt_sha256") or "")[:12],
                 (files.get("receipt_sha256") or "")[:12], (reg.get("inverse_receipt_sha256") or "")[:12], check_ms))
-        c_u, _ru = post("/studio/undo", {})
+        c_u, _ru = post("/studio/undo", declared_undo(base, brief))
         o2, p2, _c2 = ws.export()
         back = studio.strict_check(o1["scene"], o2["scene"], live.shapes.records(["bay"]))
         regs = [("bay", scene_diff.region(live.shapes.records(["bay"])[0], out0["scene"]))]
@@ -4347,7 +4395,7 @@ def impact_selftest(plant=""):
         c_l, st3 = ask("light the lanes")
         L = (st3["candidates"] or [{}])[0]
         m = L.get("impact") or {}
-        c_p, s_p = post("/studio/still?id=%s&candidate=%s" % (st3["id"], L.get("letter", "A")), D.selftest_still(), "image/png")
+        c_p, s_p = post("/studio/still?id=%s&candidate=%s&scene=%s" % (st3["id"], L.get("letter", "A"), declared_scene(live.studio, st3["id"], L.get("letter", "A"))), D.selftest_still(), "image/png")
         c_m, r_m = post("/studio/admit", {"id": st3["id"], "candidate": L.get("letter", "A"), "still": s_p.get("still", "")})
         row("impact: a candidate over a budget is flagged and still admitted, the flag advisory (IMPACT-PLANT)", L.get("verdict") == "CLEAN" and m.get("flag") == "over budget (advisory)"
             and [o["budget"] for o in m.get("over_budget", [])] == ["lights_drawn"] and m.get("candidate", {}).get("lights_drawn", 0) > m.get("budgets", {}).get("lights_drawn", 1e9)
@@ -4559,7 +4607,7 @@ def preview_selftest(plant=""):
         row("another request, another seed: other states (B4-SEED-SENSITIVITY)", rep5["seed"] == st2["id"] != rep["seed"]
             and rep5["fingerprints_sha256"]["base"] != rep["fingerprints_sha256"]["base"] and rep5["state_verified"],
             "seed %s against %s: the base's fingerprints %s against %s" % (rep5["seed"], rep["seed"], rep5["fingerprints_sha256"]["base"][:12], rep["fingerprints_sha256"]["base"][:12]))
-        c_s, s_s = post("/studio/still?id=%s&candidate=A" % st2["id"], D.selftest_still(), "image/png")
+        c_s, s_s = post("/studio/still?id=%s&candidate=A&scene=%s" % (st2["id"], declared_scene(live.studio, st2["id"], "A")), D.selftest_still(), "image/png")
         c_m, _r_m = post("/studio/admit", {"id": st2["id"], "candidate": "A", "still": s_s.get("still", "")})
         c_st, r_st = post("/studio/preview", {"id": st2["id"], "candidate": "B"})
         row("the head moved since the candidate was drawn: PREVIEW-STALE", c_m == 200 and c_st == 409 and r_st.get("code") == "PREVIEW-STALE",

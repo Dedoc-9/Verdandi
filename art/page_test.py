@@ -558,7 +558,12 @@ def run(browser, headed, argv_plant="", say=None):
             # the admission's scene served first, then the loop held behind what the undo will write
             served_admitted, _w = served_head(120)
             live_gate.clear()
-        r = ch.do({"do": "undo"}, 45 if argv_plant in PLANT_EDITS else 240)
+            # BINDING-0 (0253, M22): the page presses Undo only once it has read Undo's account at the host's revision, so
+            # that the press declares the `of` and `scene` GET /undo.json gives at it (a harness change, not the product's)
+            undo_rev = (get("/live?world=%s" % W).get("rev") or {}).get("id")
+        else:
+            undo_rev = None
+        r = ch.do({"do": "undo", "rev": undo_rev}, 45 if argv_plant in PLANT_EDITS else 240)
         u = snapshot()
         last = live.studio.state().get("last") or {}
         # DASHBOARD-0 (0249): and the page names the restoration the host proved from the ledger (exact), never success alone
@@ -614,7 +619,7 @@ def run(browser, headed, argv_plant="", say=None):
             first (the account's pending condition, met, and the revision it makes); the card is read once the page shows
             the host's account at that revision; the revision is read again just before the press, and after it (a refusal
             writes nothing)"""
-            _c, s_ = http.post("/studio/still?id=%s&candidate=%s" % (rid2, L), D.selftest_still(), "image/png")
+            _c, s_ = http.post("/studio/still?id=%s&candidate=%s&scene=%s" % (rid2, L, play.declared_scene(live.studio, rid2, L)), D.selftest_still(), "image/png")
             r1 = (get("/live?world=%s" % W).get("rev") or {}).get("id")
             card = ch.do({"do": "card", "title": title, "rev": r1}, 90)
             r2 = (get("/live?world=%s" % W).get("rev") or {}).get("id")

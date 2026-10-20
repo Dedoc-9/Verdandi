@@ -552,18 +552,23 @@ def briefs_on_map(ws, name):
     return out
 
 
-def commit_admission(ws, evaluation, intent_sha256, files, fields, stills=()):
+def commit_admission(ws, evaluation, intent_sha256, files, fields, stills=(), gate=None):
     """Admit with crash safety: files is [(absolute path, new bytes)], fields the admit event's (with head_before, the
     head the caller checked). See recover().
 
     The fence (fix 1 of the owner's ruling of 2026-10-13; Kleppmann: the store checks the token at the write): the
     whole admission holds the content lock, and under it the head is computed again from the files and compared with
     head_before before anything is written — the caller's own check was made before the lock, and another admission
-    may have landed between the two. Every caller is fenced here, whoever it is."""
+    may have landed between the two. Every caller is fenced here, whoever it is.
+
+    BINDING-0 (0253): `gate`, when given (art/studio.py, the studio's admission and undo), is called under the lock
+    after every check of the commit and before its first write, the place BINDING-0 version 0's order names for the
+    binding check ("after cmd_admit's checks and the commit's own under the content lock, and before the admission's
+    first write"); it raises to refuse, and then nothing of the admission is written. The command line passes none."""
     durable.point("admit:lock-wait")
     try:
         with durable.locked(led.lock_path(ws.ledger)):
-            return _commit_locked(ws, evaluation, intent_sha256, files, fields, stills)
+            return _commit_locked(ws, evaluation, intent_sha256, files, fields, stills, gate)
     except durable.Busy:
         raise SystemExit("REFUSED (BUSY): another writer held this tree's content lock for the whole wait (%g s); nothing was "
                          "changed. Admit again when it ends" % durable.WAIT)
@@ -584,7 +589,7 @@ def shared_map(ws, out_now, files):
                                  ", ".join(others), "s" if len(others) == 1 else "", out_now["scene"]["map"], "that world" if len(others) == 1 else "those worlds"))
 
 
-def _commit_locked(ws, evaluation, intent_sha256, files, fields, stills=()):
+def _commit_locked(ws, evaluation, intent_sha256, files, fields, stills=(), gate=None):
     if os.path.exists(ws.pending):               # this process holds the lock: the folder's writer is dead
         for ln in _recover(ws):
             print(ln)
@@ -600,6 +605,9 @@ def _commit_locked(ws, evaluation, intent_sha256, files, fields, stills=()):
     # Part of the fence: the race court's plant "no-fence" takes it away with the rest
     if durable.PLANT != "no-fence":
         held_head(ws, events, fields["head_before"])
+    # BINDING-0 (0253): the studio's binding check, after every check above and before the first write below
+    if gate is not None:
+        gate()
     # the admission's still (ADMISSION-0), kept by its sha256 before anything else is written: content-addressed, so a
     # still left by an admission that then failed names nothing and harms nothing, and the event never names a still
     # that is not on the disk
@@ -861,12 +869,14 @@ def cmd_record(ws, seq):
     return r
 
 
-def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note="", still=None, despite=False, inverse_of="", region=None):
+def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note="", still=None, despite=False, inverse_of="", region=None, gate=None):
     """Admit an evaluation. ADMISSION-0 (0222): its record must be complete and every item it requires present — for
     rung A a still of the candidate (a file, or its bytes), its detectors read here; a flagged one only with despite —
     or, for an undo, inverse_of naming the admission it is the exact inverse of. STRICT-0 (0238): `region`, from a
     strict request (art/studio.py), is refused unless its check passed, and is recorded with the admission: the shapes'
-    sha256, the receipt (every box the change touches, each with the regions that hold it) and the inverse receipt."""
+    sha256, the receipt (every box the change touches, each with the regions that hold it) and the inverse receipt.
+    BINDING-0 (0253): `gate` is passed to the commit (commit_admission), the studio's binding check; the command line
+    passes none (it is outside BINDING-0 version 0)."""
     region_refusal(seq, region)
     events, _l, _h = led.read(ws.ledger)
     ev = events[int(seq)]
@@ -877,7 +887,7 @@ def cmd_admit(ws, seq, accept_leakage=False, chooser="the owner", note="", still
         "evaluation": seq, "intent_sha256": ev["intent_sha256"], "head_before": head, "head_after": canon.head(parts1),
         "parts_after": parts1, "accepted_leakage": bool(accept_leakage), "inverse": inverse,
         "design_lines": list(it["layout"]), "evidence": evidence, "observed": {"at": now(), "chooser": chooser, "note": note},
-        **({"region": region} if region is not None else {})}, stills)
+        **({"region": region} if region is not None else {})}, stills, gate)
     det = evidence["detectors"]
     print("ADMITTED candidate %s (#%s) at head %s -> %s (ledger #%s; %s)" % (
         it["candidate"], seq, head[:12], canon.head(parts1)[:12], a["seq"],

@@ -7482,3 +7482,170 @@ inverse's repair against the same contract; BLENDER-VIEW-0 after, its rulings ma
 NOT_MEASURED: the full check and the gate in his checkout. No row, rung, pinned source or oracle file changed. Docs:
 AGENTS.md (a row for BINDING-0, the studio's count), art/director/README.md (§8), docs/CAPABILITY-MATRIX.md (two dated
 notes), docs/CORE.md (art 33,553 lines), this entry.
+
+### BINDING-0 enforced — the scene binding at the studio's admission and undo · **built, off the gate** (0253, two commits: the freeze, `art/director/binding_freeze.py`, `art/director/bindings/0253-matrix.json`, `0253-vectors.json`, `frozen-0253.jsonl`; the guard, `art/studio.py`, `art/director.py`, `art/binding_rows.py`, `art/play.py`, `art/flagship.py`, `art/studio_queue.py`, `art/page_dash.py`, `art/page_test.py`, `art/web/play.js`, `art/web/page_test.js`, `art/selftests.py`)
+
+**His rulings**, in his words. On the review of the plan (2026-10-18): *"My ruling: LOCK the two-sided causal plant as
+the first 0253 specification artifact."* Its four obligations: *"`BIND-CAUSAL-0` — two-sided proof"* (*"With enforcement
+removed, the motivating wrong-scene admission must reproduce. With enforcement restored, the same case must refuse for
+the binding-specific reason. A positive-only plant proves execution, not causality."*); *"`BIND-NOTSUFFICIENT-0` —
+matching is not authority"* (*"A correctly matched binding must not bypass existing admission checks. Use a concrete
+candidate that still fails an independent, registered requirement."*); *"`BIND-ORDER-0` — observable precedence"*
+(*"Define the relevant refusal precedence and plant a candidate that violates two checks at once. Require the earlier
+check’s result, preserving STALE-first behavior."*); *"`BIND-COUNT-0` — classifier visibility"* (*"Measure the
+classifier count before and after adding the registered binding plants. Require the expected increase and verify that
+every new plant is actually counted—not merely executed."*). His two safeguards: *"`not_checked` must be explicit. If
+STALE refuses first, the verdict should record that the binding check was not reached. Otherwise, downstream evidence
+can mistake an unexamined binding for a verified match."* *"The registered rule must remain the authority for comparison
+semantics. Before duplicating the comparison in production code, establish how conformance to the registered bytes is
+tested. The implementation must not quietly become the definition of what counts as a match."* The three layers: *"The
+0253 specification should distinguish registration errors, binding states (`MATCH`, `MISMATCH`, `UNKNOWN`), and host
+admission refusals before defining its enforcement matrix."* The window: *"Measure the affected legitimate routes and
+document the expected temporary refusal. Do not weaken 0253 to keep the chain green."* *"Then freeze the 0253 test
+matrix before implementing the guard."*
+
+On the spec's three questions (2026-10-19): *"My rulings are the first option in all three cases, with one important
+qualification on the preview path."* *"1. Register mismatch at Admit or Undo: LOCK the draft."* *"Do not add a runtime
+register-file read or a new refusal outcome at the press. Pin BINDING-0 v0 in the host, verify that the host pin matches
+the registered v0 line, and require the planted mismatched-pin case to refuse. Run `binding.py check` in the full check
+as proposed."* *"2. Should the page name a preview on Admit? LOCK the draft: never in 0253."* *"The named-preview path
+must still have direct row coverage. STUDIO-owned tests can exercise it without changing the normal page workflow."*
+*"3. Should FLAGSHIP-0 name the preview it verified? LOCK the draft: never."* *"Keep FLAGSHIP-0's rule that studio
+admission does not read its evidence. Do not amend the row to name the preview."* A later message of his, *"So my
+previous rulings should not be treated as the governing decisions."*, rested on a misreading of the agent's note ("He
+ruled the drafted option on all three questions", meaning he chose them); asked whether the three rulings govern 0253,
+he answered *"Yes, they govern (Recommended)"*. They govern; that message's order stands: *"The governing distinction:
+preparation can happen in parallel; the committed repair sequence remains 0253 → 0254 → subsequent repairs."*
+
+**What it is.**
+- *The freeze* (commit 1, before the guard): `art/director/bindings/0253-matrix.json` (sha256
+  `1eef856df803b038bd00b385b3f1fef4823baa4f7a851ee6df7513c4e9e50589`), the test matrix M1 to M25, every row's state,
+  switches, answer, director's code, decision record, ledger delta, brief and certificate, and its 34 plant rows by
+  name; `0253-vectors.json` (sha256 `eef1de71881518419a9c2add90479be9854d821d9e6b0880f10a0b4f29e6ba0b`), 80 conformance
+  vectors of v0's rule (the still's keeping, one field's comparison, the piece, the press, the record's bytes, the
+  preview's id); `frozen-0253.jsonl`, a line for each with its sha256, outside `register.jsonl`;
+  `art/director/binding_freeze.py check`, their reader. `binding.py check` and the register unchanged.
+- *The guard* (commit 2), in `art/studio.py`: the host pins BINDING-0 version 0 and sha256
+  `cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85` and never reads the register at a press; the
+  evidence an Admit relies on (the still's kept scene; a preview the request names by its id, `preview`) and an Undo's
+  (`of` and `scene`) compared exactly with v0's identities (the scene the admission's own evaluation exports; the undo's
+  target and the world's scene), refused `BINDING-MISMATCH` or `BINDING-UNKNOWN` (never through
+  STUDIO-DIRECTOR-REFUSED); the check is a `gate` that `cmd_admit` passes to `commit_admission` (`art/director.py`),
+  called under the content lock after every check of the commit and before its first write (the command line passes
+  none). Every press, admitted, undone or refused, is answered and logged with `binding` (checked, or not reached and
+  `why`: his safeguard, `not_checked` explicit) and its decision record; `admit-refused` for every refused admission,
+  `undo-refused` new; `preview_id` on the preview's finish and line; `scene` on `GET /undo.json`. `BINDING_PLANT`, set
+  by STUDIO alone, with the eleven switches the matrix names.
+- *The callers declare their bindings* (the window, M22): the stills of HELD, IMPACT-STUDIO, PREVIEW-STUDIO, STUDIO-2,
+  FLAGSHIP and STUDIO send `scene`, the candidate's; the undos of STUDIO (and `page_dash.studio_rows`), FACADE, STRICT
+  and FLAGSHIP send `of` and `scene` as `GET /undo.json` gave them (`play.declared_undo`,
+  `flagship.Http.undo_declared`); the page's Undo (`art/web/play.js`) adds `scene` to `of`. No route names a preview
+  (his ruling 2), FLAGSHIP-0 none (his ruling 3). PAGE's driver (`art/page_test.py`, `art/web/page_test.js`), a change
+  to the harness and not to the product: the undo step reads the host's revision after the admission is served and
+  presses Undo only once the page has read Undo's account at it (M22).
+- *STUDIO's matrix rows*, `art/binding_rows.py`, run by `python art/studio.py selftest`: 89 rows (the matrix's 92 runs
+  less its three measurements of the delivery), 34 of them plants named "BINDING plant: …"; every row prints the
+  matrix's own name and is held to what the matrix says it must observe; BIND-CAUSAL-0's pairs built once and copied
+  byte for byte, the host's readings required equal across the copies before either press, the same press made with the
+  check removed in one and in force in the other; the conformance rows hold the host's pure functions to the frozen
+  vectors; the pin row and its plant (`pin-differs`, refused). A refused press is held, besides, to nothing of the
+  admission written: no durable point of the commit's writes reached (`admit:stills`, `pending:file-N`,
+  `pending:manifest`, `ledger:admit`, `install:file-N`) and the ledger's stills folder unchanged (v0 order.rule).
+- *Docs*: AGENTS.md's PREVIEW-0 row brought into agreement with v0's evidence.preview.content, as v0 requires of 0253;
+  the BINDING-0 row (the enforcement, the freeze and its reader), the studio's count and PAGE-0's undo step;
+  art/STUDIO.md (the preview's, the still's and the undo's binding, the refusal table, what is kept);
+  art/director/README.md §8; docs/CAPABILITY-MATRIX.md, a dated note; docs/CORE.md.
+
+**Repairs after a review of the guard** (three lenses, each finding put to a skeptic who tried to refute it; sixteen
+findings, several of them one defect seen by more than one lens, each confirmed in whole or in part, none refuted; the
+repairs not reviewed again):
+- The order rule had no row behind it: with the gate moved below `pending:manifest` (a measurement in a copy of the
+  tree, never the tree) the still and the pending folder were written before every binding refusal and every row still
+  passed, the recovery rolling the folder back. Now every refused press is held to no write point reached and the stills
+  folder unchanged (no row and no plant added: k stays 34). Its power MEASURED in a fresh copy with the gate moved: 14
+  of 78 rows of seven groups failed, each "the press refused after the admission's first write: admit:stills,
+  pending:file-0, pending:manifest"; on the tree STUDIO 190/190.
+- M22's change to PAGE's driver, frozen in commit 1, had not been built (the reviewers reproduced the race with each
+  `/undo.json` dry run slowed by 1.0 s: the page sent `of` "", BINDING-UNKNOWN, PAGE's undo row failed, three times in
+  four); built as the matrix states.
+- A record not reached could declare a still posted after the press was refused, its bytes then depending on timing: the
+  still the press found is taken in one snapshot with the candidate at the start of the press and never read again after
+  a refusal.
+- `page_dash.studio_rows`' decided state compared the account and the press across the undo's compile (STUDIO 189/190
+  once under load, "at the same revision False"; its cause INFERRED): the loop settled first, and in the
+  director-skipped plant's state as in state 6 (a harness repair).
+- Found by the full check after those repairs (its first run, STUDIO 180/198: every preview row "its state raised
+  RuntimeError: no request of four had a camera path (PREVIEW-NO-PATH)"; the second run 190/190): a request's camera
+  path is seeded by its id, which carries the UTC second, and in the rows' fixture about a third of ids give none
+  (MEASURED, 96 of 300 ids), so the preview state's four tries failed about once in a hundred builds, by the clock and
+  not the load. Now twelve tries (about once in a million). The same four tries in `page_dash.studio_rows`' preview row
+  (0249) are as they were: its odds the same, said.
+- The docs above; his BIND-CAUSAL-0 quoted with a word changed in `art/binding_rows.py` ("not cause", his "not
+  causality"); a comment naming a scratch file; a line of the strict check joined by accident (restored byte for byte);
+  STUDIO's estimate in `art/selftests.py` (30 s, now 315 s: only the order the full check starts suites in).
+
+**Measured on his machine, by the agent** (Windows 11, Python 3.14.5, rustc 1.96.1; a scratch clone of 1381b31 under
+%TEMP%, never the checkout; each suite alone and one at a time unless said):
+- `python art/director/binding.py check`: `BINDING-0 REGISTERED version 0 sha256
+  cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85 (BINDING-0.v0.json)`; `python
+  art/director/binding_freeze.py check`: `BINDING-0 0253 FREEZE FROZEN: 80 vectors, 36 matrix entries naming 92 rows (34
+  plant rows) against BINDING-0 version 0 sha256 cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85;
+  nothing open`.
+- STUDIO SELFTEST 190/190 (324 s, and again after the last repair, 324 s): the 101 rows before and the matrix's 89. LIVE
+  30/30; BOUNDARY 9/9; FACADE 8/8; STRICT 11/11; IMPACT-STUDIO 8/8; FLAGSHIP 9/9; STUDIO-2 46/46; PREVIEW-STUDIO 14/14
+  (the whole preview 1.78 s); DIRECTOR SELFTEST PASSED; DIRECTOR CRASHTEST PASSED (15 cases); DIRECTOR RACETEST PASSED
+  (32 cases); VECTORS 65 / 65; CONFORMANCE 65 / 65; ART CHECKS PASSED; SCENE-DIFF SELFTEST PASSED: 20 of 20 plants
+  caught, HELD SELFTEST 8/8; SCHEDULE SELFTEST 43/43; then the browser suites one at a time: PAGE 19/19, PAGE-CARDS
+  30/30, PAGE-WORLDS 16/16, each browser ended in 0.5 to 0.7 s.
+- M22, the window, from those runs: no route answered BINDING-*. Admit only: HELD admitted (its compare row),
+  IMPACT-STUDIO admitted (over a budget, advisory), PREVIEW-STUDIO admitted, STUDIO-2 admitted in harbor-day. Admit and
+  undo: FACADE admitted and undone exactly; STRICT admitted and undone, its inverse receipt; FLAGSHIP admitted and
+  undone, the world as before; STUDIO's own (page_dash's undos among them) as its rows; PAGE admitted and undone,
+  "restored exactly"; PAGE-CARDS 5a undone NOT restored exactly (statements, not bytes) and 5b undone and NOT restored,
+  both bound, as the matrix expects (0254's subject is not a binding). PAGE-WORLDS neither admits nor undoes. M23's two
+  refusals, permanent and kept, are STUDIO's rows (Undo pressed before `/undo.json` is read: BINDING-UNKNOWN, the next
+  press after a fresh read undoes; Undo over a dead writer's pending folder: BINDING-UNKNOWN).
+- M21, R5: the classifier his pushed tree holds (1381b31's `tools/rung.py`, byte for byte the tree's), run from outside
+  the checkout over origin/main and this patch's tree (both commits, a throwaway branch made through a temporary index
+  and deleted after): the rung D on twenty files, loosening nothing; *"282 planted defects refused by the old checker;
+  316 by the new"*, PLANTS HELD: k = 34. By R5's own parser on STUDIO's output, STUDIO's keys 15 before and 49 after,
+  the 34 added exactly the matrix's plant names, each passing, the 15 kept and passing. (Two changes came after that
+  run: the preview state's tries, a constant of `art/binding_rows.py` that names no row and no plant, and this entry, a
+  doc.)
+- M25 (v0 acceptance 4): the 33 decision records STUDIO prints beside their cases, byte for byte the same in five runs
+  of STUDIO alone on this patch (three before the review's repairs, two after; their lines' sha256
+  `7c4eb20703cfac65fdbf0aed6d163285b3ab116b2f87c9565297b3a57b5943c9`): M1 `2c859fb76cbd…`, M3 `fa3bb2b1d080…`, M6
+  `39fa0f5d78ce…`, M6b `bcdbfe5b76cd…`, M8 `05e2ef7a3947…`, M9 `554c15ec7d0d…`, M24 `0745b07918eb…`, the rest in
+  STUDIO's output.
+- The full check, `python art/selftests.py --repeat 2`, twice. The first, before the last repair: twenty-eight suites,
+  687.4 s and 716.3 s, the browser lane held in both; run 1 STUDIO 180/198 (the camera path, above) and STUDIO APP 12/13
+  ("[FAIL] plant: silence taken as a close while a request runs — the studio stops with the request still running — the
+  page has not spoken for 4 s"), run 2 PREVIEW-STUDIO 13/14 (the whole preview 12.74 s against its 10 s), every other
+  suite passing in both. The second, on the final tree: 741.8 s and 737.9 s, the browser lane held in both, STUDIO
+  190/190 and every browser suite passing in both, ART SELFTESTS FAILED on PREVIEW-STUDIO's 10 s row alone, in both runs
+  (20.78 s and 18.55 s). Alone the same preview takes 1.78 s on this tree. Then the base and this tree back to back,
+  each `--repeat 2` on its own clone, the base first: the base (1381b31) 522.5 s and 533.2 s, run 1 twenty-eight of
+  twenty-eight (the whole preview 7.60 s), run 2 PREVIEW-STUDIO 13/14 (15.08 s); this tree 710.7 s and 699.7 s, run 1
+  twenty-eight of twenty-eight (9.24 s), run 2 PREVIEW-STUDIO 13/14 (11.32 s); the browser lane held in all four. So
+  the base fails that row the same way under the same load (MEASURED, one pair of runs); that STUDIO, now the longest
+  suite and started first, makes the load heavier than before is INFERRED. M25: the decision records STUDIO prints beside their cases
+  are byte for byte the same in both runs of the second full check and in the second run of the first (their lines'
+  sha256 `7c4eb20703cfac65fdbf0aed6d163285b3ab116b2f87c9565297b3a57b5943c9`, as in the STUDIO runs above); the first run
+  of the first printed 32 of them, M9's state having raised, each the same bytes.
+
+**What it does not show.**
+- That BINDING-0 is right, or that the guard enforces it everywhere: a finite matrix only falsifies; one author wrote
+  the rows, the guard and the vectors (his literal cases stand against a shared mistake).
+- That a still's or a preview's pixels are of the scene the page declared: the binding binds what the page says.
+- That every runtime decision re-reads the register (his ruling 1: the pin is held to the register by STUDIO's rows, not
+  at the press).
+- The order rule's check of no write before a refusal holds by a measurement, not by a plant row (one would change the
+  frozen matrix: his to rule).
+- Linux (v0 acceptance 5).
+
+**Not done.** 0254, the inverse's repair against version 0; after it, the REACH-1 finding reproduced on its own and the
+`tick_ref.py verify` door repair, in his order.
+
+NOT_MEASURED: the full check and the gate in his checkout; the gate on this tree; Linux. No row, rung, pinned source or
+oracle file changed. Docs: AGENTS.md (the BINDING-0, studio, PREVIEW-0 and PAGE-0 rows), art/STUDIO.md,
+art/director/README.md (§8), docs/CAPABILITY-MATRIX.md (a dated note), docs/CORE.md (art 36,013 lines), this entry.

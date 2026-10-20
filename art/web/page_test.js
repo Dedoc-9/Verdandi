@@ -222,6 +222,9 @@
     // Undo last admission, from the drawer
     undo: async function (st) {
       await openDrawer();
+      // BINDING-0 (0253, M22): Undo's account read at the host's revision first (never also its can: a run with nothing to
+      // undo presses all the same)
+      if (st.rev) await until(function () { const x = $("mb-undo"); return x && x.getAttribute("data-state") === "current" && atRev(st.rev) ? x : null; }, st.timeout_ms, "Undo's account read at the host's revision");
       const t0 = toasts.length, s0 = status().text;
       const outcome = press($("st-undo"), "Undo last admission");
       await until(function () { const s = status(); return s.text !== s0 && (s.good || s.bad) ? s : null; }, st.timeout_ms, "the page's word on the undo");

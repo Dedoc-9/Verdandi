@@ -94,10 +94,25 @@ def preview_ok(rep):
 
 
 class Http:
-    """The studio's HTTP surface, with its token."""
+    """The studio's HTTP surface, with its token, for one world (the foundry yard's unless named)."""
 
-    def __init__(self, base, token):
-        self.base, self.token = base, token
+    def __init__(self, base, token, world=WORLD):
+        self.base, self.token, self.world = base, token, world
+
+    def get(self, path):
+        """A read of the studio's surface (no token: its GET routes write nothing)."""
+        try:
+            with urllib.request.urlopen(self.base + path, timeout=180) as r:
+                return r.status, json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            raw = e.read() or b"{}"
+            return e.code, json.loads(raw) if raw[:1] == b"{" else {"body": raw.decode("utf-8", "replace")}
+
+    def undo_declared(self):
+        """BINDING-0 (0253): what an undo declares, as the page's Undo does: `of` and `scene` as GET /undo.json gave them
+        for this world (a key it did not give is not declared)."""
+        c, u = self.get("/undo.json?world=%s" % self.world)
+        return {k: u[k] for k in ("of", "scene") if k in u} if c == 200 and u.get("ok") else {}
 
     def post(self, path, body, ctype="application/json"):
         data = body if isinstance(body, bytes) else json.dumps(body).encode("utf-8")
@@ -190,7 +205,9 @@ def run(http, shape, prompt, choose, wait, snapshot, still_of, admission_still, 
     # admit
     hook("admit")
     before_admit = snapshot()
-    c, s_ = http.post("/studio/still?id=%s&candidate=%s" % (rid, letter), admission_still, "image/png")
+    # BINDING-0 (0253): the still declares the scene it is of, the candidate's as the host's state names it (the page's
+    # still names its scene); the procedure never names a preview (his ruling: "LOCK the draft: never.")
+    c, s_ = http.post("/studio/still?id=%s&candidate=%s&scene=%s" % (rid, letter, cand.get("scene") or ""), admission_still, "image/png")
     c, a = http.post("/studio/admit", {"id": rid, "candidate": letter, "still": s_.get("still", "")})
     after = snapshot()
     new = after["admits"][len(before_admit["admits"]):]
@@ -205,7 +222,7 @@ def run(http, shape, prompt, choose, wait, snapshot, still_of, admission_still, 
         return result()
     # undo
     hook("undo")
-    c, u = http.post("/studio/undo", {})
+    c, u = http.post("/studio/undo", http.undo_declared())       # BINDING-0 (0253): of and scene as GET /undo.json gave them
     back = snapshot()
     same = {k: back[k] for k in ("head", "brief_sha256", "scene_sha256")} == {k: before_admit[k] for k in ("head", "brief_sha256", "scene_sha256")}
     done("undo", c == 200 and same and u.get("head_restored") is True and (u.get("certificate") or {}).get("ok") is True, "FLAGSHIP-UNDO",
@@ -324,7 +341,7 @@ def selftest():
         r2 = go("Panelled column")
         rid2 = next(s_["evidence"]["id"] for s_ in r2["stages"] if s_["stage"] == "request")
         letter2 = next((c_["letter"] for c_ in live.studio.state()["request"]["candidates"] if c_["title"] == "Panelled column"), "C")
-        c_d, r_d = http.post("/studio/still?id=%s&candidate=%s" % (rid2, letter2), D.selftest_still(), "image/png")
+        c_d, r_d = http.post("/studio/still?id=%s&candidate=%s&scene=%s" % (rid2, letter2, play.declared_scene(live.studio, rid2, letter2)), D.selftest_still(), "image/png")
         c_d, r_d = http.post("/studio/admit", {"id": rid2, "candidate": letter2, "still": r_d.get("still", "")})
         w2 = snapshot()
         row("planted: an invalid region (the column reaches beyond #bay): stopped at the candidate, the studio refuses it too, the world as it was",

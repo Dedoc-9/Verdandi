@@ -679,11 +679,13 @@
     };
     const undo = function () {
       if (ui.undoing) return;
-      // the press names the admission the page showed Undo as undoing (the host records whether it is the one undone; the
-      // binding's refusal is a later patch's); until what Undo undoes is read again, the strip says nothing of it
+      // the press names the admission the page showed Undo as undoing and the scene it was shown over, both as GET
+      // /undo.json gave them (BINDING-0, 0253: the host holds the undo to them, and refuses it when they are not the
+      // ones it would undo over); until what Undo undoes is read again, the strip says nothing of it
       const of = ui.undo && ui.undo.can ? ui.undo.of : "";
+      const scene = ui.undo && ui.undo.can ? (ui.undo.scene || "") : "";
       ui.undoing = true; ui.undo = null; ui.undoKey = ""; ++uReq; undoShow();
-      post("/studio/undo", { of: of }).then(function (r) {
+      post("/studio/undo", { of: of, scene: scene }).then(function (r) {
         ui.undoing = false;
         const u = undoLine(r);
         $("st-status").innerHTML = ""; $("st-status").appendChild(el("span." + (u.bad ? "bad" : "good"), {}, u.text));

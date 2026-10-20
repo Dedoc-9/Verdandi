@@ -193,8 +193,21 @@ class StudioError(Exception):
         self.code, self.detail, self.director = code, detail, director
 
     def answer(self):
-        """The HTTP answer's body (art/play.py)."""
-        return dict({"ok": False, "code": self.code, "message": self.detail}, **({"director_code": self.director} if self.director else {}))
+        """The HTTP answer's body (art/play.py). BINDING-0 (0253): a press of Admit or Undo carries its binding (checked,
+        or not reached and why) and its decision record."""
+        return dict({"ok": False, "code": self.code, "message": self.detail}, **({"director_code": self.director} if self.director else {}),
+                    **binding_fields(self))
+
+
+def binding_fields(e):
+    """What a refused press's answer carries of BINDING-0 (0253): the binding and the decision record, when the press
+    made one (an exception of another kind than the press's, or the binding check removed, carries neither)."""
+    out = {}
+    if getattr(e, "binding", None) is not None:
+        out["binding"] = e.binding
+    if getattr(e, "binding_record", None) is not None:
+        out["record"] = e.binding_record
+    return out
 
 
 def now():
@@ -546,6 +559,223 @@ STRICT_PLANTS = ("strict-not-checked", "strict-any-region", "strict-no-receipt")
 # checks, so that Undo's account says it would undo a hand edit the press refuses
 ACCOUNT_PLANT = ""
 ACCOUNT_PLANTS = ("account-drops-stale", "account-director-skipped", "restoration-from-own-certificate", "publishing-unflagged", "undo-dry-skipped")
+
+
+# ------------------------------------------------------------------------------------------------ BINDING-0, enforced
+# BINDING-0 version 0 (art/director/bindings/BINDING-0.v0.json, registered in 0252 before this code), enforced from 0253:
+# an admission (or an undo) through the host that relies on a piece of evidence is written only if that evidence's
+# declared identity is known and equals, exactly, the identity the contract names for it, and the host's existing checks
+# pass. The registered contract is the authority for what counts as a match; the functions below are its prose made
+# executable and are held to the conformance vectors frozen before them (art/director/bindings/0253-vectors.json, cited
+# by its sha256 in frozen-0253.jsonl) by STUDIO's rows: keep (the still's rule), compare (one field), piece, press,
+# record (the decision record's bytes) and preview_id. The host pins the contract it implements: the version and sha256
+# below, which every decision record carries. It never reads the register at a press (his ruling of 2026-10-19: "Do not
+# add a runtime register-file read or a new refusal outcome at the press. Pin BINDING-0 v0 in the host, verify that the
+# host pin matches the registered v0 line, and require the planted mismatched-pin case to refuse."): STUDIO's rows hold
+# the pin against the register's version-0 line.
+BINDING_CONTRACT = "BINDING-0"
+BINDING_VERSION = 0
+BINDING_SHA256 = "cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85"
+BINDING_CODES = ("BINDING-MISMATCH", "BINDING-UNKNOWN")
+# BINDING-0's plants of the host (0253), each set by the studio self-test alone (as ACCOUNT_PLANT and STRICT_PLANT are)
+# and caught by its own rows (art/director/bindings/0253-matrix.json names them): a name, or a set of names
+#   binding-removed        the binding check skipped, and with it the decision record (the host as 0252 was)
+#   binding-sufficient     the binding compared right after the admission's evaluation and, once every binding matches,
+#                          the studio's checks after the evaluation skipped (STUDIO-STALE, STUDIO-NOT-ADMISSIBLE on the
+#                          verdict, the strict check, STUDIO-STILL-FLAGGED), the region passed as None
+#   binding-first          the binding check made before every existing check of the press
+#   stale-skipped          STUDIO-STALE's comparison skipped at the press, the evaluation left as computed
+#   not-reached-as-match   an entry not reached recorded as a MATCH
+#   account-claims-binding the account before the press says a binding was checked and matched
+#   mismatch-as-match      a MISMATCH compared as a MATCH
+#   unknown-as-match       an UNKNOWN compared as a MATCH
+#   binding-refreshed      the evidence's declared values replaced at the press by the values expected
+#   keeping-case-folded    the still's scene case-folded before it is kept
+#   pin-differs            the host's pinned sha256 not the register's
+BINDING_PLANT = ""
+BINDING_PLANTS = ("binding-removed", "binding-sufficient", "binding-first", "stale-skipped", "not-reached-as-match", "account-claims-binding",
+                  "mismatch-as-match", "unknown-as-match", "binding-refreshed", "keeping-case-folded", "pin-differs")
+
+
+def binding_planted(name):
+    """Whether BINDING_PLANT sets the plant `name` (BINDING_PLANT a name, or a set of names)."""
+    p = BINDING_PLANT
+    if not p:
+        return False
+    return p == name if isinstance(p, str) else name in p
+
+
+class _Absent:
+    """A request's key that is not there: a JSON body with no `preview` names no preview; an undo with no `of` or no
+    `scene` declares none (BINDING-UNKNOWN). Never a JSON value: null is a value, and is not this."""
+    __slots__ = ()
+
+    def __repr__(self):
+        return "ABSENT"
+
+
+ABSENT = _Absent()
+
+
+def binding_pin():
+    """The contract this host implements, as every decision record names it: BINDING-0, version 0, its sha256."""
+    sha = BINDING_SHA256
+    if binding_planted("pin-differs"):
+        sha = sha[:-1] + ("0" if sha[-1] != "0" else "1")
+    return {"contract": BINDING_CONTRACT, "version": BINDING_VERSION, "sha256": sha}
+
+
+def _form_decode(s):
+    """One name or value of a query as application/x-www-form-urlencoded reads it: '+' a space, each '%' and two hex
+    digits the byte they name (any other '%' as it is), the bytes read as UTF-8."""
+    b = s.replace("+", " ").encode("utf-8", "surrogatepass")
+    out, i, hexd = bytearray(), 0, b"0123456789abcdefABCDEF"
+    while i < len(b):
+        if b[i] == 0x25 and i + 2 < len(b) and b[i + 1] in hexd and b[i + 2] in hexd:
+            out.append(int(b[i + 1:i + 3], 16))
+            i += 3
+        else:
+            out.append(b[i])
+            i += 1
+    return out.decode("utf-8", "replace")
+
+
+def first_scene(query):
+    """The first value of a query's `scene` parameter, None when it has none (BINDING-0 v0, evidence.still.declared: "the
+    first value of POST /studio/still's scene query parameter", a query parameter read as application/x-www-form-urlencoded
+    defines one: the query split on '&', each part a name and a value split at its first '=', a name with no '=' having
+    the empty value, both decoded; frozen as the keeping vectors K1 to K16). A blank first value is the first value."""
+    for part in (query or "").split("&"):
+        if not part:
+            continue
+        name, _eq, value = part.partition("=")
+        if _form_decode(name) == "scene":
+            return _form_decode(value)
+    return None
+
+
+def keep(value):
+    """The still's rule (BINDING-0 v0, evidence.still.declared): a declared scene is kept as it is when it is exactly 64
+    characters, each 0-9 or a-f, and as "" otherwise; absent, blank and malformed are one case. Nothing kept is refreshed
+    afterwards. A preview's still is kept by the same rule."""
+    if binding_planted("keeping-case-folded") and isinstance(value, str):
+        value = value.lower()
+    return value if isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) else ""
+
+
+def keep_query(query):
+    """What the host keeps of a still's query: keep(first_scene(query))."""
+    return keep(first_scene(query))
+
+
+def well_formed(field, value):
+    """BINDING-0 v0, comparison.well formed: a scene (and a preview's id) a JSON string of exactly 64 characters, each 0-9
+    or a-f; an operation (the undo's `of`) a JSON string in the ledger's form of a sequence number, \\A(0|[1-9][0-9]*)\\Z.
+    Any other type, any other string, or none, is not."""
+    if not isinstance(value, str):
+        return False
+    return bool(re.fullmatch(r"0|[1-9][0-9]*" if field == "of" else r"[0-9a-f]{64}", value))
+
+
+def compare(kind, field, declared, expected="", finished=None):
+    """One field of one piece of evidence compared (BINDING-0 v0, comparison.rule): exact equality of the declared value
+    and the expected one, as strings, no case folding, no trimming, no prefix, no conversion. `declared` is
+    {"present": bool, "value": ...}: the request's value, or the value the host kept. UNKNOWN when either side is not well
+    formed (fail-closed: an identity absent or not well formed is unknown), else MATCH or MISMATCH. The entry's declared is
+    the value when it is a JSON string, else "". For a preview's name (`finished` the ids of the candidate's finished
+    previews) the expected value is the name itself when it names one of them, else "" (UNKNOWN); a body with no key
+    `preview` names none, and there is no entry (None)."""
+    present = isinstance(declared, dict) and declared.get("present") is True
+    value = declared.get("value") if present else None
+    if kind == "preview" and field == "preview":
+        if not present:
+            return None
+        expected = value if isinstance(value, str) and value in (finished or ()) else ""
+    d = value if isinstance(value, str) else ""
+    x = expected if isinstance(expected, str) else ""
+    if not well_formed(field, d) or not well_formed(field, x):
+        outcome = "UNKNOWN"
+    elif d == x:
+        outcome = "MATCH"
+    else:
+        outcome = "MISMATCH"
+    if outcome == "MISMATCH" and binding_planted("mismatch-as-match"):
+        outcome = "MATCH"
+    if outcome == "UNKNOWN" and binding_planted("unknown-as-match"):
+        outcome = "MATCH"
+    return {"kind": kind, "field": field, "declared": d, "expected": x, "outcome": outcome}
+
+
+def piece(fields):
+    """A piece of evidence's outcome (BINDING-0 v0, comparison.precedence): UNKNOWN if any of its fields is, else MISMATCH
+    if any is, else MATCH."""
+    outs = [f["outcome"] for f in fields]
+    return "UNKNOWN" if "UNKNOWN" in outs else "MISMATCH" if "MISMATCH" in outs else "MATCH"
+
+
+def preview_order(drawn):
+    """A named preview's fields in BINDING-0 v0's precedence: its name, its recorded candidate scene, then each still drawn
+    on its candidate's side by pose number as an integer (keyed candidate-K as the host keys it); no base-side still."""
+    ks = sorted(int(k.split("-", 1)[1]) for k in (drawn or {}) if re.fullmatch(r"candidate-(0|[1-9][0-9]*)", k))
+    return ["preview", "candidate_sha"] + ["candidate-%d" % k for k in ks]
+
+
+def press(entries):
+    """The press's binding answer (BINDING-0 v0, comparison.precedence), the entries in precedence order: BINDING-UNKNOWN
+    if any piece is UNKNOWN, else BINDING-MISMATCH if any is MISMATCH, naming the first such field ("kind.field"); ("", "")
+    when the binding adds no refusal."""
+    for want, code in (("UNKNOWN", "BINDING-UNKNOWN"), ("MISMATCH", "BINDING-MISMATCH")):
+        for e in entries:
+            if e["outcome"] == want:
+                return code, "%s.%s" % (e["kind"], e["field"])
+    return "", ""
+
+
+def record(operation, candidate, intent_sha256, of, evidence, decision, director_code=""):
+    """The decision record (BINDING-0 v0, decision record.content): the contract, its version and sha256 (the host's
+    pin), the operation, the candidate, its intent's sha256, the undo's target, every piece of evidence relied on in
+    precedence order, the decision and the director's own code. No clock and no request id."""
+    pin = binding_pin()
+    return {"contract": pin["contract"], "version": pin["version"], "sha256": pin["sha256"], "operation": operation,
+            "candidate": candidate, "intent_sha256": intent_sha256, "of": of,
+            "evidence": [{k: e[k] for k in ("kind", "field", "declared", "expected", "outcome")} for e in evidence],
+            "decision": decision, "director_code": director_code}
+
+
+def record_bytes(rec):
+    """The decision record's one form: json.dumps(record, sort_keys=True, separators=(',', ':'), ensure_ascii=True) as
+    bytes, with no trailing newline (BINDING-0 v0, decision record.form)."""
+    return json.dumps(rec, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+
+
+def preview_id(binding, drawn, report_sha256):
+    """A finished preview's id (BINDING-0 v0, evidence.preview.relied on): the sha256 of the canonical form (sorted keys,
+    separators ',' and ':', ASCII, nothing added) of its binding as recorded at its plan ({head, base_sha, candidate_sha}),
+    the scene kept for each still drawn for it (keyed side-k, "" where none was kept) and the sha256 of its
+    preview.report.json."""
+    obj = {"binding": {k: binding[k] for k in ("head", "base_sha", "candidate_sha")}, "drawn": dict(drawn), "report_sha256": report_sha256}
+    return sha256(json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii"))
+
+
+def not_reached(entries):
+    """Where an earlier check refused (BINDING-0 v0, decision record.content): each piece relied on listed with what it
+    declared, "expected" "" and "outcome" "not reached", never a comparison made after the first refusal (his safeguard:
+    "`not_checked` must be explicit")."""
+    if binding_planted("not-reached-as-match"):
+        return [{"kind": e["kind"], "field": e["field"], "declared": e["declared"], "expected": e["declared"], "outcome": "MATCH"} for e in entries]
+    return [{"kind": e["kind"], "field": e["field"], "declared": e["declared"], "expected": "", "outcome": "not reached"} for e in entries]
+
+
+def binding_message(code, names, entries):
+    """A binding refusal's words: the evidence and the field it names; for a mismatch the value declared and the value
+    expected, as the record's entry gives them; for an unknown that its value is absent or not well formed."""
+    e = [x for x in entries if "%s.%s" % (x["kind"], x["field"]) == names][0]
+    what = {"still": "the admission's still", "preview": "the named preview", "undo": "the undo"}[e["kind"]]
+    if code == "BINDING-MISMATCH":
+        return ("BINDING-0: %s binds another identity than the one this %s relies on: %s declared %s, expected %s; nothing of it was "
+                "written (the evidence is never refreshed: take it again)" % (what, "undo" if e["kind"] == "undo" else "admission", names, e["declared"], e["expected"]))
+    return ("BINDING-0: %s's %s is absent or not well formed (declared %r): an identity that is not known is refused, never taken as a match; "
+            "nothing of it was written" % (what, names, e["declared"]))
 
 
 def bounds_of(O, piece):
@@ -1077,12 +1307,14 @@ class Gateway:
             if self.req and self.req["state"] == "running":
                 raise StudioError("STUDIO-BUSY", "a request for this world is running (%s): review when it ends" % self.req["id"])
         request = json.loads(open(os.path.join(d, "request.json"), "rb").read().decode("utf-8"))
-        titles = {}
+        titles, previews = {}, {}
         try:
             for ln in open(os.path.join(self.records, "requests.jsonl"), "rb").read().splitlines():
                 e = json.loads(ln)
                 if e.get("id") == rid and e.get("candidates"):
                     titles = {c["letter"]: c["title"] for c in e["candidates"]}
+                if e.get("id") == rid and e.get("decision") == "preview" and isinstance(e.get("preview_id"), str):
+                    previews.setdefault(e.get("candidate"), []).append(e)
         except (OSError, ValueError):
             pass
         D = self.play.director()
@@ -1112,6 +1344,16 @@ class Gateway:
                                   "prompt_sha256": sha256(request.get("prompt", "").encode("utf-8")), "request": rid, "seed": path["seed"]}}
             item = {"letter": letter, "title": titles.get(letter, letter), "verdict": "", "codes": [], "message": "", "slot": None,
                     "decided": "", "head": "", "intent": raw_intent, "touches": None, "record": None, "still": None, "held": None}
+            # BINDING-0 (0253): the candidate's finished previews as the host kept them under their ids, read back from the
+            # request's own preview lines (each line's id held again to its binding, drawn scenes and report's sha256; a
+            # line that does not hold is not kept), never overwritten
+            for e in previews.get(letter, []):
+                try:
+                    b_, d_ = {k: e["binding"][k] for k in ("head", "base_sha", "candidate_sha")}, dict(e["drawn"])
+                    if preview_id(b_, d_, e["files"]["preview.report.json"]) == e["preview_id"]:
+                        item.setdefault("previews", {}).setdefault(e["preview_id"], {"binding": b_, "drawn": d_})
+                except (KeyError, TypeError, ValueError, AttributeError):
+                    continue
             it = D.canon.load_intent(raw_intent)
             item["layout"] = bool(it["layout"])
             slot = self.play.candidate_slot(ws, it, "studio %s %s: %s (drawn again)" % (rid, letter, item["title"]), shapes=shape_recs, impact_ctx=ctx)
@@ -1378,8 +1620,10 @@ class Gateway:
     def still(self, rid, letter, png, scene=""):
         """A drawn candidate's still, as the page drew it (ADMISSION-0, 0222): kept in the world's build folder by its
         sha256, its detectors read here from the bytes. It flags; it decides nothing. Admit names it. DASHBOARD-0 (0249):
-        `scene`, the scene the page says it drew, is recorded and compared with the candidate's, never refused on (the
-        binding's refusal is a later patch's, his ruling R8)."""
+        `scene`, the scene the page says it drew, is recorded; scene_is_candidate is an observation against the card's
+        kept scene, never BINDING-0's outcome. BINDING-0 (0253): the scene is kept by the still's rule (keep: the first
+        value of the route's scene parameter, as it is when it is 64 lower hex, else ""), each send replacing the one
+        before; an admission relying on this still is held to it at the press, never here."""
         r, c = self._candidate(rid, letter)
         if c["slot"] is None or c["intent"] is None:
             raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s was not drawn (%s)" % (letter, c["verdict"]))
@@ -1396,37 +1640,185 @@ class Gateway:
         path = os.path.join(d, h + ".png")
         with open(path, "wb") as fh:
             fh.write(png)
-        scene = scene if isinstance(scene, str) and re.fullmatch(r"[0-9a-f]{64}", scene or "") else ""
+        scene = keep(scene)
         with self.lock:
             c["still"] = {"sha256": h, "path": path, "detectors": det, "flags": said, "scene": scene}
         return {"still": h, "detectors": det, "flags": said, "scene": scene, "scene_is_candidate": bool(scene) and scene == c.get("scene")}
 
-    def admit(self, rid, letter, still="", despite=False):
+    def admit(self, rid, letter, still="", despite=False, preview=ABSENT):
         """Admit a drawn candidate: evaluated again at the head as the files stand, and admitted through the ledger only
         if that is the head it was drawn at, its verdict is CLEAN, and (ADMISSION-0) it brings the still the page took of
-        it as drawn — a still the detectors flag only when the designer admits despite them."""
+        it as drawn — a still the detectors flag only when the designer admits despite them. BINDING-0 (0253): and only if
+        the evidence it relies on is bound to the candidate scene at admission (the scene its own evaluation exports): the
+        still's kept scene, and a preview when the request names one by its id (`preview`; ABSENT, the key not in the body,
+        names none), compared after every existing check, the commit's own under the content lock included, and before
+        the admission's first write. Every press is decided with its decision record, on the answer and the request's
+        log line (one line a press), whatever it answers."""
+        D = self.play.director()
+        c0, st0 = self._find(rid, letter)
+        ctx = {"op": "admit", "rid": rid, "letter": letter, "still": still, "preview": preview, "entries": None, "c": c0, "st0": st0}
+        try:
+            return self._admit(rid, letter, still, despite, preview, ctx)
+        except StudioError as e:
+            self._decided(ctx, e, e.code, e.director)
+            raise
+        except failures(D) as e:
+            self._decided(ctx, e, "STUDIO-FAILED", "")
+            raise
+
+    def _find(self, rid, letter):
+        """The candidate a press names, as the gateway holds it, and its still as it stood at the start of the press, in
+        one snapshot: (candidate or None, still or None). For the decision record only (its intent's sha256, and the still
+        a record not reached declares), never a check (the press's own checks find it, or refuse)."""
+        with self.lock:
+            r = self.req
+            if not r or r.get("id") != rid or not isinstance(letter, str):
+                return None, None
+            got = [x for x in r.get("candidates") or [] if x.get("letter") == letter]
+            return (got[0], got[0].get("still")) if got else (None, None)
+
+    def _admit(self, rid, letter, still, despite, preview, ctx):
         D = self.play.director()
         ws = self.play.workspace()
-        r, c, st, png, it, verdict, after, timings, rec, region = self._admission(rid, letter, still, despite)
+        if binding_planted("binding-first"):
+            self._binding_first_admit(rid, letter, still, preview, ctx)
+        r, c, st, png, it, verdict, after, timings, rec, region = self._admission(rid, letter, still, despite, ctx=ctx)
+        scene = ctx["scene"]
         # LEDGER-SAFE-0 (0245): the evaluation was made outside the content lock; it is appended under it, and only at the
         # head the ledger holds (another admission may have landed meanwhile, or the files changed outside the loop)
         durable.point("studio:admit-evaluated")
         ev = quiet(D.append_evaluation, ws, c["intent"], verdict, after, timings, rec)
         parent_text = ws.text()
+
+        def gate():
+            # BINDING-0 (0253): the binding check, called by the director's commit under the content lock after every
+            # check it makes and before its first write (v0 order.rule); the values compared fixed before the press
+            # began: the still's kept scene, the named preview's kept scenes, this admission's own evaluation's scene
+            if binding_planted("binding-removed"):
+                return
+            entries = self._admission_entries(c, st, preview, scene, refreshed=binding_planted("binding-refreshed"))
+            ctx["entries"] = entries
+            code, names = press(entries)
+            if code:
+                raise StudioError(code, binding_message(code, names, entries))
         a = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note="request %s, candidate %s" % (rid, letter),
-                  still=png, despite=bool(despite), region=region)
+                  still=png, despite=bool(despite), region=region, gate=gate)
         cert = self._certify(ws, a, it["revision"], parent_text, (c.get("impact") or {}).get("provenance") or {"request": rid}, rid, letter)
+        decided = self._binding_decided(ctx, "ADMIT", "")
         with self.lock:
             c["decided"] = "admitted"
             c["certificate"] = cert
             comparison = self._compared(r, letter)
-            self.last = {"what": "admitted", "request": rid, "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head": a["head_after"], "certificate": cert}
+            self.last = dict({"what": "admitted", "request": rid, "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head": a["head_after"], "certificate": cert},
+                             **decided)
         self._log(dict({"id": rid, "at": now(), "decision": "admit", "candidate": letter, "ledger": [ev["seq"], a["seq"]], "head_after": a["head_after"],
                         "still_sha256": still, "despite_detectors": bool(st["flags"]), "comparison": comparison, "certificate": cert},
-                       **({"strict": {k: region[k] for k in ("count", "receipt_sha256", "inverse_receipt_sha256", "support_sha256")}} if region else {})))
+                       **({"strict": {k: region[k] for k in ("count", "receipt_sha256", "inverse_receipt_sha256", "support_sha256")}} if region else {}),
+                       **decided))
         return self.last
 
-    def _admission(self, rid, letter, still="", despite=False, dry=False):
+    # BINDING-0 (0253): the evidence a press relies on, its comparison, its decision record and its line
+    def _admission_entries(self, c, st, preview, scene, refreshed=False):
+        """An admission's evidence compared, in precedence order (v0 comparison.precedence): the still (its kept scene,
+        "" when no still the admission names is kept), then the named preview, when the request names one: its name; when
+        the name is a finished preview of the candidate, its recorded candidate scene and its candidate-side stills by
+        pose. Each expected to be the candidate scene at admission, `scene`. `refreshed` is the plant binding-refreshed."""
+        kept = (st or {}).get("scene", "")
+        entries = [compare("still", "scene", {"present": True, "value": scene if refreshed else kept}, scene)]
+        if preview is not ABSENT:
+            with self.lock:
+                store = dict(c.get("previews") or {})
+            entries.append(compare("preview", "preview", {"present": True, "value": preview}, finished=store))
+            kept_pv = store.get(preview) if isinstance(preview, str) else None
+            if kept_pv is not None:
+                entries.append(compare("preview", "candidate_sha", {"present": True, "value": scene if refreshed else kept_pv["binding"].get("candidate_sha")}, scene))
+                for f in preview_order(kept_pv["drawn"])[2:]:
+                    entries.append(compare("preview", f, {"present": True, "value": scene if refreshed else kept_pv["drawn"][f]}, scene))
+        return entries
+
+    def _declared_admission(self, ctx):
+        """What an admission declared, for a record whose binding was not reached: the still the admission names, by the
+        scene kept with it ("" when no still it names is kept), and a named preview by its name alone, whatever it names
+        (the name's own comparison would be made after the first refusal)."""
+        # the still _admission decided (None included: checked, none the admission names held) whenever the press got that
+        # far, and otherwise the still as it stood at the start of the press; never read again after the refusal, so that
+        # a still posted meanwhile, or a request restored, does not change what the record declares
+        st = ctx["st"] if "st" in ctx else ctx.get("st0")
+        still = ctx.get("still")
+        kept = st.get("scene", "") if st and isinstance(still, str) and still and st.get("sha256") == still else ""
+        out = [{"kind": "still", "field": "scene", "declared": kept}]
+        if ctx.get("preview") is not ABSENT:
+            out.append({"kind": "preview", "field": "preview", "declared": ctx["preview"] if isinstance(ctx["preview"], str) else ""})
+        return out
+
+    def _binding_decided(self, ctx, decision, director):
+        """The press's binding and its decision record ({"binding": ..., "record": ...}); {} when the plant removes the
+        check (the host as 0252 was). Where the binding check was not reached, the record lists each piece relied on as
+        declared, "not reached", and the binding says so (checked false, why the earlier code)."""
+        if binding_planted("binding-removed"):
+            return {}
+        if ctx["op"] == "admit":
+            c = ctx.get("c")
+            cand = ctx["letter"] if isinstance(ctx["letter"], str) else ""
+            intent = sha256(c["intent"]) if c is not None and c.get("intent") is not None else ""
+            of = ""
+            declared = self._declared_admission
+        else:
+            cand, intent, of = "", "", ctx.get("target") or ""
+            declared = lambda x: [{"kind": "undo", "field": f, "declared": x[f] if isinstance(x[f], str) else ""} for f in ("of", "scene")]
+        if ctx["entries"] is None:
+            entries = not_reached(declared(ctx))
+            binding = {"checked": False, "why": decision}
+        else:
+            entries = ctx["entries"]
+            code, names = press(entries)
+            binding = {"checked": True, "refused": code, "names": names}
+        return {"binding": binding, "record": record(ctx["op"], cand, intent, of, entries, decision, director)}
+
+    def _decided(self, ctx, e, decision, director):
+        """A refused press (or one answered STUDIO-FAILED): its binding and record put on the exception, which the
+        answer carries (StudioError.answer, failed_answer), and its one line written to the request's log."""
+        decided = self._binding_decided(ctx, decision, director)
+        if decided:
+            e.binding, e.binding_record = decided["binding"], decided["record"]
+        extra = getattr(e, "line", None) or {}
+        if not decided and not extra:
+            return
+        if ctx["op"] == "admit":
+            line = {"id": ctx["rid"] if isinstance(ctx["rid"], str) else "", "at": now(), "decision": "admit-refused",
+                    "candidate": ctx["letter"] if isinstance(ctx["letter"], str) else "", "code": decision}
+        else:
+            line = {"at": now(), "decision": "undo-refused", "of": ctx.get("target") or "", "code": decision}
+        if director:
+            line["director_code"] = director
+        try:
+            self._log(dict(line, **extra, **decided))
+        except OSError:
+            pass            # the record could not be written; the press is answered as it was decided
+
+    def _binding_first_admit(self, rid, letter, still, preview, ctx):
+        """The plant binding-first: the binding check made before every existing check of the press, against the
+        candidate's evaluation at the head as the files stand (so that an order state is answered BINDING-*)."""
+        D = self.play.director()
+        ws = self.play.workspace()
+        c = ctx.get("c")
+        scene = ""
+        if c is not None and c.get("intent") is not None:
+            try:
+                o1 = D.evaluate_doc(ws, D.canon.load_intent(c["intent"]))[3]
+                scene = o1["lineage"]["scene_sha256"] if o1 is not None else ""
+            except Exception:  # noqa: BLE001 — a plant's evaluation that fails leaves the scene unknown
+                scene = ""
+        with self.lock:
+            st = (c or {}).get("still")
+        st = st if st and isinstance(still, str) and still and st.get("sha256") == still else None
+        entries = self._admission_entries(c or {}, st, preview, scene)
+        code, names = press(entries)
+        if code:
+            ctx["entries"] = entries
+            raise StudioError(code, binding_message(code, names, entries))
+
+    def _admission(self, rid, letter, still="", despite=False, dry=False, ctx=None):
         """DASHBOARD-0 (0249): the checks of an admission, in admit()'s order, raising admit()'s refusal at the first that
         fails. One predicate: admit() runs it before it writes, and account() runs it dry, writing nothing, with the still
         pending (the page takes it as Admit is pressed: its presence and its detectors are checked then) and the
@@ -1437,6 +1829,8 @@ class Gateway:
         if c["slot"] is None or c["intent"] is None:
             raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s was not drawn (%s)" % (letter, c["verdict"]))
         st, png = c.get("still"), None
+        if ctx is not None:
+            ctx["st"] = st if st and isinstance(still, str) and still and st.get("sha256") == still else None
         if not dry:
             if not st or not still or st["sha256"] != still:
                 raise StudioError("STUDIO-NO-STILL", "candidate %s has no still taken as it was drawn: the page takes one as you admit, and an "
@@ -1448,14 +1842,24 @@ class Gateway:
         ws = self.play.workspace()
         it = D.canon.load_intent(c["intent"])
         verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
+        # BINDING-0 (0253): the candidate scene at admission, the scene this admission's own evaluation exports (its
+        # lineage.scene_sha256): never the card's kept value, never the scene a slot serves, never the page's
+        scene = _o1["lineage"]["scene_sha256"] if _o1 is not None else ""
+        if ctx is not None:
+            ctx["scene"] = scene
+        press_ = ctx is not None and not dry
+        skip = False
+        if press_ and binding_planted("binding-sufficient"):
+            # the plant: a matched binding taken as sufficient, the studio's checks after the evaluation skipped
+            skip = all(e["outcome"] == "MATCH" for e in self._admission_entries(c, ctx["st"], ctx["preview"], scene))
         if ACCOUNT_PLANT == "account-drops-stale" and dry:
             verdict = dict(verdict, checked_against=c["head"])
-        if verdict["checked_against"] != c["head"]:
+        if verdict["checked_against"] != c["head"] and not skip and not (press_ and binding_planted("stale-skipped")):
             raise StudioError("STUDIO-STALE", "the head moved since candidate %s was drawn (%s, now %s): ask again" % (letter, c["head"][:12], verdict["checked_against"][:12]))
-        if verdict["verdict"] != "CLEAN":
+        if verdict["verdict"] != "CLEAN" and not skip:
             raise StudioError("STUDIO-NOT-ADMISSIBLE", "candidate %s is %s (%s); only a CLEAN candidate is admitted here" % (letter, verdict["verdict"], ",".join(verdict["codes"])))
         region = None
-        if r.get("strict"):
+        if r.get("strict") and not skip:
             # STRICT-0 (0238): checked again here, from this admission's own evaluation (never the card's), against the
             # shapes as the request kept them; refused, and the refusal recorded with its reason, unless every box the
             # candidate changes lies within their regions
@@ -1466,21 +1870,25 @@ class Gateway:
             if STRICT_PLANT == "strict-not-checked":
                 rep = dict(rep, ok=True, code="")
             if not rep["ok"]:
-                if not dry:
-                    self._log({"id": rid, "at": now(), "decision": "admit-refused", "candidate": letter, "code": rep["code"],
-                               "strict": strict_line(rep, "")})
-                raise StudioError(rep["code"], "candidate %s is not held by the request's regions (strict): %s" % (letter, (
+                e = StudioError(rep["code"], "candidate %s is not held by the request's regions (strict): %s" % (letter, (
                     "%d of its %d boxes outside every region: %s" % (rep["outside_count"], rep["count"], ", ".join(rep["outside"][:6])) if rep.get("outside_count")
                     else "it changes the whole world: " + ", ".join(rep["global"][:6]) if rep.get("global")
                     else rep.get("error") or ("its shapes are not as marked: " + ", ".join("#" + n for n in rep.get("stale", []))) if rep["code"] == "ADMIT-STALE"
                     else "it changes nothing a region could hold")))
+                if not dry:
+                    # the refusal recorded with its reason: on the press's one line (admit() writes it, with the decision
+                    # record, BINDING-0 0253), as before 0253 on a line of its own
+                    e.line = {"strict": strict_line(rep, "")}
+                    if ctx is None:
+                        self._log({"id": rid, "at": now(), "decision": "admit-refused", "candidate": letter, "code": rep["code"], "strict": e.line["strict"]})
+                raise e
             region = {"strict": True, "ok": rep["ok"], "shapes": rep["shapes"],
                       "support_sha256": sha256(json.dumps(r.get("shape_recs", []), sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")),
                       "count": str(rep["count"]), "receipt": rep["receipt"], "receipt_sha256": rep["receipt_sha256"],
                       "inverse_receipt": rep["inverse_receipt"], "inverse_receipt_sha256": rep["inverse_receipt_sha256"]}
             if STRICT_PLANT == "strict-no-receipt":
                 region = {k: v for k, v in region.items() if k not in ("receipt", "inverse_receipt")}
-        if not dry and st["flags"] and not despite:
+        if not dry and st["flags"] and not despite and not skip:
             raise StudioError("STUDIO-STILL-FLAGGED", "candidate %s's still: %s. A detector proves nothing: admit despite it, which the ledger "
                                                       "records, or reject the candidate" % (letter, "; ".join(st["flags"])))
         if dry:
@@ -1498,7 +1906,15 @@ class Gateway:
         """DASHBOARD-0 (0249): the host's account of admitting candidate `letter` of request `rid` now. It is admit()'s
         own predicate run dry (_admission): its first refusal, with admit()'s code and the director's, or none; the
         still is pending (taken by the page as Admit is pressed, its detectors read then), and the checks after the first
-        refusal are not reached, as at the press. It writes nothing, and decides nothing: the press checks again."""
+        refusal are not reached, as at the press. It writes nothing, and decides nothing: the press checks again.
+        BINDING-0 (0253, v0 order.account): it checks no binding whose evidence is declared only with the press (the
+        still's scene, whether a preview is named) and never reports one as checked or matched."""
+        got = self._account(rid, letter, despite)
+        if binding_planted("account-claims-binding"):
+            got = dict(got, binding={"checked": True, "outcome": "MATCH"})
+        return got
+
+    def _account(self, rid, letter, despite=False):
         D = self.play.director()
         ws = self.play.workspace()
         if os.path.isdir(ws.pending):
@@ -1629,7 +2045,7 @@ class Gateway:
             quality.decode_png(png)
         except Exception as e:  # noqa: BLE001 — a still the host cannot read is refused, never kept
             raise StudioError("PREVIEW-STILL", "the still is not an 8-bit RGB or RGBA PNG: %s" % str(e)[:120])
-        scene = scene if isinstance(scene, str) and re.fullmatch(r"[0-9a-f]{64}", scene or "") else ""
+        scene = keep(scene)          # BINDING-0 (0253): by the still's rule
         with self.lock:
             pv["stills"][(side, k)] = png
             pv.setdefault("drawn", {})["%s-%d" % (side, k)] = scene
@@ -1663,16 +2079,22 @@ class Gateway:
             self._record(rid, "%s.preview.compare.png" % letter, sheet)
             shas["preview.compare.png"] = sha256(sheet)
         drawn = dict(pv.get("drawn") or {})
+        # BINDING-0 (0253): the finished preview's id, which an admission names it by (`preview`), over what it declared:
+        # its binding as recorded at its plan, the scene kept for each still drawn for it, its report's sha256; kept under
+        # that id with its binding and its drawn scenes, never overwritten by a later plan or finish
+        binding = dict(c.get("preview_binding") or {})
+        pid = preview_id(binding, drawn, shas["preview.report.json"])
         with self.lock:
             c["preview_report"] = rep
             c["preview_drawn"] = drawn
             c.pop("preview", None)
+            c.setdefault("previews", {}).setdefault(pid, {"binding": binding, "drawn": drawn})
         self._log({"id": rid, "at": now(), "decision": "preview", "candidate": letter, "replayed": rep["replayed"], "state_verified": rep["state_verified"],
                    "code": rep["code"], "path_id": p["path_id"], "seed": p["seed"], "files": shas,
-                   "binding": c.get("preview_binding"), "drawn": drawn, "drawn_ok": drawn_ok(c.get("preview_binding"), drawn)})
+                   "binding": c.get("preview_binding"), "drawn": drawn, "drawn_ok": drawn_ok(c.get("preview_binding"), drawn), "preview_id": pid})
         motion.gc(self.records, motion.RETENTION_DAYS)          # the previews past their retention; their sha256 stay on their lines
         # DASHBOARD-0: the answer (never the report's file) names the plan's scenes and whether the stills were drawn from them
-        return dict(rep, files=shas, binding=c.get("preview_binding"), drawn_ok=drawn_ok(c.get("preview_binding"), drawn))
+        return dict(rep, files=shas, binding=c.get("preview_binding"), drawn_ok=drawn_ok(c.get("preview_binding"), drawn), preview_id=pid)
 
     def preview_report(self, rid, letter):
         r, c = self._drawn(rid, letter)
@@ -1749,16 +2171,22 @@ class Gateway:
         return self.last
 
     @staticmethod
-    def _undo_target(events):
-        """The admission Undo undoes: the latest not yet undone (an undo is never itself undone); refused as undo()'s choice
-        of a target is (STUDIO-NOTHING-TO-UNDO; STUDIO-NOT-UNDOABLE for a layout admission)."""
+    def _latest_admission(events):
+        """The latest admission not yet undone (an undo is never itself undone), or None: the admission Undo is about,
+        undoable or not (BINDING-0's record names it as the undo's `of`, a layout admission's among them)."""
         admits = [e for e in events if e["kind"] == "admit"]
         undo_of = lambda e: e.get("observed", {}).get("note", "")[len(UNDO_NOTE):] if e.get("observed", {}).get("note", "").startswith(UNDO_NOTE) else None
         undone = {undo_of(e) for e in admits if undo_of(e) is not None}
         left = [e for e in admits if undo_of(e) is None and e["seq"] not in undone]
-        if not left:
+        return left[-1] if left else None
+
+    @staticmethod
+    def _undo_target(events):
+        """The admission Undo undoes: the latest not yet undone (an undo is never itself undone); refused as undo()'s choice
+        of a target is (STUDIO-NOTHING-TO-UNDO; STUDIO-NOT-UNDOABLE for a layout admission)."""
+        a = Gateway._latest_admission(events)
+        if a is None:
             raise StudioError("STUDIO-NOTHING-TO-UNDO", "every admission in the ledger is undone, or an undo")
-        a = left[-1]
         if a.get("design_lines"):
             raise StudioError("STUDIO-NOT-UNDOABLE", "the last admission (#%s) changed the layout; undo it through the design tool" % a["seq"])
         return a
@@ -1769,7 +2197,15 @@ class Gateway:
         back) and to, and that admission's certificate (the kept one, checked; else one made from the ledger now and not
         kept). Whether Undo would be refused is undo()'s own checks run dry (_undoing), never a second rule: `can` false
         with its first refusal's code (and the director's) when the press would be refused, as of the ledger and the files
-        read now; the press reads them again."""
+        read now; the press reads them again. BINDING-0 (0253, v0 order.account): `scene`, the world's scene its dry run
+        laid the inverse over, the value the undo will declare beside `of`; "" where it answers before its dry run (no
+        target, a layout target, a pending folder); never a binding checked or matched."""
+        got = self._undo_account()
+        if binding_planted("account-claims-binding"):
+            got = dict(got, binding={"checked": True, "outcome": "MATCH"})
+        return got
+
+    def _undo_account(self):
         D = self.play.director()
         ws = self.play.workspace()
         try:
@@ -1779,21 +2215,23 @@ class Gateway:
         try:
             a = self._undo_target(events)
         except StudioError as e:
-            return {"can": False, "code": e.code, "director_code": e.director, "message": e.detail}
+            return {"can": False, "code": e.code, "director_code": e.director, "message": e.detail, "scene": ""}
         note = a.get("observed", {}).get("note", "")
         m = re.match(r"request (\S+), candidate ([A-Z])\Z", note)
         out = {"can": True, "code": "", "director_code": "", "message": "", "of": a["seq"], "request": m.group(1) if m else "",
                "candidate": m.group(2) if m else "", "note": note[:160], "from_head": a["head_after"], "would_restore": a["head_before"],
-               "undone_certificate": self._certificate_of(D, ws, events, int(a["seq"]), keep=False)}
+               "undone_certificate": self._certificate_of(D, ws, events, int(a["seq"]), keep=False), "scene": ""}
         if os.path.isdir(ws.pending):
             out.update(can=None, message="an admission half written by a writer that ended: the press recovers it first, so its answer is not foreseen")
             return out
+        seen = {}
         try:
-            self._undoing(dry=True)
+            self._undoing(dry=True, seen=seen)
         except StudioError as e:
             out.update(can=False, code=e.code, director_code=e.director, message=e.detail[:600])
         except failures(D) as e:
             out.update(can=False, code="STUDIO-FAILED", message=failed_answer(e)["message"])
+        out["scene"] = seen.get("scene", "")
         return out
 
     @staticmethod
@@ -1804,20 +2242,24 @@ class Gateway:
                 a["seq"], verdict["verdict"], ",".join(verdict["codes"]),
                 ("recorded as #%s and not admitted" % recorded) if recorded else "which the press records and does not admit"))
 
-    def _undoing(self, dry=False, record=None):
+    def _undoing(self, dry=False, record=None, seen=None):
         """DASHBOARD-0 (0249): an undo's checks, in undo()'s order and in this one place, raising its refusal at the first
         that fails: the target (_undo_target); the inverse evaluated at the files' head; append_evaluation's guard (the
         press: `record`, which appends the evaluation under it; dry: held_head at that head, nothing appended); the
         inverse's verdict (_inverse_clean); cmd_admit's checks with the inverse it names (dry: D.admit_dry; the press runs
         cmd_admit itself). undo() runs it and goes on to write; undo_target() runs it dry. Returns (the admission undone,
         the inverse's bytes, its intent, the evaluation appended or None). A ledger that does not read is the director's
-        refusal on both paths."""
+        refusal on both paths. BINDING-0 (0253): `seen`, when given, is told the admission Undo is about ("target", its
+        sequence number, "" when there is none) and the scene at the undo ("scene": the scene the inverse's evaluation
+        lays it over, the files' as they stand, its base's lineage.scene_sha256), as soon as each is known."""
         D = self.play.director()
         ws = self.play.workspace()
+        seen = {} if seen is None else seen
         try:
             events, _l, _h = D.led.read(ws.ledger)
         except (SystemExit, led.LedgerError) as e:
             raise director_refusal(e)
+        seen["target"] = (self._latest_admission(events) or {}).get("seq", "")
         a = self._undo_target(events)
         src = D.canon.load_intent(events[int(a["evaluation"])]["intent"].encode("ascii"))
         _o, parts, _c = ws.export()
@@ -1828,6 +2270,7 @@ class Gateway:
         raw = D.canon.dumps(doc)
         it = D.canon.load_intent(raw)
         verdict, after, timings, _o1, _o0, _t, rec = D.evaluate_doc(ws, it)
+        seen["scene"] = _o0["lineage"]["scene_sha256"] if _o0 is not None else ""
         if dry and ACCOUNT_PLANT == "undo-dry-skipped":
             return a, raw, it, None
         ev = None
@@ -1846,18 +2289,78 @@ class Gateway:
                 raise director_refusal(e)
         return a, raw, it, ev
 
-    def undo(self, of=None):
+    def undo(self, of=ABSENT, scene=ABSENT):
         """Undo at the level of intent: the latest admission not yet undone (an undo is never itself undone; undo again
         walks further back), its exact inverse admitted as an intent of its own. DASHBOARD-0 (0249): the answer proves
         what came back (`restoration`), from the ledger: the head before the admission against the head after the undo,
-        the art's bytes and its statements, the parts that differ, and the undone admission's certificate. `of`, the
-        admission the page showed Undo as undoing, is recorded with whether it is the one undone, never refused on (the
-        undo's binding is a later patch's, his ruling)."""
+        the art's bytes and its statements, the parts that differ, and the undone admission's certificate. BINDING-0
+        (0253): every undo through the host names the admission it reverses (`of`) and the scene it was shown as reversing
+        (`scene`), as GET /undo.json gave them (ABSENT, the key not in the body, declares none: BINDING-UNKNOWN); `of` is
+        held to the undo target's sequence number and `scene` to the scene at the undo, after every existing check (the
+        commit's own under the content lock included) and before the undo's first write. Every press is decided with its
+        decision record, on the answer and the log line, whatever it answers."""
+        D = self.play.director()
+        ctx = {"op": "undo", "of": of, "scene": scene, "entries": None, "target": ""}
+        try:
+            return self._undo(of, scene, ctx)
+        except StudioError as e:
+            self._decided(ctx, e, e.code, e.director)
+            raise
+        except failures(D) as e:
+            self._decided(ctx, e, "STUDIO-FAILED", "")
+            raise
+
+    def _undo_entries(self, of, scene, target, at_scene, refreshed=False):
+        """An undo's evidence compared, in precedence order: `of` against the undo target's sequence number, then `scene`
+        against the scene at the undo. `refreshed` is the plant binding-refreshed."""
+        def decl(v, now_):
+            if refreshed:
+                return {"present": True, "value": now_}
+            return {"present": False} if v is ABSENT else {"present": True, "value": v}
+        return [compare("undo", "of", decl(of, target), target), compare("undo", "scene", decl(scene, at_scene), at_scene)]
+
+    def _binding_first_undo(self, of, scene, ctx):
+        """The plant binding-first: the undo's binding checked before every existing check of the press, against the
+        admission the ledger names as Undo's (any, a layout one too) and the scene the files export as they stand."""
         D = self.play.director()
         ws = self.play.workspace()
-        a, raw, it, ev = self._undoing(record=lambda raw_, v_, af_, t_, r_: quiet(D.append_evaluation, ws, raw_, v_, af_, t_, r_))
+        try:
+            target = (self._latest_admission(D.led.read(ws.ledger)[0]) or {}).get("seq", "")
+        except Exception:  # noqa: BLE001 — a plant's reading that fails leaves the target unknown
+            target = ""
+        try:
+            at_scene = ws.export()[0]["lineage"]["scene_sha256"]
+        except Exception:  # noqa: BLE001 — likewise the scene
+            at_scene = ""
+        entries = self._undo_entries(of, scene, target, at_scene)
+        code, names = press(entries)
+        if code:
+            ctx["entries"], ctx["target"] = entries, target
+            raise StudioError(code, binding_message(code, names, entries))
+
+    def _undo(self, of, scene, ctx):
+        D = self.play.director()
+        ws = self.play.workspace()
+        if binding_planted("binding-first"):
+            self._binding_first_undo(of, scene, ctx)
+        seen = {}
+        try:
+            a, raw, it, ev = self._undoing(record=lambda raw_, v_, af_, t_, r_: quiet(D.append_evaluation, ws, raw_, v_, af_, t_, r_), seen=seen)
+        finally:
+            ctx["target"] = seen.get("target", "")
         parent_text = ws.text()
-        u = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note=UNDO_NOTE + a["seq"], inverse_of=a["seq"])
+
+        def gate():
+            # BINDING-0 (0253): the undo's binding check, called by the director's commit under the content lock after
+            # every check it makes and before its first write; `of` and `scene` as the request gave them
+            if binding_planted("binding-removed"):
+                return
+            entries = self._undo_entries(of, scene, a["seq"], seen.get("scene", ""), refreshed=binding_planted("binding-refreshed"))
+            ctx["entries"] = entries
+            code, names = press(entries)
+            if code:
+                raise StudioError(code, binding_message(code, names, entries))
+        u = quiet(D.cmd_admit, ws, ev["seq"], chooser="the designer (studio)", note=UNDO_NOTE + a["seq"], inverse_of=a["seq"], gate=gate)
         cert = self._certify(ws, u, list(a["inverse"]), parent_text, {"producer": "undo", "of": a["seq"]})
         # CERT-0: whether the undo gave back the head before the admission it undoes (exactly when that admission's
         # certificate is exact; otherwise its statements and its scene, under another head: said, never hidden)
@@ -1869,13 +2372,15 @@ class Gateway:
                            "expected_head": a["head_before"], "from_head": a["head_after"], "undone_at": u["head_before"], "head_after": u["head_after"], "undone_certificate": {},
                            "ledger": {"seq": u["seq"], "held_after": "unknown"},
                            "said": "the restoration could not be read: %s: %s" % (type(e).__name__, str(e)[:200])}
-        page_saw = {"of": str(of) if of not in (None, "") else "", "matched": None if of in (None, "") else str(of) == str(a["seq"])}
+        of_ = None if of is ABSENT else of
+        page_saw = {"of": str(of_) if of_ not in (None, "") else "", "matched": None if of_ in (None, "") else str(of_) == str(a["seq"])}
+        decided = self._binding_decided(ctx, "UNDONE", "")
         with self.lock:
-            self.last = {"what": "undone", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head": u["head_after"], "certificate": cert,
-                         "head_restored": u["head_after"] == a["head_before"], "restoration": restoration, "page_saw": page_saw}
-        self._log({"at": now(), "decision": "undo", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head_after": u["head_after"], "certificate": cert,
-                   "head_restored": restored["head"], "page_saw": page_saw,
-                   "restoration": {k: restoration[k] for k in ("verdict", "head", "art_bytes", "statements", "parts_differ")}})
+            self.last = dict({"what": "undone", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head": u["head_after"], "certificate": cert,
+                              "head_restored": u["head_after"] == a["head_before"], "restoration": restoration, "page_saw": page_saw}, **decided)
+        self._log(dict({"at": now(), "decision": "undo", "of": a["seq"], "ledger": [ev["seq"], u["seq"]], "head_after": u["head_after"], "certificate": cert,
+                        "head_restored": restored["head"], "page_saw": page_saw,
+                        "restoration": {k: restoration[k] for k in ("verdict", "head", "art_bytes", "statements", "parts_differ")}}, **decided))
         return self.last
 
     def _restoration(self, D, ws, a, u, own_cert):
@@ -2054,8 +2559,9 @@ def failures(D):
 
 
 def failed_answer(e):
-    """The answer to one of failures(): STUDIO-FAILED and the exception's kind and words."""
-    return {"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}
+    """The answer to one of failures(): STUDIO-FAILED and the exception's kind and words; for a press of Admit or Undo
+    (BINDING-0, 0253) its binding and its decision record, a STUDIO-FAILED press being a decision too."""
+    return dict({"ok": False, "code": "STUDIO-FAILED", "message": "%s: %s" % (type(e).__name__, str(e)[:300])}, **binding_fields(e))
 
 
 def drawn_paths(r):

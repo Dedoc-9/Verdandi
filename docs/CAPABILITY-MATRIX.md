@@ -425,6 +425,13 @@ undo's operation and the world's scene it was shown over, each refused on a mism
 check). Of the items below, the provider's scope bounded by the request and a provider's answer at another head are not
 BINDING-0's and wait on his word; the undo's binding is BINDING-0's, as he chose it.*
 
+*Note (2026-10-19): built in 0253, in two commits: the test matrix and the conformance vectors frozen first
+(`art/director/bindings/0253-matrix.json`, `0253-vectors.json`, `frozen-0253.jsonl`), then the guard (art/studio.py,
+the `gate` of the director's commit): the still's kept scene, a preview the admission names by its id and the undo's `of`
+and `scene` refused BINDING-MISMATCH or BINDING-UNKNOWN after every existing check and before the first write, every
+press answered and logged with its decision record. The page names no preview, and FLAGSHIP-0 none (his rulings of
+2026-10-19, docs/ROADMAP.md). The inverse's repair is 0254's.*
+
 - The provider's scope is bounded by the request. Either the host intersects it with the target's, the pins' and the
   shapes' patterns, or a namespace-wide pattern needs the designer's grant. The card shows the declared scope and the
   phantom patterns.

@@ -89,6 +89,8 @@ def studio_rows(row, c):
     led_path = os.path.join(c["tmp"], "art", "ledger", brief + ".ledger")
     piece, cam, wait, post, post_still = c["piece"], c["cam"], c["wait"], c["post"], c["post_still"]
     ws = lambda: play.workspace(brief)
+    # BINDING-0 (0253): an undo declares `of` and `scene` as GET /undo.json gave them, as the page's Undo does
+    declared = lambda: play.declared_undo("http://127.0.0.1:%d" % port, brief)
 
     def now():
         return _get(port, "/live?world=%s" % brief)[1]
@@ -152,7 +154,7 @@ def studio_rows(row, c):
     rid1 = ask(g)
     # each state with the answer its set-up must give (a state that did not take hold fails, never passes as an agreement)
     results.append(("admissible", "admitted") + compare(rid1, "A"))
-    code, u = post(srv, "/studio/undo", {}, tok)
+    code, u = post(srv, "/studio/undo", declared(), tok)
     res = u.get("restoration") or {}
     row("the undo of an exact admission proves its restoration from the ledger: exact, the head before it back, its certificate kept and exact",
         code == 200 and res.get("verdict") == "exact" and res.get("head") is True and res.get("art_bytes") is True and res.get("parts_differ") == []
@@ -160,7 +162,9 @@ def studio_rows(row, c):
         and res.get("expected_head") == res.get("head_after") and (res.get("ledger") or {}).get("held_after") == "held",
         "%s; expected %s, after %s; certificate of #%s %s" % (res.get("verdict"), (res.get("expected_head") or "")[:12], (res.get("head_after") or "")[:12],
                                                               res.get("of"), (res.get("undone_certificate") or {}).get("made")))
-    # 2. decided (A was admitted); 3. stale (a change recorded since B was drawn)
+    # 2. decided (A was admitted); 3. stale (a change recorded since B was drawn). The undo's write compiled first (a
+    # harness repair, 0253: the account read before the compile, and the revision read again after it, had disagreed)
+    settle()
     results.append(("decided", "STUDIO-DECIDED/") + compare(rid1, "A"))
     recorded("a change recorded after the cards were drawn")
     settle()
@@ -220,7 +224,9 @@ def studio_rows(row, c):
                 settle()
             else:
                 open(art, "ab").write(b"# a hand edit, not recorded (plant)\n")
+                settle()            # as state 6: the hand edit compiled, the request asked, then compiled again (0253)
                 rid = ask(g)
+                settle()
             same, shown, answered, _d, same_rev = compare(rid, "A")
         finally:
             studio.ACCOUNT_PLANT = ""
@@ -260,7 +266,7 @@ def studio_rows(row, c):
         and uc.get("exact") is False and uc.get("statements") is True and not kept_before and not kept_after_get,
         "#%s (%s); would restore %s; its certificate: exact %s, statements %s, %s" % (t1.get("of"), v, (t1.get("would_restore") or "")[:12], uc.get("exact"),
                                                                                      uc.get("statements"), uc.get("made")))
-    code, u = post(srv, "/studio/undo", {}, tok)
+    code, u = post(srv, "/studio/undo", declared(), tok)
     res = u.get("restoration") or {}
     uc = res.get("undone_certificate") or {}
     row("undone, NOT restored exactly, and said: the statements came back, the bytes did not (an aligned statement's '='); its certificate kept by the POST",
@@ -273,7 +279,7 @@ def studio_rows(row, c):
     studio.ACCOUNT_PLANT = "restoration-from-own-certificate"
     try:
         aligned_admission()
-        code, u = post(srv, "/studio/undo", {}, tok)
+        code, u = post(srv, "/studio/undo", declared(), tok)
     finally:
         studio.ACCOUNT_PLANT = ""
     res = u.get("restoration") or {}
@@ -298,7 +304,7 @@ def studio_rows(row, c):
     D.dress.__file__ = moved
     try:
         studio.quiet(D.cmd_rebase, ws(), "the exporter moved")
-        code, u = post(srv, "/studio/undo", {}, tok)
+        code, u = post(srv, "/studio/undo", declared(), tok)
     finally:
         D.dress.__file__, D.MEMO["on"] = saved, memo
     res = u.get("restoration") or {}
@@ -378,7 +384,7 @@ def studio_rows(row, c):
     def undo_compare():
         _c, t_ = _get(port, "/undo.json?world=%s" % brief)
         r_ = now()["rev"]
-        code_, u_ = post(srv, "/studio/undo", {}, tok)
+        code_, u_ = post(srv, "/studio/undo", {k: t_[k] for k in ("of", "scene") if k in t_} if t_.get("ok") else {}, tok)
         said = "undoes" if t_.get("can") else "%s/%s" % (t_.get("code"), t_.get("director_code", ""))
         did = "undoes" if code_ == 200 else "%s/%s" % (u_.get("code"), u_.get("director_code", ""))
         return said, did, (t_.get("rev_before") or {}).get("id") == r_["id"]
@@ -725,7 +731,7 @@ def cards_run(browser, headed, say=None):
             met, and the revision it makes); the card is read once the page shows the host's account at that revision; the
             revision is read again just before the press, and after it (a refusal writes nothing). (equal, displayed,
             answered, same revision, the director's code, the card)"""
-            _c, s_ = http.post("/studio/still?id=%s&candidate=%s" % (rid, letter), D.selftest_still(), "image/png")
+            _c, s_ = http.post("/studio/still?id=%s&candidate=%s&scene=%s" % (rid, letter, play.declared_scene(live.studio, rid, letter)), D.selftest_still(), "image/png")
             r1 = rev().get("id")
             card = ch.do({"do": "card_now", "title": title, "rev": r1}, 90)
             r2 = rev().get("id")

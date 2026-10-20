@@ -319,7 +319,15 @@ The archives are the same bytes from the same inputs (sorted members, every time
 the gzip header). Retention: 30 days by the meta's `made_at` (`art/motion.py gc FOLDER [DAYS]`, and at the end of every
 preview over the brief's records); the request's line keeps the sha256 for good. Refusals: `PREVIEW-NO-PLAN` (no
 export, or no preview under way), `PREVIEW-STALE` (the head moved since the candidate was drawn), `PREVIEW-STILL`. Off
-the gate: nothing that decides reads a preview.
+the gate: no verdict and no order reads a preview, and no admission reads a preview's content (its fingerprints, its
+stills' pixels, its report's content, its verdict). Since 0253 an admission that names a finished preview by its id
+(`preview`: the `preview_id` that `POST /studio/preview/finish` answers and the request's preview line carries, the
+sha256 that commits to its recorded binding, the scenes kept for its stills and its report's sha256) is held to that
+preview's recorded candidate scene and the scenes kept for its candidate-side stills, and to nothing else of it. In
+the words of BINDING-0 version 0 (`art/director/bindings/BINDING-0.v0.json`, sha256 `cb08e8ed3566f7d4aa19b38ad33fdaf79d1bfd2c21afe73a38576466815cdd85`), evidence.preview.content: "no admission needs a preview, and none reads a
+preview's content; of a preview an admission names, it reads what `declared` names and nothing else, from 0253". The
+page names no preview (his ruling of 2026-10-19, quoted in docs/ROADMAP.md's 0253 entry); STUDIO's own rows press the
+named-preview path.
 
 ## The camera path and its rule (PATH-0, 0241)
 
@@ -607,7 +615,14 @@ admission), the director's guard and the inverse's evaluation, and `cmd_admit`'s
 STUDIO row holds what it says against the press at the same revision. It is read again whenever the host's revision
 moves (the ledger or the files), and says nothing it cannot foresee (a dead writer's half-done admission, which the
 press recovers first). The press names the admission the page showed it as undoing; the host records that and whether it
-is the one undone, and refuses nothing on it (the binding is a later patch's). The POST's answer carries `restoration`,
+is the one undone (`page_saw`). Since 0253 (BINDING-0) the press declares `of` and `scene` as `GET /undo.json` gave them
+(`scene`: the world's scene its dry run laid the inverse over), and the host holds the undo to them: after every other
+check, the director's commit's own under the content lock included, and before the first write, it is refused
+`BINDING-MISMATCH` when either names another identity than the undo's target and the world's scene at the undo, and
+`BINDING-UNKNOWN` when either is absent or not well formed. Two such refusals are permanent and kept (BINDING-0's
+matrix, M23), not a cost of 0254's window: Undo pressed before `/undo.json` was read at the host's revision (the page
+sends `of` ""), whose next press after a fresh read undoes; and Undo over a dead writer's pending folder (`/undo.json`
+answers `can` null and `scene` ""). The POST's answer carries `restoration`,
 from the ledger alone (two replays): the head before the admission against the head after the undo, the art's bytes and
 its statements, the parts that differ, the undone admission's certificate (made from the ledger and kept by the POST
 when there was none). Its verdict is `exact`, `statements-not-bytes` or `not-restored`; or `unknown` when the undo is in
@@ -622,7 +637,10 @@ The undo's own certificate (a redo's inverse) is another thing, never shown as t
 changes, and it leads with the latest compile's refusal (its rows labelled as the scene before's). The Queue's list moved
 into its tab. Compare is in the bar in every mode and says whether Current is the candidate's own base scene, from the
 host's identities. The admission's still and each preview still name the scene the page drew; the host records it and
-says whether it was the candidate's (or the plan's); nothing is refused on it (binding is a later patch's, his ruling).
+says whether it was the candidate's (or the plan's). Since 0253 (BINDING-0) an admission is refused `BINDING-MISMATCH`
+when its still's kept scene is not the scene the admission's own evaluation exports, and `BINDING-UNKNOWN` when none was
+kept (the scene absent, or not 64 lower-case hex characters); a preview's binding is held only when the admission names
+the preview by its id, which no route of the page does in 0253.
 The stats say they are a software timing of the page's clock, with the clock's step; VRAM stays `n/a`.
 
 **Another world's answer is refused.** The reads the page draws name their world (`/live`, `/validate.json`,
@@ -652,13 +670,14 @@ machine, its `play.js` failed by a network error the second time, the cause not 
 - That `settled` sees a write that keeps a file's mtime and size, or a write before the watcher's first look; or an
   input the export reads that the watcher does not watch (since 0249 it watches, besides the brief, the maps and the art
   layer's own code, the files the art checks read: `graybox/web/sim.js`, `graybox/tick_ref.py`, `art/web/scene_render.js`).
-- That the stills are bound to their scene by the host: recorded and said only, until the binding's patch.
+- That a still's or a preview still's pixels are of the scene the page declared: the binding (BINDING-0, 0253) binds
+  what the page says it drew, never what it drew (v0, does not show).
 - A person's reading of the page; its look; timings (printed, never checked).
 - Linux, browsers other than Edge (Chrome is in the finder and never ran); the worlds, the outline and import are 0250's
   (the next section).
 - Three paths no row exercises, VERIFIED BY READING only: an account, or Undo's, with an admission half written by a
-  writer that ended (`not_foreseen`, Undo's `can` null); a restoration that could not be read (`unknown`); the press
-  naming an admission other than the one undone (`page_saw.matched` false).
+  writer that ended (`not_foreseen`, Undo's `can` null); a restoration that could not be read (`unknown`). (The press naming an admission
+  other than the one undone is refused `BINDING-MISMATCH` since 0253, and STUDIO's BINDING-0 rows press it.)
 - The repair of the server's traceback on a hung-up idle connection: VERIFIED BY READING; no row exercises it.
 
 ## The worlds, the outline and import (DASHBOARD-0), 0250: the left panel, and import transactional
@@ -933,6 +952,7 @@ files stand and that head is the one it was drawn at.
 | `STUDIO-DIRECTOR-REFUSED` | the director itself refused the admission, refusal or undo (its own reason shown, and since 0245 its own code as `director_code`: `LEDGER-UNLOGGED`, `HEAD-MOVED`, …) |
 | `STUDIO-ROUTE` | a studio route with no branch (0245) |
 | `STUDIO-NOTHING-TO-UNDO`, `STUDIO-NOT-UNDOABLE` | no admission left to undo (an undo is never itself undone; undo again walks further back); one that changed the layout, or whose inverse is not CLEAN |
+| `BINDING-MISMATCH`, `BINDING-UNKNOWN` | at admission or undo (BINDING-0, 0253): the evidence the press relies on (the still's kept scene; a preview it names by its id; the undo's `of` and `scene`) names another identity than the candidate scene at admission (or the undo's target and the world's scene), or one absent or not well formed; checked after every other check, the director's commit's own under the content lock included, and before the first write; never through `STUDIO-DIRECTOR-REFUSED`. The answer names the field and carries `binding` and `record` |
 
 ## The record and the still (ADMISSION-0, 0222)
 
@@ -964,6 +984,15 @@ or gives holds a credential, and none is recorded. play.py also prints one line 
 (model)  time  tokens  A CLEAN; B LEAKAGE …`, or its refusal). A recorded candidate is played again without
 the provider: `python art/play.py BRIEF --intent art/build/studio/BRIEF/ID/A.intent`. Admissions, rejections and undos
 are in the brief's ledger (`art/ledger/BRIEF.ledger`), as `art/director.py` writes it.
+
+Since 0253 (BINDING-0) every press of Admit or Undo through the host, admitted, undone or refused, is answered and
+logged with `binding` (`checked` true with what it refused and the field it names, or `checked` false and `why`: the
+earlier code, where an earlier check refused and the binding was not reached) and `record`, the decision record whose
+bytes v0 fixes (the contract, version and sha256 the host pins; the operation, candidate, intent's sha256, `of`; every
+piece of evidence relied on, declared, expected and its outcome; the decision and the director's code). One line a
+press: `admit` and `undo` as before, `admit-refused` for every refused admission (before 0253 only the strict check's),
+and `undo-refused`, new, for a refused undo. `POST /studio/preview/finish` answers, and the request's preview line
+carries, `preview_id`, the id an admission names the preview by.
 
 ## Its boundary
 
