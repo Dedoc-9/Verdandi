@@ -5146,7 +5146,9 @@ head that re-freezes every reference and rebases every ledger. The agent's recom
 **Glue.** Two edits written against one head commute when both orders apply and give the same scene; they glue when,
 besides, the glued scene changes exactly what each changes and the two agree on every section both change (a piece by
 its id, a material by its name, the environment; the provenance `by` left out). Otherwise OBSTRUCTED, the obstruction
-an object with a sha256 the same whichever edit is named first. The census of seven of the flagship's edits (two bays
+an object with a sha256 the same whichever edit is named first (corrected 2026-10-21, 0256: not for a pair whose two
+orders differ, the face against the raised warehouse, nor for the glued text of two statements added; MEASURED on
+ab2a535 and repaired in 0256). The census of seven of the flagship's edits (two bays
 panelled or blank, a neighbouring bay, the whole face panelled, the warehouse raised, a lighter glass, the lanes'
 lamps): 21 pairs, 16 glue, 5 obstructed: the same bay set two ways (neither order applies), the face against each of
 three bays (they commute, the bay's statement winning either way, but they set the bay differently: commuting is not
@@ -8005,10 +8007,120 @@ status honest. That the 0.5 m plant refuses but in this map's state (about 0.018
 setting aside `chromium.json`, `edge-155-windows.json` and `latest.json`, which it overwrites); the full check
 (`python art/selftests.py --repeat 2`); the classifier his pushed tree holds over the commit (`classify`, `plants`); the
 gate twice on the committed tree, and the `Gated-Tree:` line. These are run on the committed tree and recorded in the
-commit message. Next, by his ruling: the REACH-1 repair; then GLUE-0's order.
+commit message. Next, by his ruling: the REACH-1 repair; then GLUE-0's order. (Note, 2026-10-21: his later ruling,
+quoted in 0256's entry, puts GLUE-0 first, then the `kill_tree` repair, then REACH-1.)
 
 NOT_MEASURED: the gate on this tree; the full check; the classifier; a browser at this tree; his checkout; Linux. No row,
 rung, pinned source, oracle file, registered entry, BINDING-0 file, frozen file, `art/references.jsonl`, `sim.js` or
 rules document changed. Docs: AGENTS.md (the tick's and the bot's rows), graybox/README.md, docs/BOUNDARIES.md (its
 `tick_ref.py` row, :35 and :50), docs/CAPABILITY-MATRIX.md (F-12, §9's note), docs/CORE.md (graybox 9,923 lines), the
 0254 entry's order (a note), this entry.
+
+### GLUE-0 in its canonical form — two edits judged alike whichever is named first · **built, off the gate** (0256, commit 1 of 2: `art/glue.py`)
+
+**His run of 0255** (2026-10-21, his checkout, pasted to the agent). `git am`, then `TREE HELD
+6981d3140cb20e0784e2246ee2379f331ad49ad0`; `DOOR SELFTEST 64/64`; `TICK REFERENCE VERIFIED` twice; `TICK-REF SELFTEST
+PASSED`; `python art/selftests.py --repeat 2`, **`ART SELFTESTS FAILED`**: run 1 twenty-eight of twenty-eight (536.5 s),
+run 2 twenty-seven of twenty-eight (559.0 s), `STUDIO SELFTEST 199/200`, its row "a cancelled provider's own children
+killed with it" FAIL, "the child outlived the cancellation" (log `art/build/selftests/20261021T030736Z.log`); the
+classifier his pushed tree held (e759213's), the rung D on seven files, four of them D? (escalated by computed paths),
+"loosens nothing this classifier knows to look for"; "344 planted defects refused by the old checker; 344 by the new
+(344 rows)", `PLANTS HELD`; the gate once, `GATE PASSED`, `RECONCILE rowset 74db4c8d78625af5 251 rows / 0 fail / 0
+skipped`; pushed `e759213..ab2a535`, HEAD and its upstream `ab2a535`. The full check was not clean and is not recorded
+as clean; the gate passed.
+
+**The failed row is not 0255's.** `git diff e759213 ab2a535 -- art/ tools/` is empty (MEASURED): the row, `kill_tree`,
+`run_provider` and the test's spawner are 0254's byte for byte; it had passed in all 31 earlier runs in his logs. It
+rests on a defect older than 0255, in `kill_tree` (`art/studio.py`, unchanged since 0205), measured on his machine in
+scratch with the program's own code. `taskkill /T` walks one snapshot of parent IDs, so:
+- a grandchild whose parent has already exited outlives the kill: 3 of 3 by the agent, 5 of 5 by a reviewer; under a
+  holder in a job object (`studio_app.Job`), 0 of 3 and 0 of 5;
+- a child created during the walk outlives it: a race, seen under load.
+
+Since 0243 the provider starts after the camera path, with no cancel check before it, so the row's kill lands at the
+provider's birth. Which mechanism failed his run 2 is NOT_MEASURED: the self-test removes its folder, and `kill_tree`
+discards taskkill's output. The repair is his ruling's item 3, below; nothing of it is in this patch.
+
+**His ruling on the order** (2026-10-21, pasted, answering where the `kill_tree` repair goes), verbatim:
+
+> LOCK: repair `kill_tree` after GLUE-0, before REACH-1.
+> That preserves the already-established order while putting the provider-cancellation defect ahead of the next physics investigation.
+>
+> 1. 0255 release certification — record the failed STUDIO row accurately; do not attribute it to 0255 or claim a clean full gate.
+> 2. GLUE-0 — repair the edit-order fingerprint asymmetry under its own contract.
+> 3. `kill_tree` repair — replace best-effort `taskkill /T` termination with a per-provider Windows Job Object holder, reusing the existing `Job` implementation where appropriate.
+> 4. REACH-1 — resume the discrete reachable-set investigation after the process-lifecycle repair is gated.
+>
+> Conditions for the `kill_tree` repair
+>
+> * Preserve provider stdin/stdout/stderr behavior and exit status.
+> * Make cancellation cover descendants, including orphaned grandchildren and children created during cancellation.
+> * Rewrite the existing cancellation test as an ordered handshake: child starts → cancellation occurs → termination completes → descendants are checked.
+> * Add the orphaned-grandchild regression and the two specified mutation plants.
+> * Keep Linux behavior explicitly unverified until tested; do not infer platform equivalence from reading its process-group semantics.
+> * Update the documented capability and test counts only after the relevant tests and gates establish them.
+>
+> One important distinction: the evidence supports a pre-existing defect, but the mechanism behind the single failed release run remains `NOT_MEASURED`. Preserve both facts rather than claiming that this specific failure was conclusively caused by an escaped grandchild.
+> This is the right placement: GLUE-0 keeps its priority, the known process-lifecycle defect is repaired before REACH-1, and neither repair gets silently folded into the other.
+
+The numbered list moves GLUE-0 ahead of REACH-1, against his *"LOCK: 0255 door first, then REACH-1 repair."* (0255's
+entry, where GLUE-0's order came after REACH-1). The later, numbered LOCK is taken as governing, as the agent said to
+him in the session; 0255's entry carries a note.
+
+**The defect** (found 2026-10-19 in the review packet, "GLUE-0's fingerprint depends on which edit is named first",
+MEASURED there). MEASURED again on ab2a535, here: every pair of the census judged named both ways, 42 judgments.
+`judge` worked in the order named, then swapped the edits' labels back in its obstruction by a string replacement:
+- *An obstruction and its fingerprint depended on the naming.* The face panelled against the warehouse raised to 16 m:
+  the two orders differ (33 sections), and `not_their_union` was taken of whichever composite was named first. Named as
+  the census names them, its `lost` held the bays' sections; named the other way, the building's section alone.
+- *A glued text depended on the naming.* Two bays added (`panel b3` with `panel b4`, and `blank b3` with `panel b4`):
+  `glued_text_sha256` was the text of the order named. The self-test's first row printed `18f06419ea6d`, the text with
+  b3's statement first.
+
+The other 18 pairs were the same both ways in every field. The verdict, `commutes` and `glues` were the same both ways
+in all 21. 0244's entry said the obstruction's sha256 is the same whichever edit is named first; corrected in place with
+a note.
+
+**The repair.**
+- `judge` sorts the pair first, by the sha256 of each edit's canonical form (the order the fingerprint's `pair` already
+  used), and judges that canonical pair. The verdict, the obstruction (in its canonical labels, as before), its
+  fingerprint and the glued text are the canonical pair's; only the support is given back in the caller's names.
+- The string replacement is kept only under the plant.
+- `FORMAT` and `VERSION` are unchanged (`VERDANDI-GLUE`, `0`): the census table is byte for byte as before (sha256
+  25195afc…), since the census names its one order-dependent pair in the canonical order.
+- What changes is the other naming of that pair (now the census's obstruction) and the glued text of the two pairs
+  named against the sorted order. The first row now prints `d5cc88e39c2c`, the text with b4's statement first.
+
+**Rows.** `GLUE SELFTEST 12/12` (9/9 before):
+- *"named either way, the face and the raised building (their orders differ) and two bays added: one obstruction, one
+  fingerprint, one glued text, the support's names swapped (the pair judged in its canonical form)"*;
+- *"every pair of the census named both ways: every field of the judgment the same, the support's names swapped"*: 42
+  judgments, run once and not under the plants, as the census row is;
+- the plant `glue-judged-in-named-order`: the judgment before 0256 exactly (the order named, the roles swapped back by
+  the string replacement), caught by the first new row alone;
+- the three plants before, each caught as before; `glue-fingerprint-ordered` by the first new row too.
+
+GLUE's plants are not R5's: `art/glue.py` is outside `tools/rung.py`'s `SUITES`, so R5's line is predicted unchanged
+(344 and 344).
+
+**MEASURED here** (a scratch clone of ab2a535 with this patch; Windows 11, Python 3.14.5; `PYTHONHASHSEED=0`,
+`PYTHONUTF8=1`, `python -B`): `GLUE SELFTEST 12/12`, 38 s alone; the census at ab2a535 and with the repair, the same
+bytes; the 21 pairs both ways, every field the same, the support's names swapped. ab2a535's `GLUE SELFTEST 9/9` is
+unchanged in what it held: the pair its second row names, two values for one bay, has orders that apply in neither
+order, where the swap was right.
+
+**What it does not show.**
+- That the census's seven edits are every kind of edit: the ROWS audit's gap stands.
+- An account of both orders for a pair whose orders differ: its `not_their_union` is of one composite, the canonical
+  one, a fixed choice.
+- That glue decides anything: the studio's admission does not read a glue verdict (his rule, unchanged).
+- Linux.
+
+**Not done.** The full check, the classifier his pushed tree holds over the commit, and the gate twice on the committed
+tree with the `Gated-Tree:` line: run on the tree of both commits and recorded in the patch's last commit's message.
+Next: the `kill_tree` repair, commit 2 of this patch by his word (the entry below); then REACH-1, by his ruling.
+
+NOT_MEASURED in this entry: the full check; the classifier; the gate; his checkout; Linux. No row, rung, pinned
+source, oracle file, registered entry, BINDING-0 file, frozen file, `art/references.jsonl` or `art/director/vectors.json`
+changed. Docs: AGENTS.md (the certificate's and glue's row), docs/CAPABILITY-MATRIX.md (F-13), docs/CORE.md (art 38,163
+lines), the 0244 entry (a note), the 0255 entry (a note on the order), this entry.

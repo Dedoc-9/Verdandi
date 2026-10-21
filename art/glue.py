@@ -20,7 +20,11 @@
 # Mimram and Di Giusto's category of patches, a conflict there an object of its own): which orders would not apply and
 # why, which pieces the two orders leave different, which pieces the two edits set differently; its sha256, taken
 # over the pair's canonical form (the two edits in sorted order), is the same whichever edit is named first and on
-# every machine. Composition here is of what edits ask for: a '+' of a statement already there word for word, or a
+# every machine. The pair is judged in that canonical form, so that all of the judgment (the verdict, the obstruction,
+# its fingerprint, the glued text) is the same whichever edit is named first, and only the support is said in the
+# caller's names (0256: before, the pair was judged in the order named and its labels swapped after, which left the
+# obstruction of a pair whose two orders differ, and the glued text of two statements added, depending on the naming;
+# MEASURED on ab2a535). Composition here is of what edits ask for: a '+' of a statement already there word for word, or a
 # '-' of one already gone, asks for nothing more (the studio's own admission stays as strict as it was). Exact: text,
 # bytes and sha256; nothing measured. Standard library only.
 
@@ -34,7 +38,7 @@ sys.path.insert(0, HERE)
 
 FORMAT, VERSION = "VERDANDI-GLUE", "0"
 PLANT = ""
-PLANTS = ("glue-sections-unchecked", "glue-fingerprint-ordered", "glue-repeat-refused")
+PLANTS = ("glue-sections-unchecked", "glue-fingerprint-ordered", "glue-repeat-refused", "glue-judged-in-named-order")
 
 
 def sha256(b):
@@ -90,7 +94,12 @@ def changed(s0, s1):
 
 def judge(text, a, b, scene):
     """The pair (a, b) of revisions against `text`, `scene(text)` giving the scene's bytes: {verdict, commutes, glues,
-    support, overlap, obstruction, fingerprint}. See the head of this file."""
+    support, overlap, obstruction, fingerprint}, judged in the pair's canonical form (its edits in sorted order); the
+    support in the caller's names. See the head of this file."""
+    ops = [sha256(enc(list(a)).encode("ascii")), sha256(enc(list(b)).encode("ascii"))]
+    named = ops == sorted(ops)
+    if not named and PLANT != "glue-judged-in-named-order":
+        a, b = b, a                       # the canonical form: everything below is of (a, b) in sorted order
     s0 = sections(scene(text))
     ta, why_a = compose(text, a)
     tb, why_b = compose(text, b)
@@ -120,16 +129,17 @@ def judge(text, a, b, scene):
             obstruction["not_their_union"] = {"lost": lost, "extra": extra}
         glues = commutes and not disagree and not lost and not extra
         support = {"a": sorted(ca), "b": sorted(cb)}
-    ops = [sha256(enc(list(a)).encode("ascii")), sha256(enc(list(b)).encode("ascii"))]
     pair = ops if PLANT == "glue-fingerprint-ordered" else sorted(ops)
-    if obstruction and ops != sorted(ops) and PLANT != "glue-fingerprint-ordered":
-        # the obstruction said of (b, a) as of (a, b): the edits' roles swapped back
+    if obstruction and not named and PLANT == "glue-judged-in-named-order":
+        # before 0256: the pair judged in the order named, the edits' roles swapped back after
         obstruction = json.loads(json.dumps(obstruction).replace('"a"', '"@B"').replace('"b"', '"a"').replace('"@B"', '"b"')
                                  .replace('"ab"', '"@BA"').replace('"ba"', '"ab"').replace('"@BA"', '"ba"'))
     fp = sha256(enc({"format": FORMAT, "pair": pair, "obstruction": obstruction}).encode("ascii")) if obstruction else ""
     out = {"format": FORMAT, "version": VERSION, "verdict": "GLUE" if glues else "OBSTRUCTED", "commutes": commutes, "glues": glues,
            "obstruction": obstruction, "fingerprint": fp}
     if tab is not None and ta is not None and tb is not None:
+        if not named and PLANT != "glue-judged-in-named-order":
+            support = {"a": support["b"], "b": support["a"]}       # in the caller's names
         out["support"] = support
         out["overlap"] = sorted(set(support["a"]) & set(support["b"]))
         out["glued_text_sha256"] = sha256(tab.encode("utf-8")) if glues else ""
@@ -199,6 +209,16 @@ def selftest():
     m = judge(text, op["lighter glass"], op["panel b3"], scene)
     row("a material and a bay: different sections, they glue", m["verdict"] == "GLUE" and not m["overlap"],
         "changes %d and %d sections; glued" % (len(m["support"]["a"]), len(m["support"]["b"])))
+    swap = lambda s: {"a": s["b"], "b": s["a"]}
+    fr = judge(text, op["face panels"], op["raised 16 m"], scene), judge(text, op["raised 16 m"], op["face panels"], scene)
+    pb = judge(text, op["panel b3"], op["panel b4"], scene), judge(text, op["panel b4"], op["panel b3"], scene)
+    row("named either way, the face and the raised building (their orders differ) and two bays added: one obstruction, one "
+        "fingerprint, one glued text, the support's names swapped (the pair judged in its canonical form)",
+        not fr[0]["commutes"] and fr[0]["obstruction"] == fr[1]["obstruction"] and fr[0]["fingerprint"] == fr[1]["fingerprint"] != ""
+        and pb[0]["glued_text_sha256"] == pb[1]["glued_text_sha256"] != "" and pb[0]["support"] == swap(pb[1]["support"]),
+        "the orders differ on %d sections, fingerprint %s and %s; glued text %s and %s"
+        % (len(fr[0]["obstruction"].get("orders_differ_on", [])), fr[0]["fingerprint"][:16], fr[1]["fingerprint"][:16],
+           pb[0]["glued_text_sha256"][:12], pb[1]["glued_text_sha256"][:12]))
     if not PLANT:
         t0 = time.perf_counter()
         table = census(brief)
@@ -211,6 +231,17 @@ def selftest():
             len(table) == 21 and table == again,
             "%d pairs in %.1f s: %s; obstructed: %s" % (len(table), secs, tally, "; ".join("%s / %s (%s)" % (r["a"], r["b"], ",".join(r["kind"]))
                                                                                        for r in table if r["verdict"] == "OBSTRUCTED")))
+        pairs, differ = 0, []
+        for i in range(len(OPS)):
+            for j in range(i + 1, len(OPS)):
+                r1, r2 = judge(text, OPS[i][1], OPS[j][1], scene), judge(text, OPS[j][1], OPS[i][1], scene)
+                if "support" in r2:
+                    r2 = dict(r2, support=swap(r2["support"]))
+                pairs += 1
+                if r1 != r2:
+                    differ.append("%s / %s" % (OPS[i][0], OPS[j][0]))
+        row("every pair of the census named both ways: every field of the judgment the same, the support's names swapped",
+            pairs == 21 and not differ, "%d pairs, %d judgments; %s" % (pairs, 2 * pairs, ("differ: " + "; ".join(differ)) if differ else "none differs"))
     if PLANT:
         return rows
     caught = []

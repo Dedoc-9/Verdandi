@@ -366,6 +366,18 @@ would not make (refused). Older than the door and outside it, recorded and not r
 and `rules3` print a results file's userAgent and its case lines as they are (`print` of the page's text); the door's
 `legible` is not applied there.
 
+**F-13 · GLUE-0 judged a pair in the order named (found 2026-10-19, in the review packet, "GLUE-0's fingerprint
+depends on which edit is named first", MEASURED there; closed by 0256, 2026-10-21).** MEASURED again on ab2a535, in
+scratch on his machine (Windows 11, Python 3.14.5): of the census's 21 pairs, each judged named both ways, one gave two
+obstructions and two fingerprints (the face panelled against the warehouse raised to 16 m, whose two orders differ:
+`not_their_union` was taken of whichever composite was named first) and two gave two glued texts (two bays added: the
+text of the order named); the verdicts, `commutes` and `glues` were the same both ways in all 21. Closed by 0256: the
+pair judged in its canonical form, its edits in sorted order; `GLUE SELFTEST 12/12`, every field of the 21 pairs the
+same both ways, the plant `glue-judged-in-named-order` (the judgment before 0256) caught. What it does not show: that
+the seven edits are every kind (the ROWS audit's gap stands); for a pair whose orders differ, `not_their_union` is
+still of one composite, the canonical one, a fixed choice and not an account of both. docs/CAPABILITY-MATRIX-ROWS.md
+cites `GLUE SELFTEST 9/9`; it is a dated, generated audit and is not edited.
+
 ## 6. SPEC1 against the rules
 
 About a third of SPEC1 already exists under other names, off the gate, in the art layer: stored inverses and
