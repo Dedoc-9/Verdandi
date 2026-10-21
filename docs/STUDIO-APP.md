@@ -119,7 +119,9 @@ Microsoft-authored loader DLL): no ruling exists. Whether his machine's Edge is 
   [Nested Jobs](https://learn.microsoft.com/en-ie/Windows/Win32/procthread/nested-jobs)). Terminating a process
   "does not terminate any child processes" (VERIFIED: [Terminating a Process](https://learn.microsoft.com/en-ie/Windows/Win32/procthread/terminating-a-process)),
   which is why the gateway's `taskkill /T` is a best-effort walk, not a guarantee. The race-free sequence is create
-  job, set limits, `CreateProcess(CREATE_SUSPENDED)`, assign, resume (VERIFIED: The Old New Thing). Python's
+  job, set limits, `CreateProcess(CREATE_SUSPENDED)`, assign, resume (VERIFIED: The Old New Thing). (Note, 2026-10-21: 0256 does that sequence for each provider,
+  `art/studio.py`'s `run_provider` with `studio_app.Job(own=False)`; the walk missed an orphaned grandchild 3 of 3,
+  MEASURED.) Python's
   `subprocess` can send `CTRL_BREAK_EVENT` to a `CREATE_NEW_PROCESS_GROUP` child (VERIFIED: [subprocess docs](https://docs.python.org/3/library/subprocess.html)).
 - **Atomic replacement.** CPython's `os.replace` on Windows is `MoveFileExW(src, dst, MOVEFILE_REPLACE_EXISTING)` —
   no write-through (VERIFIED: the CPython commit). `MOVEFILE_WRITE_THROUGH` means "the function does not return

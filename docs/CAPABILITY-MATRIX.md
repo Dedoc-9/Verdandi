@@ -378,6 +378,18 @@ the seven edits are every kind (the ROWS audit's gap stands); for a pair whose o
 still of one composite, the canonical one, a fixed choice and not an account of both. docs/CAPABILITY-MATRIX-ROWS.md
 cites `GLUE SELFTEST 9/9`; it is a dated, generated audit and is not edited.
 
+**F-14 · A cancelled provider's descendants could outlive the kill on Windows (found 2026-10-21, from his run 2 of
+0255's full check, STUDIO SELFTEST 199/200; closed by 0256's commit 2, 2026-10-21).** `kill_tree` ran `taskkill /T`, a
+walk of one snapshot of parent ids. MEASURED in scratch on his machine: a grandchild whose parent had exited survived 3
+of 3 (5 of 5 by a reviewer), and children made during the walk survived it (18 of 30 trials idle, 24 of 30 under load,
+a provider making a child about every 58 ms). The row checked 3 s after the cancellation was marked, not after the
+kill, and could pass with no child made. Which mechanism failed his run is NOT_MEASURED. Closed by PROVIDER-JOB-0: on
+Windows each provider starts suspended in a job of its own, and a kill ends every process in it, each waited for; the
+row an ordered handshake, an orphan's row, two plants (`STUDIO SELFTEST 203/203` on Windows). What it does not show:
+Linux (its process group, unchanged and not run); a process a provider has another service start; a child left after
+a provider's own exit (unchanged). docs/CAPABILITY-MATRIX-ROWS.md cites the process tree killed as tested; it is a
+dated, generated audit and is not edited.
+
 ## 6. SPEC1 against the rules
 
 About a third of SPEC1 already exists under other names, off the gate, in the art layer: stored inverses and

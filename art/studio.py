@@ -254,15 +254,28 @@ def load_config(path):
 
 
 # ------------------------------------------------------------------------------------------------ the provider
+# the kill's plants (0256), each set by the studio self-test alone and caught by its rows: the tree walked by
+# `taskkill /T` (the kill before 0256), and the provider alone killed
+KILL_PLANT = ""
+KILL_PLANTS = ("kill-tree-walked-by-taskkill", "kill-only-the-root")
+
+
 def kill_tree(p):
     """The provider and every process it started (a provider may run a model's own command line, which must not outlive
-    a cancellation): its process group on POSIX, `taskkill /T` on Windows."""
-    if os.name == "nt":
+    a cancellation): on Windows the job it was started in, every process of it ended before this returns; on POSIX its
+    process group (not measured since 0256). The number of the job's processes left (0 when all ended), or None on
+    POSIX. Before 0256 Windows ran `taskkill /T`, a walk of one snapshot of parent ids, which missed a grandchild whose
+    parent had exited (3 of 3, MEASURED) and a child made during the walk (a race, MEASURED under load)."""
+    left = None
+    job = getattr(p, "studio_job", None)
+    if os.name == "nt" and KILL_PLANT == "kill-tree-walked-by-taskkill":
         try:
             subprocess.run(["taskkill", "/T", "/F", "/PID", str(p.pid)], capture_output=True, timeout=15)
         except (OSError, subprocess.SubprocessError):
             pass
-    else:
+    elif os.name == "nt" and job is not None and KILL_PLANT != "kill-only-the-root":
+        left = job.end()
+    elif os.name != "nt" and KILL_PLANT != "kill-only-the-root":
         try:
             os.killpg(p.pid, signal.SIGKILL)
         except OSError:
@@ -272,21 +285,42 @@ def kill_tree(p):
     except OSError:
         pass
     p.wait()
+    return left
 
 
 def run_provider(cfg, request_bytes, cancel, holder=None):
     """(standard output, milliseconds, exit status) of the provider for the request, or a StudioError: it cannot start,
     it is cancelled, it runs past its time, it prints more than its limit, it exits with an error (the error's `exit`
-    is the status). Its standard error is kept for the message. It runs in a process group of its own, so that what it
-    starts is killed with it; `holder["proc"]` is the process while it runs."""
+    is the status). Its standard error is kept for the message. It runs in a process group of its own, and on Windows in
+    a job of its own from its first instruction (0256), so that what it starts is killed with it; `holder["proc"]` is
+    the process while it runs."""
     # its own process group; on Windows without a console window (CREATE_NO_WINDOW), which a studio started from its icon
-    # would otherwise open for every console program it runs (claude.exe among them)
-    kw = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x08000000} if os.name == "nt" else {"start_new_session": True}
+    # would otherwise open for every console program it runs (claude.exe among them), and started suspended
+    # (CREATE_SUSPENDED) until it is in its job
+    kw = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x08000000 | 0x4} if os.name == "nt" else {"start_new_session": True}
     env = dict(os.environ, **cfg["env"]) if cfg.get("env") else None     # a request's own settings (STUDIO-2: the model it was queued with)
+    job = None
+    if os.name == "nt":
+        import studio_app
+        try:
+            job = studio_app.Job(own=False)
+        except OSError as e:
+            raise StudioError("STUDIO-PROVIDER-START", "the provider was not started: its job cannot be made (%s)" % e)
     try:
         p = subprocess.Popen(cfg["argv"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=REPO, shell=False, env=env, **kw)
     except OSError as e:
+        if job is not None:
+            job.close()
         raise StudioError("STUDIO-PROVIDER-START", "the provider cannot be started: %s" % e)
+    if job is not None:
+        try:
+            job.hold(p.pid)
+        except OSError as e:
+            p.kill()                       # suspended, it has run nothing: ended here, and never run outside a job
+            p.wait()
+            job.close()
+            raise StudioError("STUDIO-PROVIDER-START", "the provider was not run: it could not be held in a job of its own (%s)" % e)
+        p.studio_job = job
     if holder is not None:
         holder["proc"] = p
     out, err, too_long = bytearray(), bytearray(), threading.Event()
@@ -331,12 +365,16 @@ def run_provider(cfg, request_bytes, cancel, holder=None):
             elif time.monotonic() - t0 > cfg["timeout_s"]:
                 why = StudioError("STUDIO-TIMEOUT", "the provider ran past %d s" % cfg["timeout_s"])
             if why:
-                kill_tree(p)
+                left = kill_tree(p)
+                if left:
+                    why = StudioError(why.code, "%s; %s of its processes were not ended within 30 s" % (why.detail, "some" if left < 0 else left))
                 raise why
             time.sleep(0.02)
     finally:
         if holder is not None:
             holder.pop("proc", None)
+        if job is not None:
+            job.close()
     for t in threads[:2]:
         t.join(5)
     if cancel.is_set():

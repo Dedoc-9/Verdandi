@@ -8124,3 +8124,90 @@ NOT_MEASURED in this entry: the full check; the classifier; the gate; his checko
 source, oracle file, registered entry, BINDING-0 file, frozen file, `art/references.jsonl` or `art/director/vectors.json`
 changed. Docs: AGENTS.md (the certificate's and glue's row), docs/CAPABILITY-MATRIX.md (F-13), docs/CORE.md (art 38,163
 lines), the 0244 entry (a note), the 0255 entry (a note on the order), this entry.
+
+### PROVIDER-JOB-0 — a cancelled provider ended with every process it started · **built, off the gate** (0256, commit 2 of 2: `art/studio.py`, `art/studio_app.py`, `art/play.py`)
+
+**His word** (2026-10-21, typed in the session after the agent said GLUE-0's release checks were running): *"just fold
+the fix for the failed STUDIO row into the next push"*. Read, as said to him: one 0256 patch file of two commits,
+GLUE-0's (the entry above) and this one, each its own commit and record, so that neither is silently folded into the
+other (his ruling, quoted whole above: *"neither repair gets silently folded into the other."*). The full check, the
+classifier and the gate run once, on the tree of both. His ruling's conditions for this repair are quoted in the entry
+above; each is answered below.
+
+**The defect** (his run 2 of 0255, the entry above). MEASURED in scratch on his machine, with the program's own code:
+`kill_tree` on Windows ran `taskkill /T /F`, which walks one snapshot of parent ids.
+- A grandchild whose parent had exited was never killed: 3 of 3 by the agent, 5 of 5 by a reviewer.
+- A child made during the walk outlived it: with a provider making a child about every 58 ms, 18 of 30 trials idle and
+  24 of 30 under 18 busy loops.
+
+The old row checked 3 s after the cancellation was marked, not after the kill. It also passed with no child ever made,
+when the kill came first. Which mechanism failed his run 2 is NOT_MEASURED: the self-test removes its folder, and
+taskkill's output was discarded.
+
+**The repair.**
+- *On Windows a provider runs in a job object of its own from its first instruction.* `run_provider` makes the job
+  (`studio_app.Job(own=False)`: no limit set, nothing joined). It starts the provider suspended (`CREATE_SUSPENDED`,
+  beside `CREATE_NEW_PROCESS_GROUP` and `CREATE_NO_WINDOW`), joins it to the job and resumes it (`Job.hold`). Every
+  process the provider starts is born in the job, an orphan included. A job that cannot be made, or a provider that
+  cannot be joined, refuses the request (`STUDIO-PROVIDER-START`); the suspended provider is ended unrun.
+- *`kill_tree` ends the job* (`Job.end`): the job is closed to new processes (its active process limit 1), its
+  processes are listed and a handle is held to each (each checked to be in the job), the job is terminated, and each
+  handle is waited for.
+  - The job's count of active processes falls to none 2.6 to 24 ms before its processes have ended (MEASURED, eight
+    trials), so the count is not what the kill waits for.
+  - A kill that leaves any process says so in the cancellation's message.
+- *The provider is still the studio's own child.* Its standard input, output and error and its exit status are as
+  before: an exit of 3, and one of 3221225786, read exactly (MEASURED). After an exit of its own, the job is let go and
+  ends nothing (no `KILL_ON_JOB_CLOSE`). A provider's child left running after the provider exits by itself is left as
+  before 0256: not a cancellation, outside his ruling, recorded and not changed.
+- *POSIX is unchanged:* its process group (`killpg`). Not measured: no Linux run since 0256, by his ruling's *"Keep
+  Linux behavior explicitly unverified until tested; do not infer platform equivalence from reading its process-group
+  semantics."*
+- `studio_app.Job()` itself, own=True (the desktop studio's job and PAGE-0's holder), is as before.
+
+**Rows** (the studio self-test in `art/play.py`, his ordered handshake: *"child starts → cancellation occurs →
+termination completes → descendants are checked"*):
+- *"a cancelled provider's own children killed with it"*, the row his run 2 failed, rewritten. The provider's child
+  writes its pid once it runs, and the request is cancelled only then. The kill is done when the request's record line
+  is written (after `kill_tree` returns). The child, held by a handle from before the cancellation, has ended by then:
+  no wait. A child that has not started 90 s after the ask fails the row.
+- *"a cancelled provider's orphaned grandchild killed with it (its parent had exited before the cancellation)"*, new:
+  the same handshake, the provider's child starting a grandchild and exiting before the cancellation.
+- `kill plant kill-tree-walked-by-taskkill caught` (the kill before 0256), caught by the orphan's row; and `kill plant
+  kill-only-the-root caught`, caught by the children's row. Each is the handshake run under its plant: the descendant
+  outlives the kill, and the row ends it after. Windows only. Two new R5 keys.
+- `STUDIO SELFTEST 203/203` on Windows (200 before: four rows more, two of them plants). Elsewhere the two plant rows are
+  not run, by the code: NOT_MEASURED.
+
+**MEASURED here** (a scratch clone of ab2a535 with 0256; Windows 11, Python 3.14.5; `PYTHONHASHSEED=0`, `PYTHONUTF8=1`,
+`python -B`), the harness itself inside a job, so the provider's job nested:
+- `STUDIO SELFTEST 203/203` alone, 329 s. Its four kill rows: the kill done 0.1 s after the cancellation (its record
+  line) and each descendant ended by then; under the taskkill plant the orphan outlived the kill (0.3 s), under the
+  root-only plant the child did. `STUDIO APP SELFTEST 13/13`, 64 s.
+- The kill through the program's own `run_provider` and `kill_tree`, on fixtures in scratch, twelve trials each: a child
+  0 of 12 alive after the kill; an orphaned grandchild 0 of 12; a provider making a child every 15 ms, cancelled 0.4 to
+  1.0 s after it started, no child outliving it in 12 runs. Under the taskkill plant the orphan was alive 3 of 3 (a
+  direct child 0 of 3); under the root-only plant both 3 of 3. An exit of 3 and one of 3221225786 read exactly, standard
+  error's last line kept.
+- The job's count against its processes, eight trials: the count 0 right after `TerminateJobObject`, the child's
+  handle signaled 2.6 to 24 ms later. With `Job.end` waiting on the handles, the child's handle was signaled when it
+  returned (0.0 ms after), eight trials.
+
+**What it does not show.**
+- A process a provider has another service start (a scheduled task, a COM or WMI server): not its descendant, not in
+  its job.
+- A child left by a provider that exits by itself: unchanged.
+- Linux.
+- The sibling row, *"a request cancelled: the provider killed, nothing drawn"*: it checks a mark due 20 s after the
+  provider starts, 0.5 s after the cancellation, so it cannot see a survivor. Not changed: outside the ruling's
+  conditions.
+- Under the full check's load, the handshake waits as long as its descendant takes to start, at most 90 s.
+
+**Not done.** The full check, the classifier his pushed tree holds over the two commits, and the gate twice on the
+committed tree with the `Gated-Tree:` line: run on that tree and recorded in this commit's message. Next, by his ruling:
+REACH-1.
+
+NOT_MEASURED in this entry: the full check; the classifier; the gate; his checkout; Linux. No row, rung, pinned source,
+oracle file, registered entry, BINDING-0 file, frozen file, `art/references.jsonl` or `art/director/vectors.json`
+changed. Docs: AGENTS.md (the studio's row), art/STUDIO.md (its boundary), docs/STUDIO-APP.md (a note),
+docs/CAPABILITY-MATRIX.md (F-14), docs/CORE.md (art's lines), this entry.

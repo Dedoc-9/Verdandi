@@ -2825,9 +2825,16 @@ TEST_PROVIDERS = {
     "hollow.py": ("import sys, json; r = json.load(sys.stdin)\n"
                   "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, 'candidates': [], "
                   "'outcome': {'kind': 'unsupported', 'unmet': [], 'questions': [], 'reason': '', 'note': 'cannot'}}))"),
+    # 0256: a provider's descendants for the kill's handshake; each writes its pid whole (a rename) once it runs, then waits
     "spawner.py": ("import sys, subprocess, time, os; sys.stdin.read()\n"
-                   "subprocess.Popen([sys.executable, '-c', 'import time, os, sys; time.sleep(2); open(sys.argv[1], \"w\").write(\"outlived\")', os.environ['STUDIO_TEST_CHILD']])\n"
-                   "time.sleep(30)"),
+                   "subprocess.Popen([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'descendant.py'), os.environ['STUDIO_TEST_CHILD']])\n"
+                   "time.sleep(600)"),
+    "descendant.py": "import os, sys, time\nt = sys.argv[1] + '.tmp'\nopen(t, 'w').write(str(os.getpid()))\nos.replace(t, sys.argv[1])\ntime.sleep(600)",
+    "middle.py": "import os, sys, subprocess\nsubprocess.Popen([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'descendant.py'), sys.argv[1]])",
+    "orphaner.py": ("import sys, subprocess, time, os; sys.stdin.read()\n"
+                    "subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'middle.py'), os.environ['STUDIO_TEST_CHILD']])\n"
+                    "open(os.environ['STUDIO_TEST_CHILD'] + '.middle-ended', 'w').write('ended')\n"
+                    "time.sleep(600)"),
     # a stand-in for Claude Code's CLI (art/providers/claude_code.py runs it through VERDANDI_CLAUDE): it records what it was
     # given, and answers as `claude -p --output-format stream-json` does, in the way FAKE_CLAUDE names
     "fake_claude.py": ("import sys, json, os, time\n"
@@ -3526,13 +3533,91 @@ def studio_selftest():
                     os.environ.pop(k, None)
                 else:
                     os.environ[k] = v
-        # a provider's own children die with it: the process group (POSIX) or taskkill /T (Windows)
-        child_mark = os.path.join(tmp, "child.ran")
-        os.environ["STUDIO_TEST_CHILD"] = child_mark
-        ok, r = failing("child", "spawner", [py, os.path.join(tmp, "spawner.py")], "STUDIO-CANCELLED", cancel_after=0.6)
-        time.sleep(3.0)
-        row("a cancelled provider's own children killed with it", ok and not os.path.exists(child_mark),
-            "the provider started a command that would write a mark after 2 s; cancelled at 0.6 s, no mark at 3.6 s" if not os.path.exists(child_mark) else "the child outlived the cancellation")
+        # a provider's own children die with it: its job, ended whole, on Windows (0256); its process group on POSIX (not
+        # measured since 0256). Held by an ordered handshake: the descendant has started (its pid written), the
+        # cancellation, the kill done (the request's record line, written once the kill returns), then the descendant
+        # checked: on Windows ended by then, a handle held to it from before the cancellation; a descendant that never
+        # starts fails the row (before 0256 a kill that came before the child existed passed it)
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+            k32w = ctypes.WinDLL("kernel32", use_last_error=True)
+            k32w.OpenProcess.restype = wintypes.HANDLE
+            k32w.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+            k32w.WaitForSingleObject.argtypes = (wintypes.HANDLE, wintypes.DWORD)
+            k32w.WaitForSingleObject.restype = wintypes.DWORD
+            k32w.TerminateProcess.argtypes = (wintypes.HANDLE, wintypes.UINT)
+            k32w.CloseHandle.argtypes = (wintypes.HANDLE,)
+        log_path = os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl")
+
+        def cancelled_tree(name, script, also=()):
+            """(held, detail) of a request whose provider runs `script`, cancelled once its descendant has started"""
+            pid_file = os.path.join(tmp, name + ".pid")
+            os.environ["STUDIO_TEST_CHILD"] = pid_file
+            g = start_studio(live, cfg(name, [py, os.path.join(tmp, script)]), say=lambda s: None)
+            before = (live.slot(0)["sha"], live.state()["slots"][0]["ok"])
+            rid = g.ask("heavier", piece, cam)
+            need = [pid_file] + [pid_file + a for a in also]
+            t = time.time()
+            while not all(os.path.exists(f) for f in need) and time.time() - t < 90:
+                time.sleep(0.02)
+            if not all(os.path.exists(f) for f in need):
+                g.cancel_request(rid)
+                wait(g, rid, 90)
+                return False, "the descendant had not started 90 s after the ask: nothing was cancelled after it"
+            pid = int(open(pid_file).read())
+            h = k32w.OpenProcess(0x00100000 | 0x1000 | 0x0001, False, pid) if os.name == "nt" else None
+            t0 = time.time()
+            g.cancel_request(rid)
+            r = wait(g, rid, 90)
+            done = False
+            while not done and time.time() - t0 < 90:
+                for ln in (open(log_path, "rb").read().splitlines() if os.path.exists(log_path) else []):
+                    try:
+                        e_ = json.loads(ln)
+                    except ValueError:
+                        continue
+                    done = done or (e_.get("id") == rid and e_.get("outcome") == "STUDIO-CANCELLED")
+                if not done:
+                    time.sleep(0.05)
+            dt = time.time() - t0
+            if os.name == "nt":
+                ended = bool(h) and k32w.WaitForSingleObject(h, 0) == 0      # the kill returned: ended already, not later
+            else:
+                ended, t1 = False, time.time()
+                while not ended and time.time() - t1 < 10:
+                    try:
+                        os.kill(pid, 0)
+                        time.sleep(0.05)
+                    except OSError:
+                        ended = True
+            if not ended:                       # the survivor ended here, so that nothing of the self-test outlives it
+                if h:
+                    k32w.TerminateProcess(h, 1)
+                else:
+                    try:
+                        os.kill(pid, signal.SIGKILL)
+                    except OSError:
+                        pass
+            if h:
+                k32w.CloseHandle(h)
+            held = done and ended and r["code"] == "STUDIO-CANCELLED" and (live.slot(0)["sha"], live.state()["slots"][0]["ok"]) == before
+            return held, ("the descendant started (pid %d) before the cancellation; the kill done %.1f s after it (its record line); "
+                          "the descendant %s" % (pid, dt, "ended by then" if ended else "outlived the kill")) if done else \
+                "the kill was not done 90 s after the cancellation (no record line)"
+        held, detail = cancelled_tree("child", "spawner.py")
+        row("a cancelled provider's own children killed with it", held, detail)
+        held, detail = cancelled_tree("orphan", "orphaner.py", (".middle-ended",))
+        row("a cancelled provider's orphaned grandchild killed with it (its parent had exited before the cancellation)", held, detail)
+        if os.name == "nt":
+            for p_, script, also, by in (("kill-tree-walked-by-taskkill", "orphaner.py", (".middle-ended",), "the orphaned grandchild's row"),
+                                         ("kill-only-the-root", "spawner.py", (), "the children's row")):
+                studio.KILL_PLANT = p_
+                try:
+                    held, detail = cancelled_tree(p_, script, also)
+                finally:
+                    studio.KILL_PLANT = ""
+                row("kill plant %s caught" % p_, not held, "by %s: %s" % (by, detail))
 
         # what is recorded of every call: the exit status, whether the response was valid, the time, the usage
         log = [json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()]

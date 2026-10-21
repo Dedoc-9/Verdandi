@@ -131,14 +131,21 @@ class Instance:
 # ------------------------------------------------------------------------------------------------ the job (Windows)
 class Job:
     """This process and everything it starts, ended together: a job object with KILL_ON_JOB_CLOSE that this process
-    joins, so its children inherit it; the last handle closes when this process ends."""
+    joins, so its children inherit it; the last handle closes when this process ends.
 
-    def __init__(self):
+    With own=False (0256), the job of one process the caller starts suspended (art/studio.py's providers): no limit is
+    set and nothing joins it at its making; `hold` joins the process and lets it run, so that it and everything it ever
+    starts are in the job; `end` ends every process in the job and says how many are left; `close` lets the job go,
+    ending nothing (no KILL_ON_JOB_CLOSE: a provider that exits by itself is left as it was before 0256)."""
+
+    def __init__(self, own=True):
         import ctypes
+        import threading
         from ctypes import wintypes
         self.ctypes, self.wintypes = ctypes, wintypes
         k32 = ctypes.WinDLL("kernel32", use_last_error=True)
         self.k32 = k32
+        self.lock = threading.Lock()          # `end` and `close` from two threads (a request's, and the studio stopping)
 
         class BASIC(ctypes.Structure):
             _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64), ("LimitFlags", wintypes.DWORD),
@@ -162,15 +169,138 @@ class Job:
         k32.GetCurrentProcess.restype = wintypes.HANDLE
         k32.QueryInformationJobObject.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p)
         k32.QueryInformationJobObject.restype = wintypes.BOOL
+        k32.TerminateJobObject.argtypes = (wintypes.HANDLE, wintypes.UINT)
+        k32.TerminateJobObject.restype = wintypes.BOOL
+        k32.CloseHandle.argtypes = (wintypes.HANDLE,)
+        k32.CloseHandle.restype = wintypes.BOOL
+        k32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+        k32.OpenProcess.restype = wintypes.HANDLE
+        k32.OpenThread.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+        k32.OpenThread.restype = wintypes.HANDLE
+        k32.ResumeThread.argtypes = (wintypes.HANDLE,)
+        k32.ResumeThread.restype = wintypes.DWORD
+        k32.CreateToolhelp32Snapshot.argtypes = (wintypes.DWORD, wintypes.DWORD)
+        k32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+        k32.Thread32First.argtypes = k32.Thread32Next.argtypes = (wintypes.HANDLE, ctypes.c_void_p)
+        k32.Thread32First.restype = k32.Thread32Next.restype = wintypes.BOOL
+        k32.IsProcessInJob.argtypes = (wintypes.HANDLE, wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL))
+        k32.IsProcessInJob.restype = wintypes.BOOL
+        k32.WaitForSingleObject.argtypes = (wintypes.HANDLE, wintypes.DWORD)
+        k32.WaitForSingleObject.restype = wintypes.DWORD
+        self.BASIC = BASIC
         self.handle = k32.CreateJobObjectW(None, None)
         if not self.handle:
             raise OSError(ctypes.get_last_error(), "CreateJobObjectW")
+        if not own:
+            return
         info = EXTENDED()
         info.BasicLimitInformation.LimitFlags = 0x2000 | 0x400      # KILL_ON_JOB_CLOSE | DIE_ON_UNHANDLED_EXCEPTION
         if not k32.SetInformationJobObject(self.handle, 9, ctypes.byref(info), ctypes.sizeof(info)):
             raise OSError(ctypes.get_last_error(), "SetInformationJobObject")
         if not k32.AssignProcessToJobObject(self.handle, k32.GetCurrentProcess()):
             raise OSError(ctypes.get_last_error(), "AssignProcessToJobObject")
+
+    def hold(self, pid):
+        """Join the process `pid`, started suspended (CREATE_SUSPENDED), to this job, then resume its threads: it runs in
+        the job from its first instruction, and every process it starts is born in the job (none can be made outside
+        it, so none escapes a walk, as one did `taskkill /T`'s). OSError if it cannot be joined or no thread resumed."""
+        ctypes, wintypes, k32 = self.ctypes, self.wintypes, self.k32
+        h = k32.OpenProcess(0x0100 | 0x0001, False, pid)            # PROCESS_SET_QUOTA | PROCESS_TERMINATE, as joining needs
+        if not h:
+            raise OSError(ctypes.get_last_error(), "OpenProcess")
+        try:
+            if not k32.AssignProcessToJobObject(self.handle, h):
+                raise OSError(ctypes.get_last_error(), "AssignProcessToJobObject")
+        finally:
+            k32.CloseHandle(h)
+
+        class THREADENTRY32(ctypes.Structure):
+            _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD), ("th32ThreadID", wintypes.DWORD),
+                        ("th32OwnerProcessID", wintypes.DWORD), ("tpBasePri", wintypes.LONG), ("tpDeltaPri", wintypes.LONG),
+                        ("dwFlags", wintypes.DWORD)]
+        snap = k32.CreateToolhelp32Snapshot(0x4, 0)                  # TH32CS_SNAPTHREAD
+        if not snap or snap == ctypes.c_void_p(-1).value:
+            raise OSError(ctypes.get_last_error(), "CreateToolhelp32Snapshot")
+        resumed = 0
+        try:
+            te = THREADENTRY32()
+            te.dwSize = ctypes.sizeof(te)
+            ok = k32.Thread32First(snap, ctypes.byref(te))
+            while ok:
+                if te.th32OwnerProcessID == pid:
+                    th = k32.OpenThread(0x0002, False, te.th32ThreadID)  # THREAD_SUSPEND_RESUME
+                    if th:
+                        if k32.ResumeThread(th) != 0xFFFFFFFF:
+                            resumed += 1
+                        k32.CloseHandle(th)
+                ok = k32.Thread32Next(snap, ctypes.byref(te))
+        finally:
+            k32.CloseHandle(snap)
+        if not resumed:
+            raise OSError(0, "no thread of process %d could be resumed" % pid)
+
+    def active(self):
+        """The processes in the job that have not ended (JobObjectBasicAccountingInformation's ActiveProcesses), or None
+        if it could not be read."""
+        ctypes, wintypes = self.ctypes, self.wintypes
+
+        class ACCOUNTING(ctypes.Structure):
+            _fields_ = [("TotalUserTime", ctypes.c_int64), ("TotalKernelTime", ctypes.c_int64), ("ThisPeriodTotalUserTime", ctypes.c_int64),
+                        ("ThisPeriodTotalKernelTime", ctypes.c_int64), ("TotalPageFaultCount", wintypes.DWORD),
+                        ("TotalProcesses", wintypes.DWORD), ("ActiveProcesses", wintypes.DWORD), ("TotalTerminatedProcesses", wintypes.DWORD)]
+        a = ACCOUNTING()
+        if not self.k32.QueryInformationJobObject(self.handle, 1, ctypes.byref(a), ctypes.sizeof(a), None):
+            return None
+        return a.ActiveProcesses
+
+    def end(self, within=30.0):
+        """End every process in the job, each waited for until it has ended. No process may join the job any more (its
+        active process limit set to 1: a child made from here on is refused); the processes in it are listed and a
+        handle held to each (each checked to be in the job, so a pid used again is not waited for); the job is
+        terminated; each handle is waited for. The job's count of active processes falls to none before they have
+        ended (2.6 to 24 ms before, MEASURED), so the count alone is not waited for. The number not shown ended within
+        `within` seconds: 0 when every one has; -1 when the job could not be closed to new processes or listed."""
+        import time
+        ctypes, wintypes, k32 = self.ctypes, self.wintypes, self.k32
+        with self.lock:
+            if self.handle is None:
+                return 0
+            lim = self.BASIC()
+            lim.LimitFlags, lim.ActiveProcessLimit = 0x8, 1                 # JOB_OBJECT_LIMIT_ACTIVE_PROCESS
+            frozen = k32.SetInformationJobObject(self.handle, 2, ctypes.byref(lim), ctypes.sizeof(lim))
+            ids = self.pids()
+            held = []
+            for pid in ids or []:
+                h = k32.OpenProcess(0x00100000 | 0x1000, False, pid)       # SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION
+                if not h:
+                    continue                                                 # it has ended (and been let go) already
+                inside = wintypes.BOOL()
+                if k32.IsProcessInJob(h, self.handle, ctypes.byref(inside)) and inside.value:
+                    held.append(h)
+                else:
+                    k32.CloseHandle(h)
+            k32.TerminateJobObject(self.handle, 1)
+            t0 = time.monotonic()
+            left = 0
+            for h in held:
+                if k32.WaitForSingleObject(h, max(0, int((within - (time.monotonic() - t0)) * 1000))) != 0:
+                    left += 1
+                k32.CloseHandle(h)
+            n = self.active()
+            while n and time.monotonic() - t0 < within:      # one that joined between the limit and the list
+                k32.TerminateJobObject(self.handle, 1)
+                time.sleep(0.01)
+                n = self.active()
+            if not frozen or ids is None or n is None:
+                return -1
+            return left + n
+
+    def close(self):
+        """Let the job go (its handle closed); with own=False this ends nothing."""
+        with self.lock:
+            if self.handle is not None:
+                self.k32.CloseHandle(self.handle)
+                self.handle = None
 
     def pids(self):
         """The processes in the job now (JobObjectBasicProcessIdList), or None if the list could not be read. The buffer

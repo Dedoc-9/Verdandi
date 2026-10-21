@@ -1009,8 +1009,9 @@ carries, `preview_id`, the id an admission names the preview by.
 
 A provider is a command with an argument list, never a shell line; the request reaches it on its standard input, never
 in its arguments. It is limited in time and in output, and killed when cancelled or superseded, with everything it
-started: it runs in a process group of its own (POSIX), or is ended with `taskkill /T` (Windows), so that a model's own
-command line cannot outlive a cancellation. play.py, stopping, does the same to a request running.
+started: it runs in a process group of its own (POSIX), or, on Windows, in a job object of its own from its first
+instruction (started suspended, joined, then resumed), every process of which is ended and waited for (0256; before,
+`taskkill /T`, which missed an orphaned grandchild), so that a model's own command line cannot outlive a cancellation. play.py, stopping, does the same to a request running.
 
 `claude_code.py` runs `claude` from an empty temporary folder with `--tools ""`, `--disallowedTools "mcp__*"`,
 `--strict-mcp-config`, `--safe-mode`, `--no-session-persistence` and `--permission-mode dontAsk`, its own system text
