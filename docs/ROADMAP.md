@@ -7880,7 +7880,10 @@ keeps an edit of the added row (it discards it, and reads exact); the forward op
 with no `@` line authenticated (the ledger is a keyless chain); a coordinated edit of a frozen file and its line in
 `frozen-0254.jsonl` caught; his own worlds (the ledger in his checkout); Linux.
 
-**Not done.** In his order: the `tick_ref.py verify` door, then REACH-1 reproduced and repaired, then GLUE-0's order.
+**Not done.** In his order: the `tick_ref.py verify` door, then REACH-1 reproduced and repaired, then GLUE-0's order. *(Corrected in place, 2026-10-20, by 0255's review: "In his order" is the agent's reading of his packet ruling's
+execution order, which puts the door first. His two later texts list the REACH-1 finding first, and no ruling of his
+settles which comes first; 0255's entry quotes all three. The 0253 entry's line above, which follows his later texts, is
+not rewritten.)*
 His to rule, each with a new freeze where it changes one: the admission's replay of #N before it applies an undo (the
 forged `@~` count); a stronger check of a stored inverse in the statement form; OPEN-5's repair.
 
@@ -7890,3 +7893,122 @@ pinned source, oracle file, registered entry, BINDING-0 file, 0253 frozen file, 
 art/references.jsonl changed in commit 2. Docs: AGENTS.md (the exact inverse's row, the counts, the plant word, §7's
 landing check), art/README.md, art/STUDIO.md, art/director/README.md, docs/CAPABILITY-MATRIX.md, docs/CORE.md (art 38,132
 lines), this entry.
+
+### VERIFY-DOOR-0 — `tick_ref.py verify` holds a trace at its door before it compares · **built, off the gate** (0255: `graybox/tick_ref.py`)
+
+**His rulings** (2026-10-19), quoted from his saved files (through `e255/his-run-0254.txt`, where the agent copied them):
+the review packet, *"The first implementation target should be the missing `tick_ref.py verify` door. If a zero-run trace, truncated run, renamed stress run, forged start, or NaN input can receive a success result, then downstream measurements can be misleading even if the tick arithmetic itself is correct."* and *"3. Repair `tick_ref.py verify`. Make invalid or incomplete inputs refuse, then test the reported cases and add a planted defect. This protects the credibility of later reconciliation results."*; on 0253's questions, *"the verify-door repair must demonstrate that the previously accepted invalid inputs now refuse, while valid registered traces still pass."*; and his correction, *"Keep both investigations in scratch until their evidence is ready. Don't let either silently change the 0253/0254 contract, and don't call either repair complete merely because the original failure reproduces."*. Of trace
+self-consistency, in the same packet: *"Likewise, a trace's claimed engine identity is not proof of which engine produced it."*
+
+**The order, as he ruled it (2026-10-20, asked before this patch was delivered).** *"LOCK: 0255 door first, then REACH-1 repair."* *"3. Deliver the patches after 0254 in the packet’s stated implementation order: door repair first, then reproduce and repair REACH-1."* *"The phrase “deliver the independently reproduced REACH-1 finding and the tick_ref.py verify door repair, in order” was ambiguous, but it does not explicitly reverse the packet’s implementation sequence."* *"No change to the release sequence. Finish 0255’s release certification, then proceed to the REACH-1 repair."* The three texts he ruled over, the packet's prose: *"The first implementation target should be the missing `tick_ref.py verify` door."* and *"The second target is the reported REACH-1 omission."*; its execution order: item 3, above,
+and *"4. Reproduce and repair REACH-1. Independently reproduce the synthetic landing counterexample, then lock a rule-derived regression case if confirmed."* On 0253's questions: *"2. Reproduce the REACH-1 counterexample independently."* *"3. Prepare the `tick_ref.py verify` door repair in scratch."* *"4. Deliver the patches after 0254 in the stated order."* His correction: *"3. After 0254: deliver the independently reproduced REACH-1 finding and the `tick_ref.py verify` door repair, in order."* Before his ruling the agent had
+read the packet as the door first and said so to him; that reading was not a ruling, and his is the one recorded here.
+The 0254 entry's "In his order" is corrected in place with a note.
+
+**What the door does.** Before it compares a snapshot, `verify` makes from the map alone every run the browser was to
+play (`makeRuns`' set: the walk if `bot_ref.py`'s walk-1 walks a route, the fight if the reading of `lines()` finds a
+shot, the stress run always) and refuses, each with its own code and in this order: VERIFY-MAP (the map not converted
+here, or not the manifest's), VERIFY-FORM (the rules-1 section, a run, a start, a snapshot or an input not of the
+writing's form, or nested deeper than it; a start's or snapshot's targets not a list of objects; a string the readers
+take for a number and cannot read; `inputs_from` malformed: no row follows it), VERIFY-NO-RUNS, VERIFY-RUN-SET (the
+names, in order and each once), VERIFY-GIVEN (`inputs_from` not the sha256 of the runs held), VERIFY-NONFINITE (a
+number not finite, as the readers read it, or a bare JSON NaN or Infinity), VERIFY-START, VERIFY-LENGTH, VERIFY-INPUTS
+(each byte for byte what was made here) and VERIFY-PLAY (a run played only when its name, start and inputs are the
+ones made here, otherwise a FAIL row, not played; then the comparison as before the door, a run that cannot be played a
+FAIL row). VERIFIED only when every row passes; every line it prints legible (`legible`), the verdict alone and last.
+The starts and inputs are never read from the trace. The tick, `RULES-1.md`, `RULES-2.md`, `RULES-3.md`, `sim.js` and
+`bot_ref.py` are unchanged: by AST, the names changed against e759213 are `MAKES`, `check_trace`, `cmd_selftest`,
+`cmd_verify`, `engine`, `fields_of`, `load_trace`, `main`, `show` and `verify`, none a tick function.
+
+**His reported cases.** MEASURED here, at e759213 (a `git archive` of it, in scratch on his machine; Windows 11, Python
+3.14.5; `PYTHONHASHSEED=0`, `PYTHONUTF8=1`, `python -B`): a trace of no runs, `TICK REFERENCE VERIFIED  0 ticks of 0
+runs`; the walk and the fight cut to 10, 3,620 ticks; the stress run renamed and cut to 2, 2,265; the fight's start
+forged, 5,863; the fight from x = NaN, 5,863: each exit 0. The packet reported the NaN case as a start with x = NaN;
+that is how his "NaN input" is read here (the agent's reading). Through the door: VERIFY-NO-RUNS, VERIFY-LENGTH,
+VERIFY-RUN-SET, VERIFY-START and VERIFY-NONFINITE, each exit 1. A NaN in an input record (a11), added by the
+preparation and not reported, was never VERIFIED: at e759213 it ended in a traceback, `InputRefused:
+INPUT-NOT-FINITE`, exit 1, because the input contract refuses it inside the tick; through the door, VERIFY-NONFINITE.
+
+**Valid registered traces still pass.** The twelve recorded rules-1 files under `graybox/build/trace/tactical/` are four
+distinct traces (sha256 b1113d80…, its page reporting Edge 155, under `chromium`, `edge-155-windows` and `latest`;
+64fdd04e…, its page reporting Firefox 157, under `firefox`, `firefox-157-windows` and `firefox-contract`; 3555ede9… and
+32bbb5a6…, the given walk, their pages reporting the same), each under three names: `trace.py` writes one trace under
+its engine tag, its family, its label and `latest.json`, and a trace holds no clock, so the bytes cannot say whether one
+run or several wrote each name. Each VERIFIED (5,863 ticks of 3 runs; 1,787 of 1), the output byte for byte the door's
+before this review. The two traces of the browser's own runs are equal in everything the door reads (their rules-1
+sections); they differ in their runtime and rules 0. Wherever an engine is named it is the page's own report.
+
+**The review of the door's repair** (2026-10-20): three lenses (a forger, compatibility, the repository), 23 findings,
+each put to a skeptic: 13 confirmed, 10 confirmed in part, none refuted; each repaired as its verdict corrected it.
+- *A start the door refused was played, and hung.* A start at x = 1e17, or ±Infinity, never ended in `cells_near` (its
+  `i += 1` stops changing `i` past 2^53 and at infinity): the door's rows were written and never printed, and `selftest`
+  and `doortest` hung on such a trace. Older than the door (at e759213 the same). Now a run is played only when its name,
+  start and inputs are the ones made here, otherwise `FAIL VERIFY-PLAY … not played`; `selftest` stops before its plants
+  when the trace does not verify; doortest's bounds play under a guard that raises when the tick is given a start or
+  inputs not made here, so that a regression fails a row and does not hang.
+- *Values the readers cannot read ended in a traceback.* A string of 17 characters beginning "f" that is not a number
+  of the writing, or targets that are not a list of objects, passed FORM and NONFINITE and raised in VERIFY-START's or
+  VERIFY-PLAY's detail (at e759213 too). Now VERIFY-FORM refuses both; `show`, `ulp_note` and `fields_of` read through
+  `as_double` and never raise, and a ulp count is given only for two numbers of the writing (a string "fxyz" or "f" in a
+  snapshot is refused by VERIFY-PLAY with no count).
+- *A trace's text was printed raw.* A run's name or the userAgent could print a line beginning `TICK REFERENCE
+  VERIFIED` before the real verdict, a carriage return or an escape, or raise on a lone surrogate. Now every line passes
+  through `legible` (a character that is not printable written `\uXXXX`, `\UXXXXXXXX` past U+FFFF), the verdict alone
+  and last.
+- *The self-test held less than the door.* Eight of nine one-line weakenings of the door left doortest at 27/27, and
+  under five of them a forged trace read VERIFIED; eight attacks now hold the stress run's start and inputs, the walk's
+  inputs, a snapshot dropped, a given trace's set, a run's keys, `inputs_from` and a bare NaN.
+- *A plant of the reading changed only the pitch.* On tactical every aim of `lines()` from about 0.52 m to 5.02 m finds
+  the same cell; the plant is split, `lines()` aimed 0.5 m and makeRuns' pitch aimed 1.0 m, each refused at VERIFY-START.
+- *An honest witness trace failed doortest.* There the column search finds the same cell as the row search. A plant
+  measured to be an equivalent mutant on a map is declared so in `READING_PLANTS`, not run there, and says so; any other
+  plant that changes nothing, or one declared and not equivalent, is a FAIL; at least one must run.
+- Words corrected: VERIFY-PLAY's line in the codes' table; the harness's docstring (the two walk inputs of dyaw NaN ended
+  in a traceback at e759213, where the harness writes a FAIL row); the SKIP row's pointer; the comment on the fight's
+  reading (a recorded trace refuses a reading that makes another start or none, not a wrong one that makes the same
+  start, as a two-argument hypot does on tactical and on witness).
+
+**MEASURED here** (the scratch clone of e759213 with this patch uncommitted, his recorded traces copied in; Windows 11,
+Python 3.14.5): `doortest`, `DOOR SELFTEST 64/64` on each of the six names holding the browser's own three runs (two
+distinct traces), and `63/64  (1 not run, said above)` on a witness trace that `sim.js`'s own `record()` made under node
+v24.19.0 (OBSERVED: no browser; it verifies, 5,247 ticks of 3 runs); `verify` on the twelve recorded files, VERIFIED;
+`selftest`, `TICK-REF SELFTEST PASSED` on `chromium.json` and `firefox.json` (on `chromium-given.json` FAILED as before
+the door: four of the six plants in the reference are not found on the walk alone, and the door's plant a SKIP); the
+review's 43 attack files, each judged within seconds: 42 refused, exit 1, each by its own code (seven Windows device
+names as the map, and witness named over tactical's manifest, by VERIFY-MAP), and one, the userAgent with a lone surrogate over an honest
+trace, VERIFIED with its header escaped; none hanging and none ending in a traceback, and the 77 attack
+files of the preparation and its checker each at the door's exit and first code as before this review; 21 one-line
+plants of the door and of doortest, each turning its own row or rows red (doortest exit 1) and none hanging; `cases`,
+`rules2`, `rules3`, `ort_ref.py`, `bot_ref.py make`, `check` and `selftest` and `rules_ref.py`, with and without their
+traces, byte for byte as before this review; `graybox/check.py --compile`, `GRAYBOX MAP CHECKS PASSED`; `art/check.py`,
+`ART CHECKS PASSED`, its rows those of e759213; `art/motion.py selftest`, `PREVIEW SELFTEST 12/12` (the tick unchanged,
+so no entry in `SEMANTICS`).
+
+**What R5's `PLANTS HELD` covers.** Nothing of the door. `graybox/tick_ref.py` is outside `tools/rung.py`'s `SUITES`; were
+it added, R5 would read only selftest's two rows that open `plant: ` (the browser's x one bit off at tick 1000, an input
+of the walk turned at tick 300) and none of the door's: `plant at the door: …`, `plant in the door's reading: …`, the
+`harness plant: …`, the bounds and the readers, which print unbracketed (MEASURED by the pushed `parse_rows` over their
+output: 2 keys and 0). They are held only by `selftest` and `doortest`, run by hand; no gate row and no suite of
+`art/selftests.py` runs either (ART CHECKS and PREVIEW import the tick, never `verify`). R5's line for 0255 is predicted
+unchanged, 344 and 344: NOT_MEASURED until the classifier runs on the committed tree.
+
+**What it does not show.** That the engine a trace names is the engine: the page's own report, which the door holds
+nothing of. That the fight's reading is the rules' text: one author wrote it and its plants; the browsers' fight starts
+show agreement with `sim.js`, not truth (a two-argument hypot makes the same start on both maps and is not refused).
+Any map but tactical against a browser through the door: no browser's runs of witness have been compared through it
+(NOT_MEASURED; the build container's witness traces of 2026-10-11 predate it). Any run that
+`makeRuns` would not make, a person's play among them: the door refuses it. That `legible` hides the phrase from a
+search anywhere in a line, or from a terminal that wraps a long line: it makes the start of every line and the exit
+status honest. That the 0.5 m plant refuses but in this map's state (about 0.018 m below its bound). Linux.
+
+**Not done.** A trace made at this tree with a browser (`python graybox/trace.py run tactical --browser msedge`, after
+setting aside `chromium.json`, `edge-155-windows.json` and `latest.json`, which it overwrites); the full check
+(`python art/selftests.py --repeat 2`); the classifier his pushed tree holds over the commit (`classify`, `plants`); the
+gate twice on the committed tree, and the `Gated-Tree:` line. These are run on the committed tree and recorded in the
+commit message. Next, by his ruling: the REACH-1 repair; then GLUE-0's order.
+
+NOT_MEASURED: the gate on this tree; the full check; the classifier; a browser at this tree; his checkout; Linux. No row,
+rung, pinned source, oracle file, registered entry, BINDING-0 file, frozen file, `art/references.jsonl`, `sim.js` or
+rules document changed. Docs: AGENTS.md (the tick's and the bot's rows), graybox/README.md, docs/BOUNDARIES.md (its
+`tick_ref.py` row, :35 and :50), docs/CAPABILITY-MATRIX.md (F-12, §9's note), docs/CORE.md (graybox 9,923 lines), the
+0254 entry's order (a note), this entry.

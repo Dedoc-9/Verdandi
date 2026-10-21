@@ -348,6 +348,24 @@ MEASURED by the agent on his machine in a scratch clone (Windows 11, Python 3.14
 - docs/CAPABILITY-MATRIX-ROWS.md cites `CERT SELFTEST 7/7`, which is 11/11 since 0254; it is a dated, generated audit and
   is not edited.
 
+**F-12 · `tick_ref.py verify` had no door (found 2026-10-19, on 1381b31, in the review packet; closed by 0255,
+2026-10-20).** MEASURED there by the main session: a trace of no runs, the walk and the fight cut to 10 ticks, and the
+stress run renamed and cut to 2 inputs, each `TICK REFERENCE VERIFIED` with exit 0. Reported, checked by the agents and
+not reproduced by the main session then: a forged fight start scoring 43 where the honest one scores 1, and a start
+with x = NaN. MEASURED again on e759213, in scratch on his machine (a `git archive` of e759213; Windows 11, Python
+3.14.5): `vd/attacks3`'s a01 (no runs, 0 ticks of 0 runs), a06 (cut, 3,620 ticks), a05 (renamed and cut, 2,265), a07
+(the forged fight, 5,863) and a09 (a start with x = NaN, 5,863), each VERIFIED with exit 0; a11, a NaN in an input
+record, which the preparation added and the packet did not report, ended in a traceback (`InputRefused:
+INPUT-NOT-FINITE`, exit 1) and was never VERIFIED. Closed by 0255 (VERIFY-DOOR-0): ten codes, VERIFY-MAP, -FORM,
+-NO-RUNS, -RUN-SET, -GIVEN, -NONFINITE, -START, -LENGTH, -INPUTS and -PLAY; the five refused by VERIFY-NO-RUNS,
+VERIFY-LENGTH, VERIFY-RUN-SET, VERIFY-START and VERIFY-NONFINITE, and a11 by VERIFY-NONFINITE, each exit 1; `DOOR
+SELFTEST 64/64`; the recorded traces still VERIFIED. What the door does not show: that the engine a trace names is the
+engine (the page's own report); that the fight's reading is the rules' text (one author: agreement with `sim.js`, not
+truth); any map but tactical against a browser through the door (witness only by `sim.js` under node, OBSERVED); any run `makeRuns`
+would not make (refused). Older than the door and outside it, recorded and not repaired: `tick_ref.py cases`, `rules2`
+and `rules3` print a results file's userAgent and its case lines as they are (`print` of the page's text); the door's
+`legible` is not applied there.
+
 ## 6. SPEC1 against the rules
 
 About a third of SPEC1 already exists under other names, off the gate, in the art layer: stored inverses and
@@ -564,6 +582,10 @@ Reported by the readers. Each line is to be read again before its fix.
 
 0245 corrects AGENTS.md:96, the three art/STUDIO.md lines and the director README's current-state table (line 208;
 line 188 is dated and stays). The rest wait for the patch that touches them.
+
+Note (2026-10-20): 0255 corrects graybox/README.md:364-365 and docs/BOUNDARIES.md:35 and :50, each read again before its
+fix (BOUNDARIES.md:35: `art/director.py` writes the design text and the layout under `graybox/maps/` when an intent's
+layout is admitted). Each row stays as the audit wrote it.
 
 Commit `6af1d9f`'s message says the flagship's undo stage requires the certificate "exact". It requires `ok` and
 `head_restored` (`art/flagship.py:176`), which has the same effect. History is not rewritten; this is said here.

@@ -6,6 +6,7 @@
 #
 #   python graybox/tick_ref.py verify TRACE.json
 #   python graybox/tick_ref.py selftest TRACE.json
+#   python graybox/tick_ref.py doortest TRACE.json
 #   python graybox/tick_ref.py cases [RESULTS.json]
 #   python graybox/tick_ref.py rules2 [RESULTS.json]
 #   python graybox/tick_ref.py rules3 [RESULTS.json]
@@ -24,10 +25,14 @@
 # `verify` reads a trace written by graybox/trace.py (any engine), converts the map it names with graybox/level.py and
 # holds the trace to it (the manifest's digests), then plays each rules-1 run from its start with the browser's inputs
 # and compares every tick's snapshot with the browser's, byte for byte, naming the first tick and the fields that
-# differ. It makes the stress run's inputs again from integers and its start from the map, and requires both to be the
-# browser's. It trusts nothing the browser computed but the inputs (and the starts of the runs a bot made, which it
-# reads back exactly). `selftest` plants defects in a copy of the trace and in this implementation, and requires each
-# to be found where it was planted.
+# differ. Before it plays, the door (VERIFY-DOOR-0, below): the runs must be the ones sim.js's makeRuns makes for the
+# map, in its order and each once, and each run's start and inputs the ones made here from the map alone (the walk by
+# graybox/bot_ref.py, the fight by a reading of lines() and makeRuns, the stress run from integers), as many snapshots
+# as inputs, every number finite; each refusal a FAIL row with its own code, and the verdict FAILED. It trusts nothing
+# the browser computed, nor which runs it chose to send. `selftest` plants defects in a copy of the trace and in this
+# implementation, and requires each to be found where it was planted. `doortest` makes the attacks that the verifier
+# accepted before the door from a trace of the browser's own runs, requires each refused by its own code, plants
+# defects in the door's reading of the fight, and switches the door off to show that the door is what refuses them.
 #
 # The input contract (RULES-1.md, *The input*; INPUT-CONTRACT-0, the owner's ruling of 2026-10-11): `tick` admits its
 # input or refuses it, whole, before anything of the state is touched. `cases` plays the shared table of hostile inputs
@@ -969,17 +974,18 @@ def stress_inputs(n):
 # ------------------------------------------------------------------------------------------------ verification
 def fields_of(text):
     d = json.loads(text)
-    out = {k: v for k, v in d.items() if k != "targets"}
-    for n, t in enumerate(d.get("targets", [])):
+    ts = d.get("targets")
+    listed = isinstance(ts, list) and all(isinstance(t, dict) for t in ts)   # else "targets" is a field like any other
+    out = {k: v for k, v in d.items() if k != "targets" or not listed}
+    for n, t in enumerate(ts if listed else []):
         for k, v in t.items():
             out["targets[%d].%s" % (n, k)] = v
     return out
 
 
 def show(v):
-    if isinstance(v, str) and v[:1] == "f" and len(v) == 17:
-        return repr(struct.unpack(">d", bytes.fromhex(v[1:]))[0])
-    return json.dumps(v)
+    d = as_double(v)
+    return repr(d) if d is not None else json.dumps(v)
 
 
 def ulps(a, b):
@@ -1007,43 +1013,426 @@ def play(world, run):
 
 
 def load_trace(path):
-    with open(path, encoding="utf-8") as fh:
-        T = json.load(fh)
-    if T.get("format") != "VERDANDI-TRACE" or T.get("version") != "1" or "1" not in T.get("rules", {}):
+    with open(path, "rb") as fh:
+        return parse_trace(fh.read(), path)
+
+
+def parse_trace(data, path):
+    """A trace's bytes read as VERDANDI-TRACE 1 with a rules-1 section, or SystemExit saying why not (never a traceback:
+    JSON nested past the reader's depth is not JSON here)."""
+    try:
+        T = json.loads(data.decode("utf-8"))
+    except (ValueError, RecursionError) as e:
+        raise SystemExit("TICK-REF: %s is not a VERDANDI-TRACE 1 file: not JSON (%s: %s)" % (path, type(e).__name__, str(e)[:200]))
+    if not isinstance(T, dict) or T.get("format") != "VERDANDI-TRACE" or T.get("version") != "1" \
+            or not isinstance(T.get("rules"), dict) or "1" not in T["rules"]:
         raise SystemExit("TICK-REF: %s is not a VERDANDI-TRACE 1 file with a rules-1 section" % path)
     return T
 
 
 def check_trace(T, out):
-    """The map the trace names, converted here and held to the trace's manifest; the world; problems found."""
+    """The map the trace names, converted here and held to the trace's manifest (the row VERIFY-MAP); the world, or None
+    when the map cannot be converted here (the row then a FAIL)."""
     name = T.get("map", "")
-    if not re.fullmatch(r"[a-z0-9_-]+", name):
+    if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_-]+", name):
         raise SystemExit("TICK-REF: the trace names no map")
-    conv = level.convert(name)
-    mine, theirs = conv["manifest"], T.get("manifest") or {}
+    try:
+        conv = level.convert(name)
+    except (OSError, ValueError, KeyError, level.MapError) as e:
+        why = "%s of %s" % (e.strerror, os.path.basename(e.filename or "")) if isinstance(e, OSError) else str(e)[:200]
+        out.append(("VERIFY-MAP the map", False, "%s cannot be converted here (%s: %s): nothing of the trace can be held to it" % (
+            name, type(e).__name__, why)))
+        return None
+    mine, theirs = conv["manifest"], T.get("manifest") if isinstance(T.get("manifest"), dict) else {}
     same = all(mine.get(k) == theirs.get(k) for k in ("canonical_sha256", "collision_sha256"))
-    out.append(("the map", same, "%s converted here: canonical %s, collision %s%s" % (
+    out.append(("VERIFY-MAP the map", same, "%s converted here: canonical %s, collision %s%s" % (
         name, mine["canonical_sha256"][:12], mine["collision_sha256"][:12], "" if same else "; the trace's are %s, %s" % (
             str(theirs.get("canonical_sha256"))[:12], str(theirs.get("collision_sha256"))[:12]))))
     return World(conv)
 
 
-def verify(T, world, rows):
-    runs = T["rules"]["1"]["runs"]
-    total, bad = 0, 0
-    for run in runs:
+# ------------------------------------------------------------------------------------------------ the door (VERIFY-DOOR-0)
+# What a trace must be before its snapshots are worth comparing. Before the door, `verify` played whatever runs a trace
+# held and checked only that each start read back to its own bytes, so that a trace of no runs, a run cut short, the
+# stress run renamed, or a start forged (its snapshots made by this very tick) was VERIFIED (MEASURED, 2026-10-19). Now
+# the host makes every run the browser was to play, from the map alone, and refuses, each with its own code and in this
+# order, whatever is not what it made:
+#
+#   VERIFY-MAP        the map named cannot be converted here, or, converted here, is not the one the trace's manifest
+#                     names (its canonical and collision digests)
+#   VERIFY-FORM       the rules-1 section is not exactly {calls, runs}, its calls a list and its runs a list of exactly
+#                     {name, start, inputs, snaps}, a name and a start that are strings and inputs and snapshots that
+#                     are lists of strings, every start and snapshot a JSON object and every input a list of [field,
+#                     value] pairs, none nested deeper than the writing's (3 and 2) nor past the JSON reader's depth,
+#                     a start's or snapshot's targets, when present, a list of JSON objects, and no value a string of
+#                     17 characters that begins "f" and is not a number of the writing ("f" and 16 hex digits: the
+#                     readers would take it for one and could not read it); or inputs_from is neither absent nor
+#                     exactly {engine, inputs}, two strings. No row follows it
+#   VERIFY-NO-RUNS    the trace holds no run under rules 1
+#   VERIFY-RUN-SET    the runs' names are not, in order and each once, the runs sim.js's makeRuns makes for the map:
+#                     "the walk" if the bot walks a route of it (made here by graybox/bot_ref.py, walk-1), "the fight"
+#                     if lines() finds an open line to a target (read here, `fight_line`), and "the stress" always. A
+#                     trace given the Python walk (inputs_from.engine "bot-ref-walk-1": trace.py --inputs BOT.json)
+#                     holds the walk alone; one given another trace's runs holds makeRuns' set, or the walk alone
+#   VERIFY-GIVEN      inputs_from names inputs other than the sha256 of the runs the trace holds, as trace.py names them
+#   VERIFY-NONFINITE  a number in a start, an input or a snapshot is not finite, as the readers read it (`as_double`: the
+#                     hex in either case), or a bare JSON NaN or Infinity
+#   VERIFY-START      a run's start is not, byte for byte, the start made here
+#   VERIFY-LENGTH     a run's inputs are not as many as the host makes for it, or its snapshots not as many as its inputs
+#   VERIFY-INPUTS     a run's inputs are not, byte for byte, the inputs made here
+#   VERIFY-PLAY       a run is played only when its name, start and inputs are the ones made here (any other: FAIL, not
+#                     played: the tick is never given a start or an input the trace made, so that an infinite or very
+#                     large start, which never ends in cells_near, is refused by its rows and printed); then a snapshot
+#                     that is not the Python tick's (the comparison itself, as before the door), or a run that cannot be
+#                     played (an input the contract refuses, a run that cannot be read), a FAIL row where before the door
+#                     it was a traceback
+#
+# The verdict is VERIFIED only when every row passes. The starts and inputs are made by this file and bot_ref.py, never
+# read from the trace. The fight is a reading of sim.js's lines() and makeRuns by one author (written for the door):
+# it is held by the browsers' own fight starts on tactical (a recorded trace refuses a reading that makes another start
+# there, at VERIFY-START, or none, at VERIFY-RUN-SET; a wrong reading that makes the same start, as a two-argument hypot
+# does on tactical and on witness, is not refused: agreement, not truth, G23; no browser's runs of witness have been
+# compared through the door, NOT_MEASURED) and by plants in `doortest` that change the reading and must make a
+# recorded trace refuse (each run only on a map where it changes the fight). Not held, because nothing of rules 1's
+# numbers rests on them: the runtime (the engine a trace names is the page's own report), inputs_from's engine but for
+# the Python walk's name, the rules-1 calls but for being a list (the engine's Math called under rules 1, as the page
+# recorded it: trace.py compares them), the rules-0 section, the manifest but for its two digests, and the file's other
+# keys. A trace that cannot be read (not JSON, or nested past the reader's depth) is refused before the door.
+DOOR = True   # switched off only by doortest's harness plant, to show that the attacks are refused because of it
+RUN_ORDER = ("the walk", "the fight", "the stress")
+STRESS_TICKS = 3600   # makeRuns: stressInputs(3600)
+AIM = 1.2             # lines() and makeRuns: the target's point aimed at, metres above its foot
+_WALKS = {}
+
+
+def made_walk(name):
+    """The walk, as bot_ref.py makes it from the map (WALK-1.md): (start, inputs), or None when no route walks."""
+    if name not in _WALKS:
+        import bot_ref   # here, not above: bot_ref.py imports this file
+        try:
+            W, _tried = bot_ref.make(name)
+            _WALKS[name] = (W["runs"][0]["start"], list(W["runs"][0]["inputs"]))
+        except bot_ref.BotTraceError as e:
+            if e.code != "BOT-REF-NO-WALK":
+                raise
+            _WALKS[name] = None
+    return _WALKS[name]
+
+
+def given_walk_engine():
+    import bot_ref
+    return bot_ref.GIVEN
+
+
+def fight_line(world, aim=AIM, rows_first=True):
+    """sim.js's lines(world).shot: for each target of a new state at spawn A in order, the floor cells row by row (j,
+    then i), the first 4 to 30 m from it whose line from the eye to the target's point AIM above its foot no wall stops.
+    (target, x, z) or None. aim and rows_first are for doortest's plants alone. Equivalent mutants, MEASURED 2026-10-20:
+    on tactical every aim from about 0.52 m to 5.02 m finds the same cell (T1, 11.0, 17.0), so a plant of the aim inside
+    that range shows nothing there (0.5 m finds (T1, 5.0, 19.0), about 0.018 m below that bound: it refuses only in
+    this map's state); on witness the cells searched column by column find the same cell as row by row (T1, 63.0,
+    53.0), so that plant is not run there (doortest says so); and the line's length by a hypot of two arguments and not
+    three finds the same cell on tactical and on witness, an equivalent mutant on both, not kept as a plant."""
+    c = world.cell
+    s0 = State.new(world, "A")
+    if rows_first:
+        order = [(i, j) for j in range(world.h) for i in range(world.w)]
+    else:
+        order = [(i, j) for i in range(world.w) for j in range(world.h)]
+    for t in s0.targets:
+        for i, j in order:
+            if world.top(i, j) != 0:
+                continue
+            x, z = (i + 0.5) * c, (j + 0.5) * c
+            dist = hypot(t.x - x, t.z - z)
+            if dist < 4 or dist > 30:
+                continue
+            oy, ty = K.eye, t.y + aim
+            dx, dz, dy = t.x - x, t.z - z, ty - oy
+            L = arith.xhypot(dx, dy, dz)
+            if wall_distance(world, x, oy, z, dx / L, dy / L, dz / L, K.ray_range) > L:
+                return t, x, z
+    return None
+
+
+def made_fight(world, pitch_aim=AIM, **plant):
+    """makeRuns' fight: its start from the line above, with rules 1's hypot and atan2, and its scripted inputs.
+    pitch_aim (the point makeRuns' pitch aims at) and plant (fight_line's) are for doortest's plants alone."""
+    shot = fight_line(world, **plant)
+    if shot is None:
+        return None
+    t, x, z = shot
+    s = State.new(world, "A")
+    s.x, s.z = x, z
+    s.feet = world.ground(x, z)
+    tgt = [q for q in s.targets if q.id == t.id][0]
+    dx, dz = tgt.x - s.x, tgt.z - s.z
+    s.yaw = math.fmod(math.fmod(arith.xatan2(dx, -dz), TWO_PI) + TWO_PI, TWO_PI)
+    s.pitch = arith.xatan2(tgt.y + pitch_aim - (s.feet + K.eye), hypot(dx, dz))
+    out = []
+
+    def add(n, inp):
+        for k in range(n):
+            out.append(inp(k) if callable(inp) else dict(inp))
+    add(1, {"fire": True})
+    add(20, {})
+    add(1, {"fire": True})
+    add(1, {"jump": True})
+    add(8, {})
+    add(1, {"fire": True, "dyaw": 0.02})
+    add(60, lambda k: {"f": True, "dyaw": 0.01, "dpitch": -0.002, "fire": k % 25 == 0})
+    add(math.ceil(K.target_down / TICK) + 10, {})
+    add(1, {"side": "B"})
+    add(30, {"f": True, "r": True})
+    add(1, {"fire": True})
+    add(1, {"reset": True})
+    add(1, {"side": "A"})
+    add(40, lambda k: {"b": True, "l": True, "jump": k % 15 == 0})
+    return write_snapshot(s), [write_input(i) for i in out]
+
+
+def made_runs(T, world):
+    """Every run the host makes for the trace's map: {name: (start, inputs)}."""
+    made = {}
+    w = made_walk(T["map"])
+    if w is not None:
+        made["the walk"] = w
+    f = globals()["made_fight"](world)   # by name, so that doortest's plants of the reading reach it
+    if f is not None:
+        made["the fight"] = f
+    made["the stress"] = (write_snapshot(State.new(world, "A")), [write_input(i) for i in stress_inputs(STRESS_TICKS)])
+    return made
+
+
+def depth(v):
+    """How deep v nests (a scalar 0, [] or {} 1), counted without recursion so that no depth of a trace's JSON ends in a
+    traceback here."""
+    deepest, stack = 0, [(v, 1)]
+    while stack:
+        x, d = stack.pop()
+        if isinstance(x, (dict, list)):
+            deepest = max(deepest, d)
+            stack.extend((y, d + 1) for y in (x.values() if isinstance(x, dict) else x))
+    return deepest
+
+
+DEPTH = {dict: 3, list: 2}   # a start or snapshot: {.., "targets": [{..}]}; an input: [[field, value], ..]
+
+
+def form_faults(T):
+    sec = T["rules"]["1"]
+    if not isinstance(sec, dict) or not isinstance(sec.get("runs"), list):
+        return ["the rules-1 section holds no list of runs"]
+    if set(sec) != {"calls", "runs"} or not isinstance(sec["calls"], list):
+        return ["the rules-1 section is not exactly {calls, runs} with its calls a list (it holds %s)" % ", ".join(sorted(map(str, sec)))]
+    src = T.get("inputs_from")
+    if src is not None and not (isinstance(src, dict) and set(src) == {"engine", "inputs"} and all(isinstance(v, str) for v in src.values())):
+        return ["inputs_from is not {engine, inputs}, two strings"]
+    for n, run in enumerate(sec["runs"]):
+        where = "run %d" % (n + 1)
+        if not isinstance(run, dict) or set(run) != {"name", "start", "inputs", "snaps"}:
+            return ["%s is not {name, start, inputs, snaps}" % where]
+        if not (isinstance(run["name"], str) and isinstance(run["start"], str) and isinstance(run["inputs"], list) and isinstance(run["snaps"], list)):
+            return ["%s: its name and start are not strings, or its inputs and snapshots not lists" % where]
+        texts = [("its start", run["start"], dict)] + [("input %d" % (k + 1), v, list) for k, v in enumerate(run["inputs"])] \
+            + [("snapshot %d" % (k + 1), v, dict) for k, v in enumerate(run["snaps"])]
+        for what, text, kind in texts:
+            try:
+                v = json.loads(text) if isinstance(text, str) else None
+            except (ValueError, RecursionError):
+                v = None
+            if not isinstance(v, kind) or (kind is list and not all(isinstance(p, list) and len(p) == 2 and isinstance(p[0], str) for p in v)):
+                return ["%s (%s), %s, is not %s" % (where, run["name"], what, "a JSON object" if kind is dict else "a list of [field, value] pairs")]
+            if depth(v) > DEPTH[kind]:
+                return ["%s (%s), %s, nests %d deep, deeper than any %s of the trace's writing (%d)" % (
+                    where, run["name"], what, depth(v), "start or snapshot" if kind is dict else "input", DEPTH[kind])]
+            ts = v.get("targets") if kind is dict else None
+            if kind is dict and "targets" in v and not (isinstance(ts, list) and all(isinstance(t, dict) for t in ts)):
+                return ["%s (%s), %s, holds targets that are not a list of JSON objects (it holds %s)" % (
+                    where, run["name"], what, json.dumps(ts)[:80])]
+            bad = misread(v)
+            if bad is not None:
+                return ["%s (%s), %s, holds %s, which the readers take for a number and is not one (\"f\" and 16 hex "
+                        "digits)" % (where, run["name"], what, json.dumps(bad))]
+    return []
+
+
+def misread(v):
+    """The first string in v, walked without recursion in the order written, of 17 characters beginning "f" that is not a
+    number of the trace's writing (`as_double` None): the readers (read_input, _dec, show) take such a string for a
+    number and raise on it; or None."""
+    stack = [v]
+    while stack:
+        x = stack.pop()
+        if isinstance(x, str) and len(x) == 17 and x[:1] == "f" and as_double(x) is None:
+            return x
+        if isinstance(x, (dict, list)):
+            stack.extend(reversed(list(x.values() if isinstance(x, dict) else x)))
+    return None
+
+
+def as_double(v):
+    """v as this file's readers read a number of the trace's writing (read_input, _dec, show: a string of 17 characters,
+    "f" and what bytes.fromhex makes 8 bytes of, upper case and lower), or None when it is not one: a string of that
+    shape that is not one, on which the readers raise, VERIFY-FORM refuses (`misread`)."""
+    if not (isinstance(v, str) and len(v) == 17 and v[:1] == "f"):
+        return None
+    try:
+        return struct.unpack(">d", bytes.fromhex(v[1:]))[0]
+    except (ValueError, struct.error):
+        return None
+
+
+def nonfinite(v):
+    """A number anywhere in v that is not finite, as the readers read it (`as_double`: the trace's writing, in either
+    case), or a bare JSON number (Python's json reads NaN, Infinity and -Infinity, which no engine's JSON writes); or
+    None. Walked without recursion, in the order written."""
+    stack = [v]
+    while stack:
+        x = stack.pop()
+        if isinstance(x, float) and not math.isfinite(x):
+            return repr(x)
+        d = as_double(x)
+        if d is not None and not math.isfinite(d):
+            return x
+        if isinstance(x, (dict, list)):
+            stack.extend(reversed(list(x.values() if isinstance(x, dict) else x)))
+    return None
+
+
+def given_digest(runs):
+    """trace.py's name for runs it gives a browser (and bot_ref.py's for a walk): the sha256 of their names, starts and
+    inputs."""
+    import hashlib
+    return hashlib.sha256(json.dumps([{"name": r["name"], "start": r["start"], "inputs": r["inputs"]} for r in runs],
+                                     sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def first_difference(mine, theirs):
+    a, b = fields_of(mine), fields_of(theirs)
+    return "; ".join("%s: here %s, the trace %s" % (k, show(a[k]) if k in a else "-", show(b[k]) if k in b else "-")
+                     for k in sorted(set(a) | set(b)) if a.get(k) != b.get(k)) or SAME_FIELDS
+
+
+SAME_FIELDS = "the same fields and values, in other bytes (an order, a key twice, a writing of their own)"
+
+
+def ulp_note(a, b):
+    """", N ulp" when a and b are both numbers of the trace's writing (`as_double`), else "": ulps reads only those."""
+    return (", %d ulp" % ulps(a, b)) if as_double(a) is not None and as_double(b) is not None else ""
+
+
+def played(world, run, rows):
+    """VERIFY-PLAY: the run played here from its start with its inputs, each snapshot held to the trace's; ticks the
+    same, or 0."""
+    label = "VERIFY-PLAY run " + str(run["name"])
+    try:
         r = play(world, run)
-        if r is None:
-            total += len(run["inputs"])
-            rows.append(("run " + run["name"], True, "%d ticks: every snapshot the same bytes as the browser's" % len(run["inputs"])))
+    except InputRefused as e:
+        rows.append((label, False, "an input is refused by the input contract (%s): the run cannot be played" % e.category))
+        return 0
+    except (ValueError, KeyError, TypeError, AttributeError, IndexError, struct.error) as e:
+        rows.append((label, False, "the run cannot be read: %s: %s" % (type(e).__name__, e)))
+        return 0
+    if r is None:
+        rows.append((label, True, "%d ticks: every snapshot the same bytes as the browser's" % len(run["inputs"])))
+        return len(run["inputs"])
+    if "what" in r:
+        rows.append((label, False, "at tick %d: %s" % (r["tick"], r["what"])))
+    else:
+        rows.append((label, False, "FIRST DIFFERENT at tick %d, in %s" % (r["tick"], "; ".join(
+            "%s: here %s, the browser %s%s" % (k, show(a), show(b), ulp_note(a, b))
+            for k, a, b in r["fields"][:6]) or SAME_FIELDS)))
+    return 0
+
+
+def verify(T, world, rows):
+    """The door's rows in their order, then every run played and compared; (ticks played the same, rows failed)."""
+    if not DOOR:
+        return verify_without_door(T, world, rows)
+    before = len(rows)
+
+    def failed():
+        return sum(1 for r in rows[before:] if not r[1])
+    faults = form_faults(T)
+    rows.append(("VERIFY-FORM the trace's form", not faults, (faults[0] + "; no row after this one is written: the door's "
+                 "other rows read only a trace of this form") if faults else
+                 "rules 1's {calls, runs}; runs of {name, start, inputs, snaps}; every start and snapshot a JSON object, every input a list of "
+                 "[field, value] pairs, none nested deeper than the writing's"))
+    if faults:
+        return 0, failed()
+    runs, src = T["rules"]["1"]["runs"], T.get("inputs_from")
+    rows.append(("VERIFY-NO-RUNS a run at least", len(runs) > 0, "%d runs" % len(runs) if runs else "the trace holds no run under rules 1"))
+    made = made_runs(T, world)
+    own = [n for n in RUN_ORDER if n in made]
+    if src is None:
+        allowed, kind = [own], "the browser's own runs, makeRuns' for this map"
+    elif src["engine"] == given_walk_engine():
+        allowed, kind = ([["the walk"]] if "the walk" in made else []), "the Python walk, given (trace.py --inputs BOT.json): the walk alone"
+    else:
+        allowed = [own] + ([["the walk"]] if "the walk" in made and own != ["the walk"] else [])
+        kind = "the runs of %s, given: makeRuns' for this map, or the walk alone" % src["engine"]
+    names = [r["name"] for r in runs]
+    ok = names in allowed
+    rows.append(("VERIFY-RUN-SET the runs, in order, each once", ok, "%s; %s: %s%s" % (
+        kind, "the trace's" if ok else "NOT the trace's, which are", ", ".join(names) or "none",
+        "" if ok else "; made here: %s" % (" or ".join("[%s]" % ", ".join(a) for a in allowed) or "none"))))
+    if src is None:
+        rows.append(("VERIFY-GIVEN the runs' source", True, "none given: the browser made its own runs"))
+    else:
+        d = given_digest(runs)
+        rows.append(("VERIFY-GIVEN the runs' source", src["inputs"] == d, "given the runs of %s, inputs %s: %s" % (
+            src["engine"], src["inputs"][:16], "the sha256 of the runs it holds" if src["inputs"] == d else "NOT the sha256 of the runs it holds (%s)" % d[:16])))
+    found = None
+    for run in runs:
+        for what, texts in (("its start", [run["start"]]), ("input", run["inputs"]), ("snapshot", run["snaps"])):
+            for k, text in enumerate(texts):
+                v = nonfinite(json.loads(text))
+                if v is not None and found is None:
+                    found = "%s: %s%s holds %s (%s)" % (run["name"], what, "" if what == "its start" else " %d" % (k + 1), v, show(v))
+    rows.append(("VERIFY-NONFINITE every number finite", found is None, found or "every number of every start, input and snapshot"))
+    mine = [r for r in runs if r["name"] in made]
+    starts = [(r["name"], first_difference(made[r["name"]][0], r["start"])) for r in mine if r["start"] != made[r["name"]][0]]
+    rows.append(("VERIFY-START each start made here", not starts, "; ".join("%s: NOT the start made here (%s)" % (n, d[:400]) for n, d in starts) if starts else
+                 "%s: the same bytes as made here" % (", ".join(r["name"] for r in mine) or "no run")))
+    lengths = [(r["name"], len(r["inputs"]), len(made[r["name"]][1]), len(r["snaps"])) for r in mine]
+    short = [x for x in lengths if not x[1] == x[2] == x[3]]
+    rows.append(("VERIFY-LENGTH each run's ticks", not short, "; ".join("%s: %d inputs and %d snapshots, NOT the %d made here" % (n, a, s, m) for n, a, m, s in short) if short else
+                 ", ".join("%s %d" % (n, a) for n, a, _m, _s in lengths) or "no run"))
+    differ = []
+    for r in mine:
+        theirs, ours = r["inputs"], made[r["name"]][1]
+        k = next((k for k, (a, b) in enumerate(zip(theirs, ours)) if a != b), None)
+        if k is not None:
+            differ.append("%s: tick %d, the trace's %s, made here %s" % (r["name"], k + 1, theirs[k], ours[k]))
+        elif len(theirs) != len(ours):
+            differ.append("%s: the trace's first %d, of the %d made here" % (r["name"], len(theirs), len(ours)))
+    rows.append(("VERIFY-INPUTS each run's inputs made here", not differ, "; ".join(differ) if differ else
+                 "every input of %s the same bytes as made here" % (", ".join(r["name"] for r in mine) or "no run")))
+    total = 0
+    for run in runs:
+        m = made.get(run["name"])
+        if m is not None and run["start"] == m[0] and run["inputs"] == m[1]:
+            total += played(world, run, rows)
         else:
-            bad += 1
-            if "what" in r:
-                rows.append(("run " + run["name"], False, "at tick %d: %s" % (r["tick"], r["what"])))
-            else:
-                rows.append(("run " + run["name"], False, "FIRST DIFFERENT at tick %d, in %s" % (r["tick"], "; ".join(
-                    "%s: here %s, the browser %s%s" % (k, show(a), show(b), (", %d ulp" % ulps(a, b)) if isinstance(a, str) and isinstance(b, str) and a[:1] == b[:1] == "f" else "")
-                    for k, a, b in r["fields"][:6]))))
+            rows.append(("VERIFY-PLAY run " + run["name"], False, "not played: its %s (refused above); the tick is given only a "
+                         "start and inputs made here" % ("name is not one made here" if m is None else "start is not the one made here"
+                                                         if run["start"] != m[0] else "inputs are not the ones made here")))
+    return total, failed()
+
+
+def verify_without_door(T, world, rows):
+    """The verifier's rows before the door (the runs played as they are; the stress run's start and inputs made again
+    only if a run has its name), for doortest's harness plant alone. Each run is played through `played`, which writes a
+    run that cannot be played as a FAIL row under VERIFY-PLAY: an input the input contract refuses (InputRefused), or a
+    run that cannot be read. The verifier before the door raised these: of doortest's attacks, the two with a walk input
+    of dyaw NaN (in lower and in upper-case hex) ended in a traceback at e759213, InputRefused: INPUT-NOT-FINITE; the
+    other eight it refused, it refused there by the play (six) or by its row of the stress run (two), as here. It plays
+    every run it is given: never give it an attack whose start is far away (cells_near never ends there), which is why
+    BOUNDS is not among the attacks it plays."""
+    runs = T["rules"]["1"]["runs"]
+    before = len(rows)
+    total = sum(played(world, run, rows) for run in runs)
     stress = [r for r in runs if r["name"] == "the stress"]
     if stress:
         made = [write_input(i) for i in stress_inputs(len(stress[0]["inputs"]))]
@@ -1051,25 +1440,44 @@ def verify(T, world, rows):
         rows.append(("the stress run's inputs and start, made again here", made == stress[0]["inputs"] and start == stress[0]["start"],
                      "%d inputs from integers%s; the start, a new state at spawn A, %s" % (
                          len(made), "" if made == stress[0]["inputs"] else " NOT the browser's", "the browser's" if start == stress[0]["start"] else "NOT the browser's")))
-    return total, bad
+    return total, sum(1 for r in rows[before:] if not r[1])
 
 
 def engine(T):
     rt = T.get("runtime") or {}
-    return rt.get("userAgent", "?")
+    return rt.get("userAgent", "?") if isinstance(rt, dict) else "?"
+
+
+def run_count(T):
+    sec = T["rules"]["1"]
+    return len(sec["runs"]) if isinstance(sec, dict) and isinstance(sec.get("runs"), list) else 0
+
+
+def legible(s):
+    """s with every character that is not printable (a line break, a carriage return, an escape, a lone surrogate) written
+    as \\uXXXX (\\UXXXXXXXX past U+FFFF): nothing a trace holds makes a line of its own, moves the terminal's cursor or
+    fails to be encoded. It makes the start of every line and the exit status honest, not a search for a phrase anywhere
+    in a line (a name holding "TICK REFERENCE VERIFIED" still holds it, escaped, inside its row), nor a line a terminal
+    wraps at its width."""
+    return "".join(c if c.isprintable() else ("\\u%04x" if ord(c) <= 0xFFFF else "\\U%08x") % ord(c) for c in s)
 
 
 def cmd_verify(path):
     T = load_trace(path)
     rows = []
     world = check_trace(T, rows)
-    total, _bad = verify(T, world, rows)
-    print("TICK-REF  %s  map %s  rules 1  (%s)" % (os.path.basename(path), T["map"], engine(T)))
-    for name, ok, detail in rows:
-        print("%s %s — %s" % ("PASS" if ok else "FAIL", name, detail))
+    total, _bad = verify(T, world, rows) if world is not None else (0, 1)
+    for line in verdict_lines(path, T, rows, total):
+        print(line)
+    return 0 if all(r[1] for r in rows) else 1
+
+
+def verdict_lines(path, T, rows, total):
+    """What `verify` prints: the header, a line for each row, the verdict last; every line legible."""
     ok = all(r[1] for r in rows)
-    print("TICK REFERENCE %s  %d ticks of %d runs played here and compared" % ("VERIFIED" if ok else "FAILED", total, len(T["rules"]["1"]["runs"])))
-    return 0 if ok else 1
+    return [legible("TICK-REF  %s  map %s  rules 1  (%s)" % (os.path.basename(path), T["map"], engine(T)))] + [
+        legible("%s %s — %s" % ("PASS" if good else "FAIL", name, detail)) for name, good, detail in rows] + [
+        "TICK REFERENCE %s  %d ticks of %d runs played here and compared" % ("VERIFIED" if ok else "FAILED", total, run_count(T))]
 
 
 # ------------------------------------------------------------------------------------------------ the input contract's cases
@@ -1230,18 +1638,33 @@ def cmd_cases(path=None):
 
 
 # ------------------------------------------------------------------------------------------------ the self-test
+def print_rows(rows):
+    """PASS, FAIL, or SKIP for a row that was not run (ok None: its detail says why); a SKIP fails nothing."""
+    for name, ok, detail in rows:
+        print(legible("%s %s — %s" % ("SKIP" if ok is None else "PASS" if ok else "FAIL", name, detail)))
+
+
 def cmd_selftest(path):
     import copy
     T = load_trace(path)
     rows = []
     world = check_trace(T, rows)
+    if world is None:
+        print_rows(rows)
+        print("TICK-REF SELFTEST FAILED")
+        return 1
 
     def found(label, ok, detail):
         rows.append((label, ok, detail))
 
     base = []
     total, bad = verify(T, world, base)
-    found("the trace verifies", bad == 0 and all(r[1] for r in base), "%d ticks of %d runs" % (total, len(T["rules"]["1"]["runs"])))
+    found("the trace verifies", bad == 0 and all(r[1] for r in base), "%d ticks of %d runs" % (total, run_count(T)))
+    if not rows[-1][1]:
+        rows.extend((r[0], r[1], legible(r[2])) for r in base if not r[1])
+        print_rows(rows)
+        print("TICK-REF SELFTEST FAILED  (its plants not run: they play the trace's own runs, which the door refuses)")
+        return 1
     # the specification's numbers are sim.js's (its P, as art/check.py reads it)
     src = open(os.path.join(HERE, "web", "sim.js"), encoding="utf-8").read()
     m = re.search(r"const P = \{([^}]*)\}", src)
@@ -1272,6 +1695,18 @@ def cmd_selftest(path):
         r = play(world, B)
         found("plant: one input of the walk turned a quarter radian more at tick 300", r is not None and r.get("tick") == 300,
               "found at tick %s, in %s" % (r and r.get("tick"), r and [f[0] for f in r.get("fields", [])]))
+    # a plant at the door (the whole set is `doortest`): the stress run renamed and cut to 2, VERIFIED before the door
+    if T.get("inputs_from") is None and [r["name"] for r in T["rules"]["1"]["runs"]] == list(RUN_ORDER):
+        rows_a, first, _t = judged(attacked(T, world, _stress_renamed_cut), world)
+        refused = first is not None and code_of(rows_a[first]) == "VERIFY-RUN-SET"
+        found("plant at the door: the stress run renamed and cut to 2", refused, "refused by VERIFY-RUN-SET, every row before it passed" if refused else
+              "NOT refused by VERIFY-RUN-SET: %s" % ("VERIFIED" if first is None else code_of(rows_a[first])))
+    else:
+        found("plant at the door: the stress run renamed and cut to 2", None, "not run: the plant is made from a trace of the browser's own "
+              "runs (%s, none given), and this trace holds %s%s; `doortest` on a trace of the browser's own three runs, none given, "
+              "that verifies, holds the door" % (
+                  ", ".join(RUN_ORDER), ", ".join(r["name"] for r in T["rules"]["1"]["runs"]) or "no run",
+                  ", given by %s" % T["inputs_from"]["engine"] if isinstance(T.get("inputs_from"), dict) else ""))
     # plants in this implementation: a defect here must show as a difference from the browser's states
     for label, name, mutant in MUTANTS:
         g = globals()
@@ -1295,11 +1730,620 @@ def cmd_selftest(path):
             if saved is not None:
                 g[name] = saved
             World.cells_near, K.stand_again = saved_cells, saved_stand
-    for name, ok, detail in rows:
-        print("%s %s — %s" % ("PASS" if ok else "FAIL", name, detail))
-    ok = all(r[1] for r in rows)
-    print("TICK-REF SELFTEST %s" % ("PASSED" if ok else "FAILED"))
+    print_rows(rows)
+    ok = all(r[1] is not False for r in rows)
+    skipped = sum(1 for r in rows if r[1] is None)
+    print("TICK-REF SELFTEST %s%s" % ("PASSED" if ok else "FAILED", "  (%d not run, said above)" % skipped if skipped else ""))
     return 0 if ok else 1
+
+
+# ------------------------------------------------------------------------------------------------ the door's own test
+# `doortest TRACE` (a trace of a browser's own runs: the walk, the fight and the stress run): the trace verifies through
+# the door; each attack below, made from it, is refused by its own code with every row before that code passed (the
+# self-consistent ones carry snapshots made by this file's own tick, so that only the door can refuse them); plants in
+# the door's reading of the fight make the honest trace refuse (one that makes the same fight on the trace's map, an
+# equivalent mutant measured there, is not run and says so: on witness the column search); four inputs that ended in a
+# traceback before the door's review are each refused by its own code; the bounds, found by the review of its repair
+# (2026-10-20), are each judged in bounded time with nothing raised, the tick never given a start or inputs the host did
+# not make, and every line verify would print legible; the readers of a detail read every value without raising; and
+# the harness plant, the door switched off, makes every attack the verifier accepted before the door VERIFIED again, so
+# that the refusals are the door's doing. Its rows are not R5's: none opens "plant: " and they print unbracketed.
+def replayed(world, start, inputs):
+    """Snapshots made by this file's tick from a start and inputs: what a forger who has this file can write."""
+    s = read_snapshot(start)
+    out = []
+    for inp in inputs:
+        tick(world, s, read_input(inp))
+        out.append(write_snapshot(s))
+    return out
+
+
+def _runs(T):
+    return T["rules"]["1"]["runs"]
+
+
+def _run(T, name):
+    return [r for r in _runs(T) if r["name"] == name][0]
+
+
+def _no_runs(T, world):
+    T["rules"]["1"]["runs"] = []
+
+
+def _run_removed(T, world):
+    T["rules"]["1"]["runs"] = [r for r in _runs(T) if r["name"] != "the fight"]
+
+
+def _run_renamed(T, world):
+    _run(T, "the walk")["name"] = "the stroll"
+
+
+def _run_twice(T, world):
+    import copy
+    _runs(T).append(copy.deepcopy(_run(T, "the stress")))
+
+
+def _stress_renamed_cut(T, world):
+    r = _run(T, "the stress")
+    r["name"], r["inputs"], r["snaps"] = "the strain", r["inputs"][:2], r["snaps"][:2]
+
+
+def _walk_fight_cut(T, world):
+    for name in ("the walk", "the fight"):
+        r = _run(T, name)
+        r["inputs"], r["snaps"] = r["inputs"][:10], r["snaps"][:10]
+
+
+def _forged_fight(T, world):
+    r = _run(T, "the fight")
+    s = read_snapshot(r["start"])
+    sy, cy = sin(s.yaw), cos(s.yaw)
+    for n, t in enumerate(s.targets):   # every target on the line of fire, 2 m apart from 2 m out
+        d = 2.0 + 2.0 * n
+        t.x, t.z, t.y = s.x + d * sy, s.z - d * cy, s.feet
+    s.score = 40.0
+    r["start"] = write_snapshot(s)
+    r["snaps"] = replayed(world, r["start"], r["inputs"])
+
+
+def _airborne_walk(T, world):
+    r = _run(T, "the walk")
+    s = read_snapshot(r["start"])
+    s.feet, s.on_ground, s.score = s.feet + 3.0, False, 1e6
+    r["start"] = write_snapshot(s)
+    r["snaps"] = replayed(world, r["start"], r["inputs"])
+
+
+def _fight_from_nan(T, world):
+    r = _run(T, "the fight")
+    s = read_snapshot(r["start"])
+    s.x = math.nan
+    r["start"] = write_snapshot(s)
+    r["snaps"] = replayed(world, r["start"], r["inputs"])
+
+
+def _fight_without_shots(T, world):
+    r = _run(T, "the fight")
+    out = []
+    for text in r["inputs"]:
+        inp = read_input(text)
+        if inp.get("fire") is True:
+            inp["fire"] = False
+        out.append(write_input(inp))
+    r["inputs"] = out
+    r["snaps"] = replayed(world, r["start"], r["inputs"])
+
+
+def _nan_input(T, world):
+    r = _run(T, "the walk")
+    inp = read_input(r["inputs"][99])
+    inp["dyaw"] = math.nan
+    r["inputs"][99] = write_input(inp)
+
+
+def _given_forged(T, world):
+    T["rules"]["1"]["runs"] = [_run(T, "the walk")]
+    T["inputs_from"] = {"engine": given_walk_engine(), "inputs": "0" * 64}
+
+
+NAN_UPPER = "f7FF8000000000000"   # a NaN in the trace's writing with its hex in upper case, which the readers read
+
+
+def _snapshot_field(text, field, value):
+    """A snapshot's text with one top-level field's value replaced, every other byte kept (the writing is compact JSON,
+    which json.dumps writes again byte for byte: held before the change)."""
+    d = json.loads(text)
+    assert json.dumps(d, separators=(",", ":"), ensure_ascii=False) == text and field in d
+    d[field] = value
+    return json.dumps(d, separators=(",", ":"), ensure_ascii=False)
+
+
+def _nan_start_upper(T, world):
+    r = _run(T, "the fight")
+    r["start"] = _snapshot_field(r["start"], "x", NAN_UPPER)
+
+
+def _nan_input_upper(T, world):
+    r = _run(T, "the walk")
+    r["inputs"][99] = json.dumps([[k, NAN_UPPER if k == "dyaw" else v] for k, v in json.loads(r["inputs"][99])], separators=(",", ":"))
+    assert any(k == "dyaw" for k, _v in json.loads(r["inputs"][99]))
+
+
+def _nan_snapshot_upper(T, world):
+    r = _run(T, "the stress")
+    r["snaps"][0] = _snapshot_field(r["snaps"][0], "x", NAN_UPPER)
+
+
+def _rules1_extra_key(T, world):
+    T["rules"]["1"]["note"] = "a key the browser's worker never writes"
+
+
+def _calls_not_list(T, world):
+    T["rules"]["1"]["calls"] = {"cos": 0}
+
+
+def _snapshot_nested(T, world):
+    r = _run(T, "the stress")
+    r["snaps"][0] = _snapshot_field(r["snaps"][0], "score", json.loads("[" * 50 + "]" * 50))
+
+
+def _start_reordered(T, world):
+    r = _run(T, "the fight")
+    d = json.loads(r["start"])
+    r["start"] = json.dumps(dict(reversed(list(d.items()))), separators=(",", ":"))
+
+
+# (label, the attack, the code that must refuse it, what the verifier without the door does with it: None, VERIFIED)
+ATTACKS = [
+    ("no runs", _no_runs, "VERIFY-NO-RUNS", None),
+    ("a run removed (the fight)", _run_removed, "VERIFY-RUN-SET", None),
+    ("a run renamed (the walk as the stroll)", _run_renamed, "VERIFY-RUN-SET", None),
+    ("a run twice (the stress)", _run_twice, "VERIFY-RUN-SET", None),
+    ("the stress run renamed and cut to 2", _stress_renamed_cut, "VERIFY-RUN-SET", None),
+    ("the walk and the fight cut to 10", _walk_fight_cut, "VERIFY-LENGTH", None),
+    ("the fight's start forged: every target on the line of fire, the score preset to 40", _forged_fight, "VERIFY-START", None),
+    ("the walk's start airborne (feet 3 m up, not on the ground), the score 1e6", _airborne_walk, "VERIFY-START", None),
+    ("the fight from x = NaN", _fight_from_nan, "VERIFY-NONFINITE", None),
+    ("the fight's inputs with its shots removed", _fight_without_shots, "VERIFY-INPUTS", None),
+    ("an input of the walk with dyaw NaN (tick 100), the browser's snapshots kept", _nan_input, "VERIFY-NONFINITE", "VERIFY-PLAY"),
+    ("the walk alone, said given by the Python walk under a digest not its own", _given_forged, "VERIFY-GIVEN", None),
+    # found by the review of the door (2026-10-19): a NaN written in upper-case hex, which the readers read, passed
+    # VERIFY-NONFINITE and was refused later under another code; the rules-1 section's other keys were not held; a
+    # value nested past the writing's depth was not held by the form; a start in other bytes was refused without a word
+    ("the fight's start with x NaN in upper-case hex, the browser's snapshots kept", _nan_start_upper, "VERIFY-NONFINITE", "VERIFY-PLAY"),
+    ("an input of the walk with dyaw NaN in upper-case hex (tick 100), the browser's snapshots kept", _nan_input_upper, "VERIFY-NONFINITE", "VERIFY-PLAY"),
+    ("a snapshot of the stress with x NaN in upper-case hex (tick 1)", _nan_snapshot_upper, "VERIFY-NONFINITE", "VERIFY-PLAY"),
+    ("a key more in the rules-1 section", _rules1_extra_key, "VERIFY-FORM", None),
+    ("the rules-1 calls not a list", _calls_not_list, "VERIFY-FORM", None),
+    ("a snapshot of the stress with its score nested 50 deep (tick 1)", _snapshot_nested, "VERIFY-FORM", "VERIFY-PLAY"),
+    ("the fight's start with its fields in another order, every value kept", _start_reordered, "VERIFY-START", "VERIFY-PLAY"),
+]
+
+def _stress_start_forged(T, world):
+    r = _run(T, "the stress")
+    s = read_snapshot(r["start"])
+    s.score = 7.0
+    r["start"] = write_snapshot(s)
+    r["snaps"] = replayed(world, r["start"], r["inputs"])
+
+
+def _input_forged(name):
+    def attack(T, world):
+        r = _run(T, name)
+        inp = read_input(r["inputs"][99])
+        inp["dyaw"] = inp.get("dyaw", 0.0) + 0.25
+        r["inputs"][99] = write_input(inp)
+        r["snaps"] = replayed(world, r["start"], r["inputs"])
+    attack.__name__ = "_%s_input_forged" % name.split()[-1]
+    return attack
+
+
+def _stress_snapshot_dropped(T, world):
+    _run(T, "the stress")["snaps"].pop()
+
+
+def _given_fight_alone(T, world):
+    T["rules"]["1"]["runs"] = [_run(T, "the fight")]
+    T["inputs_from"] = {"engine": "another engine", "inputs": given_digest(T["rules"]["1"]["runs"])}
+
+
+def _run_extra_field(T, world):
+    _run(T, "the walk")["every"] = 30
+
+
+def _inputs_from_malformed(T, world):
+    T["inputs_from"] = {"engine": "x"}
+
+
+def _snapshot_bare_nan(T, world):
+    r = _run(T, "the stress")
+    r["snaps"][0] = r["snaps"][0].replace('"score":"f0000000000000000"', '"score":NaN', 1)
+    assert '"score":NaN' in r["snaps"][0]
+
+
+STRESS_AGAIN = "the stress run's inputs and start, made again here"   # verify_without_door's row
+ATTACKS += [
+    ("the stress's start forged (its score 7), its snapshots replayed", _stress_start_forged, "VERIFY-START", STRESS_AGAIN),
+    ("the stress's input 100 turned a quarter radian more, its snapshots replayed", _input_forged("the stress"), "VERIFY-INPUTS", STRESS_AGAIN),
+    ("the walk's input 100 turned a quarter radian more, its snapshots replayed", _input_forged("the walk"), "VERIFY-INPUTS", None),
+    ("the stress's last snapshot removed", _stress_snapshot_dropped, "VERIFY-LENGTH", "VERIFY-PLAY"),
+    ("the fight alone, said given by another engine under its own digest", _given_fight_alone, "VERIFY-RUN-SET", None),
+    ("a run with a field more", _run_extra_field, "VERIFY-FORM", None),
+    ("inputs_from without its inputs", _inputs_from_malformed, "VERIFY-FORM", None),
+    ("a snapshot of the stress with a bare JSON NaN for its score (tick 1)", _snapshot_bare_nan, "VERIFY-NONFINITE", "VERIFY-PLAY"),
+]
+
+# what the row that refuses an attack must also say (its detail never empty when the bytes differ)
+MUST_SAY = {_start_reordered: SAME_FIELDS}
+
+# plants in the door's reading of the fight (lines() and makeRuns): each must make the honest trace refuse at its start
+# (label, the plant, the maps where it makes the same fight, an equivalent mutant in that map's state, MEASURED
+# 2026-10-20): there it is not run and says so; anywhere else a plant that makes the same fight is a FAIL (a defect in
+# the plant's switch, or a map whose equivalence nobody has measured), as is one declared equivalent that is not; at
+# least one plant must run)
+READING_PLANTS = [
+    ("lines() aimed 0.5 m above the target's foot, not 1.2 (the pitch at 1.2)", {"aim": 0.5}, ()),
+    ("makeRuns' pitch aimed 1.0 m above the target's foot, not 1.2", {"pitch_aim": 1.0}, ()),
+    ("the fight's floor cells searched column by column", {"rows_first": False}, ("witness",)),
+]
+
+
+def code_of(row):
+    word = row[0].split(" ", 1)[0]
+    return word if word.startswith("VERIFY-") else row[0]
+
+
+def judged(T, world):
+    """The rows verify gives T (the map's first), the first that failed (its index) or None, and the ticks played."""
+    rows = []
+    check_trace(T, rows)
+    total, _bad = verify(T, world, rows)
+    first = next((k for k, r in enumerate(rows) if not r[1]), None)
+    return rows, first, total
+
+
+def attacked(T, world, attack):
+    import copy
+    A = copy.deepcopy(T)
+    attack(A, world)
+    return A
+
+
+def last_score(run):
+    return read_snapshot(run["snaps"][-1]).score if run["snaps"] else None
+
+
+def door_rows(T, world):
+    """doortest's rows: (label, ok, detail)."""
+    global DOOR
+    out = []
+    rows, first, total = judged(T, world)
+    codes = [code_of(r) for r in rows]
+    names = [r["name"] for r in _runs(T)]
+    honest = first is None and names == list(RUN_ORDER) and T.get("inputs_from") is None
+    out.append(("the trace verifies through the door", honest, "%d ticks of %s; the rows %s" % (
+        total, ", ".join(names), ", ".join(dict.fromkeys(codes))) if honest else
+        "NOT a trace of the browser's own three runs that verifies: %s" % ("; ".join("%s %s" % (r[0], r[2]) for r in rows if not r[1])[:600] or ", ".join(names))))
+    if not honest:
+        return out
+    open_outcomes = []
+    for label, attack, code, without in ATTACKS:
+        A = attacked(T, world, attack)
+        try:
+            rows, first, _total = judged(A, world)
+        except Exception as e:   # noqa: the row is that nothing is raised
+            rows, first = [("raised", False, "%s: %s" % (type(e).__name__, str(e)[:200]))], 0
+        ok = first is not None and code_of(rows[first]) == code and MUST_SAY.get(attack, "") in rows[first][2]
+        out.append(("attack: " + label, ok, ("refused by %s — %s; every row before it passed (%s)" % (
+            code, rows[first][2][:300], ", ".join(code_of(r) for r in rows[:first]))) if ok else
+            "NOT refused by %s%s: %s" % (code, " saying %r" % MUST_SAY[attack] if attack in MUST_SAY else "",
+                                         "VERIFIED" if first is None else "the first row failed is %s — %s" % (code_of(rows[first]), rows[first][2][:300]))))
+        DOOR = False
+        try:
+            rows_off, first_off, total_off = judged(A, world)
+        finally:
+            DOOR = True
+        open_outcomes.append((label, code, without, first_off, rows_off, total_off, A))
+    for label, kw, equivalent_on in READING_PLANTS:
+        g = globals()
+        saved = g["made_fight"]
+        same = saved(world, **kw) == saved(world)
+        if same and T["map"] in equivalent_on:   # an equivalent mutant on this map, as measured: it can show nothing here
+            out.append(("plant in the door's reading: " + label, None, "not run: on the map %s this plant makes the same fight "
+                        "start and inputs as the reading without it (an equivalent mutant in this map's state, measured), so it "
+                        "can show nothing of the reading here; at least one plant of the reading must run" % T["map"]))
+            continue
+        if same or T["map"] in equivalent_on:
+            out.append(("plant in the door's reading: " + label, False, ("NOT a plant here: on the map %s it makes the same fight "
+                        "start and inputs as the reading without it, which no measurement declared (a switch that changes "
+                        "nothing, or a map whose equivalence nobody measured)" if same else "declared an equivalent mutant on "
+                        "the map %s, and it changes the fight there: the declaration is wrong") % T["map"]))
+            continue
+        g["made_fight"] = lambda w, kw=kw: saved(w, **kw)
+        try:
+            rows, first, _total = judged(T, world)
+        finally:
+            g["made_fight"] = saved
+        ok = first is not None and code_of(rows[first]) == "VERIFY-START" and "the fight" in rows[first][2] and \
+            not any(n in rows[first][2] for n in ("the walk:", "the stress:"))
+        out.append(("plant in the door's reading: " + label, ok, ("the honest trace refused by VERIFY-START — %s" % rows[first][2][:300]) if ok else
+                    "NOT refused at the fight's start: %s" % ("VERIFIED" if first is None else "%s — %s" % (code_of(rows[first]), rows[first][2][:300]))))
+    out.extend(refusal_rows(T, world))
+    out.extend(bound_rows(T, world))
+    out.extend(reader_rows())
+    # the harness plant: the door switched off; every attack's own row must then fail, and each attack the verifier
+    # accepted before the door must be VERIFIED again (the cause); the ten it never accepted are refused by the play
+    # (eight: two of them, the walk input of dyaw NaN in lower and in upper-case hex, by a FAIL row where the verifier
+    # at e759213 raised InputRefused) or by its row of the stress run made again (two), as at e759213 (MEASURED there,
+    # 2026-10-20)
+    wrong, accepted = [], []
+    for label, code, without, first_off, rows_off, total_off, A in open_outcomes:
+        outcome = None if first_off is None else code_of(rows_off[first_off])
+        if outcome != without or outcome == code:
+            wrong.append("%s: %s, not %s" % (label, outcome or "VERIFIED", without or "VERIFIED"))
+        if outcome is None:
+            extra = ""
+            if label.startswith("the fight's start forged"):
+                extra = ", its final score %s against the browser's %s" % (show(last_score(_run(A, "the fight"))), show(last_score(_run(T, "the fight"))))
+            accepted.append("%s (%d ticks of %d runs%s)" % (label, total_off, len(_runs(A)), extra))
+    out.append(("harness plant: the door switched off", not wrong and len(accepted) == sum(1 for a in ATTACKS if a[3] is None),
+                ("caught: every attack's row would fail; %d of %d VERIFIED without the door: %s; and %s" % (
+                    len(accepted), len(ATTACKS), "; ".join(accepted), "; ".join("%s refused only by %s" % (a[0], a[3]) for a in ATTACKS if a[3]))) if not wrong else
+                "NOT as the verifier was before the door: " + "; ".join(wrong)))
+    return out
+
+
+def refusal_rows(T, world):
+    """Inputs that ended in a traceback before the review (2026-10-19), each now a refusal by its own code, with every
+    row before it passed: a map that cannot be converted here; a snapshot, and a whole trace, nested 100,000 deep (past
+    Python's json reader's depth); and a snapshot with a key twice, whose refusal must say what differs."""
+    import copy
+    out = []
+    deep = "[" * 100000 + "]" * 100000
+    A = copy.deepcopy(T)
+    A["map"] = "nosuchmap"
+    rows = []
+    try:
+        w = check_trace(A, rows)
+        ok = w is None and len(rows) == 1 and not rows[0][1] and code_of(rows[0]) == "VERIFY-MAP"
+        detail = rows[0][2] if rows else "no row"
+    except Exception as e:   # noqa: the row is that nothing is raised
+        ok, detail = False, "raised %s: %s" % (type(e).__name__, e)
+    out.append(("refusal: the map named is none here (nosuchmap)", ok, ("refused by VERIFY-MAP, the world none — %s" % detail[:300]) if ok else
+                "NOT refused by VERIFY-MAP alone: %s" % detail[:300]))
+    for label, change, code, must in (
+            ("a snapshot of the stress nested 100,000 deep (tick 1)", lambda A: _run(A, "the stress")["snaps"].__setitem__(0, deep), "VERIFY-FORM", "is not a JSON object"),
+            ("a snapshot of the stress with its key x written twice (tick 1)", lambda A: _run(A, "the stress")["snaps"].__setitem__(
+                0, _run(A, "the stress")["snaps"][0][:-1] + ',"x":' + json.dumps(json.loads(_run(A, "the stress")["snaps"][0])["x"]) + "}"), "VERIFY-PLAY", SAME_FIELDS)):
+        try:
+            rows, first, _total = judged(attacked(T, world, lambda A, w, change=change: change(A)), world)
+            ok = first is not None and code_of(rows[first]) == code and must in rows[first][2]
+            detail = "VERIFIED" if first is None else rows[first][2][:300] if ok else "%s — %s" % (code_of(rows[first]), rows[first][2][:300])
+        except Exception as e:   # noqa: the row is that nothing is raised
+            ok, detail = False, "raised %s: %s" % (type(e).__name__, str(e)[:200])
+        out.append(("refusal: " + label, ok, ("refused by %s — %s" % (code, detail)) if ok else "NOT refused by %s saying %r: %s" % (code, must, detail)))
+    try:
+        parse_trace(deep.encode("utf-8"), "a trace nested 100,000 deep")
+        ok, detail = False, "read as a trace"
+    except SystemExit as e:
+        ok, detail = "not JSON" in str(e), str(e)[:300]
+    except Exception as e:   # noqa: the row is that nothing is raised
+        ok, detail = False, "raised %s: %s" % (type(e).__name__, str(e)[:200])
+    out.append(("refusal: a whole trace nested 100,000 deep", ok, ("refused before the door, not JSON here — %s" % detail) if ok else
+                "NOT refused as not JSON: %s" % detail))
+    return out
+
+
+REFUSALS = 4   # refusal_rows' rows
+
+
+class Unmade(Exception):
+    """doortest's guard: the tick was given a start or inputs the host did not make."""
+
+
+def _start_at(name, field, value):
+    def attack(T, world):
+        r = _run(T, name)
+        s = read_snapshot(r["start"])
+        setattr(s, field, value)
+        r["start"] = write_snapshot(s)
+    return attack
+
+
+def _start_text(name, field, value):
+    def attack(T, world):
+        r = _run(T, name)
+        r["start"] = _snapshot_field(r["start"], field, value)
+    return attack
+
+
+def _stress_snapshot_x(value):
+    def attack(T, world):
+        r = _run(T, "the stress")
+        r["snaps"][0] = _snapshot_field(r["snaps"][0], "x", value)
+    return attack
+
+
+def _stress_snapshot_target_x(value):
+    def attack(T, world):
+        r = _run(T, "the stress")
+        d = json.loads(r["snaps"][0])
+        assert json.dumps(d, separators=(",", ":"), ensure_ascii=False) == r["snaps"][0]
+        d["targets"][0]["x"] = value
+        r["snaps"][0] = json.dumps(d, separators=(",", ":"), ensure_ascii=False)
+    return attack
+
+
+def _renamed_far(name, new):
+    def attack(T, world):
+        r = _run(T, name)
+        s = read_snapshot(r["start"])
+        s.z = 1e17
+        r["name"], r["start"] = new, write_snapshot(s)
+    return attack
+
+
+def _walk_named(name):
+    def attack(T, world):
+        _run(T, "the walk")["name"] = name
+    return attack
+
+
+def _user_agent(text, then=None):
+    def attack(T, world):
+        T["runtime"] = dict(T.get("runtime") or {}, userAgent=text)
+        if then is not None:
+            then(T, world)
+    return attack
+
+
+VERDICT_FORGED = "TICK REFERENCE VERIFIED  5863 ticks of 3 runs played here and compared"
+# (label, the attack, the code that must refuse it or None for VERIFIED, what its row must say, what it must not say):
+# each judged in bounded time, nothing raised, by its own code with every row before it passed, and every line verify
+# would print legible. Found by the review of the door's repair (2026-10-20): a start far away or infinite hung verify
+# for ever in cells_near (the door's rows written and never printed); a value the readers take for a number and cannot
+# read, or targets that are not a list of objects, ended in a traceback; a run's name or the userAgent printed raw
+# could print a verdict line of its own, a carriage return or an escape, or raise on a lone surrogate.
+BOUNDS = [
+    ("the fight's start at x = 1e17 (finite), the browser's snapshots kept", _start_at("the fight", "x", 1e17), "VERIFY-START", "", ""),
+    ("the fight's start at x = +Infinity, the browser's snapshots kept", _start_at("the fight", "x", math.inf), "VERIFY-NONFINITE", "", ""),
+    ("the walk's start at x = -Infinity, the browser's snapshots kept", _start_at("the walk", "x", -math.inf), "VERIFY-NONFINITE", "", ""),
+    ("the stress's start at z = 1e17, the browser's snapshots kept", _start_at("the stress", "z", 1e17), "VERIFY-START", "", ""),
+    ("the walk renamed the stroll, its start at z = 1e17", _renamed_far("the walk", "the stroll"), "VERIFY-RUN-SET", "", ""),
+    ("the stress renamed the strain, its start at z = 1e17", _renamed_far("the stress", "the strain"), "VERIFY-RUN-SET", "", ""),
+    ("a stress snapshot's x 'f' and sixteen characters that are not hex (tick 1)", _stress_snapshot_x("f" + "Z" * 16), "VERIFY-FORM", "", ""),
+    ("a stress snapshot's x 'f7ff8', ten zeros and two spaces, 7 bytes to fromhex (tick 1)", _stress_snapshot_x("f7ff8" + "00" * 5 + "  "), "VERIFY-FORM", "", ""),
+    ("a stress snapshot's x 'f 7ff00000000000 ', spaced hex (tick 1)", _stress_snapshot_x("f 7ff00000000000 "), "VERIFY-FORM", "", ""),
+    ("the fight's start's x 'f' and sixteen characters that are not hex", _start_text("the fight", "x", "f" + "z" * 16), "VERIFY-FORM", "", ""),
+    ("the fight's start with its targets an object", _start_text("the fight", "targets", {"T0": 1}), "VERIFY-FORM", "", ""),
+    ("the fight's start with its targets a number", _start_text("the fight", "targets", 5), "VERIFY-FORM", "", ""),
+    ("the stress's start with its targets a list of a number", _start_text("the stress", "targets", [1]), "VERIFY-FORM", "", ""),
+    ("the walk's start with its targets a list of numbers", _start_text("the walk", "targets", [1, 2]), "VERIFY-FORM", "", ""),
+    ("a stress snapshot's x the string 'fxyz' (tick 1)", _stress_snapshot_x("fxyz"), "VERIFY-PLAY", "FIRST DIFFERENT", "ulp"),
+    ("a stress snapshot's x the string 'fg' (tick 1)", _stress_snapshot_x("fg"), "VERIFY-PLAY", "FIRST DIFFERENT", "ulp"),
+    ("a stress snapshot's x the string 'f' (tick 1)", _stress_snapshot_x("f"), "VERIFY-PLAY", "FIRST DIFFERENT", "ulp"),
+    ("a stress snapshot's x the string 'f-1', no ulp count read from it (tick 1)", _stress_snapshot_x("f-1"), "VERIFY-PLAY", "FIRST DIFFERENT", "ulp"),
+    ("a stress snapshot's first target's x the string 'fg' (tick 1)", _stress_snapshot_target_x("fg"), "VERIFY-PLAY", "FIRST DIFFERENT", "ulp"),
+    ("the walk's name holding a line break, a verdict, a carriage return and an escape", _walk_named(
+        "the walk" + chr(10) + VERDICT_FORGED + chr(13) + chr(27) + "[8m"), "VERIFY-RUN-SET", "", ""),
+    ("the walk's name holding a lone surrogate", _walk_named("the walk" + chr(0xD800)), "VERIFY-RUN-SET", "", ""),
+    ("the fight's start forged and the userAgent holding a line break, a forged PASS row, a verdict and an escape",
+     _user_agent("Mozilla/5.0)" + chr(10) + "PASS VERIFY-MAP the map" + chr(10) + VERDICT_FORGED + chr(27) + "[8m", _forged_fight),
+     "VERIFY-START", "", ""),
+    ("the userAgent (the header) holding a line break, a verdict and an escape, the trace honest",
+     _user_agent("Mozilla/5.0" + chr(10) + VERDICT_FORGED + chr(27) + "[8m"), None, "", ""),
+    ("the userAgent (the header) holding a lone surrogate, the trace honest", _user_agent("Mozilla/5.0 " + chr(0xD800)), None, "", ""),
+    ("the userAgent (the header) holding U+2028, U+0085 and U+E0001, the trace honest",
+     _user_agent("Mozilla/5.0" + chr(0x2028) + chr(0x85) + chr(0xE0001)), None, "", ""),
+]
+
+
+def printable_lines(lines):
+    """Every line printable and encodable as UTF-8, and none but the last beginning "TICK REFERENCE "."""
+    try:
+        for line in lines:
+            line.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return all(line.isprintable() for line in lines) and not any(line.startswith("TICK REFERENCE ") for line in lines[:-1])
+
+
+def bound_rows(T, world):
+    """Each of BOUNDS judged with nothing raised and the tick never given a start or inputs the host did not make (a
+    start 1e17 or Infinity away loops in cells_near for ever: MEASURED, 2026-10-20): refused by its own code with every
+    row before it passed and the verdict FAILED, or, for an honest trace, VERIFIED; and every line verify would print
+    legible: one line per row, the verdict alone and last."""
+    out = []
+    made = made_runs(T, world)
+    g = globals()
+    real = g["play"]
+
+    def guarded(world_, run):
+        m = made.get(run["name"])
+        if m is None or run["start"] != m[0] or run["inputs"] != m[1]:
+            raise Unmade(run["name"])
+        return real(world_, run)
+    g["play"] = guarded
+    try:
+        for label, attack, code, must, never in BOUNDS:
+            A = attacked(T, world, attack)
+            try:
+                rows, first, total = judged(A, world)
+                lines = verdict_lines("a trace", A, rows, total)
+                fit = printable_lines(lines)
+                if code is None:
+                    ok = first is None and fit and lines[-1].startswith("TICK REFERENCE VERIFIED")
+                    detail = ("VERIFIED, every line legible — %s" % lines[0][:200]) if ok else "NOT VERIFIED with every line legible: %s%s" % (
+                        "VERIFIED" if first is None else "%s — %s" % (code_of(rows[first]), legible(rows[first][2])[:200]),
+                        "" if fit else "; a line not legible")
+                else:
+                    said = first is not None and must in rows[first][2] and not (never and never in rows[first][2])
+                    ok = first is not None and code_of(rows[first]) == code and said and fit and lines[-1].startswith("TICK REFERENCE FAILED")
+                    detail = ("refused by %s — %s" % (code, legible(rows[first][2])[:200])) if ok else "NOT refused by %s%s%s with every line legible: %s%s" % (
+                        code, " saying %r" % must if must else "", " and not %r" % never if never else "",
+                        "VERIFIED" if first is None else "%s — %s" % (code_of(rows[first]), legible(rows[first][2])[:200]),
+                        "" if fit else "; a line not legible")
+            except Unmade as e:
+                ok, detail = False, "the tick was given the start or the inputs of %s, which the host did not make" % legible(str(e))
+            except Exception as e:   # noqa: the row is that nothing is raised
+                ok, detail = False, "raised %s: %s" % (type(e).__name__, legible(str(e))[:200])
+            out.append(("bound: " + label, ok, detail))
+    finally:
+        g["play"] = real
+    return out
+
+
+# what the detail readers are given, those the form refuses before verify reaches them included
+UNREAD_VALUES = ["f" + "Z" * 16, "f7ff8" + "00" * 5 + "  ", "f 7ff00000000000 ", "fxyz", "f", "fg", "f-1", 5, None, [1, 2], {"a": 1}]
+UNREAD_STARTS = ['{"targets":{"a":1}}', '{"targets":5}', '{"targets":[1,2]}', '{"targets":"x"}', '{"targets":null}',
+                 '{"x":"fzzzzzzzzzzzzzzzz"}']
+
+
+def reader_rows():
+    """The readers of a detail (show, ulp_note, fields_of and first_difference) read every value without raising, those
+    the form refuses included: VERIFY-FORM keeps them from verify, so that a defect in show or fields_of shows in no
+    bound row (an equivalent mutant there), and these rows hold the readers themselves (the `cases`, `rules2` and
+    `rules3` tables read with fields_of too)."""
+    out = []
+    honest = "f401c0583a8156df2"
+    for label, call in (
+            ("show reads every value", lambda: [show(v) for v in UNREAD_VALUES]),
+            ("ulp_note reads every pair, and counts only two numbers of the writing", lambda: [
+                ulp_note(v, honest) for v in UNREAD_VALUES] + [ulp_note(honest, v) for v in UNREAD_VALUES]),
+            ("fields_of and first_difference read every start", lambda: [fields_of(t) for t in UNREAD_STARTS] + [
+                first_difference(t, '{"x":"f401c0583a8156df2"}') for t in UNREAD_STARTS])):
+        try:
+            got = call()
+            ok = not (label.startswith("ulp_note") and any(got))
+            detail = "%d read, nothing raised%s" % (len(got), "" if ok else "; a count read from a value that is not a number: %r" % [x for x in got if x])
+        except Exception as e:   # noqa: the row is that nothing is raised
+            ok, detail = False, "raised %s: %s" % (type(e).__name__, legible(str(e))[:200])
+        out.append(("reader: " + label, ok, detail))
+    return out
+
+
+def door_total():
+    return 2 + len(ATTACKS) + len(READING_PLANTS) + REFUSALS + len(BOUNDS) + READERS
+
+
+READERS = 3   # reader_rows' rows
+
+
+def cmd_doortest(path):
+    T = load_trace(path)
+    rows = []
+    world = check_trace(T, rows)
+    if world is None:
+        print_rows(rows)
+        print("DOOR SELFTEST 0/%d" % door_total())
+        return 1
+    out = door_rows(T, world)
+    print_rows(out)
+    n = sum(1 for r in out if r[1])
+    skipped = sum(1 for r in out if r[1] is None)
+    total = door_total()
+    print("DOOR SELFTEST %d/%d%s" % (n, total, "  (%d not run, said above)" % skipped if skipped else ""))
+    return 0 if len(out) == total and n + skipped == total and skipped < len(READING_PLANTS) else 1
 
 
 # the plants in the reference (each a defect a second implementation could have)
@@ -1734,6 +2778,7 @@ def cmd_rules(path, rules):
 
 
 MAKES = {"verify": "python graybox/trace.py run tactical --browser msedge", "selftest": "python graybox/trace.py run tactical --browser msedge",
+         "doortest": "python graybox/trace.py run tactical --browser msedge",
          "cases": "python graybox/trace.py run tactical --cases --browser msedge", "rules2": "python graybox/trace.py run tactical --rules2 --browser msedge",
          "rules3": "python graybox/trace.py run tactical --rules3 --browser msedge"}
 
@@ -1752,9 +2797,11 @@ def main(argv):
         return cmd_verify(argv[1])
     if len(argv) == 2 and argv[0] == "selftest":
         return cmd_selftest(argv[1])
+    if len(argv) == 2 and argv[0] == "doortest":
+        return cmd_doortest(argv[1])
     if len(argv) in (1, 2) and argv[0] == "cases":
         return cmd_cases(argv[1] if len(argv) == 2 else None)
-    print("usage: python graybox/tick_ref.py verify TRACE.json | selftest TRACE.json | cases [RESULTS.json] | rules2 [RESULTS.json] | rules3 [RESULTS.json]", file=sys.stderr)
+    print("usage: python graybox/tick_ref.py verify TRACE.json | selftest TRACE.json | doortest TRACE.json | cases [RESULTS.json] | rules2 [RESULTS.json] | rules3 [RESULTS.json]", file=sys.stderr)
     return 2
 
 

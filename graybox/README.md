@@ -42,7 +42,7 @@ Esc releases the mouse.
 | map content (`maps/`) | `python graybox/check.py` — the conversion's conformance and its mutations; add `--compile` to compile and admit the tactical layout again through the design tool (needs a built shell, or `rustc` to build one, as the design tool does) |
 | the runtime (`web/`) | `python graybox/serve.py tactical --selftest` — opens the page in self-test mode, prints every check (30 on the tactical map, 27 on the witness level) and the `MEASURED` lines, and ends 0 if every check passed |
 | the rules' arithmetic (`web/sim.js`, rules 1) | `python graybox/rules_ref.py` — the same algorithms in Python: the digests and constants `sim.js` holds, the special values, the square root and hypot checked exactly, the source naming no engine function, three plants; and the accuracy, measured. Ends with `RULES REFERENCE PASSED` |
-| the tick's second implementation (`tick_ref.py`, `RULES-1.md`) | `python graybox/tick_ref.py verify TRACE.json` — plays a browser's trace again in Python, from the specification, and compares every tick's snapshot byte for byte; `python graybox/tick_ref.py selftest TRACE.json` — two plants in the trace and six in the Python tick, each found. Ends with `TICK REFERENCE VERIFIED` and `TICK-REF SELFTEST PASSED` |
+| the tick's second implementation (`tick_ref.py`, `RULES-1.md`) | `python graybox/tick_ref.py verify TRACE.json` — first the door (VERIFY-DOOR-0, 0255): the runs, their starts and their inputs must be the ones made here from the map (the walk, the fight, the stress run), each refusal a FAIL row with its own code (VERIFY-MAP to VERIFY-PLAY); then the trace played again in Python, from the specification, every tick's snapshot compared byte for byte; `python graybox/tick_ref.py selftest TRACE.json` — three plants in the trace (one at the door, run only on a trace of the browser's own runs, otherwise a SKIP that says why) and six in the Python tick, each found; `python graybox/tick_ref.py doortest TRACE.json` (a trace of the browser's own three runs) — the trace verified through the door; 27 attacks, each refused by its own code with every row before it passed; three plants in the door's reading of the fight; four inputs that once ended in a traceback; 25 bounds (a start far away or infinite, a value the readers take for a number and cannot read, a name or a userAgent that would print a line of its own), each judged in bounded time with nothing raised and every line legible; the three readers of a detail; and the harness plant, the door switched off (17 of the 27 VERIFIED again). Ends with `TICK REFERENCE VERIFIED`, `TICK-REF SELFTEST PASSED` and `DOOR SELFTEST 64/64` (on the witness map `63/64  (1 not run, said above)`) |
 | ORT-1: the origin moved between ticks (`ORT-1.md`, `web/ort_cases.json`) | `python graybox/ort_ref.py` — the table played in Python (its own transform), each case held to the values worked by hand (the state after a rebase built from the state before and the worked numbers alone), every committed rebase held to conservation in exact fractions, twelve plants each refused by its own case; `python graybox/trace.py run tactical --ort --browser msedge` (or `firefox`) — the same table through `web/ort.js` in a browser, written to `graybox/build/trace/tactical/ort/`; then `python graybox/ort_ref.py graybox/build/trace/tactical/ort/chromium.json` — the browser held to the worked values and to Python, byte for byte, and five changes planted in its results, each found. Ends with `ORT-1 HELD BY PYTHON AND THE ENGINE` |
 | rules 2: movers (`RULES-2.md`, `web/rules2_cases.json`) | `python graybox/tick_ref.py rules2` — rules 2's table played in Python, each case held to the values worked by hand from `RULES-2.md`, the case of no movers held to rules 1, and five plants in the Python tick that the worked values must catch; `python graybox/trace.py run tactical --rules2 --browser msedge` (or `firefox`) — the same table in a browser, written to `graybox/build/trace/tactical/rules2/`; then `python graybox/tick_ref.py rules2 graybox/build/trace/tactical/rules2/chromium.json` — the browser held to the worked values and to Python, every tick's snapshot and hash. Ends with `RULES 2 HELD BY PYTHON AND THE ENGINE` |
 | rules 3: solid walls, targets with a top, push (`RULES-3.md`, `web/rules3_cases.json`) | `python graybox/tick_ref.py rules3` — rules 3's table played in Python, each case held to the values worked by hand from `RULES-3.md`, and where rules 3 change what rules 2 do, played under rules 2 as well and held to what the case says rules 2 do; nine plants in the Python tick that the worked values must catch; `python graybox/trace.py run tactical --rules3 --browser msedge` (or `firefox`) — the same table in a browser (and its rules-2 runs), written to `graybox/build/trace/tactical/rules3/`; then `python graybox/tick_ref.py rules3 graybox/build/trace/tactical/rules3/chromium.json`. Ends with `RULES 3 HELD BY PYTHON AND THE ENGINE` |
@@ -230,12 +230,18 @@ old baseline against. Nothing plays it but the measurements and the trace.
 **A second implementation of the tick** (`tick_ref.py`, written from [`RULES-1.md`](RULES-1.md)). By the owner's
 ruling of 2026-10-11: the browser records the inputs, Python advances the authoritative state on its own, and each
 tick's snapshot is compared with the browser's; the first that differs names its tick and its fields. It shares the
-specification and the arithmetic's algorithms with `sim.js`, nothing else: its own state (classes, not a walked
+specification and the arithmetic's algorithms with `sim.js`, and, since 0255, its door's run set, a reading of
+`sim.js`'s `makeRuns` and `lines()` by one author (the walk is `bot_ref.py`'s); nothing else: its own state (classes, not a walked
 object), world, collision and ray walks, snapshot writer and reader, and its own square root and hypot (Python's
 integer square root). It reads a trace, converts the map the trace names and holds it to the trace's manifest,
-makes the stress run's inputs and start again from integers, and plays every rules-1 run from its start. Measured in
+and, at its door (VERIFY-DOOR-0, 0255), makes every run the browser was to play from the map alone (the walk by
+`bot_ref.py`, the fight by a reading of `lines()` and `makeRuns`, the stress run from integers) and refuses a trace
+whose runs, starts, lengths or inputs are not those, or that holds a number that is not finite or one its readers
+cannot read, each with its own code; then it plays every rules-1 run from its start (a run whose start or inputs are
+not the ones made here is not played: a FAIL row). Measured in
 the build container: Chromium 141's traces and node 22's, on both maps, 5,863 and 5,247 ticks, every snapshot the
-same bytes as the browser's; and on the owner's machine, Firefox 157's own trace of the tactical map (5,863 ticks). Its self-test plants a field one bit off and an input changed (each found at its tick)
+same bytes as the browser's; and on the owner's machine, Firefox 157's own trace of the tactical map (5,863 ticks). Its self-test plants a field one bit off and an input changed (each found at its tick), and at the door the stress
+run renamed and cut to 2 (refused by VERIFY-RUN-SET; `doortest` holds the rest of the door),
 and six defects in the Python tick (the height's updates in the wrong order, five halvings for six, the shot's
 direction with the wrong sign, a target standing again at 0, the sine's polynomial cut short, the cells scanned from
 the centre), each found. A defect of one place in the last bit can be absorbed by a run: the plain root of the sum
@@ -306,7 +312,7 @@ are in R-6.
 | `web/rules2_cases.json` | rules 2's table: eleven cases with values worked by hand from `RULES-2.md`, and two long runs among three movers held between the implementations |
 | `RULES-3.md` | rules 2 with solid walls, a standing target's top as ground, a target that waits for its column to clear, and the mover policy push (0228) |
 | `web/rules3_cases.json` | rules 3's table: fourteen cases with values worked by hand from `RULES-3.md` (and what rules 2 do with the same inputs), and two long runs among three pushers held between the implementations |
-| `tick_ref.py` | the tick's second implementation, in Python, and the verifier of a browser's trace |
+| `tick_ref.py` | the tick's second implementation, in Python, and the verifier of a browser's trace, with its door (VERIFY-DOOR-0, 0255) |
 | `ORT-1.md` | ORT-1: a rules-2 world's origin, and its rebase between two ticks as a transition bound to its basis (0227) |
 | `ort_ref.py`, `web/ort.js`, `web/ort_cases.json` | ORT-1's two implementations, Python and JavaScript, written apart, and its table of cases worked by hand |
 | `translate_probe.py` | a measurement, not a check (0225): rules 1's stress run with the world moved by 2^7 to 2^23 m along x and z, set against the unmoved run tick by tick; it writes nothing and no check reads it |
@@ -362,7 +368,8 @@ timestamps inside the page: they end inside the page's own callbacks (the draw t
 GPU's completion), before anything is composited, and are not input-to-photon. Determinism within one browser is
 checked: the replay compares two runs in the same page, and the state checks above say what its equal hashes cover.
 Across browsers and machines, rules 1 are built to give the same bits (the contract above): measured the same in two
-V8 engines and against CPython; not yet measured in another engine.
+V8 engines and against CPython, and on the owner's machine in Firefox 157 and Edge 155 as their pages report themselves
+(corrected 0255: this said "not yet measured in another engine", which the measurements above had made false).
 
 ## Boundaries
 
