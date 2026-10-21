@@ -73,16 +73,52 @@ def cells_under(b, g):
     return {(x, z) for x in range(g["w"]) for z in range(g["h"]) if x * c < b[3] and b[0] < (x + 1) * c and z * c < b[5] and b[2] < (z + 1) * c}
 
 
+# REACH-1's plant (0257), set by the reach witness below alone: the pair test before 0257, the parabola's
+REACH_PLANT = ""
+
+
+def sim_tick():
+    """The tick's length as graybox/web/sim.js declares it (const TICK = 1 / N)."""
+    import re
+    src = open(os.path.join(REPO, "graybox", "web", "sim.js"), encoding="utf-8").read()
+    m = re.findall(r"const TICK = 1 / ([0-9]+);", src)
+    if len(m) != 1:
+        raise ValueError("graybox/web/sim.js declares its TICK not once as 1 / N")
+    return 1.0 / float(m[0])
+
+
+def ticks_onto(hi, lo, allowance, tick, jump, grav):
+    """Apart from the exporter's last_tick (0257): the ticks a body jumping from feet at hi walks while the feet at a
+    tick's start, with the allowance, still reach lo, or 0; the tick walks before it moves the feet and lets a body onto
+    a surface by the feet it started at (its test top <= feet + step, in that form), its ground nowhere below 0, its
+    arithmetic graybox/web/sim.js's: vy -= gravity * TICK, then feet += vy * TICK."""
+    n, last, feet, vy = 0, 0, hi, 0.0
+    while True:
+        n = n + 1
+        if lo <= feet + allowance:
+            last = n
+        elif n > 1 and vy <= 0.0:
+            return last
+        if n == 1:
+            vy = jump
+        vy = vy - grav * tick
+        feet = feet + vy * tick
+        if feet <= 0.0:
+            return last
+
+
 def reach_here(S):
     """The reach ceiling, REACH-1 (art/README.md), computed again from the scene's C, player, targets and movers, apart
     from the exporter's code (and with its arithmetic, operation for operation, so that the two give the same doubles):
     the places a body may stand (open cells, movers' tops over their travel, targets' tops), those reached from the
-    spawns by jumps the rules allow, and over each cell the highest head a body flying from one of them raises there."""
+    spawns by jumps the tick allows (0257: played tick by tick, the tick sim.js's), and over each cell the highest head
+    a body flying from one of them raises there."""
     import math
     g, P = S["grid"], S["player"]
     w, h, cell, wall, tops = g["w"], g["h"], g["cell"], g["wall"], S["tops"]
     r, step, speed, grav, v = P["radius"], P["step"], P["speed"], P["gravity"], P["jump"]
     apex = v * v / (2.0 * grav)
+    tick = sim_tick()
     T = sim_target()
     places = {}   # name: (lo, hi, x0, z0, x1, z1, how far below its lowest the feet may be and still come onto it)
     for z in range(h):
@@ -105,13 +141,21 @@ def reach_here(S):
     reached = {("cell", int(sp["x"] // cell), int(sp["z"] // cell)) for sp in S["spawns"].values()}
     reached &= set(places)
     todo, every = sorted(reached), sorted(places.items())
+    onto = {}   # this call's own: each (p's highest, q's lowest, its allowance) played once
     while todo:
         p = places[todo.pop()]
         for name, q in every:
             if name in reached:
                 continue
-            need = q[0] - q[6] - p[1]   # the feet above p's highest when they cross onto q
-            if need <= apex and apart(p, q) <= 2.0 * r + speed * ((v + math.sqrt(v * v - 2.0 * grav * need)) / grav):
+            if REACH_PLANT == "pair-parabola":
+                need = q[0] - q[6] - p[1]   # the feet above p's highest when they cross onto q
+                hit = need <= apex and apart(p, q) <= 2.0 * r + speed * ((v + math.sqrt(v * v - 2.0 * grav * need)) / grav)
+            else:
+                n = onto.get((p[1], q[0], q[6]))
+                if n is None:
+                    n = onto[(p[1], q[0], q[6])] = ticks_onto(p[1], q[0], q[6], tick, v, grav)
+                hit = bool(n) and apart(p, q) <= 2.0 * r + n * (speed * tick)
+            if hit:
                 reached.add(name)
                 todo.append(name)
     # each place with how far (in plan, along x or z) a body may fly from it before its feet would be below 0, and a
@@ -699,9 +743,10 @@ def plants(out, art_path):
     except dress.ArtError as e:
         res.append(("a canopy clear of every head on foot, not of a rider's on a lift", False, "the exporter refused it before the checks could: " + str(e)[:90]))
     # 0229: REACH-1 against 0226's model. Beside the 2.6 m cover at 20,11, 0226's ceiling counted a head on the floor
-    # alone (3.275 m), for a climb of the apex alone (1.225 m) never reached the cover; the simulation climbs the apex
-    # and a step (1.775 m) from the 1 m steps, stands on the cover and raises a head to 5.625 m there. A slab at 4.5 m
-    # over 20,10: clear of 0226's ceiling, not of that head; and one at 6.0 m, clear of both
+    # alone (3.275 m), for a climb of the apex alone (1.225 m) never reached the cover; the simulation climbs its apex
+    # and a step (1.745833 m, 0257: the tick's apex and a step) from the 1 m steps, stands on the cover and raises a
+    # head to 5.625 m there. A slab at 4.5 m over 20,10: clear of 0226's ceiling, not of that head; and one at 6.0 m,
+    # clear of both
     for label, add, refused in (("a slab at 4.5 m beside the 2.6 m cover: clear of 0226's ceiling, not of a head on the cover", "canopy plant-r concrete 4.5 20,10 20,10", True),
                                 ("  a slab at 6.0 m there passes (the refusal is the height's)", "canopy plant-r concrete 6.0 20,10 20,10", False)):
         try:
@@ -885,6 +930,124 @@ def check_brief(name):
     return failed, skipped
 
 
+# ------------------------------------------------------------------------------------------------ REACH-1's witness
+WITNESS = os.path.join(HERE, "fixtures", "reach")
+
+
+def check_reach_witness():
+    """REACH-1's witness (0257; art/fixtures/reach/): a platform 3.8125 m high and a box 2.0 m high, its near edge off
+    the platform's edge by the farthest gap on the 1/256 m grid the tick reaches from it, derived here from the rules.
+    The tick lands on the box; both twins count it and keep the head from it under the ceiling; an exact tie is counted
+    where the tick may miss it (said, the contract's conservative count, not the tick's own verdict); and the pair test
+    before 0257, the parabola's, misses the box (a plant). The number of rows that failed."""
+    import tick_ref
+    K = tick_ref.K
+    text = open(os.path.join(WITNESS, "reachpair.art"), encoding="utf-8").read()
+    maps = os.path.join(WITNESS, "maps")
+
+    def export(src):
+        A = dress.parse(src, "reachpair.art")
+        A["name"], A["sha256"] = "reachpair", dress.sha256(src.encode("utf-8"))
+        return dress.export(A, maps)
+
+    out = export(text)
+    S = out["scene"]
+    print("== reach-witness   scene %s   (art/fixtures/reach: REACH-1's pair test against the tick, 0257)" % out["lineage"]["scene_sha256"][:12])
+    rows, failed = [], 0
+    g = S["grid"]
+    w, cell, tops = g["w"], g["cell"], S["tops"]
+    hi = tops[1 * w + 0]
+    edge = (1 + max(x for x in range(w) if tops[1 * w + x] == hi)) * cell
+    box = S["movers"][0]["box"]
+    lo, gap = box[4], box[0] - edge
+    tick, P = sim_tick(), S["player"]
+    n = ticks_onto(hi, lo, P["step"], tick, P["jump"], P["gravity"])
+    far = 2.0 * P["radius"] + n * (P["speed"] * tick)
+    derived = math.floor(far * 256) / 256.0
+    parabola = 2.0 * P["radius"] + P["speed"] * ((P["jump"] + math.sqrt(P["jump"] ** 2 - 2.0 * P["gravity"] * (lo - P["step"] - hi))) / P["gravity"])
+    rows.append(("the box stands off the platform by the farthest gap on the 1/256 m grid the tick reaches (derived from the rules)",
+                 gap == derived and far * 256 != math.floor(far * 256) and parabola < gap,
+                 "%d ticks, 2r + %d steps = %r m; the box at %r m; the parabola's limit %.6f m" % (n, n, far, gap, parabola)))
+
+    world = tick_ref.World3({"collision": out["C"], "canonical": out["W"]},
+                            [{k: m[k] for k in ("id", "box", "axis", "len", "speed", "policy")} for m in S["movers"]])
+    x0 = edge + K.radius
+    while not ((x0 - edge) * (x0 - edge) < K.radius * K.radius):
+        x0 = math.nextafter(x0, 0.0)
+    s = tick_ref.State2.new(world, "A")
+    s.x, s.feet = x0, world.ground(x0, s.z)
+    landed = None
+    for k in range(1, 400):
+        tick_ref.tick3(world, s, {"r": True, "jump": True} if k == 1 else {"r": True})
+        if s.on_ground:
+            landed = k if s.feet == lo else None
+            break
+    rows.append(("the tick lands on the box from the platform's farthest start (graybox/tick_ref.py tick3; r held, the jump at tick 1)",
+                 landed == n, "landed at tick %s, x %r" % (landed, s.x) if landed else "it did not land on the box"))
+
+    head, at = -1.0, None
+    if landed:
+        while s.x < 11.0:                      # the recorded reproduction's jump from the box
+            tick_ref.tick3(world, s, {"r": True})
+        tick_ref.tick3(world, s, {"jump": True})
+        for _k in range(400):
+            tick_ref.tick3(world, s, {})
+            if s.feet + tick_ref.BODY > head:
+                head, at = s.feet + tick_ref.BODY, (int(s.x // cell), int(s.z // cell))
+            if s.on_ground:
+                break
+
+    def covered(reach):
+        return at is not None and reach[at[1] * w + at[0]] is not None and head <= reach[at[1] * w + at[0]] - P["margin"]
+    twin = reach_here(S)
+    rows.append(("both twins count the box: their ceilings equal, the head from the box under the ceiling less the margin",
+                 twin == S["reach"] and covered(S["reach"]),
+                 "the head %.6f m over %s, the ceiling %s (less the margin %s)" % (head, at, S["reach"][at[1] * w + at[0]] if at else None, P["margin"])))
+
+    # an exact tie, 2r + n steps = the gap in the reals: counted by both twins, where the tick may not land
+    tie_box = "mover box grey 9.25,0,0 13,3.90625,6 along +x travel 0.00390625 speed 0"
+    tie_text = "\n".join(tie_box if ln.startswith("mover box ") else ln for ln in text.split("\n"))
+    o2 = export(tie_text)
+    S2 = o2["scene"]
+    n2 = ticks_onto(hi, 3.90625, P["step"], tick, P["jump"], P["gravity"])
+    tie = 5 * round(5.25 * 256) == 64 * (14 + n2)
+    over = S2["reach"][1 * w + 5]
+    box_head = round(3.90625 + P["jump"] ** 2 / (2.0 * P["gravity"]) + P["body"] + P["margin"], 4)
+    w2 = tick_ref.World3({"collision": o2["C"], "canonical": o2["W"]},
+                         [{k: m[k] for k in ("id", "box", "axis", "len", "speed", "policy")} for m in S2["movers"]])
+    s2 = tick_ref.State2.new(w2, "A")
+    s2.x, s2.feet = x0, w2.ground(x0, s2.z)
+    on = False
+    for k in range(1, 400):
+        tick_ref.tick3(w2, s2, {"r": True, "jump": True} if k == 1 else {"r": True})
+        if s2.on_ground:
+            on = s2.feet == 3.90625
+            break
+    rows.append(("an exact tie is counted (the contract's conservative count, not the tick's own verdict): a box 5.25 m off and 0.09375 m higher, 2r + %d steps exactly" % n2,
+                 tie and over == box_head and reach_here(S2) == S2["reach"],
+                 "both twins count it (the ceiling over 5,1 the box's head, %s); the tick from the farthest start %s (its binary64 rounding decides a tie)"
+                 % (over, "lands on it" if on else "does not land on it")))
+    for c, ok, d in rows:
+        print("%s %s — %s" % ("PASS" if ok else "FAIL", c, d))
+        failed += 0 if ok else 1
+
+    global REACH_PLANT
+    saved = (REACH_PLANT, dress.REACH_PLANT)
+    REACH_PLANT = dress.REACH_PLANT = "pair-parabola"
+    try:
+        mv = dress._movers(dress.parse(text, "reachpair.art"), out["W"], out["C"])
+        old, _st = dress.reach_ceiling(out["W"], out["C"], mv)
+        old_twin = reach_here(S)
+    finally:
+        REACH_PLANT, dress.REACH_PLANT = saved
+    caught = not covered(old) and not covered(old_twin)
+    print("%s plant: the pair test before 0257, the parabola's, misses the box — %s" % (
+        "PASS" if caught else "FAIL", ("refused: the head %.6f m over %s above the ceiling less the margin (%s, the twin's %s)" % (
+            head, at, old[at[1] * w + at[0]], old_twin[at[1] * w + at[0]])) if caught else "NOT refused"))
+    failed += 0 if caught else 1
+    return failed
+
+
 def main(argv) -> int:
     # 0242: a console that cannot write a character (a Windows pipe is cp1252; the number-grammar plant's refusal quotes
     # Arabic-Indic digits) writes it escaped rather than stopping the checks there
@@ -897,6 +1060,8 @@ def main(argv) -> int:
         f, s = check_brief(name)
         failed += f
         skipped += s
+    if not [a for a in argv if not a.startswith("--")]:
+        failed += check_reach_witness()
     verdict = "PASSED" if not failed else "FAILED (%d)" % failed
     print("ART CHECKS %s%s" % (verdict, (", %d SKIPPED" % skipped) if skipped else ""))
     return 0 if not failed else 1

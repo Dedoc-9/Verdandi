@@ -4264,7 +4264,8 @@ drawing): of 1,944 jumps from the lift's top, 233 ended on a wall's top. A stand
 top, and has no top: a player above it walks into its column and falls into it, and every step from inside ends inside
 (1,045 of 15,552 tries ended held in a target). The deck stopping for him is rules 2's one policy, stop, as specified.
 And the art's own reach model, which was to keep a player off what is drawn above the walls, counted a jump's apex
-alone, between neighbouring cells alone, since ART-GENERATION-0: the climb is apex and step, 1.775 m, and neither the
+alone, between neighbouring cells alone, since ART-GENERATION-0: the climb is apex and step, 1.775 m (corrected
+2026-10-21, 0257: the tick's own apex and step, 1.745833 m; 1.775 m is the parabola's), and neither the
 model nor 0226's adversarial review of it saw that (0229 corrects it). **0228, built, off the gate.**
 [`graybox/RULES-3.md`](../graybox/RULES-3.md): rules 2 with a cell as high as the world's wall blocking the body at any
 height; a standing target's top as ground (within a step of the feet, as any top); a target that would stand again
@@ -4291,7 +4292,8 @@ scenes name them. NOT_MEASURED: Firefox, his machine.
 **0229: the art plays rules 3, and its reach ceiling is held to the simulation (2026-10-14).** His report found the
 art's own model wrong as well: the reach ceiling (dressing must stand above the highest a head can rise) counted a climb
 of the jump's apex alone, to a neighbouring cell alone, since ART-GENERATION-0, and nobody on a wall. The simulation
-climbs the apex and a step (1.775 m), crosses gaps, stands on targets, and under rules 1 and 2 on the walls: a slab or a
+climbs the apex and a step (1.775 m; corrected 2026-10-21, 0257: 1.745833 m, the tick's apex and a step), crosses
+gaps, stands on targets, and under rules 1 and 2 on the walls: a slab or a
 lamp the model put above every head hung in the way of a head on a 2.6 m cover, and the city's rock drawn above 4 m
 stood where a player walked. 0226's adversarial review of movers checked a rider's ceiling and missed the climb.
 **0229, built, off the gate.** `art/dress.py`: every scene names rules 3 (with movers or without) and carries its
@@ -8211,3 +8213,222 @@ NOT_MEASURED in this entry: the full check; the classifier; the gate; his checko
 oracle file, registered entry, BINDING-0 file, frozen file, `art/references.jsonl` or `art/director/vectors.json`
 changed. Docs: AGENTS.md (the studio's row), art/STUDIO.md (its boundary), docs/STUDIO-APP.md (a note),
 docs/CAPABILITY-MATRIX.md (F-14), docs/CORE.md (art's lines), this entry.
+
+### REACH-1 by the tick — the pair test played as the graybox plays it · **built, off the gate** (0257: `art/dress.py`, `art/check.py`, `art/fixtures/reach/`)
+
+**His rulings** (2026-10-21, pasted; quoted whole from the agent's copies of his texts).
+- On the shape, asked "Which shape for REACH-1's repair?":
+
+> Choose Shape B as the preferred correctness target, but require one bounded implementation experiment before committing to it. Shape A is a reasonable fallback if B’s runtime or maintenance cost is disproportionate. I would not choose C without evidence that the simulation’s actual movement rule is wrong.
+> The key distinction is that REACH-1 is supposed to model the simulation, not merely approximate it conservatively.
+> OODA ruling
+> Observe — cause established
+> Based on your reported results, walk-before-height-update creates a one-tick reachability discrepancy. The head-side bound remains sound, and the planted reproduction catches the existing defect.
+> Orient — distinguish fidelity from conservatism
+>
+> * A: simple, conservative, but can classify an unreachable surface as reachable.
+> * B: models the actual tick transition and avoids the deliberate over-reach, provided the implementation reproduces the simulation’s arithmetic and phase ordering exactly.
+> * C: changes gameplay semantics and expands the migration surface unnecessarily.
+>
+> Decide — prototype B in isolation
+> Compare B against a direct, straightforward tick-by-tick reference implementation over the full supported input domain. Do not optimize or cache until equivalence is established.
+> The acceptance conditions
+> Before accepting B, require:
+>
+> 1. Exact phase parity: horizontal movement, height update, and step acceptance follow the simulation’s actual order.
+> 2. Boundary coverage: test equality at the step limit, immediately below and above it, zero drop, maximum supported drop, and the 1/256 m witness.
+> 3. Differential testing: B agrees with the direct reference for every tested height difference and tick boundary.
+> 4. Performance measurement: measure the cached iteration against the uncached reference. Do not assume caching is necessary or costly.
+> 5. Preserved invariants: both copies agree, head clearance remains valid, and the planted old implementation fails the regression.
+> 6. Scope discipline: no changes to `sim.js`, no rules-version bump, and no world or trace changes unless evidence demonstrates that the simulation itself is defective.
+>
+> One caveat: a finite differential test does not prove equivalence for every possible input. The proof should establish why the iteration terminates and why its acceptance condition matches the simulation; the tests then check the implementation against that argument.
+> Why not freeze A immediately?
+> A’s bound is attractive: the extra horizontal travel is at most one tick, and your measurements report no changes to the four briefs. But the zero-world-change result does not establish that the approximation is semantically exact. If REACH-1 feeds future admission or ceiling decisions, a 0.05 m conservative expansion could eventually admit a surface that the simulation cannot reach.
+> If B proves too expensive or too tightly couples the test to implementation details, A remains a defensible alternative—but register the deliberate conservative bias explicitly and retain the witness test.
+> Before either shape is frozen
+> Keep the exporter-reference failures separate from the reachability verdict. Your reported throwaway run says the four reference checks fail despite no changed fields, while the existing plaza ledger already has an unlogged-change discrepancy. That means the exporter hash and ledger state need their own accounting; neither should be silently repaired as part of REACH-1.
+> Also leave the proposed CC-0 v0.1 amendment untouched pending your ruling, and retain the Linux and mover cases as explicit outstanding coverage.
+> Next action: prototype B against the direct tick reference, measure its cost, and report the differential result. Then choose B if it is equivalent and operationally reasonable; otherwise use A with its conservative over-reach documented. No production patch or reference freeze yet.
+
+- On 0257, asked "Build B with its per-call memo as 0257?", his own word first, *"minimum:"*, then:
+
+> Yes—build Shape B with the per-call memo as 0257, but make the tie behavior and floor termination explicit parts of the contract. The experiment is strong enough to proceed to implementation, not to claim universal equivalence.
+> The important correction is that B is not simply a tighter version of A. It aligns REACH-1 with the simulation’s tick semantics, including a lower climb limit and a floor-bounded flight. Those are meaningful model changes even though your four existing worlds remain byte-identical.
+> 0257 implementation contract
+> 1. Tick-faithful reachability
+> Replace the parabola-only reachability estimate in both `art/dress.py` and `art/check.py` with Shape B. Read the tick length from `sim.js`; do not introduce another independent timing constant.
+> 2. Per-call memoization
+> Memoize repeated height-difference calculations within a single call. Preserve B’s uncached output exactly. Keep the cache local rather than introducing persistent state or cross-call invalidation complexity.
+> 3. Exact ties and floor termination
+> Preserve the measured tie policy: exact ties count as reachable. Terminate the flight at the floor, since the tick cannot descend below zero. Document the binary64 rounding qualification rather than describing B as perfectly equivalent at every boundary.
+> 4. Witness regression
+> Add the derived witness as a permanent ART CHECKS fixture. Assert that the tick lands on the box, both twins accept the surface and preserve head clearance, and the old pair-only implementation fails the witness.
+> Required release checks
+>
+> 1. Re-run the 41,160-height differential and preserve the tie cases as an explicit result category.
+> 2. Test the below-floor case and the exact step-limit neighbors.
+> 3. Verify both twins agree on the witness and all four existing briefs.
+> 4. Confirm every existing REACH-1 plant is still caught.
+> 5. Search the simulation against the new ceiling, and update documentation for the 1.7458 m climb limit, floor termination, and tie semantics.
+> 6. Run the normal art checks and compare canonical output. Target the measured baseline of approximately 45 seconds with memoization, but treat timing as diagnostic rather than a correctness criterion.
+> 7. Keep the four exporter-reference failures and the plaza ledger’s pre-existing `UNLOGGED-CHANGE` separate from the reachability result.
+>
+> Two limits to preserve
+>
+> * Do not freeze references as part of 0257. First review the implementation and its output; then freeze the four references in a separate, explicit action.
+> * Do not claim full simulation equivalence yet. Targets, moving movers, off-axis approaches, and Linux remain untested. Track them as outstanding coverage rather than expanding 0257 into a broader simulation change.
+>
+> One subtlety: counting all exact ties as reachable deliberately accepts some ties the floating-point tick misses. That is a conservative choice for dressing coverage, but it is not exact behavioral equivalence. Keep that distinction in the contract and regression output.
+> Decision: proceed with 0257 as an implementation-only patch. No `sim.js` change, no rules-version bump, no trace migration, no reference freeze, and no ledger repair bundled into it.
+
+- On what REACH-1 certifies, asked "Does REACH-1's \"reachable\" certify the sound envelope?":
+
+> REACH-1 should certify a sound envelope, not exact attainability. I agree with that contract. I would sharpen the theorem before locking it, though: the central claim is not merely that B counts every tie. It is that the envelope is a sound over-approximation of every surface the discrete simulation can reach.
+> The theorem to lock
+> Let \(T\) be the set of surfaces a body can actually reach under any permitted tick trajectory and input, and let \(E_B\) be the set of surfaces REACH-1's rule B does not exclude.
+> The required property is:
+> \[ \boxed{T \subseteq E_B} \]
+> Equivalently:
+> \[ \forall s,\quad \operatorname{TickReachable}(s) \implies \operatorname{IncludedByB}(s) \]
+> This is one-directional. B may include surfaces the tick never reaches; those are false positives that make the safety ceiling conservative. Excluding even one surface the tick can reach is a false negative and violates soundness.
+> What the current evidence establishes
+>
+> * Axis-aligned cases: the reported differential supports B's agreement with the prototype away from exact ties, and B includes the ties.
+> * The 3.0 m, 46-tick counterexample: demonstrates that geometric eligibility does not imply discrete landing. It does not refute envelope soundness; the envelope is supposed to include such a surface.
+> * Off-axis cases: soundness remains open. Irrational gaps and arbitrarily small margins mean the axis-aligned rounding argument cannot establish the general case.
+> * The broader over-approximations: ignoring intervening surfaces, using swept travel, replacing a round column with a square, and counting all approach directions are plausible sources of conservatism. Each still needs to be checked against the actual implementation and the theorem's assumptions.
+>
+> The improvement I would make
+> Do not define the theorem as “B counts every geometrically eligible surface” unless that geometric predicate is itself proved to contain every tick-reachable surface. That formulation could simply move the unproven assumption one layer upstream.
+> Instead, state the contract in terms of the actual tick system, then establish a chain of lemmas:
+>
+> 1. Every permitted tick trajectory is contained in the continuous or discrete motion envelope used by REACH-1.
+> 2. Every surface that envelope can reach is included by B's geometric test.
+> 3. Numerical evaluation cannot shrink that envelope at a boundary—including off-axis cases.
+>
+> The third lemma is the exposed gap. A fixed epsilon is not automatically a solution: it must be derived from a bound on the numerical error, or replaced by a conservative comparison that cannot exclude a truly reachable surface.
+> My ruling: retain 0257 as the candidate implementation; do not broaden its contract to exact attainability. Keep REACH-1's soundness claim unproved off-axis until the numerical-boundary argument and adversarial tests support it. The theorem is better stated as a containment guarantee over the actual tick system, with geometric eligibility serving as the proof technique—not as the definition of truth.
+
+**The contract, by that ruling: containment over the tick, T ⊆ E_B.** T is every surface a body can reach under any
+tick trajectory and input; E_B is every surface REACH-1 does not exclude. Geometric eligibility is the proof technique,
+not the definition: a box 3.0 m off the floor and 1.734375 m high is eligible (the gap is 2r + 46 steps exactly), and
+the tick from the farthest start along x misses it (MEASURED). In the differential below, the ties fell every fifth tick
+from 46 to 421; the tick missed every tie from 46 to 91 ticks and landed at every one from 96 on. The lemmas:
+1. every tick trajectory lies within REACH-1's motion: shown by hand for a flight between static surfaces. **A mover's
+   push is outside it, and unproved:** a deck that carries or shoves a body in flight may take it farther than its
+   walk;
+2. every surface that motion reaches is counted: the same proof;
+3. rounding cannot shrink the envelope at a boundary: along an axis on the 1/256 m grid, a gap and 2r + n·step are equal
+   (a tie, counted) or at least 1/1280 m apart, far beyond binary64's error. **Off an axis it is unproved:** a gap is
+   then an irrational distance, and rounding may cross the boundary either way.
+
+REACH-1's other over-approximations (what lies between, a mover's swept travel, a target's square, every direction)
+are not checked against this contract.
+
+**The cause** (confirmed before the repair, MEASURED in scratch on his machine with the program's own code at a4f14c3).
+- **The mechanism:** REACH-1 timed a jump on the parabola. The tick walks before it moves the feet (`walk3` before
+  `height3`), and lets a body onto a surface by the feet it started at (`before`), so a body walks one tick more than
+  the parabola allows.
+- **The plant:** on the witness world, 1 of 690 jump starts lands on the box with the tick as it is, and 0 of 690 with
+  `height3` run before `walk3`.
+- **The size:** over every drop to 100 m by 1/256 m, the tick outreached the parabola at 10,354 of 26,055 drops (a step)
+  and 10,251 of 25,914 (a target), by at most 0.0222 m. The head side was sound at every tick.
+
+**The repair** (shape B, by his ruling).
+- **The pair test plays the tick.** `last_tick` in the exporter and `ticks_onto` in the checks, each written apart, step
+  the tick's own arithmetic: the jump at tick 1, then `vy = vy - gravity * TICK` and `feet = feet + vy * TICK`. A
+  surface is reached when, at some tick n's start, its lowest is within its allowance of the feet (`lowest <= feet +
+  allowance`, the tick's own form: the operand audit below), and the gap is at most 2r + n ticks of walking.
+- **The floor ends the flight:** the tick's ground is nowhere below 0, and the flight stops at the first tick at or below
+  it. Without that stop, a first prototype over-reached for surfaces lower than 0.55 m, where the floor catches the body
+  first.
+- **An exact tie counts as reached.** This is his ruling's conservative count, not the tick's own verdict: the tick's
+  verdict at a tie turns on the binary64 rounding of its start and of its summed steps.
+- **The climb** is the tick's own apex and a step, 1.745833 m: its apex is 1.195833 m, the parabola's 1.225 m.
+- **The tick comes from `sim.js`.** The checks read `TICK` there (`sim_tick`); the exporter keeps its `TICKS = 120`. No
+  new timing constant is added, and the twins' equality row catches any disagreement.
+- **A per-call memo:** each (a surface's highest, another's lowest, its allowance) is played once per call. Its
+  output is B's uncached output exactly: on the four briefs and the witness, the ceilings, the standable surfaces and
+  the scenes are the same.
+- **The plant switch:** `REACH_PLANT = "pair-parabola"` in each twin, set by the witness's plant alone, gives the pair
+  test before 0257.
+
+**The witness** (`art/fixtures/reach/`: a map, a brief, a README; ART CHECKS' `== reach-witness`, after the briefs, when
+no brief is named).
+- The box's gap, 6.3984375 m, is derived from the rules: the farthest on the 1/256 m grid inside 2r + 114 steps = 6.4 m.
+- The tick lands on the box at tick 114.
+- Both twins count it, their ceilings equal, and the head from the box (4.995833 m over 5,1) is under the ceiling less
+  the margin (5.275 − 0.25).
+- An exact tie, a box 5.25 m off and 0.09375 m higher (2r + 91 steps), is counted by both twins, while the tick from the
+  farthest start does not land on it. The row says so: the contract's conservative count.
+- A plant, the pair test before 0257, misses the box: the head is above the ceiling less the margin (4.2431). One new R5
+  key.
+
+**The release checks he named.**
+1. *The differential, re-run on this tree:* 41,160 height differences on the 1/256 m grid, from platforms at 0,
+   3.8125, 50 and 100 m, each played by `tick3` at B's farthest gap and 1/256 m farther (MEASURED, 872 s). Results by
+   category:
+   - not a tie: the tick lands at B's farthest gap, and not 1/256 m farther, at every one: 0 disagreements;
+   - exact ties: 8,126, all counted by B. The tick landed at 7,783 and missed 343, every miss at 46, 51, … 91 ticks;
+   - cells: 23 (platform, gap) pairs; the 19 that are not ties agree, and the four 4 m gaps are ties.
+2. *The below-floor case and the step limit's neighbours:* each agrees with `tick3`:
+   - the step limit exactly (cells, the tick's apex + step), and its grid neighbours 446/256 (climbed) and 447/256
+     (not; REACH-1 as built said yes);
+   - zero drop;
+   - the largest drop (100 m, 424 ticks);
+   - the witness at three gaps;
+   - below the floor's reach, boxes 0.1484375 m and 1/256 m high, at B's farthest gap 7.046875 m: both landed at
+     tick 127. Before the floor's stop was added, the first prototype over-reached there.
+3. *Both twins agree* on the witness and all four briefs: ART CHECKS' row on each brief, and the witness's row.
+4. *Every existing REACH-1 plant is still caught:* ART CHECKS' 202 plant rows, each as at a4f14c3, and one more.
+5. *The search of the simulation* against the new ceiling: 150,048 tries in each of the five worlds, the four briefs
+   and the witness (MEASURED; a search and not a proof, as 0229's). Its method: breadth-first over landings and walk
+   ends from every spawn; 24 yaws; a jump at once, after 3 or 8 ticks, or a walk with no jump; with movers, waits of 0,
+   60 or 150 ticks first. Every tick's head over the cells under the body was compared with 0257's ceiling less its
+   margin:
+   - no head above it in any world;
+   - the closest 0.029167 m under it, everywhere: the parabola's apex (1.225 m) less the tick's (1.195833 m);
+   - its reach is bounded: about 160 of a map's 1,536 cells had a head, with over 5,000 places left unexplored at the
+     cap;
+   - foundry-yard, harbor-day and plaza-night gave identical numbers, sharing their spawns and play map.
+   The search is in the agent's scratch, not the repository.
+6. *The art checks against a4f14c3, row for row* (the exporter's id masked): they differ in exactly the four reference
+   lines and the witness's section. Timing, as diagnostic only: alternating runs here, quiet, a4f14c3 46.5 s and 0257
+   45.2 s; loaded, 62.4 s and 64.8 s.
+7. *Kept apart.*
+   - The four reference lines fail ("no reference at exporter …; the fields that moved: none (the bytes are the same)").
+     They are his to freeze, in a separate act after he has read this.
+   - The checkout's plaza ledger is refused at a4f14c3 already, `UNLOGGED-CHANGE` (F-1's state), and this does not
+     repair it.
+
+**The operand audit before delivery.** B as first written tested `feet >= lo - allowance`, where the tick tests
+`top <= before + step`. In binary64 the two can round apart at equality. Over 778,435 feet heights the tick produces
+(jumps from tops by 1/16 m and 0.1 m), the first form refused the highest top the tick accepts 16,870 times: from the
+floor, at tick 2, the feet at 0.05694444444444444 m and the top 0.6069444444444445 m. Those were false negatives at the
+exact step boundary (MEASURED). Both twins now test `lo <= feet + allowance`, the tick's own form, and the memo is keyed
+by (highest, lowest, allowance). On the four briefs and the witness nothing moved (ceilings, standable surfaces, scenes),
+so the search above stands. The differential and the art checks were run again on the fixed code: the same results, and
+the checks row for row the same.
+
+**His ruling on the sequence** (2026-10-21, pasted; its ruling paragraph quoted whole):
+
+> Ruling: deliver 0257 on its own evidence; keep the off-axis proof and mover-push attack off-gate and independent. If either attack finds a reachable head excluded by the envelope, preserve the smallest counterexample and reopen REACH-1 soundness. If both survive, update the evidence only to the strength actually established—without claiming the whole theorem proved merely because the adversarial tests passed.
+
+**What it does not show.**
+- Equivalence with the simulation: B is the tick's at every case tested but the ties, where it counts more.
+- Soundness off an axis (lemma 3 there) and under a mover's push: unproved. By his ruling on the sequence, each is
+  attacked apart, in scratch and off the gate; the search's harbor-lift tries are the only evidence for a push.
+- Targets (REACH-1 uses the column's bounding square) and Linux: untested.
+- Any brief beyond the four and the witness.
+
+**Not done.**
+- The four references: his to freeze (`python art/quality.py freeze NAME --note TEXT`). Then, as after every exporter
+  change, each world he admits in takes one `rebase`.
+- The full check, the classifier his pushed tree holds, and the gate twice on the committed tree, with its
+  `Gated-Tree:` line: in the commit message.
+
+No row, rung, pinned source, oracle file, registered entry, BINDING-0 file, frozen file, `sim.js`, rules document,
+trace, `art/references.jsonl` or ledger changed. Docs: AGENTS.md (the art row's REACH-1), art/README.md (REACH-1, its
+claims, the fixtures), art/fixtures/round/README.md (a note), docs/CAPABILITY-MATRIX.md (F-15), docs/CORE.md (art's
+lines), the 0228 and 0229 entries (notes on the climb), this entry.

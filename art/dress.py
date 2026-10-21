@@ -285,19 +285,57 @@ def footprint(b, w, h, cell):
     return [(x, z) for z in range(h) if z * cell < b[5] and (z + 1) * cell > b[2] for x in range(w) if x * cell < b[3] and (x + 1) * cell > b[0]]
 
 
+# REACH-1's plant (0257), set by art/check.py's reach witness alone: the pair test before 0257, the parabola's
+REACH_PLANT = ""
+
+
+def last_tick(hi, lo, allowance):
+    """The last tick n of a jump from feet at hi at whose start the feet, with the allowance, still reach a surface's
+    lowest lo (the step, or nothing for a target), or 0 if no tick's do: REACH-1's pair test as the tick plays it (0257).
+    The tick (graybox/web/sim.js, and graybox/tick_ref.py's height3) walks before it moves the feet, and lets a body onto
+    a surface by the feet it started at, so a body walks n ticks onto a surface it comes onto at tick n; its ground is
+    nowhere below 0, so the flight ends at the first tick whose feet are at or below 0. The tick's own arithmetic,
+    operation for operation: the jump at tick 1, then vy = vy - gravity * TICK and feet = feet + vy * TICK; and its own
+    test, lo <= feet + allowance (a top within a step of the feet), never lo - allowance <= feet, which can round apart
+    from it near equality. It ends: vy falls by gravity * TICK each tick, so past the apex the feet fall below the
+    surface, or below 0, and while vy is no longer positive no later tick's feet are higher."""
+    tick = 1.0 / TICKS
+    feet, vy, n, last = hi, 0.0, 0, 0
+    while True:
+        n += 1
+        if lo <= feet + allowance:
+            last = n
+        elif n > 1 and vy <= 0.0:
+            return last
+        if n == 1:
+            vy = PLAYER["jump"]
+        vy = vy - PLAYER["gravity"] * tick
+        feet = feet + vy * tick
+        if feet <= 0.0:
+            return last
+
+
 def reach_ceiling(W, C, movers=()):
     """For every cell, the height dressing above it must clear: the highest a player's head can rise over it, under
-    the graybox's rules 3 (graybox/RULES-3.md), by REACH-1 (0229; art/README.md). Before 0229 a climb was the jump's
-    apex alone and only to a neighbouring cell: the simulation climbs the apex and a step (1.775 m), crosses gaps, and
-    stands on targets, and that model was below it.
+    the graybox's rules 3 (graybox/RULES-3.md), by REACH-1 (0229, 0257; art/README.md). Before 0229 a climb was the
+    jump's apex alone and only to a neighbouring cell: the simulation climbs its apex and a step (1.745833 m: the tick's
+    own apex, 1.195833 m, below the parabola's 1.225), crosses gaps, and stands on targets, and that model was below it.
 
     Surfaces a player may stand on: every open cell's top (a cell as high as the wall is rock, which rules 3 never let a
     body enter); every mover's top, over its whole travel in plan, from its lowest to its highest; every target's top
-    (rules 3), over its column. From a surface s a player reaches a surface s2 when, jumping from s's highest at once,
-    the feet are still as high as s2's lowest less the step (less nothing, for a target, which holds a body below its
-    top) after flying the gap between them: with need = lo2 - allowance - hi, need <= the apex and the gap at most
-    2 radius + speed t, t = (jump + sqrt(jump^2 - 2 gravity need)) / gravity. Nothing in between is asked to be open,
-    which can only add surfaces. The standable surfaces are those reached so from the spawns' cells.
+    (rules 3), over its column. From a surface s a player reaches a surface s2 when a jump from s's highest, played tick
+    by tick as the graybox plays it (last_tick), still has s2's lowest within the step of the feet at some tick n's
+    start (within nothing, for a target, which holds a body below its top), before the flight ends at the floor, and
+    the gap between them is at most 2 radius + n ticks of walking. An exact tie (the gap equal to that in the reals)
+    counts as reached: the tick's own verdict there turns on the binary64 rounding of where it starts and of its summed
+    steps (on the 1/256 m grid it landed at 7,783 of 8,126 ties and not at 343, MEASURED 2026-10-21), so the test is the
+    tick's but at a tie, where it counts more. What it is to certify (his ruling, 2026-10-21) is a sound envelope:
+    every surface the tick can bring a body onto is counted, never exact attainability; off an axis, where a gap is an
+    irrational distance, rounding at the boundary is not yet shown unable to leave one out, nor a mover's push of a
+    body in flight unable to carry it past its walk. Before 0257 the test was the parabola's, t = (jump + sqrt(jump^2
+    - 2 gravity need)) / gravity, which missed the tick a body walks before its feet are tested (a box 6.3984375 m off
+    a platform's edge: the tick lands on it, and the parabola refused it). Nothing in between is asked to be open, which
+    can only add surfaces. The standable surfaces are those reached so from the spawns' cells.
 
     The head over a cell: from each standable surface, the body flies the gap to the cell less two radii (its own
     circle at both ends) at the walking speed; within the rise the feet are at the surface's highest plus the apex, after
@@ -333,17 +371,27 @@ def reach_ceiling(W, C, movers=()):
     index = {s[7]: k for k, s in enumerate(surf) if s[7] is not None}
     todo = sorted({index[(sp["x"], sp["z"])] for sp in W["spawns"].values() if (sp["x"], sp["z"]) in index})
     ok = set(todo)
+    ticks = {}   # this call's own: each (s's highest, s2's lowest, its allowance) played once
     while todo:
         k = todo.pop()
         a = surf[k]
         for j, b in enumerate(surf):
             if j in ok:
                 continue
-            need = b[0] - b[6] - a[1]
-            if need > apex:
-                continue
-            t = (v + math.sqrt(v * v - 2.0 * g * need)) / g
-            if gap(a, b) <= 2.0 * r + speed * t:
+            if REACH_PLANT == "pair-parabola":
+                need = b[0] - b[6] - a[1]
+                if need > apex:
+                    continue
+                far = 2.0 * r + speed * ((v + math.sqrt(v * v - 2.0 * g * need)) / g)
+            else:
+                key = (a[1], b[0], b[6])
+                n = ticks.get(key)
+                if n is None:
+                    n = ticks[key] = last_tick(*key)
+                if not n:
+                    continue
+                far = 2.0 * r + n * (speed * (1.0 / TICKS))
+            if gap(a, b) <= far:
                 ok.add(j)
                 todo.append(j)
     standable = {surf[k][7] for k in ok if surf[k][7] is not None}

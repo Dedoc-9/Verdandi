@@ -390,6 +390,21 @@ Linux (its process group, unchanged and not run); a process a provider has anoth
 a provider's own exit (unchanged). docs/CAPABILITY-MATRIX-ROWS.md cites the process tree killed as tested; it is a
 dated, generated audit and is not edited.
 
+**F-15 · REACH-1 omitted a surface the tick lands on (found 2026-10-19 in the review packet, reproduced
+independently the same day; closed by 0257, 2026-10-21).** REACH-1 timed a jump on the parabola. The tick walks before
+it moves the feet, and lets a body onto a surface by the feet it started at, so a body walks one tick more than the
+parabola allows. A box 6.3984375 m off a platform's edge, which the tick lands on at tick 114, was refused, and a head
+from it rose to 4.995833 m under a ceiling of 4.2431 m (MEASURED, the reproduction). Over every drop to 100 m by 1/256 m
+the tick outreached the parabola at 10,354 of 26,055 drops (a step) and 10,251 of 25,914 (a target), by at most
+0.0222 m. Closed by 0257: the pair test plays the tick (shape B, his ruling). Against `tick3` over 41,160 height
+differences there were 0 disagreements outside exact ties; at the 8,126 ties it counts every one (the tick landed at
+7,783), so it is conservative, not exact, there. The climb is the tick's 1.745833 m, the flight ends at the floor, and
+ART CHECKS plays the witness with the parabola as its plant. Its claim, by his ruling of 2026-10-21, is containment, T ⊆
+E_B: every surface the tick can reach is counted, and ties are counted conservatively (the tick misses a 3.0 m tie at 46
+ticks). Along an axis on the 1/256 m grid, rounding cannot cross the boundary: a gap and 2r + n·step are equal or at
+least 1/1280 m apart. Off the axis that is unproved, and so is a mover's push of a body in flight. What it does not
+show: soundness off the axis or under a mover's push, targets, Linux.
+
 ## 6. SPEC1 against the rules
 
 About a third of SPEC1 already exists under other names, off the gate, in the art layer: stored inverses and

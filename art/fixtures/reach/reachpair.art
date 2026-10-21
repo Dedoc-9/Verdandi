@@ -1,0 +1,13 @@
+VERDANDI-ART 0
+map reachpair
+title reach pair witness
+seed witness
+asset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)
+material grey 128,128,128 0.5 0.0
+surface ground grey
+surface floor grey
+surface stair grey
+surface raised grey
+surface cover grey
+surface wall grey
+mover box grey 10.3984375,0,0 13,2,6 along +x travel 0.00390625 speed 0

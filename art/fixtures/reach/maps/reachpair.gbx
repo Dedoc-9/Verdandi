@@ -1,0 +1,7 @@
+GRAYBOX 0
+name reachpair
+layout reachpair.layout
+# the platform: cells x 0..1 (x 0 to 4 m), every row, at 3.8125 m; its east edge is x = 4 m
+height 0,0 1,2 3.8125
+spawn A 1,1 0
+spawn B 0,1 0

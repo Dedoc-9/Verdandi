@@ -6,7 +6,8 @@
 [`art/rounds/plaza-imposing/`](../../rounds/plaza-imposing/), the owner's round of 2026-10-10. Its base no longer passes
 the checks: the base brief hangs its two cantilevers at 5.2 m over the plaza's north and south rows, and over the 2.6 m
 covers at 20,11, 27,11, 20,20 and 27,20 a player stands (the graybox's simulation climbs a jump's apex and a step,
-1.775 m, from the plaza's 1 m steps) and raises a head to 5.625 m. The reach ceiling before 0229 counted a climb of the
+1.775 m, from the plaza's 1 m steps; corrected 2026-10-21, 0257: the tick's own apex and a step, 1.745833 m, which
+still climbs the 1.6 m) and raises a head to 5.625 m. The reach ceiling before 0229 counted a climb of the
 apex alone and never reached those covers; REACH-1 (art/README.md) puts the ceiling there at 5.875 m, and every
 candidate that keeps those slabs is refused for them (MEASURED, 0229, at today's exporter: A and B, CLEAN before,
 REFUSED CHECK-FAILED; D, LEAKAGE before, REFUSED CHECK-FAILED and SCOPE-LEAK; C, which raises the slabs to 7 m, CLEAN;

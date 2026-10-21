@@ -44,19 +44,49 @@ be. Every piece of dressing is one of:
 - **flush on a rock face**: at most 8 cm deep against a rock neighbour (signs, neon strips);
 - **above every head**: wholly above the cell's reach ceiling (canopies, lamp housings).
 
-**The reach ceiling, REACH-1 (0229).** Every scene is played under the graybox's rules 3
+**The reach ceiling, REACH-1 (0229, 0257).** Every scene is played under the graybox's rules 3
 ([`graybox/RULES-3.md`](../graybox/RULES-3.md)), and says so (`rules`): a cell as high as the wall holds a body at any
 height, so nobody stands on the rock and dressing inside it is out of every head's way; a target has a top a player
 can stand on. Over that world the ceiling of a cell is the highest a head can rise over it, plus a margin of 0.25 m:
 
 - **where a body may stand**: every open cell's top; every mover's top, over its whole travel in plan, from its lowest
   to its highest; every target's top, over its column (its radius, 0.4 m, either way of its centre);
-- **which of them are reached**: from the spawns' cells, a body reaches a surface s2 from a surface s when, jumping
-  from s's highest (7 m/s up, 20 m/s² down, 6 m/s across), its feet are still as high as s2's lowest less the step
-  (0.55 m; less nothing for a target, which holds a body below its top) after flying the gap between the two, less a
-  radius (0.35 m) at each end: with `need = lo2 − allowance − hi`, `need ≤ apex` (1.225 m) and
-  `gap ≤ 2·radius + speed·t`, `t = (jump + √(jump² − 2·gravity·need)) / gravity`. Nothing between them is asked to be
-  open, which can only add surfaces;
+- **which of them are reached**: from the spawns' cells, a body reaches a surface s2 from a surface s when a jump from
+  s's highest, played tick by tick as the graybox plays it, still has s2's lowest within the step of its feet at the
+  start of some tick n, before the flight ends at the floor, and `gap ≤ 2·radius + n·speed·TICK`.
+  - *The tick* (0257: `last_tick` in the exporter, `ticks_onto` in the checks): the jump at tick 1 (7 m/s up), then
+    `vy −= gravity·TICK` and `feet += vy·TICK`, at 20 m/s² and 6 m/s across. `TICK` is read from `graybox/web/sim.js`.
+    Its test is the tick's, in the tick's form: `lowest ≤ feet + allowance`. The form `lowest − allowance ≤ feet`
+    rounds apart from it at equality (16,870 times in 778,435 feet heights, MEASURED).
+  - *The step* is 0.55 m, and nothing for a target, which holds a body below its top.
+  - *The floor* ends the flight: the tick's ground is nowhere below 0.
+  - *Why n ticks of walking:* the tick walks before it moves the feet, and lets a body onto a surface by the feet it
+    started at, so a body walks n ticks onto a surface it comes onto at tick n.
+  - *So the climb* is the tick's own apex and a step, 1.745833 m: its apex is 1.195833 m, the parabola's 1.225 m.
+  - *An exact tie* (the gap equal to `2·radius + n·speed·TICK` in the reals, as at every multiple of 0.25 m along an
+    axis) counts as reached. That is a conservative count, not the tick's own verdict: the tick's verdict at a tie turns
+    on the binary64 rounding of its start and of its summed steps. On the 1/256 m grid it landed at 7,783 of 8,126 ties
+    and missed 343 (MEASURED, 2026-10-21).
+  - *Before 0257* the time was the parabola's, `t = (jump + √(jump² − 2·gravity·need)) / gravity`, which misses the tick
+    a body walks before its feet are tested: a box 6.3984375 m off a platform's edge, which the tick lands on, was
+    refused (the witness, `fixtures/reach/`, played by `art/check.py`).
+  - *What it certifies* (his ruling, 2026-10-21): a sound envelope, T ⊆ E_B. Every surface the tick can bring a body
+    onto, by any inputs, is one REACH-1 does not exclude. A surface it counts that the tick never reaches only makes the
+    ceiling higher; leaving out one the tick reaches would break it. Geometric eligibility is how this is shown, not
+    what is true: a box at 3.0 m off the floor, 1.734375 m high, is eligible (the gap is 2r + 46 steps exactly), and the
+    tick from the farthest start along x misses it.
+    - Lemma 1, every tick trajectory inside REACH-1's motion: shown by hand for a flight between static surfaces.
+    - Lemma 2, every surface that motion reaches counted: the same proof.
+    - Lemma 3, rounding cannot shrink the envelope at a boundary. Along an axis on the 1/256 m grid, a gap and
+      2r + n·step are either equal (a tie, counted) or at least 1/1280 m apart, far beyond binary64's error.
+      **Off an axis it is unproved:** a gap is then an irrational distance, its margin can be as small as you like, and
+      rounding may cross it either way.
+    - **A mover's push is unproved:** lemma 1 is shown for flights between static surfaces, and a deck that carries or
+      shoves a body in flight may take it farther than its walk.
+    - Not checked against the implementation: the over-approximations below (what lies between, a mover's swept travel,
+      a target's square, every direction).
+
+  Nothing between them is asked to be open, which can only add surfaces;
 - **the head over a cell**: from each reached surface, the body flies the gap to the cell less two radii at the
   walking speed; while it rises (0.35 s) its head is at the surface's highest plus the apex plus the body (1.80 m, an
   assumption of this layer: the graybox player has no head), after that falling, and a fall below 0 is not counted
@@ -65,9 +95,9 @@ can stand on. Over that world the ceiling of a cell is the highest a head can ri
 
 The arithmetic is written once and done the same way in the exporter and in `art/check.py` (square roots by
 `math.sqrt`, correctly rounded on every machine, never `**` or `pow`), so the two ceilings are the same numbers.
-Before 0229 a climb was the apex alone and only to a neighbouring cell: the simulation climbs the apex and a step
-(1.775 m), crosses gaps and stands on targets, and the old ceiling sat 2.3 m under a head beside a 2.6 m cover
-(MEASURED, 0229: in a search of rules 3's simulation over the tactical map, 334 cells where a head rose above the old
+Before 0229 a climb was the apex alone and only to a neighbouring cell: the simulation climbs its apex and a step
+(1.745833 m, measured in 0257; 1.775 m before, the parabola's), crosses gaps and stands on targets, and the old
+ceiling sat 2.3 m under a head beside a 2.6 m cover (MEASURED, 0229: in a search of rules 3's simulation over the tactical map, 334 cells where a head rose above the old
 ceiling less its margin; none above REACH-1's, the closest 0.029 m under it). Decoration that should change play is
 not art: it goes into the graybox map as cover and is checked there (the owner's three-worlds rule,
 [`docs/BOUNDARIES.md`](../docs/BOUNDARIES.md)).
@@ -326,6 +356,7 @@ Movement. Otherwise the reach ceiling the checks compute is not the one you play
 | the importer's logic: a first import, a second that keeps every actor, a look revision that remakes none, a layout revision that remakes 5 and removes 4, the in-engine self-check passing | OBSERVED against a stand-in for the `unreal` module, not an engine | the build container; the stand-in is not in the repository |
 | the importer runs in Unreal 5.8 | NOT_MEASURED | the host's first run; its report |
 | the scene's bytes are exact: finite, one byte form, every field known and bounded, inside the native renderer's budgets; each brief its frozen reference | MEASURED, here | `python art/quality.py selftest` (58 rows, each check against its planted defect) and `python art/check.py` (the build container, 2026-10-13) |
+| REACH-1's pair test is the tick's (0257) | MEASURED against graybox/tick_ref.py tick3: 41,160 height differences on the 1/256 m grid from platforms at 0, 3.8125, 50 and 100 m, 0 disagreements but at the exact ties (8,126, all counted; the tick landed at 7,783); a search, as 0229's, of the four briefs and the witness, 150,048 tries each, no head above the ceiling less its margin, the closest 0.029167 m | his machine, 2026-10-21; the differential and the search are in the agent's scratch, not the repository |
 | the reach ceiling (REACH-1) is above every head the graybox's rules 3 raise | MEASURED, here, as a search and not a proof: a breadth-first search of rules 3's simulation over landings (24 yaws, jumps at once, after 3 or 8 ticks, or none; with movers, after waiting 0, 60 or 150 ticks), every tick's head over the cells under the body: the tactical map, 308,352 tries, no head above REACH-1's ceiling less its margin, the closest 0.029 m under it, 334 cells above the old one; harbor-lift with its movers, 400,032 tries, none above, the closest 0.029 m | the build container (node v22), 2026-10-14; the search is not in the repository |
 | the detectors on stills (white, black, a channel at 255, distinct colours) flag a still drawn white and not a sound one | OBSERVED on 21 stills of the two briefs, chosen with them in view; a detector, not a proof; its miss and false-alarm rates NOT_MEASURED | `python art/quality.py still FILE.png` |
 | the scene looks good | NOT_MEASURED, and no check can measure it | rendered viewpoints, judged by a person |
@@ -352,6 +383,7 @@ block a player is cover, and goes into the graybox map.
 | `director/durable.py` | B1: the content path's writes made to survive a killed process (an append flushed; a file replaced whole by a flushed temporary and a write-through rename); the death points `art/director.py crashtest` kills at; the content lock every writer of a tree's ledgers, briefs, tags and maps holds (a thread lock and the system's file lock, released by the system when its holder dies), which `art/director.py racetest` holds to account |
 | `studio_app.py` | B1: the desktop studio's supervisor (a job that ends everything it starts, play.py without a console, Edge in application mode, stopping when the window closes) and its `shortcut`; `selftest` with a stand-in browser. STUDIO-2: it serves the worlds folder (`--worlds DIR`, the per-user folder by default) |
 | `studio_queue.py` | STUDIO-2: the queue of creative work — prompts queued for any world with a provider and a model, run in the background at most one per world, kept across restarts in `queue.jsonl` (a torn last line set aside and cut; a task whose answer was recorded ready, not lost); `selftest` seeds worlds, queues, reviews, duplicates and keeps its plants |
+| `fixtures/reach/` | 0257: REACH-1's witness, a platform and a box the tick lands on that the parabola refused; `art/check.py` plays it after the briefs (`== reach-witness`); its README says what each row holds |
 | `fixtures/round/` | 0229: the round the director's self-tests play, `rounds/plaza-imposing/`'s candidates over its base with its two slabs at 6.0 m, which REACH-1 clears (its README says why; the owner's round is unchanged) |
 | `fixtures/selftest/` | the self-tests' world: the plaza's brief and layout as committed when the self-tests were written, laid under a scratch root by `director.py`'s `selftest_tree`; the self-tests never read the working brief, ledger or tags, which are the owner's world |
 | `studio_txn.py` | the studio's change transaction as a reference (docs/STUDIO-CONTRACT.md): the promotion journal's form and grammar and `Recover(J, P, F)`; `check` holds it over every enumerated crash point, `selftest` plants wrong decisions, `recover ROOT` reads a studio and prints what its stub must do; nothing here launches or writes a studio |
