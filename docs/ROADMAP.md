@@ -8178,6 +8178,12 @@ termination completes → descendants are checked"*):
 - `kill plant kill-tree-walked-by-taskkill caught` (the kill before 0256), caught by the orphan's row; and `kill plant
   kill-only-the-root caught`, caught by the children's row. Each is the handshake run under its plant: the descendant
   outlives the kill, and the row ends it after. Windows only. Two new R5 keys.
+  - *Note, 2026-10-21 (0258):* these two rows counted a catch whenever their row was not held, so a timeout, no record
+    line, another code or a changed world would have read as caught. Their record line was any line bearing the
+    request's id, which two gateways asked within one second share (F-16): his full check of 0257 failed the orphan's
+    row so, run 2. The catches recorded here printed the descendant outliving the kill, the defect's own witness (under
+    the taskkill plant 0.3 s after the cancellation, not at once), but the predicate did not require it. Since 0258 it
+    does.
 - `STUDIO SELFTEST 203/203` on Windows (200 before: four rows more, two of them plants). Elsewhere the two plant rows are
   not run, by the code: NOT_MEASURED.
 
@@ -8432,3 +8438,302 @@ No row, rung, pinned source, oracle file, registered entry, BINDING-0 file, froz
 trace, `art/references.jsonl` or ledger changed. Docs: AGENTS.md (the art row's REACH-1), art/README.md (REACH-1, its
 claims, the fixtures), art/fixtures/round/README.md (a note), docs/CAPABILITY-MATRIX.md (F-15), docs/CORE.md (art's
 lines), the 0228 and 0229 entries (notes on the climb), this entry.
+
+### KILL-WITNESS-0 — a kill plant caught only by its causal witness, read from its own record line · **built, off the gate** (0258: `art/play.py`)
+
+**His rulings** (2026-10-21, pasted; each quoted whole from the agent's copies of his texts).
+- On 0256's two plant rows, after the finding that they counted any failure of their row as a catch:
+
+> Repair 0256’s kill-plant witness before any further R5 promotion. I would put it ahead of the next gate, but not interrupt 0257’s current search if that would disturb its registered run. The defect is in the evidence apparatus, and the affected rows are R5 keys; leaving it in place means the gate can certify a false catch.
+> Decision order
+>
+> 1. Finish 0257 exactly as registered. Let the witness search finish, then commit and run its required full check, classifier, and gate twice. Preserve both outputs and any failures. Do not let the 0256 repair contaminate the current 0257 evidence.
+> 2. Repair the two 0256 kill-plant rows. A catch must require the specific causal witness: the record line was written, cancellation/kill completed, and the descendant was still alive at the required observation point. A timeout, missing record, wrong refusal code, changed world, or harness exception must not count as a catch.
+> 3. Add adversarial tests for the verdict logic. At minimum, inject a missing record, a delayed handshake, the wrong refusal code, a changed world, a harness exception, and the genuine descendant-survives-kill condition. Only the final condition may satisfy the catch predicate.
+> 4. Rerun the affected evidence and then the full gate twice. Keep the old results as historical evidence; do not silently rewrite them as though the repaired predicate had always existed.
+> 5. Run the registered silence experiment on a quiet machine. Keep the arms and trial order as preregistered. Its purpose is to test the proposed load/memo/heartbeat explanation, not to retroactively excuse earlier failures.
+>
+> What I accept from IVD-0
+> The most important result is not the name of a new theorem. It is the distinction between a failed test row and evidence that the planted defect caused that failure.
+> The proposed three cases are useful detection conditions:
+>
+> * A pure, deterministic suite where the plant has no relevant environmental side effects.
+> * A defect-specific witness that unrelated failures cannot produce.
+> * A control that reproduces the plant's relevant side effects under equivalent conditions.
+>
+> For the kill rows, the third option is not necessary if the causal witness is implemented correctly. The descendant-survives-kill observation is much stronger than treating an arbitrary handshake failure as detection.
+> I would also retain the subagent’s caution about repeated trials: interleaving controls can expose environmental interference, but it does not magically establish soundness if the control fails to reproduce relevant side effects or the verdict rule permits unrelated causes.
+> Scope of the repair
+> I would not use this finding to declare every other plant row invalid automatically. Instead, audit each row's actual `caught` predicate and classify its evidence:
+>
+> * Strong: defect-specific witness or a properly matched control.
+> * Conditional: failure is attributed to the plant, but unrelated causes have not been excluded.
+> * Unsound: a timeout, arbitrary row failure, harness exception, or unrelated state change can produce `caught`.
+>
+> The report that roughly a dozen suites have broad catch predicates is a reason to audit them, not enough by itself to identify every offending line or determine each row's final status.
+> Bottom line: preserve the 0257 run; repair 0256’s two false-catch paths immediately afterward; verify the verdict predicate with deliberate counterexamples; then rerun the full gate. Until that repair is gated, those two R5 rows must not be cited as reliable evidence that cancellation killed descendants.
+
+- On the order after 0257's delivery, asked "Build 0258 now, or after your 0257 run so its checks don't share the
+  machine?":
+
+> Build 0258 after the 0257 run, on an otherwise quiet machine. Don't overlap their checks.
+> The order I would use is:
+>
+> 1. Finish 0257’s release bookkeeping. Preserve the two identical gate outputs, the 346 → 347 plant result, and `TREE HELD`. Keep the full-check red status accurately attributed to the four unfrozen reference lines; do not describe the full check as green.
+> 2. Freeze the four references as a separate, explicit decision. Read each reference's actual lines before running `python art/quality.py freeze NAME --note TEXT` for `foundry-yard`, `harbor-day`, `harbor-lift`, and `plaza-night`. Freezing is an intentional baseline decision, not routine cleanup. Preserve the existing plaza `UNLOGGED-CHANGE` finding; 0257 did not introduce or resolve it.
+> 3. Rebase each world you intend to admit, one at a time, after the references are frozen. Verify the resulting ledger state for each world; do not assume freezing automatically makes its ledger admissible.
+> 4. Apply 0258 and run its targeted adversarial tests. The kill-plant predicate must count a catch only when the record line exists and the descendant demonstrably outlives the completed kill. Missing records, timeouts, wrong refusal codes, changed worlds, and harness exceptions must remain failures—not catches.
+> 5. Run the full required checks twice, serially, and compare the outputs byte-for-byte. Retain the pre-0258 results as historical evidence.
+>
+> One important distinction: if the machine is already quiet and the 0257 evidence is fully captured, the reference-freeze decision need not wait for 0258. But do not run 0258's tests concurrently with 0257's checks. The kill-plant witness is an R5 evidence-integrity repair, so it should be gated before its rows are relied on again as proof of successful cancellation.
+
+**0257's release, on his checkout** (2026-10-21, his run, pasted).
+- `git am` and the landing check: `TREE HELD 329f90d6967f517acee8013a0860c7292c8af776`.
+- `art/check.py`: `ART CHECKS FAILED (4)`, the four reference lines alone ("the fields that moved: none (the bytes are
+  the same)"), the witness's five rows passing.
+- His freeze, a separate act: the four references at exporter `e926f9f16f58` (foundry-yard `9743e35c7303`, harbor-day
+  `e7a6dcc28a46`, harbor-lift `25637f1d56bc`, plaza-night `08b1b5981285`), then `ART CHECKS PASSED`; his commit
+  `27bc15e`.
+- His rebase of the checkout's plaza-night: `rebased: 9e7811343bcf -> 2c9a23d7ebd8 (ledger #26; 9 art checks passed)`,
+  then `LEDGER VERIFIED  27 events … the files are the head 2c9a23d7ebd8`; his commit `411ee42`. F-1's
+  `UNLOGGED-CHANGE` in the checkout is resolved by that act of his, not by 0257; F-1 stays recorded as found.
+- The full check (`20261021T215118Z`): run 1 twenty-eight of twenty-eight (681.8 s); run 2 twenty-seven of twenty-eight
+  (682.6 s), `STUDIO SELFTEST 202/203` on *"a cancelled provider's orphaned grandchild killed with it … the kill done
+  0.0 s after it (its record line); the descendant outlived the kill"*. Not 0257's: 0257 changed neither `art/play.py`
+  nor `art/studio.py`. Its cause is below; it is repaired here.
+- The classifier his pushed tree held (a4f14c3's): 14 files, the rung D, loosening nothing; `346 planted defects refused
+  by the old checker; 347 by the new (347 rows)`, `PLANTS HELD`.
+- The gate twice: `GATE PASSED`, `RECONCILE  rowset 74db4c8d78625af5  251 rows / 0 fail / 0 skipped`, the two outputs'
+  hashes equal. Pushed `a4f14c3..411ee42`.
+
+**The defects** (both in 0256's own rows, the agent's code).
+1. *The plant rows' predicate* (read from the code, a4f14c3 `art/play.py`:3553-3620). The two plant rows,
+   `kill plant kill-tree-walked-by-taskkill caught` and `kill plant kill-only-the-root caught`, were scored `not held`:
+   the handshake's row under the plant, negated. That row was held only when every one of its checks held, so the plant
+   read as caught when any one failed:
+   - a descendant whose pid was not written 90 s after the ask (nothing cancelled after it);
+   - a record line not written 90 s after the cancellation;
+   - an answer other than `STUDIO-CANCELLED`, or none;
+   - a changed world;
+   - no handle to the descendant (`OpenProcess` failing read as the descendant alive).
+
+   A harness exception ended the suite rather than reading as caught. The catches 0256 recorded printed the descendant
+   outliving the kill, the defect's own witness, but the predicate did not require it. Those rows are R5 keys, so a
+   false catch would have counted toward `PLANTS HELD`.
+2. *The record line was not known to be the request's own* (MEASURED in scratch on his machine, on copies of 411ee42).
+   - The mechanism: a request's id is the second of the clock and a count each gateway starts again at 1
+     (`art/studio.py`, `Gateway.ask`). Each handshake starts a gateway of its own on one record (`requests.jsonl`), and
+     the handshake took any line with its id and `STUDIO-CANCELLED` as its record line. Two handshakes asked within one
+     second share an id, so the second read the first's line, at once ("0.0 s"), and checked its descendant before its
+     own kill.
+   - With the gateways' clock held still, every handshake shared one id (`20261021T120000-1`). The orphan's row failed
+     as in his run 2 ("the kill done 0.0 s after it … outlived the kill", `STUDIO SELFTEST 202/203`), and both plant rows
+     read caught at 0.0 s from the wrong line: a false-catch path.
+   - With the clock free, alone, the four handshakes asked 0.59 s, 0.72 s and 0.93 s apart: each pair can share a
+     second. That run passed 203/203. How often the full check's load puts two asks in one second is NOT_MEASURED.
+
+**The repair.**
+- *The handshake's observations are kept whole.* `cancelled_tree` returns what it saw: whether the descendant started,
+  its pid, the time to the record line, whether the record line was written, the request's id and code, whether a line
+  before the cancellation already bore its id, whether the world was as before, and the descendant's state when the
+  kill was done. It no longer decides anything.
+- *The record line is the request's own.* The record's length is read before the cancellation, and the record line is
+  a line appended after it with the request's id and `STUDIO-CANCELLED`. A line from before it, bearing the same id, is
+  never taken.
+- *The descendant names itself exactly.* On Windows it writes its creation time beside its pid (`GetProcessTimes`). The
+  harness's handle, opened before the cancellation, is the descendant's only when the process it holds was created at
+  that time, so a pid that names another process is not read as the descendant's.
+- *Its state is read, not inferred.* `WaitForSingleObject(h, 0)` answering 0 is ended and `WAIT_TIMEOUT` (0x102) is
+  alive; anything else, or no handle, is not known. Only a process known to be the descendant, and alive, is ended by
+  the harness after the row.
+- *One verdict* (`kill_verdict`). Held: every check, and the descendant ended when the kill was done. Caught: the
+  descendant started, the handle its own, its own record line written (the kill had returned), `STUDIO-CANCELLED`, the
+  world as it was, and the descendant alive then. Anything else is neither.
+- *A harness exception is no catch.* The plant rows run through `kill_catch`, which judges a raising handshake by the
+  same verdict (no catch) and puts the plant back after.
+
+**Rows** (the studio self-test in `art/play.py`).
+- The two held rows and the two plant rows, under their names as before (R5's keys unchanged).
+- Ten rows of the verdict on observations made up here, none of them a plant row, each named "the kill's verdict: …":
+  - His minimum is among them: a missing record line, a delayed handshake, the wrong refusal code, a changed world and a
+    harness exception, each no catch; and the witness whole, the one catch.
+  - Three more are no catch: no answer to the request, a handle not known to be the descendant's, a descendant the kill
+    ended.
+  - Each row says what the rows before 0258 did with its case: six were counted as a catch by their predicate,
+    `not held`; a raising handshake ended the suite; a descendant the kill ended was not counted.
+  - The harness exception is also driven through the plant rows' own path (`kill_catch` with a handshake that raises).
+- One row of the record line: *"the kill's record line is its own request's: two requests given one id (the gateways'
+  clock held still), each kill read from the line after its own cancellation"*. The second's id was already on a
+  cancelled line from before its cancellation, the line the reading before 0258 took; each handshake is held.
+- `STUDIO SELFTEST 214/214` on Windows (203 before: eleven rows more, none of them a plant row). Elsewhere the two
+  plant rows are not run, by the code: NOT_MEASURED.
+
+**MEASURED here** (scratch clones of 411ee42 on his machine; Windows 11, Python 3.14.5; `PYTHONHASHSEED=0`,
+`PYTHONUTF8=1`, `python -B`).
+- `STUDIO SELFTEST 214/214` alone. The four handshake rows held and caught as before: the kill done 0.1 s after the
+  cancellation, 0.4 s under the taskkill plant. The ten verdict rows pass. The own-line row shows ids
+  `20261021T120000-1` and `20261021T120000-1`, the second's id already on a cancelled line from before its cancellation.
+- Each repair undone in a copy of its own; the rows catch it:
+  - the record line read from the whole record again: `STUDIO SELFTEST 213/214`, the own-line row alone failing;
+  - the predicate before 0258, a catch whenever the row is not held: `206/214`. The eight verdict rows whose cases that
+    predicate counts as a catch fail: seven made-up cases, and the raising handshake through the plant rows' path.
+    Nothing else fails.
+- The release (the full check twice, the classifier and plants, the gate twice): in the commit message.
+
+**Found and recorded, not repaired** (docs/CAPABILITY-MATRIX.md; his to place).
+- F-16: request ids repeat across gateways asked within one second. The record then holds two requests under one id,
+  and `Gateway._record` writes a request's files under `records/<id>/`, so the later request's files overwrite the
+  earlier's (by reading; the self-test's handshakes share them, MEASURED above).
+- F-17: `art/director.py verify` (and `rebase`) on a world with no ledger ends in a traceback, `IndexError` at
+  `replay`'s `events[0]`, not a refusal with its own code (MEASURED on a copy of his checkout: harbor-lift, harbor-day
+  and foundry-yard). Such a world needs `genesis` first. Also: `rebase` holds the 9 art checks an evaluation runs, not
+  the frozen reference, so it passes before a freeze (MEASURED).
+
+**What it does not show.**
+- The verdict rows are made-up observations: they hold the predicate, not the harness's collection of what it saw,
+  which the five handshake rows exercise.
+- A pid reused between the descendant's write and the harness's open is refused by its creation time, not by a test
+  that makes one: no row reuses a pid.
+- Linux: the plant rows are not run there, by the code; nothing is inferred of it.
+- The other suites' plant predicates: not audited here. His ruling asks that each be classified (strong, conditional,
+  unsound) by reading its actual `caught` predicate, and that the finding not be read as making every other plant row
+  invalid.
+
+**Kept as history.** 0256's entry, its records and its counts stand as written, with a note that their predicate was
+`not held` and their record line any line bearing the request's id; F-14 in docs/CAPABILITY-MATRIX.md has the same
+note. Until this repair is gated, by his ruling, those two rows are not cited as reliable evidence that cancellation
+killed descendants.
+
+**His rulings on batching (BATCH-0), recorded here; they govern from 0259** (2026-10-21, pasted; each quoted whole).
+- On the agent's draft of the protocol:
+
+> I’d harden this before adopting it. The core idea is sound: batch independent, low-risk changes; retain per-commit attribution; pay for the expensive gate once at the batch tip. The weak point is that per-item green checks do not establish that the combined tree is green, and a final gate cannot always tell you which item caused a regression.
+> I would approve the approach with the following amendments.
+> Hardened batch contract
+> 1. Batch sheet is a precondition, not documentation after the fact
+> Before any edit, every item must declare:
+>
+> * Exact files it may modify, create, or delete.
+> * The obligation it addresses and its explicit non-claims.
+> * Its dependencies and expected rung.
+> * Targeted checks, exact expected outputs, and failure conditions.
+> * Each plant and its causal witness—what observation uniquely qualifies as detection.
+> * Its rollback or forward-repair plan.
+> * Whether it changes registered evidence, reference baselines, admission rules, or the gate itself.
+>
+> No undeclared write. If implementation discovers that another file must change, stop and submit a revised sheet for adjudication. Do not silently expand the item.
+> 2. Composition must be checked, not asserted
+> Disjoint write sets are necessary but insufficient. Two items can write different files while one changes the assumptions under which the other's checks operate.
+> For each pair of items \(A,B\), require:
+> \[ W_A \cap W_B = \varnothing \]
+> and, for their targeted checks,
+> \[ R_A \cap W_B = \varnothing,\qquad R_B \cap W_A = \varnothing \]
+> where \(W\) is the declared write set and \(R\) is the actual read set, including imported modules, generated files, configuration, fixtures, and reference ledgers.
+> Static declarations alone can miss dynamic reads. Record observed file access where feasible, and fail closed on undeclared accesses to protected inputs. If the checks or runtime dependencies cannot be established sufficiently, order the items or split the batch.
+> 3. Every commit gets attributable evidence
+> For each item:
+>
+> 1. Build only the approved change.
+> 2. Commit it separately.
+> 3. Run its targeted checks at that exact commit.
+> 4. Record the commit hash, dirty-tree status, command, exit code, output digest, plant witnesses, and rung.
+> 5. Preserve failures. Repair forward in a new commit; never rewrite a failure into a green result by rerunning the same commit until it passes.
+>
+> A targeted pass proves only the targeted obligations. It does not establish batch integration.
+> 4. The batch tip gets the full gate
+> At the last commit, record `Gated-Tree` as the exact tree identity, then run the prescribed full check, plant suite, and gate twice, serially.
+> Require:
+>
+> * The same source tree and relevant environment for both runs.
+> * Byte-identical outputs where the protocol requires them.
+> * Zero unexplained failures, skips, or missing evidence.
+> * Explicit accounting for every expected plant and its causal witness.
+> * No concurrent research or other machine-intensive check during the window.
+>
+> If the final gate fails, do not automatically blame the last item. The failure is attributed using the per-commit evidence; then reproduce and isolate the interaction with targeted tests or a smaller follow-up batch. Preserve the red batch result until a forward repair passes the required checks.
+> 5. Define the limit honestly
+> A clean batch does not prove that every interaction between its items was tested. Disjoint files and independent targeted checks reduce the risk; they do not eliminate it.
+> Add an explicit interaction obligation to each batch sheet:
+>
+> * Which cross-item interactions are expected?
+> * Which check exercises each interaction?
+> * Which interactions remain untested?
+> * Does any untested interaction affect safety, admission, provenance, or gate integrity?
+>
+> Any untested interaction touching a critical boundary must either receive a targeted test or be separated into another batch. Noncritical residual risk may be accepted, but must be recorded rather than silently treated as zero.
+> Batch adjudication sheet
+> This is the format I would require before approving any batch.
+> Batch contract
+> Batch number / patch filename
+> Items and intended order
+> 1
+> Files per item (read/write sets)
+> Obligations, non-claims, expected rung
+> Targeted checks and exact expected outcomes
+> Plants and causal witnesses
+> Dependencies and commit order
+> Cross-item interactions and residual risks
+>  Copy batch sheet
+> My ruling
+> CHANGE, then adopt. The batching policy is worth using, but three requirements are non-negotiable:
+>
+> 1. Observed dependency/read-set conflicts must be considered, not just overlapping writes.
+> 2. A batch-level failure must remain red until its cause is resolved; per-commit green results cannot override it.
+> 3. The batch sheet must expose critical untested interactions before the build, not after the gate fails.
+>
+> This preserves your intended payoff—one expensive full cycle per batch—without pretending that independent item checks prove the composition. The batch sheet comes first; I adjudicate each item before implementation.
+
+- On 0258 and 0259, asked "Ship 0258 alone, then make 0259 the first agreed batch?":
+
+> Yes: ship 0258 alone, then make 0259 the first agreed batch. That is the safer sequence because 0258 repairs an existing evidence-integrity defect in two R5 kill-plant rows, while the proposed 0259 items are still awaiting design and interaction review.
+> One qualification: 0258 passing STUDIO 214/214 is a targeted result, not release clearance. Its full release checks have not run, and the two mutation comparisons are still pending. Keep those distinctions explicit.
+> Release order
+>
+> 1. Finish the two scratch mutation comparisons. Confirm that the repaired predicate rejects the old false-catch cases and accepts only the genuine descendant-survives-kill witness.
+> 2. Complete 0258’s release checks at its own commit, including the required full checks, plants, and gate twice. Preserve the exact outputs and any failures; do not call it released before those checks finish.
+> 3. Keep the read-only plant audit and web research separate from the release check window.
+> 4. Once 0258 is settled, review the 0259 batch sheet before any 0259 implementation begins.
+>
+> 0259 admission criteria
+> The candidates are reasonable, but I am not pre-approving them as one batch. The batch sheet must establish:
+>
+> * F-17: the no-ledger case returns an explicit refusal code, and verify/rebase cannot silently create or assume missing authority.
+> * F-16: request IDs are unique across gateways, and saved records cannot overwrite earlier requests. Define the uniqueness scope and test collisions, retries, and persistence.
+> * Plant-predicate repairs: one item per suite where write/read-set analysis permits. Each repaired predicate needs a specific causal witness and negative controls.
+> * DES-0 leak: demonstrate that the plant variable no longer leaks into `play.py` in a way that changes unrelated test behavior. Test both the plant and its control.
+>
+> For every item, require the exact files, dependencies, targeted checks and expected results, plants and witnesses, and expected rung. In particular, check whether F-16 and F-17 touch shared ledger or gateway code; if their checks read files changed by the other item, order them or split them.
+> The research may improve the batching policy, but it cannot override observed file conflicts or weaken the evidence rules. Any proposed optimal batch size is an estimate under your actual cycle costs—not a correctness theorem.
+> Final ruling: BUILD 0258 alone; DEFER 0259 implementation until I adjudicate its complete batch sheet. Keep the research and plant audit off the release check window. Once 0258 is clean on its own release criteria, 0259 can become the first batch under the agreed protocol.
+
+- On the agent's three refinements, asked "Add the three refinements to BATCH-0 as written?":
+
+> Yes—with one tightening amendment. I approve all three refinements for BATCH-0, subject to the exact rules below. The 0258 mutation results are useful targeted evidence, but they do not substitute for its pending release gate.
+> BATCH-0 — amended ruling
+> 1. Shared documentation — APPROVE
+> Each item may edit only its own designated sections in `docs/ROADMAP.md`, `AGENTS.md`, and `docs/CAPABILITY-MATRIX.md`, plus its own art entry in `docs/CORE.md`. The shared line count is updated once, in the batch's last commit.
+> The exemption applies only to documentation that no check reads. If a check consumes a shared document, that document is a measured input and its edits must participate in the dependency analysis.
+> 2. Measured read sets — APPROVE
+> Use the Python audit hook in scratch to record opened files across every Python process spawned by each targeted check. Record non-Python readers separately, including the conformance binary and its inputs.
+> The measurement must identify subprocesses and normalize paths consistently. If a child process escapes instrumentation, or a read cannot be attributed, mark the read set incomplete—not independent. Measured reads supplement declared dependencies; they do not prove that an unexecuted branch could never read another file.
+> 3. Ordered pairs — APPROVE
+> If B changes a file read by A's checks, and A precedes B, rerun A's affected targeted checks at the batch tip.
+> The batch sheet must list every such rerun explicitly. Checks already covered by the full check need not be duplicated, but only when their coverage is demonstrated. Otherwise run them separately, including the conformance runner, doortest, freeze readers, and rung self-test where applicable.
+> 4. Output comparison — CLARIFIED
+> Byte identity is required for the two gate outputs where the existing protocol requires it. Full-check outputs may differ in timings: compare suite verdicts and counts, then explain every difference. Do not normalize away unexplained differences or treat matching counts alone as proof of equivalent execution.
+> One additional enforcement rule
+> The measured dependency graph must be frozen into the batch evidence before the expensive batch gate. If actual reads contradict the planned order, stop and revise the sheet before proceeding. Do not discover a conflict, continue anyway, and rationalize it after the gate.
+> For F-16 and F-17, for example, if F-17 writes `director.py` and F-16's STUDIO checks read it, the sheet must capture that dependency even though their implementation write sets do not overlap.
+> Execution decision
+>
+> * 0258: wait for the web research and plant audit to finish, then open its isolated release window. Preserve the reported `214/214`, `213/214`, and `206/214` targeted results as measured evidence; do not yet label the release fully gated.
+> * BATCH-0: record these amendments in the protocol before building 0259.
+> * 0259: no implementation until the complete item-level batch sheet is submitted and adjudicated.
+>
+> The key principle is now explicit: batching saves repeated full gates, not evidence about changed dependencies. Every item retains its own commit-level attribution, and every affected obligation is checked again at the final tree.
+
+The protocol's text, as amended, is the first item of 0259's sheet; this entry records his words, not the protocol.
+
+No row, rung, pinned source, oracle file, registered entry, BINDING-0 file, frozen file, art/references.jsonl or ledger
+changed. Docs: AGENTS.md (the studio's row), docs/CAPABILITY-MATRIX.md (F-14, a note; F-16 and F-17), docs/CORE.md
+(art's lines), 0256's entry (a note), this entry (with his rulings on batching, recorded).

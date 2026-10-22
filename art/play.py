@@ -2825,11 +2825,20 @@ TEST_PROVIDERS = {
     "hollow.py": ("import sys, json; r = json.load(sys.stdin)\n"
                   "print(json.dumps({'format': 'VERDANDI-STUDIO-RESPONSE', 'version': '0', 'id': r['id'], 'provider': {'name': 't', 'model': 't'}, 'candidates': [], "
                   "'outcome': {'kind': 'unsupported', 'unmet': [], 'questions': [], 'reason': '', 'note': 'cannot'}}))"),
-    # 0256: a provider's descendants for the kill's handshake; each writes its pid whole (a rename) once it runs, then waits
+    # 0256: a provider's descendants for the kill's handshake; each writes its pid whole (a rename) once it runs, then waits;
+    # 0258: on Windows with its creation time (GetProcessTimes), so that the harness's handle is known to be its own
     "spawner.py": ("import sys, subprocess, time, os; sys.stdin.read()\n"
                    "subprocess.Popen([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'descendant.py'), os.environ['STUDIO_TEST_CHILD']])\n"
                    "time.sleep(600)"),
-    "descendant.py": "import os, sys, time\nt = sys.argv[1] + '.tmp'\nopen(t, 'w').write(str(os.getpid()))\nos.replace(t, sys.argv[1])\ntime.sleep(600)",
+    "descendant.py": ("import os, sys, time\nt = sys.argv[1] + '.tmp'\nmade = ''\n"
+                      "if os.name == 'nt':\n"
+                      "    import ctypes\n    from ctypes import wintypes\n"
+                      "    k = ctypes.WinDLL('kernel32')\n    k.GetCurrentProcess.restype = wintypes.HANDLE\n"
+                      "    k.GetProcessTimes.argtypes = (wintypes.HANDLE,) + (ctypes.POINTER(wintypes.FILETIME),) * 4\n"
+                      "    f = (wintypes.FILETIME * 4)()\n"
+                      "    if k.GetProcessTimes(k.GetCurrentProcess(), *[ctypes.byref(x) for x in f]):\n"
+                      "        made = ' %d' % ((f[0].dwHighDateTime << 32) | f[0].dwLowDateTime)\n"
+                      "open(t, 'w').write(str(os.getpid()) + made)\nos.replace(t, sys.argv[1])\ntime.sleep(600)"),
     "middle.py": "import os, sys, subprocess\nsubprocess.Popen([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'descendant.py'), sys.argv[1]])",
     "orphaner.py": ("import sys, subprocess, time, os; sys.stdin.read()\n"
                     "subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'middle.py'), os.environ['STUDIO_TEST_CHILD']])\n"
@@ -3537,7 +3546,9 @@ def studio_selftest():
         # measured since 0256). Held by an ordered handshake: the descendant has started (its pid written), the
         # cancellation, the kill done (the request's record line, written once the kill returns), then the descendant
         # checked: on Windows ended by then, a handle held to it from before the cancellation; a descendant that never
-        # starts fails the row (before 0256 a kill that came before the child existed passed it)
+        # starts fails the row (before 0256 a kill that came before the child existed passed it). Since 0258 the
+        # handshake's observations are kept whole and judged by kill_verdict, and a plant row is caught only by its causal
+        # witness (his ruling, 2026-10-21): before 0258 it counted any failure of its row's held as a catch
         if os.name == "nt":
             import ctypes
             from ctypes import wintypes
@@ -3548,10 +3559,56 @@ def studio_selftest():
             k32w.WaitForSingleObject.restype = wintypes.DWORD
             k32w.TerminateProcess.argtypes = (wintypes.HANDLE, wintypes.UINT)
             k32w.CloseHandle.argtypes = (wintypes.HANDLE,)
+            k32w.GetProcessTimes.argtypes = (wintypes.HANDLE,) + (ctypes.POINTER(wintypes.FILETIME),) * 4
+            k32w.GetProcessTimes.restype = wintypes.BOOL
         log_path = os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl")
 
+        def made_at(h):
+            """the creation time of the process `h` holds, as GetProcessTimes gives it (FILETIME), or None"""
+            f = (wintypes.FILETIME * 4)()
+            if not k32w.GetProcessTimes(h, *[ctypes.byref(x) for x in f]):
+                return None
+            return (f[0].dwHighDateTime << 32) | f[0].dwLowDateTime
+
+        def cancelled_in(lines, rid):
+            """whether the request record's lines hold the line of request `rid` cancelled"""
+            for ln in lines:
+                try:
+                    e_ = json.loads(ln)
+                except ValueError:
+                    continue
+                if e_.get("id") == rid and e_.get("outcome") == "STUDIO-CANCELLED":
+                    return True
+            return False
+
+        def kill_verdict(o):
+            """(held, caught, why) of one cancelled provider's observations (0258). Held: every check of the handshake,
+            and the descendant ended when the kill was done. Caught, the causal witness of a kill that leaves a
+            descendant: the descendant started; the handle is its own (on Windows, its creation time the one it wrote);
+            the cancellation's record line written, so the kill had returned (the request's own line, one appended after
+            its cancellation, never one from before it that bears its id); the request answered STUDIO-CANCELLED;
+            the world as it was; and the descendant alive then. A timeout, no record line, another code, a changed
+            world, a handle not known to be the descendant's, a state not read or the harness raising is neither."""
+            if o.get("raised"):
+                return False, False, "the harness raised: %s" % o["raised"]
+            if not o.get("started"):
+                return False, False, "the descendant had not started 90 s after the ask: nothing was cancelled after it"
+            if not o.get("record"):
+                return False, False, "the kill was not done 90 s after the cancellation (no record line)"
+            head = "the descendant started (pid %d) before the cancellation; the kill done %.1f s after it (its record line)" % (o["pid"], o["dt"])
+            if o.get("code") != "STUDIO-CANCELLED":
+                return False, False, head + "; the request answered %s, not STUDIO-CANCELLED" % o.get("code")
+            if not o.get("world_same"):
+                return False, False, head + "; the world changed"
+            if o.get("alive") is False:
+                return True, False, head + "; the descendant ended by then"
+            if o.get("alive") is True:
+                return False, True, head + "; the descendant outlived the kill"
+            return False, False, head + "; the descendant's state then not known: %s" % o.get("unknown")
+
         def cancelled_tree(name, script, also=()):
-            """(held, detail) of a request whose provider runs `script`, cancelled once its descendant has started"""
+            """What was observed of a request whose provider runs `script`, cancelled once its descendant has started
+            (0258: judged by kill_verdict; before it, its (held, detail))"""
             pid_file = os.path.join(tmp, name + ".pid")
             os.environ["STUDIO_TEST_CHILD"] = pid_file
             g = start_studio(live, cfg(name, [py, os.path.join(tmp, script)]), say=lambda s: None)
@@ -3564,25 +3621,37 @@ def studio_selftest():
             if not all(os.path.exists(f) for f in need):
                 g.cancel_request(rid)
                 wait(g, rid, 90)
-                return False, "the descendant had not started 90 s after the ask: nothing was cancelled after it"
-            pid = int(open(pid_file).read())
+                return {"started": False}
+            said = open(pid_file).read().split()
+            pid = int(said[0])
             h = k32w.OpenProcess(0x00100000 | 0x1000 | 0x0001, False, pid) if os.name == "nt" else None
+            # the handle is the descendant's own when the process it holds was made when the descendant says it was
+            own = os.name != "nt" or (bool(h) and len(said) == 2 and made_at(h) == int(said[1]))
+            # 0258: the kill's record line is one appended after this cancellation. Ids repeat across gateways asked within
+            # a second (each counts from 1), so a line from before it may bear this request's id: his full check of 0257
+            # (run 2) read the row before's line so, and checked the descendant before its own kill
+            seen = open(log_path, "rb").read() if os.path.exists(log_path) else b""
+            mark, earlier = len(seen), cancelled_in(seen.splitlines(), rid)
             t0 = time.time()
             g.cancel_request(rid)
             r = wait(g, rid, 90)
             done = False
             while not done and time.time() - t0 < 90:
-                for ln in (open(log_path, "rb").read().splitlines() if os.path.exists(log_path) else []):
-                    try:
-                        e_ = json.loads(ln)
-                    except ValueError:
-                        continue
-                    done = done or (e_.get("id") == rid and e_.get("outcome") == "STUDIO-CANCELLED")
+                with open(log_path, "rb") as fh:
+                    fh.seek(mark)
+                    done = cancelled_in(fh.read().splitlines(), rid)
                 if not done:
                     time.sleep(0.05)
             dt = time.time() - t0
+            unknown = None
             if os.name == "nt":
-                ended = bool(h) and k32w.WaitForSingleObject(h, 0) == 0      # the kill returned: ended already, not later
+                state = k32w.WaitForSingleObject(h, 0) if h else None       # the kill returned: ended already, not later
+                ended = own and state == 0
+                alive = (own and state == 0x102) or None                     # WAIT_TIMEOUT: still running
+                if not ended and not alive:
+                    unknown = ("no handle to pid %d" % pid if not h else "the handle's process is not the one that wrote the pid"
+                               if not own else "WaitForSingleObject answered %r" % state)
+                alive = False if ended else alive
             else:
                 ended, t1 = False, time.time()
                 while not ended and time.time() - t1 < 10:
@@ -3591,7 +3660,8 @@ def studio_selftest():
                         time.sleep(0.05)
                     except OSError:
                         ended = True
-            if not ended:                       # the survivor ended here, so that nothing of the self-test outlives it
+                alive = not ended
+            if alive:                           # the survivor ended here, so that nothing of the self-test outlives it
                 if h:
                     k32w.TerminateProcess(h, 1)
                 else:
@@ -3601,23 +3671,77 @@ def studio_selftest():
                         pass
             if h:
                 k32w.CloseHandle(h)
-            held = done and ended and r["code"] == "STUDIO-CANCELLED" and (live.slot(0)["sha"], live.state()["slots"][0]["ok"]) == before
-            return held, ("the descendant started (pid %d) before the cancellation; the kill done %.1f s after it (its record line); "
-                          "the descendant %s" % (pid, dt, "ended by then" if ended else "outlived the kill")) if done else \
-                "the kill was not done 90 s after the cancellation (no record line)"
-        held, detail = cancelled_tree("child", "spawner.py")
+            return {"started": True, "pid": pid, "dt": dt, "record": done, "alive": alive, "unknown": unknown, "rid": rid, "earlier": earlier,
+                    "code": r.get("code") if r and r.get("id") == rid else None,
+                    "world_same": (live.slot(0)["sha"], live.state()["slots"][0]["ok"]) == before}
+        held, _c, detail = kill_verdict(cancelled_tree("child", "spawner.py"))
         row("a cancelled provider's own children killed with it", held, detail)
-        held, detail = cancelled_tree("orphan", "orphaner.py", (".middle-ended",))
+        held, _c, detail = kill_verdict(cancelled_tree("orphan", "orphaner.py", (".middle-ended",)))
         row("a cancelled provider's orphaned grandchild killed with it (its parent had exited before the cancellation)", held, detail)
+
+        def kill_catch(p_, script, also, run):
+            """(caught, detail) of the kill under its plant p_: `run` (the handshake) judged by kill_verdict, its raising
+            no catch (0258), the plant put back after"""
+            studio.KILL_PLANT = p_
+            try:
+                seen_ = run(p_, script, also)
+            except Exception as e:
+                seen_ = {"raised": "%s: %s" % (type(e).__name__, e)}
+            finally:
+                studio.KILL_PLANT = ""
+            return kill_verdict(seen_)[1:]
         if os.name == "nt":
             for p_, script, also, by in (("kill-tree-walked-by-taskkill", "orphaner.py", (".middle-ended",), "the orphaned grandchild's row"),
                                          ("kill-only-the-root", "spawner.py", (), "the children's row")):
-                studio.KILL_PLANT = p_
-                try:
-                    held, detail = cancelled_tree(p_, script, also)
-                finally:
-                    studio.KILL_PLANT = ""
-                row("kill plant %s caught" % p_, not held, "by %s: %s" % (by, detail))
+                caught, detail = kill_catch(p_, script, also, cancelled_tree)
+                row("kill plant %s caught" % p_, caught, "by %s: %s" % (by, detail))
+        # the verdict itself, on observations made up here (0258; his minimum, a missing record, a delayed handshake, the
+        # wrong refusal code, a changed world, a harness exception and the descendant that survives the kill, and three
+        # more): none of them is a catch now but the witness whole; each says what the rows before 0258 did with it, whose
+        # predicate (not held) counted a catch whenever the row was not held, and whose handshake ended the suite if it raised
+        whole = {"started": True, "pid": 4, "dt": 0.1, "record": True, "code": "STUDIO-CANCELLED", "world_same": True, "alive": True, "unknown": None}
+        then_said = {"counted": "the predicate before 0258 (not held) counted it as one", "raised": "before 0258 a raising handshake ended the suite",
+                "not counted": "the predicate before 0258 did not count it either"}
+        for what, o, then in (("a missing record line (the kill not done 90 s after the cancellation)", dict(whole, record=False), "counted"),
+                              ("a delayed handshake (the descendant's pid not written 90 s after the ask)", {"started": False}, "counted"),
+                              ("the wrong refusal code (STUDIO-PROVIDER-EXIT)", dict(whole, code="STUDIO-PROVIDER-EXIT"), "counted"),
+                              ("no answer to the request", dict(whole, code=None), "counted"),
+                              ("a changed world", dict(whole, world_same=False), "counted"),
+                              ("the harness raising", {"raised": "OSError: made up for this row"}, "raised"),
+                              ("a handle not known to be the descendant's", dict(whole, alive=None, unknown="the handle's process is not the one that wrote the pid"), "counted"),
+                              ("a descendant the kill ended", dict(whole, alive=False), "not counted")):
+            h_, c_, d_ = kill_verdict(o)
+            row("the kill's verdict: no catch on %s" % what, not c_ and (then != "counted" or not h_) and (then != "not counted" or h_),
+                "%s; %s" % (d_, then_said[then]))
+
+        def raising(*_a):
+            raise OSError("made up for this row")
+        c_, d_ = kill_catch("", "spawner.py", (), raising)
+        row("the kill's verdict: no catch when the handshake itself raises, through the rows' own path", not c_ and studio.KILL_PLANT == "", d_)
+        h_, c_, d_ = kill_verdict(whole)
+        row("the kill's verdict: the witness whole is a catch, and not held", c_ and not h_, d_)
+        # the kill's record line is its own request's (0258): with the gateways' clock held still, two handshakes share an
+        # id, and each must read the line appended after its own cancellation, never the one before it
+        import datetime as _dt
+        import types as _ty
+
+        class _Still(_dt.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return _dt.datetime(2026, 10, 21, 12, 0, 0, tzinfo=tz)
+        clock = studio.datetime
+        studio.datetime = _ty.SimpleNamespace(**dict(vars(_dt), datetime=_Still))
+        try:
+            one = cancelled_tree("own-1", "spawner.py")
+            two = cancelled_tree("own-2", "orphaner.py", (".middle-ended",))
+        finally:
+            studio.datetime = clock
+        h1, _c, d1 = kill_verdict(one)
+        h2, _c, d2 = kill_verdict(two)
+        row("the kill's record line is its own request's: two requests given one id (the gateways' clock held still), each kill read from the line after its own cancellation",
+            h1 and h2 and one.get("rid") is not None and one.get("rid") == two.get("rid") and one.get("earlier") is False and two.get("earlier") is True,
+            "ids %s and %s; before the second's cancellation a cancelled line already bore its id (%s), which the reading before 0258 took; "
+            "the first: %s; the second: %s" % (one.get("rid"), two.get("rid"), two.get("earlier"), d1, d2))
 
         # what is recorded of every call: the exit status, whether the response was valid, the time, the usage
         log = [json.loads(ln) for ln in open(os.path.join(tmp, "art", "build", "studio", brief, "requests.jsonl"), "rb").read().splitlines()]

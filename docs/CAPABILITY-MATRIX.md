@@ -388,7 +388,11 @@ Windows each provider starts suspended in a job of its own, and a kill ends ever
 row an ordered handshake, an orphan's row, two plants (`STUDIO SELFTEST 203/203` on Windows). What it does not show:
 Linux (its process group, unchanged and not run); a process a provider has another service start; a child left after
 a provider's own exit (unchanged). docs/CAPABILITY-MATRIX-ROWS.md cites the process tree killed as tested; it is a
-dated, generated audit and is not edited.
+dated, generated audit and is not edited. *Note (0258, 2026-10-21):* the two plant rows counted a catch whenever their
+row was not held (a timeout, no record line, another code or a changed world), and their record line was any line
+bearing the request's id, which two gateways asked within one second share (F-16). His full check of 0257 failed the
+orphan's row so, run 2. Their recorded catches stand as recorded; since 0258 a catch needs its causal witness, read from
+the request's own line (`STUDIO SELFTEST 214/214` on Windows).
 
 **F-15 · REACH-1 omitted a surface the tick lands on (found 2026-10-19 in the review packet, reproduced
 independently the same day; closed by 0257, 2026-10-21).** REACH-1 timed a jump on the parabola. The tick walks before
@@ -404,6 +408,24 @@ E_B: every surface the tick can reach is counted, and ties are counted conservat
 ticks). Along an axis on the 1/256 m grid, rounding cannot cross the boundary: a gap and 2r + n·step are equal or at
 least 1/1280 m apart. Off the axis that is unproved, and so is a mover's push of a body in flight. What it does not
 show: soundness off the axis or under a mover's push, targets, Linux.
+
+**F-16 · Request ids repeat across gateways asked within one second (found 2026-10-21, from his full check of 0257, run
+2; recorded, not repaired).** A request's id is the second of the clock and a count each gateway starts again at 1
+(`art/studio.py`, `Gateway.ask`). Two gateways asked within one second give two requests one id. MEASURED in scratch on
+his machine: the studio self-test's kill handshakes, each a gateway of its own on one record, asked 0.59 to 0.93 s apart
+alone, and with the clock held still they shared one id. The orphan's row then read the row before's record line and
+failed (STUDIO SELFTEST 202/203), and both kill plant rows read caught from the wrong line. 0258 binds the handshake to
+the line appended after its own cancellation. Not repaired, by reading: the record then holds two requests under one id,
+and `Gateway._record` writes a request's files under `records/<id>/`, the later request's over the earlier's. In the
+desktop studio a world has one gateway, so two first asks in one second need two gateways (a restart, or the queue's).
+His to place.
+
+**F-17 · `director.py verify` on a world with no ledger ends in a traceback (found 2026-10-21, rehearsing his reference
+freeze; recorded, not repaired).** MEASURED on a copy of his checkout at 0257: `python art/director.py verify NAME` for
+harbor-lift, harbor-day and foundry-yard, none of which has a ledger in the checkout, ends in `IndexError` at `replay`'s
+`events[0]`, not a refusal with its own code; `rebase` replays first, so it does the same. Such a world needs `genesis`
+first. Also MEASURED: `rebase` holds the 9 art checks an evaluation runs and not the frozen reference, so it passes
+before a freeze. His to place.
 
 ## 6. SPEC1 against the rules
 
