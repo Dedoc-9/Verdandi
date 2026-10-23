@@ -163,14 +163,29 @@ G5 checkpoint + anchor   [PASS 13 / FAIL 0 / BLOCKED 1]
   PASS     G5 out-of-range (below-boundary) anchor -> BLOCKED [B]
   BLOCKED  G5 effects_range_root verification (both candidates)  -- D4-2: range-tree algorithm + proof format not specified
 
-G6 reproducibility + bounds + constants   [PASS 6 / FAIL 0 / BLOCKED 0]
+G6 reproducibility + bounds + constants (+ MAX_TOTAL)   [PASS 21 / FAIL 0 / BLOCKED 0]
   PASS     G6 determinism: identical bytes/commitments across runs
   PASS     G6 frozen ecs.py sha256 == 3d568d22... (byte-identical)
   PASS     G6 write isolation: oracle package performs no file I/O
   PASS     P1V-bounds reduced-limit lp (3B): at-limit accept, one-past reject on prefix  -- reduced-limit MAX_LEN_TEST=8; accept at 8, reject at 9 on the prefix
   PASS     P1V-bounds reduced-limit node_count (3B): over-limit collection rejected  -- reduced MAX_NODES_TEST=1 rejects a >1-node collection
   PASS     P1V-constants: MAX_LEN/MAX_NODES/MAX_TOTAL/MAX_HASH_CHUNKS by value
+  PASS     G6 MAX_TOTAL parser at-limit accepts [A]
+  PASS     G6 MAX_TOTAL parser one-under -> MAX_TOTAL [A]
+  PASS     G6 MAX_TOTAL combined-exceeds (legal singles) -> MAX_TOTAL [A]
+  PASS     G6 MAX_TOTAL builder at-limit accepts [A]
+  PASS     G6 MAX_TOTAL builder one-under -> MAX_TOTAL (0261 fix) [A]
+  PASS     G6 MAX_TOTAL builder/parser symmetry at reduced limit [A]
+  PASS     G6 truncation near limit -> TRUNCATED, not MAX_TOTAL [A]
+  PASS     G6 MAX_TOTAL parser at-limit accepts [B]
+  PASS     G6 MAX_TOTAL parser one-under -> MAX_TOTAL [B]
+  PASS     G6 MAX_TOTAL combined-exceeds (legal singles) -> MAX_TOTAL [B]
+  PASS     G6 MAX_TOTAL builder at-limit accepts [B]
+  PASS     G6 MAX_TOTAL builder one-under -> MAX_TOTAL (0261 fix) [B]
+  PASS     G6 MAX_TOTAL builder/parser symmetry at reduced limit [B]
+  PASS     G6 truncation near limit -> TRUNCATED, not MAX_TOTAL [B]
+  PASS     G6 production MAX_TOTAL == 2**40 (separate from reduced test limits)
 
 ====================================================================================================
-TOTAL  PASS 156  FAIL 0  BLOCKED 1
+TOTAL  PASS 171  FAIL 0  BLOCKED 1
 GATE PASS  (BLOCKED rows are not passes and do not fail the run; they mark D4-2/D8 scope)

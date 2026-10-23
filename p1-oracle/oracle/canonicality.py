@@ -67,6 +67,11 @@ def serialize_state(state, cand, keyhasher=d.prod_key_hasher, limits=d.PROD_LIMI
     root_hash, collection = build_state(state, cand, keyhasher, limits)
     if len(collection) > limits.max_nodes:
         raise d.malformed("MAX_NODES", "%d > %d" % (len(collection), limits.max_nodes))
+    # builder/parser symmetry (0261): the builder honours MAX_TOTAL too (sum of unique node encodings, as the parser
+    # counts it, excluding the container header), so it never emits output the parser would reject under the same limit.
+    total = sum(len(enc) for enc in collection.values())
+    if total > limits.max_total:
+        raise d.malformed("MAX_TOTAL", "%d > %d" % (total, limits.max_total))
     out = d.DOM("skuld-state-0") + d.u16(d.VERSION) + d.raw32(root_hash) + d.u64(len(collection))
     for addr in sorted(collection):
         out += collection[addr]

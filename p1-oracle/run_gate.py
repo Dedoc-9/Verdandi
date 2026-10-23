@@ -15,7 +15,7 @@ import platform
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from tests import test_g1, test_g2, test_g3, test_g4, test_g5, test_g6, test_seams, test_buckets, test_struct, test_tier1, test_links  # noqa: E402
+from tests import test_g1, test_g2, test_g3, test_g4, test_g5, test_g6, test_seams, test_buckets, test_struct, test_tier1, test_links, test_total  # noqa: E402
 
 GATES = [
     ("G1 canonical bytes (+ Tier-1 local negatives)", [test_g1, test_tier1]),
@@ -23,7 +23,7 @@ GATES = [
     ("G3 reconstruction", [test_g3]),
     ("G4 record semantics (+ link/sequence validation)", [test_g4, test_links]),
     ("G5 checkpoint + anchor", [test_g5]),
-    ("G6 reproducibility + bounds + constants", [test_g6]),
+    ("G6 reproducibility + bounds + constants (+ MAX_TOTAL)", [test_g6, test_total]),
 ]
 
 

@@ -62,8 +62,8 @@ are covered by commitment recomputation, not a local `DOMAIN`/`VERSION` reject.
 | R0.1 | big-endian fixed-width `u8/u16/u32/u64`; `lp = u64(len)‖bytes` | `decoder` primitives | pos: value/key/node encodings; neg: truncation→`TRUNCATED` | HAND | `test_g1` value/key vectors | PARTIAL | truncation reject is incidental (no dedicated vector); add explicit truncated-field negatives |
 | R0.2 | legal integer ranges; indices in `[0,2⁶⁴−2]`, `2⁶⁴−1` reserved; exclusive sums `≤2⁶⁴−1` | `decoder`,`records` | pos/neg: `test_g4::index_bounds`; reduced-limit `test_g6` | HAND | G4 index bounds; G6 reduced-limit | VERIFIED | — |
 | R0.3 | `MAX_HASH_CHUNKS=52`; 51×5-bit + 1-bit; two-level depth ≤ 53+53 | `decoder.chunk`,`_construct` | pos: injected final-bit reaches `BRANCH(51)` / depth-52 bucket | INDEP (injected) | `test_seams` final-bit/full-collision | PARTIAL | the 53-node max-chain bound is not asserted as its own vector |
-| R0.4 | content-addressing is a DAG; `MAX_NODES` counts unique-by-hash; `MAX_TOTAL` sums unique bytes; shared node once | `canonicality`,`parse_collection` | pos: DAG share `test_g3`; neg: reduced `MAX_NODES` `test_g6` | HAND/ORACLE | G3 DAG; G6 reduced node-count | VERIFIED | `MAX_TOTAL` reduced-limit not separately driven (only `MAX_NODES`) — PARTIAL on the total bound |
-| R0.5 | limits checked incrementally — reject **before** over-allocation | `Reader.lp`,`parse_collection` | neg: reduced `MAX_LEN` rejects on the length prefix before the body | — | `test_g6::reduced_limit_lp` | VERIFIED (lp) | node/total incrementality asserted only indirectly |
+| R0.4 | content-addressing is a DAG; `MAX_NODES` counts unique-by-hash; `MAX_TOTAL` sums unique bytes; shared node once | `canonicality`,`parse_collection` | pos: DAG share; neg: reduced `MAX_NODES`, reduced `MAX_TOTAL` (parser + builder) | HAND/ORACLE | G3 DAG; G6 reduced node-count; `test_total` (both cands) | VERIFIED | closed 0261 — `MAX_TOTAL` boundary driven on parser and builder; builder now honours it (symmetry) |
+| R0.5 | limits checked incrementally — reject **before** over-allocation | `Reader.lp`,`parse_collection` | neg: reduced `MAX_LEN` on the length prefix; reduced `MAX_TOTAL` over nodes; reduced `MAX_NODES` | — | `test_g6::reduced_limit_lp`; `test_total` | VERIFIED | `MAX_TOTAL` tallied over node encodings (combined-exceeds driven); lp rejects on the prefix before the body |
 | R0.6 | `u16(VERSION)` carried by the six node types, `state_serialization`, record, `EFF_EMPTY_RANGE`, checkpoint; **not** `EFF_LEAF/EFF_NODE` | encoders, `_read_version` | pos: every encoding carries `u16(0)`; neg: wrong version→`VERSION` (node + container) | HAND | `test_tier1` wrong-VERSION node (both cands) + container | VERIFIED (decoded carriers) | record/checkpoint are preimage-hashed (no byte-decoder) → their VERSION is covered by commitment recomputation, not a local `VERSION` reject |
 
 ## §1 Values
@@ -131,6 +131,19 @@ evidence kept at `evidence/history/pre-0260/`. Rows R6.4, R6.5 and gap G-5 updat
 depth, not a miss. (2) The oracle has **no record byte-decoder** (records are structured dicts + preimage hashing), so
 an invalid **LINK-tag byte** (≠ 0x00/0x01) is **not reachable** and stays **OPEN** — faking it would need a record
 byte-parser, beyond G-5.
+
+## Changelog — 0261 aggregate-byte limit MAX_TOTAL (2026-10-23)
+
+Determined what `MAX_TOTAL` counts under rev 20 (sum of **unique node encodings**, not the container header, tallied
+incrementally) and probed the asymmetry: `parse_collection` enforced it but `serialize_state` did **not** (it checked
+only `MAX_NODES`) — a genuine builder/parser contract gap. **Fix (narrowest):** `serialize_state` now also enforces
+`MAX_TOTAL`, so the builder never emits output the parser would reject under the same limit. **Added**
+`tests/test_total.py` (both candidates): parser at-limit/one-under/combined-exceeds, builder at-limit/one-under,
+builder↔parser symmetry, truncation-near-limit kept distinct from `MAX_TOTAL`, production constant kept separate from
+reduced test limits; + a plant disabling the builder check. New run **171 PASS / 0 FAIL / 1 BLOCKED**, two runs
+identical, **10/10 plants bite**; 0260 evidence kept at `evidence/history/pre-0261/`. Rows R0.4, R0.5 and gap G-7
+updated. This completes the owner's 0259–0261 gap-closure sequence; remaining open items are G-1 (hand-traced composite,
+deferred), the architectural LINK-tag-byte OPEN, and the BLOCKED D4-2/D8 items.
 
 ## §6 Records, commitments, links
 
@@ -201,9 +214,13 @@ byte-parser, beyond G-5.
 - **B-3.** Non-genesis anchor **trust** (R7.5) — D8.
 - **B-4.** Content-address collision behavior (R4a.2) — OPEN by nature: defined, not testable without breaking SHA-256.
 
+**Resource bounds — CLOSED 0261:**
+- **G-7.** `MAX_TOTAL` reduced-limit boundary (parser + builder), combined-exceeds, builder↔parser symmetry (builder
+  now honours `MAX_TOTAL`), truncation kept distinct, production constant kept separate — `test_total` (both cands) +
+  plant. (R0.4, R0.5)
+
 **Scope notes:**
-- `range_count > MAX_LEN` arithmetic-validity vector is absent (R5.4) — OPEN, low priority.
-- The `MAX_TOTAL` reduced-limit boundary is not separately driven (R0.4) — PARTIAL.
+- `range_count > MAX_LEN` arithmetic-validity vector is absent (R5.4) — OPEN, low priority (not in the 0259–0261 scope).
 
 ## What this matrix does and does not establish
 

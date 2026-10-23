@@ -772,7 +772,7 @@
         "verdict": "BLOCKED"
       }
     ],
-    "G6 reproducibility + bounds + constants": [
+    "G6 reproducibility + bounds + constants (+ MAX_TOTAL)": [
       {
         "detail": "",
         "name": "G6 determinism: identical bytes/commitments across runs",
@@ -802,6 +802,81 @@
         "detail": "",
         "name": "P1V-constants: MAX_LEN/MAX_NODES/MAX_TOTAL/MAX_HASH_CHUNKS by value",
         "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL parser at-limit accepts [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL parser one-under -> MAX_TOTAL [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL combined-exceeds (legal singles) -> MAX_TOTAL [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL builder at-limit accepts [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL builder one-under -> MAX_TOTAL (0261 fix) [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL builder/parser symmetry at reduced limit [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 truncation near limit -> TRUNCATED, not MAX_TOTAL [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL parser at-limit accepts [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL parser one-under -> MAX_TOTAL [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL combined-exceeds (legal singles) -> MAX_TOTAL [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL builder at-limit accepts [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL builder one-under -> MAX_TOTAL (0261 fix) [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 MAX_TOTAL builder/parser symmetry at reduced limit [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 truncation near limit -> TRUNCATED, not MAX_TOTAL [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G6 production MAX_TOTAL == 2**40 (separate from reduced test limits)",
+        "verdict": "PASS"
       }
     ]
   },
@@ -812,7 +887,7 @@
     "AUTHORIZATION.md": "b74257b440839e7ecac27dddb1f7904d1432c0226d02ddaea61ba9d6eb7b0d99",
     "MANIFEST.json": "705b8c4892191ff648e13f2bdc51b6b660be420fc825d50a9d1e2ff9521851fc",
     "README.md": "ed9a71d3b79c069b4d5decd184c1c687af511c6046dad2c342f2d6e9b322da46",
-    "docs/P1-REV20-REQUIREMENT-MATRIX.md": "26b7fdcb6823c47f0471e7f85b5eebb9690e48858988b7d1d8bc599afc03bae6",
+    "docs/P1-REV20-REQUIREMENT-MATRIX.md": "cbce12854b353fcf43b71401728eda360173d3e789fd8f356be425bea2519933",
     "docs/P6-REBUILD-EQUIVALENCE.md": "8e50f30fffc428273b8614ddb5f4cfba2fc848711297e4df61b9e1098c754d7c",
     "fixtures/__init__.py": "4cccbb83ce94bc940942ab5f0eadafc3c3c660072bd1342d0ee82b78c6116c43",
     "fixtures/hand_calculated/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -820,13 +895,13 @@
     "fixtures/malformed/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "fixtures/malformed/buckets.py": "37ca62a835917b44e94bb3e13628925cef1cb326fde8ff0ed402c3014c1b19d6",
     "oracle/__init__.py": "7ec065133eac0c915da871d1ab5a073ecfaa9051eaa4de59175620dba17294b4",
-    "oracle/canonicality.py": "511561e756f733c58d54704fe7d8fbb3ad1f16c868f6115d64e94bf15d75d76e",
+    "oracle/canonicality.py": "197e524c75b7d90e208cbce92aa7f8a281a88ce29a0d266c4ae7ba32cc62e0a4",
     "oracle/checkpoints.py": "15d88c2429cb3a70c01937aae35709f6d9b32652d7a7bd42c6a34703a9fba440",
     "oracle/decoder.py": "88e1e881b44677d499d410cb390bd802e6f0b49edd4fe1b2951d17cadc6a3f3a",
     "oracle/frozen/__init__.py": "5b04b0a59acd01b427da358ccaf45a0901ff4ff894f4d325ac1a591c8e93f35e",
     "oracle/frozen/ecs.py": "3d568d22d812ae2321b03b7450d09109c8ff20e3308b5f9cd2a5e2fde9eb1c0b",
     "oracle/records.py": "f23a9c22994818d4fcd7ec99e3d804d5090eab5c501297cfbcb9f4cf9918fb14",
-    "run_gate.py": "3fff808afd16b3caefc6f5604cbe5e26d266e1e716bcf17397033cef58f6efef",
+    "run_gate.py": "d93427a01635fbedd3b7ff8437e4ad6a55f8d10bbbd065575101e0835e1e6568",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/harness.py": "61761c056d96c481d3c9bd457104d908728e4b39536ee5816a2bd23f3e348302",
     "tests/test_buckets.py": "1b6ea4b643d2442ef146aa27066055e02ed549940fd87e834640d4d6c421c808",
@@ -840,11 +915,12 @@
     "tests/test_seams.py": "5167e1eac0ff99c639d25f54c73e6c762e7c4465c0304353f05221bbc4c080db",
     "tests/test_struct.py": "9bd62bcf19bc12030260e7c1ec330aa6a62f89d3834316a8ff5a21161473204f",
     "tests/test_tier1.py": "4a2cecd5e836dbca7cf0fa90ffb054de9909c4b58b77300a24fbd54b70f9f168",
-    "verify_plants.py": "96e0fd395a665f9a54e29728ee5a6731595fa46b1f72682995edab3e6f513dee"
+    "tests/test_total.py": "395dbd12c52cc9580d1e63b1ddeb4456ae3a59bb70904fa74893d86074dc5253",
+    "verify_plants.py": "3bba6f887b3543a08e743f27901cda4c2cf7fba816dbec546a6e239a30062136"
   },
   "totals": {
     "BLOCKED": 1,
     "FAIL": 0,
-    "PASS": 156
+    "PASS": 171
   }
 }
