@@ -39,7 +39,7 @@ G1 canonical bytes   [PASS 35 / FAIL 0 / BLOCKED 0]
   PASS     G1 serialize singleton-one-component cand B
   PASS     G1 reconstruct singleton-one-component cand B
 
-G2 trie shape (+ injected routing / seam consistency+isolation / bucket placement)   [PASS 17 / FAIL 0 / BLOCKED 0]
+G2 trie shape (+ injected routing / seam / bucket placement / structural rejection)   [PASS 39 / FAIL 0 / BLOCKED 0]
   PASS     G2 ordinary routing -> BRANCH top + round-trip (real SHA-256)
   PASS     G2 reorder nodes -> NODE_ORDER reject
   PASS     G2 drop referenced node -> MISSING_CHILD reject
@@ -57,6 +57,28 @@ G2 trie shape (+ injected routing / seam consistency+isolation / bucket placemen
   PASS     G2 misplaced bucket (depth 1) -> BUCKET_MISPLACED [B]
   PASS     G2 correctly-placed full-collision bucket validates [B]
   PASS     G2 bucket members not fully colliding -> BUCKET_NOT_COLLIDING [B]
+  PASS     G2 ROOT dup child hash -> DUP_CHILD (Tier-1) [A]
+  PASS     G2 BRANCH dup child hash -> DUP_CHILD [A]
+  PASS     G2 distinct ROOT children accept (counterpart) [A]
+  PASS     G2 inline bucket valid members parse (counterpart) [A]
+  PASS     G2 inline member wrong candidate domain -> DOMAIN [A]
+  PASS     G2 inline member wrong VERSION -> VERSION [A]
+  PASS     G2 inline member duplicate member -> BUCKET_DUP_KEY [A]
+  PASS     G2 inline member out of order -> BUCKET_ORDER [A]
+  PASS     G2 inline member mixed leaf types -> BUCKET_MIXED [A]
+  PASS     G2 inline member malformed value -> VTYPE [A]
+  PASS     G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [A]
+  PASS     G2 ROOT dup child hash -> DUP_CHILD (Tier-1) [B]
+  PASS     G2 BRANCH dup child hash -> DUP_CHILD [B]
+  PASS     G2 distinct ROOT children accept (counterpart) [B]
+  PASS     G2 inline bucket valid members parse (counterpart) [B]
+  PASS     G2 inline member wrong candidate domain -> DOMAIN [B]
+  PASS     G2 inline member wrong VERSION -> VERSION [B]
+  PASS     G2 inline member duplicate member -> BUCKET_DUP_KEY [B]
+  PASS     G2 inline member out of order -> BUCKET_ORDER [B]
+  PASS     G2 inline member mixed leaf types -> BUCKET_MIXED [B]
+  PASS     G2 inline member malformed value -> VTYPE [B]
+  PASS     G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [B]
 
 G3 reconstruction   [PASS 6 / FAIL 0 / BLOCKED 0]
   PASS     G3 shared component root is one DAG node + round-trips
@@ -106,5 +128,5 @@ G6 reproducibility + bounds + constants   [PASS 6 / FAIL 0 / BLOCKED 0]
   PASS     P1V-constants: MAX_LEN/MAX_NODES/MAX_TOTAL/MAX_HASH_CHUNKS by value
 
 ====================================================================================================
-TOTAL  PASS 90  FAIL 0  BLOCKED 1
+TOTAL  PASS 112  FAIL 0  BLOCKED 1
 GATE PASS  (BLOCKED rows are not passes and do not fail the run; they mark D4-2/D8 scope)

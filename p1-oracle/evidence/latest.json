@@ -184,7 +184,7 @@
         "verdict": "PASS"
       }
     ],
-    "G2 trie shape (+ injected routing / seam consistency+isolation / bucket placement)": [
+    "G2 trie shape (+ injected routing / seam / bucket placement / structural rejection)": [
       {
         "detail": "",
         "name": "G2 ordinary routing -> BRANCH top + round-trip (real SHA-256)",
@@ -268,6 +268,116 @@
       {
         "detail": "",
         "name": "G2 bucket members not fully colliding -> BUCKET_NOT_COLLIDING [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 ROOT dup child hash -> DUP_CHILD (Tier-1) [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 BRANCH dup child hash -> DUP_CHILD [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 distinct ROOT children accept (counterpart) [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline bucket valid members parse (counterpart) [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member wrong candidate domain -> DOMAIN [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member wrong VERSION -> VERSION [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member duplicate member -> BUCKET_DUP_KEY [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member out of order -> BUCKET_ORDER [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member mixed leaf types -> BUCKET_MIXED [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member malformed value -> VTYPE [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 ROOT dup child hash -> DUP_CHILD (Tier-1) [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 BRANCH dup child hash -> DUP_CHILD [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 distinct ROOT children accept (counterpart) [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline bucket valid members parse (counterpart) [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member wrong candidate domain -> DOMAIN [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member wrong VERSION -> VERSION [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member duplicate member -> BUCKET_DUP_KEY [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member out of order -> BUCKET_ORDER [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member mixed leaf types -> BUCKET_MIXED [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 inline member malformed value -> VTYPE [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [B]",
         "verdict": "PASS"
       }
     ],
@@ -482,6 +592,8 @@
     "AUTHORIZATION.md": "b74257b440839e7ecac27dddb1f7904d1432c0226d02ddaea61ba9d6eb7b0d99",
     "MANIFEST.json": "705b8c4892191ff648e13f2bdc51b6b660be420fc825d50a9d1e2ff9521851fc",
     "README.md": "ed9a71d3b79c069b4d5decd184c1c687af511c6046dad2c342f2d6e9b322da46",
+    "docs/P1-REV20-REQUIREMENT-MATRIX.md": "8131450fb87c9a3b4ac85e4b6c88a66b3bd513e7953e946703fa271ede8ea0fe",
+    "docs/P6-REBUILD-EQUIVALENCE.md": "8e50f30fffc428273b8614ddb5f4cfba2fc848711297e4df61b9e1098c754d7c",
     "fixtures/__init__.py": "4cccbb83ce94bc940942ab5f0eadafc3c3c660072bd1342d0ee82b78c6116c43",
     "fixtures/hand_calculated/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "fixtures/hand_calculated/vectors.py": "89b95135d878806668e96020f2a5c1c0156f161aae357010686eaeee095ce672",
@@ -490,11 +602,11 @@
     "oracle/__init__.py": "7ec065133eac0c915da871d1ab5a073ecfaa9051eaa4de59175620dba17294b4",
     "oracle/canonicality.py": "511561e756f733c58d54704fe7d8fbb3ad1f16c868f6115d64e94bf15d75d76e",
     "oracle/checkpoints.py": "15d88c2429cb3a70c01937aae35709f6d9b32652d7a7bd42c6a34703a9fba440",
-    "oracle/decoder.py": "053d5e02c289b2d2d121344721885ef209e8fd7f257f178c4106622c65514800",
+    "oracle/decoder.py": "1f27a3ba9d7049f3dcb7ba153709cf816eac91ff599de78e925ab8234b971959",
     "oracle/frozen/__init__.py": "5b04b0a59acd01b427da358ccaf45a0901ff4ff894f4d325ac1a591c8e93f35e",
     "oracle/frozen/ecs.py": "3d568d22d812ae2321b03b7450d09109c8ff20e3308b5f9cd2a5e2fde9eb1c0b",
     "oracle/records.py": "f23a9c22994818d4fcd7ec99e3d804d5090eab5c501297cfbcb9f4cf9918fb14",
-    "run_gate.py": "6479fc796cf33bd38541e28c8a926d0bf064d0489762a77b1477853da729f1ec",
+    "run_gate.py": "2417c8f039c98b8a8f91b82b4c6a05aef992140b6408efe0554e3a4aa57eab43",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/harness.py": "61761c056d96c481d3c9bd457104d908728e4b39536ee5816a2bd23f3e348302",
     "tests/test_buckets.py": "1b6ea4b643d2442ef146aa27066055e02ed549940fd87e834640d4d6c421c808",
@@ -505,11 +617,12 @@
     "tests/test_g5.py": "b45bfb31519bcb40615fa03bb4eeffc701fc75f366399b930105785556b3b1e3",
     "tests/test_g6.py": "2e9bee2ed21257e12a09d09a17d160675536f712a7a7edc419527228a4b8952c",
     "tests/test_seams.py": "5167e1eac0ff99c639d25f54c73e6c762e7c4465c0304353f05221bbc4c080db",
-    "verify_plants.py": "caa6536ec169a42300d8dea364f7d3f034b6751df8fef2e1f485517f43791cca"
+    "tests/test_struct.py": "9bd62bcf19bc12030260e7c1ec330aa6a62f89d3834316a8ff5a21161473204f",
+    "verify_plants.py": "2046592895ae20bc27adc592526c6226cd0e28bbf93205a911a9354ce01f135f"
   },
   "totals": {
     "BLOCKED": 1,
     "FAIL": 0,
-    "PASS": 90
+    "PASS": 112
   }
 }

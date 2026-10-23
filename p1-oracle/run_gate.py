@@ -15,11 +15,11 @@ import platform
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from tests import test_g1, test_g2, test_g3, test_g4, test_g5, test_g6, test_seams, test_buckets  # noqa: E402
+from tests import test_g1, test_g2, test_g3, test_g4, test_g5, test_g6, test_seams, test_buckets, test_struct  # noqa: E402
 
 GATES = [
     ("G1 canonical bytes", [test_g1]),
-    ("G2 trie shape (+ injected routing / seam consistency+isolation / bucket placement)", [test_g2, test_seams, test_buckets]),
+    ("G2 trie shape (+ injected routing / seam / bucket placement / structural rejection)", [test_g2, test_seams, test_buckets, test_struct]),
     ("G3 reconstruction", [test_g3]),
     ("G4 record semantics", [test_g4]),
     ("G5 checkpoint + anchor", [test_g5]),

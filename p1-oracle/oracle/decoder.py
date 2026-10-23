@@ -341,6 +341,12 @@ def _read_bitmap_children(r, level):
     for slot in range(32):
         if bitmap & (1 << slot):
             children.append((slot, r.take(32)))        # ascending slot order by construction
+    # Tier-1 structural rule (§4a/§8): within a single node, occupied slots reference DISTINCT child hashes.
+    # Applies uniformly to ROOT and BRANCH, so a repeated child in a ROOT slot rejects here (DUP_CHILD) rather than
+    # downstream as a DUP_KEY consequence. (0258 fix; lawful cross-parent sharing is unaffected.)
+    hashes = [h for _s, h in children]
+    if len(set(hashes)) != len(hashes):
+        raise malformed("DUP_CHILD", "same child hash in two slots of one node")
     return bitmap, children
 
 

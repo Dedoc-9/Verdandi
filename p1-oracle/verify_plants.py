@@ -15,7 +15,7 @@ from oracle import decoder as d          # noqa: E402
 from oracle import canonicality as C     # noqa: E402
 from oracle import records as R          # noqa: E402
 from oracle import checkpoints as K      # noqa: E402
-from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets  # noqa: E402
+from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets, test_struct  # noqa: E402
 
 
 def _fails(rows):
@@ -79,6 +79,20 @@ def main():
     ok &= _plant("G2 bucket-placement check disabled",
                  lambda: setattr(C, "_check_buckets", lambda *a, **k: None),
                  lambda: setattr(C, "_check_buckets", _orig_cb), test_buckets)
+
+    # 0258: disable the Tier-1 distinct-children check -> the ROOT/BRANCH DUP_CHILD vectors must FAIL
+    _orig_bmc = d._read_bitmap_children
+
+    def _lax_bmc(r, level):
+        bitmap = r.u32()
+        children = []
+        for slot in range(32):
+            if bitmap & (1 << slot):
+                children.append((slot, r.take(32)))
+        return bitmap, children                        # defect: no distinct-children check
+    ok &= _plant("G2 distinct-children check disabled",
+                 lambda: setattr(d, "_read_bitmap_children", _lax_bmc),
+                 lambda: setattr(d, "_read_bitmap_children", _orig_bmc), test_struct)
 
     print("ALL PLANTS BITE" if ok else "SOME PLANT INERT -- APPARATUS DOES NOT FULLY BITE")
     return 0 if ok else 1
