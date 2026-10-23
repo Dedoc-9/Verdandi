@@ -144,7 +144,11 @@ def encode_value(v):
             mag = a.to_bytes((a.bit_length() + 7) // 8, "big")   # non-empty (v<0)
         return bytes([VTYPE_INT, sign]) + lp(mag)
     if isinstance(v, str):
-        return bytes([VTYPE_STR]) + lp(v.encode("utf-8"))        # utf-8; surrogates raise on encode
+        try:
+            body = v.encode("utf-8")                              # utf-8; a lone surrogate cannot be encoded
+        except UnicodeEncodeError as e:
+            raise malformed("STR_SURROGATE", str(e))             # typed local rejection (0259)
+        return bytes([VTYPE_STR]) + lp(body)
     raise malformed("VALUE_TYPE", type(v).__name__)
 
 

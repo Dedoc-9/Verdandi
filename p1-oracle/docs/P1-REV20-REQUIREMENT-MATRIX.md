@@ -38,6 +38,21 @@ preserved immutably at `76e9d69` and `evidence/history/pre-0258/`. Rows R4.3, R4
 below. Deferred by owner ruling: composite hand-traced vector (G-1), standalone Tier-1 negatives (G-2/G-3), link/SEQ
 cases (G-5), `MAX_TOTAL` symmetry (G-7); BLOCKED items stay BLOCKED.
 
+## Changelog — 0259 standalone Tier-1 negatives (2026-10-23)
+
+Probed each case at its **local** decoder layer first; every malformed input already rejected there with a specific
+code except **lone-surrogate-on-encode**, which raised an untyped `UnicodeEncodeError` — **hardened** to a typed
+`STR_SURROGATE` (`encode_value`). **Added** `tests/test_tier1.py`: §1 int `INT_NONMINIMAL`/`INT_NEGZERO`/`INT_SIGN`,
+bad `VTYPE`, `STR_UTF8` (decode), `STR_SURROGATE` (encode); §2 `KTYPE`/`KTYPE_POS`; node framing (both candidates)
+wrong `DOMAIN`, wrong `VERSION`, `ROOT`-missing-scalars→`TRUNCATED`, scalars-on-non-ROOT→`TRAILING`,
+popcount>children→`TRUNCATED`; container `STATE_DOM`/`VERSION`; accepting neighbours throughout. Added a `verify_plants`
+plant that disables the minimal/sign/UTF-8 guards. New run **136 PASS / 0 FAIL / 1 BLOCKED**, two runs identical,
+**8/8 plants bite**; 0258 evidence kept at `evidence/history/pre-0259/`. Rows R1.1–R1.3, R2.1, R0.6, R8.1 and gap item
+G-2 updated. *Honest structural notes:* slot order is implied by the bitmap, so "non-ascending slots" is **not
+representable** (no negative possible); a popcount/child mismatch surfaces as a framing `TRUNCATED`/`TRAILING`, not a
+dedicated `POPCOUNT` code; record/checkpoint domain/VERSION are preimage-hashed (no byte-decoder), so those carriers
+are covered by commitment recomputation, not a local `DOMAIN`/`VERSION` reject.
+
 ---
 
 ## §0 Primitives, resource limits, versioning
@@ -49,21 +64,21 @@ cases (G-5), `MAX_TOTAL` symmetry (G-7); BLOCKED items stay BLOCKED.
 | R0.3 | `MAX_HASH_CHUNKS=52`; 51×5-bit + 1-bit; two-level depth ≤ 53+53 | `decoder.chunk`,`_construct` | pos: injected final-bit reaches `BRANCH(51)` / depth-52 bucket | INDEP (injected) | `test_seams` final-bit/full-collision | PARTIAL | the 53-node max-chain bound is not asserted as its own vector |
 | R0.4 | content-addressing is a DAG; `MAX_NODES` counts unique-by-hash; `MAX_TOTAL` sums unique bytes; shared node once | `canonicality`,`parse_collection` | pos: DAG share `test_g3`; neg: reduced `MAX_NODES` `test_g6` | HAND/ORACLE | G3 DAG; G6 reduced node-count | VERIFIED | `MAX_TOTAL` reduced-limit not separately driven (only `MAX_NODES`) — PARTIAL on the total bound |
 | R0.5 | limits checked incrementally — reject **before** over-allocation | `Reader.lp`,`parse_collection` | neg: reduced `MAX_LEN` rejects on the length prefix before the body | — | `test_g6::reduced_limit_lp` | VERIFIED (lp) | node/total incrementality asserted only indirectly |
-| R0.6 | `u16(VERSION)` carried by the six node types, `state_serialization`, record, `EFF_EMPTY_RANGE`, checkpoint; **not** `EFF_LEAF/EFF_NODE` | encoders, `_read_version` | pos: every encoding carries `u16(0)`; neg: wrong version→`VERSION` | HAND | G1 encodings; `_read_version` path | PARTIAL | no dedicated "wrong VERSION rejected" vector per carrier; add one |
+| R0.6 | `u16(VERSION)` carried by the six node types, `state_serialization`, record, `EFF_EMPTY_RANGE`, checkpoint; **not** `EFF_LEAF/EFF_NODE` | encoders, `_read_version` | pos: every encoding carries `u16(0)`; neg: wrong version→`VERSION` (node + container) | HAND | `test_tier1` wrong-VERSION node (both cands) + container | VERIFIED (decoded carriers) | record/checkpoint are preimage-hashed (no byte-decoder) → their VERSION is covered by commitment recomputation, not a local `VERSION` reject |
 
 ## §1 Values
 
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
 |---|---|---|---|---|---|---|---|
-| R1.1 | `VTYPE 0x01` int / `0x02` str; one accepted encoding per value | `decode_value` | pos: int & str vectors; neg: bad `VTYPE`→`VTYPE` | HAND | `test_g1` value vectors (8) | PARTIAL | bad-`VTYPE` negative is a code path, not a gate vector |
-| R1.2 | int = sign byte + minimal magnitude; positive-zero only; neg-zero/non-minimal/bad-sign rejected | `decode_value` | pos: `0,10,255,256,-7`; neg: non-minimal / neg-zero / bad sign | HAND | `test_g1` positives; negatives only in dev smoke | **PARTIAL** | **gap: §1 int negatives (`INT_NONMINIMAL`,`INT_NEGZERO`,`INT_SIGN`) are implemented but have no gate vector** — add them |
-| R1.3 | str UTF-8, no normalization; invalid UTF-8 / lone surrogate rejected | `decode_value` | pos: `"orc"`,`""`, composed `é`; neg: lone surrogate→`STR_UTF8` | HAND | `test_g1` (incl. composed é) | PARTIAL | **gap: invalid-UTF-8 negative has no gate vector** — add one |
+| R1.1 | `VTYPE 0x01` int / `0x02` str; one accepted encoding per value | `decode_value` | pos: int & str vectors; neg: bad `VTYPE`→`VTYPE` | HAND | `test_g1` value vectors; `test_tier1` bad-VTYPE | VERIFIED | closed 0259 |
+| R1.2 | int = sign byte + minimal magnitude; positive-zero only; neg-zero/non-minimal/bad-sign rejected | `decode_value` | pos: `0,10,255,256,-7`; neg: `INT_NONMINIMAL`/`INT_NEGZERO`/`INT_SIGN` | HAND | `test_g1` positives; `test_tier1` negatives + plant | VERIFIED | closed 0259 |
+| R1.3 | str UTF-8, no normalization; invalid UTF-8 / lone surrogate rejected | `decode_value`,`encode_value` | pos: `"orc"`,`""`, composed `é`; neg: `STR_UTF8` (decode), `STR_SURROGATE` (encode) | HAND | `test_g1`; `test_tier1` UTF-8 + surrogate | VERIFIED | closed 0259 (encode-surrogate hardened to a typed reject) |
 
 ## §2 Keys and chunk extraction
 
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
 |---|---|---|---|---|---|---|---|
-| R2.1 | `KEY = KTYPE(0x10/0x11)‖lp(utf8)`; order by full KEY bytes | `encode_key`,`decode_key` | pos: key vectors; neg: bad `KTYPE`→`KTYPE` | HAND | `test_g1` key vectors | PARTIAL | bad-`KTYPE` and KTYPE-position negatives are code paths, no gate vector |
+| R2.1 | `KEY = KTYPE(0x10/0x11)‖lp(utf8)`; order by full KEY bytes | `encode_key`,`decode_key` | pos: key vectors; neg: `KTYPE`, `KTYPE_POS` | HAND | `test_g1` key vectors; `test_tier1` KTYPE/position | VERIFIED | closed 0259 |
 | R2.2 | `chunk(d)` MSB-first, 51×5-bit then 1-bit (52 levels) | `decoder.chunk` | pos: real-SHA KAT; injected final-bit/full-collision | HAND (KAT) / INDEP | `test_seams::kat`, final-bit, full-collision | VERIFIED | — |
 
 ## §3 State → tree hierarchy
@@ -130,7 +145,7 @@ cases (G-5), `MAX_TOTAL` symmetry (G-7); BLOCKED items stay BLOCKED.
 
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
 |---|---|---|---|---|---|---|---|
-| R8.1 | Tier-1 local: framing, minimal int, UTF-8, `KTYPE`, `node_type`, domain, single `VERSION`, popcount==slots ascending, `SCALARS` iff ROOT, bucket `count≥2`/order/no-dup, B `level` in range | `read_one_node` | neg: bucket `count`, bitmap-high-bits, scalar-type | HAND | G2/G3 rows | PARTIAL | **gap: most Tier-1 rejections (domain, VERSION, KTYPE, minimal-int, UTF-8, popcount/slots, SCALARS-iff-ROOT) are implemented but lack gate vectors** — enumerate as negatives |
+| R8.1 | Tier-1 local: framing, minimal int, UTF-8, `KTYPE`, `node_type`, domain, single `VERSION`, popcount==slots ascending, `SCALARS` iff ROOT, bucket `count≥2`/order/no-dup, B `level` in range | `read_one_node` | neg: domain, VERSION, minimal-int, UTF-8, KTYPE, SCALARS-iff-ROOT (framing), popcount (framing), bucket count/order/dup/mixed, bitmap-high-bits, scalar-type | HAND | `test_tier1` (both cands), `test_g2`, `test_g3`, `test_struct` | VERIFIED | closed 0259. Structural: non-ascending slots not representable (bitmap-implied); popcount mismatch → framing `TRUNCATED`/`TRAILING`, not a dedicated code |
 | R8.2 | Tier-2 whole-state: `construct` shape, top-node rules, **P6 full key-path** (every ancestor slot = `chunk(d)`), no dup key, shared-root lawful, distinct children, reachable/unique | `reconstruct`,`_check_buckets` | pos: round-trips; neg: misrouted leaf→`CANONICALITY`, `MISSING_CHILD`, `DUP_CHILD`, bucket placement | ORACLE | G2/G3/`test_buckets`/`test_struct` misrouting | VERIFIED (equivalent, documented) | **M-1 closed 0258: the rebuild-and-compare ⇒ P6 argument is recorded in `docs/P6-REBUILD-EQUIVALENCE.md` with a planted misrouting witness; a literal ancestor-walk remains optional defence-in-depth** |
 | R8.3 | Tier-3 semantic: replay, recompute **both** commitments, reject re-wrapped-over-changed-field (DIG-08) | `verify_ledger` | neg: wrong `ecs`/`struct` commitment | ORACLE | `test_g4::wrong_ecs`,`wrong_struct` | VERIFIED | — |
 
@@ -146,12 +161,14 @@ cases (G-5), `MAX_TOTAL` symmetry (G-7); BLOCKED items stay BLOCKED.
   byte-strings (whole container bytes written out by hand for one tiny state), and/or a second independent encoder
   authored from the prose without reading the oracle.
 
-**Missing negative vectors (Tier-1 rejections implemented but undriven):**
-- **G-2.** §1/§2: `INT_NONMINIMAL`, `INT_NEGZERO`, `INT_SIGN`, bad `VTYPE`, invalid UTF-8 / lone surrogate, bad `KTYPE`,
-  KTYPE-position. (R1.2, R1.3, R1.1, R2.1)
-- **G-3.** §8/§4 — **partially CLOSED 0258:** mixed-leaf bucket, inline-order, dup-within-bucket, wrong inline domain,
-  inline `VERSION` mismatch are now driven (`test_struct`). **Still open:** wrong domain tag / `VERSION` mismatch on a
-  *standalone* node, `popcount != slots` / non-ascending slots, `SCALARS`-on-non-ROOT / missing-on-ROOT. (R8.1, R0.6)
+**Missing negative vectors (Tier-1 rejections) — CLOSED across 0258/0259:**
+- **G-2.** §1/§2 — **CLOSED 0259:** `INT_NONMINIMAL`, `INT_NEGZERO`, `INT_SIGN`, bad `VTYPE`, invalid UTF-8 (decode) +
+  lone surrogate (encode, now typed `STR_SURROGATE`), bad `KTYPE`, KTYPE-position — all driven by `test_tier1` + plant.
+  (R1.1–R1.3, R2.1)
+- **G-3.** §8/§4 — **CLOSED (0258 + 0259):** bucket member malformations (`test_struct`, 0258); standalone-node wrong
+  `DOMAIN`/`VERSION`, `SCALARS`-iff-ROOT and popcount via framing `TRUNCATED`/`TRAILING` (`test_tier1`, 0259).
+  *Structural:* non-ascending slots are bitmap-implied (not representable); record/checkpoint carriers are
+  preimage-hashed. (R8.1, R0.6)
 - **G-4.** §4a — **`DUP_CHILD` CLOSED 0258** (ROOT & BRANCH, both candidates, Tier-1, + plant). **Still open:**
   `DUP_ENTRY` as a dedicated vector. (R4a.2)
 - **G-5.** §6: `SEQ_ZERO`, bad-`LINK`-tag, forward/self `parent`. (R6.4, R6.5)

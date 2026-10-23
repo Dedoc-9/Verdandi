@@ -1,0 +1,132 @@
+P-1 ORACLE GATE (test-only, OFF-GATE; P-1 remains OPEN)
+python 3.14.5 on Windows-11-10.0.26200-SP0; PYTHONHASHSEED=0 PYTHONUTF8=1
+====================================================================================================
+
+G1 canonical bytes   [PASS 35 / FAIL 0 / BLOCKED 0]
+  PASS     G1 value encode 0
+  PASS     G1 value round-trip 0
+  PASS     G1 value encode 10
+  PASS     G1 value round-trip 10
+  PASS     G1 value encode 255
+  PASS     G1 value round-trip 255
+  PASS     G1 value encode 256
+  PASS     G1 value round-trip 256
+  PASS     G1 value encode -7
+  PASS     G1 value round-trip -7
+  PASS     G1 value encode 'orc'
+  PASS     G1 value round-trip 'orc'
+  PASS     G1 value encode ''
+  PASS     G1 value round-trip ''
+  PASS     G1 value encode 'é'
+  PASS     G1 value round-trip 'é'
+  PASS     G1 key encode eid:e1
+  PASS     G1 key encode comp:hp
+  PASS     G1 key encode eid:entity-longer-name
+  PASS     G1 EMPTY node cand A
+  PASS     G1 LEAF_COMP hp=10 cand A
+  PASS     G1 serialize genesis cand A
+  PASS     G1 reconstruct genesis cand A
+  PASS     G1 serialize singleton-empty-entity cand A
+  PASS     G1 reconstruct singleton-empty-entity cand A
+  PASS     G1 serialize singleton-one-component cand A
+  PASS     G1 reconstruct singleton-one-component cand A
+  PASS     G1 EMPTY node cand B
+  PASS     G1 LEAF_COMP hp=10 cand B
+  PASS     G1 serialize genesis cand B
+  PASS     G1 reconstruct genesis cand B
+  PASS     G1 serialize singleton-empty-entity cand B
+  PASS     G1 reconstruct singleton-empty-entity cand B
+  PASS     G1 serialize singleton-one-component cand B
+  PASS     G1 reconstruct singleton-one-component cand B
+
+G2 trie shape (+ injected routing / seam / bucket placement / structural rejection)   [PASS 39 / FAIL 0 / BLOCKED 0]
+  PASS     G2 ordinary routing -> BRANCH top + round-trip (real SHA-256)
+  PASS     G2 reorder nodes -> NODE_ORDER reject
+  PASS     G2 drop referenced node -> MISSING_CHILD reject
+  PASS     G2 bucket count<2 -> reject
+  PASS     G2 BRANCH level51 high bitmap bit -> reject
+  PASS     P1V-seam injected final-bit divergence -> two-slot BRANCH(51) [INJECTED]  -- INJECTED two-slot BRANCH(51)
+  PASS     P1V-seam injected full collision -> terminal BUCKET [INJECTED]  -- INJECTED BUCKET count=2
+  PASS     P1V-seam bucket + leaf under two-slot BRANCH(51) [INJECTED]  -- INJECTED BRANCH(51){BUCKET(2), LEAF_ENT}
+  PASS     P1V-seam consistency: build-H==validate-H passes; different H -> CANONICALITY reject
+  PASS     P1V-seam isolation: swapping H changes no node address/order; plant bites  -- addresses/order are H-independent; a leak WOULD reorder (plant bites)
+  PASS     P1V-keyhash-kat: production key-hash == sha256(KEY), seam disabled
+  PASS     G2 misplaced bucket (depth 1) -> BUCKET_MISPLACED [A]
+  PASS     G2 correctly-placed full-collision bucket validates [A]
+  PASS     G2 bucket members not fully colliding -> BUCKET_NOT_COLLIDING [A]
+  PASS     G2 misplaced bucket (depth 1) -> BUCKET_MISPLACED [B]
+  PASS     G2 correctly-placed full-collision bucket validates [B]
+  PASS     G2 bucket members not fully colliding -> BUCKET_NOT_COLLIDING [B]
+  PASS     G2 ROOT dup child hash -> DUP_CHILD (Tier-1) [A]
+  PASS     G2 BRANCH dup child hash -> DUP_CHILD [A]
+  PASS     G2 distinct ROOT children accept (counterpart) [A]
+  PASS     G2 inline bucket valid members parse (counterpart) [A]
+  PASS     G2 inline member wrong candidate domain -> DOMAIN [A]
+  PASS     G2 inline member wrong VERSION -> VERSION [A]
+  PASS     G2 inline member duplicate member -> BUCKET_DUP_KEY [A]
+  PASS     G2 inline member out of order -> BUCKET_ORDER [A]
+  PASS     G2 inline member mixed leaf types -> BUCKET_MIXED [A]
+  PASS     G2 inline member malformed value -> VTYPE [A]
+  PASS     G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [A]
+  PASS     G2 ROOT dup child hash -> DUP_CHILD (Tier-1) [B]
+  PASS     G2 BRANCH dup child hash -> DUP_CHILD [B]
+  PASS     G2 distinct ROOT children accept (counterpart) [B]
+  PASS     G2 inline bucket valid members parse (counterpart) [B]
+  PASS     G2 inline member wrong candidate domain -> DOMAIN [B]
+  PASS     G2 inline member wrong VERSION -> VERSION [B]
+  PASS     G2 inline member duplicate member -> BUCKET_DUP_KEY [B]
+  PASS     G2 inline member out of order -> BUCKET_ORDER [B]
+  PASS     G2 inline member mixed leaf types -> BUCKET_MIXED [B]
+  PASS     G2 inline member malformed value -> VTYPE [B]
+  PASS     G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [B]
+
+G3 reconstruction   [PASS 6 / FAIL 0 / BLOCKED 0]
+  PASS     G3 shared component root is one DAG node + round-trips
+  PASS     G3 empty component/entity maps round-trip
+  PASS     G3 every ECS field recovered; mutating any one changes the bytes
+  PASS     G3 duplicate entity key -> DUP_KEY reject
+  PASS     G3 orphan node -> CANONICALITY reject
+  PASS     G3 string-valued scalar -> SCALAR_NOT_INT reject (block D)
+
+G4 record semantics   [PASS 13 / FAIL 0 / BLOCKED 0]
+  PASS     G4 record preimage bytes == hand-calculated; candidate-independent (A==B)
+  PASS     G4 index convention: 2^64-1 reserved; exclusive sum <= 2^64-1
+  PASS     G4 Candidate B structural commit differs from A (B path executed, not inferred)
+  PASS     G4 valid ledger accepts; effect_index 0/1/multi [A]
+  PASS     G4 wrong ecs_state_commitment -> SEMANTIC [A]
+  PASS     G4 wrong structural_state_commitment -> SEMANTIC [A]
+  PASS     G4 unknown/fail-after-valid/wrong-arity -> SEMANTIC, atomic [A]
+  PASS     G4 link truth table (genesis/prev/parentless) [A]
+  PASS     G4 valid ledger accepts; effect_index 0/1/multi [B]
+  PASS     G4 wrong ecs_state_commitment -> SEMANTIC [B]
+  PASS     G4 wrong structural_state_commitment -> SEMANTIC [B]
+  PASS     G4 unknown/fail-after-valid/wrong-arity -> SEMANTIC, atomic [B]
+  PASS     G4 link truth table (genesis/prev/parentless) [B]
+
+G5 checkpoint + anchor   [PASS 13 / FAIL 0 / BLOCKED 1]
+  PASS     G5 Candidate A/B checkpoints differ (B path executed, not inferred)
+  PASS     G5 valid checkpoint: digest/range/head/anchor PASS; effects-root BLOCKED [A]
+  PASS     G5 wrong range_count -> range_identity FAIL [A]
+  PASS     G5 head != boundary -> FAIL (D4-3) [A]
+  PASS     G5 tampered field vs expected digest -> digest FAIL [A]
+  PASS     G5 non-genesis anchor: identity/reachability PASS, trust BLOCKED (D8) [A]
+  PASS     G5 out-of-range (below-boundary) anchor -> BLOCKED [A]
+  PASS     G5 valid checkpoint: digest/range/head/anchor PASS; effects-root BLOCKED [B]
+  PASS     G5 wrong range_count -> range_identity FAIL [B]
+  PASS     G5 head != boundary -> FAIL (D4-3) [B]
+  PASS     G5 tampered field vs expected digest -> digest FAIL [B]
+  PASS     G5 non-genesis anchor: identity/reachability PASS, trust BLOCKED (D8) [B]
+  PASS     G5 out-of-range (below-boundary) anchor -> BLOCKED [B]
+  BLOCKED  G5 effects_range_root verification (both candidates)  -- D4-2: range-tree algorithm + proof format not specified
+
+G6 reproducibility + bounds + constants   [PASS 6 / FAIL 0 / BLOCKED 0]
+  PASS     G6 determinism: identical bytes/commitments across runs
+  PASS     G6 frozen ecs.py sha256 == 3d568d22... (byte-identical)
+  PASS     G6 write isolation: oracle package performs no file I/O
+  PASS     P1V-bounds reduced-limit lp (3B): at-limit accept, one-past reject on prefix  -- reduced-limit MAX_LEN_TEST=8; accept at 8, reject at 9 on the prefix
+  PASS     P1V-bounds reduced-limit node_count (3B): over-limit collection rejected  -- reduced MAX_NODES_TEST=1 rejects a >1-node collection
+  PASS     P1V-constants: MAX_LEN/MAX_NODES/MAX_TOTAL/MAX_HASH_CHUNKS by value
+
+====================================================================================================
+TOTAL  PASS 112  FAIL 0  BLOCKED 1
+GATE PASS  (BLOCKED rows are not passes and do not fail the run; they mark D4-2/D8 scope)

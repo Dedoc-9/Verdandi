@@ -2,7 +2,7 @@ P-1 ORACLE GATE (test-only, OFF-GATE; P-1 remains OPEN)
 python 3.14.5 on Windows-11-10.0.26200-SP0; PYTHONHASHSEED=0 PYTHONUTF8=1
 ====================================================================================================
 
-G1 canonical bytes   [PASS 35 / FAIL 0 / BLOCKED 0]
+G1 canonical bytes (+ Tier-1 local negatives)   [PASS 59 / FAIL 0 / BLOCKED 0]
   PASS     G1 value encode 0
   PASS     G1 value round-trip 0
   PASS     G1 value encode 10
@@ -38,6 +38,30 @@ G1 canonical bytes   [PASS 35 / FAIL 0 / BLOCKED 0]
   PASS     G1 reconstruct singleton-empty-entity cand B
   PASS     G1 serialize singleton-one-component cand B
   PASS     G1 reconstruct singleton-one-component cand B
+  PASS     T1 INT non-minimal -> INT_NONMINIMAL
+  PASS     T1 INT negative-zero -> INT_NEGZERO
+  PASS     T1 INT bad sign byte -> INT_SIGN
+  PASS     T1 bad VTYPE -> VTYPE
+  PASS     T1 STR invalid UTF-8 (decode) -> STR_UTF8
+  PASS     T1 STR lone surrogate (encode) -> STR_SURROGATE
+  PASS     T1 valid int/str decode (neighbours)
+  PASS     T1 bad KTYPE -> KTYPE
+  PASS     T1 KTYPE position (comp where eid expected) -> KTYPE_POS
+  PASS     T1 wrong candidate domain -> DOMAIN [A]
+  PASS     T1 wrong VERSION on node -> VERSION [A]
+  PASS     T1 ROOT missing SCALARS -> TRUNCATED (framing) [A]
+  PASS     T1 SCALARS on non-ROOT (BRANCH) -> TRAILING (framing) [A]
+  PASS     T1 popcount > children -> TRUNCATED (framing) [A]
+  PASS     T1 valid EMPTY node parses (neighbour) [A]
+  PASS     T1 wrong candidate domain -> DOMAIN [B]
+  PASS     T1 wrong VERSION on node -> VERSION [B]
+  PASS     T1 ROOT missing SCALARS -> TRUNCATED (framing) [B]
+  PASS     T1 SCALARS on non-ROOT (BRANCH) -> TRAILING (framing) [B]
+  PASS     T1 popcount > children -> TRUNCATED (framing) [B]
+  PASS     T1 valid EMPTY node parses (neighbour) [B]
+  PASS     T1 container wrong DOM -> STATE_DOM
+  PASS     T1 container wrong VERSION -> VERSION
+  PASS     T1 valid container parses (neighbour)
 
 G2 trie shape (+ injected routing / seam / bucket placement / structural rejection)   [PASS 39 / FAIL 0 / BLOCKED 0]
   PASS     G2 ordinary routing -> BRANCH top + round-trip (real SHA-256)
@@ -128,5 +152,5 @@ G6 reproducibility + bounds + constants   [PASS 6 / FAIL 0 / BLOCKED 0]
   PASS     P1V-constants: MAX_LEN/MAX_NODES/MAX_TOTAL/MAX_HASH_CHUNKS by value
 
 ====================================================================================================
-TOTAL  PASS 112  FAIL 0  BLOCKED 1
+TOTAL  PASS 136  FAIL 0  BLOCKED 1
 GATE PASS  (BLOCKED rows are not passes and do not fail the run; they mark D4-2/D8 scope)

@@ -15,7 +15,7 @@ from oracle import decoder as d          # noqa: E402
 from oracle import canonicality as C     # noqa: E402
 from oracle import records as R          # noqa: E402
 from oracle import checkpoints as K      # noqa: E402
-from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets, test_struct  # noqa: E402
+from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets, test_struct, test_tier1  # noqa: E402
 
 
 def _fails(rows):
@@ -93,6 +93,22 @@ def main():
     ok &= _plant("G2 distinct-children check disabled",
                  lambda: setattr(d, "_read_bitmap_children", _lax_bmc),
                  lambda: setattr(d, "_read_bitmap_children", _orig_bmc), test_struct)
+
+    # 0259: disable the minimal-int / surrogate guards -> the Tier-1 value negatives must FAIL
+    _orig_dv = d.decode_value
+
+    def _lax_dv(r):
+        vt = r.u8()
+        if vt == d.VTYPE_INT:
+            sign = r.u8()
+            mag = r.lp()
+            return (int.from_bytes(mag, "big") if sign == 0x00 else -int.from_bytes(mag, "big"))  # no minimal/sign guard
+        if vt == d.VTYPE_STR:
+            return r.lp().decode("utf-8", "replace")        # no strict UTF-8 guard
+        raise d.malformed("VTYPE", hex(vt))
+    ok &= _plant("T1 value guards (minimal/sign/utf-8) disabled",
+                 lambda: setattr(d, "decode_value", _lax_dv),
+                 lambda: setattr(d, "decode_value", _orig_dv), test_tier1)
 
     print("ALL PLANTS BITE" if ok else "SOME PLANT INERT -- APPARATUS DOES NOT FULLY BITE")
     return 0 if ok else 1
