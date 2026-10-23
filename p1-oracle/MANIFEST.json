@@ -1,0 +1,63 @@
+{
+  "package": "p1-oracle",
+  "purpose": "test-only G1-G6 decoder/oracle validating the P-1 byte-encoding contract (ENCODING-TABLE-P1.md rev 20)",
+  "status": "OFF-GATE / SCRATCH; P-1 remains OPEN; this is not part of the Verdandi gate",
+  "grant": {
+    "date": "2026-10-23",
+    "scope": "scratch-tree decoder/oracle + independent hand-calculated fixtures + G1-G6 gate execution only",
+    "recorded_in": "AUTHORIZATION.md and ENCODING-TABLE-P1.md header (grant note, rev 20)",
+    "not": "not a test result, not a change in P-1 status, not a conformance claim, not candidate selection"
+  },
+  "five_conditions": [
+    "No production candidate or frozen reference changes.",
+    "No production-reference freeze, candidate selection, promotion, or conformance claim.",
+    "Independent hand-calculated vectors, with injected-routing results explicitly labeled.",
+    "Separate verdicts for malformed input, semantic mismatch, and BLOCKED.",
+    "Reproducible logs, inputs, outputs, source hashes, and exit status."
+  ],
+  "exclusions_blocked_or_out_of_scope": [
+    "D4-2 effects_range_root verification (the range-tree algorithm + proof format)",
+    "below-boundary history_anchor proof (authenticated-prefix; needs D4-2/D8)",
+    "D8 trust (external provenance of the anchor)",
+    "candidate selection, production-reference freeze, promotion, conformance claim, P-1 ratification"
+  ],
+  "baseline_isolation": {
+    "repo": "Verdandi",
+    "repo_head": "29352e51156924f8c0d48fc3ade9cc9f9d222660",
+    "branch": "main",
+    "upstream": "origin/main",
+    "working_tree_pre_build_untracked": ["art/ledger/harbor-lift.tags.json", "art/ledger/plaza-night.tags.json"],
+    "interpreter": "CPython 3.14.5",
+    "rustc": "1.96.1 (31fca3adb 2026-06-26)",
+    "determinism_env": {"PYTHONHASHSEED": "0", "PYTHONUTF8": "1"},
+    "frozen_dependency": {
+      "file": "oracle/frozen/ecs.py",
+      "sha256": "3d568d22d812ae2321b03b7450d09109c8ff20e3308b5f9cd2a5e2fde9eb1c0b",
+      "role": "the only semantic dependency: ecs._apply_ops (Tier-3 replay) and ecs.digest (conformance identity); byte-identical to the frozen SKULD-R2 ecs.py",
+      "must_remain": "byte-identical; the build must never modify it"
+    },
+    "isolation_rule": "the oracle writes only under p1-oracle/evidence/ and its own scratch temp; it never writes ecs.py, never writes outside p1-oracle/, and is checked for this by test_g6."
+  },
+  "normative_constants_pinned_for_v0": {
+    "VERSION_u16": 0,
+    "candidate_domain_infix": {"A": "hamtA", "B": "merkleB"},
+    "MAX_LEN": 4294967295,
+    "MAX_NODES": 4294967295,
+    "MAX_TOTAL": 1099511627776,
+    "MAX_HASH_CHUNKS": 52,
+    "note": "VERSION's integer value is pinned to 0 for the v0 '-0' domains for this test build and checked by test P1V-constants; the spec pins the domain suffix '-0' and u16 width, and this records the integer chosen."
+  },
+  "commit_boundaries": [
+    {"commit": 1, "contents": "Authorization, scope, baseline hashes", "gate_status": "Not run"},
+    {"commit": 2, "contents": "Independent oracle skeleton and fixture format", "gate_status": "Not passed"},
+    {"commit": 3, "contents": "G1-G3 decoder and canonicality tests", "gate_status": "Report measured results"},
+    {"commit": 4, "contents": "G4-G5 records, replay, checkpoint and anchor tests", "gate_status": "Preserve BLOCKED verdicts"},
+    {"commit": 5, "contents": "G6 reproducibility, seam tests, complete evidence", "gate_status": "Report actual final results"}
+  ],
+  "verdict_categories": {
+    "MALFORMED": "Tier-1/2 structural rejection (framing, domain, type, shape, resource limit)",
+    "SEMANTIC": "Tier-3 replay / commitment mismatch (well-formed but wrong)",
+    "BLOCKED": "not verifiable this milestone (D4-2 effects-root, below-boundary anchor) - never relabelled, never reported as a pass"
+  },
+  "independence": "the oracle implements the grammar from ENCODING-TABLE-P1.md; expected bytes in fixtures are hand-written literals (with derivation comments), and expected hashes are hashlib.sha256 over those literals, never produced by the oracle's own encode path."
+}
