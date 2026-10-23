@@ -1,8 +1,17 @@
-# P-1 rev 20 — Requirement-to-Evidence Matrix
+# P-1 rev 20/21 — Requirement-to-Evidence Matrix
 
 > **DESIGN / TRACEABILITY ONLY. Off-gate, non-normative. P-1 remains `OPEN`.** This maps the normative requirements of
-> `ENCODING-TABLE-P1.md` rev 20 to the evidence produced by the test-only `p1-oracle/` package at the published
-> revision **`76e9d69`**. It is a control document for review and for scoping any future production-conformance test.
+> `ENCODING-TABLE-P1.md` (now **rev 21** after the owner-ratified Level-1 amendment S-1…S-8) to the evidence produced
+> by the test-only `p1-oracle/` package.
+>
+> **rev-21 note (2026-10-23):** the amendment is **spec-text clarification**; the oracle's behaviour is unchanged, so
+> the gate result is unchanged (it does **not** newly "pass" rev 21). S-1 (VERSION=0) and S-2 (version agreement) are
+> new normative requirements the oracle already meets (R0.6). S-3 narrows the record obligations to
+> preimage-construction invariants with **no wire decoder**, so the invalid-`LINK`-**byte** item is **N/A by contract**
+> (R6.5 / gap G-5), not an OPEN gap. S-5/S-6 are framing clarifications (R8.1). S-7 makes `EMPTY` placement normative —
+> enforced only incidentally today, a dedicated vector pending (R4.1/R8.2). **S-4/R8.2 stay PARTIAL and M-1 reopened:**
+> the direct P6 walk is **planned (0263), not implemented**, and the rebuild-and-compare equivalence is **unproved** —
+> no P6 or production-conformance gap is closed by rev 21. It is a control document for review and for scoping any future production-conformance test.
 > It establishes **oracle-level** evidence (Level 2) only; it is **not** a conformance claim, selects no candidate,
 > freezes no reference, and leaves `ecs.digest` untouched. Reported results are **MEASURED on the author's host**
 > (Python 3.14.5, Windows; `evidence/latest.json`), **not independently reproduced** by the owner.
@@ -167,7 +176,7 @@ prove every composite encoding independently correct, and the pre-existing `vect
 | R6.2 | record preimage layout (`Q/V/W/N/F/S/T`, `EVENT/OP/EFFECTS/LINK`) | `record_preimage` | pos: hand-calculated preimage; A==B candidate-independence | HAND | `test_g4::preimage_bytes` | VERIFIED | — |
 | R6.3 | Tier-3 replay via **frozen ECS**; effects one-for-one; unknown/wrong-arity/`fail` → whole-event `SEMANTIC`, no partial | `replay_event`,`verify_ledger` | neg: unknown / fail-after-valid / wrong-arity; atomicity | ORACLE | `test_g4::atomic` (both cands); plant | VERIFIED | — |
 | R6.4 | link truth table (genesis `0x00`/`0x00`; `seq≥2` prev mandatory; parentless non-genesis legal; forward/self/unknown rejected) | `verify_ledger` | neg: `GENESIS_PREV`, `PREV_LINK` (unknown/forward), `PARENT_LINK` (unknown/forward/self); pos: linear, parentless non-genesis, parent=earlier | ORACLE | `test_g4::links`, `test_links` (both cands) + plant | VERIFIED | closed 0260 (forward/self/unknown share the `PARENT_LINK` = "not an earlier record" code) |
-| R6.5 | record decoder obligations: `LINK` tag ∉{0,1} reject; `seq=0` reject; seq order; overflow | `records`,`verify_ledger` | neg: `SEQ_ZERO`, `SEQ_ORDER`, overflow (R5.3) | ORACLE | `test_links` SEQ_ZERO/SEQ_ORDER (both cands); `test_g4` overflow | PARTIAL | `SEQ_ZERO`/`SEQ_ORDER` closed 0260 (SEQ_ZERO doubly-guarded); **bad-LINK-tag byte OPEN — no record byte-decoder in the oracle** |
+| R6.5 | record validation invariants (preimage-construction, rev 21 S-3): `seq ≥ 1` + contiguous commit-chain; genesis/`seq≥2` links; §5 effects-index exclusive-sum (separate) | `records`,`verify_ledger` | neg: `SEQ_ZERO`, `SEQ_ORDER`, overflow (R5.3) | ORACLE | `test_links` SEQ_ZERO/SEQ_ORDER (both cands); `test_g4` overflow | VERIFIED | `SEQ_ZERO`/`SEQ_ORDER` closed 0260; invalid-`LINK`-**byte** is **N/A by the rev-21 preimage-construction contract** (no record wire decoder) — no longer an OPEN gap |
 
 ## §7 Checkpoint and anchor
 
@@ -185,7 +194,7 @@ prove every composite encoding independently correct, and the pre-existing `vect
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
 |---|---|---|---|---|---|---|---|
 | R8.1 | Tier-1 local: framing, minimal int, UTF-8, `KTYPE`, `node_type`, domain, single `VERSION`, popcount==slots ascending, `SCALARS` iff ROOT, bucket `count≥2`/order/no-dup, B `level` in range | `read_one_node` | neg: domain, VERSION, minimal-int, UTF-8, KTYPE, SCALARS-iff-ROOT (framing), popcount (framing), bucket count/order/dup/mixed, bitmap-high-bits, scalar-type | HAND | `test_tier1` (both cands), `test_g2`, `test_g3`, `test_struct` | VERIFIED | closed 0259. Structural: non-ascending slots not representable (bitmap-implied); popcount mismatch → framing `TRUNCATED`/`TRAILING`, not a dedicated code |
-| R8.2 | Tier-2 whole-state: `construct` shape, top-node rules, **P6 full key-path** (every ancestor slot = `chunk(d)`), no dup key, shared-root lawful, distinct children, reachable/unique | `reconstruct`,`_check_buckets` | pos: round-trips; neg: misrouted leaf→`CANONICALITY`, `MISSING_CHILD`, `DUP_CHILD`, bucket placement | ORACLE | G2/G3/`test_buckets`/`test_struct` misrouting | VERIFIED (equivalent, documented) | **M-1 closed 0258: the rebuild-and-compare ⇒ P6 argument is recorded in `docs/P6-REBUILD-EQUIVALENCE.md` with a planted misrouting witness; a literal ancestor-walk remains optional defence-in-depth** |
+| R8.2 | Tier-2 whole-state: `construct` shape, top-node rules, **P6 full key-path** (every ancestor slot = `chunk(d)`), no dup key, shared-root lawful, distinct children, reachable/unique | `reconstruct`,`_check_buckets` | pos: round-trips; neg: misrouted leaf→`CANONICALITY`, `MISSING_CHILD`, `DUP_CHILD`, bucket placement | ORACLE | G2/G3/`test_buckets`/`test_struct` misrouting | **PARTIAL (downgraded, owner ruling 2026-10-23)** | the tested misrouting/placement vectors are rejected (**MEASURED on those vectors**); **universal P6 is NOT proved**. Rebuild-and-compare equivalence is **argued, not proved (provisional)** — `P6-REBUILD-EQUIVALENCE.md` enumerates its assumptions but does not discharge them for all admitted inputs. A direct per-ancestor-slot walk is **planned (0263)** to enforce P6 directly; the row is not promoted to full VERIFIED until that walk is implemented, tested across its stated scope, and reviewed |
 | R8.3 | Tier-3 semantic: replay, recompute **both** commitments, reject re-wrapped-over-changed-field (DIG-08) | `verify_ledger` | neg: wrong `ecs`/`struct` commitment | ORACLE | `test_g4::wrong_ecs`,`wrong_struct` | VERIFIED | — |
 
 ---
@@ -211,17 +220,21 @@ prove every composite encoding independently correct, and the pre-existing `vect
   preimage-hashed. (R8.1, R0.6)
 - **G-4.** §4a — **`DUP_CHILD` CLOSED 0258** (ROOT & BRANCH, both candidates, Tier-1, + plant). **Still open:**
   `DUP_ENTRY` as a dedicated vector. (R4a.2)
-- **G-5.** §6 — **CLOSED 0260** except one architectural OPEN: `SEQ_ZERO`, `SEQ_ORDER`, forward/self/unknown `parent`,
-  forward/unknown `prev` all driven (`test_links`, both cands) + plant. **Still OPEN (architectural):** invalid
-  **LINK-tag byte** — the oracle has no record byte-decoder, so a raw tag ≠ 0x00/0x01 is unreachable without adding one.
-  (R6.4, R6.5)
+- **G-5.** §6 — **CLOSED**: `SEQ_ZERO`, `SEQ_ORDER`, forward/self/unknown `parent`, forward/unknown `prev` all driven
+  (0260, `test_links`, both cands) + plant; the invalid **LINK-tag byte** is now **N/A by the rev-21 S-3
+  preimage-construction contract** (no record wire decoder) — formerly listed "architectural OPEN", resolved by the
+  ratified amendment, not by a test. (R6.4, R6.5)
 - **G-6.** §4a: dedicated `P1V-identity` (three digests distinct; container hash unused). (R4a.4)
 
-**Method equivalence — CLOSED 0258:**
-- **M-1.** The rebuild-and-compare ⇒ P6 argument is recorded in [`P6-REBUILD-EQUIVALENCE.md`](P6-REBUILD-EQUIVALENCE.md),
-  with its assumptions (complete parsing, unique-key recovery, consistent active hasher, seam-independent addressing,
-  whole-byte comparison, explicit bucket placement) each tied to a test, and a planted misrouting witness
-  (`test_struct`) that rejects with `CANONICALITY`. An explicit per-ancestor-slot walk remains optional defence-in-depth.
+**Method equivalence — REOPENED / provisional (owner ruling 2026-10-23):**
+- **M-1.** Earlier marked "closed 0258" on the strength of [`P6-REBUILD-EQUIVALENCE.md`](P6-REBUILD-EQUIVALENCE.md) + a
+  planted misrouting witness. The owner's S-4 ruling corrects this: that doc **enumerates** its assumptions (complete
+  parsing, unique-key recovery, consistent active hasher, seam-independent addressing, whole-byte comparison, explicit
+  bucket placement) but does **not discharge** them for all admitted inputs — so the equivalence is **argued, not
+  proved**, and one witness is not a proof. Resolution (owner-chosen **option B**): add a **direct per-ancestor-slot
+  walk** (planned 0263) that enforces P6 directly, with rebuild-and-compare kept as an independent (partially
+  shared-dependency) cross-check. M-1 is **not closed** until that walk is implemented, tested, and reviewed. See
+  `P1-REV20-AMENDMENT-DRAFT.md` S-4.
 
 **Blocked (held on D4-2 / D8; must stay BLOCKED, never a pass):**
 - **B-1.** `effects_range_root` construction + verification (R5.6, R7.4) — D4-2.
