@@ -9,9 +9,12 @@
 > new normative requirements the oracle already meets (R0.6). S-3 narrows the record obligations to
 > preimage-construction invariants with **no wire decoder**, so the invalid-`LINK`-**byte** item is **N/A by contract**
 > (R6.5 / gap G-5), not an OPEN gap. S-5/S-6 are framing clarifications (R8.1). S-7 makes `EMPTY` placement normative —
-> enforced only incidentally today, a dedicated vector pending (R4.1/R8.2). **S-4/R8.2 stay PARTIAL and M-1 reopened:**
-> the direct P6 walk is **planned (0263), not implemented**, and the rebuild-and-compare equivalence is **unproved** —
-> no P6 or production-conformance gap is closed by rev 21. It is a control document for review and for scoping any future production-conformance test.
+> now enforced by the 0263 walk with a dedicated reason (`WALK_EMPTY_PLACEMENT`), a positive-trie vector still pending
+> (R4.1/R8.2). **S-4/R8.2 updated 2026-10-23 (0263):** the direct per-ancestor-slot P6 walk is now **implemented and
+> tested** (`canonicality._p6_walk`, `test_walk`, both candidates, run before rebuild-and-compare), so R8.2 is
+> **VERIFIED on the tested vectors** and M-1 is **resolved within that scope, pending the owner's review** — but
+> **universal P6 is not proved**, **walk attribution stays UNPROVEN** (rebuild-and-compare is complete and rejects the
+> same trees), and **no production-conformance gap is closed**. It is a control document for review and for scoping any future production-conformance test.
 > It establishes **oracle-level** evidence (Level 2) only; it is **not** a conformance claim, selects no candidate,
 > freezes no reference, and leaves `ecs.digest` untouched. Reported results are **MEASURED on the author's host**
 > (Python 3.14.5, Windows; `evidence/latest.json`), **not independently reproduced** by the owner.
@@ -103,9 +106,9 @@ are covered by commitment recomputation, not a local `DOMAIN`/`VERSION` reject.
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
 |---|---|---|---|---|---|---|---|
 | R4.1 | per-type grammar (domain/version/type/fields); B carries `level` ROOT=0/BRANCH 0–51/BUCKET=52 | `enc_*`,`read_one_node` | pos: node encodings A & B; neg: level-range, bitmap-high-bits | HAND | G1 EMPTY/LEAF_COMP both cands; `test_g2::bitmap_high` | VERIFIED | — |
-| R4.2 | `construct()` is the one deterministic shape; decoder rejects any non-`construct` shape | `_construct`,`reconstruct` | pos: all round-trips; neg: reorder→`NODE_ORDER`, orphan→`CANONICALITY` | HAND/ORACLE | G1/G2/G3 | VERIFIED (via rebuild-and-compare) | method note M-1: shape is enforced by rebuild-compare, not the literal P6 walk |
+| R4.2 | `construct()` is the one deterministic shape; decoder rejects any non-`construct` shape | `_construct`,`reconstruct`,`_p6_walk` | pos: all round-trips; neg: reorder→`NODE_ORDER`, orphan→`CANONICALITY` | HAND/ORACLE | G1/G2/G3; `test_walk` | VERIFIED (direct P6 walk 0263 + rebuild-and-compare cross-check) | method note M-1: shape is now enforced by the direct per-ancestor-slot walk (0263) with rebuild-and-compare kept as an independent cross-check; see M-1 |
 | R4.3 | bucket: inline leaves, by-hash children; leaf-type-per-trie; `count≥2`; canonical order; no dup key | `enc_bucket`,`read_one_node` | pos: injected full-collision bucket; neg: `count<2`, mixed, order, dup, wrong-domain/version, bad-value | HAND/INDEP | `test_g2::bucket_count`; `test_seams::full_collision`; `test_struct` inline members (both cands) | VERIFIED | closed 0258 — inline-member malformations rejected for their specific local reason |
-| R4.4 | bucket placement: **depth 52 and members fully collide** (recompute under active hash) else misplaced | `_check_buckets` | pos: placed-ok; neg: `BUCKET_MISPLACED`, `BUCKET_NOT_COLLIDING` | INDEP (injected) | `test_buckets` (A & B); plant `verify_plants` | VERIFIED | — |
+| R4.4 | bucket placement: **depth 52 and members fully collide** (recompute under active hash) else misplaced | `_p6_walk` (0263) | pos: placed-ok; neg: `BUCKET_MISPLACED`, `BUCKET_NOT_COLLIDING` | INDEP (injected) | `test_buckets` (A & B); `test_walk` walk-alone bucket rows; plant `verify_plants` | VERIFIED | 0263: the bucket-placement check is now carried by the explicit P6 ancestor-slot walk (same codes) |
 | R4.5 | node address = `SHA256(node encoding)`; Candidate A recomputes, stores no hash field | `node_address` | pos: all serializations; isolation (seam never reaches it) | — | `test_seams::isolation` | VERIFIED | — |
 
 ## §4a State serialization
@@ -113,7 +116,7 @@ are covered by commitment recomputation, not a local `DOMAIN`/`VERSION` reject.
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
 |---|---|---|---|---|---|---|---|
 | R4a.1 | container = `DOM‖u16‖root_hash‖u64(count)‖nodes`, ascending by node-hash | `serialize_state`,`parse_collection` | pos: serializations, **one hand-traced composite (0262)**; neg: reorder→`NODE_ORDER`, composite-ordering plant | HAND (leaf) + one independent composite / CORRELATED (rest) | G1; `test_g2::reorder`; `test_composite` | VERIFIED | container order + composite bytes now have one independent witness (0262); general composite path stays CORRELATED (G-1) |
-| R4a.2 | unique nodes; dup-entry reject; content-address-collision **reported not aliased**; dup child in one parent reject; shared-across-parents lawful | `parse_collection`,`_read_bitmap_children` | pos: DAG share; neg: `DUP_CHILD` (ROOT & BRANCH, Tier-1), `DUP_ENTRY`/`CONTENT_ADDRESS_COLLISION` (code paths) | ORACLE | G3 DAG share; `test_struct` ROOT/BRANCH `DUP_CHILD` + plant | PARTIAL | **`DUP_CHILD` closed 0258 (VERIFIED, both cands)**; `DUP_ENTRY` still lacks a vector; **content-address collision OPEN — untestable without breaking SHA-256** |
+| R4a.2 | unique nodes; dup-entry reject; content-address-collision **reported not aliased**; dup child in one parent reject; shared-across-parents lawful | `parse_collection`,`_read_bitmap_children` | pos: DAG share; neg: `DUP_CHILD` (ROOT & BRANCH, Tier-1), `DUP_ENTRY`/`CONTENT_ADDRESS_COLLISION` (code paths) | ORACLE | G3 DAG share; `test_struct` ROOT/BRANCH `DUP_CHILD` + plant | PARTIAL | **`DUP_CHILD` closed 0258 (VERIFIED, both cands)**; `DUP_ENTRY` still lacks a vector; **content-address collision OPEN — untestable without breaking SHA-256**. **0263 note:** the reconstruct-level entity/component `DUP_KEY` check is now **shadowed** by the P6 walk (two leaves of one key cannot share a path, so a duplicate-key tree is inherently off-path → `WALK_MISROUTE` fires first); the `DUP_KEY` backstop is still exercised with the walk off (`test_g3`, `reconstruct(..., _p6=False)` → `DUP_KEY`) |
 | R4a.3 | reconstruction recovers every ECS field; `MISSING_CHILD` vs malformed; orphan rejected | `reconstruct` | pos: full-field recovery; neg: `MISSING_CHILD`, orphan→`CANONICALITY` | ORACLE | `test_g3::fields`; `test_g2::missing`; `test_g3::orphan` | VERIFIED | — |
 | R4a.4 | three distinct digest identities (`structural_state_root`=ROOT hash; `ecs_state_digest`=`ecs.digest`; container byte-hash used nowhere) | `records`,`checkpoints` | pos: commitments bind ROOT hash + ecs.digest | ORACLE | used in G4/G5 | PARTIAL | **gap: no dedicated `P1V-identity` vector asserting the three are distinct and the container hash is unused** — add it |
 
@@ -168,6 +171,29 @@ auditable field-by-field — it materially lowers the correlated-provenance risk
 prove every composite encoding independently correct, and the pre-existing `vectors.py` composite helpers remain
 `CORRELATED`. G-1 is **reduced, not eliminated**.
 
+## Changelog — 0263 direct P6 ancestor-slot walk (S-4 / M-1, within tested scope) (2026-10-23)
+
+Implemented the owner's option-(B) direct P6 enforcement. **Added** `canonicality._p6_walk` / `_p6_node` /
+`_p6_check_slot` and the isolation entry `check_p6_walk`: for every leaf and every bucket member it recomputes `H` with
+the **active** key-hasher and checks that at each ancestor branching node of level `L` the slot it occupies equals
+`chunk(H, L)` (levels 0…51, structural depth — not Candidate B's stored `level`, which is additionally cross-checked),
+requiring buckets at **terminal depth 52** with all members on the complete path. It **rejects, never repairs**, runs
+**before** rebuild-and-compare, and gives the specific code (`WALK_MISROUTE` / `WALK_DEPTH` / `BUCKET_MISPLACED` /
+`BUCKET_NOT_COLLIDING` / `WALK_EMPTY_PLACEMENT`); **no node-address seam** is introduced. Rebuild-and-compare is kept as
+an independent cross-check with **shared dependencies documented** (parse, `node_address`, the active hasher, `chunk`;
+`P6-REBUILD-EQUIVALENCE.md`). **Added** `tests/test_walk.py` (both candidates): accepting controls (entity tree + a
+depth-52 bucket), misroute at depth 0 / a deeper BRANCH (depth 1) / inside a component trie, bucket off-52,
+non-colliding members — each via `check_p6_walk` so the walk is shown to bite **alone** — plus the reconstruct path and
+an **attribution** row; `fixtures/malformed/walk.py`; two plants (whole-walk, and routing-only). Two pre-existing crafted
+trees now reject with the walk's specific code: the seam cross-hasher case (`test_seams`, was `CANONICALITY` →
+`WALK_MISROUTE`) and the duplicate-entity-key tree (`test_g3`, was `DUP_KEY` → `WALK_MISROUTE`, with the `DUP_KEY`
+backstop still shown via `_p6=False`). New run **193 PASS / 0 FAIL / 1 BLOCKED**, two runs byte-identical,
+**12/12 plants bite**; 0262 evidence kept at `evidence/history/pre-0263/`; frozen `ecs.py` unchanged
+(`3d568d22…`). Rows R4.2, R4.4, R4a.2, R8.2 and gap M-1 updated. **Honest scope:** MEASURED on the stated vectors only;
+**universal P6 is NOT proved** and **walk attribution is UNPROVEN** (rebuild-and-compare is a complete canonicality
+check, so it independently rejects every off-path tree — the walk's demonstrated value is sufficiency on its own vectors
+and the specific code, not a unique catch). No candidate selected, no reference frozen, no conformance claim; P-1 OPEN.
+
 ## §6 Records, commitments, links
 
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
@@ -194,7 +220,7 @@ prove every composite encoding independently correct, and the pre-existing `vect
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
 |---|---|---|---|---|---|---|---|
 | R8.1 | Tier-1 local: framing, minimal int, UTF-8, `KTYPE`, `node_type`, domain, single `VERSION`, popcount==slots ascending, `SCALARS` iff ROOT, bucket `count≥2`/order/no-dup, B `level` in range | `read_one_node` | neg: domain, VERSION, minimal-int, UTF-8, KTYPE, SCALARS-iff-ROOT (framing), popcount (framing), bucket count/order/dup/mixed, bitmap-high-bits, scalar-type | HAND | `test_tier1` (both cands), `test_g2`, `test_g3`, `test_struct` | VERIFIED | closed 0259. Structural: non-ascending slots not representable (bitmap-implied); popcount mismatch → framing `TRUNCATED`/`TRAILING`, not a dedicated code |
-| R8.2 | Tier-2 whole-state: `construct` shape, top-node rules, **P6 full key-path** (every ancestor slot = `chunk(d)`), no dup key, shared-root lawful, distinct children, reachable/unique | `reconstruct`,`_check_buckets` | pos: round-trips; neg: misrouted leaf→`CANONICALITY`, `MISSING_CHILD`, `DUP_CHILD`, bucket placement | ORACLE | G2/G3/`test_buckets`/`test_struct` misrouting | **PARTIAL (downgraded, owner ruling 2026-10-23)** | the tested misrouting/placement vectors are rejected (**MEASURED on those vectors**); **universal P6 is NOT proved**. Rebuild-and-compare equivalence is **argued, not proved (provisional)** — `P6-REBUILD-EQUIVALENCE.md` enumerates its assumptions but does not discharge them for all admitted inputs. A direct per-ancestor-slot walk is **planned (0263)** to enforce P6 directly; the row is not promoted to full VERIFIED until that walk is implemented, tested across its stated scope, and reviewed |
+| R8.2 | Tier-2 whole-state: `construct` shape, top-node rules, **P6 full key-path** (every ancestor slot = `chunk(d)`), no dup key, shared-root lawful, distinct children, reachable/unique | `reconstruct`,`_p6_walk` (0263) | pos: round-trips + walk accepting controls; neg: misroute at depth 0 / deeper branch / component trie→`WALK_MISROUTE`, bucket off-52→`BUCKET_MISPLACED`, non-colliding→`BUCKET_NOT_COLLIDING`, `MISSING_CHILD`, `DUP_CHILD` | ORACLE | G2/G3, `test_walk` (both cands, walk ALONE via `check_p6_walk`), `test_buckets`, `test_struct`; plants (whole-walk + routing-only) | **VERIFIED on the tested vectors (0263); universal P6 NOT proved; attribution UNPROVEN — pending owner review** | 0263 adds the direct per-ancestor-slot walk (every branch level 0…51; buckets at terminal depth 52 with all members on the complete path), run BEFORE rebuild-and-compare, which gives the SPECIFIC code; rebuild-and-compare is kept as an independent cross-check (shared deps documented, `P6-REBUILD-EQUIVALENCE.md`). **MEASURED** on the stated vectors only; it does **not** prove P6 for all admitted inputs. **Attribution UNPROVEN by construction**: rebuild-and-compare is a complete canonicality check, so it independently rejects every off-path tree (shown: walk off `_p6=False` → still `CANONICALITY`); the walk's shown value is sufficiency on its own vectors + the specific code, not a unique catch. Not promoted to universal VERIFIED |
 | R8.3 | Tier-3 semantic: replay, recompute **both** commitments, reject re-wrapped-over-changed-field (DIG-08) | `verify_ledger` | neg: wrong `ecs`/`struct` commitment | ORACLE | `test_g4::wrong_ecs`,`wrong_struct` | VERIFIED | — |
 
 ---
@@ -226,15 +252,22 @@ prove every composite encoding independently correct, and the pre-existing `vect
   ratified amendment, not by a test. (R6.4, R6.5)
 - **G-6.** §4a: dedicated `P1V-identity` (three digests distinct; container hash unused). (R4a.4)
 
-**Method equivalence — REOPENED / provisional (owner ruling 2026-10-23):**
+**Method equivalence — direct walk implemented 0263; pending owner review:**
 - **M-1.** Earlier marked "closed 0258" on the strength of [`P6-REBUILD-EQUIVALENCE.md`](P6-REBUILD-EQUIVALENCE.md) + a
-  planted misrouting witness. The owner's S-4 ruling corrects this: that doc **enumerates** its assumptions (complete
+  planted misrouting witness. The owner's S-4 ruling corrected this: that doc **enumerates** its assumptions (complete
   parsing, unique-key recovery, consistent active hasher, seam-independent addressing, whole-byte comparison, explicit
-  bucket placement) but does **not discharge** them for all admitted inputs — so the equivalence is **argued, not
-  proved**, and one witness is not a proof. Resolution (owner-chosen **option B**): add a **direct per-ancestor-slot
-  walk** (planned 0263) that enforces P6 directly, with rebuild-and-compare kept as an independent (partially
-  shared-dependency) cross-check. M-1 is **not closed** until that walk is implemented, tested, and reviewed. See
-  `P1-REV20-AMENDMENT-DRAFT.md` S-4.
+  bucket placement) but does **not discharge** them for all admitted inputs — so the rebuild-and-compare equivalence is
+  **argued, not proved**, and one witness is not a proof. Resolution (owner-chosen **option B**): a **direct
+  per-ancestor-slot walk** that enforces P6 directly. **0263 implements it** (`canonicality._p6_walk`): for every leaf
+  and bucket member it recomputes `H` under the active hasher and checks each ancestor slot equals `chunk(d)` at levels
+  0…51, requiring buckets at terminal depth 52 with all members on the complete path; it runs **before**
+  rebuild-and-compare and rejects (never repairs). Tested both candidates (misroute at depth 0 / a deeper branch / a
+  component trie; bucket off-52; non-colliding members; accepting controls) in ISOLATION via `check_p6_walk`, plus a
+  routing-only plant; rebuild-and-compare is retained as an independent cross-check with **shared dependencies
+  documented** (parse, `node_address`, the active hasher, `chunk`). **Attribution stays UNPROVEN by construction**
+  (rebuild-and-compare is complete, so it rejects every off-path tree too — shown with `_p6=False` → `CANONICALITY`).
+  M-1 is resolved **only within the tested scope and pending the owner's review**; universal P6 and full method
+  independence are **not** claimed. See `P1-REV20-AMENDMENT-DRAFT.md` S-4 and `P6-REBUILD-EQUIVALENCE.md`.
 
 **Blocked (held on D4-2 / D8; must stay BLOCKED, never a pass):**
 - **B-1.** `effects_range_root` construction + verification (R5.6, R7.4) — D4-2.

@@ -15,7 +15,7 @@ from oracle import decoder as d          # noqa: E402
 from oracle import canonicality as C     # noqa: E402
 from oracle import records as R          # noqa: E402
 from oracle import checkpoints as K      # noqa: E402
-from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets, test_struct, test_tier1, test_links, test_total, test_composite  # noqa: E402
+from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets, test_struct, test_tier1, test_links, test_total, test_composite, test_walk  # noqa: E402
 
 
 def _fails(rows):
@@ -75,10 +75,19 @@ def main():
                  lambda: setattr(C, "reconstruct", _lax_recon),
                  lambda: setattr(C, "reconstruct", _orig_recon), test_seams)
 
-    _orig_cb = C._check_buckets
-    ok &= _plant("G2 bucket-placement check disabled",
-                 lambda: setattr(C, "_check_buckets", lambda *a, **k: None),
-                 lambda: setattr(C, "_check_buckets", _orig_cb), test_buckets)
+    # the P6 ancestor-slot walk (0263) also carries the bucket-placement check; disabling it lets the misplaced /
+    # non-colliding bucket vectors fall through to the generic rebuild-compare -> their specific codes no longer fire
+    _orig_walk = C._p6_walk
+    ok &= _plant("G2 P6 walk disabled (bucket placement)",
+                 lambda: setattr(C, "_p6_walk", lambda *a, **k: None),
+                 lambda: setattr(C, "_p6_walk", _orig_walk), test_buckets)
+
+    # 0263: neuter ONLY the ancestor-slot routing predicate -> the WALK_MISROUTE vectors must FAIL (bucket-placement
+    # and collision rows are untouched, so this isolates the misrouting logic the direct P6 walk adds)
+    _orig_slot = C._p6_check_slot
+    ok &= _plant("G2 P6 walk misroute check disabled",
+                 lambda: setattr(C, "_p6_check_slot", lambda *a, **k: None),
+                 lambda: setattr(C, "_p6_check_slot", _orig_slot), test_walk)
 
     # 0258: disable the Tier-1 distinct-children check -> the ROOT/BRANCH DUP_CHILD vectors must FAIL
     _orig_bmc = d._read_bitmap_children

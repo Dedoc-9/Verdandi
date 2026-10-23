@@ -89,17 +89,18 @@ finding; keep those blocked. → **RH-T5.**
 
 ## Disposition
 
-| ID | Grade | Next action |
+| ID | Grade | Falsification probe — RUN 0263 (see [`P1-RED-HARDENING-TESTS.md`](P1-RED-HARDENING-TESTS.md)) |
 |---|---|---|
-| RH-1 | POTENTIAL | add boundary + work-before-rejection instrumentation (RH-T1) |
-| RH-2 | POTENTIAL | strengthen independent G-1 vectors (RH-T2) |
-| RH-3 | NOT APPLICABLE (CVE); POTENTIAL (test) | structural-uniqueness table (RH-T3) |
-| RH-4 | POTENTIAL (premise-limited) | measure worst-case work; collisions infeasible under A-h (RH-T4) |
-| RH-5 | KNOWN-GAP/reinforcement | keep D4-2/D8 blocked; separate-predicate checkpoint tests (RH-T5) |
+| RH-1 | POTENTIAL | **RH-T1 run: 6/6 PASS** — every length/count/total rejects before work; no over-read, no crash. No defect. |
+| RH-2 | POTENTIAL | **RH-T2 run: PASS** on near-neighbour accept/reject (both cands); the second independent encoder stays N.A./residual (G-1 reduced). No defect. |
+| RH-3 | NOT APPLICABLE (CVE); POTENTIAL (test) | **RH-T3 run: (a)(b)(c)(e) PASS, (d) N.A.** — within-parent dup rejected, cross-parent DAG lawful, one canonical form. No defect. |
+| RH-4 | POTENTIAL (premise-limited) | **RH-T4 run: OBSERVED** — work scales with element count, not depth (52-level bucket = 4 key-hash calls); shared subgraph validated once. Measurement, no defect. |
+| RH-5 | KNOWN-GAP/reinforcement | **RH-T5 run: PASS + 2 BLOCKED** — predicates reported apart; no global-agreement inference; D4-2/D8 stay BLOCKED. No defect. |
 
-**No S-9 proposed.** If turning any RH-T into a test reveals a real failure, it becomes a proposed S-9+ finding for
-owner adjudication — it does not silently alter rev 21. These are research dispositions, not conformance claims; this
-is a web-based design pass, not an independent reproduction of the gate or spec.
+**No S-9 proposed — now confirmed by execution.** The RH-T1…RH-T5 probes ran against the 0263 implementation
+(`probes/redharden.py`): **21 PASS · 2 BLOCKED · 2 N.A. · 3 OBSERVED · 0 FAIL**. A FAIL would become a proposed S-9+
+finding for owner adjudication — it does not silently alter rev 21. These remain research/probe dispositions, not
+conformance claims; the web pass was not an independent reproduction of the gate or spec, and the probes are off the gate.
 
 ## Sources (verified this pass; untrusted reference data)
 - CVE-2012-2459 / Bitcoin Merkle duplicate construction — [BIP-98](https://bitcoin.org/bip/98/), Bitcoin Core `merkle.cpp` comments, [Zebra merkle.rs](https://docs.rs/crate/zebra-chain/11.3.0/source/src/block/merkle.rs)

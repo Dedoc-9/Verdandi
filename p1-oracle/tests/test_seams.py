@@ -76,9 +76,12 @@ def run():
         buf = C.serialize_state(st, "B", keyhasher=kh)
         if C.reconstruct(buf, "B", keyhasher=kh) != st:                 # same H -> canonical
             raise AssertionError("consistent-H validation failed")
-        # validate the SAME bytes under production SHA-256 routing -> canonicality disagreement -> reject
-        reject(lambda: C.reconstruct(buf, "B", keyhasher=d.prod_key_hasher), code="CANONICALITY")
-    c.ok("P1V-seam consistency: build-H==validate-H passes; different H -> CANONICALITY reject", consistency)
+        # validate the SAME bytes under production SHA-256 routing: the tree is laid out per the injected chunks, so the
+        # hasher disagreement surfaces as an ancestor-slot mismatch in the 0263 P6 walk (WALK_MISROUTE), the first
+        # detector; with the walk off (_p6=False) rebuild-and-compare rejects the same bytes as CANONICALITY.
+        reject(lambda: C.reconstruct(buf, "B", keyhasher=d.prod_key_hasher), code="WALK_MISROUTE")
+        reject(lambda: C.reconstruct(buf, "B", keyhasher=d.prod_key_hasher, _p6=False), code="CANONICALITY")
+    c.ok("P1V-seam consistency: same H passes; different H -> WALK_MISROUTE (CANONICALITY with walk off)", consistency)
 
     # --- seam ISOLATION: swapping H changes NO node address or collection order of a fixed encoded tree ---
     def isolation():

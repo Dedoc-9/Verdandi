@@ -78,10 +78,12 @@ oracle gains a direct walk.
   rebuild-and-compare) satisfies it — the present rebuild-and-compare equivalence is **unproved**.
 - **Implementation requirement (the oracle):** the oracle performs the **explicit ancestor-slot walk** as its direct
   enforcement of the normative requirement (detailed below).
-- **Current status:** the walk is **planned (0263), not implemented**; its universal implementation correctness is **not
-  yet demonstrated**. Implementing the walk does **not** by itself close R8.2 — closure requires the implementation and
-  its tests reviewed against the normative depth rules. The walk's "correctness" is itself an obligation, not a given.
-**Option-(B) implementation (planned 0263, NOT done; needs approval of text + evidence):**
+- **Current status (updated 2026-10-23, 0263):** the walk is **implemented and tested** (`canonicality._p6_walk`,
+  `tests/test_walk.py`, both candidates; 193 PASS / 0 FAIL / 1 BLOCKED, 12/12 plants bite). Its **universal** correctness
+  is still **not** demonstrated — the evidence is MEASURED on the enumerated vectors only. Implementing the walk does
+  **not** by itself close R8.2 to universal VERIFIED; R8.2 is marked VERIFIED **on the tested vectors, pending the
+  owner's review**, and the walk's "correctness" remains an obligation reviewed against the normative depth rules.
+**Option-(B) implementation (0263, DONE — pending the owner's review of text + evidence):**
 1. **Direct walk = P6 enforcement, exact depth semantics.** For **every** leaf key, recompute `H` via the **active**
    hasher (production, or the authorized **key-hash** seam). At **each** branch depth `d` on the root-to-leaf path, the
    leaf's `chunk(d)` **must equal the slot it occupies** in that ancestor; a mismatch at **any** depth is rejected —
@@ -89,8 +91,11 @@ oracle gains a direct walk.
    **complete** path: the shared `chunk(0…51)` down the branch chain **and** the final routing decision that places the
    bucket at **depth 52** (all members' `H` agree on all 52 chunks). Final-bit handling matches the spec's exact
    52-chunk definition (`chunk(51)` is the 1-bit chunk; `BUCKET` at `d = 52`). The validator **rejects** a misplaced
-   node; it never repairs or canonicalizes before checking. Distinct codes, e.g. `WALK_MISROUTE` (slot ≠ `chunk(d)`) /
-   `WALK_DEPTH` (bucket not at 52).
+   node; it never repairs or canonicalizes before checking. **Implemented codes (0263):** `WALK_MISROUTE` (slot ≠
+   `chunk(d)` at some ancestor level); the bucket-depth and bucket-collision cases keep their existing specific codes
+   `BUCKET_MISPLACED` (not at terminal depth 52) and `BUCKET_NOT_COLLIDING` (members not fully colliding); `WALK_DEPTH`
+   guards a branch nesting past level 51 and, for Candidate B, a stored `level` that disagrees with the structural depth;
+   `WALK_EMPTY_PLACEMENT` guards an `EMPTY` outside a size-0 component-trie top (S-7).
 2. **Rebuild-and-compare stays as an independent defence, not the proof.** Both enforce canonicality through distinct
    mechanisms. **Shared dependencies are documented, not hidden:** both use `read_one_node` parsing, `node_address`
    hashing, and the active key-hasher — independence is *partial* (distinct traversal/logic, shared parse+hash). No
@@ -98,12 +103,12 @@ oracle gains a direct walk.
    `chunk(d)` rule at each depth), reviewed against the normative depth rules — not on any equivalence argument.
 3. **No node-address seam.** Only the already-authorized key-hash seam is used; node addressing stays production SHA-256.
 
-**Impact trace:** New-normative **YES** (outcome made explicit; proof-obligation clause new). Code **YES** (add the
-walk to `canonicality.py`, run before rebuild-and-compare). Tests **YES** (new `test_walk.py`, below). Matrix: **R8.2
-downgraded now** (below), upgraded only after the walk is implemented, tested, and reviewed against the normative depth
-rules — and never promoted to full VERIFIED beyond its tested scope.
+**Impact trace:** New-normative **YES** (outcome made explicit; proof-obligation clause new). Code **YES** (0263 added
+the walk to `canonicality.py`, run before rebuild-and-compare). Tests **YES** (`test_walk.py`, done). Matrix: **R8.2 is
+now VERIFIED on the tested vectors (0263), pending the owner's review** — never promoted to full/universal VERIFIED, and
+attribution remains unproven.
 
-### S-4 test plan (safeguard 4; planned, not implemented)
+### S-4 test plan (safeguard 4; implemented 0263 — `tests/test_walk.py`, both candidates)
 - Retain the existing `CANONICALITY` misrouting/placement tests (they continue to assert rejection).
 - Walk-specific vectors, **both candidates**, each asserted to reject with the specific `WALK_*` code (the walk runs
   **before** rebuild-and-compare, so the observed code attributes the verdict to the walk): a leaf off-path at

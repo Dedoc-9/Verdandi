@@ -67,7 +67,7 @@ G1 canonical bytes (+ Tier-1 local negatives + hand-traced composite)   [PASS 63
   PASS     G1 oracle composite == hand-traced literal [B]
   PASS     G1 hand-traced composite reconstructs [B]
 
-G2 trie shape (+ injected routing / seam / bucket placement / structural rejection)   [PASS 39 / FAIL 0 / BLOCKED 0]
+G2 trie shape (+ injected routing / seam / bucket placement / structural rejection / P6 walk)   [PASS 57 / FAIL 0 / BLOCKED 0]
   PASS     G2 ordinary routing -> BRANCH top + round-trip (real SHA-256)
   PASS     G2 reorder nodes -> NODE_ORDER reject
   PASS     G2 drop referenced node -> MISSING_CHILD reject
@@ -76,7 +76,7 @@ G2 trie shape (+ injected routing / seam / bucket placement / structural rejecti
   PASS     P1V-seam injected final-bit divergence -> two-slot BRANCH(51) [INJECTED]  -- INJECTED two-slot BRANCH(51)
   PASS     P1V-seam injected full collision -> terminal BUCKET [INJECTED]  -- INJECTED BUCKET count=2
   PASS     P1V-seam bucket + leaf under two-slot BRANCH(51) [INJECTED]  -- INJECTED BRANCH(51){BUCKET(2), LEAF_ENT}
-  PASS     P1V-seam consistency: build-H==validate-H passes; different H -> CANONICALITY reject
+  PASS     P1V-seam consistency: same H passes; different H -> WALK_MISROUTE (CANONICALITY with walk off)
   PASS     P1V-seam isolation: swapping H changes no node address/order; plant bites  -- addresses/order are H-independent; a leak WOULD reorder (plant bites)
   PASS     P1V-keyhash-kat: production key-hash == sha256(KEY), seam disabled
   PASS     G2 misplaced bucket (depth 1) -> BUCKET_MISPLACED [A]
@@ -95,7 +95,7 @@ G2 trie shape (+ injected routing / seam / bucket placement / structural rejecti
   PASS     G2 inline member out of order -> BUCKET_ORDER [A]
   PASS     G2 inline member mixed leaf types -> BUCKET_MIXED [A]
   PASS     G2 inline member malformed value -> VTYPE [A]
-  PASS     G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [A]
+  PASS     G2 misrouted leaf (wrong ROOT slot) -> WALK_MISROUTE [A]
   PASS     G2 ROOT dup child hash -> DUP_CHILD (Tier-1) [B]
   PASS     G2 BRANCH dup child hash -> DUP_CHILD [B]
   PASS     G2 distinct ROOT children accept (counterpart) [B]
@@ -106,13 +106,31 @@ G2 trie shape (+ injected routing / seam / bucket placement / structural rejecti
   PASS     G2 inline member out of order -> BUCKET_ORDER [B]
   PASS     G2 inline member mixed leaf types -> BUCKET_MIXED [B]
   PASS     G2 inline member malformed value -> VTYPE [B]
-  PASS     G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [B]
+  PASS     G2 misrouted leaf (wrong ROOT slot) -> WALK_MISROUTE [B]
+  PASS     P6 walk accepts canonical two-entity tree (control) [A]
+  PASS     P6 walk accepts correctly-placed depth-52 bucket (control) [A]
+  PASS     P6 walk alone rejects leaf off-path at ROOT (depth 0) -> WALK_MISROUTE [A]
+  PASS     P6 walk alone rejects leaf off-path at a deeper BRANCH (depth 1) -> WALK_MISROUTE [A]
+  PASS     P6 walk alone rejects component off-path in a component trie -> WALK_MISROUTE [A]
+  PASS     P6 walk alone rejects bucket off terminal depth 52 -> BUCKET_MISPLACED [A]
+  PASS     P6 walk alone rejects bucket members not fully colliding -> BUCKET_NOT_COLLIDING [A]
+  PASS     reconstruct() surfaces the walk's code before rebuild-compare -> WALK_MISROUTE [A]
+  PASS     attribution UNPROVEN: walk disabled -> still rejected by rebuild-compare (CANONICALITY) [A]  -- attribution UNPROVEN: rebuild-and-compare independently rejects (CANONICALITY); walk gives the reason, not a unique catch
+  PASS     P6 walk accepts canonical two-entity tree (control) [B]
+  PASS     P6 walk accepts correctly-placed depth-52 bucket (control) [B]
+  PASS     P6 walk alone rejects leaf off-path at ROOT (depth 0) -> WALK_MISROUTE [B]
+  PASS     P6 walk alone rejects leaf off-path at a deeper BRANCH (depth 1) -> WALK_MISROUTE [B]
+  PASS     P6 walk alone rejects component off-path in a component trie -> WALK_MISROUTE [B]
+  PASS     P6 walk alone rejects bucket off terminal depth 52 -> BUCKET_MISPLACED [B]
+  PASS     P6 walk alone rejects bucket members not fully colliding -> BUCKET_NOT_COLLIDING [B]
+  PASS     reconstruct() surfaces the walk's code before rebuild-compare -> WALK_MISROUTE [B]
+  PASS     attribution UNPROVEN: walk disabled -> still rejected by rebuild-compare (CANONICALITY) [B]  -- attribution UNPROVEN: rebuild-and-compare independently rejects (CANONICALITY); walk gives the reason, not a unique catch
 
 G3 reconstruction   [PASS 6 / FAIL 0 / BLOCKED 0]
   PASS     G3 shared component root is one DAG node + round-trips
   PASS     G3 empty component/entity maps round-trip
   PASS     G3 every ECS field recovered; mutating any one changes the bytes
-  PASS     G3 duplicate entity key -> DUP_KEY reject
+  PASS     G3 duplicate entity key -> WALK_MISROUTE (walk); DUP_KEY backstop with walk off
   PASS     G3 orphan node -> CANONICALITY reject
   PASS     G3 string-valued scalar -> SCALAR_NOT_INT reject (block D)
 
@@ -191,5 +209,5 @@ G6 reproducibility + bounds + constants (+ MAX_TOTAL)   [PASS 21 / FAIL 0 / BLOC
   PASS     G6 production MAX_TOTAL == 2**40 (separate from reduced test limits)
 
 ====================================================================================================
-TOTAL  PASS 175  FAIL 0  BLOCKED 1
+TOTAL  PASS 193  FAIL 0  BLOCKED 1
 GATE PASS  (BLOCKED rows are not passes and do not fail the run; they mark D4-2/D8 scope)

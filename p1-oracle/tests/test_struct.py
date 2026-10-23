@@ -88,14 +88,15 @@ def run():
             c.ok("G2 inline member %s -> %s [%s]" % (label, code, cand),
                  lambda members=members, code=code, cand=cand: reject(lambda: d.decode_node(_bucket(members, cand), cand), code=code))
 
-        # --- misrouting: a leaf under the wrong ROOT slot -> CANONICALITY (P6 equivalence witness) ---
+        # --- misrouting: a leaf under the wrong ROOT slot. Since 0263 the explicit P6 walk runs before rebuild-and-
+        # compare, so this is now rejected with the specific WALK_MISROUTE (was the generic CANONICALITY). ---
         def misrouted(cand=cand, eh=eh):
             le = d.enc_leaf_ent(cand, "e1", eh)
             lh = d.node_address(le)
             H = d.prod_key_hasher(_ek("e1"))
             wrong = (d.chunk(H, 0) + 1) % 32
             root = d.enc_root(cand, {wrong: lh}, d.enc_scalars(2, 0, 0))
-            reject(lambda: C.reconstruct(_container(root, [empty, le]), cand), code="CANONICALITY")
-        c.ok("G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [%s]" % cand, misrouted)
+            reject(lambda: C.reconstruct(_container(root, [empty, le]), cand), code="WALK_MISROUTE")
+        c.ok("G2 misrouted leaf (wrong ROOT slot) -> WALK_MISROUTE [%s]" % cand, misrouted)
 
     return c.done()

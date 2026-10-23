@@ -1,0 +1,12 @@
+G1 corrupt EMPTY encoder                       planted -> FAIL=6  BITES
+G3 scalars accept string (block D off)         planted -> FAIL=6  BITES
+G4 replay swallows TxnAbort                    planted -> FAIL=4  BITES
+G5 range identity forced PASS                  planted -> FAIL=2  BITES
+G2 reconstruct ignores active key-hasher       planted -> FAIL=4  BITES
+G2 bucket-placement check disabled             planted -> FAIL=4  BITES
+G2 distinct-children check disabled            planted -> FAIL=2  BITES
+T1 value guards (minimal/sign/utf-8) disabled  planted -> FAIL=4  BITES
+G4 link/sequence checks disabled               planted -> FAIL=12  BITES
+G6 builder MAX_TOTAL check disabled            planted -> FAIL=4  BITES
+G1 composite node ordering reversed            planted -> FAIL=4  BITES
+ALL PLANTS BITE

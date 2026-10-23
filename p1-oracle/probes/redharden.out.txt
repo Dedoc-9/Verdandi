@@ -1,0 +1,36 @@
+----------------------------------------------------------------------------------------------------
+RH-T1   PASS      lp length 2**40 (>MAX_LEN) rejected on the prefix  -- input=u64(2**40); outcome=malformed/LP_TOO_LONG
+RH-T1   PASS      lp length 1000 with 3 payload bytes -> TRUNCATED  -- input=u64(1000)+3B; outcome=malformed/TRUNCATED
+RH-T1   PASS      node_count 2**40 (>MAX_NODES) rejected on the prefix  -- outcome=malformed/MAX_NODES
+RH-T1   PASS      node_count 2**32-2 with no nodes -> fast reject (no hang/alloc)  -- outcome=malformed/DOMAIN
+RH-T1   PASS      bucket count 2**32-1 with no members -> fast reject  -- outcome=malformed/DOMAIN
+RH-T1   PASS      collectively-over-MAX_TOTAL (legal singles) -> MAX_TOTAL  -- max_total=370<371; outcome=malformed/MAX_TOTAL
+----------------------------------------------------------------------------------------------------
+RH-T2   PASS      composite round-trips (accepting control) [A]  -- entities=2, mixed int/str/neg; len=570
+RH-T2   PASS      reversed node order -> NODE_ORDER [A]  -- outcome=malformed/NODE_ORDER
+RH-T2   PASS      a referenced node dropped -> rejected [A]  -- outcome=malformed/MISSING_CHILD
+RH-T2   PASS      composite round-trips (accepting control) [B]  -- entities=2, mixed int/str/neg; len=586
+RH-T2   PASS      reversed node order -> NODE_ORDER [B]  -- outcome=malformed/NODE_ORDER
+RH-T2   PASS      a referenced node dropped -> rejected [B]  -- outcome=malformed/MISSING_CHILD
+RH-T2   PASS      misplaced leaf -> WALK_MISROUTE [A]  -- outcome=malformed/WALK_MISROUTE
+RH-T2   PASS      misplaced leaf -> WALK_MISROUTE [B]  -- outcome=malformed/WALK_MISROUTE
+RH-T2   PASS      non-minimal int (alt form) -> INT_NONMINIMAL  -- outcome=malformed/INT_NONMINIMAL
+RH-T2   N.A.      a SECOND independent encoder from the prose (full G-1 close)  -- not run; recorded residual, not a defect
+----------------------------------------------------------------------------------------------------
+RH-T3   PASS      (a) identical child refs in one parent -> DUP_CHILD  -- outcome=malformed/DUP_CHILD
+RH-T3   PASS      (b) component subtree shared across entities -> lawful DAG  -- shared LEAF_COMP nodes=1
+RH-T3   PASS      (c) duplicate entity key -> WALK_MISROUTE (walk) / DUP_KEY (backstop)  -- walk=WALK_MISROUTE backstop=DUP_KEY
+RH-T3   N.A.      (d) one address, two encodings -> CONTENT_ADDRESS_COLLISION  -- code path present; unconstructable without breaking SHA-256 (S-8)
+RH-T3   PASS      (e) a reordered valid tree -> NODE_ORDER (one canonical form)  -- outcome=NODE_ORDER
+----------------------------------------------------------------------------------------------------
+RH-T4   OBSERVED  wide ROOT (20 entities)  -- len=2175B nodes=22 keyhash_calls=40
+RH-T4   OBSERVED  deep single-path full-collision bucket  -- len=3411B nodes=54 keyhash_calls=4 (branches 1..51 + bucket)
+RH-T4   OBSERVED  shared component DAG (8 entities, one hp=1)  -- len=980B nodes=10 shared_LEAF_COMP=1 (not re-stored per parent)
+----------------------------------------------------------------------------------------------------
+RH-T5   PASS      digest / range / head / anchor reported as SEPARATE predicates  -- verdicts={'digest': 'PASS', 'head_eq_boundary': 'PASS', 'head_binding': 'PASS', 'range_identity': 'PASS', 'effects_range_root': 'BLOCKED', 'anchor_identity': 'PASS', 'anchor_reachability': 'PASS', 'anchor_trust': 'PASS'}
+RH-T5   BLOCKED   effects_range_root stays BLOCKED (D4-2)  -- D4-2: range-tree algorithm + proof format not sp
+RH-T5   BLOCKED   non-genesis anchor: identity/reachability PASS, trust BLOCKED (D8)  -- trust=BLOCKED
+RH-T5   PASS      two local-valid checkpoints at one boundary -> no global-agreement inference  -- distinct digests; no cross-checkpoint function in checkpoints.py
+====================================================================================================
+RH-T PROBE TOTALS: BLOCKED=2  N.A.=2  OBSERVED=3  PASS=21
+RED-HARDENING PROBES: NO CONFIRMED NEW DEFECT (no FAIL); no S-9 proposed

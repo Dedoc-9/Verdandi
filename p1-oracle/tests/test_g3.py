@@ -60,8 +60,12 @@ def run():
         root = d.enc_root("A", {0: d.node_address(le1), 1: d.node_address(le2)}, d.enc_scalars(3, 0, 0))
         nodes = sorted([empty, lc, le1, le2, root], key=d.node_address)
         buf = d.DOM("skuld-state-0") + d.u16(d.VERSION) + d.raw32(d.node_address(root)) + d.u64(len(nodes)) + b"".join(nodes)
-        reject(lambda: C.reconstruct(buf, "A"), code="DUP_KEY")
-    c.ok("G3 duplicate entity key -> DUP_KEY reject", dup_key)
+        # two LEAF_ENT for the same eid must share one path (one H), so putting them at two ROOT slots is inherently
+        # off-path: since 0263 the P6 walk catches that first (WALK_MISROUTE). The reconstruct-level DUP_KEY check is
+        # now a backstop, shadowed by the walk; with the walk disabled (_p6=False) it still fires on the same bytes.
+        reject(lambda: C.reconstruct(buf, "A"), code="WALK_MISROUTE")
+        reject(lambda: C.reconstruct(buf, "A", _p6=False), code="DUP_KEY")
+    c.ok("G3 duplicate entity key -> WALK_MISROUTE (walk); DUP_KEY backstop with walk off", dup_key)
 
     # orphan node (unreferenced) -> rejected (rebuild-and-compare)
     def orphan():

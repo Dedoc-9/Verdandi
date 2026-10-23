@@ -324,7 +324,7 @@
         "verdict": "PASS"
       }
     ],
-    "G2 trie shape (+ injected routing / seam / bucket placement / structural rejection)": [
+    "G2 trie shape (+ injected routing / seam / bucket placement / structural rejection / P6 walk)": [
       {
         "detail": "",
         "name": "G2 ordinary routing -> BRANCH top + round-trip (real SHA-256)",
@@ -367,7 +367,7 @@
       },
       {
         "detail": "",
-        "name": "P1V-seam consistency: build-H==validate-H passes; different H -> CANONICALITY reject",
+        "name": "P1V-seam consistency: same H passes; different H -> WALK_MISROUTE (CANONICALITY with walk off)",
         "verdict": "PASS"
       },
       {
@@ -462,7 +462,7 @@
       },
       {
         "detail": "",
-        "name": "G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [A]",
+        "name": "G2 misrouted leaf (wrong ROOT slot) -> WALK_MISROUTE [A]",
         "verdict": "PASS"
       },
       {
@@ -517,7 +517,97 @@
       },
       {
         "detail": "",
-        "name": "G2 misrouted leaf (wrong ROOT slot) -> CANONICALITY [B]",
+        "name": "G2 misrouted leaf (wrong ROOT slot) -> WALK_MISROUTE [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk accepts canonical two-entity tree (control) [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk accepts correctly-placed depth-52 bucket (control) [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects leaf off-path at ROOT (depth 0) -> WALK_MISROUTE [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects leaf off-path at a deeper BRANCH (depth 1) -> WALK_MISROUTE [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects component off-path in a component trie -> WALK_MISROUTE [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects bucket off terminal depth 52 -> BUCKET_MISPLACED [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects bucket members not fully colliding -> BUCKET_NOT_COLLIDING [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "reconstruct() surfaces the walk's code before rebuild-compare -> WALK_MISROUTE [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "attribution UNPROVEN: rebuild-and-compare independently rejects (CANONICALITY); walk gives the reason, not a unique catch",
+        "name": "attribution UNPROVEN: walk disabled -> still rejected by rebuild-compare (CANONICALITY) [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk accepts canonical two-entity tree (control) [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk accepts correctly-placed depth-52 bucket (control) [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects leaf off-path at ROOT (depth 0) -> WALK_MISROUTE [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects leaf off-path at a deeper BRANCH (depth 1) -> WALK_MISROUTE [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects component off-path in a component trie -> WALK_MISROUTE [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects bucket off terminal depth 52 -> BUCKET_MISPLACED [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "P6 walk alone rejects bucket members not fully colliding -> BUCKET_NOT_COLLIDING [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "reconstruct() surfaces the walk's code before rebuild-compare -> WALK_MISROUTE [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "attribution UNPROVEN: rebuild-and-compare independently rejects (CANONICALITY); walk gives the reason, not a unique catch",
+        "name": "attribution UNPROVEN: walk disabled -> still rejected by rebuild-compare (CANONICALITY) [B]",
         "verdict": "PASS"
       }
     ],
@@ -539,7 +629,7 @@
       },
       {
         "detail": "",
-        "name": "G3 duplicate entity key -> DUP_KEY reject",
+        "name": "G3 duplicate entity key -> WALK_MISROUTE (walk); DUP_KEY backstop with walk off",
         "verdict": "PASS"
       },
       {
@@ -908,45 +998,50 @@
     "MANIFEST.json": "705b8c4892191ff648e13f2bdc51b6b660be420fc825d50a9d1e2ff9521851fc",
     "README.md": "ed9a71d3b79c069b4d5decd184c1c687af511c6046dad2c342f2d6e9b322da46",
     "docs/0262-COMPOSITE-DERIVATION.md": "872f24ac0b61b009102e985669de23571a6b6c14e447bc0afed4579f1fc0e119",
-    "docs/P1-RED-HARDENING-AUDIT.md": "750faba66c5382af5d199510876b6b113813a3ce4e0128e285c2b654331a1c06",
-    "docs/P1-REV20-AMENDMENT-DRAFT.md": "3e4290ecd79ab273a32e2dcc5072fc3461ca15c110d79e234da48d10fd822c01",
-    "docs/P1-REV20-REQUIREMENT-MATRIX.md": "9e9a1eba74375336b08fbcc29da93100f3b76f9a088185caa116f805d282d400",
+    "docs/P1-RED-HARDENING-AUDIT.md": "b89fe50bc44c28653ce0e9589c01c18f316cefbed682470d31f6d7f93505e359",
+    "docs/P1-RED-HARDENING-TESTS.md": "36fb09c6acdf9af48759ec9b67a99dee0d6d9bd8b32fa8cfcde9f200d042cb1e",
+    "docs/P1-REV20-AMENDMENT-DRAFT.md": "94e8ef6d5cb333e7e737c27df24f0577b0691015af5d3bb69d88c0512aa2a56f",
+    "docs/P1-REV20-REQUIREMENT-MATRIX.md": "ee7b994e9d6238211e5d7fef2ca57a8782fe3baa635f9ba5aab172ee2e50b3f4",
     "docs/P1-REV20-SPEC-AUDIT.md": "d64aca71aa0fd670f35b3a64957e6258b615dc7774ce2136a11e0f400d16dacf",
-    "docs/P6-REBUILD-EQUIVALENCE.md": "8e50f30fffc428273b8614ddb5f4cfba2fc848711297e4df61b9e1098c754d7c",
+    "docs/P1-SCALING-NOTE.md": "29629d4af50185313078bb580cdf32f5cd6983c779668a1f9f9466f6d4bec860",
+    "docs/P6-REBUILD-EQUIVALENCE.md": "27cce8fc3c20761692208dfd6b41a7e0416ffa9c685c2b37e433c35cbeb56bc6",
     "fixtures/__init__.py": "4cccbb83ce94bc940942ab5f0eadafc3c3c660072bd1342d0ee82b78c6116c43",
     "fixtures/hand_calculated/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "fixtures/hand_calculated/composite.py": "ef35ff6fa2d73d1839adbf8306eaaec1af5e6764792593f237968135ad400c92",
     "fixtures/hand_calculated/vectors.py": "89b95135d878806668e96020f2a5c1c0156f161aae357010686eaeee095ce672",
     "fixtures/malformed/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "fixtures/malformed/buckets.py": "37ca62a835917b44e94bb3e13628925cef1cb326fde8ff0ed402c3014c1b19d6",
+    "fixtures/malformed/walk.py": "6da32f6f627096f9761c6e8c36363395759aecba777a71da6f80458b954af73c",
     "oracle/__init__.py": "7ec065133eac0c915da871d1ab5a073ecfaa9051eaa4de59175620dba17294b4",
-    "oracle/canonicality.py": "197e524c75b7d90e208cbce92aa7f8a281a88ce29a0d266c4ae7ba32cc62e0a4",
+    "oracle/canonicality.py": "97fb131c9342d7f5c24226f71bb7d917b59fee20f56b88329804ca00cf04555b",
     "oracle/checkpoints.py": "15d88c2429cb3a70c01937aae35709f6d9b32652d7a7bd42c6a34703a9fba440",
     "oracle/decoder.py": "88e1e881b44677d499d410cb390bd802e6f0b49edd4fe1b2951d17cadc6a3f3a",
     "oracle/frozen/__init__.py": "5b04b0a59acd01b427da358ccaf45a0901ff4ff894f4d325ac1a591c8e93f35e",
     "oracle/frozen/ecs.py": "3d568d22d812ae2321b03b7450d09109c8ff20e3308b5f9cd2a5e2fde9eb1c0b",
     "oracle/records.py": "f23a9c22994818d4fcd7ec99e3d804d5090eab5c501297cfbcb9f4cf9918fb14",
-    "run_gate.py": "d1f2f13c44d010e70e2462b9ed5ab9058d868c16828a4ae236a2d0230ece69e2",
+    "probes/redharden.py": "9f1bafd335e19165d7dee7d1e86bfa9dc9c62a28a36fb6e35ad280529d05a59c",
+    "run_gate.py": "3c37effeca1f26ca5aa8fdf675a6e8bd0996972fa3633fe88b7e98039a1bfc63",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/harness.py": "61761c056d96c481d3c9bd457104d908728e4b39536ee5816a2bd23f3e348302",
     "tests/test_buckets.py": "1b6ea4b643d2442ef146aa27066055e02ed549940fd87e834640d4d6c421c808",
     "tests/test_composite.py": "2ad2cadcc6045de0a8467458cbf10c83749cb75ea1cfe15f94ab3255d411df9c",
     "tests/test_g1.py": "2e8fb7b1278319f5358d96f14bfa990c84e326afc196dc97cd66e2cb6302dd19",
     "tests/test_g2.py": "42e7ca594825344716f3c1a9802f239d1978851c54046163bbdc5b37889f8a7c",
-    "tests/test_g3.py": "aec8a6acd45554052a7679159a618373d13e3a98b6d1caf3f8ac0270d04bf52f",
+    "tests/test_g3.py": "2d7b302d0c860709805ea83b6cdf0b216da801606e47329ff46aaebe40c0c39d",
     "tests/test_g4.py": "9682df103e06c54acc319d6b10b505e3b8b896b8264294bce5cf4b0d426ec33f",
     "tests/test_g5.py": "b45bfb31519bcb40615fa03bb4eeffc701fc75f366399b930105785556b3b1e3",
     "tests/test_g6.py": "2e9bee2ed21257e12a09d09a17d160675536f712a7a7edc419527228a4b8952c",
     "tests/test_links.py": "2bf628c4e8488828d7858fedc189274ffc5f228bc40f1b119de3dca4e1e8628f",
-    "tests/test_seams.py": "5167e1eac0ff99c639d25f54c73e6c762e7c4465c0304353f05221bbc4c080db",
-    "tests/test_struct.py": "9bd62bcf19bc12030260e7c1ec330aa6a62f89d3834316a8ff5a21161473204f",
+    "tests/test_seams.py": "926f33e4a7f09236cd1cb7416a532f20c5b302b323c8b174d9f2f75cc277c4f6",
+    "tests/test_struct.py": "9a2b7d4ae905f5bcafc6df8ac023658174463d222a45117c41e18e4e94276ccc",
     "tests/test_tier1.py": "4a2cecd5e836dbca7cf0fa90ffb054de9909c4b58b77300a24fbd54b70f9f168",
     "tests/test_total.py": "395dbd12c52cc9580d1e63b1ddeb4456ae3a59bb70904fa74893d86074dc5253",
-    "verify_plants.py": "20cffc856ac8d7a1b67a66d89786d2df2923f4d9197b40ef805ecd39c6fb7b50"
+    "tests/test_walk.py": "c8cd38c32cf5b7ae5781215306d7129eaa210813524e5c5a04ce718a7ab064c1",
+    "verify_plants.py": "9d2e7a4bb7546edb27d84fd5dc57b3ad300d7a3bc681dfd91cb78dae74513dde"
   },
   "totals": {
     "BLOCKED": 1,
     "FAIL": 0,
-    "PASS": 175
+    "PASS": 193
   }
 }
