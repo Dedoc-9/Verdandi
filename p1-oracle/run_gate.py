@@ -15,10 +15,10 @@ import platform
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from tests import test_g1, test_g2, test_g3, test_g4, test_g5, test_g6, test_seams, test_buckets, test_struct, test_tier1, test_links, test_total  # noqa: E402
+from tests import test_g1, test_g2, test_g3, test_g4, test_g5, test_g6, test_seams, test_buckets, test_struct, test_tier1, test_links, test_total, test_composite  # noqa: E402
 
 GATES = [
-    ("G1 canonical bytes (+ Tier-1 local negatives)", [test_g1, test_tier1]),
+    ("G1 canonical bytes (+ Tier-1 local negatives + hand-traced composite)", [test_g1, test_tier1, test_composite]),
     ("G2 trie shape (+ injected routing / seam / bucket placement / structural rejection)", [test_g2, test_seams, test_buckets, test_struct]),
     ("G3 reconstruction", [test_g3]),
     ("G4 record semantics (+ link/sequence validation)", [test_g4, test_links]),

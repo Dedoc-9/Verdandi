@@ -7,7 +7,7 @@
   "frozen_ecs_sha256": "3d568d22d812ae2321b03b7450d09109c8ff20e3308b5f9cd2a5e2fde9eb1c0b",
   "gate_status": "PASS",
   "gates": {
-    "G1 canonical bytes (+ Tier-1 local negatives)": [
+    "G1 canonical bytes (+ Tier-1 local negatives + hand-traced composite)": [
       {
         "detail": "",
         "name": "G1 value encode 0",
@@ -301,6 +301,26 @@
       {
         "detail": "",
         "name": "T1 valid container parses (neighbour)",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G1 oracle composite == hand-traced literal [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G1 hand-traced composite reconstructs [A]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G1 oracle composite == hand-traced literal [B]",
+        "verdict": "PASS"
+      },
+      {
+        "detail": "",
+        "name": "G1 hand-traced composite reconstructs [B]",
         "verdict": "PASS"
       }
     ],
@@ -887,10 +907,12 @@
     "AUTHORIZATION.md": "b74257b440839e7ecac27dddb1f7904d1432c0226d02ddaea61ba9d6eb7b0d99",
     "MANIFEST.json": "705b8c4892191ff648e13f2bdc51b6b660be420fc825d50a9d1e2ff9521851fc",
     "README.md": "ed9a71d3b79c069b4d5decd184c1c687af511c6046dad2c342f2d6e9b322da46",
-    "docs/P1-REV20-REQUIREMENT-MATRIX.md": "cbce12854b353fcf43b71401728eda360173d3e789fd8f356be425bea2519933",
+    "docs/0262-COMPOSITE-DERIVATION.md": "872f24ac0b61b009102e985669de23571a6b6c14e447bc0afed4579f1fc0e119",
+    "docs/P1-REV20-REQUIREMENT-MATRIX.md": "2c4300cb2c0e50fd7cf588efc76f78230fbf98b2f7e315b4fa7658c638de2e51",
     "docs/P6-REBUILD-EQUIVALENCE.md": "8e50f30fffc428273b8614ddb5f4cfba2fc848711297e4df61b9e1098c754d7c",
     "fixtures/__init__.py": "4cccbb83ce94bc940942ab5f0eadafc3c3c660072bd1342d0ee82b78c6116c43",
     "fixtures/hand_calculated/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "fixtures/hand_calculated/composite.py": "ef35ff6fa2d73d1839adbf8306eaaec1af5e6764792593f237968135ad400c92",
     "fixtures/hand_calculated/vectors.py": "89b95135d878806668e96020f2a5c1c0156f161aae357010686eaeee095ce672",
     "fixtures/malformed/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "fixtures/malformed/buckets.py": "37ca62a835917b44e94bb3e13628925cef1cb326fde8ff0ed402c3014c1b19d6",
@@ -901,10 +923,11 @@
     "oracle/frozen/__init__.py": "5b04b0a59acd01b427da358ccaf45a0901ff4ff894f4d325ac1a591c8e93f35e",
     "oracle/frozen/ecs.py": "3d568d22d812ae2321b03b7450d09109c8ff20e3308b5f9cd2a5e2fde9eb1c0b",
     "oracle/records.py": "f23a9c22994818d4fcd7ec99e3d804d5090eab5c501297cfbcb9f4cf9918fb14",
-    "run_gate.py": "d93427a01635fbedd3b7ff8437e4ad6a55f8d10bbbd065575101e0835e1e6568",
+    "run_gate.py": "d1f2f13c44d010e70e2462b9ed5ab9058d868c16828a4ae236a2d0230ece69e2",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/harness.py": "61761c056d96c481d3c9bd457104d908728e4b39536ee5816a2bd23f3e348302",
     "tests/test_buckets.py": "1b6ea4b643d2442ef146aa27066055e02ed549940fd87e834640d4d6c421c808",
+    "tests/test_composite.py": "2ad2cadcc6045de0a8467458cbf10c83749cb75ea1cfe15f94ab3255d411df9c",
     "tests/test_g1.py": "2e8fb7b1278319f5358d96f14bfa990c84e326afc196dc97cd66e2cb6302dd19",
     "tests/test_g2.py": "42e7ca594825344716f3c1a9802f239d1978851c54046163bbdc5b37889f8a7c",
     "tests/test_g3.py": "aec8a6acd45554052a7679159a618373d13e3a98b6d1caf3f8ac0270d04bf52f",
@@ -916,11 +939,11 @@
     "tests/test_struct.py": "9bd62bcf19bc12030260e7c1ec330aa6a62f89d3834316a8ff5a21161473204f",
     "tests/test_tier1.py": "4a2cecd5e836dbca7cf0fa90ffb054de9909c4b58b77300a24fbd54b70f9f168",
     "tests/test_total.py": "395dbd12c52cc9580d1e63b1ddeb4456ae3a59bb70904fa74893d86074dc5253",
-    "verify_plants.py": "3bba6f887b3543a08e743f27901cda4c2cf7fba816dbec546a6e239a30062136"
+    "verify_plants.py": "20cffc856ac8d7a1b67a66d89786d2df2923f4d9197b40ef805ecd39c6fb7b50"
   },
   "totals": {
     "BLOCKED": 1,
     "FAIL": 0,
-    "PASS": 171
+    "PASS": 175
   }
 }

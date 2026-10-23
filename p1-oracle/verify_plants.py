@@ -15,7 +15,7 @@ from oracle import decoder as d          # noqa: E402
 from oracle import canonicality as C     # noqa: E402
 from oracle import records as R          # noqa: E402
 from oracle import checkpoints as K      # noqa: E402
-from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets, test_struct, test_tier1, test_links, test_total  # noqa: E402
+from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets, test_struct, test_tier1, test_links, test_total, test_composite  # noqa: E402
 
 
 def _fails(rows):
@@ -148,6 +148,19 @@ def main():
     ok &= _plant("G6 builder MAX_TOTAL check disabled",
                  lambda: setattr(C, "serialize_state", _lax_ss),
                  lambda: setattr(C, "serialize_state", _orig_ss), test_total)
+
+    # 0262: composite-level mutation — emit the collection UNSORTED -> the hand-traced composite vector must FAIL
+    _orig_ss2 = C.serialize_state
+
+    def _unsorted_ss(state, cand, keyhasher=d.prod_key_hasher, limits=d.PROD_LIMITS):
+        rh, coll = C.build_state(state, cand, keyhasher, limits)
+        out = d.DOM("skuld-state-0") + d.u16(d.VERSION) + d.raw32(rh) + d.u64(len(coll))
+        for a in sorted(coll, reverse=True):             # defect: descending, not ascending node-hash order
+            out += coll[a]
+        return out
+    ok &= _plant("G1 composite node ordering reversed",
+                 lambda: setattr(C, "serialize_state", _unsorted_ss),
+                 lambda: setattr(C, "serialize_state", _orig_ss2), test_composite)
 
     print("ALL PLANTS BITE" if ok else "SOME PLANT INERT -- APPARATUS DOES NOT FULLY BITE")
     return 0 if ok else 1

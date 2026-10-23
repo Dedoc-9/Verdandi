@@ -8,4 +8,5 @@ G2 distinct-children check disabled            planted -> FAIL=2  BITES
 T1 value guards (minimal/sign/utf-8) disabled  planted -> FAIL=4  BITES
 G4 link/sequence checks disabled               planted -> FAIL=12  BITES
 G6 builder MAX_TOTAL check disabled            planted -> FAIL=4  BITES
+G1 composite node ordering reversed            planted -> FAIL=4  BITES
 ALL PLANTS BITE

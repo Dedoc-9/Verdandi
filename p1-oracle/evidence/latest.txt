@@ -2,7 +2,7 @@ P-1 ORACLE GATE (test-only, OFF-GATE; P-1 remains OPEN)
 python 3.14.5 on Windows-11-10.0.26200-SP0; PYTHONHASHSEED=0 PYTHONUTF8=1
 ====================================================================================================
 
-G1 canonical bytes (+ Tier-1 local negatives)   [PASS 59 / FAIL 0 / BLOCKED 0]
+G1 canonical bytes (+ Tier-1 local negatives + hand-traced composite)   [PASS 63 / FAIL 0 / BLOCKED 0]
   PASS     G1 value encode 0
   PASS     G1 value round-trip 0
   PASS     G1 value encode 10
@@ -62,6 +62,10 @@ G1 canonical bytes (+ Tier-1 local negatives)   [PASS 59 / FAIL 0 / BLOCKED 0]
   PASS     T1 container wrong DOM -> STATE_DOM
   PASS     T1 container wrong VERSION -> VERSION
   PASS     T1 valid container parses (neighbour)
+  PASS     G1 oracle composite == hand-traced literal [A]
+  PASS     G1 hand-traced composite reconstructs [A]
+  PASS     G1 oracle composite == hand-traced literal [B]
+  PASS     G1 hand-traced composite reconstructs [B]
 
 G2 trie shape (+ injected routing / seam / bucket placement / structural rejection)   [PASS 39 / FAIL 0 / BLOCKED 0]
   PASS     G2 ordinary routing -> BRANCH top + round-trip (real SHA-256)
@@ -187,5 +191,5 @@ G6 reproducibility + bounds + constants (+ MAX_TOTAL)   [PASS 21 / FAIL 0 / BLOC
   PASS     G6 production MAX_TOTAL == 2**40 (separate from reduced test limits)
 
 ====================================================================================================
-TOTAL  PASS 171  FAIL 0  BLOCKED 1
+TOTAL  PASS 175  FAIL 0  BLOCKED 1
 GATE PASS  (BLOCKED rows are not passes and do not fail the run; they mark D4-2/D8 scope)

@@ -85,7 +85,7 @@ are covered by commitment recomputation, not a local `DOMAIN`/`VERSION` reject.
 
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
 |---|---|---|---|---|---|---|---|
-| R3.1 | entity-trie top always `ROOT` (binds `SCALARS`); component top = `construct(K,0)` (EMPTY/bare LEAF_COMP/BRANCH) | `build_state` | pos: genesis / singleton / one-comp / multi-comp | HAND (leaf) + CORRELATED (composite) | G1 serializations; `test_g2` ordinary | VERIFIED | composite-byte provenance is CORRELATED (see Gap G-1) |
+| R3.1 | entity-trie top always `ROOT` (binds `SCALARS`); component top = `construct(K,0)` (EMPTY/bare LEAF_COMP/BRANCH) | `build_state` | pos: genesis / singleton / one-comp / multi-comp | HAND (leaf) + CORRELATED (composite), **+ one fully independent composite (0262)** | G1 serializations; `test_g2` ordinary; `test_composite` | VERIFIED | composite provenance reduced by the 0262 hand-traced vector; the general composite path stays CORRELATED (Gap G-1) |
 | R3.2 | `SCALARS` = `DOM‖A·VALUE‖S·VALUE‖C·VALUE`; all three **int** (block D); string scalar rejected | `_decode_scalars` | pos: round-trips; neg: string scalar→`SCALAR_NOT_INT` | HAND | `test_g3::scalar_type`; plant `verify_plants` | VERIFIED | — |
 | R3.3 | duplicate logical keys unrepresentable; rejected on descent | `reconstruct` | neg: duplicate entity key→`DUP_KEY` | ORACLE | `test_g3::dup_key` | PARTIAL | component-level duplicate not separately crafted |
 
@@ -103,7 +103,7 @@ are covered by commitment recomputation, not a local `DOMAIN`/`VERSION` reject.
 
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
 |---|---|---|---|---|---|---|---|
-| R4a.1 | container = `DOM‖u16‖root_hash‖u64(count)‖nodes`, ascending by node-hash | `serialize_state`,`parse_collection` | pos: serializations; neg: reorder→`NODE_ORDER` | HAND (leaf)/CORRELATED | G1; `test_g2::reorder` | VERIFIED | composite provenance CORRELATED (G-1) |
+| R4a.1 | container = `DOM‖u16‖root_hash‖u64(count)‖nodes`, ascending by node-hash | `serialize_state`,`parse_collection` | pos: serializations, **one hand-traced composite (0262)**; neg: reorder→`NODE_ORDER`, composite-ordering plant | HAND (leaf) + one independent composite / CORRELATED (rest) | G1; `test_g2::reorder`; `test_composite` | VERIFIED | container order + composite bytes now have one independent witness (0262); general composite path stays CORRELATED (G-1) |
 | R4a.2 | unique nodes; dup-entry reject; content-address-collision **reported not aliased**; dup child in one parent reject; shared-across-parents lawful | `parse_collection`,`_read_bitmap_children` | pos: DAG share; neg: `DUP_CHILD` (ROOT & BRANCH, Tier-1), `DUP_ENTRY`/`CONTENT_ADDRESS_COLLISION` (code paths) | ORACLE | G3 DAG share; `test_struct` ROOT/BRANCH `DUP_CHILD` + plant | PARTIAL | **`DUP_CHILD` closed 0258 (VERIFIED, both cands)**; `DUP_ENTRY` still lacks a vector; **content-address collision OPEN — untestable without breaking SHA-256** |
 | R4a.3 | reconstruction recovers every ECS field; `MISSING_CHILD` vs malformed; orphan rejected | `reconstruct` | pos: full-field recovery; neg: `MISSING_CHILD`, orphan→`CANONICALITY` | ORACLE | `test_g3::fields`; `test_g2::missing`; `test_g3::orphan` | VERIFIED | — |
 | R4a.4 | three distinct digest identities (`structural_state_root`=ROOT hash; `ecs_state_digest`=`ecs.digest`; container byte-hash used nowhere) | `records`,`checkpoints` | pos: commitments bind ROOT hash + ecs.digest | ORACLE | used in G4/G5 | PARTIAL | **gap: no dedicated `P1V-identity` vector asserting the three are distinct and the container hash is unused** — add it |
@@ -145,6 +145,20 @@ identical, **10/10 plants bite**; 0260 evidence kept at `evidence/history/pre-02
 updated. This completes the owner's 0259–0261 gap-closure sequence; remaining open items are G-1 (hand-traced composite,
 deferred), the architectural LINK-tag-byte OPEN, and the BLOCKED D4-2/D8 items.
 
+## Changelog — 0262 hand-traced composite vector (G-1, partial close) (2026-10-23)
+
+Confirmed a hand-assembled composite serialization (one entity, one string component, scalars) matches the oracle
+**byte-for-byte, both candidates** (A 283 B, B 290 B) before committing it. **Added** `fixtures/hand_calculated/composite.py`
+— literal grammar fields + `u8/u16/u32/u64` + SHA-256 only, **no oracle encoders and no grammar-reimplementing helper**
+— with the full derivation in [`0262-COMPOSITE-DERIVATION.md`](0262-COMPOSITE-DERIVATION.md) (every field a reviewable
+literal; SHA-256/slot/sort are the only computed parts). `tests/test_composite.py` asserts the oracle reproduces it and
+that it reconstructs, both candidates; a composite-ordering plant (reversed collection order) turns G1 RED. New run
+**175 PASS / 0 FAIL / 1 BLOCKED**, two runs identical, **11/11 plants bite**; 0261 evidence kept at
+`evidence/history/pre-0262/`. **Scope (honest):** **one** independently derived composite vector per candidate,
+auditable field-by-field — it materially lowers the correlated-provenance risk for the composite path; it does **not**
+prove every composite encoding independently correct, and the pre-existing `vectors.py` composite helpers remain
+`CORRELATED`. G-1 is **reduced, not eliminated**.
+
 ## §6 Records, commitments, links
 
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
@@ -178,13 +192,14 @@ deferred), the architectural LINK-tag-byte OPEN, and the BLOCKED D4-2/D8 items.
 
 ## Prioritized gap list (for the next milestone, all off-gate, no production change)
 
-**Correlated-provenance risk (highest — it is the limit of Level-2 evidence):**
-- **G-1.** For composite serializations (ROOT, multi-node trees), the "expected bytes" in `fixtures/hand_calculated/vectors.py`
-  are built by re-encoding the same grammar the oracle implements, then hashing with `hashlib`. The **leaf** literals
-  (EMPTY, LEAF_COMP, VALUE sign-byte, KEY) are genuinely HAND and checkable by eye; the composite structure is
-  `CORRELATED`. A shared misreading of the grammar would pass G1. *Next:* add a few fully hand-traced composite
-  byte-strings (whole container bytes written out by hand for one tiny state), and/or a second independent encoder
-  authored from the prose without reading the oracle.
+**Correlated-provenance risk (the limit of Level-2 evidence) — REDUCED 0262, not eliminated:**
+- **G-1.** `fixtures/hand_calculated/vectors.py`'s composite helpers re-encode the same grammar the oracle implements
+  (`CORRELATED`) — a shared misreading would pass those. **0262** adds **one fully hand-traced composite vector per
+  candidate** (`composite.py` + `0262-COMPOSITE-DERIVATION.md`): literal grammar fields, SHA-256/sort/slot the only
+  computed parts, no grammar helper, matched to the oracle byte-for-byte, with a composite-ordering plant. This is
+  auditable field-by-field and lowers the risk materially, but covers one state shape, not the whole composite path;
+  the pre-existing `vectors.py` composite cases stay `CORRELATED`. *Residual next:* more hand-traced shapes, or a second
+  independent encoder authored from the prose without reading the oracle.
 
 **Missing negative vectors (Tier-1 rejections) — CLOSED across 0258/0259:**
 - **G-2.** §1/§2 — **CLOSED 0259:** `INT_NONMINIMAL`, `INT_NEGZERO`, `INT_SIGN`, bad `VTYPE`, invalid UTF-8 (decode) +
