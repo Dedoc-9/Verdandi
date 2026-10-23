@@ -6,4 +6,5 @@ G2 reconstruct ignores active key-hasher       planted -> FAIL=4  BITES
 G2 bucket-placement check disabled             planted -> FAIL=4  BITES
 G2 distinct-children check disabled            planted -> FAIL=2  BITES
 T1 value guards (minimal/sign/utf-8) disabled  planted -> FAIL=4  BITES
+G4 link/sequence checks disabled               planted -> FAIL=12  BITES
 ALL PLANTS BITE

@@ -15,7 +15,7 @@ from oracle import decoder as d          # noqa: E402
 from oracle import canonicality as C     # noqa: E402
 from oracle import records as R          # noqa: E402
 from oracle import checkpoints as K      # noqa: E402
-from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets, test_struct, test_tier1  # noqa: E402
+from tests import test_g1, test_g3, test_g4, test_g5, test_seams, test_buckets, test_struct, test_tier1, test_links  # noqa: E402
 
 
 def _fails(rows):
@@ -109,6 +109,30 @@ def main():
     ok &= _plant("T1 value guards (minimal/sign/utf-8) disabled",
                  lambda: setattr(d, "decode_value", _lax_dv),
                  lambda: setattr(d, "decode_value", _orig_dv), test_tier1)
+
+    # 0260: disable the link/sequence checks in verify_ledger -> the G-5 negatives must FAIL
+    from oracle.frozen import ecs as _ecs
+    _orig_vl = R.verify_ledger
+
+    def _lax_vl(records, cand):
+        state = _ecs.genesis()
+        per, eff_log = [], []
+        for rec in records:
+            base = len(eff_log)
+            ns, effects = R.replay_event(state, rec["event"])    # keep replay; skip seq/prev/parent checks (defect)
+            for j, (k, p) in enumerate(effects):
+                eff_log.append((base + j, rec["seq"], k, p))
+            ec = R.ecs_state_commitment(_ecs.digest(ns))
+            rh, _c = C.build_state(ns, cand)
+            sc = R.structural_state_commitment(rh)
+            per.append({"seq": rec["seq"], "commit": R.record_commitment(rec, cand, ec, sc),
+                        "ecs_commit": ec, "struct_commit": sc, "base_effect_index": base, "count": len(effects),
+                        "root_hash": rh})
+            state = ns
+        return {"ok": True, "per_record": per, "eff_log": eff_log, "E_boundary": len(eff_log), "final_state": state}
+    ok &= _plant("G4 link/sequence checks disabled",
+                 lambda: setattr(R, "verify_ledger", _lax_vl),
+                 lambda: setattr(R, "verify_ledger", _orig_vl), test_links)
 
     print("ALL PLANTS BITE" if ok else "SOME PLANT INERT -- APPARATUS DOES NOT FULLY BITE")
     return 0 if ok else 1

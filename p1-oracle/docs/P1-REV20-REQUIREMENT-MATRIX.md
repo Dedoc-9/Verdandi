@@ -120,6 +120,18 @@ are covered by commitment recomputation, not a local `DOMAIN`/`VERSION` reject.
 | R5.6 | `effects_range_root` construction **and verification** | — | — | — | — | **BLOCKED (D4-2)** | range-tree algorithm + proof format undefined; never a pass |
 | R5.7 | pruning: retain-full-prefix this milestone; prefix-pruning deferred | `checkpoints` | recompute-from-zero holds under retain-full-prefix | ORACLE | implicit in G5 | VERIFIED / BLOCKED | prefix-pruning path BLOCKED (D4-2/D8) |
 
+## Changelog — 0260 link / sequence validation (2026-10-23)
+
+Probed first: `SEQ_ZERO`, `SEQ_ORDER`, `PREV_LINK` (unknown/forward), `PARENT_LINK` (unknown/forward/self) all fire at
+their local check; valid linear / parentless-non-genesis / parent=earlier accept. **Added** `tests/test_links.py` (both
+candidates), each negative isolated on the record whose check fires, with accepting neighbours, + a plant that disables
+the link/sequence checks. New run **156 PASS / 0 FAIL / 1 BLOCKED**, two runs identical, **9/9 plants bite**; 0259
+evidence kept at `evidence/history/pre-0260/`. Rows R6.4, R6.5 and gap G-5 updated. *Honest findings:* (1) `SEQ_ZERO` is
+**doubly guarded** (`verify_ledger` and `record_preimage`), so the link/seq plant flips 12 of 14 negatives — defence in
+depth, not a miss. (2) The oracle has **no record byte-decoder** (records are structured dicts + preimage hashing), so
+an invalid **LINK-tag byte** (≠ 0x00/0x01) is **not reachable** and stays **OPEN** — faking it would need a record
+byte-parser, beyond G-5.
+
 ## §6 Records, commitments, links
 
 | ID | Normative requirement | Component | Pos / Neg vectors | Provenance | Evidence | Status | Gap / next action |
@@ -127,8 +139,8 @@ are covered by commitment recomputation, not a local `DOMAIN`/`VERSION` reject.
 | R6.1 | typed commitment wrappers recompute (`ecs_`/`structural_state_commitment`) | `records` | neg: wrong `ecs`/`struct` commitment→`SEMANTIC` | HAND | `test_g4::wrong_ecs`,`wrong_struct` (both cands) | VERIFIED | — |
 | R6.2 | record preimage layout (`Q/V/W/N/F/S/T`, `EVENT/OP/EFFECTS/LINK`) | `record_preimage` | pos: hand-calculated preimage; A==B candidate-independence | HAND | `test_g4::preimage_bytes` | VERIFIED | — |
 | R6.3 | Tier-3 replay via **frozen ECS**; effects one-for-one; unknown/wrong-arity/`fail` → whole-event `SEMANTIC`, no partial | `replay_event`,`verify_ledger` | neg: unknown / fail-after-valid / wrong-arity; atomicity | ORACLE | `test_g4::atomic` (both cands); plant | VERIFIED | — |
-| R6.4 | link truth table (genesis `0x00`/`0x00`; `seq≥2` prev mandatory; parentless non-genesis legal; forward/self/unknown rejected) | `verify_ledger` | neg: `GENESIS_PREV`,`PREV_LINK`; pos: parentless non-genesis | ORACLE | `test_g4::links` (both cands) | PARTIAL | forward/self `parent` and the full `parent`=earlier-member cases not all crafted |
-| R6.5 | record decoder obligations: `LINK` tag ∉{0,1} reject; `seq=0` reject; seq order; overflow | `records`,`verify_ledger` | neg: overflow (R5.3), `SEQ_ORDER` | ORACLE | `verify_ledger` paths | PARTIAL | `SEQ_ZERO` and bad-`LINK`-tag lack dedicated gate vectors |
+| R6.4 | link truth table (genesis `0x00`/`0x00`; `seq≥2` prev mandatory; parentless non-genesis legal; forward/self/unknown rejected) | `verify_ledger` | neg: `GENESIS_PREV`, `PREV_LINK` (unknown/forward), `PARENT_LINK` (unknown/forward/self); pos: linear, parentless non-genesis, parent=earlier | ORACLE | `test_g4::links`, `test_links` (both cands) + plant | VERIFIED | closed 0260 (forward/self/unknown share the `PARENT_LINK` = "not an earlier record" code) |
+| R6.5 | record decoder obligations: `LINK` tag ∉{0,1} reject; `seq=0` reject; seq order; overflow | `records`,`verify_ledger` | neg: `SEQ_ZERO`, `SEQ_ORDER`, overflow (R5.3) | ORACLE | `test_links` SEQ_ZERO/SEQ_ORDER (both cands); `test_g4` overflow | PARTIAL | `SEQ_ZERO`/`SEQ_ORDER` closed 0260 (SEQ_ZERO doubly-guarded); **bad-LINK-tag byte OPEN — no record byte-decoder in the oracle** |
 
 ## §7 Checkpoint and anchor
 
@@ -171,7 +183,10 @@ are covered by commitment recomputation, not a local `DOMAIN`/`VERSION` reject.
   preimage-hashed. (R8.1, R0.6)
 - **G-4.** §4a — **`DUP_CHILD` CLOSED 0258** (ROOT & BRANCH, both candidates, Tier-1, + plant). **Still open:**
   `DUP_ENTRY` as a dedicated vector. (R4a.2)
-- **G-5.** §6: `SEQ_ZERO`, bad-`LINK`-tag, forward/self `parent`. (R6.4, R6.5)
+- **G-5.** §6 — **CLOSED 0260** except one architectural OPEN: `SEQ_ZERO`, `SEQ_ORDER`, forward/self/unknown `parent`,
+  forward/unknown `prev` all driven (`test_links`, both cands) + plant. **Still OPEN (architectural):** invalid
+  **LINK-tag byte** — the oracle has no record byte-decoder, so a raw tag ≠ 0x00/0x01 is unreachable without adding one.
+  (R6.4, R6.5)
 - **G-6.** §4a: dedicated `P1V-identity` (three digests distinct; container hash unused). (R4a.4)
 
 **Method equivalence — CLOSED 0258:**
