@@ -11,6 +11,24 @@
 > to rev 21. Run `PYTHONHASHSEED=0 PYTHONUTF8=1 python p1-oracle/probes/redharden.py`; two runs identical; transcript at
 > [`../probes/redharden.out.txt`](../probes/redharden.out.txt).
 
+## Baseline / provenance (forward-only pin, added after 663211f)
+
+So a future reader can reconstruct exactly which implementation and frozen dependency these off-gate results refer to:
+
+- **Baseline commit:** `663211f` (`feat(p1-oracle): 0263 direct P6 ancestor-slot walk + RH-T red-hardening probes`).
+  The probes reproduce this record's results **byte-for-byte** when re-run against that committed tree
+  (`PYTHONHASHSEED=0 PYTHONUTF8=1 python p1-oracle/probes/redharden.py`, two runs identical) — this pin was verified by
+  re-running against `663211f`, not inferred.
+- **Frozen dependency:** `oracle/frozen/ecs.py` SHA-256 `3d568d22d812ae2321b03b7450d09109c8ff20e3308b5f9cd2a5e2fde9eb1c0b` (unchanged).
+- **Scope:** off-gate RH-T1–RH-T5 probes (`probes/redharden.py`); **not** part of `run_gate.py`; **not**
+  production-conformance evidence; P-1 remains `OPEN`.
+- **Associated gate evidence:** `evidence/latest.json`, reported `193 PASS / 0 FAIL / 1 BLOCKED` — the gate over the same
+  committed tree, which does not import the probes (so its count is independent of RH-T).
+- **Environment:** CPython 3.14.5, `Windows-11-10.0.26200-SP0`, `PYTHONHASHSEED=0 PYTHONUTF8=1` — the values recorded in
+  the accompanying `evidence/latest.json` from this session's run (the probe transcript itself does not record the
+  environment; these are read from the gate evidence, not reconstructed from memory). MEASURED on that host, not
+  independently reproduced by the owner.
+
 Grades per row: **PASS** (apparatus behaved as the test demanded — the bad input was rejected, or the good input
 accepted), **FAIL** (a real defect), **BLOCKED** (a D4-2/D8 item, never a pass), **N.A.** (the external case's mechanism
 does not arise / is unconstructable under A-h), **OBSERVED** (a measurement, not a pass/fail).
