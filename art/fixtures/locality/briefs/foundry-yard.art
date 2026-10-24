@@ -1,0 +1,105 @@
+VERDANDI-ART 0
+# B5a (0241), the fourth world: "an industrial district at dusk", dressed on the tactical graybox like the other three,
+# so that nothing of play moves: not a wall, a floor, a cover block, a spawn or a target. The direction, in one breath:
+# brick warehouses and corrugated-steel sheds shoulder to shoulder on the rock along both side lanes, their bays glazed
+# with wired glass or panelled in rusted steel; a low sun through a haze of smoke; sodium lamps coming on along the
+# lanes; oil standing on the paving; signal red at the bases. Made only of statements the language has (FACADE-0's
+# building and bay among them): no openings, no sawtooth roofs, nothing a box cannot say. The flagship's warehouse is
+# the long brick one at the north lane's west end, building:10,2-17,2.
+
+map tactical
+title Foundry yard at dusk
+seed cinder
+
+time dusk
+sun 255 9 0.9 255,168,112
+fog 0.022 96,82,74
+exposure 0.6
+bloom 0.5
+rain 0.0
+
+# every mesh names where it came from and under what licence
+asset cube /Engine/BasicShapes/Cube.Cube engine Unreal Engine EULA (engine content)
+
+# the palette: brick in two fires, corrugated and rusted steel, wired glass, sooted concrete, the yard's paving and its
+# oil, steel housings; signal colours at the bases and where they meet, lit faintly from within
+material brick          128,64,48   0.86 0.0
+material brick_dark      86,48,40   0.90 0.0
+material steel_corr     112,118,120 0.48 0.7
+material steel_rust     128,74,46   0.78 0.3
+material glass_wired     52,64,70   0.10 0.0
+material concrete       118,112,104 0.88 0.0
+material concrete_dark   72,70,68   0.92 0.0
+material floor_yard      74,70,64   0.62 0.0
+material plaza_stone     98,92,84   0.55 0.0
+material puddle          18,16,14   0.03 0.0
+material housing         40,40,42   0.45 0.8
+material neon_amber     255,150,40  0.40 0.0 emissive 255,150,40 24
+material neon_cyan        0,196,226 0.40 0.0 emissive 0,196,226 24
+material neon_signal    255,64,32   0.40 0.0 emissive 255,64,32 28
+
+# the play geometry: what C holds, in the look's materials
+surface ground floor_yard
+surface floor  floor_yard
+surface stair  floor_yard
+surface raised plaza_stone
+surface cover  steel_rust
+surface wall   brick_dark
+
+# regions: the places the look talks about (cells, x across and z down), as in the other worlds of this map
+region base-a      2,9  8,22
+region base-b     39,9 45,22
+region north-lane  5,3 42,6
+region south-lane  5,25 42,28
+region mid-west    9,14 18,17
+region mid-east   29,14 38,17
+region plaza      19,10 28,21
+region north-flank 23,7 24,9
+region south-flank 23,22 24,24
+
+# the district: warehouses and sheds on the rock that faces each side lane, their faces on the lane and the roofs of the
+# yard (the skyline) behind them.
+# North lane, west to east: the long brick warehouse (the flagship's), a steel shed in wide bays, a dark-brick store.
+building north-lane brick      14 10,2 17,2 face window glass_wired storey 3.5
+building north-lane steel_corr 10 19,2 26,2 face panel steel_rust storey 3 bay 2
+building north-lane brick_dark 12 28,2 37,2 face window glass_wired storey 4
+# South lane, east to west: the north lane's turned about the centre, so each base meets the same street
+building south-lane brick      14 30,29 37,29 face window glass_wired storey 3.5
+building south-lane steel_corr 10 21,29 28,29 face panel steel_rust storey 3 bay 2
+building south-lane brick_dark 12 10,29 19,29 face window glass_wired storey 4
+
+# beyond: the bases' blocks and the plaza's ring raised as plain masonry, stacks and roofs in the skyline
+tower base-a brick_dark 6 9
+tower base-b brick_dark 6 9
+tower plaza concrete 12 20 mass
+skyline concrete_dark 6 16
+
+# a loading canopy over the plaza's north edge, and its twin over the south
+canopy plaza steel_corr 7.0 19,10 28,11
+canopy plaza steel_corr 7.0 19,20 28,21
+
+# light: the low sun does the work; sodium along the lanes, coming on; signal colours at the bases and in the mid lane
+neon base-a neon_amber 2.9 3
+neon base-b neon_cyan 2.9 3
+neon mid-west neon_signal 2.6 5
+neon mid-east neon_signal 2.6 5
+lamp north-lane 255,172,96 220 4
+lamp south-lane 255,172,96 220 4
+lamp north-flank 255,186,120 160 1
+lamp south-flank 255,186,120 160 2
+lamp plaza 255,200,150 140 3
+
+# oil and rainwater standing on the paving
+puddle north-lane puddle 18
+puddle south-lane puddle 18
+puddle plaza puddle 22
+puddle mid-west puddle 15
+puddle mid-east puddle 15
+
+# viewpoints for critique: fixed first-person poses, each where a player can stand (yaw 0 north, 90 east)
+view north-lane    14,5    0  6
+view south-lane    33,26 180  6
+view base-a-exit    8,15  90  0
+view plaza-centre  24,15  90  2
+view north-flank   23,8  180  4
+view mid-west      13,16  90  0

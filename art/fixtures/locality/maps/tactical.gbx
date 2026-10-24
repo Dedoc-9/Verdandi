@@ -1,0 +1,71 @@
+GRAYBOX 0
+# FPS-GRAYBOX-0: the tactical graybox. Its walls and floor are tactical.layout, which the design compiler produced
+# from tactical.design. This file adds only what the design language does not say: heights, cover, spawns, the
+# objective, targets, probes and routes, each on floor cells. Coordinates are cells, x across and z down; a cell is
+# `cell` metres. The map is point-symmetric about the plaza's centre.
+name tactical
+layout tactical.layout
+cell 2
+wall 4
+
+# spawn regions: base A in the west, base B in the east; yaw in degrees, 0 north (-z), 90 east (+x)
+spawn A 3,15 90
+spawn B 44,16 270
+
+# the central engagement: a raised platform in the plaza, a step on every side, the objective on top
+height 21,12 26,19 0.5
+height 22,13 25,18 1.0
+objective 22,14 25,17
+# tall pillars at the plaza's corners break the long sightlines across it
+cover 20,11 20,11 2.6
+cover 27,11 27,11 2.6
+cover 20,20 20,20 2.6
+cover 27,20 27,20 2.6
+
+# the mid lane: low cover, 1 m, that a jump mounts
+cover 12,14 12,14 1.0
+cover 12,17 12,17 1.0
+cover 16,15 16,16 1.0
+cover 31,15 31,16 1.0
+cover 35,14 35,14 1.0
+cover 35,17 35,17 1.0
+
+# the side lanes: crates and pillars, the south lane the north lane turned about the centre
+cover 11,4 11,5 1.0
+cover 36,26 36,27 1.0
+cover 17,5 17,5 2.6
+cover 30,26 30,26 2.6
+cover 21,4 21,4 1.0
+cover 26,27 26,27 1.0
+cover 28,6 28,6 1.0
+cover 19,25 19,25 1.0
+cover 33,4 34,4 1.0
+cover 13,27 14,27 1.0
+cover 38,5 38,5 2.6
+cover 9,26 9,26 2.6
+
+# at the bases' exits
+cover 8,12 8,12 1.0
+cover 39,19 39,19 1.0
+
+# targets
+target 10,16
+target 37,15
+target 24,11
+target 23,20
+target 26,4
+target 21,27
+
+# probes: cells that must block, and cells that must stay open
+probe wall 1,15
+probe wall 23,2
+probe wall 9,10
+probe open 23,8
+probe open 24,23
+probe open 6,8
+probe open 41,24
+
+# the three routes from base A to base B
+route north 3,15 6,4 41,4 44,16
+route mid 3,15 20,15 23,15 27,16 44,16
+route south 3,15 6,27 41,27 44,16
