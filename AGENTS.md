@@ -28,6 +28,7 @@ When two sources disagree, trust them in this order:
 | [`docs/PROGRAM.md`](docs/PROGRAM.md), [`docs/ROADMAP.md`](docs/ROADMAP.md) | the why, the owner's rulings, and what is declared but not built |
 | [`docs/REPOSITORY-TRUTH.md`](docs/REPOSITORY-TRUTH.md) | the last audit of documents against code, and its open findings |
 | [`docs/CAPABILITY-MATRIX.md`](docs/CAPABILITY-MATRIX.md) | before planning against the engine and studio specification: what exists, graded, its findings, and the agreed order (2026-10-16) |
+| [`docs/BATCH-0.md`](docs/BATCH-0.md) | before proposing a batch of changes: the sheet first, measured read sets, every commit's own evidence, a red batch stays red (his protocol, 2026-10-21/22) |
 | each folder's `README.md` | that folder's contract, parts, invariants and ghosts |
 
 ## 2. The map

@@ -8737,3 +8737,134 @@ The protocol's text, as amended, is the first item of 0259's sheet; this entry r
 No row, rung, pinned source, oracle file, registered entry, BINDING-0 file, frozen file, art/references.jsonl or ledger
 changed. Docs: AGENTS.md (the studio's row), docs/CAPABILITY-MATRIX.md (F-14, a note; F-16 and F-17), docs/CORE.md
 (art's lines), 0256's entry (a note), this entry (with his rulings on batching, recorded).
+
+### Batch 0265 — five repairs, the first batch agreed by its sheet before it was built · **built, off the gate** (0265, five commits: I-0 `docs/BATCH-0.md` (new), `AGENTS.md`; I-1 `art/glue.py`; I-2 `art/check.py`; I-3 `art/director.py`, `art/play.py`; I-4 `art/director/durable.py`, `art/director.py`, `docs/CORE.md`)
+
+The 0259 batch of the agreed order, numbered 0265 (0259 to 0264 were taken meanwhile), built under BATCH-0
+(`docs/BATCH-0.md`). Its sheet, version 10, its dependency graph and the protocol for a red row at its tip were each
+ruled before the build, and the graph was frozen by his ruling (the agent's records, kept in scratch: the sheet
+`65ae20e0…`, the graph `5b5c60ab…`, the frozen record `d7f19b75…`). Each item below is one commit, its checks run at that
+commit and a write guard held over its files; the tip ran as the build request he authorized states it. His ruling of
+2026-10-25 on the four decisions:
+
+> Rulings: accept SHEET-v10.md as written; freeze graph-v10-proposed.json (5b5c60ab…); adopt PROTOCOL-FLAKY-ROWS-v2.md, strict; authorize the build as BUILD-REQUEST.md (corrected) states it.
+
+Goal lines (GOAL-LINE-0, proposed): all five items are maintenance and none names a clause of the goal. His caution on
+that count: *"a useful review trigger, not an automatic failure condition or a new gate."*
+
+**His plan-hardening ruling** (2026-10-22, his message of 19:01 UTC, answering "how many future rungs are planned?";
+recorded in this entry only, as his placement ruling requires: *"Record the plan in the 0259 ROADMAP entry only."*):
+
+> Yes. I would harden the plan around the recent pivots, not merely add more items to the queue. The biggest change is that the work now has three distinct purposes—repairing the plant harness, auditing correctness boundaries, and investigating the simulation—and the plan should prevent evidence from one purpose being mistaken for proof of another.
+>
+> The October 9 decision to hold the gate at 251 rows and shift attention toward FPS design is especially important. The plan should not quietly turn the plant audit into another gate-expansion project.
+>
+> ## 1. Make these five changes to the plan
+>
+> A. Establish a hard 0259 release boundary
+>
+> Finish the revised read-set measurement, freeze the graph, resolve the I-2 assertion and I-3 studio-ledger regression, then execute the authorized batch. Keep the 251-row gate unchanged.
+>
+> The new STUDIO regression is a targeted contract check, not permission to expand the gate. Any graph conflict stops the build and requires a revised sheet before proceeding.
+>
+> B. Split harness integrity from product correctness
+>
+> Treat F-16, C-A–C-F, Q2, D-A/D-B, memo plants, D-D/CERT, S-D, and the eight-suite audit as a bounded audit-and-repair track.
+>
+> Every finding gets its own obligation, failure mechanism, plant, honest control, and targeted check. A green plant suite demonstrates only what its tests establish; it does not prove the underlying product contract is correct.
+>
+> C. Make research findings—not the backlog—authorize new patches
+>
+> GEOMETRY-0, MOVER-0, and ROUNDING-0 remain independent investigations. Each must produce a preregistered question, discriminating test, and explicit verdict before any patch is proposed.
+>
+> The silence failure remains `NOT_MEASURED`; investigate it only with a new registration. Do not merge it with the plant allowlist fix or use the unsuccessful reproduction as evidence that the failure is gone.
+>
+> D. Restore a separate FPS-design milestone
+>
+> The previous direction toward `FPS-GRAYBOX-0` should remain visible rather than being displaced indefinitely by harness cleanup.
+>
+> Keep the verified-core/runtime/renderer boundary explicit, require deterministic replay with fixed ticks and saved commands for motion replay, and make rendering noninterference and defect-directed conversion mutations explicit tests. These are design-track goals, not claims that the current repository already satisfies them.
+>
+> E. Add evidence-based batch sizing and gate escalation
+>
+> Keep 3–5 items per batch as a planning heuristic, not a quota. Use lightweight checks for low-risk changes; use the full gate at release and contract-risk checkpoints. Split a batch when an interaction is critical but not covered by targeted tests.
+>
+> Never relax a bound, widen a predicate, or add gate rows merely to make a failing run green.
+>
+> ## 2. Reorder the post-0259 backlog by dependency and value
+>
+> I would not treat the ten listed items as ten guaranteed patches.
+>
+> | Phase | Work                                                                   | Exit condition                                                                                                     |
+> | ----- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+> | 0     | 0259                                                                   | Batch-tip checks and unchanged 251-row gate pass under the agreed release protocol.                                |
+> | 1     | F-16 and F-3                                                           | Uniqueness scope and provider self-scope contract are explicitly ruled; then decide whether each requires a patch. |
+> | 2     | Plant audit: C-A–C-F, Q2, D-A/D-B, memo plants, eight unaudited suites | Each predicate is classified as sound, unsound, or unresolved with evidence.                                       |
+> | 3     | Reference-dependent work: D-D/CERT, S-D                                | Required 0254 and 0253 reference conditions are satisfied before code changes.                                     |
+> | 4     | B4-TIMING-BOUNDARY                                                     | A falsifiable design distinguishes the timing failure modes while preserving the 10-second bound.                  |
+> | 5     | Research tracks                                                        | GEOMETRY-0, MOVER-0, ROUNDING-0 each produce an independent verdict.                                               |
+> | 6     | FPS-GRAYBOX-0                                                          | A separately reviewed design slice establishes and tests its contracts.                                            |
+> | Later | REACH-3                                                                | Enforcement layer only; it never becomes the authority for the evidence it enforces.                               |
+>
+> The order between phases 1 and 2 is provisional. If the audits reveal a shared prerequisite or a critical interaction, re-order before assigning items to a batch.
+>
+> ## 3. Add one rule that prevents the plan from drifting
+>
+> Every new work item should have a short admission record:
+>
+> - Question: what uncertainty or failure are we addressing?
+> - Evidence: what observation supports the concern?
+> - Discriminator: what result would separate competing explanations?
+> - Scope: what files, contracts, references, and tests may change?
+> - Exit condition: what exact result allows the item to close?
+> - Non-claims: what will still remain unproved?
+>
+> This applies to research as well as code. A finding that does not justify a patch can still be a successful result.
+>
+> ## My recommendation
+>
+> Harden the plan now in three concrete ways: freeze the 0259 release boundary, turn the remaining plant work into an audit with explicit verdicts rather than a patch quota, and reserve a distinct milestone for FPS design.
+>
+> That keeps the engineering rigor you've built without allowing the harness to become the project’s permanent center of gravity. The immediate action remains finishing the revised 0259 graph and sheet; no later item is authorized merely because it appears in this roadmap.
+
+**His GOAL-LINE-0 ruling** (2026-10-25, answering "Add a goal line to every admission record from now on?"; recorded
+here, D7, as he accepted it):
+
+> Yes—with one important constraint: every admission record should carry a goal line, but the goal line must be descriptive and auditable, not a second authority mechanism.
+> Given your reported findings, the problem is not a shortage of cryptographic machinery. It is drift: security mechanisms and architectural rules can accumulate without a recorded connection to the goal they are supposed to serve. A required goal line gives each admission a direct, reviewable answer to “Why does this change belong?”
+> I would make this a requirement for new admission records, not a retroactive rewrite of the existing chain.
+> Proposed rule
+> GOAL-LINE-0: Every new admission record MUST state the goal the transition serves, the intended observable outcome, and the scope of the change. The goal line is immutable with the admission record. It does not itself authorize the transition or establish that the goal was achieved.
+> A compact record could look like this:
+>
+> ```
+> goal_line:
+>   goal: <stable goal reference, if one exists>
+>   outcome: <observable intended result>
+>   scope: <what this transition may change>
+>   basis: <charter, decision, issue, or explicit maintenance rationale>
+> ```
+>
+> Four rules to keep it useful
+>
+> 1. No invented goals after the fact. The author declares the goal when preparing the admission; the record preserves it.
+> 2. No goal laundering. A plausible goal does not override failed predicates, missing evidence, or insufficient authority.
+> 3. No vague boilerplate. “Improve security” is insufficient without saying what observable property changes.
+> 4. No forced retroactive migration. Existing admission records remain as they are. Add goal lines to new records, and to historical records only when they are deliberately reviewed or re-admitted.
+>
+> A maintenance change may legitimately say that its goal is to preserve existing behavior, reduce a measured cost, or correct a specified defect. It should not need to pretend every small change advances a grand strategic objective.
+> What this gives you
+> The goal line creates a lightweight traceability chain:
+> Project goal → intended outcome → admitted transition → supporting evidence.
+> That helps reviewers identify scope drift without adding signatures, quorum requirements, or another policy engine. Where the goal is disputed, record the dispute; don't let the goal field silently settle it.
+> Ruling: Adopt GOAL-LINE-0 as a proposed requirement for new admission records. Keep it small, and evaluate whether it catches real drift before expanding it into a more elaborate goal registry.
+
+#### I-0 · BATCH-0's text into the repository (commit 1 of 5: `docs/BATCH-0.md`, `AGENTS.md`, this entry)
+
+- `docs/BATCH-0.md` (new) holds the protocol as he amended it and his three BATCH-0 rulings, each quoted whole. It takes
+  in neither the plan-hardening ruling (his: *"Do not fold it into `docs/BATCH-0.md`."*) nor the GOAL-LINE-0 ruling;
+  both are recorded in this entry, and neither widens this item's writes.
+- `AGENTS.md` §1: one row pointing to it.
+- Its check, the check of the words (scratch, no row): every quotation of his in `docs/BATCH-0.md` and in this entry
+  held to his saved text, and both rulings of this entry present whole. Its output is in the commit's message. It
+  enforces nothing in the program; documentation alone enforces nothing.
