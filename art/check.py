@@ -1040,12 +1040,34 @@ def check_reach_witness():
         old_twin = reach_here(S)
     finally:
         REACH_PLANT, dress.REACH_PLANT = saved
-    caught = not covered(old) and not covered(old_twin)
+    # 0265: the plant is caught only when the four values below hold, each computed here, never a line only printed.
+    # Before 0265 it read caught whenever the parabola's ceilings did not cover the head, and covered() is false when no
+    # head was measured: a run in which the tick never landed read as the plant refused.
+    seen = (landed == n, (covered(S["reach"]), covered(twin)), (covered(old), covered(old_twin)),
+            all(ok for _c, ok, _d in rows))
+    caught = witness_caught(*seen)
     print("%s plant: the pair test before 0257, the parabola's, misses the box — %s" % (
-        "PASS" if caught else "FAIL", ("refused: the head %.6f m over %s above the ceiling less the margin (%s, the twin's %s)" % (
-            head, at, old[at[1] * w + at[0]], old_twin[at[1] * w + at[0]])) if caught else "NOT refused"))
+        "PASS" if caught else "FAIL", ("refused: the tick landed at tick %d; the head %.6f m over %s under both twins' ceilings less the margin "
+                                       "(%s, %s) and above both parabola ceilings (%s, the twin's %s); the honest rows passed" % (
+                                           landed, head, at, S["reach"][at[1] * w + at[0]], twin[at[1] * w + at[0]], old[at[1] * w + at[0]],
+                                           old_twin[at[1] * w + at[0]])) if caught else "NOT refused: landed %s, the twins cover %s, the parabolas cover %s, "
+                                                                                       "the honest rows passed %s" % seen))
     failed += 0 if caught else 1
+    # the verdict itself, scored on made-up observations: it holds the scoring only, never a trial of the live plant
+    for c, obs, want in (("no landing counts nothing", (False, (True, True), (False, False), True), False),
+                         ("the current ceilings not covering the head count nothing", (True, (True, False), (False, False), True), False),
+                         ("all four held count the parabola's miss", (True, (True, True), (False, False), True), True)):
+        ok = witness_caught(*obs) == want
+        print("%s the witness's verdict, scored on made-up observations: %s — %s" % ("PASS" if ok else "FAIL", c, "scored %s" % witness_caught(*obs)))
+        failed += 0 if ok else 1
     return failed
+
+
+def witness_caught(landed, twins_cover, parabolas_cover, honest_pass):
+    """REACH-1's plant caught (0265): the tick landed on the box; both twins' current ceilings cover the head measured
+    from it; both parabola ceilings do not; and the honest rows passed in the same run, so that the row that fails under
+    the plant is the plant row's own predicate."""
+    return bool(landed) and all(twins_cover) and not any(parabolas_cover) and bool(honest_pass)
 
 
 def main(argv) -> int:

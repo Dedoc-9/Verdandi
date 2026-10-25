@@ -8882,3 +8882,18 @@ here, D7, as he accepted it):
   the same value twice"; `glue-judged-in-named-order` by "named either way".
 - `GLUE SELFTEST 15/15` (12 before). GLUE stays outside R5's suites: `PLANTS HELD` says nothing of it, and nothing here
   says R5 proves GLUE correct.
+
+#### I-2 · The reach witness's plant caught by its witness (commit 3 of 5: `art/check.py`, this section)
+
+- **The defect** (the plant-predicate audit of 2026-10-22): the plant row read caught whenever both parabola ceilings
+  failed to cover the head, and `covered()` is false when no head was measured. MEASURED on the tree before this commit,
+  the tick made never to land: the verdict computed caught, and printing the row raised `TypeError`.
+- **Now** (`witness_caught`): the plant row's verdict is the conjunction of four values, each computed in the row, never
+  a line only printed:
+  1. the tick landed on the box;
+  2. both twins' current ceilings cover the head measured from it;
+  3. both parabola ceilings do not;
+  4. the honest rows passed in the same run, so that the row that fails under the plant is its own predicate.
+- **Three rows score the verdict on made-up observations:** no landing counts nothing; the current ceilings not
+  covering count nothing; all four held count the miss. They hold the scoring only, never a trial of the live plant.
+- `== reach-witness` 8 rows, every one PASS (5 before). The R5 key is kept, word for word: check.py's keys stay 203.
