@@ -35,7 +35,21 @@ HOOK = None                      # the race court's: called with each death poin
 WAIT = float(os.environ.get("VERDANDI_LOCK_WAIT", "60"))
 # a planted defect for the race court only (art/director.py racetest): "no-lock" (locked() holds nothing),
 # "no-fence" (an admission does not read the head again under the lock), "recover-ignores-lock"
-PLANT = os.environ.get("VERDANDI_PLANT", "")
+# DES-0 (0265): the names PLANT is compared with in art/, every one; the director's census row (des_rows) holds this
+# list to every comparison site, and PLANT takes VERDANDI_PLANT from the environment only when it is one of them
+NAMES = ("no-lock", "no-fence", "recover-ignores-lock", "no-export-lock", "no-shared-map", "admit-reads-twice",
+         "queue-torn-in-memory", "queue-forgets")
+
+
+def from_env(value=None):
+    """VERDANDI_PLANT (or `value`) when it names a plant compared in art/, else "" (DES-0, 0265). A foreign value, such as
+    another suite's plant inherited by a child (STUDIO APP's ignore-busy), no longer reaches PLANT, where any value
+    turned the export memo off (art/director.py memo_call); before 0265 every value was taken."""
+    v = os.environ.get("VERDANDI_PLANT", "") if value is None else value
+    return v if v in NAMES else ""
+
+
+PLANT = from_env()
 
 
 def point(name):

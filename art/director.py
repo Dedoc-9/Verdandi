@@ -1776,7 +1776,7 @@ def cmd_selftest():
         except SystemExit as e:
             results.append(("plant: no shared-map check — the layout admitted", False, str(e)[:110]))
         finally:
-            durable.PLANT = os.environ.get("VERDANDI_PLANT", "")
+            durable.PLANT = durable.from_env()
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     # 0254: the frozen matrix's rows (art/director/inverse/0254-matrix.json, DIRECTOR SELFTEST, FZ1 to OU9), their
@@ -2078,7 +2078,7 @@ def memo_rows(plant=""):
             ws.export()
             ws.export()
         finally:
-            durable.PLANT = os.environ.get("VERDANDI_PLANT", "")
+            durable.PLANT = durable.from_env()
         rows.append(("memo: off while a plant of the director is set", MEMO_STATS["off"] - n0 == 2, "two exports under the plant no-fence, both computed"))
     finally:
         MEMO.clear()
@@ -2090,6 +2090,105 @@ def memo_rows(plant=""):
     for p_ in MEMO_PLANTS:
         caught = [n for n, ok, _d in memo_rows(p_) if not ok]
         rows.append(("memo plant %s caught" % p_, bool(caught), ("by: " + "; ".join(c[6:] for c in caught)) if caught else "NOT CAUGHT"))
+    rows += des_rows()
+    return rows
+
+
+def des_rows():
+    """DES-0 (0265): VERDANDI_PLANT reaches durable.PLANT only for a name compared in art/. A foreign name (STUDIO APP's
+    ignore-busy, which the plaza it starts inherits) leaves PLANT empty and the export memo on; a recognized one
+    (no-fence) reaches it and turns the memo off; a census holds durable.NAMES to every comparison site in art/. Two
+    plants: durable-plant-any-name (every value taken, the reading before 0265), caught by the foreign-name row through
+    the memo's counter; durable-plant-list-short (a compared name taken off the list), caught by the census, which
+    names it. Not claimed: that the leak caused the silence failures (NOT_MEASURED), or anything of racetest."""
+    import re
+    rows = []
+    here = os.path.join(HERE, "director")
+    tmp = tempfile.mkdtemp(prefix="des-selftest-")
+    saved_plant, saved_memo = durable.PLANT, dict(MEMO)
+
+    def child(value):
+        """durable.PLANT as a fresh process reads it with VERDANDI_PLANT set to value"""
+        env = dict(os.environ, VERDANDI_PLANT=value)
+        r = subprocess.run([sys.executable, "-B", "-c", "import sys; sys.path.insert(0, sys.argv[1]); import durable; print(repr(durable.PLANT))", here],
+                           capture_output=True, text=True, env=env, timeout=120)
+        return r.stdout.strip() if r.returncode == 0 else "exit %d" % r.returncode
+
+    def memo_under(value):
+        """two exports with durable.PLANT as the reading gives it for value: (hits, offs) they add"""
+        durable.PLANT = durable.from_env(value)
+        h0, o0 = MEMO_STATS["hit"], MEMO_STATS["off"]
+        try:
+            ws.export()
+            ws.export()
+        finally:
+            durable.PLANT = saved_plant
+        return MEMO_STATS["hit"] - h0, MEMO_STATS["off"] - o0
+
+    def census():
+        """the names compared with durable.PLANT in art/: [(name, file:line)]"""
+        found = []
+        pat = re.compile(r'\bdurable\.PLANT\s*(?:==|!=)\s*"([^"]+)"')
+        own = re.compile(r'(?<![.\w])PLANT\s*(?:==|!=)\s*"([^"]+)"')
+        for d, _dirs, fs in os.walk(HERE):
+            for f in sorted(fs):
+                if f.endswith(".py"):
+                    p = os.path.join(d, f)
+                    for i, ln in enumerate(open(p, encoding="utf-8").read().split("\n")):
+                        for m in pat.finditer(ln):
+                            found.append((m.group(1), "%s:%d" % (os.path.relpath(p, REPO), i + 1)))
+                        if os.path.abspath(p) == os.path.abspath(durable.__file__):
+                            for m in own.finditer(ln):
+                                found.append((m.group(1), "%s:%d" % (os.path.relpath(p, REPO), i + 1)))
+        return found
+
+    def foreign_row():
+        got = child("ignore-busy")
+        hits, offs = memo_under("ignore-busy")
+        return got == "''" and hits == 1 and offs == 0, "a fresh process reads %s; two exports under it: %d hit, %d off" % (got, hits, offs)
+
+    def census_row():
+        sites = census()
+        names = {n for n, _s in sites}
+        missing, extra = sorted(names - set(durable.NAMES)), sorted(set(durable.NAMES) - names)
+        return not missing and not extra and len(names) == 8, "%d names at %d comparison sites%s%s" % (
+            len(names), len(sites), ("; compared but not on the list: " + ", ".join(missing)) if missing else "",
+            ("; on the list but compared nowhere: " + ", ".join(extra)) if extra else "")
+    try:
+        ws = selftest_tree(tmp)
+        MEMO.update(on=True, plant="")
+        memo_clear()
+        f_ok, f_d = foreign_row()
+        rows.append(("the plant variable: a foreign name (STUDIO APP's ignore-busy) leaves durable.PLANT empty and the memo on", f_ok, f_d))
+        got = child("no-fence")
+        hits, offs = memo_under("no-fence")
+        rows.append(("the plant variable: a recognized name (no-fence) reaches durable.PLANT and turns the memo off",
+                     got == "'no-fence'" and hits == 0 and offs == 2, "a fresh process reads %s; two exports under it: %d hit, %d off" % (got, hits, offs)))
+        c_ok, c_d = census_row()
+        rows.append(("the plant variable: durable.NAMES is every name compared with durable.PLANT in art/ (a census of the comparison sites)", c_ok, c_d))
+        memo_clear()
+        real = durable.from_env
+        durable.from_env = lambda value=None: os.environ.get("VERDANDI_PLANT", "") if value is None else value
+        try:
+            p_ok, p_d = foreign_row()
+        finally:
+            durable.from_env = real
+        rows.append(("plant: durable-plant-any-name, every value taken as before 0265, caught by the foreign-name row through the memo's counter",
+                     f_ok and not p_ok, ("refused: the foreign-name row fails under it (%s)" % p_d) if f_ok and not p_ok else "NOT refused: " + p_d))
+        names0 = durable.NAMES
+        durable.NAMES = tuple(n for n in names0 if n != "queue-forgets")
+        try:
+            s_ok, s_d = census_row()
+        finally:
+            durable.NAMES = names0
+        rows.append(("plant: durable-plant-list-short, queue-forgets taken off durable's list, caught by the census row, which names it",
+                     c_ok and not s_ok and "queue-forgets" in s_d, ("refused: the census row fails under it (%s)" % s_d) if c_ok and not s_ok else "NOT refused: " + s_d))
+    finally:
+        durable.PLANT = saved_plant
+        MEMO.clear()
+        MEMO.update(saved_memo)
+        memo_clear()
+        shutil.rmtree(tmp, ignore_errors=True)
     return rows
 
 

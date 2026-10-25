@@ -434,6 +434,16 @@ not as approval of the behavior"*): the studio's open path takes an empty ledger
 (`art/play.py:762-764`), and starts a genesis on a world with no ledger (`:771-775`), so opening such a world in the
 studio gives it a ledger silently. Nothing here says that is safe or authorized.
 
+**DES-0 · the plant variable reached `durable.PLANT` whatever its value (found 2026-10-21; repaired by 0265).** Before
+0265 `VERDANDI_PLANT` was taken into `durable.PLANT` for any value, and any value turned the export memo off
+(`art/director.py`, `memo_call`). STUDIO APP's self-test starts a plaza under `ignore-busy` (`art/studio_app.py:763`),
+which the child's environment carries (`:441`), so that plaza's director ran with its memo off. MEASURED again at
+`b441a1e`: every value, a foreign one among them, reached `durable.PLANT` and bypassed the memo. *Repaired (0265, I-4):*
+`durable.PLANT` takes the variable only for a name on `durable.NAMES`, the eight names compared with it in `art/`, and a
+census row holds the list to every comparison site; a foreign name leaves the memo on and a recognized one turns it
+off (the director's rows, two plants among them). Not claimed: that the leak caused the silence failures (their cause
+NOT_MEASURED), or anything of racetest.
+
 ## 6. SPEC1 against the rules
 
 About a third of SPEC1 already exists under other names, off the gate, in the art layer: stored inverses and

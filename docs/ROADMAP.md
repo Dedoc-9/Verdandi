@@ -8915,3 +8915,25 @@ here, D7, as he accepted it):
   behavior"*):** the studio's open path takes an empty ledger away and starts it again (`art/play.py:762-764`), and
   starts a genesis on a world with no ledger (`:771-775`). After this commit `verify` and `rebase` refuse that world,
   while opening it in the studio gives it a ledger silently. Nothing here says that is safe or authorized.
+
+#### I-4 · DES-0: the plant variable reaches only the names compared (commit 5 of 5, the batch's last: `art/director/durable.py`, `art/director.py`, `AGENTS.md` the director's memotest wording, `docs/CAPABILITY-MATRIX.md` DES-0, `docs/CORE.md` art's count, this section)
+
+- **The defect** (DES-0, found 2026-10-21; MEASURED again at `b441a1e`): `durable.PLANT` took `VERDANDI_PLANT` whatever
+  its value, and any value turned the export memo off. STUDIO APP's `ignore-busy`, inherited by the plaza it starts, ran
+  that plaza's director with the memo off.
+- **Now:** `durable.from_env` takes the variable only for a name on `durable.NAMES`, the eight names compared with
+  `durable.PLANT` in `art/`. The two resets in the director's self-test take it the same way.
+- **The rows** (five, two of them plants, in the memo's rows and so in both `memotest` and `selftest`):
+  - a foreign name (`ignore-busy`): a fresh process reads `durable.PLANT` empty, and the memo stays on;
+  - a recognized name (`no-fence`): it reaches `durable.PLANT`, and the memo is off;
+  - the census: `durable.NAMES` is every name compared with `durable.PLANT` in `art/` (8 names at 12 sites);
+  - the plant `durable-plant-any-name` (every value taken, the reading before), caught by the foreign-name row through
+    the memo's counter;
+  - the plant `durable-plant-list-short` (`queue-forgets` taken off the list), caught by the census, which names it.
+- `MEMO SELFTEST` 18 rows (13 before); `DIRECTOR SELFTEST` 132 rows, 41 of them R5's; `STUDIO APP SELFTEST 13/13`.
+- **Not claimed:** that the leak caused the earlier silence failures (their cause NOT_MEASURED, as he ruled: *"The
+  allowlist may fix the identified plant-propagation behavior. It does not establish that this behavior caused the
+  earlier silence failures."*), or anything of racetest.
+- **`docs/CORE.md`, written once by this last commit (BATCH-0 §3, his D4):** `art/`'s lines are 40,223, the newlines of
+  every tracked `.rs`, `.py`, `.js` and `.html` file under `art/` at this tip (39,971 at `b441a1e`, of which LOCALITY-1's
+  1,218 had not been counted; this batch adds 252). Every other folder's count is as recorded.
