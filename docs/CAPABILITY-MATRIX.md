@@ -421,11 +421,18 @@ desktop studio a world has one gateway, so two first asks in one second need two
 His to place.
 
 **F-17 · `director.py verify` on a world with no ledger ends in a traceback (found 2026-10-21, rehearsing his reference
-freeze; recorded, not repaired).** MEASURED on a copy of his checkout at 0257: `python art/director.py verify NAME` for
+freeze; repaired by 0265).** MEASURED on a copy of his checkout at 0257: `python art/director.py verify NAME` for
 harbor-lift, harbor-day and foundry-yard, none of which has a ledger in the checkout, ends in `IndexError` at `replay`'s
 `events[0]`, not a refusal with its own code; `rebase` replays first, so it does the same. Such a world needs `genesis`
 first. Also MEASURED: `rebase` holds the 9 art checks an evaluation runs and not the frozen reference, so it passes
-before a freeze. His to place.
+before a freeze. His to place. *Repaired (0265, I-3):* `replay` refuses a ledger with no event, `LEDGER-NONE`, so `verify`
+and `rebase` on a world with no ledger answer `LEDGER REFUSED: LEDGER-NONE …` with exit 1, write no ledger, append
+nothing and leave the world's files as they were (`art/build/content.lock`, a lock and no authority, is still made);
+valid ledgers replay as before (the frozen 0254 legacy ledger, the self-test genesis, and the ledger the studio itself
+wrote). Not repaired, and recorded as an unresolved admission-boundary question (his D6: *"Accept as a scoped deferral,
+not as approval of the behavior"*): the studio's open path takes an empty ledger away and starts it again
+(`art/play.py:762-764`), and starts a genesis on a world with no ledger (`:771-775`), so opening such a world in the
+studio gives it a ledger silently. Nothing here says that is safe or authorized.
 
 ## 6. SPEC1 against the rules
 

@@ -3227,6 +3227,16 @@ def studio_selftest():
             row("the ledger verifies after the admissions, the refusal and the undos", True, "%d events" % len(director().led.read(os.path.join(tmp, "art", "ledger", brief + ".ledger"))[0]))
         except (director().led.LedgerError, studio.StudioError) as e:
             row("the ledger verifies after the admissions, the refusal and the undos", False, str(e)[:120])
+        # F-17 (0265, his design A): the ledger the studio itself wrote, through its admissions, its refusal and its two
+        # undos, replayed by the director's replay as 0265 left it; its head is the head of the studio's files now
+        Dr = director()
+        try:
+            ev_r, _h = Dr.led.chain(os.path.join(tmp, "art", "ledger", brief + ".ledger"))
+            head_r, files_r = Dr.replay(None, ev_r)["head"], Dr.canon.head(Dr.current_parts(workspace(brief)))
+            row("the ledger the studio wrote replays (F-17's replay) to the head of the studio's files after the second undo",
+                head_r == files_r, "%d events; replayed %s, the files %s" % (len(ev_r), head_r[:12], files_r[:12]))
+        except Dr.led.LedgerError as e:
+            row("the ledger the studio wrote replays (F-17's replay) to the head of the studio's files after the second undo", False, str(e)[:120])
 
         # LEDGER-SAFE-0 (0245): the gateway's ledger writes, held to the head the ledger holds; its certificates made again
         D_ = director()

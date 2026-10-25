@@ -595,6 +595,9 @@ class Refusal(SystemExit):
 # the self-test's planted defects of LEDGER-SAFE-0 (cmd_selftest), never set otherwise: "no-held-check" (an event is
 # appended whatever head the ledger holds), "rebase-unchecked" (a rebase is recorded whatever its checks say)
 SAFE_PLANT = ""
+# F-17's plant (0265), set by ledger_none_rows alone and put back after: "replay-empty-unchecked", an empty ledger
+# replayed to its first event (the IndexError of before 0265)
+REPLAY_PLANT = ""
 
 
 def held_head(ws, events, checked=None):
@@ -1202,8 +1205,11 @@ def cmd_approve(ws, view, image, config, approver="the owner", note="", despite=
 # -------------------------------------------------------------------------------------------- verification
 def replay(ws, events):
     """The ledger replayed from its genesis: the art text, the design text and the head after the last event.
-    Refuses (raising LedgerError) any event that does not follow from the ones before it."""
+    Refuses (raising LedgerError) any event that does not follow from the ones before it, and a ledger with no event
+    (LEDGER-NONE, F-17, 0265: before, its first event was read and an IndexError ended the command)."""
     E = led.LedgerError
+    if not events and REPLAY_PLANT != "replay-empty-unchecked":
+        raise E("LEDGER-NONE: the ledger holds no event; start it with genesis")
     g = events[0]
     st = {"art": g["art_text"], "design": g["design_text"], "parts": dict(g["parts"]), "head": g["head"]}
     inv_ok = False              # set afresh for every admit event below; carried over only under the plant replay-undo-carried
@@ -1777,6 +1783,7 @@ def cmd_selftest():
     # expectations read only through inverse_freeze.frozen(), run once honest and once per INVERSE_PLANT value
     import inverse_rows
     results += inverse_rows.director_rows(sys.modules[__name__])
+    results += ledger_none_rows()
     results += memo_rows()
     failed = 0
     for name, ok, d in results:
@@ -1784,6 +1791,78 @@ def cmd_selftest():
         failed += 0 if ok else 1
     print("DIRECTOR SELFTEST %s" % ("PASSED" if not failed else "FAILED (%d)" % failed))
     return 0 if not failed else 1
+
+
+def ledger_none_rows():
+    """F-17 (0265): a world with no ledger, and ledgers that replay as before. verify and rebase on a world with no
+    ledger answer LEDGER-NONE with exit 1, write no ledger, append nothing and leave the world's files byte for byte as
+    they were (art/build/content.lock, a lock and no authority, is still made); the frozen 0254 legacy ledger replays to
+    the head its freeze records, and the self-test tree's genesis to its own head; and the plant replay-empty-unchecked
+    (the IndexError of before 0265) is caught only by the verify row's LEDGER-NONE."""
+    import contextlib
+    import io
+    import inverse_freeze
+    global REPLAY_PLANT
+    rows = []
+    tmp = tempfile.mkdtemp(prefix="ledger-none-")
+    try:
+        def files(root):
+            out = {}
+            for d, _dirs, fs in os.walk(root):
+                if os.path.relpath(d, root).split(os.sep)[:2] == ["art", "build"]:
+                    continue
+                for f in fs:
+                    out[os.path.relpath(os.path.join(d, f), root)] = canon.sha256(open(os.path.join(d, f), "rb").read())
+            return out
+
+        def refused(cmd):
+            root = os.path.join(tmp, "%s-%s" % (cmd, REPLAY_PLANT or "honest"))
+            ws = selftest_tree(root)
+            os.remove(ws.ledger)                           # the world as F-17 found harbor-lift: its files, no ledger
+            before, out = files(root), io.StringIO()
+            try:
+                with contextlib.redirect_stdout(out):
+                    rc = main([cmd, ws.brief, "--root", root] + (["--note", "a self-test"] if cmd == "rebase" else []))
+                said = out.getvalue()
+            except Exception as e:  # noqa: BLE001 — the IndexError of before 0265 is what the plant brings back
+                rc, said = None, "%s: %s" % (type(e).__name__, e)
+            same = files(root) == before
+            ok = rc == 1 and "LEDGER REFUSED: LEDGER-NONE" in said and not os.path.exists(ws.ledger) and same
+            return ok, "exit %s, %s; the ledger %s; the world's files %s" % (rc, " ".join(said.split())[:80], "absent" if not os.path.exists(ws.ledger)
+                                                                           else "WRITTEN", "byte for byte as they were" if same else "CHANGED")
+        v_ok, v_d = refused("verify")
+        rows.append(("verify on a world with no ledger refused LEDGER-NONE, exit 1: no ledger written, the world's files as they were", v_ok, v_d))
+        r_ok, r_d = refused("rebase")
+        rows.append(("rebase on a world with no ledger refused LEDGER-NONE, exit 1: no ledger written, nothing appended, the world's files as they were",
+                     r_ok, r_d))
+        _m, V, L, problems = inverse_freeze.frozen()
+        got = "?"
+        try:
+            want = V["legacy"]["replay"]["replayed files head"]
+            p = os.path.join(tmp, "legacy", "copy.ledger")
+            os.makedirs(os.path.dirname(p))
+            open(p, "wb").write(L)
+            ev_l, _h = led.chain(p)
+            leg = replay(None, ev_l)["head"]
+            ws_g = selftest_tree(os.path.join(tmp, "genesis"))
+            ev_g, _h = led.chain(ws_g.ledger)
+            gen, own = replay(ws_g, ev_g)["head"], canon.head(current_parts(ws_g))
+            ok = not problems and leg == want and gen == own == ev_g[0]["head"]
+            got = "the 0254 legacy ledger (%d events) to %s, its freeze's %s; the genesis to %s, the files' %s" % (len(ev_l), leg[:12], want[:12], gen[:12], own[:12])
+        except (led.LedgerError, TypeError, KeyError) as e:
+            ok, got = False, "%s: %s" % (type(e).__name__, str(e)[:100])
+        rows.append(("valid ledgers replay as before: the frozen 0254 legacy ledger to the head its freeze records, the self-test genesis to its own head",
+                     ok, got))
+        REPLAY_PLANT = "replay-empty-unchecked"
+        try:
+            p_ok, p_d = refused("verify")
+        finally:
+            REPLAY_PLANT = ""
+        rows.append(("plant: replay-empty-unchecked, an empty ledger replayed to its first event as before 0265, caught by the verify row's LEDGER-NONE",
+                     v_ok and not p_ok, ("refused: the verify row fails under it (%s)" % p_d) if v_ok and not p_ok else "NOT refused: " + p_d))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return rows
 
 
 def _safe_plant(p):

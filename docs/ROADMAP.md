@@ -8897,3 +8897,21 @@ here, D7, as he accepted it):
 - **Three rows score the verdict on made-up observations:** no landing counts nothing; the current ceilings not
   covering count nothing; all four held count the miss. They hold the scoring only, never a trial of the live plant.
 - `== reach-witness` 8 rows, every one PASS (5 before). The R5 key is kept, word for word: check.py's keys stay 203.
+
+#### I-3 · F-17: an empty ledger refused (commit 4 of 5: `art/director.py`, `art/play.py`, `AGENTS.md` STUDIO's row, `docs/CAPABILITY-MATRIX.md` F-17, this section)
+
+- **The defect** (F-17, found 2026-10-21; MEASURED again at `b441a1e`): `verify` and `rebase` on a world with no ledger
+  ended in `IndexError` at `replay`'s first event.
+- **Now:** `replay` refuses a ledger with no event, `LEDGER-NONE`, the code `held_head` already gives on the append path.
+  So `verify` and `rebase` answer `LEDGER REFUSED: LEDGER-NONE …` with exit 1, write no ledger, append nothing and leave
+  the world's files byte for byte as they were. The behaviour changes only for an empty ledger; valid ledgers replay as
+  before.
+- **The director's rows** (four, one a plant): verify refused; rebase refused; the frozen 0254 legacy ledger replaying to
+  the head its freeze records and the self-test genesis to its own head; the plant `replay-empty-unchecked` (the
+  `IndexError` of before), caught only by the verify row's `LEDGER-NONE`. `DIRECTOR SELFTEST` 127 rows, 39 of them R5's.
+- **STUDIO's row** (his design A): after the studio's own admissions, its refusal and its two undos, the ledger it wrote
+  replays to the head of its files. It is no plant row. `STUDIO SELFTEST 215/215`.
+- **An unresolved admission-boundary question, recorded (his D6, *"Accept as a scoped deferral, not as approval of the
+  behavior"*):** the studio's open path takes an empty ledger away and starts it again (`art/play.py:762-764`), and
+  starts a genesis on a world with no ledger (`:771-775`). After this commit `verify` and `rebase` refuse that world,
+  while opening it in the studio gives it a ledger silently. Nothing here says that is safe or authorized.
