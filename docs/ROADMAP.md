@@ -8868,3 +8868,17 @@ here, D7, as he accepted it):
 - Its check, the check of the words (scratch, no row): every quotation of his in `docs/BATCH-0.md` and in this entry
   held to his saved text, and both rulings of this entry present whole. Its output is in the commit's message. It
   enforces nothing in the program; documentation alone enforces nothing.
+
+#### I-1 · GLUE's plants caught by their own rows (commit 2 of 5: `art/glue.py`, `AGENTS.md` GLUE's row, this section)
+
+- **The defect** (the plant-predicate audit of 2026-10-22): a GLUE plant counted caught when any row of the planted run
+  failed, or when the run raised (`art/glue.py`, the plant loop before 0265).
+- **Now:** each plant names its own row (`DESIGNATED`), and `scored` counts it caught only when that row passed in the
+  honest run and fails under the plant. Another row failing is no catch, and an exception is no catch.
+- **Three scorer rows**, on made-up observations: another row failing under a plant; the named row failing in the honest
+  run; a plant run that raises. Each is no catch. They hold the scorer, never a plant trial.
+- **The mapping, confirmed at this commit by running each plant:** `glue-sections-unchecked` by "the building's face and
+  one of its bays"; `glue-fingerprint-ordered` by "one bay, two values: OBSTRUCTED"; `glue-repeat-refused` by "one bay,
+  the same value twice"; `glue-judged-in-named-order` by "named either way".
+- `GLUE SELFTEST 15/15` (12 before). GLUE stays outside R5's suites: `PLANTS HELD` says nothing of it, and nothing here
+  says R5 proves GLUE correct.

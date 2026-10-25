@@ -39,6 +39,22 @@ sys.path.insert(0, HERE)
 FORMAT, VERSION = "VERDANDI-GLUE", "0"
 PLANT = ""
 PLANTS = ("glue-sections-unchecked", "glue-fingerprint-ordered", "glue-repeat-refused", "glue-judged-in-named-order")
+# each plant's own row, by the start of its text (0265): a plant is caught only when this row fails under it and
+# passes in the honest run. Before 0265 any row failing, or the run raising, counted as a catch.
+DESIGNATED = {"glue-sections-unchecked": "the building's face and one of its bays",
+              "glue-fingerprint-ordered": "one bay, two values: OBSTRUCTED",
+              "glue-repeat-refused": "one bay, the same value twice",
+              "glue-judged-in-named-order": "named either way"}
+
+
+def scored(designated, honest, under):
+    """Whether a plant is caught: the one row its name designates passed in the honest run (`honest`, its rows as
+    (name, ok)) and fails under the plant (`under`, the plant run's rows, or the exception it raised: no catch)."""
+    if isinstance(under, BaseException):
+        return False
+    h = [ok for n, ok in honest if n.startswith(designated)]
+    u = [ok for n, ok in under if n.startswith(designated)]
+    return len(h) == 1 and h[0] and len(u) == 1 and not u[0]
 
 
 def sha256(b):
@@ -242,19 +258,31 @@ def selftest():
                     differ.append("%s / %s" % (OPS[i][0], OPS[j][0]))
         row("every pair of the census named both ways: every field of the judgment the same, the support's names swapped",
             pairs == 21 and not differ, "%d pairs, %d judgments; %s" % (pairs, 2 * pairs, ("differ: " + "; ".join(differ)) if differ else "none differs"))
+        # the scorer, on made-up observations (0265): it is held here, never shown by a plant run
+        named, other = "the named row", "another row"
+        row("the scorer: another row failing under a plant, its own row passing, is no catch",
+            not scored(named, [(named, True), (other, True)], [(named, True), (other, False)]), "not caught")
+        row("the scorer: the named row failing in the honest run is no catch, though it fails under the plant too",
+            not scored(named, [(named, False), (other, True)], [(named, False), (other, True)]), "not caught")
+        row("the scorer: a plant run that raises is no catch",
+            not scored(named, [(named, True), (other, True)], RuntimeError("the plant broke the run")), "not caught")
     if PLANT:
         return rows
     caught = []
+    honest = list(rows)
     for p in PLANTS:
         globals()["PLANT"] = p
         try:
-            failed = [n for n, ok in selftest() if not ok]
-        except Exception as e:  # noqa: BLE001 — a plant that breaks the run is caught by it
-            failed = ["the run: %s" % type(e).__name__]
+            under = selftest()
+        except Exception as e:  # noqa: BLE001 — a plant that breaks the run is no catch (0265)
+            under = e
         finally:
             globals()["PLANT"] = ""
-        caught.append(bool(failed))
-        print("[%s] glue plant %s caught — %s" % ("PASS" if failed else "FAIL", p, ("by: " + "; ".join(f_[:70] for f_ in failed)) if failed else "NOT CAUGHT"))
+        ok_ = scored(DESIGNATED[p], honest, under)
+        caught.append(ok_)
+        why = ("the run raised %s" % type(under).__name__) if isinstance(under, BaseException) else (
+            "failed: " + ("; ".join(n[:60] for n, o in under if not o) or "nothing"))
+        print("[%s] glue plant %s caught — %s" % ("PASS" if ok_ else "FAIL", p, ("by its own row: " + DESIGNATED[p]) if ok_ else "NOT CAUGHT by its own row (%s)" % why))
     ok = all(o for _n, o in rows) and all(caught)
     print("GLUE SELFTEST %d/%d" % (sum(o for _n, o in rows) + sum(caught), len(rows) + len(caught)))
     return 0 if ok else 1
