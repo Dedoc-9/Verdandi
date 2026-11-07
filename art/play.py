@@ -769,11 +769,24 @@ class Hub:
                         raise studio.StudioError("STUDIO-WORLD", "world %s cannot be opened: its empty ledger could not be taken away (%s): try "
                                                                  "again" % (name, e.strerror or type(e).__name__))
                 if not os.path.exists(ws.ledger):
+                    # D6 (2026-11-06): checked again under the world's content lock (reentrant: cmd_genesis takes the same
+                    # one). In this process self.lock already makes opens one at a time; the content lock is what keeps
+                    # another process's start of the same ledger out (a director command's genesis), argued from
+                    # durable.locked's OS file lock and not measured. A world whose ledger exists takes no lock here, as
+                    # before. QUIET_LOCK first, then the content lock: the order studio.quiet(director command) takes them.
                     # DASHBOARD-0 (0250): its console swapped under QUIET_LOCK (D._quiet swapped it without), its refusal
                     # answered STUDIO-WORLD as before
-                    with studio.QUIET_LOCK:
-                        D._quiet(D.cmd_genesis, ws)
-                    self.say("world %s: its ledger started" % name)
+                    started = False
+                    try:
+                        with studio.QUIET_LOCK, D.durable.locked(D.led.lock_path(ws.ledger)):
+                            if not os.path.exists(ws.ledger):
+                                D._quiet(D.cmd_genesis, ws)
+                                started = True
+                    except D.durable.Busy:
+                        raise studio.StudioError("STUDIO-WORLD", "world %s cannot be opened: LEDGER-BUSY: another writer held its content lock "
+                                                                 "for the whole wait; try again" % name)
+                    if started:
+                        self.say("world %s: its ledger started" % name)
             except D.led.LedgerError as e:
                 raise studio.StudioError("STUDIO-WORLD", "world %s cannot be opened: %s" % (name, e))
             live = Live(name, os.path.join(root, "art", "briefs", name + ".art"), [], root=root)

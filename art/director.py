@@ -598,6 +598,13 @@ SAFE_PLANT = ""
 # F-17's plant (0265), set by ledger_none_rows alone and put back after: "replay-empty-unchecked", an empty ledger
 # replayed to its first event (the IndexError of before 0265)
 REPLAY_PLANT = ""
+# D6 (2026-11-06): the race court's planted defect, "genesis-check-unlocked" (cmd_genesis checks that no ledger exists
+# before taking the content lock, as before the repair). Set only by that case of cmd_racetest, and put back after it.
+GENESIS_PLANT = ""
+# the genesis case's forced meeting: a two-party barrier the racetest sets for each trial, with the plant on or off (as
+# PLANT_MEET does for its export plant), so that both starters pass the check made before the lock before either
+# appends; the court reads the meeting by the barrier's action; None otherwise
+GENESIS_MEET = None
 
 
 def held_head(ws, events, checked=None):
@@ -1135,8 +1142,44 @@ def cmd_refuse(ws, seq, chooser="the owner", note=""):
 
 
 def cmd_genesis(ws):
+    """D6 (2026-11-06, the owner's authorization): the check that no ledger exists and the genesis's append are one step
+    under the tree's content lock (durable.locked is reentrant in this thread, so led.append's own lock is the same one).
+    Checked before the lock was taken, two starters both saw no ledger and both appended a genesis. led.append orders
+    the two appends under its own lock, so the loser's genesis is the ledger's second line (seq 1, naming the winner's
+    line), and led.chain refuses it for good: LEDGER-KIND, a genesis that is not event 0 (two genesis lines MEASURED on
+    a scratch copy, 10 of 10 trials with two threads; the race court's plant row holds every trial to that refusal). The
+    race court's two starters are made to meet (GENESIS_MEET) after the check made before the lock and before the
+    lock is taken, so that both have seen no ledger before either appends: the overlap is made, not left to the
+    scheduler, and the starter that loses is refused by the check made under the lock. The court reads the meeting by
+    the barrier's action, which runs once when both have come; a partner that never came is waited for 30 s and this
+    start goes on alone. The court's plant "genesis-check-unlocked", after the same meeting, skips the outer lock and
+    the check made under it, as before the repair (its append still takes led.append's own lock). Scope: what the court
+    measures is two threads of one process calling this function at once; no production path in one process does so
+    (the Hub opens a world under its own lock; an import starts its ledger in a staging folder no opener lists). Between
+    processes (a director command's genesis beside a running studio) the exclusion is the content lock's OS file lock,
+    ARGUED from durable.locked and not measured. A ledger that exists is refused at once,
+    before any lock, as before; a ledger the lock cannot be had for is LEDGER-BUSY, the refusal led.append gave before
+    (the outer lock now makes the inner one reenter). GENESIS_MEET and GENESIS_PLANT are set by the race court alone."""
     if os.path.exists(ws.ledger):
         raise SystemExit("%s exists: a ledger is started once" % os.path.relpath(ws.ledger, ws.root))
+    if GENESIS_MEET is not None:
+        try:
+            GENESIS_MEET.wait(30)
+        except threading.BrokenBarrierError:         # its partner never came: this start goes on alone (the court
+            pass                                     # reads the meeting by the barrier's action, which did not run)
+    if GENESIS_PLANT == "genesis-check-unlocked":
+        return _genesis_append(ws)
+    try:
+        with durable.locked(led.lock_path(ws.ledger)):
+            if os.path.exists(ws.ledger):
+                raise SystemExit("%s exists: a ledger is started once" % os.path.relpath(ws.ledger, ws.root))
+            return _genesis_append(ws)
+    except durable.Busy:
+        raise led.LedgerError("LEDGER-BUSY: another writer held %s for the whole wait (%g s); nothing was appended"
+                              % (led.lock_path(ws.ledger), durable.WAIT))
+
+
+def _genesis_append(ws):
     out, parts, _c = ws.export()
     dname, dtext = ws.design(out)
     g = led.append(ws.ledger, "genesis", {"brief": ws.brief, "map": out["scene"]["map"], "parts": parts, "head": canon.head(parts),
@@ -2369,6 +2412,78 @@ def cmd_racetest():
         b0, b1 = thread_trials(""), thread_trials("no-lock")
         res("two threads append 25 events each to one ledger: the chain whole, 51 events, in every trial", b0 == 0, "broken in %d of 5" % b0)
         res("plant: the lock holds nothing — the chain breaks", b1 > 0, "broken in %d of 5" % b1)
+
+        # D6 (2026-11-06): two starters of one ledger at once (two threads calling cmd_genesis directly on a tree whose
+        # ledger is missing). This measures exclusion between threads of one process, a race no production path in one
+        # process makes (the Hub opens under its own lock; an import's ledger is in its own staging folder); exclusion
+        # between processes is the content lock's OS file lock, argued and not measured here. Before the repair both
+        # threads saw no ledger and both appended a genesis
+        # (MEASURED on a scratch copy, 10 of 10 trials); the check and the append are now one step under the content lock.
+        # Every trial is read by its own evidence and named by it: "held" (the starters met; one genesis line, the chain
+        # whole, one start refused as existing), "caught" (the starters met; both started, two genesis lines, the chain
+        # refused LEDGER-KIND at event 1: the plant's own signature) or "other" (anything else: the starters not met, a
+        # start that raised, another refusal). The clean row passes only when every trial is held, the plant's only when
+        # every trial is caught, so a trial that went wrong for another reason never counts as the plant caught (the
+        # discipline of 0265's I-1 and I-2). Both set durable.PLANT to none themselves, as thread_trials does, so that
+        # neither reads the launcher's VERDANDI_PLANT.
+        def genesis_trials(plant, trials=8):
+            global GENESIS_PLANT, GENESIS_MEET
+            counts, detail = {"held": 0, "caught": 0, "other": 0}, []
+            durable.PLANT = ""
+            try:
+                for t in range(trials):
+                    GENESIS_PLANT, GENESIS_MEET = "", None    # the tree's own genesis made as a command makes it
+                    gws = selftest_tree(os.path.join(tmp, "genesis-race", "%s%02d" % (plant or "clean", t)))
+                    os.remove(gws.ledger)          # the tree's own first line taken away: two starters race to write it
+                    # both starters meet after the check made before the lock: the overlap made, not hoped for
+                    tripped = []                     # the barrier's action runs once, when both starters have come
+                    GENESIS_PLANT, GENESIS_MEET = plant, threading.Barrier(2, action=lambda: tripped.append(1))
+                    go, outcomes = threading.Barrier(2), []
+
+                    def starter():
+                        go.wait()
+                        try:
+                            cmd_genesis(gws)               # printing kept off the console by the one redirect below
+                            outcomes.append("started")
+                        except SystemExit as e:      # the loser sees the winner's ledger: refused, nothing appended
+                            outcomes.append("exists" if "exists" in str(e) else "refused: %s" % e)
+                        except Exception as e:       # noqa: BLE001
+                            outcomes.append("%s: %s" % (type(e).__name__, e))
+                    th = [threading.Thread(target=starter) for _k in (1, 2)]
+                    with contextlib.redirect_stdout(io.StringIO()):   # one swap, in this thread: never two at once
+                        for x in th:
+                            x.start()
+                        for x in th:
+                            x.join()
+                    kinds = [e["kind"] for e in led.read(gws.ledger)[0]]
+                    try:
+                        led.chain(gws.ledger)
+                        refusal = ""
+                    except led.LedgerError as e:
+                        refusal = str(e)
+                    met = tripped == [1]             # both starters past the check made before the lock, and met
+                    if met and kinds == ["genesis"] and not refusal and sorted(outcomes) == ["exists", "started"]:
+                        verdict = "held"
+                    elif (met and kinds == ["genesis", "genesis"] and refusal.startswith("LEDGER-KIND: event 1 ")
+                          and outcomes == ["started", "started"]):
+                        verdict = "caught"
+                    else:
+                        verdict = "other"
+                    counts[verdict] += 1
+                    if verdict != ("caught" if plant else "held") and len(detail) < 2:
+                        detail.append("%s: %s %s %s%s" % (verdict, kinds, refusal.split(":")[0] if refusal else "whole",
+                                                          outcomes, "" if met else " (the starters did not meet)"))
+            finally:
+                GENESIS_PLANT, GENESIS_MEET = "", None
+                durable.PLANT = saved_plant
+            return counts, detail
+        g0, gd0 = genesis_trials("")
+        g1, gd1 = genesis_trials("genesis-check-unlocked")
+        res("two threads start one ledger at once, both past the check made before the lock before either appends: exactly one genesis line, the chain whole, the other start refused by the check under the lock, in every trial",
+            g0["held"] == 8, "held in %d of 8, caught %d, other %d %s" % (g0["held"], g0["caught"], g0["other"], "; ".join(gd0)))
+        res("plant: the existence checked before the lock — two genesis lines", g1["caught"] == 8,
+            "caught by its own signature in %d of 8 (both started, two genesis lines, LEDGER-KIND at event 1), held %d, other %d %s"
+            % (g1["caught"], g1["held"], g1["other"], "; ".join(gd1)))
         child = ("import os, sys, time\nsys.path.insert(0, %r)\nimport ledger as led\np, go, k = sys.argv[1], sys.argv[2], sys.argv[3]\n"
                  "while not os.path.exists(go):\n    time.sleep(0.001)\n"
                  "for i in range(25):\n    led.append(p, 'evaluate', {'note': '%%s-%%d' %% (k, i)})\n") % lib
