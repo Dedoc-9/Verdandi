@@ -1,0 +1,7 @@
+# The mathkernel subsystem is stored BYTE-EXACT: frozen artifacts are pinned by sha256 and must not be
+# altered by end-of-line normalization or textual patch round-trips. The CSV evidence is CRLF as frozen
+# (its sha256 is of those exact bytes), so the CSVs are marked `binary` -- git format-patch then emits a
+# literal-byte patch and git am writes the exact bytes (a textual diff would strip the CR). Other files
+# are LF and kept un-normalized.
+* -text
+*.csv binary
