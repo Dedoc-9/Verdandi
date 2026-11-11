@@ -1,0 +1,255 @@
+input_bits,input_repr,op,oracle_bits,cr_bits,signed_ulp,agrees_cr,abs_err,rel_err,status,tags
+0000000000000000,0.0,sin,0000000000000000,0000000000000000,+0,yes,0.000e+00,0.000e+00,certified-S1-exact-zero (mpfr p=120),"adv:domain-endpoint,frozen:direct sin/cos,frozen:exceptional values"
+0000000000000000,0.0,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,frozen:direct sin/cos,frozen:exceptional values"
+0000000000000001,5e-324,sin,0000000000000001,0000000000000001,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,adv:hard-to-round,frozen:exceptional values"
+0000000000000001,5e-324,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,adv:hard-to-round,frozen:exceptional values"
+0000000000000002,1e-323,sin,0000000000000002,0000000000000002,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,adv:hard-to-round"
+0000000000000002,1e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,adv:hard-to-round"
+0000000000000003,1.5e-323,sin,0000000000000003,0000000000000003,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,adv:hard-to-round"
+0000000000000003,1.5e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,adv:hard-to-round"
+0000000000000004,2e-323,sin,0000000000000004,0000000000000004,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000004,2e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000005,2.5e-323,sin,0000000000000005,0000000000000005,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000005,2.5e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000006,3e-323,sin,0000000000000006,0000000000000006,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000006,3e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000007,3.5e-323,sin,0000000000000007,0000000000000007,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000007,3.5e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000008,4e-323,sin,0000000000000008,0000000000000008,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000008,4e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000009,4.4e-323,sin,0000000000000009,0000000000000009,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+0000000000000009,4.4e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000a,5e-323,sin,000000000000000a,000000000000000a,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000a,5e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000b,5.4e-323,sin,000000000000000b,000000000000000b,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000b,5.4e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000c,6e-323,sin,000000000000000c,000000000000000c,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000c,6e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000d,6.4e-323,sin,000000000000000d,000000000000000d,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000d,6.4e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000e,7e-323,sin,000000000000000e,000000000000000e,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000e,7e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000f,7.4e-323,sin,000000000000000f,000000000000000f,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+000000000000000f,7.4e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+00000000000007e8,1e-320,sin,00000000000007e8,00000000000007e8,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+00000000000007e8,1e-320,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+000fffffffffffff,2.225073858507201e-308,sin,000fffffffffffff,000fffffffffffff,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",frozen:exceptional values
+000fffffffffffff,2.225073858507201e-308,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",frozen:exceptional values
+0010000000000000,2.2250738585072014e-308,sin,0010000000000000,0010000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+0010000000000000,2.2250738585072014e-308,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3ddb7cdfd9d7bdbb,1e-10,sin,3ddb7cdfd9d7bdbb,3ddb7cdfd9d7bdbb,+0,yes,1.667e-31,1.667e-21,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3ddb7cdfd9d7bdbb,1e-10,cos,3ff0000000000000,3ff0000000000000,+0,yes,5.000e-21,5.000e-21,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3e30000000000000,3.725290298461914e-09,sin,3e30000000000000,3e30000000000000,+0,yes,8.616e-27,2.313e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3e30000000000000,3.725290298461914e-09,cos,3ff0000000000000,3ff0000000000000,+0,yes,6.939e-18,6.939e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3e3fffffffffffff,7.450580596923827e-09,sin,3e3fffffffffffff,3e3fffffffffffff,+0,yes,6.893e-26,9.252e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3e3fffffffffffff,7.450580596923827e-09,cos,3ff0000000000000,3ff0000000000000,+0,yes,2.776e-17,2.776e-17,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3e40000000000000,7.450580596923828e-09,sin,3e40000000000000,3e40000000000000,+0,yes,6.893e-26,9.252e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3e40000000000000,7.450580596923828e-09,cos,3ff0000000000000,3ff0000000000000,+0,yes,2.776e-17,2.776e-17,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3e50000000000000,1.4901161193847656e-08,sin,3e50000000000000,3e50000000000000,+0,yes,5.515e-25,3.701e-17,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3e50000000000000,1.4901161193847656e-08,cos,3fefffffffffffff,3fefffffffffffff,+0,yes,2.054e-33,2.054e-33,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3ee4f8b588e368f1,1e-05,sin,3ee4f8b588e1e8a2,3ee4f8b588e1e8a2,+0,yes,6.182e-22,6.182e-17,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3ee4f8b588e368f1,1e-05,cos,3feffffffff920c8,3feffffffff920c8,+0,yes,4.137e-18,4.137e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+3fd999999999999a,0.4,sin,3fd8ec3ae92b676b,3fd8ec3ae92b676b,+0,yes,1.035e-17,2.657e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-path
+3fd999999999999a,0.4,cos,3fed7954e7dba2f8,3fed7954e7dba2f8,+0,yes,2.866e-17,3.112e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-path
+3fe0000000000000,0.5,sin,3fdeaee8744b05f0,3fdeaee8744b05f0,+0,yes,5.104e-18,1.065e-17,"certified (mpfr p=120, arb p=120)",frozen:direct sin/cos
+3fe0000000000000,0.5,cos,3fec1528065b7d50,3fec1528065b7d50,+0,yes,4.262e-17,4.857e-17,"certified (mpfr p=120, arb p=120)",frozen:direct sin/cos
+3fe921fb54442d15,0.785398163397448,sin,3fe6a09e667f3bca,3fe6a09e667f3bca,+0,yes,2.757e-17,3.899e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d15,0.785398163397448,cos,3fe6a09e667f3bcf,3fe6a09e667f3bcf,+0,yes,1.322e-17,1.869e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d16,0.7853981633974481,sin,3fe6a09e667f3bcb,3fe6a09e667f3bcb,+0,yes,4.950e-18,7.000e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d16,0.7853981633974481,cos,3fe6a09e667f3bce,3fe6a09e667f3bce,+0,yes,1.930e-17,2.729e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d17,0.7853981633974482,sin,3fe6a09e667f3bcc,3fe6a09e667f3bcc,+0,yes,3.747e-17,5.299e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d17,0.7853981633974482,cos,3fe6a09e667f3bce,3fe6a09e667f3bcd,+1,NO,5.921e-17,8.373e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d18,0.7853981633974483,sin,3fe6a09e667f3bcc,3fe6a09e667f3bcc,+0,yes,4.104e-17,5.803e-17,"certified (mpfr p=120, arb p=120)","adv:reduction-boundary,frozen:direct sin/cos"
+3fe921fb54442d18,0.7853981633974483,cos,3fe6a09e667f3bcd,3fe6a09e667f3bcd,+0,yes,2.669e-17,3.774e-17,"certified (mpfr p=120, arb p=120)","adv:reduction-boundary,frozen:direct sin/cos"
+3fe921fb54442d19,0.7853981633974484,sin,3fe6a09e667f3bcd,3fe6a09e667f3bcd,+0,yes,8.519e-18,1.205e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d19,0.7853981633974484,cos,3fe6a09e667f3bcc,3fe6a09e667f3bcc,+0,yes,5.830e-18,8.245e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d1a,0.7853981633974485,sin,3fe6a09e667f3bce,3fe6a09e667f3bce,+0,yes,2.400e-17,3.394e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d1a,0.7853981633974485,cos,3fe6a09e667f3bcb,3fe6a09e667f3bcb,+0,yes,3.835e-17,5.423e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d1b,0.7853981633974486,sin,3fe6a09e667f3bce,3fe6a09e667f3bce,+0,yes,5.451e-17,7.708e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3fe921fb54442d1b,0.7853981633974486,cos,3fe6a09e667f3bca,3fe6a09e667f3bcb,-1,NO,7.087e-17,1.002e-16,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+3ff0000000000000,1.0,sin,3feaed548f090cee,3feaed548f090cee,+0,yes,1.777e-18,2.112e-18,"certified (mpfr p=120, arb p=120)",frozen:direct sin/cos
+3ff0000000000000,1.0,cos,3fe14a280fb5068c,3fe14a280fb5068c,+0,yes,4.761e-17,8.812e-17,"certified (mpfr p=120, arb p=120)",frozen:direct sin/cos
+3ff7333333333330,1.4499999999999993,sin,3fefc44e08da43db,3fefc44e08da43db,+0,yes,4.614e-17,4.648e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333330,1.4499999999999993,cos,3fbed944fd82a141,3fbed944fd82a141,+0,yes,4.717e-18,3.915e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333331,1.4499999999999995,sin,3fefc44e08da43dc,3fefc44e08da43dc,+0,yes,3.813e-17,3.841e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333331,1.4499999999999995,cos,3fbed944fd82a131,3fbed944fd82a131,+0,yes,6.335e-18,5.257e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333332,1.4499999999999997,sin,3fefc44e08da43dc,3fefc44e08da43dc,+0,yes,1.137e-17,1.145e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333332,1.4499999999999997,cos,3fbed944fd82a122,3fbed944fd82a122,+0,yes,5.924e-18,4.916e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333333,1.45,sin,3fefc44e08da43dc,3fefc44e08da43dc,+0,yes,1.539e-17,1.550e-17,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,frozen:direct sin/cos,frozen:reduction stress"
+3ff7333333333333,1.45,cos,3fbed944fd82a112,3fbed944fd82a112,+0,yes,4.306e-18,3.574e-17,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,frozen:direct sin/cos,frozen:reduction stress"
+3ff7333333333334,1.4500000000000002,sin,3fefc44e08da43dc,3fefc44e08da43dc,+0,yes,4.214e-17,4.245e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333334,1.4500000000000002,cos,3fbed944fd82a102,3fbed944fd82a102,+0,yes,2.688e-18,2.231e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333335,1.4500000000000004,sin,3fefc44e08da43dd,3fefc44e08da43dd,+0,yes,4.212e-17,4.243e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333335,1.4500000000000004,cos,3fbed944fd82a0f2,3fbed944fd82a0f2,+0,yes,1.070e-18,8.881e-18,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333336,1.4500000000000006,sin,3fefc44e08da43dd,3fefc44e08da43dd,+0,yes,1.537e-17,1.548e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff7333333333336,1.4500000000000006,cos,3fbed944fd82a0e2,3fbed944fd82a0e2,+0,yes,5.478e-19,4.546e-18,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+3ff921fb54442d12,1.5707963267948952,sin,3ff0000000000000,3ff0000000000000,+0,yes,9.709e-31,9.709e-31,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d12,1.5707963267948952,cos,3cd91a62633145c0,3cd91a62633145c0,+0,yes,8.478e-32,6.084e-17,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d13,1.5707963267948954,sin,3ff0000000000000,3ff0000000000000,+0,yes,6.862e-31,6.862e-31,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d13,1.5707963267948954,cos,3cd51a62633145c0,3cd51a62633145c0,+0,yes,8.478e-32,7.238e-17,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d14,1.5707963267948957,sin,3ff0000000000000,3ff0000000000000,+0,yes,4.507e-31,4.507e-31,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d14,1.5707963267948957,cos,3cd11a62633145c0,3cd11a62633145c0,+0,yes,8.478e-32,8.930e-17,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d15,1.570796326794896,sin,3ff0000000000000,3ff0000000000000,+0,yes,2.645e-31,2.645e-31,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2"
+3ff921fb54442d15,1.570796326794896,cos,3cca34c4c6628b81,3cca34c4c6628b81,+0,yes,1.382e-32,1.900e-17,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2"
+3ff921fb54442d16,1.5707963267948961,sin,3ff0000000000000,3ff0000000000000,+0,yes,1.277e-31,1.277e-31,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2"
+3ff921fb54442d16,1.5707963267948961,cos,3cc234c4c6628b81,3cc234c4c6628b81,+0,yes,1.382e-32,2.736e-17,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2"
+3ff921fb54442d17,1.5707963267948963,sin,3ff0000000000000,3ff0000000000000,+0,yes,4.012e-32,4.012e-32,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2,frozen:reduction stress"
+3ff921fb54442d17,1.5707963267948963,cos,3cb469898cc51702,3cb469898cc51702,+0,yes,1.382e-32,4.880e-17,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2,frozen:reduction stress"
+3ff921fb54442d18,1.5707963267948966,sin,3ff0000000000000,3ff0000000000000,+0,yes,1.875e-33,1.875e-33,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+3ff921fb54442d18,1.5707963267948966,cos,3c91a62633145c07,3c91a62633145c07,+0,yes,1.497e-33,2.445e-17,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+3ff921fb54442d19,1.5707963267948968,sin,3ff0000000000000,3ff0000000000000,+0,yes,1.293e-32,1.293e-32,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2,frozen:reduction stress"
+3ff921fb54442d19,1.5707963267948968,cos,bca72cece675d1fd,bca72cece675d1fd,+0,yes,1.083e-32,6.734e-17,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2,frozen:reduction stress"
+3ff921fb54442d1a,1.570796326794897,sin,3ff0000000000000,3ff0000000000000,+0,yes,7.329e-32,7.329e-32,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2"
+3ff921fb54442d1a,1.570796326794897,cos,bcbb9676733ae8fe,bcbb9676733ae8fe,+0,yes,1.382e-32,3.611e-17,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2"
+3ff921fb54442d1b,1.5707963267948972,sin,3ff0000000000000,3ff0000000000000,+0,yes,1.830e-31,1.830e-31,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2"
+3ff921fb54442d1b,1.5707963267948972,cos,bcc5cb3b399d747f,bcc5cb3b399d747f,+0,yes,1.382e-32,2.285e-17,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2"
+3ff921fb54442d1c,1.5707963267948974,sin,3ff0000000000000,3ff0000000000000,+0,yes,3.419e-31,3.419e-31,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d1c,1.5707963267948974,cos,bccdcb3b399d747f,bccdcb3b399d747f,+0,yes,1.382e-32,1.672e-17,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d1d,1.5707963267948977,sin,3ff0000000000000,3ff0000000000000,+0,yes,5.502e-31,5.502e-31,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d1d,1.5707963267948977,cos,bcd2e59d9cceba40,bcd2e59d9cceba40,+0,yes,8.478e-32,8.082e-17,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d1e,1.570796326794898,sin,3ff0000000000000,3ff0000000000000,+0,yes,8.078e-31,8.078e-31,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d1e,1.570796326794898,cos,bcd6e59d9cceba40,bcd6e59d9cceba40,+0,yes,8.478e-32,6.670e-17,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d1f,1.5707963267948981,sin,3ff0000000000000,3ff0000000000000,+0,yes,1.115e-30,1.115e-30,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+3ff921fb54442d1f,1.5707963267948981,cos,bcdae59d9cceba40,bcdae59d9cceba40,+0,yes,8.478e-32,5.678e-17,"certified (mpfr p=120, arb p=120)",adv:hard-to-round
+4000000000000000,2.0,sin,3fed18f6ead1b446,3fed18f6ead1b446,+0,yes,1.402e-17,1.542e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-path
+4000000000000000,2.0,cos,bfdaa22657537205,bfdaa22657537205,+0,yes,1.991e-17,4.783e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-path
+4002d97c7f3321cf,2.3561944901923435,sin,3fe6a09e667f3bd6,3fe6a09e667f3bd6,+0,yes,4.054e-17,5.733e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321cf,2.3561944901923435,cos,bfe6a09e667f3bc4,bfe6a09e667f3bc3,-1,NO,5.614e-17,7.939e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d0,2.356194490192344,sin,3fe6a09e667f3bd3,3fe6a09e667f3bd3,+0,yes,2.149e-17,3.039e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d0,2.356194490192344,cos,bfe6a09e667f3bc6,bfe6a09e667f3bc6,+0,yes,3.584e-17,5.068e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d1,2.3561944901923444,sin,3fe6a09e667f3bd0,3fe6a09e667f3bd0,+0,yes,2.438e-18,3.448e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d1,2.3561944901923444,cos,bfe6a09e667f3bc9,bfe6a09e667f3bc9,+0,yes,1.679e-17,2.374e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d2,2.356194490192345,sin,3fe6a09e667f3bcd,3fe6a09e667f3bcd,+0,yes,1.661e-17,2.349e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d2,2.356194490192345,cos,bfe6a09e667f3bcc,bfe6a09e667f3bcc,+0,yes,2.261e-18,3.197e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d3,2.3561944901923453,sin,3fe6a09e667f3bca,3fe6a09e667f3bca,+0,yes,3.566e-17,5.043e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d3,2.3561944901923453,cos,bfe6a09e667f3bcf,bfe6a09e667f3bcf,+0,yes,2.131e-17,3.014e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d4,2.3561944901923457,sin,3fe6a09e667f3bc8,3fe6a09e667f3bc7,+1,NO,5.632e-17,7.964e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d4,2.3561944901923457,cos,bfe6a09e667f3bd2,bfe6a09e667f3bd2,+0,yes,4.036e-17,5.707e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d5,2.356194490192346,sin,3fe6a09e667f3bc5,3fe6a09e667f3bc5,+0,yes,3.727e-17,5.270e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4002d97c7f3321d5,2.356194490192346,cos,bfe6a09e667f3bd4,bfe6a09e667f3bd4,+0,yes,5.162e-17,7.300e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400921fb54442d15,3.141592653589792,sin,3cda34c4c6628b81,3cda34c4c6628b81,+0,yes,2.765e-32,1.900e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+400921fb54442d15,3.141592653589792,cos,bff0000000000000,bff0000000000000,+0,yes,1.058e-30,1.058e-30,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+400921fb54442d16,3.1415926535897922,sin,3cd234c4c6628b81,3cd234c4c6628b81,+0,yes,2.765e-32,2.736e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+400921fb54442d16,3.1415926535897922,cos,bff0000000000000,bff0000000000000,+0,yes,5.107e-31,5.107e-31,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+400921fb54442d17,3.1415926535897927,sin,3cc469898cc51702,3cc469898cc51702,+0,yes,2.765e-32,4.880e-17,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+400921fb54442d17,3.1415926535897927,cos,bff0000000000000,bff0000000000000,+0,yes,1.605e-31,1.605e-31,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+400921fb54442d18,3.141592653589793,sin,3ca1a62633145c07,3ca1a62633145c07,+0,yes,2.995e-33,2.445e-17,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+400921fb54442d18,3.141592653589793,cos,bff0000000000000,bff0000000000000,+0,yes,7.499e-33,7.499e-33,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+400921fb54442d19,3.1415926535897936,sin,bcb72cece675d1fd,bcb72cece675d1fd,+0,yes,2.166e-32,6.734e-17,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+400921fb54442d19,3.1415926535897936,cos,bff0000000000000,bff0000000000000,+0,yes,5.172e-32,5.172e-32,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+400921fb54442d1a,3.141592653589794,sin,bccb9676733ae8fe,bccb9676733ae8fe,+0,yes,2.765e-32,3.611e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+400921fb54442d1a,3.141592653589794,cos,bff0000000000000,bff0000000000000,+0,yes,2.932e-31,2.932e-31,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+400921fb54442d1b,3.1415926535897944,sin,bcd5cb3b399d747f,bcd5cb3b399d747f,+0,yes,2.765e-32,2.285e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+400921fb54442d1b,3.1415926535897944,cos,bff0000000000000,bff0000000000000,+0,yes,7.318e-31,7.318e-31,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+400f6a7a2955385b,3.92699081698724,sin,bfe6a09e667f3bc3,bfe6a09e667f3bc3,+0,yes,1.159e-17,1.639e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a2955385b,3.92699081698724,cos,bfe6a09e667f3bd6,bfe6a09e667f3bd6,+0,yes,2.763e-18,3.907e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a2955385c,3.9269908169872405,sin,bfe6a09e667f3bc6,bfe6a09e667f3bc6,+0,yes,7.462e-18,1.055e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a2955385c,3.9269908169872405,cos,bfe6a09e667f3bd3,bfe6a09e667f3bd3,+0,yes,2.181e-17,3.085e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a2955385d,3.926990816987241,sin,bfe6a09e667f3bc9,bfe6a09e667f3bc9,+0,yes,2.651e-17,3.749e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a2955385d,3.926990816987241,cos,bfe6a09e667f3bd0,bfe6a09e667f3bd0,+0,yes,4.086e-17,5.778e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a2955385e,3.9269908169872414,sin,bfe6a09e667f3bcc,bfe6a09e667f3bcc,+0,yes,4.556e-17,6.443e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a2955385e,3.9269908169872414,cos,bfe6a09e667f3bce,bfe6a09e667f3bce,+0,yes,5.111e-17,7.229e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a2955385f,3.926990816987242,sin,bfe6a09e667f3bce,bfe6a09e667f3bce,+0,yes,4.642e-17,6.564e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a2955385f,3.926990816987242,cos,bfe6a09e667f3bcb,bfe6a09e667f3bcb,+0,yes,3.207e-17,4.535e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a29553860,3.9269908169872423,sin,bfe6a09e667f3bd2,bfe6a09e667f3bd1,-1,NO,8.366e-17,1.183e-16,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a29553860,3.9269908169872423,cos,bfe6a09e667f3bc8,bfe6a09e667f3bc8,+0,yes,1.302e-17,1.841e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a29553861,3.9269908169872427,sin,bfe6a09e667f3bd4,bfe6a09e667f3bd4,+0,yes,8.318e-18,1.176e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+400f6a7a29553861,3.9269908169872427,cos,bfe6a09e667f3bc5,bfe6a09e667f3bc5,+0,yes,6.031e-18,8.529e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4012d97c7f3321cf,4.712388980384687,sin,bff0000000000000,bff0000000000000,+0,yes,4.056e-30,4.056e-30,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+4012d97c7f3321cf,4.712388980384687,cos,bce9a79394c9e8a1,bce9a79394c9e8a1,+0,yes,1.401e-31,4.918e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+4012d97c7f3321d0,4.712388980384688,sin,bff0000000000000,bff0000000000000,+0,yes,1.921e-30,1.921e-30,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+4012d97c7f3321d0,4.712388980384688,cos,bce1a79394c9e8a1,bce1a79394c9e8a1,+0,yes,1.401e-31,7.147e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+4012d97c7f3321d1,4.712388980384689,sin,bff0000000000000,bff0000000000000,+0,yes,5.745e-31,5.745e-31,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2,frozen:reduction stress"
+4012d97c7f3321d1,4.712388980384689,cos,bcd34f272993d141,bcd34f272993d141,+0,yes,5.714e-32,5.331e-17,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2,frozen:reduction stress"
+4012d97c7f3321d2,4.71238898038469,sin,bff0000000000000,bff0000000000000,+0,yes,1.687e-32,1.687e-32,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+4012d97c7f3321d2,4.71238898038469,cos,bcaa79394c9e8a0a,bcaa79394c9e8a0a,+0,yes,7.834e-33,4.265e-17,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:reduction stress"
+4012d97c7f3321d3,4.712388980384691,sin,bff0000000000000,bff0000000000000,+0,yes,2.481e-31,2.481e-31,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2,frozen:reduction stress"
+4012d97c7f3321d3,4.712388980384691,cos,3cc961b1acd85d7d,3cc961b1acd85d7d,+0,yes,4.147e-32,5.887e-17,"certified (mpfr p=120, arb p=120)","adv:hard-to-round,adv:near-k*pi/2,frozen:reduction stress"
+4012d97c7f3321d4,4.7123889803846915,sin,bff0000000000000,bff0000000000000,+0,yes,1.268e-30,1.268e-30,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+4012d97c7f3321d4,4.7123889803846915,cos,3cdcb0d8d66c2ebf,3cdcb0d8d66c2ebf,+0,yes,5.714e-32,3.588e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+4012d97c7f3321d5,4.712388980384692,sin,bff0000000000000,bff0000000000000,+0,yes,3.077e-30,3.077e-30,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+4012d97c7f3321d5,4.712388980384692,cos,3ce6586c6b36175f,3ce6586c6b36175f,+0,yes,1.401e-31,5.646e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+4014000000000000,5.0,sin,bfeeaf81f5e09933,bfeeaf81f5e09933,+0,yes,1.493e-17,1.557e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-path
+4014000000000000,5.0,cos,3fd22785706b4ad9,3fd22785706b4ad9,+0,yes,1.819e-17,6.414e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-path
+4015fdbbe9bba772,5.497787143782135,sin,bfe6a09e667f3bdf,bfe6a09e667f3bdf,+0,yes,1.108e-17,1.568e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba772,5.497787143782135,cos,3fe6a09e667f3bba,3fe6a09e667f3bba,+0,yes,2.543e-17,3.597e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba773,5.497787143782136,sin,bfe6a09e667f3bd9,bfe6a09e667f3bd9,+0,yes,2.701e-17,3.820e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba773,5.497787143782136,cos,3fe6a09e667f3bc0,3fe6a09e667f3bc0,+0,yes,1.266e-17,1.791e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba774,5.497787143782137,sin,bfe6a09e667f3bd4,bfe6a09e667f3bd4,+0,yes,4.591e-17,6.493e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba774,5.497787143782137,cos,3fe6a09e667f3bc6,3fe6a09e667f3bc6,+0,yes,5.076e-17,7.178e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba775,5.497787143782138,sin,bfe6a09e667f3bce,bfe6a09e667f3bce,+0,yes,7.816e-18,1.105e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba775,5.497787143782138,cos,3fe6a09e667f3bcb,3fe6a09e667f3bcb,+0,yes,2.217e-17,3.135e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba776,5.497787143782139,sin,bfe6a09e667f3bc8,bfe6a09e667f3bc8,+0,yes,3.028e-17,4.282e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba776,5.497787143782139,cos,3fe6a09e667f3bd1,3fe6a09e667f3bd1,+0,yes,1.593e-17,2.253e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba777,5.49778714378214,sin,bfe6a09e667f3bc3,bfe6a09e667f3bc3,+0,yes,4.265e-17,6.031e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba777,5.49778714378214,cos,3fe6a09e667f3bd6,3fe6a09e667f3bd7,-1,NO,5.699e-17,8.060e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba778,5.497787143782141,sin,bfe6a09e667f3bbd,bfe6a09e667f3bbd,+0,yes,4.548e-18,6.432e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+4015fdbbe9bba778,5.497787143782141,cos,3fe6a09e667f3bdc,3fe6a09e667f3bdc,+0,yes,1.890e-17,2.673e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+401921fb54442d15,6.283185307179584,sin,bcea34c4c6628b81,bcea34c4c6628b81,+0,yes,5.529e-32,1.900e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+401921fb54442d15,6.283185307179584,cos,3ff0000000000000,3ff0000000000000,+0,yes,4.232e-30,4.232e-30,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+401921fb54442d16,6.2831853071795845,sin,bce234c4c6628b81,bce234c4c6628b81,+0,yes,5.529e-32,2.736e-17,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+401921fb54442d16,6.2831853071795845,cos,3ff0000000000000,3ff0000000000000,+0,yes,2.043e-30,2.043e-30,"certified (mpfr p=120, arb p=120)",adv:near-k*pi/2
+401921fb54442d17,6.283185307179585,sin,bcd469898cc51702,bcd469898cc51702,+0,yes,5.529e-32,4.880e-17,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:direct sin/cos,frozen:reduction stress"
+401921fb54442d17,6.283185307179585,cos,3ff0000000000000,3ff0000000000000,+0,yes,6.420e-31,6.420e-31,"certified (mpfr p=120, arb p=120)","adv:near-k*pi/2,frozen:direct sin/cos,frozen:reduction stress"
+401921fb54442d18,6.283185307179586,sin,bcb1a62633145c07,bcb1a62633145c07,+0,yes,5.990e-33,2.445e-17,"certified (mpfr p=120, arb p=120)",frozen:direct sin/cos
+401921fb54442d18,6.283185307179586,cos,3ff0000000000000,3ff0000000000000,+0,yes,3.000e-32,3.000e-32,"certified (mpfr p=120, arb p=120)",frozen:direct sin/cos
+7ff0000000000000,inf,sin,fff8000000000000,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+7ff0000000000000,inf,cos,fff8000000000000,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+7ff0000000000001,nan,sin,7ff8000000000001,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+7ff0000000000001,nan,cos,7ff8000000000001,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+7ff8000000000000,nan,sin,7ff8000000000000,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+7ff8000000000000,nan,cos,7ff8000000000000,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+7ffabcdef1234567,nan,sin,7ffabcdef1234567,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+7ffabcdef1234567,nan,cos,7ffabcdef1234567,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+8000000000000000,-0.0,sin,8000000000000000,8000000000000000,+0,yes,0.000e+00,0.000e+00,certified-S1-exact-zero (mpfr p=120),frozen:exceptional values
+8000000000000000,-0.0,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",frozen:exceptional values
+8000000000000001,-5e-324,sin,8000000000000001,8000000000000001,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+8000000000000001,-5e-324,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+8000000000000002,-1e-323,sin,8000000000000002,8000000000000002,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+8000000000000002,-1e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+8000000000000003,-1.5e-323,sin,8000000000000003,8000000000000003,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+8000000000000003,-1.5e-323,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+80000000000007e8,-1e-320,sin,80000000000007e8,80000000000007e8,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+80000000000007e8,-1e-320,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+8010000000000000,-2.2250738585072014e-308,sin,8010000000000000,8010000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+8010000000000000,-2.2250738585072014e-308,cos,3ff0000000000000,3ff0000000000000,+0,yes,0.000e+00,0.000e+00,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+bddb7cdfd9d7bdbb,-1e-10,sin,bddb7cdfd9d7bdbb,bddb7cdfd9d7bdbb,+0,yes,1.667e-31,1.667e-21,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+bddb7cdfd9d7bdbb,-1e-10,cos,3ff0000000000000,3ff0000000000000,+0,yes,5.000e-21,5.000e-21,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+be30000000000000,-3.725290298461914e-09,sin,be30000000000000,be30000000000000,+0,yes,8.616e-27,2.313e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+be30000000000000,-3.725290298461914e-09,cos,3ff0000000000000,3ff0000000000000,+0,yes,6.939e-18,6.939e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+be3fffffffffffff,-7.450580596923827e-09,sin,be3fffffffffffff,be3fffffffffffff,+0,yes,6.893e-26,9.252e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+be3fffffffffffff,-7.450580596923827e-09,cos,3ff0000000000000,3ff0000000000000,+0,yes,2.776e-17,2.776e-17,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+be40000000000000,-7.450580596923828e-09,sin,be40000000000000,be40000000000000,+0,yes,6.893e-26,9.252e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+be40000000000000,-7.450580596923828e-09,cos,3ff0000000000000,3ff0000000000000,+0,yes,2.776e-17,2.776e-17,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+be50000000000000,-1.4901161193847656e-08,sin,be50000000000000,be50000000000000,+0,yes,5.515e-25,3.701e-17,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+be50000000000000,-1.4901161193847656e-08,cos,3fefffffffffffff,3fefffffffffffff,+0,yes,2.054e-33,2.054e-33,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+bee4f8b588e368f1,-1e-05,sin,bee4f8b588e1e8a2,bee4f8b588e1e8a2,+0,yes,6.182e-22,6.182e-17,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+bee4f8b588e368f1,-1e-05,cos,3feffffffff920c8,3feffffffff920c8,+0,yes,4.137e-18,4.137e-18,"certified (mpfr p=120, arb p=120)",adv:small/subnormal
+bfe921fb54442d15,-0.785398163397448,sin,bfe6a09e667f3bca,bfe6a09e667f3bca,+0,yes,2.757e-17,3.899e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d15,-0.785398163397448,cos,3fe6a09e667f3bcf,3fe6a09e667f3bcf,+0,yes,1.322e-17,1.869e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d16,-0.7853981633974481,sin,bfe6a09e667f3bcb,bfe6a09e667f3bcb,+0,yes,4.950e-18,7.000e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d16,-0.7853981633974481,cos,3fe6a09e667f3bce,3fe6a09e667f3bce,+0,yes,1.930e-17,2.729e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d17,-0.7853981633974482,sin,bfe6a09e667f3bcc,bfe6a09e667f3bcc,+0,yes,3.747e-17,5.299e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d17,-0.7853981633974482,cos,3fe6a09e667f3bce,3fe6a09e667f3bcd,+1,NO,5.921e-17,8.373e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d18,-0.7853981633974483,sin,bfe6a09e667f3bcc,bfe6a09e667f3bcc,+0,yes,4.104e-17,5.803e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d18,-0.7853981633974483,cos,3fe6a09e667f3bcd,3fe6a09e667f3bcd,+0,yes,2.669e-17,3.774e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d19,-0.7853981633974484,sin,bfe6a09e667f3bcd,bfe6a09e667f3bcd,+0,yes,8.519e-18,1.205e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d19,-0.7853981633974484,cos,3fe6a09e667f3bcc,3fe6a09e667f3bcc,+0,yes,5.830e-18,8.245e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d1a,-0.7853981633974485,sin,bfe6a09e667f3bce,bfe6a09e667f3bce,+0,yes,2.400e-17,3.394e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d1a,-0.7853981633974485,cos,3fe6a09e667f3bcb,3fe6a09e667f3bcb,+0,yes,3.835e-17,5.423e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d1b,-0.7853981633974486,sin,bfe6a09e667f3bce,bfe6a09e667f3bce,+0,yes,5.451e-17,7.708e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bfe921fb54442d1b,-0.7853981633974486,cos,3fe6a09e667f3bca,3fe6a09e667f3bcb,-1,NO,7.087e-17,1.002e-16,"certified (mpfr p=120, arb p=120)",adv:reduction-boundary
+bff0000000000000,-1.0,sin,bfeaed548f090cee,bfeaed548f090cee,+0,yes,1.777e-18,2.112e-18,"certified (mpfr p=120, arb p=120)",adv:reduction-path
+bff0000000000000,-1.0,cos,3fe14a280fb5068c,3fe14a280fb5068c,+0,yes,4.761e-17,8.812e-17,"certified (mpfr p=120, arb p=120)",adv:reduction-path
+bff7333333333330,-1.4499999999999993,sin,bfefc44e08da43db,bfefc44e08da43db,+0,yes,4.614e-17,4.648e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+bff7333333333330,-1.4499999999999993,cos,3fbed944fd82a141,3fbed944fd82a141,+0,yes,4.717e-18,3.915e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+bff7333333333331,-1.4499999999999995,sin,bfefc44e08da43dc,bfefc44e08da43dc,+0,yes,3.813e-17,3.841e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+bff7333333333331,-1.4499999999999995,cos,3fbed944fd82a131,3fbed944fd82a131,+0,yes,6.335e-18,5.257e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+bff7333333333332,-1.4499999999999997,sin,bfefc44e08da43dc,bfefc44e08da43dc,+0,yes,1.137e-17,1.145e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+bff7333333333332,-1.4499999999999997,cos,3fbed944fd82a122,3fbed944fd82a122,+0,yes,5.924e-18,4.916e-17,"certified (mpfr p=120, arb p=120)",adv:domain-endpoint
+bff7333333333333,-1.45,sin,bfefc44e08da43dc,bfefc44e08da43dc,+0,yes,1.539e-17,1.550e-17,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,frozen:direct sin/cos"
+bff7333333333333,-1.45,cos,3fbed944fd82a112,3fbed944fd82a112,+0,yes,4.306e-18,3.574e-17,"certified (mpfr p=120, arb p=120)","adv:domain-endpoint,frozen:direct sin/cos"
+fff0000000000000,-inf,sin,fff8000000000000,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+fff0000000000000,-inf,cos,fff8000000000000,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+fff8000000000000,nan,sin,fff8000000000000,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
+fff8000000000000,nan,cos,fff8000000000000,NON-FINITE,n/a,n/a,n/a,n/a,S3: reaches oracle; no numeric CR reference,frozen:exceptional values
