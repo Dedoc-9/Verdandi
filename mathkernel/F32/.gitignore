@@ -1,0 +1,3 @@
+# The repository's root rules ignore *.log. This subtree's sweep, build and test logs are run records
+# held by sha256, so they are taken back in below this folder; nothing else is changed.
+!*.log

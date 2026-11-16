@@ -1,0 +1,9 @@
+# The run records below were captured with CR LF line ends and are held by sha256 as captured. Marked binary,
+# git format-patch writes them as literal bytes and git am restores them; a textual patch loses the CR.
+# A CR LF record placed anywhere else under this folder needs its own line here.
+orl/gen/*.txt binary
+orl/gen/*.log binary
+orl/gen-nm/*.txt binary
+orl/gen-nm/*.log binary
+orl/evidence/*.txt binary
+orl/evidence/*.log binary
