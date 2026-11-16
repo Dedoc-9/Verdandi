@@ -1,0 +1,13 @@
+# FROZEN4 of f32: a manifest of the sources gate4.py judges, written after the proofs (the older FROZEN.txt, written before the proofs, is kept beside it); each line is sha256, two spaces, path from the tree's root; the sha256 of this file is the anchor, to be recorded outside the tree.
+68d34d8ac681dbfc5038433e05f0171f12fea7fe172f4b54c61fcc14668a5250  f32/F32.v
+098937171e5e6971ac673994cefaf10a0c8b678984a2c954934f6afe5580cc73  f32/F32_Statement.v
+a342c0b3283ef46c9a562412f5de3bed2f8a97b75b45365190ec532fc24b5ce4  f32/Identity.v
+9a91ab2ed2e439360f8002018064722297d6248ab0b28c6b43cb561ae6bb8f52  f32/gate.json
+78648260c61e285e39e54015d804ead47779ee4252101168c0fdd576ce657334  f32/plants/admitted.v
+a376e6460e7fa41b25f8811727133c5086a79542e17a81579d9214024a441d66  f32/plants/guard.v
+4ba8ea5facf28cd81a37938a25b02dda1d48db4bdb344486167c25c59f6ab24d  f32/plants/loose_F32.v
+13a415c0c9834918e1283c6d0e8f00f8e0182a16a03e5b7d0e223e3987b26366  f32/plants/loose_Stmt.v
+1fbfcf7898c89f76d4a96ea60382512eca08ba5cc72df5bdcc5752b9776877a8  f32/plants/shadow.v
+a7bb5215133f53fbb52f0a82d30afd1d0b5c45c1f31a17f1e76e7b3ac23f70f5  gate/expected-pa-flocq4.txt
+21a33b65aba9b3e900b112bf39e27373f85f37c0fe05c7e06cc84203e7bfa8f3  gate/gate4.py
+0cb07c57e0249a63c53a087c78b0fee36439e4a9fe050c1d1f491e45afab1181  gate/strict_read.py

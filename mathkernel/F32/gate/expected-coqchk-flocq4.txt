@@ -1,0 +1,4 @@
+Coq.Logic.FunctionalExtensionality.functional_extensionality_dep
+Coq.Reals.ClassicalDedekindReals.sig_not_dec
+Coq.Reals.ClassicalDedekindReals.sig_forall_dec
+Coq.Logic.Classical_Prop.classic

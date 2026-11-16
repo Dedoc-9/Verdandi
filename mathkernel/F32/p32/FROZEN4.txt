@@ -1,0 +1,22 @@
+# FROZEN4 of p32: a manifest of the sources gate4.py judges, written after the proofs (the older FROZEN.txt, written before the proofs, is kept beside it); each line is sha256, two spaces, path from the tree's root; the sha256 of this file is the anchor, to be recorded outside the tree.
+68d34d8ac681dbfc5038433e05f0171f12fea7fe172f4b54c61fcc14668a5250  f32/F32.v
+098937171e5e6971ac673994cefaf10a0c8b678984a2c954934f6afe5580cc73  f32/F32_Statement.v
+a342c0b3283ef46c9a562412f5de3bed2f8a97b75b45365190ec532fc24b5ce4  f32/Identity.v
+9a91ab2ed2e439360f8002018064722297d6248ab0b28c6b43cb561ae6bb8f52  f32/gate.json
+a7bb5215133f53fbb52f0a82d30afd1d0b5c45c1f31a17f1e76e7b3ac23f70f5  gate/expected-pa-flocq4.txt
+21a33b65aba9b3e900b112bf39e27373f85f37c0fe05c7e06cc84203e7bfa8f3  gate/gate4.py
+0cb07c57e0249a63c53a087c78b0fee36439e4a9fe050c1d1f491e45afab1181  gate/strict_read.py
+ac1a747416d6140d67602f851b4f58d72b99fa4934acf3d68757358fb6edcb87  orl/emit.py
+0c3ca7b51f9b3b2724c2d0fea8504ef2854f28b42b8d825a090f1405c126ffd3  p32/Funcs.v
+055b4602b3b94aa0418fe2888e4ce89125bea979f028103fa7fb722a974a936c  p32/Graphs.v
+95590c2c88d3d206c531741c8ca7ad5e741f91d8e5c895784ba53bee3bf90dd5  p32/Hypot.v
+ca2b754f7d2c16cb5300e1d6dda6042b1901d7339da310c439192f6bdd036ffe  p32/Identity.v
+a1b2af32031ec3d40a95621a3aa397b9ddc9f707475211aca45a7104b75b422d  p32/P32_Statement.v
+360b5f8503fe2b0bbc6fc2b20df0434267729377b00365b679e593c80d2fba52  p32/T32.v
+21d0946f810682b5086c064020e2cacd734b3c3f02c2bb3f8a660721a1e341d6  p32/gate.json
+9b09d0c87f4ffbbba0cc843f2d4de9e5b5156eb5125c25c417ee165c52ccbc7a  p32/plants/Graphs_edited.v
+924bce440cca0e9d1045b4901e4b518ddea426b31c55d7440e0768e2e711bcf1  p32/plants/Graphs_k28.v
+6372fd15050ef5d01523becca533a6505d5a04459d7795c304206ed60b826aa6  p32/plants/Graphs_m99.v
+d155a1a442592fbd3ab26c618f7ace85e4bbdeded226f2b6902eb09112a74034  p32/plants/Hypot_admitted.v
+d9d329d20ee678e0c14c713bcae5acb3b43e7b17905c7479e22aebf84c8577b2  p32/plants/Hypot_guard.v
+b2c9fb699e2a1351c2690cdad3d554ff332435f2b09ba4d19b7568d9a8fe96d5  p32/plants/Hypot_shadow.v
