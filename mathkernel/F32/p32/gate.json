@@ -1,0 +1,10 @@
+{"name": "P32", "tier": "flocq4", "deps": ["f32"],
+ "files": ["Graphs.v", "P32_Statement.v", "T32.v", "Funcs.v", "Hypot.v", "Identity.v"], "identity": "Identity",
+ "generated": {"p32/Graphs.v": ["orl/emit.py", "coq", "-"]},
+ "plants": {
+  "split-constant": {"replace": {"Graphs.v": "plants/Graphs_k28.v"}, "fails": "T32", "text": "not a valid ring equation"},
+  "magic-constant": {"replace": {"Graphs.v": "plants/Graphs_m99.v"}, "fails": "T32", "text": "Unable to unify"},
+  "admitted": {"replace": {"Hypot.v": "plants/Hypot_admitted.v"}, "reader": "hypot32_faithful :"},
+  "shadow": {"replace": {"Hypot.v": "plants/Hypot_shadow.v"}, "fails": "Identity", "text": "has type"},
+  "guard": {"replace": {"Hypot.v": "plants/Hypot_guard.v"}, "reader": "is assumed to be guarded"},
+  "hand-edited-graph": {"replace": {"Graphs.v": "plants/Graphs_edited.v"}, "generated": "p32/Graphs.v"}}}

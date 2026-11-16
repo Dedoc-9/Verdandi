@@ -1,0 +1,9 @@
+{"name": "EXP32R", "tier": "flocq4", "deps": ["f32", "p32", "exp32"],
+ "files": ["RANGE_Statement.v", "Chain.v", "Range.v", "Identity.v"], "identity": "Identity",
+ "generated": {"exp32r/Chain.v": ["exp32r/gen_range.py", "coq"]},
+ "plants": {
+  "upper-constant": {"replace": {"Chain.v": "plants/Chain_upper.v"}, "fails": "Chain", "text": "Cannot find witness"},
+  "lower-constant": {"replace": {"Chain.v": "plants/Chain_lower.v"}, "fails": "Chain", "text": "Cannot find witness"},
+  "admitted": {"replace": {"Range.v": "plants/Range_admitted.v"}, "reader": "fmax_format :"},
+  "shadow": {"replace": {"Range.v": "plants/Range_shadow.v"}, "fails": "Identity", "text": "has type"},
+  "hand-edited-chain": {"replace": {"Chain.v": "plants/Chain_edited.v"}, "generated": "exp32r/Chain.v"}}}

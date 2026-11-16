@@ -1,0 +1,11 @@
+{"name": "EXP32", "tier": "flocq4", "deps": ["f32", "p32"],
+ "files": ["Graph.v", "EXP32_Statement.v", "Taylor.v", "Exp32.v", "Identity.v"], "identity": "Identity",
+ "generated": {"exp32/Graph.v": ["orl/emit2.py", "coq", "-"]},
+ "plants": {
+  "eleven-squarings": {"replace": {"Graph.v": "plants/Graph_sq11.v"}, "fails": "Exp32", "text": "cannot unify \"Rabs (exp32_sq y - exp x)\""},
+  "coefficient-43": {"replace": {"Graph.v": "plants/Graph_c43.v"}, "fails": "Exp32", "text": "Found no subterm matching \"RN64 (v1 / 5040)\""},
+  "clamp-170": {"replace": {"Graph.v": "plants/Graph_clamp.v"}, "fails": "Exp32", "text": "Unable to unify \"x1 / 4096\""},
+  "admitted": {"replace": {"Exp32.v": "plants/Exp32_admitted.v"}, "reader": "sq_exp :"},
+  "tail-axiom": {"replace": {"Taylor.v": "plants/Taylor_axiom.v"}, "reader": "exp_poly7 :"},
+  "shadow": {"replace": {"Exp32.v": "plants/Exp32_shadow.v"}, "fails": "Identity", "text": "has type"},
+  "hand-edited-graph": {"replace": {"Graph.v": "plants/Graph_edited.v"}, "generated": "exp32/Graph.v"}}}

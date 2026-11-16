@@ -1,0 +1,9 @@
+{"name": "P32R", "tier": "flocq4", "deps": ["f32", "p32"],
+ "files": ["P32R_Statement.v", "Range.v", "Identity.v"], "identity": "Identity",
+ "plants": {
+  "admitted": {"replace": {"Range.v": "plants/Range_admitted.v"}, "reader": "rn32_below :"},
+  "axiom": {"replace": {"Range.v": "plants/Range_axiom.v"}, "reader": "hyp_big :"},
+  "shadow": {"replace": {"Range.v": "plants/Range_shadow.v"}, "fails": "Identity", "text": "has type"},
+  "guard": {"replace": {"Range.v": "plants/Range_guard.v"}, "reader": "is assumed to be guarded"},
+  "loose-narrow": {"replace": {"P32R_Statement.v": "plants/Stmt_loose_narrow.v"}, "fails": "Range", "text": "\"Rabs v < OVF32\""},
+  "loose-hypot": {"replace": {"P32R_Statement.v": "plants/Stmt_loose_hypot.v"}, "fails": "Range", "text": "Cannot find witness"}}}

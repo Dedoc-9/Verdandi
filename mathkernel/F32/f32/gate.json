@@ -1,0 +1,6 @@
+{"name": "F32", "tier": "flocq4", "files": ["F32_Statement.v", "F32.v", "Identity.v"], "identity": "Identity",
+ "plants": {
+  "loose-constant": {"replace": {"F32_Statement.v": "plants/loose_Stmt.v", "F32.v": "plants/loose_F32.v"}, "fails": "F32", "text": "Cannot find witness"},
+  "admitted": {"replace": {"F32.v": "plants/admitted.v"}, "reader": "F32_rel :"},
+  "shadow": {"replace": {"F32.v": "plants/shadow.v"}, "fails": "Identity", "text": "has type"},
+  "guard": {"replace": {"F32.v": "plants/guard.v"}, "reader": "is assumed to be guarded"}}}
